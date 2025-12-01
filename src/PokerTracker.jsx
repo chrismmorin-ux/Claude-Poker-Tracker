@@ -58,12 +58,10 @@ const SCREEN = {
   STATS: 'stats',
 };
 
-// Card definitions
-const SUITS = ['Ã¢â„¢Â ', 'Ã¢â„¢Â¥', 'Ã¢â„¢Â¦', 'Ã¢â„¢Â£'];
+const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-// Suit mapping for abbreviations (AÃ¢â„¢Â¥ -> Ah)
-const SUIT_ABBREV = { 'Ã¢â„¢Â¥': 'h', 'Ã¢â„¢Â¦': 'd', 'Ã¢â„¢Â£': 'c', 'Ã¢â„¢Â ': 's' };
+const SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
 
 // Action type constants
 const ACTIONS = {
@@ -110,10 +108,10 @@ const SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const isFoldAction = (action) => FOLD_ACTIONS.includes(action);
 
 // Helper function: Check if a card is red (hearts or diamonds)
-const isRedCard = (card) => card && (card.includes('Ã¢â„¢Â¥') || card.includes('Ã¢â„¢Â¦'));
+const isRedCard = (card) => card && (card.includes('♥') || card.includes('♦'));
 
 // Helper function: Check if a suit is red
-const isRedSuit = (suit) => suit === 'Ã¢â„¢Â¥' || suit === 'Ã¢â„¢Â¦';
+const isRedSuit = (suit) => suit === '♥' || suit === '♦';
 
 // Initial empty player cards state
 const createEmptyPlayerCards = () => ({
@@ -316,7 +314,7 @@ const VisibilityToggle = ({ visible, onToggle, size = 'small' }) => {
       className="bg-gray-600 hover:bg-gray-700 rounded shadow flex items-center justify-center cursor-pointer"
       style={sizeStyle}
     >
-      <div className={`text-white ${textSize}`}>{visible ? 'ðŸ‘' : 'ðŸ‘â€ðŸ—¨'}</div>
+      <div className={`text-white ${textSize}`}>{visible ? '👁' : '👁‍🗨'}</div>
     </button>
   );
 };
@@ -1273,7 +1271,7 @@ const PokerTrackerWireframes = () => {
                                     {displayAction}
                                   </div>
                                 ) : (
-                                  <div className="text-gray-300">ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â</div>
+                                  <div className="text-gray-300">—</div>
                                 )}
                               </div>
                             );
@@ -1796,7 +1794,7 @@ const PokerTrackerWireframes = () => {
                   onClick={nextStreet}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold text-xl"
                 >
-                  Next Street ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
+                  Next Street ➡
                 </button>
               </div>
 
@@ -1900,7 +1898,7 @@ const PokerTrackerWireframes = () => {
         <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: '1600px', height: '720px' }}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Player Statistics</h2>
-            <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-green-600 text-white px-4 py-2 rounded-lg">ÃƒÂ¢Ã¢â‚¬Â Ã‚Â Back to Table</button>
+            <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-green-600 text-white px-4 py-2 rounded-lg">⬅ Back to Table</button>
           </div>
           
           <div className="grid grid-cols-5 gap-3 mb-6">
