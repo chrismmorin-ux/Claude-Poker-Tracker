@@ -15,7 +15,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v103)
+## Architecture (v104)
 
 ### File Structure
 ```
@@ -24,7 +24,7 @@ src/PokerTracker.jsx
 ├── Lines 11-107:    Constants (CONSTANTS, ACTIONS, etc.)
 ├── Lines 109-242:   Helper Functions (11 pure functions)
 ├── Lines 244-408:   UI Components (CardSlot, PositionBadge, etc.)
-└── Lines 410+:      Main Component
+└── Lines 410+:      Main Component (includes responsive scaling hook)
 ```
 
 ### Key Constants
@@ -67,14 +67,22 @@ Set `DEBUG = false` at line 8 to disable all console logging.
 - Use `CONSTANTS.NUM_SEATS` for seat limits (not hardcoded 9)
 - Use extracted UI components for consistency
 
+## Responsive Design
+The app uses dynamic scaling to fit any browser window size:
+- Design dimensions: 1600x720 (Samsung Galaxy A22 landscape)
+- Scale calculated on mount and window resize: `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
+- Mobile-optimized component sizes: badges (16px/28px), seats (40px), cards scaled down
+- Card selectors maximized: 90px height cards with large text, no scrolling required
+
 ## Testing Changes
-The app renders at 50% scale in a 1600x720 container. Test all 4 views:
+Test all 4 views at various browser sizes:
 1. Table View (default)
-2. Card Selector (click community/hole cards)
-3. Showdown View (click "showdown" street)
+2. Card Selector (click community/hole cards) - shows current street in header
+3. Showdown View (click "showdown" street) - auto-advances to next empty card slot
 4. Stats View (click "Stats" button)
 
 ## Version History
 - v101: Baseline features
 - v102: Constants extraction
-- v103: Full refactoring (current)
+- v103: Full refactoring
+- v104: Mobile landscape optimization, responsive scaling, card selector improvements (current)

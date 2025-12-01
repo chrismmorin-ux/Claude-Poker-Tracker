@@ -1,9 +1,9 @@
-# Poker Tracker Specification - v103
+# Poker Tracker Specification - v104
 
-## Version: v103 (Refactoring Complete)
-## Last Updated: 2024-12-01
-## File: poker_tracker_wireframes_v103.tsx
-## Lines: 1958
+## Version: v104 (Mobile Optimized + Responsive Scaling)
+## Last Updated: 2025-12-01
+## File: src/PokerTracker.jsx
+## Lines: ~2000
 
 ---
 
@@ -15,7 +15,7 @@
 3. **Showdown View**: Card assignment + hand history summary for all 9 players
 4. **Stats View**: Player statistics display (placeholder)
 
-### Key Variable Names (v103 naming)
+### Key Variable Names (v104 naming)
 | Variable | Purpose |
 |----------|---------|
 | `currentView` | Which view is shown: `SCREEN.TABLE` or `SCREEN.STATS` |
@@ -24,6 +24,7 @@
 | `highlightedBoardIndex` | Which community card slot (0-4) is selected |
 | `highlightedHoleSlot` | Which hole card slot (0-1) is selected |
 | `highlightedSeat` | Which seat (1-9) is selected in showdown view |
+| `scale` | Dynamic viewport scale factor (v104) |
 
 ---
 
@@ -34,7 +35,7 @@
 11-107:     Constants (CONSTANTS, ACTIONS, SEAT_ARRAY, etc.)
 109-242:    Helper Functions (11 pure functions)
 244-408:    Extracted UI Components (4 components)
-410+:       Main Component (PokerTrackerWireframes)
+410+:       Main Component (includes responsive scaling hook - v104)
 ```
 
 ---
@@ -48,19 +49,22 @@ log = (...args) => DEBUG && console.log('[PokerTracker]', ...args)
 
 CONSTANTS = {
   NUM_SEATS: 9,
+  // Mobile-optimized card dimensions (v104)
   CARD: {
-    SMALL: { width: 40, height: 58 },    // Hole cards on table
-    MEDIUM: { width: 50, height: 70 },   // Showdown card slots
-    LARGE: { width: 60, height: 85 },    // Card selector slots
-    TABLE: { width: 70, height: 100 },   // Community cards on table
+    SMALL: { width: 24, height: 35 },    // Hole cards on table
+    MEDIUM: { width: 28, height: 40 },   // Showdown card slots
+    LARGE: { width: 32, height: 45 },    // Card selector slots
+    TABLE: { width: 35, height: 50 },    // Community cards on table
   },
-  BADGE_SIZE: 24,
-  SEAT_SIZE: 60,
-  DEALER_BUTTON_SIZE: 45,
-  TOGGLE_BUTTON_SIZE: 40,
+  // Mobile-optimized UI elements (v104)
+  BADGE_SIZE: 16,
+  SEAT_SIZE: 40,
+  DEALER_BUTTON_SIZE: 28,
+  TOGGLE_BUTTON_SIZE: 24,
+  // Samsung Galaxy A22 landscape (v104)
   TABLE_WIDTH: 1600,
   TABLE_HEIGHT: 720,
-  TABLE_SCALE: 0.5,
+  TABLE_SCALE: 1.0,  // Dynamic scaling via hook
   FELT_WIDTH: 900,
   FELT_HEIGHT: 450,
 }
@@ -125,7 +129,7 @@ BADGE_CONFIG = {
 ```jsx
 <PositionBadge
   type="dealer|sb|bb|me"     // Required: which badge type
-  size="small|large"          // Optional: 24px or 45px (default: small)
+  size="small|large"          // Optional: 16px or 28px mobile (v104) (default: small)
   draggable={boolean}         // Optional: enable drag (default: false)
   onDragStart={function}      // Optional: drag handler
 />
@@ -221,6 +225,7 @@ isShowdownViewOpen: boolean
 allPlayerCards: { 1: ['',''], ..., 9: ['',''] }
 highlightedSeat: number | null  // 1-9
 highlightedHoleSlot: 0 | 1 | null
+scale: number  // Dynamic viewport scale (v104)
 ```
 
 ---
@@ -237,6 +242,34 @@ highlightedHoleSlot: 0 | 1 | null
 | 4bet, Donk, Check-Raise | Orange | bg-orange-300/400 |
 | Won | Green | bg-green-400 |
 | Mucked | Gray | bg-gray-400 |
+
+---
+
+## V104 FEATURES - RESPONSIVE DESIGN & MOBILE OPTIMIZATION
+
+### Dynamic Viewport Scaling
+- **Hook**: `useEffect` calculates scale on mount and window resize
+- **Formula**: `scale = min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
+- **Target Device**: Samsung Galaxy A22 landscape (1600x720)
+- **Behavior**: Scales down to fit any browser window, never scales up beyond 1.0
+
+### Card Selector Improvements (v104)
+- **Header Changes**:
+  - Title shows current street: "Select Cards: Preflop" / "Select Cards: Flop"
+  - Board and hole cards moved to header (right side)
+  - Vertical separator between board and hole cards
+  - "Done" button renamed to "Table View"
+
+- **Card Table Optimization**:
+  - Cards maximized: 90px height x 62px width
+  - Large text: rank (text-lg), suit (text-3xl)
+  - No scrolling required - everything fits in viewport
+  - Cell padding reduced to p-1, minimal spacing
+
+### Showdown Improvements (v104)
+- **Auto-advance**: Skips already-filled card slots when selecting cards
+- **Summary Display**: Shows "show [cards]" for active hands without explicit action
+- **Card Table**: Same maximized sizing as regular card selector (90px x 62px)
 
 ---
 

@@ -1,8 +1,8 @@
-# ⚡ QUICK REFERENCE CARD - Poker Tracker v103
+# ⚡ QUICK REFERENCE CARD - Poker Tracker v104
 
 ## 🎯 ESSENTIAL INFO
-- **Version**: v103 (All Refactoring Complete ✅)
-- **File**: poker_tracker_wireframes_v103.tsx (1958 lines)
+- **Version**: v104 (Mobile Optimized + Responsive Scaling ✅)
+- **File**: src/PokerTracker.jsx (~2000 lines)
 
 ## 📖 MUST-READ DOCS
 1. **POKER_TRACKER_SPEC_V103.md** ⭐ (3k tokens) - READ FIRST
@@ -15,10 +15,16 @@ Lines 1-10:      Imports + Debug (DEBUG flag, log helper)
 Lines 11-107:    Constants (CONSTANTS, ACTIONS, SEAT_ARRAY)
 Lines 109-242:   Helper Functions (11 pure functions)
 Lines 244-408:   UI Components (PositionBadge, CardSlot, etc.)
-Lines 410+:      Main Component
+Lines 410+:      Main Component (includes responsive scaling hook)
 ```
 
-## 🔧 VARIABLE NAMES (v103)
+## 📱 RESPONSIVE DESIGN (v104)
+- **Target**: Samsung Galaxy A22 landscape (1600x720)
+- **Scaling**: Dynamic - `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
+- **Mobile sizes**: Badges (16px/28px), Seats (40px), Cards scaled down
+- **Card Selectors**: 90px height, large text (rank: text-lg, suit: text-3xl), no scrolling
+
+## 🔧 VARIABLE NAMES (v104)
 | Variable | Purpose |
 |----------|---------|
 | `currentView` | SCREEN.TABLE or SCREEN.STATS |
@@ -27,6 +33,7 @@ Lines 410+:      Main Component
 | `highlightedBoardIndex` | Community card 0-4 |
 | `highlightedHoleSlot` | Hole card 0-1 |
 | `highlightedSeat` | Selected seat in showdown |
+| `scale` | Dynamic viewport scale (v104) |
 
 ## 🧩 COMPONENT PROPS
 
@@ -101,19 +108,19 @@ Lines 410+:      Main Component
 | `handleWonSeat(seat)` | Mark winner |
 | `handleSetMySeat(seat)` | Set my seat |
 
-## ✅ REFACTORING STATUS - ALL COMPLETE
-- ✅ Chunk 1: Constants extraction (v102)
-- ✅ Chunk 2: UI Components extraction (v103)
-- ✅ Chunk 3: Helper Functions extraction (v103)
-- ✅ Chunk 4: Simplify Complex Functions (v103)
-- ✅ Chunk 5: Event Handler Cleanup (v103)
+## ✅ VERSION HISTORY
+- ✅ v101: Baseline features
+- ✅ v102: Constants extraction
+- ✅ v103: Full refactoring (12.1% reduction)
+- ✅ v104: Mobile landscape optimization, responsive scaling, card selector improvements
 
 ## 📊 FILE STATS
 | Version | Lines | Change |
 |---------|-------|--------|
 | v101 | ~2063 | baseline |
 | v102 | 2228 | +165 |
-| v103 | 1958 | **-270 (12.1%)** |
+| v103 | 1958 | -270 (12.1%) |
+| v104 | ~2000 | +42 (responsive features) |
 
 ## 🐛 DEBUG
 - Set `DEBUG = false` at line 8 to disable logging
