@@ -689,12 +689,13 @@ const PokerTrackerWireframes = () => {
     for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
       const inactiveStatus = isSeatInactive(seat);
       const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
-      
-      // Skip folded, absent, and mucked seats
-      if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked) {
+      const hasWon = seatActions['showdown']?.[seat] === ACTIONS.WON;
+
+      // Skip folded, absent, mucked, and won seats
+      if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked || hasWon) {
         continue;
       }
-      
+
       // Check if this active seat has both cards
       const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
       if (!cards[0] || !cards[1]) {
@@ -1641,27 +1642,29 @@ const PokerTrackerWireframes = () => {
                 <div className="text-white text-xl font-bold">Hand #47</div>
                 <div className="text-green-300 text-base">2h 15m</div>
               </div>
-              <div className="flex gap-2">
-                <button 
+              <div className="flex gap-2 items-center justify-between flex-1">
+                <div className="flex gap-2">
+                  <button
+                    onClick={nextHand}
+                    className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                  >
+                    <SkipForward size={18} />
+                    Next Hand
+                  </button>
+                  <button
+                    onClick={() => setCurrentScreen(SCREEN.STATS)}
+                    className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                  >
+                    <BarChart3 size={18} />
+                    Stats
+                  </button>
+                </div>
+                <button
                   onClick={resetHand}
                   className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2"
                 >
                   <RotateCcw size={18} />
                   Reset
-                </button>
-                <button 
-                  onClick={nextHand}
-                  className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  <SkipForward size={18} />
-                  Next Hand
-                </button>
-                <button 
-                  onClick={() => setCurrentScreen(SCREEN.STATS)}
-                  className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  <BarChart3 size={18} />
-                  Stats
                 </button>
               </div>
             </div>
@@ -1799,11 +1802,11 @@ const PokerTrackerWireframes = () => {
               </div>
 
               <div className="absolute bottom-8 right-8">
-                <button 
+                <button
                   onClick={clearStreetActions}
                   className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold text-lg"
                 >
-                  Clear Actions
+                  Clear Street
                 </button>
               </div>
 
