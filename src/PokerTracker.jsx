@@ -12,25 +12,25 @@ const log = (...args) => DEBUG && console.log('[PokerTracker]', ...args);
 const CONSTANTS = {
   // Table configuration
   NUM_SEATS: 9,
-  
-  // Card dimensions (in pixels)
+
+  // Card dimensions (in pixels) - scaled for mobile
   CARD: {
-    SMALL: { width: 40, height: 58 },    // Hole cards on table
-    MEDIUM: { width: 50, height: 70 },   // Showdown card slots
-    LARGE: { width: 60, height: 85 },    // Card selector slots
-    TABLE: { width: 70, height: 100 },   // Community cards on table
+    SMALL: { width: 24, height: 35 },    // Hole cards on table
+    MEDIUM: { width: 28, height: 40 },   // Showdown card slots
+    LARGE: { width: 32, height: 45 },    // Card selector slots
+    TABLE: { width: 35, height: 50 },    // Community cards on table
   },
-  
-  // UI element dimensions
-  BADGE_SIZE: 24,
-  SEAT_SIZE: 60,
-  DEALER_BUTTON_SIZE: 45,
-  TOGGLE_BUTTON_SIZE: 40,
-  
-  // Table layout (scaled container)
+
+  // UI element dimensions - scaled for mobile
+  BADGE_SIZE: 16,
+  SEAT_SIZE: 40,
+  DEALER_BUTTON_SIZE: 28,
+  TOGGLE_BUTTON_SIZE: 24,
+
+  // Table layout - Samsung Galaxy A22 landscape (1600 x 720)
   TABLE_WIDTH: 1600,
   TABLE_HEIGHT: 720,
-  TABLE_SCALE: 0.5,
+  TABLE_SCALE: 1.0,
   FELT_WIDTH: 900,
   FELT_HEIGHT: 450,
 };
@@ -275,21 +275,21 @@ const BADGE_CONFIG = {
 };
 
 // Position Badge Component - D, SB, BB, ME indicators
-// size: 'small' (24px) for showdown view, 'large' (45px) for table view
+// size: 'small' (16px) for showdown view, 'large' (28px) for table view (mobile)
 const PositionBadge = ({ type, size = 'small', draggable = false, onDragStart = null }) => {
   const config = BADGE_CONFIG[type];
   if (!config) return null;
-  
-  const sizeClass = size === 'small' ? 'w-6 h-6' : 'w-[45px] h-[45px]';
-  const textSize = size === 'small' ? 'text-xs' : (type === 'dealer' ? 'text-2xl' : 'text-sm');
-  const borderWidth = size === 'small' ? 'border-2' : 'border-4';
-  
+
+  const sizeClass = size === 'small' ? 'w-4 h-4' : 'w-[28px] h-[28px]';
+  const textSize = size === 'small' ? 'text-xs' : (type === 'dealer' ? 'text-lg' : 'text-xs');
+  const borderWidth = size === 'small' ? 'border-2' : 'border-2';
+
   return (
-    <div 
+    <div
       className={`${config.bg} rounded-full shadow flex items-center justify-center ${borderWidth} ${config.border} ${
         draggable ? 'cursor-move select-none shadow-xl' : ''
       }`}
-      style={size === 'small' ? { width: '24px', height: '24px' } : { width: '45px', height: '45px' }}
+      style={size === 'small' ? { width: '16px', height: '16px' } : { width: '28px', height: '28px' }}
       onMouseDown={draggable ? onDragStart : undefined}
     >
       <div className={`${textSize} font-bold ${config.text}`}>{config.label}</div>
@@ -431,7 +431,29 @@ const PokerTrackerWireframes = () => {
   const [allPlayerCards, setAllPlayerCards] = useState(createEmptyPlayerCards());
   const [highlightedSeat, setHighlightedSeat] = useState(1);
   const [highlightedHoleSlot, setHighlightedCardSlot] = useState(0);
+  const [scale, setScale] = useState(1);
   const tableRef = useRef(null);
+
+  // Calculate scale to fit viewport
+  useEffect(() => {
+    const calculateScale = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const designWidth = CONSTANTS.TABLE_WIDTH;
+      const designHeight = CONSTANTS.TABLE_HEIGHT;
+
+      // Calculate scale to fit both width and height with some padding
+      const scaleX = (viewportWidth * 0.95) / designWidth;
+      const scaleY = (viewportHeight * 0.95) / designHeight;
+      const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
 
   const advanceDealer = () => {
     setDealerSeat((dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1);
@@ -804,25 +826,48 @@ const PokerTrackerWireframes = () => {
       setHoleCards(prev => prev.map(c => c === card ? '' : c));
     }
     
-    // Auto-advance logic
-    if (slot === 0) {
-      // Move to second card of same seat
-      setHighlightedCardSlot(1);
-    } else {
-      // Move to first card of next seat, skipping folded/absent/mucked seats
-      let nextSeat = seat + 1;
+    // Auto-advance logic - find next empty slot
+    const findNextEmptySlot = (currentSeat, currentSlot) => {
+      // First check if the second slot of current seat is empty
+      if (currentSlot === 0) {
+        const cards = currentSeat === mySeat ? holeCards : allPlayerCards[currentSeat];
+        if (!cards[1]) {
+          return { seat: currentSeat, slot: 1 };
+        }
+      }
+
+      // Otherwise, look for next seat with empty slots
+      let nextSeat = currentSeat + 1;
       while (nextSeat <= CONSTANTS.NUM_SEATS) {
         const nextStatus = isSeatInactive(nextSeat);
         const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
-        // Skip folded, absent, and mucked seats
-        if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked) {
-          setHighlightedSeat(nextSeat);
-          setHighlightedCardSlot(0);
-          return;
+        const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
+
+        // Skip folded, absent, mucked, and won seats
+        if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
+          const cards = nextSeat === mySeat ? holeCards : allPlayerCards[nextSeat];
+          // Check first slot
+          if (!cards[0]) {
+            return { seat: nextSeat, slot: 0 };
+          }
+          // Check second slot
+          if (!cards[1]) {
+            return { seat: nextSeat, slot: 1 };
+          }
         }
         nextSeat++;
       }
-      // No more active seats
+
+      // No empty slots found
+      return null;
+    };
+
+    const nextEmpty = findNextEmptySlot(seat, slot);
+    if (nextEmpty) {
+      setHighlightedSeat(nextEmpty.seat);
+      setHighlightedCardSlot(nextEmpty.slot);
+    } else {
+      // No more empty slots
       setHighlightedSeat(null);
       setHighlightedCardSlot(null);
     }
@@ -1075,8 +1120,13 @@ const PokerTrackerWireframes = () => {
   if (isShowdownViewOpen) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{ width: '1600px', height: '720px', transform: 'scale(0.5)', transformOrigin: 'center center' }}>
-          <div 
+        <div style={{
+          width: '1600px',
+          height: '720px',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center'
+        }}>
+          <div
             className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
             style={{ width: '1600px', height: '720px' }}
           >
@@ -1228,11 +1278,11 @@ const PokerTrackerWireframes = () => {
                             if (effectiveAction) {
                               actionColor = getActionColor(effectiveAction);
                               displayAction = getActionDisplayName(effectiveAction);
-                              
+
                               // For showdown, add cards if available
                               if (street === 'showdown') {
                                 const handAbbr = getHandAbbreviation(cards);
-                                
+
                                 if (effectiveAction === ACTIONS.MUCKED) {
                                   // Muck - no cards shown
                                   displayAction = 'muck';
@@ -1262,6 +1312,13 @@ const PokerTrackerWireframes = () => {
                                     displayAction = '';
                                   }
                                 }
+                              }
+                            } else if (street === 'showdown') {
+                              // No action recorded for showdown, but check if player has cards
+                              const handAbbr = getHandAbbreviation(cards);
+                              if (handAbbr && inactiveStatus !== SEAT_STATUS.ABSENT && inactiveStatus !== SEAT_STATUS.FOLDED) {
+                                displayAction = `show ${handAbbr}`;
+                                actionColor = 'bg-gray-100 text-gray-900';
                               }
                             }
                             
@@ -1374,14 +1431,14 @@ const PokerTrackerWireframes = () => {
                   </div>
                   
                   {/* Card Selection Table */}
-                  <div className="flex-1 bg-white p-8 overflow-auto">
-                    <table className="w-full border-collapse">
+                  <div className="flex-1 bg-white py-1 px-2 overflow-hidden flex items-center justify-center">
+                    <table className="border-collapse">
                       <thead>
                         <tr>
-                          <th className="w-16"></th>
+                          <th style={{ width: '40px' }}></th>
                           {RANKS.map(rank => (
-                            <th key={rank} className="text-center pb-3">
-                              <div className="text-2xl font-bold">{rank}</div>
+                            <th key={rank} className="text-center">
+                              <div className="text-xl font-bold">{rank}</div>
                             </th>
                           ))}
                         </tr>
@@ -1389,27 +1446,27 @@ const PokerTrackerWireframes = () => {
                       <tbody>
                         {SUITS.map(suit => (
                           <tr key={suit}>
-                            <td className="text-center pr-4">
-                              <div className={`text-4xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
+                            <td className="text-center" style={{ width: '40px' }}>
+                              <div className={`text-3xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
                                 {suit}
                               </div>
                             </td>
                             {RANKS.map(rank => {
                               const card = `${rank}${suit}`;
-                              
+
                               // Check if card is used in community cards
                               const isInCommunity = communityCards.includes(card);
                               const communityIndex = communityCards.indexOf(card);
-                              
+
                               // Check if card is used in any player's hand
                               let usedBySeat = null;
                               let cardSlotIndex = null;
-                              
+
                               // Check my seat's hole cards
                               if (holeCards.includes(card)) {
                                 usedBySeat = mySeat;
                               }
-                              
+
                               // Check all other players
                               Object.entries(allPlayerCards).forEach(([seat, playerHand]) => {
                                 const index = playerHand.indexOf(card);
@@ -1418,10 +1475,10 @@ const PokerTrackerWireframes = () => {
                                   cardSlotIndex = index;
                                 }
                               });
-                              
+
                               const isUsed = isInCommunity || usedBySeat !== null;
                               const canSelect = highlightedSeat !== null && highlightedHoleSlot !== null;
-                              
+
                               // Get street indicator for community cards
                               let streetIndicator = null;
                               if (isInCommunity) {
@@ -1429,27 +1486,27 @@ const PokerTrackerWireframes = () => {
                                 else if (communityIndex === 3) streetIndicator = 'T';
                                 else if (communityIndex === 4) streetIndicator = 'R';
                               }
-                              
+
                               return (
                                 <td key={card} className="p-1 relative">
                                   <button
                                     onClick={() => canSelect && selectCardForShowdown(card)}
                                     disabled={!canSelect}
-                                    className={`w-full aspect-[2/3] rounded-lg font-bold text-xl transition-all relative ${
-                                      isUsed 
-                                        ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40' 
+                                    className={`w-full rounded-lg font-bold transition-all relative flex flex-col items-center justify-center gap-1 ${
+                                      isUsed
+                                        ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40'
                                         : !canSelect
                                           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                           : isRedSuit(suit)
-                                            ? 'bg-red-50 hover:bg-red-200 border-4 border-red-400 text-red-600 hover:scale-110'
-                                            : 'bg-gray-50 hover:bg-gray-200 border-4 border-gray-800 text-black hover:scale-110'
+                                            ? 'bg-red-50 hover:bg-red-200 border-2 border-red-400 text-red-600 hover:scale-105'
+                                            : 'bg-gray-50 hover:bg-gray-200 border-2 border-gray-800 text-black hover:scale-105'
                                     }`}
-                                    style={{ minHeight: '70px' }}
+                                    style={{ height: '90px', width: '62px' }}
                                   >
-                                    <div>{rank}</div>
-                                    <div className="text-3xl">{suit}</div>
+                                    <div className="text-lg font-bold">{rank}</div>
+                                    <div className="text-3xl leading-none">{suit}</div>
                                     {streetIndicator && (
-                                      <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                                      <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-tl">
                                         {streetIndicator}
                                       </div>
                                     )}
@@ -1480,90 +1537,94 @@ const PokerTrackerWireframes = () => {
   if (showCardSelector) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{ width: '1600px', height: '720px', transform: 'scale(0.5)', transformOrigin: 'center center' }}>
-          <div 
+        <div style={{
+          width: '1600px',
+          height: '720px',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center'
+        }}>
+          <div
             className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
             style={{ width: '1600px', height: '720px' }}
           >
             <div className="bg-white p-6 flex justify-between items-center">
-              <h2 className="text-3xl font-bold">
-                Select Cards - Click a slot below, then click a card
+              <h2 className="text-3xl font-bold capitalize">
+                Select Cards: {currentStreet}
               </h2>
-              <button 
-                onClick={handleCloseCardSelector}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-              >
-                Done
-              </button>
-            </div>
-
-            <div className="bg-gray-100 p-4 flex justify-center gap-8 items-center">
-              <div>
-                <div className="text-sm font-bold mb-2">BOARD</div>
-                <div className="flex gap-2">
-                  {[0, 1, 2, 3, 4].map((idx) => {
-                    const isHighlighted = cardSelectorType === 'community' && highlightedBoardIndex === idx;
-                    return (
-                      <CardSlot
-                        key={idx}
-                        card={communityCards[idx]}
-                        variant="selector"
-                        isHighlighted={isHighlighted}
-                        onClick={() => {setCardSelectorType('community'); setHighlightedCardIndex(idx);}}
-                      />
-                    );
-                  })}
+              <div className="flex items-center gap-4">
+                {/* Community Cards Display */}
+                <div>
+                  <div className="text-sm font-bold mb-2 text-center">BOARD</div>
+                  <div className="flex gap-2">
+                    {[0, 1, 2, 3, 4].map((idx) => {
+                      const isHighlighted = cardSelectorType === 'community' && highlightedBoardIndex === idx;
+                      return (
+                        <CardSlot
+                          key={idx}
+                          card={communityCards[idx]}
+                          variant="selector"
+                          isHighlighted={isHighlighted}
+                          onClick={() => {setCardSelectorType('community'); setHighlightedCardIndex(idx);}}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-bold mb-2">HOLE CARDS</div>
-                <div className="flex gap-2 items-center">
-                  {[0, 1].map((idx) => {
-                    const isHighlighted = cardSelectorType === 'hole' && highlightedBoardIndex === idx;
-                    return (
-                      <CardSlot
-                        key={idx}
-                        card={holeCards[idx]}
-                        variant="selector"
-                        isHighlighted={isHighlighted}
-                        isHidden={!holeCardsVisible}
-                        onClick={() => {setCardSelectorType('hole'); setHighlightedCardIndex(idx);}}
-                      />
-                    );
-                  })}
-                  <VisibilityToggle 
-                    visible={holeCardsVisible} 
-                    onToggle={() => setHoleCardsVisible(!holeCardsVisible)} 
-                    size="large" 
-                  />
+                {/* Vertical Separator */}
+                <div className="h-24 w-1 bg-gray-300"></div>
+                {/* Hole Cards Display */}
+                <div>
+                  <div className="text-sm font-bold mb-2 text-center">HOLE CARDS</div>
+                  <div className="flex gap-2 items-center">
+                    {[0, 1].map((idx) => {
+                      const isHighlighted = cardSelectorType === 'hole' && highlightedBoardIndex === idx;
+                      return (
+                        <CardSlot
+                          key={idx}
+                          card={holeCards[idx]}
+                          variant="selector"
+                          isHighlighted={isHighlighted}
+                          isHidden={!holeCardsVisible}
+                          onClick={() => {setCardSelectorType('hole'); setHighlightedCardIndex(idx);}}
+                        />
+                      );
+                    })}
+                    <VisibilityToggle
+                      visible={holeCardsVisible}
+                      onToggle={() => setHoleCardsVisible(!holeCardsVisible)}
+                      size="large"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex gap-2">
                 <button
                   onClick={() => clearCards('community')}
-                  className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
                 >
                   Clear Board
                 </button>
                 <button
                   onClick={() => clearCards('hole')}
-                  className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
                 >
                   Clear Hole
                 </button>
+                <button
+                  onClick={handleCloseCardSelector}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
+                >
+                  Table View
+                </button>
               </div>
             </div>
-            
-            <div className="flex-1 bg-white p-8 overflow-auto flex flex-col justify-center">
-              <table className="w-full border-collapse">
+
+            <div className="flex-1 bg-white py-1 px-2 overflow-hidden flex items-center justify-center">
+              <table className="border-collapse">
                 <thead>
                   <tr>
-                    <th className="w-16"></th>
+                    <th style={{ width: '40px' }}></th>
                     {RANKS.map(rank => (
-                      <th key={rank} className="text-center pb-3">
-                        <div className="text-2xl font-bold">{rank}</div>
+                      <th key={rank} className="text-center">
+                        <div className="text-xl font-bold">{rank}</div>
                       </th>
                     ))}
                   </tr>
@@ -1571,8 +1632,8 @@ const PokerTrackerWireframes = () => {
                 <tbody>
                   {SUITS.map(suit => (
                     <tr key={suit}>
-                      <td className="text-center pr-4">
-                        <div className={`text-4xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
+                      <td className="text-center" style={{ width: '40px' }}>
+                        <div className={`text-3xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
                           {suit}
                         </div>
                       </td>
@@ -1584,27 +1645,27 @@ const PokerTrackerWireframes = () => {
                         const isUsed = isInCommunity || (holeCardsVisible && isInHole);
                         const canSelect = highlightedBoardIndex !== null;
                         const streetIndicator = getCardStreet(card);
-                        
+
                         return (
                           <td key={card} className="p-1 relative">
                             <button
                               onClick={() => canSelect && selectCard(card)}
                               disabled={!canSelect}
-                              className={`w-full aspect-[2/3] rounded-lg font-bold text-xl transition-all relative ${
-                                isUsed 
-                                  ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40' 
+                              className={`w-full rounded-lg font-bold transition-all relative flex flex-col items-center justify-center gap-1 ${
+                                isUsed
+                                  ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40'
                                   : highlightedBoardIndex === null
                                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                     : isRedSuit(suit)
-                                      ? 'bg-red-50 hover:bg-red-200 border-4 border-red-400 text-red-600 hover:scale-110'
-                                      : 'bg-gray-50 hover:bg-gray-200 border-4 border-gray-800 text-black hover:scale-110'
+                                      ? 'bg-red-50 hover:bg-red-200 border-2 border-red-400 text-red-600 hover:scale-105'
+                                      : 'bg-gray-50 hover:bg-gray-200 border-2 border-gray-800 text-black hover:scale-105'
                               }`}
-                              style={{ minHeight: '70px' }}
+                              style={{ height: '90px', width: '62px' }}
                             >
-                              <div>{rank}</div>
-                              <div className="text-3xl">{suit}</div>
+                              <div className="text-lg font-bold">{rank}</div>
+                              <div className="text-3xl leading-none">{suit}</div>
                               {streetIndicator && (
-                                <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                                <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-tl">
                                   {streetIndicator}
                                 </div>
                               )}
@@ -1627,9 +1688,14 @@ const PokerTrackerWireframes = () => {
   if (currentView === SCREEN.TABLE) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{ width: '1600px', height: '720px', transform: 'scale(0.5)', transformOrigin: 'center center' }}>
-          <div 
-            className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col" 
+        <div style={{
+          width: '1600px',
+          height: '720px',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center'
+        }}>
+          <div
+            className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
             style={{ width: '1600px', height: '720px' }}
             onClick={(e) => {
               if (!isDraggingDealer) {
@@ -1670,10 +1736,10 @@ const PokerTrackerWireframes = () => {
             </div>
 
             <div className="flex-1 relative p-4">
-              <div 
+              <div
                 ref={tableRef}
                 className="absolute bg-green-700 shadow-2xl"
-                style={{ 
+                style={{
                   top: '50px',
                   left: '200px',
                   width: '900px',
@@ -1685,7 +1751,7 @@ const PokerTrackerWireframes = () => {
                 onMouseLeave={handleDealerDragEnd}
               >
                 <div className="absolute inset-4 bg-green-600 border-8 border-green-800 shadow-inner" style={{ borderRadius: '217px' }}>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-3">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2">
                     {[0, 1, 2, 3, 4].map((idx) => (
                       <CardSlot
                         key={idx}
@@ -1705,8 +1771,8 @@ const PokerTrackerWireframes = () => {
                     <button
                       onClick={() => togglePlayerSelection(seat)}
                       onContextMenu={(e) => handleSeatRightClick(e, seat)}
-                      className={`rounded-lg shadow-lg transition-all font-bold text-2xl ${getSeatColor(seat)}`}
-                      style={{ width: '60px', height: '60px' }}
+                      className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
+                      style={{ width: '40px', height: '40px' }}
                     >
                       {seat}
                     </button>
@@ -1897,7 +1963,12 @@ const PokerTrackerWireframes = () => {
   // Stats Screen
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-      <div style={{ width: '1600px', height: '720px', transform: 'scale(0.5)', transformOrigin: 'center center' }}>
+      <div style={{
+        width: '1600px',
+        height: '720px',
+        transform: `scale(${scale})`,
+        transformOrigin: 'center center'
+      }}>
         <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: '1600px', height: '720px' }}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Player Statistics</h2>

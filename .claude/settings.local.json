@@ -1,16 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(test:*)",
-      "Bash(git mv:*)",
-      "Bash(npm install)",
       "Bash(npm run dev:*)",
-      "Bash(git add:*)",
-      "Bash(git remote set-url:*)",
-      "Bash(git push:*)",
-      "Bash(cat:*)",
-      "Bash(python:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nUI improvements: showdown auto-advance, button text and layout\n\n- Skip ''won'' seats in allCardsAssigned() to auto-advance showdown without requiring cards\n- Change ''Clear Actions'' button text to ''Clear Street'' for clarity\n- Reposition table view buttons: Next Hand and Stats on left, Reset on right\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "WebSearch",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
