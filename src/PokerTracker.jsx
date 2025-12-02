@@ -1,5 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useReducer, useRef, useEffect, useMemo, useCallback } from 'react';
 import { BarChart3, RotateCcw, SkipForward } from 'lucide-react';
+import { ScaledContainer } from './components/ui/ScaledContainer';
+import { CardSlot } from './components/ui/CardSlot';
+import { VisibilityToggle } from './components/ui/VisibilityToggle';
+import { PositionBadge } from './components/ui/PositionBadge';
+import { DiagonalOverlay } from './components/ui/DiagonalOverlay';
+import { StatsView } from './components/views/StatsView';
+import { CardSelectorView } from './components/views/CardSelectorView';
+import { TableView } from './components/views/TableView';
+import { ShowdownView } from './components/views/ShowdownView';
+import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
+import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
+import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -243,196 +255,27 @@ const getOverlayStatus = (inactiveStatus, isMucked, hasWon) => {
 };
 
 // =============================================================================
-// EXTRACTED UI COMPONENTS
-// =============================================================================
-
-// Badge type configurations
-const BADGE_CONFIG = {
-  dealer: {
-    bg: 'bg-white',
-    border: 'border-gray-800',
-    text: 'text-black',
-    label: 'D',
-  },
-  sb: {
-    bg: 'bg-blue-400',
-    border: 'border-blue-600',
-    text: 'text-white',
-    label: 'SB',
-  },
-  bb: {
-    bg: 'bg-red-400',
-    border: 'border-red-600',
-    text: 'text-white',
-    label: 'BB',
-  },
-  me: {
-    bg: 'bg-purple-500',
-    border: 'border-purple-700',
-    text: 'text-white',
-    label: 'ME',
-  },
-};
-
-// Position Badge Component - D, SB, BB, ME indicators
-// size: 'small' (16px) for showdown view, 'large' (28px) for table view (mobile)
-const PositionBadge = ({ type, size = 'small', draggable = false, onDragStart = null }) => {
-  const config = BADGE_CONFIG[type];
-  if (!config) return null;
-
-  const sizeClass = size === 'small' ? 'w-4 h-4' : 'w-[28px] h-[28px]';
-  const textSize = size === 'small' ? 'text-xs' : (type === 'dealer' ? 'text-lg' : 'text-xs');
-  const borderWidth = size === 'small' ? 'border-2' : 'border-2';
-
-  return (
-    <div
-      className={`${config.bg} rounded-full shadow flex items-center justify-center ${borderWidth} ${config.border} ${
-        draggable ? 'cursor-move select-none shadow-xl' : ''
-      }`}
-      style={size === 'small' ? { width: '16px', height: '16px' } : { width: '28px', height: '28px' }}
-      onMouseDown={draggable ? onDragStart : undefined}
-    >
-      <div className={`${textSize} font-bold ${config.text}`}>{config.label}</div>
-    </div>
-  );
-};
-
-// Visibility Toggle Component - Show/hide hole cards button
-// size: 'small' (24px) or 'large' (40px)
-const VisibilityToggle = ({ visible, onToggle, size = 'small' }) => {
-  const sizeStyle = size === 'small' 
-    ? { width: '24px', height: '24px' } 
-    : { width: '40px', height: '40px' };
-  const textSize = size === 'small' ? 'text-xs' : 'text-xl';
-  
-  return (
-    <button 
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      className="bg-gray-600 hover:bg-gray-700 rounded shadow flex items-center justify-center cursor-pointer"
-      style={sizeStyle}
-    >
-      <div className={`text-white ${textSize}`}>{visible ? '👁' : '👁‍🗨'}</div>
-    </button>
-  );
-};
-
-// Diagonal Overlay Component - FOLD/ABSENT/MUCK/WON labels
-const DiagonalOverlay = ({ status }) => {
-  if (!status) return null;
-  
-  const overlayConfig = {
-    [SEAT_STATUS.FOLDED]: { bg: 'bg-red-600', label: 'FOLD' },
-    [SEAT_STATUS.ABSENT]: { bg: 'bg-gray-600', label: 'ABSENT' },
-    mucked: { bg: 'bg-gray-700', label: 'MUCK' },
-    won: { bg: 'bg-green-600', label: 'WON' },
-  };
-  
-  const config = overlayConfig[status];
-  if (!config) return null;
-  
-  return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className={`transform -rotate-45 text-xs font-bold px-3 py-1 rounded shadow-lg ${config.bg} text-white`}>
-        {config.label}
-      </div>
-    </div>
-  );
-};
-
-// Card Slot Component - Reusable card display
-// variant: 'table' (community cards), 'hole-table' (hole cards on table), 
-//          'showdown' (showdown view), 'selector' (card selector)
-const CardSlot = ({ 
-  card, 
-  variant = 'showdown',
-  isHighlighted = false,
-  isHidden = false,
-  status = null, // 'folded', 'absent', 'mucked', 'won'
-  onClick = null,
-  canInteract = true,
-}) => {
-  // Size configurations for different variants
-  const sizeConfig = {
-    'table': { width: 70, height: 100, fontSize: 'text-2xl', plusSize: 'text-4xl' },
-    'hole-table': { width: 40, height: 58, fontSize: 'text-xl', plusSize: 'text-2xl' },
-    'showdown': { width: 50, height: 70, fontSize: 'text-lg', plusSize: 'text-2xl' },
-    'selector': { width: 60, height: 85, fontSize: 'text-xl', plusSize: 'text-3xl' },
-  };
-  
-  const size = sizeConfig[variant] || sizeConfig.showdown;
-  
-  // Determine background color based on state
-  let bgColor = 'bg-gray-300';
-  if (isHidden) {
-    bgColor = 'bg-gray-700';
-  } else if (card) {
-    bgColor = 'bg-white';
-  } else if (status === 'mucked') {
-    bgColor = 'bg-gray-400';
-  } else if (status === 'won') {
-    bgColor = 'bg-green-200';
-  } else if (status === SEAT_STATUS.FOLDED) {
-    bgColor = 'bg-red-200';
-  } else if (status === SEAT_STATUS.ABSENT) {
-    bgColor = 'bg-gray-300';
-  } else if (variant === 'table') {
-    bgColor = card ? 'bg-white' : 'bg-gray-700';
-  }
-  
-  // Determine opacity
-  const opacity = (status && status !== 'won') || isHidden ? 'opacity-60' : '';
-  
-  // Highlight and interaction styles
-  const highlightStyle = isHighlighted ? 'ring-4 ring-yellow-400 scale-110' : '';
-  const hoverStyle = canInteract && !isHighlighted && onClick ? 'hover:ring-2 hover:ring-blue-400 cursor-pointer' : '';
-  const tableHoverStyle = variant === 'table' && onClick ? 'hover:ring-4 hover:ring-yellow-400 cursor-pointer' : '';
-  const cursorStyle = !canInteract ? 'cursor-default' : '';
-  
-  return (
-    <div
-      className={`${bgColor} rounded-lg shadow-lg flex items-center justify-center font-bold ${size.fontSize} transition-all ${opacity} ${highlightStyle} ${hoverStyle} ${tableHoverStyle} ${cursorStyle}`}
-      style={{ width: `${size.width}px`, height: `${size.height}px` }}
-      onClick={canInteract && onClick ? onClick : undefined}
-    >
-      {!isHidden && card ? (
-        <span className={isRedCard(card) ? 'text-red-600' : 'text-black'}>{card}</span>
-      ) : (
-        <span className={`text-gray-400 ${size.plusSize}`}>{isHidden ? '' : '+'}</span>
-      )}
-    </div>
-  );
-};
-
-// =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
 const PokerTrackerWireframes = () => {
-  // All state variables
-  const [currentView, setCurrentScreen] = useState(SCREEN.TABLE);
-  const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [currentStreet, setCurrentStreet] = useState('preflop');
-  const [mySeat, setMySeat] = useState(5);
-  const [dealerButtonSeat, setDealerSeat] = useState(1);
-  const [holeCardsVisible, setHoleCardsVisible] = useState(true);
-  const [isDraggingDealer, setIsDraggingDealer] = useState(false);
-  const [seatActions, setSeatActions] = useState({});
-  const [contextMenu, setContextMenu] = useState(null);
-  const [absentSeats, setAbsentSeats] = useState([]);
-  const [communityCards, setCommunityCards] = useState([]);
-  const [holeCards, setHoleCards] = useState(['', '']);
-  const [showCardSelector, setShowCardSelector] = useState(false);
-  const [cardSelectorType, setCardSelectorType] = useState('community');
-  const [highlightedBoardIndex, setHighlightedCardIndex] = useState(0);
-  const [isShowdownViewOpen, setIsShowdownViewOpen] = useState(false);
-  const [allPlayerCards, setAllPlayerCards] = useState(createEmptyPlayerCards());
-  const [highlightedSeat, setHighlightedSeat] = useState(1);
-  const [highlightedHoleSlot, setHighlightedCardSlot] = useState(0);
+  // State managed by reducers
+  const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
+  const [uiState, dispatchUi] = useReducer(uiReducer, initialUiState);
+  const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
+
+  // Local UI state (scale)
   const [scale, setScale] = useState(1);
   const tableRef = useRef(null);
+
+  // Destructure state for easier access
+  const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
+  const { currentView, selectedPlayers, contextMenu, isDraggingDealer } = uiState;
+  const {
+    communityCards, holeCards, holeCardsVisible, showCardSelector,
+    cardSelectorType, highlightedBoardIndex, isShowdownViewOpen,
+    allPlayerCards, highlightedSeat, highlightedHoleSlot
+  } = cardState;
 
   // Calculate scale to fit viewport
   useEffect(() => {
@@ -456,52 +299,58 @@ const PokerTrackerWireframes = () => {
   }, []);
 
   const advanceDealer = () => {
-    setDealerSeat((dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1);
+    dispatchGame({ type: GAME_ACTIONS.ADVANCE_DEALER });
   };
 
-  const getSmallBlindSeat = () => {
-    let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
-    let attempts = 0;
-    while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-      seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-      attempts++;
-    }
-    return seat;
-  };
+  // Memoized calculation of small blind seat
+  const getSmallBlindSeat = useMemo(() => {
+    return () => {
+      let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
+      let attempts = 0;
+      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
+        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
+        attempts++;
+      }
+      return seat;
+    };
+  }, [dealerButtonSeat, absentSeats]);
 
-  const getBigBlindSeat = () => {
-    const sbSeat = getSmallBlindSeat();
-    let seat = (sbSeat % CONSTANTS.NUM_SEATS) + 1;
-    let attempts = 0;
-    while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-      seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-      attempts++;
-    }
-    return seat;
-  };
+  // Memoized calculation of big blind seat
+  const getBigBlindSeat = useMemo(() => {
+    return () => {
+      const sbSeat = getSmallBlindSeat();
+      let seat = (sbSeat % CONSTANTS.NUM_SEATS) + 1;
+      let attempts = 0;
+      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
+        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
+        attempts++;
+      }
+      return seat;
+    };
+  }, [dealerButtonSeat, absentSeats, getSmallBlindSeat]);
 
-  const handleDealerDragStart = (e) => {
-    setIsDraggingDealer(true);
+  const handleDealerDragStart = useCallback((e) => {
+    dispatchUi({ type: UI_ACTIONS.START_DRAGGING_DEALER });
     e.preventDefault();
-  };
+  }, [dispatchUi]);
 
-  const handleDealerDrag = (e) => {
+  const handleDealerDrag = useCallback((e) => {
     if (!isDraggingDealer || !tableRef.current) return;
-    
+
     e.stopPropagation();
     e.preventDefault();
-    
+
     const rect = tableRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     let closestSeat = 1;
     let minDist = Infinity;
-    
+
     SEAT_POSITIONS.forEach(({ seat, x: sx, y: sy }) => {
       // Skip absent seats
       if (absentSeats.includes(seat)) return;
-      
+
       const seatX = (sx / 100) * rect.width;
       const seatY = (sy / 100) * rect.height;
       const dist = Math.sqrt((x - seatX) ** 2 + (y - seatY) ** 2);
@@ -510,126 +359,167 @@ const PokerTrackerWireframes = () => {
         closestSeat = seat;
       }
     });
-    
-    setDealerSeat(closestSeat);
-  };
 
-  const handleDealerDragEnd = (e) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: closestSeat });
+  }, [isDraggingDealer, absentSeats, dispatchGame]);
+
+  const handleDealerDragEnd = useCallback((e) => {
     if (isDraggingDealer) {
       e.stopPropagation();
       e.preventDefault();
     }
-    setIsDraggingDealer(false);
-  };
+    dispatchUi({ type: UI_ACTIONS.STOP_DRAGGING_DEALER });
+  }, [isDraggingDealer, dispatchUi]);
 
-  const togglePlayerSelection = (seat) => {
-    setSelectedPlayers(prev => 
-      prev.includes(seat) 
-        ? prev.filter(s => s !== seat)
-        : [...prev, seat]
-    );
-  };
+  const togglePlayerSelection = useCallback((seat) => {
+    dispatchUi({ type: UI_ACTIONS.TOGGLE_PLAYER_SELECTION, payload: seat });
+  }, [dispatchUi]);
 
-  const handleSeatRightClick = (e, seat) => {
+  const handleSeatRightClick = useCallback((e, seat) => {
     e.preventDefault();
-    
+
     const seatPos = SEAT_POSITIONS.find(s => s.seat === seat);
     if (!seatPos) return;
-    
+
     const tableRect = tableRef.current?.getBoundingClientRect();
     if (!tableRect) return;
-    
+
     const seatX = (seatPos.x / 100) * 900 + 200;
     const seatY = (seatPos.y / 100) * 450 + 50;
-    
-    setContextMenu({
-      x: seatX - 160,
-      y: seatY - 20,
-      seat: seat
+
+    dispatchUi({
+      type: UI_ACTIONS.SET_CONTEXT_MENU,
+      payload: { x: seatX - 160, y: seatY - 20, seat }
     });
-  };
+  }, [dispatchUi]);
 
-  const handleSetMySeat = (seat) => {
-    setMySeat(seat);
-    setContextMenu(null);
-  };
+  const handleSetMySeat = useCallback((seat) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_MY_SEAT, payload: seat });
+    dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
+  }, [dispatchGame, dispatchUi]);
 
-  const recordAction = (action) => {
-    if (selectedPlayers.length === 0) return;
-    
-    setSeatActions(prev => {
-      const newActions = { ...prev };
-      if (!newActions[currentStreet]) {
-        newActions[currentStreet] = {};
+  // Helper functions for seat action logic (must be defined before recordAction)
+  const hasSeatFolded = useCallback((seat) => {
+    // Check all streets up to and including current street
+    const currentIndex = STREETS.indexOf(currentStreet);
+
+    for (let i = 0; i <= currentIndex; i++) {
+      const street = STREETS[i];
+      const action = seatActions[street]?.[seat];
+      if (isFoldAction(action)) {
+        return true;
       }
-      
-      selectedPlayers.forEach(seat => {
-        newActions[currentStreet][seat] = action;
-        log(`Seat ${seat}: ${action} on ${currentStreet}`);
-      });
-      
-      return newActions;
+    }
+    return false;
+  }, [currentStreet, seatActions]);
+
+  const getFirstActionSeat = useCallback(() => {
+    if (currentStreet === 'preflop') {
+      // First to act preflop is after big blind
+      const bbSeat = getBigBlindSeat();
+      let seat = (bbSeat % CONSTANTS.NUM_SEATS) + 1;
+      let attempts = 0;
+      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
+        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
+        attempts++;
+      }
+      return seat;
+    } else {
+      // Postflop, first to act is first non-absent, non-folded seat after dealer
+      let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
+      let attempts = 0;
+      while (attempts < CONSTANTS.NUM_SEATS) {
+        if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
+          return seat;
+        }
+        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
+        attempts++;
+      }
+      return 1; // Fallback
+    }
+  }, [currentStreet, getBigBlindSeat, absentSeats, dealerButtonSeat, hasSeatFolded]);
+
+  const getNextActionSeat = useCallback((currentSeat) => {
+    let seat = (currentSeat % CONSTANTS.NUM_SEATS) + 1;
+    let attempts = 0;
+    while (attempts < CONSTANTS.NUM_SEATS) {
+      if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
+        return seat;
+      }
+      seat = (seat % CONSTANTS.NUM_SEATS) + 1;
+      attempts++;
+    }
+    return null; // No more seats to act
+  }, [absentSeats, hasSeatFolded]);
+
+  const recordAction = useCallback((action) => {
+    if (selectedPlayers.length === 0) return;
+
+    selectedPlayers.forEach(seat => {
+      log(`Seat ${seat}: ${action} on ${currentStreet}`);
     });
-    
-    setAbsentSeats(prev => prev.filter(s => !selectedPlayers.includes(s)));
-    
+
+    // Record the action (reducer handles removing from absent)
+    dispatchGame({
+      type: GAME_ACTIONS.RECORD_ACTION,
+      payload: { seats: selectedPlayers, action }
+    });
+
     // Auto-advance to next seat
     const lastSelectedSeat = Math.max(...selectedPlayers);
     const nextSeat = getNextActionSeat(lastSelectedSeat);
     if (nextSeat) {
-      setSelectedPlayers([nextSeat]);
+      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
     } else {
-      setSelectedPlayers([]);
+      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
     }
-  };
+  }, [selectedPlayers, currentStreet, dispatchGame, dispatchUi, getNextActionSeat]);
 
-  const recordSeatAction = (seat, action) => {
-    setSeatActions(prev => {
-      const newActions = { ...prev };
-      if (!newActions[currentStreet]) {
-        newActions[currentStreet] = {};
-      }
-      newActions[currentStreet][seat] = action;
-      log(`Seat ${seat}: ${action} on ${currentStreet}`);
-      return newActions;
+  const recordSeatAction = useCallback((seat, action) => {
+    log(`Seat ${seat}: ${action} on ${currentStreet}`);
+    dispatchGame({
+      type: GAME_ACTIONS.RECORD_ACTION,
+      payload: { seats: [seat], action }
     });
-  };
+  }, [currentStreet, dispatchGame]);
 
-  const toggleAbsent = () => {
+  const toggleAbsent = useCallback(() => {
     if (selectedPlayers.length === 0) return;
-    
-    setAbsentSeats(prev => {
-      const newAbsent = [...prev];
-      selectedPlayers.forEach(seat => {
-        if (!newAbsent.includes(seat)) {
-          newAbsent.push(seat);
-          log(`Seat ${seat}: marked as absent`);
-        }
-      });
-      return newAbsent;
-    });
-    
-    setSelectedPlayers([]);
-  };
 
-  const clearStreetActions = () => {
-    setSeatActions(prev => {
-      const newActions = { ...prev };
-      delete newActions[currentStreet];
-      return newActions;
+    selectedPlayers.forEach(seat => {
+      log(`Seat ${seat}: marked as absent`);
     });
+
+    dispatchGame({ type: GAME_ACTIONS.TOGGLE_ABSENT, payload: selectedPlayers });
+    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+  }, [selectedPlayers, dispatchGame, dispatchUi]);
+
+  const clearStreetActions = useCallback(() => {
+    dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
     // Re-select first action seat
     const firstSeat = getFirstActionSeat();
-    setSelectedPlayers([firstSeat]);
-  };
+    dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
+  }, [dispatchGame, dispatchUi, getFirstActionSeat]);
 
-  const nextStreet = () => {
+  const openCardSelector = useCallback((type, index) => {
+    log('openCardSelector::', type, index);
+    dispatchCard({
+      type: CARD_ACTIONS.OPEN_CARD_SELECTOR,
+      payload: { type, index }
+    });
+  }, [dispatchCard]);
+
+  const openShowdownScreen = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.OPEN_SHOWDOWN_VIEW });
+  }, [dispatchCard]);
+
+  const nextStreet = useCallback(() => {
     const currentIndex = STREETS.indexOf(currentStreet);
     if (currentIndex < STREETS.length - 1) {
       const nextStreetName = STREETS[currentIndex + 1];
-      setCurrentStreet(nextStreetName);
-      setSelectedPlayers([]);
-      
+      dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: nextStreetName });
+      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+
       // Auto-open card selector for flop, turn, and river
       if (nextStreetName === 'flop') {
         openCardSelector('community', 0);
@@ -641,34 +531,12 @@ const PokerTrackerWireframes = () => {
         openShowdownScreen();
       }
     }
-  };
+  }, [currentStreet, dispatchGame, dispatchUi, openCardSelector, openShowdownScreen]);
 
-  const openCardSelector = (type, index) => {
-    log('openCardSelector::', type, index);
-    setCardSelectorType(type);
-    setHighlightedCardIndex(index);
-    setShowCardSelector(true);
-  };
-
-  const openShowdownScreen = () => {
-    // Find first non-folded, non-absent seat
-    let firstActiveSeat = 1;
-    for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
-      const status = isSeatInactive(seat);
-      if (status !== SEAT_STATUS.FOLDED && status !== SEAT_STATUS.ABSENT) {
-        firstActiveSeat = seat;
-        break;
-      }
-    }
-    setHighlightedSeat(firstActiveSeat);
-    setHighlightedCardSlot(0);
-    setIsShowdownViewOpen(true);
-  };
-
-  const isSeatInactive = (seat) => {
+  const isSeatInactive = useCallback((seat) => {
     // Check if seat is absent
     if (absentSeats.includes(seat)) return SEAT_STATUS.ABSENT;
-    
+
     // Check if seat folded on any previous street
     for (const street of BETTING_STREETS) {
       const action = seatActions[street]?.[seat];
@@ -676,9 +544,9 @@ const PokerTrackerWireframes = () => {
         return SEAT_STATUS.FOLDED;
       }
     }
-    
+
     return false;
-  };
+  }, [absentSeats, seatActions]);
 
   const getSeatActionSummary = (seat) => {
     const actions = [];
@@ -706,7 +574,7 @@ const PokerTrackerWireframes = () => {
     return actions;
   };
 
-  const allCardsAssigned = () => {
+  const allCardsAssigned = useCallback(() => {
     // Check if all non-folded, non-absent seats have cards assigned
     for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
       const inactiveStatus = isSeatInactive(seat);
@@ -725,107 +593,42 @@ const PokerTrackerWireframes = () => {
       }
     }
     return true;
-  };
+  }, [isSeatInactive, seatActions, mySeat, holeCards, allPlayerCards]);
 
-  const getFirstActionSeat = () => {
-    if (currentStreet === 'preflop') {
-      // First to act preflop is after big blind
-      const bbSeat = getBigBlindSeat();
-      let seat = (bbSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return seat;
-    } else {
-      // Postflop, first to act is first non-absent, non-folded seat after dealer
-      let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (attempts < CONSTANTS.NUM_SEATS) {
-        if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
-          return seat;
-        }
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return 1; // Fallback
-    }
-  };
-
-  const getNextActionSeat = (currentSeat) => {
-    let seat = (currentSeat % CONSTANTS.NUM_SEATS) + 1;
-    let attempts = 0;
-    while (attempts < CONSTANTS.NUM_SEATS) {
-      if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
-        return seat;
-      }
-      seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-      attempts++;
-    }
-    return null; // No more seats to act
-  };
-
-  const hasSeatFolded = (seat) => {
-    // Check all streets up to and including current street
-    const currentIndex = STREETS.indexOf(currentStreet);
-    
-    for (let i = 0; i <= currentIndex; i++) {
-      const street = STREETS[i];
-      const action = seatActions[street]?.[seat];
-      if (isFoldAction(action)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const selectCardForShowdown = (card) => {
+  const selectCardForShowdown = useCallback((card) => {
     const seat = highlightedSeat;
     const slot = highlightedHoleSlot;
-    
+
     // For my seat, update holeCards instead of allPlayerCards
     if (seat === mySeat) {
-      setHoleCards(prev => {
-        const newCards = [...prev];
-        
-        // Remove card from other slot if it's there
-        const existingIndex = newCards.indexOf(card);
-        if (existingIndex !== -1 && existingIndex !== slot) {
-          newCards[existingIndex] = '';
-        }
-        
-        // Assign to current slot
-        newCards[slot] = card;
-        return newCards;
-      });
+      // Remove card from other slot if it's there
+      const existingIndex = holeCards.indexOf(card);
+      if (existingIndex !== -1 && existingIndex !== slot) {
+        dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: existingIndex, card: '' } });
+      }
+
+      // Assign to current slot
+      dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: slot, card } });
     } else {
-      setAllPlayerCards(prev => {
-        const newCards = { ...prev };
-        
-        // Remove card from any other player's hand
-        Object.keys(newCards).forEach(s => {
-          const seatNum = parseInt(s);
-          newCards[seatNum] = newCards[seatNum].map(c => c === card ? '' : c);
-        });
-        
-        // Assign to current slot
-        newCards[seat][slot] = card;
-        
-        return newCards;
-      });
+      // Remove card from any other player's hand
+      for (let s = 1; s <= CONSTANTS.NUM_SEATS; s++) {
+        const cards = allPlayerCards[s];
+        const cardIndex = cards.indexOf(card);
+        if (cardIndex !== -1) {
+          dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat: s, slotIndex: cardIndex, card: '' } });
+        }
+      }
+
+      // Assign to current slot
+      dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat, slotIndex: slot, card } });
     }
-    
+
     // Also remove from community cards if it's there
-    if (communityCards.includes(card)) {
-      setCommunityCards(prev => prev.map(c => c === card ? '' : c));
+    const communityIndex = communityCards.indexOf(card);
+    if (communityIndex !== -1) {
+      dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: communityIndex, card: '' } });
     }
-    
-    // Also remove from hole cards if it's there and this isn't my seat
-    if (seat !== mySeat && holeCards.includes(card)) {
-      setHoleCards(prev => prev.map(c => c === card ? '' : c));
-    }
-    
+
     // Auto-advance logic - find next empty slot
     const findNextEmptySlot = (currentSeat, currentSlot) => {
       // First check if the second slot of current seat is empty
@@ -864,88 +667,76 @@ const PokerTrackerWireframes = () => {
 
     const nextEmpty = findNextEmptySlot(seat, slot);
     if (nextEmpty) {
-      setHighlightedSeat(nextEmpty.seat);
-      setHighlightedCardSlot(nextEmpty.slot);
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });
     } else {
       // No more empty slots
-      setHighlightedSeat(null);
-      setHighlightedCardSlot(null);
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
     }
-  };
+  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, dispatchCard, isSeatInactive]);
 
-  const selectCard = (card) => {
+  const selectCard = useCallback((card) => {
     if (highlightedBoardIndex === null) return;
-    
+
     if (cardSelectorType === 'community') {
-      setCommunityCards(prev => {
-        const newCards = [...prev];
-        
-        // Remove the card from any other community card slot
-        const existingIndex = newCards.indexOf(card);
-        if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
-          newCards[existingIndex] = '';
-        }
-        
-        // Assign the card to the highlighted slot
-        newCards[highlightedBoardIndex] = card;
-        return newCards;
-      });
-      
+      // Remove the card from any other community card slot
+      const existingIndex = communityCards.indexOf(card);
+      if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
+        dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: existingIndex, card: '' } });
+      }
+
+      // Assign the card to the highlighted slot
+      dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: highlightedBoardIndex, card } });
+
       // Check if this was the last card needed for this street
-      const shouldAutoClose = 
+      const shouldAutoClose =
         (currentStreet === 'flop' && highlightedBoardIndex === 2) ||
         (currentStreet === 'turn' && highlightedBoardIndex === 3) ||
         (currentStreet === 'river' && highlightedBoardIndex === 4);
-      
+
       if (shouldAutoClose) {
         // Close card selector and return to table
-        setShowCardSelector(false);
-        setHighlightedCardIndex(null);
+        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
       } else {
         // Auto-advance to next community card slot
         if (highlightedBoardIndex < 4) {
-          setHighlightedCardIndex(highlightedBoardIndex + 1);
+          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: highlightedBoardIndex + 1 });
         } else {
-          setHighlightedCardIndex(null);
+          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
         }
       }
     } else if (cardSelectorType === 'hole') {
-      setHoleCards(prev => {
-        const newCards = [...prev];
-        
-        // Remove the card from the other hole card slot
-        const existingIndex = newCards.indexOf(card);
-        if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
-          newCards[existingIndex] = '';
-        }
-        
-        // Assign the card to the highlighted slot
-        newCards[highlightedBoardIndex] = card;
-        return newCards;
-      });
-      
+      // Remove the card from the other hole card slot
+      const existingIndex = holeCards.indexOf(card);
+      if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
+        dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: existingIndex, card: '' } });
+      }
+
+      // Assign the card to the highlighted slot
+      dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: highlightedBoardIndex, card } });
+
       // Check if this was the second hole card
       if (highlightedBoardIndex === 1) {
         // Close card selector and return to table (without changing street)
-        setShowCardSelector(false);
-        setHighlightedCardIndex(null);
+        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
       } else {
         // Auto-advance to next hole card slot
-        setHighlightedCardIndex(1);
+        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: 1 });
       }
     }
-  };
+  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard]);
 
-  const clearCards = (type) => {
+  const clearCards = useCallback((type) => {
     if (type === 'community') {
-      setCommunityCards([]);
+      dispatchCard({ type: CARD_ACTIONS.CLEAR_COMMUNITY_CARDS });
     } else if (type === 'hole') {
-      setHoleCards(['', '']);
+      dispatchCard({ type: CARD_ACTIONS.CLEAR_HOLE_CARDS });
     }
-    setHighlightedCardIndex(null);
-  };
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
+  }, [dispatchCard]);
 
-  const getCardStreet = (card) => {
+  const getCardStreet = useCallback((card) => {
     const communityIndex = communityCards.indexOf(card);
     if (communityIndex !== -1) {
       if (communityIndex <= 2) return 'F';
@@ -955,57 +746,36 @@ const PokerTrackerWireframes = () => {
     // Only show "Hole" indicator if hole cards are visible
     if (holeCardsVisible && holeCards.includes(card)) return 'Hole';
     return null;
-  };
+  }, [communityCards, holeCardsVisible, holeCards]);
 
-  const nextHand = () => {
-    // Clear all cards
-    setCommunityCards([]);
-    setHoleCards(['', '']);
-    setAllPlayerCards(createEmptyPlayerCards());
-    
-    // Clear all actions
-    setSeatActions({});
-    
-    // Set street to preflop
-    setCurrentStreet('preflop');
-    
-    // Clear selections
-    setSelectedPlayers([]);
-    
-    // Keep absentSeats as is (don't clear)
-    
-    // Advance dealer
-    setDealerSeat((dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1);
+  const nextHand = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
+    dispatchGame({ type: GAME_ACTIONS.NEXT_HAND });
+    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
     log('nextHand: dealer advanced, all cards/actions cleared');
-  };
+  }, [dispatchCard, dispatchGame, dispatchUi]);
 
-  const resetHand = () => {
-    setCommunityCards([]);
-    setHoleCards(['', '']);
-    setSeatActions({});
-    setCurrentStreet('preflop');
-    setAbsentSeats([]);
-    setSelectedPlayers([]);
-    setAllPlayerCards(createEmptyPlayerCards());
+  const resetHand = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
+    dispatchGame({ type: GAME_ACTIONS.RESET_HAND });
+    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
     log('resetHand: all state cleared including absent seats');
-  };
+  }, [dispatchCard, dispatchGame, dispatchUi]);
 
   // Handler: Close showdown view and advance to next hand
-  const handleNextHandFromShowdown = () => {
+  const handleNextHandFromShowdown = useCallback(() => {
     nextHand();
-    setIsShowdownViewOpen(false);
-    setHighlightedSeat(null);
-    setHighlightedCardSlot(null);
-  };
+    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
+  }, [nextHand, dispatchCard]);
 
   // Handler: Clear all player cards in showdown view
-  const handleClearShowdownCards = () => {
-    setAllPlayerCards(createEmptyPlayerCards());
-    setSeatActions(prev => {
-      const newActions = { ...prev };
-      delete newActions['showdown'];
-      return newActions;
-    });
+  const handleClearShowdownCards = useCallback(() => {
+    // Reset all player cards
+    dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
+
+    // Clear showdown actions
+    dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
+
     // Find first active seat
     let firstActiveSeat = 1;
     for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
@@ -1015,60 +785,57 @@ const PokerTrackerWireframes = () => {
         break;
       }
     }
-    setHighlightedSeat(firstActiveSeat);
-    setHighlightedCardSlot(0);
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActiveSeat });
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
     log('handleClearShowdownCards: cards cleared, first active seat selected');
-  };
+  }, [dispatchCard, dispatchGame, isSeatInactive]);
 
   // Handler: Close showdown view
-  const handleCloseShowdown = () => {
-    setIsShowdownViewOpen(false);
-    setHighlightedSeat(null);
-    setHighlightedCardSlot(null);
-  };
+  const handleCloseShowdown = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
+  }, [dispatchCard]);
 
   // Handler: Close card selector
-  const handleCloseCardSelector = () => {
-    setShowCardSelector(false);
-    setHighlightedCardIndex(null);
-  };
+  const handleCloseCardSelector = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
+  }, [dispatchCard]);
 
   // Helper: Advance to next active seat in showdown (skips folded/absent/mucked/won)
-  const advanceToNextActiveSeat = (fromSeat) => {
+  const advanceToNextActiveSeat = useCallback((fromSeat) => {
     let nextSeat = fromSeat + 1;
     while (nextSeat <= CONSTANTS.NUM_SEATS) {
       const nextStatus = isSeatInactive(nextSeat);
       const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
       const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
       if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
-        setHighlightedSeat(nextSeat);
-        setHighlightedCardSlot(0);
+        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
+        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
         return;
       }
       nextSeat++;
     }
     // No more active seats, deselect
-    setHighlightedSeat(null);
-    setHighlightedCardSlot(null);
-  };
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
+  }, [isSeatInactive, seatActions, dispatchCard]);
 
   // Handler: Mark seat as mucked and advance
-  const handleMuckSeat = (seat) => {
+  const handleMuckSeat = useCallback((seat) => {
     recordSeatAction(seat, ACTIONS.MUCKED);
     advanceToNextActiveSeat(seat);
-  };
+  }, [recordSeatAction, advanceToNextActiveSeat]);
 
   // Handler: Mark seat as winner and advance
-  const handleWonSeat = (seat) => {
+  const handleWonSeat = useCallback((seat) => {
     recordSeatAction(seat, ACTIONS.WON);
     advanceToNextActiveSeat(seat);
-  };
+  }, [recordSeatAction, advanceToNextActiveSeat]);
 
-  const getSeatColor = (seat) => {
+  const getSeatColor = useCallback((seat) => {
     const foldedPreviously = hasSeatFolded(seat);
     const isSelected = selectedPlayers.includes(seat);
     const isMySeat = seat === mySeat;
-    
+
     // Helper for ring color based on selection state
     const getSelectionRing = () => {
       if (isMySeat && isSelected) return 'ring-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse';
@@ -1076,34 +843,79 @@ const PokerTrackerWireframes = () => {
       if (isSelected) return 'ring-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse';
       return '';
     };
-    
+
     // Absent seats
     if (absentSeats.includes(seat)) {
       const ring = isMySeat ? 'ring-purple-500' : (isSelected ? 'ring-yellow-400' : '');
       return `bg-gray-900 ${ring ? `ring-4 ${ring}` : ''} text-gray-600 opacity-50 ${isSelected ? 'animate-pulse' : ''}`;
     }
-    
+
     // Folded on previous street
     if (foldedPreviously) {
       const ringColor = getSelectionRing() || 'ring-red-300';
       return `bg-red-400 ring-4 ${ringColor} text-white`;
     }
-    
+
     // Get action-based colors
     const action = seatActions[currentStreet]?.[seat];
     let baseColor = 'bg-gray-700';
     let ringColor = getSelectionRing();
-    
+
     if (action) {
       const style = getSeatActionStyle(action);
       baseColor = style.bg;
       if (!ringColor) ringColor = style.ring;
     }
-    
+
     const ring = ringColor ? `ring-4 ${ringColor}` : '';
     const hover = !action && !isSelected && !isMySeat ? 'hover:bg-gray-600' : '';
     return `${baseColor} ${ring} text-white ${hover}`;
-  };
+  }, [hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet]);
+
+  // Wrapper functions for props (delegate to reducers)
+  const setCurrentScreen = useCallback((screen) => {
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: screen });
+  }, [dispatchUi]);
+
+  const setContextMenu = useCallback((menu) => {
+    if (menu === null) {
+      dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
+    } else {
+      dispatchUi({ type: UI_ACTIONS.SET_CONTEXT_MENU, payload: menu });
+    }
+  }, [dispatchUi]);
+
+  const setSelectedPlayers = useCallback((players) => {
+    dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: players });
+  }, [dispatchUi]);
+
+  const setHoleCardsVisible = useCallback((visible) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_HOLE_VISIBILITY, payload: visible });
+  }, [dispatchCard]);
+
+  const setCurrentStreet = useCallback((street) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
+  }, [dispatchGame]);
+
+  const setDealerSeat = useCallback((seat) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
+  }, [dispatchGame]);
+
+  const setCardSelectorType = useCallback((type) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_CARD_SELECTOR_TYPE, payload: type });
+  }, [dispatchCard]);
+
+  const setHighlightedCardIndex = useCallback((index) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
+  }, [dispatchCard]);
+
+  const setHighlightedSeat = useCallback((seat) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: seat });
+  }, [dispatchCard]);
+
+  const setHighlightedCardSlot = useCallback((slot) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: slot });
+  }, [dispatchCard]);
 
   // Auto-select first action seat when street changes or card selector closes
   useEffect(() => {
@@ -1111,918 +923,132 @@ const PokerTrackerWireframes = () => {
       // Only auto-select if no players are currently selected
       if (selectedPlayers.length === 0) {
         const firstSeat = getFirstActionSeat();
-        setSelectedPlayers([firstSeat]);
+        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
       }
     }
-  }, [currentStreet, showCardSelector, currentView]);
+  }, [currentStreet, showCardSelector, currentView, selectedPlayers, getFirstActionSeat, dispatchUi]);
 
   // Showdown Screen
   if (isShowdownViewOpen) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{
-          width: '1600px',
-          height: '720px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center'
-        }}>
-          <div
-            className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-            style={{ width: '1600px', height: '720px' }}
-          >
-            <div className="bg-white p-6 flex justify-between items-center">
-              <h2 className="text-3xl font-bold">
-                Showdown - Click a card slot, then click a card
-              </h2>
-              <div className="flex items-center gap-4">
-                {/* Community Cards Display */}
-                <div>
-                  <div className="text-sm font-bold mb-2 text-center">BOARD</div>
-                  <div className="flex gap-2">
-                    {[0, 1, 2, 3, 4].map((idx) => (
-                      <CardSlot
-                        key={idx}
-                        card={communityCards[idx]}
-                        variant="selector"
-                        canInteract={false}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <button 
-                  onClick={handleNextHandFromShowdown}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg text-xl font-bold flex items-center gap-2"
-                >
-                  <SkipForward size={24} />
-                  Next Hand
-                </button>
-                <button 
-                  onClick={handleClearShowdownCards}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-                >
-                  Clear Cards
-                </button>
-                <button 
-                  onClick={handleCloseShowdown}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-gray-100 p-4">
-              {allCardsAssigned() ? (
-                /* Summary View - Show action history for each seat */
-                <>
-                  {/* Player Cards Display */}
-                  <div className="grid grid-cols-9 gap-2 mb-4">
-                    {SEAT_ARRAY.map(seat => {
-                      const inactiveStatus = isSeatInactive(seat);
-                      const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
-                      const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-                      const isDealer = dealerButtonSeat === seat;
-                      const isSB = getSmallBlindSeat() === seat;
-                      const isBB = getBigBlindSeat() === seat;
-                      const isMySeat = mySeat === seat;
-                      
-                      return (
-                        <div key={seat} className="flex flex-col items-center">
-                          {/* Seat Number */}
-                          <div className="text-sm font-bold mb-1">Seat {seat}</div>
-                          
-                          {/* Dealer/Blinds/My Seat Indicators with Visibility Toggle */}
-                          <div className="flex gap-1 mb-1 items-center" style={{ minHeight: '24px' }}>
-                            {isDealer && <PositionBadge type="dealer" size="small" />}
-                            {isSB && <PositionBadge type="sb" size="small" />}
-                            {isBB && <PositionBadge type="bb" size="small" />}
-                            {isMySeat && <PositionBadge type="me" size="small" />}
-                            {isMySeat && (
-                              <VisibilityToggle 
-                                visible={holeCardsVisible} 
-                                onToggle={() => setHoleCardsVisible(!holeCardsVisible)} 
-                                size="small" 
-                              />
-                            )}
-                          </div>
-                          
-                          {/* Card Slots */}
-                          <div className="flex gap-1 mb-1 relative">
-                            {[0, 1].map(cardSlot => {
-                              const card = cards[cardSlot];
-                              const shouldHideCard = isMySeat && !holeCardsVisible;
-                              const hasWon = seatActions['showdown']?.[seat] === ACTIONS.WON;
-                              const cardStatus = isMucked ? 'mucked' : hasWon ? 'won' : inactiveStatus || null;
-                              
-                              return (
-                                <CardSlot
-                                  key={cardSlot}
-                                  card={card}
-                                  variant="showdown"
-                                  isHidden={shouldHideCard}
-                                  status={cardStatus}
-                                  canInteract={false}
-                                />
-                              );
-                            })}
-                            
-                            {/* Diagonal Overlay Label */}
-                            <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, seatActions['showdown']?.[seat] === ACTIONS.WON)} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Action History Grid - Segmented by Street */}
-                  <div className="bg-white rounded shadow p-4">
-                    <div className="grid grid-cols-9 gap-2">
-                      {/* Headers with Labels buttons */}
-                      {SEAT_ARRAY.map(seat => (
-                        <div key={seat} className="flex flex-col items-center">
-                          <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold w-full mb-2">
-                            Labels
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Street Sections */}
-                    {STREETS.map(street => (
-                      <div key={street} className="mb-3">
-                        <div className="text-xs font-bold text-gray-700 uppercase mb-1 border-b-2 border-gray-600 pb-1">
-                          {street}
-                        </div>
-                        <div className="grid grid-cols-9 gap-2">
-                          {SEAT_ARRAY.map(seat => {
-                            const action = seatActions[street]?.[seat];
-                            const inactiveStatus = isSeatInactive(seat);
-                            const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-                            
-                            let displayAction = '';
-                            let actionColor = 'bg-gray-100 text-gray-900';
-                            
-                            // For showdown street, check if player folded on a previous street
-                            let effectiveAction = action;
-                            if (street === 'showdown' && !action) {
-                              // Check all previous streets for fold
-                              const hasFolded = BETTING_STREETS.some(prevStreet => {
-                                const prevAction = seatActions[prevStreet]?.[seat];
-                                return isFoldAction(prevAction);
-                              });
-                              if (hasFolded) {
-                                effectiveAction = ACTIONS.FOLD;
-                              }
-                            }
-                            
-                            if (effectiveAction) {
-                              actionColor = getActionColor(effectiveAction);
-                              displayAction = getActionDisplayName(effectiveAction);
-
-                              // For showdown, add cards if available
-                              if (street === 'showdown') {
-                                const handAbbr = getHandAbbreviation(cards);
-
-                                if (effectiveAction === ACTIONS.MUCKED) {
-                                  // Muck - no cards shown
-                                  displayAction = 'muck';
-                                } else if (effectiveAction === ACTIONS.WON) {
-                                  // Won - show cards if available
-                                  if (handAbbr) {
-                                    displayAction = `won ${handAbbr}`;
-                                  } else {
-                                    displayAction = 'won';
-                                  }
-                                } else if (isFoldAction(effectiveAction)) {
-                                  // Folded - show cards if available, otherwise just "fold"
-                                  if (handAbbr) {
-                                    displayAction = `fold ${handAbbr}`;
-                                  } else {
-                                    displayAction = 'fold';
-                                  }
-                                } else if (inactiveStatus === SEAT_STATUS.ABSENT) {
-                                  // Absent - no action
-                                  displayAction = '';
-                                } else {
-                                  // Active player who made it to showdown - only show "show" if cards present
-                                  if (handAbbr) {
-                                    displayAction = `show ${handAbbr}`;
-                                  } else {
-                                    // No cards assigned and not folded/mucked/won/absent - don't display anything
-                                    displayAction = '';
-                                  }
-                                }
-                              }
-                            } else if (street === 'showdown') {
-                              // No action recorded for showdown, but check if player has cards
-                              const handAbbr = getHandAbbreviation(cards);
-                              if (handAbbr && inactiveStatus !== SEAT_STATUS.ABSENT && inactiveStatus !== SEAT_STATUS.FOLDED) {
-                                displayAction = `show ${handAbbr}`;
-                                actionColor = 'bg-gray-100 text-gray-900';
-                              }
-                            }
-                            
-                            return (
-                              <div key={seat} className="text-center py-1 px-1 text-xs" style={{ minHeight: '24px' }}>
-                                {displayAction ? (
-                                  <div className={`${actionColor} rounded px-1 py-1 font-semibold`}>
-                                    {displayAction}
-                                  </div>
-                                ) : (
-                                  <div className="text-gray-300">—</div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                /* Card Selection View */
-                <>
-                  <div className="grid grid-cols-9 gap-2 mb-4">
-                    {SEAT_ARRAY.map(seat => {
-                      const inactiveStatus = isSeatInactive(seat);
-                      const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
-                      // Use holeCards for my seat, allPlayerCards for others
-                      const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-                      const isDealer = dealerButtonSeat === seat;
-                      const isSB = getSmallBlindSeat() === seat;
-                      const isBB = getBigBlindSeat() === seat;
-                      const isMySeat = mySeat === seat;
-                      
-                      return (
-                        <div key={seat} className="flex flex-col items-center">
-                          {/* Seat Number - Always at top */}
-                          <div className="text-sm font-bold mb-1">Seat {seat}</div>
-                          
-                          {/* Dealer/Blinds/My Seat Indicators with Visibility Toggle */}
-                          <div className="flex gap-1 mb-1 items-center" style={{ minHeight: '24px' }}>
-                            {isDealer && <PositionBadge type="dealer" size="small" />}
-                            {isSB && <PositionBadge type="sb" size="small" />}
-                            {isBB && <PositionBadge type="bb" size="small" />}
-                            {isMySeat && <PositionBadge type="me" size="small" />}
-                            {isMySeat && (
-                              <VisibilityToggle 
-                                visible={holeCardsVisible} 
-                                onToggle={() => setHoleCardsVisible(!holeCardsVisible)} 
-                                size="small" 
-                              />
-                            )}
-                          </div>
-                          
-                          {/* Card Slots with Overlaid Labels */}
-                          <div className="flex gap-1 mb-1 relative">
-                            {[0, 1].map(cardSlot => {
-                              const card = cards[cardSlot];
-                              const isHighlighted = highlightedSeat === seat && highlightedHoleSlot === cardSlot;
-                              const shouldHideCard = isMySeat && !holeCardsVisible;
-                              const canInteract = inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked;
-                              const cardStatus = isMucked ? 'mucked' : inactiveStatus || null;
-                              
-                              return (
-                                <CardSlot
-                                  key={cardSlot}
-                                  card={card}
-                                  variant="showdown"
-                                  isHighlighted={isHighlighted}
-                                  isHidden={shouldHideCard}
-                                  status={cardStatus}
-                                  canInteract={canInteract}
-                                  onClick={() => {
-                                    if (canInteract) {
-                                      setHighlightedSeat(seat);
-                                      setHighlightedCardSlot(cardSlot);
-                                    }
-                                  }}
-                                />
-                              );
-                            })}
-                            
-                            {/* Diagonal Overlay Label for Folded/Absent/Mucked/Won */}
-                            <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, seatActions['showdown']?.[seat] === ACTIONS.WON)} />
-                          </div>
-                          
-                          {/* Muck and Won Buttons - Only for non-folded and non-absent and non-mucked/won hands */}
-                          {inactiveStatus !== SEAT_STATUS.FOLDED && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked && seatActions['showdown']?.[seat] !== ACTIONS.WON && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => handleMuckSeat(seat)}
-                                className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded font-semibold"
-                              >
-                                Muck
-                              </button>
-                              {/* Only show Won button if no seat has won yet */}
-                              {!Object.values(seatActions['showdown'] || {}).includes(ACTIONS.WON) && (
-                                <button
-                                  onClick={() => handleWonSeat(seat)}
-                                  className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded font-semibold"
-                                >
-                                  Won
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Card Selection Table */}
-                  <div className="flex-1 bg-white py-1 px-2 overflow-hidden flex items-center justify-center">
-                    <table className="border-collapse">
-                      <thead>
-                        <tr>
-                          <th style={{ width: '40px' }}></th>
-                          {RANKS.map(rank => (
-                            <th key={rank} className="text-center">
-                              <div className="text-xl font-bold">{rank}</div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {SUITS.map(suit => (
-                          <tr key={suit}>
-                            <td className="text-center" style={{ width: '40px' }}>
-                              <div className={`text-3xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
-                                {suit}
-                              </div>
-                            </td>
-                            {RANKS.map(rank => {
-                              const card = `${rank}${suit}`;
-
-                              // Check if card is used in community cards
-                              const isInCommunity = communityCards.includes(card);
-                              const communityIndex = communityCards.indexOf(card);
-
-                              // Check if card is used in any player's hand
-                              let usedBySeat = null;
-                              let cardSlotIndex = null;
-
-                              // Check my seat's hole cards
-                              if (holeCards.includes(card)) {
-                                usedBySeat = mySeat;
-                              }
-
-                              // Check all other players
-                              Object.entries(allPlayerCards).forEach(([seat, playerHand]) => {
-                                const index = playerHand.indexOf(card);
-                                if (index !== -1) {
-                                  usedBySeat = parseInt(seat);
-                                  cardSlotIndex = index;
-                                }
-                              });
-
-                              const isUsed = isInCommunity || usedBySeat !== null;
-                              const canSelect = highlightedSeat !== null && highlightedHoleSlot !== null;
-
-                              // Get street indicator for community cards
-                              let streetIndicator = null;
-                              if (isInCommunity) {
-                                if (communityIndex <= 2) streetIndicator = 'F';
-                                else if (communityIndex === 3) streetIndicator = 'T';
-                                else if (communityIndex === 4) streetIndicator = 'R';
-                              }
-
-                              return (
-                                <td key={card} className="p-1 relative">
-                                  <button
-                                    onClick={() => canSelect && selectCardForShowdown(card)}
-                                    disabled={!canSelect}
-                                    className={`w-full rounded-lg font-bold transition-all relative flex flex-col items-center justify-center gap-1 ${
-                                      isUsed
-                                        ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40'
-                                        : !canSelect
-                                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                          : isRedSuit(suit)
-                                            ? 'bg-red-50 hover:bg-red-200 border-2 border-red-400 text-red-600 hover:scale-105'
-                                            : 'bg-gray-50 hover:bg-gray-200 border-2 border-gray-800 text-black hover:scale-105'
-                                    }`}
-                                    style={{ height: '90px', width: '62px' }}
-                                  >
-                                    <div className="text-lg font-bold">{rank}</div>
-                                    <div className="text-3xl leading-none">{suit}</div>
-                                    {streetIndicator && (
-                                      <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-tl">
-                                        {streetIndicator}
-                                      </div>
-                                    )}
-                                    {usedBySeat !== null && (
-                                      <div className="absolute top-1 left-1 bg-green-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                        {usedBySeat}
-                                      </div>
-                                    )}
-                                  </button>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <ShowdownView
+        scale={scale}
+        communityCards={communityCards}
+        holeCards={holeCards}
+        holeCardsVisible={holeCardsVisible}
+        mySeat={mySeat}
+        dealerButtonSeat={dealerButtonSeat}
+        allPlayerCards={allPlayerCards}
+        highlightedSeat={highlightedSeat}
+        highlightedHoleSlot={highlightedHoleSlot}
+        seatActions={seatActions}
+        SEAT_ARRAY={SEAT_ARRAY}
+        STREETS={STREETS}
+        BETTING_STREETS={BETTING_STREETS}
+        ACTIONS={ACTIONS}
+        SEAT_STATUS={SEAT_STATUS}
+        handleNextHandFromShowdown={handleNextHandFromShowdown}
+        handleClearShowdownCards={handleClearShowdownCards}
+        handleCloseShowdown={handleCloseShowdown}
+        allCardsAssigned={allCardsAssigned}
+        isSeatInactive={isSeatInactive}
+        getSmallBlindSeat={getSmallBlindSeat}
+        getBigBlindSeat={getBigBlindSeat}
+        setHoleCardsVisible={setHoleCardsVisible}
+        setHighlightedSeat={setHighlightedSeat}
+        setHighlightedCardSlot={setHighlightedCardSlot}
+        handleMuckSeat={handleMuckSeat}
+        handleWonSeat={handleWonSeat}
+        selectCardForShowdown={selectCardForShowdown}
+        getOverlayStatus={getOverlayStatus}
+        getActionColor={getActionColor}
+        getActionDisplayName={getActionDisplayName}
+        isFoldAction={isFoldAction}
+        getHandAbbreviation={getHandAbbreviation}
+        SkipForward={SkipForward}
+      />
     );
   }
 
   // Card Selector Screen (renders when showCardSelector is true)
   if (showCardSelector) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{
-          width: '1600px',
-          height: '720px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center'
-        }}>
-          <div
-            className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-            style={{ width: '1600px', height: '720px' }}
-          >
-            <div className="bg-white p-6 flex justify-between items-center">
-              <h2 className="text-3xl font-bold capitalize">
-                Select Cards: {currentStreet}
-              </h2>
-              <div className="flex items-center gap-4">
-                {/* Community Cards Display */}
-                <div>
-                  <div className="text-sm font-bold mb-2 text-center">BOARD</div>
-                  <div className="flex gap-2">
-                    {[0, 1, 2, 3, 4].map((idx) => {
-                      const isHighlighted = cardSelectorType === 'community' && highlightedBoardIndex === idx;
-                      return (
-                        <CardSlot
-                          key={idx}
-                          card={communityCards[idx]}
-                          variant="selector"
-                          isHighlighted={isHighlighted}
-                          onClick={() => {setCardSelectorType('community'); setHighlightedCardIndex(idx);}}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Vertical Separator */}
-                <div className="h-24 w-1 bg-gray-300"></div>
-                {/* Hole Cards Display */}
-                <div>
-                  <div className="text-sm font-bold mb-2 text-center">HOLE CARDS</div>
-                  <div className="flex gap-2 items-center">
-                    {[0, 1].map((idx) => {
-                      const isHighlighted = cardSelectorType === 'hole' && highlightedBoardIndex === idx;
-                      return (
-                        <CardSlot
-                          key={idx}
-                          card={holeCards[idx]}
-                          variant="selector"
-                          isHighlighted={isHighlighted}
-                          isHidden={!holeCardsVisible}
-                          onClick={() => {setCardSelectorType('hole'); setHighlightedCardIndex(idx);}}
-                        />
-                      );
-                    })}
-                    <VisibilityToggle
-                      visible={holeCardsVisible}
-                      onToggle={() => setHoleCardsVisible(!holeCardsVisible)}
-                      size="large"
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={() => clearCards('community')}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-                >
-                  Clear Board
-                </button>
-                <button
-                  onClick={() => clearCards('hole')}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-                >
-                  Clear Hole
-                </button>
-                <button
-                  onClick={handleCloseCardSelector}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-xl font-bold"
-                >
-                  Table View
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 bg-white py-1 px-2 overflow-hidden flex items-center justify-center">
-              <table className="border-collapse">
-                <thead>
-                  <tr>
-                    <th style={{ width: '40px' }}></th>
-                    {RANKS.map(rank => (
-                      <th key={rank} className="text-center">
-                        <div className="text-xl font-bold">{rank}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {SUITS.map(suit => (
-                    <tr key={suit}>
-                      <td className="text-center" style={{ width: '40px' }}>
-                        <div className={`text-3xl ${isRedSuit(suit) ? 'text-red-600' : 'text-black'}`}>
-                          {suit}
-                        </div>
-                      </td>
-                      {RANKS.map(rank => {
-                        const card = `${rank}${suit}`;
-                        const isInCommunity = communityCards.includes(card);
-                        const isInHole = holeCards.includes(card);
-                        // Only consider it "used" if it's visible
-                        const isUsed = isInCommunity || (holeCardsVisible && isInHole);
-                        const canSelect = highlightedBoardIndex !== null;
-                        const streetIndicator = getCardStreet(card);
-
-                        return (
-                          <td key={card} className="p-1 relative">
-                            <button
-                              onClick={() => canSelect && selectCard(card)}
-                              disabled={!canSelect}
-                              className={`w-full rounded-lg font-bold transition-all relative flex flex-col items-center justify-center gap-1 ${
-                                isUsed
-                                  ? 'bg-gray-300 text-gray-400 cursor-not-allowed opacity-40'
-                                  : highlightedBoardIndex === null
-                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    : isRedSuit(suit)
-                                      ? 'bg-red-50 hover:bg-red-200 border-2 border-red-400 text-red-600 hover:scale-105'
-                                      : 'bg-gray-50 hover:bg-gray-200 border-2 border-gray-800 text-black hover:scale-105'
-                              }`}
-                              style={{ height: '90px', width: '62px' }}
-                            >
-                              <div className="text-lg font-bold">{rank}</div>
-                              <div className="text-3xl leading-none">{suit}</div>
-                              {streetIndicator && (
-                                <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-tl">
-                                  {streetIndicator}
-                                </div>
-                              )}
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CardSelectorView
+        cardSelectorType={cardSelectorType}
+        currentStreet={currentStreet}
+        communityCards={communityCards}
+        holeCards={holeCards}
+        holeCardsVisible={holeCardsVisible}
+        highlightedBoardIndex={highlightedBoardIndex}
+        scale={scale}
+        getCardStreet={getCardStreet}
+        selectCard={selectCard}
+        clearCards={clearCards}
+        handleCloseCardSelector={handleCloseCardSelector}
+        setHoleCardsVisible={setHoleCardsVisible}
+        setCardSelectorType={setCardSelectorType}
+        setHighlightedCardIndex={setHighlightedCardIndex}
+      />
     );
   }
 
   // Table Screen (main poker table view)
   if (currentView === SCREEN.TABLE) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-        <div style={{
-          width: '1600px',
-          height: '720px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center'
-        }}>
-          <div
-            className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-            style={{ width: '1600px', height: '720px' }}
-            onClick={(e) => {
-              if (!isDraggingDealer) {
-                setContextMenu(null);
-              }
-            }}
-          >
-            <div className="flex justify-between items-center px-4 py-2 bg-black bg-opacity-40">
-              <div className="flex items-center gap-4">
-                <div className="text-white text-xl font-bold">Hand #47</div>
-                <div className="text-green-300 text-base">2h 15m</div>
-              </div>
-              <div className="flex gap-2 items-center justify-between flex-1">
-                <div className="flex gap-2">
-                  <button
-                    onClick={nextHand}
-                    className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                  >
-                    <SkipForward size={18} />
-                    Next Hand
-                  </button>
-                  <button
-                    onClick={() => setCurrentScreen(SCREEN.STATS)}
-                    className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                  >
-                    <BarChart3 size={18} />
-                    Stats
-                  </button>
-                </div>
-                <button
-                  onClick={resetHand}
-                  className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  <RotateCcw size={18} />
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 relative p-4">
-              <div
-                ref={tableRef}
-                className="absolute bg-green-700 shadow-2xl"
-                style={{
-                  top: '50px',
-                  left: '200px',
-                  width: '900px',
-                  height: '450px',
-                  borderRadius: '225px'
-                }}
-                onMouseMove={handleDealerDrag}
-                onMouseUp={handleDealerDragEnd}
-                onMouseLeave={handleDealerDragEnd}
-              >
-                <div className="absolute inset-4 bg-green-600 border-8 border-green-800 shadow-inner" style={{ borderRadius: '217px' }}>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2">
-                    {[0, 1, 2, 3, 4].map((idx) => (
-                      <CardSlot
-                        key={idx}
-                        card={communityCards[idx]}
-                        variant="table"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCardSelector('community', idx);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {SEAT_POSITIONS.map(({ seat, x, y }) => (
-                  <div key={seat} className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}%`, top: `${y}%` }}>
-                    <button
-                      onClick={() => togglePlayerSelection(seat)}
-                      onContextMenu={(e) => handleSeatRightClick(e, seat)}
-                      className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
-                      style={{ width: '40px', height: '40px' }}
-                    >
-                      {seat}
-                    </button>
-                    
-                    {dealerButtonSeat === seat && (
-                      <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2">
-                        <PositionBadge type="dealer" size="large" draggable={true} onDragStart={handleDealerDragStart} />
-                      </div>
-                    )}
-                    
-                    {getSmallBlindSeat() === seat && (
-                      <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2">
-                        <PositionBadge type="sb" size="large" />
-                      </div>
-                    )}
-                    
-                    {getBigBlindSeat() === seat && (
-                      <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2">
-                        <PositionBadge type="bb" size="large" />
-                      </div>
-                    )}
-                    
-                    {seat === mySeat && (
-                      <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 flex gap-2 items-center">
-                        {holeCardsVisible ? (
-                          <>
-                            <CardSlot
-                              card={holeCards[0]}
-                              variant="hole-table"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openCardSelector('hole', 0);
-                              }}
-                            />
-                            <CardSlot
-                              card={holeCards[1]}
-                              variant="hole-table"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openCardSelector('hole', 1);
-                              }}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <CardSlot card={null} variant="hole-table" isHidden={true} canInteract={false} />
-                            <CardSlot card={null} variant="hole-table" isHidden={true} canInteract={false} />
-                          </>
-                        )}
-                        <VisibilityToggle 
-                          visible={holeCardsVisible} 
-                          onToggle={() => setHoleCardsVisible(!holeCardsVisible)} 
-                          size="large" 
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                <div 
-                  className="absolute transform -translate-x-1/2 bg-amber-800 border-4 border-amber-900 rounded-lg shadow-xl flex items-center justify-center"
-                  style={{ left: '50%', bottom: '-30px', width: '300px', height: '60px' }}
-                >
-                  <div className="text-white font-bold text-2xl">TABLE</div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-8 left-8 flex gap-2">
-                {STREETS.map(street => (
-                  <button
-                    key={street}
-                    onClick={() => {
-                      setCurrentStreet(street);
-                      if (street === 'showdown') {
-                        openShowdownScreen();
-                      }
-                    }}
-                    className={`py-3 px-6 rounded-lg text-xl font-bold capitalize ${
-                      currentStreet === street 
-                        ? 'bg-yellow-500 text-black shadow-lg' 
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    {street}
-                  </button>
-                ))}
-                <button 
-                  onClick={nextStreet}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold text-xl"
-                >
-                  Next Street ➡
-                </button>
-              </div>
-
-              <div className="absolute bottom-8 right-8">
-                <button
-                  onClick={clearStreetActions}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold text-lg"
-                >
-                  Clear Street
-                </button>
-              </div>
-
-              {contextMenu && (
-                <div
-                  className="absolute bg-white rounded-lg shadow-2xl py-2 z-50"
-                  style={{
-                    left: `${contextMenu.x}px`,
-                    top: `${contextMenu.y}px`,
-                    minWidth: '150px'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => handleSetMySeat(contextMenu.seat)}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100 font-semibold"
-                  >
-                    Make My Seat
-                  </button>
-                  <button
-                    onClick={() => {setDealerSeat(contextMenu.seat); setContextMenu(null);}}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100 font-semibold"
-                  >
-                    Make Dealer
-                  </button>
-                </div>
-              )}
-
-              {selectedPlayers.length > 0 && currentStreet !== 'showdown' && (
-                <div className="absolute top-50 right-8 bg-white rounded-lg shadow-2xl p-4" style={{ width: '480px', top: '80px' }}>
-                  <div className="flex justify-between items-center mb-3 pb-2 border-b-2">
-                    <h3 className="text-2xl font-bold">
-                      {selectedPlayers.length === 1 
-                        ? `Seat ${selectedPlayers[0]}` 
-                        : `${selectedPlayers.length} Seats: ${selectedPlayers.sort((a,b) => a-b).join(', ')}`
-                      }
-                    </h3>
-                    <div className="text-base font-semibold text-blue-600 uppercase">{currentStreet}</div>
-                  </div>
-
-                  {currentStreet === 'preflop' ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      <button onClick={() => recordAction(ACTIONS.FOLD)} className="py-4 bg-red-400 hover:bg-red-500 rounded-lg font-bold text-base text-white">Fold</button>
-                      <button onClick={() => recordAction(ACTIONS.LIMP)} className="py-4 bg-gray-400 hover:bg-gray-500 rounded-lg font-bold text-base text-white">Limp</button>
-                      <button onClick={() => recordAction(ACTIONS.CALL)} className="py-4 bg-blue-300 hover:bg-blue-400 rounded-lg font-bold text-base text-white">Call</button>
-                      <button onClick={() => recordAction(ACTIONS.OPEN)} className="py-4 bg-green-400 hover:bg-green-500 rounded-lg font-bold text-base text-white">Open</button>
-                      <button onClick={() => recordAction(ACTIONS.THREE_BET)} className="py-4 bg-yellow-400 hover:bg-yellow-500 rounded-lg font-bold text-base">3bet</button>
-                      <button onClick={() => recordAction(ACTIONS.FOUR_BET)} className="py-4 bg-orange-400 hover:bg-orange-500 rounded-lg font-bold text-base text-white">4bet</button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-3">
-                        <div className="text-sm font-bold text-blue-700 mb-2">IF PFR:</div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button onClick={() => recordAction(ACTIONS.CBET_IP_SMALL)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet IP (S)</button>
-                          <button onClick={() => recordAction(ACTIONS.CBET_IP_LARGE)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet IP (L)</button>
-                          <button onClick={() => recordAction(ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
-                          <button onClick={() => recordAction(ACTIONS.CBET_OOP_SMALL)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet OOP (S)</button>
-                          <button onClick={() => recordAction(ACTIONS.CBET_OOP_LARGE)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet OOP (L)</button>
-                          <button onClick={() => recordAction(ACTIONS.FOLD_TO_CR)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to CR</button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-sm font-bold text-purple-700 mb-2">IF PFC:</div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button onClick={() => recordAction(ACTIONS.DONK)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Donk</button>
-                          <button onClick={() => recordAction(ACTIONS.STAB)} className="py-3 bg-yellow-200 hover:bg-yellow-300 rounded font-semibold text-sm">Stab</button>
-                          <button onClick={() => recordAction(ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
-                          <button onClick={() => recordAction(ACTIONS.CHECK_RAISE)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Check-Raise</button>
-                          <button onClick={() => recordAction(ACTIONS.FOLD_TO_CBET)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to Cbet</button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <button onClick={() => setSelectedPlayers([])} className="mt-3 w-full py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-semibold">Clear Selection</button>
-                  <button onClick={toggleAbsent} className="mt-2 w-full py-2 bg-gray-800 hover:bg-gray-900 text-white rounded font-semibold">Mark as Absent</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <TableView
+        scale={scale}
+        currentStreet={currentStreet}
+        communityCards={communityCards}
+        holeCards={holeCards}
+        holeCardsVisible={holeCardsVisible}
+        mySeat={mySeat}
+        dealerButtonSeat={dealerButtonSeat}
+        selectedPlayers={selectedPlayers}
+        contextMenu={contextMenu}
+        isDraggingDealer={isDraggingDealer}
+        tableRef={tableRef}
+        SEAT_POSITIONS={SEAT_POSITIONS}
+        STREETS={STREETS}
+        ACTIONS={ACTIONS}
+        SCREEN={SCREEN}
+        setContextMenu={setContextMenu}
+        nextHand={nextHand}
+        setCurrentScreen={setCurrentScreen}
+        resetHand={resetHand}
+        openCardSelector={openCardSelector}
+        togglePlayerSelection={togglePlayerSelection}
+        handleSeatRightClick={handleSeatRightClick}
+        getSeatColor={getSeatColor}
+        handleDealerDragStart={handleDealerDragStart}
+        handleDealerDrag={handleDealerDrag}
+        handleDealerDragEnd={handleDealerDragEnd}
+        getSmallBlindSeat={getSmallBlindSeat}
+        getBigBlindSeat={getBigBlindSeat}
+        setHoleCardsVisible={setHoleCardsVisible}
+        setCurrentStreet={setCurrentStreet}
+        openShowdownScreen={openShowdownScreen}
+        nextStreet={nextStreet}
+        clearStreetActions={clearStreetActions}
+        handleSetMySeat={handleSetMySeat}
+        setDealerSeat={setDealerSeat}
+        recordAction={recordAction}
+        setSelectedPlayers={setSelectedPlayers}
+        toggleAbsent={toggleAbsent}
+        SkipForward={SkipForward}
+        BarChart3={BarChart3}
+        RotateCcw={RotateCcw}
+      />
     );
   }
 
   // Stats Screen
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
-      <div style={{
-        width: '1600px',
-        height: '720px',
-        transform: `scale(${scale})`,
-        transformOrigin: 'center center'
-      }}>
-        <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: '1600px', height: '720px' }}>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Player Statistics</h2>
-            <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-green-600 text-white px-4 py-2 rounded-lg">⬅ Back to Table</button>
-          </div>
-          
-          <div className="grid grid-cols-5 gap-3 mb-6">
-            {SEAT_POSITIONS.map(({seat}) => (
-              <button key={seat} className={`p-4 rounded-lg border-2 hover:border-blue-500 text-center ${seat === mySeat ? 'bg-blue-100 border-blue-400' : 'bg-white border-gray-300'}`}>
-                <div className="text-sm text-gray-600">Seat</div>
-                <div className="font-bold text-3xl">{seat}</div>
-                <div className="text-xs text-gray-500 mt-1">45 hands</div>
-              </button>
-            ))}
-          </div>
-
-          <div className="bg-white p-6 rounded-lg border-2 border-gray-300">
-            <h3 className="text-xl font-bold mb-4">Seat {mySeat} Statistics (You)</h3>
-            
-            <div className="grid grid-cols-3 gap-6">
-              <div>
-                <h4 className="font-semibold text-blue-700 mb-3">Preflop</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>VPIP</span><span className="font-bold">32%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>PFR</span><span className="font-bold">18%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>3bet</span><span className="font-bold">8%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Limp</span><span className="font-bold">12%</span></div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-green-700 mb-3">As PFR</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Cbet IP</span><span className="font-bold">65%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Cbet OOP</span><span className="font-bold">45%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Large %</span><span className="font-bold">35%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Fold CR</span><span className="font-bold">40%</span></div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-purple-700 mb-3">As PFC</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Donk</span><span className="font-bold">15%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Stab</span><span className="font-bold">25%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Check-Raise</span><span className="font-bold">12%</span></div>
-                  <div className="flex justify-between p-2 bg-gray-50 rounded"><span>Fold Cbet</span><span className="font-bold">55%</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <StatsView
+      seatActions={seatActions}
+      mySeat={mySeat}
+      setCurrentScreen={setCurrentScreen}
+      scale={scale}
+    />
   );
 };
 

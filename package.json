@@ -1,6 +1,6 @@
 {
   "name": "poker-tracker",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "React-based poker hand tracker for live 9-handed games",
   "private": true,
   "type": "module",

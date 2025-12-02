@@ -1,6 +1,67 @@
 # Poker Tracker Change Log
 
-## v103 (Current) - All Refactoring Complete ✅
+## v106 (Current) - State Management Refactoring ✅
+
+### Summary
+- **Lines**: 1088 → ~1000 lines main file
+- **Architecture**: Migrated from useState to useReducer pattern
+- **State Management**: Three specialized reducers (game, UI, cards)
+- **Performance**: All handlers wrapped in useCallback
+- **Code Quality**: Eliminated circular dependencies, improved organization
+
+### Key Changes
+- **Reducers Created**:
+  - `gameReducer.js` - Game state (street, dealer, actions, absent seats)
+  - `uiReducer.js` - UI state (view, selection, context menu, dragging)
+  - `cardReducer.js` - Card state (community, hole, player cards, showdown)
+- **Handler Optimization**: All 15+ handlers converted to useCallback with proper dependencies
+- **Function Organization**: Helper functions moved before dependent callbacks
+- **Bug Fixes**: Fixed circular dependency issues and initialization bugs
+- **Imports**: Added reducer imports from `./reducers/` directory
+
+---
+
+## v105 - Component Extraction
+
+### Summary
+- **Lines**: 1957 → 1088 (44% reduction)
+- **Components**: 4 view components + 5 UI components extracted
+- **Eliminated**: ~164 lines of duplicate UI component code
+
+### Components Extracted
+**View Components** (`src/components/views/`):
+- `TableView.jsx` (~326 lines) - Main poker table interface
+- `StatsView.jsx` (~264 lines) - Statistics display
+- `CardSelectorView.jsx` (~180 lines) - Card selection interface
+- `ShowdownView.jsx` (~487 lines) - Showdown interface with summary
+
+**UI Components** (`src/components/ui/`):
+- `CardSlot.jsx` - 4 variants (table, hole-table, showdown, selector)
+- `VisibilityToggle.jsx` - Show/hide toggle button
+- `PositionBadge.jsx` - Position indicators (D, SB, BB, ME)
+- `DiagonalOverlay.jsx` - Status overlays (FOLD/ABSENT/MUCK/WON)
+- `ScaledContainer.jsx` - Responsive scaling wrapper
+
+---
+
+## v104 - Mobile Optimization
+
+### Summary
+- Mobile landscape optimization (Samsung Galaxy A22: 1600x720)
+- Dynamic responsive scaling
+- Card selector improvements
+- Button layout optimization
+
+### Changes
+- **Responsive Scaling**: Auto-scales to fit viewport (min 95% padding, max 1.0x scale)
+- **Component Sizes**: Reduced for mobile (badges 16px/28px, seats 40px)
+- **Card Selectors**: 90px height cards, large text, no scrolling
+- **Button Layout**: Optimized for touch targets and mobile screens
+- **Auto-Advance**: Card selector auto-advances to next slot after selection
+
+---
+
+## v103 - All Refactoring Complete ✅
 
 ### Summary
 - **Lines**: 2228 → 1958 (270 lines saved, **12.1% reduction**)
@@ -94,12 +155,17 @@
 
 ---
 
-## File Stats
-| Version | Lines | Change |
-|---------|-------|--------|
-| v101 | ~2063 | baseline |
-| v102 | 2228 | +165 (added component definitions) |
-| v103 | 1958 | **-270 (12.1% reduction)** |
+## File Stats (Main PokerTracker.jsx)
+| Version | Lines | Change | Notes |
+|---------|-------|--------|-------|
+| v101 | ~2063 | baseline | Monolithic file |
+| v102 | 2228 | +165 | Added component definitions |
+| v103 | 1958 | **-270 (12.1% reduction)** | Refactoring complete |
+| v104 | 1957 | -1 | Mobile optimization |
+| v105 | 1088 | **-869 (44% reduction)** | Component extraction |
+| v106 | ~1000 | **-88 (8% reduction)** | Reducer refactoring |
+
+**Total Reduction**: 2228 → 1000 lines (**55% smaller**)
 
 ---
 
