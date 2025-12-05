@@ -1,13 +1,11 @@
 import React from 'react';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
+import { isRedSuit } from '../../utils/displayUtils';
 
 // Card constants
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 const SUITS = ['♠', '♥', '♦', '♣'];
-
-// Helper function
-const isRedSuit = (suit) => suit === '♥' || suit === '♦';
 
 /**
  * CardSelectorView - Interactive card selection interface

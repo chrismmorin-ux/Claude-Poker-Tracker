@@ -12,6 +12,37 @@ import { ShowdownView } from './components/views/ShowdownView';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
+import {
+  getActionDisplayName,
+  getActionColor,
+  getSeatActionStyle,
+  getOverlayStatus
+} from './utils/actionUtils';
+import {
+  isRedCard,
+  isRedSuit,
+  getCardAbbreviation,
+  getHandAbbreviation
+} from './utils/displayUtils';
+import {
+  ACTIONS,
+  FOLD_ACTIONS,
+  SEAT_STATUS,
+  STREETS,
+  BETTING_STREETS,
+  SEAT_ARRAY,
+  SUITS,
+  RANKS,
+  SUIT_ABBREV,
+  isFoldAction
+} from './constants/gameConstants';
+import { useActionUtils } from './hooks/useActionUtils';
+import { useStateSetters } from './hooks/useStateSetters';
+import { useSeatUtils } from './hooks/useSeatUtils';
+import { useSeatColor } from './hooks/useSeatColor';
+import { useShowdownHandlers } from './hooks/useShowdownHandlers';
+import { useCardSelection } from './hooks/useCardSelection';
+import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -60,198 +91,10 @@ const SEAT_POSITIONS = [
   { seat: 9, x: 67, y: 88 },
 ];
 
-// Street definitions
-const STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown'];
-const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']; // Streets where betting occurs (excludes showdown)
-
 // Screen/View identifiers
 const SCREEN = {
   TABLE: 'table',
   STATS: 'stats',
-};
-
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-
-const SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
-
-// Action type constants
-const ACTIONS = {
-  // Preflop actions
-  FOLD: 'fold',
-  LIMP: 'limp',
-  CALL: 'call',
-  OPEN: 'open',
-  THREE_BET: '3bet',
-  FOUR_BET: '4bet',
-  
-  // Postflop actions - PFR
-  CBET_IP_SMALL: 'cbet_ip_small',
-  CBET_IP_LARGE: 'cbet_ip_large',
-  CBET_OOP_SMALL: 'cbet_oop_small',
-  CBET_OOP_LARGE: 'cbet_oop_large',
-  CHECK: 'check',
-  FOLD_TO_CR: 'fold_to_cr',
-  
-  // Postflop actions - PFC
-  DONK: 'donk',
-  STAB: 'stab',
-  CHECK_RAISE: 'check_raise',
-  FOLD_TO_CBET: 'fold_to_cbet',
-  
-  // Showdown actions
-  MUCKED: 'mucked',
-  WON: 'won',
-};
-
-// All actions that count as a fold (for checking fold status)
-const FOLD_ACTIONS = [ACTIONS.FOLD, ACTIONS.FOLD_TO_CR, ACTIONS.FOLD_TO_CBET];
-
-// Seat status values (returned by isSeatInactive)
-const SEAT_STATUS = {
-  FOLDED: 'folded',
-  ABSENT: 'absent',
-};
-
-// Array of seat numbers for iteration
-const SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-// Helper function: Check if an action is a fold action
-const isFoldAction = (action) => FOLD_ACTIONS.includes(action);
-
-// Helper function: Check if a card is red (hearts or diamonds)
-const isRedCard = (card) => card && (card.includes('♥') || card.includes('♦'));
-
-// Helper function: Check if a suit is red
-const isRedSuit = (suit) => suit === '♥' || suit === '♦';
-
-// Initial empty player cards state
-const createEmptyPlayerCards = () => ({
-  1: ['', ''],
-  2: ['', ''],
-  3: ['', ''],
-  4: ['', ''],
-  5: ['', ''],
-  6: ['', ''],
-  7: ['', ''],
-  8: ['', ''],
-  9: ['', '']
-});
-
-// Helper function: Get card abbreviation (A♥ -> Ah)
-const getCardAbbreviation = (card) => {
-  if (!card) return '';
-  const rank = card[0];
-  const suit = card[1];
-  return rank + SUIT_ABBREV[suit];
-};
-
-// Helper function: Get hand abbreviation from two cards
-const getHandAbbreviation = (cards) => {
-  if (!cards || cards.length !== 2) return '';
-  const card1 = getCardAbbreviation(cards[0]);
-  const card2 = getCardAbbreviation(cards[1]);
-  if (!card1 || !card2) return '';
-  return card1 + card2;
-};
-
-// Helper function: Get display name for an action
-const getActionDisplayName = (action) => {
-  if (isFoldAction(action)) return 'fold';
-  
-  switch(action) {
-    case ACTIONS.LIMP: return 'limp';
-    case ACTIONS.CALL: return 'call';
-    case ACTIONS.OPEN: return 'open';
-    case ACTIONS.THREE_BET: return '3bet';
-    case ACTIONS.FOUR_BET: return '4bet';
-    case ACTIONS.CBET_IP_SMALL: return 'cbet IP (S)';
-    case ACTIONS.CBET_IP_LARGE: return 'cbet IP (L)';
-    case ACTIONS.CBET_OOP_SMALL: return 'cbet OOP (S)';
-    case ACTIONS.CBET_OOP_LARGE: return 'cbet OOP (L)';
-    case ACTIONS.CHECK: return 'check';
-    case ACTIONS.CHECK_RAISE: return 'check-raise';
-    case ACTIONS.DONK: return 'donk';
-    case ACTIONS.STAB: return 'stab';
-    case ACTIONS.MUCKED: return 'muck';
-    case ACTIONS.WON: return 'won';
-    default: return action || '';
-  }
-};
-
-// Helper function: Get Tailwind classes for action color (used in showdown summary)
-const getActionColor = (action) => {
-  if (isFoldAction(action)) {
-    return 'bg-red-300 text-red-900';
-  }
-  
-  switch(action) {
-    case ACTIONS.LIMP:
-      return 'bg-gray-300 text-gray-900';
-    case ACTIONS.CALL:
-    case ACTIONS.CHECK:
-      return 'bg-blue-200 text-blue-900';
-    case ACTIONS.OPEN:
-      return 'bg-green-300 text-green-900';
-    case ACTIONS.THREE_BET:
-    case ACTIONS.STAB:
-      return 'bg-yellow-300 text-yellow-900';
-    case ACTIONS.FOUR_BET:
-    case ACTIONS.DONK:
-    case ACTIONS.CHECK_RAISE:
-      return 'bg-orange-300 text-orange-900';
-    case ACTIONS.CBET_IP_SMALL:
-    case ACTIONS.CBET_IP_LARGE:
-    case ACTIONS.CBET_OOP_SMALL:
-    case ACTIONS.CBET_OOP_LARGE:
-      return 'bg-green-200 text-green-900';
-    case ACTIONS.MUCKED:
-      return 'bg-gray-400 text-gray-900';
-    case ACTIONS.WON:
-      return 'bg-green-400 text-green-900';
-    default:
-      return 'bg-gray-100 text-gray-900';
-  }
-};
-
-// Helper function: Get seat background and ring colors based on action (used in table view)
-const getSeatActionStyle = (action) => {
-  if (isFoldAction(action)) {
-    return { bg: 'bg-red-400', ring: 'ring-red-300' };
-  }
-  
-  switch(action) {
-    case ACTIONS.LIMP:
-      return { bg: 'bg-gray-400', ring: 'ring-gray-300' };
-    case ACTIONS.CALL:
-    case ACTIONS.CHECK:
-      return { bg: 'bg-blue-300', ring: 'ring-blue-200' };
-    case ACTIONS.OPEN:
-      return { bg: 'bg-green-400', ring: 'ring-green-300' };
-    case ACTIONS.THREE_BET:
-    case ACTIONS.STAB:
-      return { bg: 'bg-yellow-400', ring: 'ring-yellow-300' };
-    case ACTIONS.FOUR_BET:
-    case ACTIONS.DONK:
-    case ACTIONS.CHECK_RAISE:
-      return { bg: 'bg-orange-400', ring: 'ring-orange-300' };
-    case ACTIONS.CBET_IP_SMALL:
-    case ACTIONS.CBET_IP_LARGE:
-    case ACTIONS.CBET_OOP_SMALL:
-    case ACTIONS.CBET_OOP_LARGE:
-      return { bg: 'bg-green-500', ring: 'ring-green-300' };
-    default:
-      return { bg: 'bg-green-500', ring: 'ring-green-300' };
-  }
-};
-
-// Helper function: Determine overlay status for showdown view
-const getOverlayStatus = (inactiveStatus, isMucked, hasWon) => {
-  if (inactiveStatus === SEAT_STATUS.FOLDED) return SEAT_STATUS.FOLDED;
-  if (inactiveStatus === SEAT_STATUS.ABSENT) return SEAT_STATUS.ABSENT;
-  if (isMucked) return 'mucked';
-  if (hasWon) return 'won';
-  return null;
 };
 
 // =============================================================================
@@ -298,36 +141,46 @@ const PokerTrackerWireframes = () => {
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
 
+  // =============================================================================
+  // HOOKS - Custom hooks for utility functions and state setters
+  // =============================================================================
+
+  // Get action utility functions with constants injected
+  const {
+    getActionDisplayName,
+    getActionColor,
+    getSeatActionStyle,
+    getOverlayStatus,
+    getCardAbbreviation,
+    getHandAbbreviation,
+  } = useActionUtils();
+
+  // Get state setter functions
+  const {
+    setCurrentScreen,
+    setContextMenu,
+    setSelectedPlayers,
+    setHoleCardsVisible,
+    setCurrentStreet,
+    setDealerSeat,
+    setCardSelectorType,
+    setHighlightedCardIndex,
+    setHighlightedSeat,
+    setHighlightedCardSlot,
+  } = useStateSetters(dispatchGame, dispatchUi, dispatchCard);
+
+  // Get seat utility functions
+  const {
+    getSmallBlindSeat,
+    getBigBlindSeat,
+    hasSeatFolded,
+    getFirstActionSeat,
+    getNextActionSeat,
+  } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, seatActions, CONSTANTS.NUM_SEATS);
+
   const advanceDealer = () => {
     dispatchGame({ type: GAME_ACTIONS.ADVANCE_DEALER });
   };
-
-  // Memoized calculation of small blind seat
-  const getSmallBlindSeat = useMemo(() => {
-    return () => {
-      let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return seat;
-    };
-  }, [dealerButtonSeat, absentSeats]);
-
-  // Memoized calculation of big blind seat
-  const getBigBlindSeat = useMemo(() => {
-    return () => {
-      const sbSeat = getSmallBlindSeat();
-      let seat = (sbSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return seat;
-    };
-  }, [dealerButtonSeat, absentSeats, getSmallBlindSeat]);
 
   const handleDealerDragStart = useCallback((e) => {
     dispatchUi({ type: UI_ACTIONS.START_DRAGGING_DEALER });
@@ -397,60 +250,6 @@ const PokerTrackerWireframes = () => {
     dispatchGame({ type: GAME_ACTIONS.SET_MY_SEAT, payload: seat });
     dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
   }, [dispatchGame, dispatchUi]);
-
-  // Helper functions for seat action logic (must be defined before recordAction)
-  const hasSeatFolded = useCallback((seat) => {
-    // Check all streets up to and including current street
-    const currentIndex = STREETS.indexOf(currentStreet);
-
-    for (let i = 0; i <= currentIndex; i++) {
-      const street = STREETS[i];
-      const action = seatActions[street]?.[seat];
-      if (isFoldAction(action)) {
-        return true;
-      }
-    }
-    return false;
-  }, [currentStreet, seatActions]);
-
-  const getFirstActionSeat = useCallback(() => {
-    if (currentStreet === 'preflop') {
-      // First to act preflop is after big blind
-      const bbSeat = getBigBlindSeat();
-      let seat = (bbSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (absentSeats.includes(seat) && attempts < CONSTANTS.NUM_SEATS) {
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return seat;
-    } else {
-      // Postflop, first to act is first non-absent, non-folded seat after dealer
-      let seat = (dealerButtonSeat % CONSTANTS.NUM_SEATS) + 1;
-      let attempts = 0;
-      while (attempts < CONSTANTS.NUM_SEATS) {
-        if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
-          return seat;
-        }
-        seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-        attempts++;
-      }
-      return 1; // Fallback
-    }
-  }, [currentStreet, getBigBlindSeat, absentSeats, dealerButtonSeat, hasSeatFolded]);
-
-  const getNextActionSeat = useCallback((currentSeat) => {
-    let seat = (currentSeat % CONSTANTS.NUM_SEATS) + 1;
-    let attempts = 0;
-    while (attempts < CONSTANTS.NUM_SEATS) {
-      if (!absentSeats.includes(seat) && !hasSeatFolded(seat)) {
-        return seat;
-      }
-      seat = (seat % CONSTANTS.NUM_SEATS) + 1;
-      attempts++;
-    }
-    return null; // No more seats to act
-  }, [absentSeats, hasSeatFolded]);
 
   const recordAction = useCallback((action) => {
     if (selectedPlayers.length === 0) return;
@@ -555,7 +354,7 @@ const PokerTrackerWireframes = () => {
       const action = seatActions[street]?.[seat];
       if (action) {
         let displayAction = getActionDisplayName(action);
-        
+
         if (street === 'showdown' && action !== ACTIONS.MUCKED) {
           // For showdown, add cards if available
           const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
@@ -566,7 +365,7 @@ const PokerTrackerWireframes = () => {
             displayAction = 'show';
           }
         }
-        
+
         actions.push(`${street} ${displayAction}`);
       }
     });
@@ -594,138 +393,6 @@ const PokerTrackerWireframes = () => {
     }
     return true;
   }, [isSeatInactive, seatActions, mySeat, holeCards, allPlayerCards]);
-
-  const selectCardForShowdown = useCallback((card) => {
-    const seat = highlightedSeat;
-    const slot = highlightedHoleSlot;
-
-    // For my seat, update holeCards instead of allPlayerCards
-    if (seat === mySeat) {
-      // Remove card from other slot if it's there
-      const existingIndex = holeCards.indexOf(card);
-      if (existingIndex !== -1 && existingIndex !== slot) {
-        dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: existingIndex, card: '' } });
-      }
-
-      // Assign to current slot
-      dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: slot, card } });
-    } else {
-      // Remove card from any other player's hand
-      for (let s = 1; s <= CONSTANTS.NUM_SEATS; s++) {
-        const cards = allPlayerCards[s];
-        const cardIndex = cards.indexOf(card);
-        if (cardIndex !== -1) {
-          dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat: s, slotIndex: cardIndex, card: '' } });
-        }
-      }
-
-      // Assign to current slot
-      dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat, slotIndex: slot, card } });
-    }
-
-    // Also remove from community cards if it's there
-    const communityIndex = communityCards.indexOf(card);
-    if (communityIndex !== -1) {
-      dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: communityIndex, card: '' } });
-    }
-
-    // Auto-advance logic - find next empty slot
-    const findNextEmptySlot = (currentSeat, currentSlot) => {
-      // First check if the second slot of current seat is empty
-      if (currentSlot === 0) {
-        const cards = currentSeat === mySeat ? holeCards : allPlayerCards[currentSeat];
-        if (!cards[1]) {
-          return { seat: currentSeat, slot: 1 };
-        }
-      }
-
-      // Otherwise, look for next seat with empty slots
-      let nextSeat = currentSeat + 1;
-      while (nextSeat <= CONSTANTS.NUM_SEATS) {
-        const nextStatus = isSeatInactive(nextSeat);
-        const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
-        const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
-
-        // Skip folded, absent, mucked, and won seats
-        if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
-          const cards = nextSeat === mySeat ? holeCards : allPlayerCards[nextSeat];
-          // Check first slot
-          if (!cards[0]) {
-            return { seat: nextSeat, slot: 0 };
-          }
-          // Check second slot
-          if (!cards[1]) {
-            return { seat: nextSeat, slot: 1 };
-          }
-        }
-        nextSeat++;
-      }
-
-      // No empty slots found
-      return null;
-    };
-
-    const nextEmpty = findNextEmptySlot(seat, slot);
-    if (nextEmpty) {
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });
-    } else {
-      // No more empty slots
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
-    }
-  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, dispatchCard, isSeatInactive]);
-
-  const selectCard = useCallback((card) => {
-    if (highlightedBoardIndex === null) return;
-
-    if (cardSelectorType === 'community') {
-      // Remove the card from any other community card slot
-      const existingIndex = communityCards.indexOf(card);
-      if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
-        dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: existingIndex, card: '' } });
-      }
-
-      // Assign the card to the highlighted slot
-      dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: highlightedBoardIndex, card } });
-
-      // Check if this was the last card needed for this street
-      const shouldAutoClose =
-        (currentStreet === 'flop' && highlightedBoardIndex === 2) ||
-        (currentStreet === 'turn' && highlightedBoardIndex === 3) ||
-        (currentStreet === 'river' && highlightedBoardIndex === 4);
-
-      if (shouldAutoClose) {
-        // Close card selector and return to table
-        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
-      } else {
-        // Auto-advance to next community card slot
-        if (highlightedBoardIndex < 4) {
-          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: highlightedBoardIndex + 1 });
-        } else {
-          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
-        }
-      }
-    } else if (cardSelectorType === 'hole') {
-      // Remove the card from the other hole card slot
-      const existingIndex = holeCards.indexOf(card);
-      if (existingIndex !== -1 && existingIndex !== highlightedBoardIndex) {
-        dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: existingIndex, card: '' } });
-      }
-
-      // Assign the card to the highlighted slot
-      dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: highlightedBoardIndex, card } });
-
-      // Check if this was the second hole card
-      if (highlightedBoardIndex === 1) {
-        // Close card selector and return to table (without changing street)
-        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
-      } else {
-        // Auto-advance to next hole card slot
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: 1 });
-      }
-    }
-  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard]);
 
   const clearCards = useCallback((type) => {
     if (type === 'community') {
@@ -762,160 +429,58 @@ const PokerTrackerWireframes = () => {
     log('resetHand: all state cleared including absent seats');
   }, [dispatchCard, dispatchGame, dispatchUi]);
 
-  // Handler: Close showdown view and advance to next hand
-  const handleNextHandFromShowdown = useCallback(() => {
-    nextHand();
-    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-  }, [nextHand, dispatchCard]);
+  // Get showdown handler functions
+  const {
+    handleClearShowdownCards,
+    handleMuckSeat,
+    handleWonSeat,
+    handleNextHandFromShowdown,
+    handleCloseShowdown,
+    handleCloseCardSelector,
+  } = useShowdownHandlers(
+    dispatchCard,
+    dispatchGame,
+    isSeatInactive,
+    seatActions,
+    recordSeatAction,
+    nextHand,
+    CONSTANTS.NUM_SEATS,
+    log
+  );
 
-  // Handler: Clear all player cards in showdown view
-  const handleClearShowdownCards = useCallback(() => {
-    // Reset all player cards
-    dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
+  // Get seat color function
+  const getSeatColor = useSeatColor(
+    hasSeatFolded,
+    selectedPlayers,
+    mySeat,
+    absentSeats,
+    seatActions,
+    currentStreet,
+    getSeatActionStyle
+  );
 
-    // Clear showdown actions
-    dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
+  // Get card selection functions
+  const selectCard = useCardSelection(
+    highlightedBoardIndex,
+    cardSelectorType,
+    communityCards,
+    holeCards,
+    currentStreet,
+    dispatchCard
+  );
 
-    // Find first active seat
-    let firstActiveSeat = 1;
-    for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
-      const status = isSeatInactive(seat);
-      if (status !== SEAT_STATUS.FOLDED && status !== SEAT_STATUS.ABSENT) {
-        firstActiveSeat = seat;
-        break;
-      }
-    }
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActiveSeat });
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
-    log('handleClearShowdownCards: cards cleared, first active seat selected');
-  }, [dispatchCard, dispatchGame, isSeatInactive]);
-
-  // Handler: Close showdown view
-  const handleCloseShowdown = useCallback(() => {
-    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-  }, [dispatchCard]);
-
-  // Handler: Close card selector
-  const handleCloseCardSelector = useCallback(() => {
-    dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
-  }, [dispatchCard]);
-
-  // Helper: Advance to next active seat in showdown (skips folded/absent/mucked/won)
-  const advanceToNextActiveSeat = useCallback((fromSeat) => {
-    let nextSeat = fromSeat + 1;
-    while (nextSeat <= CONSTANTS.NUM_SEATS) {
-      const nextStatus = isSeatInactive(nextSeat);
-      const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
-      const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
-      if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
-        return;
-      }
-      nextSeat++;
-    }
-    // No more active seats, deselect
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
-  }, [isSeatInactive, seatActions, dispatchCard]);
-
-  // Handler: Mark seat as mucked and advance
-  const handleMuckSeat = useCallback((seat) => {
-    recordSeatAction(seat, ACTIONS.MUCKED);
-    advanceToNextActiveSeat(seat);
-  }, [recordSeatAction, advanceToNextActiveSeat]);
-
-  // Handler: Mark seat as winner and advance
-  const handleWonSeat = useCallback((seat) => {
-    recordSeatAction(seat, ACTIONS.WON);
-    advanceToNextActiveSeat(seat);
-  }, [recordSeatAction, advanceToNextActiveSeat]);
-
-  const getSeatColor = useCallback((seat) => {
-    const foldedPreviously = hasSeatFolded(seat);
-    const isSelected = selectedPlayers.includes(seat);
-    const isMySeat = seat === mySeat;
-
-    // Helper for ring color based on selection state
-    const getSelectionRing = () => {
-      if (isMySeat && isSelected) return 'ring-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse';
-      if (isMySeat) return 'ring-purple-500';
-      if (isSelected) return 'ring-yellow-400 shadow-lg shadow-yellow-400/50 animate-pulse';
-      return '';
-    };
-
-    // Absent seats
-    if (absentSeats.includes(seat)) {
-      const ring = isMySeat ? 'ring-purple-500' : (isSelected ? 'ring-yellow-400' : '');
-      return `bg-gray-900 ${ring ? `ring-4 ${ring}` : ''} text-gray-600 opacity-50 ${isSelected ? 'animate-pulse' : ''}`;
-    }
-
-    // Folded on previous street
-    if (foldedPreviously) {
-      const ringColor = getSelectionRing() || 'ring-red-300';
-      return `bg-red-400 ring-4 ${ringColor} text-white`;
-    }
-
-    // Get action-based colors
-    const action = seatActions[currentStreet]?.[seat];
-    let baseColor = 'bg-gray-700';
-    let ringColor = getSelectionRing();
-
-    if (action) {
-      const style = getSeatActionStyle(action);
-      baseColor = style.bg;
-      if (!ringColor) ringColor = style.ring;
-    }
-
-    const ring = ringColor ? `ring-4 ${ringColor}` : '';
-    const hover = !action && !isSelected && !isMySeat ? 'hover:bg-gray-600' : '';
-    return `${baseColor} ${ring} text-white ${hover}`;
-  }, [hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet]);
-
-  // Wrapper functions for props (delegate to reducers)
-  const setCurrentScreen = useCallback((screen) => {
-    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: screen });
-  }, [dispatchUi]);
-
-  const setContextMenu = useCallback((menu) => {
-    if (menu === null) {
-      dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
-    } else {
-      dispatchUi({ type: UI_ACTIONS.SET_CONTEXT_MENU, payload: menu });
-    }
-  }, [dispatchUi]);
-
-  const setSelectedPlayers = useCallback((players) => {
-    dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: players });
-  }, [dispatchUi]);
-
-  const setHoleCardsVisible = useCallback((visible) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HOLE_VISIBILITY, payload: visible });
-  }, [dispatchCard]);
-
-  const setCurrentStreet = useCallback((street) => {
-    dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
-  }, [dispatchGame]);
-
-  const setDealerSeat = useCallback((seat) => {
-    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
-  }, [dispatchGame]);
-
-  const setCardSelectorType = useCallback((type) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_CARD_SELECTOR_TYPE, payload: type });
-  }, [dispatchCard]);
-
-  const setHighlightedCardIndex = useCallback((index) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
-  }, [dispatchCard]);
-
-  const setHighlightedSeat = useCallback((seat) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: seat });
-  }, [dispatchCard]);
-
-  const setHighlightedCardSlot = useCallback((slot) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: slot });
-  }, [dispatchCard]);
+  const selectCardForShowdown = useShowdownCardSelection(
+    highlightedSeat,
+    highlightedHoleSlot,
+    mySeat,
+    holeCards,
+    allPlayerCards,
+    communityCards,
+    seatActions,
+    isSeatInactive,
+    dispatchCard,
+    CONSTANTS.NUM_SEATS
+  );
 
   // Auto-select first action seat when street changes or card selector closes
   useEffect(() => {

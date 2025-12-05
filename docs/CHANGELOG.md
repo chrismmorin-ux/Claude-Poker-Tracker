@@ -1,6 +1,133 @@
 # Poker Tracker Change Log
 
-## v106 (Current) - State Management Refactoring ✅
+## v108 (Current) - Custom Hooks Extraction ✅
+
+### Summary
+- **Lines**: 967 → 620 lines main file (36% reduction)
+- **Architecture**: Extracted logic into custom hooks and constants
+- **New Files**: 8 files created (1 constants file + 7 custom hooks)
+- **Code Quality**: Eliminated all duplicate code, improved testability
+- **Net Reduction**: ~347 lines from main file, highly modular architecture
+
+### Key Changes
+- **Constants Extraction (v108a)**:
+  - Created `src/constants/gameConstants.js` - Centralized game configuration
+  - Extracted: ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, BETTING_STREETS, SEAT_ARRAY, SUITS, RANKS, SUIT_ABBREV, isFoldAction
+  - Removed 41 lines from main file
+
+- **Simple Hooks (v108b)**:
+  - Created `src/hooks/useActionUtils.js` - Action utility wrappers
+  - Created `src/hooks/useStateSetters.js` - State dispatcher wrappers
+  - Consolidated 16 wrapper functions into 2 hooks
+  - Removed 50 lines from main file
+
+- **Complex Hooks (v108c)**:
+  - Created `src/hooks/useSeatUtils.js` - Seat logic utilities
+  - Created `src/hooks/useSeatColor.js` - Seat color styling
+  - Created `src/hooks/useShowdownHandlers.js` - Showdown handlers
+  - Eliminated duplicate seat utility functions
+  - Removed 149 lines from main file
+
+- **Card Selection Hooks (v108d)**:
+  - Created `src/hooks/useCardSelection.js` - Regular card selection
+  - Created `src/hooks/useShowdownCardSelection.js` - Showdown card selection
+  - Extracted complex card selection logic
+  - Removed 107 lines from main file
+
+### Files Created
+1. `src/constants/gameConstants.js` (~57 lines) - Game constants and action definitions
+2. `src/hooks/useActionUtils.js` (~58 lines) - Action utility functions
+3. `src/hooks/useStateSetters.js` (~72 lines) - State setter functions
+4. `src/hooks/useSeatUtils.js` (~57 lines) - Seat-related utilities
+5. `src/hooks/useSeatColor.js` (~60 lines) - Seat color logic
+6. `src/hooks/useShowdownHandlers.js` (~99 lines) - Showdown handlers
+7. `src/hooks/useCardSelection.js` (~72 lines) - Card selection logic
+8. `src/hooks/useShowdownCardSelection.js` (~109 lines) - Showdown card selection
+
+### Files Modified
+- `src/PokerTracker.jsx` - Removed 347 lines, added hook imports and calls (967 → 620 lines)
+- `CLAUDE.md` - Updated architecture section with hooks directory
+- `docs/QUICK_REF.md` - Added hooks reference section
+- `docs/CHANGELOG.md` - This file
+
+### Technical Details
+- **Phased Implementation**: 4 phases (v108a → v108d) for safety and testability
+- **Hook Pattern**: All hooks use proper useCallback/useMemo with dependency arrays
+- **Dependency Injection**: Hooks receive state and constants as parameters
+- **No Breaking Changes**: Maintained exact same functionality and API
+
+### Architecture Improvements
+**Before v108:**
+```
+PokerTracker.jsx (967 lines)
+├── All constants, helpers, handlers, logic
+└── Imports: Reducers, Views, UI components, Utils
+```
+
+**After v108:**
+```
+PokerTracker.jsx (620 lines)
+├── Orchestrates state and views
+├── Minimal logic (just coordination)
+└── Imports: Constants, Hooks, Reducers, Views, UI
+
+New structure:
+├── src/constants/ - Centralized game configuration
+├── src/hooks/ - 7 custom hooks for component logic
+├── src/reducers/ - State management (unchanged)
+├── src/utils/ - Pure functions (unchanged)
+└── src/components/ - UI components (unchanged)
+```
+
+**Benefits:**
+- Clear separation of concerns
+- Highly testable (hooks can be tested independently)
+- Reusable (hooks can be used in other components)
+- Maintainable (single responsibility principle)
+- Scalable (easy to add new features)
+
+---
+
+## v107 - Utils Integration ✅
+
+### Summary
+- **Lines**: 1056 → ~920 lines main file (13% reduction)
+- **Architecture**: Connected existing utils, removed duplicates
+- **New File**: `src/utils/displayUtils.js` - Display formatting utilities
+- **Code Quality**: Eliminated 134 lines of duplicate helper functions
+- **Net Reduction**: ~51 lines across entire codebase
+
+### Key Changes
+- **New Utils File Created**:
+  - `displayUtils.js` - Display and formatting utilities (isRedCard, isRedSuit, getCardAbbreviation, getHandAbbreviation)
+- **Utils Integration**: Connected existing utils (actionUtils, cardUtils, seatUtils) to PokerTracker.jsx
+- **Removed Duplicates**:
+  - Deleted 134 lines of duplicate helper functions from PokerTracker.jsx (lines 122-255)
+  - Removed isRedSuit from ShowdownView.jsx and CardSelectorView.jsx
+  - Removed isRedCard from CardSlot.jsx
+- **Wrapper Pattern**: Added 6 useCallback wrappers to inject constants into utils functions
+- **Components Updated**: 4 files now import from utils (ShowdownView, CardSelectorView, CardSlot, PokerTracker)
+
+### Files Modified
+- `src/PokerTracker.jsx` - Added imports, removed duplicates, added wrappers (1056 → ~920 lines)
+- `src/utils/displayUtils.js` - **NEW** file (~50 lines)
+- `src/components/views/ShowdownView.jsx` - Import isRedSuit from utils
+- `src/components/views/CardSelectorView.jsx` - Import isRedSuit from utils
+- `src/components/ui/CardSlot.jsx` - Import isRedCard from utils
+- `CLAUDE.md` - Updated to v107 with utils documentation
+- `docs/QUICK_REF.md` - Added utils reference section
+- `docs/CHANGELOG.md` - This file
+
+### Technical Details
+- **Dependency Injection Pattern**: Utils accept constants as parameters instead of using closure
+- **Wrapper Functions**: `wrappedGetActionDisplayName`, `wrappedGetActionColor`, `wrappedGetSeatActionStyle`, `wrappedGetOverlayStatus`, `wrappedGetCardAbbreviation`, `wrappedGetHandAbbreviation`
+- **Import Pattern**:
+  - From PokerTracker.jsx: `import { func } from './utils/fileName'`
+  - From views/ui: `import { func } from '../../utils/fileName'`
+
+---
+
+## v106 - State Management Refactoring ✅
 
 ### Summary
 - **Lines**: 1088 → ~1000 lines main file

@@ -34,13 +34,37 @@ npm run build
 ```
 poker-tracker/
 ├── src/
-│   ├── PokerTracker.jsx    # Main component (single file)
-│   ├── main.jsx            # Entry point
-│   └── index.css           # Tailwind imports
+│   ├── PokerTracker.jsx         # Main component (~620 lines)
+│   ├── constants/
+│   │   └── gameConstants.js     # Game configuration
+│   ├── hooks/                   # Custom hooks (7 files)
+│   │   ├── useActionUtils.js
+│   │   ├── useStateSetters.js
+│   │   ├── useSeatUtils.js
+│   │   ├── useSeatColor.js
+│   │   ├── useShowdownHandlers.js
+│   │   ├── useCardSelection.js
+│   │   └── useShowdownCardSelection.js
+│   ├── reducers/                # State management (3 files)
+│   │   ├── gameReducer.js
+│   │   ├── uiReducer.js
+│   │   └── cardReducer.js
+│   ├── utils/                   # Utility functions (5 files)
+│   │   ├── actionUtils.js
+│   │   ├── cardUtils.js
+│   │   ├── seatUtils.js
+│   │   ├── displayUtils.js
+│   │   └── validation.js
+│   ├── components/
+│   │   ├── views/               # Full-screen views (4 files)
+│   │   └── ui/                  # Reusable UI (5 files)
+│   ├── main.jsx                 # Entry point
+│   └── index.css                # Tailwind imports
 ├── docs/
-│   ├── SPEC.md             # Complete specification
-│   ├── CHANGELOG.md        # Version history
-│   └── QUICK_REF.md        # Quick reference card
+│   ├── SPEC.md                  # Complete specification
+│   ├── CHANGELOG.md             # Version history
+│   └── QUICK_REF.md             # Quick reference card
+├── CLAUDE.md                    # Project context for AI
 ├── index.html
 ├── package.json
 ├── vite.config.js
@@ -50,22 +74,34 @@ poker-tracker/
 
 ## Version
 
-Current: v103 (All refactoring complete)
+Current: **v108** (Custom Hooks Extraction - 36% reduction)
+
+Previous versions:
+- v107: Utils integration
+- v106: State management refactoring (useReducer)
+- v105: Component extraction
+- v104: Mobile optimization
+- v103: Full refactoring
 
 ## Documentation
 
 See the `docs/` folder for:
-- **SPEC.md** - Complete specification (~3k tokens) - READ FIRST
-- **CHANGELOG.md** - Version history and changes
+- **SPEC.md** - Complete specification
+- **CHANGELOG.md** - Version history and changes (includes v108 details)
 - **QUICK_REF.md** - Fast reference for development
 
-## Development Notes
+Also see:
+- **CLAUDE.md** - Complete project context and architecture documentation
 
-- Single-file component architecture (~1957 lines)
-- All constants extracted to top of file
-- 11 helper functions outside component
-- 4 reusable UI components (CardSlot, PositionBadge, etc.)
-- Debug mode: Set `DEBUG = false` at line 8 to disable logging
+## Architecture Highlights
+
+- **Modular design**: Main component reduced from 967 to 620 lines (36%)
+- **Custom hooks**: 7 hooks encapsulate component logic
+- **State management**: 3 useReducer hooks (game, UI, card state)
+- **Pure utilities**: 5 utility modules for reusable functions
+- **Component library**: 9 reusable components (4 views + 5 UI)
+- **Constants**: Centralized game configuration
+- **Debug mode**: Set `DEBUG = false` in PokerTracker.jsx to disable logging
 
 ## License
 

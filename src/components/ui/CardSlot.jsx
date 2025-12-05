@@ -1,11 +1,5 @@
 import React from 'react';
-
-// Helper function to determine if a card is red
-const isRedCard = (card) => {
-  if (!card) return false;
-  const suit = card.slice(-1);
-  return suit === '♥' || suit === '♦';
-};
+import { isRedCard } from '../../utils/displayUtils';
 
 /**
  * CardSlot - Reusable card display component

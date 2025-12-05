@@ -1,21 +1,61 @@
-# ⚡ QUICK REFERENCE CARD - Poker Tracker v104
+# ⚡ QUICK REFERENCE CARD - Poker Tracker v108
 
 ## 🎯 ESSENTIAL INFO
-- **Version**: v104 (Mobile Optimized + Responsive Scaling ✅)
-- **File**: src/PokerTracker.jsx (~2000 lines)
+- **Version**: v108 (Custom Hooks Extraction ✅)
+- **Main File**: src/PokerTracker.jsx (~620 lines - 36% reduction!)
+- **Constants**: src/constants/ (gameConstants.js)
+- **Hooks**: src/hooks/ (7 custom hooks)
+- **Utils**: src/utils/ (5 files: actionUtils, cardUtils, seatUtils, displayUtils, validation)
 
 ## 📖 MUST-READ DOCS
 1. **POKER_TRACKER_SPEC_V103.md** ⭐ (3k tokens) - READ FIRST
-2. **CHANGELOG_v103.md** (2k tokens) - What changed
-3. **PROJECT_SUMMARY.md** (2k tokens) - Quick overview
+2. **CHANGELOG.md** (Latest changes including v108)
+3. **CLAUDE.md** (Complete architecture documentation)
 
-## 🏗️ CODE ORGANIZATION
+## 🏗️ CODE ORGANIZATION (v108)
 ```
-Lines 1-10:      Imports + Debug (DEBUG flag, log helper)
-Lines 11-107:    Constants (CONSTANTS, ACTIONS, SEAT_ARRAY)
-Lines 109-242:   Helper Functions (11 pure functions)
-Lines 244-408:   UI Components (PositionBadge, CardSlot, etc.)
-Lines 410+:      Main Component (includes responsive scaling hook)
+src/PokerTracker.jsx (~620 lines):
+  Lines 1-45:      Imports (React, icons, components, reducers, utils, hooks, constants)
+  Lines 47-92:     Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
+  Lines 94-179:    Main Component (reducers, hooks, handlers, view rendering)
+  Note: All game constants and complex logic extracted to hooks
+
+src/constants/ (1 file) - NEW in v108:
+  gameConstants.js     ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.
+
+src/hooks/ (7 files) - NEW in v108:
+  useActionUtils.js        Action utility wrappers (6 functions)
+  useStateSetters.js       State dispatcher wrappers (10 functions)
+  useSeatUtils.js          Seat logic utilities (5 functions)
+  useSeatColor.js          Seat color styling
+  useShowdownHandlers.js   Showdown handlers (6 handlers)
+  useCardSelection.js      Card selection logic
+  useShowdownCardSelection.js Showdown card selection
+
+src/utils/ (5 files):
+  actionUtils.js       Action styling, display, overlays
+  cardUtils.js         Card assignment and manipulation
+  seatUtils.js         Seat navigation and positioning
+  displayUtils.js      Display formatting
+  validation.js        Input validation
+
+src/reducers/ (3 files):
+  gameReducer.js       Game state (street, dealer, actions)
+  uiReducer.js         UI state (view, selection, context menu)
+  cardReducer.js       Card state (community, hole, showdown)
+
+src/components/views/ (4 files):
+  TableView.jsx        Main poker table (~326 lines)
+  StatsView.jsx        Statistics display (~264 lines)
+  CardSelectorView.jsx Card selection (~178 lines)
+  ShowdownView.jsx     Showdown interface (~485 lines)
+
+src/components/ui/ (5 files):
+  CardSlot.jsx         Card display with 4 variants
+  VisibilityToggle.jsx Show/hide button
+  PositionBadge.jsx    D, SB, BB, ME indicators
+  DiagonalOverlay.jsx  FOLD/ABSENT/MUCK/WON overlays
+  ScaledContainer.jsx  Responsive scaling wrapper
 ```
 
 ## 📱 RESPONSIVE DESIGN (v104)
@@ -84,18 +124,39 @@ Lines 410+:      Main Component (includes responsive scaling hook)
 | 4bet/Donk/CR | Orange |
 | Limp/Muck | Gray |
 
-## 📦 HELPER FUNCTIONS
+## 🔧 UTILS REFERENCE (v107)
+
+### Import Patterns
+```javascript
+// From PokerTracker.jsx:
+import { funcName } from './utils/fileName';
+
+// From views/ or ui/:
+import { funcName } from '../../utils/fileName';
+```
+
+### Common Utils
+**actionUtils**: `getActionDisplayName`, `getActionColor`, `getSeatActionStyle`, `getOverlayStatus`
+**displayUtils**: `isRedCard`, `isRedSuit`, `getCardAbbreviation`, `getHandAbbreviation`
+**cardUtils**: `assignCardToSlot`, `findNextEmptySlot`, `shouldAutoCloseCardSelector`
+**seatUtils**: `getSmallBlindSeat`, `getBigBlindSeat`, `getFirstActionSeat`, `getNextActionSeat`
+**validation**: `isValidSeat`, `isValidCard`, `isValidStreet`, `isValidAction`
+
+### Helper Functions (PokerTracker.jsx only)
 | Function | Purpose |
 |----------|---------|
 | `log()` | Debug logging with prefix |
-| `isFoldAction(action)` | Check if fold |
-| `isRedCard(card)` | Check if hearts/diamonds |
-| `getCardAbbreviation(card)` | A♥ → Ah |
-| `getHandAbbreviation(cards)` | Cards → AhTd |
-| `getActionDisplayName(action)` | Action → display name |
-| `getActionColor(action)` | Action → Tailwind (showdown) |
-| `getSeatActionStyle(action)` | Action → {bg, ring} (table) |
-| `getOverlayStatus(...)` | Determine overlay status |
+| `isFoldAction(action)` | Check if fold (used by utils) |
+
+### Wrapped Utils (with constants injected)
+| Wrapper | Original Utils Function |
+|---------|------------------------|
+| `wrappedGetActionDisplayName` | `getActionDisplayName(action, isFoldAction, ACTIONS)` |
+| `wrappedGetActionColor` | `getActionColor(action, isFoldAction, ACTIONS)` |
+| `wrappedGetSeatActionStyle` | `getSeatActionStyle(action, isFoldAction, ACTIONS)` |
+| `wrappedGetOverlayStatus` | `getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)` |
+| `wrappedGetCardAbbreviation` | `getCardAbbreviation(card, SUIT_ABBREV)` |
+| `wrappedGetHandAbbreviation` | `getHandAbbreviation(cards, SUIT_ABBREV)` |
 
 ## 🎬 EVENT HANDLERS
 | Handler | Purpose |
@@ -113,14 +174,20 @@ Lines 410+:      Main Component (includes responsive scaling hook)
 - ✅ v102: Constants extraction
 - ✅ v103: Full refactoring (12.1% reduction)
 - ✅ v104: Mobile landscape optimization, responsive scaling, card selector improvements
+- ✅ v105: Component extraction (views and UI components modularized)
+- ✅ v106: State management refactoring with useReducer
+- ✅ v107: Utils integration - connected existing utils, removed duplicates
 
 ## 📊 FILE STATS
-| Version | Lines | Change |
-|---------|-------|--------|
+| Version | Main File Lines | Change |
+|---------|----------------|--------|
 | v101 | ~2063 | baseline |
 | v102 | 2228 | +165 |
 | v103 | 1958 | -270 (12.1%) |
 | v104 | ~2000 | +42 (responsive features) |
+| v105 | 1088 | -912 (45.6%, extracted components) |
+| v106 | 1056 | -32 (3.0%, useReducer) |
+| v107 | ~920 | -136 (12.9%, utils integration) |
 
 ## 🐛 DEBUG
 - Set `DEBUG = false` at line 8 to disable logging

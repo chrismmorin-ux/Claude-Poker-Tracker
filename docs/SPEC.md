@@ -1,9 +1,9 @@
-# Poker Tracker Specification - v104
+# Poker Tracker Specification - v108
 
-## Version: v104 (Mobile Optimized + Responsive Scaling)
-## Last Updated: 2025-12-01
-## File: src/PokerTracker.jsx
-## Lines: ~2000
+## Version: v108 (Custom Hooks Extraction - Modular Architecture)
+## Last Updated: 2025-12-05
+## Main File: src/PokerTracker.jsx (~620 lines)
+## Total Project: 8 new files (constants + 7 hooks) + existing architecture
 
 ---
 
@@ -28,19 +28,88 @@
 
 ---
 
-## CODE ORGANIZATION (Lines)
+## CODE ORGANIZATION (v108 Modular Architecture)
 
+### Main File: src/PokerTracker.jsx (~620 lines)
 ```
-1-10:       Imports + Debug setup (DEBUG flag, log helper)
-11-107:     Constants (CONSTANTS, ACTIONS, SEAT_ARRAY, etc.)
-109-242:    Helper Functions (11 pure functions)
-244-408:    Extracted UI Components (4 components)
-410+:       Main Component (includes responsive scaling hook - v104)
+Lines 1-45:      Imports (React, icons, components, reducers, utils, hooks, constants)
+Lines 47-92:     Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
+Lines 94-179:    Main Component (reducers, hooks, handlers, view rendering)
+```
+
+### New Files (v108):
+```
+src/constants/
+└── gameConstants.js (~57 lines)     # Game configuration constants
+
+src/hooks/
+├── useActionUtils.js (~58 lines)    # Action utility wrappers
+├── useStateSetters.js (~72 lines)   # State dispatcher wrappers
+├── useSeatUtils.js (~57 lines)      # Seat logic utilities
+├── useSeatColor.js (~60 lines)      # Seat color styling
+├── useShowdownHandlers.js (~99 lines) # Showdown handlers
+├── useCardSelection.js (~72 lines)  # Card selection logic
+└── useShowdownCardSelection.js (~109 lines) # Showdown card selection
+
+src/reducers/
+├── gameReducer.js                   # Game state management
+├── uiReducer.js                     # UI state management
+└── cardReducer.js                   # Card state management
+
+src/utils/
+├── actionUtils.js                   # Action styling and display
+├── cardUtils.js                     # Card manipulation
+├── seatUtils.js                     # Seat navigation
+├── displayUtils.js                  # Display formatting
+└── validation.js                    # Input validation
+
+src/components/
+├── views/                           # Full-screen views
+│   ├── TableView.jsx (~326 lines)
+│   ├── StatsView.jsx (~264 lines)
+│   ├── CardSelectorView.jsx (~178 lines)
+│   └── ShowdownView.jsx (~485 lines)
+└── ui/                              # Reusable UI components
+    ├── CardSlot.jsx
+    ├── VisibilityToggle.jsx
+    ├── PositionBadge.jsx
+    ├── DiagonalOverlay.jsx
+    └── ScaledContainer.jsx
 ```
 
 ---
 
-## CONSTANTS (Lines 11-107)
+## CONSTANTS
+
+### Game Constants (src/constants/gameConstants.js)
+All centralized game configuration:
+
+```javascript
+ACTIONS = {
+  FOLD, LIMP, CALL, OPEN, THREE_BET, FOUR_BET,
+  CBET_IP_SMALL, CBET_IP_LARGE, CBET_OOP_SMALL, CBET_OOP_LARGE,
+  CHECK, FOLD_TO_CR, DONK, STAB, CHECK_RAISE, FOLD_TO_CBET,
+  MUCKED, WON
+  // ... 25 total actions
+}
+
+FOLD_ACTIONS = [ACTIONS.FOLD, ACTIONS.FOLD_TO_CR, ACTIONS.FOLD_TO_CBET]
+SEAT_STATUS = { FOLDED: 'folded', ABSENT: 'absent' }
+SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9]      // For iteration
+
+STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown']
+BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']  // Excludes showdown
+
+SUITS = ['♠', '♥', '♦', '♣']
+RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
+SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' }
+
+// Helper function
+isFoldAction = (action) => FOLD_ACTIONS.includes(action)
+```
+
+### UI Constants (src/PokerTracker.jsx)
+UI-specific configuration:
 
 ```javascript
 // Debug
@@ -70,62 +139,104 @@ CONSTANTS = {
 }
 
 SEAT_POSITIONS = [{ seat: 1-9, x: %, y: % }]  // 9 positions
-SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9]      // For iteration
-
-STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown']
-BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']  // Excludes showdown
-
 SCREEN = { TABLE: 'table', STATS: 'stats' }
-
-SUITS = ['♠', '♥', '♦', '♣']
-RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
-SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' }
-
-ACTIONS = {
-  FOLD, LIMP, CALL, OPEN, THREE_BET, FOUR_BET,
-  CBET_IP_SMALL, CBET_IP_LARGE, CBET_OOP_SMALL, CBET_OOP_LARGE,
-  CHECK, FOLD_TO_CR, DONK, STAB, CHECK_RAISE, FOLD_TO_CBET,
-  MUCKED, WON
-}
-
-FOLD_ACTIONS = [ACTIONS.FOLD, ACTIONS.FOLD_TO_CR, ACTIONS.FOLD_TO_CBET]
-SEAT_STATUS = { FOLDED: 'folded', ABSENT: 'absent' }
 ```
 
 ---
 
-## HELPER FUNCTIONS (Lines 109-242)
+## CUSTOM HOOKS (src/hooks/)
 
-### Pure Functions (Outside Component)
-| Function | Purpose |
-|----------|---------|
-| `isFoldAction(action)` | Returns true if action is any fold type |
-| `isRedCard(card)` | Returns true if card is hearts/diamonds |
-| `isRedSuit(suit)` | Returns true if suit is ♥ or ♦ |
-| `createEmptyPlayerCards()` | Returns `{ 1: ['',''], 2: ['',''], ... 9: ['',''] }` |
-| `getCardAbbreviation(card)` | "A♥" → "Ah" |
-| `getHandAbbreviation(cards)` | ["A♥", "T♦"] → "AhTd" |
-| `getActionDisplayName(action)` | ACTIONS.FOLD → 'fold' |
-| `getActionColor(action)` | Returns Tailwind classes for showdown summary |
-| `getSeatActionStyle(action)` | Returns `{bg, ring}` for table seat styling |
-| `getOverlayStatus(inactive, mucked, won)` | Determines DiagonalOverlay status |
-| `log(...args)` | Debug logging with [PokerTracker] prefix |
+### useActionUtils.js
+Action utility functions (wraps utils with constants):
+- `getActionDisplayName(action)` - ACTIONS.FOLD → 'fold'
+- `getActionColor(action)` - Tailwind classes for showdown summary
+- `getSeatActionStyle(action)` - Returns `{bg, ring}` for table seat styling
+- `getOverlayStatus(inactive, mucked, won)` - DiagonalOverlay status
+- `getCardAbbreviation(card)` - "A♥" → "Ah"
+- `getHandAbbreviation(cards)` - ["A♥", "T♦"] → "AhTd"
+
+### useStateSetters.js
+State dispatcher wrappers (10 functions):
+- `setCurrentScreen(screen)` - Set view (TABLE/STATS)
+- `setContextMenu(menu)` - Set context menu
+- `setSelectedPlayers(players)` - Set selected seats
+- `setHoleCardsVisible(visible)` - Toggle hole cards
+- `setCurrentStreet(street)` - Set current street
+- `setDealerSeat(seat)` - Set dealer button
+- `setCardSelectorType(type)` - Set card selector type
+- `setHighlightedCardIndex(index)` - Highlight community card
+- `setHighlightedSeat(seat)` - Highlight seat in showdown
+- `setHighlightedCardSlot(slot)` - Highlight hole card slot
+
+### useSeatUtils.js
+Seat logic utilities (wraps utils):
+- `getSmallBlindSeat()` - Calculate SB seat
+- `getBigBlindSeat()` - Calculate BB seat
+- `hasSeatFolded(seat)` - Check if seat folded
+- `getFirstActionSeat()` - Get first seat to act
+- `getNextActionSeat(fromSeat)` - Get next seat to act
+
+### useSeatColor.js
+Seat color styling:
+- `getSeatColor(seat)` - Returns `{bg, ring}` for seat based on status/action
+
+### useShowdownHandlers.js
+Showdown-specific handlers (6 functions):
+- `handleClearShowdownCards()` - Clear all player cards
+- `handleMuckSeat(seat)` - Mark seat as mucked + advance
+- `handleWonSeat(seat)` - Mark seat as winner + advance
+- `handleNextHandFromShowdown()` - Close showdown + next hand
+- `handleCloseShowdown()` - Close showdown view
+- `handleCloseCardSelector()` - Close card selector
+
+### useCardSelection.js
+Regular card selection logic:
+- `selectCard(card)` - Handle card selection with auto-advance
+
+### useShowdownCardSelection.js
+Showdown card selection logic:
+- `selectCardForShowdown(card)` - Complex multi-player card selection with auto-advance
 
 ---
 
-## EXTRACTED UI COMPONENTS (Lines 244-408)
+## UTILITY FUNCTIONS (src/utils/)
 
-### BADGE_CONFIG
-```javascript
-BADGE_CONFIG = {
-  dealer: { bg: 'bg-white', border: 'border-gray-800', text: 'text-black', label: 'D' },
-  sb: { bg: 'bg-blue-400', border: 'border-blue-600', text: 'text-white', label: 'SB' },
-  bb: { bg: 'bg-red-400', border: 'border-red-600', text: 'text-white', label: 'BB' },
-  me: { bg: 'bg-purple-500', border: 'border-purple-700', text: 'text-white', label: 'ME' },
-}
-```
+### actionUtils.js
+- `getActionDisplayName(action, isFoldAction, ACTIONS)` - Action to display name
+- `getActionColor(action, isFoldAction, ACTIONS)` - Action to Tailwind classes
+- `getSeatActionStyle(action, isFoldAction, ACTIONS)` - Seat styling
+- `getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)` - Overlay status
 
-### PositionBadge - 11 uses
+### displayUtils.js
+- `isRedCard(card)` - Check if card is red (♥ or ♦)
+- `isRedSuit(suit)` - Check if suit is red
+- `getCardAbbreviation(card, SUIT_ABBREV)` - Card to abbreviation
+- `getHandAbbreviation(cards, SUIT_ABBREV)` - Cards to abbreviation
+
+### cardUtils.js
+- `assignCardToSlot(cards, card, targetSlot)` - Card assignment
+- `findNextEmptySlot(...)` - Find next empty showdown slot
+- `shouldAutoCloseCardSelector(currentStreet, highlightedIndex)` - Auto-close logic
+
+### seatUtils.js
+- `getSmallBlindSeat(dealerSeat, absentSeats, numSeats)` - Calculate SB
+- `getBigBlindSeat(dealerSeat, absentSeats, numSeats)` - Calculate BB
+- `getFirstActionSeat(...)` - First seat to act
+- `getNextActionSeat(...)` - Next seat to act
+
+### validation.js
+- `isValidCard(card)` - Validate card string
+- `isValidSeat(seat, numSeats)` - Validate seat number
+- `isValidAction(action, ACTIONS)` - Validate action
+
+---
+
+## UI COMPONENTS (src/components/ui/)
+
+All reusable UI components extracted to separate files:
+
+### PositionBadge.jsx
+Position indicators for dealer, blinds, and player seat.
 ```jsx
 <PositionBadge
   type="dealer|sb|bb|me"     // Required: which badge type
@@ -135,7 +246,8 @@ BADGE_CONFIG = {
 />
 ```
 
-### VisibilityToggle - 4 uses
+### VisibilityToggle.jsx
+Show/hide toggle button for hole cards.
 ```jsx
 <VisibilityToggle
   visible={boolean}           // Required: current visibility state
@@ -144,14 +256,16 @@ BADGE_CONFIG = {
 />
 ```
 
-### DiagonalOverlay - 2 uses
+### DiagonalOverlay.jsx
+Status overlays for folded/absent/mucked/won seats.
 ```jsx
 <DiagonalOverlay
   status={SEAT_STATUS.FOLDED|SEAT_STATUS.ABSENT|'mucked'|'won'|null}
 />
 ```
 
-### CardSlot - 23 uses
+### CardSlot.jsx
+Universal card display component with 4 variants.
 ```jsx
 <CardSlot
   card={string|null}          // Card like "A♥" or null
@@ -172,11 +286,20 @@ BADGE_CONFIG = {
 | `showdown` | 50px | 70px | Showdown view cards |
 | `selector` | 60px | 85px | Card selector slots |
 
+### ScaledContainer.jsx
+Responsive scaling wrapper for viewport adaptation.
+```jsx
+<ScaledContainer scale={number}>
+  {children}
+</ScaledContainer>
+```
+
 ---
 
-## EVENT HANDLERS (Inside Component)
+## EVENT HANDLERS
 
-### Extracted Handlers
+### From Hooks (useShowdownHandlers.js)
+These handlers are provided by the `useShowdownHandlers` hook:
 | Handler | Purpose |
 |---------|---------|
 | `handleNextHandFromShowdown` | Close showdown + advance to next hand |
@@ -185,10 +308,9 @@ BADGE_CONFIG = {
 | `handleCloseCardSelector` | Close card selector |
 | `handleMuckSeat(seat)` | Mark seat as mucked + advance |
 | `handleWonSeat(seat)` | Mark seat as winner + advance |
-| `handleSetMySeat(seat)` | Set my seat position |
-| `advanceToNextActiveSeat(fromSeat)` | Helper: advance to next active seat |
 
-### Other Key Handlers
+### Main Component Handlers (PokerTracker.jsx)
+These handlers are defined directly in the main component:
 | Handler | Purpose |
 |---------|---------|
 | `handleDealerDragStart/Drag/End` | Dealer button drag-and-drop |
@@ -200,33 +322,50 @@ BADGE_CONFIG = {
 | `nextStreet` | Advance to next street |
 | `nextHand` | Start new hand (preserves absent) |
 | `resetHand` | Full reset (clears everything) |
+| `handleSetMySeat(seat)` | Set my seat position |
 
 ---
 
-## STATE VARIABLES
+## STATE MANAGEMENT (useReducer Pattern)
 
+State is managed by three specialized reducers (v106+):
+
+### gameReducer (src/reducers/gameReducer.js)
+Game-related state:
+```javascript
+currentStreet: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown'
+dealerButtonSeat: number  // 1-9
+mySeat: number  // 1-9
+seatActions: { [street]: { [seat]: ACTIONS.* } }
+absentSeats: number[]
+```
+
+### uiReducer (src/reducers/uiReducer.js)
+UI-related state:
 ```javascript
 currentView: SCREEN.TABLE | SCREEN.STATS
 selectedPlayers: number[]
-currentStreet: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown'
-mySeat: number  // 1-9
-dealerButtonSeat: number  // 1-9
-holeCardsVisible: boolean
-isDraggingDealer: boolean
-seatActions: { [street]: { [seat]: ACTIONS.* } }
 contextMenu: { x, y, seat } | null
-absentSeats: number[]
-communityCards: string[]  // Length 5
-holeCards: string[]  // Length 2
+isDraggingDealer: boolean
+holeCardsVisible: boolean
 showCardSelector: boolean
 cardSelectorType: 'community' | 'hole'
+scale: number  // Dynamic viewport scale (v104)
+```
+
+### cardReducer (src/reducers/cardReducer.js)
+Card-related state:
+```javascript
+communityCards: string[]  // Length 5
+holeCards: string[]  // Length 2
 highlightedBoardIndex: number | null  // 0-4 for community cards
 isShowdownViewOpen: boolean
 allPlayerCards: { 1: ['',''], ..., 9: ['',''] }
 highlightedSeat: number | null  // 1-9
 highlightedHoleSlot: 0 | 1 | null
-scale: number  // Dynamic viewport scale (v104)
 ```
+
+All state updates use dispatch actions (e.g., `dispatchGame`, `dispatchUi`, `dispatchCard`).
 
 ---
 
@@ -299,15 +438,36 @@ scale: number  // Dynamic viewport scale (v104)
 ## DEVELOPMENT NOTES
 
 ### Debug Mode
-Set `DEBUG = false` at line 8 to disable all console logging.
+Set `DEBUG = false` in `src/PokerTracker.jsx` to disable all console logging.
 
 ### Token Efficiency
-1. Read THIS spec first (~3k tokens)
-2. Only read .tsx if making code changes (~50k tokens)
-3. Use str_replace for changes < 100 lines
-4. Update CHANGELOG after every change
+1. Read THIS spec first (~4k tokens)
+2. Read specific files as needed (main file is only ~620 lines now!)
+3. Use Edit tool for targeted changes
+4. Update CHANGELOG.md after version changes
 
-### Code Organization
-- Single file: poker_tracker_wireframes_v103.tsx
-- ~1958 lines (down from 2228 in v102)
-- All refactoring complete ✅
+### Code Organization (v108)
+**Modular Architecture:**
+- Main file: `src/PokerTracker.jsx` (~620 lines)
+- Constants: `src/constants/gameConstants.js` (~57 lines)
+- Hooks: `src/hooks/` (7 files, ~584 total lines)
+- Reducers: `src/reducers/` (3 files)
+- Utils: `src/utils/` (5 files)
+- Components: `src/components/` (9 files: 4 views + 5 UI)
+
+**Total reduction from v101:** 2063 → 620 lines main file (70% reduction)
+
+### Adding New Features
+- **New action**: Update `gameConstants.js`, then `actionUtils.js`
+- **New handler**: Add to appropriate hook or main component
+- **New state**: Update appropriate reducer (game/ui/card)
+- **New UI component**: Create in `src/components/ui/`
+- **New utility**: Add to appropriate file in `src/utils/`
+
+### Version History
+- v101-v103: Refactoring and constants extraction
+- v104: Mobile optimization and responsive scaling
+- v105: Component extraction (views and UI)
+- v106: State management with useReducer
+- v107: Utils integration and display utilities
+- **v108: Custom hooks extraction (current)** ✅

@@ -1,0 +1,322 @@
+# Poker Tracker - Cursor Rules
+
+## 🎯 Project Overview
+React-based poker hand tracker for live 9-handed games.
+Current version: v108 (Modular architecture with custom hooks)
+Main file: src/PokerTracker.jsx (~620 lines)
+
+---
+
+## 📚 Documentation Workflow
+
+### ALWAYS Update Documentation When:
+1. **Adding/removing files** → Update README.md, CLAUDE.md, QUICK_REF.md
+2. **Changing architecture** → Update CLAUDE.md, SPEC.md
+3. **Adding features** → Update CHANGELOG.md, SPEC.md
+4. **Modifying constants** → Update QUICK_REF.md
+5. **Creating hooks/utils** → Update CLAUDE.md, QUICK_REF.md, SPEC.md
+6. **Version changes** → Update ALL docs (CHANGELOG, CLAUDE, QUICK_REF, README, SPEC)
+
+### Documentation Files Reference:
+- **CHANGELOG.md** - Version history, what changed, line counts, files created/modified
+- **CLAUDE.md** - Complete architecture, how to work with the codebase
+- **QUICK_REF.md** - Fast reference for common patterns and locations
+- **SPEC.md** - Complete specification with constants, hooks, components
+- **README.md** - Project overview, getting started, architecture highlights
+
+### Documentation Update Checklist:
+After making changes, check:
+- [ ] Does CHANGELOG.md need a new entry?
+- [ ] Does CLAUDE.md architecture section need updating?
+- [ ] Does QUICK_REF.md need new line numbers or patterns?
+- [ ] Does SPEC.md need updated constants/hooks/components?
+- [ ] Does README.md version or structure need updating?
+
+---
+
+## 🔄 Git Workflow
+
+### Prompt for Commit When:
+1. **Completed a logical unit of work** (e.g., extracted a hook, added a feature)
+2. **All tests pass** (run `npm run dev` and verify app loads)
+3. **Documentation is updated** (see checklist above)
+4. **File changes are cohesive** (related changes, not mixed concerns)
+
+### Commit Message Format:
+```
+<type>: <description>
+
+<optional body>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Types:** feat, fix, refactor, docs, chore, test, style
+
+### Before Every Commit:
+1. ✅ Run `npm run dev` - verify app loads without errors
+2. ✅ Test all 4 views (Table, Stats, Card Selector, Showdown)
+3. ✅ Check console for errors
+4. ✅ Verify documentation is updated
+5. ✅ Review git diff for unintended changes
+
+### Multi-Phase Work:
+- Commit after each logical phase (e.g., v108a, v108b, v108c, v108d)
+- Each phase should leave app in working state
+- Document phase completion in commit message
+
+---
+
+## 🏗️ Architecture Principles
+
+### File Organization (v108):
+```
+src/
+├── constants/          # Game configuration (ACTIONS, STREETS, etc.)
+├── hooks/              # Custom hooks (logic extraction)
+├── reducers/           # State management (game, ui, card)
+├── utils/              # Pure utility functions
+└── components/
+    ├── views/          # Full-screen views (Table, Stats, etc.)
+    └── ui/             # Reusable UI components
+```
+
+### When to Create New Files:
+- **Hook**: Extracting complex logic from components (>40 lines)
+- **Util**: Pure function used in multiple places
+- **Component**: Reusable UI element used 2+ times
+- **Reducer**: New domain of state (beyond game/ui/card)
+- **Constant**: Shared configuration across files
+
+### Separation of Concerns:
+- **Constants** = Configuration (no logic)
+- **Utils** = Pure functions (no side effects, no React)
+- **Hooks** = React logic with side effects (useCallback, useMemo)
+- **Reducers** = State management (actions, state updates)
+- **Components** = UI rendering (props, JSX)
+
+---
+
+## ⚛️ React Best Practices
+
+### Custom Hooks:
+- ✅ Prefix with `use` (useCardSelection, useSeatColor)
+- ✅ Use `useCallback` for functions passed as props
+- ✅ Use `useMemo` for expensive calculations
+- ✅ Document dependencies in dependency arrays
+- ✅ Return objects or single values (not arrays unless destructured)
+
+### Component Patterns:
+- ✅ Extract to separate file when >80 lines
+- ✅ Props over state when possible
+- ✅ Destructure props in function signature
+- ✅ Use PropTypes or TypeScript (future)
+- ✅ Keep components focused (single responsibility)
+
+### State Management:
+- ✅ Use `useReducer` for complex state (multiple related values)
+- ✅ Group related state in same reducer
+- ✅ Use action constants (never hardcoded strings)
+- ✅ Immutable updates (spread operators, no mutations)
+
+### Performance:
+- ✅ `useCallback` for event handlers passed to children
+- ✅ `useMemo` for expensive calculations
+- ✅ Avoid inline functions in JSX when possible
+- ✅ Minimize re-renders (proper dependencies)
+
+---
+
+## 📝 Code Style
+
+### Naming Conventions:
+- **Components**: PascalCase (TableView, CardSlot)
+- **Hooks**: camelCase with `use` prefix (useCardSelection)
+- **Utils**: camelCase (getActionColor, isRedCard)
+- **Constants**: UPPER_SNAKE_CASE (ACTIONS, SEAT_STATUS)
+- **Variables**: camelCase (currentStreet, dealerButtonSeat)
+- **Handlers**: handleXyz (handleMuckSeat, handleCloseShowdown)
+
+### Import Order:
+1. React imports
+2. Third-party libraries
+3. Constants
+4. Hooks
+5. Reducers
+6. Utils
+7. Components (UI, then Views)
+8. Styles/CSS
+
+### Code Organization in Files:
+1. Imports
+2. Constants (file-specific)
+3. Helper functions (if needed)
+4. Main component/hook/util
+5. Exports
+
+---
+
+## 🎨 Project-Specific Patterns
+
+### Constants (src/constants/gameConstants.js):
+- ✅ Use `ACTIONS.*` for all action types (never hardcoded strings)
+- ✅ Use `SEAT_ARRAY` for iteration (not `[1,2,3,4,5,6,7,8,9]`)
+- ✅ Use `CONSTANTS.NUM_SEATS` for limits (not hardcoded `9`)
+- ✅ Export `isFoldAction` helper with constants
+
+### Utility Functions (src/utils/):
+- ✅ Pure functions (no side effects)
+- ✅ Accept constants as parameters (dependency injection)
+- ✅ Single responsibility
+- ✅ Wrap with hooks when used in components
+
+### Custom Hooks Patterns:
+- ✅ **Action Utils**: Wrap utils with constants injected
+- ✅ **State Setters**: Wrap reducers with dispatch functions
+- ✅ **Seat Utils**: Seat calculation and navigation
+- ✅ **Seat Color**: Complex color logic extraction
+- ✅ **Showdown Handlers**: Showdown-specific event handlers
+- ✅ **Card Selection**: Card selection logic with auto-advance
+
+### Reducer Actions:
+- ✅ Use action constants from reducer files
+- ✅ Payload object for data (consistent structure)
+- ✅ Dispatch pattern: `dispatch({ type: ACTION, payload: data })`
+
+---
+
+## 🧪 Testing Workflow
+
+### After Every Code Change:
+1. Run `npm run dev`
+2. Verify app loads without console errors
+3. Test affected functionality
+4. Test all 4 views if changing shared code
+
+### Full Integration Test Checklist:
+- [ ] Set dealer button, select mySeat
+- [ ] Record preflop actions (fold, call, raise)
+- [ ] Advance to flop, select 3 community cards
+- [ ] Record flop actions
+- [ ] Advance to turn/river
+- [ ] Enter showdown, assign player cards
+- [ ] Mark players as mucked/won
+- [ ] Complete hand, advance to next hand
+- [ ] Test edge cases (absent seats, all fold preflop)
+
+---
+
+## 🚫 What NOT to Do
+
+### Code Anti-Patterns:
+- ❌ Hardcoded action strings (use `ACTIONS.*`)
+- ❌ Hardcoded seat arrays `[1,2,3,4,5,6,7,8,9]` (use `SEAT_ARRAY`)
+- ❌ Hardcoded seat limits `<= 9` (use `CONSTANTS.NUM_SEATS`)
+- ❌ Inline component definitions (extract to files)
+- ❌ Direct state mutations (always use spread/immutable updates)
+- ❌ Missing dependency arrays in `useCallback`/`useMemo`
+- ❌ Duplicate code across files (extract to utils/hooks)
+
+### Documentation Anti-Patterns:
+- ❌ Making changes without updating docs
+- ❌ Outdated line numbers in QUICK_REF
+- ❌ Missing version entries in CHANGELOG
+- ❌ Inconsistent terminology across docs
+
+### Git Anti-Patterns:
+- ❌ Committing broken code
+- ❌ Mixing unrelated changes in one commit
+- ❌ Committing without testing
+- ❌ Vague commit messages
+
+---
+
+## 🔧 Debugging
+
+### Debug Mode:
+Set `DEBUG = true` in `src/PokerTracker.jsx` to enable logging.
+All logs prefixed with `[PokerTracker]`.
+
+### Common Issues:
+| Problem | Solution |
+|---------|----------|
+| White screen | Check console for syntax errors |
+| Action not recording | Verify using `ACTIONS.*` constant |
+| Colors wrong | Check `getActionColor`/`getSeatActionStyle` |
+| Card not showing | Verify `CardSlot` props |
+| Hook error | Check dependency arrays |
+| State not updating | Verify reducer dispatch with correct action |
+
+---
+
+## 📦 Refactoring Guidelines
+
+### When to Refactor:
+- Function > 50 lines → Extract helper or hook
+- Component > 150 lines → Extract sub-components
+- Duplicate code (2+ places) → Extract to util/hook
+- Complex logic in component → Extract to hook
+- Magic numbers/strings → Extract to constants
+
+### Refactoring Process:
+1. **Plan**: Identify what to extract and where it goes
+2. **Extract**: Create new file with extracted code
+3. **Integrate**: Update main file to use extraction
+4. **Test**: Verify app works identically
+5. **Document**: Update all relevant docs
+6. **Commit**: Create commit with clear message
+
+### Phased Refactoring:
+- Break large refactors into phases (like v108a-d)
+- Each phase = working state + commit
+- Test after each phase
+- Document each phase in CHANGELOG
+
+---
+
+## 🎯 When in Doubt
+
+1. **Read the docs first**: SPEC.md → CLAUDE.md → QUICK_REF.md
+2. **Follow existing patterns**: Look at similar files
+3. **Test thoroughly**: All 4 views after changes
+4. **Update documentation**: Keep it current
+5. **Ask for commit**: Better safe than sorry
+6. **Small commits**: Easier to review and rollback
+
+---
+
+## 🚀 Quick Commands
+
+```bash
+npm install          # Install dependencies
+npm run dev          # Start dev server (localhost:5173)
+npm run build        # Production build
+git status           # Check working tree
+git diff             # Review changes
+```
+
+---
+
+## 📊 Project Stats (v108)
+
+- **Main file**: 620 lines (down from 2063 in v101 - 70% reduction)
+- **Total files**: 8 new files (constants + 7 hooks)
+- **Architecture**: Modular (constants, hooks, reducers, utils, components)
+- **State management**: 3 useReducer hooks (game, ui, card)
+- **Custom hooks**: 7 hooks for logic extraction
+- **UI components**: 9 components (4 views + 5 UI)
+
+---
+
+## 🎓 Learning Resources
+
+- React Hooks: https://react.dev/reference/react
+- useReducer Pattern: https://react.dev/reference/react/useReducer
+- Component Patterns: https://react.dev/learn/thinking-in-react
+- Git Best Practices: https://chris.beams.io/posts/git-commit/
+
+---
+
+**Remember**: Clean code is maintainable code. Take time to do it right! 🎯
