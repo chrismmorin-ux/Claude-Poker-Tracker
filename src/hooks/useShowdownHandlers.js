@@ -44,8 +44,10 @@ export const useShowdownHandlers = (
     let nextSeat = fromSeat + 1;
     while (nextSeat <= numSeats) {
       const nextStatus = isSeatInactive(nextSeat);
-      const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
-      const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
+      const nextActions = seatActions['showdown']?.[nextSeat];
+      const nextActionsArray = Array.isArray(nextActions) ? nextActions : (nextActions ? [nextActions] : []);
+      const nextMucked = nextActionsArray.includes(ACTIONS.MUCKED);
+      const nextWon = nextActionsArray.includes(ACTIONS.WON);
       if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
         dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
         dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });

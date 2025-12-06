@@ -115,8 +115,10 @@ export const findNextEmptySlot = (
   let nextSeat = currentSeat + 1;
   while (nextSeat <= NUM_SEATS) {
     const nextStatus = isSeatInactive(nextSeat);
-    const nextMucked = seatActions['showdown']?.[nextSeat] === ACTIONS.MUCKED;
-    const nextWon = seatActions['showdown']?.[nextSeat] === ACTIONS.WON;
+    const nextActions = seatActions['showdown']?.[nextSeat];
+    const nextActionsArray = Array.isArray(nextActions) ? nextActions : (nextActions ? [nextActions] : []);
+    const nextMucked = nextActionsArray.includes(ACTIONS.MUCKED);
+    const nextWon = nextActionsArray.includes(ACTIONS.WON);
 
     // Skip folded, absent, mucked, and won seats
     if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {

@@ -155,22 +155,28 @@ export const getSeatActionSummary = (
   const actions = [];
 
   streets.forEach(street => {
-    const action = seatActions[street]?.[seat];
-    if (action) {
-      let displayAction = getActionDisplayName(action);
+    const streetActions = seatActions[street]?.[seat];
+    // Handle both array (new format) and single value (old format)
+    const actionArray = Array.isArray(streetActions) ? streetActions : (streetActions ? [streetActions] : []);
 
-      if (street === 'showdown' && action !== ACTIONS.MUCKED) {
-        // For showdown, add cards if available
-        const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-        const handAbbr = getHandAbbreviation(cards);
-        if (handAbbr) {
-          displayAction = `show ${handAbbr}`;
-        } else {
-          displayAction = 'show';
+    if (actionArray.length > 0) {
+      // For hand history, show all actions in sequence
+      actionArray.forEach(action => {
+        let displayAction = getActionDisplayName(action);
+
+        if (street === 'showdown' && action !== ACTIONS.MUCKED) {
+          // For showdown, add cards if available
+          const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
+          const handAbbr = getHandAbbreviation(cards);
+          if (handAbbr) {
+            displayAction = `show ${handAbbr}`;
+          } else {
+            displayAction = 'show';
+          }
         }
-      }
 
-      actions.push(`${street} ${displayAction}`);
+        actions.push(`${street} ${displayAction}`);
+      });
     }
   });
 
@@ -201,8 +207,10 @@ export const allCardsAssigned = (
 ) => {
   for (let seat = 1; seat <= numSeats; seat++) {
     const inactiveStatus = isSeatInactive(seat);
-    const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
-    const hasWon = seatActions['showdown']?.[seat] === ACTIONS.WON;
+    const showdownActions = seatActions['showdown']?.[seat];
+    const actionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
+    const isMucked = actionsArray.includes(ACTIONS.MUCKED);
+    const hasWon = actionsArray.includes(ACTIONS.WON);
 
     // Skip folded, absent, mucked, and won seats
     if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked || hasWon) {

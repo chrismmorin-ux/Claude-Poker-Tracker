@@ -20,7 +20,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v108)
+## Architecture (v109)
 
 ### File Structure
 ```
@@ -41,7 +41,8 @@ src/
 │   ├── useSeatColor.js          (Seat color styling)
 │   ├── useShowdownHandlers.js   (Showdown handlers)
 │   ├── useCardSelection.js      (Card selection logic)
-│   └── useShowdownCardSelection.js (Showdown card selection)
+│   ├── useShowdownCardSelection.js (Showdown card selection)
+│   └── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
 │
 ├── reducers/                    (State management)
 │   ├── gameReducer.js           (Game state: street, dealer, actions)
@@ -50,10 +51,12 @@ src/
 │
 ├── utils/                       (Utility functions)
 │   ├── actionUtils.js           (Action styling, display, overlays)
+│   ├── actionValidation.js      (Action sequence validation)
 │   ├── cardUtils.js             (Card assignment and manipulation)
 │   ├── seatUtils.js             (Seat navigation and positioning)
 │   ├── displayUtils.js          (Display formatting)
-│   └── validation.js            (Input validation)
+│   ├── validation.js            (Input validation)
+│   └── persistence.js           (IndexedDB CRUD operations - NEW in v109)
 │
 └── components/
     ├── ui/                      (Reusable UI components)
@@ -61,13 +64,16 @@ src/
     │   ├── VisibilityToggle.jsx (Show/hide button)
     │   ├── PositionBadge.jsx    (D, SB, BB, ME indicators)
     │   ├── DiagonalOverlay.jsx  (FOLD/ABSENT/MUCK/WON overlays)
-    │   └── ScaledContainer.jsx  (Responsive scaling wrapper)
+    │   ├── ScaledContainer.jsx  (Responsive scaling wrapper)
+    │   ├── ActionBadge.jsx      (Single action badge display)
+    │   └── ActionSequence.jsx   (Multiple action badges with overflow)
     │
     └── views/                   (Full-screen view components)
         ├── TableView.jsx        (Main poker table, ~326 lines)
         ├── StatsView.jsx        (Statistics display, ~264 lines)
         ├── CardSelectorView.jsx (Card selection, ~178 lines)
-        └── ShowdownView.jsx     (Showdown interface, ~485 lines)
+        ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
+        └── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
 ```
 
 ### State Management (useReducer)
@@ -89,7 +95,7 @@ The app uses three reducers for clean state management:
 - `ACTIONS.*` - All action types (FOLD, CALL, OPEN, etc.)
 - `SEAT_ARRAY` - [1,2,3,4,5,6,7,8,9] for iteration
 - `CONSTANTS.NUM_SEATS` - Use instead of hardcoded 9
-- `SCREEN.TABLE` / `SCREEN.STATS` - View identifiers
+- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` - View identifiers
 
 ### Component Architecture
 View and UI components are modular:
@@ -256,7 +262,7 @@ Test all 4 views at various browser sizes:
   - Updated 4 components to import from utils (ShowdownView, CardSelectorView, CardSlot, PokerTracker)
   - Main file reduced from 1056 to ~920 lines (13% reduction)
   - Net codebase reduction: ~51 lines
-- v108: Custom hooks extraction (current)
+- v108: Custom hooks extraction
   - Created `src/constants/gameConstants.js` - Centralized game configuration
   - Created 7 custom hooks in `src/hooks/`:
     - `useActionUtils.js` - Action utility wrappers
@@ -270,3 +276,14 @@ Test all 4 views at various browser sizes:
   - Main file reduced from 967 to 620 lines (36% reduction)
   - Phased implementation (v108a → v108d) for safety
   - Highly modular architecture with clear separation of concerns
+- v109: Hand history and persistence system (current)
+  - Created `src/utils/persistence.js` - IndexedDB CRUD operations (saveHand, loadHandById, getAllHands, deleteHand, clearAllHands, getHandCount)
+  - Created `src/hooks/usePersistence.js` - Auto-save/restore hook with debouncing (1.5s delay)
+  - Created `src/components/views/HistoryView.jsx` - Hand history browser UI (~300 lines)
+  - Created `src/components/ui/ActionBadge.jsx` - Single action badge component
+  - Created `src/components/ui/ActionSequence.jsx` - Multiple action badges with overflow (+N display)
+  - Created `src/utils/actionValidation.js` - Validates poker action sequences (prevents illegal actions)
+  - Added SCREEN.HISTORY view identifier
+  - Features: Load any saved hand, delete individual hands, clear all history, relative timestamps
+  - Multiple actions per street now fully supported with visual action sequences
+  - Database schema: PokerTrackerDB v1 with 'hands' object store (handId, timestamp, sessionId indexes)

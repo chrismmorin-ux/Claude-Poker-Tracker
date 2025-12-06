@@ -1,9 +1,9 @@
-# Poker Tracker Specification - v108
+# Poker Tracker Specification - v109
 
-## Version: v108 (Custom Hooks Extraction - Modular Architecture)
-## Last Updated: 2025-12-05
+## Version: v109 (Hand History & Persistence System)
+## Last Updated: 2025-12-06
 ## Main File: src/PokerTracker.jsx (~620 lines)
-## Total Project: 8 new files (constants + 7 hooks) + existing architecture
+## Total Project: v108 architecture + persistence system (6 new files)
 
 ---
 
@@ -14,11 +14,13 @@
 2. **Card Selector**: Full-screen card assignment for board and hole cards
 3. **Showdown View**: Card assignment + hand history summary for all 9 players
 4. **Stats View**: Player statistics display (placeholder)
+5. **History View**: Hand history browser with load/delete functionality (NEW in v109)
+6. **Persistence**: Auto-save/restore with IndexedDB (NEW in v109)
 
 ### Key Variable Names (v104 naming)
 | Variable | Purpose |
 |----------|---------|
-| `currentView` | Which view is shown: `SCREEN.TABLE` or `SCREEN.STATS` |
+| `currentView` | Which view is shown: `SCREEN.TABLE`, `SCREEN.STATS`, or `SCREEN.HISTORY` |
 | `isShowdownViewOpen` | Boolean for showdown card assignment view |
 | `dealerButtonSeat` | Which seat (1-9) has the dealer button |
 | `highlightedBoardIndex` | Which community card slot (0-4) is selected |
@@ -49,7 +51,8 @@ src/hooks/
 ├── useSeatColor.js (~60 lines)      # Seat color styling
 ├── useShowdownHandlers.js (~99 lines) # Showdown handlers
 ├── useCardSelection.js (~72 lines)  # Card selection logic
-└── useShowdownCardSelection.js (~109 lines) # Showdown card selection
+├── useShowdownCardSelection.js (~109 lines) # Showdown card selection
+└── usePersistence.js (~237 lines)   # IndexedDB auto-save/restore (NEW in v109)
 
 src/reducers/
 ├── gameReducer.js                   # Game state management
@@ -58,23 +61,28 @@ src/reducers/
 
 src/utils/
 ├── actionUtils.js                   # Action styling and display
+├── actionValidation.js              # Action sequence validation (NEW in v109)
 ├── cardUtils.js                     # Card manipulation
 ├── seatUtils.js                     # Seat navigation
 ├── displayUtils.js                  # Display formatting
-└── validation.js                    # Input validation
+├── validation.js                    # Input validation
+└── persistence.js (~376 lines)      # IndexedDB CRUD operations (NEW in v109)
 
 src/components/
 ├── views/                           # Full-screen views
 │   ├── TableView.jsx (~326 lines)
 │   ├── StatsView.jsx (~264 lines)
 │   ├── CardSelectorView.jsx (~178 lines)
-│   └── ShowdownView.jsx (~485 lines)
+│   ├── ShowdownView.jsx (~485 lines)
+│   └── HistoryView.jsx (~300 lines) # Hand history browser (NEW in v109)
 └── ui/                              # Reusable UI components
     ├── CardSlot.jsx
     ├── VisibilityToggle.jsx
     ├── PositionBadge.jsx
     ├── DiagonalOverlay.jsx
-    └── ScaledContainer.jsx
+    ├── ScaledContainer.jsx
+    ├── ActionBadge.jsx              # Single action badge (NEW in v109)
+    └── ActionSequence.jsx           # Multiple action badges (NEW in v109)
 ```
 
 ---

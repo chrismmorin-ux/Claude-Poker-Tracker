@@ -93,6 +93,13 @@ export const TableView = ({
                   <BarChart3 size={18} />
                   Stats
                 </button>
+                <button
+                  onClick={() => setCurrentScreen(SCREEN.HISTORY)}
+                  className="bg-purple-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                >
+                  📚
+                  History
+                </button>
               </div>
               <button
                 onClick={resetHand}
@@ -215,7 +222,8 @@ export const TableView = ({
                     </div>
                   )}
                 </div>
-              ))}
+              )})}
+
 
               <div
                 className="absolute transform -translate-x-1/2 bg-amber-800 border-4 border-amber-900 rounded-lg shadow-xl flex items-center justify-center"

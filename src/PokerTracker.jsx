@@ -9,6 +9,7 @@ import { StatsView } from './components/views/StatsView';
 import { CardSelectorView } from './components/views/CardSelectorView';
 import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
+import { HistoryView } from './components/views/HistoryView';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
@@ -98,6 +99,7 @@ const SEAT_POSITIONS = [
 const SCREEN = {
   TABLE: 'table',
   STATS: 'stats',
+  HISTORY: 'history',
 };
 
 // =============================================================================
@@ -414,8 +416,10 @@ const PokerTrackerWireframes = () => {
     // Check if all non-folded, non-absent seats have cards assigned
     for (let seat = 1; seat <= CONSTANTS.NUM_SEATS; seat++) {
       const inactiveStatus = isSeatInactive(seat);
-      const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
-      const hasWon = seatActions['showdown']?.[seat] === ACTIONS.WON;
+      const showdownActions = seatActions['showdown']?.[seat];
+      const showdownActionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
+      const isMucked = showdownActionsArray.includes(ACTIONS.MUCKED);
+      const hasWon = showdownActionsArray.includes(ACTIONS.WON);
 
       // Skip folded, absent, mucked, and won seats
       if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked || hasWon) {
@@ -548,6 +552,7 @@ const PokerTrackerWireframes = () => {
         STREETS={STREETS}
         BETTING_STREETS={BETTING_STREETS}
         ACTIONS={ACTIONS}
+        ACTION_ABBREV={ACTION_ABBREV}
         SEAT_STATUS={SEAT_STATUS}
         handleNextHandFromShowdown={handleNextHandFromShowdown}
         handleClearShowdownCards={handleClearShowdownCards}
@@ -612,7 +617,9 @@ const PokerTrackerWireframes = () => {
         SEAT_POSITIONS={SEAT_POSITIONS}
         STREETS={STREETS}
         ACTIONS={ACTIONS}
+        ACTION_ABBREV={ACTION_ABBREV}
         SCREEN={SCREEN}
+        seatActions={seatActions}
         setContextMenu={setContextMenu}
         nextHand={nextHand}
         setCurrentScreen={setCurrentScreen}
@@ -631,6 +638,8 @@ const PokerTrackerWireframes = () => {
         openShowdownScreen={openShowdownScreen}
         nextStreet={nextStreet}
         clearStreetActions={clearStreetActions}
+        clearSeatActions={clearSeatActions}
+        undoLastAction={undoLastAction}
         handleSetMySeat={handleSetMySeat}
         setDealerSeat={setDealerSeat}
         recordAction={recordAction}
@@ -639,6 +648,19 @@ const PokerTrackerWireframes = () => {
         SkipForward={SkipForward}
         BarChart3={BarChart3}
         RotateCcw={RotateCcw}
+      />
+    );
+  }
+
+  // History Screen
+  if (currentView === SCREEN.HISTORY) {
+    return (
+      <HistoryView
+        scale={scale}
+        setCurrentScreen={setCurrentScreen}
+        dispatchGame={dispatchGame}
+        dispatchCard={dispatchCard}
+        STREETS={STREETS}
       />
     );
   }

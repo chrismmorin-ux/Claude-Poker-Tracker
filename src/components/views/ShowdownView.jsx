@@ -3,6 +3,7 @@ import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
 import { DiagonalOverlay } from '../ui/DiagonalOverlay';
+import { ActionSequence } from '../ui/ActionSequence';
 import { isRedSuit } from '../../utils/displayUtils';
 
 // Card constants
@@ -28,6 +29,7 @@ export const ShowdownView = ({
   STREETS,
   BETTING_STREETS,
   ACTIONS,
+  ACTION_ABBREV,
   SEAT_STATUS,
   handleNextHandFromShowdown,
   handleClearShowdownCards,
@@ -110,7 +112,9 @@ export const ShowdownView = ({
                 <div className="grid grid-cols-9 gap-2 mb-4">
                   {SEAT_ARRAY.map(seat => {
                     const inactiveStatus = isSeatInactive(seat);
-                    const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
+                    const showdownActions = seatActions['showdown']?.[seat];
+                    const showdownActionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
+                    const isMucked = showdownActionsArray.includes(ACTIONS.MUCKED);
                     const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
                     const isDealer = dealerButtonSeat === seat;
                     const isSB = getSmallBlindSeat() === seat;
@@ -142,7 +146,7 @@ export const ShowdownView = ({
                           {[0, 1].map(cardSlot => {
                             const card = cards[cardSlot];
                             const shouldHideCard = isMySeat && !holeCardsVisible;
-                            const hasWon = seatActions['showdown']?.[seat] === ACTIONS.WON;
+                            const hasWon = showdownActionsArray.includes(ACTIONS.WON);
                             const cardStatus = isMucked ? 'mucked' : hasWon ? 'won' : inactiveStatus || null;
 
                             return (
@@ -158,7 +162,7 @@ export const ShowdownView = ({
                           })}
 
                           {/* Diagonal Overlay Label */}
-                          <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, seatActions['showdown']?.[seat] === ACTIONS.WON)} SEAT_STATUS={SEAT_STATUS} />
+                          <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, showdownActionsArray.includes(ACTIONS.WON))} SEAT_STATUS={SEAT_STATUS} />
                         </div>
                       </div>
                     );
@@ -186,7 +190,11 @@ export const ShowdownView = ({
                       </div>
                       <div className="grid grid-cols-9 gap-2">
                         {SEAT_ARRAY.map(seat => {
-                          const action = seatActions[street]?.[seat];
+                          // Get actions array (handle backward compatibility)
+                          const actions = seatActions[street]?.[seat];
+                          const actionArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+                          const lastAction = actionArray[actionArray.length - 1]; // Last action for showdown
+
                           const inactiveStatus = isSeatInactive(seat);
                           const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
 
@@ -194,19 +202,27 @@ export const ShowdownView = ({
                           let actionColor = 'bg-gray-100 text-gray-900';
 
                           // For showdown street, check if player folded on a previous street
-                          let effectiveAction = action;
-                          if (street === 'showdown' && !action) {
+                          let effectiveAction = lastAction;
+                          if (street === 'showdown' && !lastAction) {
                             // Check all previous streets for fold
                             const hasFolded = BETTING_STREETS.some(prevStreet => {
-                              const prevAction = seatActions[prevStreet]?.[seat];
-                              return isFoldAction(prevAction);
+                              const prevActions = seatActions[prevStreet]?.[seat];
+                              const prevArray = Array.isArray(prevActions) ? prevActions : (prevActions ? [prevActions] : []);
+                              return prevArray.some(a => isFoldAction(a));
                             });
                             if (hasFolded) {
                               effectiveAction = ACTIONS.FOLD;
                             }
                           }
 
-                          if (effectiveAction) {
+                          // For betting streets, show full action sequence
+                          // For showdown, show last action only
+                          if (street !== 'showdown' && actionArray.length > 0) {
+                            // Betting streets: show sequence
+                            displayAction = actionArray.map(a => getActionDisplayName(a)).join(' → ');
+                            actionColor = getActionColor(lastAction); // Color based on last action
+                          } else if (effectiveAction) {
+                            // Showdown: show last action with cards
                             actionColor = getActionColor(effectiveAction);
                             displayAction = getActionDisplayName(effectiveAction);
 
@@ -255,7 +271,18 @@ export const ShowdownView = ({
 
                           return (
                             <div key={seat} className="text-center py-1 px-1 text-xs" style={{ minHeight: '24px' }}>
-                              {displayAction ? (
+                              {/* For betting streets with multiple actions, use ActionSequence component */}
+                              {street !== 'showdown' && actionArray.length > 0 ? (
+                                <div className="flex justify-center">
+                                  <ActionSequence
+                                    actions={actionArray}
+                                    size="small"
+                                    maxVisible={3}
+                                    ACTIONS={ACTIONS}
+                                    ACTION_ABBREV={ACTION_ABBREV}
+                                  />
+                                </div>
+                              ) : displayAction ? (
                                 <div className={`${actionColor} rounded px-1 py-1 font-semibold`}>
                                   {displayAction}
                                 </div>
@@ -276,7 +303,9 @@ export const ShowdownView = ({
                 <div className="grid grid-cols-9 gap-2 mb-4">
                   {SEAT_ARRAY.map(seat => {
                     const inactiveStatus = isSeatInactive(seat);
-                    const isMucked = seatActions['showdown']?.[seat] === ACTIONS.MUCKED;
+                    const showdownActions = seatActions['showdown']?.[seat];
+                    const showdownActionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
+                    const isMucked = showdownActionsArray.includes(ACTIONS.MUCKED);
                     // Use holeCards for my seat, allPlayerCards for others
                     const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
                     const isDealer = dealerButtonSeat === seat;
@@ -333,11 +362,11 @@ export const ShowdownView = ({
                           })}
 
                           {/* Diagonal Overlay Label for Folded/Absent/Mucked/Won */}
-                          <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, seatActions['showdown']?.[seat] === ACTIONS.WON)} SEAT_STATUS={SEAT_STATUS} />
+                          <DiagonalOverlay status={getOverlayStatus(inactiveStatus, isMucked, showdownActionsArray.includes(ACTIONS.WON))} SEAT_STATUS={SEAT_STATUS} />
                         </div>
 
                         {/* Muck and Won Buttons - Only for non-folded and non-absent and non-mucked/won hands */}
-                        {inactiveStatus !== SEAT_STATUS.FOLDED && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked && seatActions['showdown']?.[seat] !== ACTIONS.WON && (
+                        {inactiveStatus !== SEAT_STATUS.FOLDED && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked && !showdownActionsArray.includes(ACTIONS.WON) && (
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleMuckSeat(seat)}
@@ -346,7 +375,10 @@ export const ShowdownView = ({
                               Muck
                             </button>
                             {/* Only show Won button if no seat has won yet */}
-                            {!Object.values(seatActions['showdown'] || {}).includes(ACTIONS.WON) && (
+                            {!Object.values(seatActions['showdown'] || {}).some(actions => {
+                              const actionsArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+                              return actionsArray.includes(ACTIONS.WON);
+                            }) && (
                               <button
                                 onClick={() => handleWonSeat(seat)}
                                 className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded font-semibold"

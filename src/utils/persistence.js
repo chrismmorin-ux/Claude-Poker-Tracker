@@ -99,7 +99,7 @@ export const saveHand = async (handData) => {
     const handRecord = {
       ...handData,
       timestamp: Date.now(),
-      version: '1.0.8', // TODO: Get from package.json
+      version: '1.0.9', // Multi-action support
       sessionId: null,  // Future: session tracking
     };
 
