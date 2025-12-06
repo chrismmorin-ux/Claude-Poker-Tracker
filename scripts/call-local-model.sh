@@ -46,19 +46,20 @@ fi
 # Build the system prompt
 SYSTEM_PROMPT="You are an expert coding assistant. Provide concise, accurate code solutions. $CONTEXT"
 
-# Build the JSON payload
-JSON_PAYLOAD=$(cat <<EOF
-{
-  "model": "$MODEL_NAME",
-  "messages": [
-    {"role": "system", "content": "$SYSTEM_PROMPT"},
-    {"role": "user", "content": "$TASK"}
-  ],
-  "temperature": 0.3,
-  "max_tokens": 2000
+# Build the JSON payload using Python for proper escaping
+JSON_PAYLOAD=$(python -c "
+import json, sys
+payload = {
+    'model': '$MODEL_NAME',
+    'messages': [
+        {'role': 'system', 'content': '''$SYSTEM_PROMPT'''},
+        {'role': 'user', 'content': '''$TASK'''}
+    ],
+    'temperature': 0.3,
+    'max_tokens': 2000
 }
-EOF
-)
+print(json.dumps(payload))
+")
 
 # Display which model we're using
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

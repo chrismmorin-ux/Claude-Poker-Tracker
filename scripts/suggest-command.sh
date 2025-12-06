@@ -1,133 +1,136 @@
 #!/bin/bash
-# suggest-command.sh - Suggest the best command/approach for a task
+# suggest-command.sh - Suggest which command to use based on task classification
+#
+# Usage: bash suggest-command.sh "task description"
+# Output: Suggested command and reasoning
+
+set -e
 
 TASK="$1"
 
 if [ -z "$TASK" ]; then
-    echo "Usage: $0 <task_description>"
+    echo "Usage: $0 \"task description\"" >&2
+    echo "" >&2
+    echo "Example:" >&2
+    echo "  bash $0 \"Create a utility function to format dates\"" >&2
     exit 1
 fi
 
-# Get classification from task-classifier
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Classify the task
 CLASSIFICATION=$("$SCRIPT_DIR/task-classifier.sh" "$TASK")
 
-# Extract decision and confidence
-DECISION=$(echo "$CLASSIFICATION" | cut -d: -f1)
-CONFIDENCE=$(echo "$CLASSIFICATION" | cut -d: -f2)
+# =============================================================================
+# SUGGESTION ENGINE
+# =============================================================================
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🤔 Task Analysis"
+echo "📋 Task Classification: $CLASSIFICATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Task: \"$TASK\""
-echo ""
 
-# Provide suggestion based on classification
-case "$DECISION" in
-    "local")
-        echo "✅ Recommendation: Use LOCAL MODEL"
+case "$CLASSIFICATION" in
+    simple_utility)
+        echo "✅ Recommended: DeepSeek (local model)"
         echo ""
-        case "$CONFIDENCE" in
-            "high")
-                echo "Confidence: ⭐⭐⭐ HIGH"
-                echo ""
-                echo "This is a perfect task for local models. You'll save Claude tokens"
-                echo "and get fast results!"
-                ;;
-            "medium")
-                echo "Confidence: ⭐⭐ MEDIUM"
-                echo ""
-                echo "This task should work well with local models, though Claude might"
-                echo "provide slightly better quality."
-                ;;
-            "low")
-                echo "Confidence: ⭐ LOW"
-                echo ""
-                echo "Local models might work, but consider Claude if quality is critical."
-                ;;
-        esac
+        echo "Reasoning:"
+        echo "  - Task appears to be a simple utility function (< 80 lines)"
+        echo "  - DeepSeek is good at isolated code generation"
+        echo "  - Expected generation time: ~30-45 seconds"
         echo ""
-        echo "📝 Suggested commands:"
-
-        # Suggest specific command based on task keywords
-        TASK_LOWER=$(echo "$TASK" | tr '[:upper:]' '[:lower:]')
-        if echo "$TASK_LOWER" | grep -q -E "refactor|rename|extract"; then
-            echo "  • /local-refactor $TASK"
-        elif echo "$TASK_LOWER" | grep -q -E "test|unit test"; then
-            echo "  • /local-test $TASK"
-        elif echo "$TASK_LOWER" | grep -q -E "document|comment|jsdoc"; then
-            echo "  • /local-doc $TASK"
-        elif echo "$TASK_LOWER" | grep -q -E "generate|create|boilerplate"; then
-            echo "  • /local-code $TASK"
-        else
-            echo "  • /local $TASK"
-        fi
+        echo "Suggested Command:"
+        echo "  /local-code $TASK"
         echo ""
-        echo "💰 Estimated token savings: 500-1500 tokens"
+        echo "Alternative (with template):"
+        echo "  bash ./scripts/call-local-model.sh deepseek \"\$(cat .claude/prompts/utility-function.md)"
+        echo ""
+        echo "  Task: $TASK\""
+        echo ""
+        echo "💡 Tip: Review output with Claude to fix import paths and export style"
+        echo "   Expected token savings: 70-85%"
         ;;
 
-    "claude")
-        echo "✅ Recommendation: Use CLAUDE"
+    simple_component)
+        echo "✅ Recommended: DeepSeek (local model)"
         echo ""
-        case "$CONFIDENCE" in
-            "high")
-                echo "Confidence: ⭐⭐⭐ HIGH"
-                echo ""
-                echo "This task requires Claude's advanced capabilities. Local models"
-                echo "are unlikely to produce satisfactory results."
-                ;;
-            "medium")
-                echo "Confidence: ⭐⭐ MEDIUM"
-                echo ""
-                echo "Claude is recommended for this task. Local models might struggle"
-                echo "with the complexity."
-                ;;
-            "low")
-                echo "Confidence: ⭐ LOW"
-                echo ""
-                echo "Claude is probably better, but local models could work if you're"
-                echo "willing to iterate."
-                ;;
-        esac
+        echo "Reasoning:"
+        echo "  - Task appears to be a simple React component (< 100 lines, < 5 props)"
+        echo "  - DeepSeek can handle basic UI components"
+        echo "  - Expected generation time: ~30-45 seconds"
         echo ""
-        echo "📝 Suggested approach:"
-        echo "  • Continue using Claude normally (just type your request)"
+        echo "Suggested Command:"
+        echo "  /local-code $TASK"
         echo ""
-        echo "Why Claude?"
-        TASK_LOWER=$(echo "$TASK" | tr '[:upper:]' '[:lower:]')
-        if echo "$TASK_LOWER" | grep -q -E "debug|fix bug"; then
-            echo "  → Debugging requires deep code understanding"
-        elif echo "$TASK_LOWER" | grep -q -E "architecture|design"; then
-            echo "  → Architecture decisions need advanced reasoning"
-        elif echo "$TASK_LOWER" | grep -q -E "optimize|performance"; then
-            echo "  → Optimization requires performance analysis"
-        elif echo "$TASK_LOWER" | grep -q -E "feature|implement"; then
-            echo "  → New features need project-wide context"
-        else
-            echo "  → This task requires Claude's advanced capabilities"
-        fi
+        echo "Alternative (with template):"
+        echo "  bash ./scripts/call-local-model.sh deepseek \"\$(cat .claude/prompts/react-component.md)"
+        echo ""
+        echo "  Task: $TASK\""
+        echo ""
+        echo "💡 Tip: Review output with Claude to fix:"
+        echo "   - Import paths (count directories explicitly)"
+        echo "   - Export style (must be named export)"
+        echo "   - Props vs local constants"
+        echo "   Expected token savings: 70-85%"
         ;;
 
-    "unsure")
-        echo "⚠️  Recommendation: UNCERTAIN"
+    refactor)
+        echo "✅ Recommended: Qwen (local model)"
         echo ""
-        echo "Confidence: ❓ UNSURE"
+        echo "Reasoning:"
+        echo "  - Task is refactoring/renaming (Qwen's strength)"
+        echo "  - Qwen is very fast at mechanical changes"
+        echo "  - Expected generation time: ~3-10 seconds"
         echo ""
-        echo "This task could go either way. Here are your options:"
+        echo "Suggested Command:"
+        echo "  /local-refactor $TASK"
         echo ""
-        echo "Option 1: Try Local First (Fast, Free)"
-        echo "  • /local $TASK"
-        echo "  • If result is good → you saved tokens!"
-        echo "  • If result is poor → fall back to Claude"
+        echo "Alternative:"
+        echo "  bash ./scripts/call-local-model.sh qwen \"$TASK\""
         echo ""
-        echo "Option 2: Use Claude (Reliable)"
-        echo "  • Continue with Claude normally"
-        echo "  • Guaranteed quality"
-        echo "  • Higher token usage"
+        echo "💡 Tip: Qwen preserves existing code well but may over-explain"
+        echo "   Add 'code only, no explanations' to prompt if needed"
+        ;;
+
+    complex)
+        echo "⚠️  Recommended: Claude"
         echo ""
-        echo "💡 Suggestion: Try local first. If you're not satisfied with the"
-        echo "   result, you can always ask Claude afterward."
+        echo "Reasoning:"
+        echo "  - Task appears moderately complex"
+        echo "  - May require project context or multiple integrations"
+        echo "  - Local models might need significant fixes (5-10 min overhead)"
+        echo ""
+        echo "Suggested Command:"
+        echo "  Just describe the task to Claude directly"
+        echo ""
+        echo "Alternative (if you want to try local first):"
+        echo "  /local-code $TASK"
+        echo ""
+        echo "  Then review with Claude (may not save tokens if fixes are extensive)"
+        ;;
+
+    claude_required)
+        echo "🔴 Recommended: Claude (REQUIRED)"
+        echo ""
+        echo "Reasoning:"
+        echo "  - Task involves:"
+        echo "    • State management (reducers, complex hooks)"
+        echo "    • Integration code (connecting multiple pieces)"
+        echo "    • Multi-file changes"
+        echo "    • Complex business logic requiring project understanding"
+        echo ""
+        echo "Suggested Command:"
+        echo "  Just describe the task to Claude directly"
+        echo ""
+        echo "⚠️  Do NOT use local models for this - they will produce low-quality"
+        echo "   output requiring more Claude tokens to fix than direct generation"
+        ;;
+
+    *)
+        echo "❓ Unknown classification: $CLASSIFICATION"
+        echo ""
+        echo "Defaulting to: Claude (safest option)"
         ;;
 esac
 

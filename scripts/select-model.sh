@@ -1,32 +1,45 @@
 #!/bin/bash
-# select-model.sh - Automatically select best model based on task description
+# select-model.sh - Auto-select local model (qwen or deepseek) based on task
+#
+# Used by call-local-model.sh when MODEL_CHOICE="auto"
+# Usage: bash select-model.sh "task description"
+# Output: "qwen" or "deepseek"
+
+set -e
 
 TASK="$1"
 
-# Convert to lowercase for easier matching
-TASK_LOWER=$(echo "$TASK" | tr '[:upper:]' '[:lower:]')
+if [ -z "$TASK" ]; then
+    echo "Usage: $0 \"task description\"" >&2
+    exit 1
+fi
 
-# Keywords that suggest Qwen (better at refactoring, understanding existing code)
-QWEN_KEYWORDS=("refactor" "rename" "extract" "test" "document" "comment" "explain" "understand" "analyze" "review" "fix" "bug")
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Keywords that suggest DeepSeek (better at generation, creating new code)
-DEEPSEEK_KEYWORDS=("generate" "create" "write" "build" "implement" "add" "boilerplate" "scaffold" "template")
+# Classify the task
+CLASSIFICATION=$("$SCRIPT_DIR/task-classifier.sh" "$TASK")
 
-# Check for Qwen keywords
-for keyword in "${QWEN_KEYWORDS[@]}"; do
-    if echo "$TASK_LOWER" | grep -q "$keyword"; then
+# Map classification to model choice
+case "$CLASSIFICATION" in
+    refactor)
+        # Qwen is best for refactoring
         echo "qwen"
-        exit 0
-    fi
-done
-
-# Check for DeepSeek keywords
-for keyword in "${DEEPSEEK_KEYWORDS[@]}"; do
-    if echo "$TASK_LOWER" | grep -q "$keyword"; then
+        ;;
+    
+    simple_utility|simple_component|complex)
+        # DeepSeek for code generation
         echo "deepseek"
-        exit 0
-    fi
-done
-
-# Default to Qwen (safer, more conservative choice)
-echo "qwen"
+        ;;
+    
+    claude_required)
+        # Default to deepseek (user explicitly chose to use local model)
+        # They can ignore the output if they realize it's too complex
+        echo "deepseek"
+        ;;
+    
+    *)
+        # Default to deepseek
+        echo "deepseek"
+        ;;
+esac
