@@ -7,7 +7,16 @@
       "Bash(git commit:*)",
       "Bash(python:*)",
       "Bash(curl:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/*)",
+      "Bash(./scripts/task-classifier.sh:*)",
+      "Bash(./scripts/suggest-command.sh:*)",
+      "Bash(source ~/.bashrc)",
+      "Bash(alias cc)",
+      "SlashCommand(/local-code:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

@@ -18,6 +18,7 @@ import {
   getSeatActionStyle,
   getOverlayStatus
 } from './utils/actionUtils';
+import { validateActionSequence } from './utils/actionValidation';
 import {
   isRedCard,
   isRedSuit,
@@ -26,6 +27,7 @@ import {
 } from './utils/displayUtils';
 import {
   ACTIONS,
+  ACTION_ABBREV,
   FOLD_ACTIONS,
   SEAT_STATUS,
   STREETS,
@@ -43,6 +45,7 @@ import { useSeatColor } from './hooks/useSeatColor';
 import { useShowdownHandlers } from './hooks/useShowdownHandlers';
 import { useCardSelection } from './hooks/useCardSelection';
 import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
+import { usePersistence } from './hooks/usePersistence';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -106,6 +109,9 @@ const PokerTrackerWireframes = () => {
   const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
   const [uiState, dispatchUi] = useReducer(uiReducer, initialUiState);
   const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
+
+  // Initialize persistence (auto-save + auto-restore)
+  const { isReady } = usePersistence(gameState, cardState, dispatchGame, dispatchCard);
 
   // Local UI state (scale)
   const [scale, setScale] = useState(1);
@@ -254,11 +260,28 @@ const PokerTrackerWireframes = () => {
   const recordAction = useCallback((action) => {
     if (selectedPlayers.length === 0) return;
 
+    // Validate action for each selected seat
+    const invalidSeats = [];
+    selectedPlayers.forEach(seat => {
+      const currentActions = seatActions[currentStreet]?.[seat] || [];
+      const validation = validateActionSequence(currentActions, action, currentStreet, ACTIONS);
+      if (!validation.valid) {
+        invalidSeats.push({ seat, error: validation.error });
+      }
+    });
+
+    // Show error if any seat has invalid action
+    if (invalidSeats.length > 0) {
+      const errorMsg = invalidSeats.map(s => `Seat ${s.seat}: ${s.error}`).join('\n');
+      alert(`Invalid action:\n${errorMsg}`);
+      return;
+    }
+
+    // Log and record action
     selectedPlayers.forEach(seat => {
       log(`Seat ${seat}: ${action} on ${currentStreet}`);
     });
 
-    // Record the action (reducer handles removing from absent)
     dispatchGame({
       type: GAME_ACTIONS.RECORD_ACTION,
       payload: { seats: selectedPlayers, action }
@@ -272,7 +295,7 @@ const PokerTrackerWireframes = () => {
     } else {
       dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
     }
-  }, [selectedPlayers, currentStreet, dispatchGame, dispatchUi, getNextActionSeat]);
+  }, [selectedPlayers, currentStreet, seatActions, dispatchGame, dispatchUi, getNextActionSeat]);
 
   const recordSeatAction = useCallback((seat, action) => {
     log(`Seat ${seat}: ${action} on ${currentStreet}`);
@@ -281,6 +304,20 @@ const PokerTrackerWireframes = () => {
       payload: { seats: [seat], action }
     });
   }, [currentStreet, dispatchGame]);
+
+  const clearSeatActions = useCallback((seats) => {
+    dispatchGame({
+      type: GAME_ACTIONS.CLEAR_SEAT_ACTIONS,
+      payload: seats
+    });
+  }, [dispatchGame]);
+
+  const undoLastAction = useCallback((seat) => {
+    dispatchGame({
+      type: GAME_ACTIONS.UNDO_LAST_ACTION,
+      payload: seat
+    });
+  }, [dispatchGame]);
 
   const toggleAbsent = useCallback(() => {
     if (selectedPlayers.length === 0) return;

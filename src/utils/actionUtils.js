@@ -217,3 +217,49 @@ export const allCardsAssigned = (
   }
   return true;
 };
+
+/**
+ * Gets action abbreviation (3-4 chars max) for badge display
+ * @param {string} action - Action constant
+ * @param {Object} ACTION_ABBREV - Abbreviation map
+ * @returns {string} - Abbreviated action
+ */
+export const getActionAbbreviation = (action, ACTION_ABBREV) => {
+  return ACTION_ABBREV[action] || action?.substring(0, 3).toUpperCase() || '???';
+};
+
+/**
+ * Gets the last action from an action array (handles backward compatibility)
+ * @param {string|string[]|undefined} actions - Action or action array
+ * @returns {string|null} - Last action or null
+ */
+export const getLastAction = (actions) => {
+  if (!actions) return null;
+  if (typeof actions === 'string') return actions; // Old format (backward compat)
+  if (Array.isArray(actions)) return actions[actions.length - 1] || null; // New format
+  return null;
+};
+
+/**
+ * Normalizes action data for backward compatibility
+ * Converts string actions to arrays for new format
+ * @param {string|string[]|undefined} action - Action data
+ * @returns {string[]} - Array of actions
+ */
+export const normalizeActionData = (action) => {
+  if (!action) return [];
+  if (typeof action === 'string') return [action]; // Old format → convert to array
+  if (Array.isArray(action)) return action; // New format → return as-is
+  return [];
+};
+
+/**
+ * Gets action sequence display string
+ * @param {string[]} actions - Array of actions
+ * @param {Function} getActionDisplayName - Display name function
+ * @returns {string} - Formatted sequence (e.g., "open → 3bet → call")
+ */
+export const getActionSequenceDisplay = (actions, getActionDisplayName) => {
+  if (!actions || actions.length === 0) return '';
+  return actions.map(a => getActionDisplayName(a)).join(' → ');
+};

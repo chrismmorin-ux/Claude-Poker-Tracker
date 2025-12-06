@@ -41,8 +41,33 @@ export const ACTIONS = {
   WON: 'won',
 };
 
+// Action abbreviations (3-4 chars max) for display in badges
+export const ACTION_ABBREV = {
+  [ACTIONS.FOLD]: 'FLD',
+  [ACTIONS.LIMP]: 'LMP',
+  [ACTIONS.CALL]: 'CAL',
+  [ACTIONS.OPEN]: 'OPN',
+  [ACTIONS.THREE_BET]: '3BT',
+  [ACTIONS.FOUR_BET]: '4BT',
+  [ACTIONS.CBET_IP_SMALL]: 'C-S',
+  [ACTIONS.CBET_IP_LARGE]: 'C-L',
+  [ACTIONS.CBET_OOP_SMALL]: 'CO-S',
+  [ACTIONS.CBET_OOP_LARGE]: 'CO-L',
+  [ACTIONS.CHECK]: 'CHK',
+  [ACTIONS.CHECK_RAISE]: 'C/R',
+  [ACTIONS.DONK]: 'DNK',
+  [ACTIONS.STAB]: 'STB',
+  [ACTIONS.FOLD_TO_CBET]: 'F/C',
+  [ACTIONS.FOLD_TO_CR]: 'F/CR',
+  [ACTIONS.MUCKED]: 'MCK',
+  [ACTIONS.WON]: 'WON',
+};
+
 // All actions that count as a fold (for checking fold status)
 export const FOLD_ACTIONS = [ACTIONS.FOLD, ACTIONS.FOLD_TO_CR, ACTIONS.FOLD_TO_CBET];
+
+// Terminal actions (actions that end a player's participation in the hand)
+export const TERMINAL_ACTIONS = [...FOLD_ACTIONS, ACTIONS.WON];
 
 // Seat status values (returned by isSeatInactive)
 export const SEAT_STATUS = {

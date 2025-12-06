@@ -12,9 +12,12 @@ export const GAME_ACTIONS = {
   SET_MY_SEAT: 'SET_MY_SEAT',
   RECORD_ACTION: 'RECORD_ACTION',
   CLEAR_STREET_ACTIONS: 'CLEAR_STREET_ACTIONS',
+  CLEAR_SEAT_ACTIONS: 'CLEAR_SEAT_ACTIONS',
+  UNDO_LAST_ACTION: 'UNDO_LAST_ACTION',
   TOGGLE_ABSENT: 'TOGGLE_ABSENT',
   RESET_HAND: 'RESET_HAND',
   NEXT_HAND: 'NEXT_HAND',
+  HYDRATE_STATE: 'HYDRATE_STATE',
 };
 
 // Initial state
@@ -72,15 +75,19 @@ export const gameReducer = (state, action) => {
       const { seats, action: playerAction } = action.payload;
       const newSeatActions = { ...state.seatActions };
 
-      // Structure: seatActions[street][seat] = action
+      // Structure: seatActions[street][seat] = [action1, action2, ...]
       if (!newSeatActions[state.currentStreet]) {
         newSeatActions[state.currentStreet] = {};
       }
 
       seats.forEach(seat => {
+        // Get current actions for this seat (array)
+        const currentActions = newSeatActions[state.currentStreet][seat] || [];
+
+        // Append new action to array
         newSeatActions[state.currentStreet] = {
           ...newSeatActions[state.currentStreet],
-          [seat]: playerAction
+          [seat]: [...currentActions, playerAction]
         };
       });
 
@@ -97,6 +104,54 @@ export const gameReducer = (state, action) => {
     case GAME_ACTIONS.CLEAR_STREET_ACTIONS: {
       const newSeatActions = { ...state.seatActions };
       delete newSeatActions[state.currentStreet];
+
+      return {
+        ...state,
+        seatActions: newSeatActions,
+      };
+    }
+
+    case GAME_ACTIONS.CLEAR_SEAT_ACTIONS: {
+      const seats = action.payload;
+      const newSeatActions = { ...state.seatActions };
+
+      if (newSeatActions[state.currentStreet]) {
+        const updatedStreet = { ...newSeatActions[state.currentStreet] };
+        seats.forEach(seat => {
+          delete updatedStreet[seat];
+        });
+        newSeatActions[state.currentStreet] = updatedStreet;
+      }
+
+      return {
+        ...state,
+        seatActions: newSeatActions,
+      };
+    }
+
+    case GAME_ACTIONS.UNDO_LAST_ACTION: {
+      const seat = action.payload;
+      const currentActions = [...(state.seatActions[state.currentStreet]?.[seat] || [])];
+
+      if (currentActions.length === 0) {
+        return state; // Nothing to undo
+      }
+
+      currentActions.pop(); // Remove last action
+      const newSeatActions = { ...state.seatActions };
+
+      if (currentActions.length === 0) {
+        // Remove seat entry if no actions left
+        const updatedStreet = { ...newSeatActions[state.currentStreet] };
+        delete updatedStreet[seat];
+        newSeatActions[state.currentStreet] = updatedStreet;
+      } else {
+        // Update with remaining actions
+        newSeatActions[state.currentStreet] = {
+          ...newSeatActions[state.currentStreet],
+          [seat]: currentActions
+        };
+      }
 
       return {
         ...state,
@@ -137,6 +192,12 @@ export const gameReducer = (state, action) => {
         dealerButtonSeat: (state.dealerButtonSeat % NUM_SEATS) + 1,
         seatActions: {},
         // Keep absentSeats as-is (don't clear)
+      };
+
+    case GAME_ACTIONS.HYDRATE_STATE:
+      return {
+        ...state,
+        ...action.payload  // Merge loaded state
       };
 
     default:

@@ -27,6 +27,7 @@ export const CARD_ACTIONS = {
   SELECT_CARD_FOR_SELECTOR: 'SELECT_CARD_FOR_SELECTOR',
   SELECT_CARD_FOR_SHOWDOWN: 'SELECT_CARD_FOR_SHOWDOWN',
   REMOVE_CARD_FROM_ALL: 'REMOVE_CARD_FROM_ALL',
+  HYDRATE_STATE: 'HYDRATE_STATE',
 };
 
 // Helper function to create empty player cards
@@ -219,6 +220,12 @@ export const cardReducer = (state, action) => {
         communityCards: ['', '', '', '', ''],
         holeCards: ['', ''],
         allPlayerCards: createEmptyPlayerCards(),
+      };
+
+    case CARD_ACTIONS.HYDRATE_STATE:
+      return {
+        ...state,
+        ...action.payload  // Merge loaded card state (persistent fields only)
       };
 
     default:

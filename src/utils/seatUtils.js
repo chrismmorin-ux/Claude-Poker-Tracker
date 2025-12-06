@@ -56,8 +56,13 @@ export const hasSeatFolded = (seat, currentStreet, streets, seatActions, isFoldA
 
   for (let i = 0; i <= currentIndex; i++) {
     const street = streets[i];
-    const action = seatActions[street]?.[seat];
-    if (isFoldAction(action)) {
+    const actions = seatActions[street]?.[seat];
+
+    // Handle both string (old format) and array (new format)
+    const actionArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+
+    // Check if any action in the sequence is a fold
+    if (actionArray.some(action => isFoldAction(action))) {
       return true;
     }
   }

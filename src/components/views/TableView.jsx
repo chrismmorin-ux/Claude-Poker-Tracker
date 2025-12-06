@@ -2,6 +2,7 @@ import React from 'react';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
+import { ActionSequence } from '../ui/ActionSequence';
 
 /**
  * TableView - Main poker table interface
@@ -22,7 +23,9 @@ export const TableView = ({
   SEAT_POSITIONS,
   STREETS,
   ACTIONS,
+  ACTION_ABBREV,
   SCREEN,
+  seatActions,
   setContextMenu,
   nextHand,
   setCurrentScreen,
@@ -41,6 +44,8 @@ export const TableView = ({
   openShowdownScreen,
   nextStreet,
   clearStreetActions,
+  clearSeatActions,
+  undoLastAction,
   handleSetMySeat,
   setDealerSeat,
   recordAction,
@@ -130,16 +135,32 @@ export const TableView = ({
                 </div>
               </div>
 
-              {SEAT_POSITIONS.map(({ seat, x, y }) => (
-                <div key={seat} className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}%`, top: `${y}%` }}>
-                  <button
-                    onClick={() => togglePlayerSelection(seat)}
-                    onContextMenu={(e) => handleSeatRightClick(e, seat)}
-                    className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    {seat}
-                  </button>
+              {SEAT_POSITIONS.map(({ seat, x, y }) => {
+                const actionArray = seatActions[currentStreet]?.[seat] || [];
+
+                return (
+                  <div key={seat} className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}%`, top: `${y}%` }}>
+                    {/* Action badges above seat */}
+                    {actionArray.length > 0 && (
+                      <div className="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2">
+                        <ActionSequence
+                          actions={actionArray}
+                          size="small"
+                          maxVisible={2}
+                          ACTIONS={ACTIONS}
+                          ACTION_ABBREV={ACTION_ABBREV}
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => togglePlayerSelection(seat)}
+                      onContextMenu={(e) => handleSeatRightClick(e, seat)}
+                      className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
+                      style={{ width: '40px', height: '40px' }}
+                    >
+                      {seat}
+                    </button>
 
                   {dealerButtonSeat === seat && (
                     <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2">
@@ -277,6 +298,28 @@ export const TableView = ({
                   <div className="text-base font-semibold text-blue-600 uppercase">{currentStreet}</div>
                 </div>
 
+                {/* Current action sequence display - only for single seat */}
+                {selectedPlayers.length === 1 && (() => {
+                  const seat = selectedPlayers[0];
+                  const actionArray = seatActions[currentStreet]?.[seat] || [];
+
+                  if (actionArray.length > 0) {
+                    return (
+                      <div className="mb-3 p-2 bg-blue-50 rounded">
+                        <div className="text-xs font-semibold text-gray-700 mb-1">Current Actions:</div>
+                        <ActionSequence
+                          actions={actionArray}
+                          size="medium"
+                          maxVisible={5}
+                          ACTIONS={ACTIONS}
+                          ACTION_ABBREV={ACTION_ABBREV}
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {currentStreet === 'preflop' ? (
                   <div className="grid grid-cols-3 gap-2">
                     <button onClick={() => recordAction(ACTIONS.FOLD)} className="py-4 bg-red-400 hover:bg-red-500 rounded-lg font-bold text-base text-white">Fold</button>
@@ -315,6 +358,24 @@ export const TableView = ({
 
                 <button onClick={() => setSelectedPlayers([])} className="mt-3 w-full py-2 bg-gray-600 hover:bg-gray-700 text-white rounded font-semibold">Clear Selection</button>
                 <button onClick={toggleAbsent} className="mt-2 w-full py-2 bg-gray-800 hover:bg-gray-900 text-white rounded font-semibold">Mark as Absent</button>
+
+                {/* Clear and Undo buttons - only for single seat with actions */}
+                {selectedPlayers.length === 1 && seatActions[currentStreet]?.[selectedPlayers[0]]?.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => clearSeatActions([selectedPlayers[0]])}
+                      className="mt-2 w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold"
+                    >
+                      Clear Seat Actions
+                    </button>
+                    <button
+                      onClick={() => undoLastAction(selectedPlayers[0])}
+                      className="mt-2 w-full py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
+                    >
+                      ↶ Undo Last Action
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

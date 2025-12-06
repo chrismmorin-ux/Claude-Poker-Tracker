@@ -1,0 +1,23 @@
+{
+  "defaultModel": "qwen",
+  "confidenceThreshold": 0.7,
+  "autoRoute": true,
+  "askOnUncertain": true,
+  "logRouting": true,
+  "logFile": "~/.claude/routing-log.json",
+  "localModelKeywords": {
+    "high": ["rename", "comment", "format", "typo", "capitalize"],
+    "medium": ["refactor", "extract", "test", "document"],
+    "low": ["generate", "create", "utility"]
+  },
+  "claudeKeywords": {
+    "high": ["debug", "architecture", "design", "optimize", "security"],
+    "medium": ["feature", "implement", "integrate"],
+    "low": ["improve", "enhance", "update"]
+  },
+  "preferences": {
+    "preferLocal": false,
+    "alwaysAskFirst": false,
+    "showTokenSavings": true
+  }
+}

@@ -39,19 +39,22 @@ export const useSeatColor = (
       return `bg-red-400 ring-4 ${ringColor} text-white`;
     }
 
-    // Get action-based colors
-    const action = seatActions[currentStreet]?.[seat];
+    // Get action-based colors (use last action from array)
+    const actions = seatActions[currentStreet]?.[seat];
+    const actionArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+    const lastAction = actionArray[actionArray.length - 1]; // Get last action for color
+
     let baseColor = 'bg-gray-700';
     let ringColor = getSelectionRing();
 
-    if (action) {
-      const style = getSeatActionStyle(action);
+    if (lastAction) {
+      const style = getSeatActionStyle(lastAction);
       baseColor = style.bg;
       if (!ringColor) ringColor = style.ring;
     }
 
     const ring = ringColor ? `ring-4 ${ringColor}` : '';
-    const hover = !action && !isSelected && !isMySeat ? 'hover:bg-gray-600' : '';
+    const hover = !lastAction && !isSelected && !isMySeat ? 'hover:bg-gray-600' : '';
     return `${baseColor} ${ring} text-white ${hover}`;
   }, [hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet, getSeatActionStyle]);
 
