@@ -139,4 +139,13 @@ export const LAYOUT = {
   SEAT_SIZE: 40,
   DEALER_BUTTON_SIZE: 28,
   TOGGLE_BUTTON_SIZE: 24,
+
+  // Table label positioning (below felt)
+  TABLE_LABEL_BOTTOM: -30,
+  TABLE_LABEL_WIDTH: 300,
+  TABLE_LABEL_HEIGHT: 60,
+
+  // Action panel positioning
+  ACTION_PANEL_WIDTH: 480,
+  ACTION_PANEL_TOP: 80,
 };

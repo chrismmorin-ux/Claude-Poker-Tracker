@@ -57,6 +57,9 @@ import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
 import { usePersistence } from './hooks/usePersistence';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { usePlayerPersistence } from './hooks/usePlayerPersistence';
+import { useToast } from './hooks/useToast';
+import { ToastContainer } from './components/ui/Toast';
+import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -147,6 +150,9 @@ const PokerTrackerWireframes = () => {
     getPlayerSeat,
     clearAllSeatAssignments
   } = usePlayerPersistence(playerState, dispatchPlayer);
+
+  // Initialize toast notifications
+  const { toasts, dismissToast, showError, showSuccess, showWarning } = useToast();
 
   // Local UI state (scale)
   const [scale, setScale] = useState(1);
@@ -316,7 +322,7 @@ const PokerTrackerWireframes = () => {
     // Show error if any seat has invalid action
     if (invalidSeats.length > 0) {
       const errorMsg = invalidSeats.map(s => `Seat ${s.seat}: ${s.error}`).join('\n');
-      alert(`Invalid action:\n${errorMsg}`);
+      showError(`Invalid action:\n${errorMsg}`);
       return;
     }
 
@@ -575,10 +581,22 @@ const PokerTrackerWireframes = () => {
     }
   }, [currentStreet, showCardSelector, currentView, selectedPlayers, getFirstActionSeat, dispatchUi]);
 
+  // Toast container (rendered with every view)
+  const toastOverlay = <ToastContainer toasts={toasts} onDismiss={dismissToast} />;
+
+  // Helper to return to table view
+  const returnToTable = useCallback(() => {
+    setCurrentScreen(SCREEN.TABLE);
+    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
+  }, [setCurrentScreen, dispatchCard]);
+
   // Showdown Screen
   if (isShowdownViewOpen) {
     return (
-      <ShowdownView
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Showdown" onReturnToTable={returnToTable}>
+          <ShowdownView
         scale={scale}
         communityCards={communityCards}
         holeCards={holeCards}
@@ -614,14 +632,19 @@ const PokerTrackerWireframes = () => {
         isFoldAction={isFoldAction}
         getHandAbbreviation={getHandAbbreviation}
         SkipForward={SkipForward}
-      />
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // Card Selector Screen (renders when showCardSelector is true)
   if (showCardSelector) {
     return (
-      <CardSelectorView
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Card Selector" onReturnToTable={returnToTable}>
+          <CardSelectorView
         cardSelectorType={cardSelectorType}
         currentStreet={currentStreet}
         communityCards={communityCards}
@@ -636,14 +659,19 @@ const PokerTrackerWireframes = () => {
         setHoleCardsVisible={setHoleCardsVisible}
         setCardSelectorType={setCardSelectorType}
         setHighlightedCardIndex={setHighlightedCardIndex}
-      />
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // Table Screen (main poker table view)
   if (currentView === SCREEN.TABLE) {
     return (
-      <TableView
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Table" onReturnToTable={returnToTable}>
+          <TableView
         scale={scale}
         currentStreet={currentStreet}
         communityCards={communityCards}
@@ -695,73 +723,97 @@ const PokerTrackerWireframes = () => {
         SkipForward={SkipForward}
         BarChart3={BarChart3}
         RotateCcw={RotateCcw}
-      />
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // History Screen
   if (currentView === SCREEN.HISTORY) {
     return (
-      <HistoryView
-        scale={scale}
-        setCurrentScreen={setCurrentScreen}
-        dispatchGame={dispatchGame}
-        dispatchCard={dispatchCard}
-        dispatchPlayer={dispatchPlayer}
-        STREETS={STREETS}
-      />
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="History" onReturnToTable={returnToTable}>
+          <HistoryView
+          scale={scale}
+          setCurrentScreen={setCurrentScreen}
+          dispatchGame={dispatchGame}
+          dispatchCard={dispatchCard}
+          dispatchPlayer={dispatchPlayer}
+          STREETS={STREETS}
+          showError={showError}
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // Sessions Screen
   if (currentView === SCREEN.SESSIONS) {
     return (
-      <SessionsView
-        scale={scale}
-        setCurrentScreen={setCurrentScreen}
-        sessionState={sessionState}
-        dispatchSession={dispatchSession}
-        startNewSession={startNewSession}
-        endCurrentSession={endCurrentSession}
-        updateSessionField={updateSessionField}
-        loadAllSessions={loadAllSessions}
-        deleteSessionById={deleteSessionById}
-        SCREEN={SCREEN}
-      />
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Sessions" onReturnToTable={returnToTable}>
+          <SessionsView
+          scale={scale}
+          setCurrentScreen={setCurrentScreen}
+          sessionState={sessionState}
+          dispatchSession={dispatchSession}
+          startNewSession={startNewSession}
+          endCurrentSession={endCurrentSession}
+          updateSessionField={updateSessionField}
+          loadAllSessions={loadAllSessions}
+          deleteSessionById={deleteSessionById}
+          SCREEN={SCREEN}
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // Players Screen
   if (currentView === SCREEN.PLAYERS) {
     return (
-      <PlayersView
-        scale={scale}
-        onBackToTable={() => setCurrentScreen(SCREEN.TABLE)}
-        playerState={playerState}
-        createNewPlayer={createNewPlayer}
-        updatePlayerById={updatePlayerById}
-        deletePlayerById={deletePlayerById}
-        loadAllPlayers={loadAllPlayers}
-        assignPlayerToSeat={assignPlayerToSeat}
-        clearSeatAssignment={clearSeatAssignment}
-        getSeatPlayerName={getSeatPlayerName}
-        isPlayerAssigned={isPlayerAssigned}
-        getPlayerSeat={getPlayerSeat}
-        clearAllSeatAssignments={clearAllSeatAssignments}
-        pendingSeatForPlayerAssignment={pendingSeatForPlayerAssignment}
-        setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
-      />
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Players" onReturnToTable={returnToTable}>
+          <PlayersView
+          scale={scale}
+          onBackToTable={() => setCurrentScreen(SCREEN.TABLE)}
+          playerState={playerState}
+          createNewPlayer={createNewPlayer}
+          updatePlayerById={updatePlayerById}
+          deletePlayerById={deletePlayerById}
+          loadAllPlayers={loadAllPlayers}
+          assignPlayerToSeat={assignPlayerToSeat}
+          clearSeatAssignment={clearSeatAssignment}
+          getSeatPlayerName={getSeatPlayerName}
+          isPlayerAssigned={isPlayerAssigned}
+          getPlayerSeat={getPlayerSeat}
+          clearAllSeatAssignments={clearAllSeatAssignments}
+          pendingSeatForPlayerAssignment={pendingSeatForPlayerAssignment}
+          setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
+          showError={showError}
+          />
+        </ViewErrorBoundary>
+      </>
     );
   }
 
   // Stats Screen
   return (
-    <StatsView
-      seatActions={seatActions}
-      mySeat={mySeat}
-      setCurrentScreen={setCurrentScreen}
-      scale={scale}
-    />
+    <>
+      {toastOverlay}
+      <ViewErrorBoundary viewName="Stats" onReturnToTable={returnToTable}>
+        <StatsView
+          seatActions={seatActions}
+          mySeat={mySeat}
+          setCurrentScreen={setCurrentScreen}
+          scale={scale}
+        />
+      </ViewErrorBoundary>
+    </>
   );
 };
 

@@ -16,10 +16,11 @@
 // =============================================================================
 
 /**
- * Global debug flag - set to false to disable debug logging
+ * Global debug flag - automatically disabled in production builds
+ * Uses Vite's import.meta.env.DEV which is true in dev, false in production
  * All modules should import this instead of defining their own
  */
-export const DEBUG = true;
+export const DEBUG = import.meta.env.DEV;
 
 // =============================================================================
 // ERROR CODES

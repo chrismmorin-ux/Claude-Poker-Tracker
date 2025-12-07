@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount } from '../../utils/persistence';
+import { LAYOUT } from '../../constants/gameConstants';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
@@ -20,7 +21,8 @@ export const HistoryView = ({
   dispatchGame,
   dispatchCard,
   dispatchPlayer,
-  STREETS
+  STREETS,
+  showError
 }) => {
   const [hands, setHands] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export const HistoryView = ({
       }
     } catch (error) {
       console.error('[HistoryView] Failed to load hand:', error);
-      alert('Failed to load hand. Please try again.');
+      showError('Failed to load hand. Please try again.');
     }
   };
 
@@ -107,7 +109,7 @@ export const HistoryView = ({
       await loadHands();
     } catch (error) {
       console.error('[HistoryView] Failed to delete hand:', error);
-      alert('Failed to delete hand. Please try again.');
+      showError('Failed to delete hand. Please try again.');
     }
   };
 
@@ -124,7 +126,7 @@ export const HistoryView = ({
       await loadHands();
     } catch (error) {
       console.error('[HistoryView] Failed to clear hands:', error);
-      alert('Failed to clear hands. Please try again.');
+      showError('Failed to clear hands. Please try again.');
     }
   };
 
@@ -181,7 +183,7 @@ export const HistoryView = ({
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="bg-gray-50 overflow-y-auto" style={{ width: '1600px', height: '720px' }}>
+      <div className="bg-gray-50 overflow-y-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
         {/* Header */}
         <div className="bg-white border-b border-gray-300 p-6 sticky top-0 z-10">
           <div className="flex justify-between items-center">

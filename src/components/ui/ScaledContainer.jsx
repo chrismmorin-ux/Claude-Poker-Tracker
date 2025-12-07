@@ -1,4 +1,5 @@
 import React from 'react';
+import { LAYOUT } from '../../constants/gameConstants';
 
 /**
  * ScaledContainer - Responsive wrapper that scales content to fit viewport
@@ -8,8 +9,8 @@ export const ScaledContainer = ({ scale, children }) => (
   <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
     <div
       style={{
-        width: '1600px',
-        height: '720px',
+        width: `${LAYOUT.TABLE_WIDTH}px`,
+        height: `${LAYOUT.TABLE_HEIGHT}px`,
         transform: `scale(${scale})`,
         transformOrigin: 'center center',
       }}

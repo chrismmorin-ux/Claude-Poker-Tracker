@@ -22,7 +22,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v111)
+## Architecture (v112)
 
 ### File Structure
 ```
@@ -48,7 +48,8 @@ src/
 │   ├── useShowdownCardSelection.js (Showdown card selection)
 │   ├── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
 │   ├── useSessionPersistence.js (Session persistence and lifecycle - NEW in v110)
-│   └── usePlayerPersistence.js  (Player persistence and seat assignment - NEW in v111)
+│   ├── usePlayerPersistence.js  (Player persistence and seat assignment - NEW in v111)
+│   └── useToast.js              (Toast notification state management - NEW in v112)
 │
 ├── reducers/                    (State management)
 │   ├── gameReducer.js           (Game state: street, dealer, actions)
@@ -64,7 +65,8 @@ src/
 │   ├── seatUtils.js             (Seat navigation and positioning)
 │   ├── displayUtils.js          (Display formatting, time formatting - UPDATED in v110)
 │   ├── validation.js            (Input validation)
-│   └── persistence.js           (IndexedDB CRUD operations - hands, sessions, players - UPDATED in v111)
+│   ├── persistence.js           (IndexedDB CRUD operations - hands, sessions, players - UPDATED in v111)
+│   └── exportUtils.js           (Data export/import functionality - NEW in v112)
 │
 └── components/
     ├── ui/                      (Reusable UI components)
@@ -76,7 +78,13 @@ src/
     │   ├── ActionBadge.jsx      (Single action badge display)
     │   ├── ActionSequence.jsx   (Multiple action badges with overflow)
     │   ├── SessionForm.jsx      (New session creation form - NEW in v110)
-    │   └── PlayerForm.jsx       (Player creation/editing form - NEW in v111)
+    │   ├── PlayerForm.jsx       (Player creation/editing form - NEW in v111)
+    │   ├── Toast.jsx            (Toast notifications with 4 variants - NEW in v112)
+    │   ├── ViewErrorBoundary.jsx (Per-view error boundary with retry - NEW in v112)
+    │   ├── PlayerFilters.jsx    (Player search/sort/filter controls - NEW in v112)
+    │   ├── PlayerRow.jsx        (Single player table row - NEW in v112)
+    │   ├── SeatGrid.jsx         (9-seat assignment grid - NEW in v112)
+    │   └── SessionCard.jsx      (Past session display card - NEW in v112)
     │
     └── views/                   (Full-screen view components)
         ├── TableView.jsx        (Main poker table, ~380 lines - UPDATED in v111)
@@ -84,8 +92,8 @@ src/
         ├── CardSelectorView.jsx (Card selection, ~178 lines)
         ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
         ├── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
-        ├── SessionsView.jsx     (Session management, ~656 lines - NEW in v110)
-        └── PlayersView.jsx      (Player management, ~860 lines - NEW in v111)
+        ├── SessionsView.jsx     (Session management, ~715 lines - UPDATED in v112)
+        └── PlayersView.jsx      (Player management, ~587 lines - UPDATED in v112)
 ```
 
 ### State Management (useReducer)
@@ -326,7 +334,7 @@ Test all 6 views at various browser sizes:
   - Added SCREEN.SESSIONS view identifier
   - Features: Start/end sessions, venue selection, game type selection, buy-in tracking, rebuy transactions, cash-out workflow, running total bankroll, session history, inline editing
   - Database schema: PokerTrackerDB v4 with 'sessions' object store (sessionId, startTime, endTime indexes, activeSession metadata)
-- v111: Player management system (current)
+- v111: Player management system
   - Created `src/constants/playerConstants.js` - Player configuration (PLAYER_ACTIONS, physical attributes, style tags)
   - Created `src/reducers/playerReducer.js` - Player state management with seat assignments
   - Created `src/hooks/usePlayerPersistence.js` - Player CRUD and seat assignment logic (~320 lines)
@@ -338,3 +346,19 @@ Test all 6 views at various browser sizes:
   - Features: Player profiles with physical descriptions (ethnicity, build, gender, facial hair, hat, sunglasses), playing style tags, notes, avatar upload, quick seat assignment (right-click + drag-and-drop), seat management with click-to-select workflow, auto-highlight seat from context menu, duplicate player prevention, replacement prompts, portrait mode support
   - Database schema: PokerTrackerDB v5 with 'players' object store (playerId, name, createdAt, lastSeenAt indexes)
   - Responsive design: PlayersView uses viewport-based widths for portrait phone screens while other views remain landscape
+- v112: CTO review improvements (current)
+  - Created `src/components/ui/Toast.jsx` - Toast notification with 4 variants (error, success, warning, info)
+  - Created `src/hooks/useToast.js` - Toast state management hook with auto-dismiss
+  - Created `src/components/ui/ViewErrorBoundary.jsx` - Per-view error boundary with retry/return options
+  - Created `src/utils/exportUtils.js` - Data export/import functionality for backup/restore
+  - Extracted `src/components/ui/PlayerFilters.jsx` - Search, sort, filter controls from PlayersView
+  - Extracted `src/components/ui/PlayerRow.jsx` - Single player table row from PlayersView
+  - Extracted `src/components/ui/SeatGrid.jsx` - 9-seat assignment grid from PlayersView
+  - Extracted `src/components/ui/SessionCard.jsx` - Past session display card from SessionsView
+  - Replaced all 7 `alert()` calls with toast notifications
+  - Wrapped all 7 views with ViewErrorBoundary for graceful error recovery
+  - PlayersView.jsx reduced from ~869 to ~587 lines (32% reduction)
+  - SessionsView.jsx reduced from ~800 to ~715 lines (~11% reduction)
+  - DEBUG flag now respects environment (import.meta.env.DEV)
+  - All layout values centralized in LAYOUT constants
+  - 272 tests passing across 8 test files

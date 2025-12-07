@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { isRedSuit } from '../../utils/displayUtils';
+import { LAYOUT } from '../../constants/gameConstants';
 
 // Card constants
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -31,14 +32,14 @@ export const CardSelectorView = ({
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
       <div style={{
-        width: '1600px',
-        height: '720px',
+        width: `${LAYOUT.TABLE_WIDTH}px`,
+        height: `${LAYOUT.TABLE_HEIGHT}px`,
         transform: `scale(${scale})`,
         transformOrigin: 'center center'
       }}>
         <div
           className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-          style={{ width: '1600px', height: '720px' }}
+          style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
         >
           <div className="bg-white p-6 flex justify-between items-center">
             <h2 className="text-3xl font-bold capitalize">

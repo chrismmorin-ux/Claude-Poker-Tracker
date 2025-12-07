@@ -5,12 +5,14 @@
  * Allows creating, ending, editing, and deleting sessions.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Play, Square, Trash2, Clock, DollarSign, Target } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Square, Download, Upload } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { SessionForm } from '../ui/SessionForm';
+import { SessionCard } from '../ui/SessionCard';
 import { SESSION_GOALS, VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 import { formatTime12Hour, calculateTotalRebuy } from '../../utils/displayUtils';
+import { downloadBackup, readJsonFile, validateImportData, importAllData } from '../../utils/exportUtils';
 
 /**
  * SessionsView component
@@ -53,6 +55,12 @@ export const SessionsView = ({
   const [rebuyAmount, setRebuyAmount] = useState('');
   const [showCashOutModal, setShowCashOutModal] = useState(false);
   const [cashOutAmount, setCashOutAmount] = useState('');
+
+  // Import/Export state
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [importData, setImportData] = useState(null);
+  const [importStatus, setImportStatus] = useState(null); // { success, message }
+  const fileInputRef = useRef(null);
 
   // Load all sessions on mount
   useEffect(() => {
@@ -177,24 +185,6 @@ export const SessionsView = ({
     return gameType?.rebuyDefault || 200;
   };
 
-  // Format duration
-  const formatDuration = (startTime, endTime) => {
-    const duration = (endTime || Date.now()) - startTime;
-    const hours = Math.floor(duration / 3600000);
-    const minutes = Math.floor((duration % 3600000) / 60000);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  // Format date
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
   // Format relative time
   const formatRelativeTime = (timestamp) => {
     const now = Date.now();
@@ -206,6 +196,69 @@ export const SessionsView = ({
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  };
+
+  // Handle export
+  const handleExport = async () => {
+    try {
+      await downloadBackup();
+      setImportStatus({ success: true, message: 'Backup downloaded successfully!' });
+      setTimeout(() => setImportStatus(null), 3000);
+    } catch (error) {
+      setImportStatus({ success: false, message: 'Failed to export data: ' + error.message });
+    }
+  };
+
+  // Handle file selection for import
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await readJsonFile(file);
+      const validation = validateImportData(data);
+
+      if (!validation.valid) {
+        setImportStatus({ success: false, message: 'Invalid backup file: ' + validation.errors.join(', ') });
+        return;
+      }
+
+      setImportData(data);
+      setShowImportConfirm(true);
+    } catch (error) {
+      setImportStatus({ success: false, message: 'Failed to read file: ' + error.message });
+    }
+
+    // Reset file input
+    event.target.value = '';
+  };
+
+  // Handle import confirmation
+  const handleConfirmImport = async () => {
+    if (!importData) return;
+
+    try {
+      const result = await importAllData(importData);
+
+      if (result.success) {
+        setImportStatus({
+          success: true,
+          message: `Imported ${result.counts.hands} hands, ${result.counts.sessions} sessions, ${result.counts.players} players`
+        });
+
+        // Reload sessions
+        const allSessions = await loadAllSessions();
+        const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
+        setSessions(sorted);
+      } else {
+        setImportStatus({ success: false, message: 'Import completed with errors: ' + result.errors.join(', ') });
+      }
+    } catch (error) {
+      setImportStatus({ success: false, message: 'Import failed: ' + error.message });
+    }
+
+    setShowImportConfirm(false);
+    setImportData(null);
   };
 
   // Calculate running total bankroll (sum of all profit/loss)
@@ -241,6 +294,27 @@ export const SessionsView = ({
                 New Session
               </button>
               <button
+                onClick={handleExport}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
+              >
+                <Download size={18} />
+                Export
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 font-medium"
+              >
+                <Upload size={18} />
+                Import
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
                 onClick={() => setCurrentScreen(SCREEN.TABLE)}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
               >
@@ -248,6 +322,19 @@ export const SessionsView = ({
               </button>
             </div>
           </div>
+
+          {/* Import/Export Status */}
+          {importStatus && (
+            <div className={`mb-4 p-4 rounded-lg ${importStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {importStatus.message}
+              <button
+                onClick={() => setImportStatus(null)}
+                className="ml-4 text-sm underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Current Session */}
           {sessionState.currentSession.isActive && sessionState.currentSession.sessionId && (
@@ -487,78 +574,11 @@ export const SessionsView = ({
               {sessions
                 .filter((s) => !s.isActive)
                 .map((session) => (
-                  <div
+                  <SessionCard
                     key={session.sessionId}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-800">
-                            {formatDate(session.startTime)} - {session.venue} - {session.gameType} - {formatTime12Hour(session.startTime)}
-                          </h3>
-                        </div>
-
-                        <div className="flex gap-6 text-sm text-gray-600 flex-wrap">
-                          <div className="flex items-center gap-1">
-                            <Clock size={14} />
-                            {formatDuration(session.startTime, session.endTime)}
-                          </div>
-                          <div>
-                            {session.handCount} hands
-                          </div>
-
-                          {/* Buy-in + Total Rebuy */}
-                          {session.buyIn && (
-                            <div className="flex items-center gap-1">
-                              <DollarSign size={14} />
-                              Buy-in: ${session.buyIn}
-                              {session.rebuyTransactions && session.rebuyTransactions.length > 0 && (
-                                <span className="text-xs text-gray-500">
-                                  (+${calculateTotalRebuy(session.rebuyTransactions)} rebuy)
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Cash Out */}
-                          {session.cashOut !== null && session.cashOut !== undefined && (
-                            <div className="flex items-center gap-1">
-                              <DollarSign size={14} />
-                              Cash out: ${session.cashOut}
-                            </div>
-                          )}
-
-                          {/* Profit/Loss */}
-                          {session.cashOut !== null && session.cashOut !== undefined && session.buyIn && (
-                            <div className={`font-medium ${
-                              (session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)) >= 0
-                                ? 'text-green-600'
-                                : 'text-red-600'
-                            }`}>
-                              {(session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)) >= 0 ? '+' : ''}
-                              ${(session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)).toFixed(2)}
-                            </div>
-                          )}
-
-                          {/* Goal */}
-                          {session.goal && (
-                            <div className="flex items-center gap-1">
-                              <Target size={14} />
-                              {session.goal}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteSession(session.sessionId)}
-                        className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
+                    session={session}
+                    onDelete={handleDeleteSession}
+                  />
                 ))}
 
               {sessions.filter((s) => !s.isActive).length === 0 && (
@@ -604,6 +624,46 @@ export const SessionsView = ({
         >
           Pre-session Drills
         </button>
+
+        {/* Import Confirmation Modal */}
+        {showImportConfirm && importData && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Confirm Import</h2>
+              <p className="text-red-600 font-semibold mb-4">
+                Warning: This will replace ALL existing data!
+              </p>
+              <p className="text-gray-600 mb-4">
+                The backup file contains:
+              </p>
+              <ul className="list-disc list-inside text-gray-700 mb-4">
+                <li>{importData.counts?.hands || importData.data?.hands?.length || 0} hands</li>
+                <li>{importData.counts?.sessions || importData.data?.sessions?.length || 0} sessions</li>
+                <li>{importData.counts?.players || importData.data?.players?.length || 0} players</li>
+              </ul>
+              {importData.exportedAtISO && (
+                <p className="text-sm text-gray-500 mb-4">
+                  Exported: {new Date(importData.exportedAtISO).toLocaleString()}
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowImportConfirm(false); setImportData(null); }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmImport}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Import & Replace
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Cash Out Modal */}
         {showCashOutModal && (

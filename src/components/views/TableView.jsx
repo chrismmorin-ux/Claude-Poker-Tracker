@@ -4,6 +4,7 @@ import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
 import { ActionSequence } from '../ui/ActionSequence';
+import { LAYOUT } from '../../constants/gameConstants';
 
 /**
  * TableView - Main poker table interface
@@ -65,14 +66,14 @@ export const TableView = ({
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
       <div style={{
-        width: '1600px',
-        height: '720px',
+        width: `${LAYOUT.TABLE_WIDTH}px`,
+        height: `${LAYOUT.TABLE_HEIGHT}px`,
         transform: `scale(${scale})`,
         transformOrigin: 'center center'
       }}>
         <div
           className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-          style={{ width: '1600px', height: '720px' }}
+          style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
           onClick={(e) => {
             if (!isDraggingDealer) {
               setContextMenu(null);
@@ -137,17 +138,17 @@ export const TableView = ({
               ref={tableRef}
               className="absolute bg-green-700 shadow-2xl"
               style={{
-                top: '50px',
-                left: '200px',
-                width: '900px',
-                height: '450px',
-                borderRadius: '225px'
+                top: `${LAYOUT.TABLE_OFFSET_Y}px`,
+                left: `${LAYOUT.TABLE_OFFSET_X}px`,
+                width: `${LAYOUT.FELT_WIDTH}px`,
+                height: `${LAYOUT.FELT_HEIGHT}px`,
+                borderRadius: `${LAYOUT.FELT_HEIGHT / 2}px`
               }}
               onMouseMove={handleDealerDrag}
               onMouseUp={handleDealerDragEnd}
               onMouseLeave={handleDealerDragEnd}
             >
-              <div className="absolute inset-4 bg-green-600 border-8 border-green-800 shadow-inner" style={{ borderRadius: '217px' }}>
+              <div className="absolute inset-4 bg-green-600 border-8 border-green-800 shadow-inner" style={{ borderRadius: `${LAYOUT.FELT_HEIGHT / 2 - 8}px` }}>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2">
                   {[0, 1, 2, 3, 4].map((idx) => (
                     <CardSlot
@@ -185,7 +186,7 @@ export const TableView = ({
                       onClick={() => togglePlayerSelection(seat)}
                       onContextMenu={(e) => handleSeatRightClick(e, seat)}
                       className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
-                      style={{ width: '40px', height: '40px' }}
+                      style={{ width: `${LAYOUT.SEAT_SIZE}px`, height: `${LAYOUT.SEAT_SIZE}px` }}
                     >
                       {seat}
                     </button>
@@ -257,7 +258,7 @@ export const TableView = ({
 
               <div
                 className="absolute transform -translate-x-1/2 bg-amber-800 border-4 border-amber-900 rounded-lg shadow-xl flex items-center justify-center"
-                style={{ left: '50%', bottom: '-30px', width: '300px', height: '60px' }}
+                style={{ left: '50%', bottom: `${LAYOUT.TABLE_LABEL_BOTTOM}px`, width: `${LAYOUT.TABLE_LABEL_WIDTH}px`, height: `${LAYOUT.TABLE_LABEL_HEIGHT}px` }}
               >
                 <div className="text-white font-bold text-2xl">TABLE</div>
               </div>
@@ -378,7 +379,7 @@ export const TableView = ({
             )}
 
             {selectedPlayers.length > 0 && currentStreet !== 'showdown' && (
-              <div className="absolute top-50 right-8 bg-white rounded-lg shadow-2xl p-4" style={{ width: '480px', top: '80px' }}>
+              <div className="absolute top-50 right-8 bg-white rounded-lg shadow-2xl p-4" style={{ width: `${LAYOUT.ACTION_PANEL_WIDTH}px`, top: `${LAYOUT.ACTION_PANEL_TOP}px` }}>
                 <div className="flex justify-between items-center mb-3 pb-2 border-b-2">
                   <h3 className="text-2xl font-bold">
                     {selectedPlayers.length === 1

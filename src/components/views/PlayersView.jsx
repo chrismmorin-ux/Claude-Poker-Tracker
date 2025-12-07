@@ -8,12 +8,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { PlayerForm } from '../ui/PlayerForm';
-import {
-  ETHNICITY_OPTIONS,
-  BUILD_OPTIONS,
-  GENDER_OPTIONS,
-  FACIAL_HAIR_OPTIONS
-} from '../../constants/playerConstants';
+import { PlayerFilters } from '../ui/PlayerFilters';
+import { PlayerRow } from '../ui/PlayerRow';
+import { SeatGrid } from '../ui/SeatGrid';
 import { LIMITS } from '../../constants/gameConstants';
 
 /**
@@ -50,7 +47,8 @@ export const PlayersView = ({
   clearAllSeatAssignments,
   pendingSeatForPlayerAssignment,
   setPendingSeatForPlayerAssignment,
-  scale = 1
+  scale = 1,
+  showError
 }) => {
   // State
   const [showNewPlayerModal, setShowNewPlayerModal] = useState(false);
@@ -194,7 +192,7 @@ export const PlayersView = ({
       setFilterHat('');
       setFilterSunglasses('');
     } catch (error) {
-      alert(`Failed to create player: ${error.message}`);
+      showError(`Failed to create player: ${error.message}`);
     }
   };
 
@@ -334,7 +332,7 @@ export const PlayersView = ({
       await updatePlayerById(editingPlayer.playerId, playerData);
       setEditingPlayer(null);
     } catch (error) {
-      alert(`Failed to update player: ${error.message}`);
+      showError(`Failed to update player: ${error.message}`);
     }
   };
 
@@ -343,7 +341,7 @@ export const PlayersView = ({
       await deletePlayerById(deletingPlayer.playerId);
       setDeletingPlayer(null);
     } catch (error) {
-      alert(`Failed to delete player: ${error.message}`);
+      showError(`Failed to delete player: ${error.message}`);
     }
   };
 
@@ -357,43 +355,6 @@ export const PlayersView = ({
     });
     return Array.from(tags).sort();
   }, [playerState.allPlayers]);
-
-  // Format relative time
-  const formatRelativeTime = (timestamp) => {
-    if (!timestamp) return 'Never';
-
-    const now = Date.now();
-    const diff = now - timestamp;
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 7) {
-      const date = new Date(timestamp);
-      return date.toLocaleDateString();
-    } else if (days > 0) {
-      return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else if (minutes > 0) {
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    } else {
-      return 'Just now';
-    }
-  };
-
-  // Build description summary
-  const getDescriptionSummary = (player) => {
-    const parts = [];
-    if (player.ethnicity) parts.push(player.ethnicity);
-    if (player.gender) parts.push(player.gender);
-    if (player.build) parts.push(player.build);
-    if (player.facialHair && player.facialHair !== 'Clean-shaven') parts.push(player.facialHair);
-    if (player.hat) parts.push('Hat');
-    if (player.sunglasses) parts.push('Sunglasses');
-    return parts.length > 0 ? parts.join(', ') : 'No description';
-  };
 
   return (
     <div className="w-full h-full bg-gray-100 overflow-auto">
@@ -419,113 +380,28 @@ export const PlayersView = ({
           </button>
         </div>
 
-        {/* Search and Sort */}
-        <div className="mt-4 flex gap-3 items-center">
-          {/* Search */}
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name or nickname..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-40"
-          >
-            <option value="lastSeen">Last Seen</option>
-            <option value="name">Name</option>
-            <option value="handCount">Hand Count</option>
-          </select>
-        </div>
-
-        {/* Physical Feature Filters */}
-        <div className="mt-3 grid grid-cols-7 gap-2">
-          {/* Gender */}
-          <select
-            value={filterGender}
-            onChange={(e) => setFilterGender(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">All Genders</option>
-            {GENDER_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-
-          {/* Build */}
-          <select
-            value={filterBuild}
-            onChange={(e) => setFilterBuild(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">All Builds</option>
-            {BUILD_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-
-          {/* Ethnicity */}
-          <select
-            value={filterEthnicity}
-            onChange={(e) => setFilterEthnicity(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">All Ethnicities</option>
-            {ETHNICITY_OPTIONS.map(eth => (
-              <option key={eth} value={eth}>{eth}</option>
-            ))}
-          </select>
-
-          {/* Facial Hair */}
-          <select
-            value={filterFacialHair}
-            onChange={(e) => setFilterFacialHair(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">All Facial Hair</option>
-            {FACIAL_HAIR_OPTIONS.map(fh => (
-              <option key={fh} value={fh}>{fh}</option>
-            ))}
-          </select>
-
-          {/* Hat */}
-          <select
-            value={filterHat}
-            onChange={(e) => setFilterHat(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">Hat?</option>
-            <option value="yes">Wears Hat</option>
-            <option value="no">No Hat</option>
-          </select>
-
-          {/* Sunglasses */}
-          <select
-            value={filterSunglasses}
-            onChange={(e) => setFilterSunglasses(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">Sunglasses?</option>
-            <option value="yes">Wears Sunglasses</option>
-            <option value="no">No Sunglasses</option>
-          </select>
-
-          {/* Style Tag */}
-          <select
-            value={filterTag}
-            onChange={(e) => setFilterTag(e.target.value)}
-            className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">All Styles</option>
-            {allStyleTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-        </div>
+        {/* Search, Sort, and Filters */}
+        <PlayerFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          filterGender={filterGender}
+          setFilterGender={setFilterGender}
+          filterBuild={filterBuild}
+          setFilterBuild={setFilterBuild}
+          filterEthnicity={filterEthnicity}
+          setFilterEthnicity={setFilterEthnicity}
+          filterFacialHair={filterFacialHair}
+          setFilterFacialHair={setFilterFacialHair}
+          filterHat={filterHat}
+          setFilterHat={setFilterHat}
+          filterSunglasses={filterSunglasses}
+          setFilterSunglasses={setFilterSunglasses}
+          filterTag={filterTag}
+          setFilterTag={setFilterTag}
+          allStyleTags={allStyleTags}
+        />
 
         {/* Stats */}
         <div className="mt-3 text-sm text-gray-600">
@@ -534,73 +410,16 @@ export const PlayersView = ({
       </div>
 
       {/* Seat Management Section */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">Current Seat Assignments</h2>
-          <button
-            onClick={handleClearAllSeats}
-            className="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium"
-          >
-            Clear All Seats
-          </button>
-        </div>
-        <div className="grid grid-cols-9 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(seat => {
-            const playerName = getSeatPlayerName(seat);
-            const isSelected = selectedSeat === seat;
-            return (
-              <div
-                key={seat}
-                className={`border-2 rounded-lg p-3 text-center transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-yellow-400 bg-yellow-50 ring-4 ring-yellow-400 scale-110'
-                    : playerName
-                    ? 'border-blue-500 bg-blue-50 hover:bg-blue-100'
-                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                }`}
-                draggable={!!playerName}
-                onClick={() => handleSeatClick(seat)}
-                onDragStart={() => handleSeatDragStart(seat)}
-                onDragEnd={handleSeatDragEnd}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  handleDrop(seat);
-                }}
-              >
-                <div className="text-xs font-semibold text-gray-600 mb-1">
-                  Seat {seat}
-                </div>
-                {playerName ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-sm font-semibold text-blue-800 truncate w-full" title={playerName}>
-                      {playerName}
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearSeatAssignment(seat);
-                      }}
-                      className="text-xs text-red-600 hover:text-red-800 font-medium"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-xs text-gray-400">
-                    {isSelected ? 'Click player below' : 'Empty'}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {selectedSeat && (
-          <div className="mt-2 text-sm text-green-700 font-medium text-center">
-            Seat {selectedSeat} selected - Click a player below to assign
-          </div>
-        )}
-      </div>
+      <SeatGrid
+        selectedSeat={selectedSeat}
+        getSeatPlayerName={getSeatPlayerName}
+        onSeatClick={handleSeatClick}
+        onClearSeat={clearSeatAssignment}
+        onClearAllSeats={handleClearAllSeats}
+        onSeatDragStart={handleSeatDragStart}
+        onSeatDragEnd={handleSeatDragEnd}
+        onDrop={handleDrop}
+      />
 
       {/* Player List */}
       <div className="p-4">
@@ -626,118 +445,19 @@ export const PlayersView = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredPlayers.map(player => {
-                  const assignedSeat = getPlayerSeat(player.playerId);
-                  const isAssigned = assignedSeat !== null;
-
-                  return (
-                    <tr
-                      key={player.playerId}
-                      className={`transition-colors ${
-                        isAssigned ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
-                      } ${selectedSeat ? 'cursor-pointer' : ''}`}
-                      draggable
-                      onDragStart={() => handleDragStart(player.playerId)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
-                    >
-                      {/* Player */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {/* Seat Number Badge */}
-                          {isAssigned && (
-                            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded font-bold text-sm flex-shrink-0">
-                              {assignedSeat}
-                            </div>
-                          )}
-                          {/* Avatar */}
-                          {player.avatar ? (
-                            <img
-                              src={player.avatar}
-                              alt={player.name}
-                              className="w-10 h-10 rounded-full object-cover border border-gray-300 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0">
-                              {player.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          {/* Name */}
-                          <div>
-                            <div className="font-semibold text-gray-800">{player.name}</div>
-                            {player.nickname && (
-                              <div className="text-xs text-gray-500">"{player.nickname}"</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                    {/* Description */}
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-600">
-                        {getDescriptionSummary(player)}
-                      </div>
-                    </td>
-
-                    {/* Style Tags */}
-                    <td className="px-4 py-3">
-                      {player.styleTags && player.styleTags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {player.styleTags.slice(0, 2).map(tag => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {player.styleTags.length > 2 && (
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                              +{player.styleTags.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
-
-                    {/* Hand Count */}
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-700">{player.handCount || 0}</div>
-                    </td>
-
-                    {/* Last Seen */}
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-600">{formatRelativeTime(player.lastSeenAt)}</div>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3 justify-end">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingPlayer(player);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingPlayer(player);
-                          }}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                {filteredPlayers.map(player => (
+                  <PlayerRow
+                    key={player.playerId}
+                    player={player}
+                    assignedSeat={getPlayerSeat(player.playerId)}
+                    isSelecting={!!selectedSeat}
+                    onDragStart={() => handleDragStart(player.playerId)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
+                    onEdit={() => setEditingPlayer(player)}
+                    onDelete={() => setDeletingPlayer(player)}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

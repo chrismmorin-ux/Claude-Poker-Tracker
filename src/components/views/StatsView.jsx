@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
+import { LAYOUT } from '../../constants/gameConstants';
 
 // Import constants that StatsView needs
 // These will need to be imported from the main file or moved to a constants file
@@ -27,7 +28,7 @@ const SCREEN = {
 export const StatsView = ({ seatActions, mySeat, setCurrentScreen, scale }) => {
   return (
     <ScaledContainer scale={scale}>
-      <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: '1600px', height: '720px' }}>
+      <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Player Statistics</h2>
             <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-green-600 text-white px-4 py-2 rounded-lg">⬅ Back to Table</button>
