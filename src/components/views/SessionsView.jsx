@@ -1,0 +1,655 @@
+/**
+ * SessionsView.jsx - Sessions management view
+ *
+ * Displays current active session and all past sessions.
+ * Allows creating, ending, editing, and deleting sessions.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Play, Square, Trash2, Clock, DollarSign, Target } from 'lucide-react';
+import { ScaledContainer } from '../ui/ScaledContainer';
+import { SessionForm } from '../ui/SessionForm';
+import { SESSION_GOALS, VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
+import { formatTime12Hour, calculateTotalRebuy } from '../../utils/displayUtils';
+
+/**
+ * SessionsView component
+ * @param {Object} props
+ * @param {number} props.scale - Scale factor for responsive design
+ * @param {Function} props.setCurrentScreen - Navigate to different views
+ * @param {Object} props.sessionState - Session state from sessionReducer
+ * @param {Function} props.dispatchSession - Session dispatcher
+ * @param {Function} props.startNewSession - Start new session handler
+ * @param {Function} props.endCurrentSession - End current session handler
+ * @param {Function} props.updateSessionField - Update session field handler
+ * @param {Function} props.loadAllSessions - Load all sessions handler
+ * @param {Function} props.deleteSessionById - Delete session handler
+ * @param {Object} props.SCREEN - Screen constants
+ */
+export const SessionsView = ({
+  scale,
+  setCurrentScreen,
+  sessionState,
+  dispatchSession,
+  startNewSession,
+  endCurrentSession,
+  updateSessionField,
+  loadAllSessions,
+  deleteSessionById,
+  SCREEN
+}) => {
+  // Local UI state
+  const [showNewSessionForm, setShowNewSessionForm] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [editingBuyIn, setEditingBuyIn] = useState(false);
+  const [editingVenue, setEditingVenue] = useState(false);
+  const [editingGameType, setEditingGameType] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [addingRebuy, setAddingRebuy] = useState(false);
+  const [buyInValue, setBuyInValue] = useState('');
+  const [venueValue, setVenueValue] = useState('');
+  const [gameTypeValue, setGameTypeValue] = useState('');
+  const [goalValue, setGoalValue] = useState('');
+  const [rebuyAmount, setRebuyAmount] = useState('');
+  const [showCashOutModal, setShowCashOutModal] = useState(false);
+  const [cashOutAmount, setCashOutAmount] = useState('');
+
+  // Load all sessions on mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      const allSessions = await loadAllSessions();
+      // Sort by start time descending (most recent first)
+      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
+      setSessions(sorted);
+    };
+
+    loadSessions();
+  }, [loadAllSessions]);
+
+  // Handle new session submission
+  const handleNewSession = async (sessionData) => {
+    try {
+      await startNewSession(sessionData);
+      setShowNewSessionForm(false);
+
+      // Reload sessions
+      const allSessions = await loadAllSessions();
+      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
+      setSessions(sorted);
+    } catch (error) {
+      console.error('Failed to start session:', error);
+    }
+  };
+
+  // Handle end session - show cash out modal
+  const handleEndSession = () => {
+    setShowCashOutModal(true);
+    setCashOutAmount(''); // Reset to empty
+  };
+
+  // Handle confirm cash out and end session
+  const handleConfirmCashOut = async () => {
+    try {
+      const cashOut = cashOutAmount ? parseFloat(cashOutAmount) : null;
+
+      // Pass cashOut to the endCurrentSession function
+      await endCurrentSession(cashOut);
+
+      // Reload sessions
+      const allSessions = await loadAllSessions();
+      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
+      setSessions(sorted);
+
+      // Close modal
+      setShowCashOutModal(false);
+      setCashOutAmount('');
+    } catch (error) {
+      console.error('Failed to end session:', error);
+    }
+  };
+
+  // Handle cancel cash out modal
+  const handleCancelCashOut = () => {
+    setShowCashOutModal(false);
+    setCashOutAmount('');
+  };
+
+  // Handle delete session
+  const handleDeleteSession = async (sessionId) => {
+    if (!window.confirm(`Delete session #${sessionId}? This cannot be undone.`)) return;
+
+    try {
+      await deleteSessionById(sessionId);
+
+      // Reload sessions
+      const allSessions = await loadAllSessions();
+      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
+      setSessions(sorted);
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
+
+  // Handle buy-in update
+  const handleBuyInUpdate = () => {
+    const parsed = parseFloat(buyInValue);
+    if (!isNaN(parsed)) {
+      updateSessionField('buyIn', parsed);
+    }
+    setEditingBuyIn(false);
+  };
+
+  // Handle goal update
+  const handleGoalUpdate = () => {
+    updateSessionField('goal', goalValue);
+    setEditingGoal(false);
+  };
+
+  // Handle start add rebuy
+  const handleStartAddRebuy = () => {
+    const gameType = sessionState.currentSession.gameType;
+    const defaultAmount = getDefaultRebuyAmount(gameType);
+    setRebuyAmount(defaultAmount.toString());
+    setAddingRebuy(true);
+  };
+
+  // Handle confirm rebuy
+  const handleConfirmRebuy = () => {
+    const parsedAmount = parseFloat(rebuyAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return;
+
+    updateSessionField('rebuyTransactions', [
+      ...sessionState.currentSession.rebuyTransactions,
+      { timestamp: Date.now(), amount: parsedAmount }
+    ]);
+    setAddingRebuy(false);
+  };
+
+  // Handle cancel rebuy
+  const handleCancelRebuy = () => {
+    setAddingRebuy(false);
+    setRebuyAmount('');
+  };
+
+  // Helper to get default rebuy amount based on game type
+  const getDefaultRebuyAmount = (gameTypeLabel) => {
+    const gameType = Object.values(GAME_TYPES).find(gt => gt.label === gameTypeLabel);
+    return gameType?.rebuyDefault || 200;
+  };
+
+  // Format duration
+  const formatDuration = (startTime, endTime) => {
+    const duration = (endTime || Date.now()) - startTime;
+    const hours = Math.floor(duration / 3600000);
+    const minutes = Math.floor((duration % 3600000) / 60000);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  // Format date
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Format relative time
+  const formatRelativeTime = (timestamp) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  // Calculate running total bankroll (sum of all profit/loss)
+  const calculateTotalBankroll = () => {
+    return sessions.reduce((total, session) => {
+      // Only include completed sessions with cashOut
+      if (session.endTime && session.cashOut !== null && session.cashOut !== undefined) {
+        const buyIn = session.buyIn || 0;
+        const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
+        const profitLoss = session.cashOut - buyIn - totalRebuys;
+        return total + profitLoss;
+      }
+      return total;
+    }, 0);
+  };
+
+  const totalBankroll = calculateTotalBankroll();
+
+  return (
+    <ScaledContainer scale={scale}>
+      <div className="w-full h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
+        {/* Scrollable Content */}
+        <div className="w-full h-full pt-8 px-8 pb-24 overflow-y-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800">Sessions</h1>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNewSessionForm(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 font-medium"
+              >
+                <Play size={18} />
+                New Session
+              </button>
+              <button
+                onClick={() => setCurrentScreen(SCREEN.TABLE)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Back to Table
+              </button>
+            </div>
+          </div>
+
+          {/* Current Session */}
+          {sessionState.currentSession.isActive && sessionState.currentSession.sessionId && (
+            <div className="mb-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-1">
+                    {sessionState.currentSession.venue} - {sessionState.currentSession.gameType} - {formatTime12Hour(sessionState.currentSession.startTime)}
+                  </h2>
+                  <p className="text-green-100">
+                    Started {formatRelativeTime(sessionState.currentSession.startTime)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleEndSession}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Square size={16} />
+                  End Session
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                {/* Hands */}
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-green-100 mb-1">Hands</div>
+                  <div className="text-2xl font-bold">{sessionState.currentSession.handCount || 0}</div>
+                </div>
+
+                {/* Buy-in + Session Total */}
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-green-100 mb-1">Initial Buy-in</div>
+                  {editingBuyIn ? (
+                    <input
+                      type="number"
+                      value={buyInValue}
+                      onChange={(e) => setBuyInValue(e.target.value)}
+                      onBlur={handleBuyInUpdate}
+                      className="w-full px-2 py-1 text-gray-900 rounded"
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      onClick={() => {
+                        setBuyInValue((sessionState.currentSession.buyIn || '').toString());
+                        setEditingBuyIn(true);
+                      }}
+                      className="text-2xl font-bold mb-2 cursor-pointer hover:bg-white/10 rounded px-2 py-1"
+                    >
+                      ${sessionState.currentSession.buyIn || '---'}
+                    </div>
+                  )}
+                  <div className="text-green-100 text-xs mb-1">Session Total</div>
+                  <div className="text-2xl font-bold">
+                    ${(sessionState.currentSession.buyIn || 0) + calculateTotalRebuy(sessionState.currentSession.rebuyTransactions)}
+                  </div>
+                </div>
+
+                {/* Rebuys */}
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-green-100 mb-1">Rebuys</div>
+                  {addingRebuy ? (
+                    <div className="space-y-2">
+                      <input
+                        type="number"
+                        value={rebuyAmount}
+                        onChange={(e) => setRebuyAmount(e.target.value)}
+                        className="w-full px-2 py-1 text-gray-900 rounded"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleConfirmRebuy}
+                          className="flex-1 px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-xs"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={handleCancelRebuy}
+                          className="flex-1 px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-xs"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleStartAddRebuy}
+                      className="w-full px-3 py-2 bg-white/20 hover:bg-white/30 rounded text-sm"
+                    >
+                      + Add Rebuy
+                    </button>
+                  )}
+
+                  {/* Rebuy transaction list */}
+                  {sessionState.currentSession.rebuyTransactions && sessionState.currentSession.rebuyTransactions.length > 0 && (
+                    <div className="mt-3 space-y-1 max-h-24 overflow-y-auto">
+                      {sessionState.currentSession.rebuyTransactions.map((tx, idx) => (
+                        <div key={idx} className="flex justify-between text-xs">
+                          <span>{formatTime12Hour(tx.timestamp)}</span>
+                          <span>${tx.amount}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Venue and Game Type - Combined on one line */}
+              <div className="mt-4 bg-white/10 rounded-lg p-3">
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Venue */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-100 text-sm">Venue:</span>
+                    {editingVenue ? (
+                      <select
+                        value={venueValue}
+                        onChange={(e) => {
+                          const newVenue = e.target.value;
+                          setVenueValue(newVenue);
+                          updateSessionField('venue', newVenue);
+                          setEditingVenue(false);
+                        }}
+                        onBlur={() => setEditingVenue(false)}
+                        className="px-2 py-1 text-gray-900 rounded"
+                        autoFocus
+                      >
+                        {VENUES.map((v) => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          setVenueValue(sessionState.currentSession.venue || VENUES[0]);
+                          setEditingVenue(true);
+                        }}
+                        className="text-lg cursor-pointer hover:bg-white/10 rounded px-2 py-1 font-medium"
+                      >
+                        {sessionState.currentSession.venue || 'Click to set'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Game Type */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-100 text-sm">Game Type:</span>
+                    {editingGameType ? (
+                      <select
+                        value={gameTypeValue}
+                        onChange={(e) => {
+                          setGameTypeValue(e.target.value);
+                          const gameTypeLabel = GAME_TYPES[e.target.value]?.label;
+                          if (gameTypeLabel) {
+                            updateSessionField('gameType', gameTypeLabel);
+                          }
+                          setEditingGameType(false);
+                        }}
+                        onBlur={() => setEditingGameType(false)}
+                        className="px-2 py-1 text-gray-900 rounded"
+                        autoFocus
+                      >
+                        {GAME_TYPE_KEYS.map((key) => (
+                          <option key={key} value={key}>{GAME_TYPES[key].label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          const currentKey = GAME_TYPE_KEYS.find(
+                            key => GAME_TYPES[key].label === sessionState.currentSession.gameType
+                          ) || GAME_TYPE_KEYS[0];
+                          setGameTypeValue(currentKey);
+                          setEditingGameType(true);
+                        }}
+                        className="text-lg cursor-pointer hover:bg-white/10 rounded px-2 py-1 font-medium"
+                      >
+                        {sessionState.currentSession.gameType || 'Click to set'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Goal */}
+              <div className="mt-4">
+                <div className="text-green-100 text-sm mb-1">Goal</div>
+                {editingGoal ? (
+                  <select
+                    value={goalValue}
+                    onChange={(e) => setGoalValue(e.target.value)}
+                    onBlur={handleGoalUpdate}
+                    className="w-full px-3 py-2 text-gray-900 rounded"
+                    autoFocus
+                  >
+                    <option value="">No specific goal</option>
+                    {Object.values(SESSION_GOALS).map((goal) => (
+                      <option key={goal} value={goal}>{goal}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div
+                    onClick={() => {
+                      setGoalValue(sessionState.currentSession.goal || '');
+                      setEditingGoal(true);
+                    }}
+                    className="text-lg cursor-pointer hover:bg-white/10 rounded px-2 py-1"
+                  >
+                    {sessionState.currentSession.goal || 'Click to set goal'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* No Active Session */}
+          {!sessionState.currentSession.isActive && (
+            <div className="mb-6 bg-white rounded-lg shadow-lg p-8 text-center">
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">No Active Session</h2>
+              <button
+                onClick={() => setShowNewSessionForm(true)}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto font-medium"
+              >
+                <Play size={18} />
+                New Session
+              </button>
+            </div>
+          )}
+
+          {/* Past Sessions */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Past Sessions</h2>
+            </div>
+
+            <div className="divide-y divide-gray-200">
+              {sessions
+                .filter((s) => !s.isActive)
+                .map((session) => (
+                  <div
+                    key={session.sessionId}
+                    className="p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {formatDate(session.startTime)} - {session.venue} - {session.gameType} - {formatTime12Hour(session.startTime)}
+                          </h3>
+                        </div>
+
+                        <div className="flex gap-6 text-sm text-gray-600 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <Clock size={14} />
+                            {formatDuration(session.startTime, session.endTime)}
+                          </div>
+                          <div>
+                            {session.handCount} hands
+                          </div>
+
+                          {/* Buy-in + Total Rebuy */}
+                          {session.buyIn && (
+                            <div className="flex items-center gap-1">
+                              <DollarSign size={14} />
+                              Buy-in: ${session.buyIn}
+                              {session.rebuyTransactions && session.rebuyTransactions.length > 0 && (
+                                <span className="text-xs text-gray-500">
+                                  (+${calculateTotalRebuy(session.rebuyTransactions)} rebuy)
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Cash Out */}
+                          {session.cashOut !== null && session.cashOut !== undefined && (
+                            <div className="flex items-center gap-1">
+                              <DollarSign size={14} />
+                              Cash out: ${session.cashOut}
+                            </div>
+                          )}
+
+                          {/* Profit/Loss */}
+                          {session.cashOut !== null && session.cashOut !== undefined && session.buyIn && (
+                            <div className={`font-medium ${
+                              (session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)) >= 0
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            }`}>
+                              {(session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)) >= 0 ? '+' : ''}
+                              ${(session.cashOut - session.buyIn - calculateTotalRebuy(session.rebuyTransactions)).toFixed(2)}
+                            </div>
+                          )}
+
+                          {/* Goal */}
+                          {session.goal && (
+                            <div className="flex items-center gap-1">
+                              <Target size={14} />
+                              {session.goal}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteSession(session.sessionId)}
+                        className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+              {sessions.filter((s) => !s.isActive).length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No past sessions yet
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* New Session Form Modal */}
+          {showNewSessionForm && (
+            <SessionForm
+              onSubmit={handleNewSession}
+              onCancel={() => setShowNewSessionForm(false)}
+              scale={scale}
+              defaultGameType={
+                // Get game type key from most recent session
+                sessions.length > 0
+                  ? Object.keys(GAME_TYPES).find(key => GAME_TYPES[key].label === sessions[0].gameType)
+                  : ''
+              }
+              defaultVenue={sessions.length > 0 ? sessions[0].venue : ''}
+            />
+          )}
+        </div>
+
+        {/* Running Total Bankroll - Bottom Left Corner */}
+        <div className="absolute bottom-8 left-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-xl p-4 text-white z-20 max-w-xs">
+          <div className="text-blue-100 text-xs mb-1">Running Total Bankroll</div>
+          <div className={`text-2xl font-bold ${totalBankroll >= 0 ? 'text-white' : 'text-red-200'}`}>
+            {totalBankroll >= 0 ? '+' : ''}${totalBankroll.toFixed(2)}
+          </div>
+          <div className="text-blue-100 text-xs mt-1">
+            {sessions.filter(s => s.endTime && s.cashOut !== null).length} sessions
+          </div>
+        </div>
+
+        {/* Pre-session Drills Button - Bottom Right Corner */}
+        <button
+          onClick={() => {/* Dead button for now */}}
+          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg font-medium z-10"
+        >
+          Pre-session Drills
+        </button>
+
+        {/* Cash Out Modal */}
+        {showCashOutModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">End Session</h2>
+              <p className="text-gray-600 mb-4">
+                Enter your cash out amount (optional)
+              </p>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cash Out Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    value={cashOutAmount}
+                    onChange={(e) => setCashOutAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Leave empty to skip</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelCashOut}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmCashOut}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  End Session
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </ScaledContainer>
+  );
+};

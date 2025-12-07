@@ -20,7 +20,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v109)
+## Architecture (v110)
 
 ### File Structure
 ```
@@ -32,7 +32,8 @@ src/
 │   └── Note: All game constants and complex logic extracted to hooks
 │
 ├── constants/                   (Game configuration - NEW in v108)
-│   └── gameConstants.js         (ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.)
+│   ├── gameConstants.js         (ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.)
+│   └── sessionConstants.js      (SESSION_ACTIONS, VENUES, GAME_TYPES, SESSION_GOALS - NEW in v110)
 │
 ├── hooks/                       (Custom hooks - NEW in v108)
 │   ├── useActionUtils.js        (Action utility wrappers)
@@ -42,21 +43,23 @@ src/
 │   ├── useShowdownHandlers.js   (Showdown handlers)
 │   ├── useCardSelection.js      (Card selection logic)
 │   ├── useShowdownCardSelection.js (Showdown card selection)
-│   └── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
+│   ├── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
+│   └── useSessionPersistence.js (Session persistence and lifecycle - NEW in v110)
 │
 ├── reducers/                    (State management)
 │   ├── gameReducer.js           (Game state: street, dealer, actions)
 │   ├── uiReducer.js             (UI state: view, selection, context menu)
-│   └── cardReducer.js           (Card state: community, hole, showdown)
+│   ├── cardReducer.js           (Card state: community, hole, showdown)
+│   └── sessionReducer.js        (Session state: current session, all sessions - NEW in v110)
 │
 ├── utils/                       (Utility functions)
 │   ├── actionUtils.js           (Action styling, display, overlays)
 │   ├── actionValidation.js      (Action sequence validation)
 │   ├── cardUtils.js             (Card assignment and manipulation)
 │   ├── seatUtils.js             (Seat navigation and positioning)
-│   ├── displayUtils.js          (Display formatting)
+│   ├── displayUtils.js          (Display formatting, time formatting - UPDATED in v110)
 │   ├── validation.js            (Input validation)
-│   └── persistence.js           (IndexedDB CRUD operations - NEW in v109)
+│   └── persistence.js           (IndexedDB CRUD operations - hands and sessions - UPDATED in v110)
 │
 └── components/
     ├── ui/                      (Reusable UI components)
@@ -66,14 +69,16 @@ src/
     │   ├── DiagonalOverlay.jsx  (FOLD/ABSENT/MUCK/WON overlays)
     │   ├── ScaledContainer.jsx  (Responsive scaling wrapper)
     │   ├── ActionBadge.jsx      (Single action badge display)
-    │   └── ActionSequence.jsx   (Multiple action badges with overflow)
+    │   ├── ActionSequence.jsx   (Multiple action badges with overflow)
+    │   └── SessionForm.jsx      (New session creation form - NEW in v110)
     │
     └── views/                   (Full-screen view components)
         ├── TableView.jsx        (Main poker table, ~326 lines)
         ├── StatsView.jsx        (Statistics display, ~264 lines)
         ├── CardSelectorView.jsx (Card selection, ~178 lines)
         ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
-        └── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
+        ├── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
+        └── SessionsView.jsx     (Session management, ~656 lines - NEW in v110)
 ```
 
 ### State Management (useReducer)
@@ -91,11 +96,17 @@ The app uses three reducers for clean state management:
 - State: `communityCards`, `holeCards`, `allPlayerCards`, `isShowdownViewOpen`, etc.
 - Actions: `SET_COMMUNITY_CARD`, `SET_HOLE_CARD`, `OPEN_SHOWDOWN_VIEW`, etc.
 
+**sessionReducer** (`src/reducers/sessionReducer.js` - NEW in v110):
+- State: `currentSession` (sessionId, startTime, venue, gameType, buyIn, rebuyTransactions, cashOut, etc.), `allSessions`, `isLoading`
+- Actions: `START_SESSION`, `END_SESSION`, `UPDATE_SESSION_FIELD`, `ADD_REBUY`, `LOAD_SESSIONS`, `HYDRATE_SESSION`, etc.
+
 ### Key Constants
 - `ACTIONS.*` - All action types (FOLD, CALL, OPEN, etc.)
 - `SEAT_ARRAY` - [1,2,3,4,5,6,7,8,9] for iteration
 - `CONSTANTS.NUM_SEATS` - Use instead of hardcoded 9
-- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` - View identifiers
+- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` / `SCREEN.SESSIONS` - View identifiers
+- `VENUES` - ['Online', 'Horseshoe Casino', 'Wind Creek Casino'] (NEW in v110)
+- `GAME_TYPES` - {TOURNAMENT, ONE_TWO, ONE_THREE, TWO_FIVE} with buy-in defaults (NEW in v110)
 
 ### Component Architecture
 View and UI components are modular:
@@ -122,11 +133,13 @@ Helper functions are centralized in the utils/ directory:
 - `getSeatActionStyle(action, isFoldAction, ACTIONS)` - Get seat background/ring colors
 - `getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)` - Determine overlay status
 
-**displayUtils.js**: Display formatting utilities (NEW in v107)
+**displayUtils.js**: Display formatting utilities (NEW in v107, UPDATED in v110)
 - `isRedCard(card)` - Check if card is red (♥ or ♦)
 - `isRedSuit(suit)` - Check if suit is red
 - `getCardAbbreviation(card, SUIT_ABBREV)` - Convert "A♥" → "Ah"
 - `getHandAbbreviation(cards, SUIT_ABBREV)` - Convert ["A♥", "K♠"] → "AhKs"
+- `formatTime12Hour(timestamp)` - Format timestamp to "2:30 PM" (NEW in v110)
+- `calculateTotalRebuy(rebuyTransactions)` - Sum rebuy amounts (NEW in v110)
 
 **cardUtils.js**: Card manipulation utilities
 - `assignCardToSlot(cards, card, targetSlot)` - Assign card and remove from other slots
@@ -232,11 +245,12 @@ The app uses dynamic scaling to fit any browser window size:
 - Card selectors maximized: 90px height cards with large text, no scrolling required
 
 ## Testing Changes
-Test all 4 views at various browser sizes:
+Test all 5 views at various browser sizes:
 1. Table View (default)
 2. Card Selector (click community/hole cards) - shows current street in header
 3. Showdown View (click "showdown" street) - auto-advances to next empty card slot
 4. Stats View (click "Stats" button)
+5. Sessions View (click "Sessions" button) - manage poker sessions (NEW in v110)
 
 ## Version History
 - v101: Baseline features
@@ -276,7 +290,7 @@ Test all 4 views at various browser sizes:
   - Main file reduced from 967 to 620 lines (36% reduction)
   - Phased implementation (v108a → v108d) for safety
   - Highly modular architecture with clear separation of concerns
-- v109: Hand history and persistence system (current)
+- v109: Hand history and persistence system
   - Created `src/utils/persistence.js` - IndexedDB CRUD operations (saveHand, loadHandById, getAllHands, deleteHand, clearAllHands, getHandCount)
   - Created `src/hooks/usePersistence.js` - Auto-save/restore hook with debouncing (1.5s delay)
   - Created `src/components/views/HistoryView.jsx` - Hand history browser UI (~300 lines)
@@ -287,3 +301,14 @@ Test all 4 views at various browser sizes:
   - Features: Load any saved hand, delete individual hands, clear all history, relative timestamps
   - Multiple actions per street now fully supported with visual action sequences
   - Database schema: PokerTrackerDB v1 with 'hands' object store (handId, timestamp, sessionId indexes)
+- v110: Session management system (current)
+  - Created `src/constants/sessionConstants.js` - Session configuration (VENUES, GAME_TYPES, SESSION_GOALS, SESSION_ACTIONS)
+  - Created `src/reducers/sessionReducer.js` - Session state management
+  - Created `src/hooks/useSessionPersistence.js` - Session persistence and lifecycle (~327 lines)
+  - Created `src/components/views/SessionsView.jsx` - Session management UI (~656 lines)
+  - Created `src/components/ui/SessionForm.jsx` - New session creation form
+  - Updated `src/utils/persistence.js` - Added session CRUD operations, database v3→v4 migration (cashOut field)
+  - Updated `src/utils/displayUtils.js` - Added formatTime12Hour and calculateTotalRebuy utilities
+  - Added SCREEN.SESSIONS view identifier
+  - Features: Start/end sessions, venue selection, game type selection, buy-in tracking, rebuy transactions, cash-out workflow, running total bankroll, session history, inline editing
+  - Database schema: PokerTrackerDB v4 with 'sessions' object store (sessionId, startTime, endTime indexes, activeSession metadata)

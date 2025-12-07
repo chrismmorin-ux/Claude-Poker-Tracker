@@ -16,7 +16,13 @@
       "Bash(source ~/.bashrc)",
       "Bash(alias cc)",
       "SlashCommand(/local-code:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(timeout /t 3)",
+      "Bash(git checkout:*)",
+      "Bash(npx babel:*)",
+      "Bash(git stash:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

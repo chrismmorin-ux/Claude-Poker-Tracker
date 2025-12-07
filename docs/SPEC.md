@@ -1,9 +1,9 @@
-# Poker Tracker Specification - v109
+# Poker Tracker Specification - v110
 
-## Version: v109 (Hand History & Persistence System)
+## Version: v110 (Session Management System)
 ## Last Updated: 2025-12-06
 ## Main File: src/PokerTracker.jsx (~620 lines)
-## Total Project: v108 architecture + persistence system (6 new files)
+## Total Project: v108 architecture + persistence system + session management (11 new files)
 
 ---
 
@@ -15,18 +15,20 @@
 3. **Showdown View**: Card assignment + hand history summary for all 9 players
 4. **Stats View**: Player statistics display (placeholder)
 5. **History View**: Hand history browser with load/delete functionality (NEW in v109)
-6. **Persistence**: Auto-save/restore with IndexedDB (NEW in v109)
+6. **Sessions View**: Session management with buy-in tracking, rebuys, cash-out workflow (NEW in v110)
+7. **Persistence**: Auto-save/restore with IndexedDB for hands and sessions (v109+v110)
 
 ### Key Variable Names (v104 naming)
 | Variable | Purpose |
 |----------|---------|
-| `currentView` | Which view is shown: `SCREEN.TABLE`, `SCREEN.STATS`, or `SCREEN.HISTORY` |
+| `currentView` | Which view is shown: `SCREEN.TABLE`, `SCREEN.STATS`, `SCREEN.HISTORY`, or `SCREEN.SESSIONS` |
 | `isShowdownViewOpen` | Boolean for showdown card assignment view |
 | `dealerButtonSeat` | Which seat (1-9) has the dealer button |
 | `highlightedBoardIndex` | Which community card slot (0-4) is selected |
 | `highlightedHoleSlot` | Which hole card slot (0-1) is selected |
 | `highlightedSeat` | Which seat (1-9) is selected in showdown view |
 | `scale` | Dynamic viewport scale factor (v104) |
+| `sessionState` | Current session state (sessionId, venue, gameType, buyIn, etc.) (NEW in v110) |
 
 ---
 
@@ -39,34 +41,37 @@ Lines 47-92:     Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only
 Lines 94-179:    Main Component (reducers, hooks, handlers, view rendering)
 ```
 
-### New Files (v108):
+### New Files (v108-v110):
 ```
 src/constants/
-└── gameConstants.js (~57 lines)     # Game configuration constants
+├── gameConstants.js (~57 lines)     # Game configuration constants (v108)
+└── sessionConstants.js              # Session configuration (NEW in v110)
 
 src/hooks/
-├── useActionUtils.js (~58 lines)    # Action utility wrappers
-├── useStateSetters.js (~72 lines)   # State dispatcher wrappers
-├── useSeatUtils.js (~57 lines)      # Seat logic utilities
-├── useSeatColor.js (~60 lines)      # Seat color styling
-├── useShowdownHandlers.js (~99 lines) # Showdown handlers
-├── useCardSelection.js (~72 lines)  # Card selection logic
-├── useShowdownCardSelection.js (~109 lines) # Showdown card selection
-└── usePersistence.js (~237 lines)   # IndexedDB auto-save/restore (NEW in v109)
+├── useActionUtils.js (~58 lines)    # Action utility wrappers (v108)
+├── useStateSetters.js (~72 lines)   # State dispatcher wrappers (v108)
+├── useSeatUtils.js (~57 lines)      # Seat logic utilities (v108)
+├── useSeatColor.js (~60 lines)      # Seat color styling (v108)
+├── useShowdownHandlers.js (~99 lines) # Showdown handlers (v108)
+├── useCardSelection.js (~72 lines)  # Card selection logic (v108)
+├── useShowdownCardSelection.js (~109 lines) # Showdown card selection (v108)
+├── usePersistence.js (~237 lines)   # IndexedDB auto-save/restore (v109)
+└── useSessionPersistence.js (~327 lines) # Session persistence (NEW in v110)
 
 src/reducers/
-├── gameReducer.js                   # Game state management
-├── uiReducer.js                     # UI state management
-└── cardReducer.js                   # Card state management
+├── gameReducer.js                   # Game state management (v106)
+├── uiReducer.js                     # UI state management (v106)
+├── cardReducer.js                   # Card state management (v106)
+└── sessionReducer.js                # Session state management (NEW in v110)
 
 src/utils/
 ├── actionUtils.js                   # Action styling and display
-├── actionValidation.js              # Action sequence validation (NEW in v109)
+├── actionValidation.js              # Action sequence validation (v109)
 ├── cardUtils.js                     # Card manipulation
 ├── seatUtils.js                     # Seat navigation
-├── displayUtils.js                  # Display formatting
+├── displayUtils.js                  # Display formatting (UPDATED in v110)
 ├── validation.js                    # Input validation
-└── persistence.js (~376 lines)      # IndexedDB CRUD operations (NEW in v109)
+└── persistence.js (~520 lines)      # IndexedDB CRUD operations (v109, UPDATED in v110)
 
 src/components/
 ├── views/                           # Full-screen views
@@ -74,15 +79,17 @@ src/components/
 │   ├── StatsView.jsx (~264 lines)
 │   ├── CardSelectorView.jsx (~178 lines)
 │   ├── ShowdownView.jsx (~485 lines)
-│   └── HistoryView.jsx (~300 lines) # Hand history browser (NEW in v109)
+│   ├── HistoryView.jsx (~300 lines) # Hand history browser (v109)
+│   └── SessionsView.jsx (~656 lines) # Session management (NEW in v110)
 └── ui/                              # Reusable UI components
     ├── CardSlot.jsx
     ├── VisibilityToggle.jsx
     ├── PositionBadge.jsx
     ├── DiagonalOverlay.jsx
     ├── ScaledContainer.jsx
-    ├── ActionBadge.jsx              # Single action badge (NEW in v109)
-    └── ActionSequence.jsx           # Multiple action badges (NEW in v109)
+    ├── ActionBadge.jsx              # Single action badge (v109)
+    ├── ActionSequence.jsx           # Multiple action badges (v109)
+    └── SessionForm.jsx              # New session form (NEW in v110)
 ```
 
 ---
@@ -116,6 +123,34 @@ SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' }
 isFoldAction = (action) => FOLD_ACTIONS.includes(action)
 ```
 
+### Session Constants (src/constants/sessionConstants.js - NEW in v110)
+Session configuration for session management:
+
+```javascript
+SESSION_ACTIONS = {
+  START_SESSION, END_SESSION, UPDATE_SESSION_FIELD, ADD_REBUY,
+  LOAD_SESSIONS, SET_ACTIVE_SESSION, HYDRATE_SESSION,
+  INCREMENT_HAND_COUNT, SET_LOADING
+}
+
+VENUES = ['Online', 'Horseshoe Casino', 'Wind Creek Casino']
+
+GAME_TYPES = {
+  TOURNAMENT: { label: 'Tournament', buyInDefault: 0, rebuyDefault: 0 },
+  ONE_TWO: { label: '1/2', buyInDefault: 200, rebuyDefault: 200 },
+  ONE_THREE: { label: '1/3', buyInDefault: 300, rebuyDefault: 300 },
+  TWO_FIVE: { label: '2/5', buyInDefault: 500, rebuyDefault: 500 }
+}
+
+GAME_TYPE_KEYS = ['TOURNAMENT', 'ONE_TWO', 'ONE_THREE', 'TWO_FIVE']
+
+SESSION_GOALS = {
+  OBSERVE: 'Observe and take notes',
+  TIGHT_AGGRESSIVE: 'Play tight and aggressive',
+  // ... more goals
+}
+```
+
 ### UI Constants (src/PokerTracker.jsx)
 UI-specific configuration:
 
@@ -147,7 +182,7 @@ CONSTANTS = {
 }
 
 SEAT_POSITIONS = [{ seat: 1-9, x: %, y: % }]  // 9 positions
-SCREEN = { TABLE: 'table', STATS: 'stats' }
+SCREEN = { TABLE: 'table', STATS: 'stats', HISTORY: 'history', SESSIONS: 'sessions' }
 ```
 
 ---
@@ -373,7 +408,29 @@ highlightedSeat: number | null  // 1-9
 highlightedHoleSlot: 0 | 1 | null
 ```
 
-All state updates use dispatch actions (e.g., `dispatchGame`, `dispatchUi`, `dispatchCard`).
+### sessionReducer (src/reducers/sessionReducer.js - NEW in v110)
+Session-related state:
+```javascript
+currentSession: {
+  sessionId: number | null
+  startTime: number | null
+  endTime: number | null
+  isActive: boolean
+  venue: string | null
+  gameType: string | null
+  buyIn: number | null
+  rebuyTransactions: Array<{timestamp: number, amount: number}>
+  cashOut: number | null
+  reUp: number
+  goal: string | null
+  notes: string | null
+  handCount: number
+}
+allSessions: Array<Session>  // Cached session list
+isLoading: boolean
+```
+
+All state updates use dispatch actions (e.g., `dispatchGame`, `dispatchUi`, `dispatchCard`, `dispatchSession`).
 
 ---
 
@@ -478,4 +535,6 @@ Set `DEBUG = false` in `src/PokerTracker.jsx` to disable all console logging.
 - v105: Component extraction (views and UI)
 - v106: State management with useReducer
 - v107: Utils integration and display utilities
-- **v108: Custom hooks extraction (current)** ✅
+- v108: Custom hooks extraction
+- v109: Hand history and persistence system
+- **v110: Session management system (current)** ✅

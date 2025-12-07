@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { initDB, saveHand, loadLatestHand } from '../utils/persistence';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
+import { SESSION_ACTIONS } from '../reducers/sessionReducer';
 
 // =============================================================================
 // CONSTANTS
@@ -39,9 +40,10 @@ const logError = (...args) => console.error('[usePersistence]', ...args);
  * @param {Object} cardState - Card state from cardReducer
  * @param {Function} dispatchGame - Game state dispatcher
  * @param {Function} dispatchCard - Card state dispatcher
+ * @param {Function} dispatchSession - Session state dispatcher (optional, for hand count)
  * @returns {Object} { isReady, saveNow, clearHistory, lastSavedAt }
  */
-export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard) => {
+export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard, dispatchSession = null) => {
   // State
   const [isReady, setIsReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -146,6 +148,11 @@ export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard)
         const handId = await saveHand(handData);
         setLastSavedAt(new Date());
         log(`Auto-saved hand ${handId}`);
+
+        // Increment session hand count if session is active
+        if (dispatchSession) {
+          dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
+        }
       } catch (error) {
         logError('Auto-save failed:', error);
         // Fail silently - app continues working
@@ -199,6 +206,11 @@ export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard)
       const handId = await saveHand(handData);
       setLastSavedAt(new Date());
       log(`Manual save completed - hand ${handId}`);
+
+      // Increment session hand count if session is active
+      if (dispatchSession) {
+        dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
+      }
     } catch (error) {
       logError('Manual save failed:', error);
     }

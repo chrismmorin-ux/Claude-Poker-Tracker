@@ -100,6 +100,13 @@ export const TableView = ({
                   📚
                   History
                 </button>
+                <button
+                  onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
+                  className="bg-orange-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                >
+                  🎯
+                  Sessions
+                </button>
               </div>
               <button
                 onClick={resetHand}

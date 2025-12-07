@@ -10,9 +10,11 @@ import { CardSelectorView } from './components/views/CardSelectorView';
 import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
 import { HistoryView } from './components/views/HistoryView';
+import { SessionsView } from './components/views/SessionsView';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
+import { sessionReducer, initialSessionState, SESSION_ACTIONS } from './reducers/sessionReducer';
 import {
   getActionDisplayName,
   getActionColor,
@@ -47,6 +49,7 @@ import { useShowdownHandlers } from './hooks/useShowdownHandlers';
 import { useCardSelection } from './hooks/useCardSelection';
 import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
 import { usePersistence } from './hooks/usePersistence';
+import { useSessionPersistence } from './hooks/useSessionPersistence';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -100,6 +103,7 @@ const SCREEN = {
   TABLE: 'table',
   STATS: 'stats',
   HISTORY: 'history',
+  SESSIONS: 'sessions',
 };
 
 // =============================================================================
@@ -111,9 +115,20 @@ const PokerTrackerWireframes = () => {
   const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
   const [uiState, dispatchUi] = useReducer(uiReducer, initialUiState);
   const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
+  const [sessionState, dispatchSession] = useReducer(sessionReducer, initialSessionState);
 
   // Initialize persistence (auto-save + auto-restore)
-  const { isReady } = usePersistence(gameState, cardState, dispatchGame, dispatchCard);
+  const { isReady } = usePersistence(gameState, cardState, dispatchGame, dispatchCard, dispatchSession);
+
+  // Initialize session persistence (auto-save + auto-restore sessions)
+  const {
+    isReady: sessionReady,
+    startNewSession,
+    endCurrentSession,
+    updateSessionField,
+    loadAllSessions,
+    deleteSessionById
+  } = useSessionPersistence(sessionState, dispatchSession);
 
   // Local UI state (scale)
   const [scale, setScale] = useState(1);
@@ -661,6 +676,24 @@ const PokerTrackerWireframes = () => {
         dispatchGame={dispatchGame}
         dispatchCard={dispatchCard}
         STREETS={STREETS}
+      />
+    );
+  }
+
+  // Sessions Screen
+  if (currentView === SCREEN.SESSIONS) {
+    return (
+      <SessionsView
+        scale={scale}
+        setCurrentScreen={setCurrentScreen}
+        sessionState={sessionState}
+        dispatchSession={dispatchSession}
+        startNewSession={startNewSession}
+        endCurrentSession={endCurrentSession}
+        updateSessionField={updateSessionField}
+        loadAllSessions={loadAllSessions}
+        deleteSessionById={deleteSessionById}
+        SCREEN={SCREEN}
       />
     );
   }
