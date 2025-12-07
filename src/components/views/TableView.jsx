@@ -51,6 +51,12 @@ export const TableView = ({
   recordAction,
   setSelectedPlayers,
   toggleAbsent,
+  getRecentPlayers,
+  assignPlayerToSeat,
+  clearSeatAssignment,
+  getSeatPlayerName,
+  isPlayerAssigned,
+  setPendingSeatForPlayerAssignment,
   SkipForward,
   BarChart3,
   RotateCcw,
@@ -106,6 +112,13 @@ export const TableView = ({
                 >
                   🎯
                   Sessions
+                </button>
+                <button
+                  onClick={() => setCurrentScreen(SCREEN.PLAYERS)}
+                  className="bg-teal-600 text-white px-3 py-2 rounded flex items-center gap-2"
+                >
+                  👥
+                  Players
                 </button>
               </div>
               <button
@@ -228,6 +241,15 @@ export const TableView = ({
                       />
                     </div>
                   )}
+
+                  {/* Player Name Badge */}
+                  {getSeatPlayerName(seat) && (
+                    <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2" style={{ marginTop: dealerButtonSeat === seat || getSmallBlindSeat() === seat || getBigBlindSeat() === seat ? '36px' : '4px' }}>
+                      <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                        {getSeatPlayerName(seat)}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )})}
 
@@ -278,11 +300,11 @@ export const TableView = ({
 
             {contextMenu && (
               <div
-                className="absolute bg-white rounded-lg shadow-2xl py-2 z-50"
+                className="absolute bg-white rounded-lg shadow-2xl py-2 z-50 max-h-96 overflow-y-auto"
                 style={{
                   left: `${contextMenu.x}px`,
                   top: `${contextMenu.y}px`,
-                  minWidth: '150px'
+                  minWidth: '180px'
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -298,6 +320,59 @@ export const TableView = ({
                 >
                   Make Dealer
                 </button>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-1"></div>
+
+                {/* Player Assignment Section */}
+                <div className="px-4 py-1 text-xs font-semibold text-gray-500 uppercase">
+                  Assign Player
+                </div>
+
+                {/* Create New Player */}
+                <button
+                  onClick={() => {
+                    setPendingSeatForPlayerAssignment(contextMenu.seat);
+                    setContextMenu(null);
+                    setCurrentScreen(SCREEN.PLAYERS);
+                  }}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 font-semibold text-blue-600"
+                >
+                  + Create New Player
+                </button>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-1"></div>
+
+                {/* Recent Players List */}
+                {getRecentPlayers(20, true).map(player => (
+                  <button
+                    key={player.playerId}
+                    onClick={() => {
+                      assignPlayerToSeat(contextMenu.seat, player.playerId);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                  >
+                    {player.name}
+                  </button>
+                ))}
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-1"></div>
+
+                {/* Clear Player (only show if player is assigned) */}
+                {getSeatPlayerName(contextMenu.seat) && (
+                  <button
+                    onClick={() => {
+                      clearSeatAssignment(contextMenu.seat);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 font-semibold text-red-600"
+                  >
+                    Clear Player
+                  </button>
+                )}
               </div>
             )}
 

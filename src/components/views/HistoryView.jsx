@@ -3,6 +3,7 @@ import { ScaledContainer } from '../ui/ScaledContainer';
 import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount } from '../../utils/persistence';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
+import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
 
 const SCREEN = {
   TABLE: 'table',
@@ -18,6 +19,7 @@ export const HistoryView = ({
   setCurrentScreen,
   dispatchGame,
   dispatchCard,
+  dispatchPlayer,
   STREETS
 }) => {
   const [hands, setHands] = useState([]);
@@ -70,6 +72,14 @@ export const HistoryView = ({
               holeCardsVisible: hand.cardState.holeCardsVisible,
               allPlayerCards: hand.cardState.allPlayerCards
             }
+          });
+        }
+
+        // Hydrate player seat assignments
+        if (hand.seatPlayers && dispatchPlayer) {
+          dispatchPlayer({
+            type: PLAYER_ACTIONS.HYDRATE_SEAT_PLAYERS,
+            payload: { seatPlayers: hand.seatPlayers }
           });
         }
 

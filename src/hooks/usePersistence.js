@@ -14,6 +14,7 @@ import { initDB, saveHand, loadLatestHand } from '../utils/persistence';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { SESSION_ACTIONS } from '../reducers/sessionReducer';
+import { PLAYER_ACTIONS } from '../reducers/playerReducer';
 
 // =============================================================================
 // CONSTANTS
@@ -38,12 +39,14 @@ const logError = (...args) => console.error('[usePersistence]', ...args);
  *
  * @param {Object} gameState - Game state from gameReducer
  * @param {Object} cardState - Card state from cardReducer
+ * @param {Object} playerState - Player state from playerReducer
  * @param {Function} dispatchGame - Game state dispatcher
  * @param {Function} dispatchCard - Card state dispatcher
  * @param {Function} dispatchSession - Session state dispatcher (optional, for hand count)
+ * @param {Function} dispatchPlayer - Player state dispatcher (optional, for seat assignments)
  * @returns {Object} { isReady, saveNow, clearHistory, lastSavedAt }
  */
-export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard, dispatchSession = null) => {
+export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession = null, dispatchPlayer = null) => {
   // State
   const [isReady, setIsReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -92,6 +95,15 @@ export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard,
               }
             });
             log('Card state hydrated');
+          }
+
+          // Hydrate player seat assignments
+          if (latestHand.seatPlayers && dispatchPlayer) {
+            dispatchPlayer({
+              type: PLAYER_ACTIONS.HYDRATE_SEAT_PLAYERS,
+              payload: { seatPlayers: latestHand.seatPlayers }
+            });
+            log('Player seat assignments hydrated');
           }
         } else {
           log('No previous hand found - starting fresh');
@@ -142,7 +154,8 @@ export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard,
             holeCards: cardState.holeCards,
             holeCardsVisible: cardState.holeCardsVisible,
             allPlayerCards: cardState.allPlayerCards
-          }
+          },
+          seatPlayers: playerState.seatPlayers
         };
 
         const handId = await saveHand(handData);
@@ -165,7 +178,7 @@ export const usePersistence = (gameState, cardState, dispatchGame, dispatchCard,
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [gameState, cardState, isReady]);
+  }, [gameState, cardState, playerState, isReady, dispatchSession]);
 
   // ==========================================================================
   // EXPORTED FUNCTIONS

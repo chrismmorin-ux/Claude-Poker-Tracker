@@ -20,7 +20,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v110)
+## Architecture (v111)
 
 ### File Structure
 ```
@@ -33,7 +33,8 @@ src/
 │
 ├── constants/                   (Game configuration - NEW in v108)
 │   ├── gameConstants.js         (ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.)
-│   └── sessionConstants.js      (SESSION_ACTIONS, VENUES, GAME_TYPES, SESSION_GOALS - NEW in v110)
+│   ├── sessionConstants.js      (SESSION_ACTIONS, VENUES, GAME_TYPES, SESSION_GOALS - NEW in v110)
+│   └── playerConstants.js       (PLAYER_ACTIONS, ETHNICITY_OPTIONS, BUILD_OPTIONS, STYLE_TAGS - NEW in v111)
 │
 ├── hooks/                       (Custom hooks - NEW in v108)
 │   ├── useActionUtils.js        (Action utility wrappers)
@@ -44,13 +45,15 @@ src/
 │   ├── useCardSelection.js      (Card selection logic)
 │   ├── useShowdownCardSelection.js (Showdown card selection)
 │   ├── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
-│   └── useSessionPersistence.js (Session persistence and lifecycle - NEW in v110)
+│   ├── useSessionPersistence.js (Session persistence and lifecycle - NEW in v110)
+│   └── usePlayerPersistence.js  (Player persistence and seat assignment - NEW in v111)
 │
 ├── reducers/                    (State management)
 │   ├── gameReducer.js           (Game state: street, dealer, actions)
 │   ├── uiReducer.js             (UI state: view, selection, context menu)
 │   ├── cardReducer.js           (Card state: community, hole, showdown)
-│   └── sessionReducer.js        (Session state: current session, all sessions - NEW in v110)
+│   ├── sessionReducer.js        (Session state: current session, all sessions - NEW in v110)
+│   └── playerReducer.js         (Player state: all players, seat assignments - NEW in v111)
 │
 ├── utils/                       (Utility functions)
 │   ├── actionUtils.js           (Action styling, display, overlays)
@@ -59,7 +62,7 @@ src/
 │   ├── seatUtils.js             (Seat navigation and positioning)
 │   ├── displayUtils.js          (Display formatting, time formatting - UPDATED in v110)
 │   ├── validation.js            (Input validation)
-│   └── persistence.js           (IndexedDB CRUD operations - hands and sessions - UPDATED in v110)
+│   └── persistence.js           (IndexedDB CRUD operations - hands, sessions, players - UPDATED in v111)
 │
 └── components/
     ├── ui/                      (Reusable UI components)
@@ -70,19 +73,21 @@ src/
     │   ├── ScaledContainer.jsx  (Responsive scaling wrapper)
     │   ├── ActionBadge.jsx      (Single action badge display)
     │   ├── ActionSequence.jsx   (Multiple action badges with overflow)
-    │   └── SessionForm.jsx      (New session creation form - NEW in v110)
+    │   ├── SessionForm.jsx      (New session creation form - NEW in v110)
+    │   └── PlayerForm.jsx       (Player creation/editing form - NEW in v111)
     │
     └── views/                   (Full-screen view components)
-        ├── TableView.jsx        (Main poker table, ~326 lines)
+        ├── TableView.jsx        (Main poker table, ~380 lines - UPDATED in v111)
         ├── StatsView.jsx        (Statistics display, ~264 lines)
         ├── CardSelectorView.jsx (Card selection, ~178 lines)
         ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
         ├── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
-        └── SessionsView.jsx     (Session management, ~656 lines - NEW in v110)
+        ├── SessionsView.jsx     (Session management, ~656 lines - NEW in v110)
+        └── PlayersView.jsx      (Player management, ~860 lines - NEW in v111)
 ```
 
 ### State Management (useReducer)
-The app uses three reducers for clean state management:
+The app uses five reducers for clean state management:
 
 **gameReducer** (`src/reducers/gameReducer.js`):
 - State: `currentStreet`, `dealerButtonSeat`, `mySeat`, `seatActions`, `absentSeats`
@@ -100,13 +105,19 @@ The app uses three reducers for clean state management:
 - State: `currentSession` (sessionId, startTime, venue, gameType, buyIn, rebuyTransactions, cashOut, etc.), `allSessions`, `isLoading`
 - Actions: `START_SESSION`, `END_SESSION`, `UPDATE_SESSION_FIELD`, `ADD_REBUY`, `LOAD_SESSIONS`, `HYDRATE_SESSION`, etc.
 
+**playerReducer** (`src/reducers/playerReducer.js` - NEW in v111):
+- State: `allPlayers` (player database), `seatPlayers` (ephemeral seat assignments), `isLoading`
+- Actions: `LOAD_PLAYERS`, `SET_SEAT_PLAYER`, `CLEAR_SEAT_PLAYER`, `CLEAR_ALL_SEAT_PLAYERS`, `HYDRATE_PLAYERS`, etc.
+
 ### Key Constants
 - `ACTIONS.*` - All action types (FOLD, CALL, OPEN, etc.)
 - `SEAT_ARRAY` - [1,2,3,4,5,6,7,8,9] for iteration
 - `CONSTANTS.NUM_SEATS` - Use instead of hardcoded 9
-- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` / `SCREEN.SESSIONS` - View identifiers
+- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` / `SCREEN.SESSIONS` / `SCREEN.PLAYERS` - View identifiers
 - `VENUES` - ['Online', 'Horseshoe Casino', 'Wind Creek Casino'] (NEW in v110)
 - `GAME_TYPES` - {TOURNAMENT, ONE_TWO, ONE_THREE, TWO_FIVE} with buy-in defaults (NEW in v110)
+- `PLAYER_ACTIONS.*` - Player state action types (NEW in v111)
+- `ETHNICITY_OPTIONS`, `BUILD_OPTIONS`, `GENDER_OPTIONS`, `STYLE_TAGS` - Player attribute options (NEW in v111)
 
 ### Component Architecture
 View and UI components are modular:
@@ -245,12 +256,13 @@ The app uses dynamic scaling to fit any browser window size:
 - Card selectors maximized: 90px height cards with large text, no scrolling required
 
 ## Testing Changes
-Test all 5 views at various browser sizes:
-1. Table View (default)
+Test all 6 views at various browser sizes:
+1. Table View (default) - includes player assignment via right-click (NEW in v111)
 2. Card Selector (click community/hole cards) - shows current street in header
 3. Showdown View (click "showdown" street) - auto-advances to next empty card slot
 4. Stats View (click "Stats" button)
 5. Sessions View (click "Sessions" button) - manage poker sessions (NEW in v110)
+6. Players View (click "Players" button) - manage players, portrait-mode optimized (NEW in v111)
 
 ## Version History
 - v101: Baseline features
@@ -301,7 +313,7 @@ Test all 5 views at various browser sizes:
   - Features: Load any saved hand, delete individual hands, clear all history, relative timestamps
   - Multiple actions per street now fully supported with visual action sequences
   - Database schema: PokerTrackerDB v1 with 'hands' object store (handId, timestamp, sessionId indexes)
-- v110: Session management system (current)
+- v110: Session management system
   - Created `src/constants/sessionConstants.js` - Session configuration (VENUES, GAME_TYPES, SESSION_GOALS, SESSION_ACTIONS)
   - Created `src/reducers/sessionReducer.js` - Session state management
   - Created `src/hooks/useSessionPersistence.js` - Session persistence and lifecycle (~327 lines)
@@ -312,3 +324,15 @@ Test all 5 views at various browser sizes:
   - Added SCREEN.SESSIONS view identifier
   - Features: Start/end sessions, venue selection, game type selection, buy-in tracking, rebuy transactions, cash-out workflow, running total bankroll, session history, inline editing
   - Database schema: PokerTrackerDB v4 with 'sessions' object store (sessionId, startTime, endTime indexes, activeSession metadata)
+- v111: Player management system (current)
+  - Created `src/constants/playerConstants.js` - Player configuration (PLAYER_ACTIONS, physical attributes, style tags)
+  - Created `src/reducers/playerReducer.js` - Player state management with seat assignments
+  - Created `src/hooks/usePlayerPersistence.js` - Player CRUD and seat assignment logic (~320 lines)
+  - Created `src/components/views/PlayersView.jsx` - Player management UI (~860 lines, portrait-mode optimized)
+  - Created `src/components/ui/PlayerForm.jsx` - Player creation/editing form with physical descriptions
+  - Updated `src/components/views/TableView.jsx` - Added player assignment via right-click context menu, player management button
+  - Updated `src/utils/persistence.js` - Added player CRUD operations, database v4→v5 migration (players store)
+  - Added SCREEN.PLAYERS view identifier
+  - Features: Player profiles with physical descriptions (ethnicity, build, gender, facial hair, hat, sunglasses), playing style tags, notes, avatar upload, quick seat assignment (right-click + drag-and-drop), seat management with click-to-select workflow, auto-highlight seat from context menu, duplicate player prevention, replacement prompts, portrait mode support
+  - Database schema: PokerTrackerDB v5 with 'players' object store (playerId, name, createdAt, lastSeenAt indexes)
+  - Responsive design: PlayersView uses viewport-based widths for portrait phone screens while other views remain landscape

@@ -11,10 +11,12 @@ import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
 import { HistoryView } from './components/views/HistoryView';
 import { SessionsView } from './components/views/SessionsView';
+import { PlayersView } from './components/views/PlayersView';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
 import { sessionReducer, initialSessionState, SESSION_ACTIONS } from './reducers/sessionReducer';
+import { playerReducer, initialPlayerState, PLAYER_ACTIONS } from './reducers/playerReducer';
 import {
   getActionDisplayName,
   getActionColor,
@@ -50,6 +52,7 @@ import { useCardSelection } from './hooks/useCardSelection';
 import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
 import { usePersistence } from './hooks/usePersistence';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
+import { usePlayerPersistence } from './hooks/usePlayerPersistence';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -104,6 +107,7 @@ const SCREEN = {
   STATS: 'stats',
   HISTORY: 'history',
   SESSIONS: 'sessions',
+  PLAYERS: 'players',
 };
 
 // =============================================================================
@@ -116,9 +120,10 @@ const PokerTrackerWireframes = () => {
   const [uiState, dispatchUi] = useReducer(uiReducer, initialUiState);
   const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
   const [sessionState, dispatchSession] = useReducer(sessionReducer, initialSessionState);
+  const [playerState, dispatchPlayer] = useReducer(playerReducer, initialPlayerState);
 
   // Initialize persistence (auto-save + auto-restore)
-  const { isReady } = usePersistence(gameState, cardState, dispatchGame, dispatchCard, dispatchSession);
+  const { isReady } = usePersistence(gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession, dispatchPlayer);
 
   // Initialize session persistence (auto-save + auto-restore sessions)
   const {
@@ -130,9 +135,29 @@ const PokerTrackerWireframes = () => {
     deleteSessionById
   } = useSessionPersistence(sessionState, dispatchSession);
 
+  // Initialize player persistence
+  const {
+    isReady: playerReady,
+    createNewPlayer,
+    updatePlayerById,
+    deletePlayerById,
+    loadAllPlayers,
+    assignPlayerToSeat,
+    clearSeatAssignment,
+    getSeatPlayerName,
+    getRecentPlayers,
+    getAssignedPlayerIds,
+    isPlayerAssigned,
+    getPlayerSeat,
+    clearAllSeatAssignments
+  } = usePlayerPersistence(playerState, dispatchPlayer);
+
   // Local UI state (scale)
   const [scale, setScale] = useState(1);
   const tableRef = useRef(null);
+
+  // Track which seat triggered player creation (for auto-assignment)
+  const [pendingSeatForPlayerAssignment, setPendingSeatForPlayerAssignment] = useState(null);
 
   // Destructure state for easier access
   const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
@@ -660,6 +685,12 @@ const PokerTrackerWireframes = () => {
         recordAction={recordAction}
         setSelectedPlayers={setSelectedPlayers}
         toggleAbsent={toggleAbsent}
+        getRecentPlayers={getRecentPlayers}
+        assignPlayerToSeat={assignPlayerToSeat}
+        clearSeatAssignment={clearSeatAssignment}
+        getSeatPlayerName={getSeatPlayerName}
+        isPlayerAssigned={isPlayerAssigned}
+        setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
         SkipForward={SkipForward}
         BarChart3={BarChart3}
         RotateCcw={RotateCcw}
@@ -675,6 +706,7 @@ const PokerTrackerWireframes = () => {
         setCurrentScreen={setCurrentScreen}
         dispatchGame={dispatchGame}
         dispatchCard={dispatchCard}
+        dispatchPlayer={dispatchPlayer}
         STREETS={STREETS}
       />
     );
@@ -694,6 +726,29 @@ const PokerTrackerWireframes = () => {
         loadAllSessions={loadAllSessions}
         deleteSessionById={deleteSessionById}
         SCREEN={SCREEN}
+      />
+    );
+  }
+
+  // Players Screen
+  if (currentView === SCREEN.PLAYERS) {
+    return (
+      <PlayersView
+        scale={scale}
+        onBackToTable={() => setCurrentScreen(SCREEN.TABLE)}
+        playerState={playerState}
+        createNewPlayer={createNewPlayer}
+        updatePlayerById={updatePlayerById}
+        deletePlayerById={deletePlayerById}
+        loadAllPlayers={loadAllPlayers}
+        assignPlayerToSeat={assignPlayerToSeat}
+        clearSeatAssignment={clearSeatAssignment}
+        getSeatPlayerName={getSeatPlayerName}
+        isPlayerAssigned={isPlayerAssigned}
+        getPlayerSeat={getPlayerSeat}
+        clearAllSeatAssignments={clearAllSeatAssignments}
+        pendingSeatForPlayerAssignment={pendingSeatForPlayerAssignment}
+        setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
       />
     );
   }

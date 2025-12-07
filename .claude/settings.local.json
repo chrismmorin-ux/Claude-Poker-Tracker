@@ -22,7 +22,9 @@
       "Bash(npx babel:*)",
       "Bash(git stash:*)",
       "Bash(timeout /t 3 /nobreak)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(cat:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
