@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
-import { SEAT_STATUS, ACTIONS } from '../constants/gameConstants';
+import { findNextEmptySlot } from '../utils/seatNavigation';
 
 /**
  * Custom hook for showdown card selection logic
@@ -53,45 +53,17 @@ export const useShowdownCardSelection = (
       dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: communityIndex, card: '' } });
     }
 
-    // Auto-advance logic - find next empty slot
-    const findNextEmptySlot = (currentSeat, currentSlot) => {
-      // First check if the second slot of current seat is empty
-      if (currentSlot === 0) {
-        const cards = currentSeat === mySeat ? holeCards : allPlayerCards[currentSeat];
-        if (!cards[1]) {
-          return { seat: currentSeat, slot: 1 };
-        }
-      }
-
-      // Otherwise, look for next seat with empty slots
-      let nextSeat = currentSeat + 1;
-      while (nextSeat <= numSeats) {
-        const nextStatus = isSeatInactive(nextSeat);
-        const nextActions = seatActions['showdown']?.[nextSeat];
-        const nextActionsArray = Array.isArray(nextActions) ? nextActions : (nextActions ? [nextActions] : []);
-        const nextMucked = nextActionsArray.includes(ACTIONS.MUCKED);
-        const nextWon = nextActionsArray.includes(ACTIONS.WON);
-
-        // Skip folded, absent, mucked, and won seats
-        if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
-          const cards = nextSeat === mySeat ? holeCards : allPlayerCards[nextSeat];
-          // Check first slot
-          if (!cards[0]) {
-            return { seat: nextSeat, slot: 0 };
-          }
-          // Check second slot
-          if (!cards[1]) {
-            return { seat: nextSeat, slot: 1 };
-          }
-        }
-        nextSeat++;
-      }
-
-      // No empty slots found
-      return null;
-    };
-
-    const nextEmpty = findNextEmptySlot(seat, slot);
+    // Auto-advance logic - use unified seatNavigation utility
+    const nextEmpty = findNextEmptySlot(
+      seat,
+      slot,
+      mySeat,
+      holeCards,
+      allPlayerCards,
+      numSeats,
+      isSeatInactive,
+      seatActions
+    );
     if (nextEmpty) {
       dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
       dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });

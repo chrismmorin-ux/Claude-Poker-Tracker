@@ -170,12 +170,8 @@ export const HistoryView = ({
       const streetActions = seatActions[street];
       if (streetActions) {
         Object.keys(streetActions).forEach(seat => {
-          const actions = streetActions[seat];
-          if (Array.isArray(actions)) {
-            actionCount += actions.length;
-          } else if (actions) {
-            actionCount += 1;
-          }
+          const actions = streetActions[seat] || [];
+          actionCount += actions.length;
         });
       }
     });

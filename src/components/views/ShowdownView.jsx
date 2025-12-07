@@ -191,10 +191,9 @@ export const ShowdownView = ({
                       </div>
                       <div className="grid grid-cols-9 gap-2">
                         {SEAT_ARRAY.map(seat => {
-                          // Get actions array (handle backward compatibility)
-                          const actions = seatActions[street]?.[seat];
-                          const actionArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
-                          const lastAction = actionArray[actionArray.length - 1]; // Last action for showdown
+                          // Get actions array (always array format after normalization)
+                          const actions = seatActions[street]?.[seat] || [];
+                          const lastAction = actions[actions.length - 1]; // Last action for showdown
 
                           const inactiveStatus = isSeatInactive(seat);
                           const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
@@ -377,8 +376,7 @@ export const ShowdownView = ({
                             </button>
                             {/* Only show Won button if no seat has won yet */}
                             {!Object.values(seatActions['showdown'] || {}).some(actions => {
-                              const actionsArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
-                              return actionsArray.includes(ACTIONS.WON);
+                              return (actions || []).includes(ACTIONS.WON);
                             }) && (
                               <button
                                 onClick={() => handleWonSeat(seat)}

@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
-import { SEAT_STATUS, ACTIONS } from '../constants/gameConstants';
+import { ACTIONS } from '../constants/gameConstants';
+import { findFirstActiveSeat, findNextActiveSeat } from '../utils/seatNavigation';
 
 /**
  * Custom hook for showdown view handlers
@@ -25,39 +26,24 @@ export const useShowdownHandlers = (
     // Clear showdown actions
     dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
 
-    // Find first active seat
-    let firstActiveSeat = 1;
-    for (let seat = 1; seat <= numSeats; seat++) {
-      const status = isSeatInactive(seat);
-      if (status !== SEAT_STATUS.FOLDED && status !== SEAT_STATUS.ABSENT) {
-        firstActiveSeat = seat;
-        break;
-      }
-    }
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActiveSeat });
+    // Find first active seat using unified utility
+    const firstActive = findFirstActiveSeat(numSeats, isSeatInactive, seatActions) || 1;
+    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActive });
     dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
     log('handleClearShowdownCards: cards cleared, first active seat selected');
-  }, [dispatchCard, dispatchGame, isSeatInactive, numSeats, log]);
+  }, [dispatchCard, dispatchGame, isSeatInactive, seatActions, numSeats, log]);
 
   // Helper: Advance to next active seat in showdown (skips folded/absent/mucked/won)
   const advanceToNextActiveSeat = useCallback((fromSeat) => {
-    let nextSeat = fromSeat + 1;
-    while (nextSeat <= numSeats) {
-      const nextStatus = isSeatInactive(nextSeat);
-      const nextActions = seatActions['showdown']?.[nextSeat];
-      const nextActionsArray = Array.isArray(nextActions) ? nextActions : (nextActions ? [nextActions] : []);
-      const nextMucked = nextActionsArray.includes(ACTIONS.MUCKED);
-      const nextWon = nextActionsArray.includes(ACTIONS.WON);
-      if (nextStatus !== SEAT_STATUS.FOLDED && nextStatus !== SEAT_STATUS.ABSENT && !nextMucked && !nextWon) {
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
-        return;
-      }
-      nextSeat++;
+    const nextSeat = findNextActiveSeat(fromSeat, numSeats, isSeatInactive, seatActions);
+    if (nextSeat !== null) {
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
+    } else {
+      // No more active seats, deselect
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
+      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
     }
-    // No more active seats, deselect
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
   }, [isSeatInactive, seatActions, dispatchCard, numSeats]);
 
   // Handler: Mark seat as mucked and advance

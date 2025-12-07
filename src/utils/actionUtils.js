@@ -237,15 +237,14 @@ export const getActionAbbreviation = (action, ACTION_ABBREV) => {
 };
 
 /**
- * Gets the last action from an action array (handles backward compatibility)
- * @param {string|string[]|undefined} actions - Action or action array
+ * Gets the last action from an action array
+ * Note: seatActions are always arrays (normalized on load from database)
+ * @param {string[]|undefined} actions - Action array
  * @returns {string|null} - Last action or null
  */
 export const getLastAction = (actions) => {
-  if (!actions) return null;
-  if (typeof actions === 'string') return actions; // Old format (backward compat)
-  if (Array.isArray(actions)) return actions[actions.length - 1] || null; // New format
-  return null;
+  if (!actions || !Array.isArray(actions)) return null;
+  return actions[actions.length - 1] || null;
 };
 
 /**

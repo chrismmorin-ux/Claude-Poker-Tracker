@@ -21,6 +21,7 @@
  */
 
 import { logger, AppError, ERROR_CODES } from './errorHandler';
+import { normalizeHandRecord } from '../migrations/normalizeSeatActions';
 
 // =============================================================================
 // CONSTANTS
@@ -342,7 +343,8 @@ export const loadHandById = async (handId) => {
 
         if (hand) {
           log(`Loaded hand ID ${handId}`);
-          resolve(hand);
+          // Normalize seatActions to array format (migration for old data)
+          resolve(normalizeHandRecord(hand));
         } else {
           log(`Hand ID ${handId} not found`);
           resolve(null);
@@ -380,7 +382,8 @@ export const getAllHands = async () => {
       request.onsuccess = (event) => {
         const hands = event.target.result;
         log(`Loaded ${hands.length} hands from database`);
-        resolve(hands);
+        // Normalize seatActions to array format (migration for old data)
+        resolve(hands.map(normalizeHandRecord));
       };
 
       request.onerror = (event) => {

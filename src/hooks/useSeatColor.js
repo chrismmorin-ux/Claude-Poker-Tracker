@@ -40,9 +40,8 @@ export const useSeatColor = (
     }
 
     // Get action-based colors (use last action from array)
-    const actions = seatActions[currentStreet]?.[seat];
-    const actionArray = Array.isArray(actions) ? actions : (actions ? [actions] : []);
-    const lastAction = actionArray[actionArray.length - 1]; // Get last action for color
+    const actions = seatActions[currentStreet]?.[seat] || [];
+    const lastAction = actions[actions.length - 1]; // Get last action for color
 
     let baseColor = 'bg-gray-700';
     let ringColor = getSelectionRing();

@@ -12,6 +12,8 @@ Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 6. Utility functions in `src/utils/`
 7. Game constants in `src/constants/`
 8. Use `docs/QUICK_REF.md` for fast lookups
+9. See `docs/DEBUGGING.md` for error codes and debugging
+10. See `docs/STATE_SCHEMAS.md` for state shape reference
 
 ## Key Commands
 ```bash
