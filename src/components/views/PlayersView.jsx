@@ -14,6 +14,7 @@ import {
   GENDER_OPTIONS,
   FACIAL_HAIR_OPTIONS
 } from '../../constants/playerConstants';
+import { LIMITS } from '../../constants/gameConstants';
 
 /**
  * PlayersView component
@@ -212,10 +213,10 @@ export const PlayersView = ({
     setPendingSeatForPlayerAssignment(null);
   };
 
-  // Find next empty seat
+  // Find next empty seat (using LIMITS.NUM_SEATS instead of hardcoded 9)
   const findNextEmptySeat = (startSeat = 1) => {
-    for (let i = 0; i < 9; i++) {
-      const seat = ((startSeat - 1 + i) % 9) + 1;
+    for (let i = 0; i < LIMITS.NUM_SEATS; i++) {
+      const seat = ((startSeat - 1 + i) % LIMITS.NUM_SEATS) + 1;
       if (!getSeatPlayerName(seat)) {
         return seat;
       }

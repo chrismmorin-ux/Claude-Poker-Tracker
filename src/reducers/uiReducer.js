@@ -3,6 +3,8 @@
  * Manages: currentView, selectedPlayers, contextMenu, isDraggingDealer
  */
 
+import { createValidatedReducer } from '../utils/reducerUtils';
+
 // Action types
 export const UI_ACTIONS = {
   SET_SCREEN: 'SET_SCREEN',
@@ -29,8 +31,27 @@ export const initialUiState = {
   isDraggingDealer: false,
 };
 
-// Reducer
-export const uiReducer = (state, action) => {
+// =============================================================================
+// STATE SCHEMA (for validation)
+// =============================================================================
+
+/**
+ * Schema for UI state validation
+ * Used by createValidatedReducer to catch state corruption
+ */
+export const UI_STATE_SCHEMA = {
+  currentView: { type: 'string' }, // Can be any screen type
+  selectedPlayers: { type: 'array', items: 'number' },
+  contextMenu: { type: 'object', required: false }, // Can be null
+  isDraggingDealer: { type: 'boolean' },
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+// Raw reducer (wrapped with validation below)
+const rawUiReducer = (state, action) => {
   switch (action.type) {
     case UI_ACTIONS.SET_SCREEN:
       return {
@@ -90,3 +111,19 @@ export const uiReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED REDUCER (export this)
+// =============================================================================
+
+/**
+ * UI reducer wrapped with validation
+ * - Logs all actions in debug mode
+ * - Validates state after each action
+ * - Returns previous state on error (prevents corruption)
+ */
+export const uiReducer = createValidatedReducer(
+  rawUiReducer,
+  UI_STATE_SCHEMA,
+  'uiReducer'
+);

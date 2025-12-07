@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
@@ -473,4 +474,81 @@ export const TableView = ({
       </div>
     </div>
   );
+};
+
+TableView.propTypes = {
+  // Layout
+  scale: PropTypes.number.isRequired,
+  tableRef: PropTypes.object,
+
+  // Game state
+  currentStreet: PropTypes.string.isRequired,
+  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCardsVisible: PropTypes.bool.isRequired,
+  mySeat: PropTypes.number.isRequired,
+  dealerButtonSeat: PropTypes.number.isRequired,
+  seatActions: PropTypes.object.isRequired,
+
+  // UI state
+  selectedPlayers: PropTypes.arrayOf(PropTypes.number).isRequired,
+  contextMenu: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number,
+    seat: PropTypes.number,
+  }),
+  isDraggingDealer: PropTypes.bool.isRequired,
+
+  // Constants
+  SEAT_POSITIONS: PropTypes.arrayOf(PropTypes.shape({
+    seat: PropTypes.number,
+    x: PropTypes.number,
+    y: PropTypes.number,
+  })).isRequired,
+  STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
+  ACTIONS: PropTypes.object.isRequired,
+  ACTION_ABBREV: PropTypes.object.isRequired,
+  SCREEN: PropTypes.object.isRequired,
+
+  // State setters
+  setContextMenu: PropTypes.func.isRequired,
+  setCurrentScreen: PropTypes.func.isRequired,
+  setHoleCardsVisible: PropTypes.func.isRequired,
+  setCurrentStreet: PropTypes.func.isRequired,
+  setDealerSeat: PropTypes.func.isRequired,
+  setSelectedPlayers: PropTypes.func.isRequired,
+
+  // Action handlers
+  nextHand: PropTypes.func.isRequired,
+  resetHand: PropTypes.func.isRequired,
+  openCardSelector: PropTypes.func.isRequired,
+  togglePlayerSelection: PropTypes.func.isRequired,
+  handleSeatRightClick: PropTypes.func.isRequired,
+  getSeatColor: PropTypes.func.isRequired,
+  handleDealerDragStart: PropTypes.func.isRequired,
+  handleDealerDrag: PropTypes.func.isRequired,
+  handleDealerDragEnd: PropTypes.func.isRequired,
+  getSmallBlindSeat: PropTypes.func.isRequired,
+  getBigBlindSeat: PropTypes.func.isRequired,
+  openShowdownScreen: PropTypes.func.isRequired,
+  nextStreet: PropTypes.func.isRequired,
+  clearStreetActions: PropTypes.func.isRequired,
+  clearSeatActions: PropTypes.func.isRequired,
+  undoLastAction: PropTypes.func.isRequired,
+  handleSetMySeat: PropTypes.func.isRequired,
+  recordAction: PropTypes.func.isRequired,
+  toggleAbsent: PropTypes.func.isRequired,
+
+  // Player management
+  getRecentPlayers: PropTypes.func.isRequired,
+  assignPlayerToSeat: PropTypes.func.isRequired,
+  clearSeatAssignment: PropTypes.func.isRequired,
+  getSeatPlayerName: PropTypes.func.isRequired,
+  isPlayerAssigned: PropTypes.func.isRequired,
+  setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
+
+  // Icons (React components)
+  SkipForward: PropTypes.elementType.isRequired,
+  BarChart3: PropTypes.elementType.isRequired,
+  RotateCcw: PropTypes.elementType.isRequired,
 };

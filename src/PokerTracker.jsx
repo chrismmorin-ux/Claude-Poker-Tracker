@@ -5,6 +5,7 @@ import { CardSlot } from './components/ui/CardSlot';
 import { VisibilityToggle } from './components/ui/VisibilityToggle';
 import { PositionBadge } from './components/ui/PositionBadge';
 import { DiagonalOverlay } from './components/ui/DiagonalOverlay';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { StatsView } from './components/views/StatsView';
 import { CardSelectorView } from './components/views/CardSelectorView';
 import { TableView } from './components/views/TableView';
@@ -12,6 +13,7 @@ import { ShowdownView } from './components/views/ShowdownView';
 import { HistoryView } from './components/views/HistoryView';
 import { SessionsView } from './components/views/SessionsView';
 import { PlayersView } from './components/views/PlayersView';
+import { logger } from './utils/errorHandler';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
@@ -41,7 +43,9 @@ import {
   SUITS,
   RANKS,
   SUIT_ABBREV,
-  isFoldAction
+  isFoldAction,
+  LIMITS,
+  LAYOUT
 } from './constants/gameConstants';
 import { useActionUtils } from './hooks/useActionUtils';
 import { useStateSetters } from './hooks/useStateSetters';
@@ -58,34 +62,26 @@ import { usePlayerPersistence } from './hooks/usePlayerPersistence';
 // CONSTANTS - All magic numbers and configuration values
 // =============================================================================
 
-// Debug mode - set to false to disable console logging
-const DEBUG = true;
-const log = (...args) => DEBUG && console.log('[PokerTracker]', ...args);
+// Module name for centralized logging
+const MODULE_NAME = 'PokerTracker';
+const log = (...args) => logger.debug(MODULE_NAME, ...args);
 
+// Local constants that reference centralized LAYOUT and LIMITS
 const CONSTANTS = {
-  // Table configuration
-  NUM_SEATS: 9,
+  // From LIMITS
+  NUM_SEATS: LIMITS.NUM_SEATS,
 
-  // Card dimensions (in pixels) - scaled for mobile
-  CARD: {
-    SMALL: { width: 24, height: 35 },    // Hole cards on table
-    MEDIUM: { width: 28, height: 40 },   // Showdown card slots
-    LARGE: { width: 32, height: 45 },    // Card selector slots
-    TABLE: { width: 35, height: 50 },    // Community cards on table
-  },
-
-  // UI element dimensions - scaled for mobile
-  BADGE_SIZE: 16,
-  SEAT_SIZE: 40,
-  DEALER_BUTTON_SIZE: 28,
-  TOGGLE_BUTTON_SIZE: 24,
-
-  // Table layout - Samsung Galaxy A22 landscape (1600 x 720)
-  TABLE_WIDTH: 1600,
-  TABLE_HEIGHT: 720,
-  TABLE_SCALE: 1.0,
-  FELT_WIDTH: 900,
-  FELT_HEIGHT: 450,
+  // From LAYOUT
+  CARD: LAYOUT.CARD,
+  BADGE_SIZE: LAYOUT.BADGE_SIZE,
+  SEAT_SIZE: LAYOUT.SEAT_SIZE,
+  DEALER_BUTTON_SIZE: LAYOUT.DEALER_BUTTON_SIZE,
+  TOGGLE_BUTTON_SIZE: LAYOUT.TOGGLE_BUTTON_SIZE,
+  TABLE_WIDTH: LAYOUT.TABLE_WIDTH,
+  TABLE_HEIGHT: LAYOUT.TABLE_HEIGHT,
+  TABLE_SCALE: 1.0,  // Runtime scale factor (not a magic number)
+  FELT_WIDTH: LAYOUT.FELT_WIDTH,
+  FELT_HEIGHT: LAYOUT.FELT_HEIGHT,
 };
 
 // Seat positions (percentage-based for responsive layout)
@@ -285,12 +281,17 @@ const PokerTrackerWireframes = () => {
     const tableRect = tableRef.current?.getBoundingClientRect();
     if (!tableRect) return;
 
-    const seatX = (seatPos.x / 100) * 900 + 200;
-    const seatY = (seatPos.y / 100) * 450 + 50;
+    // Calculate seat position using LAYOUT constants (no magic numbers)
+    const seatX = (seatPos.x / 100) * LAYOUT.FELT_WIDTH + LAYOUT.TABLE_OFFSET_X;
+    const seatY = (seatPos.y / 100) * LAYOUT.FELT_HEIGHT + LAYOUT.TABLE_OFFSET_Y;
 
     dispatchUi({
       type: UI_ACTIONS.SET_CONTEXT_MENU,
-      payload: { x: seatX - 160, y: seatY - 20, seat }
+      payload: {
+        x: seatX + LAYOUT.CONTEXT_MENU_OFFSET_X,
+        y: seatY + LAYOUT.CONTEXT_MENU_OFFSET_Y,
+        seat
+      }
     });
   }, [dispatchUi]);
 
@@ -764,4 +765,11 @@ const PokerTrackerWireframes = () => {
   );
 };
 
-export default PokerTrackerWireframes;
+// Wrap the main component with ErrorBoundary for crash protection
+const PokerTrackerWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <PokerTrackerWireframes />
+  </ErrorBoundary>
+);
+
+export default PokerTrackerWithErrorBoundary;

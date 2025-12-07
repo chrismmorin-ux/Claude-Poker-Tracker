@@ -3,6 +3,9 @@
  * Manages: currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats
  */
 
+import { createValidatedReducer, SCHEMA_RULES } from '../utils/reducerUtils';
+import { LIMITS } from '../constants/gameConstants';
+
 // Action types
 export const GAME_ACTIONS = {
   SET_STREET: 'SET_STREET',
@@ -31,10 +34,31 @@ export const initialGameState = {
 
 // Street progression order
 const STREET_ORDER = ['preflop', 'flop', 'turn', 'river', 'showdown'];
-const NUM_SEATS = 9;
+// Use centralized LIMITS.NUM_SEATS instead of hardcoded value
+const NUM_SEATS = LIMITS.NUM_SEATS;
 
-// Reducer
-export const gameReducer = (state, action) => {
+// =============================================================================
+// STATE SCHEMA (for validation)
+// =============================================================================
+
+/**
+ * Schema for game state validation
+ * Used by createValidatedReducer to catch state corruption
+ */
+export const GAME_STATE_SCHEMA = {
+  currentStreet: SCHEMA_RULES.street,
+  dealerButtonSeat: SCHEMA_RULES.seat,
+  mySeat: SCHEMA_RULES.seat,
+  seatActions: SCHEMA_RULES.object,
+  absentSeats: SCHEMA_RULES.seatArray,
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+// Raw reducer (wrapped with validation below)
+const rawGameReducer = (state, action) => {
   switch (action.type) {
     case GAME_ACTIONS.SET_STREET:
       return {
@@ -204,3 +228,19 @@ export const gameReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED REDUCER (export this)
+// =============================================================================
+
+/**
+ * Game reducer wrapped with validation
+ * - Logs all actions in debug mode
+ * - Validates state after each action
+ * - Returns previous state on error (prevents corruption)
+ */
+export const gameReducer = createValidatedReducer(
+  rawGameReducer,
+  GAME_STATE_SCHEMA,
+  'gameReducer'
+);

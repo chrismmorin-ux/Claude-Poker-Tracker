@@ -22,20 +22,18 @@ import {
   deleteSession as dbDeleteSession
 } from '../utils/persistence';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
+import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 const DEBOUNCE_DELAY = 1500; // 1.5 seconds
-const DEBUG = true;
+const MODULE_NAME = 'useSessionPersistence';
 
-// =============================================================================
-// LOGGING
-// =============================================================================
-
-const log = (...args) => DEBUG && console.log('[useSessionPersistence]', ...args);
-const logError = (...args) => console.error('[useSessionPersistence]', ...args);
+// Backward-compatible logging wrappers
+const log = (...args) => logger.debug(MODULE_NAME, ...args);
+const logError = (error) => logger.error(MODULE_NAME, error);
 
 // =============================================================================
 // SESSION PERSISTENCE HOOK

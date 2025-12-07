@@ -24,7 +24,11 @@
       "Bash(timeout /t 3 /nobreak)",
       "Bash(del nul)",
       "Bash(cat:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(find:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test)"
     ],
     "deny": [],
     "ask": []

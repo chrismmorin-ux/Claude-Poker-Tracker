@@ -19,19 +19,17 @@ import {
   getPlayerByName
 } from '../utils/persistence';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
+import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const DEBUG = true;
+const MODULE_NAME = 'usePlayerPersistence';
 
-// =============================================================================
-// LOGGING
-// =============================================================================
-
-const log = (...args) => DEBUG && console.log('[usePlayerPersistence]', ...args);
-const logError = (...args) => console.error('[usePlayerPersistence]', ...args);
+// Backward-compatible logging wrappers
+const log = (...args) => logger.debug(MODULE_NAME, ...args);
+const logError = (error) => logger.error(MODULE_NAME, error);
 
 // =============================================================================
 // PLAYER PERSISTENCE HOOK

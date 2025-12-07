@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { isRedCard } from '../../utils/displayUtils';
 
 /**
@@ -72,4 +73,18 @@ export const CardSlot = ({
       )}
     </div>
   );
+};
+
+CardSlot.propTypes = {
+  card: PropTypes.string,
+  variant: PropTypes.oneOf(['table', 'hole-table', 'showdown', 'selector']),
+  isHighlighted: PropTypes.bool,
+  isHidden: PropTypes.bool,
+  status: PropTypes.oneOf(['folded', 'absent', 'mucked', 'won', null]),
+  onClick: PropTypes.func,
+  canInteract: PropTypes.bool,
+  SEAT_STATUS: PropTypes.shape({
+    FOLDED: PropTypes.string,
+    ABSENT: PropTypes.string,
+  }),
 };

@@ -6,6 +6,7 @@
  */
 
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
+import { createValidatedReducer } from '../utils/reducerUtils';
 
 // =============================================================================
 // INITIAL STATE
@@ -37,14 +38,28 @@ export const initialSessionState = {
 };
 
 // =============================================================================
-// REDUCER
+// STATE SCHEMA (for validation)
 // =============================================================================
 
 /**
- * Session reducer
+ * Schema for session state validation
+ * Used by createValidatedReducer to catch state corruption
+ */
+export const SESSION_STATE_SCHEMA = {
+  currentSession: { type: 'object' },
+  allSessions: { type: 'array' },
+  isLoading: { type: 'boolean' },
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+/**
+ * Session reducer (raw, wrapped with validation below)
  * Handles all session-related state changes
  */
-export const sessionReducer = (state, action) => {
+const rawSessionReducer = (state, action) => {
   switch (action.type) {
     // Start a new session
     case SESSION_ACTIONS.START_SESSION:
@@ -147,6 +162,22 @@ export const sessionReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED REDUCER (export this)
+// =============================================================================
+
+/**
+ * Session reducer wrapped with validation
+ * - Logs all actions in debug mode
+ * - Validates state after each action
+ * - Returns previous state on error (prevents corruption)
+ */
+export const sessionReducer = createValidatedReducer(
+  rawSessionReducer,
+  SESSION_STATE_SCHEMA,
+  'sessionReducer'
+);
 
 // Export action types for convenience
 export { SESSION_ACTIONS };

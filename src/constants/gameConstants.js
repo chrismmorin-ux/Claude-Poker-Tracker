@@ -80,3 +80,63 @@ export const SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 // Helper function: Check if an action is a fold action
 export const isFoldAction = (action) => FOLD_ACTIONS.includes(action);
+
+// =============================================================================
+// NUMERIC LIMITS (replaces magic numbers)
+// =============================================================================
+
+/**
+ * Game limits - centralizes all numeric constraints
+ * Use these instead of hardcoded numbers like 9, 18, etc.
+ */
+export const LIMITS = {
+  // Table configuration
+  NUM_SEATS: 9,
+
+  // Card limits
+  MAX_HOLE_CARDS: 2,
+  MAX_COMMUNITY_CARDS: 5,
+
+  // Derived limits (calculated from base values)
+  MAX_SHOWDOWN_SLOTS: 18,  // NUM_SEATS * MAX_HOLE_CARDS
+};
+
+// =============================================================================
+// LAYOUT CONSTANTS (replaces magic numbers in positioning)
+// =============================================================================
+
+/**
+ * Layout dimensions for table rendering
+ * All values in pixels, used for positioning calculations
+ */
+export const LAYOUT = {
+  // Design dimensions (Samsung Galaxy A22 landscape)
+  TABLE_WIDTH: 1600,
+  TABLE_HEIGHT: 720,
+
+  // Felt (playing area) dimensions
+  FELT_WIDTH: 900,
+  FELT_HEIGHT: 450,
+
+  // Table positioning offsets
+  TABLE_OFFSET_X: 200,
+  TABLE_OFFSET_Y: 50,
+
+  // Context menu positioning
+  CONTEXT_MENU_OFFSET_X: -160,
+  CONTEXT_MENU_OFFSET_Y: -20,
+
+  // Card dimensions (in pixels) - scaled for mobile
+  CARD: {
+    SMALL: { width: 24, height: 35 },    // Hole cards on table
+    MEDIUM: { width: 28, height: 40 },   // Showdown card slots
+    LARGE: { width: 32, height: 45 },    // Card selector slots
+    TABLE: { width: 35, height: 50 },    // Community cards on table
+  },
+
+  // UI element dimensions
+  BADGE_SIZE: 16,
+  SEAT_SIZE: 40,
+  DEALER_BUTTON_SIZE: 28,
+  TOGGLE_BUTTON_SIZE: 24,
+};

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
@@ -494,4 +495,60 @@ export const ShowdownView = ({
       </div>
     </div>
   );
+};
+
+ShowdownView.propTypes = {
+  // Layout
+  scale: PropTypes.number.isRequired,
+
+  // Card state
+  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCardsVisible: PropTypes.bool.isRequired,
+  allPlayerCards: PropTypes.object.isRequired,
+  highlightedSeat: PropTypes.number,
+  highlightedHoleSlot: PropTypes.number,
+
+  // Game state
+  mySeat: PropTypes.number.isRequired,
+  dealerButtonSeat: PropTypes.number.isRequired,
+  seatActions: PropTypes.object.isRequired,
+
+  // Constants
+  SEAT_ARRAY: PropTypes.arrayOf(PropTypes.number).isRequired,
+  STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
+  BETTING_STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
+  ACTIONS: PropTypes.object.isRequired,
+  ACTION_ABBREV: PropTypes.object.isRequired,
+  SEAT_STATUS: PropTypes.shape({
+    FOLDED: PropTypes.string,
+    ABSENT: PropTypes.string,
+  }).isRequired,
+
+  // Handlers
+  handleNextHandFromShowdown: PropTypes.func.isRequired,
+  handleClearShowdownCards: PropTypes.func.isRequired,
+  handleCloseShowdown: PropTypes.func.isRequired,
+  handleMuckSeat: PropTypes.func.isRequired,
+  handleWonSeat: PropTypes.func.isRequired,
+  selectCardForShowdown: PropTypes.func.isRequired,
+
+  // Utility functions
+  allCardsAssigned: PropTypes.func.isRequired,
+  isSeatInactive: PropTypes.func.isRequired,
+  getSmallBlindSeat: PropTypes.func.isRequired,
+  getBigBlindSeat: PropTypes.func.isRequired,
+  getOverlayStatus: PropTypes.func.isRequired,
+  getActionColor: PropTypes.func.isRequired,
+  getActionDisplayName: PropTypes.func.isRequired,
+  isFoldAction: PropTypes.func.isRequired,
+  getHandAbbreviation: PropTypes.func.isRequired,
+
+  // State setters
+  setHoleCardsVisible: PropTypes.func.isRequired,
+  setHighlightedSeat: PropTypes.func.isRequired,
+  setHighlightedCardSlot: PropTypes.func.isRequired,
+
+  // Icons
+  SkipForward: PropTypes.elementType.isRequired,
 };

@@ -5,6 +5,9 @@
  *          allPlayerCards, highlightedSeat, highlightedHoleSlot
  */
 
+import { createValidatedReducer } from '../utils/reducerUtils';
+import { LIMITS } from '../constants/gameConstants';
+
 // Action types
 export const CARD_ACTIONS = {
   SET_COMMUNITY_CARD: 'SET_COMMUNITY_CARD',
@@ -57,8 +60,33 @@ export const initialCardState = {
   highlightedHoleSlot: 0,
 };
 
-// Reducer
-export const cardReducer = (state, action) => {
+// =============================================================================
+// STATE SCHEMA (for validation)
+// =============================================================================
+
+/**
+ * Schema for card state validation
+ * Used by createValidatedReducer to catch state corruption
+ */
+export const CARD_STATE_SCHEMA = {
+  communityCards: { type: 'array', length: 5 },
+  holeCards: { type: 'array', length: 2 },
+  holeCardsVisible: { type: 'boolean' },
+  showCardSelector: { type: 'boolean' },
+  cardSelectorType: { type: 'string', enum: ['community', 'hole'] },
+  highlightedBoardIndex: { type: 'number', required: false }, // Can be null
+  isShowdownViewOpen: { type: 'boolean' },
+  allPlayerCards: { type: 'object' },
+  highlightedSeat: { type: 'number', required: false }, // Can be null
+  highlightedHoleSlot: { type: 'number', required: false }, // Can be null
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+// Raw reducer (wrapped with validation below)
+const rawCardReducer = (state, action) => {
   switch (action.type) {
     case CARD_ACTIONS.SET_COMMUNITY_CARD: {
       const { index, card } = action.payload;
@@ -182,15 +210,16 @@ export const cardReducer = (state, action) => {
       if (highlightedHoleSlot === 0) {
         newSlot = 1;
       } else {
-        // Move to next seat
-        newSeat = highlightedSeat < 9 ? highlightedSeat + 1 : 1;
+        // Move to next seat (using LIMITS.NUM_SEATS instead of hardcoded 9)
+        newSeat = highlightedSeat < LIMITS.NUM_SEATS ? highlightedSeat + 1 : 1;
         newSlot = 0;
       }
 
       // Find next empty slot (loop through all seats/slots)
       let foundEmpty = false;
       let attempts = 0;
-      const maxAttempts = 18; // 9 seats × 2 slots
+      // Use LIMITS.MAX_SHOWDOWN_SLOTS instead of hardcoded 18
+      const maxAttempts = LIMITS.MAX_SHOWDOWN_SLOTS;
 
       while (!foundEmpty && attempts < maxAttempts) {
         if (!allPlayerCards[newSeat][newSlot]) {
@@ -200,7 +229,7 @@ export const cardReducer = (state, action) => {
           if (newSlot === 0) {
             newSlot = 1;
           } else {
-            newSeat = newSeat < 9 ? newSeat + 1 : 1;
+            newSeat = newSeat < LIMITS.NUM_SEATS ? newSeat + 1 : 1;
             newSlot = 0;
           }
         }
@@ -232,3 +261,19 @@ export const cardReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED REDUCER (export this)
+// =============================================================================
+
+/**
+ * Card reducer wrapped with validation
+ * - Logs all actions in debug mode
+ * - Validates state after each action
+ * - Returns previous state on error (prevents corruption)
+ */
+export const cardReducer = createValidatedReducer(
+  rawCardReducer,
+  CARD_STATE_SCHEMA,
+  'cardReducer'
+);

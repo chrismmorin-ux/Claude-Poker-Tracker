@@ -15,20 +15,18 @@ import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { SESSION_ACTIONS } from '../reducers/sessionReducer';
 import { PLAYER_ACTIONS } from '../reducers/playerReducer';
+import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 const DEBOUNCE_DELAY = 1500; // 1.5 seconds
-const DEBUG = true;
+const MODULE_NAME = 'usePersistence';
 
-// =============================================================================
-// LOGGING
-// =============================================================================
-
-const log = (...args) => DEBUG && console.log('[usePersistence]', ...args);
-const logError = (...args) => console.error('[usePersistence]', ...args);
+// Backward-compatible logging wrappers
+const log = (...args) => logger.debug(MODULE_NAME, ...args);
+const logError = (error) => logger.error(MODULE_NAME, error);
 
 // =============================================================================
 // PERSISTENCE HOOK

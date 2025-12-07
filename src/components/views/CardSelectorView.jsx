@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { isRedSuit } from '../../utils/displayUtils';
@@ -174,4 +175,30 @@ export const CardSelectorView = ({
       </div>
     </div>
   );
+};
+
+CardSelectorView.propTypes = {
+  // Layout
+  scale: PropTypes.number.isRequired,
+
+  // State
+  cardSelectorType: PropTypes.oneOf(['community', 'hole']).isRequired,
+  currentStreet: PropTypes.string.isRequired,
+  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCardsVisible: PropTypes.bool.isRequired,
+  highlightedBoardIndex: PropTypes.number,
+
+  // Utility functions
+  getCardStreet: PropTypes.func.isRequired,
+  selectCard: PropTypes.func.isRequired,
+  clearCards: PropTypes.func.isRequired,
+
+  // Handlers
+  handleCloseCardSelector: PropTypes.func.isRequired,
+
+  // State setters
+  setHoleCardsVisible: PropTypes.func.isRequired,
+  setCardSelectorType: PropTypes.func.isRequired,
+  setHighlightedCardIndex: PropTypes.func.isRequired,
 };

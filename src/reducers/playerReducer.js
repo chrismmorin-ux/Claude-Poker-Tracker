@@ -6,6 +6,7 @@
  */
 
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
+import { createValidatedReducer } from '../utils/reducerUtils';
 
 // =============================================================================
 // INITIAL STATE
@@ -25,14 +26,28 @@ export const initialPlayerState = {
 };
 
 // =============================================================================
-// REDUCER
+// STATE SCHEMA (for validation)
 // =============================================================================
 
 /**
- * Player reducer
+ * Schema for player state validation
+ * Used by createValidatedReducer to catch state corruption
+ */
+export const PLAYER_STATE_SCHEMA = {
+  allPlayers: { type: 'array' },
+  seatPlayers: { type: 'object' },
+  isLoading: { type: 'boolean' },
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+/**
+ * Player reducer (raw, wrapped with validation below)
  * Handles all player-related state changes
  */
-export const playerReducer = (state, action) => {
+const rawPlayerReducer = (state, action) => {
   switch (action.type) {
     // Load all players from database
     case PLAYER_ACTIONS.LOAD_PLAYERS:
@@ -84,6 +99,22 @@ export const playerReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED REDUCER (export this)
+// =============================================================================
+
+/**
+ * Player reducer wrapped with validation
+ * - Logs all actions in debug mode
+ * - Validates state after each action
+ * - Returns previous state on error (prevents corruption)
+ */
+export const playerReducer = createValidatedReducer(
+  rawPlayerReducer,
+  PLAYER_STATE_SCHEMA,
+  'playerReducer'
+);
 
 // Export action types for convenience
 export { PLAYER_ACTIONS };

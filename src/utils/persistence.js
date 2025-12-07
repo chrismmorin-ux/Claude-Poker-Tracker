@@ -20,6 +20,8 @@
  *       Fields: name, nickname, ethnicity, build, gender, facialHair, hat, sunglasses, styleTags, notes, avatar, handCount, stats
  */
 
+import { logger, AppError, ERROR_CODES } from './errorHandler';
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
@@ -30,14 +32,11 @@ const STORE_NAME = 'hands';
 const SESSIONS_STORE_NAME = 'sessions';
 const ACTIVE_SESSION_STORE_NAME = 'activeSession';
 const PLAYERS_STORE_NAME = 'players';
-const DEBUG = true; // Set to false to disable console logging
+const MODULE_NAME = 'Persistence';
 
-// =============================================================================
-// LOGGING
-// =============================================================================
-
-const log = (...args) => DEBUG && console.log('[Persistence]', ...args);
-const logError = (...args) => console.error('[Persistence]', ...args);
+// Backward-compatible logging wrappers
+const log = (...args) => logger.debug(MODULE_NAME, ...args);
+const logError = (error) => logger.error(MODULE_NAME, error);
 
 // =============================================================================
 // DATABASE INITIALIZATION
