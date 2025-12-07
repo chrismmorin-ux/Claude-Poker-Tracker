@@ -32,3 +32,8 @@ Thumbs.db
 # Cache
 .eslintcache
 .cache/
+
+# Claude Code local files
+.claude/settings.local.json
+.claude/.pr-size-session.json
+.claude/arch-changes.log

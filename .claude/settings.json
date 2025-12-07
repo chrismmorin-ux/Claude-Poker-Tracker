@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/git-guard.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/secrets-scan.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pre-commit-gate.js"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/arch-audit.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pr-size-tracker.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/agent-suggest.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/new-file-test-reminder.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/agent-suggest.js"
+          }
+        ]
+      }
+    ]
+  }
+}
