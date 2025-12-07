@@ -30,7 +30,11 @@
       "Bash(npm install:*)",
       "Bash(npm test)",
       "Bash(cmd /c \"dir /s /b C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\")",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "SlashCommand(/cto-review:*)",
+      "Bash(findstr:*)",
+      "Bash(npm test:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
