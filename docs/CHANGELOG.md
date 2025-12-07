@@ -1,6 +1,58 @@
 # Poker Tracker Change Log
 
-## v108 (Current) - Custom Hooks Extraction ✅
+## v113 (Current) - Project Continuity System ✅
+
+### Summary
+- **Purpose**: Enable seamless project tracking across chat sessions
+- **New Files**: 6 files created (3 hooks, 1 command, 1 registry, 1 template)
+- **Archived**: 2 completed project files moved to archive
+
+### Key Changes
+- **Project Registry** (`.claude/projects.json`)
+  - Central tracking for active, pending, and completed projects
+  - Stores project metadata: id, name, file path, priority, phases, completion
+
+- **Startup Hook** (`project-status.cjs`)
+  - UserPromptSubmit hook shows active projects at chat start
+  - Displays progress percentage and suggests resume command
+  - Rate-limited to once per 2-hour session
+
+- **Work Tracking Hooks**
+  - `project-update.cjs` - Reminds to update project files after significant edits
+  - `commit-project-check.cjs` - Warns before commit if project files not updated
+
+- **Project Commands** (`/project`)
+  - `/project status` - View all projects with completion status
+  - `/project start <name>` - Create new project from template
+  - `/project resume <id>` - Load project context and continue
+  - `/project complete <id>` - Mark project as finished
+  - `/project archive <id>` - Move to archive directory
+
+- **Directory Structure**
+  - `docs/projects/` - Active project files
+  - `docs/archive/` - Completed project files
+  - `docs/projects/TEMPLATE.project.md` - Standard project template
+
+### Files Created
+1. `.claude/projects.json` - Project registry
+2. `.claude/hooks/project-status.cjs` - Startup status hook
+3. `.claude/hooks/project-update.cjs` - Edit tracking hook
+4. `.claude/hooks/commit-project-check.cjs` - Pre-commit hook
+5. `.claude/commands/project.md` - Project management command
+6. `docs/projects/TEMPLATE.project.md` - Project file template
+
+### Files Modified
+- `.claude/settings.json` - Registered 3 new hooks
+- `.gitignore` - Added session file exclusions
+- `CLAUDE.md` - Added Project Continuity System documentation
+
+### Archived Projects
+- `docs/archive/debug-infrastructure.project.md` (was DEBUG_PROJECT.md)
+- `docs/archive/cto-review-v112.project.md` (was IMPLEMENTATION_PLAN.md)
+
+---
+
+## v108 - Custom Hooks Extraction ✅
 
 ### Summary
 - **Lines**: 967 → 620 lines main file (36% reduction)

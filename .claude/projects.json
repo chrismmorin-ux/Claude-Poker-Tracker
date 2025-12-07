@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "description": "Project Continuity Registry - Tracks active, pending, and completed projects",
+  "active": [],
+  "pending": [],
+  "completed": [
+    {
+      "id": "debug-infrastructure",
+      "name": "Debug Infrastructure",
+      "file": "docs/archive/debug-infrastructure.project.md",
+      "priority": "high",
+      "completedAt": "2025-12-07",
+      "phases": 8,
+      "phasesComplete": 8
+    },
+    {
+      "id": "cto-review-v112",
+      "name": "CTO Review Implementation",
+      "file": "docs/archive/cto-review-v112.project.md",
+      "priority": "high",
+      "completedAt": "2025-12-07",
+      "phases": 11,
+      "phasesComplete": 11
+    }
+  ],
+  "lastUpdated": "2025-12-07T00:00:00Z"
+}

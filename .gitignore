@@ -36,4 +36,8 @@ Thumbs.db
 # Claude Code local files
 .claude/settings.local.json
 .claude/.pr-size-session.json
+.claude/.project-status-shown.json
+.claude/.project-update-session.json
+.claude/.agent-suggest-session.json
+.claude/.last-review.json
 .claude/arch-changes.log

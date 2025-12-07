@@ -15,6 +15,36 @@ Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 9. See `docs/DEBUGGING.md` for error codes and debugging
 10. See `docs/STATE_SCHEMAS.md` for state shape reference
 
+## Project Continuity System
+
+This codebase uses a project tracking system to maintain continuity across chat sessions.
+
+### On Chat Start
+A startup hook checks for active/pending projects and displays status. If you see a project status banner, consider resuming that work.
+
+### Project Commands
+```bash
+/project status              # Show all projects
+/project start <name>        # Create new project
+/project resume <id>         # Load project context
+/project complete <id>       # Mark complete
+/project archive <id>        # Move to archive
+```
+
+### Project Files
+- **Active projects**: `docs/projects/*.project.md`
+- **Archived projects**: `docs/archive/*.project.md`
+- **Registry**: `.claude/projects.json`
+- **Template**: `docs/projects/TEMPLATE.project.md`
+
+### Workflow
+1. Start new work with `/project start <name>`
+2. Update project file as phases complete
+3. When done, use `/project complete <id>`
+4. Archive with `/project archive <id>`
+
+The system will remind you to update project files during significant work sessions.
+
 ## Key Commands
 ```bash
 npm install    # Install dependencies
@@ -22,7 +52,7 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
-## Architecture (v112)
+## Architecture (v113)
 
 ### File Structure
 ```

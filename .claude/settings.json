@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/project-status.cjs"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -15,6 +26,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/pre-commit-gate.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/commit-project-check.cjs"
           }
         ]
       }
@@ -34,6 +49,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/agent-suggest.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/project-update.cjs"
           }
         ]
       },
@@ -47,6 +66,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/agent-suggest.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/project-update.cjs"
           }
         ]
       }
