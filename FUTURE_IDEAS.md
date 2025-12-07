@@ -78,4 +78,4 @@ This document is populated with tasks and potential features than I, the user, h
 - [add log-ins for different users]
 - [accomodate multiple actions within a single street that get logged, but limited to what actually can happen (ie, you cannot call after folding, you cannot check after there is a bet, but you can 3bet after an open, or check raise after a check).  We may need to update our types of actions for this]
 -[in player logging, generate an avatar based on the descirption of the player]
-
+- [creation of a collapsable side bar on table view with the various buttons (stats, history, sessions, players]
