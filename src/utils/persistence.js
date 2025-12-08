@@ -230,6 +230,7 @@ export const initDB = async () => {
 /**
  * Save a hand to the database
  * Auto-links hand to active session if one exists
+ * Calculates sessionHandNumber for display (1-based index within session)
  * @param {Object} handData - Hand data containing gameState, cardState, and optional seatPlayers
  * @returns {Promise<number>} The auto-generated handId
  */
@@ -239,13 +240,30 @@ export const saveHand = async (handData) => {
 
     // Get active session to auto-link hand
     const activeSession = await getActiveSession();
+    const sessionId = activeSession?.sessionId || null;
+
+    // Calculate sessionHandNumber (1-based position within session)
+    let sessionHandNumber = null;
+    if (sessionId) {
+      const existingCount = await getSessionHandCount(sessionId);
+      sessionHandNumber = existingCount + 1;
+    }
+
+    // Generate handDisplayId for searching
+    // Format: "S{sessionId}-H{sessionHandNumber}" or "H{timestamp}" if no session
+    const timestamp = Date.now();
+    const handDisplayId = sessionId
+      ? `S${sessionId}-H${sessionHandNumber}`
+      : `H${timestamp}`;
 
     // Add metadata
     const handRecord = {
       ...handData,
-      timestamp: Date.now(),
-      version: '1.1.0', // Session tracking support
-      sessionId: activeSession?.sessionId || null,  // Auto-link to active session
+      timestamp,
+      version: '1.2.0', // Added sessionHandNumber and handDisplayId
+      sessionId,
+      sessionHandNumber,  // 1-based index within session (null if no session)
+      handDisplayId,      // Searchable identifier
     };
 
     return new Promise((resolve, reject) => {
@@ -255,7 +273,7 @@ export const saveHand = async (handData) => {
 
       request.onsuccess = (event) => {
         const handId = event.target.result;
-        log(`Hand saved successfully (ID: ${handId})`);
+        log(`Hand saved successfully (ID: ${handId}, displayId: ${handDisplayId})`);
         resolve(handId);
       };
 

@@ -167,7 +167,15 @@ export const TableView = ({
             <div className="flex items-center gap-4">
               <div className="text-white text-xl font-bold">Hand #{handCount + 1}</div>
               {hasActiveSession ? (
-                <div className="text-green-300 text-base">{sessionTimeDisplay}</div>
+                <>
+                  <div className="text-green-300 text-base">{sessionTimeDisplay}</div>
+                  <button
+                    onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-semibold"
+                  >
+                    End Session
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => {

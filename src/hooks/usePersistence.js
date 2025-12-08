@@ -13,7 +13,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { initDB, saveHand, loadLatestHand } from '../utils/persistence';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
-import { SESSION_ACTIONS } from '../reducers/sessionReducer';
 import { PLAYER_ACTIONS } from '../reducers/playerReducer';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 
@@ -160,10 +159,8 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         setLastSavedAt(new Date());
         log(`Auto-saved hand ${handId}`);
 
-        // Increment session hand count if session is active
-        if (dispatchSession) {
-          dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
-        }
+        // Note: Hand count is NOT incremented here - it's only incremented
+        // when explicitly calling nextHand() to advance to a new hand
       } catch (error) {
         logError('Auto-save failed:', error);
         // Fail silently - app continues working
@@ -176,7 +173,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [gameState, cardState, playerState, isReady, dispatchSession]);
+  }, [gameState, cardState, playerState, isReady]);
 
   // ==========================================================================
   // EXPORTED FUNCTIONS
@@ -218,10 +215,8 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       setLastSavedAt(new Date());
       log(`Manual save completed - hand ${handId}`);
 
-      // Increment session hand count if session is active
-      if (dispatchSession) {
-        dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
-      }
+      // Note: Hand count is NOT incremented here - it's only incremented
+      // when explicitly calling nextHand() to advance to a new hand
     } catch (error) {
       logError('Manual save failed:', error);
     }

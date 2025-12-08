@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
-import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions } from '../../utils/persistence';
+import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions, getSessionHandCount } from '../../utils/persistence';
 import { LAYOUT } from '../../constants/gameConstants';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
+import { SESSION_ACTIONS } from '../../reducers/sessionReducer';
 
 const SCREEN = {
   TABLE: 'table',
@@ -13,7 +14,7 @@ const SCREEN = {
 
 // Filter options
 const FILTER_ALL = 'all';
-const FILTER_NO_SESSION = 'no_session';
+const FILTER_CURRENT_SESSION = 'current_session';
 
 /**
  * HistoryView - Displays saved hand history
@@ -25,14 +26,19 @@ export const HistoryView = ({
   dispatchGame,
   dispatchCard,
   dispatchPlayer,
+  dispatchSession,
   STREETS,
-  showError
+  showError,
+  currentSessionId
 }) => {
   const [hands, setHands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [handCount, setHandCount] = useState(0);
   const [sessions, setSessions] = useState([]);
-  const [sessionFilter, setSessionFilter] = useState(FILTER_ALL);
+  // Default to current session if available, otherwise all
+  const [sessionFilter, setSessionFilter] = useState(
+    currentSessionId ? FILTER_CURRENT_SESSION : FILTER_ALL
+  );
   const [sessionsMap, setSessionsMap] = useState({}); // Map sessionId to session data
 
   // Load all hands and sessions on mount
@@ -69,10 +75,14 @@ export const HistoryView = ({
 
       if (sessionFilter === FILTER_ALL) {
         allHands = await getAllHands();
-      } else if (sessionFilter === FILTER_NO_SESSION) {
-        // Get all hands and filter for those without a session
-        const all = await getAllHands();
-        allHands = all.filter(h => !h.sessionId);
+      } else if (sessionFilter === FILTER_CURRENT_SESSION) {
+        // Filter by current session if available
+        if (currentSessionId) {
+          allHands = await getHandsBySessionId(currentSessionId);
+        } else {
+          // No current session, show all hands
+          allHands = await getAllHands();
+        }
       } else {
         // Filter by specific session ID
         allHands = await getHandsBySessionId(parseInt(sessionFilter, 10));
@@ -137,7 +147,7 @@ export const HistoryView = ({
     }
   };
 
-  const handleDeleteHand = async (handId) => {
+  const handleDeleteHand = async (handId, handSessionId) => {
     if (!confirm('Delete this hand? This cannot be undone.')) {
       return;
     }
@@ -145,6 +155,15 @@ export const HistoryView = ({
     try {
       await deleteHand(handId);
       console.log(`[HistoryView] Deleted hand ${handId}`);
+
+      // If deleted hand was from current session, update the session hand count
+      if (currentSessionId && handSessionId === currentSessionId && dispatchSession) {
+        const newCount = await getSessionHandCount(currentSessionId);
+        dispatchSession({
+          type: SESSION_ACTIONS.SET_HAND_COUNT,
+          payload: { count: newCount }
+        });
+      }
 
       // Reload hand list
       await loadHands();
@@ -163,6 +182,14 @@ export const HistoryView = ({
       await clearAllHands();
       console.log('[HistoryView] Cleared all hands');
 
+      // Reset session hand count since all hands are cleared
+      if (dispatchSession) {
+        dispatchSession({
+          type: SESSION_ACTIONS.SET_HAND_COUNT,
+          payload: { count: 0 }
+        });
+      }
+
       // Reload hand list
       await loadHands();
     } catch (error) {
@@ -173,24 +200,12 @@ export const HistoryView = ({
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    // Relative time for recent hands
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    // Absolute time for older hands
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
@@ -259,8 +274,10 @@ export const HistoryView = ({
                 onChange={(e) => setSessionFilter(e.target.value)}
                 className="px-4 py-3 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-medium focus:border-blue-500 focus:outline-none"
               >
+                {currentSessionId && (
+                  <option value={FILTER_CURRENT_SESSION}>Current Session</option>
+                )}
                 <option value={FILTER_ALL}>All Sessions</option>
-                <option value={FILTER_NO_SESSION}>No Session</option>
                 {sessions
                   .sort((a, b) => b.startTime - a.startTime)
                   .map(session => (
@@ -300,61 +317,111 @@ export const HistoryView = ({
               <div className="text-gray-500">Play a hand and it will be automatically saved here</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
-              {hands.map((hand) => (
-                <div
-                  key={hand.handId}
-                  className="bg-white rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-colors"
-                >
-                  <div className="p-4 flex items-center justify-between">
-                    {/* Hand Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4">
-                        <div className="text-2xl font-bold text-gray-700">
-                          #{hand.handId}
+            <div className="grid grid-cols-1 gap-2">
+              {hands.map((hand, index) => {
+                // Check if this is the first hand of a new session (for session headers)
+                const prevHand = index > 0 ? hands[index - 1] : null;
+                const isNewSession = !prevHand || prevHand.sessionId !== hand.sessionId;
+                const showSessionHeader = sessionFilter === FILTER_ALL && isNewSession;
+
+                // Get session color for left border (alternating colors by session)
+                const sessionColors = [
+                  'border-l-purple-500',
+                  'border-l-blue-500',
+                  'border-l-green-500',
+                  'border-l-orange-500',
+                  'border-l-pink-500',
+                  'border-l-teal-500',
+                ];
+                const sessionIndex = hand.sessionId
+                  ? Object.keys(sessionsMap).indexOf(String(hand.sessionId)) % sessionColors.length
+                  : -1;
+                const borderColor = sessionIndex >= 0 ? sessionColors[sessionIndex] : 'border-l-gray-300';
+
+                return (
+                  <React.Fragment key={hand.handId}>
+                    {/* Session Header - shown when session changes */}
+                    {showSessionHeader && (
+                      <div className="mt-4 mb-2 first:mt-0">
+                        <div className={`bg-gray-100 rounded-lg px-4 py-3 border-l-4 ${borderColor}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg font-bold text-gray-700">
+                                {hand.sessionId ? getSessionLabel(hand.sessionId) : 'No Session'}
+                              </span>
+                              {hand.sessionId && sessionsMap[hand.sessionId] && (
+                                <span className="text-sm text-gray-500">
+                                  {sessionsMap[hand.sessionId].gameType || '1/2'}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {hands.filter(h => h.sessionId === hand.sessionId).length} hands
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">
-                            {getStreetDisplay(hand.gameState?.currentStreet)}
-                          </span>
-                          <span className="text-gray-600 text-sm">
-                            {formatTimestamp(hand.timestamp)}
-                          </span>
-                          <span className="text-gray-500 text-sm">
-                            {getActionSummary(hand)}
-                          </span>
-                          {hand.gameState?.mySeat && (
-                            <span className="text-gray-500 text-sm">
-                              Seat {hand.gameState.mySeat}
-                            </span>
-                          )}
-                          {hand.sessionId && getSessionLabel(hand.sessionId) && (
-                            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
-                              {getSessionLabel(hand.sessionId)}
-                            </span>
-                          )}
+                      </div>
+                    )}
+
+                    {/* Hand Card */}
+                    <div
+                      className={`bg-white rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-colors ${
+                        sessionFilter === FILTER_ALL ? `border-l-4 ${borderColor}` : ''
+                      }`}
+                    >
+                      <div className="p-4 flex items-center justify-between">
+                        {/* Hand Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4">
+                            <div className="text-2xl font-bold text-gray-700">
+                              {/* Display session hand number if available, otherwise fall back to handId */}
+                              #{hand.sessionHandNumber || hand.handId}
+                            </div>
+                            {/* Show handDisplayId for reference/search */}
+                            {hand.handDisplayId && (
+                              <div className="text-xs text-gray-400 font-mono">
+                                {hand.handDisplayId}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">
+                                {getStreetDisplay(hand.gameState?.currentStreet)}
+                              </span>
+                              <span className="text-gray-600 text-sm">
+                                {formatTimestamp(hand.timestamp)}
+                              </span>
+                              <span className="text-gray-500 text-sm">
+                                {getActionSummary(hand)}
+                              </span>
+                              {hand.gameState?.mySeat && (
+                                <span className="text-gray-500 text-sm">
+                                  Seat {hand.gameState.mySeat}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleLoadHand(hand.handId)}
+                            className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 font-semibold"
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => handleDeleteHand(hand.handId, hand.sessionId)}
+                            className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleLoadHand(hand.handId)}
-                        className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 font-semibold"
-                      >
-                        Load
-                      </button>
-                      <button
-                        onClick={() => handleDeleteHand(hand.handId)}
-                        className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 font-semibold"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </React.Fragment>
+                );
+              })}
             </div>
           )}
         </div>

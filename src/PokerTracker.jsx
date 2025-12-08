@@ -514,8 +514,10 @@ const PokerTrackerWireframes = () => {
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
     dispatchGame({ type: GAME_ACTIONS.NEXT_HAND });
     dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
-    log('nextHand: dealer advanced, all cards/actions cleared');
-  }, [dispatchCard, dispatchGame, dispatchUi]);
+    // Increment hand count only when actively moving to next hand
+    dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
+    log('nextHand: dealer advanced, all cards/actions cleared, hand count incremented');
+  }, [dispatchCard, dispatchGame, dispatchUi, dispatchSession]);
 
   const resetHand = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
@@ -761,8 +763,10 @@ const PokerTrackerWireframes = () => {
           dispatchGame={dispatchGame}
           dispatchCard={dispatchCard}
           dispatchPlayer={dispatchPlayer}
+          dispatchSession={dispatchSession}
           STREETS={STREETS}
           showError={showError}
+          currentSessionId={sessionState.currentSession?.sessionId}
           />
         </ViewErrorBoundary>
       </>

@@ -128,7 +128,7 @@ export const CollapsibleSidebar = ({
 
   const navItems = [
     { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, color: 'bg-blue-600 hover:bg-blue-700' },
-    { screen: SCREEN.HISTORY, label: 'History', icon: '📚', color: 'bg-purple-600 hover:bg-purple-700' },
+    { screen: SCREEN.HISTORY, label: 'Hand History', icon: '📚', color: 'bg-purple-600 hover:bg-purple-700' },
     { screen: SCREEN.SESSIONS, label: 'Sessions', icon: '🎯', color: 'bg-orange-600 hover:bg-orange-700' },
     { screen: SCREEN.PLAYERS, label: 'Players', icon: '👥', color: 'bg-teal-600 hover:bg-teal-700' },
   ];

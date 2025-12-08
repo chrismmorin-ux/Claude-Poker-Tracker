@@ -151,6 +151,16 @@ const rawSessionReducer = (state, action) => {
         }
       };
 
+    // Set hand count to specific value (used when syncing with database)
+    case SESSION_ACTIONS.SET_HAND_COUNT:
+      return {
+        ...state,
+        currentSession: {
+          ...state.currentSession,
+          handCount: action.payload.count
+        }
+      };
+
     // Set loading state
     case SESSION_ACTIONS.SET_LOADING:
       return {
