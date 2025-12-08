@@ -726,8 +726,11 @@ const PokerTrackerWireframes = () => {
         setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
         isSidebarCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
+        absentSeats={absentSeats}
+        numSeats={CONSTANTS.NUM_SEATS}
         handCount={sessionState.currentSession?.handCount || 0}
         sessionStartTime={sessionState.currentSession?.startTime}
+        hasActiveSession={sessionState.currentSession?.isActive === true}
         currentSessionBuyIn={sessionState.currentSession?.buyIn || 0}
         currentSessionRebuys={sessionState.currentSession?.rebuyTransactions || []}
         SkipForward={SkipForward}

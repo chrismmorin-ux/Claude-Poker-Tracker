@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
@@ -8,26 +8,25 @@ import { CollapsibleSidebar } from '../ui/CollapsibleSidebar';
 import { LAYOUT } from '../../constants/gameConstants';
 
 /**
- * Format elapsed time from start timestamp to now
+ * Format relative time from start timestamp
  * @param {number} startTime - Unix timestamp in ms
- * @returns {string} - Formatted string like "2h 15m" or "45m" or "--"
+ * @returns {string} - Formatted string like "Started 2h ago" or "Started 45m ago"
  */
-const formatElapsedTime = (startTime) => {
-  if (!startTime) return '--';
+const formatRelativeTime = (startTime) => {
+  if (!startTime) return '';
 
   const now = Date.now();
-  const elapsed = now - startTime;
+  const diff = now - startTime;
 
-  if (elapsed < 0) return '--';
+  if (diff < 0) return '';
 
-  const totalMinutes = Math.floor(elapsed / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
 
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
+  if (minutes < 60) return `Started ${minutes}m ago`;
+  if (hours < 24) return `Started ${hours}h ago`;
+  return `Started ${days}d ago`;
 };
 
 /**
@@ -85,32 +84,43 @@ export const TableView = ({
   setPendingSeatForPlayerAssignment,
   isSidebarCollapsed,
   toggleSidebar,
+  absentSeats,
+  numSeats,
   handCount,
   sessionStartTime,
+  hasActiveSession,
   currentSessionBuyIn,
   currentSessionRebuys,
   SkipForward,
   BarChart3,
   RotateCcw,
 }) => {
-  // Update elapsed time every minute
-  const [elapsedTime, setElapsedTime] = useState(() => formatElapsedTime(sessionStartTime));
+  // Update session time display every minute
+  const [sessionTimeDisplay, setSessionTimeDisplay] = useState(() => formatRelativeTime(sessionStartTime));
 
   // Calculate current session investment (buy-in + rebuys)
   const currentInvestment = currentSessionBuyIn + (currentSessionRebuys || []).reduce((sum, r) => sum + (r.amount || 0), 0);
 
+  // Convert absentSeats array to Set for CollapsibleSidebar
+  const absentSeatsSet = useMemo(() => new Set(absentSeats || []), [absentSeats]);
+
+  // Handle seat change from sidebar navigation
+  const handleSeatChange = (seat) => {
+    setSelectedPlayers([seat]);
+  };
+
   useEffect(() => {
     if (!sessionStartTime) {
-      setElapsedTime('--');
+      setSessionTimeDisplay('');
       return;
     }
 
     // Update immediately
-    setElapsedTime(formatElapsedTime(sessionStartTime));
+    setSessionTimeDisplay(formatRelativeTime(sessionStartTime));
 
     // Update every minute
     const interval = setInterval(() => {
-      setElapsedTime(formatElapsedTime(sessionStartTime));
+      setSessionTimeDisplay(formatRelativeTime(sessionStartTime));
     }, 60000);
 
     return () => clearInterval(interval);
@@ -138,15 +148,29 @@ export const TableView = ({
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
             onNavigate={setCurrentScreen}
+            onSeatChange={handleSeatChange}
             SCREEN={SCREEN}
             BarChart3={BarChart3}
+            selectedPlayers={selectedPlayers}
+            dealerButtonSeat={dealerButtonSeat}
+            absentSeats={absentSeatsSet}
+            numSeats={numSeats}
           />
 
           {/* Header Bar */}
           <div className={`flex justify-between items-center px-4 py-2 bg-black bg-opacity-40 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
             <div className="flex items-center gap-4">
               <div className="text-white text-xl font-bold">Hand #{handCount + 1}</div>
-              <div className="text-green-300 text-base">{elapsedTime}</div>
+              {hasActiveSession ? (
+                <div className="text-green-300 text-base">{sessionTimeDisplay}</div>
+              ) : (
+                <button
+                  onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
+                >
+                  Start Session
+                </button>
+              )}
               {currentInvestment > 0 && (
                 <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
                   ${currentInvestment} invested
@@ -166,7 +190,7 @@ export const TableView = ({
                 className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2"
               >
                 <RotateCcw size={18} />
-                Reset
+                Reset Hand
               </button>
             </div>
           </div>
@@ -417,7 +441,7 @@ export const TableView = ({
             )}
 
             {selectedPlayers.length > 0 && currentStreet !== 'showdown' && (
-              <div className="absolute top-50 right-8 bg-white rounded-lg shadow-2xl p-4" style={{ width: `${LAYOUT.ACTION_PANEL_WIDTH}px`, top: `${LAYOUT.ACTION_PANEL_TOP}px` }}>
+              <div className="absolute bg-white rounded-lg shadow-2xl p-4" style={{ width: `${LAYOUT.ACTION_PANEL_WIDTH}px`, top: `${LAYOUT.ACTION_PANEL_TOP}px`, left: `${LAYOUT.TABLE_OFFSET_X + LAYOUT.FELT_WIDTH + 20}px` }}>
                 <div className="flex justify-between items-center mb-3 pb-2 border-b-2">
                   <h3 className="text-2xl font-bold">
                     {selectedPlayers.length === 1
@@ -589,10 +613,13 @@ TableView.propTypes = {
   // Sidebar state
   isSidebarCollapsed: PropTypes.bool.isRequired,
   toggleSidebar: PropTypes.func.isRequired,
+  absentSeats: PropTypes.arrayOf(PropTypes.number).isRequired,
+  numSeats: PropTypes.number.isRequired,
 
   // Session info
   handCount: PropTypes.number.isRequired,
   sessionStartTime: PropTypes.number, // Optional - null if no active session
+  hasActiveSession: PropTypes.bool.isRequired,
   currentSessionBuyIn: PropTypes.number,
   currentSessionRebuys: PropTypes.array,
 
