@@ -47,11 +47,20 @@ Files to read before starting work:
 ### Goal
 [What this phase accomplishes]
 
+### Task Delegation
+Before implementing, check if tasks can be delegated to local models:
+- [ ] Run `/route <task>` for each subtask
+- Utility functions (<80 lines) → `/local-code`
+- Simple components (<100 lines) → `/local-code`
+- Refactoring → `/local-refactor`
+- Documentation → `/local-doc`
+- Unit tests → `/local-test`
+
 ### Files to Create
-- [ ] `path/to/new/file.js` - Description
+- [ ] `path/to/new/file.js` - Description (owner: Claude | local)
 
 ### Files to Modify
-- [ ] `path/to/existing/file.js` - What changes
+- [ ] `path/to/existing/file.js` - What changes (owner: Claude | local)
 
 ### Implementation Details
 [Technical notes, code snippets, decisions]
@@ -60,6 +69,7 @@ Files to read before starting work:
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] Feature works as expected
+- [ ] Docs updated (see source→docs mapping in CLAUDE.md)
 
 ---
 
@@ -97,6 +107,10 @@ Track progress across Claude Code sessions:
 Before marking project complete:
 - [ ] All phases marked [x] COMPLETE
 - [ ] Tests passing
-- [ ] Documentation updated (CLAUDE.md, CHANGELOG.md)
+- [ ] Documentation updated:
+  - [ ] CLAUDE.md (architecture, if structural changes)
+  - [ ] docs/QUICK_REF.md (if new constants/hooks/utils)
+  - [ ] docs/CHANGELOG.md (version entry)
+  - [ ] docs/STATE_SCHEMAS.md (if reducer changes)
 - [ ] Code reviewed or self-reviewed
 - [ ] Committed with descriptive message

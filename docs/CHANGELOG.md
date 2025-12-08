@@ -1,11 +1,38 @@
 # Poker Tracker Change Log
 
-## v113 (Current) - Project Continuity System ✅
+## v113 (Current) - Project Continuity System + Local Model Workflow ✅
 
 ### Summary
-- **Purpose**: Enable seamless project tracking across chat sessions
-- **New Files**: 6 files created (3 hooks, 1 command, 1 registry, 1 template)
+- **Purpose**: Enable seamless project tracking across chat sessions + integrate local model delegation
+- **New Files**: 7 files created (4 hooks, 1 command, 1 registry, 1 template)
 - **Archived**: 2 completed project files moved to archive
+- **Workflow**: Local model commands + documentation sync integrated into task planning
+
+### Local Model Workflow Integration
+- **CLAUDE.md**: Added "Local Model Workflow" section with decision flow and command reference
+- **engineering_practices.md**: Added "Local Models (DeepSeek/Qwen)" role definition with command mapping
+- **TEMPLATE.project.md**: Added "Task Delegation" checklist to phases
+- **cto-decompose.md**: Added `local_command` field to task JSON schema
+
+### Documentation Sync System
+- **New Hook**: `.claude/hooks/docs-sync.cjs` - Tracks source→docs staleness
+  - Monitors source file edits (constants, hooks, reducers, utils, components)
+  - Maps changes to required doc updates
+  - Warns after 5+ source edits if docs not updated
+  - Pre-commit warning if docs are stale
+- **CLAUDE.md**: Added "Documentation Maintenance" section with update mapping
+- **TEMPLATE.project.md**: Added doc verification to phase checklists
+- **settings.json**: Registered docs-sync hook for Edit, Write, and Bash (git commit)
+
+### Local Model Commands Reference
+| Command | Model | Use For |
+|---------|-------|---------|
+| `/route <task>` | - | Get recommendation |
+| `/local <task>` | Auto | Auto-route to best model |
+| `/local-code <task>` | DeepSeek | New code (<80 lines) |
+| `/local-refactor <task>` | Qwen | Refactoring tasks |
+| `/local-doc <task>` | Qwen | Documentation/JSDoc |
+| `/local-test <task>` | Qwen | Unit test generation |
 
 ### Key Changes
 - **Project Registry** (`.claude/projects.json`)
@@ -20,6 +47,7 @@
 - **Work Tracking Hooks**
   - `project-update.cjs` - Reminds to update project files after significant edits
   - `commit-project-check.cjs` - Warns before commit if project files not updated
+  - `docs-sync.cjs` - Tracks source→docs staleness and warns before commit
 
 - **Project Commands** (`/project`)
   - `/project status` - View all projects with completion status

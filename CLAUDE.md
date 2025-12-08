@@ -52,6 +52,100 @@ npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
 ```
 
+## Local Model Workflow
+
+This project uses local LLM models (via LM Studio) to save Claude tokens on routine tasks. **Always consider local models before starting work.**
+
+### Decision Flow
+Before implementing any task:
+1. Run `/route <task description>` to get a recommendation
+2. Or use the decision tree:
+   - **Simple utility function** (<80 lines, no state) → `/local-code`
+   - **Simple React component** (<100 lines, <5 props) → `/local-code`
+   - **Refactoring/renaming** → `/local-refactor`
+   - **Documentation/comments** → `/local-doc`
+   - **Unit tests** → `/local-test`
+   - **State/reducers/hooks/integration** → Use Claude directly
+
+### Local Model Commands
+```bash
+/route <task>        # Get recommendation on which model to use
+/local <task>        # Auto-route to best local model
+/local-code <task>   # DeepSeek: new code/boilerplate
+/local-refactor <task>  # Qwen: refactoring tasks
+/local-doc <task>    # Qwen: documentation/comments
+/local-test <task>   # Qwen: unit tests
+```
+
+### When to Use Local Models
+| Task Type | Use Local? | Command |
+|-----------|------------|---------|
+| Pure utility function | ✅ Yes | `/local-code` |
+| Simple UI component | ✅ Yes | `/local-code` |
+| Rename/extract/move | ✅ Yes | `/local-refactor` |
+| Add JSDoc comments | ✅ Yes | `/local-doc` |
+| Generate test cases | ✅ Yes | `/local-test` |
+| Reducer logic | ❌ No | Claude |
+| Custom hooks | ❌ No | Claude |
+| Multi-file changes | ❌ No | Claude |
+| State management | ❌ No | Claude |
+| Integration code | ❌ No | Claude |
+
+### After Local Model Generation
+1. **Review the output** for correctness
+2. **Fix import paths** (local models often get these wrong)
+3. **Verify export style** matches project (named exports)
+4. **Run tests** to validate functionality
+5. **Use Claude to fix** any issues (still saves tokens overall)
+
+### Integration with CTO-Decompose
+When `/cto-decompose` assigns `owner: "ai:less-capable"`:
+- Map to appropriate `/local-*` command
+- These are candidates for local model delegation
+- `ai:less-capable` = simple, well-defined tasks
+
+## Documentation Maintenance
+
+Documentation must stay in sync with code changes. A `docs-sync` hook tracks this automatically.
+
+### Doc Update Requirements
+When you edit source files, update the corresponding docs:
+
+| Source Change | Docs to Update |
+|---------------|----------------|
+| `src/constants/` | CLAUDE.md, docs/QUICK_REF.md |
+| `src/hooks/` | CLAUDE.md, docs/QUICK_REF.md |
+| `src/reducers/` | CLAUDE.md, docs/STATE_SCHEMAS.md |
+| `src/utils/` | CLAUDE.md, docs/QUICK_REF.md |
+| `src/components/views/` | CLAUDE.md |
+| `src/components/ui/` | CLAUDE.md, docs/QUICK_REF.md |
+| `.claude/commands/` | CLAUDE.md |
+| New features | docs/CHANGELOG.md |
+| Version bump | CLAUDE.md, docs/QUICK_REF.md, docs/CHANGELOG.md |
+
+### Documentation Workflow
+1. **During work**: The `docs-sync` hook tracks source file edits
+2. **Periodic reminder**: After 5+ source edits, you'll see which docs need updating
+3. **Before commit**: Hook warns if docs are stale
+4. **Update docs**: Update relevant docs before committing
+
+### Key Documentation Files
+| File | Purpose | Update When |
+|------|---------|-------------|
+| `CLAUDE.md` | Architecture overview | Any structural change |
+| `docs/QUICK_REF.md` | Quick lookup reference | New constants/hooks/utils |
+| `docs/CHANGELOG.md` | Version history | Each version bump |
+| `docs/STATE_SCHEMAS.md` | State shapes | Reducer changes |
+| `docs/SPEC.md` | Full specification | Major feature changes |
+| `engineering_practices.md` | Standards | Process changes |
+
+### Version Bumping Checklist
+When incrementing version (e.g., v113 → v114):
+- [ ] Update version in CLAUDE.md header and Architecture section
+- [ ] Update version in docs/QUICK_REF.md header
+- [ ] Add entry to docs/CHANGELOG.md
+- [ ] Update `engineering_practices.md` version footer if changed
+
 ## Architecture (v113)
 
 ### File Structure

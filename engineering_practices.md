@@ -689,6 +689,34 @@ When AI generates code, verify:
 
 **Token Budget:** Lower (simple tasks)
 
+### Local Models (DeepSeek/Qwen via LM Studio)
+
+**Command Mapping for `ai:less-capable` tasks:**
+
+| Task Type | Local Command | Model |
+|-----------|---------------|-------|
+| Utility functions (<80 lines) | `/local-code` | DeepSeek |
+| Simple React components (<100 lines) | `/local-code` | DeepSeek |
+| Refactoring/renaming | `/local-refactor` | Qwen |
+| Documentation/JSDoc | `/local-doc` | Qwen |
+| Unit test generation | `/local-test` | Qwen |
+| Auto-route (uncertain) | `/local` | Auto |
+
+**When CTO-Decompose Outputs `ai:less-capable`:**
+1. Check task matches local model criteria (see table above)
+2. Use `/route <task>` if uncertain
+3. Run the appropriate `/local-*` command
+4. Have Claude review and fix output (import paths, exports, edge cases)
+
+**Local Model Limitations:**
+- No project context awareness
+- Often incorrect import paths
+- May use wrong export style
+- Cannot do multi-file changes
+- No state management understanding
+
+**Token Savings:** 70-85% for suitable tasks (utility functions, simple components)
+
 ### Research Agent
 
 **Best Used For:**
@@ -795,5 +823,5 @@ try {
 
 ---
 
-*Last updated: v111*
+*Last updated: v113*
 *Maintainer: Project Team*

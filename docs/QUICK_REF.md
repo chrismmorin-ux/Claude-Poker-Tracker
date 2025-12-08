@@ -1,16 +1,37 @@
-# ⚡ QUICK REFERENCE CARD - Poker Tracker v108
+# ⚡ QUICK REFERENCE CARD - Poker Tracker v113
 
 ## 🎯 ESSENTIAL INFO
-- **Version**: v108 (Custom Hooks Extraction ✅)
-- **Main File**: src/PokerTracker.jsx (~620 lines - 36% reduction!)
-- **Constants**: src/constants/ (gameConstants.js)
-- **Hooks**: src/hooks/ (7 custom hooks)
-- **Utils**: src/utils/ (5 files: actionUtils, cardUtils, seatUtils, displayUtils, validation)
+- **Version**: v113 (Project Continuity + Local Model Workflow)
+- **Main File**: src/PokerTracker.jsx (~620 lines)
+- **Constants**: src/constants/ (gameConstants.js, sessionConstants.js, playerConstants.js)
+- **Hooks**: src/hooks/ (11 custom hooks)
+- **Utils**: src/utils/ (7 files: actionUtils, cardUtils, seatUtils, displayUtils, validation, persistence, exportUtils)
 
 ## 📖 MUST-READ DOCS
 1. **POKER_TRACKER_SPEC_V103.md** ⭐ (3k tokens) - READ FIRST
-2. **CHANGELOG.md** (Latest changes including v108)
+2. **CHANGELOG.md** (Latest changes)
 3. **CLAUDE.md** (Complete architecture documentation)
+
+## 🤖 LOCAL MODEL COMMANDS
+Before starting work, check if task can be delegated:
+```bash
+/route <task>           # Get recommendation
+/local <task>           # Auto-route to best local model
+/local-code <task>      # DeepSeek: new code (<80 lines)
+/local-refactor <task>  # Qwen: refactoring tasks
+/local-doc <task>       # Qwen: documentation
+/local-test <task>      # Qwen: unit tests
+```
+
+| Task Type | Use Local? | Command |
+|-----------|------------|---------|
+| Utility function | ✅ Yes | `/local-code` |
+| Simple component | ✅ Yes | `/local-code` |
+| Refactoring | ✅ Yes | `/local-refactor` |
+| JSDoc comments | ✅ Yes | `/local-doc` |
+| Test generation | ✅ Yes | `/local-test` |
+| Reducer/hooks | ❌ No | Claude |
+| Multi-file | ❌ No | Claude |
 
 ## 🏗️ CODE ORGANIZATION (v108)
 ```

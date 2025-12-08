@@ -30,6 +30,7 @@ For each task, produce JSON in this format:
   "type": "<feature|bug|refactor|investigation|research|ops|doc>",
   "priority": "<P0|P1|P2>",
   "owner": "<senior|junior|ai:less-capable|ai:research|ai:capable>",
+  "local_command": "</local-code|/local-refactor|/local-doc|/local-test|null>",
   "inputs": ["required files, APIs, data"],
   "outputs": ["PR, doc, tests, metrics"],
   "acceptance_criteria": ["1.", "2.", "3."],
@@ -39,6 +40,19 @@ For each task, produce JSON in this format:
   "workflow_guidance": "step-by-step for junior/ai:less-capable owners"
 }
 ```
+
+### Local Model Mapping (for `ai:less-capable` tasks)
+
+When assigning `owner: "ai:less-capable"`, also specify `local_command`:
+
+| Task Type | local_command |
+|-----------|---------------|
+| New utility function (<80 lines) | `/local-code` |
+| New simple component (<100 lines, <5 props) | `/local-code` |
+| Refactoring, renaming, extracting | `/local-refactor` |
+| Adding documentation/JSDoc | `/local-doc` |
+| Generating unit tests | `/local-test` |
+| State/hooks/reducers/integration | `null` (requires Claude) |
 
 Also provide:
 - A dependency graph (which tasks block which)
