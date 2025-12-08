@@ -29,6 +29,7 @@ import { downloadBackup, readJsonFile, validateImportData, importAllData } from 
  * @param {Object} props.SCREEN - Screen constants
  * @param {boolean} props.autoOpenNewSession - If true, auto-open new session form
  * @param {Function} props.setAutoOpenNewSession - Set the auto-open flag
+ * @param {Function} props.resetTableState - Reset table state (cards, actions) for new session
  */
 export const SessionsView = ({
   scale,
@@ -42,7 +43,8 @@ export const SessionsView = ({
   deleteSessionById,
   SCREEN,
   autoOpenNewSession,
-  setAutoOpenNewSession
+  setAutoOpenNewSession,
+  resetTableState
 }) => {
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
@@ -92,6 +94,11 @@ export const SessionsView = ({
     try {
       await startNewSession(sessionData);
       setShowNewSessionForm(false);
+
+      // Reset table state for new session (clear cards, actions, etc.)
+      if (resetTableState) {
+        resetTableState();
+      }
 
       // Navigate back to TableView to start entering hands
       setCurrentScreen(SCREEN.TABLE);

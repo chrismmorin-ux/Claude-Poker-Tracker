@@ -788,6 +788,7 @@ const PokerTrackerWireframes = () => {
           SCREEN={SCREEN}
           autoOpenNewSession={autoOpenNewSession}
           setAutoOpenNewSession={setAutoOpenNewSession}
+          resetTableState={resetHand}
           />
         </ViewErrorBoundary>
       </>
