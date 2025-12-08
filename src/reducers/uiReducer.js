@@ -15,6 +15,7 @@ export const UI_ACTIONS = {
   CLOSE_CONTEXT_MENU: 'CLOSE_CONTEXT_MENU',
   START_DRAGGING_DEALER: 'START_DRAGGING_DEALER',
   STOP_DRAGGING_DEALER: 'STOP_DRAGGING_DEALER',
+  TOGGLE_SIDEBAR: 'TOGGLE_SIDEBAR',
 };
 
 // Screen constants (imported from main component)
@@ -29,6 +30,7 @@ export const initialUiState = {
   selectedPlayers: [],
   contextMenu: null, // { x, y, seat }
   isDraggingDealer: false,
+  isSidebarCollapsed: false, // Sidebar starts expanded
 };
 
 // =============================================================================
@@ -44,6 +46,7 @@ export const UI_STATE_SCHEMA = {
   selectedPlayers: { type: 'array', items: 'number' },
   contextMenu: { type: 'object', required: false }, // Can be null
   isDraggingDealer: { type: 'boolean' },
+  isSidebarCollapsed: { type: 'boolean' },
 };
 
 // =============================================================================
@@ -105,6 +108,12 @@ const rawUiReducer = (state, action) => {
       return {
         ...state,
         isDraggingDealer: false,
+      };
+
+    case UI_ACTIONS.TOGGLE_SIDEBAR:
+      return {
+        ...state,
+        isSidebarCollapsed: !state.isSidebarCollapsed,
       };
 
     default:

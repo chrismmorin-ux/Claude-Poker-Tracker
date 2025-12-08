@@ -208,10 +208,11 @@ src/
     │   ├── PlayerFilters.jsx    (Player search/sort/filter controls - NEW in v112)
     │   ├── PlayerRow.jsx        (Single player table row - NEW in v112)
     │   ├── SeatGrid.jsx         (9-seat assignment grid - NEW in v112)
-    │   └── SessionCard.jsx      (Past session display card - NEW in v112)
+    │   ├── SessionCard.jsx      (Past session display card - NEW in v112)
+    │   └── CollapsibleSidebar.jsx (Collapsible navigation sidebar - NEW in v113)
     │
     └── views/                   (Full-screen view components)
-        ├── TableView.jsx        (Main poker table, ~380 lines - UPDATED in v111)
+        ├── TableView.jsx        (Main poker table, ~400 lines - UPDATED in v113)
         ├── StatsView.jsx        (Statistics display, ~264 lines)
         ├── CardSelectorView.jsx (Card selection, ~178 lines)
         ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
@@ -228,8 +229,8 @@ The app uses five reducers for clean state management:
 - Actions: `SET_STREET`, `ADVANCE_DEALER`, `RECORD_ACTION`, `CLEAR_STREET_ACTIONS`, etc.
 
 **uiReducer** (`src/reducers/uiReducer.js`):
-- State: `currentView`, `selectedPlayers`, `contextMenu`, `isDraggingDealer`
-- Actions: `SET_SCREEN`, `TOGGLE_PLAYER_SELECTION`, `SET_CONTEXT_MENU`, etc.
+- State: `currentView`, `selectedPlayers`, `contextMenu`, `isDraggingDealer`, `isSidebarCollapsed`
+- Actions: `SET_SCREEN`, `TOGGLE_PLAYER_SELECTION`, `SET_CONTEXT_MENU`, `TOGGLE_SIDEBAR`, etc.
 
 **cardReducer** (`src/reducers/cardReducer.js`):
 - State: `communityCards`, `holeCards`, `allPlayerCards`, `isShowdownViewOpen`, etc.
@@ -391,7 +392,7 @@ The app uses dynamic scaling to fit any browser window size:
 
 ## Testing Changes
 Test all 6 views at various browser sizes:
-1. Table View (default) - includes player assignment via right-click (NEW in v111)
+1. Table View (default) - includes player assignment via right-click, collapsible sidebar (NEW in v113)
 2. Card Selector (click community/hole cards) - shows current street in header
 3. Showdown View (click "showdown" street) - auto-advances to next empty card slot
 4. Stats View (click "Stats" button)
@@ -470,7 +471,7 @@ Test all 6 views at various browser sizes:
   - Features: Player profiles with physical descriptions (ethnicity, build, gender, facial hair, hat, sunglasses), playing style tags, notes, avatar upload, quick seat assignment (right-click + drag-and-drop), seat management with click-to-select workflow, auto-highlight seat from context menu, duplicate player prevention, replacement prompts, portrait mode support
   - Database schema: PokerTrackerDB v5 with 'players' object store (playerId, name, createdAt, lastSeenAt indexes)
   - Responsive design: PlayersView uses viewport-based widths for portrait phone screens while other views remain landscape
-- v112: CTO review improvements (current)
+- v112: CTO review improvements
   - Created `src/components/ui/Toast.jsx` - Toast notification with 4 variants (error, success, warning, info)
   - Created `src/hooks/useToast.js` - Toast state management hook with auto-dismiss
   - Created `src/components/ui/ViewErrorBoundary.jsx` - Per-view error boundary with retry/return options
@@ -486,3 +487,14 @@ Test all 6 views at various browser sizes:
   - DEBUG flag now respects environment (import.meta.env.DEV)
   - All layout values centralized in LAYOUT constants
   - 272 tests passing across 8 test files
+- v113: Collapsible sidebar, dynamic hand tracking, session integration, and bankroll display (current)
+  - Created `src/components/ui/CollapsibleSidebar.jsx` - Collapsible navigation sidebar component
+  - Updated `src/reducers/uiReducer.js` - Added `isSidebarCollapsed` state and `TOGGLE_SIDEBAR` action
+  - Updated `src/components/views/TableView.jsx` - Integrated CollapsibleSidebar, moved nav buttons from header
+  - Features: Sidebar with Stats, History, Sessions, Players navigation; expand/collapse toggle; icons-only when collapsed
+  - Header simplified: only Hand #, session time, Next Hand, and Reset buttons remain
+  - Dynamic hand count: displays actual hand number from session (replacing hardcoded #47)
+  - Live session timer: shows elapsed time since session start, updates every minute
+  - Added `getHandsBySessionId()` function to persistence.js for session-based queries
+  - Updated HistoryView.jsx: session filter dropdown, hands show linked session badge, filter by session
+  - Bankroll display: TableView header shows current session investment (buy-in + rebuys), SessionsView shows running total

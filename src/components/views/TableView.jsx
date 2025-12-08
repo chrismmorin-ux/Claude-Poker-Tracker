@@ -1,10 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
 import { ActionSequence } from '../ui/ActionSequence';
+import { CollapsibleSidebar } from '../ui/CollapsibleSidebar';
 import { LAYOUT } from '../../constants/gameConstants';
+
+/**
+ * Format elapsed time from start timestamp to now
+ * @param {number} startTime - Unix timestamp in ms
+ * @returns {string} - Formatted string like "2h 15m" or "45m" or "--"
+ */
+const formatElapsedTime = (startTime) => {
+  if (!startTime) return '--';
+
+  const now = Date.now();
+  const elapsed = now - startTime;
+
+  if (elapsed < 0) return '--';
+
+  const totalMinutes = Math.floor(elapsed / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
 
 /**
  * TableView - Main poker table interface
@@ -59,10 +83,39 @@ export const TableView = ({
   getSeatPlayerName,
   isPlayerAssigned,
   setPendingSeatForPlayerAssignment,
+  isSidebarCollapsed,
+  toggleSidebar,
+  handCount,
+  sessionStartTime,
+  currentSessionBuyIn,
+  currentSessionRebuys,
   SkipForward,
   BarChart3,
   RotateCcw,
 }) => {
+  // Update elapsed time every minute
+  const [elapsedTime, setElapsedTime] = useState(() => formatElapsedTime(sessionStartTime));
+
+  // Calculate current session investment (buy-in + rebuys)
+  const currentInvestment = currentSessionBuyIn + (currentSessionRebuys || []).reduce((sum, r) => sum + (r.amount || 0), 0);
+
+  useEffect(() => {
+    if (!sessionStartTime) {
+      setElapsedTime('--');
+      return;
+    }
+
+    // Update immediately
+    setElapsedTime(formatElapsedTime(sessionStartTime));
+
+    // Update every minute
+    const interval = setInterval(() => {
+      setElapsedTime(formatElapsedTime(sessionStartTime));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
       <div style={{
@@ -80,49 +133,34 @@ export const TableView = ({
             }
           }}
         >
-          <div className="flex justify-between items-center px-4 py-2 bg-black bg-opacity-40">
+          {/* Collapsible Sidebar */}
+          <CollapsibleSidebar
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+            onNavigate={setCurrentScreen}
+            SCREEN={SCREEN}
+            BarChart3={BarChart3}
+          />
+
+          {/* Header Bar */}
+          <div className={`flex justify-between items-center px-4 py-2 bg-black bg-opacity-40 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
             <div className="flex items-center gap-4">
-              <div className="text-white text-xl font-bold">Hand #47</div>
-              <div className="text-green-300 text-base">2h 15m</div>
+              <div className="text-white text-xl font-bold">Hand #{handCount + 1}</div>
+              <div className="text-green-300 text-base">{elapsedTime}</div>
+              {currentInvestment > 0 && (
+                <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  ${currentInvestment} invested
+                </div>
+              )}
             </div>
-            <div className="flex gap-2 items-center justify-between flex-1">
-              <div className="flex gap-2">
-                <button
-                  onClick={nextHand}
-                  className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  <SkipForward size={18} />
-                  Next Hand
-                </button>
-                <button
-                  onClick={() => setCurrentScreen(SCREEN.STATS)}
-                  className="bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  <BarChart3 size={18} />
-                  Stats
-                </button>
-                <button
-                  onClick={() => setCurrentScreen(SCREEN.HISTORY)}
-                  className="bg-purple-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  📚
-                  History
-                </button>
-                <button
-                  onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
-                  className="bg-orange-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  🎯
-                  Sessions
-                </button>
-                <button
-                  onClick={() => setCurrentScreen(SCREEN.PLAYERS)}
-                  className="bg-teal-600 text-white px-3 py-2 rounded flex items-center gap-2"
-                >
-                  👥
-                  Players
-                </button>
-              </div>
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={nextHand}
+                className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
+              >
+                <SkipForward size={18} />
+                Next Hand
+              </button>
               <button
                 onClick={resetHand}
                 className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2"
@@ -133,7 +171,7 @@ export const TableView = ({
             </div>
           </div>
 
-          <div className="flex-1 relative p-4">
+          <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
             <div
               ref={tableRef}
               className="absolute bg-green-700 shadow-2xl"
@@ -547,6 +585,16 @@ TableView.propTypes = {
   getSeatPlayerName: PropTypes.func.isRequired,
   isPlayerAssigned: PropTypes.func.isRequired,
   setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
+
+  // Sidebar state
+  isSidebarCollapsed: PropTypes.bool.isRequired,
+  toggleSidebar: PropTypes.func.isRequired,
+
+  // Session info
+  handCount: PropTypes.number.isRequired,
+  sessionStartTime: PropTypes.number, // Optional - null if no active session
+  currentSessionBuyIn: PropTypes.number,
+  currentSessionRebuys: PropTypes.array,
 
   // Icons (React components)
   SkipForward: PropTypes.elementType.isRequired,

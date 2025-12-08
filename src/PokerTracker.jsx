@@ -163,7 +163,7 @@ const PokerTrackerWireframes = () => {
 
   // Destructure state for easier access
   const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
-  const { currentView, selectedPlayers, contextMenu, isDraggingDealer } = uiState;
+  const { currentView, selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed } = uiState;
   const {
     communityCards, holeCards, holeCardsVisible, showCardSelector,
     cardSelectorType, highlightedBoardIndex, isShowdownViewOpen,
@@ -276,6 +276,10 @@ const PokerTrackerWireframes = () => {
 
   const togglePlayerSelection = useCallback((seat) => {
     dispatchUi({ type: UI_ACTIONS.TOGGLE_PLAYER_SELECTION, payload: seat });
+  }, [dispatchUi]);
+
+  const toggleSidebar = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.TOGGLE_SIDEBAR });
   }, [dispatchUi]);
 
   const handleSeatRightClick = useCallback((e, seat) => {
@@ -720,6 +724,12 @@ const PokerTrackerWireframes = () => {
         getSeatPlayerName={getSeatPlayerName}
         isPlayerAssigned={isPlayerAssigned}
         setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        handCount={sessionState.currentSession?.handCount || 0}
+        sessionStartTime={sessionState.currentSession?.startTime}
+        currentSessionBuyIn={sessionState.currentSession?.buyIn || 0}
+        currentSessionRebuys={sessionState.currentSession?.rebuyTransactions || []}
         SkipForward={SkipForward}
         BarChart3={BarChart3}
         RotateCcw={RotateCcw}

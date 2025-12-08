@@ -193,8 +193,8 @@ export const ShowdownView = ({
                       <div className="grid grid-cols-9 gap-2">
                         {SEAT_ARRAY.map(seat => {
                           // Get actions array (always array format after normalization)
-                          const actions = seatActions[street]?.[seat] || [];
-                          const lastAction = actions[actions.length - 1]; // Last action for showdown
+                          const actionArray = seatActions[street]?.[seat] || [];
+                          const lastAction = actionArray[actionArray.length - 1]; // Last action for showdown
 
                           const inactiveStatus = isSeatInactive(seat);
                           const cards = seat === mySeat ? holeCards : allPlayerCards[seat];

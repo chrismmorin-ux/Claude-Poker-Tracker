@@ -402,6 +402,42 @@ export const getAllHands = async () => {
 };
 
 /**
+ * Get all hands for a specific session
+ * @param {number} sessionId - The session ID to filter by
+ * @returns {Promise<Array>} Array of hand records for this session
+ */
+export const getHandsBySessionId = async (sessionId) => {
+  try {
+    const db = await initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const index = objectStore.index('sessionId');
+      const request = index.getAll(sessionId);
+
+      request.onsuccess = (event) => {
+        const hands = event.target.result;
+        log(`Loaded ${hands.length} hands for session ${sessionId}`);
+        resolve(hands.map(normalizeHandRecord));
+      };
+
+      request.onerror = (event) => {
+        logError(`Failed to load hands for session ${sessionId}:`, event.target.error);
+        reject(event.target.error);
+      };
+
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
+  } catch (error) {
+    logError('Error in getHandsBySessionId:', error);
+    return [];
+  }
+};
+
+/**
  * Delete a specific hand by ID
  * @param {number} handId - The hand ID to delete
  * @returns {Promise<void>}

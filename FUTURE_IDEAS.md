@@ -10,16 +10,16 @@ This document is populated with tasks and potential features than I, the user, h
     - ✅ [auto-restore latest hand on startup]
     - ✅ [graceful error handling]
     - FUTURE ENHANCEMENTS:
-        - [Phase 2: Hand History View]
-            - [create HistoryView.jsx component]
-            - [list all saved hands with timestamps]
-            - [click to load specific hand]
-            - [delete individual hands]
-            - [display actual hand count (not hardcoded #47)]
-        - [Phase 3: Session Integration]
-            - [link hands to sessions via sessionId]
-            - [filter hands by session]
-            - [session-based statistics]
+        - ✅ [Phase 2: Hand History View] - COMPLETED
+            - ✅ [create HistoryView.jsx component] - COMPLETED
+            - ✅ [list all saved hands with timestamps] - COMPLETED
+            - ✅ [click to load specific hand] - COMPLETED
+            - ✅ [delete individual hands] - COMPLETED
+            - ✅ [display actual hand count (not hardcoded #47)] - COMPLETED
+        - ✅ [Phase 3: Session Integration] - COMPLETED
+            - ✅ [link hands to sessions via sessionId] - COMPLETED (auto-linked on save)
+            - ✅ [filter hands by session] - COMPLETED
+            - [session-based statistics] - (future enhancement)
         - [Phase 4: Advanced Features]
             - [export hands as JSON]
             - [import hands from file]
@@ -30,9 +30,9 @@ This document is populated with tasks and potential features than I, the user, h
 - [add debug features and systems]
     - [allow for better debugging by AI]
     - [add debug feautres and systems to allow manual debugging, without AI]
-- [add bankroll fuctionality, after sessions functionality]
-    - [edit bankroll through session contributions or deductions]
-    - [display from sessions]
+- ✅ [add bankroll fuctionality, after sessions functionality] - COMPLETED
+    - ✅ [edit bankroll through session contributions or deductions] - COMPLETED (via session buy-in/rebuy/cashout)
+    - ✅ [display from sessions] - COMPLETED (SessionsView shows running total, TableView shows current investment)
 - [add a ranges functionality]
     - [ranges - add visual of hands played by each player]
     - [ranges - GTO optimal and custom opening ranges]
@@ -78,4 +78,4 @@ This document is populated with tasks and potential features than I, the user, h
 - [add log-ins for different users]
 - [accomodate multiple actions within a single street that get logged, but limited to what actually can happen (ie, you cannot call after folding, you cannot check after there is a bet, but you can 3bet after an open, or check raise after a check).  We may need to update our types of actions for this]
 -[in player logging, generate an avatar based on the descirption of the player]
-- [creation of a collapsable side bar on table view with the various buttons (stats, history, sessions, players]
+- ✅ [creation of a collapsable side bar on table view with the various buttons (stats, history, sessions, players] - COMPLETED
