@@ -91,15 +91,16 @@ export const TableView = ({
   hasActiveSession,
   currentSessionBuyIn,
   currentSessionRebuys,
+  currentSessionVenue,
+  currentSessionGameType,
+  setAutoOpenNewSession,
+  updateSessionField,
   SkipForward,
   BarChart3,
   RotateCcw,
 }) => {
   // Update session time display every minute
   const [sessionTimeDisplay, setSessionTimeDisplay] = useState(() => formatRelativeTime(sessionStartTime));
-
-  // Calculate current session investment (buy-in + rebuys)
-  const currentInvestment = currentSessionBuyIn + (currentSessionRebuys || []).reduce((sum, r) => sum + (r.amount || 0), 0);
 
   // Convert absentSeats array to Set for CollapsibleSidebar
   const absentSeatsSet = useMemo(() => new Set(absentSeats || []), [absentSeats]);
@@ -155,6 +156,10 @@ export const TableView = ({
             dealerButtonSeat={dealerButtonSeat}
             absentSeats={absentSeatsSet}
             numSeats={numSeats}
+            hasActiveSession={hasActiveSession}
+            currentSessionVenue={currentSessionVenue}
+            currentSessionGameType={currentSessionGameType}
+            updateSessionField={updateSessionField}
           />
 
           {/* Header Bar */}
@@ -165,16 +170,14 @@ export const TableView = ({
                 <div className="text-green-300 text-base">{sessionTimeDisplay}</div>
               ) : (
                 <button
-                  onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
+                  onClick={() => {
+                    setAutoOpenNewSession(true);
+                    setCurrentScreen(SCREEN.SESSIONS);
+                  }}
                   className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
                 >
-                  Start Session
+                  New Session
                 </button>
-              )}
-              {currentInvestment > 0 && (
-                <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  ${currentInvestment} invested
-                </div>
               )}
             </div>
             <div className="flex gap-2 items-center">
@@ -622,6 +625,10 @@ TableView.propTypes = {
   hasActiveSession: PropTypes.bool.isRequired,
   currentSessionBuyIn: PropTypes.number,
   currentSessionRebuys: PropTypes.array,
+  currentSessionVenue: PropTypes.string,
+  currentSessionGameType: PropTypes.string,
+  setAutoOpenNewSession: PropTypes.func.isRequired,
+  updateSessionField: PropTypes.func.isRequired,
 
   // Icons (React components)
   SkipForward: PropTypes.elementType.isRequired,

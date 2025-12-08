@@ -61,6 +61,14 @@
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/edit-review-suggest.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.js"
           }
         ]
       },
@@ -82,6 +90,32 @@
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/edit-review-suggest.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.js"
           }
         ]
       }

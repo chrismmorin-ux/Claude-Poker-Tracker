@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 
 /**
  * Get the position name for a seat relative to the dealer
@@ -116,7 +117,15 @@ export const CollapsibleSidebar = ({
   dealerButtonSeat,
   absentSeats,
   numSeats,
+  hasActiveSession,
+  currentSessionVenue,
+  currentSessionGameType,
+  updateSessionField,
 }) => {
+  // Local editing state for venue and game type
+  const [editingVenue, setEditingVenue] = useState(false);
+  const [editingGameType, setEditingGameType] = useState(false);
+
   const navItems = [
     { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, color: 'bg-blue-600 hover:bg-blue-700' },
     { screen: SCREEN.HISTORY, label: 'History', icon: '📚', color: 'bg-purple-600 hover:bg-purple-700' },
@@ -198,6 +207,76 @@ export const CollapsibleSidebar = ({
         )}
       </div>
 
+      {/* Session Info - when active session exists */}
+      {hasActiveSession && (
+        <div className={`flex flex-col gap-2 py-3 border-b border-gray-600 ${isCollapsed ? 'px-1' : 'px-2'}`}>
+          {/* Venue */}
+          <div className="flex flex-col">
+            {!isCollapsed && (
+              <div className="text-gray-400 text-xs mb-1">Venue</div>
+            )}
+            {editingVenue && !isCollapsed ? (
+              <select
+                value={currentSessionVenue || ''}
+                onChange={(e) => {
+                  updateSessionField('venue', e.target.value);
+                  setEditingVenue(false);
+                }}
+                onBlur={() => setEditingVenue(false)}
+                className="px-2 py-1 text-sm bg-gray-700 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none"
+                autoFocus
+              >
+                {VENUES.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            ) : (
+              <button
+                onClick={() => !isCollapsed && setEditingVenue(true)}
+                className={`text-left text-green-400 font-medium hover:text-green-300 transition-colors ${isCollapsed ? 'text-xs text-center' : 'text-sm'}`}
+                title={isCollapsed ? `Venue: ${currentSessionVenue}` : 'Click to change venue'}
+              >
+                {isCollapsed ? '📍' : (currentSessionVenue || 'Set venue')}
+              </button>
+            )}
+          </div>
+
+          {/* Game Type */}
+          <div className="flex flex-col">
+            {!isCollapsed && (
+              <div className="text-gray-400 text-xs mb-1">Game</div>
+            )}
+            {editingGameType && !isCollapsed ? (
+              <select
+                value={GAME_TYPE_KEYS.find(key => GAME_TYPES[key].label === currentSessionGameType) || ''}
+                onChange={(e) => {
+                  const gameTypeLabel = GAME_TYPES[e.target.value]?.label;
+                  if (gameTypeLabel) {
+                    updateSessionField('gameType', gameTypeLabel);
+                  }
+                  setEditingGameType(false);
+                }}
+                onBlur={() => setEditingGameType(false)}
+                className="px-2 py-1 text-sm bg-gray-700 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none"
+                autoFocus
+              >
+                {GAME_TYPE_KEYS.map((key) => (
+                  <option key={key} value={key}>{GAME_TYPES[key].label}</option>
+                ))}
+              </select>
+            ) : (
+              <button
+                onClick={() => !isCollapsed && setEditingGameType(true)}
+                className={`text-left text-green-400 font-medium hover:text-green-300 transition-colors ${isCollapsed ? 'text-xs text-center' : 'text-sm'}`}
+                title={isCollapsed ? `Game: ${currentSessionGameType}` : 'Click to change game type'}
+              >
+                {isCollapsed ? '🎰' : (currentSessionGameType || 'Set game')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Spacer to push nav items to bottom */}
       <div className="flex-1" />
 
@@ -232,4 +311,8 @@ CollapsibleSidebar.propTypes = {
   dealerButtonSeat: PropTypes.number.isRequired,
   absentSeats: PropTypes.instanceOf(Set).isRequired,
   numSeats: PropTypes.number.isRequired,
+  hasActiveSession: PropTypes.bool,
+  currentSessionVenue: PropTypes.string,
+  currentSessionGameType: PropTypes.string,
+  updateSessionField: PropTypes.func,
 };

@@ -383,6 +383,31 @@ Set `DEBUG = false` at line 8 to disable all console logging.
 - **Handlers**: Wrap all handler functions in `useCallback` with correct dependencies
 - **Function order**: Define helper functions BEFORE callbacks that depend on them
 
+## Post-Edit Workflow
+
+After completing multi-file changes or significant edits:
+
+1. **Code Review**: Run `/review staged` to catch bugs, pattern violations, and style issues
+2. **Component Audit**: If you modified React components significantly, run `/audit-component <filepath>`
+3. **Documentation**: Check if documentation needs updating (docs-sync hook will remind you)
+
+### Automatic Reminders
+- The `edit-review-suggest` hook suggests `/review staged` after 5+ edits or 200+ lines changed
+- The `efficiency-tracker` hook tracks session metrics for workflow analysis
+
+### Efficiency Analysis
+Run `/efficiency-analysis` to review your work session:
+- Agent usage patterns (did we use appropriate agents?)
+- Local model opportunities (could tasks have been delegated?)
+- Token efficiency (parallel reads, Explore agent usage)
+- Code review gaps
+
+```bash
+/efficiency-analysis              # Balanced analysis
+/efficiency-analysis quick        # Quick summary
+/efficiency-analysis detailed     # Full deep-dive
+```
+
 ## Responsive Design
 The app uses dynamic scaling to fit any browser window size:
 - Design dimensions: 1600x720 (Samsung Galaxy A22 landscape)

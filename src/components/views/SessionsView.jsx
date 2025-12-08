@@ -27,6 +27,8 @@ import { downloadBackup, readJsonFile, validateImportData, importAllData } from 
  * @param {Function} props.loadAllSessions - Load all sessions handler
  * @param {Function} props.deleteSessionById - Delete session handler
  * @param {Object} props.SCREEN - Screen constants
+ * @param {boolean} props.autoOpenNewSession - If true, auto-open new session form
+ * @param {Function} props.setAutoOpenNewSession - Set the auto-open flag
  */
 export const SessionsView = ({
   scale,
@@ -38,7 +40,9 @@ export const SessionsView = ({
   updateSessionField,
   loadAllSessions,
   deleteSessionById,
-  SCREEN
+  SCREEN,
+  autoOpenNewSession,
+  setAutoOpenNewSession
 }) => {
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
@@ -74,16 +78,23 @@ export const SessionsView = ({
     loadSessions();
   }, [loadAllSessions]);
 
+  // Auto-open new session form when navigating from TableView
+  useEffect(() => {
+    if (autoOpenNewSession) {
+      setShowNewSessionForm(true);
+      // Reset the flag so it doesn't re-open on subsequent mounts
+      setAutoOpenNewSession(false);
+    }
+  }, [autoOpenNewSession, setAutoOpenNewSession]);
+
   // Handle new session submission
   const handleNewSession = async (sessionData) => {
     try {
       await startNewSession(sessionData);
       setShowNewSessionForm(false);
 
-      // Reload sessions
-      const allSessions = await loadAllSessions();
-      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
-      setSessions(sorted);
+      // Navigate back to TableView to start entering hands
+      setCurrentScreen(SCREEN.TABLE);
     } catch (error) {
       console.error('Failed to start session:', error);
     }

@@ -161,6 +161,9 @@ const PokerTrackerWireframes = () => {
   // Track which seat triggered player creation (for auto-assignment)
   const [pendingSeatForPlayerAssignment, setPendingSeatForPlayerAssignment] = useState(null);
 
+  // Track if we should auto-open the new session form when navigating to Sessions view
+  const [autoOpenNewSession, setAutoOpenNewSession] = useState(false);
+
   // Destructure state for easier access
   const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
   const { currentView, selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed } = uiState;
@@ -733,6 +736,10 @@ const PokerTrackerWireframes = () => {
         hasActiveSession={sessionState.currentSession?.isActive === true}
         currentSessionBuyIn={sessionState.currentSession?.buyIn || 0}
         currentSessionRebuys={sessionState.currentSession?.rebuyTransactions || []}
+        currentSessionVenue={sessionState.currentSession?.venue}
+        currentSessionGameType={sessionState.currentSession?.gameType}
+        setAutoOpenNewSession={setAutoOpenNewSession}
+        updateSessionField={updateSessionField}
         SkipForward={SkipForward}
         BarChart3={BarChart3}
         RotateCcw={RotateCcw}
@@ -779,6 +786,8 @@ const PokerTrackerWireframes = () => {
           loadAllSessions={loadAllSessions}
           deleteSessionById={deleteSessionById}
           SCREEN={SCREEN}
+          autoOpenNewSession={autoOpenNewSession}
+          setAutoOpenNewSession={setAutoOpenNewSession}
           />
         </ViewErrorBoundary>
       </>

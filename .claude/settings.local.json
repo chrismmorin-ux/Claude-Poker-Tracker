@@ -34,7 +34,8 @@
       "SlashCommand(/cto-review:*)",
       "Bash(findstr:*)",
       "Bash(npm test:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "SlashCommand(/review:*)"
     ],
     "deny": [],
     "ask": []
