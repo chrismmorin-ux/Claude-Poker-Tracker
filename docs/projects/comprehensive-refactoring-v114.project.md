@@ -46,7 +46,7 @@ Files to read before starting work:
 | 1 | [x] COMPLETE | State Consolidation - move view state to uiReducer |
 | 2 | [x] COMPLETE | Context API - create providers, migrate StatsView & TableView |
 | 3 | [x] COMPLETE | Component Decomposition - split large views into folders |
-| 4 | [ ] | Storage Abstraction - create IStorage interface |
+| 4 | [x] COMPLETE | Storage Abstraction - create IStorage interface |
 | 5 | [ ] | Data Model Enhancement - player stats, audit trail |
 
 ---
@@ -157,16 +157,47 @@ Original: 553 lines → Main file now 219 lines (60% reduction)
 
 ---
 
-## Phase 4: Storage Abstraction
+## Phase 4: Storage Abstraction [x] COMPLETE
 
 ### Goal
 Abstract IndexedDB behind an interface for future cloud backend.
 
-### Planned Files
-- `src/storage/IStorage.js` - Interface definition
-- `src/storage/IndexedDBStorage.js` - Current impl wrapper
-- `src/storage/StorageProvider.jsx` - Context provider
-- `src/storage/useStorage.js` - Hook
+### Files Created
+- [x] `src/storage/IStorage.js` (~215 lines) - Abstract base class with all method signatures
+- [x] `src/storage/IndexedDBStorage.js` (~140 lines) - Wrapper delegating to persistence.js
+- [x] `src/storage/StorageProvider.jsx` (~100 lines) - React context provider + useStorage hook
+- [x] `src/storage/index.js` - Central export
+
+### Architecture
+```
+IStorage (abstract) ─┬─> IndexedDBStorage (current)
+                     ├─> CloudStorage (future)
+                     └─> MockStorage (testing)
+```
+
+### API Surface
+- **Hand operations**: saveHand, loadLatestHand, loadHandById, getAllHands, getHandsBySessionId, deleteHand, clearAllHands, getHandCount, handExists
+- **Session operations**: createSession, endSession, getActiveSession, setActiveSession, clearActiveSession, getAllSessions, getSessionById, deleteSession, updateSession, getSessionHandCount
+- **Player operations**: createPlayer, getAllPlayers, getPlayerById, updatePlayer, deletePlayer, getPlayerByName
+- **Database operations**: initialize, isAvailable
+
+### Usage (Future Integration)
+```jsx
+// In App.jsx
+import { StorageProvider, indexedDBStorage } from './storage';
+<StorageProvider storage={indexedDBStorage}>
+  <App />
+</StorageProvider>
+
+// In components
+import { useStorage } from './storage';
+const storage = useStorage();
+await storage.getAllHands();
+```
+
+### Verification
+- [x] All 268 tests pass
+- [x] No changes to existing app behavior (abstraction layer only)
 
 ---
 
@@ -198,6 +229,7 @@ Prepare data model for analytics and sync features.
 |------|---------|-------|-----------|
 | 2025-12-08 | Session 1 | 1-2 | Completed Phase 1 (state consolidation), Phase 2 (contexts, StatsView, TableView migration) |
 | 2025-12-08 | Session 2 | 3 | Complete Phase 3: TableView (6 components), SessionsView (5 components), ShowdownView (5 components) |
+| 2025-12-08 | Session 3 | 4 | Complete Phase 4: Storage abstraction layer (IStorage, IndexedDBStorage, StorageProvider) |
 
 ---
 

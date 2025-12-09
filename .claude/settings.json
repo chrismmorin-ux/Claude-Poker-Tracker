@@ -21,15 +21,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/git-guard.js"
+            "command": "node .claude/hooks/git-guard.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/secrets-scan.js"
+            "command": "node .claude/hooks/secrets-scan.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/pre-commit-gate.js"
+            "command": "node .claude/hooks/pre-commit-gate.cjs"
           },
           {
             "type": "command",
@@ -48,15 +48,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/arch-audit.js"
+            "command": "node .claude/hooks/arch-audit.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/pr-size-tracker.js"
+            "command": "node .claude/hooks/pr-size-tracker.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/agent-suggest.js"
+            "command": "node .claude/hooks/agent-suggest.cjs"
           },
           {
             "type": "command",
@@ -68,11 +68,11 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/edit-review-suggest.js"
+            "command": "node .claude/hooks/edit-review-suggest.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.js"
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
           }
         ]
       },
@@ -81,11 +81,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/new-file-test-reminder.js"
+            "command": "node .claude/hooks/new-file-test-reminder.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/agent-suggest.js"
+            "command": "node .claude/hooks/agent-suggest.cjs"
           },
           {
             "type": "command",
@@ -97,11 +97,11 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/edit-review-suggest.js"
+            "command": "node .claude/hooks/edit-review-suggest.cjs"
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.js"
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
           }
         ]
       },
@@ -110,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.js"
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
           }
         ]
       },
@@ -119,7 +119,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.js"
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
           }
         ]
       }
