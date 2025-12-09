@@ -22,7 +22,7 @@ created: 2025-12-08
 
 Achieve 90%+ test coverage across the Poker Tracker codebase.
 
-**Current Status (Dec 9, 2025):** 2,009 tests across 66 files
+**Current Status (Dec 9, 2025):** 2,155 tests across 72 files
 **Target:** ~1,987 tests (90%+ coverage) - EXCEEDED!
 
 Full plan: `C:\Users\chris\.claude\plans\snazzy-tumbling-backus.md`
@@ -51,8 +51,8 @@ Files to read before starting work:
 | 7 | [x] COMPLETE | View component tests: StatsView, CardSelectorView (~45 tests) |
 | 8 | [x] COMPLETE | Context provider tests (~100 tests, 100% coverage verified) |
 | 9 | [x] COMPLETE | View component tests: TableView, ShowdownView, HistoryView, SessionsView, PlayersView (~392 tests) |
-| 10 | [ ] | PlayerForm sub-components (~85 tests) <- CURRENT |
-| 11 | [ ] | Reducer coverage gaps: uiReducer, sessionReducer (~20 tests) |
+| 10 | [x] COMPLETE | PlayerForm sub-components (132 tests) |
+| 11 | [x] COMPLETE | Reducer coverage gaps: uiReducer, sessionReducer (14 tests) |
 | 12 | [ ] | Utility & storage gaps: screenNavigation, persistence, migrations (~60 tests) |
 | 13 | [ ] | Test quality: fix act() warnings, add integration tests (~30 tests) |
 
@@ -251,38 +251,46 @@ Test remaining view components with 0% coverage (~175 estimated → 392 actual t
 
 ---
 
-## Phase 10: PlayerForm Sub-components <- CURRENT
+## Phase 10: PlayerForm Sub-components [COMPLETE]
 
 ### Goal
-Test PlayerForm sections at 0% coverage (~85 tests)
+Test PlayerForm sections at 0% coverage (132 tests actual)
 
-### Files to Create
-- [ ] `src/components/ui/PlayerForm/__tests__/index.test.jsx` (~25 tests)
-- [ ] `src/components/ui/PlayerForm/__tests__/AvatarSection.test.jsx` (~10 tests)
-- [ ] `src/components/ui/PlayerForm/__tests__/BasicInfoSection.test.jsx` (~12 tests)
-- [ ] `src/components/ui/PlayerForm/__tests__/NotesSection.test.jsx` (~8 tests)
-- [ ] `src/components/ui/PlayerForm/__tests__/PhysicalSection.test.jsx` (~20 tests)
-- [ ] `src/components/ui/PlayerForm/__tests__/StyleTagsSection.test.jsx` (~10 tests)
+### Files Created
+- [x] `src/components/ui/PlayerForm/__tests__/index.test.jsx` (36 tests)
+- [x] `src/components/ui/PlayerForm/__tests__/AvatarSection.test.jsx` (15 tests)
+- [x] `src/components/ui/PlayerForm/__tests__/BasicInfoSection.test.jsx` (18 tests)
+- [x] `src/components/ui/PlayerForm/__tests__/NotesSection.test.jsx` (13 tests)
+- [x] `src/components/ui/PlayerForm/__tests__/PhysicalSection.test.jsx` (34 tests)
+- [x] `src/components/ui/PlayerForm/__tests__/StyleTagsSection.test.jsx` (16 tests)
+
+### Verification
+- [x] All 132 PlayerForm tests pass
+- [x] Total test count: 2,141 tests across 72 files
 
 ---
 
-## Phase 11: Reducer Coverage Gaps
+## Phase 11: Reducer Coverage Gaps [COMPLETE]
 
 ### Goal
-Fill remaining reducer coverage gaps (~20 tests)
+Fill remaining reducer coverage gaps (14 tests added)
 
-| File | Current | Target | Lines Missing |
-|------|---------|--------|---------------|
-| uiReducer.js | 57.14% | 95% | 143, 209-243 |
-| sessionReducer.js | 93.75% | 98% | 156 |
+### Tests Added
+- `uiReducer.test.js`:
+  - Added TOGGLE_SIDEBAR tests (3 tests)
+  - Added ADVANCE_SHOWDOWN_HIGHLIGHT tests (8 tests)
 
-### Files to Modify
-- [ ] `src/reducers/__tests__/uiReducer.test.js` - Add card selector/showdown view action tests
-- [ ] `src/reducers/__tests__/sessionReducer.test.js` - Add edge case for line 156
+- `sessionReducer.test.js`:
+  - Added SET_HAND_COUNT tests (3 tests)
+
+### Verification
+- [x] uiReducer.js: 47 tests (up from 36)
+- [x] sessionReducer.js: 27 tests (up from 24)
+- [x] Total test count: 2,155 tests across 72 files
 
 ---
 
-## Phase 12: Utility & Storage Gaps
+## Phase 12: Utility & Storage Gaps <- CURRENT
 
 ### Goal
 Cover missing utility and storage modules (~60 tests)
@@ -340,6 +348,8 @@ Fix warnings and add integration tests (~30 tests + refactoring)
 | 2025-12-08 | Session 2 | 1-6 | Completed Phases 1-6 (1,363 tests) |
 | 2025-12-09 | Session 3 | 7-8 | Verified Phase 7 (partial) and Phase 8 complete, added Phases 9-13 |
 | 2025-12-09 | Session 4 | 9 | Completed Phase 9 - View Component Tests (392 tests added, 2,009 total) |
+| 2025-12-09 | Session 5 | 10 | Completed Phase 10 - PlayerForm Sub-components (132 tests added, 2,141 total) |
+| 2025-12-09 | Session 5 | 11 | Completed Phase 11 - Reducer Coverage Gaps (14 tests added, 2,155 total) |
 
 ---
 

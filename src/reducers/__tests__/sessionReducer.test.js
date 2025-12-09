@@ -277,6 +277,37 @@ describe('sessionReducer', () => {
     });
   });
 
+  describe('SET_HAND_COUNT', () => {
+    it('sets hand count to specific value', () => {
+      const newState = sessionReducer(state, {
+        type: SESSION_ACTIONS.SET_HAND_COUNT,
+        payload: { count: 42 },
+      });
+      expect(newState.currentSession.handCount).toBe(42);
+    });
+
+    it('can set hand count to 0', () => {
+      state.currentSession.handCount = 10;
+      const newState = sessionReducer(state, {
+        type: SESSION_ACTIONS.SET_HAND_COUNT,
+        payload: { count: 0 },
+      });
+      expect(newState.currentSession.handCount).toBe(0);
+    });
+
+    it('preserves other session state when setting hand count', () => {
+      state.currentSession.venue = 'Wind Creek Casino';
+      state.currentSession.buyIn = 300;
+      const newState = sessionReducer(state, {
+        type: SESSION_ACTIONS.SET_HAND_COUNT,
+        payload: { count: 15 },
+      });
+      expect(newState.currentSession.handCount).toBe(15);
+      expect(newState.currentSession.venue).toBe('Wind Creek Casino');
+      expect(newState.currentSession.buyIn).toBe(300);
+    });
+  });
+
   describe('SET_LOADING', () => {
     it('sets loading to true', () => {
       const newState = sessionReducer(state, {

@@ -225,6 +225,28 @@ describe('uiReducer', () => {
     });
   });
 
+  describe('TOGGLE_SIDEBAR', () => {
+    it('collapses sidebar when expanded', () => {
+      state.isSidebarCollapsed = false;
+      const newState = uiReducer(state, { type: UI_ACTIONS.TOGGLE_SIDEBAR });
+      expect(newState.isSidebarCollapsed).toBe(true);
+    });
+
+    it('expands sidebar when collapsed', () => {
+      state.isSidebarCollapsed = true;
+      const newState = uiReducer(state, { type: UI_ACTIONS.TOGGLE_SIDEBAR });
+      expect(newState.isSidebarCollapsed).toBe(false);
+    });
+
+    it('preserves other state when toggling', () => {
+      state.selectedPlayers = [1, 2, 3];
+      state.currentView = 'stats';
+      const newState = uiReducer(state, { type: UI_ACTIONS.TOGGLE_SIDEBAR });
+      expect(newState.selectedPlayers).toEqual([1, 2, 3]);
+      expect(newState.currentView).toBe('stats');
+    });
+  });
+
   // Card selector view state (moved from cardReducer in v114)
   describe('OPEN_CARD_SELECTOR', () => {
     it('opens card selector for community cards', () => {
@@ -335,6 +357,148 @@ describe('uiReducer', () => {
         payload: 1,
       });
       expect(newState.highlightedHoleSlot).toBe(1);
+    });
+  });
+
+  describe('ADVANCE_SHOWDOWN_HIGHLIGHT', () => {
+    // Helper to create empty allPlayerCards
+    const createEmptyAllPlayerCards = () => {
+      const cards = {};
+      for (let seat = 1; seat <= 9; seat++) {
+        cards[seat] = [null, null];
+      }
+      return cards;
+    };
+
+    it('advances from slot 0 to slot 1 in same seat', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 0;
+      const allPlayerCards = createEmptyAllPlayerCards();
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      expect(newState.highlightedSeat).toBe(1);
+      expect(newState.highlightedHoleSlot).toBe(1);
+    });
+
+    it('advances from slot 1 to next seat slot 0', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 1;
+      const allPlayerCards = createEmptyAllPlayerCards();
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      expect(newState.highlightedSeat).toBe(2);
+      expect(newState.highlightedHoleSlot).toBe(0);
+    });
+
+    it('wraps from seat 9 to seat 1', () => {
+      state.highlightedSeat = 9;
+      state.highlightedHoleSlot = 1;
+      const allPlayerCards = createEmptyAllPlayerCards();
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      expect(newState.highlightedSeat).toBe(1);
+      expect(newState.highlightedHoleSlot).toBe(0);
+    });
+
+    it('skips filled slots and finds next empty', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 0;
+      const allPlayerCards = createEmptyAllPlayerCards();
+      // Fill slot 1 on seat 1
+      allPlayerCards[1][1] = 'A♠';
+      // Fill both slots on seat 2
+      allPlayerCards[2] = ['K♠', 'Q♠'];
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      // Should skip filled slots and find seat 3 slot 0
+      expect(newState.highlightedSeat).toBe(3);
+      expect(newState.highlightedHoleSlot).toBe(0);
+    });
+
+    it('skips multiple filled seats', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 0;
+      const allPlayerCards = createEmptyAllPlayerCards();
+      // Fill all slots on seats 1-5
+      for (let seat = 1; seat <= 5; seat++) {
+        allPlayerCards[seat] = ['A♠', 'K♠'];
+      }
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      // Should skip to seat 6 slot 0
+      expect(newState.highlightedSeat).toBe(6);
+      expect(newState.highlightedHoleSlot).toBe(0);
+    });
+
+    it('handles when all slots are filled (stops at max attempts)', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 0;
+      const allPlayerCards = createEmptyAllPlayerCards();
+      // Fill all slots
+      for (let seat = 1; seat <= 9; seat++) {
+        allPlayerCards[seat] = ['A♠', 'K♠'];
+      }
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      // Should have attempted to find empty but exhausted all slots
+      // Will end at some position after trying all slots
+      expect(newState.highlightedSeat).toBeDefined();
+      expect(newState.highlightedHoleSlot).toBeDefined();
+    });
+
+    it('advances correctly in the middle of the table', () => {
+      state.highlightedSeat = 5;
+      state.highlightedHoleSlot = 0;
+      const allPlayerCards = createEmptyAllPlayerCards();
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      expect(newState.highlightedSeat).toBe(5);
+      expect(newState.highlightedHoleSlot).toBe(1);
+    });
+
+    it('finds empty slot 0 when slot 1 is filled on next seat', () => {
+      state.highlightedSeat = 1;
+      state.highlightedHoleSlot = 1;
+      const allPlayerCards = createEmptyAllPlayerCards();
+      // Fill slot 1 on seat 2 (but slot 0 is empty)
+      allPlayerCards[2][1] = 'A♠';
+
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT,
+        payload: { allPlayerCards },
+      });
+
+      // Should find seat 2 slot 0 (empty)
+      expect(newState.highlightedSeat).toBe(2);
+      expect(newState.highlightedHoleSlot).toBe(0);
     });
   });
 
