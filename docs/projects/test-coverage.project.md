@@ -44,8 +44,8 @@ Files to read before starting work:
 | 3 | [x] COMPLETE | Simple hook tests: useToast, usePlayerFiltering, useActionUtils, useSeatUtils, useStateSetters (~125 tests) |
 | 4 | [x] COMPLETE | Complex hook tests: useSeatColor, useCardSelection, useShowdownCardSelection, useShowdownHandlers (~100 tests) |
 | 5 | [x] COMPLETE | Persistence hook tests: usePersistence, useSessionPersistence, usePlayerPersistence (~80 tests) |
-| 6 | [ ] | UI component tests (~130 tests) <- CURRENT |
-| 7 | [ ] | View component tests (~80 tests) |
+| 6 | [x] COMPLETE | UI component tests (~423 tests) |
+| 7 | [ ] | View component tests (~80 tests) <- CURRENT |
 | 8 | [ ] | Context provider tests (~50 tests) |
 
 ---
@@ -148,17 +148,30 @@ Test async hooks with IndexedDB (~80 tests estimated → 95 actual)
 
 ---
 
-## Phase 6: UI Component Tests
+## Phase 6: UI Component Tests [COMPLETE]
 
 ### Goal
-Test React UI components (~130 tests)
+Test React UI components (~130 tests estimated → 423 actual)
 
-### Files to Create
-- [ ] `src/components/ui/__tests__/CardSlot.test.jsx` (~18 tests)
-- [ ] `src/components/ui/__tests__/Toast.test.jsx` (~12 tests)
-- [ ] `src/components/ui/__tests__/ActionBadge.test.jsx` (~8 tests)
-- [ ] `src/components/ui/__tests__/ActionSequence.test.jsx` (~10 tests)
-- [ ] Plus ~12 more component test files
+### Files Created
+- [x] `src/components/ui/__tests__/Toast.test.jsx` (23 tests)
+- [x] `src/components/ui/__tests__/PositionBadge.test.jsx` (23 tests)
+- [x] `src/components/ui/__tests__/DiagonalOverlay.test.jsx` (21 tests)
+- [x] `src/components/ui/__tests__/VisibilityToggle.test.jsx` (17 tests)
+- [x] `src/components/ui/__tests__/ScaledContainer.test.jsx` (17 tests)
+- [x] `src/components/ui/__tests__/ActionBadge.test.jsx` (21 tests)
+- [x] `src/components/ui/__tests__/ActionSequence.test.jsx` (26 tests)
+- [x] `src/components/ui/__tests__/CardSlot.test.jsx` (42 tests)
+- [x] `src/components/ui/__tests__/ViewErrorBoundary.test.jsx` (22 tests)
+- [x] `src/components/ui/__tests__/PlayerRow.test.jsx` (35 tests)
+- [x] `src/components/ui/__tests__/SeatGrid.test.jsx` (30 tests)
+- [x] `src/components/ui/__tests__/SessionCard.test.jsx` (30 tests)
+- [x] `src/components/ui/__tests__/PlayerFilters.test.jsx` (28 tests)
+- [x] `src/components/ui/__tests__/SessionForm.test.jsx` (36 tests)
+- [x] `src/components/ui/__tests__/CollapsibleSidebar.test.jsx` (52 tests)
+
+### Verification
+- [x] All 1363 tests pass (940 Phase 1-5 + 423 Phase 6)
 
 ---
 
