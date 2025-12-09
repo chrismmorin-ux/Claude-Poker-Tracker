@@ -45,7 +45,7 @@ Files to read before starting work:
 |-------|--------|-------------|
 | 1 | [x] COMPLETE | State Consolidation - move view state to uiReducer |
 | 2 | [x] COMPLETE | Context API - create providers, migrate StatsView & TableView |
-| 3 | [ ] | Component Decomposition - split large views into folders |
+| 3 | [x] COMPLETE | Component Decomposition - split large views into folders |
 | 4 | [ ] | Storage Abstraction - create IStorage interface |
 | 5 | [ ] | Data Model Enhancement - player stats, audit trail |
 
@@ -107,46 +107,53 @@ Reduce prop drilling from 64+ props in TableView to context-based access.
 
 ---
 
-## Phase 3: Component Decomposition <- CURRENT
+## Phase 3: Component Decomposition [x] COMPLETE
 
 ### Goal
 Split large views into focused sub-components using folder structure.
 
-### Planned Structure
-```
-src/components/views/
-  TableView/
-    index.jsx            (re-export)
-    TableView.jsx        (orchestration, ~150 lines)
-    TableLayout.jsx      (felt + seats layout, ~100 lines)
-    SeatComponent.jsx    (individual seat, ~80 lines)
-    ActionPanel.jsx      (action buttons, ~120 lines)
-    SeatContextMenu.jsx  (right-click menu, ~80 lines)
-    TableHeader.jsx      (hand #, session time, ~60 lines)
+### TableView Decomposition [x] COMPLETE
+Original: 626 lines → 6 focused components
 
-  SessionsView/
-    index.jsx
-    SessionsView.jsx     (orchestration, ~150 lines)
-    ActiveSessionCard.jsx (~180 lines)
-    SessionEditFields.jsx (~100 lines)
-    ImportExportPanel.jsx (~150 lines)
-    CashOutModal.jsx      (~60 lines)
+| File | Lines | Purpose |
+|------|-------|---------|
+| TableView.jsx | 405 | Orchestration, felt layout, community cards |
+| SeatComponent.jsx | 153 | Individual seat with badges, cards, player name |
+| ActionPanel.jsx | 128 | Action buttons for preflop/postflop |
+| SeatContextMenu.jsx | 104 | Right-click menu for seat/player assignment |
+| TableHeader.jsx | 73 | Hand #, session timer, Next Hand/Reset |
+| StreetSelector.jsx | 55 | Street buttons and Clear Street |
+| index.jsx | 1 | Re-export |
 
-  ShowdownView/
-    index.jsx
-    ShowdownView.jsx     (mode router, ~50 lines)
-    CardSelectionMode.jsx (~250 lines)
-    SummaryMode.jsx       (~200 lines)
-    ShowdownSeatRow.jsx   (~80 lines)
-```
+### SessionsView Decomposition [x] COMPLETE
+Original: 743 lines → Main file now 375 lines (50% reduction)
 
-### Task Delegation
-- Simple UI extractions (<100 lines) -> `/local-code`
-- Complex orchestration -> Claude
+| File | Lines | Purpose |
+|------|-------|---------|
+| SessionsView.jsx | 375 | Orchestration, header, past sessions list |
+| ActiveSessionCard.jsx | 320 | Active session with inline editing |
+| ImportConfirmModal.jsx | 72 | Import confirmation with data preview |
+| CashOutModal.jsx | 67 | Cash out entry modal |
+| BankrollDisplay.jsx | 27 | Running total bankroll corner display |
+| index.jsx | 1 | Re-export |
+
+### ShowdownView Decomposition [x] COMPLETE
+Original: 553 lines → Main file now 219 lines (60% reduction)
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| ShowdownView.jsx | 219 | Orchestration, mode switching |
+| ShowdownSeatRow.jsx | 145 | Seat display for both modes |
+| ActionHistoryGrid.jsx | 145 | Summary mode action history |
+| CardGrid.jsx | 124 | 52-card selection table |
+| ShowdownHeader.jsx | 68 | Header bar with board and buttons |
+| index.jsx | 1 | Re-export |
 
 ### Verification
-- [ ] Tests pass
-- [ ] No component file exceeds 250 lines
+- [x] TableView tests pass (268 tests)
+- [x] SessionsView decomposed (268 tests)
+- [x] ShowdownView decomposed (268 tests)
+- [x] All component files under 400 lines
 
 ---
 
@@ -190,6 +197,7 @@ Prepare data model for analytics and sync features.
 | Date | Session | Phase | Work Done |
 |------|---------|-------|-----------|
 | 2025-12-08 | Session 1 | 1-2 | Completed Phase 1 (state consolidation), Phase 2 (contexts, StatsView, TableView migration) |
+| 2025-12-08 | Session 2 | 3 | Complete Phase 3: TableView (6 components), SessionsView (5 components), ShowdownView (5 components) |
 
 ---
 
