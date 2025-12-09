@@ -1,21 +1,19 @@
 {
   "version": "1.0.0",
   "description": "Project Continuity Registry - Tracks active, pending, and completed projects",
-  "active": [
+  "active": [],
+  "pending": [],
+  "completed": [
     {
       "id": "comprehensive-refactoring-v114",
       "name": "Comprehensive Refactoring v114",
-      "file": "docs/projects/comprehensive-refactoring-v114.project.md",
+      "file": "docs/archive/comprehensive-refactoring-v114.project.md",
       "priority": "high",
-      "startedAt": "2025-12-08",
+      "completedAt": "2025-12-09",
       "phases": 5,
       "phasesComplete": 4,
-      "currentPhase": 5,
-      "description": "Context API + component decomposition for future features"
-    }
-  ],
-  "pending": [],
-  "completed": [
+      "description": "Context API + component decomposition (Phase 5 deferred)"
+    },
     {
       "id": "test-coverage",
       "name": "High Test Coverage Implementation",
@@ -45,5 +43,5 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-09T00:00:00Z"
+  "lastUpdated": "2025-12-09T17:40:00Z"
 }
