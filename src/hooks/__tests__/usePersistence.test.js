@@ -431,27 +431,31 @@ describe('usePersistence', () => {
 
   describe('return values', () => {
     it('returns isReady boolean', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.isReady).toBe('boolean');
+      unmount();
     });
 
     it('returns saveNow function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.saveNow).toBe('function');
+      unmount();
     });
 
     it('returns clearHistory function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.clearHistory).toBe('function');
+      unmount();
     });
 
     it('returns lastSavedAt (initially null)', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.lastSavedAt).toBeNull();
+      unmount();
     });
   });
 

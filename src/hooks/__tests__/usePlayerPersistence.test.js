@@ -396,9 +396,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 3: 101 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.getSeatPlayerName(3)).toBe('Frank');
+      unmount(); // Prevent async state updates after test
     });
 
     it('returns null when seat is empty', () => {
@@ -407,9 +408,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: {},
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.getSeatPlayerName(3)).toBeNull();
+      unmount();
     });
 
     it('returns null when player not found', () => {
@@ -418,9 +420,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 3: 999 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.getSeatPlayerName(3)).toBeNull();
+      unmount();
     });
   });
 
@@ -435,12 +438,13 @@ describe('usePlayerPersistence', () => {
         ],
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       const recent = result.current.getRecentPlayers();
       expect(recent[0].name).toBe('New');
       expect(recent[1].name).toBe('Middle');
       expect(recent[2].name).toBe('Old');
+      unmount();
     });
 
     it('respects limit parameter', () => {
@@ -452,10 +456,11 @@ describe('usePlayerPersistence', () => {
         ],
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       const recent = result.current.getRecentPlayers(2);
       expect(recent).toHaveLength(2);
+      unmount();
     });
 
     it('excludes assigned players when excludeAssigned is true', () => {
@@ -467,11 +472,12 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 3: 1 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       const recent = result.current.getRecentPlayers(null, true);
       expect(recent).toHaveLength(1);
       expect(recent[0].name).toBe('Unassigned');
+      unmount();
     });
   });
 
@@ -481,12 +487,13 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 1: 101, 3: 102, 5: null },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       const assigned = result.current.getAssignedPlayerIds();
       expect(assigned.has(101)).toBe(true);
       expect(assigned.has(102)).toBe(true);
       expect(assigned.has(null)).toBe(false);
+      unmount();
     });
   });
 
@@ -496,9 +503,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 3: 101 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.isPlayerAssigned(101)).toBe(true);
+      unmount();
     });
 
     it('returns false when player is not assigned', () => {
@@ -506,9 +514,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 3: 101 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.isPlayerAssigned(999)).toBe(false);
+      unmount();
     });
   });
 
@@ -518,9 +527,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: { 7: 101 },
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.getPlayerSeat(101)).toBe(7);
+      unmount();
     });
 
     it('returns null when player is not assigned', () => {
@@ -528,9 +538,10 @@ describe('usePlayerPersistence', () => {
         seatPlayers: {},
       });
 
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(result.current.getPlayerSeat(101)).toBeNull();
+      unmount();
     });
   });
 
@@ -554,7 +565,7 @@ describe('usePlayerPersistence', () => {
 
   describe('return values', () => {
     it('returns all expected functions', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.isReady).toBe('boolean');
       expect(typeof result.current.createNewPlayer).toBe('function');
@@ -569,6 +580,7 @@ describe('usePlayerPersistence', () => {
       expect(typeof result.current.isPlayerAssigned).toBe('function');
       expect(typeof result.current.getPlayerSeat).toBe('function');
       expect(typeof result.current.clearAllSeatAssignments).toBe('function');
+      unmount();
     });
   });
 

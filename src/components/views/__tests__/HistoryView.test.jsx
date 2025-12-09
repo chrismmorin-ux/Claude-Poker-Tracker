@@ -2,8 +2,8 @@
  * HistoryView.test.jsx - Tests for history view component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { HistoryView } from '../HistoryView';
 
 // Mock persistence functions
@@ -72,21 +72,40 @@ describe('HistoryView', () => {
     getSessionHandCount.mockResolvedValue(0);
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
+  // Helper to wait for loading to complete
+  const waitForLoad = async () => {
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
+  };
+
   describe('rendering', () => {
     it('renders title', async () => {
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
       expect(screen.getByText('Hand History')).toBeInTheDocument();
     });
 
     it('renders back to table button', async () => {
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
       expect(screen.getByText(/Back to Table/)).toBeInTheDocument();
     });
 
-    it('shows loading state initially', () => {
+    it('shows loading state initially', async () => {
+      // Suppress expected act() warning for this specific test
+      // (we're intentionally testing an intermediate loading state)
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       getAllHands.mockImplementation(() => new Promise(() => {})); // Never resolves
-      render(<HistoryView {...defaultProps} />);
+      const { unmount } = render(<HistoryView {...defaultProps} />);
       expect(screen.getByText('Loading...')).toBeInTheDocument();
+      // Unmount before promise would update state to avoid act() warning
+      unmount();
+      consoleSpy.mockRestore();
     });
 
     it('shows empty state when no hands', async () => {
@@ -155,28 +174,23 @@ describe('HistoryView', () => {
       ]);
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('All Sessions')).toBeInTheDocument();
-      });
+      expect(screen.getByText('All Sessions')).toBeInTheDocument();
     });
 
     it('shows Current Session option when currentSessionId provided', async () => {
       render(<HistoryView {...defaultProps} currentSessionId={1} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Current Session')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Current Session')).toBeInTheDocument();
     });
   });
 
   describe('interactions', () => {
     it('calls setCurrentScreen when back button clicked', async () => {
       render(<HistoryView {...defaultProps} />);
-
-      await waitFor(() => {
-        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
-      });
+      await waitForLoad();
 
       fireEvent.click(screen.getByText(/Back to Table/));
       expect(defaultProps.setCurrentScreen).toHaveBeenCalledWith('table');
@@ -188,12 +202,11 @@ describe('HistoryView', () => {
       loadHandById.mockResolvedValue(mockHand);
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Load')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Load'));
       });
-
-      fireEvent.click(screen.getByText('Load'));
 
       await waitFor(() => {
         expect(loadHandById).toHaveBeenCalledWith(1);
@@ -206,12 +219,11 @@ describe('HistoryView', () => {
       loadHandById.mockResolvedValue(mockHand);
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Load')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Load'));
       });
-
-      fireEvent.click(screen.getByText('Load'));
 
       await waitFor(() => {
         expect(defaultProps.dispatchGame).toHaveBeenCalled();
@@ -225,12 +237,11 @@ describe('HistoryView', () => {
       loadHandById.mockResolvedValue(mockHand);
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Load')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Load'));
       });
-
-      fireEvent.click(screen.getByText('Load'));
 
       await waitFor(() => {
         expect(defaultProps.setCurrentScreen).toHaveBeenCalledWith('table');
@@ -252,12 +263,11 @@ describe('HistoryView', () => {
 
     it('confirms before deleting hand', async () => {
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Delete')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Delete'));
       });
-
-      fireEvent.click(screen.getByText('Delete'));
 
       expect(window.confirm).toHaveBeenCalled();
     });
@@ -266,12 +276,11 @@ describe('HistoryView', () => {
       deleteHand.mockResolvedValue();
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Delete')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Delete'));
       });
-
-      fireEvent.click(screen.getByText('Delete'));
 
       await waitFor(() => {
         expect(deleteHand).toHaveBeenCalledWith(1);
@@ -282,12 +291,11 @@ describe('HistoryView', () => {
       vi.spyOn(window, 'confirm').mockReturnValue(false);
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Delete')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Delete'));
       });
-
-      fireEvent.click(screen.getByText('Delete'));
 
       expect(deleteHand).not.toHaveBeenCalled();
     });
@@ -306,12 +314,11 @@ describe('HistoryView', () => {
 
     it('confirms before clearing all', async () => {
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Clear All')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Clear All'));
       });
-
-      fireEvent.click(screen.getByText('Clear All'));
 
       expect(window.confirm).toHaveBeenCalled();
     });
@@ -320,12 +327,11 @@ describe('HistoryView', () => {
       clearAllHands.mockResolvedValue();
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Clear All')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Clear All'));
       });
-
-      fireEvent.click(screen.getByText('Clear All'));
 
       await waitFor(() => {
         expect(clearAllHands).toHaveBeenCalled();
@@ -340,12 +346,11 @@ describe('HistoryView', () => {
       loadHandById.mockRejectedValue(new Error('Load failed'));
 
       render(<HistoryView {...defaultProps} />);
+      await waitForLoad();
 
-      await waitFor(() => {
-        expect(screen.getByText('Load')).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByText('Load'));
       });
-
-      fireEvent.click(screen.getByText('Load'));
 
       await waitFor(() => {
         expect(defaultProps.showError).toHaveBeenCalled();

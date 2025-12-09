@@ -548,39 +548,45 @@ describe('useSessionPersistence', () => {
 
   describe('return values', () => {
     it('returns isReady boolean', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.isReady).toBe('boolean');
+      unmount();
     });
 
     it('returns startNewSession function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.startNewSession).toBe('function');
+      unmount();
     });
 
     it('returns endCurrentSession function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.endCurrentSession).toBe('function');
+      unmount();
     });
 
     it('returns updateSessionField function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.updateSessionField).toBe('function');
+      unmount();
     });
 
     it('returns loadAllSessions function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.loadAllSessions).toBe('function');
+      unmount();
     });
 
     it('returns deleteSessionById function', async () => {
-      const { result } = createHook();
+      const { result, unmount } = createHook();
 
       expect(typeof result.current.deleteSessionById).toBe('function');
+      unmount();
     });
   });
 
