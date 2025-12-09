@@ -60,6 +60,7 @@ import { usePlayerPersistence } from './hooks/usePlayerPersistence';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ui/Toast';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
+import { GameProvider, UIProvider, SessionProvider, PlayerProvider } from './contexts';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -166,12 +167,14 @@ const PokerTrackerWireframes = () => {
 
   // Destructure state for easier access
   const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
-  const { currentView, selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed } = uiState;
   const {
-    communityCards, holeCards, holeCardsVisible, showCardSelector,
-    cardSelectorType, highlightedBoardIndex, isShowdownViewOpen,
-    allPlayerCards, highlightedSeat, highlightedHoleSlot
-  } = cardState;
+    currentView, selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed,
+    // View state (moved from cardReducer in v114)
+    showCardSelector, cardSelectorType, highlightedBoardIndex,
+    isShowdownViewOpen, highlightedSeat, highlightedHoleSlot
+  } = uiState;
+  // Card data only
+  const { communityCards, holeCards, holeCardsVisible, allPlayerCards } = cardState;
 
   // Calculate scale to fit viewport
   useEffect(() => {
@@ -395,15 +398,15 @@ const PokerTrackerWireframes = () => {
 
   const openCardSelector = useCallback((type, index) => {
     log('openCardSelector::', type, index);
-    dispatchCard({
-      type: CARD_ACTIONS.OPEN_CARD_SELECTOR,
+    dispatchUi({
+      type: UI_ACTIONS.OPEN_CARD_SELECTOR,
       payload: { type, index }
     });
-  }, [dispatchCard]);
+  }, [dispatchUi]);
 
   const openShowdownScreen = useCallback(() => {
-    dispatchCard({ type: CARD_ACTIONS.OPEN_SHOWDOWN_VIEW });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.OPEN_SHOWDOWN_VIEW });
+  }, [dispatchUi]);
 
   const nextStreet = useCallback(() => {
     const currentIndex = STREETS.indexOf(currentStreet);
@@ -495,8 +498,8 @@ const PokerTrackerWireframes = () => {
     } else if (type === 'hole') {
       dispatchCard({ type: CARD_ACTIONS.CLEAR_HOLE_CARDS });
     }
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
+  }, [dispatchCard, dispatchUi]);
 
   const getCardStreet = useCallback((card) => {
     const communityIndex = communityCards.indexOf(card);
@@ -536,6 +539,7 @@ const PokerTrackerWireframes = () => {
     handleCloseCardSelector,
   } = useShowdownHandlers(
     dispatchCard,
+    dispatchUi,
     dispatchGame,
     isSeatInactive,
     seatActions,
@@ -563,7 +567,8 @@ const PokerTrackerWireframes = () => {
     communityCards,
     holeCards,
     currentStreet,
-    dispatchCard
+    dispatchCard,
+    dispatchUi
   );
 
   const selectCardForShowdown = useShowdownCardSelection(
@@ -576,6 +581,7 @@ const PokerTrackerWireframes = () => {
     seatActions,
     isSeatInactive,
     dispatchCard,
+    dispatchUi,
     CONSTANTS.NUM_SEATS
   );
 
@@ -596,12 +602,26 @@ const PokerTrackerWireframes = () => {
   // Helper to return to table view
   const returnToTable = useCallback(() => {
     setCurrentScreen(SCREEN.TABLE);
-    dispatchCard({ type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-  }, [setCurrentScreen, dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW });
+  }, [setCurrentScreen, dispatchUi]);
+
+  // Context wrapper - provides all contexts to child views
+  // Views can gradually migrate from props to useContext
+  const withContextProviders = useCallback((children) => (
+    <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+      <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
+        <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
+          <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
+            {children}
+          </PlayerProvider>
+        </SessionProvider>
+      </UIProvider>
+    </GameProvider>
+  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer]);
 
   // Showdown Screen
   if (isShowdownViewOpen) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Showdown" onReturnToTable={returnToTable}>
@@ -649,7 +669,7 @@ const PokerTrackerWireframes = () => {
 
   // Card Selector Screen (renders when showCardSelector is true)
   if (showCardSelector) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Card Selector" onReturnToTable={returnToTable}>
@@ -675,76 +695,52 @@ const PokerTrackerWireframes = () => {
   }
 
   // Table Screen (main poker table view)
+  // Props reduced from 64+ to ~30 by using contexts
   if (currentView === SCREEN.TABLE) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Table" onReturnToTable={returnToTable}>
           <TableView
-        scale={scale}
-        currentStreet={currentStreet}
-        communityCards={communityCards}
-        holeCards={holeCards}
-        holeCardsVisible={holeCardsVisible}
-        mySeat={mySeat}
-        dealerButtonSeat={dealerButtonSeat}
-        selectedPlayers={selectedPlayers}
-        contextMenu={contextMenu}
-        isDraggingDealer={isDraggingDealer}
-        tableRef={tableRef}
-        SEAT_POSITIONS={SEAT_POSITIONS}
-        STREETS={STREETS}
-        ACTIONS={ACTIONS}
-        ACTION_ABBREV={ACTION_ABBREV}
-        SCREEN={SCREEN}
-        seatActions={seatActions}
-        setContextMenu={setContextMenu}
-        nextHand={nextHand}
-        setCurrentScreen={setCurrentScreen}
-        resetHand={resetHand}
-        openCardSelector={openCardSelector}
-        togglePlayerSelection={togglePlayerSelection}
-        handleSeatRightClick={handleSeatRightClick}
-        getSeatColor={getSeatColor}
-        handleDealerDragStart={handleDealerDragStart}
-        handleDealerDrag={handleDealerDrag}
-        handleDealerDragEnd={handleDealerDragEnd}
-        getSmallBlindSeat={getSmallBlindSeat}
-        getBigBlindSeat={getBigBlindSeat}
-        setHoleCardsVisible={setHoleCardsVisible}
-        setCurrentStreet={setCurrentStreet}
-        openShowdownScreen={openShowdownScreen}
-        nextStreet={nextStreet}
-        clearStreetActions={clearStreetActions}
-        clearSeatActions={clearSeatActions}
-        undoLastAction={undoLastAction}
-        handleSetMySeat={handleSetMySeat}
-        setDealerSeat={setDealerSeat}
-        recordAction={recordAction}
-        setSelectedPlayers={setSelectedPlayers}
-        toggleAbsent={toggleAbsent}
-        getRecentPlayers={getRecentPlayers}
-        assignPlayerToSeat={assignPlayerToSeat}
-        clearSeatAssignment={clearSeatAssignment}
-        getSeatPlayerName={getSeatPlayerName}
-        isPlayerAssigned={isPlayerAssigned}
-        setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
-        isSidebarCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-        absentSeats={absentSeats}
-        numSeats={CONSTANTS.NUM_SEATS}
-        handCount={sessionState.currentSession?.handCount || 0}
-        sessionStartTime={sessionState.currentSession?.startTime}
-        hasActiveSession={sessionState.currentSession?.isActive === true}
-        currentSessionBuyIn={sessionState.currentSession?.buyIn || 0}
-        currentSessionRebuys={sessionState.currentSession?.rebuyTransactions || []}
-        currentSessionVenue={sessionState.currentSession?.venue}
-        currentSessionGameType={sessionState.currentSession?.gameType}
-        setAutoOpenNewSession={setAutoOpenNewSession}
-        updateSessionField={updateSessionField}
-        SkipForward={SkipForward}
-        BarChart3={BarChart3}
-        RotateCcw={RotateCcw}
+            // Layout (viewport-derived)
+            scale={scale}
+            tableRef={tableRef}
+            SEAT_POSITIONS={SEAT_POSITIONS}
+            numSeats={CONSTANTS.NUM_SEATS}
+            // Card state (from cardReducer, not in contexts yet)
+            communityCards={communityCards}
+            holeCards={holeCards}
+            holeCardsVisible={holeCardsVisible}
+            // Handlers not in contexts (defined in parent)
+            nextHand={nextHand}
+            resetHand={resetHand}
+            handleSeatRightClick={handleSeatRightClick}
+            getSeatColor={getSeatColor}
+            handleDealerDragStart={handleDealerDragStart}
+            handleDealerDrag={handleDealerDrag}
+            handleDealerDragEnd={handleDealerDragEnd}
+            setHoleCardsVisible={setHoleCardsVisible}
+            setCurrentStreet={setCurrentStreet}
+            openShowdownScreen={openShowdownScreen}
+            nextStreet={nextStreet}
+            clearStreetActions={clearStreetActions}
+            clearSeatActions={clearSeatActions}
+            undoLastAction={undoLastAction}
+            handleSetMySeat={handleSetMySeat}
+            setDealerSeat={setDealerSeat}
+            recordAction={recordAction}
+            toggleAbsent={toggleAbsent}
+            // Player persistence (from usePlayerPersistence, not PlayerContext)
+            getRecentPlayers={getRecentPlayers}
+            clearSeatAssignment={clearSeatAssignment}
+            isPlayerAssigned={isPlayerAssigned}
+            // Local UI state from parent
+            setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
+            setAutoOpenNewSession={setAutoOpenNewSession}
+            // Icons (React components)
+            SkipForward={SkipForward}
+            BarChart3={BarChart3}
+            RotateCcw={RotateCcw}
           />
         </ViewErrorBoundary>
       </>
@@ -753,7 +749,7 @@ const PokerTrackerWireframes = () => {
 
   // History Screen
   if (currentView === SCREEN.HISTORY) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="History" onReturnToTable={returnToTable}>
@@ -775,7 +771,7 @@ const PokerTrackerWireframes = () => {
 
   // Sessions Screen
   if (currentView === SCREEN.SESSIONS) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Sessions" onReturnToTable={returnToTable}>
@@ -801,7 +797,7 @@ const PokerTrackerWireframes = () => {
 
   // Players Screen
   if (currentView === SCREEN.PLAYERS) {
-    return (
+    return withContextProviders(
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Players" onReturnToTable={returnToTable}>
@@ -828,17 +824,12 @@ const PokerTrackerWireframes = () => {
     );
   }
 
-  // Stats Screen
-  return (
+  // Stats Screen - uses contexts for state, only scale prop needed
+  return withContextProviders(
     <>
       {toastOverlay}
       <ViewErrorBoundary viewName="Stats" onReturnToTable={returnToTable}>
-        <StatsView
-          seatActions={seatActions}
-          mySeat={mySeat}
-          setCurrentScreen={setCurrentScreen}
-          scale={scale}
-        />
+        <StatsView scale={scale} />
       </ViewErrorBoundary>
     </>
   );

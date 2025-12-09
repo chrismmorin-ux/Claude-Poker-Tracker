@@ -1,31 +1,23 @@
 import React from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
-import { LAYOUT } from '../../constants/gameConstants';
-
-// Import constants that StatsView needs
-// These will need to be imported from the main file or moved to a constants file
-const SEAT_POSITIONS = [
-  { seat: 1, x: 33, y: 88 },
-  { seat: 2, x: 15, y: 70 },
-  { seat: 3, x: 8, y: 45 },
-  { seat: 4, x: 18, y: 20 },
-  { seat: 5, x: 50, y: 8 },
-  { seat: 6, x: 82, y: 20 },
-  { seat: 7, x: 92, y: 45 },
-  { seat: 8, x: 85, y: 70 },
-  { seat: 9, x: 67, y: 88 },
-];
-
-const SCREEN = {
-  TABLE: 'table',
-  STATS: 'stats',
-};
+import { LAYOUT, SEAT_ARRAY } from '../../constants/gameConstants';
+import { useGame } from '../../contexts';
+import { useUI } from '../../contexts';
 
 /**
  * StatsView - Displays player statistics
  * Shows stats grid for all seats and detailed stats for the current player
+ *
+ * Props reduced from 4 to 1 by using contexts:
+ * - seatActions → useGame()
+ * - mySeat → useGame()
+ * - setCurrentScreen → useUI()
+ * - scale (kept as prop - viewport-derived, not app state)
  */
-export const StatsView = ({ seatActions, mySeat, setCurrentScreen, scale }) => {
+export const StatsView = ({ scale }) => {
+  // Get state from contexts instead of props
+  const { seatActions, mySeat } = useGame();
+  const { setCurrentScreen, SCREEN } = useUI();
   return (
     <ScaledContainer scale={scale}>
       <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
@@ -35,7 +27,7 @@ export const StatsView = ({ seatActions, mySeat, setCurrentScreen, scale }) => {
           </div>
 
           <div className="grid grid-cols-5 gap-3 mb-6">
-            {SEAT_POSITIONS.map(({seat}) => (
+            {SEAT_ARRAY.map((seat) => (
               <button key={seat} className={`p-4 rounded-lg border-2 hover:border-blue-500 text-center ${seat === mySeat ? 'bg-blue-100 border-blue-400' : 'bg-white border-gray-300'}`}>
                 <div className="text-sm text-gray-600">Seat</div>
                 <div className="font-bold text-3xl">{seat}</div>

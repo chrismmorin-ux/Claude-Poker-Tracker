@@ -42,7 +42,19 @@ Files to read before starting work:
 
 ---
 
-## Phase 1: [Name] ← CURRENT
+## Before Starting Each Phase (MANDATORY)
+
+Run this checklist before beginning ANY phase:
+
+- [ ] **Project file active** - Verify this file is in `docs/projects/` and registered in `.claude/projects.json`
+- [ ] **Previous phase docs updated** - If not Phase 1, ensure previous phase documentation was committed
+- [ ] **Tests passing** - Run `npm test` before making changes
+- [ ] **Read context files** - Read all files listed in "Context Files" section above
+- [ ] **Plan if needed** - Use `EnterPlanMode` if touching 4+ files
+
+---
+
+## Phase 1: [Name] <- CURRENT
 
 ### Goal
 [What this phase accomplishes]

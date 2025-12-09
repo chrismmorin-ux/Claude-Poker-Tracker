@@ -1,8 +1,9 @@
-# ⚡ QUICK REFERENCE CARD - Poker Tracker v113
+# ⚡ QUICK REFERENCE CARD - Poker Tracker v114
 
 ## 🎯 ESSENTIAL INFO
-- **Version**: v113 (Project Continuity + Local Model Workflow)
+- **Version**: v114 (Context API + State Consolidation)
 - **Main File**: src/PokerTracker.jsx (~620 lines)
+- **Contexts**: src/contexts/ (4 providers: Game, UI, Session, Player) - NEW in v114
 - **Constants**: src/constants/ (gameConstants.js, sessionConstants.js, playerConstants.js)
 - **Hooks**: src/hooks/ (11 custom hooks)
 - **Utils**: src/utils/ (7 files: actionUtils, cardUtils, seatUtils, displayUtils, validation, persistence, exportUtils)
@@ -33,18 +34,27 @@ Before starting work, check if task can be delegated:
 | Reducer/hooks | ❌ No | Claude |
 | Multi-file | ❌ No | Claude |
 
-## 🏗️ CODE ORGANIZATION (v108)
+## 🏗️ CODE ORGANIZATION (v114)
 ```
 src/PokerTracker.jsx (~620 lines):
-  Lines 1-45:      Imports (React, icons, components, reducers, utils, hooks, constants)
-  Lines 47-92:     Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
-  Lines 94-179:    Main Component (reducers, hooks, handlers, view rendering)
-  Note: All game constants and complex logic extracted to hooks
+  Lines 1-63:      Imports (React, icons, components, reducers, utils, hooks, constants, contexts)
+  Lines 65-112:    Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
+  Lines 114+:      Main Component (reducers, hooks, handlers, context providers, view rendering)
+  Note: All game constants and complex logic extracted to hooks; contexts wrap view components
 
-src/constants/ (1 file) - NEW in v108:
-  gameConstants.js     ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.
+src/contexts/ (5 files) - NEW in v114:
+  GameContext.jsx      Game state + derived (getSmallBlindSeat, getBigBlindSeat, hasSeatFolded)
+  UIContext.jsx        UI state + handlers (setCurrentScreen, togglePlayerSelection, etc.)
+  SessionContext.jsx   Session state + handlers (hasActiveSession, updateSessionField)
+  PlayerContext.jsx    Player state + handlers (getSeatPlayerName, assignPlayerToSeat)
+  index.js             Central export
 
-src/hooks/ (7 files) - NEW in v108:
+src/constants/ (3 files):
+  gameConstants.js     ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, LAYOUT, LIMITS, etc.
+  sessionConstants.js  SESSION_ACTIONS, VENUES, GAME_TYPES, SESSION_GOALS
+  playerConstants.js   PLAYER_ACTIONS, ETHNICITY_OPTIONS, BUILD_OPTIONS, STYLE_TAGS
+
+src/hooks/ (11 files):
   useActionUtils.js        Action utility wrappers (6 functions)
   useStateSetters.js       State dispatcher wrappers (10 functions)
   useSeatUtils.js          Seat logic utilities (5 functions)
@@ -52,32 +62,73 @@ src/hooks/ (7 files) - NEW in v108:
   useShowdownHandlers.js   Showdown handlers (6 handlers)
   useCardSelection.js      Card selection logic
   useShowdownCardSelection.js Showdown card selection
+  usePersistence.js        IndexedDB auto-save/restore
+  useSessionPersistence.js Session lifecycle
+  usePlayerPersistence.js  Player CRUD + seat assignment
+  useToast.js              Toast notification state
 
-src/utils/ (5 files):
+src/utils/ (7 files):
   actionUtils.js       Action styling, display, overlays
+  actionValidation.js  Action sequence validation
   cardUtils.js         Card assignment and manipulation
   seatUtils.js         Seat navigation and positioning
   displayUtils.js      Display formatting
   validation.js        Input validation
+  persistence.js       IndexedDB CRUD operations
+  exportUtils.js       Data export/import
 
-src/reducers/ (3 files):
+src/reducers/ (5 files):
   gameReducer.js       Game state (street, dealer, actions)
-  uiReducer.js         UI state (view, selection, context menu)
-  cardReducer.js       Card state (community, hole, showdown)
+  uiReducer.js         UI state (view, selection, context menu, card selector, showdown view)
+  cardReducer.js       Card data only (community, hole, player cards)
+  sessionReducer.js    Session state (current, all sessions)
+  playerReducer.js     Player state (all players, seat assignments)
 
-src/components/views/ (4 files):
-  TableView.jsx        Main poker table (~326 lines)
-  StatsView.jsx        Statistics display (~264 lines)
+src/components/views/ (7 files):
+  TableView.jsx        Main poker table (~550 lines) - uses contexts
+  StatsView.jsx        Statistics display (~78 lines) - uses contexts
   CardSelectorView.jsx Card selection (~178 lines)
   ShowdownView.jsx     Showdown interface (~485 lines)
+  HistoryView.jsx      Hand history browser (~300 lines)
+  SessionsView.jsx     Session management (~715 lines)
+  PlayersView.jsx      Player management (~587 lines)
 
-src/components/ui/ (5 files):
+src/components/ui/ (12 files):
   CardSlot.jsx         Card display with 4 variants
   VisibilityToggle.jsx Show/hide button
   PositionBadge.jsx    D, SB, BB, ME indicators
   DiagonalOverlay.jsx  FOLD/ABSENT/MUCK/WON overlays
   ScaledContainer.jsx  Responsive scaling wrapper
+  ActionBadge.jsx      Single action badge
+  ActionSequence.jsx   Multiple action badges
+  SessionForm.jsx      New session form
+  PlayerForm.jsx       Player creation/editing
+  Toast.jsx            Toast notifications
+  ViewErrorBoundary.jsx Per-view error boundary
+  CollapsibleSidebar.jsx Navigation sidebar
 ```
+
+## 🔌 CONTEXT API (v114)
+
+### Import Pattern
+```javascript
+// In view components:
+import { useGame, useUI, useSession, usePlayer } from '../../contexts';
+
+// Usage in component:
+const { currentStreet, mySeat, seatActions } = useGame();
+const { selectedPlayers, setCurrentScreen, SCREEN } = useUI();
+const { currentSession, hasActiveSession } = useSession();
+const { getSeatPlayerName, assignPlayerToSeat } = usePlayer();
+```
+
+### Context Providers
+| Context | State | Key Handlers/Derived |
+|---------|-------|---------------------|
+| `useGame()` | currentStreet, mySeat, dealerButtonSeat, seatActions, absentSeats | getSmallBlindSeat, getBigBlindSeat, hasSeatFolded, isSeatInactive |
+| `useUI()` | selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed, showCardSelector, isShowdownViewOpen | setCurrentScreen, togglePlayerSelection, setContextMenu, openCardSelector, SCREEN |
+| `useSession()` | currentSession, allSessions, isLoading | hasActiveSession, totalInvestment, updateSessionField, incrementHandCount |
+| `usePlayer()` | allPlayers, seatPlayers, isLoading | getSeatPlayerName, assignPlayerToSeat, clearSeatPlayer |
 
 ## 📱 RESPONSIVE DESIGN (v104)
 - **Target**: Samsung Galaxy A22 landscape (1600x720)

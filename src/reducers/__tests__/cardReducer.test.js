@@ -23,12 +23,7 @@ describe('cardReducer', () => {
       expect(initialCardState.communityCards).toEqual(['', '', '', '', '']);
       expect(initialCardState.holeCards).toEqual(['', '']);
       expect(initialCardState.holeCardsVisible).toBe(true);
-      expect(initialCardState.showCardSelector).toBe(false);
-      expect(initialCardState.cardSelectorType).toBe('community');
-      expect(initialCardState.highlightedBoardIndex).toBe(0);
-      expect(initialCardState.isShowdownViewOpen).toBe(false);
-      expect(initialCardState.highlightedSeat).toBe(1);
-      expect(initialCardState.highlightedHoleSlot).toBe(0);
+      // Note: View state (showCardSelector, isShowdownViewOpen, etc.) moved to uiReducer in v114
     });
 
     it('has empty player cards for all 9 seats', () => {
@@ -137,96 +132,9 @@ describe('cardReducer', () => {
     });
   });
 
-  describe('OPEN_CARD_SELECTOR', () => {
-    it('opens card selector for community cards', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.OPEN_CARD_SELECTOR,
-        payload: { type: 'community', index: 2 },
-      });
-      expect(newState.showCardSelector).toBe(true);
-      expect(newState.cardSelectorType).toBe('community');
-      expect(newState.highlightedBoardIndex).toBe(2);
-    });
-
-    it('opens card selector for hole cards', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.OPEN_CARD_SELECTOR,
-        payload: { type: 'hole', index: 1 },
-      });
-      expect(newState.showCardSelector).toBe(true);
-      expect(newState.cardSelectorType).toBe('hole');
-      expect(newState.highlightedBoardIndex).toBe(1);
-    });
-  });
-
-  describe('CLOSE_CARD_SELECTOR', () => {
-    it('closes card selector and resets highlight', () => {
-      state.showCardSelector = true;
-      state.highlightedBoardIndex = 3;
-      const newState = cardReducer(state, { type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
-      expect(newState.showCardSelector).toBe(false);
-      expect(newState.highlightedBoardIndex).toBe(null);
-    });
-  });
-
-  describe('SET_CARD_SELECTOR_TYPE', () => {
-    it('sets selector type to hole', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_CARD_SELECTOR_TYPE,
-        payload: 'hole',
-      });
-      expect(newState.cardSelectorType).toBe('hole');
-    });
-
-    it('sets selector type to community', () => {
-      state.cardSelectorType = 'hole';
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_CARD_SELECTOR_TYPE,
-        payload: 'community',
-      });
-      expect(newState.cardSelectorType).toBe('community');
-    });
-  });
-
-  describe('SET_HIGHLIGHTED_CARD_INDEX', () => {
-    it('updates highlighted card index', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
-        payload: 4,
-      });
-      expect(newState.highlightedBoardIndex).toBe(4);
-    });
-
-    it('can set to null', () => {
-      state.highlightedBoardIndex = 2;
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
-        payload: null,
-      });
-      expect(newState.highlightedBoardIndex).toBe(null);
-    });
-  });
-
-  describe('OPEN_SHOWDOWN_VIEW', () => {
-    it('opens showdown view and initializes highlight', () => {
-      const newState = cardReducer(state, { type: CARD_ACTIONS.OPEN_SHOWDOWN_VIEW });
-      expect(newState.isShowdownViewOpen).toBe(true);
-      expect(newState.highlightedSeat).toBe(1);
-      expect(newState.highlightedHoleSlot).toBe(0);
-    });
-  });
-
-  describe('CLOSE_SHOWDOWN_VIEW', () => {
-    it('closes showdown view and clears highlights', () => {
-      state.isShowdownViewOpen = true;
-      state.highlightedSeat = 5;
-      state.highlightedHoleSlot = 1;
-      const newState = cardReducer(state, { type: CARD_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-      expect(newState.isShowdownViewOpen).toBe(false);
-      expect(newState.highlightedSeat).toBe(null);
-      expect(newState.highlightedHoleSlot).toBe(null);
-    });
-  });
+  // Note: OPEN_CARD_SELECTOR, CLOSE_CARD_SELECTOR, SET_CARD_SELECTOR_TYPE,
+  // SET_HIGHLIGHTED_CARD_INDEX, OPEN_SHOWDOWN_VIEW, CLOSE_SHOWDOWN_VIEW
+  // moved to uiReducer in v114
 
   describe('SET_PLAYER_CARD', () => {
     it('sets player card at specified seat and slot', () => {
@@ -258,60 +166,8 @@ describe('cardReducer', () => {
     });
   });
 
-  describe('SET_HIGHLIGHTED_SEAT', () => {
-    it('updates highlighted seat', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 7,
-      });
-      expect(newState.highlightedSeat).toBe(7);
-    });
-  });
-
-  describe('SET_HIGHLIGHTED_HOLE_SLOT', () => {
-    it('updates highlighted hole slot', () => {
-      const newState = cardReducer(state, {
-        type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: 1,
-      });
-      expect(newState.highlightedHoleSlot).toBe(1);
-    });
-  });
-
-  describe('ADVANCE_SHOWDOWN_HIGHLIGHT', () => {
-    it('advances from slot 0 to slot 1 in same seat', () => {
-      state.highlightedSeat = 3;
-      state.highlightedHoleSlot = 0;
-      const newState = cardReducer(state, { type: CARD_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT });
-      expect(newState.highlightedSeat).toBe(3);
-      expect(newState.highlightedHoleSlot).toBe(1);
-    });
-
-    it('advances from slot 1 to slot 0 of next seat', () => {
-      state.highlightedSeat = 3;
-      state.highlightedHoleSlot = 1;
-      const newState = cardReducer(state, { type: CARD_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT });
-      expect(newState.highlightedSeat).toBe(4);
-      expect(newState.highlightedHoleSlot).toBe(0);
-    });
-
-    it('wraps from seat 9 to seat 1', () => {
-      state.highlightedSeat = 9;
-      state.highlightedHoleSlot = 1;
-      const newState = cardReducer(state, { type: CARD_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT });
-      expect(newState.highlightedSeat).toBe(1);
-      expect(newState.highlightedHoleSlot).toBe(0);
-    });
-
-    it('skips already filled slots', () => {
-      state.highlightedSeat = 1;
-      state.highlightedHoleSlot = 0;
-      state.allPlayerCards[1] = ['A♠', 'K♠']; // Seat 1 full
-      const newState = cardReducer(state, { type: CARD_ACTIONS.ADVANCE_SHOWDOWN_HIGHLIGHT });
-      expect(newState.highlightedSeat).toBe(2);
-      expect(newState.highlightedHoleSlot).toBe(0);
-    });
-  });
+  // Note: SET_HIGHLIGHTED_SEAT, SET_HIGHLIGHTED_HOLE_SLOT, ADVANCE_SHOWDOWN_HIGHLIGHT
+  // moved to uiReducer in v114
 
   describe('RESET_CARDS', () => {
     it('resets all cards to empty', () => {
@@ -343,7 +199,7 @@ describe('cardReducer', () => {
       expect(newState.communityCards).toEqual(['A♠', 'K♥', 'Q♦', '', '']);
       expect(newState.holeCards).toEqual(['J♣', 'T♠']);
       // Preserves non-hydrated fields
-      expect(newState.showCardSelector).toBe(false);
+      expect(newState.holeCardsVisible).toBe(true);
     });
   });
 

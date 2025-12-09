@@ -73,7 +73,7 @@ seatActions: {
 
 ## Card State (`cardReducer.js`)
 
-Manages card selection: community cards, hole cards, showdown.
+Manages card data only (view state moved to uiReducer in v114).
 
 ### State Shape
 
@@ -82,17 +82,11 @@ Manages card selection: community cards, hole cards, showdown.
   communityCards: ['', '', '', '', ''],  // string[5]: flop[0-2], turn[3], river[4]
   holeCards: ['', ''],                    // string[2]: player's hole cards
   holeCardsVisible: true,                 // boolean: show/hide hole cards
-  showCardSelector: false,                // boolean: card selector open
-  cardSelectorType: 'community',          // string: 'community' | 'hole'
-  highlightedBoardIndex: 0,               // number | null: selected card index
-  isShowdownViewOpen: false,              // boolean: showdown view open
   allPlayerCards: {                       // object: { [seat]: string[2] }
     1: ['', ''],
     2: ['', ''],
     // ... seats 3-9
-  },
-  highlightedSeat: 1,                     // number | null: selected showdown seat
-  highlightedHoleSlot: 0                  // number | null: selected card slot (0 or 1)
+  }
 }
 ```
 
@@ -103,13 +97,7 @@ export const CARD_STATE_SCHEMA = {
   communityCards: { type: 'array', length: 5 },
   holeCards: { type: 'array', length: 2 },
   holeCardsVisible: { type: 'boolean' },
-  showCardSelector: { type: 'boolean' },
-  cardSelectorType: { type: 'string', enum: ['community', 'hole'] },
-  highlightedBoardIndex: { type: 'number', required: false },
-  isShowdownViewOpen: { type: 'boolean' },
-  allPlayerCards: { type: 'object' },
-  highlightedSeat: { type: 'number', required: false },
-  highlightedHoleSlot: { type: 'number', required: false }
+  allPlayerCards: { type: 'object' }
 };
 ```
 
@@ -132,13 +120,7 @@ Cards use Unicode suit symbols:
 | `CLEAR_HOLE_CARDS` | - | Clear hole cards |
 | `TOGGLE_HOLE_VISIBILITY` | - | Toggle hole cards visible |
 | `SET_HOLE_VISIBILITY` | `boolean` | Set visibility directly |
-| `OPEN_CARD_SELECTOR` | `{ type, index }` | Open selector for card |
-| `CLOSE_CARD_SELECTOR` | - | Close card selector |
-| `OPEN_SHOWDOWN_VIEW` | - | Open showdown interface |
-| `CLOSE_SHOWDOWN_VIEW` | - | Close showdown interface |
 | `SET_PLAYER_CARD` | `{ seat, slotIndex, card }` | Set opponent's card |
-| `SET_HIGHLIGHTED_SEAT` | `number | null` | Select showdown seat |
-| `SET_HIGHLIGHTED_HOLE_SLOT` | `number | null` | Select card slot |
 | `RESET_CARDS` | - | Clear all cards |
 | `HYDRATE_STATE` | `object` | Restore state from saved data |
 
@@ -146,7 +128,7 @@ Cards use Unicode suit symbols:
 
 ## UI State (`uiReducer.js`)
 
-Manages UI state: current view, selections, context menus.
+Manages UI state: current view, selections, context menus, and view state (moved from cardReducer in v114).
 
 ### State Shape
 
@@ -155,7 +137,15 @@ Manages UI state: current view, selections, context menus.
   currentView: 'table',         // string: 'table' | 'stats' | 'history' | 'sessions' | 'players'
   selectedPlayers: [],          // number[]: selected seat numbers
   contextMenu: null,            // object | null: { x, y, seat }
-  isDraggingDealer: false       // boolean: dealer button being dragged
+  isDraggingDealer: false,      // boolean: dealer button being dragged
+  isSidebarCollapsed: false,    // boolean: sidebar collapsed state (v113)
+  // View state (moved from cardReducer in v114)
+  showCardSelector: false,      // boolean: card selector open
+  cardSelectorType: 'community', // string: 'community' | 'hole'
+  highlightedBoardIndex: 0,     // number: selected card index (0-4)
+  isShowdownViewOpen: false,    // boolean: showdown view open
+  highlightedSeat: 1,           // number: selected showdown seat (1-9)
+  highlightedHoleSlot: 0        // number: selected card slot (0 or 1)
 }
 ```
 
@@ -166,7 +156,14 @@ export const UI_STATE_SCHEMA = {
   currentView: { type: 'string' },
   selectedPlayers: { type: 'array', items: 'number' },
   contextMenu: { type: 'object', required: false },
-  isDraggingDealer: { type: 'boolean' }
+  isDraggingDealer: { type: 'boolean' },
+  isSidebarCollapsed: { type: 'boolean' },
+  showCardSelector: { type: 'boolean' },
+  cardSelectorType: { type: 'string', enum: ['community', 'hole'] },
+  highlightedBoardIndex: { type: 'number' },
+  isShowdownViewOpen: { type: 'boolean' },
+  highlightedSeat: { type: 'number' },
+  highlightedHoleSlot: { type: 'number' }
 };
 ```
 
@@ -182,6 +179,15 @@ export const UI_STATE_SCHEMA = {
 | `CLOSE_CONTEXT_MENU` | - | Close context menu |
 | `START_DRAGGING_DEALER` | - | Begin dealer drag |
 | `STOP_DRAGGING_DEALER` | - | End dealer drag |
+| `TOGGLE_SIDEBAR` | - | Toggle sidebar collapse |
+| `OPEN_CARD_SELECTOR` | `{ type, index }` | Open selector for card |
+| `CLOSE_CARD_SELECTOR` | - | Close card selector |
+| `SET_CARD_SELECTOR_TYPE` | `string` | Set selector type |
+| `SET_HIGHLIGHTED_CARD_INDEX` | `number` | Set highlighted card index |
+| `OPEN_SHOWDOWN_VIEW` | - | Open showdown interface |
+| `CLOSE_SHOWDOWN_VIEW` | - | Close showdown interface |
+| `SET_HIGHLIGHTED_SEAT` | `number` | Select showdown seat |
+| `SET_HIGHLIGHTED_HOLE_SLOT` | `number` | Select card slot |
 
 ---
 

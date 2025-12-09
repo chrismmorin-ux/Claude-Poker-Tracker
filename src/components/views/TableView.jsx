@@ -5,7 +5,8 @@ import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { PositionBadge } from '../ui/PositionBadge';
 import { ActionSequence } from '../ui/ActionSequence';
 import { CollapsibleSidebar } from '../ui/CollapsibleSidebar';
-import { LAYOUT } from '../../constants/gameConstants';
+import { LAYOUT, STREETS, ACTIONS, ACTION_ABBREV } from '../../constants/gameConstants';
+import { useGame, useUI, useSession, usePlayer } from '../../contexts';
 
 /**
  * Format relative time from start timestamp
@@ -32,38 +33,31 @@ const formatRelativeTime = (startTime) => {
 /**
  * TableView - Main poker table interface
  * Displays the poker table with seats, cards, and action buttons
+ *
+ * Props reduced from 64+ to ~30 by using contexts:
+ * - Game state → useGame()
+ * - UI state/handlers → useUI()
+ * - Session state → useSession()
+ * - Player utilities → usePlayer()
  */
 export const TableView = ({
+  // Layout (viewport-derived)
   scale,
-  currentStreet,
+  tableRef,
+  SEAT_POSITIONS,
+  numSeats,
+  // Card state (from cardReducer, not in contexts yet)
   communityCards,
   holeCards,
   holeCardsVisible,
-  mySeat,
-  dealerButtonSeat,
-  selectedPlayers,
-  contextMenu,
-  isDraggingDealer,
-  tableRef,
-  SEAT_POSITIONS,
-  STREETS,
-  ACTIONS,
-  ACTION_ABBREV,
-  SCREEN,
-  seatActions,
-  setContextMenu,
+  // Handlers not in contexts (defined in parent)
   nextHand,
-  setCurrentScreen,
   resetHand,
-  openCardSelector,
-  togglePlayerSelection,
   handleSeatRightClick,
   getSeatColor,
   handleDealerDragStart,
   handleDealerDrag,
   handleDealerDragEnd,
-  getSmallBlindSeat,
-  getBigBlindSeat,
   setHoleCardsVisible,
   setCurrentStreet,
   openShowdownScreen,
@@ -74,31 +68,61 @@ export const TableView = ({
   handleSetMySeat,
   setDealerSeat,
   recordAction,
-  setSelectedPlayers,
   toggleAbsent,
+  // Player persistence (from usePlayerPersistence, not PlayerContext)
   getRecentPlayers,
-  assignPlayerToSeat,
   clearSeatAssignment,
-  getSeatPlayerName,
   isPlayerAssigned,
+  // Local UI state from parent
   setPendingSeatForPlayerAssignment,
-  isSidebarCollapsed,
-  toggleSidebar,
-  absentSeats,
-  numSeats,
-  handCount,
-  sessionStartTime,
-  hasActiveSession,
-  currentSessionBuyIn,
-  currentSessionRebuys,
-  currentSessionVenue,
-  currentSessionGameType,
   setAutoOpenNewSession,
-  updateSessionField,
+  // Icons (React components)
   SkipForward,
   BarChart3,
   RotateCcw,
 }) => {
+  // Get state and handlers from contexts
+  const {
+    currentStreet,
+    mySeat,
+    dealerButtonSeat,
+    seatActions,
+    absentSeats,
+    getSmallBlindSeat,
+    getBigBlindSeat,
+  } = useGame();
+
+  const {
+    selectedPlayers,
+    contextMenu,
+    isDraggingDealer,
+    isSidebarCollapsed,
+    setCurrentScreen,
+    setContextMenu,
+    togglePlayerSelection,
+    toggleSidebar,
+    openCardSelector,
+    setSelectedPlayers,
+    SCREEN,
+  } = useUI();
+
+  const {
+    currentSession,
+    hasActiveSession,
+    updateSessionField,
+  } = useSession();
+
+  const {
+    getSeatPlayerName,
+    assignPlayerToSeat,
+  } = usePlayer();
+
+  // Derived session values
+  const handCount = currentSession?.handCount || 0;
+  const sessionStartTime = currentSession?.startTime;
+  const currentSessionVenue = currentSession?.venue;
+  const currentSessionGameType = currentSession?.gameType;
+
   // Update session time display every minute
   const [sessionTimeDisplay, setSessionTimeDisplay] = useState(() => formatRelativeTime(sessionStartTime));
 
@@ -551,92 +575,49 @@ export const TableView = ({
 };
 
 TableView.propTypes = {
-  // Layout
+  // Layout (viewport-derived)
   scale: PropTypes.number.isRequired,
   tableRef: PropTypes.object,
-
-  // Game state
-  currentStreet: PropTypes.string.isRequired,
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  mySeat: PropTypes.number.isRequired,
-  dealerButtonSeat: PropTypes.number.isRequired,
-  seatActions: PropTypes.object.isRequired,
-
-  // UI state
-  selectedPlayers: PropTypes.arrayOf(PropTypes.number).isRequired,
-  contextMenu: PropTypes.shape({
-    x: PropTypes.number,
-    y: PropTypes.number,
-    seat: PropTypes.number,
-  }),
-  isDraggingDealer: PropTypes.bool.isRequired,
-
-  // Constants
   SEAT_POSITIONS: PropTypes.arrayOf(PropTypes.shape({
     seat: PropTypes.number,
     x: PropTypes.number,
     y: PropTypes.number,
   })).isRequired,
-  STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
-  ACTIONS: PropTypes.object.isRequired,
-  ACTION_ABBREV: PropTypes.object.isRequired,
-  SCREEN: PropTypes.object.isRequired,
+  numSeats: PropTypes.number.isRequired,
 
-  // State setters
-  setContextMenu: PropTypes.func.isRequired,
-  setCurrentScreen: PropTypes.func.isRequired,
-  setHoleCardsVisible: PropTypes.func.isRequired,
-  setCurrentStreet: PropTypes.func.isRequired,
-  setDealerSeat: PropTypes.func.isRequired,
-  setSelectedPlayers: PropTypes.func.isRequired,
+  // Card state (from cardReducer, not in contexts yet)
+  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
+  holeCardsVisible: PropTypes.bool.isRequired,
 
-  // Action handlers
+  // Handlers not in contexts (defined in parent)
   nextHand: PropTypes.func.isRequired,
   resetHand: PropTypes.func.isRequired,
-  openCardSelector: PropTypes.func.isRequired,
-  togglePlayerSelection: PropTypes.func.isRequired,
   handleSeatRightClick: PropTypes.func.isRequired,
   getSeatColor: PropTypes.func.isRequired,
   handleDealerDragStart: PropTypes.func.isRequired,
   handleDealerDrag: PropTypes.func.isRequired,
   handleDealerDragEnd: PropTypes.func.isRequired,
-  getSmallBlindSeat: PropTypes.func.isRequired,
-  getBigBlindSeat: PropTypes.func.isRequired,
+  setHoleCardsVisible: PropTypes.func.isRequired,
+  setCurrentStreet: PropTypes.func.isRequired,
   openShowdownScreen: PropTypes.func.isRequired,
   nextStreet: PropTypes.func.isRequired,
   clearStreetActions: PropTypes.func.isRequired,
   clearSeatActions: PropTypes.func.isRequired,
   undoLastAction: PropTypes.func.isRequired,
   handleSetMySeat: PropTypes.func.isRequired,
+  setDealerSeat: PropTypes.func.isRequired,
   recordAction: PropTypes.func.isRequired,
   toggleAbsent: PropTypes.func.isRequired,
 
-  // Player management
+  // Player persistence (from usePlayerPersistence, not PlayerContext)
   getRecentPlayers: PropTypes.func.isRequired,
-  assignPlayerToSeat: PropTypes.func.isRequired,
   clearSeatAssignment: PropTypes.func.isRequired,
-  getSeatPlayerName: PropTypes.func.isRequired,
   isPlayerAssigned: PropTypes.func.isRequired,
+
+  // Local UI state from parent
   setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
-
-  // Sidebar state
-  isSidebarCollapsed: PropTypes.bool.isRequired,
-  toggleSidebar: PropTypes.func.isRequired,
-  absentSeats: PropTypes.arrayOf(PropTypes.number).isRequired,
-  numSeats: PropTypes.number.isRequired,
-
-  // Session info
-  handCount: PropTypes.number.isRequired,
-  sessionStartTime: PropTypes.number, // Optional - null if no active session
-  hasActiveSession: PropTypes.bool.isRequired,
-  currentSessionBuyIn: PropTypes.number,
-  currentSessionRebuys: PropTypes.array,
-  currentSessionVenue: PropTypes.string,
-  currentSessionGameType: PropTypes.string,
   setAutoOpenNewSession: PropTypes.func.isRequired,
-  updateSessionField: PropTypes.func.isRequired,
 
   // Icons (React components)
   SkipForward: PropTypes.elementType.isRequired,

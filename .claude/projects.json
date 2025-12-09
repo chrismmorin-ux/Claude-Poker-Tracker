@@ -1,7 +1,19 @@
 {
   "version": "1.0.0",
   "description": "Project Continuity Registry - Tracks active, pending, and completed projects",
-  "active": [],
+  "active": [
+    {
+      "id": "comprehensive-refactoring-v114",
+      "name": "Comprehensive Refactoring v114",
+      "file": "docs/projects/comprehensive-refactoring-v114.project.md",
+      "priority": "high",
+      "startedAt": "2025-12-08",
+      "phases": 5,
+      "phasesComplete": 2,
+      "currentPhase": 3,
+      "description": "Context API + component decomposition for future features"
+    }
+  ],
   "pending": [],
   "completed": [
     {
@@ -23,5 +35,5 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-07T00:00:00Z"
+  "lastUpdated": "2025-12-08T00:00:00Z"
 }

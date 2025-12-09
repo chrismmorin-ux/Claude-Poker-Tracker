@@ -15,6 +15,35 @@ Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 9. See `docs/DEBUGGING.md` for error codes and debugging
 10. See `docs/STATE_SCHEMAS.md` for state shape reference
 
+## Starting New Work (MANDATORY)
+
+Before writing any code for a multi-file task, follow this checklist:
+
+### 1. Create Project File
+```bash
+/project start <project-name>
+```
+This creates a tracking file in `docs/projects/` for progress continuity.
+
+### 2. Read Before Write
+- Read ALL potentially affected files in parallel at session start
+- Use `Task` tool with `Explore` agent for unfamiliar areas
+- Never edit a file you haven't read
+
+### 3. Plan Complex Changes
+- **4+ files affected?** Use `EnterPlanMode` to map all touch points
+- **Cross-cutting concerns?** (reducer + hook + UI) Plan first
+- **Data flow changes?** Diagram the flow before coding
+
+### 4. Track Progress
+- Update project file as phases complete
+- Run `/review staged` after 3+ files modified
+- Update documentation DURING work, not after
+
+**The `new-work-check` hook will remind you if you forget.**
+
+---
+
 ## Project Continuity System
 
 This codebase uses a project tracking system to maintain continuity across chat sessions.
@@ -146,16 +175,23 @@ When incrementing version (e.g., v113 → v114):
 - [ ] Add entry to docs/CHANGELOG.md
 - [ ] Update `engineering_practices.md` version footer if changed
 
-## Architecture (v113)
+## Architecture (v114)
 
 ### File Structure
 ```
 src/
 ├── PokerTracker.jsx (~620 lines)
-│   ├── Lines 1-45:      Imports (React, icons, components, reducers, utils, hooks, constants)
-│   ├── Lines 47-92:     Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
-│   ├── Lines 94-179:    Main Component (reducers, hooks, handlers, view rendering)
-│   └── Note: All game constants and complex logic extracted to hooks
+│   ├── Lines 1-63:      Imports (React, icons, components, reducers, utils, hooks, constants, contexts)
+│   ├── Lines 65-112:    Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
+│   ├── Lines 114+:      Main Component (reducers, hooks, handlers, context providers, view rendering)
+│   └── Note: All game constants extracted to hooks; contexts wrap view components
+│
+├── contexts/                    (React Context providers - NEW in v114)
+│   ├── GameContext.jsx          (Game state + derived: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded)
+│   ├── UIContext.jsx            (UI state + handlers: setCurrentScreen, togglePlayerSelection, etc.)
+│   ├── SessionContext.jsx       (Session state + handlers: hasActiveSession, updateSessionField)
+│   ├── PlayerContext.jsx        (Player state + handlers: getSeatPlayerName, assignPlayerToSeat)
+│   └── index.js                 (Central export)
 │
 ├── constants/                   (Game configuration - NEW in v108)
 │   ├── gameConstants.js         (ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.)
@@ -228,13 +264,14 @@ The app uses five reducers for clean state management:
 - State: `currentStreet`, `dealerButtonSeat`, `mySeat`, `seatActions`, `absentSeats`
 - Actions: `SET_STREET`, `ADVANCE_DEALER`, `RECORD_ACTION`, `CLEAR_STREET_ACTIONS`, etc.
 
-**uiReducer** (`src/reducers/uiReducer.js`):
+**uiReducer** (`src/reducers/uiReducer.js` - UPDATED in v114):
 - State: `currentView`, `selectedPlayers`, `contextMenu`, `isDraggingDealer`, `isSidebarCollapsed`
-- Actions: `SET_SCREEN`, `TOGGLE_PLAYER_SELECTION`, `SET_CONTEXT_MENU`, `TOGGLE_SIDEBAR`, etc.
+- View state (moved from cardReducer): `showCardSelector`, `cardSelectorType`, `highlightedBoardIndex`, `isShowdownViewOpen`, `highlightedSeat`, `highlightedHoleSlot`
+- Actions: `SET_SCREEN`, `TOGGLE_PLAYER_SELECTION`, `SET_CONTEXT_MENU`, `TOGGLE_SIDEBAR`, `OPEN_CARD_SELECTOR`, `CLOSE_CARD_SELECTOR`, `OPEN_SHOWDOWN_VIEW`, `CLOSE_SHOWDOWN_VIEW`, etc.
 
-**cardReducer** (`src/reducers/cardReducer.js`):
-- State: `communityCards`, `holeCards`, `allPlayerCards`, `isShowdownViewOpen`, etc.
-- Actions: `SET_COMMUNITY_CARD`, `SET_HOLE_CARD`, `OPEN_SHOWDOWN_VIEW`, etc.
+**cardReducer** (`src/reducers/cardReducer.js` - UPDATED in v114):
+- State: `communityCards`, `holeCards`, `holeCardsVisible`, `allPlayerCards` (card data only, view state moved to uiReducer)
+- Actions: `SET_COMMUNITY_CARD`, `SET_HOLE_CARD`, `SET_PLAYER_CARD`, `RESET_CARDS`, etc.
 
 **sessionReducer** (`src/reducers/sessionReducer.js` - NEW in v110):
 - State: `currentSession` (sessionId, startTime, venue, gameType, buyIn, rebuyTransactions, cashOut, etc.), `allSessions`, `isLoading`
@@ -243,6 +280,27 @@ The app uses five reducers for clean state management:
 **playerReducer** (`src/reducers/playerReducer.js` - NEW in v111):
 - State: `allPlayers` (player database), `seatPlayers` (ephemeral seat assignments), `isLoading`
 - Actions: `LOAD_PLAYERS`, `SET_SEAT_PLAYER`, `CLEAR_SEAT_PLAYER`, `CLEAR_ALL_SEAT_PLAYERS`, `HYDRATE_PLAYERS`, etc.
+
+### Context Providers (NEW in v114)
+Contexts reduce prop drilling by providing state and handlers to nested components:
+
+**GameContext** - `useGame()`:
+- Provides: `currentStreet`, `mySeat`, `dealerButtonSeat`, `seatActions`, `absentSeats`, `dispatchGame`
+- Derived: `getSmallBlindSeat()`, `getBigBlindSeat()`, `hasSeatFolded()`, `isSeatInactive()`, `getSeatAllActions()`
+
+**UIContext** - `useUI()`:
+- Provides: `selectedPlayers`, `contextMenu`, `isDraggingDealer`, `isSidebarCollapsed`, `showCardSelector`, `isShowdownViewOpen`, `SCREEN`, `dispatchUi`
+- Handlers: `setCurrentScreen()`, `togglePlayerSelection()`, `setSelectedPlayers()`, `setContextMenu()`, `toggleSidebar()`, `openCardSelector()`
+
+**SessionContext** - `useSession()`:
+- Provides: `currentSession`, `allSessions`, `isLoading`, `dispatchSession`
+- Derived: `hasActiveSession`, `totalInvestment`
+- Handlers: `updateSessionField()`, `addRebuy()`, `incrementHandCount()`
+
+**PlayerContext** - `usePlayer()`:
+- Provides: `allPlayers`, `seatPlayers`, `isLoading`, `dispatchPlayer`
+- Utilities: `getPlayerById()`, `getSeatPlayerName()`, `getSeatPlayer()`
+- Handlers: `assignPlayerToSeat()`, `clearSeatPlayer()`, `clearAllSeatPlayers()`
 
 ### Key Constants
 - `ACTIONS.*` - All action types (FOLD, CALL, OPEN, etc.)

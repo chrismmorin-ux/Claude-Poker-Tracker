@@ -37,21 +37,22 @@ export const useStateSetters = (dispatchGame, dispatchUi, dispatchCard) => {
     dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
   }, [dispatchGame]);
 
+  // View state setters (moved from cardReducer to uiReducer in v114)
   const setCardSelectorType = useCallback((type) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_CARD_SELECTOR_TYPE, payload: type });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.SET_CARD_SELECTOR_TYPE, payload: type });
+  }, [dispatchUi]);
 
   const setHighlightedCardIndex = useCallback((index) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
+  }, [dispatchUi]);
 
   const setHighlightedSeat = useCallback((seat) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: seat });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: seat });
+  }, [dispatchUi]);
 
   const setHighlightedCardSlot = useCallback((slot) => {
-    dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: slot });
-  }, [dispatchCard]);
+    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: slot });
+  }, [dispatchUi]);
 
   return {
     setCurrentScreen,

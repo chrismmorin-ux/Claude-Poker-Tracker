@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/project-status.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/new-work-check.cjs"
           }
         ]
       }

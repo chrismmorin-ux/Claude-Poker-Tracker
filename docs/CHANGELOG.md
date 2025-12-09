@@ -1,32 +1,67 @@
 # Poker Tracker Change Log
 
-## v114 (Current) - Session-Based Hand Numbering + History Improvements
+## v114 (Current) - Context API + State Consolidation
 
 ### Summary
-- **Purpose**: Improve hand history organization with session-based numbering and visual grouping
-- **Files Modified**: 9 files (persistence, HistoryView, sessionReducer, usePersistence, PokerTracker, constants, CLAUDE.md)
+- **Purpose**: Reduce prop drilling and consolidate view state management for future features
+- **New Files**: 5 context files (GameContext, UIContext, SessionContext, PlayerContext, index)
+- **Prop Reduction**: TableView 64+ props -> ~30 props, StatsView 4 props -> 1 prop
+- **State Consolidation**: View state moved from cardReducer to uiReducer
 
-### Hand History Improvements
-- **Session Hand Numbers**: Hands now display position within session (#1, #2, #3) instead of global database IDs
-- **Hand Display ID**: Searchable identifier format `S{sessionId}-H{handNum}` (e.g., "S5-H3" for Session 5, Hand 3)
-- **Visual Session Grouping**: When viewing "All Sessions", hands are grouped under session headers with color-coded left borders
-- **Exact Timestamps**: Changed from relative time ("2h ago") to exact format ("Dec 8, 2:30 PM")
+### Context API Introduction
+- **GameContext.jsx** (~90 lines): Provides game state + derived utilities
+  - State: currentStreet, mySeat, dealerButtonSeat, seatActions, absentSeats
+  - Derived: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded, isSeatInactive
+- **UIContext.jsx** (~140 lines): Provides UI state + handlers
+  - State: selectedPlayers, contextMenu, isDraggingDealer, isSidebarCollapsed, showCardSelector, isShowdownViewOpen
+  - Handlers: setCurrentScreen, togglePlayerSelection, setContextMenu, openCardSelector, SCREEN
+- **SessionContext.jsx** (~100 lines): Provides session state + operations
+  - State: currentSession, allSessions, isLoading
+  - Derived: hasActiveSession, totalInvestment
+  - Handlers: updateSessionField, addRebuy, incrementHandCount
+- **PlayerContext.jsx** (~110 lines): Provides player state + seat management
+  - State: allPlayers, seatPlayers, isLoading
+  - Handlers: getSeatPlayerName, assignPlayerToSeat, clearSeatPlayer
 
-### Hand Count Sync Fix
-- **Bug Fixed**: Hand count was incrementing on every auto-save instead of only when clicking "Next Hand"
-- **Solution**: Moved `INCREMENT_HAND_COUNT` dispatch from `usePersistence` auto-save to `nextHand()` callback
-- **New Action**: Added `SET_HAND_COUNT` action to reset/sync count when clearing or deleting hands
+### State Consolidation
+- **Moved from cardReducer to uiReducer**:
+  - showCardSelector, cardSelectorType, highlightedBoardIndex
+  - isShowdownViewOpen, highlightedSeat, highlightedHoleSlot
+- **cardReducer now contains only card data**: communityCards, holeCards, holeCardsVisible, allPlayerCards
+- **Updated hooks**: useCardSelection, useShowdownCardSelection, useShowdownHandlers, useStateSetters
 
-### Database Changes
-- **New Fields** in hand records:
-  - `sessionHandNumber` (number|null): 1-based position within session
-  - `handDisplayId` (string): Searchable identifier (e.g., "S5-H3")
-- **Version**: Database record version updated to 1.2.0
+### View Migrations
+- **StatsView.jsx**: Props reduced from 4 to 1 (scale only)
+  - Uses: useGame() for seatActions, mySeat
+  - Uses: useUI() for setCurrentScreen, SCREEN
+- **TableView.jsx**: Props reduced from 64+ to ~30
+  - Uses all 4 contexts for state and handlers
+  - Remaining props: scale, tableRef, card state, parent handlers, icons
 
-### Workflow Improvements
-- **Pre-Implementation Checklist**: Added to CLAUDE.md for planning multi-file changes
-- **Mandatory Review Triggers**: Defined when `/review staged` and tests are required
-- **Local Model Delegation**: Documented which subtasks can use `/local-code`
+### Hand History Improvements (earlier in v114)
+- **Session Hand Numbers**: Hands display position within session (#1, #2, #3)
+- **Hand Display ID**: Searchable format `S{sessionId}-H{handNum}`
+- **Visual Session Grouping**: Hands grouped under session headers
+- **Hand Count Sync Fix**: INCREMENT_HAND_COUNT moved to nextHand() callback
+
+### Files Created
+- `src/contexts/GameContext.jsx`
+- `src/contexts/UIContext.jsx`
+- `src/contexts/SessionContext.jsx`
+- `src/contexts/PlayerContext.jsx`
+- `src/contexts/index.js`
+
+### Files Modified
+- `src/reducers/uiReducer.js` - Added view state and actions
+- `src/reducers/cardReducer.js` - Removed view state
+- `src/PokerTracker.jsx` - Added withContextProviders wrapper
+- `src/components/views/StatsView.jsx` - Migrated to contexts
+- `src/components/views/TableView.jsx` - Migrated to contexts
+- `src/hooks/useCardSelection.js` - Updated to use dispatchUi
+- `src/hooks/useShowdownCardSelection.js` - Updated to use dispatchUi
+- `src/hooks/useShowdownHandlers.js` - Updated to use dispatchUi
+- `src/hooks/useStateSetters.js` - Updated to use dispatchUi
+- Test files updated for moved state
 
 ---
 

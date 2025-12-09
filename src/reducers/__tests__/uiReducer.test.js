@@ -24,6 +24,13 @@ describe('uiReducer', () => {
       expect(initialUiState.selectedPlayers).toEqual([]);
       expect(initialUiState.contextMenu).toBe(null);
       expect(initialUiState.isDraggingDealer).toBe(false);
+      // View state moved from cardReducer in v114
+      expect(initialUiState.showCardSelector).toBe(false);
+      expect(initialUiState.cardSelectorType).toBe('community');
+      expect(initialUiState.highlightedBoardIndex).toBe(0);
+      expect(initialUiState.isShowdownViewOpen).toBe(false);
+      expect(initialUiState.highlightedSeat).toBe(1);
+      expect(initialUiState.highlightedHoleSlot).toBe(0);
     });
   });
 
@@ -215,6 +222,119 @@ describe('uiReducer', () => {
     it('does nothing when already false', () => {
       const newState = uiReducer(state, { type: UI_ACTIONS.STOP_DRAGGING_DEALER });
       expect(newState.isDraggingDealer).toBe(false);
+    });
+  });
+
+  // Card selector view state (moved from cardReducer in v114)
+  describe('OPEN_CARD_SELECTOR', () => {
+    it('opens card selector for community cards', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.OPEN_CARD_SELECTOR,
+        payload: { type: 'community', index: 2 },
+      });
+      expect(newState.showCardSelector).toBe(true);
+      expect(newState.cardSelectorType).toBe('community');
+      expect(newState.highlightedBoardIndex).toBe(2);
+    });
+
+    it('opens card selector for hole cards', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.OPEN_CARD_SELECTOR,
+        payload: { type: 'hole', index: 1 },
+      });
+      expect(newState.showCardSelector).toBe(true);
+      expect(newState.cardSelectorType).toBe('hole');
+      expect(newState.highlightedBoardIndex).toBe(1);
+    });
+  });
+
+  describe('CLOSE_CARD_SELECTOR', () => {
+    it('closes card selector and resets highlight', () => {
+      state.showCardSelector = true;
+      state.highlightedBoardIndex = 3;
+      const newState = uiReducer(state, { type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
+      expect(newState.showCardSelector).toBe(false);
+      expect(newState.highlightedBoardIndex).toBe(null);
+    });
+  });
+
+  describe('SET_CARD_SELECTOR_TYPE', () => {
+    it('sets selector type to hole', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_CARD_SELECTOR_TYPE,
+        payload: 'hole',
+      });
+      expect(newState.cardSelectorType).toBe('hole');
+    });
+
+    it('sets selector type to community', () => {
+      state.cardSelectorType = 'hole';
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_CARD_SELECTOR_TYPE,
+        payload: 'community',
+      });
+      expect(newState.cardSelectorType).toBe('community');
+    });
+  });
+
+  describe('SET_HIGHLIGHTED_CARD_INDEX', () => {
+    it('updates highlighted card index', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
+        payload: 4,
+      });
+      expect(newState.highlightedBoardIndex).toBe(4);
+    });
+
+    it('can set to null', () => {
+      state.highlightedBoardIndex = 2;
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
+        payload: null,
+      });
+      expect(newState.highlightedBoardIndex).toBe(null);
+    });
+  });
+
+  // Showdown view state (moved from cardReducer in v114)
+  describe('OPEN_SHOWDOWN_VIEW', () => {
+    it('opens showdown view and initializes highlight', () => {
+      const newState = uiReducer(state, { type: UI_ACTIONS.OPEN_SHOWDOWN_VIEW });
+      expect(newState.isShowdownViewOpen).toBe(true);
+      expect(newState.highlightedSeat).toBe(1);
+      expect(newState.highlightedHoleSlot).toBe(0);
+    });
+  });
+
+  describe('CLOSE_SHOWDOWN_VIEW', () => {
+    it('closes showdown view and clears highlights', () => {
+      state.isShowdownViewOpen = true;
+      state.highlightedSeat = 5;
+      state.highlightedHoleSlot = 1;
+      const newState = uiReducer(state, { type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW });
+      expect(newState.isShowdownViewOpen).toBe(false);
+      expect(newState.highlightedSeat).toBe(null);
+      expect(newState.highlightedHoleSlot).toBe(null);
+    });
+  });
+
+  describe('SET_HIGHLIGHTED_SEAT', () => {
+    it('updates highlighted seat', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
+        payload: 7,
+      });
+      expect(newState.highlightedSeat).toBe(7);
+    });
+  });
+
+  describe('SET_HIGHLIGHTED_HOLE_SLOT', () => {
+    it('updates highlighted hole slot', () => {
+      const newState = uiReducer(state, {
+        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
+        payload: 1,
+      });
+      expect(newState.highlightedHoleSlot).toBe(1);
     });
   });
 

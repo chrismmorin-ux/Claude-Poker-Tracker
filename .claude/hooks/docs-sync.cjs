@@ -39,6 +39,9 @@ const DOC_REQUIREMENTS = {
   // UI components -> CLAUDE.md component section
   'src/components/ui/': ['CLAUDE.md', 'docs/QUICK_REF.md'],
 
+  // Context changes -> CLAUDE.md architecture + STATE_SCHEMAS (CRITICAL PATH)
+  'src/contexts/': ['CLAUDE.md', 'docs/QUICK_REF.md', 'docs/STATE_SCHEMAS.md'],
+
   // Command changes -> CLAUDE.md commands section
   '.claude/commands/': ['CLAUDE.md'],
 
@@ -48,6 +51,13 @@ const DOC_REQUIREMENTS = {
   // New features -> CHANGELOG
   'src/PokerTracker.jsx': ['docs/CHANGELOG.md'],
 };
+
+// Critical paths that should trigger immediate warning (not wait for 5 edits)
+const CRITICAL_PATHS = [
+  'src/reducers/',
+  'src/contexts/',
+  'src/hooks/',
+];
 
 // Docs that are considered "updated" (these reset the staleness tracker)
 const DOC_FILES = [
@@ -109,6 +119,13 @@ function getRequiredDocs(filePath) {
   return required;
 }
 
+function isCriticalPath(filePath) {
+  return CRITICAL_PATHS.some(pattern =>
+    filePath.includes(pattern.replace(/\//g, path.sep)) ||
+    filePath.includes(pattern.replace(/\//g, '/'))
+  );
+}
+
 function isDocFile(filePath) {
   return DOC_FILES.some(doc => filePath.endsWith(doc));
 }
@@ -159,9 +176,20 @@ async function main() {
       });
     }
 
-    // Periodic reminder after significant source changes
+    // Check if this is a critical path edit (immediate warning)
+    const isCritical = isCriticalPath(filePath);
     const staleDocs = Array.from(session.requiredDocs);
-    if (session.sourceEdits.length >= 5 && staleDocs.length > 0 &&
+
+    // Immediate warning for critical paths (reducers, contexts, hooks)
+    if (isCritical && staleDocs.length > 0 && !session.warningsShown.includes('critical-' + filePath)) {
+      console.log('\n[DOCS] ⚠️  CRITICAL PATH EDITED: ' + path.basename(filePath));
+      console.log('These docs should be updated before committing:');
+      staleDocs.forEach(doc => console.log('  - ' + doc));
+      console.log('Tip: Update docs during implementation, not after.');
+      session.warningsShown.push('critical-' + filePath);
+    }
+    // Periodic reminder after significant source changes (non-critical)
+    else if (session.sourceEdits.length >= 5 && staleDocs.length > 0 &&
         !session.warningsShown.includes('periodic')) {
       console.log('\n[DOCS] Source files modified. These docs may need updating:');
       staleDocs.forEach(doc => console.log('  - ' + doc));

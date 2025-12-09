@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
+import { UI_ACTIONS } from '../reducers/uiReducer';
 import { findNextEmptySlot } from '../utils/seatNavigation';
 
 /**
  * Custom hook for showdown card selection logic
  * Handles card assignment with auto-advance to next empty slot
  * More complex than regular card selection due to multi-player logic
+ * NOTE: View state actions moved from cardReducer to uiReducer in v114
  */
 export const useShowdownCardSelection = (
   highlightedSeat,
@@ -17,6 +19,7 @@ export const useShowdownCardSelection = (
   seatActions,
   isSeatInactive,
   dispatchCard,
+  dispatchUi,
   numSeats
 ) => {
   const selectCardForShowdown = useCallback((card) => {
@@ -65,14 +68,14 @@ export const useShowdownCardSelection = (
       seatActions
     );
     if (nextEmpty) {
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });
+      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
+      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });
     } else {
       // No more empty slots
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
-      dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
+      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
+      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
     }
-  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, dispatchCard, isSeatInactive, numSeats]);
+  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, dispatchCard, dispatchUi, isSeatInactive, numSeats]);
 
   return selectCardForShowdown;
 };

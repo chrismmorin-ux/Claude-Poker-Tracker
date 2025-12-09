@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
+import { UI_ACTIONS } from '../reducers/uiReducer';
 
 /**
  * Custom hook for card selection logic (community and hole cards)
  * Handles regular card selection with auto-advance and auto-close behavior
+ * NOTE: View state actions moved from cardReducer to uiReducer in v114
  */
 export const useCardSelection = (
   highlightedBoardIndex,
@@ -11,7 +13,8 @@ export const useCardSelection = (
   communityCards,
   holeCards,
   currentStreet,
-  dispatchCard
+  dispatchCard,
+  dispatchUi
 ) => {
   const selectCard = useCallback((card) => {
     if (highlightedBoardIndex === null) return;
@@ -34,13 +37,13 @@ export const useCardSelection = (
 
       if (shouldAutoClose) {
         // Close card selector and return to table
-        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
+        dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
       } else {
         // Auto-advance to next community card slot
         if (highlightedBoardIndex < 4) {
-          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: highlightedBoardIndex + 1 });
+          dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: highlightedBoardIndex + 1 });
         } else {
-          dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
+          dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
         }
       }
     } else if (cardSelectorType === 'hole') {
@@ -56,13 +59,13 @@ export const useCardSelection = (
       // Check if this was the second hole card
       if (highlightedBoardIndex === 1) {
         // Close card selector and return to table (without changing street)
-        dispatchCard({ type: CARD_ACTIONS.CLOSE_CARD_SELECTOR });
+        dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
       } else {
         // Auto-advance to next hole card slot
-        dispatchCard({ type: CARD_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: 1 });
+        dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: 1 });
       }
     }
-  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard]);
+  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard, dispatchUi]);
 
   return selectCard;
 };
