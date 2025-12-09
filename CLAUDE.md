@@ -383,6 +383,27 @@ Set `DEBUG = false` at line 8 to disable all console logging.
 - **Handlers**: Wrap all handler functions in `useCallback` with correct dependencies
 - **Function order**: Define helper functions BEFORE callbacks that depend on them
 
+## Pre-Implementation Checklist
+
+Before starting implementation, evaluate the task scope:
+
+### Planning Gate
+- [ ] **4+ files affected?** → Use `EnterPlanMode` to map all touch points
+- [ ] **Cross-cutting concerns?** (reducer + hook + UI) → Plan first to identify dependencies
+- [ ] **Data flow changes?** → Diagram the flow before coding to avoid rework
+
+### Local Model Delegation
+Identify subtasks that can be delegated to save tokens:
+- [ ] **Adding constants** (e.g., `SESSION_ACTIONS.NEW_ACTION`) → `/local-code`
+- [ ] **Simple reducer cases** with clear input/output → `/local-code`
+- [ ] **Pure utility functions** (<80 lines, no state) → `/local-code`
+- [ ] **Timestamp/formatting changes** → `/local-refactor`
+- [ ] **JSX templates** with clear spec → `/local-code`
+
+### File Reading Strategy
+- [ ] Read all potentially-affected files in parallel at session start
+- [ ] Use Explore agent for unknown codebases or unfamiliar patterns
+
 ## Post-Edit Workflow
 
 After completing multi-file changes or significant edits:
@@ -390,23 +411,26 @@ After completing multi-file changes or significant edits:
 1. **Code Review**: Run `/review staged` to catch bugs, pattern violations, and style issues
 2. **Component Audit**: If you modified React components significantly, run `/audit-component <filepath>`
 3. **Documentation**: Check if documentation needs updating (docs-sync hook will remind you)
+4. **Tests**: If reducer or hook modified, run `npm test`
+
+### Mandatory Review Triggers
+| Trigger | Action |
+|---------|--------|
+| 3+ files modified | Run `/review staged` |
+| Reducer changed | Run `npm test` |
+| State shape changed | Update `docs/STATE_SCHEMAS.md` |
+| New constants added | Update `docs/QUICK_REF.md` |
 
 ### Automatic Reminders
 - The `edit-review-suggest` hook suggests `/review staged` after 5+ edits or 200+ lines changed
 - The `efficiency-tracker` hook tracks session metrics for workflow analysis
 
 ### Efficiency Analysis
-Run `/efficiency-analysis` to review your work session:
+Use CTO agent to review work session efficiency:
 - Agent usage patterns (did we use appropriate agents?)
 - Local model opportunities (could tasks have been delegated?)
 - Token efficiency (parallel reads, Explore agent usage)
 - Code review gaps
-
-```bash
-/efficiency-analysis              # Balanced analysis
-/efficiency-analysis quick        # Quick summary
-/efficiency-analysis detailed     # Full deep-dive
-```
 
 ## Responsive Design
 The app uses dynamic scaling to fit any browser window size:

@@ -1,6 +1,36 @@
 # Poker Tracker Change Log
 
-## v113 (Current) - Project Continuity System + Local Model Workflow ✅
+## v114 (Current) - Session-Based Hand Numbering + History Improvements
+
+### Summary
+- **Purpose**: Improve hand history organization with session-based numbering and visual grouping
+- **Files Modified**: 9 files (persistence, HistoryView, sessionReducer, usePersistence, PokerTracker, constants, CLAUDE.md)
+
+### Hand History Improvements
+- **Session Hand Numbers**: Hands now display position within session (#1, #2, #3) instead of global database IDs
+- **Hand Display ID**: Searchable identifier format `S{sessionId}-H{handNum}` (e.g., "S5-H3" for Session 5, Hand 3)
+- **Visual Session Grouping**: When viewing "All Sessions", hands are grouped under session headers with color-coded left borders
+- **Exact Timestamps**: Changed from relative time ("2h ago") to exact format ("Dec 8, 2:30 PM")
+
+### Hand Count Sync Fix
+- **Bug Fixed**: Hand count was incrementing on every auto-save instead of only when clicking "Next Hand"
+- **Solution**: Moved `INCREMENT_HAND_COUNT` dispatch from `usePersistence` auto-save to `nextHand()` callback
+- **New Action**: Added `SET_HAND_COUNT` action to reset/sync count when clearing or deleting hands
+
+### Database Changes
+- **New Fields** in hand records:
+  - `sessionHandNumber` (number|null): 1-based position within session
+  - `handDisplayId` (string): Searchable identifier (e.g., "S5-H3")
+- **Version**: Database record version updated to 1.2.0
+
+### Workflow Improvements
+- **Pre-Implementation Checklist**: Added to CLAUDE.md for planning multi-file changes
+- **Mandatory Review Triggers**: Defined when `/review staged` and tests are required
+- **Local Model Delegation**: Documented which subtasks can use `/local-code`
+
+---
+
+## v113 - Project Continuity System + Local Model Workflow ✅
 
 ### Summary
 - **Purpose**: Enable seamless project tracking across chat sessions + integrate local model delegation

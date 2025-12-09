@@ -158,11 +158,16 @@ export const HistoryView = ({
 
       // If deleted hand was from current session, update the session hand count
       if (currentSessionId && handSessionId === currentSessionId && dispatchSession) {
-        const newCount = await getSessionHandCount(currentSessionId);
-        dispatchSession({
-          type: SESSION_ACTIONS.SET_HAND_COUNT,
-          payload: { count: newCount }
-        });
+        try {
+          const newCount = await getSessionHandCount(currentSessionId);
+          dispatchSession({
+            type: SESSION_ACTIONS.SET_HAND_COUNT,
+            payload: { count: newCount }
+          });
+        } catch (countError) {
+          console.error('[HistoryView] Failed to update hand count:', countError);
+          // Non-fatal: hand was deleted, just couldn't sync count
+        }
       }
 
       // Reload hand list

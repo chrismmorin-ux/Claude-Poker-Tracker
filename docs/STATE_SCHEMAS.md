@@ -231,7 +231,8 @@ export const SESSION_STATE_SCHEMA = {
 | `END_SESSION` | `{ endTime, cashOut }` | End current session |
 | `UPDATE_SESSION_FIELD` | `{ field, value }` | Update session field |
 | `ADD_REBUY` | `{ amount, timestamp }` | Add rebuy transaction |
-| `INCREMENT_HAND_COUNT` | - | Increment hands played |
+| `INCREMENT_HAND_COUNT` | - | Increment hands played (called by nextHand) |
+| `SET_HAND_COUNT` | `{ count }` | Set hand count directly (for sync/reset) |
 | `LOAD_SESSIONS` | `session[]` | Load sessions from DB |
 | `SET_LOADING` | `boolean` | Set loading state |
 | `HYDRATE_SESSION` | `object` | Restore active session |
@@ -329,7 +330,15 @@ IndexedDB stores persistent data across sessions.
 **`hands`** - Saved poker hands
 - keyPath: `handId` (autoIncrement)
 - Indexes: `timestamp`, `sessionId`
-- Fields: All game + card state, plus `seatPlayers`
+- Fields:
+  - `gameState`: game reducer state snapshot
+  - `cardState`: card reducer state snapshot
+  - `seatPlayers`: seat-to-playerId mapping
+  - `timestamp`: Unix timestamp (ms)
+  - `sessionId`: linked session ID (null if no session)
+  - `sessionHandNumber`: 1-based position within session (null if no session)
+  - `handDisplayId`: searchable ID format "S{sessionId}-H{num}" or "H{timestamp}"
+  - `version`: record version (currently "1.2.0")
 
 **`sessions`** - Poker sessions
 - keyPath: `sessionId` (autoIncrement)
