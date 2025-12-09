@@ -20,9 +20,12 @@ created: 2025-12-08
 
 ## Overview
 
-Achieve 90%+ test coverage across the Poker Tracker codebase. Currently at 268 tests across 8 files. Target: ~950 tests across 30+ files.
+Achieve 90%+ test coverage across the Poker Tracker codebase.
 
-Full plan: `C:\Users\chris\.claude\plans\binary-squishing-lagoon.md`
+**Current Status (Dec 9, 2025):** 2,009 tests across 66 files
+**Target:** ~1,987 tests (90%+ coverage) - EXCEEDED!
+
+Full plan: `C:\Users\chris\.claude\plans\snazzy-tumbling-backus.md`
 
 ---
 
@@ -45,8 +48,13 @@ Files to read before starting work:
 | 4 | [x] COMPLETE | Complex hook tests: useSeatColor, useCardSelection, useShowdownCardSelection, useShowdownHandlers (~100 tests) |
 | 5 | [x] COMPLETE | Persistence hook tests: usePersistence, useSessionPersistence, usePlayerPersistence (~80 tests) |
 | 6 | [x] COMPLETE | UI component tests (~423 tests) |
-| 7 | [ ] | View component tests (~80 tests) <- CURRENT |
-| 8 | [ ] | Context provider tests (~50 tests) |
+| 7 | [x] COMPLETE | View component tests: StatsView, CardSelectorView (~45 tests) |
+| 8 | [x] COMPLETE | Context provider tests (~100 tests, 100% coverage verified) |
+| 9 | [x] COMPLETE | View component tests: TableView, ShowdownView, HistoryView, SessionsView, PlayersView (~392 tests) |
+| 10 | [ ] | PlayerForm sub-components (~85 tests) <- CURRENT |
+| 11 | [ ] | Reducer coverage gaps: uiReducer, sessionReducer (~20 tests) |
+| 12 | [ ] | Utility & storage gaps: screenNavigation, persistence, migrations (~60 tests) |
+| 13 | [ ] | Test quality: fix act() warnings, add integration tests (~30 tests) |
 
 ---
 
@@ -175,32 +183,143 @@ Test React UI components (~130 tests estimated → 423 actual)
 
 ---
 
-## Phase 7: View Component Tests
+## Phase 7: View Component Tests (Partial) [COMPLETE]
 
 ### Goal
-Test view components (~80 tests)
+Test StatsView and CardSelectorView (~45 tests)
 
-### Files to Create
-- [ ] `src/components/views/__tests__/CardSelectorView.test.jsx`
-- [ ] `src/components/views/__tests__/ShowdownView.test.jsx`
-- [ ] `src/components/views/__tests__/TableView.test.jsx`
-- [ ] `src/components/views/__tests__/HistoryView.test.jsx`
-- [ ] `src/components/views/__tests__/SessionsView.test.jsx`
-- [ ] `src/components/views/__tests__/PlayersView.test.jsx`
+### Files Created
+- [x] `src/components/views/__tests__/StatsView.test.jsx` (100% coverage)
+- [x] `src/components/views/__tests__/CardSelectorView.test.jsx` (83% coverage)
+
+### Verification
+- [x] Tests pass
 
 ---
 
-## Phase 8: Context Provider Tests
+## Phase 8: Context Provider Tests [COMPLETE]
 
 ### Goal
-Test React context providers (~50 tests)
+Test React context providers (~100 tests, 100% coverage achieved)
+
+### Files Created
+- [x] `src/contexts/__tests__/GameContext.test.jsx` (25 tests)
+- [x] `src/contexts/__tests__/UIContext.test.jsx`
+- [x] `src/contexts/__tests__/SessionContext.test.jsx`
+- [x] `src/contexts/__tests__/PlayerContext.test.jsx`
+- [x] `src/contexts/__tests__/CardContext.test.jsx`
+
+### Verification
+- [x] All context tests pass
+- [x] 100% coverage on all context files
+
+---
+
+## Phase 9: View Component Tests (Remaining) [COMPLETE]
+
+### Goal
+Test remaining view components with 0% coverage (~175 estimated → 392 actual tests)
+
+### Files Created
+
+**TableView sub-components (143 tests):**
+- [x] `src/components/views/TableView/__tests__/TableHeader.test.jsx` (17 tests)
+- [x] `src/components/views/TableView/__tests__/StreetSelector.test.jsx` (18 tests)
+- [x] `src/components/views/TableView/__tests__/SeatContextMenu.test.jsx` (23 tests)
+- [x] `src/components/views/TableView/__tests__/ActionPanel.test.jsx` (52 tests)
+- [x] `src/components/views/TableView/__tests__/SeatComponent.test.jsx` (33 tests)
+
+**ShowdownView sub-components (89 tests):**
+- [x] `src/components/views/ShowdownView/__tests__/ShowdownHeader.test.jsx` (15 tests)
+- [x] `src/components/views/ShowdownView/__tests__/CardGrid.test.jsx` (19 tests)
+- [x] `src/components/views/ShowdownView/__tests__/ShowdownSeatRow.test.jsx` (33 tests)
+- [x] `src/components/views/ShowdownView/__tests__/ActionHistoryGrid.test.jsx` (22 tests)
+
+**SessionsView sub-components (103 tests):**
+- [x] `src/components/views/SessionsView/__tests__/BankrollDisplay.test.jsx` (18 tests)
+- [x] `src/components/views/SessionsView/__tests__/CashOutModal.test.jsx` (24 tests)
+- [x] `src/components/views/SessionsView/__tests__/ImportConfirmModal.test.jsx` (24 tests)
+- [x] `src/components/views/SessionsView/__tests__/ActiveSessionCard.test.jsx` (37 tests)
+
+**Other views (57 tests):**
+- [x] `src/components/views/__tests__/HistoryView.test.jsx` (26 tests)
+- [x] `src/components/views/__tests__/PlayersView.test.jsx` (31 tests)
+
+### Verification
+- [x] All 2,009 tests pass
+- [x] Test target of ~1,987 exceeded
+
+---
+
+## Phase 10: PlayerForm Sub-components <- CURRENT
+
+### Goal
+Test PlayerForm sections at 0% coverage (~85 tests)
 
 ### Files to Create
-- [ ] `src/contexts/__tests__/GameContext.test.jsx`
-- [ ] `src/contexts/__tests__/UIContext.test.jsx`
-- [ ] `src/contexts/__tests__/SessionContext.test.jsx`
-- [ ] `src/contexts/__tests__/PlayerContext.test.jsx`
-- [ ] `src/contexts/__tests__/CardContext.test.jsx`
+- [ ] `src/components/ui/PlayerForm/__tests__/index.test.jsx` (~25 tests)
+- [ ] `src/components/ui/PlayerForm/__tests__/AvatarSection.test.jsx` (~10 tests)
+- [ ] `src/components/ui/PlayerForm/__tests__/BasicInfoSection.test.jsx` (~12 tests)
+- [ ] `src/components/ui/PlayerForm/__tests__/NotesSection.test.jsx` (~8 tests)
+- [ ] `src/components/ui/PlayerForm/__tests__/PhysicalSection.test.jsx` (~20 tests)
+- [ ] `src/components/ui/PlayerForm/__tests__/StyleTagsSection.test.jsx` (~10 tests)
+
+---
+
+## Phase 11: Reducer Coverage Gaps
+
+### Goal
+Fill remaining reducer coverage gaps (~20 tests)
+
+| File | Current | Target | Lines Missing |
+|------|---------|--------|---------------|
+| uiReducer.js | 57.14% | 95% | 143, 209-243 |
+| sessionReducer.js | 93.75% | 98% | 156 |
+
+### Files to Modify
+- [ ] `src/reducers/__tests__/uiReducer.test.js` - Add card selector/showdown view action tests
+- [ ] `src/reducers/__tests__/sessionReducer.test.js` - Add edge case for line 156
+
+---
+
+## Phase 12: Utility & Storage Gaps
+
+### Goal
+Cover missing utility and storage modules (~60 tests)
+
+| File | Current | Lines Missing |
+|------|---------|---------------|
+| screenNavigation.js | 0% | 21-142 |
+| persistence.js (root) | 0% | All |
+| migrateV6SeatActions.js | 0% | 18-68 |
+| playersStorage.js | 48.41% | CRUD gaps |
+| StorageProvider.jsx | 0% | 29-113 |
+
+### Files to Create
+- [ ] `src/utils/__tests__/screenNavigation.test.js`
+- [ ] `src/migrations/__tests__/migrateV6SeatActions.test.js`
+- [ ] `src/storage/__tests__/StorageProvider.test.jsx`
+
+### Files to Modify
+- [ ] `src/utils/persistence/__tests__/playersStorage.test.js` - Expand CRUD coverage
+
+---
+
+## Phase 13: Test Quality Improvements
+
+### Goal
+Fix warnings and add integration tests (~30 tests + refactoring)
+
+### Tasks
+
+**1. Fix act() warnings:**
+- [ ] `src/hooks/__tests__/useSessionPersistence.test.js` - 6+ warnings
+- [ ] `src/hooks/__tests__/usePersistence.test.js` - 3+ warnings
+- [ ] `src/hooks/__tests__/usePlayerPersistence.test.js` - Multiple warnings
+
+**2. Add integration tests:**
+- [ ] Session workflow: start session → play hand → end session
+- [ ] Player workflow: create player → assign to seat → track actions
 
 ---
 
@@ -218,15 +337,19 @@ Test React context providers (~50 tests)
 | Date | Session | Phase | Work Done |
 |------|---------|-------|-----------|
 | 2025-12-08 | Initial | Planning | Created project file, analyzed codebase |
+| 2025-12-08 | Session 2 | 1-6 | Completed Phases 1-6 (1,363 tests) |
+| 2025-12-09 | Session 3 | 7-8 | Verified Phase 7 (partial) and Phase 8 complete, added Phases 9-13 |
+| 2025-12-09 | Session 4 | 9 | Completed Phase 9 - View Component Tests (392 tests added, 2,009 total) |
 
 ---
 
 ## Completion Checklist
 
 Before marking project complete:
-- [ ] All phases marked [x] COMPLETE
-- [ ] Tests passing (900+ tests)
+- [ ] All phases (1-13) marked [x] COMPLETE
+- [ ] Tests passing (~1,987 tests target)
 - [ ] Coverage at 90%+
+- [ ] View components coverage at 80%+
 - [ ] Documentation updated:
   - [ ] CLAUDE.md (testing section if needed)
   - [ ] docs/CHANGELOG.md (version entry)
