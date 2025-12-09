@@ -33,6 +33,9 @@ Thumbs.db
 .eslintcache
 .cache/
 
+# Test coverage reports
+coverage/
+
 # Claude Code local files
 .claude/settings.local.json
 .claude/.pr-size-session.json
