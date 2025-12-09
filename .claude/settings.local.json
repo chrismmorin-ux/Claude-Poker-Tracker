@@ -35,7 +35,9 @@
       "Bash(findstr:*)",
       "Bash(npm test:*)",
       "Bash(dir:*)",
-      "SlashCommand(/review:*)"
+      "SlashCommand(/review:*)",
+      "Bash(wc:*)",
+      "Bash(timeout 15 npm run dev:*)"
     ],
     "deny": [],
     "ask": []
