@@ -1,6 +1,17 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { LAYOUT } from '../../../constants/gameConstants';
+import {
+  LAYOUT,
+  ACTIONS,
+  ACTION_ABBREV,
+  SEAT_STATUS,
+  SEAT_ARRAY,
+  STREETS,
+  BETTING_STREETS,
+  isFoldAction,
+} from '../../../constants/gameConstants';
+import { useCard, useGame, useUI } from '../../../contexts';
+import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { ShowdownHeader } from './ShowdownHeader';
 import { ShowdownSeatRow } from './ShowdownSeatRow';
 import { CardGrid } from './CardGrid';
@@ -12,41 +23,51 @@ import { ActionHistoryGrid } from './ActionHistoryGrid';
  */
 export const ShowdownView = ({
   scale,
-  communityCards,
-  holeCards,
-  holeCardsVisible,
-  mySeat,
-  dealerButtonSeat,
-  allPlayerCards,
-  highlightedSeat,
-  highlightedHoleSlot,
-  seatActions,
-  SEAT_ARRAY,
-  STREETS,
-  BETTING_STREETS,
-  ACTIONS,
-  ACTION_ABBREV,
-  SEAT_STATUS,
+  // Handlers defined in parent
   handleNextHandFromShowdown,
   handleClearShowdownCards,
   handleCloseShowdown,
   allCardsAssigned,
   isSeatInactive,
-  getSmallBlindSeat,
-  getBigBlindSeat,
-  setHoleCardsVisible,
-  setHighlightedSeat,
-  setHighlightedCardSlot,
   handleMuckSeat,
   handleWonSeat,
   selectCardForShowdown,
+  // Utility functions
   getOverlayStatus,
   getActionColor,
   getActionDisplayName,
-  isFoldAction,
   getHandAbbreviation,
-  SkipForward,
 }) => {
+  // Get card state from CardContext
+  const {
+    communityCards,
+    holeCards,
+    holeCardsVisible,
+    allPlayerCards,
+    dispatchCard,
+  } = useCard();
+
+  // Get game state from GameContext
+  const {
+    mySeat,
+    dealerButtonSeat,
+    seatActions,
+    getSmallBlindSeat,
+    getBigBlindSeat,
+  } = useGame();
+
+  // Get UI state from UIContext
+  const {
+    highlightedSeat,
+    highlightedHoleSlot,
+    setHighlightedSeat,
+    setHighlightedHoleSlot,
+  } = useUI();
+
+  // Handler for setting hole cards visibility
+  const setHoleCardsVisible = useCallback((visible) => {
+    dispatchCard({ type: CARD_ACTIONS.SET_HOLE_VISIBILITY, payload: visible });
+  }, [dispatchCard]);
   const isAllCardsAssigned = allCardsAssigned();
   const mode = isAllCardsAssigned ? 'summary' : 'selection';
 
@@ -58,7 +79,7 @@ export const ShowdownView = ({
   // Handler to highlight a slot
   const handleHighlightSlot = (seat, cardSlot) => {
     setHighlightedSeat(seat);
-    setHighlightedCardSlot(cardSlot);
+    setHighlightedHoleSlot(cardSlot);
   };
 
   return (
@@ -80,7 +101,6 @@ export const ShowdownView = ({
             onClearCards={handleClearShowdownCards}
             onDone={handleCloseShowdown}
             SEAT_STATUS={SEAT_STATUS}
-            SkipForward={SkipForward}
           />
 
           <div className="bg-gray-100 p-4">
@@ -166,31 +186,7 @@ ShowdownView.propTypes = {
   // Layout
   scale: PropTypes.number.isRequired,
 
-  // Card state
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  allPlayerCards: PropTypes.object.isRequired,
-  highlightedSeat: PropTypes.number,
-  highlightedHoleSlot: PropTypes.number,
-
-  // Game state
-  mySeat: PropTypes.number.isRequired,
-  dealerButtonSeat: PropTypes.number.isRequired,
-  seatActions: PropTypes.object.isRequired,
-
-  // Constants
-  SEAT_ARRAY: PropTypes.arrayOf(PropTypes.number).isRequired,
-  STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
-  BETTING_STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
-  ACTIONS: PropTypes.object.isRequired,
-  ACTION_ABBREV: PropTypes.object.isRequired,
-  SEAT_STATUS: PropTypes.shape({
-    FOLDED: PropTypes.string,
-    ABSENT: PropTypes.string,
-  }).isRequired,
-
-  // Handlers
+  // Handlers (still passed from parent)
   handleNextHandFromShowdown: PropTypes.func.isRequired,
   handleClearShowdownCards: PropTypes.func.isRequired,
   handleCloseShowdown: PropTypes.func.isRequired,
@@ -198,22 +194,11 @@ ShowdownView.propTypes = {
   handleWonSeat: PropTypes.func.isRequired,
   selectCardForShowdown: PropTypes.func.isRequired,
 
-  // Utility functions
+  // Utility functions (still passed from parent)
   allCardsAssigned: PropTypes.func.isRequired,
   isSeatInactive: PropTypes.func.isRequired,
-  getSmallBlindSeat: PropTypes.func.isRequired,
-  getBigBlindSeat: PropTypes.func.isRequired,
   getOverlayStatus: PropTypes.func.isRequired,
   getActionColor: PropTypes.func.isRequired,
   getActionDisplayName: PropTypes.func.isRequired,
-  isFoldAction: PropTypes.func.isRequired,
   getHandAbbreviation: PropTypes.func.isRequired,
-
-  // State setters
-  setHoleCardsVisible: PropTypes.func.isRequired,
-  setHighlightedSeat: PropTypes.func.isRequired,
-  setHighlightedCardSlot: PropTypes.func.isRequired,
-
-  // Icons
-  SkipForward: PropTypes.elementType.isRequired,
 };

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../ui/CardSlot';
 import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { isRedSuit } from '../../utils/displayUtils';
 import { LAYOUT } from '../../constants/gameConstants';
+import { useCard, useUI, useGame } from '../../contexts';
+import { CARD_ACTIONS } from '../../reducers/cardReducer';
 
 // Card constants
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -14,21 +16,35 @@ const SUITS = ['♠', '♥', '♦', '♣'];
  * Used for selecting community cards and hole cards
  */
 export const CardSelectorView = ({
-  cardSelectorType,
-  currentStreet,
-  communityCards,
-  holeCards,
-  holeCardsVisible,
-  highlightedBoardIndex,
   scale,
   getCardStreet,
   selectCard,
   clearCards,
   handleCloseCardSelector,
-  setHoleCardsVisible,
-  setCardSelectorType,
-  setHighlightedCardIndex,
 }) => {
+  // Get card state from CardContext
+  const {
+    communityCards,
+    holeCards,
+    holeCardsVisible,
+    dispatchCard,
+  } = useCard();
+
+  // Get UI state from UIContext
+  const {
+    cardSelectorType,
+    highlightedBoardIndex,
+    setCardSelectorType,
+    setHighlightedCardIndex,
+  } = useUI();
+
+  // Get game state from GameContext
+  const { currentStreet } = useGame();
+
+  // Handler for toggling hole cards visibility
+  const handleToggleHoleCardsVisibility = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
+  }, [dispatchCard]);
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
       <div style={{
@@ -85,7 +101,7 @@ export const CardSelectorView = ({
                   })}
                   <VisibilityToggle
                     visible={holeCardsVisible}
-                    onToggle={() => setHoleCardsVisible(!holeCardsVisible)}
+                    onToggle={handleToggleHoleCardsVisibility}
                     size="large"
                   />
                 </div>
@@ -182,24 +198,11 @@ CardSelectorView.propTypes = {
   // Layout
   scale: PropTypes.number.isRequired,
 
-  // State
-  cardSelectorType: PropTypes.oneOf(['community', 'hole']).isRequired,
-  currentStreet: PropTypes.string.isRequired,
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  highlightedBoardIndex: PropTypes.number,
-
-  // Utility functions
+  // Utility functions (still passed from parent until further refactoring)
   getCardStreet: PropTypes.func.isRequired,
   selectCard: PropTypes.func.isRequired,
   clearCards: PropTypes.func.isRequired,
 
   // Handlers
   handleCloseCardSelector: PropTypes.func.isRequired,
-
-  // State setters
-  setHoleCardsVisible: PropTypes.func.isRequired,
-  setCardSelectorType: PropTypes.func.isRequired,
-  setHighlightedCardIndex: PropTypes.func.isRequired,
 };

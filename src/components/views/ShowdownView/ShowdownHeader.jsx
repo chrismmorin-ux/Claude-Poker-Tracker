@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { SkipForward } from 'lucide-react';
 import { CardSlot } from '../../ui/CardSlot';
 
 /**
@@ -11,7 +12,6 @@ export const ShowdownHeader = ({
   onClearCards,
   onDone,
   SEAT_STATUS,
-  SkipForward,
 }) => {
   return (
     <div className="bg-white p-6 flex justify-between items-center">
@@ -64,5 +64,4 @@ ShowdownHeader.propTypes = {
   onClearCards: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
   SEAT_STATUS: PropTypes.object.isRequired,
-  SkipForward: PropTypes.elementType.isRequired,
 };

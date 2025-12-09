@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { BarChart3 } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 
 /**
@@ -112,7 +113,6 @@ export const CollapsibleSidebar = ({
   onNavigate,
   onSeatChange,
   SCREEN,
-  BarChart3,
   selectedPlayers,
   dealerButtonSeat,
   absentSeats,
@@ -306,7 +306,6 @@ CollapsibleSidebar.propTypes = {
   onNavigate: PropTypes.func.isRequired,
   onSeatChange: PropTypes.func.isRequired,
   SCREEN: PropTypes.object.isRequired,
-  BarChart3: PropTypes.elementType.isRequired,
   selectedPlayers: PropTypes.arrayOf(PropTypes.number).isRequired,
   dealerButtonSeat: PropTypes.number.isRequired,
   absentSeats: PropTypes.instanceOf(Set).isRequired,

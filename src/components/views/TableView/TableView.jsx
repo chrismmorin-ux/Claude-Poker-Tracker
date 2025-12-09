@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { LAYOUT } from '../../../constants/gameConstants';
-import { useGame, useUI, useSession, usePlayer } from '../../../contexts';
+import { useGame, useUI, useSession, usePlayer, useCard } from '../../../contexts';
+import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
 import { ActionPanel } from './ActionPanel';
@@ -40,10 +41,6 @@ export const TableView = ({
   tableRef,
   SEAT_POSITIONS,
   numSeats,
-  // Card state (from cardReducer, not in contexts yet)
-  communityCards,
-  holeCards,
-  holeCardsVisible,
   // Handlers not in contexts (defined in parent)
   nextHand,
   resetHand,
@@ -52,7 +49,6 @@ export const TableView = ({
   handleDealerDragStart,
   handleDealerDrag,
   handleDealerDragEnd,
-  setHoleCardsVisible,
   setCurrentStreet,
   openShowdownScreen,
   nextStreet,
@@ -70,10 +66,6 @@ export const TableView = ({
   // Local UI state from parent
   setPendingSeatForPlayerAssignment,
   setAutoOpenNewSession,
-  // Icons (React components)
-  SkipForward,
-  BarChart3,
-  RotateCcw,
 }) => {
   // Get state and handlers from contexts
   const {
@@ -110,6 +102,14 @@ export const TableView = ({
     getSeatPlayerName,
     assignPlayerToSeat,
   } = usePlayer();
+
+  // Card state from CardContext
+  const {
+    communityCards,
+    holeCards,
+    holeCardsVisible,
+    dispatchCard,
+  } = useCard();
 
   // Derived session values
   const handCount = currentSession?.handCount || 0;
@@ -184,7 +184,7 @@ export const TableView = ({
   };
 
   const handleToggleHoleCardsVisibility = () => {
-    setHoleCardsVisible(!holeCardsVisible);
+    dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
   };
 
   const handleClearSelection = () => {
@@ -215,7 +215,6 @@ export const TableView = ({
             onNavigate={setCurrentScreen}
             onSeatChange={handleSeatChange}
             SCREEN={SCREEN}
-            BarChart3={BarChart3}
             selectedPlayers={selectedPlayers}
             dealerButtonSeat={dealerButtonSeat}
             absentSeats={absentSeatsSet}
@@ -236,8 +235,6 @@ export const TableView = ({
             onNewSession={handleNewSession}
             onNextHand={nextHand}
             onResetHand={resetHand}
-            SkipForward={SkipForward}
-            RotateCcw={RotateCcw}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
@@ -364,11 +361,6 @@ TableView.propTypes = {
   })).isRequired,
   numSeats: PropTypes.number.isRequired,
 
-  // Card state (from cardReducer, not in contexts yet)
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-
   // Handlers not in contexts (defined in parent)
   nextHand: PropTypes.func.isRequired,
   resetHand: PropTypes.func.isRequired,
@@ -377,7 +369,6 @@ TableView.propTypes = {
   handleDealerDragStart: PropTypes.func.isRequired,
   handleDealerDrag: PropTypes.func.isRequired,
   handleDealerDragEnd: PropTypes.func.isRequired,
-  setHoleCardsVisible: PropTypes.func.isRequired,
   setCurrentStreet: PropTypes.func.isRequired,
   openShowdownScreen: PropTypes.func.isRequired,
   nextStreet: PropTypes.func.isRequired,
@@ -397,9 +388,4 @@ TableView.propTypes = {
   // Local UI state from parent
   setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
   setAutoOpenNewSession: PropTypes.func.isRequired,
-
-  // Icons (React components)
-  SkipForward: PropTypes.elementType.isRequired,
-  BarChart3: PropTypes.elementType.isRequired,
-  RotateCcw: PropTypes.elementType.isRequired,
 };

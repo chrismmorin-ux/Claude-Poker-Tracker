@@ -1,5 +1,4 @@
 import React, { useState, useReducer, useRef, useEffect, useMemo, useCallback } from 'react';
-import { BarChart3, RotateCcw, SkipForward } from 'lucide-react';
 import { ScaledContainer } from './components/ui/ScaledContainer';
 import { CardSlot } from './components/ui/CardSlot';
 import { VisibilityToggle } from './components/ui/VisibilityToggle';
@@ -60,7 +59,7 @@ import { usePlayerPersistence } from './hooks/usePlayerPersistence';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ui/Toast';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
-import { GameProvider, UIProvider, SessionProvider, PlayerProvider } from './contexts';
+import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider } from './contexts';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -612,12 +611,14 @@ const PokerTrackerWireframes = () => {
       <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
         <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
           <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-            {children}
+            <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+              {children}
+            </CardProvider>
           </PlayerProvider>
         </SessionProvider>
       </UIProvider>
     </GameProvider>
-  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer]);
+  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard]);
 
   // Showdown Screen
   if (isShowdownViewOpen) {
@@ -626,41 +627,19 @@ const PokerTrackerWireframes = () => {
         {toastOverlay}
         <ViewErrorBoundary viewName="Showdown" onReturnToTable={returnToTable}>
           <ShowdownView
-        scale={scale}
-        communityCards={communityCards}
-        holeCards={holeCards}
-        holeCardsVisible={holeCardsVisible}
-        mySeat={mySeat}
-        dealerButtonSeat={dealerButtonSeat}
-        allPlayerCards={allPlayerCards}
-        highlightedSeat={highlightedSeat}
-        highlightedHoleSlot={highlightedHoleSlot}
-        seatActions={seatActions}
-        SEAT_ARRAY={SEAT_ARRAY}
-        STREETS={STREETS}
-        BETTING_STREETS={BETTING_STREETS}
-        ACTIONS={ACTIONS}
-        ACTION_ABBREV={ACTION_ABBREV}
-        SEAT_STATUS={SEAT_STATUS}
-        handleNextHandFromShowdown={handleNextHandFromShowdown}
-        handleClearShowdownCards={handleClearShowdownCards}
-        handleCloseShowdown={handleCloseShowdown}
-        allCardsAssigned={allCardsAssigned}
-        isSeatInactive={isSeatInactive}
-        getSmallBlindSeat={getSmallBlindSeat}
-        getBigBlindSeat={getBigBlindSeat}
-        setHoleCardsVisible={setHoleCardsVisible}
-        setHighlightedSeat={setHighlightedSeat}
-        setHighlightedCardSlot={setHighlightedCardSlot}
-        handleMuckSeat={handleMuckSeat}
-        handleWonSeat={handleWonSeat}
-        selectCardForShowdown={selectCardForShowdown}
-        getOverlayStatus={getOverlayStatus}
-        getActionColor={getActionColor}
-        getActionDisplayName={getActionDisplayName}
-        isFoldAction={isFoldAction}
-        getHandAbbreviation={getHandAbbreviation}
-        SkipForward={SkipForward}
+            scale={scale}
+            handleNextHandFromShowdown={handleNextHandFromShowdown}
+            handleClearShowdownCards={handleClearShowdownCards}
+            handleCloseShowdown={handleCloseShowdown}
+            allCardsAssigned={allCardsAssigned}
+            isSeatInactive={isSeatInactive}
+            handleMuckSeat={handleMuckSeat}
+            handleWonSeat={handleWonSeat}
+            selectCardForShowdown={selectCardForShowdown}
+            getOverlayStatus={getOverlayStatus}
+            getActionColor={getActionColor}
+            getActionDisplayName={getActionDisplayName}
+            getHandAbbreviation={getHandAbbreviation}
           />
         </ViewErrorBoundary>
       </>
@@ -674,20 +653,11 @@ const PokerTrackerWireframes = () => {
         {toastOverlay}
         <ViewErrorBoundary viewName="Card Selector" onReturnToTable={returnToTable}>
           <CardSelectorView
-        cardSelectorType={cardSelectorType}
-        currentStreet={currentStreet}
-        communityCards={communityCards}
-        holeCards={holeCards}
-        holeCardsVisible={holeCardsVisible}
-        highlightedBoardIndex={highlightedBoardIndex}
-        scale={scale}
-        getCardStreet={getCardStreet}
-        selectCard={selectCard}
-        clearCards={clearCards}
-        handleCloseCardSelector={handleCloseCardSelector}
-        setHoleCardsVisible={setHoleCardsVisible}
-        setCardSelectorType={setCardSelectorType}
-        setHighlightedCardIndex={setHighlightedCardIndex}
+            scale={scale}
+            getCardStreet={getCardStreet}
+            selectCard={selectCard}
+            clearCards={clearCards}
+            handleCloseCardSelector={handleCloseCardSelector}
           />
         </ViewErrorBoundary>
       </>
@@ -695,7 +665,7 @@ const PokerTrackerWireframes = () => {
   }
 
   // Table Screen (main poker table view)
-  // Props reduced from 64+ to ~30 by using contexts
+  // Props reduced by using contexts (Game, UI, Session, Player, Card)
   if (currentView === SCREEN.TABLE) {
     return withContextProviders(
       <>
@@ -707,10 +677,6 @@ const PokerTrackerWireframes = () => {
             tableRef={tableRef}
             SEAT_POSITIONS={SEAT_POSITIONS}
             numSeats={CONSTANTS.NUM_SEATS}
-            // Card state (from cardReducer, not in contexts yet)
-            communityCards={communityCards}
-            holeCards={holeCards}
-            holeCardsVisible={holeCardsVisible}
             // Handlers not in contexts (defined in parent)
             nextHand={nextHand}
             resetHand={resetHand}
@@ -719,7 +685,6 @@ const PokerTrackerWireframes = () => {
             handleDealerDragStart={handleDealerDragStart}
             handleDealerDrag={handleDealerDrag}
             handleDealerDragEnd={handleDealerDragEnd}
-            setHoleCardsVisible={setHoleCardsVisible}
             setCurrentStreet={setCurrentStreet}
             openShowdownScreen={openShowdownScreen}
             nextStreet={nextStreet}
@@ -737,10 +702,6 @@ const PokerTrackerWireframes = () => {
             // Local UI state from parent
             setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
             setAutoOpenNewSession={setAutoOpenNewSession}
-            // Icons (React components)
-            SkipForward={SkipForward}
-            BarChart3={BarChart3}
-            RotateCcw={RotateCcw}
           />
         </ViewErrorBoundary>
       </>

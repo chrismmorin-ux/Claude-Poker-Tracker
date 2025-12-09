@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { SkipForward, RotateCcw } from 'lucide-react';
 
 /**
  * TableHeader - Header bar with hand count, session timer, and control buttons
@@ -13,8 +14,6 @@ export const TableHeader = ({
   onNewSession,
   onNextHand,
   onResetHand,
-  SkipForward,
-  RotateCcw,
 }) => {
   return (
     <div className={`flex justify-between items-center px-4 py-2 bg-black bg-opacity-40 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
@@ -68,6 +67,4 @@ TableHeader.propTypes = {
   onNewSession: PropTypes.func.isRequired,
   onNextHand: PropTypes.func.isRequired,
   onResetHand: PropTypes.func.isRequired,
-  SkipForward: PropTypes.elementType.isRequired,
-  RotateCcw: PropTypes.elementType.isRequired,
 };

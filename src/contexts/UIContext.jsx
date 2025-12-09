@@ -94,6 +94,16 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: slot });
   }, [dispatchUi]);
 
+  // Handler: Set card selector type (community/hole)
+  const setCardSelectorType = useCallback((type) => {
+    dispatchUi({ type: UI_ACTIONS.SET_CARD_SELECTOR_TYPE, payload: type });
+  }, [dispatchUi]);
+
+  // Handler: Set highlighted card index (for card selector)
+  const setHighlightedCardIndex = useCallback((index) => {
+    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
+  }, [dispatchUi]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -125,6 +135,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closeShowdownView,
     setHighlightedSeat,
     setHighlightedHoleSlot,
+    setCardSelectorType,
+    setHighlightedCardIndex,
   }), [
     currentView,
     selectedPlayers,
@@ -150,6 +162,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closeShowdownView,
     setHighlightedSeat,
     setHighlightedHoleSlot,
+    setCardSelectorType,
+    setHighlightedCardIndex,
   ]);
 
   return (
