@@ -79,6 +79,7 @@ The system will remind you to update project files during significant work sessi
 npm install    # Install dependencies
 npm run dev    # Start dev server (localhost:5173)
 npm run build  # Production build
+npm test       # Run test suite (1,617 tests)
 ```
 
 ## Local Model Workflow

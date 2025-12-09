@@ -176,6 +176,27 @@ Before/after screenshots for visual changes.
   --------------
 ```
 
+### Current Test Coverage
+
+**Test Suite Statistics (v114):**
+- **Total Tests**: 1,617 tests across 51 test files
+- **Run Command**: `npm test`
+- **Coverage Report**: `npm test -- --coverage`
+
+**Coverage by Area:**
+
+| Area | Tests | Coverage | Status |
+|------|-------|----------|--------|
+| Reducers | ~150 | 90%+ | ✅ Excellent |
+| Custom Hooks | ~200 | 90%+ | ✅ Excellent |
+| Constants | ~100 | 100% | ✅ Complete |
+| Utils (actionUtils, cardUtils, etc.) | ~150 | 85%+ | ✅ Good |
+| Utils (reducerUtils, errorHandler) | ~52 | 90%+ | ✅ Excellent |
+| UI Components | ~300 | 85%+ | ✅ Good |
+| Contexts | ~119 | 80%+ | ✅ Good |
+| Storage Layer | ~61 | 90%+ | ✅ Excellent |
+| View Components | ~22 | Partial | 🔶 Basic |
+
 ### Coverage Targets
 
 | Type | Target | Minimum |
@@ -191,6 +212,8 @@ Before/after screenshots for visual changes.
 - Utility functions (pure functions)
 - Custom hooks (behavior)
 - Critical business logic
+- Context providers (state + derived values)
+- Storage interfaces
 
 **Should Test:**
 - Component rendering
@@ -202,16 +225,49 @@ Before/after screenshots for visual changes.
 - Third-party library wrappers
 - Constant definitions
 
-### Test File Naming
+### Test File Organization
+
+Tests are organized in `__tests__` folders adjacent to source files:
 
 ```
 src/
+  contexts/
+    __tests__/
+      GameContext.test.jsx
+      UIContext.test.jsx
+      SessionContext.test.jsx
+      PlayerContext.test.jsx
+      CardContext.test.jsx
   utils/
-    cardUtils.js
-    cardUtils.test.js    # Co-located
+    __tests__/
+      reducerUtils.test.js
+      errorHandler.test.js
+  storage/
+    __tests__/
+      IStorage.test.js
+      IndexedDBStorage.test.js
+  components/
+    views/
+      __tests__/
+        StatsView.test.jsx
+        CardSelectorView.test.jsx
+    ui/
+      __tests__/
+        CardSlot.test.jsx
+        ActionBadge.test.jsx
+        ...
   reducers/
-    gameReducer.js
-    gameReducer.test.js
+    __tests__/
+      gameReducer.test.js
+      uiReducer.test.js
+      cardReducer.test.js
+      sessionReducer.test.js
+      playerReducer.test.js
+  hooks/
+    __tests__/
+      useActionUtils.test.js
+      useSeatUtils.test.js
+      ...
 ```
 
 ### Test Structure
@@ -226,6 +282,32 @@ describe('functionName', () => {
     });
   });
 });
+```
+
+### Testing React Contexts
+
+Use wrapper helper functions for context testing:
+
+```javascript
+// Helper to wrap hook in provider
+const wrapper = ({ children }) => (
+  <GameProvider initialState={mockState}>
+    {children}
+  </GameProvider>
+);
+
+// Test hook with renderHook
+const { result } = renderHook(() => useGame(), { wrapper });
+expect(result.current.currentStreet).toBe('preflop');
+```
+
+### Running Tests
+
+```bash
+npm test                    # Run all tests
+npm test -- --coverage      # Run with coverage report
+npm test -- --watch         # Watch mode for development
+npm test -- CardSlot        # Run specific test file
 ```
 
 ---
@@ -823,5 +905,5 @@ try {
 
 ---
 
-*Last updated: v113*
+*Last updated: v114*
 *Maintainer: Project Team*
