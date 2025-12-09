@@ -4,16 +4,21 @@ A React-based poker hand tracker for live 9-handed games.
 
 ## Features
 
-- **Table View**: 9-seat poker table with auto-selection workflow
+- **Table View**: 9-seat poker table with collapsible sidebar navigation
 - **Card Selector**: Full-screen card assignment for board and hole cards
-- **Showdown View**: Card assignment + hand history summary for all 9 players
-- **Stats View**: Player statistics display (placeholder)
+- **Showdown View**: Card assignment + hand history for all players
+- **Stats View**: Player statistics display
+- **History View**: Browse and manage saved hands with session grouping
+- **Sessions View**: Session management with bankroll tracking
+- **Players View**: Player database with seat assignment
 
 ## Tech Stack
 
-- React 18
-- Vite
+- React 18 with Context API
+- Vite 5
 - Tailwind CSS
+- Vitest (2,199 tests)
+- IndexedDB for persistence
 - Lucide React (icons)
 
 ## Getting Started
@@ -27,6 +32,12 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
 ## Project Structure
@@ -34,74 +45,68 @@ npm run build
 ```
 poker-tracker/
 ├── src/
-│   ├── PokerTracker.jsx         # Main component (~620 lines)
-│   ├── constants/
-│   │   └── gameConstants.js     # Game configuration
-│   ├── hooks/                   # Custom hooks (7 files)
-│   │   ├── useActionUtils.js
-│   │   ├── useStateSetters.js
-│   │   ├── useSeatUtils.js
-│   │   ├── useSeatColor.js
-│   │   ├── useShowdownHandlers.js
-│   │   ├── useCardSelection.js
-│   │   └── useShowdownCardSelection.js
-│   ├── reducers/                # State management (3 files)
-│   │   ├── gameReducer.js
-│   │   ├── uiReducer.js
-│   │   └── cardReducer.js
-│   ├── utils/                   # Utility functions (5 files)
-│   │   ├── actionUtils.js
-│   │   ├── cardUtils.js
-│   │   ├── seatUtils.js
-│   │   ├── displayUtils.js
-│   │   └── validation.js
-│   ├── components/
-│   │   ├── views/               # Full-screen views (4 files)
-│   │   └── ui/                  # Reusable UI (5 files)
-│   ├── main.jsx                 # Entry point
-│   └── index.css                # Tailwind imports
+│   ├── PokerTracker.jsx           # Main component (~620 lines)
+│   ├── contexts/                  # React Context providers (5 files)
+│   ├── constants/                 # Game configuration (3 files)
+│   ├── hooks/                     # Custom hooks (12 files)
+│   ├── reducers/                  # State management (5 files)
+│   ├── utils/                     # Utility functions (11 files)
+│   ├── storage/                   # Persistence layer
+│   └── components/
+│       ├── views/                 # Full-screen views (7 main views)
+│       └── ui/                    # Reusable UI components (15 files)
 ├── docs/
-│   ├── SPEC.md                  # Complete specification
-│   ├── CHANGELOG.md             # Version history
-│   └── QUICK_REF.md             # Quick reference card
-├── CLAUDE.md                    # Project context for AI
-├── index.html
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-└── postcss.config.js
+│   ├── SPEC.md                    # Complete specification
+│   ├── CHANGELOG.md               # Version history
+│   ├── QUICK_REF.md               # Quick reference card
+│   ├── STATE_SCHEMAS.md           # State shape reference
+│   ├── DEBUGGING.md               # Error codes and debugging
+│   └── CANONICAL_SOURCES.md       # Source of truth hierarchy
+├── .claude/                       # Claude Code automation
+│   ├── agents/                    # AI agent definitions
+│   ├── commands/                  # Custom slash commands
+│   └── hooks/                     # Automation hooks
+├── CLAUDE.md                      # AI context and architecture
+└── engineering_practices.md       # Engineering standards
 ```
 
 ## Version
 
-Current: **v108** (Custom Hooks Extraction - 36% reduction)
+Current: **v114** (Context API + State Consolidation)
 
-Previous versions:
-- v107: Utils integration
-- v106: State management refactoring (useReducer)
-- v105: Component extraction
-- v104: Mobile optimization
-- v103: Full refactoring
+See `docs/CHANGELOG.md` for full version history.
 
 ## Documentation
 
-See the `docs/` folder for:
-- **SPEC.md** - Complete specification
-- **CHANGELOG.md** - Version history and changes (includes v108 details)
-- **QUICK_REF.md** - Fast reference for development
-
-Also see:
-- **CLAUDE.md** - Complete project context and architecture documentation
+| Document | Purpose |
+|----------|---------|
+| `CLAUDE.md` | Architecture overview, AI context |
+| `engineering_practices.md` | Coding standards, PR requirements |
+| `docs/SPEC.md` | Complete product specification |
+| `docs/QUICK_REF.md` | Quick reference for development |
+| `docs/CANONICAL_SOURCES.md` | What's authoritative for each topic |
 
 ## Architecture Highlights
 
-- **Modular design**: Main component reduced from 967 to 620 lines (36%)
-- **Custom hooks**: 7 hooks encapsulate component logic
-- **State management**: 3 useReducer hooks (game, UI, card state)
-- **Pure utilities**: 5 utility modules for reusable functions
-- **Component library**: 9 reusable components (4 views + 5 UI)
-- **Constants**: Centralized game configuration
-- **Debug mode**: Set `DEBUG = false` in PokerTracker.jsx to disable logging
+- **Context API**: 5 context providers reduce prop drilling
+- **State Management**: 5 useReducer hooks (game, UI, card, session, player)
+- **Persistence**: IndexedDB with migration support (v1→v5)
+- **Testing**: 2,199 tests with ~90% coverage
+- **Error Handling**: Structured error codes (E1xx-E4xx) with boundaries
+- **Custom Hooks**: 12 hooks encapsulate component logic
+
+## Quality Gate (Local Commits)
+
+When using Claude Code, a **quality-gate hook** blocks commits unless tests have passed recently.
+
+**How it works:**
+1. The `test-tracker` hook detects `npm test` runs and writes `.claude/.test-state.json`
+2. The `quality-gate` hook checks this marker before allowing `git commit`
+3. If tests haven't run (or are stale), the commit is blocked with a clear message
+
+**If you see "Commit BLOCKED":** Run `npm test` first, then retry the commit.
+
+> Note: CI also runs tests on every PR, so this local gate is an early safety net, not the only enforcement.
 
 ## License
 

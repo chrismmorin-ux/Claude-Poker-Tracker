@@ -178,24 +178,24 @@ Before/after screenshots for visual changes.
 
 ### Current Test Coverage
 
-**Test Suite Statistics (v114):**
-- **Total Tests**: 1,617 tests across 51 test files
+**Test Suite Statistics:**
+- **Total Tests**: Run `npm test` to see current count (canonical source)
 - **Run Command**: `npm test`
-- **Coverage Report**: `npm test -- --coverage`
+- **Coverage Report**: `npm run test:coverage`
 
-**Coverage by Area:**
+> **Note**: Test counts are not maintained in documentation. Run `npm test` for the authoritative count. See `docs/CANONICAL_SOURCES.md` for the source of truth hierarchy.
 
-| Area | Tests | Coverage | Status |
-|------|-------|----------|--------|
-| Reducers | ~150 | 90%+ | ✅ Excellent |
-| Custom Hooks | ~200 | 90%+ | ✅ Excellent |
-| Constants | ~100 | 100% | ✅ Complete |
-| Utils (actionUtils, cardUtils, etc.) | ~150 | 85%+ | ✅ Good |
-| Utils (reducerUtils, errorHandler) | ~52 | 90%+ | ✅ Excellent |
-| UI Components | ~300 | 85%+ | ✅ Good |
-| Contexts | ~119 | 80%+ | ✅ Good |
-| Storage Layer | ~61 | 90%+ | ✅ Excellent |
-| View Components | ~22 | Partial | 🔶 Basic |
+**Coverage Targets by Area:**
+
+| Area | Target Coverage | Priority |
+|------|-----------------|----------|
+| Reducers | 90%+ | Critical |
+| Custom Hooks | 90%+ | Critical |
+| Utility Functions | 85%+ | High |
+| Contexts | 80%+ | High |
+| UI Components | 85%+ | Medium |
+| View Components | 70%+ | Medium |
+| Storage Layer | 90%+ | Critical |
 
 ### Coverage Targets
 
