@@ -44,7 +44,8 @@
       "Bash(node .claude/hooks/project-update.cjs:*)",
       "Bash(ren:*)",
       "Bash(ren git-guard.js git-guard.cjs)",
-      "Bash(node .claude/hooks/arch-audit.cjs:*)"
+      "Bash(node .claude/hooks/arch-audit.cjs:*)",
+      "SlashCommand(/project:*)"
     ],
     "deny": [],
     "ask": []
