@@ -12,6 +12,17 @@
       "phasesComplete": 4,
       "currentPhase": 5,
       "description": "Context API + component decomposition for future features"
+    },
+    {
+      "id": "test-coverage",
+      "name": "High Test Coverage Implementation",
+      "file": "docs/projects/test-coverage.project.md",
+      "priority": "high",
+      "startedAt": "2025-12-08",
+      "phases": 8,
+      "phasesComplete": 0,
+      "currentPhase": 1,
+      "description": "Achieve 90%+ test coverage (~950 tests)"
     }
   ],
   "pending": [],
