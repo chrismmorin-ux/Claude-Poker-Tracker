@@ -13,6 +13,10 @@ import { HistoryView } from './components/views/HistoryView';
 import { SessionsView } from './components/views/SessionsView';
 import { PlayersView } from './components/views/PlayersView';
 import { SettingsView } from './components/views/SettingsView';
+import { LoginView } from './components/views/LoginView';
+import { SignupView } from './components/views/SignupView';
+import { PasswordResetView } from './components/views/PasswordResetView';
+import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { logger } from './utils/errorHandler';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
@@ -20,6 +24,7 @@ import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardRedu
 import { sessionReducer, initialSessionState, SESSION_ACTIONS } from './reducers/sessionReducer';
 import { playerReducer, initialPlayerState, PLAYER_ACTIONS } from './reducers/playerReducer';
 import { settingsReducer, initialSettingsState, SETTINGS_ACTIONS } from './reducers/settingsReducer';
+import { authReducer, initialAuthState } from './reducers/authReducer';
 import {
   getActionDisplayName,
   getActionColor,
@@ -59,10 +64,11 @@ import { usePersistence } from './hooks/usePersistence';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { usePlayerPersistence } from './hooks/usePlayerPersistence';
 import { useSettingsPersistence } from './hooks/useSettingsPersistence';
+import { useAuthPersistence } from './hooks/useAuthPersistence';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ui/Toast';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
-import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider, SettingsProvider } from './contexts';
+import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider, SettingsProvider, AuthProvider } from './contexts';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -125,6 +131,10 @@ const PokerTrackerWireframes = () => {
   const [sessionState, dispatchSession] = useReducer(sessionReducer, initialSessionState);
   const [playerState, dispatchPlayer] = useReducer(playerReducer, initialPlayerState);
   const [settingsState, dispatchSettings] = useReducer(settingsReducer, initialSettingsState);
+  const [authState, dispatchAuth] = useReducer(authReducer, initialAuthState);
+
+  // Initialize auth persistence (Firebase auth state listener)
+  const { isReady: authReady } = useAuthPersistence(authState, dispatchAuth);
 
   // Initialize persistence (auto-save + auto-restore)
   const { isReady } = usePersistence(gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession, dispatchPlayer);
@@ -617,21 +627,66 @@ const PokerTrackerWireframes = () => {
 
   // Context wrapper - provides all contexts to child views
   // Views can gradually migrate from props to useContext
+  // AuthProvider is outermost to be available to all other providers
   const withContextProviders = useCallback((children) => (
-    <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
-      <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
-        <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
-          <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-            <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-              <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                {children}
-              </SettingsProvider>
-            </CardProvider>
-          </PlayerProvider>
-        </SessionProvider>
-      </UIProvider>
-    </GameProvider>
-  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard, settingsState, dispatchSettings]);
+    <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
+      <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+        <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
+          <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
+            <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
+              <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+                <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                  {children}
+                </SettingsProvider>
+              </CardProvider>
+            </PlayerProvider>
+          </SessionProvider>
+        </UIProvider>
+      </GameProvider>
+    </AuthProvider>
+  ), [authState, dispatchAuth, gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard, settingsState, dispatchSettings]);
+
+  // Show loading screen while Firebase auth initializes
+  // This prevents flash of login screen for already-authenticated users
+  if (!authReady) {
+    return <AuthLoadingScreen />;
+  }
+
+  // Login Screen
+  if (currentView === SCREEN.LOGIN) {
+    return withContextProviders(
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Login" onReturnToTable={returnToTable}>
+          <LoginView scale={scale} />
+        </ViewErrorBoundary>
+      </>
+    );
+  }
+
+  // Signup Screen
+  if (currentView === SCREEN.SIGNUP) {
+    return withContextProviders(
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Signup" onReturnToTable={returnToTable}>
+          <SignupView scale={scale} />
+        </ViewErrorBoundary>
+      </>
+    );
+  }
+
+  // Password Reset Screen
+  if (currentView === SCREEN.PASSWORD_RESET) {
+    return withContextProviders(
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Password Reset" onReturnToTable={returnToTable}>
+          <PasswordResetView scale={scale} />
+        </ViewErrorBoundary>
+      </>
+    );
+  }
 
   // Showdown Screen
   if (isShowdownViewOpen) {

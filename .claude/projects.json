@@ -3,7 +3,17 @@
   "description": "Project Continuity Registry - References unified backlog for all work tracking",
   "backlog": ".claude/BACKLOG.md",
   "note": "The BACKLOG.md file is the single source of truth. This file tracks project metadata only.",
-  "active": [],
+  "active": [
+    {
+      "id": "firebase-auth",
+      "name": "Firebase Authentication System",
+      "file": "docs/projects/firebase-auth.project.md",
+      "priority": "P2",
+      "phases": 6,
+      "phasesComplete": 3,
+      "description": "Optional Firebase Auth with email/password + Google OAuth, guest mode preserved, account management in Settings"
+    }
+  ],
   "pending": [
     {
       "id": "mvp-polish",
@@ -141,6 +151,6 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-10T05:20:00Z",
+  "lastUpdated": "2025-12-10T06:45:00Z",
   "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
 }

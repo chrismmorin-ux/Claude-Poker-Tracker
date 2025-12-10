@@ -3,6 +3,7 @@
  * Central import point for context API
  */
 
+export { AuthProvider, useAuth } from './AuthContext';
 export { GameProvider, useGame } from './GameContext';
 export { UIProvider, useUI } from './UIContext';
 export { SessionProvider, useSession } from './SessionContext';

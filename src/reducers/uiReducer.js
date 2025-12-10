@@ -39,6 +39,10 @@ export const SCREEN = {
   SESSIONS: 'sessions',
   PLAYERS: 'players',
   SETTINGS: 'settings',
+  // Auth screens
+  LOGIN: 'login',
+  SIGNUP: 'signup',
+  PASSWORD_RESET: 'passwordReset',
 };
 
 // Initial state
