@@ -65,10 +65,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/edit-tracker.cjs"
-          },
-          {
-            "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
           },
           {
@@ -92,10 +88,6 @@
       {
         "matcher": "Write",
         "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/edit-tracker.cjs"
-          },
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"

@@ -1,10 +1,22 @@
 # Recent Changes
-**Version**: 1.0.6 | **Updated**: 2025-12-09
+**Version**: v116 | **Updated**: 2025-12-10
 
-## v114 (Current) - Context API + State Consolidation
+## v116 (Current) - Error Reporting System
+- **Error logging**: localStorage-based error persistence (FIFO 50 entries)
+- **Error viewer**: Collapsible log in Settings with expandable details
+- **Report Bug**: Copy/download JSON export with privacy-safe data
+- **Tests**: 2,310 tests passing (28 new errorLog tests)
+
+## v115 - Settings System
+- **Settings infrastructure**: settingsConstants, settingsReducer, SettingsContext
+- **Persistence**: useSettingsPersistence hook + settingsStorage (IndexedDB v6)
+- **SettingsView UI**: Theme, card size, default venue/game type, custom venues
+- **DB migration**: v5 → v6 (adds 'settings' store)
+
+## v114 - Context API + State Consolidation
 - **Context providers**: GameContext, UIContext, SessionContext, PlayerContext
-- **Prop reduction**: TableView 64+ props -> ~30, StatsView 4 -> 1
-- **State moved**: View state (showCardSelector, isShowdownViewOpen) from cardReducer to uiReducer
+- **Prop reduction**: TableView 64+ → ~30, StatsView 4 → 1
+- **State moved**: View state (showCardSelector, isShowdownViewOpen) to uiReducer
 - **Hand display**: Session-based hand numbers (S1-H3 format)
 
 ## v113 - Project Continuity + Local Model Workflow
@@ -13,25 +25,14 @@
 - **Hooks**: project-status.cjs, project-update.cjs, docs-sync.cjs
 - **Collapsible sidebar**: Stats/History/Sessions/Players navigation
 
-## v112 - CTO Review Improvements
-- **Toast notifications**: Replaced all 7 `alert()` calls
-- **Error boundaries**: ViewErrorBoundary for graceful recovery
-- **Component extraction**: PlayerFilters, PlayerRow, SeatGrid, SessionCard
-- **Export/import**: Data backup/restore functionality
-
-## v111 - Player Management
-- **Player profiles**: Physical descriptions, style tags, notes, avatar
-- **Seat assignments**: Right-click context menu, drag-and-drop
-- **Portrait mode**: PlayersView responsive design
-
 ## Files Changed Recently
 | File | Change | Version |
 |------|--------|---------|
+| `src/utils/errorLog.js` | Created | v116 |
+| `src/components/views/SettingsView.jsx` | Error log UI | v116 |
+| `src/contexts/SettingsContext.jsx` | Created | v115 |
 | `src/contexts/*.jsx` | Created | v114 |
-| `src/reducers/uiReducer.js` | View state added | v114 |
-| `.claude/projects.json` | Created | v113 |
-| `src/components/ui/Toast.jsx` | Created | v112 |
 
 ## Where to Look
 - Full changelog: `docs/CHANGELOG.md`
-- Version history: `CLAUDE.md` (bottom section)
+- State schemas: `.claude/context/STATE_SCHEMA.md`
