@@ -16,7 +16,8 @@ import {
   getPlayerById,
   updatePlayer,
   deletePlayer as dbDeletePlayer,
-  getPlayerByName
+  getPlayerByName,
+  GUEST_USER_ID
 } from '../utils/persistence';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
@@ -40,9 +41,10 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  *
  * @param {Object} playerState - Player state from playerReducer
  * @param {Function} dispatchPlayer - Player state dispatcher
+ * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, createNewPlayer, updatePlayerById, deletePlayerById, loadAllPlayers, assignPlayerToSeat, clearSeatAssignment, getSeatPlayerName }
  */
-export const usePlayerPersistence = (playerState, dispatchPlayer) => {
+export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST_USER_ID) => {
   // State
   const [isReady, setIsReady] = useState(false);
 
@@ -52,11 +54,11 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
 
   useEffect(() => {
     const initialize = async () => {
-      log('Initializing player persistence...');
+      log(`Initializing player persistence for user ${userId}...`);
 
       try {
-        // Load all players from database
-        const players = await getAllPlayers();
+        // Load all players from database for this user
+        const players = await getAllPlayers(userId);
         log(`Loaded ${players.length} players`);
 
         // Update state with all players
@@ -75,7 +77,7 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
     };
 
     initialize();
-  }, []); // Run once on mount
+  }, [dispatchPlayer, userId]); // Re-initialize if userId changes
 
   // ==========================================================================
   // PLAYER CRUD OPERATIONS
@@ -88,18 +90,18 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
    */
   const createNewPlayer = useCallback(async (playerData) => {
     try {
-      log('Creating new player...');
+      log(`Creating new player for user ${userId}...`);
 
-      // Validate name is unique
+      // Validate name is unique for this user
       if (playerData.name) {
-        const existingPlayer = await getPlayerByName(playerData.name);
+        const existingPlayer = await getPlayerByName(playerData.name, userId);
         if (existingPlayer) {
           throw new Error(`Player with name "${playerData.name}" already exists`);
         }
       }
 
-      // Create player in database
-      const playerId = await createPlayer(playerData);
+      // Create player in database for this user
+      const playerId = await createPlayer(playerData, userId);
       log(`Player ${playerId} created in database`);
 
       // Reload all players to update list
@@ -111,7 +113,7 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
       logError('Failed to create new player:', error);
       throw error;
     }
-  }, []);
+  }, [userId]);
 
   /**
    * Update a player by ID
@@ -123,16 +125,16 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
     try {
       log(`Updating player ${playerId}...`);
 
-      // Validate name uniqueness if name is being updated
+      // Validate name uniqueness if name is being updated (for this user)
       if (updates.name) {
-        const existingPlayer = await getPlayerByName(updates.name);
+        const existingPlayer = await getPlayerByName(updates.name, userId);
         if (existingPlayer && existingPlayer.playerId !== playerId) {
           throw new Error(`Player with name "${updates.name}" already exists`);
         }
       }
 
       // Update in database
-      await updatePlayer(playerId, updates);
+      await updatePlayer(playerId, updates, userId);
       log(`Player ${playerId} updated successfully`);
 
       // Reload all players to update list
@@ -141,7 +143,7 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
       logError(`Failed to update player ${playerId}:`, error);
       throw error;
     }
-  }, []);
+  }, [userId]);
 
   /**
    * Delete a player by ID
@@ -164,14 +166,14 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
   }, []);
 
   /**
-   * Load all players from database
+   * Load all players from database for this user
    * @returns {Promise<Array>} Array of player records
    */
   const loadAllPlayers = useCallback(async () => {
     try {
-      log('Loading all players...');
+      log(`Loading all players for user ${userId}...`);
 
-      const players = await getAllPlayers();
+      const players = await getAllPlayers(userId);
       log(`Loaded ${players.length} players`);
 
       // Update reducer state
@@ -185,7 +187,7 @@ export const usePlayerPersistence = (playerState, dispatchPlayer) => {
       logError('Failed to load players:', error);
       return [];
     }
-  }, [dispatchPlayer]);
+  }, [dispatchPlayer, userId]);
 
   // ==========================================================================
   // SEAT ASSIGNMENT OPERATIONS (Ephemeral - per hand)

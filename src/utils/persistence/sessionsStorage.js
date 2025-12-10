@@ -11,9 +11,17 @@ import {
   STORE_NAME,
   SESSIONS_STORE_NAME,
   ACTIVE_SESSION_STORE_NAME,
+  GUEST_USER_ID,
   log,
   logError,
 } from './database';
+
+/**
+ * Get the active session key for a user
+ * @param {string} userId - User ID (or 'guest')
+ * @returns {string} Active session key
+ */
+const getActiveSessionKey = (userId) => `active_${userId || GUEST_USER_ID}`;
 
 // =============================================================================
 // SESSION CRUD OPERATIONS
@@ -22,9 +30,10 @@ import {
 /**
  * Create a new session
  * @param {Object} sessionData - Session data (buyIn, goal, notes, etc.)
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<number>} The auto-generated sessionId
  */
-export const createSession = async (sessionData = {}) => {
+export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
@@ -41,7 +50,8 @@ export const createSession = async (sessionData = {}) => {
       goal: sessionData.goal || null,
       notes: sessionData.notes || null,
       handCount: 0,
-      version: '1.3.0'  // Updated version for v4 schema
+      userId,
+      version: '1.4.0'  // Updated version for v7 schema (userId)
     };
 
     return new Promise((resolve, reject) => {
@@ -128,26 +138,28 @@ export const endSession = async (sessionId, cashOut = null) => {
 };
 
 /**
- * Get the currently active session
+ * Get the currently active session for a user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<Object|null>} Active session data or null
  */
-export const getActiveSession = async () => {
+export const getActiveSession = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-      const request = objectStore.get(1); // Always use key = 1
+      const request = objectStore.get(activeKey);
 
       request.onsuccess = (event) => {
         const activeSessionRecord = event.target.result;
 
         if (activeSessionRecord && activeSessionRecord.sessionId) {
-          log(`Active session: ${activeSessionRecord.sessionId}`);
+          log(`Active session for user ${userId}: ${activeSessionRecord.sessionId}`);
           resolve({ sessionId: activeSessionRecord.sessionId });
         } else {
-          log('No active session');
+          log(`No active session for user ${userId}`);
           resolve(null);
         }
       };
@@ -168,28 +180,31 @@ export const getActiveSession = async () => {
 };
 
 /**
- * Set the active session
+ * Set the active session for a user
  * @param {number} sessionId - The session ID to make active
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const setActiveSession = async (sessionId) => {
+export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
 
       const activeSessionRecord = {
-        id: 1, // Always use key = 1
+        id: activeKey,
         sessionId: sessionId,
+        userId,
         lastUpdated: Date.now()
       };
 
       const request = objectStore.put(activeSessionRecord);
 
       request.onsuccess = () => {
-        log(`Active session set to ${sessionId}`);
+        log(`Active session set to ${sessionId} for user ${userId}`);
         resolve();
       };
 
@@ -209,20 +224,22 @@ export const setActiveSession = async (sessionId) => {
 };
 
 /**
- * Clear the active session
+ * Clear the active session for a user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const clearActiveSession = async () => {
+export const clearActiveSession = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-      const request = objectStore.delete(1); // Always use key = 1
+      const request = objectStore.delete(activeKey);
 
       request.onsuccess = () => {
-        log('Active session cleared');
+        log(`Active session cleared for user ${userId}`);
         resolve();
       };
 
@@ -242,26 +259,30 @@ export const clearActiveSession = async () => {
 };
 
 /**
- * Get all sessions from the database
- * @returns {Promise<Array>} Array of all session records
+ * Get all sessions from the database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<Array>} Array of session records
  */
-export const getAllSessions = async () => {
+export const getAllSessions = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const request = objectStore.getAll();
+
+      // Use userId index to filter sessions
+      const index = objectStore.index('userId');
+      const request = index.getAll(userId);
 
       request.onsuccess = (event) => {
         const sessions = event.target.result;
-        log(`Loaded ${sessions.length} sessions from database`);
+        log(`Loaded ${sessions.length} sessions for user ${userId}`);
         resolve(sessions);
       };
 
       request.onerror = (event) => {
-        logError('Failed to load all sessions:', event.target.error);
+        logError('Failed to load sessions:', event.target.error);
         reject(event.target.error);
       };
 

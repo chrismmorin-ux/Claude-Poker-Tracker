@@ -10,11 +10,11 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { initDB, saveHand, loadLatestHand } from '../utils/persistence';
+import { initDB, saveHand, loadLatestHand, GUEST_USER_ID } from '../utils/persistence';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../reducers/playerReducer';
-import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
+import { logger } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
@@ -41,9 +41,10 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  * @param {Function} dispatchCard - Card state dispatcher
  * @param {Function} dispatchSession - Session state dispatcher (optional, for hand count)
  * @param {Function} dispatchPlayer - Player state dispatcher (optional, for seat assignments)
+ * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, saveNow, clearHistory, lastSavedAt }
  */
-export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession = null, dispatchPlayer = null) => {
+export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession = null, dispatchPlayer = null, userId = GUEST_USER_ID) => {
   // State
   const [isReady, setIsReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -58,15 +59,15 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
 
   useEffect(() => {
     const initialize = async () => {
-      log('Initializing persistence...');
+      log(`Initializing persistence for user ${userId}...`);
 
       try {
         // Initialize database
         await initDB();
         log('Database initialized');
 
-        // Load latest hand
-        const latestHand = await loadLatestHand();
+        // Load latest hand for this user
+        const latestHand = await loadLatestHand(userId);
 
         if (latestHand) {
           log(`Restoring hand ${latestHand.handId} from ${new Date(latestHand.timestamp).toLocaleString()}`);
@@ -118,7 +119,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
     };
 
     initialize();
-  }, []); // Run once on mount
+  }, [dispatchGame, dispatchCard, dispatchPlayer, userId]); // Re-initialize if userId changes
 
   // ==========================================================================
   // AUTO-SAVE (on state change)
@@ -155,9 +156,9 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
           seatPlayers: playerState.seatPlayers
         };
 
-        const handId = await saveHand(handData);
+        const handId = await saveHand(handData, userId);
         setLastSavedAt(new Date());
-        log(`Auto-saved hand ${handId}`);
+        log(`Auto-saved hand ${handId} for user ${userId}`);
 
         // Note: Hand count is NOT incremented here - it's only incremented
         // when explicitly calling nextHand() to advance to a new hand
@@ -173,7 +174,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [gameState, cardState, playerState, isReady]);
+  }, [gameState, cardState, playerState, isReady, userId]);
 
   // ==========================================================================
   // EXPORTED FUNCTIONS
@@ -211,19 +212,19 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         }
       };
 
-      const handId = await saveHand(handData);
+      const handId = await saveHand(handData, userId);
       setLastSavedAt(new Date());
-      log(`Manual save completed - hand ${handId}`);
+      log(`Manual save completed - hand ${handId} for user ${userId}`);
 
       // Note: Hand count is NOT incremented here - it's only incremented
       // when explicitly calling nextHand() to advance to a new hand
     } catch (error) {
       logError('Manual save failed:', error);
     }
-  }, [gameState, cardState, isReady]);
+  }, [gameState, cardState, isReady, userId]);
 
   /**
-   * Clear all hand history
+   * Clear all hand history for this user
    * Future use: "Clear History" button
    */
   const clearHistory = useCallback(async () => {
@@ -234,12 +235,12 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
 
     try {
       const { clearAllHands } = await import('../utils/persistence');
-      await clearAllHands();
-      log('Hand history cleared');
+      await clearAllHands(userId);
+      log(`Hand history cleared for user ${userId}`);
     } catch (error) {
       logError('Failed to clear history:', error);
     }
-  }, [isReady]);
+  }, [isReady, userId]);
 
   // ==========================================================================
   // RETURN

@@ -51,7 +51,12 @@ Tasks assigned to local models (DeepSeek/Qwen). Local models update status here.
 
 | ID | Task | Model | Status | Command | Output |
 |----|------|-------|--------|---------|--------|
-| - | No delegated tasks | - | - | - | - |
+| T-2.1 | Create primitiveActions.js | Claude* | completed | - | src/constants/primitiveActions.js (85 lines) |
+| T-2.2 | Create primitiveActionValidation.js | Claude* | completed | - | src/utils/primitiveActionValidation.js (117 lines) |
+| T-2.3 | Create primitive action tests | Claude* | completed | - | 52 tests passing |
+| T-2.4 | Add PRIMITIVE_ACTIONS export to gameConstants.js | Claude* | completed | - | Re-export added |
+
+*Note: Local model delegation attempted but script outputs code without auto-creating files. Claude completed to maintain velocity.
 
 ### Delegation Template
 When delegating, Claude outputs:
@@ -98,6 +103,12 @@ When delegating, Claude outputs:
 | DOC-001 | Add API_REFERENCE.md context file | Local | 30min | None |
 | DOC-002 | Add TESTING_GUIDE.md context file | Local | 30min | None |
 | DOC-003 | Auto-populate RECENT_CHANGES.md from git log | Claude | 1hr | None |
+| ARCH-001 | Further PokerTracker.jsx decomposition (Option C: Full Context Migration) | Claude | 2-3hr | Trigger: >1200 lines |
+
+### Deferred Architecture Decisions
+| ID | Decision | Revisit Trigger | Notes |
+|----|----------|-----------------|-------|
+| ARCH-001 | PokerTracker.jsx further decomposition | File exceeds 1200 lines OR new view requires 5+ file changes | Options: ViewRouter prop passing, handler hooks, full context migration. Current: 852 lines. See chat 2025-12-10 for analysis. |
 
 ---
 

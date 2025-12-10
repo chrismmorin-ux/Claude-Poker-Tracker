@@ -19,7 +19,8 @@ import {
   getAllSessions,
   getSessionById,
   updateSession,
-  deleteSession as dbDeleteSession
+  deleteSession as dbDeleteSession,
+  GUEST_USER_ID
 } from '../utils/persistence';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
@@ -44,9 +45,10 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  *
  * @param {Object} sessionState - Session state from sessionReducer
  * @param {Function} dispatchSession - Session state dispatcher
+ * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, startNewSession, endCurrentSession, updateSessionField, loadAllSessions, deleteSessionById }
  */
-export const useSessionPersistence = (sessionState, dispatchSession) => {
+export const useSessionPersistence = (sessionState, dispatchSession, userId = GUEST_USER_ID) => {
   // State
   const [isReady, setIsReady] = useState(false);
 
@@ -60,17 +62,17 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
 
   useEffect(() => {
     const initialize = async () => {
-      log('Initializing session persistence...');
+      log(`Initializing session persistence for user ${userId}...`);
 
       try {
-        // Load active session marker (single source of truth)
-        const activeSession = await getActiveSession();
+        // Load active session marker for this user (single source of truth)
+        const activeSession = await getActiveSession(userId);
         const activeSessionId = activeSession?.sessionId || null;
 
         // P1 Fix: Reconcile dual source of truth
         // The activeSession store is the single source of truth.
         // If any sessions have isActive=true but don't match, fix them.
-        const allSessions = await getAllSessions();
+        const allSessions = await getAllSessions(userId);
         for (const session of allSessions) {
           const shouldBeActive = session.sessionId === activeSessionId;
           if (session.isActive !== shouldBeActive) {
@@ -95,10 +97,10 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
           } else {
             // Session was deleted but activeSession marker still exists - clean up
             log(`Active session ${activeSessionId} not found - clearing marker`);
-            await clearActiveSession();
+            await clearActiveSession(userId);
           }
         } else {
-          log('No active session found - starting without session');
+          log(`No active session found for user ${userId} - starting without session`);
         }
 
         isInitializedRef.current = true;
@@ -113,7 +115,7 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
     };
 
     initialize();
-  }, []); // Run once on mount
+  }, [dispatchSession, userId]); // Re-initialize if userId changes
 
   // ==========================================================================
   // AUTO-SAVE (on session state change)
@@ -186,14 +188,14 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
     let activeSessionSet = false;
 
     try {
-      log('Starting new session...');
+      log(`Starting new session for user ${userId}...`);
 
-      // Step 1: Create session in database
-      sessionId = await createSession(sessionData);
+      // Step 1: Create session in database for this user
+      sessionId = await createSession(sessionData, userId);
       log(`Session ${sessionId} created in database`);
 
-      // Step 2: Set as active session
-      await setActiveSession(sessionId);
+      // Step 2: Set as active session for this user
+      await setActiveSession(sessionId, userId);
       activeSessionSet = true;
       log(`Session ${sessionId} set as active`);
 
@@ -225,7 +227,7 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
 
       try {
         if (activeSessionSet) {
-          await clearActiveSession();
+          await clearActiveSession(userId);
           log('Rollback: cleared active session');
         }
         if (sessionId) {
@@ -243,7 +245,7 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
 
       throw error;
     }
-  }, [dispatchSession]);
+  }, [dispatchSession, userId]);
 
   /**
    * End the current session
@@ -265,8 +267,8 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
       await dbEndSession(sessionId, cashOut);
       log(`Session ${sessionId} ended in database`);
 
-      // Clear active session
-      await clearActiveSession();
+      // Clear active session for this user
+      await clearActiveSession(userId);
       log('Active session cleared');
 
       // Update reducer state
@@ -283,7 +285,7 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
       logError('Failed to end session:', error);
       throw error;
     }
-  }, [sessionState.currentSession.sessionId, dispatchSession]);
+  }, [sessionState.currentSession.sessionId, dispatchSession, userId]);
 
   /**
    * Update a field in the current session
@@ -317,14 +319,14 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
   }, [sessionState.currentSession.sessionId, dispatchSession]);
 
   /**
-   * Load all sessions from database
+   * Load all sessions from database for this user
    * @returns {Promise<Array>} Array of session records
    */
   const loadAllSessions = useCallback(async () => {
     try {
-      log('Loading all sessions...');
+      log(`Loading all sessions for user ${userId}...`);
 
-      const sessions = await getAllSessions();
+      const sessions = await getAllSessions(userId);
       log(`Loaded ${sessions.length} sessions`);
 
       // Update reducer state
@@ -338,7 +340,7 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
       logError('Failed to load sessions:', error);
       return [];
     }
-  }, [dispatchSession]);
+  }, [dispatchSession, userId]);
 
   /**
    * Delete a session by ID

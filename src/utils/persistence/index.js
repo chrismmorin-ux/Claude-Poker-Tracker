@@ -12,7 +12,7 @@
  */
 
 // Database initialization and constants
-export { initDB } from './database';
+export { initDB, GUEST_USER_ID } from './database';
 
 // Hand CRUD operations
 export {

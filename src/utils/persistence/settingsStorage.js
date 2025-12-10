@@ -2,45 +2,54 @@
  * settingsStorage.js - Settings CRUD operations
  *
  * Provides database operations for app settings persistence.
- * Uses a singleton pattern (single record with id: 1) since
- * there's only one settings object per app instance.
+ * Uses per-user keying (id: `settings_${userId}`) for multi-user support.
  * Part of the persistence layer.
  */
 
 import {
   initDB,
   SETTINGS_STORE_NAME,
+  GUEST_USER_ID,
   log,
   logError,
 } from './database';
 import { DEFAULT_SETTINGS } from '../../constants/settingsConstants';
+
+/**
+ * Get the settings key for a user
+ * @param {string} userId - User ID (or 'guest')
+ * @returns {string} Settings key
+ */
+const getSettingsKey = (userId) => `settings_${userId || GUEST_USER_ID}`;
 
 // =============================================================================
 // SETTINGS CRUD OPERATIONS
 // =============================================================================
 
 /**
- * Get settings from database
+ * Get settings from database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<Object|null>} Settings object or null if not found
  */
-export const getSettings = async () => {
+export const getSettings = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SETTINGS_STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const request = objectStore.get(1); // Singleton record with id: 1
+      const request = objectStore.get(settingsKey);
 
       request.onsuccess = () => {
         const settings = request.result;
         if (settings) {
-          log('Settings loaded successfully');
-          // Return settings without the id field
-          const { id, ...settingsData } = settings;
+          log(`Settings loaded for user ${userId}`);
+          // Return settings without the id and userId fields
+          const { id, userId: _, ...settingsData } = settings;
           resolve(settingsData);
         } else {
-          log('No settings found, will use defaults');
+          log(`No settings found for user ${userId}, will use defaults`);
           resolve(null);
         }
       };
@@ -63,15 +72,18 @@ export const getSettings = async () => {
 /**
  * Save settings to database (full replacement)
  * @param {Object} settings - Full settings object to save
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const saveSettings = async (settings) => {
+export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const settingsKey = getSettingsKey(userId);
 
-    // Create record with id: 1 for singleton pattern
+    // Create record with userId-based key
     const settingsRecord = {
-      id: 1,
+      id: settingsKey,
+      userId,
       ...settings,
       updatedAt: Date.now(),
     };
@@ -82,7 +94,7 @@ export const saveSettings = async (settings) => {
       const request = objectStore.put(settingsRecord); // put creates or updates
 
       request.onsuccess = () => {
-        log('Settings saved successfully');
+        log(`Settings saved for user ${userId}`);
         resolve();
       };
 
@@ -104,20 +116,22 @@ export const saveSettings = async (settings) => {
 /**
  * Update specific settings fields (merge with existing)
  * @param {Object} updates - Partial settings to update
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<Object>} Updated settings object
  */
-export const updateSettings = async (updates) => {
+export const updateSettings = async (updates, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SETTINGS_STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const getRequest = objectStore.get(1);
+      const getRequest = objectStore.get(settingsKey);
 
       getRequest.onsuccess = () => {
-        // Get existing settings or use defaults
-        const existing = getRequest.result || { id: 1, ...DEFAULT_SETTINGS };
+        // Get existing settings or use defaults with userId-based key
+        const existing = getRequest.result || { id: settingsKey, userId, ...DEFAULT_SETTINGS };
 
         // Merge updates
         const updated = {
@@ -129,8 +143,8 @@ export const updateSettings = async (updates) => {
         const putRequest = objectStore.put(updated);
 
         putRequest.onsuccess = () => {
-          log('Settings updated successfully');
-          const { id, ...settingsData } = updated;
+          log(`Settings updated for user ${userId}`);
+          const { id, userId: _, ...settingsData } = updated;
           resolve(settingsData);
         };
 
@@ -156,13 +170,14 @@ export const updateSettings = async (updates) => {
 };
 
 /**
- * Reset settings to defaults
+ * Reset settings to defaults for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const resetSettings = async () => {
+export const resetSettings = async (userId = GUEST_USER_ID) => {
   try {
-    await saveSettings({ ...DEFAULT_SETTINGS });
-    log('Settings reset to defaults');
+    await saveSettings({ ...DEFAULT_SETTINGS }, userId);
+    log(`Settings reset to defaults for user ${userId}`);
   } catch (error) {
     logError('Error in resetSettings:', error);
     throw error;
@@ -170,20 +185,22 @@ export const resetSettings = async () => {
 };
 
 /**
- * Clear all settings (delete the record)
+ * Clear settings for a specific user (delete the record)
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const clearSettings = async () => {
+export const clearSettings = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
+    const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SETTINGS_STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const request = objectStore.delete(1);
+      const request = objectStore.delete(settingsKey);
 
       request.onsuccess = () => {
-        log('Settings cleared');
+        log(`Settings cleared for user ${userId}`);
         resolve();
       };
 

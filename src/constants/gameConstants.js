@@ -3,6 +3,15 @@
  * Centralized constants for poker game logic, actions, and card definitions
  */
 
+// Re-export primitive actions for unified import
+export {
+  PRIMITIVE_ACTIONS,
+  LEGACY_TO_PRIMITIVE,
+  PRIMITIVE_ACTION_VALUES,
+  isPrimitiveAction,
+  toPrimitive,
+} from './primitiveActions';
+
 // Street definitions
 export const STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown'];
 export const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']; // Streets where betting occurs (excludes showdown)

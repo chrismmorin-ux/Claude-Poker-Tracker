@@ -8,6 +8,7 @@
 import {
   initDB,
   PLAYERS_STORE_NAME,
+  GUEST_USER_ID,
   log,
   logError,
 } from './database';
@@ -19,25 +20,27 @@ import {
 /**
  * Create a new player
  * @param {Object} playerData - Player data (name, nickname, ethnicity, etc.)
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<number>} The auto-generated playerId
- * @throws {Error} If player with same name already exists
+ * @throws {Error} If player with same name already exists for this user
  */
-export const createPlayer = async (playerData) => {
+export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
-    // Check for duplicate name at DB level (P1 fix)
+    // Check for duplicate name at DB level for this user
     if (playerData.name) {
-      const existingPlayer = await getPlayerByNameInternal(db, playerData.name);
+      const existingPlayer = await getPlayerByNameInternal(db, playerData.name, userId);
       if (existingPlayer) {
         db.close();
         throw new Error(`Player with name "${playerData.name}" already exists`);
       }
     }
 
-    // Add metadata
+    // Add metadata including userId
     const playerRecord = {
       ...playerData,
+      userId,
       createdAt: Date.now(),
       lastSeenAt: Date.now(),
       handCount: 0,
@@ -74,14 +77,17 @@ export const createPlayer = async (playerData) => {
  * Internal helper to check player by name using existing db connection
  * @param {IDBDatabase} db - Open database connection
  * @param {string} name - Player name to search
+ * @param {string} userId - User ID to filter by
  * @returns {Promise<Object|null>} Player or null
  */
-const getPlayerByNameInternal = (db, name) => {
+const getPlayerByNameInternal = (db, name, userId) => {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
     const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-    const index = objectStore.index('name');
-    const request = index.get(name);
+
+    // Use the userId_name compound index
+    const index = objectStore.index('userId_name');
+    const request = index.get([userId, name]);
 
     request.onsuccess = (event) => {
       resolve(event.target.result || null);
@@ -94,26 +100,30 @@ const getPlayerByNameInternal = (db, name) => {
 };
 
 /**
- * Get all players from the database
- * @returns {Promise<Array>} Array of all player records
+ * Get all players from the database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<Array>} Array of player records
  */
-export const getAllPlayers = async () => {
+export const getAllPlayers = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const request = objectStore.getAll();
+
+      // Use userId index to filter players
+      const index = objectStore.index('userId');
+      const request = index.getAll(userId);
 
       request.onsuccess = (event) => {
         const players = event.target.result;
-        log(`Loaded ${players.length} players from database`);
+        log(`Loaded ${players.length} players for user ${userId}`);
         resolve(players);
       };
 
       request.onerror = (event) => {
-        logError('Failed to load all players:', event.target.error);
+        logError('Failed to load players:', event.target.error);
         reject(event.target.error);
       };
 
@@ -172,16 +182,17 @@ export const getPlayerById = async (playerId) => {
  * Update a player's fields
  * @param {number} playerId - The player ID to update
  * @param {Object} updates - Fields to update (name, nickname, ethnicity, etc.)
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
- * @throws {Error} If updating name to one that already exists
+ * @throws {Error} If updating name to one that already exists for this user
  */
-export const updatePlayer = async (playerId, updates) => {
+export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
-    // Check for duplicate name at DB level if name is being updated (P1 fix)
+    // Check for duplicate name at DB level if name is being updated
     if (updates.name) {
-      const existingPlayer = await getPlayerByNameInternal(db, updates.name);
+      const existingPlayer = await getPlayerByNameInternal(db, updates.name, userId);
       if (existingPlayer && existingPlayer.playerId !== playerId) {
         db.close();
         throw new Error(`Player with name "${updates.name}" already exists`);
@@ -270,28 +281,31 @@ export const deletePlayer = async (playerId) => {
 };
 
 /**
- * Get a player by name (case-insensitive)
+ * Get a player by name for a specific user
  * @param {string} name - The player name to search for
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<Object|null>} Player data or null if not found
  */
-export const getPlayerByName = async (name) => {
+export const getPlayerByName = async (name, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const index = objectStore.index('name');
-      const request = index.get(name);
+
+      // Use the userId_name compound index
+      const index = objectStore.index('userId_name');
+      const request = index.get([userId, name]);
 
       request.onsuccess = (event) => {
         const player = event.target.result;
 
         if (player) {
-          log(`Found player with name "${name}"`);
+          log(`Found player "${name}" for user ${userId}`);
           resolve(player);
         } else {
-          log(`Player with name "${name}" not found`);
+          log(`Player "${name}" not found for user ${userId}`);
           resolve(null);
         }
       };

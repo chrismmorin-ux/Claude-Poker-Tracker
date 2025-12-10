@@ -19,6 +19,7 @@ import {
   getSettings,
   saveSettings,
   resetSettings as dbResetSettings,
+  GUEST_USER_ID,
 } from '../utils/persistence';
 import { SETTINGS_ACTIONS, DEFAULT_SETTINGS } from '../constants/settingsConstants';
 import { logger } from '../utils/errorHandler';
@@ -42,9 +43,10 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  *
  * @param {Object} settingsState - Settings state from settingsReducer
  * @param {Function} dispatchSettings - Settings state dispatcher
+ * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, resetToDefaults }
  */
-export const useSettingsPersistence = (settingsState, dispatchSettings) => {
+export const useSettingsPersistence = (settingsState, dispatchSettings, userId = GUEST_USER_ID) => {
   // State
   const [isReady, setIsReady] = useState(false);
 
@@ -58,11 +60,11 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
 
   useEffect(() => {
     const initialize = async () => {
-      log('Initializing settings persistence...');
+      log(`Initializing settings persistence for user ${userId}...`);
 
       try {
-        // Load settings from database
-        const storedSettings = await getSettings();
+        // Load settings from database for this user
+        const storedSettings = await getSettings(userId);
 
         // Hydrate settings state (merges with defaults)
         dispatchSettings({
@@ -93,7 +95,7 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
     };
 
     initialize();
-  }, []); // Run once on mount
+  }, [dispatchSettings, userId]); // Re-initialize if userId changes
 
   // ==========================================================================
   // AUTO-SAVE (on settings change)
@@ -120,8 +122,8 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
     // Save immediately (no debounce needed for settings)
     const save = async () => {
       try {
-        log('Auto-saving settings...');
-        await saveSettings(currentSettings);
+        log(`Auto-saving settings for user ${userId}...`);
+        await saveSettings(currentSettings, userId);
         previousSettingsRef.current = { ...currentSettings };
         log('Settings saved');
       } catch (error) {
@@ -131,7 +133,7 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
     };
 
     save();
-  }, [settingsState.settings, isReady]);
+  }, [settingsState.settings, isReady, userId]);
 
   // ==========================================================================
   // HANDLERS
@@ -142,10 +144,10 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
    */
   const resetToDefaults = useCallback(async () => {
     try {
-      log('Resetting settings to defaults...');
+      log(`Resetting settings to defaults for user ${userId}...`);
 
-      // Reset in database
-      await dbResetSettings();
+      // Reset in database for this user
+      await dbResetSettings(userId);
 
       // Reset in state
       dispatchSettings({ type: SETTINGS_ACTIONS.RESET_SETTINGS });
@@ -158,7 +160,7 @@ export const useSettingsPersistence = (settingsState, dispatchSettings) => {
       logError(error);
       throw error;
     }
-  }, [dispatchSettings]);
+  }, [dispatchSettings, userId]);
 
   // ==========================================================================
   // RETURN

@@ -10,6 +10,7 @@ import { normalizeHandRecord } from '../../migrations/normalizeSeatActions';
 import {
   initDB,
   STORE_NAME,
+  GUEST_USER_ID,
   log,
   logError,
 } from './database';
@@ -28,14 +29,15 @@ import {
  * Auto-links hand to active session if one exists
  * Calculates sessionHandNumber for display (1-based index within session)
  * @param {Object} handData - Hand data containing gameState, cardState, and optional seatPlayers
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<number>} The auto-generated handId
  */
-export const saveHand = async (handData) => {
+export const saveHand = async (handData, userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
-    // Get active session to auto-link hand
-    const activeSession = await getActiveSession();
+    // Get active session to auto-link hand (for this user)
+    const activeSession = await getActiveSession(userId);
     const sessionId = activeSession?.sessionId || null;
 
     // Calculate sessionHandNumber (1-based position within session)
@@ -56,7 +58,8 @@ export const saveHand = async (handData) => {
     const handRecord = {
       ...handData,
       timestamp,
-      version: '1.2.0', // Added sessionHandNumber and handDisplayId
+      version: '1.3.0', // Added userId for multi-user support
+      userId,
       sessionId,
       sessionHandNumber,  // 1-based index within session (null if no session)
       handDisplayId,      // Searchable identifier
@@ -95,30 +98,34 @@ export const saveHand = async (handData) => {
 };
 
 /**
- * Load the most recent hand from the database
+ * Load the most recent hand from the database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<Object|null>} Hand data or null if no hands exist
  */
-export const loadLatestHand = async () => {
+export const loadLatestHand = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const index = objectStore.index('timestamp');
 
-      // Open cursor in descending order (most recent first)
-      const request = index.openCursor(null, 'prev');
+      // Use userId_timestamp compound index for efficient user-filtered query
+      const index = objectStore.index('userId_timestamp');
+
+      // Create key range for this user's records, open cursor in descending order
+      const keyRange = IDBKeyRange.bound([userId, 0], [userId, Date.now()]);
+      const request = index.openCursor(keyRange, 'prev');
 
       request.onsuccess = (event) => {
         const cursor = event.target.result;
 
         if (cursor) {
           const hand = cursor.value;
-          log(`Loaded latest hand (ID: ${hand.handId}, timestamp: ${new Date(hand.timestamp).toLocaleString()})`);
+          log(`Loaded latest hand for user ${userId} (ID: ${hand.handId})`);
           resolve(normalizeHandRecord(hand));
         } else {
-          log('No hands found in database');
+          log(`No hands found for user ${userId}`);
           resolve(null);
         }
       };
@@ -181,27 +188,31 @@ export const loadHandById = async (handId) => {
 };
 
 /**
- * Load all hands from the database
- * @returns {Promise<Array>} Array of all hand records
+ * Load all hands from the database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<Array>} Array of hand records
  */
-export const getAllHands = async () => {
+export const getAllHands = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.getAll();
+
+      // Use userId index to filter hands
+      const index = objectStore.index('userId');
+      const request = index.getAll(userId);
 
       request.onsuccess = (event) => {
         const hands = event.target.result;
-        log(`Loaded ${hands.length} hands from database`);
+        log(`Loaded ${hands.length} hands for user ${userId}`);
         // Normalize seatActions to array format (migration for old data)
         resolve(hands.map(normalizeHandRecord));
       };
 
       request.onerror = (event) => {
-        logError('Failed to load all hands:', event.target.error);
+        logError('Failed to load hands:', event.target.error);
         reject(event.target.error);
       };
 
@@ -286,25 +297,49 @@ export const deleteHand = async (handId) => {
 };
 
 /**
- * Clear all hands from the database
+ * Clear all hands for a specific user from the database
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const clearAllHands = async () => {
+export const clearAllHands = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.clear();
+      const index = objectStore.index('userId');
 
-      request.onsuccess = () => {
-        log('All hands cleared from database');
-        resolve();
+      // Get all hands for this user and delete them
+      const getRequest = index.getAllKeys(userId);
+
+      getRequest.onsuccess = (event) => {
+        const keys = event.target.result;
+        let deleted = 0;
+
+        if (keys.length === 0) {
+          log(`No hands to clear for user ${userId}`);
+          resolve();
+          return;
+        }
+
+        keys.forEach((key) => {
+          const deleteRequest = objectStore.delete(key);
+          deleteRequest.onsuccess = () => {
+            deleted++;
+            if (deleted === keys.length) {
+              log(`Cleared ${deleted} hands for user ${userId}`);
+              resolve();
+            }
+          };
+          deleteRequest.onerror = (e) => {
+            logError('Failed to delete hand:', e.target.error);
+          };
+        });
       };
 
-      request.onerror = (event) => {
-        logError('Failed to clear hands:', event.target.error);
+      getRequest.onerror = (event) => {
+        logError('Failed to get hands for clearing:', event.target.error);
         reject(event.target.error);
       };
 
@@ -323,21 +358,23 @@ export const clearAllHands = async () => {
 // =============================================================================
 
 /**
- * Get the count of hands in the database
+ * Get the count of hands in the database for a specific user
+ * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<number>} Number of hands
  */
-export const getHandCount = async () => {
+export const getHandCount = async (userId = GUEST_USER_ID) => {
   try {
     const db = await initDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.count();
+      const index = objectStore.index('userId');
+      const request = index.count(userId);
 
       request.onsuccess = (event) => {
         const count = event.target.result;
-        log(`Hand count: ${count}`);
+        log(`Hand count for user ${userId}: ${count}`);
         resolve(count);
       };
 

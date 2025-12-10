@@ -1,10 +1,31 @@
-import React, { useState, useReducer, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ScaledContainer } from './components/ui/ScaledContainer';
-import { CardSlot } from './components/ui/CardSlot';
-import { VisibilityToggle } from './components/ui/VisibilityToggle';
-import { PositionBadge } from './components/ui/PositionBadge';
-import { DiagonalOverlay } from './components/ui/DiagonalOverlay';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { logger } from './utils/errorHandler';
+import { GAME_ACTIONS } from './reducers/gameReducer';
+import { UI_ACTIONS } from './reducers/uiReducer';
+import { CARD_ACTIONS } from './reducers/cardReducer';
+import { SESSION_ACTIONS } from './reducers/sessionReducer';
+import { validateActionSequence } from './utils/actionValidation';
+import {
+  ACTIONS,
+  SEAT_STATUS,
+  STREETS,
+  BETTING_STREETS,
+  isFoldAction,
+  LIMITS,
+  LAYOUT
+} from './constants/gameConstants';
+import { useActionUtils } from './hooks/useActionUtils';
+import { useStateSetters } from './hooks/useStateSetters';
+import { useSeatUtils } from './hooks/useSeatUtils';
+import { useSeatColor } from './hooks/useSeatColor';
+import { useShowdownHandlers } from './hooks/useShowdownHandlers';
+import { useCardSelection } from './hooks/useCardSelection';
+import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
+import { useAppState } from './hooks/useAppState';
+import { AppProviders } from './AppProviders';
+import { SCREEN } from './ViewRouter';
+// View components
 import { StatsView } from './components/views/StatsView';
 import { CardSelectorView } from './components/views/CardSelectorView';
 import { TableView } from './components/views/TableView';
@@ -17,58 +38,8 @@ import { LoginView } from './components/views/LoginView';
 import { SignupView } from './components/views/SignupView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
-import { logger } from './utils/errorHandler';
-import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
-import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
-import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
-import { sessionReducer, initialSessionState, SESSION_ACTIONS } from './reducers/sessionReducer';
-import { playerReducer, initialPlayerState, PLAYER_ACTIONS } from './reducers/playerReducer';
-import { settingsReducer, initialSettingsState, SETTINGS_ACTIONS } from './reducers/settingsReducer';
-import { authReducer, initialAuthState } from './reducers/authReducer';
-import {
-  getActionDisplayName,
-  getActionColor,
-  getSeatActionStyle,
-  getOverlayStatus
-} from './utils/actionUtils';
-import { validateActionSequence } from './utils/actionValidation';
-import {
-  isRedCard,
-  isRedSuit,
-  getCardAbbreviation,
-  getHandAbbreviation
-} from './utils/displayUtils';
-import {
-  ACTIONS,
-  ACTION_ABBREV,
-  FOLD_ACTIONS,
-  SEAT_STATUS,
-  STREETS,
-  BETTING_STREETS,
-  SEAT_ARRAY,
-  SUITS,
-  RANKS,
-  SUIT_ABBREV,
-  isFoldAction,
-  LIMITS,
-  LAYOUT
-} from './constants/gameConstants';
-import { useActionUtils } from './hooks/useActionUtils';
-import { useStateSetters } from './hooks/useStateSetters';
-import { useSeatUtils } from './hooks/useSeatUtils';
-import { useSeatColor } from './hooks/useSeatColor';
-import { useShowdownHandlers } from './hooks/useShowdownHandlers';
-import { useCardSelection } from './hooks/useCardSelection';
-import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
-import { usePersistence } from './hooks/usePersistence';
-import { useSessionPersistence } from './hooks/useSessionPersistence';
-import { usePlayerPersistence } from './hooks/usePlayerPersistence';
-import { useSettingsPersistence } from './hooks/useSettingsPersistence';
-import { useAuthPersistence } from './hooks/useAuthPersistence';
-import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ui/Toast';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
-import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider, SettingsProvider, AuthProvider } from './contexts';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -109,71 +80,57 @@ const SEAT_POSITIONS = [
   { seat: 9, x: 67, y: 88 },
 ];
 
-// Screen/View identifiers
-const SCREEN = {
-  TABLE: 'table',
-  STATS: 'stats',
-  HISTORY: 'history',
-  SESSIONS: 'sessions',
-  PLAYERS: 'players',
-  SETTINGS: 'settings',
-};
+// SCREEN imported from ViewRouter
 
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
 const PokerTrackerWireframes = () => {
-  // State managed by reducers
-  const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
-  const [uiState, dispatchUi] = useReducer(uiReducer, initialUiState);
-  const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
-  const [sessionState, dispatchSession] = useReducer(sessionReducer, initialSessionState);
-  const [playerState, dispatchPlayer] = useReducer(playerReducer, initialPlayerState);
-  const [settingsState, dispatchSettings] = useReducer(settingsReducer, initialSettingsState);
-  const [authState, dispatchAuth] = useReducer(authReducer, initialAuthState);
-
-  // Initialize auth persistence (Firebase auth state listener)
-  const { isReady: authReady } = useAuthPersistence(authState, dispatchAuth);
-
-  // Initialize persistence (auto-save + auto-restore)
-  const { isReady } = usePersistence(gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession, dispatchPlayer);
-
-  // Initialize session persistence (auto-save + auto-restore sessions)
+  // Consolidated state management from useAppState hook
   const {
-    isReady: sessionReady,
-    startNewSession,
-    endCurrentSession,
-    updateSessionField,
-    loadAllSessions,
-    deleteSessionById
-  } = useSessionPersistence(sessionState, dispatchSession);
-
-  // Initialize player persistence
-  const {
-    isReady: playerReady,
-    createNewPlayer,
-    updatePlayerById,
-    deletePlayerById,
-    loadAllPlayers,
-    assignPlayerToSeat,
-    clearSeatAssignment,
-    getSeatPlayerName,
-    getRecentPlayers,
-    getAssignedPlayerIds,
-    isPlayerAssigned,
-    getPlayerSeat,
-    clearAllSeatAssignments
-  } = usePlayerPersistence(playerState, dispatchPlayer);
-
-  // Initialize settings persistence
-  const {
-    isReady: settingsReady,
-    resetToDefaults: resetSettingsToDefaults
-  } = useSettingsPersistence(settingsState, dispatchSettings);
-
-  // Initialize toast notifications
-  const { toasts, dismissToast, showError, showSuccess, showWarning } = useToast();
+    // State
+    gameState,
+    uiState,
+    cardState,
+    sessionState,
+    playerState,
+    settingsState,
+    authState,
+    // Dispatchers
+    dispatchGame,
+    dispatchUi,
+    dispatchCard,
+    dispatchSession,
+    dispatchPlayer,
+    dispatchSettings,
+    dispatchAuth,
+    // Ready flags
+    isReady,
+    // Persistence functions
+    sessionPersistence: {
+      startNewSession,
+      endCurrentSession,
+      updateSessionField,
+      loadAllSessions,
+      deleteSessionById
+    },
+    playerPersistence: {
+      createNewPlayer,
+      updatePlayerById,
+      deletePlayerById,
+      loadAllPlayers,
+      assignPlayerToSeat,
+      clearSeatAssignment,
+      getSeatPlayerName,
+      getRecentPlayers,
+      isPlayerAssigned,
+      getPlayerSeat,
+      clearAllSeatAssignments
+    },
+    // Toast functions
+    toast: { toasts, dismissToast, showError, showSuccess, showWarning }
+  } = useAppState();
 
   // Local UI state (scale)
   const [scale, setScale] = useState(1);
@@ -616,6 +573,9 @@ const PokerTrackerWireframes = () => {
     }
   }, [currentStreet, showCardSelector, currentView, selectedPlayers, getFirstActionSeat, dispatchUi]);
 
+  // Alias for auth ready (from isReady.auth)
+  const authReady = isReady.auth;
+
   // Toast container (rendered with every view)
   const toastOverlay = <ToastContainer toasts={toasts} onDismiss={dismissToast} />;
 
@@ -625,25 +585,26 @@ const PokerTrackerWireframes = () => {
     dispatchUi({ type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW });
   }, [setCurrentScreen, dispatchUi]);
 
-  // Context wrapper - provides all contexts to child views
-  // Views can gradually migrate from props to useContext
-  // AuthProvider is outermost to be available to all other providers
+  // Context wrapper using AppProviders component
   const withContextProviders = useCallback((children) => (
-    <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
-      <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
-        <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
-          <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
-            <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-              <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-                <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                  {children}
-                </SettingsProvider>
-              </CardProvider>
-            </PlayerProvider>
-          </SessionProvider>
-        </UIProvider>
-      </GameProvider>
-    </AuthProvider>
+    <AppProviders
+      authState={authState}
+      dispatchAuth={dispatchAuth}
+      gameState={gameState}
+      dispatchGame={dispatchGame}
+      uiState={uiState}
+      dispatchUi={dispatchUi}
+      sessionState={sessionState}
+      dispatchSession={dispatchSession}
+      playerState={playerState}
+      dispatchPlayer={dispatchPlayer}
+      cardState={cardState}
+      dispatchCard={dispatchCard}
+      settingsState={settingsState}
+      dispatchSettings={dispatchSettings}
+    >
+      {children}
+    </AppProviders>
   ), [authState, dispatchAuth, gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard, settingsState, dispatchSettings]);
 
   // Show loading screen while Firebase auth initializes

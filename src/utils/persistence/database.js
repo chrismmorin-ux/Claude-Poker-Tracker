@@ -5,22 +5,27 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v6
+ *   Database: "PokerTrackerDB" v7
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
- *       Indexes: timestamp, sessionId
- *       Fields: seatPlayers (object mapping seat # to playerId)
+ *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
+ *       Fields: seatPlayers, userId (for multi-user data isolation)
  *     - "sessions" (keyPath: "sessionId", autoIncrement: true)
- *       Indexes: startTime, endTime, isActive
- *       Fields: venue, gameType, buyIn, rebuyTransactions (array), cashOut, goal, notes, etc.
+ *       Indexes: startTime, endTime, isActive, userId, userId_startTime (compound)
+ *       Fields: venue, gameType, buyIn, rebuyTransactions (array), cashOut, goal, notes, userId
  *     - "activeSession" (keyPath: "id")
- *       Single-record store for current active session
+ *       Per-user store: id = `active_${userId}` (e.g., "active_guest")
+ *       Fields: sessionId, userId, lastUpdated
  *     - "players" (keyPath: "playerId", autoIncrement: true)
- *       Indexes: name, createdAt, lastSeenAt
- *       Fields: name, nickname, ethnicity, build, gender, facialHair, hat, sunglasses, styleTags, notes, avatar, handCount, stats
+ *       Indexes: name, createdAt, lastSeenAt, userId, userId_name (compound)
+ *       Fields: name, nickname, ethnicity, build, gender, facialHair, styleTags, notes, avatar, userId
  *     - "settings" (keyPath: "id")
- *       Single-record store for app settings (id: 1)
- *       Fields: theme, cardSize, defaultVenue, defaultGameType, autoBackupEnabled, backupFrequency, customVenues, customGameTypes, errorReportingEnabled
+ *       Per-user store: id = `settings_${userId}` (e.g., "settings_guest")
+ *       Fields: theme, cardSize, defaultVenue, defaultGameType, customVenues, customGameTypes, userId
+ *
+ * Migration History:
+ *   v6 → v7: Added userId field to all stores for multi-user data isolation
+ *            Changed settings/activeSession from singleton to per-user keying
  */
 
 import { logger } from '../errorHandler';
@@ -30,7 +35,10 @@ import { logger } from '../errorHandler';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
+
+// Guest user ID constant - matches authConstants.GUEST_USER_ID
+export const GUEST_USER_ID = 'guest';
 export const STORE_NAME = 'hands';
 export const SESSIONS_STORE_NAME = 'sessions';
 export const ACTIVE_SESSION_STORE_NAME = 'activeSession';
@@ -235,6 +243,156 @@ export const initDB = async () => {
 
           log('Settings object store created');
         }
+      }
+
+      // Migrate to v7: Add userId field for multi-user data isolation
+      if (oldVersion < 7) {
+        log('Upgrading to v7: Adding userId for multi-user support');
+
+        const transaction = event.target.transaction;
+
+        // Add userId index to hands store
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          const handsStore = transaction.objectStore(STORE_NAME);
+          if (!handsStore.indexNames.contains('userId')) {
+            handsStore.createIndex('userId', 'userId', { unique: false });
+            log('Created userId index on hands store');
+          }
+          if (!handsStore.indexNames.contains('userId_timestamp')) {
+            handsStore.createIndex('userId_timestamp', ['userId', 'timestamp'], { unique: false });
+            log('Created userId_timestamp compound index on hands store');
+          }
+
+          // Migrate existing hands to have userId = 'guest'
+          const handsCursor = handsStore.openCursor();
+          handsCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              if (!record.userId) {
+                record.userId = GUEST_USER_ID;
+                cursor.update(record);
+              }
+              cursor.continue();
+            } else {
+              log('v7 migration: hands userId added');
+            }
+          };
+        }
+
+        // Add userId index to sessions store
+        if (db.objectStoreNames.contains(SESSIONS_STORE_NAME)) {
+          const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+          if (!sessionsStore.indexNames.contains('userId')) {
+            sessionsStore.createIndex('userId', 'userId', { unique: false });
+            log('Created userId index on sessions store');
+          }
+          if (!sessionsStore.indexNames.contains('userId_startTime')) {
+            sessionsStore.createIndex('userId_startTime', ['userId', 'startTime'], { unique: false });
+            log('Created userId_startTime compound index on sessions store');
+          }
+
+          // Migrate existing sessions to have userId = 'guest'
+          const sessionsCursor = sessionsStore.openCursor();
+          sessionsCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              if (!record.userId) {
+                record.userId = GUEST_USER_ID;
+                cursor.update(record);
+              }
+              cursor.continue();
+            } else {
+              log('v7 migration: sessions userId added');
+            }
+          };
+        }
+
+        // Add userId index to players store
+        if (db.objectStoreNames.contains(PLAYERS_STORE_NAME)) {
+          const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
+          if (!playersStore.indexNames.contains('userId')) {
+            playersStore.createIndex('userId', 'userId', { unique: false });
+            log('Created userId index on players store');
+          }
+          if (!playersStore.indexNames.contains('userId_name')) {
+            playersStore.createIndex('userId_name', ['userId', 'name'], { unique: false });
+            log('Created userId_name compound index on players store');
+          }
+
+          // Migrate existing players to have userId = 'guest'
+          const playersCursor = playersStore.openCursor();
+          playersCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              if (!record.userId) {
+                record.userId = GUEST_USER_ID;
+                cursor.update(record);
+              }
+              cursor.continue();
+            } else {
+              log('v7 migration: players userId added');
+            }
+          };
+        }
+
+        // Add userId index to settings store
+        // Settings changes from singleton (id:1) to per-user (id: `settings_${userId}`)
+        if (db.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
+          const settingsStore = transaction.objectStore(SETTINGS_STORE_NAME);
+
+          // Migrate existing settings record (id: 1) to guest user
+          const settingsCursor = settingsStore.openCursor();
+          settingsCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              // Migrate old singleton record (id: 1) to guest user format
+              if (record.id === 1 && !record.userId) {
+                // Delete old record with id: 1
+                settingsStore.delete(1);
+                // Create new record with userId-based key
+                record.id = `settings_${GUEST_USER_ID}`;
+                record.userId = GUEST_USER_ID;
+                settingsStore.add(record);
+                log('v7 migration: settings migrated to userId-based key');
+              }
+              cursor.continue();
+            } else {
+              log('v7 migration: settings userId added');
+            }
+          };
+        }
+
+        // ActiveSession changes from singleton (id:1) to per-user (id: `active_${userId}`)
+        if (db.objectStoreNames.contains(ACTIVE_SESSION_STORE_NAME)) {
+          const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
+
+          const activeCursor = activeStore.openCursor();
+          activeCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              // Migrate old singleton record (id: 1) to guest user format
+              if (record.id === 1 && !record.userId) {
+                // Delete old record with id: 1
+                activeStore.delete(1);
+                // Create new record with userId-based key
+                record.id = `active_${GUEST_USER_ID}`;
+                record.userId = GUEST_USER_ID;
+                activeStore.add(record);
+                log('v7 migration: activeSession migrated to userId-based key');
+              }
+              cursor.continue();
+            } else {
+              log('v7 migration: activeSession userId added');
+            }
+          };
+        }
+
+        log('v7 migration initiated for all stores');
       }
     };
   });
