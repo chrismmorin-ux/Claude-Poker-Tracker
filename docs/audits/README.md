@@ -74,24 +74,36 @@ All 5 phases of the audit have been completed. 15 audit documents produced.
 
 ## Quick Reference
 
-### Critical Bugs to Fix
+### Critical Bugs ✅ ALL FIXED (2025-12-09)
 
 ```
-M-5: loadLatestHand() missing normalizeSeatActions
-R-5: Session HYDRATE replaces instead of merging defaults
-W-1: startNewSession non-atomic (orphan sessions possible)
-C-3: Card reducer allows duplicates
+M-5: loadLatestHand() missing normalizeSeatActions ✅ FIXED
+R-5: Session HYDRATE replaces instead of merging defaults ✅ FIXED
+W-1: startNewSession non-atomic (orphan sessions possible) ✅ FIXED
+C-3: Card reducer allows duplicates ✅ FIXED
 ```
 
-### Files That Need Changes
+### P1 Issues ✅ ALL FIXED (2025-12-09)
 
-| File | Priority | Changes |
-|------|----------|---------|
-| `handsStorage.js:117` | P0 | Add normalization |
-| `sessionReducer.js:138` | P0 | Merge with defaults |
-| `gameReducer.js:221` | P1 | Merge with defaults |
-| `useSessionPersistence.js:161` | P1 | Add rollback |
-| `validation.js` | P1 | Create/enhance |
+```
+Schema validation only in DEBUG mode ✅ FIXED - Now always on
+Player name uniqueness at DB level ✅ FIXED - DB-level check added
+Active session dual source of truth ✅ FIXED - Reconciliation on load
+Action/seat validation in recordSeatAction ✅ FIXED - Validation added
+```
+
+### Files Changed
+
+| File | Changes | Status |
+|------|---------|--------|
+| `handsStorage.js:119` | Added normalization | ✅ Complete |
+| `sessionReducer.js:139-145` | Merge with defaults | ✅ Complete |
+| `gameReducer.js:103-122` | Action/seat validation | ✅ Complete |
+| `cardReducer.js:71-127` | Duplicate card prevention | ✅ Complete |
+| `useSessionPersistence.js:70-99` | Session reconciliation | ✅ Complete |
+| `useSessionPersistence.js:167-229` | Atomic with rollback | ✅ Complete |
+| `playersStorage.js:29-36,182-189` | DB-level name uniqueness | ✅ Complete |
+| `reducerUtils.js:152-173` | Schema validation always on | ✅ Complete |
 
 ---
 

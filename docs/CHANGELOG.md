@@ -1,5 +1,71 @@
 # Poker Tracker Change Log
 
+## v114.1 - MVP Critical Fixes (P0+P1 Audit Issues) ✅
+
+### Summary
+- **Purpose**: Fix all critical and high-priority issues from Core System Audit
+- **Scope**: 8 issues fixed across 8 files
+- **Tests**: 2,235 tests passing
+
+### P0 Critical Fixes (4 issues)
+
+#### M1-1: loadLatestHand Normalization ✅ (Already Fixed)
+- **File**: `src/utils/persistence/handsStorage.js:119`
+- **Fix**: `normalizeHandRecord()` called before resolving loaded hand
+- **Impact**: Old hands with string-format seatActions now load correctly
+
+#### M1-2: Session Hydration Default Merging ✅ (Already Fixed)
+- **File**: `src/reducers/sessionReducer.js:139-145`
+- **Fix**: `HYDRATE_SESSION` merges with `initialSessionState.currentSession`
+- **Impact**: Sessions missing fields get proper defaults
+
+#### M1-3: Atomic startNewSession ✅ (Already Fixed)
+- **File**: `src/hooks/useSessionPersistence.js:167-229`
+- **Fix**: Full rollback logic on failure (deletes session, clears marker)
+- **Impact**: No orphan sessions in database on error
+
+#### M1-4: Card Duplicate Prevention ✅ (Fixed 2025-12-09)
+- **File**: `src/reducers/cardReducer.js:71-127`
+- **Fix**: `isCardInUse()` check added to SET_COMMUNITY_CARD and SET_HOLE_CARD
+- **Impact**: Same card cannot appear in multiple slots
+- **Tests**: 10 new tests for duplicate prevention
+
+### P1 High Priority Fixes (4 issues)
+
+#### M2-1: Schema Validation Always On ✅
+- **File**: `src/utils/reducerUtils.js:152-173`
+- **Fix**: Removed `DEBUG &&` check from `createValidatedReducer`
+- **Impact**: Schema validation now runs in production
+
+#### M2-2: DB-Level Player Name Uniqueness ✅
+- **File**: `src/utils/persistence/playersStorage.js:29-36,73-93,182-189`
+- **Fix**: Duplicate name check in both `createPlayer` and `updatePlayer`
+- **Impact**: Race conditions cannot create duplicate players
+
+#### M2-3: Active Session Reconciliation ✅
+- **File**: `src/hooks/useSessionPersistence.js:70-99`
+- **Fix**: Reconciliation on initialization using `activeSession` as source of truth
+- **Impact**: No stale activeSession references or orphaned markers
+
+#### M2-4: Action/Seat Validation ✅
+- **File**: `src/reducers/gameReducer.js:103-122`
+- **Fix**: Validates action type against ACTIONS constant, filters invalid seats
+- **Impact**: Invalid data rejected, valid seats still processed
+- **Tests**: 3 new tests for validation
+
+### Files Modified
+- `src/reducers/cardReducer.js` - Duplicate prevention
+- `src/reducers/gameReducer.js` - Action/seat validation
+- `src/utils/reducerUtils.js` - Always-on schema validation
+- `src/utils/persistence/playersStorage.js` - DB-level uniqueness
+- `src/hooks/useSessionPersistence.js` - Session reconciliation
+- `src/reducers/__tests__/cardReducer.test.js` - 10 new tests
+- `src/reducers/__tests__/gameReducer.test.js` - 3 new tests
+- `docs/audits/README.md` - Marked issues as FIXED
+- `docs/audits/invariant-catalog.md` - Updated enforcement status
+
+---
+
 ## v114 (Current) - Context API + State Consolidation
 
 ### Summary
