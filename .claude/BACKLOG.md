@@ -113,42 +113,43 @@ Projects that need `/project start` before beginning.
 ├──────────┬──────────────────────────────────┬───────────────────┤
 │ Priority │ Project                          │ Status            │
 ├──────────┼──────────────────────────────────┼───────────────────┤
-│ 1. P1    │ Settings System                  │ ◀ NEXT UP         │
-│ 2. P2    │ Error Reporting                  │ Blocked by #1     │
-│ 3. P2    │ MVP UI Polish                    │ Ready (parallel)  │
-│ 4. P3    │ Firebase Cloud Sync              │ Blocked by #1     │
-│ 5. P3    │ Player Tendencies Analytics      │ Ready after MVP   │
-│ 6. P4    │ Range Analysis Tools             │ Phase 3           │
-│ 7. P4    │ TypeScript Migration             │ Optional          │
+│ 1. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
+│ 2. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
+│ 3. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
+│ 4. P2    │ MVP UI Polish                    │ ◀ NEXT UP         │
+│ 5. P3    │ Firebase Cloud Sync              │ Post-MVP          │
+│ 6. P3    │ Player Tendencies Analytics      │ Post-MVP          │
+│ 7. P4    │ Range Analysis Tools             │ Phase 3           │
+│ 8. P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Start with: /project start settings-system
+Start with: /project start mvp-polish
 ```
 
 ### MVP Phase Projects
 
-#### Settings System (NEXT UP)
+#### Settings System (COMPLETE)
 - **ID**: settings-system
 - **Priority**: P1
-- **Status**: Planned (NEXT UP)
+- **Status**: ✅ Complete (2025-12-09)
 - **File**: `docs/projects/settings-system.project.md`
 - **Description**: Settings infrastructure, preferences UI, venue/game type customization
-- **Phases**: 3 planned
-- **Blocked By**: None (mvp-critical-fixes complete)
+- **Phases**: 3/3 complete
+- **Result**: v115 - Full settings system with persistence
 
-#### Error Reporting
+#### Error Reporting (COMPLETE)
 - **ID**: error-reporting
 - **Priority**: P2
-- **Status**: Planned
+- **Status**: ✅ Complete (2025-12-10)
 - **File**: `docs/projects/error-reporting.project.md`
 - **Description**: Local error logging, error log viewer, bug report export
-- **Phases**: 3 planned
-- **Blocked By**: settings-system
+- **Phases**: 3/3 complete
+- **Result**: v116 - Error log utility, viewer in Settings, Report Bug feature
 
-#### MVP Polish
+#### MVP Polish (NEXT UP)
 - **ID**: mvp-polish
 - **Priority**: P2
-- **Status**: Planned
+- **Status**: ◀ NEXT UP
 - **File**: `docs/projects/mvp-polish.project.md`
 - **Description**: Toast review, error message polish, UI animations, destructive action confirmations
 - **Phases**: 4 planned

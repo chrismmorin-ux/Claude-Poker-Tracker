@@ -233,7 +233,7 @@ When incrementing version (e.g., v113 → v114):
 - [ ] Add entry to docs/CHANGELOG.md
 - [ ] Update `engineering_practices.md` version footer if changed
 
-## Architecture (v115)
+## Architecture (v116)
 
 ### File Structure
 ```
@@ -288,6 +288,8 @@ src/
 │   ├── displayUtils.js          (Display formatting, time formatting - UPDATED in v110)
 │   ├── validation.js            (Input validation)
 │   ├── exportUtils.js           (Data export/import functionality - NEW in v112)
+│   ├── errorLog.js              (Error logging to localStorage - NEW in v116)
+│   ├── errorHandler.js          (Centralized error codes and logging)
 │   └── persistence/             (IndexedDB persistence layer - UPDATED in v115)
 │       ├── database.js          (DB connection, migrations - v6 adds settings store)
 │       ├── handsStorage.js      (Hand CRUD operations)
@@ -323,7 +325,7 @@ src/
         ├── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
         ├── SessionsView.jsx     (Session management, ~715 lines - UPDATED in v112)
         ├── PlayersView.jsx      (Player management, ~587 lines - UPDATED in v112)
-        └── SettingsView.jsx     (Settings configuration, ~320 lines - NEW in v115)
+        └── SettingsView.jsx     (Settings configuration, ~700 lines - UPDATED in v116)
 ```
 
 ### State Management (useReducer)
@@ -688,7 +690,7 @@ Test all 7 views at various browser sizes:
   - Added `getHandsBySessionId()` function to persistence.js for session-based queries
   - Updated HistoryView.jsx: session filter dropdown, hands show linked session badge, filter by session
   - Bankroll display: TableView header shows current session investment (buy-in + rebuys), SessionsView shows running total
-- v115: Settings system with persistence (current)
+- v115: Settings system with persistence
   - Created `src/constants/settingsConstants.js` - SETTINGS_ACTIONS, DEFAULT_SETTINGS, THEMES, CARD_SIZES, BACKUP_FREQUENCIES
   - Created `src/reducers/settingsReducer.js` - Settings state management with validation
   - Created `src/contexts/SettingsContext.jsx` - Provider with derived allVenues, allGameTypes
@@ -699,3 +701,11 @@ Test all 7 views at various browser sizes:
   - Features: Theme toggle (placeholder), card size selector, default venue/game type, custom venues, error reporting toggle, reset to defaults
   - Settings persist to IndexedDB on every change (immediate save)
   - All 2282 tests passing
+- v116: Error Reporting System (current)
+  - Created `src/utils/errorLog.js` - Error logging utility for localStorage (28 tests)
+  - Updated `src/components/ui/ViewErrorBoundary.jsx` - Now persists errors to localStorage
+  - Updated `src/components/views/SettingsView.jsx` - Added Error Log viewer section (~700 lines)
+  - Features: Error log viewer with collapsible entries, relative timestamps, clear all button
+  - Report Bug feature: Copy to clipboard or download JSON export
+  - Privacy: No sensitive data (player names, finances) in error exports
+  - All 2310 tests passing

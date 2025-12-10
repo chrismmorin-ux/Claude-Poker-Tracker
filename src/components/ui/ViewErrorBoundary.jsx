@@ -10,6 +10,7 @@
 import React from 'react';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 import { logger, AppError, ERROR_CODES } from '../../utils/errorHandler';
+import { logErrorObject } from '../../utils/errorLog';
 
 /**
  * ViewErrorBoundary - Granular error boundary for individual views
@@ -55,7 +56,14 @@ export class ViewErrorBoundary extends React.Component {
           }
         );
 
+    // Log to console
     logger.error('ViewErrorBoundary', appError);
+
+    // Persist to localStorage for later review
+    logErrorObject(appError, appError.code, {
+      view: viewName,
+      componentStack: errorInfo.componentStack?.substring(0, 500),
+    });
   }
 
   handleRetry = () => {

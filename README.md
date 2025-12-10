@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v115** (Settings System)
+Current: **v116** (Error Reporting System)
 
 See `docs/CHANGELOG.md` for full version history.
 

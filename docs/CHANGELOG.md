@@ -1,6 +1,46 @@
 # Poker Tracker Change Log
 
-## v115 - Settings System (Current)
+## v116 - Error Reporting System (Current)
+
+### Summary
+- **Purpose**: Add local error logging, viewer, and bug report export feature
+- **New Files**: 2 files (errorLog.js, errorLog.test.js)
+- **Modified Files**: 2 files (ViewErrorBoundary.jsx, SettingsView.jsx)
+- **Tests**: 2,310 tests passing (28 new errorLog tests)
+
+### Phase 1: Error Boundary Logging
+- **errorLog.js** (~180 lines): localStorage-based error logging
+  - logError(), logErrorObject(): Persist errors with context
+  - getErrorLog(), getRecentErrors(): Retrieve error history
+  - clearErrorLog(): Clear all errors
+  - exportErrorLog(): Generate sanitized bug report JSON
+  - FIFO limit of 50 entries
+  - Key: `poker-tracker-error-log`
+- **ViewErrorBoundary.jsx**: Now calls logErrorObject() on componentDidCatch
+  - Errors persist to localStorage for later review
+
+### Phase 2: Error Log Viewer
+- **SettingsView.jsx** (~700 lines, was ~320): Added Error Log section
+  - Collapsible error log with expand/collapse toggle
+  - Error count badge showing number of logged errors
+  - Individual error entries with:
+    - Error code and truncated message
+    - Relative timestamp (e.g., "2h ago")
+    - Expandable details: full message, context, stack trace, app version
+  - "Clear All" button with confirmation
+  - Empty state when no errors
+
+### Phase 3: Report Bug Feature
+- **SettingsView.jsx**: Added Report Bug section
+  - Copy to Clipboard button with "Copied!" feedback
+  - Download JSON button for file export
+  - Privacy notice about no sensitive data
+  - Export includes: error codes, timestamps, app version, browser type
+  - Excludes: player names, financial data, full stack traces, userAgent
+
+---
+
+## v115 - Settings System
 
 ### Summary
 - **Purpose**: Create comprehensive settings system with persistence for app customization

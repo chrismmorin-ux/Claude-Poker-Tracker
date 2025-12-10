@@ -6,15 +6,6 @@
   "active": [],
   "pending": [
     {
-      "id": "error-reporting",
-      "name": "Error Reporting System",
-      "file": "docs/projects/error-reporting.project.md",
-      "priority": "P2",
-      "phases": 3,
-      "phasesComplete": 0,
-      "description": "Local error logging, error log viewer, bug report export"
-    },
-    {
       "id": "mvp-polish",
       "name": "MVP UI Polish Pass",
       "file": "docs/projects/mvp-polish.project.md",
@@ -61,6 +52,16 @@
     }
   ],
   "completed": [
+    {
+      "id": "error-reporting",
+      "name": "Error Reporting System",
+      "file": "docs/projects/error-reporting.project.md",
+      "priority": "P2",
+      "completedAt": "2025-12-10",
+      "phases": 3,
+      "phasesComplete": 3,
+      "description": "Local error logging, error log viewer, bug report export"
+    },
     {
       "id": "settings-system",
       "name": "Settings System",
@@ -140,6 +141,6 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-09T23:30:00Z",
+  "lastUpdated": "2025-12-10T05:20:00Z",
   "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
 }
