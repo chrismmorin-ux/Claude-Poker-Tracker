@@ -1,7 +1,7 @@
 ---
 id: settings-system
 name: Settings System
-status: pending
+status: active
 priority: P1
 created: 2025-12-09
 ---
@@ -43,7 +43,7 @@ Files to read before starting work:
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| 1 | [ ] | Settings infrastructure (reducer, context, persistence) |
+| 1 | [x] COMPLETE | Settings infrastructure (reducer, context, persistence) |
 | 2 | [ ] | SettingsView with basic preferences |
 | 3 | [ ] | Venue/game type customization |
 
@@ -61,7 +61,7 @@ Run this checklist before beginning ANY phase:
 
 ---
 
-## Phase 1: Settings Infrastructure <- CURRENT
+## Phase 1: Settings Infrastructure [COMPLETE]
 
 ### Goal
 Create the foundational settings system: reducer, context, and persistence layer.
@@ -114,7 +114,7 @@ Create the foundational settings system: reducer, context, and persistence layer
 
 ---
 
-## Phase 2: SettingsView
+## Phase 2: SettingsView <- CURRENT
 
 ### Goal
 Create the SettingsView UI with basic preference controls.
@@ -181,6 +181,7 @@ Allow users to add/remove custom venues and game types beyond the defaults.
 | Date | Session | Phase | Work Done |
 |------|---------|-------|-----------|
 | 2025-12-09 | Initial | Planning | Created project file from roadmap |
+| 2025-12-09 | Phase 1 | Phase 1 | Created settings infrastructure: constants, reducer, context, persistence, tests. DB v5→v6 migration. Added Settings nav to sidebar. All 2282 tests passing. |
 
 ---
 
