@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/project-status.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/new-work-check.cjs"
           }
         ]
       }
@@ -26,6 +30,14 @@
           {
             "type": "command",
             "command": "node .claude/hooks/quality-gate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pre-commit-gate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/commit-project-check.cjs"
           }
         ]
       }
@@ -41,6 +53,22 @@
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pr-size-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/agent-suggest.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/project-update.cjs"
           }
         ]
       },
@@ -54,6 +82,22 @@
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/new-file-test-reminder.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/agent-suggest.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/project-update.cjs"
           }
         ]
       },
@@ -63,6 +107,24 @@
           {
             "type": "command",
             "command": "node .claude/hooks/test-tracker.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-tracker.cjs"
           }
         ]
       }

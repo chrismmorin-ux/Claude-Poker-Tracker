@@ -4,6 +4,20 @@
 Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 
 ## Quick Start
+
+### Context Files (Read First!)
+**Prefer `.claude/context/*.md` files** over raw source files for initial context:
+```
+.claude/context/
+├── CONTEXT_SUMMARY.md      # Project overview (~400 tokens)
+├── STATE_SCHEMA.md         # All 5 reducer shapes (~500 tokens)
+├── PERSISTENCE_OVERVIEW.md # IndexedDB API summary (~400 tokens)
+├── RECENT_CHANGES.md       # Last 4 version changes (~350 tokens)
+└── HOTSPOTS.md            # Critical/fragile files (~400 tokens)
+```
+Only request full file contents when context summaries are insufficient.
+
+### Full Documentation
 1. Read `docs/SPEC.md` first (complete specification)
 2. Main code is in `src/PokerTracker.jsx` (~620 lines)
 3. View components in `src/components/views/`
@@ -82,9 +96,20 @@ npm run build  # Production build
 npm test       # Run test suite (1,617 tests)
 ```
 
-## Local Model Workflow
+## Local Model Workflow & Delegation Policy
 
-This project uses local LLM models (via LM Studio) to save Claude tokens on routine tasks. **Always consider local models before starting work.**
+This project uses local LLM models (via LM Studio) to save Claude tokens on routine tasks. **Claude must delegate by default** and only perform high-level reasoning, decomposition, review, or final sign-off directly.
+
+### Delegation Rules (Enforced)
+
+| Rule | Threshold | Action |
+|------|-----------|--------|
+| **Default behavior** | All tasks | Decompose and delegate to local models |
+| **File complexity** | >3 files touched | Mark `human-review-required`, still delegate |
+| **Token cost** | >8k estimated tokens | Must delegate |
+| **Deep cross-file reasoning** | Core persistence/reducer/hydration | May require Claude, needs permission |
+| **Testing requirement** | All delegated tasks | Must include test command |
+| **PR merging** | Never | Agents open PRs, humans merge |
 
 ### Decision Flow
 Before implementing any task:
@@ -95,7 +120,7 @@ Before implementing any task:
    - **Refactoring/renaming** → `/local-refactor`
    - **Documentation/comments** → `/local-doc`
    - **Unit tests** → `/local-test`
-   - **State/reducers/hooks/integration** → Use Claude directly
+   - **State/reducers/hooks/integration** → Claude (with permission if complex)
 
 ### Local Model Commands
 ```bash
@@ -120,6 +145,38 @@ Before implementing any task:
 | Multi-file changes | ❌ No | Claude |
 | State management | ❌ No | Claude |
 | Integration code | ❌ No | Claude |
+
+### Task Output Format (for delegation)
+When delegating, Claude outputs tasks in this format:
+```
+///LOCAL_TASKS
+[
+  {
+    "id": "T-001",
+    "title": "Add formatCurrency utility function",
+    "inputs": ["src/utils/displayUtils.js"],
+    "constraints": ["pure function", "no external deps"],
+    "tests": ["npm test src/test/displayUtils.test.js"],
+    "priority": "P1",
+    "assigned_to": "local:deepseek-coder",
+    "expected_patch_format": "unified-diff"
+  }
+]
+```
+
+### Request-for-Permission Flow
+If Claude must implement directly (rare), it will output:
+```
+///CLAUDE_REQUEST_FOR_PERMISSION
+{
+  "summary": "Implement cross-reducer hydration fix",
+  "reason": "Requires understanding of 5 reducer interactions",
+  "est_tokens": 4500,
+  "acceptance_criteria": ["All 1617 tests pass", "No hydration errors"],
+  "mitigation": "Will output tests + diff for human review"
+}
+```
+Respond with `approve` or `deny`.
 
 ### After Local Model Generation
 1. **Review the output** for correctness

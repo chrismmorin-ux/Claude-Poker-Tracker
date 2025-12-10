@@ -1,6 +1,8 @@
 {
-  "version": "1.0.0",
-  "description": "Project Continuity Registry - Tracks active, pending, and completed projects",
+  "version": "2.0.0",
+  "description": "Project Continuity Registry - References unified backlog for all work tracking",
+  "backlog": ".claude/BACKLOG.md",
+  "note": "The BACKLOG.md file is the single source of truth. This file tracks project metadata only.",
   "active": [],
   "pending": [
     {
