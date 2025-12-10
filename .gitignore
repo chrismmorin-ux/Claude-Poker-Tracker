@@ -36,7 +36,7 @@ Thumbs.db
 # Test coverage reports
 coverage/
 
-# Claude Code local files
+# Claude Code local/session files
 .claude/settings.local.json
 .claude/.pr-size-session.json
 .claude/.project-status-shown.json
@@ -44,4 +44,8 @@ coverage/
 .claude/.agent-suggest-session.json
 .claude/.last-review.json
 .claude/.new-work-check-shown.json
+.claude/.test-state.json
+.claude/.last-edit.json
+.claude/.edit-review-session.json
+.claude/.efficiency-session.json
 .claude/arch-changes.log
