@@ -10,6 +10,8 @@
  * - Lines changed per edit
  * - Time between edits (edit velocity)
  * - Tool usage patterns (Read, Edit, Write, Task)
+ * - Hook effectiveness metrics (blocks, warnings, compliance)
+ * - Token optimization opportunities
  *
  * Hook Type: PostToolUse (Edit, Write, Read, Task)
  *
@@ -22,10 +24,12 @@ const fs = require('fs');
 const path = require('path');
 
 const SESSION_FILE = path.join(process.cwd(), '.claude', '.efficiency-session.json');
+const CONTEXT_DIR = path.join(process.cwd(), '.claude', 'context');
 
 const CONFIG = {
   SESSION_EXPIRY_HOURS: 4,  // Reset session after 4 hours
   HIGH_CHURN_THRESHOLD: 4,  // Warn if file edited 4+ times
+  CONTEXT_FIRST_REMINDER_THRESHOLD: 5, // Remind about context files after 5 source reads
 };
 
 function loadSession() {
@@ -61,6 +65,8 @@ function createEmptySession() {
     sequentialReadCount: 0,
     parallelReadCount: 0,
     lastReadTimestamp: null,
+    sourceFileReads: 0,           // Count of src/ file reads
+    contextFileReads: 0,          // Count of .claude/context/ reads
 
     // Agent/Task tracking
     agentsInvoked: [],            // ['Explore', 'code-reviewer', ...]
@@ -74,6 +80,21 @@ function createEmptySession() {
       Task: 0,
       Grep: 0,
       Glob: 0,
+    },
+
+    // Hook effectiveness metrics
+    hookMetrics: {
+      delegationBlocks: 0,        // Files blocked by delegation-check-pre
+      delegationViolations: 0,    // Files written despite delegation marking
+      qualityGateBlocks: 0,       // Commits blocked by quality-gate
+      contextFirstReminders: 0,   // Times reminded to read context first
+    },
+
+    // Token optimization tracking
+    tokenOptimization: {
+      estimatedTokensSaved: 0,
+      estimatedTokensWasted: 0,
+      delegationOpportunities: 0, // Tasks that could have been delegated
     },
 
     // Warnings already shown (prevent duplicates)
@@ -99,13 +120,38 @@ function calculateLinesChanged(oldString, newString) {
   return Math.abs(newLines - oldLines) + Math.min(oldLines, newLines);
 }
 
+async function readStdinWithTimeout(timeoutMs = 1000) {
+  return new Promise((resolve) => {
+    let input = '';
+    const rl = readline.createInterface({
+      input: process.stdin,
+      terminal: false
+    });
+
+    const timeout = setTimeout(() => {
+      rl.close();
+      resolve(input);
+    }, timeoutMs);
+
+    rl.on('line', (line) => {
+      input += line;
+    });
+
+    rl.on('close', () => {
+      clearTimeout(timeout);
+      resolve(input);
+    });
+
+    rl.on('error', () => {
+      clearTimeout(timeout);
+      resolve(input);
+    });
+  });
+}
+
 async function main() {
-  // Read stdin
-  let input = '';
-  const rl = readline.createInterface({ input: process.stdin });
-  for await (const line of rl) {
-    input += line;
-  }
+  // Read stdin with timeout to prevent hanging
+  const input = await readStdinWithTimeout(1000);
 
   // Parse JSON
   let data;
@@ -178,7 +224,7 @@ async function main() {
     session.totalLinesChanged += linesChanged;
   }
 
-  // Handle Read tool - track sequential vs parallel patterns
+  // Handle Read tool - track sequential vs parallel patterns and context-first
   if (tool === 'Read') {
     const filePath = data?.tool_input?.file_path || '';
 
@@ -203,6 +249,32 @@ async function main() {
     }
 
     session.lastReadTimestamp = now;
+
+    // Track context vs source file reads
+    const isContextFile = filePath.includes('.claude/context') || filePath.includes('.claude\\context');
+    const isSourceFile = filePath.includes('/src/') || filePath.includes('\\src\\');
+
+    if (isContextFile) {
+      session.contextFileReads = (session.contextFileReads || 0) + 1;
+    } else if (isSourceFile) {
+      session.sourceFileReads = (session.sourceFileReads || 0) + 1;
+
+      // Check if reading source files without reading context first
+      const warningKey = 'context-first-reminder';
+      if (session.contextFileReads === 0 &&
+          session.sourceFileReads >= CONFIG.CONTEXT_FIRST_REMINDER_THRESHOLD &&
+          !session.warningsShown.includes(warningKey)) {
+        console.log('');
+        console.log('[EFFICIENCY] Token optimization tip:');
+        console.log(`  You've read ${session.sourceFileReads} source files without reading context summaries.`);
+        console.log('  Consider reading .claude/context/*.md first (~2000 tokens vs ~3000+ for raw files).');
+        console.log('  Files: CONTEXT_SUMMARY.md, STATE_SCHEMA.md, PERSISTENCE_OVERVIEW.md');
+        console.log('');
+        session.warningsShown.push(warningKey);
+        session.hookMetrics = session.hookMetrics || {};
+        session.hookMetrics.contextFirstReminders = (session.hookMetrics.contextFirstReminders || 0) + 1;
+      }
+    }
   }
 
   // Handle Task tool - track agent usage

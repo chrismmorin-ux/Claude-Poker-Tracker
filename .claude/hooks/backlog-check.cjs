@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Backlog Check Hook - Reminds Claude to read BACKLOG.md at session start
+ * Backlog & Context Check Hook - Session start reminder
  *
  * Hook Type: UserPromptSubmit (runs on first user message)
  *
- * The BACKLOG.md is the single source of truth for all work tracking.
- * This hook reminds Claude to read it before starting any work.
+ * Reminds Claude to:
+ * 1. Read BACKLOG.md (single source of truth for work tracking)
+ * 2. Read context summary files BEFORE full source files (token optimization)
  *
  * Exit codes:
  * - 0: Always allow (informational only)
@@ -16,10 +17,21 @@ const path = require('path');
 const readline = require('readline');
 
 const BACKLOG_FILE = path.join(process.cwd(), '.claude', 'BACKLOG.md');
+const CONTEXT_DIR = path.join(process.cwd(), '.claude', 'context');
 const SESSION_FILE = path.join(process.cwd(), '.claude', '.backlog-check-shown.json');
 
 // Only show once per session (2 hour window)
 const SESSION_WINDOW_MS = 2 * 60 * 60 * 1000;
+
+// Context files with estimated token counts
+const CONTEXT_FILES = [
+  { name: 'CONTEXT_SUMMARY.md', tokens: 400, desc: 'Project overview' },
+  { name: 'STATE_SCHEMA.md', tokens: 500, desc: 'All 5 reducer shapes' },
+  { name: 'PERSISTENCE_OVERVIEW.md', tokens: 400, desc: 'IndexedDB API' },
+  { name: 'RECENT_CHANGES.md', tokens: 350, desc: 'Last 4 versions' },
+  { name: 'HOTSPOTS.md', tokens: 400, desc: 'Critical files' },
+  { name: 'PROCESS_CHECKLIST.md', tokens: 300, desc: 'Workflow steps' },
+];
 
 function hasShownRecently() {
   try {
@@ -68,10 +80,32 @@ function getBacklogSummary() {
   }
 }
 
+function getAvailableContextFiles() {
+  const available = [];
+  let totalTokens = 0;
+
+  for (const file of CONTEXT_FILES) {
+    const filePath = path.join(CONTEXT_DIR, file.name);
+    if (fs.existsSync(filePath)) {
+      available.push(file);
+      totalTokens += file.tokens;
+    }
+  }
+
+  return { files: available, totalTokens };
+}
+
 async function main() {
-  // Consume stdin
-  const rl = readline.createInterface({ input: process.stdin });
-  for await (const line of rl) { /* consume */ }
+  // Consume stdin with timeout
+  try {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      terminal: false
+    });
+    const timeout = setTimeout(() => rl.close(), 1000);
+    for await (const line of rl) { /* consume */ }
+    clearTimeout(timeout);
+  } catch (e) {}
 
   // Only show once per session window
   if (hasShownRecently()) {
@@ -79,22 +113,50 @@ async function main() {
   }
 
   const summary = getBacklogSummary();
+  const contextInfo = getAvailableContextFiles();
 
-  console.log('\n┌─────────────────────────────────────────────────────────────┐');
-  console.log('│  📋 BACKLOG REMINDER - Single Source of Truth              │');
+  console.log('');
+  console.log('┌─────────────────────────────────────────────────────────────┐');
+  console.log('│  📋 SESSION START - Read Before Working                     │');
   console.log('├─────────────────────────────────────────────────────────────┤');
   console.log('│                                                             │');
-  console.log('│  Before starting work, read: .claude/BACKLOG.md            │');
+  console.log('│  1. BACKLOG: .claude/BACKLOG.md (work tracking)            │');
   console.log('│                                                             │');
+
   if (summary?.currentProject) {
-    console.log(`│  Current focus: ${summary.currentProject.substring(0, 40).padEnd(40)}│`);
+    const proj = summary.currentProject.substring(0, 43);
+    console.log(`│     Current focus: ${proj.padEnd(38)}│`);
+    console.log('│                                                             │');
   }
+
+  console.log('│  2. CONTEXT FILES (read BEFORE full source files):         │');
   console.log('│                                                             │');
-  console.log('│  Update BACKLOG.md as you work:                            │');
-  console.log('│  - Add tasks to "Current Session Tasks"                    │');
-  console.log('│  - Update "Active Projects" progress                       │');
-  console.log('│  - Move completed items to archive                         │');
-  console.log('└─────────────────────────────────────────────────────────────┘\n');
+
+  // List available context files with token counts
+  for (const file of contextInfo.files.slice(0, 4)) {
+    const entry = `     .claude/context/${file.name}`;
+    const tokens = `(~${file.tokens} tok)`;
+    const padLen = 59 - entry.length - tokens.length - 2;
+    console.log(`│${entry}${' '.repeat(Math.max(1, padLen))}${tokens} │`);
+  }
+
+  if (contextInfo.files.length > 4) {
+    console.log(`│     ... and ${contextInfo.files.length - 4} more files                                    │`);
+  }
+
+  console.log('│                                                             │');
+  console.log(`│     Total: ~${String(contextInfo.totalTokens).padEnd(4)} tokens (vs ~3000+ for raw files)    │`);
+  console.log('│                                                             │');
+  console.log('├─────────────────────────────────────────────────────────────┤');
+  console.log('│  💡 TOKEN OPTIMIZATION TIP                                  │');
+  console.log('│                                                             │');
+  console.log('│  Read context summaries FIRST. Only request full source    │');
+  console.log('│  files when summaries are insufficient for the task.       │');
+  console.log('│                                                             │');
+  console.log('│  Use Explore agent for codebase questions instead of       │');
+  console.log('│  reading multiple files directly.                           │');
+  console.log('└─────────────────────────────────────────────────────────────┘');
+  console.log('');
 
   markShown();
   process.exit(0);

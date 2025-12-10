@@ -2,7 +2,7 @@
 # suggest-command.sh - Suggest which command to use based on task classification
 #
 # Usage: bash suggest-command.sh "task description"
-# Output: Suggested command and reasoning
+# Output: Suggested command and reasoning with confidence level
 
 set -e
 
@@ -19,17 +19,47 @@ fi
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Classify the task
-CLASSIFICATION=$("$SCRIPT_DIR/task-classifier.sh" "$TASK")
+# Try v2 classifier first, fall back to v1
+if [ -f "$SCRIPT_DIR/task-classifier-v2.sh" ]; then
+    RESULT=$("$SCRIPT_DIR/task-classifier-v2.sh" "$TASK")
+    CLASSIFICATION="${RESULT%%:*}"
+    CONFIDENCE="${RESULT##*:}"
+else
+    CLASSIFICATION=$("$SCRIPT_DIR/task-classifier.sh" "$TASK")
+    CONFIDENCE="medium"
+fi
+
+# =============================================================================
+# CONFIDENCE INDICATOR
+# =============================================================================
+
+get_confidence_indicator() {
+    case "$1" in
+        high)   echo "🟢" ;;
+        medium) echo "🟡" ;;
+        low)    echo "🔴" ;;
+        *)      echo "⚪" ;;
+    esac
+}
+
+CONF_ICON=$(get_confidence_indicator "$CONFIDENCE")
 
 # =============================================================================
 # SUGGESTION ENGINE
 # =============================================================================
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📋 Task Classification: $CLASSIFICATION"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "$CONF_ICON Confidence: $CONFIDENCE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+
+# Add confidence-based warnings
+if [ "$CONFIDENCE" = "low" ]; then
+    echo "⚠️  LOW CONFIDENCE - Manual review recommended"
+    echo "   The classifier is uncertain. Consider /route for detailed analysis."
+    echo ""
+fi
 
 case "$CLASSIFICATION" in
     simple_utility)
@@ -43,10 +73,9 @@ case "$CLASSIFICATION" in
         echo "Suggested Command:"
         echo "  /local-code $TASK"
         echo ""
-        echo "Alternative (with template):"
-        echo "  bash ./scripts/call-local-model.sh deepseek \"\$(cat .claude/prompts/utility-function.md)"
-        echo ""
-        echo "  Task: $TASK\""
+        if [ "$CONFIDENCE" = "high" ]; then
+            echo "💚 HIGH CONFIDENCE - Safe to auto-delegate"
+        fi
         echo ""
         echo "💡 Tip: Review output with Claude to fix import paths and export style"
         echo "   Expected token savings: 70-85%"
@@ -63,10 +92,9 @@ case "$CLASSIFICATION" in
         echo "Suggested Command:"
         echo "  /local-code $TASK"
         echo ""
-        echo "Alternative (with template):"
-        echo "  bash ./scripts/call-local-model.sh deepseek \"\$(cat .claude/prompts/react-component.md)"
-        echo ""
-        echo "  Task: $TASK\""
+        if [ "$CONFIDENCE" = "high" ]; then
+            echo "💚 HIGH CONFIDENCE - Safe to auto-delegate"
+        fi
         echo ""
         echo "💡 Tip: Review output with Claude to fix:"
         echo "   - Import paths (count directories explicitly)"
@@ -86,28 +114,64 @@ case "$CLASSIFICATION" in
         echo "Suggested Command:"
         echo "  /local-refactor $TASK"
         echo ""
-        echo "Alternative:"
-        echo "  bash ./scripts/call-local-model.sh qwen \"$TASK\""
+        if [ "$CONFIDENCE" = "high" ]; then
+            echo "💚 HIGH CONFIDENCE - Safe to auto-delegate"
+        fi
         echo ""
         echo "💡 Tip: Qwen preserves existing code well but may over-explain"
         echo "   Add 'code only, no explanations' to prompt if needed"
         ;;
 
+    documentation)
+        echo "✅ Recommended: Qwen (local model)"
+        echo ""
+        echo "Reasoning:"
+        echo "  - Task is documentation/comments (Qwen's strength)"
+        echo "  - Qwen produces good technical documentation"
+        echo "  - Expected generation time: ~5-15 seconds"
+        echo ""
+        echo "Suggested Command:"
+        echo "  /local-doc $TASK"
+        echo ""
+        if [ "$CONFIDENCE" = "high" ]; then
+            echo "💚 HIGH CONFIDENCE - Safe to auto-delegate"
+        fi
+        echo ""
+        echo "💡 Tip: Specify JSDoc vs inline comments vs README"
+        ;;
+
+    test_generation)
+        echo "✅ Recommended: Qwen (local model)"
+        echo ""
+        echo "Reasoning:"
+        echo "  - Task is test generation"
+        echo "  - Qwen can produce good unit test structure"
+        echo "  - Expected generation time: ~10-20 seconds"
+        echo ""
+        echo "Suggested Command:"
+        echo "  /local-test $TASK"
+        echo ""
+        if [ "$CONFIDENCE" = "high" ]; then
+            echo "💚 HIGH CONFIDENCE - Safe to auto-delegate"
+        fi
+        echo ""
+        echo "💡 Tip: May need Claude review for complex mocks/integration"
+        ;;
+
     complex)
-        echo "⚠️  Recommended: Claude"
+        echo "⚠️  Recommended: Consider decomposition"
         echo ""
         echo "Reasoning:"
         echo "  - Task appears moderately complex"
-        echo "  - May require project context or multiple integrations"
-        echo "  - Local models might need significant fixes (5-10 min overhead)"
+        echo "  - May benefit from breaking into smaller tasks"
+        echo "  - Local models might need significant fixes"
         echo ""
-        echo "Suggested Command:"
-        echo "  Just describe the task to Claude directly"
+        echo "Options:"
+        echo "  1. Use /cto-decompose to break into subtasks"
+        echo "  2. Describe directly to Claude"
+        echo "  3. Try /local-code (may need fixes)"
         echo ""
-        echo "Alternative (if you want to try local first):"
-        echo "  /local-code $TASK"
-        echo ""
-        echo "  Then review with Claude (may not save tokens if fixes are extensive)"
+        echo "💡 Tip: Decomposition often identifies delegatable subtasks"
         ;;
 
     claude_required)
@@ -135,4 +199,4 @@ case "$CLASSIFICATION" in
 esac
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

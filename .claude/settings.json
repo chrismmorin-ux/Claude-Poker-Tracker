@@ -48,6 +48,15 @@
             "command": "node .claude/hooks/commit-project-check.cjs"
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/delegation-check-pre.cjs"
+          }
+        ]
       }
     ],
     "PostToolUse": [
