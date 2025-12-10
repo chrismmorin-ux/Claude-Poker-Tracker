@@ -241,7 +241,7 @@ describe('sessionReducer', () => {
   });
 
   describe('HYDRATE_SESSION', () => {
-    it('hydrates session state from saved data', () => {
+    it('hydrates session state from saved data, merging with defaults', () => {
       const session = {
         sessionId: 10,
         startTime: 1700000000000,
@@ -252,7 +252,15 @@ describe('sessionReducer', () => {
         type: SESSION_ACTIONS.HYDRATE_SESSION,
         payload: { session },
       });
-      expect(newState.currentSession).toEqual(session);
+      // Session should have the provided values merged with defaults
+      expect(newState.currentSession.sessionId).toBe(10);
+      expect(newState.currentSession.startTime).toBe(1700000000000);
+      expect(newState.currentSession.isActive).toBe(true);
+      expect(newState.currentSession.venue).toBe('Wind Creek Casino');
+      // Missing fields should have defaults from initialSessionState
+      expect(newState.currentSession.rebuyTransactions).toEqual([]);
+      expect(newState.currentSession.handCount).toBe(0);
+      expect(newState.currentSession.reUp).toBe(0);
     });
 
     it('uses initial state when session is null', () => {
@@ -261,6 +269,23 @@ describe('sessionReducer', () => {
         payload: { session: null },
       });
       expect(newState.currentSession).toEqual(initialSessionState.currentSession);
+    });
+
+    it('preserves all fields when hydrating complete session', () => {
+      const completeSession = {
+        ...initialSessionState.currentSession,
+        sessionId: 20,
+        startTime: 1700000000000,
+        isActive: true,
+        venue: 'Horseshoe Casino',
+        gameType: '2/5',
+        buyIn: 500,
+      };
+      const newState = sessionReducer(state, {
+        type: SESSION_ACTIONS.HYDRATE_SESSION,
+        payload: { session: completeSession },
+      });
+      expect(newState.currentSession).toEqual(completeSession);
     });
   });
 

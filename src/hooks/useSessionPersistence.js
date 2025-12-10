@@ -154,23 +154,33 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
   // ==========================================================================
 
   /**
-   * Start a new session
+   * Start a new session (atomic with rollback)
    * @param {Object} sessionData - Session data (buyIn, goal, notes, etc.)
    * @returns {Promise<number>} The new session ID
+   *
+   * This function implements atomic session creation with rollback:
+   * 1. Create session in DB
+   * 2. Set as active session in DB
+   * 3. Update React state
+   * If step 3 fails, steps 1-2 are rolled back to prevent orphan sessions.
    */
   const startNewSession = useCallback(async (sessionData = {}) => {
+    let sessionId = null;
+    let activeSessionSet = false;
+
     try {
       log('Starting new session...');
 
-      // Create session in database
-      const sessionId = await createSession(sessionData);
+      // Step 1: Create session in database
+      sessionId = await createSession(sessionData);
       log(`Session ${sessionId} created in database`);
 
-      // Set as active session
+      // Step 2: Set as active session
       await setActiveSession(sessionId);
+      activeSessionSet = true;
       log(`Session ${sessionId} set as active`);
 
-      // Update reducer state
+      // Step 3: Update reducer state (could fail)
       dispatchSession({
         type: SESSION_ACTIONS.START_SESSION,
         payload: {
@@ -189,7 +199,31 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
       log('New session started successfully');
       return sessionId;
     } catch (error) {
-      logError('Failed to start new session:', error);
+      // Rollback: Clean up DB state if any step failed
+      logError(new AppError(
+        ERROR_CODES.OPERATION_FAILED,
+        'Failed to start new session, attempting rollback',
+        { sessionId, error: error.message }
+      ));
+
+      try {
+        if (activeSessionSet) {
+          await clearActiveSession();
+          log('Rollback: cleared active session');
+        }
+        if (sessionId) {
+          await dbDeleteSession(sessionId);
+          log(`Rollback: deleted session ${sessionId}`);
+        }
+      } catch (rollbackError) {
+        // Log but don't throw - original error is more important
+        logError(new AppError(
+          ERROR_CODES.OPERATION_FAILED,
+          'Rollback failed',
+          { rollbackError: rollbackError.message }
+        ));
+      }
+
       throw error;
     }
   }, [dispatchSession]);

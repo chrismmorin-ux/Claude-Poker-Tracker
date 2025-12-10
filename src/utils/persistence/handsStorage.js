@@ -116,7 +116,7 @@ export const loadLatestHand = async () => {
         if (cursor) {
           const hand = cursor.value;
           log(`Loaded latest hand (ID: ${hand.handId}, timestamp: ${new Date(hand.timestamp).toLocaleString()})`);
-          resolve(hand);
+          resolve(normalizeHandRecord(hand));
         } else {
           log('No hands found in database');
           resolve(null);

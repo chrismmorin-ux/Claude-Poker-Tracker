@@ -7,6 +7,8 @@
  */
 
 import { createValidatedReducer } from '../utils/reducerUtils';
+import { isCardInUse } from '../utils/validation';
+import { logger, DEBUG } from '../utils/errorHandler';
 
 // Action types (card data only)
 export const CARD_ACTIONS = {
@@ -112,6 +114,26 @@ const rawCardReducer = (state, action) => {
 
     case CARD_ACTIONS.SET_PLAYER_CARD: {
       const { seat, slotIndex, card } = action.payload;
+
+      // Check for duplicate cards (skip empty strings - clearing a slot)
+      if (card && card !== '') {
+        const inUse = isCardInUse(
+          card,
+          state.communityCards,
+          state.holeCards,
+          state.allPlayerCards,
+          seat,      // Exclude current seat
+          slotIndex  // Exclude current slot
+        );
+
+        if (inUse) {
+          if (DEBUG) {
+            logger.warn('cardReducer', `Duplicate card rejected: ${card} at seat ${seat}, slot ${slotIndex}`);
+          }
+          return state; // Reject duplicate - return unchanged state
+        }
+      }
+
       const newAllPlayerCards = { ...state.allPlayerCards };
       newAllPlayerCards[seat] = [...newAllPlayerCards[seat]];
       newAllPlayerCards[seat][slotIndex] = card;
@@ -129,10 +151,13 @@ const rawCardReducer = (state, action) => {
         allPlayerCards: createEmptyPlayerCards(),
       };
 
+    // Hydrate card state from database (on app startup)
+    // Merges with defaults to ensure all fields exist (handles old records lacking new fields)
     case CARD_ACTIONS.HYDRATE_STATE:
       return {
-        ...state,
-        ...action.payload  // Merge loaded card state (persistent fields only)
+        ...initialCardState,  // Defaults first
+        ...state,             // Current state
+        ...action.payload     // Loaded data overwrites
       };
 
     default:

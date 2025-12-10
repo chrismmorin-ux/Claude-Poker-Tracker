@@ -2,8 +2,38 @@
   "version": "1.0.0",
   "description": "Project Continuity Registry - Tracks active, pending, and completed projects",
   "active": [],
-  "pending": [],
+  "pending": [
+    {
+      "id": "typescript-migration",
+      "name": "TypeScript Migration (Phase D)",
+      "file": "docs/projects/typescript-migration.project.md",
+      "priority": "medium",
+      "phases": 3,
+      "phasesComplete": 0,
+      "description": "Future TypeScript migration - type definitions, type guards, gradual conversion"
+    }
+  ],
   "completed": [
+    {
+      "id": "audit-fix-implementation",
+      "name": "Audit Fix Implementation (Phases A-C)",
+      "file": "docs/projects/audit-fix-implementation.project.md",
+      "priority": "high",
+      "completedAt": "2025-12-09",
+      "phases": 3,
+      "phasesComplete": 3,
+      "description": "Critical fixes from Core System Audit: normalization, HYDRATE defaults, validators, card duplicates, session atomicity"
+    },
+    {
+      "id": "core-system-audit",
+      "name": "Core System Audit - Poker Tracker Application",
+      "file": "docs/projects/core-system-audit.project.md",
+      "priority": "high",
+      "completedAt": "2025-12-09",
+      "phases": 5,
+      "phasesComplete": 5,
+      "description": "Comprehensive audit with 15 documents covering persistence, reducers, hydration, invariants, and schema proposals"
+    },
     {
       "id": "comprehensive-refactoring-v114",
       "name": "Comprehensive Refactoring v114",
@@ -43,5 +73,5 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-09T17:40:00Z"
+  "lastUpdated": "2025-12-09T22:00:00Z"
 }

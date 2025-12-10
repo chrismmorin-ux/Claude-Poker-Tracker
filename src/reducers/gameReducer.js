@@ -218,10 +218,13 @@ const rawGameReducer = (state, action) => {
         // Keep absentSeats as-is (don't clear)
       };
 
+    // Hydrate game state from database (on app startup)
+    // Merges with defaults to ensure all fields exist (handles old records lacking new fields)
     case GAME_ACTIONS.HYDRATE_STATE:
       return {
-        ...state,
-        ...action.payload  // Merge loaded state
+        ...initialGameState,  // Defaults first
+        ...state,             // Current state
+        ...action.payload     // Loaded data overwrites
       };
 
     default:

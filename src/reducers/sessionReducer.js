@@ -135,10 +135,13 @@ const rawSessionReducer = (state, action) => {
       };
 
     // Hydrate session state from database (on app startup)
+    // Merges with defaults to ensure all fields exist (handles old records lacking new fields)
     case SESSION_ACTIONS.HYDRATE_SESSION:
       return {
         ...state,
-        currentSession: action.payload.session || initialSessionState.currentSession
+        currentSession: action.payload.session
+          ? { ...initialSessionState.currentSession, ...action.payload.session }
+          : initialSessionState.currentSession
       };
 
     // Increment hand count (called after each hand is saved)
