@@ -12,6 +12,7 @@ import { ShowdownView } from './components/views/ShowdownView';
 import { HistoryView } from './components/views/HistoryView';
 import { SessionsView } from './components/views/SessionsView';
 import { PlayersView } from './components/views/PlayersView';
+import { SettingsView } from './components/views/SettingsView';
 import { logger } from './utils/errorHandler';
 import { gameReducer, initialGameState, GAME_ACTIONS } from './reducers/gameReducer';
 import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
@@ -803,18 +804,7 @@ const PokerTrackerWireframes = () => {
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Settings" onReturnToTable={returnToTable}>
-          <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Settings</h1>
-              <p className="text-gray-400 mb-4">Settings view coming soon...</p>
-              <button
-                onClick={() => setCurrentScreen(SCREEN.TABLE)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
-              >
-                Back to Table
-              </button>
-            </div>
-          </div>
+          <SettingsView scale={scale} />
         </ViewErrorBoundary>
       </>
     );
