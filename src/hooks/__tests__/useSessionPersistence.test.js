@@ -19,6 +19,7 @@ vi.mock('../../utils/persistence', () => ({
   getSessionById: vi.fn(() => Promise.resolve(null)),
   updateSession: vi.fn(() => Promise.resolve()),
   deleteSession: vi.fn(() => Promise.resolve()),
+  GUEST_USER_ID: 'guest',
 }));
 
 // Mock the errorHandler module
@@ -167,7 +168,7 @@ describe('useSessionPersistence', () => {
         await result.current.startNewSession({ buyIn: 200, venue: 'Horseshoe Casino' });
       });
 
-      expect(createSession).toHaveBeenCalledWith({ buyIn: 200, venue: 'Horseshoe Casino' });
+      expect(createSession).toHaveBeenCalledWith({ buyIn: 200, venue: 'Horseshoe Casino' }, 'guest');
     });
 
     it('sets session as active', async () => {
@@ -183,7 +184,7 @@ describe('useSessionPersistence', () => {
         await result.current.startNewSession({});
       });
 
-      expect(setActiveSession).toHaveBeenCalledWith(42);
+      expect(setActiveSession).toHaveBeenCalledWith(42, 'guest');
     });
 
     it('dispatches START_SESSION action', async () => {

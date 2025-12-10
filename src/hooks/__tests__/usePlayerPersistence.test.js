@@ -16,6 +16,7 @@ vi.mock('../../utils/persistence', () => ({
   updatePlayer: vi.fn(() => Promise.resolve()),
   deletePlayer: vi.fn(() => Promise.resolve()),
   getPlayerByName: vi.fn(() => Promise.resolve(null)),
+  GUEST_USER_ID: 'guest',
 }));
 
 // Mock the errorHandler module
@@ -129,7 +130,7 @@ describe('usePlayerPersistence', () => {
         await result.current.createNewPlayer({ name: 'Charlie' });
       });
 
-      expect(createPlayer).toHaveBeenCalledWith({ name: 'Charlie' });
+      expect(createPlayer).toHaveBeenCalledWith({ name: 'Charlie' }, 'guest');
     });
 
     it('validates name uniqueness', async () => {
@@ -194,7 +195,7 @@ describe('usePlayerPersistence', () => {
         await result.current.updatePlayerById(5, { nickname: 'Ace' });
       });
 
-      expect(updatePlayer).toHaveBeenCalledWith(5, { nickname: 'Ace' });
+      expect(updatePlayer).toHaveBeenCalledWith(5, { nickname: 'Ace' }, 'guest');
     });
 
     it('validates name uniqueness when updating name', async () => {

@@ -22,6 +22,7 @@ vi.mock('../../utils/persistence', () => ({
   saveHand: vi.fn(() => Promise.resolve(1)),
   loadLatestHand: vi.fn(() => Promise.resolve(null)),
   clearAllHands: vi.fn(() => Promise.resolve()),
+  GUEST_USER_ID: 'guest',
 }));
 
 // Mock the errorHandler module

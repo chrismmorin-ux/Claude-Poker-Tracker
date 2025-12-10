@@ -16,6 +16,7 @@ vi.mock('../../../utils/persistence', () => ({
   getHandsBySessionId: vi.fn(() => Promise.resolve([])),
   getAllSessions: vi.fn(() => Promise.resolve([])),
   getSessionHandCount: vi.fn(() => Promise.resolve(0)),
+  GUEST_USER_ID: 'guest',
 }));
 
 import {

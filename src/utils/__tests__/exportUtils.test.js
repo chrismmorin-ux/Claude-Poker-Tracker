@@ -24,6 +24,7 @@ vi.mock('../persistence', () => ({
   createPlayer: vi.fn(),
   deleteSession: vi.fn(),
   deletePlayer: vi.fn(),
+  GUEST_USER_ID: 'guest',
 }));
 
 import {

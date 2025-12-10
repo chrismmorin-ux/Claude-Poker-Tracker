@@ -34,6 +34,7 @@ vi.mock('../../utils/persistence', () => ({
   deletePlayer: vi.fn().mockResolvedValue(undefined),
   getPlayerByName: vi.fn().mockResolvedValue(null),
   initDB: vi.fn().mockResolvedValue(undefined),
+  GUEST_USER_ID: 'guest',
 }));
 
 describe('IndexedDBStorage', () => {

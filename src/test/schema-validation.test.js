@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Import canonical sources
-import { ACTIONS, STREETS, SUITS, RANKS } from '../constants/gameConstants.js';
+import { ACTIONS, STREETS, SUITS, RANKS, ACTION_ABBREV } from '../constants/gameConstants.js';
 import { SESSION_ACTIONS, VENUES, GAME_TYPES } from '../constants/sessionConstants.js';
 import { PLAYER_ACTIONS, ETHNICITY_OPTIONS, BUILD_OPTIONS, GENDER_OPTIONS, STYLE_TAGS } from '../constants/playerConstants.js';
 import { GAME_ACTIONS, initialGameState } from '../reducers/gameReducer.js';
@@ -84,9 +84,6 @@ describe('Schema Validation - Documentation Drift Detection', () => {
 
   describe('Constants Documentation', () => {
     it('All ACTIONS should have ACTION_ABBREV defined', () => {
-      // Import ACTION_ABBREV
-      const { ACTION_ABBREV } = require('../constants/gameConstants.js');
-
       const actionKeys = Object.values(ACTIONS);
       const abbrevKeys = Object.keys(ACTION_ABBREV);
 
