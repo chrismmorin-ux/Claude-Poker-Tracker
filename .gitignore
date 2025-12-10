@@ -43,4 +43,5 @@ coverage/
 .claude/.project-update-session.json
 .claude/.agent-suggest-session.json
 .claude/.last-review.json
+.claude/.new-work-check-shown.json
 .claude/arch-changes.log
