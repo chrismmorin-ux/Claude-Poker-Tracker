@@ -1,0 +1,15 @@
+{
+  "task_id": "TEST-001",
+  "model": "deepseek",
+  "description": "Create a simple utility function that formats a number as currency (USD). The function should take a number and return a string like '$1,234.56'. Handle negative numbers with parentheses like '($1,234.56)'.",
+  "output_file": "src/utils/formatCurrency.js",
+  "context_files": [],
+  "constraints": [
+    "Export a named function called formatCurrency",
+    "Include JSDoc comment with @param and @returns",
+    "Handle edge cases: null, undefined, NaN should return '$0.00'",
+    "Use Intl.NumberFormat for locale-aware formatting"
+  ],
+  "test_command": "",
+  "language": "javascript"
+}

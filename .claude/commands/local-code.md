@@ -3,15 +3,35 @@ description: Use DeepSeek to generate new code/boilerplate
 argument-hint: [description of code to generate]
 ---
 
-**Using DeepSeek Coder** to generate code...
+**Local Model Code Generation**
 
-$(bash ./scripts/call-local-model.sh deepseek "Generate code for: $ARGUMENTS
+To generate code with local models, Claude should:
 
-Please create clean, production-ready code following modern best practices and coding standards.
+1. **Create a task spec file** at `.claude/task-specs/<task-id>.json`:
+```json
+{
+  "task_id": "T-XXX",
+  "model": "deepseek",
+  "description": "Clear description of what to create",
+  "output_file": "src/path/to/file.js",
+  "context_files": ["relevant/context/file.js"],
+  "constraints": ["Constraint 1", "Constraint 2"],
+  "test_command": "",
+  "language": "javascript"
+}
+```
 
-IMPORTANT: After completing this task, append your status to .claude/BACKLOG.md in the 'Local Model Updates' section:
-### [TIMESTAMP] Task Completed
-- **Task ID**: (if assigned)
-- **Status**: completed | failed | blocked
-- **Output**: Description of what was created
-- **Notes**: Any issues or follow-up needed")
+2. **Execute the task**:
+```bash
+./scripts/execute-local-task.sh .claude/task-specs/<task-id>.json
+```
+
+3. **Review the output** - Read the created file and verify quality
+
+4. **If issues**, either:
+   - Revise the task spec and retry (1x max)
+   - Implement directly with Claude
+
+**User Request**: $ARGUMENTS
+
+Claude should now decompose this into a task spec and execute it.

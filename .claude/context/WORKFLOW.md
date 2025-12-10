@@ -27,31 +27,59 @@ When using `EnterPlanMode`:
 
 **Files**: `docs/projects/*.project.md` (active), `docs/archive/` (completed)
 
-## Local Model Delegation
+## Local Model Delegation (MANDATORY)
 
-### When to Delegate (Use `/local-*`)
-| Task | Command |
-|------|---------|
-| Utility function (<80 lines) | `/local-code` |
-| Simple UI component (<100 lines) | `/local-code` |
-| Refactoring/renaming | `/local-refactor` |
-| JSDoc/comments | `/local-doc` |
-| Unit tests | `/local-test` |
+**User Mandate**: Local models do 80%+ of implementation. Claude plans, decomposes, and reviews.
 
-### When Claude Implements
-- Reducer logic, custom hooks, state management
-- Multi-file changes, integration code
-- Core persistence/hydration (needs permission)
+### Claude's Role
+1. **Decompose** user requests into atomic tasks (≤50 lines each)
+2. **Create task specs** for each delegable task
+3. **Execute** via `./scripts/execute-local-task.sh`
+4. **Review** output quality
+5. **Only implement directly** if task is non-delegable
 
-### Commands
-```bash
-/route <task>         # Get recommendation
-/local <task>         # Auto-route
-/local-code <task>    # DeepSeek: new code
-/local-refactor <task># Qwen: refactoring
-/local-doc <task>     # Qwen: docs
-/local-test <task>    # Qwen: tests
+### Atomic Task Criteria
+A task is delegable to local model if ALL:
+- ≤50 lines of code
+- ≤2 external imports
+- Affects 1 file only
+- Stateless or simple logic
+- Has clear constraints
+
+### Task Spec Format
+```json
+{
+  "task_id": "T-XXX",
+  "model": "deepseek",
+  "description": "Specific, clear description",
+  "output_file": "src/path/to/file.js",
+  "context_files": ["relevant/file.js"],
+  "constraints": ["Export named function", "Include JSDoc"],
+  "test_command": "npx vitest run path/to/test",
+  "language": "javascript"
+}
 ```
+
+### Execution Flow
+```bash
+# 1. Create task spec
+# 2. Execute
+./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
+# 3. Review output
+# 4. If quality issues: revise spec and retry (1x) or implement directly
+```
+
+### Non-Delegable (Claude implements)
+- Reducers, custom hooks, state management
+- Multi-file changes, integration code
+- Bug fixes (need root cause analysis)
+- Tasks requiring deep context understanding
+
+### Model Selection
+| Model | Best For |
+|-------|----------|
+| `deepseek` | New code generation, utilities |
+| `qwen` | Refactoring, documentation, tests |
 
 ## Documentation Sync
 
