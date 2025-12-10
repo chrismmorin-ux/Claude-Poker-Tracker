@@ -1,5 +1,5 @@
 # Project Backlog - Single Source of Truth
-**Last Updated**: 2025-12-09 | **Updated By**: Claude
+**Last Updated**: 2025-12-09 | **Updated By**: Claude | **Roadmap**: See `C:\Users\chris\.claude\plans\snug-gathering-flurry.md`
 
 This file is the central registry for ALL work: active, delegated, pending, and planned.
 Both Claude and local models read and update this file.
@@ -105,21 +105,97 @@ When delegating, Claude outputs:
 
 Projects that need `/project start` before beginning.
 
-### TypeScript Migration
-- **ID**: typescript-migration
+### MVP Phase Projects
+
+#### MVP Critical Fixes (NEXT UP)
+- **ID**: mvp-critical-fixes
+- **Priority**: P0
+- **Status**: Planned (NEXT UP)
+- **File**: `docs/projects/mvp-critical-fixes.project.md`
+- **Description**: P0+P1 audit fixes for system stability (loadLatestHand normalization, session hydration defaults, startNewSession atomicity, card duplicates, validation layer)
+- **Phases**: 2 planned
+- **Blocked By**: None (start here)
+
+#### Settings System
+- **ID**: settings-system
+- **Priority**: P1
+- **Status**: Planned
+- **File**: `docs/projects/settings-system.project.md`
+- **Description**: Settings infrastructure, preferences UI, venue/game type customization
+- **Phases**: 3 planned
+- **Blocked By**: mvp-critical-fixes
+
+#### Error Reporting
+- **ID**: error-reporting
 - **Priority**: P2
-- **Status**: Planned (not started)
+- **Status**: Planned
+- **File**: `docs/projects/error-reporting.project.md`
+- **Description**: Local error logging, error log viewer, bug report export
+- **Phases**: 3 planned
+- **Blocked By**: settings-system
+
+#### MVP Polish
+- **ID**: mvp-polish
+- **Priority**: P2
+- **Status**: Planned
+- **File**: `docs/projects/mvp-polish.project.md`
+- **Description**: Toast review, error message polish, UI animations, destructive action confirmations
+- **Phases**: 4 planned
+- **Blocked By**: mvp-critical-fixes
+
+---
+
+### Phase 2 Projects (Post-MVP)
+
+#### Firebase Cloud Sync
+- **ID**: firebase-cloud-sync
+- **Priority**: P3
+- **Status**: Planned
+- **File**: `docs/projects/firebase-cloud-sync.project.md`
+- **Description**: Firebase backup/restore, device-based auth, conflict resolution, multi-device sync
+- **Phases**: 5 planned
+- **Blocked By**: settings-system, MVP complete
+
+#### Player Tendencies Analytics (PRIMARY)
+- **ID**: player-tendencies
+- **Priority**: P3
+- **Status**: Planned
+- **File**: `docs/projects/player-tendencies.project.md`
+- **Description**: VPIP, PFR, aggression factor, 3-bet%, C-bet% calculations and display
+- **Phases**: 5 planned
+- **Blocked By**: MVP complete
+- **Note**: User's primary analytics focus
+
+---
+
+### Phase 3 Projects (Expansion)
+
+#### Range Analysis Tools
+- **ID**: range-analysis
+- **Priority**: P4
+- **Status**: Planned
+- **File**: `docs/projects/range-analysis.project.md`
+- **Description**: Hand range input matrix, equity calculator, range comparison
+- **Phases**: 4 planned
+- **Blocked By**: Phase 2 complete
+
+#### TypeScript Migration
+- **ID**: typescript-migration
+- **Priority**: P4
+- **Status**: Planned
 - **File**: `docs/projects/typescript-migration.project.md`
 - **Description**: Type definitions, type guards, gradual conversion
 - **Phases**: 3 planned
-- **Blocked By**: None (ready when prioritized)
+- **Blocked By**: MVP complete (optional enhancement)
+
+---
 
 ### Future Ideas
 | Idea | Description | Complexity | Notes |
 |------|-------------|------------|-------|
-| Stats Dashboard | Visual stats for session history | Medium | Needs charting library |
-| Cloud Sync | Backup/restore to cloud storage | High | Security considerations |
+| Advanced Stats | Positional stats, trends over time | Medium | After player-tendencies |
 | Mobile PWA | Progressive web app packaging | Medium | Service worker needed |
+| Session Heat Maps | Profit by hour of day | Medium | After basic analytics |
 
 ---
 

@@ -6,10 +6,73 @@
   "active": [],
   "pending": [
     {
+      "id": "mvp-critical-fixes",
+      "name": "MVP Critical Fixes (P0+P1 Audit Issues)",
+      "file": "docs/projects/mvp-critical-fixes.project.md",
+      "priority": "P0",
+      "phases": 2,
+      "phasesComplete": 0,
+      "description": "Fix P0+P1 audit issues: loadLatestHand normalization, session hydration, atomicity, card duplicates, validation layer"
+    },
+    {
+      "id": "settings-system",
+      "name": "Settings System",
+      "file": "docs/projects/settings-system.project.md",
+      "priority": "P1",
+      "phases": 3,
+      "phasesComplete": 0,
+      "description": "Settings infrastructure, preferences UI, venue/game type customization"
+    },
+    {
+      "id": "error-reporting",
+      "name": "Error Reporting System",
+      "file": "docs/projects/error-reporting.project.md",
+      "priority": "P2",
+      "phases": 3,
+      "phasesComplete": 0,
+      "description": "Local error logging, error log viewer, bug report export"
+    },
+    {
+      "id": "mvp-polish",
+      "name": "MVP UI Polish Pass",
+      "file": "docs/projects/mvp-polish.project.md",
+      "priority": "P2",
+      "phases": 4,
+      "phasesComplete": 0,
+      "description": "Toast review, error message polish, UI animations, destructive action confirmations"
+    },
+    {
+      "id": "firebase-cloud-sync",
+      "name": "Firebase Cloud Sync",
+      "file": "docs/projects/firebase-cloud-sync.project.md",
+      "priority": "P3",
+      "phases": 5,
+      "phasesComplete": 0,
+      "description": "Firebase backup/restore, device-based auth, conflict resolution, multi-device sync"
+    },
+    {
+      "id": "player-tendencies",
+      "name": "Player Tendencies Analytics",
+      "file": "docs/projects/player-tendencies.project.md",
+      "priority": "P3",
+      "phases": 5,
+      "phasesComplete": 0,
+      "description": "VPIP, PFR, aggression factor, 3-bet%, C-bet% calculations and display"
+    },
+    {
+      "id": "range-analysis",
+      "name": "Range Analysis Tools",
+      "file": "docs/projects/range-analysis.project.md",
+      "priority": "P4",
+      "phases": 4,
+      "phasesComplete": 0,
+      "description": "Hand range input matrix, equity calculator, range comparison"
+    },
+    {
       "id": "typescript-migration",
       "name": "TypeScript Migration (Phase D)",
       "file": "docs/projects/typescript-migration.project.md",
-      "priority": "medium",
+      "priority": "P4",
       "phases": 3,
       "phasesComplete": 0,
       "description": "Future TypeScript migration - type definitions, type guards, gradual conversion"
@@ -75,5 +138,6 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-09T22:00:00Z"
+  "lastUpdated": "2025-12-09T23:30:00Z",
+  "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
 }
