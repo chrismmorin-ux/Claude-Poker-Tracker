@@ -8,6 +8,14 @@
 4. **Read before write** - Read all affected files in parallel first
 5. **Plan if complex** - 4+ files or cross-cutting concerns → `EnterPlanMode`
 
+## Planning Mode Guidelines
+When using `EnterPlanMode`:
+1. **Single source of truth** - Project file (`docs/projects/*.project.md`) is authoritative
+2. **Plan file purpose** - Only for local model execution prompts (~100 lines max)
+3. **No duplication** - Don't repeat task tables, checklists, or execution orders in plan file
+4. **Agent parallelization** - Launch independent agents in single parallel batch
+5. **Trim after planning** - Delete redundant plan file content once project file is finalized
+
 ## Project Commands
 ```bash
 /project status       # View all projects
@@ -74,3 +82,18 @@
 | `docs-sync` | Tracks source→doc staleness |
 | `efficiency-tracker` | Session metrics |
 | `project-status` | Shows active projects |
+
+## Process Learnings (Updated 2025-12-10)
+
+### PROC-001: Single Source of Truth
+- Project file is authoritative; plan file is execution notes only
+- Avoid duplicating task tables, phase lists, verification checklists
+
+### PROC-002: Agent Parallelization
+- Before launching agents, list dependencies explicitly
+- Independent agents → single parallel batch
+- Dependent agents → wait for prerequisites
+
+### PROC-003: Backlog Consistency
+- Phase counts in BACKLOG.md must match project file
+- Verify after any project file update

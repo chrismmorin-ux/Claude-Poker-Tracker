@@ -113,27 +113,46 @@ Projects that need `/project start` before beginning.
 ├──────────┬──────────────────────────────────┬───────────────────┤
 │ Priority │ Project                          │ Status            │
 ├──────────┼──────────────────────────────────┼───────────────────┤
-│ 1. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
-│ 2. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
-│ 3. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
-│ 4. P2    │ Firebase Authentication          │ ◀ IN PROGRESS 3/6 │
-│ 5. P2    │ MVP UI Polish                    │ NEXT UP           │
-│ 6. P3    │ Firebase Cloud Sync              │ Post-MVP          │
-│ 7. P3    │ Player Tendencies Analytics      │ Post-MVP          │
-│ 8. P4    │ Range Analysis Tools             │ Phase 3           │
-│ 9. P4    │ TypeScript Migration             │ Optional          │
+│ 1. P0    │ Architecture Health & Actions    │ ◀ IN PROGRESS 0/6 │
+│ 2. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
+│ 3. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
+│ 4. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
+│ 5. P2    │ Firebase Authentication          │ PAUSED 4/6        │
+│ 6. P2    │ MVP UI Polish                    │ After Arch Health │
+│ 7. P3    │ Firebase Cloud Sync              │ Post-MVP          │
+│ 8. P3    │ Player Tendencies Analytics      │ Post-Arch Health  │
+│ 9. P4    │ Range Analysis Tools             │ Post-Arch Health  │
+│ 10.P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Current: Firebase Auth (Phase 5 next)
-Then: /project start mvp-polish
+Current: Architecture Health (Phase 1)
+Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 ```
+
+### Active Projects
+
+#### Architecture Health & Action System Refactor (IN PROGRESS)
+- **ID**: architecture-health
+- **Priority**: P0 (Critical for future features)
+- **Status**: ◀ IN PROGRESS (Phase 1)
+- **File**: `docs/projects/architecture-health.project.md`
+- **Plan**: `C:\Users\chris\.claude\plans\frolicking-cooking-glacier.md`
+- **Description**: CTO review fixes + action system refactor (primitive actions → pattern recognition)
+- **Phases**: 0/5 complete (30+ tasks, 24 local / 6 Claude)
+- **Phase 1**: Architecture Cleanup (IndexedDB userId, main component decomposition, deps update)
+- **Phase 2**: Primitive Action System (check/bet/call/raise/fold only)
+- **Phase 3**: Action Sequence Storage (ordered actions, not aggregated)
+- **Phase 4**: Pattern Recognition Engine (derive 3bet, cbet, check-raise, etc.)
+- **Phase 5**: Migration & Integration
+- **Deferred**: Hand Strength (separate project), Bet Sizing (separate project)
+- **Blocks**: Player Tendencies, Range Analysis, Cloud Sync
 
 ### MVP Phase Projects
 
-#### Firebase Authentication (IN PROGRESS)
+#### Firebase Authentication (PAUSED)
 - **ID**: firebase-auth
 - **Priority**: P2
-- **Status**: ◀ IN PROGRESS (Phase 5 next)
+- **Status**: PAUSED (Phase 5 merged into Architecture Health)
 - **File**: `docs/projects/firebase-auth.project.md`
 - **Description**: Optional Firebase Auth with email/password + Google OAuth, guest mode preserved
 - **Phases**: 4/6 complete
@@ -142,7 +161,7 @@ Then: /project start mvp-polish
   - Phase 2: Auth State Management (Reducer + Context)
   - Phase 3: Authentication Views (Login, Signup, Reset)
   - Phase 4: Account Management in Settings
-- **Next**: Phase 5 - Data Isolation (userId in IndexedDB)
+- **Remaining**: Phase 5 (Data Isolation - now in Arch Health), Phase 6 (Polish)
 
 #### Settings System (COMPLETE)
 - **ID**: settings-system
