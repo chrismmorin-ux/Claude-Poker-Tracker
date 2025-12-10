@@ -1,5 +1,52 @@
 # Poker Tracker Change Log
 
+## v115 - Settings System (Current)
+
+### Summary
+- **Purpose**: Create comprehensive settings system with persistence for app customization
+- **New Files**: 6 files (settingsConstants, settingsReducer, SettingsContext, useSettingsPersistence, settingsStorage, SettingsView)
+- **Modified Files**: 3 files (database.js, PokerTracker.jsx, CollapsibleSidebar)
+- **DB Migration**: v5 → v6 (adds 'settings' store)
+- **Tests**: 2,282 tests passing (23 new settings tests)
+
+### Settings Infrastructure (Phase 1)
+- **settingsConstants.js** (~110 lines): Action types, defaults, options
+  - SETTINGS_ACTIONS: LOAD, UPDATE, RESET, HYDRATE, ADD/REMOVE_CUSTOM_VENUE/GAME_TYPE
+  - DEFAULT_SETTINGS: theme, cardSize, defaultVenue, defaultGameType, customVenues, customGameTypes, errorReportingEnabled
+  - THEMES, CARD_SIZES, BACKUP_FREQUENCIES option arrays
+- **settingsReducer.js** (~160 lines): Full state management with validation
+  - All 9 action types handled
+  - Schema validation via createValidatedReducer
+- **SettingsContext.jsx** (~180 lines): Provider + derived values
+  - allVenues: [...VENUES, ...customVenues]
+  - allGameTypes: {...GAME_TYPES, ...customGameTypes}
+  - Handlers: updateSetting, resetSettings, addCustomVenue, removeCustomVenue
+- **useSettingsPersistence.js** (~160 lines): Persistence hook
+  - Init on mount: loads from DB or creates defaults
+  - Auto-save on change (immediate, no debounce)
+  - resetToDefaults handler
+- **settingsStorage.js** (~175 lines): IndexedDB CRUD
+  - Singleton pattern (id: 1)
+  - getSettings, saveSettings, updateSettings, resetSettings
+
+### SettingsView UI (Phase 2)
+- **SettingsView.jsx** (~320 lines): Full settings interface
+  - Display section: Theme toggle (placeholder), card size selector
+  - Game Defaults section: Default venue, default game type dropdowns
+  - Custom Venues section: Add/remove custom venues
+  - Data & About section: Backup frequency (placeholder), error reporting toggle, version info, reset to defaults with confirmation
+
+### Database Migration
+- **database.js**: DB_VERSION 5 → 6
+  - Added SETTINGS_STORE_NAME constant
+  - Added v6 migration block creating 'settings' object store
+
+### Integration
+- **PokerTracker.jsx**: Added settingsReducer, useSettingsPersistence, SettingsProvider, SCREEN.SETTINGS routing
+- **CollapsibleSidebar.jsx**: Added Settings nav link
+
+---
+
 ## v114.1 - MVP Critical Fixes (P0+P1 Audit Issues) ✅
 
 ### Summary

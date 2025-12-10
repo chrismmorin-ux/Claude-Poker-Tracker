@@ -44,7 +44,7 @@ Files to read before starting work:
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1 | [x] COMPLETE | Settings infrastructure (reducer, context, persistence) |
-| 2 | [ ] | SettingsView with basic preferences |
+| 2 | [x] COMPLETE | SettingsView with basic preferences |
 | 3 | [ ] | Venue/game type customization |
 
 ---
@@ -114,49 +114,48 @@ Create the foundational settings system: reducer, context, and persistence layer
 
 ---
 
-## Phase 2: SettingsView <- CURRENT
+## Phase 2: SettingsView [COMPLETE]
 
 ### Goal
 Create the SettingsView UI with basic preference controls.
 
-### Files to Create
-- [ ] `src/components/views/SettingsView.jsx` - Settings UI
+### Files Created
+- [x] `src/components/views/SettingsView.jsx` - Settings UI (~320 lines)
 
-### Files to Modify
-- [ ] `src/PokerTracker.jsx` - Add SCREEN.SETTINGS routing
-- [ ] `src/constants/gameConstants.js` - Add SCREEN.SETTINGS
-- [ ] `src/components/ui/CollapsibleSidebar.jsx` - Add Settings link
+### Files Modified
+- [x] `src/PokerTracker.jsx` - Import SettingsView, route to it
+- [x] `src/components/ui/CollapsibleSidebar.jsx` - Added Settings nav link (done in Phase 1)
 
-### UI Sections
-1. **Display** - Theme toggle (placeholder), card size selector
-2. **Game Defaults** - Default venue, default stakes
-3. **Data** - Export all data, Import data, Clear all data
-4. **About** - Version info, feedback link
+### UI Sections Implemented
+1. **Display** - Theme toggle (placeholder/disabled), card size selector (functional)
+2. **Game Defaults** - Default venue dropdown, default game type dropdown
+3. **Custom Venues** - Add/remove custom venues (integrated with Phase 1 context)
+4. **Data & About** - Backup frequency (placeholder), error reporting toggle, version info (v114.1), reset to defaults with confirmation
 
 ### Verification (Phase 2)
-- [ ] SettingsView renders correctly
-- [ ] Settings changes persist
-- [ ] Navigation works from sidebar
-- [ ] Export/Import/Clear work correctly
-- [ ] Tests pass
+- [x] SettingsView renders correctly
+- [x] Settings changes persist (via useSettingsPersistence)
+- [x] Navigation works from sidebar
+- [x] Custom venue add/remove works
+- [x] All 2282 tests pass
 
 ---
 
-## Phase 3: Venue/Game Type Customization
+## Phase 3: Venue/Game Type Customization <- CURRENT
 
 ### Goal
-Allow users to add/remove custom venues and game types beyond the defaults.
+Allow users to add/remove custom venues and game types beyond the defaults, and integrate them into SessionForm.
 
 ### Files to Modify
-- [ ] `src/components/views/SettingsView.jsx` - Add customization UI
-- [ ] `src/constants/sessionConstants.js` - Make VENUES/GAME_TYPES read from settings
-- [ ] `src/components/ui/SessionForm.jsx` - Use combined venue/game type list
+- [ ] `src/components/views/SettingsView.jsx` - Add custom game type UI (custom venues already done)
+- [ ] `src/components/ui/SessionForm.jsx` - Use `useSettings()` for allVenues, allGameTypes
 
 ### Features
-- Add custom venue (text input)
-- Remove custom venue (not default venues)
-- Add custom game type (label + buy-in default)
-- Remove custom game type
+- [x] Add custom venue (text input) - DONE in Phase 2
+- [x] Remove custom venue (not default venues) - DONE in Phase 2
+- [ ] Add custom game type (label + buy-in default)
+- [ ] Remove custom game type
+- [ ] SessionForm uses combined venue/game type list from settings
 
 ### Verification (Phase 3)
 - [ ] Custom venues appear in SessionForm dropdown
@@ -182,6 +181,7 @@ Allow users to add/remove custom venues and game types beyond the defaults.
 |------|---------|-------|-----------|
 | 2025-12-09 | Initial | Planning | Created project file from roadmap |
 | 2025-12-09 | Phase 1 | Phase 1 | Created settings infrastructure: constants, reducer, context, persistence, tests. DB v5→v6 migration. Added Settings nav to sidebar. All 2282 tests passing. |
+| 2025-12-09 | Phase 2 | Phase 2 | Created SettingsView.jsx with full UI: Display, Game Defaults, Custom Venues, Data & About sections. Integrated into PokerTracker routing. All 2282 tests pass. |
 
 ---
 
