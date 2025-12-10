@@ -105,25 +105,36 @@ When delegating, Claude outputs:
 
 Projects that need `/project start` before beginning.
 
+### Project Priority Order (for new chat sessions)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PROJECT EXECUTION ORDER                       │
+├──────────┬──────────────────────────────────┬───────────────────┤
+│ Priority │ Project                          │ Status            │
+├──────────┼──────────────────────────────────┼───────────────────┤
+│ 1. P1    │ Settings System                  │ ◀ NEXT UP         │
+│ 2. P2    │ Error Reporting                  │ Blocked by #1     │
+│ 3. P2    │ MVP UI Polish                    │ Ready (parallel)  │
+│ 4. P3    │ Firebase Cloud Sync              │ Blocked by #1     │
+│ 5. P3    │ Player Tendencies Analytics      │ Ready after MVP   │
+│ 6. P4    │ Range Analysis Tools             │ Phase 3           │
+│ 7. P4    │ TypeScript Migration             │ Optional          │
+└──────────┴──────────────────────────────────┴───────────────────┘
+
+Start with: /project start settings-system
+```
+
 ### MVP Phase Projects
 
-#### MVP Critical Fixes (NEXT UP)
-- **ID**: mvp-critical-fixes
-- **Priority**: P0
-- **Status**: Planned (NEXT UP)
-- **File**: `docs/projects/mvp-critical-fixes.project.md`
-- **Description**: P0+P1 audit fixes for system stability (loadLatestHand normalization, session hydration defaults, startNewSession atomicity, card duplicates, validation layer)
-- **Phases**: 2 planned
-- **Blocked By**: None (start here)
-
-#### Settings System
+#### Settings System (NEXT UP)
 - **ID**: settings-system
 - **Priority**: P1
-- **Status**: Planned
+- **Status**: Planned (NEXT UP)
 - **File**: `docs/projects/settings-system.project.md`
 - **Description**: Settings infrastructure, preferences UI, venue/game type customization
 - **Phases**: 3 planned
-- **Blocked By**: mvp-critical-fixes
+- **Blocked By**: None (mvp-critical-fixes complete)
 
 #### Error Reporting
 - **ID**: error-reporting
@@ -141,7 +152,7 @@ Projects that need `/project start` before beginning.
 - **File**: `docs/projects/mvp-polish.project.md`
 - **Description**: Toast review, error message polish, UI animations, destructive action confirmations
 - **Phases**: 4 planned
-- **Blocked By**: mvp-critical-fixes
+- **Blocked By**: None (can run parallel with settings-system)
 
 ---
 
@@ -226,6 +237,7 @@ Local models append completion updates here. Claude processes these on next sess
 ### Completed Projects
 | Project | Completed | Phases | Archive |
 |---------|-----------|--------|---------|
+| MVP Critical Fixes | 2025-12-09 | 2/2 | `docs/projects/mvp-critical-fixes.project.md` |
 | Audit Fix Implementation | 2025-12-09 | 3/3 | `docs/projects/audit-fix-implementation.project.md` |
 | Core System Audit | 2025-12-09 | 5/5 | `docs/projects/core-system-audit.project.md` |
 | Comprehensive Refactoring v114 | 2025-12-09 | 4/5 | `docs/archive/comprehensive-refactoring-v114.project.md` |
