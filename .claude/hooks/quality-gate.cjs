@@ -67,7 +67,17 @@ function isAllowedConsoleLog(filePath) {
 async function main() {
   let input = '';
   const rl = readline.createInterface({ input: process.stdin });
-  for await (const line of rl) { input += line; }
+
+  // Set a timeout to prevent hanging if stdin never closes
+  const timeout = setTimeout(() => {
+    rl.close();
+  }, 5000); // 5 second timeout
+
+  try {
+    for await (const line of rl) { input += line; }
+  } finally {
+    clearTimeout(timeout);
+  }
 
   let data;
   try { data = JSON.parse(input); } catch (e) { process.exit(0); }
