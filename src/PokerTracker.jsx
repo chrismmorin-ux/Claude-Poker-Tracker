@@ -18,6 +18,7 @@ import { uiReducer, initialUiState, UI_ACTIONS } from './reducers/uiReducer';
 import { cardReducer, initialCardState, CARD_ACTIONS } from './reducers/cardReducer';
 import { sessionReducer, initialSessionState, SESSION_ACTIONS } from './reducers/sessionReducer';
 import { playerReducer, initialPlayerState, PLAYER_ACTIONS } from './reducers/playerReducer';
+import { settingsReducer, initialSettingsState, SETTINGS_ACTIONS } from './reducers/settingsReducer';
 import {
   getActionDisplayName,
   getActionColor,
@@ -56,10 +57,11 @@ import { useShowdownCardSelection } from './hooks/useShowdownCardSelection';
 import { usePersistence } from './hooks/usePersistence';
 import { useSessionPersistence } from './hooks/useSessionPersistence';
 import { usePlayerPersistence } from './hooks/usePlayerPersistence';
+import { useSettingsPersistence } from './hooks/useSettingsPersistence';
 import { useToast } from './hooks/useToast';
 import { ToastContainer } from './components/ui/Toast';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
-import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider } from './contexts';
+import { GameProvider, UIProvider, SessionProvider, PlayerProvider, CardProvider, SettingsProvider } from './contexts';
 
 // =============================================================================
 // CONSTANTS - All magic numbers and configuration values
@@ -107,6 +109,7 @@ const SCREEN = {
   HISTORY: 'history',
   SESSIONS: 'sessions',
   PLAYERS: 'players',
+  SETTINGS: 'settings',
 };
 
 // =============================================================================
@@ -120,6 +123,7 @@ const PokerTrackerWireframes = () => {
   const [cardState, dispatchCard] = useReducer(cardReducer, initialCardState);
   const [sessionState, dispatchSession] = useReducer(sessionReducer, initialSessionState);
   const [playerState, dispatchPlayer] = useReducer(playerReducer, initialPlayerState);
+  const [settingsState, dispatchSettings] = useReducer(settingsReducer, initialSettingsState);
 
   // Initialize persistence (auto-save + auto-restore)
   const { isReady } = usePersistence(gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession, dispatchPlayer);
@@ -150,6 +154,12 @@ const PokerTrackerWireframes = () => {
     getPlayerSeat,
     clearAllSeatAssignments
   } = usePlayerPersistence(playerState, dispatchPlayer);
+
+  // Initialize settings persistence
+  const {
+    isReady: settingsReady,
+    resetToDefaults: resetSettingsToDefaults
+  } = useSettingsPersistence(settingsState, dispatchSettings);
 
   // Initialize toast notifications
   const { toasts, dismissToast, showError, showSuccess, showWarning } = useToast();
@@ -612,13 +622,15 @@ const PokerTrackerWireframes = () => {
         <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
           <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
             <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-              {children}
+              <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                {children}
+              </SettingsProvider>
             </CardProvider>
           </PlayerProvider>
         </SessionProvider>
       </UIProvider>
     </GameProvider>
-  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard]);
+  ), [gameState, dispatchGame, uiState, dispatchUi, sessionState, dispatchSession, playerState, dispatchPlayer, cardState, dispatchCard, settingsState, dispatchSettings]);
 
   // Showdown Screen
   if (isShowdownViewOpen) {
@@ -780,6 +792,29 @@ const PokerTrackerWireframes = () => {
           setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
           showError={showError}
           />
+        </ViewErrorBoundary>
+      </>
+    );
+  }
+
+  // Settings Screen - uses SettingsContext for state
+  if (currentView === SCREEN.SETTINGS) {
+    return withContextProviders(
+      <>
+        {toastOverlay}
+        <ViewErrorBoundary viewName="Settings" onReturnToTable={returnToTable}>
+          <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold mb-4">Settings</h1>
+              <p className="text-gray-400 mb-4">Settings view coming soon...</p>
+              <button
+                onClick={() => setCurrentScreen(SCREEN.TABLE)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+              >
+                Back to Table
+              </button>
+            </div>
+          </div>
         </ViewErrorBoundary>
       </>
     );

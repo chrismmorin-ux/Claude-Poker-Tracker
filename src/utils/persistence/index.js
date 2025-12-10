@@ -50,3 +50,12 @@ export {
   deletePlayer,
   getPlayerByName,
 } from './playersStorage';
+
+// Settings CRUD operations
+export {
+  getSettings,
+  saveSettings,
+  updateSettings,
+  resetSettings,
+  clearSettings,
+} from './settingsStorage';

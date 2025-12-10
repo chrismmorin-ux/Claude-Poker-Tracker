@@ -5,7 +5,7 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v5
+ *   Database: "PokerTrackerDB" v6
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId
@@ -18,6 +18,9 @@
  *     - "players" (keyPath: "playerId", autoIncrement: true)
  *       Indexes: name, createdAt, lastSeenAt
  *       Fields: name, nickname, ethnicity, build, gender, facialHair, hat, sunglasses, styleTags, notes, avatar, handCount, stats
+ *     - "settings" (keyPath: "id")
+ *       Single-record store for app settings (id: 1)
+ *       Fields: theme, cardSize, defaultVenue, defaultGameType, autoBackupEnabled, backupFrequency, customVenues, customGameTypes, errorReportingEnabled
  */
 
 import { logger } from '../errorHandler';
@@ -27,11 +30,12 @@ import { logger } from '../errorHandler';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 5;
+export const DB_VERSION = 6;
 export const STORE_NAME = 'hands';
 export const SESSIONS_STORE_NAME = 'sessions';
 export const ACTIVE_SESSION_STORE_NAME = 'activeSession';
 export const PLAYERS_STORE_NAME = 'players';
+export const SETTINGS_STORE_NAME = 'settings';
 
 const MODULE_NAME = 'Persistence';
 
@@ -217,6 +221,19 @@ export const initDB = async () => {
           playersStore.createIndex('lastSeenAt', 'lastSeenAt', { unique: false });
 
           log('Players object store and indexes created');
+        }
+      }
+
+      // Migrate to v6: Add settings object store
+      if (oldVersion < 6) {
+        log('Upgrading to v6: Adding settings object store');
+
+        if (!db.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
+          // Settings uses a singleton pattern with keyPath 'id'
+          // There will only ever be one record with id: 1
+          db.createObjectStore(SETTINGS_STORE_NAME, { keyPath: 'id' });
+
+          log('Settings object store created');
         }
       }
     };

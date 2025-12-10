@@ -8,3 +8,4 @@ export { UIProvider, useUI } from './UIContext';
 export { SessionProvider, useSession } from './SessionContext';
 export { PlayerProvider, usePlayer } from './PlayerContext';
 export { CardProvider, useCard } from './CardContext';
+export { SettingsProvider, useSettings } from './SettingsContext';
