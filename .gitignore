@@ -49,3 +49,5 @@ coverage/
 .claude/.edit-review-session.json
 .claude/.efficiency-session.json
 .claude/arch-changes.log
+.claude/.backlog-check-shown.json
+nul
