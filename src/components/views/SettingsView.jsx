@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { ChevronDown, ChevronRight, Trash2, AlertTriangle, Bug, Copy, Download, Check } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { LAYOUT } from '../../constants/gameConstants';
-import { useSettings } from '../../contexts';
+import { useSettings, useAuth } from '../../contexts';
 import { useUI } from '../../contexts';
 import {
   THEMES,
@@ -13,6 +13,7 @@ import {
 } from '../../constants/settingsConstants';
 import { GAME_TYPES } from '../../constants/sessionConstants';
 import { getRecentErrors, clearErrorLog, getErrorCount, exportErrorLog } from '../../utils/errorLog';
+import { AccountSection } from '../ui/AccountSection';
 
 /**
  * SettingsView - App settings configuration interface
@@ -22,8 +23,9 @@ import { getRecentErrors, clearErrorLog, getErrorCount, exportErrorLog } from '.
  * - Data: Export all, Import, Clear all (with confirmation)
  * - About: Version info, Error reporting toggle, Reset to defaults
  */
-export const SettingsView = ({ scale }) => {
+export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => {
   const { setCurrentScreen, SCREEN } = useUI();
+  const { isInitialized: authInitialized } = useAuth();
   const {
     settings,
     isLoading,
@@ -179,6 +181,28 @@ export const SettingsView = ({ scale }) => {
     }
   };
 
+  // Toast handler for AccountSection
+  const handleShowToast = useCallback((message, type) => {
+    if (type === 'success' && showSuccess) {
+      showSuccess(message);
+    } else if (type === 'error' && showError) {
+      showError(message);
+    } else if (type === 'warning' && showWarning) {
+      showWarning(message);
+    } else if (type === 'info' && showSuccess) {
+      showSuccess(message); // Use success for info
+    }
+  }, [showSuccess, showError, showWarning]);
+
+  // Navigation handlers for AccountSection
+  const handleNavigateToLogin = useCallback(() => {
+    setCurrentScreen(SCREEN.LOGIN);
+  }, [setCurrentScreen, SCREEN]);
+
+  const handleNavigateToSignup = useCallback(() => {
+    setCurrentScreen(SCREEN.SIGNUP);
+  }, [setCurrentScreen, SCREEN]);
+
   if (isLoading) {
     return (
       <ScaledContainer scale={scale}>
@@ -210,6 +234,15 @@ export const SettingsView = ({ scale }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-6">
+          {/* Account Section */}
+          {authInitialized && (
+            <AccountSection
+              onNavigateToLogin={handleNavigateToLogin}
+              onNavigateToSignup={handleNavigateToSignup}
+              onShowToast={handleShowToast}
+            />
+          )}
+
           {/* Display Section */}
           <div className="bg-gray-800 rounded-lg p-5">
             <h3 className="text-lg font-bold text-blue-400 mb-4">Display</h3>
@@ -705,4 +738,7 @@ export const SettingsView = ({ scale }) => {
 
 SettingsView.propTypes = {
   scale: PropTypes.number.isRequired,
+  showSuccess: PropTypes.func,
+  showError: PropTypes.func,
+  showWarning: PropTypes.func,
 };

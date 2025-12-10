@@ -36,12 +36,12 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Current Session Tasks
 | ID | Task | Owner | Status | Notes |
 |----|------|-------|--------|-------|
-| AUTH-001 | Firebase Auth Phase 4 - Account Management | Claude | pending | Next phase |
+| AUTH-002 | Firebase Auth Phase 5 - Data Isolation | Claude | pending | Next phase |
 
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| Firebase Authentication | Phase 4 | 3/6 complete | `docs/projects/firebase-auth.project.md` |
+| Firebase Authentication | Phase 5 | 4/6 complete | `docs/projects/firebase-auth.project.md` |
 
 ---
 
@@ -124,7 +124,7 @@ Projects that need `/project start` before beginning.
 │ 9. P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Current: Firebase Auth (Phase 4 next)
+Current: Firebase Auth (Phase 5 next)
 Then: /project start mvp-polish
 ```
 
@@ -133,15 +133,16 @@ Then: /project start mvp-polish
 #### Firebase Authentication (IN PROGRESS)
 - **ID**: firebase-auth
 - **Priority**: P2
-- **Status**: ◀ IN PROGRESS (Phase 4 next)
+- **Status**: ◀ IN PROGRESS (Phase 5 next)
 - **File**: `docs/projects/firebase-auth.project.md`
 - **Description**: Optional Firebase Auth with email/password + Google OAuth, guest mode preserved
-- **Phases**: 3/6 complete
+- **Phases**: 4/6 complete
 - **Completed Phases**:
   - Phase 1: Firebase Infrastructure Setup
   - Phase 2: Auth State Management (Reducer + Context)
   - Phase 3: Authentication Views (Login, Signup, Reset)
-- **Next**: Phase 4 - Account Management in Settings
+  - Phase 4: Account Management in Settings
+- **Next**: Phase 5 - Data Isolation (userId in IndexedDB)
 
 #### Settings System (COMPLETE)
 - **ID**: settings-system

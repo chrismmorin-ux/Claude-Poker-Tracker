@@ -53,7 +53,7 @@ Files to read before starting work:
 | 1 | [x] | Firebase Infrastructure Setup |
 | 2 | [x] | Auth State Management (Reducer + Context) |
 | 3 | [x] | Authentication Views (Login, Signup, Reset) |
-| 4 | [ ] | Account Management in Settings |
+| 4 | [x] | Account Management in Settings |
 | 5 | [ ] | Data Isolation (userId in IndexedDB) |
 | 6 | [ ] | Integration & Testing |
 
@@ -509,7 +509,7 @@ PASSWORD_RESET: 'passwordReset',
 
 ---
 
-## Phase 4: Account Management in Settings ← CURRENT
+## Phase 4: Account Management in Settings [x] COMPLETE
 
 ### Goal
 Add Account section to SettingsView for profile display, password change, and logout.
@@ -572,23 +572,24 @@ Add Account section to SettingsView for profile display, password change, and lo
 - Pass navigation handler to AccountSection
 
 ### Files to Create
-- [ ] `src/components/ui/ConfirmDeleteModal.jsx` (owner: local)
-- [ ] `src/components/ui/AccountSection.jsx` (owner: Claude)
+- [x] `src/components/ui/ConfirmDeleteModal.jsx` (owner: local)
+- [x] `src/components/ui/AccountSection.jsx` (owner: Claude)
 
 ### Files to Modify
-- [ ] `src/components/views/SettingsView.jsx` (owner: Claude)
+- [x] `src/components/views/SettingsView.jsx` (owner: Claude)
+- [x] `src/PokerTracker.jsx` (owner: Claude) - Pass toast handlers to SettingsView
 
 ### Verification
-- [ ] Guest sees sign-in/create account options
-- [ ] Authenticated user sees profile info
-- [ ] Password change works (email users)
-- [ ] Sign out works
-- [ ] Delete account shows confirmation
-- [ ] `npm test` passes
+- [x] Guest sees sign-in/create account options
+- [x] Authenticated user sees profile info
+- [x] Password change works (email users)
+- [x] Sign out works
+- [x] Delete account shows confirmation
+- [x] `npm test` passes (2351 tests)
 
 ---
 
-## Phase 5: Data Isolation (userId in IndexedDB)
+## Phase 5: Data Isolation (userId in IndexedDB) ← CURRENT
 
 ### Goal
 Add userId field to all IndexedDB records for data isolation between users.

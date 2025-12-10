@@ -859,7 +859,12 @@ const PokerTrackerWireframes = () => {
       <>
         {toastOverlay}
         <ViewErrorBoundary viewName="Settings" onReturnToTable={returnToTable}>
-          <SettingsView scale={scale} />
+          <SettingsView
+            scale={scale}
+            showSuccess={showSuccess}
+            showError={showError}
+            showWarning={showWarning}
+          />
         </ViewErrorBoundary>
       </>
     );
