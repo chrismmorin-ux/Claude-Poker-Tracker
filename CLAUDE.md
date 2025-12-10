@@ -256,262 +256,34 @@ When incrementing version (e.g., v113 → v114):
 
 ## Architecture (v116)
 
-### File Structure
-```
-src/
-├── PokerTracker.jsx (~620 lines)
-│   ├── Lines 1-63:      Imports (React, icons, components, reducers, utils, hooks, constants, contexts)
-│   ├── Lines 65-112:    Constants (CONSTANTS, SEAT_POSITIONS, SCREEN - UI-specific only)
-│   ├── Lines 114+:      Main Component (reducers, hooks, handlers, context providers, view rendering)
-│   └── Note: All game constants extracted to hooks; contexts wrap view components
-│
-├── contexts/                    (React Context providers - NEW in v114)
-│   ├── GameContext.jsx          (Game state + derived: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded)
-│   ├── UIContext.jsx            (UI state + handlers: setCurrentScreen, togglePlayerSelection, etc.)
-│   ├── SessionContext.jsx       (Session state + handlers: hasActiveSession, updateSessionField)
-│   ├── PlayerContext.jsx        (Player state + handlers: getSeatPlayerName, assignPlayerToSeat)
-│   ├── SettingsContext.jsx      (Settings state + handlers: updateSetting, allVenues, allGameTypes - NEW in v115)
-│   └── index.js                 (Central export)
-│
-├── constants/                   (Game configuration - NEW in v108)
-│   ├── gameConstants.js         (ACTIONS, FOLD_ACTIONS, SEAT_STATUS, STREETS, etc.)
-│   ├── sessionConstants.js      (SESSION_ACTIONS, VENUES, GAME_TYPES, SESSION_GOALS - NEW in v110)
-│   ├── playerConstants.js       (PLAYER_ACTIONS, ETHNICITY_OPTIONS, BUILD_OPTIONS, STYLE_TAGS - NEW in v111)
-│   └── settingsConstants.js     (SETTINGS_ACTIONS, DEFAULT_SETTINGS, THEMES, CARD_SIZES - NEW in v115)
-│
-├── hooks/                       (Custom hooks - NEW in v108)
-│   ├── useActionUtils.js        (Action utility wrappers)
-│   ├── useStateSetters.js       (State dispatcher wrappers)
-│   ├── useSeatUtils.js          (Seat logic utilities)
-│   ├── useSeatColor.js          (Seat color styling)
-│   ├── useShowdownHandlers.js   (Showdown handlers)
-│   ├── useCardSelection.js      (Card selection logic)
-│   ├── useShowdownCardSelection.js (Showdown card selection)
-│   ├── usePersistence.js        (IndexedDB auto-save/restore - NEW in v109)
-│   ├── useSessionPersistence.js (Session persistence and lifecycle - NEW in v110)
-│   ├── usePlayerPersistence.js  (Player persistence and seat assignment - NEW in v111)
-│   ├── useToast.js              (Toast notification state management - NEW in v112)
-│   └── useSettingsPersistence.js (Settings persistence and handlers - NEW in v115)
-│
-├── reducers/                    (State management)
-│   ├── gameReducer.js           (Game state: street, dealer, actions)
-│   ├── uiReducer.js             (UI state: view, selection, context menu)
-│   ├── cardReducer.js           (Card state: community, hole, showdown)
-│   ├── sessionReducer.js        (Session state: current session, all sessions - NEW in v110)
-│   ├── playerReducer.js         (Player state: all players, seat assignments - NEW in v111)
-│   └── settingsReducer.js       (Settings state: theme, defaults, custom venues - NEW in v115)
-│
-├── utils/                       (Utility functions)
-│   ├── actionUtils.js           (Action styling, display, overlays)
-│   ├── actionValidation.js      (Action sequence validation)
-│   ├── cardUtils.js             (Card assignment and manipulation)
-│   ├── seatUtils.js             (Seat navigation and positioning)
-│   ├── displayUtils.js          (Display formatting, time formatting - UPDATED in v110)
-│   ├── validation.js            (Input validation)
-│   ├── exportUtils.js           (Data export/import functionality - NEW in v112)
-│   ├── errorLog.js              (Error logging to localStorage - NEW in v116)
-│   ├── errorHandler.js          (Centralized error codes and logging)
-│   └── persistence/             (IndexedDB persistence layer - UPDATED in v115)
-│       ├── database.js          (DB connection, migrations - v6 adds settings store)
-│       ├── handsStorage.js      (Hand CRUD operations)
-│       ├── sessionsStorage.js   (Session CRUD operations)
-│       ├── playersStorage.js    (Player CRUD operations)
-│       ├── settingsStorage.js   (Settings CRUD operations - NEW in v115)
-│       └── index.js             (Central export)
-│
-└── components/
-    ├── ui/                      (Reusable UI components)
-    │   ├── CardSlot.jsx         (Card display with 4 variants)
-    │   ├── VisibilityToggle.jsx (Show/hide button)
-    │   ├── PositionBadge.jsx    (D, SB, BB, ME indicators)
-    │   ├── DiagonalOverlay.jsx  (FOLD/ABSENT/MUCK/WON overlays)
-    │   ├── ScaledContainer.jsx  (Responsive scaling wrapper)
-    │   ├── ActionBadge.jsx      (Single action badge display)
-    │   ├── ActionSequence.jsx   (Multiple action badges with overflow)
-    │   ├── SessionForm.jsx      (New session creation form - NEW in v110)
-    │   ├── PlayerForm.jsx       (Player creation/editing form - NEW in v111)
-    │   ├── Toast.jsx            (Toast notifications with 4 variants - NEW in v112)
-    │   ├── ViewErrorBoundary.jsx (Per-view error boundary with retry - NEW in v112)
-    │   ├── PlayerFilters.jsx    (Player search/sort/filter controls - NEW in v112)
-    │   ├── PlayerRow.jsx        (Single player table row - NEW in v112)
-    │   ├── SeatGrid.jsx         (9-seat assignment grid - NEW in v112)
-    │   ├── SessionCard.jsx      (Past session display card - NEW in v112)
-    │   └── CollapsibleSidebar.jsx (Collapsible navigation sidebar - NEW in v113)
-    │
-    └── views/                   (Full-screen view components)
-        ├── TableView.jsx        (Main poker table, ~400 lines - UPDATED in v113)
-        ├── StatsView.jsx        (Statistics display, ~264 lines)
-        ├── CardSelectorView.jsx (Card selection, ~178 lines)
-        ├── ShowdownView.jsx     (Showdown interface, ~485 lines)
-        ├── HistoryView.jsx      (Hand history browser, ~300 lines - NEW in v109)
-        ├── SessionsView.jsx     (Session management, ~715 lines - UPDATED in v112)
-        ├── PlayersView.jsx      (Player management, ~587 lines - UPDATED in v112)
-        └── SettingsView.jsx     (Settings configuration, ~700 lines - UPDATED in v116)
-```
+> **For detailed architecture information, see:** `.claude/context/CONTEXT_SUMMARY.md`
+> **For state shapes, see:** `.claude/context/STATE_SCHEMA.md`
+> **For persistence API, see:** `.claude/context/PERSISTENCE_OVERVIEW.md`
 
-### State Management (useReducer)
-The app uses six reducers for clean state management:
+### Quick Reference
 
-**gameReducer** (`src/reducers/gameReducer.js`):
-- State: `currentStreet`, `dealerButtonSeat`, `mySeat`, `seatActions`, `absentSeats`
-- Actions: `SET_STREET`, `ADVANCE_DEALER`, `RECORD_ACTION`, `CLEAR_STREET_ACTIONS`, etc.
+**Main Structure:**
+- `src/PokerTracker.jsx` (~620 lines) - Main component
+- `src/contexts/` - 5 context providers (Game, UI, Session, Player, Settings)
+- `src/reducers/` - 6 reducers (game, ui, card, session, player, settings)
+- `src/hooks/` - 12 custom hooks
+- `src/components/views/` - 8 view components
+- `src/components/ui/` - 16 UI components
+- `src/utils/` - Utility functions + persistence layer (IndexedDB v6)
 
-**uiReducer** (`src/reducers/uiReducer.js` - UPDATED in v114):
-- State: `currentView`, `selectedPlayers`, `contextMenu`, `isDraggingDealer`, `isSidebarCollapsed`
-- View state (moved from cardReducer): `showCardSelector`, `cardSelectorType`, `highlightedBoardIndex`, `isShowdownViewOpen`, `highlightedSeat`, `highlightedHoleSlot`
-- Actions: `SET_SCREEN`, `TOGGLE_PLAYER_SELECTION`, `SET_CONTEXT_MENU`, `TOGGLE_SIDEBAR`, `OPEN_CARD_SELECTOR`, `CLOSE_CARD_SELECTOR`, `OPEN_SHOWDOWN_VIEW`, `CLOSE_SHOWDOWN_VIEW`, etc.
+**Key Constants:**
+- `ACTIONS.*` - Poker actions (FOLD, CALL, OPEN, etc.)
+- `SEAT_ARRAY` - [1-9] for iteration
+- `SCREEN.*` - View identifiers (TABLE, STATS, HISTORY, SESSIONS, PLAYERS, SETTINGS)
 
-**cardReducer** (`src/reducers/cardReducer.js` - UPDATED in v114):
-- State: `communityCards`, `holeCards`, `holeCardsVisible`, `allPlayerCards` (card data only, view state moved to uiReducer)
-- Actions: `SET_COMMUNITY_CARD`, `SET_HOLE_CARD`, `SET_PLAYER_CARD`, `RESET_CARDS`, etc.
+### Important Patterns
 
-**sessionReducer** (`src/reducers/sessionReducer.js` - NEW in v110):
-- State: `currentSession` (sessionId, startTime, venue, gameType, buyIn, rebuyTransactions, cashOut, etc.), `allSessions`, `isLoading`
-- Actions: `START_SESSION`, `END_SESSION`, `UPDATE_SESSION_FIELD`, `ADD_REBUY`, `LOAD_SESSIONS`, `HYDRATE_SESSION`, etc.
-
-**playerReducer** (`src/reducers/playerReducer.js` - NEW in v111):
-- State: `allPlayers` (player database), `seatPlayers` (ephemeral seat assignments), `isLoading`
-- Actions: `LOAD_PLAYERS`, `SET_SEAT_PLAYER`, `CLEAR_SEAT_PLAYER`, `CLEAR_ALL_SEAT_PLAYERS`, `HYDRATE_PLAYERS`, etc.
-
-**settingsReducer** (`src/reducers/settingsReducer.js` - NEW in v115):
-- State: `settings` (theme, cardSize, defaultVenue, defaultGameType, customVenues, customGameTypes, etc.), `isLoading`, `isInitialized`
-- Actions: `LOAD_SETTINGS`, `UPDATE_SETTING`, `RESET_SETTINGS`, `HYDRATE_SETTINGS`, `ADD_CUSTOM_VENUE`, `REMOVE_CUSTOM_VENUE`, `ADD_CUSTOM_GAME_TYPE`, `REMOVE_CUSTOM_GAME_TYPE`
-
-### Context Providers (NEW in v114)
-Contexts reduce prop drilling by providing state and handlers to nested components:
-
-**GameContext** - `useGame()`:
-- Provides: `currentStreet`, `mySeat`, `dealerButtonSeat`, `seatActions`, `absentSeats`, `dispatchGame`
-- Derived: `getSmallBlindSeat()`, `getBigBlindSeat()`, `hasSeatFolded()`, `isSeatInactive()`, `getSeatAllActions()`
-
-**UIContext** - `useUI()`:
-- Provides: `selectedPlayers`, `contextMenu`, `isDraggingDealer`, `isSidebarCollapsed`, `showCardSelector`, `isShowdownViewOpen`, `SCREEN`, `dispatchUi`
-- Handlers: `setCurrentScreen()`, `togglePlayerSelection()`, `setSelectedPlayers()`, `setContextMenu()`, `toggleSidebar()`, `openCardSelector()`
-
-**SessionContext** - `useSession()`:
-- Provides: `currentSession`, `allSessions`, `isLoading`, `dispatchSession`
-- Derived: `hasActiveSession`, `totalInvestment`
-- Handlers: `updateSessionField()`, `addRebuy()`, `incrementHandCount()`
-
-**PlayerContext** - `usePlayer()`:
-- Provides: `allPlayers`, `seatPlayers`, `isLoading`, `dispatchPlayer`
-- Utilities: `getPlayerById()`, `getSeatPlayerName()`, `getSeatPlayer()`
-- Handlers: `assignPlayerToSeat()`, `clearSeatPlayer()`, `clearAllSeatPlayers()`
-
-**SettingsContext** - `useSettings()` (NEW in v115):
-- Provides: `settings`, `isLoading`, `isInitialized`, `dispatchSettings`
-- Derived: `allVenues` (defaults + custom), `allGameTypes` (defaults + custom), `allGameTypeKeys`
-- Handlers: `updateSetting()`, `resetSettings()`, `addCustomVenue()`, `removeCustomVenue()`, `addCustomGameType()`, `removeCustomGameType()`
-- Utilities: `isCustomVenue()`, `isCustomGameType()`
-
-### Key Constants
-- `ACTIONS.*` - All action types (FOLD, CALL, OPEN, etc.)
-- `SEAT_ARRAY` - [1,2,3,4,5,6,7,8,9] for iteration
-- `CONSTANTS.NUM_SEATS` - Use instead of hardcoded 9
-- `SCREEN.TABLE` / `SCREEN.STATS` / `SCREEN.HISTORY` / `SCREEN.SESSIONS` / `SCREEN.PLAYERS` / `SCREEN.SETTINGS` - View identifiers
-- `VENUES` - ['Online', 'Horseshoe Casino', 'Wind Creek Casino'] (NEW in v110)
-- `GAME_TYPES` - {TOURNAMENT, ONE_TWO, ONE_THREE, TWO_FIVE} with buy-in defaults (NEW in v110)
-- `PLAYER_ACTIONS.*` - Player state action types (NEW in v111)
-- `ETHNICITY_OPTIONS`, `BUILD_OPTIONS`, `GENDER_OPTIONS`, `STYLE_TAGS` - Player attribute options (NEW in v111)
-- `SETTINGS_ACTIONS.*` - Settings state action types (NEW in v115)
-- `DEFAULT_SETTINGS` - Default values for all settings (NEW in v115)
-- `THEMES`, `CARD_SIZES`, `BACKUP_FREQUENCIES` - Settings option arrays (NEW in v115)
-
-### Component Architecture
-View and UI components are modular:
-
-**View Components** (in `src/components/views/`):
-- Import from `'../ui/...'` for UI components
-- Receive state and handlers as props from PokerTracker.jsx
-- Examples: `TableView`, `StatsView`, `CardSelectorView`, `ShowdownView`
-
-**UI Components** (in `src/components/ui/`):
-- Self-contained, reusable across views
-- `CardSlot` - 4 variants: `table`, `hole-table`, `showdown`, `selector`
-- `PositionBadge` - 2 sizes: `small` (16px), `large` (28px)
-- `VisibilityToggle` - 2 sizes: `small` (24px), `large` (40px)
-- `DiagonalOverlay` - Status overlays (requires SEAT_STATUS prop)
-- `ScaledContainer` - Responsive scaling wrapper
-
-### Utility Functions (src/utils/)
-Helper functions are centralized in the utils/ directory:
-
-**actionUtils.js**: Action-related utilities
-- `getActionDisplayName(action, isFoldAction, ACTIONS)` - Get display name for action
-- `getActionColor(action, isFoldAction, ACTIONS)` - Get Tailwind classes for action color
-- `getSeatActionStyle(action, isFoldAction, ACTIONS)` - Get seat background/ring colors
-- `getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)` - Determine overlay status
-
-**displayUtils.js**: Display formatting utilities (NEW in v107, UPDATED in v110)
-- `isRedCard(card)` - Check if card is red (♥ or ♦)
-- `isRedSuit(suit)` - Check if suit is red
-- `getCardAbbreviation(card, SUIT_ABBREV)` - Convert "A♥" → "Ah"
-- `getHandAbbreviation(cards, SUIT_ABBREV)` - Convert ["A♥", "K♠"] → "AhKs"
-- `formatTime12Hour(timestamp)` - Format timestamp to "2:30 PM" (NEW in v110)
-- `calculateTotalRebuy(rebuyTransactions)` - Sum rebuy amounts (NEW in v110)
-
-**cardUtils.js**: Card manipulation utilities
-- `assignCardToSlot(cards, card, targetSlot)` - Assign card and remove from other slots
-- `findNextEmptySlot(...)` - Find next empty card slot in showdown
-- `shouldAutoCloseCardSelector(currentStreet, highlightedIndex)` - Auto-close logic
-
-**seatUtils.js**: Seat navigation utilities
-- `getSmallBlindSeat(dealerSeat, absentSeats, numSeats)` - Calculate SB seat
-- `getBigBlindSeat(dealerSeat, absentSeats, numSeats)` - Calculate BB seat
-- `getFirstActionSeat(...)` - Get first seat to act on current street
-- `getNextActionSeat(...)` - Get next seat to act
-
-**validation.js**: Input validation utilities
-- `isValidCard(card)` - Validate card string
-- `isValidSeat(seat, numSeats)` - Validate seat number
-- `isValidAction(action, ACTIONS)` - Validate action
-
-**Import pattern**: Utils use dependency injection - constants are passed as parameters.
-
-### Custom Hooks (src/hooks/)
-Encapsulated component logic extracted from PokerTracker.jsx for better organization and testability:
-
-**useActionUtils.js**: Action utility wrappers (~58 lines)
-- Returns 6 functions with constants injected: `getActionDisplayName`, `getActionColor`, `getSeatActionStyle`, `getOverlayStatus`, `getCardAbbreviation`, `getHandAbbreviation`
-- Consolidates utility wrapper functions into a single hook
-
-**useStateSetters.js**: State dispatcher wrappers (~72 lines)
-- Returns 10 setter functions: `setCurrentScreen`, `setContextMenu`, `setSelectedPlayers`, `setHoleCardsVisible`, `setCurrentStreet`, `setDealerSeat`, `setCardSelectorType`, `setHighlightedCardIndex`, `setHighlightedSeat`, `setHighlightedCardSlot`
-- Takes `(dispatchGame, dispatchUi, dispatchCard)` as parameters
-
-**useSeatUtils.js**: Seat logic utilities (~57 lines)
-- Returns 5 functions: `getSmallBlindSeat`, `getBigBlindSeat`, `hasSeatFolded`, `getFirstActionSeat`, `getNextActionSeat`
-- Wraps seatUtils functions with proper dependencies and constant injection
-- Takes `(currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats)` as parameters
-
-**useSeatColor.js**: Seat color styling (~60 lines)
-- Returns `getSeatColor` function
-- Complex logic for determining seat colors based on status, selection, and actions
-- Takes `(hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet, getSeatActionStyle)` as parameters
-
-**useShowdownHandlers.js**: Showdown handlers (~99 lines)
-- Returns 6 handlers: `handleClearShowdownCards`, `handleMuckSeat`, `handleWonSeat`, `handleNextHandFromShowdown`, `handleCloseShowdown`, `handleCloseCardSelector`
-- Encapsulates all showdown-specific handler logic
-- Takes `(dispatchCard, dispatchGame, isSeatInactive, seatActions, recordSeatAction, nextHand, numSeats, log)` as parameters
-
-**useCardSelection.js**: Card selection logic (~72 lines)
-- Returns `selectCard` function
-- Handles community and hole card selection with auto-advance and auto-close
-- Takes `(highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard)` as parameters
-
-**useShowdownCardSelection.js**: Showdown card selection (~109 lines)
-- Returns `selectCardForShowdown` function
-- Complex auto-advance logic for multi-player card assignment
-- Takes `(highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, isSeatInactive, dispatchCard, numSeats)` as parameters
-
-**Hook pattern**: All hooks use `useCallback` and `useMemo` with proper dependency arrays. They encapsulate complex logic and return functions ready to use.
-
-### Important: useCallback Pattern
-All handler functions are wrapped in `useCallback` with proper dependencies to prevent unnecessary re-renders and enable use in dependency arrays. When adding new handlers:
+**useCallback Pattern** - All handlers wrapped with proper dependencies:
 1. Use `useCallback` for functions passed as props
-2. Include all external dependencies in the dependency array
-3. Helper functions used as dependencies must also be `useCallback`
-4. Define helper functions BEFORE functions that depend on them
+2. Include all external dependencies in the array
+3. Define helper functions BEFORE dependent callbacks
+
+**Import Pattern** - Utils use dependency injection (constants passed as parameters)
 
 ## Common Tasks
 
@@ -613,120 +385,23 @@ Test all 7 views at various browser sizes:
 7. Settings View (click "Settings" in sidebar) - app preferences, custom venues (NEW in v115)
 
 ## Version History
-- v101: Baseline features
-- v102: Constants extraction
-- v103: Full refactoring
-- v104: Mobile landscape optimization, responsive scaling, card selector improvements
-- v105: Component extraction - views and UI components modularized
-  - Reduced main file from 1957 to 1088 lines (44% smaller)
-  - 4 view components extracted to `src/components/views/`
-  - 5 UI components extracted to `src/components/ui/`
-  - Eliminated ~164 lines of duplicate UI component code
-- v106: State management refactoring with useReducer
-  - Migrated from useState to three useReducer hooks (gameReducer, uiReducer, cardReducer)
-  - All handlers converted to useCallback with proper dependencies
-  - Improved code organization: helper functions defined before dependent callbacks
-  - Fixed circular dependency issues and initialization bugs
-  - Main file reduced to ~1000 lines
-- v107: Utils integration
-  - Created `src/utils/displayUtils.js` for display formatting utilities
-  - Connected existing utils (actionUtils, cardUtils, seatUtils) to PokerTracker.jsx
-  - Removed 134 lines of duplicate helper functions
-  - Added useCallback wrappers to inject constants into utils
-  - Updated 4 components to import from utils (ShowdownView, CardSelectorView, CardSlot, PokerTracker)
-  - Main file reduced from 1056 to ~920 lines (13% reduction)
-  - Net codebase reduction: ~51 lines
-- v108: Custom hooks extraction
-  - Created `src/constants/gameConstants.js` - Centralized game configuration
-  - Created 7 custom hooks in `src/hooks/`:
-    - `useActionUtils.js` - Action utility wrappers
-    - `useStateSetters.js` - State dispatcher wrappers
-    - `useSeatUtils.js` - Seat logic utilities
-    - `useSeatColor.js` - Seat color styling
-    - `useShowdownHandlers.js` - Showdown handlers
-    - `useCardSelection.js` - Card selection logic
-    - `useShowdownCardSelection.js` - Showdown card selection
-  - Eliminated all duplicate code and improved testability
-  - Main file reduced from 967 to 620 lines (36% reduction)
-  - Phased implementation (v108a → v108d) for safety
-  - Highly modular architecture with clear separation of concerns
-- v109: Hand history and persistence system
-  - Created `src/utils/persistence.js` - IndexedDB CRUD operations (saveHand, loadHandById, getAllHands, deleteHand, clearAllHands, getHandCount)
-  - Created `src/hooks/usePersistence.js` - Auto-save/restore hook with debouncing (1.5s delay)
-  - Created `src/components/views/HistoryView.jsx` - Hand history browser UI (~300 lines)
-  - Created `src/components/ui/ActionBadge.jsx` - Single action badge component
-  - Created `src/components/ui/ActionSequence.jsx` - Multiple action badges with overflow (+N display)
-  - Created `src/utils/actionValidation.js` - Validates poker action sequences (prevents illegal actions)
-  - Added SCREEN.HISTORY view identifier
-  - Features: Load any saved hand, delete individual hands, clear all history, relative timestamps
-  - Multiple actions per street now fully supported with visual action sequences
-  - Database schema: PokerTrackerDB v1 with 'hands' object store (handId, timestamp, sessionId indexes)
-- v110: Session management system
-  - Created `src/constants/sessionConstants.js` - Session configuration (VENUES, GAME_TYPES, SESSION_GOALS, SESSION_ACTIONS)
-  - Created `src/reducers/sessionReducer.js` - Session state management
-  - Created `src/hooks/useSessionPersistence.js` - Session persistence and lifecycle (~327 lines)
-  - Created `src/components/views/SessionsView.jsx` - Session management UI (~656 lines)
-  - Created `src/components/ui/SessionForm.jsx` - New session creation form
-  - Updated `src/utils/persistence.js` - Added session CRUD operations, database v3→v4 migration (cashOut field)
-  - Updated `src/utils/displayUtils.js` - Added formatTime12Hour and calculateTotalRebuy utilities
-  - Added SCREEN.SESSIONS view identifier
-  - Features: Start/end sessions, venue selection, game type selection, buy-in tracking, rebuy transactions, cash-out workflow, running total bankroll, session history, inline editing
-  - Database schema: PokerTrackerDB v4 with 'sessions' object store (sessionId, startTime, endTime indexes, activeSession metadata)
-- v111: Player management system
-  - Created `src/constants/playerConstants.js` - Player configuration (PLAYER_ACTIONS, physical attributes, style tags)
-  - Created `src/reducers/playerReducer.js` - Player state management with seat assignments
-  - Created `src/hooks/usePlayerPersistence.js` - Player CRUD and seat assignment logic (~320 lines)
-  - Created `src/components/views/PlayersView.jsx` - Player management UI (~860 lines, portrait-mode optimized)
-  - Created `src/components/ui/PlayerForm.jsx` - Player creation/editing form with physical descriptions
-  - Updated `src/components/views/TableView.jsx` - Added player assignment via right-click context menu, player management button
-  - Updated `src/utils/persistence.js` - Added player CRUD operations, database v4→v5 migration (players store)
-  - Added SCREEN.PLAYERS view identifier
-  - Features: Player profiles with physical descriptions (ethnicity, build, gender, facial hair, hat, sunglasses), playing style tags, notes, avatar upload, quick seat assignment (right-click + drag-and-drop), seat management with click-to-select workflow, auto-highlight seat from context menu, duplicate player prevention, replacement prompts, portrait mode support
-  - Database schema: PokerTrackerDB v5 with 'players' object store (playerId, name, createdAt, lastSeenAt indexes)
-  - Responsive design: PlayersView uses viewport-based widths for portrait phone screens while other views remain landscape
-- v112: CTO review improvements
-  - Created `src/components/ui/Toast.jsx` - Toast notification with 4 variants (error, success, warning, info)
-  - Created `src/hooks/useToast.js` - Toast state management hook with auto-dismiss
-  - Created `src/components/ui/ViewErrorBoundary.jsx` - Per-view error boundary with retry/return options
-  - Created `src/utils/exportUtils.js` - Data export/import functionality for backup/restore
-  - Extracted `src/components/ui/PlayerFilters.jsx` - Search, sort, filter controls from PlayersView
-  - Extracted `src/components/ui/PlayerRow.jsx` - Single player table row from PlayersView
-  - Extracted `src/components/ui/SeatGrid.jsx` - 9-seat assignment grid from PlayersView
-  - Extracted `src/components/ui/SessionCard.jsx` - Past session display card from SessionsView
-  - Replaced all 7 `alert()` calls with toast notifications
-  - Wrapped all 7 views with ViewErrorBoundary for graceful error recovery
-  - PlayersView.jsx reduced from ~869 to ~587 lines (32% reduction)
-  - SessionsView.jsx reduced from ~800 to ~715 lines (~11% reduction)
-  - DEBUG flag now respects environment (import.meta.env.DEV)
-  - All layout values centralized in LAYOUT constants
-  - 272 tests passing across 8 test files
-- v113: Collapsible sidebar, dynamic hand tracking, session integration, and bankroll display
-  - Created `src/components/ui/CollapsibleSidebar.jsx` - Collapsible navigation sidebar component
-  - Updated `src/reducers/uiReducer.js` - Added `isSidebarCollapsed` state and `TOGGLE_SIDEBAR` action
-  - Updated `src/components/views/TableView.jsx` - Integrated CollapsibleSidebar, moved nav buttons from header
-  - Features: Sidebar with Stats, History, Sessions, Players navigation; expand/collapse toggle; icons-only when collapsed
-  - Header simplified: only Hand #, session time, Next Hand, and Reset buttons remain
-  - Dynamic hand count: displays actual hand number from session (replacing hardcoded #47)
-  - Live session timer: shows elapsed time since session start, updates every minute
-  - Added `getHandsBySessionId()` function to persistence.js for session-based queries
-  - Updated HistoryView.jsx: session filter dropdown, hands show linked session badge, filter by session
-  - Bankroll display: TableView header shows current session investment (buy-in + rebuys), SessionsView shows running total
-- v115: Settings system with persistence
-  - Created `src/constants/settingsConstants.js` - SETTINGS_ACTIONS, DEFAULT_SETTINGS, THEMES, CARD_SIZES, BACKUP_FREQUENCIES
-  - Created `src/reducers/settingsReducer.js` - Settings state management with validation
-  - Created `src/contexts/SettingsContext.jsx` - Provider with derived allVenues, allGameTypes
-  - Created `src/hooks/useSettingsPersistence.js` - Init on mount, auto-save on change
-  - Created `src/utils/persistence/settingsStorage.js` - Settings CRUD (singleton pattern)
-  - Created `src/components/views/SettingsView.jsx` - Full settings UI (~320 lines)
-  - Updated `src/utils/persistence/database.js` - DB v5→v6 migration, added settings store
-  - Features: Theme toggle (placeholder), card size selector, default venue/game type, custom venues, error reporting toggle, reset to defaults
-  - Settings persist to IndexedDB on every change (immediate save)
-  - All 2282 tests passing
-- v116: Error Reporting System (current)
-  - Created `src/utils/errorLog.js` - Error logging utility for localStorage (28 tests)
-  - Updated `src/components/ui/ViewErrorBoundary.jsx` - Now persists errors to localStorage
-  - Updated `src/components/views/SettingsView.jsx` - Added Error Log viewer section (~700 lines)
-  - Features: Error log viewer with collapsible entries, relative timestamps, clear all button
-  - Report Bug feature: Copy to clipboard or download JSON export
-  - Privacy: No sensitive data (player names, finances) in error exports
-  - All 2310 tests passing
+
+> **For complete version history, see:** `docs/CHANGELOG.md`
+> **For recent changes, see:** `.claude/context/RECENT_CHANGES.md`
+
+### Recent Versions
+
+- **v116** (current): Error Reporting System
+  - Error logging to localStorage, error log viewer in Settings
+  - Report Bug feature with privacy-safe exports
+  - 2310 tests passing
+
+- **v115**: Settings System
+  - Full settings persistence (theme, defaults, custom venues)
+  - SettingsContext provider, IndexedDB v6
+
+- **v114**: Context Providers
+  - 5 contexts to reduce prop drilling (Game, UI, Session, Player, Settings)
+
+- **v113**: UI Polish
+  - Collapsible sidebar, dynamic hand count, session timer

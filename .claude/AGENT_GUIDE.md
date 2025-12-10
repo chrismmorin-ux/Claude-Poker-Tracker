@@ -22,6 +22,12 @@ After writing code?
 Before committing?
 ├─ Tests must pass                → npm test (enforced by quality-gate hook)
 └─ Docs may need update           → docs-sync hook will warn
+
+End of session or encountering issues?
+├─ Recurring errors               → /process-fix last
+├─ Session review                 → /process-review session
+├─ Context feels bloated          → /process-slim analyze
+└─ Full process audit             → /process-audit full
 ```
 
 ---
@@ -124,7 +130,39 @@ Before committing?
 
 ---
 
-### 5. Local Model Commands (Token-Saving)
+### 5. Process Specialist Agent
+**When to use:** Workflow optimization, error prevention, context efficiency, process compliance
+
+**Commands:**
+- `/process-audit [quick|full|errors|context|delegation]` - Comprehensive process audit
+- `/process-fix [error description|last]` - Analyze error and create preventions
+- `/process-slim [analyze|recommend|apply]` - Reduce context file sizes
+- `/process-review [session|commit|last-N-commits]` - Review work for compliance
+
+**Example:**
+```
+/process-audit quick       # Fast compliance check
+/process-fix last          # Analyze most recent error
+/process-slim analyze      # Check context efficiency
+/process-review session    # Review this session's work
+```
+
+**Output:**
+- Compliance scores (delegation, context, errors, docs)
+- Recurring error patterns with specific preventions
+- Token savings recommendations
+- Specific file changes to implement
+
+**Good for:**
+- End-of-session reviews
+- After encountering recurring errors
+- Optimizing context/token usage
+- Improving delegation compliance
+- Continuous process improvement
+
+---
+
+### 6. Local Model Commands (Token-Saving)
 **When to use:** Simple, well-defined tasks that don't need full Claude reasoning
 
 **Commands:**
@@ -296,5 +334,10 @@ Only `docs-sync` is purely advisory - the rest enforce quality.
 | Simple code generation | `/local-code` |
 | Simple refactoring | `/local-refactor` |
 | Get recommendation | `/route` |
+| Process compliance audit | `/process-audit` |
+| Fix/prevent errors | `/process-fix` |
+| Reduce context bloat | `/process-slim` |
+| Review session work | `/process-review` |
 
 When in doubt, use `/route "<description>"` to get a recommendation.
+For process issues, use `/process-audit quick` to identify problems.

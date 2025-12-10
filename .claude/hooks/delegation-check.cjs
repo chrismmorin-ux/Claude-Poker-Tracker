@@ -55,7 +55,7 @@ function checkDelegationTable(projectContent, filename) {
 
   // Check for file in "Files to Create" with (owner: local)
   const filesToCreatePattern = new RegExp(
-    `\\[\\s*\\]\\s*\`[^`]*${basename.replace(/\./g, '\\.')}\`[^(]*\\(owner:\\s*local\\)`,
+    '\\[\\s*\\]\\s*`[^`]*' + basename.replace(/\./g, '\\.') + '`[^(]*\\(owner:\\s*local\\)',
     'i'
   );
 
@@ -64,22 +64,57 @@ function checkDelegationTable(projectContent, filename) {
          filesToCreatePattern.test(projectContent);
 }
 
-function logViolation(filename) {
+function logViolation(filename, projectFile) {
   try {
-    let violations = [];
+    let data = {
+      version: "1.0",
+      lastUpdate: new Date().toISOString(),
+      violations: [],
+      metrics: {
+        totalTasksTracked: 0,
+        tasksActuallyDelegated: 0,
+        complianceRate: 0,
+        tokensSavedEstimate: 0,
+        tokensWastedEstimate: 0
+      },
+      history: []
+    };
+
     if (fs.existsSync(VIOLATIONS_FILE)) {
-      violations = JSON.parse(fs.readFileSync(VIOLATIONS_FILE, 'utf8'));
+      try {
+        data = JSON.parse(fs.readFileSync(VIOLATIONS_FILE, 'utf8'));
+      } catch (e) {
+        // Reset if file is corrupted
+      }
     }
-    violations.push({
+
+    // Add violation
+    data.violations.push({
       file: filename,
+      project: projectFile,
       timestamp: new Date().toISOString(),
+      estimatedTokensWasted: 800 // Average tokens for simple component
     });
-    // Keep only last 50 violations
-    if (violations.length > 50) {
-      violations = violations.slice(-50);
+
+    // Update metrics
+    data.metrics.totalTasksTracked++;
+    data.metrics.tokensWastedEstimate += 800;
+    if (data.metrics.totalTasksTracked > 0) {
+      data.metrics.complianceRate = Math.round(
+        (data.metrics.tasksActuallyDelegated / data.metrics.totalTasksTracked) * 100
+      );
     }
-    fs.writeFileSync(VIOLATIONS_FILE, JSON.stringify(violations, null, 2));
-  } catch (e) {}
+    data.lastUpdate = new Date().toISOString();
+
+    // Keep only last 100 violations
+    if (data.violations.length > 100) {
+      data.violations = data.violations.slice(-100);
+    }
+
+    fs.writeFileSync(VIOLATIONS_FILE, JSON.stringify(data, null, 2));
+  } catch (e) {
+    // Silent fail - don't break workflow
+  }
 }
 
 async function main() {
@@ -143,7 +178,7 @@ async function main() {
     console.log('└─────────────────────────────────────────────────────────────┘');
     console.log('');
 
-    logViolation(filename);
+    logViolation(filename, projectFile);
   }
 
   process.exit(0);

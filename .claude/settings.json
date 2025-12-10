@@ -119,6 +119,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/test-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/process-suggest.cjs"
           }
         ]
       },
