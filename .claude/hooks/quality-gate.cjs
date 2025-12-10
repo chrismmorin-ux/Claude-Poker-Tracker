@@ -64,20 +64,36 @@ function isAllowedConsoleLog(filePath) {
   return CONSOLE_LOG_ALLOWED.some(allowed => filePath.includes(allowed));
 }
 
+async function readStdin() {
+  return new Promise((resolve) => {
+    let input = '';
+    const rl = readline.createInterface({ input: process.stdin });
+
+    // Aggressive timeout - if no data within 100ms, assume no input
+    const timeout = setTimeout(() => {
+      rl.close();
+      resolve('');
+    }, 100);
+
+    rl.on('line', (line) => {
+      clearTimeout(timeout);
+      input += line;
+    });
+
+    rl.on('close', () => {
+      clearTimeout(timeout);
+      resolve(input);
+    });
+
+    rl.on('error', () => {
+      clearTimeout(timeout);
+      resolve('');
+    });
+  });
+}
+
 async function main() {
-  let input = '';
-  const rl = readline.createInterface({ input: process.stdin });
-
-  // Set a timeout to prevent hanging if stdin never closes
-  const timeout = setTimeout(() => {
-    rl.close();
-  }, 5000); // 5 second timeout
-
-  try {
-    for await (const line of rl) { input += line; }
-  } finally {
-    clearTimeout(timeout);
-  }
+  const input = await readStdin();
 
   let data;
   try { data = JSON.parse(input); } catch (e) { process.exit(0); }
@@ -128,18 +144,19 @@ async function main() {
     const blockers = issues.filter(i => i.type === 'BLOCK');
 
     if (blockers.length > 0) {
-      console.log('\n[QUALITY GATE] Commit BLOCKED - issues must be resolved:\n');
+      // Exit code 2 requires stderr for the error message
+      console.error('\n[QUALITY GATE] Commit BLOCKED - issues must be resolved:\n');
       for (const issue of blockers) {
-        console.log(`  [${issue.code}] ${issue.message}`);
-        console.log(`  Action: ${issue.action}\n`);
+        console.error(`  [${issue.code}] ${issue.message}`);
+        console.error(`  Action: ${issue.action}\n`);
       }
-      console.log('  Quality gate enforces: tests must pass before commits.');
-      console.log('  See: docs/CANONICAL_SOURCES.md for source of truth hierarchy.\n');
+      console.error('  Quality gate enforces: tests must pass before commits.');
+      console.error('  See: docs/CANONICAL_SOURCES.md for source of truth hierarchy.\n');
       process.exit(2); // BLOCK
     }
   }
 
-  // All checks passed
+  // All checks passed - stdout is fine for success messages
   console.log('[QUALITY GATE] All checks passed - commit allowed');
   process.exit(0);
 }

@@ -15,14 +15,36 @@
 
 const readline = require('readline');
 
-async function main() {
-  // Read JSON from stdin
-  let input = '';
-  const rl = readline.createInterface({ input: process.stdin });
+async function readStdin() {
+  return new Promise((resolve) => {
+    let input = '';
+    const rl = readline.createInterface({ input: process.stdin });
 
-  for await (const line of rl) {
-    input += line;
-  }
+    // Timeout to prevent hanging if stdin never closes
+    const timeout = setTimeout(() => {
+      rl.close();
+      resolve('');
+    }, 100);
+
+    rl.on('line', (line) => {
+      clearTimeout(timeout);
+      input += line;
+    });
+
+    rl.on('close', () => {
+      clearTimeout(timeout);
+      resolve(input);
+    });
+
+    rl.on('error', () => {
+      clearTimeout(timeout);
+      resolve('');
+    });
+  });
+}
+
+async function main() {
+  const input = await readStdin();
 
   let data;
   try {
@@ -38,13 +60,14 @@ async function main() {
   const cmd = command.toLowerCase().replace(/\s+/g, ' ').trim();
 
   // BLOCK: Force push to main/master
+  // Note: Exit code 2 requires stderr for error message per Claude Code docs
   if (/git\s+push\s+.*--force/.test(cmd) || /git\s+push\s+-f/.test(cmd)) {
     if (/\b(main|master)\b/.test(cmd) || !/\b\w+\/\w+\b/.test(cmd)) {
-      console.log('BLOCKED: Force push to main/master is prohibited.');
-      console.log('See engineering_practices.md Section 1: Branch Protection Rules');
-      console.log('');
-      console.log('If you need to force push to a feature branch, specify the branch explicitly:');
-      console.log('  git push --force origin feature/your-branch');
+      console.error('BLOCKED: Force push to main/master is prohibited.');
+      console.error('See engineering_practices.md Section 1: Branch Protection Rules');
+      console.error('');
+      console.error('If you need to force push to a feature branch, specify the branch explicitly:');
+      console.error('  git push --force origin feature/your-branch');
       process.exit(2);
     }
   }
@@ -53,8 +76,8 @@ async function main() {
   if (/git\s+reset\s+--hard/.test(cmd)) {
     // Check if we're on main/master
     if (/\b(main|master|origin\/main|origin\/master)\b/.test(cmd)) {
-      console.log('BLOCKED: Hard reset on main/master is prohibited.');
-      console.log('See engineering_practices.md Section 1: Branch Protection Rules');
+      console.error('BLOCKED: Hard reset on main/master is prohibited.');
+      console.error('See engineering_practices.md Section 1: Branch Protection Rules');
       process.exit(2);
     }
   }
@@ -76,8 +99,8 @@ async function main() {
 
   // BLOCK: Rebase with -i (interactive) - not supported in non-interactive shells
   if (/git\s+rebase\s+-i/.test(cmd) || /git\s+add\s+-i/.test(cmd)) {
-    console.log('BLOCKED: Interactive git commands (-i) are not supported in this environment.');
-    console.log('Use non-interactive alternatives or run manually in your terminal.');
+    console.error('BLOCKED: Interactive git commands (-i) are not supported in this environment.');
+    console.error('Use non-interactive alternatives or run manually in your terminal.');
     process.exit(2);
   }
 

@@ -16,13 +16,36 @@
 
 const readline = require('readline');
 
-async function main() {
-  let input = '';
-  const rl = readline.createInterface({ input: process.stdin });
+async function readStdin() {
+  return new Promise((resolve) => {
+    let input = '';
+    const rl = readline.createInterface({ input: process.stdin });
 
-  for await (const line of rl) {
-    input += line;
-  }
+    // Timeout to prevent hanging if stdin never closes
+    const timeout = setTimeout(() => {
+      rl.close();
+      resolve('');
+    }, 100);
+
+    rl.on('line', (line) => {
+      clearTimeout(timeout);
+      input += line;
+    });
+
+    rl.on('close', () => {
+      clearTimeout(timeout);
+      resolve(input);
+    });
+
+    rl.on('error', () => {
+      clearTimeout(timeout);
+      resolve('');
+    });
+  });
+}
+
+async function main() {
+  const input = await readStdin();
 
   let data;
   try {
@@ -58,19 +81,20 @@ async function main() {
   ];
 
   // Check if any sensitive files are being added
+  // Note: Exit code 2 requires stderr for error message per Claude Code docs
   for (const pattern of sensitivePatterns) {
     if (pattern.test(command)) {
-      console.log('BLOCKED: Potential secret or sensitive file detected in git command.');
-      console.log(`Pattern matched: ${pattern}`);
-      console.log('');
-      console.log('See engineering_practices.md Section 7: Security & Secrets Handling');
-      console.log('');
-      console.log('Never commit:');
-      console.log('  - API keys, tokens, credentials');
-      console.log('  - .env files with real values');
-      console.log('  - Private keys (.pem, .key)');
-      console.log('');
-      console.log('If this is intentional and safe, run the command manually.');
+      console.error('BLOCKED: Potential secret or sensitive file detected in git command.');
+      console.error(`Pattern matched: ${pattern}`);
+      console.error('');
+      console.error('See engineering_practices.md Section 7: Security & Secrets Handling');
+      console.error('');
+      console.error('Never commit:');
+      console.error('  - API keys, tokens, credentials');
+      console.error('  - .env files with real values');
+      console.error('  - Private keys (.pem, .key)');
+      console.error('');
+      console.error('If this is intentional and safe, run the command manually.');
       process.exit(2);
     }
   }
