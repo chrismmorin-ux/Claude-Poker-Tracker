@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v114** (Context API + State Consolidation)
+Current: **v115** (Settings System)
 
 See `docs/CHANGELOG.md` for full version history.
 

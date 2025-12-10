@@ -36,6 +36,17 @@
   - Custom Venues section: Add/remove custom venues
   - Data & About section: Backup frequency (placeholder), error reporting toggle, version info, reset to defaults with confirmation
 
+### Venue/Game Type Customization (Phase 3)
+- **SettingsView.jsx**: Added Custom Game Types section
+  - Add custom game type with label and default buy-in
+  - Remove custom game types (default types cannot be removed)
+  - Custom game types displayed with buy-in amount
+- **SessionForm.jsx**: Now uses `useSettings()` hook
+  - Dynamic venues from `allVenues` (defaults + custom)
+  - Dynamic game types from `allGameTypes` (defaults + custom)
+  - No longer imports VENUES/GAME_TYPES directly from constants
+- **SessionForm.test.jsx**: Updated tests to wrap with SettingsProvider
+
 ### Database Migration
 - **database.js**: DB_VERSION 5 → 6
   - Added SETTINGS_STORE_NAME constant

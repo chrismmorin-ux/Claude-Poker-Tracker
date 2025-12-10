@@ -3,10 +3,12 @@
  *
  * Modal form for starting a new poker session.
  * Allows optional buy-in, goal selection, and notes.
+ * Uses settings context for dynamic venues and game types.
  */
 
 import React, { useState } from 'react';
-import { SESSION_GOALS, VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
+import { SESSION_GOALS } from '../../constants/sessionConstants';
+import { useSettings } from '../../contexts';
 
 /**
  * SessionForm component
@@ -18,9 +20,12 @@ import { SESSION_GOALS, VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constan
  * @param {string} props.defaultVenue - Default venue from previous session
  */
 export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '', defaultVenue = '' }) => {
+  // Get venues and game types from settings (includes custom ones)
+  const { allVenues, allGameTypes, allGameTypeKeys } = useSettings();
+
   // Initialize with defaults from previous session
   const initialGameType = defaultGameType || 'ONE_TWO'; // Default to 1/2 if no previous session
-  const initialBuyIn = GAME_TYPES[initialGameType]?.buyInDefault || 200;
+  const initialBuyIn = allGameTypes[initialGameType]?.buyInDefault || 200;
 
   const [venue, setVenue] = useState(defaultVenue || '');
   const [gameType, setGameType] = useState(initialGameType);
@@ -34,7 +39,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
   const handleGameTypeSelect = (key) => {
     setGameType(key);
     // Auto-fill buy-in based on game type
-    const defaultBuyIn = GAME_TYPES[key].buyInDefault;
+    const defaultBuyIn = allGameTypes[key].buyInDefault;
     setBuyIn(defaultBuyIn > 0 ? defaultBuyIn.toString() : '');
   };
 
@@ -63,7 +68,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
     // Prepare session data
     const sessionData = {
       venue,
-      gameType: GAME_TYPES[gameType].label,
+      gameType: allGameTypes[gameType].label,
       buyIn: buyIn ? parseFloat(buyIn) : null,
       goal: goal === 'Custom goal...' ? customGoal : goal || null,
       notes: notes || null
@@ -101,7 +106,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
               Game Type <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-4 gap-2">
-              {GAME_TYPE_KEYS.map((key) => (
+              {allGameTypeKeys.map((key) => (
                 <button
                   key={key}
                   type="button"
@@ -112,7 +117,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
-                  {GAME_TYPES[key].label}
+                  {allGameTypes[key].label}
                 </button>
               ))}
             </div>
@@ -134,7 +139,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
               }`}
             >
               <option value="">Select venue...</option>
-              {VENUES.map((v) => (
+              {allVenues.map((v) => (
                 <option key={v} value={v}>{v}</option>
               ))}
             </select>

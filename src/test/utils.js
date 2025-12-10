@@ -41,6 +41,15 @@ export {
   STYLE_TAGS,
 } from '../constants/playerConstants';
 
+export {
+  SETTINGS_ACTIONS,
+  DEFAULT_SETTINGS,
+  THEMES,
+  CARD_SIZES,
+  BACKUP_FREQUENCIES,
+  SETTINGS_FIELDS,
+} from '../constants/settingsConstants';
+
 // =============================================================================
 // MOCK STATE FACTORIES
 // =============================================================================
@@ -105,6 +114,32 @@ export const createMockPlayerState = (overrides = {}) => ({
   isLoading: false,
   ...overrides,
 });
+
+/**
+ * Create a mock settings state with optional overrides
+ * Use this when testing components that use useSettings()
+ */
+export const createMockSettingsState = (overrides = {}) => {
+  // Import DEFAULT_SETTINGS inline to avoid circular dependency
+  const defaults = {
+    theme: 'dark',
+    cardSize: 'medium',
+    defaultVenue: null,
+    defaultGameType: null,
+    autoBackupEnabled: false,
+    backupFrequency: 'manual',
+    customVenues: [],
+    customGameTypes: [],
+    errorReportingEnabled: true,
+  };
+
+  return {
+    settings: { ...defaults, ...(overrides.settings || {}) },
+    isLoading: false,
+    isInitialized: true,
+    ...overrides,
+  };
+};
 
 /**
  * Create empty player cards object for all 9 seats
@@ -185,7 +220,7 @@ export const createMockHandRecord = (overrides = {}) => ({
 export const createMockDispatch = () => vi.fn();
 
 /**
- * Create all three dispatchers used in PokerTracker
+ * Create all six dispatchers used in PokerTracker
  */
 export const createMockDispatchers = () => ({
   dispatchGame: vi.fn(),
@@ -193,6 +228,7 @@ export const createMockDispatchers = () => ({
   dispatchCard: vi.fn(),
   dispatchSession: vi.fn(),
   dispatchPlayer: vi.fn(),
+  dispatchSettings: vi.fn(),
 });
 
 // =============================================================================
@@ -327,3 +363,44 @@ export const ALL_VALID_CARDS = (() => {
   }
   return cards;
 })();
+
+// =============================================================================
+// REACT TESTING LIBRARY HELPERS
+// =============================================================================
+
+/**
+ * Helper to create a wrapper factory for context providers
+ * Use this pattern in your test files for components that use context hooks.
+ *
+ * @example
+ * // In your test file:
+ * import { render } from '@testing-library/react';
+ * import { SettingsProvider } from '../../../contexts/SettingsContext';
+ * import { createMockSettingsState } from '../../test/utils';
+ *
+ * // Create a wrapper helper
+ * const renderWithSettings = (ui, settingsState = createMockSettingsState()) => {
+ *   return render(
+ *     <SettingsProvider settingsState={settingsState} dispatchSettings={vi.fn()}>
+ *       {ui}
+ *     </SettingsProvider>
+ *   );
+ * };
+ *
+ * // Use it in tests
+ * it('renders with default settings', () => {
+ *   renderWithSettings(<MyComponent />);
+ *   // assertions...
+ * });
+ *
+ * // Test with custom settings
+ * it('shows custom venues', () => {
+ *   const customState = createMockSettingsState({
+ *     settings: { customVenues: ['My Casino'] }
+ *   });
+ *   renderWithSettings(<MyComponent />, customState);
+ * });
+ *
+ * NOTE: This pattern must be implemented in each test file that needs it
+ * because utils.js is a plain JS file and cannot contain JSX.
+ */

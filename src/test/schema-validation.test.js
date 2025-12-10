@@ -49,8 +49,8 @@ describe('Schema Validation - Documentation Drift Detection', () => {
       expect(claudeMd).not.toBeNull();
       expect(changelog).not.toBeNull();
 
-      // CHANGELOG has "## v114 (Current)" format
-      const changelogMatch = changelog.match(/## v(\d+) \(Current\)/);
+      // CHANGELOG has "## v114 (Current)" or "## v114 - Name (Current)" format
+      const changelogMatch = changelog.match(/## v(\d+)(?:\s+-\s+[^(]+)?\s+\(Current\)/);
       const changelogVersion = changelogMatch ? parseInt(changelogMatch[1]) : null;
 
       // CLAUDE.md has "v114" or "**v114**" in Architecture section
@@ -69,8 +69,8 @@ describe('Schema Validation - Documentation Drift Detection', () => {
       expect(readme).not.toBeNull();
       expect(changelog).not.toBeNull();
 
-      // CHANGELOG has "## v114 (Current)" format
-      const changelogMatch = changelog.match(/## v(\d+) \(Current\)/);
+      // CHANGELOG has "## v114 (Current)" or "## v114 - Name (Current)" format
+      const changelogMatch = changelog.match(/## v(\d+)(?:\s+-\s+[^(]+)?\s+\(Current\)/);
       const changelogVersion = changelogMatch ? parseInt(changelogMatch[1]) : null;
 
       // README has "**v114**" format

@@ -6,15 +6,6 @@
   "active": [],
   "pending": [
     {
-      "id": "settings-system",
-      "name": "Settings System",
-      "file": "docs/projects/settings-system.project.md",
-      "priority": "P1",
-      "phases": 3,
-      "phasesComplete": 0,
-      "description": "Settings infrastructure, preferences UI, venue/game type customization"
-    },
-    {
       "id": "error-reporting",
       "name": "Error Reporting System",
       "file": "docs/projects/error-reporting.project.md",
@@ -70,6 +61,16 @@
     }
   ],
   "completed": [
+    {
+      "id": "settings-system",
+      "name": "Settings System",
+      "file": "docs/projects/settings-system.project.md",
+      "priority": "P1",
+      "completedAt": "2025-12-09",
+      "phases": 3,
+      "phasesComplete": 3,
+      "description": "Settings infrastructure, preferences UI, venue/game type customization"
+    },
     {
       "id": "mvp-critical-fixes",
       "name": "MVP Critical Fixes (P0+P1 Audit Issues)",

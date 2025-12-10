@@ -301,6 +301,50 @@ const { result } = renderHook(() => useGame(), { wrapper });
 expect(result.current.currentStreet).toBe('preflop');
 ```
 
+### Testing Components with Context Dependencies
+
+**IMPORTANT**: When a component uses `useSettings()`, `useGame()`, or other context hooks,
+tests MUST wrap the component with the appropriate provider.
+
+Use the shared test utilities in `src/test/utils.js`:
+
+```javascript
+import { render, screen } from '@testing-library/react';
+import { SettingsProvider } from '../../../contexts/SettingsContext';
+import { createMockSettingsState } from '../../test/utils';
+
+// Create a wrapper helper in your test file
+const renderWithSettings = (ui, settingsState = createMockSettingsState()) => {
+  return render(
+    <SettingsProvider settingsState={settingsState} dispatchSettings={vi.fn()}>
+      {ui}
+    </SettingsProvider>
+  );
+};
+
+// Use it in tests
+it('renders with default settings', () => {
+  renderWithSettings(<MyComponent />);
+  // assertions...
+});
+
+// Test with custom settings
+it('shows custom venues', () => {
+  const customState = createMockSettingsState({
+    settings: { customVenues: ['My Casino'] }
+  });
+  renderWithSettings(<MyComponent />, customState);
+  expect(screen.getByText('My Casino')).toBeInTheDocument();
+});
+```
+
+**Available mock state factories** (from `src/test/utils.js`):
+- `createMockGameState()` - For components using `useGame()`
+- `createMockUIState()` - For components using `useUI()`
+- `createMockSessionState()` - For components using `useSession()`
+- `createMockPlayerState()` - For components using `usePlayer()`
+- `createMockSettingsState()` - For components using `useSettings()`
+
 ### Running Tests
 
 ```bash

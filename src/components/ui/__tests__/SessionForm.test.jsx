@@ -1,11 +1,26 @@
 /**
  * SessionForm.test.jsx - Tests for SessionForm component
+ *
+ * This component uses useSettings() context hook, so all renders must be wrapped
+ * with SettingsProvider. Uses createMockSettingsState from shared test utils.
  */
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SessionForm } from '../SessionForm';
+import { SettingsProvider } from '../../../contexts/SettingsContext';
+import { createMockSettingsState } from '../../../test/utils';
+
+// Wrapper that provides SettingsContext
+// Pattern documented in engineering_practices.md "Testing Components with Context Dependencies"
+const renderWithSettings = (ui, settingsState = createMockSettingsState()) => {
+  return render(
+    <SettingsProvider settingsState={settingsState} dispatchSettings={vi.fn()}>
+      {ui}
+    </SettingsProvider>
+  );
+};
 
 describe('SessionForm', () => {
   const defaultProps = {
@@ -20,12 +35,12 @@ describe('SessionForm', () => {
 
   describe('rendering', () => {
     it('renders form title', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Start New Session')).toBeInTheDocument();
     });
 
     it('renders game type buttons', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Tournament')).toBeInTheDocument();
       expect(screen.getByText('1/2')).toBeInTheDocument();
       expect(screen.getByText('1/3')).toBeInTheDocument();
@@ -33,54 +48,54 @@ describe('SessionForm', () => {
     });
 
     it('renders venue dropdown', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Venue')).toBeInTheDocument();
       expect(screen.getByText('Select venue...')).toBeInTheDocument();
     });
 
     it('renders buy-in input', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Buy-in')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('200')).toBeInTheDocument();
     });
 
     it('renders goal dropdown', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Goal (optional)')).toBeInTheDocument();
       expect(screen.getByText('Select a goal...')).toBeInTheDocument();
     });
 
     it('renders notes textarea', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Notes (optional)')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Any notes for this session...')).toBeInTheDocument();
     });
 
     it('renders Cancel button', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Cancel')).toBeInTheDocument();
     });
 
     it('renders Start Session button', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('Start Session')).toBeInTheDocument();
     });
 
     it('renders close button', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('×')).toBeInTheDocument();
     });
   });
 
   describe('game type selection', () => {
     it('defaults to 1/2 game type', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       const oneTwo = screen.getByText('1/2');
       expect(oneTwo.className).toContain('bg-blue-600');
     });
 
     it('selects game type on click', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('2/5'));
 
@@ -89,7 +104,7 @@ describe('SessionForm', () => {
     });
 
     it('auto-fills buy-in when game type is selected', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       const buyInInput = screen.getByPlaceholderText('200');
 
       // Default is 1/2 = $200
@@ -101,7 +116,7 @@ describe('SessionForm', () => {
     });
 
     it('uses default game type from props', () => {
-      render(<SessionForm {...defaultProps} defaultGameType="TWO_FIVE" />);
+      renderWithSettings(<SessionForm {...defaultProps} defaultGameType="TWO_FIVE" />);
 
       const twoFive = screen.getByText('2/5');
       expect(twoFive.className).toContain('bg-blue-600');
@@ -110,7 +125,7 @@ describe('SessionForm', () => {
 
   describe('venue selection', () => {
     it('shows venue options', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       const venueSelects = screen.getAllByRole('combobox');
       // First combobox is venue
       expect(venueSelects[0]).toBeInTheDocument();
@@ -118,7 +133,7 @@ describe('SessionForm', () => {
     });
 
     it('uses default venue from props', () => {
-      render(<SessionForm {...defaultProps} defaultVenue="Horseshoe Casino" />);
+      renderWithSettings(<SessionForm {...defaultProps} defaultVenue="Horseshoe Casino" />);
       const venueSelect = screen.getAllByRole('combobox')[0];
       expect(venueSelect).toHaveValue('Horseshoe Casino');
     });
@@ -126,7 +141,7 @@ describe('SessionForm', () => {
 
   describe('form submission', () => {
     it('calls onSubmit with form data', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       // Fill out form
       const buyInInput = screen.getByPlaceholderText('200');
@@ -144,7 +159,7 @@ describe('SessionForm', () => {
     });
 
     it('includes venue in submission', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const venueSelect = screen.getAllByRole('combobox')[0];
       fireEvent.change(venueSelect, { target: { value: 'Horseshoe Casino' } });
@@ -159,7 +174,7 @@ describe('SessionForm', () => {
     });
 
     it('includes notes in submission', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const notesInput = screen.getByPlaceholderText('Any notes for this session...');
       fireEvent.change(notesInput, { target: { value: 'Test notes' } });
@@ -174,7 +189,7 @@ describe('SessionForm', () => {
     });
 
     it('handles empty buy-in', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const buyInInput = screen.getByPlaceholderText('200');
       fireEvent.change(buyInInput, { target: { value: '' } });
@@ -191,7 +206,7 @@ describe('SessionForm', () => {
 
   describe('form validation', () => {
     it('shows error for invalid buy-in', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const buyInInput = screen.getByPlaceholderText('200');
       fireEvent.change(buyInInput, { target: { value: '-50' } });
@@ -203,7 +218,7 @@ describe('SessionForm', () => {
     });
 
     it('shows error for non-numeric buy-in', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const buyInInput = screen.getByPlaceholderText('200');
       fireEvent.change(buyInInput, { target: { value: 'abc' } });
@@ -217,7 +232,7 @@ describe('SessionForm', () => {
 
   describe('cancel functionality', () => {
     it('calls onCancel when Cancel button clicked', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('Cancel'));
 
@@ -225,7 +240,7 @@ describe('SessionForm', () => {
     });
 
     it('calls onCancel when close button clicked', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('×'));
 
@@ -233,7 +248,7 @@ describe('SessionForm', () => {
     });
 
     it('calls onCancel when clicking backdrop', () => {
-      const { container } = render(<SessionForm {...defaultProps} />);
+      const { container } = renderWithSettings(<SessionForm {...defaultProps} />);
 
       // Click on the overlay background
       const overlay = container.querySelector('.fixed.inset-0');
@@ -243,7 +258,7 @@ describe('SessionForm', () => {
     });
 
     it('does not cancel when clicking form content', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('Start New Session'));
 
@@ -253,7 +268,7 @@ describe('SessionForm', () => {
 
   describe('custom goal', () => {
     it('shows custom goal input when Custom goal selected', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const goalSelect = screen.getAllByRole('combobox')[1];
       fireEvent.change(goalSelect, { target: { value: 'Custom goal...' } });
@@ -262,7 +277,7 @@ describe('SessionForm', () => {
     });
 
     it('uses custom goal text in submission', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       const goalSelect = screen.getAllByRole('combobox')[1];
       fireEvent.change(goalSelect, { target: { value: 'Custom goal...' } });
@@ -282,32 +297,32 @@ describe('SessionForm', () => {
 
   describe('styling', () => {
     it('applies scale from props', () => {
-      const { container } = render(<SessionForm {...defaultProps} scale={0.8} />);
+      const { container } = renderWithSettings(<SessionForm {...defaultProps} scale={0.8} />);
       const form = container.querySelector('.bg-white.rounded-lg');
       expect(form.style.transform).toBe('scale(0.8)');
     });
 
     it('has fixed overlay for modal', () => {
-      const { container } = render(<SessionForm {...defaultProps} />);
+      const { container } = renderWithSettings(<SessionForm {...defaultProps} />);
       expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
     });
 
     it('has z-50 for stacking context', () => {
-      const { container } = render(<SessionForm {...defaultProps} />);
+      const { container } = renderWithSettings(<SessionForm {...defaultProps} />);
       expect(container.querySelector('.z-50')).toBeInTheDocument();
     });
   });
 
   describe('game type required indicator', () => {
     it('shows required asterisk for game type', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
       expect(screen.getByText('*')).toBeInTheDocument();
     });
   });
 
   describe('tournament game type', () => {
     it('clears buy-in for tournament', () => {
-      render(<SessionForm {...defaultProps} />);
+      renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('Tournament'));
 
