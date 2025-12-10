@@ -54,19 +54,7 @@ function loadEditState() {
   return { lastEdit: 0, editCount: 0 };
 }
 
-function saveTestState(state) {
-  try {
-    const dir = path.dirname(TEST_STATE_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(TEST_STATE_FILE, JSON.stringify(state, null, 2));
-  } catch (e) {}
-}
-
-function isTestCommand(command) {
-  return /npm\s+(test|run\s+test)/.test(command) ||
-         /vitest/.test(command) ||
-         /npm\s+run\s+test:coverage/.test(command);
-}
+// Note: Test state tracking is handled by test-tracker.cjs (PostToolUse)
 
 function isCommitCommand(command) {
   return /git\s+commit/.test(command);
@@ -85,21 +73,9 @@ async function main() {
   try { data = JSON.parse(input); } catch (e) { process.exit(0); }
 
   const command = data?.tool_input?.command || '';
-  const hookType = data?.hook_type || '';
 
-  // Track successful test runs (PostToolUse)
-  if (hookType === 'PostToolUse' && isTestCommand(command)) {
-    // This would be called after test command completes
-    // We'll record it as passed (the hook framework would tell us if it failed)
-    saveTestState({
-      lastRun: Date.now(),
-      passed: true,
-      command: command
-    });
-    process.exit(0);
-  }
-
-  // For commit commands (PreToolUse), enforce the quality gate
+  // This hook only handles PreToolUse for commit commands
+  // PostToolUse test tracking is handled by test-tracker.cjs
   if (!isCommitCommand(command)) {
     process.exit(0);
   }

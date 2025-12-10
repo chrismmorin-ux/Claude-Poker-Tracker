@@ -53,18 +53,23 @@ async function main() {
   try { data = JSON.parse(input); } catch (e) { process.exit(0); }
 
   const command = data?.tool_input?.command || '';
-  const toolResult = data?.tool_result || {};
-  const stdout = toolResult?.stdout || '';
+  // tool_response is the correct field name (not tool_result)
+  const toolResponse = data?.tool_response || {};
+  const stdout = toolResponse?.stdout || '';
 
   // Only track test commands
   if (!isTestCommand(command)) {
     process.exit(0);
   }
 
+  // Strip ANSI escape codes for reliable matching
+  const cleanStdout = stdout.replace(/\x1b\[[0-9;]*m/g, '');
+
   // Detect if tests passed by looking for success indicators
-  // Vitest output includes "X passed" at the end
-  const passedMatch = stdout.match(/(\d+)\s+passed/);
-  const failedMatch = stdout.match(/(\d+)\s+failed/);
+  // Vitest output format: "Tests  2235 passed"
+  // Use specific pattern to match "Tests" line (with spaces), not "Test Files" line
+  const passedMatch = cleanStdout.match(/Tests\s+(\d+)\s+passed/);
+  const failedMatch = cleanStdout.match(/Tests\s+(\d+)\s+failed/);
 
   const testsPassed = passedMatch && (!failedMatch || parseInt(failedMatch[1]) === 0);
   const testCount = passedMatch ? parseInt(passedMatch[1]) : 0;
