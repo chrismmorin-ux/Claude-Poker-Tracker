@@ -245,6 +245,7 @@ Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 - **Description**: Type definitions, type guards, gradual conversion
 - **Phases**: 3 planned
 - **Blocked By**: MVP complete (optional enhancement)
+- **Motivation**: Catches function signature mismatches at compile time (e.g., useAuthPersistence bug 2025-12-10 where wrong args passed silently failed)
 
 ---
 

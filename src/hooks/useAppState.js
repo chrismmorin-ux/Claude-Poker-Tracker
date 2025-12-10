@@ -45,7 +45,7 @@ export const useAppState = () => {
   // =========================================================================
 
   // Auth persistence (Firebase auth state listener)
-  const { isReady: authReady } = useAuthPersistence(authState, dispatchAuth);
+  const { isReady: authReady } = useAuthPersistence(dispatchAuth);
 
   // Hand persistence (auto-save + auto-restore)
   const { isReady: handReady } = usePersistence(

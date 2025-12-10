@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, ACTIONS, ACTION_ABBREV } from '../../../constants/gameConstants';
+import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
+import { useGame } from '../../../contexts';
 
 /**
  * ActionPanel - Action buttons panel for selected seats
@@ -16,6 +18,28 @@ export const ActionPanel = ({
   onClearSeatActions,
   onUndoLastAction,
 }) => {
+  // Get recordPrimitiveAction from context
+  const { recordPrimitiveAction } = useGame();
+
+  /**
+   * Record an action in both legacy and new formats.
+   * During transition, we dual-write to maintain compatibility.
+   *
+   * @param {string} legacyAction - Legacy action constant (ACTIONS.*)
+   * @param {string} primitiveAction - Primitive action (PRIMITIVE_ACTIONS.*)
+   */
+  const handleRecordAction = (legacyAction, primitiveAction) => {
+    // Record legacy action for backwards compatibility
+    onRecordAction(legacyAction);
+
+    // Also record primitive action for new sequence system
+    if (recordPrimitiveAction && primitiveAction) {
+      selectedPlayers.forEach(seat => {
+        recordPrimitiveAction(seat, primitiveAction);
+      });
+    }
+  };
+
   if (selectedPlayers.length === 0 || currentStreet === 'showdown') {
     return null;
   }
@@ -58,35 +82,35 @@ export const ActionPanel = ({
 
       {currentStreet === 'preflop' ? (
         <div className="grid grid-cols-3 gap-2">
-          <button onClick={() => onRecordAction(ACTIONS.FOLD)} className="py-4 bg-red-400 hover:bg-red-500 rounded-lg font-bold text-base text-white">Fold</button>
-          <button onClick={() => onRecordAction(ACTIONS.LIMP)} className="py-4 bg-gray-400 hover:bg-gray-500 rounded-lg font-bold text-base text-white">Limp</button>
-          <button onClick={() => onRecordAction(ACTIONS.CALL)} className="py-4 bg-blue-300 hover:bg-blue-400 rounded-lg font-bold text-base text-white">Call</button>
-          <button onClick={() => onRecordAction(ACTIONS.OPEN)} className="py-4 bg-green-400 hover:bg-green-500 rounded-lg font-bold text-base text-white">Open</button>
-          <button onClick={() => onRecordAction(ACTIONS.THREE_BET)} className="py-4 bg-yellow-400 hover:bg-yellow-500 rounded-lg font-bold text-base">3bet</button>
-          <button onClick={() => onRecordAction(ACTIONS.FOUR_BET)} className="py-4 bg-orange-400 hover:bg-orange-500 rounded-lg font-bold text-base text-white">4bet</button>
+          <button onClick={() => handleRecordAction(ACTIONS.FOLD, PRIMITIVE_ACTIONS.FOLD)} className="py-4 bg-red-400 hover:bg-red-500 rounded-lg font-bold text-base text-white">Fold</button>
+          <button onClick={() => handleRecordAction(ACTIONS.LIMP, PRIMITIVE_ACTIONS.CALL)} className="py-4 bg-gray-400 hover:bg-gray-500 rounded-lg font-bold text-base text-white">Limp</button>
+          <button onClick={() => handleRecordAction(ACTIONS.CALL, PRIMITIVE_ACTIONS.CALL)} className="py-4 bg-blue-300 hover:bg-blue-400 rounded-lg font-bold text-base text-white">Call</button>
+          <button onClick={() => handleRecordAction(ACTIONS.OPEN, PRIMITIVE_ACTIONS.RAISE)} className="py-4 bg-green-400 hover:bg-green-500 rounded-lg font-bold text-base text-white">Open</button>
+          <button onClick={() => handleRecordAction(ACTIONS.THREE_BET, PRIMITIVE_ACTIONS.RAISE)} className="py-4 bg-yellow-400 hover:bg-yellow-500 rounded-lg font-bold text-base">3bet</button>
+          <button onClick={() => handleRecordAction(ACTIONS.FOUR_BET, PRIMITIVE_ACTIONS.RAISE)} className="py-4 bg-orange-400 hover:bg-orange-500 rounded-lg font-bold text-base text-white">4bet</button>
         </div>
       ) : (
         <>
           <div className="mb-3">
             <div className="text-sm font-bold text-blue-700 mb-2">IF PFR:</div>
             <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => onRecordAction(ACTIONS.CBET_IP_SMALL)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet IP (S)</button>
-              <button onClick={() => onRecordAction(ACTIONS.CBET_IP_LARGE)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet IP (L)</button>
-              <button onClick={() => onRecordAction(ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
-              <button onClick={() => onRecordAction(ACTIONS.CBET_OOP_SMALL)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet OOP (S)</button>
-              <button onClick={() => onRecordAction(ACTIONS.CBET_OOP_LARGE)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet OOP (L)</button>
-              <button onClick={() => onRecordAction(ACTIONS.FOLD_TO_CR)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to CR</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CBET_IP_SMALL, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet IP (S)</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CBET_IP_LARGE, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet IP (L)</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CHECK, PRIMITIVE_ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CBET_OOP_SMALL, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-green-200 hover:bg-green-300 rounded font-semibold text-sm">Cbet OOP (S)</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CBET_OOP_LARGE, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-green-300 hover:bg-green-400 rounded font-semibold text-sm">Cbet OOP (L)</button>
+              <button onClick={() => handleRecordAction(ACTIONS.FOLD_TO_CR, PRIMITIVE_ACTIONS.FOLD)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to CR</button>
             </div>
           </div>
 
           <div>
             <div className="text-sm font-bold text-purple-700 mb-2">IF PFC:</div>
             <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => onRecordAction(ACTIONS.DONK)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Donk</button>
-              <button onClick={() => onRecordAction(ACTIONS.STAB)} className="py-3 bg-yellow-200 hover:bg-yellow-300 rounded font-semibold text-sm">Stab</button>
-              <button onClick={() => onRecordAction(ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
-              <button onClick={() => onRecordAction(ACTIONS.CHECK_RAISE)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Check-Raise</button>
-              <button onClick={() => onRecordAction(ACTIONS.FOLD_TO_CBET)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to Cbet</button>
+              <button onClick={() => handleRecordAction(ACTIONS.DONK, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Donk</button>
+              <button onClick={() => handleRecordAction(ACTIONS.STAB, PRIMITIVE_ACTIONS.BET)} className="py-3 bg-yellow-200 hover:bg-yellow-300 rounded font-semibold text-sm">Stab</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CHECK, PRIMITIVE_ACTIONS.CHECK)} className="py-3 bg-blue-200 hover:bg-blue-300 rounded font-semibold text-sm">Check</button>
+              <button onClick={() => handleRecordAction(ACTIONS.CHECK_RAISE, PRIMITIVE_ACTIONS.RAISE)} className="py-3 bg-orange-200 hover:bg-orange-300 rounded font-semibold text-sm">Check-Raise</button>
+              <button onClick={() => handleRecordAction(ACTIONS.FOLD_TO_CBET, PRIMITIVE_ACTIONS.FOLD)} className="py-3 bg-red-200 hover:bg-red-300 rounded font-semibold text-sm">Fold to Cbet</button>
             </div>
           </div>
         </>

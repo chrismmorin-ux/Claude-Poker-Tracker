@@ -20,6 +20,7 @@ export const ShowdownSeatRow = ({
   inactiveStatus,
   isMucked,
   hasWon,
+  anyoneHasWon,
   highlightedSeat,
   highlightedHoleSlot,
   mode, // 'selection' or 'summary'
@@ -36,7 +37,7 @@ export const ShowdownSeatRow = ({
   const canInteract = mode === 'selection' && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked;
 
   // Check if any seat has won (for hiding Won button on other seats)
-  const someoneHasWon = mode === 'selection' && hasWon;
+  const someoneHasWon = mode === 'selection' && anyoneHasWon;
 
   return (
     <div className="flex flex-col items-center">
@@ -131,6 +132,7 @@ ShowdownSeatRow.propTypes = {
   inactiveStatus: PropTypes.string,
   isMucked: PropTypes.bool.isRequired,
   hasWon: PropTypes.bool.isRequired,
+  anyoneHasWon: PropTypes.bool.isRequired,
   highlightedSeat: PropTypes.number,
   highlightedHoleSlot: PropTypes.number,
   mode: PropTypes.oneOf(['selection', 'summary']).isRequired,

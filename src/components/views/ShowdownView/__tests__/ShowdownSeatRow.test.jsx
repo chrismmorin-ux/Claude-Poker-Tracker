@@ -19,6 +19,7 @@ describe('ShowdownSeatRow', () => {
     inactiveStatus: null,
     isMucked: false,
     hasWon: false,
+    anyoneHasWon: false,
     highlightedSeat: null,
     highlightedHoleSlot: null,
     mode: 'selection',
@@ -129,8 +130,8 @@ describe('ShowdownSeatRow', () => {
       expect(screen.getByText('Won')).toBeInTheDocument();
     });
 
-    it('hides Won button when hasWon is true', () => {
-      render(<ShowdownSeatRow {...defaultProps} mode="selection" hasWon={true} />);
+    it('hides Won button when anyoneHasWon is true', () => {
+      render(<ShowdownSeatRow {...defaultProps} mode="selection" anyoneHasWon={true} />);
       expect(screen.queryByText('Won')).not.toBeInTheDocument();
     });
 

@@ -1,14 +1,21 @@
 {
   "version": "1.0",
   "description": "Tracks delegation policy violations for process improvement analysis",
-  "lastUpdate": "2025-12-10T00:00:00Z",
-  "violations": [],
+  "lastUpdate": "2025-12-10T22:49:32.031Z",
+  "violations": [
+    {
+      "file": "src/test.js",
+      "project": "docs/projects/firebase-auth.project.md",
+      "timestamp": "2025-12-10T22:49:32.031Z",
+      "estimatedTokensWasted": 800
+    }
+  ],
   "metrics": {
-    "totalTasksTracked": 0,
+    "totalTasksTracked": 1,
     "tasksActuallyDelegated": 0,
     "complianceRate": 0,
     "tokensSavedEstimate": 0,
-    "tokensWastedEstimate": 0
+    "tokensWastedEstimate": 800
   },
   "history": [
     {

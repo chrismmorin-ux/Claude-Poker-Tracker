@@ -1,12 +1,14 @@
 /**
  * GameContext.jsx - Game state context provider
- * Provides: currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats
+ * Provides: currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats, actionSequence
  * Plus derived values: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded, isSeatInactive
+ * Plus action helpers: recordPrimitiveAction
  */
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { ACTIONS, FOLD_ACTIONS, LIMITS } from '../constants/gameConstants';
 import { getSmallBlindSeat as calcSmallBlind, getBigBlindSeat as calcBigBlind } from '../utils/seatUtils';
+import { GAME_ACTIONS } from '../reducers/gameReducer';
 
 // Create context
 const GameContext = createContext(null);
@@ -16,7 +18,7 @@ const GameContext = createContext(null);
  * Wraps children with game state and derived utilities
  */
 export const GameProvider = ({ gameState, dispatchGame, children }) => {
-  const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats } = gameState;
+  const { currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats, actionSequence } = gameState;
 
   // Derived: Get small blind seat
   const getSmallBlindSeat = useCallback(() => {
@@ -55,6 +57,14 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     return allActions;
   }, [seatActions]);
 
+  // Action helper: Record a primitive action for a seat
+  const recordPrimitiveAction = useCallback((seat, primitiveAction) => {
+    dispatchGame({
+      type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+      payload: { seat, action: primitiveAction },
+    });
+  }, [dispatchGame]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -63,6 +73,7 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     mySeat,
     seatActions,
     absentSeats,
+    actionSequence,  // New: ordered action sequence
     // Dispatch
     dispatchGame,
     // Derived utilities
@@ -71,18 +82,22 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     hasSeatFolded,
     isSeatInactive,
     getSeatAllActions,
+    // Action helpers
+    recordPrimitiveAction,  // New: record primitive action
   }), [
     currentStreet,
     dealerButtonSeat,
     mySeat,
     seatActions,
     absentSeats,
+    actionSequence,
     dispatchGame,
     getSmallBlindSeat,
     getBigBlindSeat,
     hasSeatFolded,
     isSeatInactive,
     getSeatAllActions,
+    recordPrimitiveAction,
   ]);
 
   return (
