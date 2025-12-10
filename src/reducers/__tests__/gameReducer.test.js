@@ -157,6 +157,37 @@ describe('gameReducer', () => {
       expect(newState.seatActions.flop[2]).toEqual(['check']);
       expect(newState.seatActions.preflop).toBeUndefined();
     });
+
+    it('rejects invalid action type', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_ACTION,
+        payload: { seats: [3], action: 'invalid_action_xyz' },
+      });
+      // State should be unchanged
+      expect(newState.seatActions).toEqual({});
+    });
+
+    it('rejects if all seats are invalid', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_ACTION,
+        payload: { seats: [0, 10, -1], action: 'fold' },
+      });
+      // State should be unchanged
+      expect(newState.seatActions).toEqual({});
+    });
+
+    it('filters out invalid seats but processes valid ones', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_ACTION,
+        payload: { seats: [0, 3, 10, 5], action: 'fold' },
+      });
+      // Only seats 3 and 5 should be recorded (valid seats)
+      expect(newState.seatActions.preflop[3]).toEqual(['fold']);
+      expect(newState.seatActions.preflop[5]).toEqual(['fold']);
+      // Invalid seats should not be recorded
+      expect(newState.seatActions.preflop[0]).toBeUndefined();
+      expect(newState.seatActions.preflop[10]).toBeUndefined();
+    });
   });
 
   describe('CLEAR_STREET_ACTIONS', () => {

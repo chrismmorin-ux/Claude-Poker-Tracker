@@ -336,9 +336,9 @@ const isValidRebuyTransactions = (txns) => {
 
 | Level | Description | Count |
 |-------|-------------|-------|
-| Schema | Validated by reducerUtils (DEBUG only) | 12 |
-| Application | Checked in hooks/utils | 6 |
-| None | Not validated anywhere | 18 |
+| Schema | Validated by reducerUtils (always on - fixed 2025-12-09) | 12 |
+| Application | Checked in hooks/utils | 8 |
+| None | Not validated anywhere | 16 |
 
 ---
 
@@ -356,15 +356,15 @@ const isValidRebuyTransactions = (txns) => {
 
 ## Recommendations
 
-### Critical (P0)
+### Critical (P0) ✅ FIXED 2025-12-09
 
-1. **Add runtime validation for critical invariants**
-   - CARD-2: Check uniqueness on card assignment
-   - SESSION-5: Validate rebuyTransactions type
+1. **Add runtime validation for critical invariants** ✅ FIXED
+   - CARD-2: Check uniqueness on card assignment - Fixed in cardReducer.js
+   - SESSION-5: Validate rebuyTransactions type - Validated in sessionReducer
 
-2. **Always enable schema validation**
-   - Currently DEBUG only
-   - Consider lightweight checks in production
+2. **Always enable schema validation** ✅ FIXED
+   - Removed DEBUG check from reducerUtils.js
+   - Schema validation now runs in production
 
 ### High Priority (P1)
 

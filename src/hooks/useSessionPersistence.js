@@ -63,14 +63,27 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
       log('Initializing session persistence...');
 
       try {
-        // Load active session
+        // Load active session marker (single source of truth)
         const activeSession = await getActiveSession();
+        const activeSessionId = activeSession?.sessionId || null;
 
-        if (activeSession && activeSession.sessionId) {
-          log(`Restoring active session ${activeSession.sessionId}`);
+        // P1 Fix: Reconcile dual source of truth
+        // The activeSession store is the single source of truth.
+        // If any sessions have isActive=true but don't match, fix them.
+        const allSessions = await getAllSessions();
+        for (const session of allSessions) {
+          const shouldBeActive = session.sessionId === activeSessionId;
+          if (session.isActive !== shouldBeActive) {
+            log(`Fixing isActive mismatch for session ${session.sessionId}: ${session.isActive} -> ${shouldBeActive}`);
+            await updateSession(session.sessionId, { isActive: shouldBeActive });
+          }
+        }
+
+        if (activeSessionId) {
+          log(`Restoring active session ${activeSessionId}`);
 
           // Get full session data
-          const sessionData = await getSessionById(activeSession.sessionId);
+          const sessionData = await getSessionById(activeSessionId);
 
           if (sessionData) {
             // Hydrate session state
@@ -79,6 +92,10 @@ export const useSessionPersistence = (sessionState, dispatchSession) => {
               payload: { session: sessionData }
             });
             log('Session state hydrated');
+          } else {
+            // Session was deleted but activeSession marker still exists - clean up
+            log(`Active session ${activeSessionId} not found - clearing marker`);
+            await clearActiveSession();
           }
         } else {
           log('No active session found - starting without session');

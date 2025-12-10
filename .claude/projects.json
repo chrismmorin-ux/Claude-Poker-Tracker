@@ -6,15 +6,6 @@
   "active": [],
   "pending": [
     {
-      "id": "mvp-critical-fixes",
-      "name": "MVP Critical Fixes (P0+P1 Audit Issues)",
-      "file": "docs/projects/mvp-critical-fixes.project.md",
-      "priority": "P0",
-      "phases": 2,
-      "phasesComplete": 0,
-      "description": "Fix P0+P1 audit issues: loadLatestHand normalization, session hydration, atomicity, card duplicates, validation layer"
-    },
-    {
       "id": "settings-system",
       "name": "Settings System",
       "file": "docs/projects/settings-system.project.md",
@@ -79,6 +70,16 @@
     }
   ],
   "completed": [
+    {
+      "id": "mvp-critical-fixes",
+      "name": "MVP Critical Fixes (P0+P1 Audit Issues)",
+      "file": "docs/projects/mvp-critical-fixes.project.md",
+      "priority": "P0",
+      "completedAt": "2025-12-09",
+      "phases": 2,
+      "phasesComplete": 2,
+      "description": "Fixed all P0+P1 audit issues: card duplicate prevention, production validation, DB-level player uniqueness, session reconciliation, action/seat validation"
+    },
     {
       "id": "audit-fix-implementation",
       "name": "Audit Fix Implementation (Phases A-C)",

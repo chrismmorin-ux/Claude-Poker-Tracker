@@ -120,10 +120,9 @@ export const validateSchema = (state, schema) => {
 /**
  * Create a validated reducer that logs actions and validates state
  *
- * In debug mode:
- * - Logs all actions with their payloads
- * - Validates state after each action
- * - Logs state corruption errors with context
+ * Validation behavior:
+ * - DEBUG mode: Full validation with detailed logging
+ * - Production mode: Lightweight critical checks (type validation only)
  *
  * On error:
  * - Returns previous state to prevent corruption
@@ -150,10 +149,11 @@ export const createValidatedReducer = (reducer, schema, moduleName) => {
       // Execute the reducer
       const newState = reducer(state, action);
 
-      // Validate state shape after every action (debug mode only)
-      if (DEBUG && schema) {
+      // Validate state shape after every action
+      if (schema) {
         const errors = validateSchema(newState, schema);
         if (errors.length > 0) {
+          // Always log validation errors (even in production)
           const appError = new AppError(
             ERROR_CODES.STATE_CORRUPTION,
             `State validation failed after ${action.type}`,

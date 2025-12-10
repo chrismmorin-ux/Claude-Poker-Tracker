@@ -70,6 +70,29 @@ const rawCardReducer = (state, action) => {
   switch (action.type) {
     case CARD_ACTIONS.SET_COMMUNITY_CARD: {
       const { index, card } = action.payload;
+
+      // Check for duplicate cards (skip empty strings - clearing a slot)
+      if (card && card !== '') {
+        const inUse = isCardInUse(
+          card,
+          state.communityCards,
+          state.holeCards,
+          state.allPlayerCards,
+          null,  // No seat exclusion (this is community card)
+          null   // No slot exclusion
+        );
+
+        // Allow if card is already in this exact slot (same card re-selected)
+        const alreadyInSlot = state.communityCards[index] === card;
+
+        if (inUse && !alreadyInSlot) {
+          if (DEBUG) {
+            logger.warn('cardReducer', `Duplicate card rejected: ${card} at community index ${index}`);
+          }
+          return state; // Reject duplicate - return unchanged state
+        }
+      }
+
       const newCommunityCards = [...state.communityCards];
       newCommunityCards[index] = card;
       return {
@@ -80,6 +103,29 @@ const rawCardReducer = (state, action) => {
 
     case CARD_ACTIONS.SET_HOLE_CARD: {
       const { index, card } = action.payload;
+
+      // Check for duplicate cards (skip empty strings - clearing a slot)
+      if (card && card !== '') {
+        const inUse = isCardInUse(
+          card,
+          state.communityCards,
+          state.holeCards,
+          state.allPlayerCards,
+          null,  // No seat exclusion (this is hole card)
+          null   // No slot exclusion
+        );
+
+        // Allow if card is already in this exact slot (same card re-selected)
+        const alreadyInSlot = state.holeCards[index] === card;
+
+        if (inUse && !alreadyInSlot) {
+          if (DEBUG) {
+            logger.warn('cardReducer', `Duplicate card rejected: ${card} at hole index ${index}`);
+          }
+          return state; // Reject duplicate - return unchanged state
+        }
+      }
+
       const newHoleCards = [...state.holeCards];
       newHoleCards[index] = card;
       return {

@@ -20,10 +20,20 @@ import {
  * Create a new player
  * @param {Object} playerData - Player data (name, nickname, ethnicity, etc.)
  * @returns {Promise<number>} The auto-generated playerId
+ * @throws {Error} If player with same name already exists
  */
 export const createPlayer = async (playerData) => {
   try {
     const db = await initDB();
+
+    // Check for duplicate name at DB level (P1 fix)
+    if (playerData.name) {
+      const existingPlayer = await getPlayerByNameInternal(db, playerData.name);
+      if (existingPlayer) {
+        db.close();
+        throw new Error(`Player with name "${playerData.name}" already exists`);
+      }
+    }
 
     // Add metadata
     const playerRecord = {
@@ -58,6 +68,29 @@ export const createPlayer = async (playerData) => {
     logError('Error in createPlayer:', error);
     throw error;
   }
+};
+
+/**
+ * Internal helper to check player by name using existing db connection
+ * @param {IDBDatabase} db - Open database connection
+ * @param {string} name - Player name to search
+ * @returns {Promise<Object|null>} Player or null
+ */
+const getPlayerByNameInternal = (db, name) => {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
+    const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
+    const index = objectStore.index('name');
+    const request = index.get(name);
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result || null);
+    };
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+  });
 };
 
 /**
@@ -140,10 +173,20 @@ export const getPlayerById = async (playerId) => {
  * @param {number} playerId - The player ID to update
  * @param {Object} updates - Fields to update (name, nickname, ethnicity, etc.)
  * @returns {Promise<void>}
+ * @throws {Error} If updating name to one that already exists
  */
 export const updatePlayer = async (playerId, updates) => {
   try {
     const db = await initDB();
+
+    // Check for duplicate name at DB level if name is being updated (P1 fix)
+    if (updates.name) {
+      const existingPlayer = await getPlayerByNameInternal(db, updates.name);
+      if (existingPlayer && existingPlayer.playerId !== playerId) {
+        db.close();
+        throw new Error(`Player with name "${updates.name}" already exists`);
+      }
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');

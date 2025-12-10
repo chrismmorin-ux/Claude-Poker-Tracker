@@ -325,10 +325,12 @@ The reducer does NOT enforce which community card slots are visible per street. 
 
 ### Critical (P0)
 
-1. **C-3: Add duplicate prevention**
-   - Option A: Check uniqueness in reducer (expensive)
-   - Option B: Add `REMOVE_CARD_FROM_ALL` action and use it before SET_*
-   - Option C: Accept current hook-based enforcement (document risk)
+1. **C-3: Add duplicate prevention** ✅ FIXED (2025-12-09)
+   - **Implemented Option A**: Check uniqueness in reducer using `isCardInUse()` from validation utils
+   - `SET_COMMUNITY_CARD` now rejects duplicates (lines 71-94 of cardReducer.js)
+   - `SET_HOLE_CARD` now rejects duplicates (lines 104-127 of cardReducer.js)
+   - `SET_PLAYER_CARD` already had duplicate checking (lines 136-171)
+   - 10 new tests added covering all duplicate scenarios
 
 ### High Priority (P1)
 

@@ -60,6 +60,55 @@ describe('cardReducer', () => {
       });
       expect(newState.communityCards[0]).toBe('K♥');
     });
+
+    it('rejects duplicate card already in community cards', () => {
+      state.communityCards = ['A♠', 'K♥', '', '', ''];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_COMMUNITY_CARD,
+        payload: { index: 2, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.communityCards).toEqual(['A♠', 'K♥', '', '', '']);
+    });
+
+    it('rejects duplicate card already in hole cards', () => {
+      state.holeCards = ['A♠', 'K♥'];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_COMMUNITY_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.communityCards).toEqual(['', '', '', '', '']);
+    });
+
+    it('rejects duplicate card already in player cards', () => {
+      state.allPlayerCards[3] = ['A♠', 'K♥'];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_COMMUNITY_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.communityCards).toEqual(['', '', '', '', '']);
+    });
+
+    it('allows setting same card to same slot (re-selection)', () => {
+      state.communityCards = ['A♠', '', '', '', ''];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_COMMUNITY_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should allow - same card in same slot
+      expect(newState.communityCards[0]).toBe('A♠');
+    });
+
+    it('allows clearing a slot with empty string', () => {
+      state.communityCards = ['A♠', 'K♥', '', '', ''];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_COMMUNITY_CARD,
+        payload: { index: 0, card: '' },
+      });
+      expect(newState.communityCards).toEqual(['', 'K♥', '', '', '']);
+    });
   });
 
   describe('SET_HOLE_CARD', () => {
@@ -79,6 +128,55 @@ describe('cardReducer', () => {
         payload: { index: 1, card: 'K♠' },
       });
       expect(newState.holeCards).toEqual(['A♠', 'K♠']);
+    });
+
+    it('rejects duplicate card already in hole cards', () => {
+      state.holeCards = ['A♠', ''];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_HOLE_CARD,
+        payload: { index: 1, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.holeCards).toEqual(['A♠', '']);
+    });
+
+    it('rejects duplicate card already in community cards', () => {
+      state.communityCards = ['A♠', 'K♥', 'Q♦', '', ''];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_HOLE_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.holeCards).toEqual(['', '']);
+    });
+
+    it('rejects duplicate card already in player cards', () => {
+      state.allPlayerCards[5] = ['A♠', 'K♥'];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_HOLE_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should reject - state unchanged
+      expect(newState.holeCards).toEqual(['', '']);
+    });
+
+    it('allows setting same card to same slot (re-selection)', () => {
+      state.holeCards = ['A♠', 'K♥'];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_HOLE_CARD,
+        payload: { index: 0, card: 'A♠' },
+      });
+      // Should allow - same card in same slot
+      expect(newState.holeCards[0]).toBe('A♠');
+    });
+
+    it('allows clearing a slot with empty string', () => {
+      state.holeCards = ['A♠', 'K♥'];
+      const newState = cardReducer(state, {
+        type: CARD_ACTIONS.SET_HOLE_CARD,
+        payload: { index: 0, card: '' },
+      });
+      expect(newState.holeCards).toEqual(['', 'K♥']);
     });
   });
 

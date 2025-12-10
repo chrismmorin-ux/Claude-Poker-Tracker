@@ -4,7 +4,9 @@
  */
 
 import { createValidatedReducer, SCHEMA_RULES } from '../utils/reducerUtils';
-import { LIMITS } from '../constants/gameConstants';
+import { LIMITS, ACTIONS } from '../constants/gameConstants';
+import { isValidSeat, isValidAction } from '../utils/validation';
+import { logger, DEBUG } from '../utils/errorHandler';
 
 // Action types
 export const GAME_ACTIONS = {
@@ -97,6 +99,28 @@ const rawGameReducer = (state, action) => {
 
     case GAME_ACTIONS.RECORD_ACTION: {
       const { seats, action: playerAction } = action.payload;
+
+      // P1 Fix: Validate action type
+      if (!isValidAction(playerAction, ACTIONS)) {
+        if (DEBUG) {
+          logger.warn('gameReducer', `Invalid action rejected: ${playerAction}`);
+        }
+        return state; // Reject invalid action
+      }
+
+      // P1 Fix: Validate and filter seat numbers
+      const validSeats = seats.filter(seat => isValidSeat(seat, NUM_SEATS));
+      if (validSeats.length === 0) {
+        if (DEBUG) {
+          logger.warn('gameReducer', `No valid seats in RECORD_ACTION: ${seats}`);
+        }
+        return state; // Reject if no valid seats
+      }
+
+      if (validSeats.length !== seats.length && DEBUG) {
+        logger.warn('gameReducer', `Invalid seats filtered out: ${seats.filter(s => !validSeats.includes(s))}`);
+      }
+
       const newSeatActions = { ...state.seatActions };
 
       // Structure: seatActions[street][seat] = [action1, action2, ...]
@@ -104,7 +128,7 @@ const rawGameReducer = (state, action) => {
         newSeatActions[state.currentStreet] = {};
       }
 
-      seats.forEach(seat => {
+      validSeats.forEach(seat => {
         // Get current actions for this seat (array)
         const currentActions = newSeatActions[state.currentStreet][seat] || [];
 
@@ -116,7 +140,7 @@ const rawGameReducer = (state, action) => {
       });
 
       // Remove seats from absent if they're taking action
-      const newAbsentSeats = state.absentSeats.filter(s => !seats.includes(s));
+      const newAbsentSeats = state.absentSeats.filter(s => !validSeats.includes(s));
 
       return {
         ...state,

@@ -428,33 +428,34 @@ Schema validation in reducers: ~0.1ms per action (DEBUG only)
 
 ## Recommendations
 
-### Critical (P0)
+### Critical (P0) ✅ FIXED
 
-1. **Add default merging to HYDRATE actions immediately**
-   - Prevents undefined field errors
-   - Low risk, high value
+1. **Add default merging to HYDRATE actions immediately** ✅ FIXED
+   - Fixed in sessionReducer.js, gameReducer.js, cardReducer.js - merges with defaults
 
-2. **Add normalization to loadLatestHand**
-   - Fixes known bug
-   - 5 minutes to implement
+2. **Add normalization to loadLatestHand** ✅ FIXED
+   - Fixed in handsStorage.js - calls normalizeHandRecord
 
-### High Priority (P1)
+### High Priority (P1) ✅ FIXED 2025-12-09
 
-3. **Create validation.js utilities**
-   - Foundation for all validation
-   - Reusable across codebase
+3. **Create validation.js utilities** ✅ EXISTS
+   - validation.js has isValidSeat, isValidCard, isValidAction, isCardInUse, etc.
 
-4. **Add persistence validation**
-   - Catch data corruption before save
-   - Validate on load with fallbacks
+4. **Add persistence validation** ✅ PARTIAL
+   - Player name uniqueness added at DB level in playersStorage.js
+   - Session reconciliation added in useSessionPersistence.js
+
+5. **Enable schema validation in production** ✅ FIXED
+   - Removed DEBUG check from reducerUtils.js
+   - Schema validation now always runs
+
+6. **Add input validation in reducers** ✅ FIXED
+   - gameReducer.js: action/seat validation in RECORD_ACTION
+   - cardReducer.js: duplicate card prevention in SET_*_CARD
 
 ### Medium Priority (P2)
 
-5. **Enable schema validation in production**
-   - Currently DEBUG only
-   - Consider lightweight production checks
-
-6. **Add telemetry for violations**
+7. **Add telemetry for violations**
    - Log validation failures
    - Identify common issues
 
@@ -462,15 +463,17 @@ Schema validation in reducers: ~0.1ms per action (DEBUG only)
 
 ## Files to Create/Modify
 
-| File | Action | Priority |
-|------|--------|----------|
-| `src/utils/validation.js` | Enhance | P1 |
-| `src/utils/persistence/validation.js` | Create | P1 |
-| `src/utils/reducerUtils.js` | Enhance schema | P2 |
-| `src/reducers/gameReducer.js` | Add input validation | P1 |
-| `src/reducers/cardReducer.js` | Add input validation | P1 |
-| `src/reducers/sessionReducer.js` | Add HYDRATE defaults | P0 |
-| `src/utils/persistence/handsStorage.js` | Add validation | P1 |
+| File | Action | Priority | Status |
+|------|--------|----------|--------|
+| `src/utils/validation.js` | Enhance | P1 | ✅ EXISTS |
+| `src/utils/persistence/validation.js` | Create | P1 | Deferred |
+| `src/utils/reducerUtils.js` | Enhance schema | P2 | ✅ DONE (always on) |
+| `src/reducers/gameReducer.js` | Add input validation | P1 | ✅ DONE |
+| `src/reducers/cardReducer.js` | Add input validation | P1 | ✅ DONE |
+| `src/reducers/sessionReducer.js` | Add HYDRATE defaults | P0 | ✅ DONE |
+| `src/utils/persistence/handsStorage.js` | Add validation | P1 | ✅ DONE (normalization) |
+| `src/utils/persistence/playersStorage.js` | Add name uniqueness | P1 | ✅ DONE |
+| `src/hooks/useSessionPersistence.js` | Add reconciliation | P1 | ✅ DONE |
 
 ---
 
