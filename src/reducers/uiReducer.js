@@ -31,10 +31,14 @@ export const UI_ACTIONS = {
   ADVANCE_SHOWDOWN_HIGHLIGHT: 'ADVANCE_SHOWDOWN_HIGHLIGHT',
 };
 
-// Screen constants (imported from main component)
+// Screen constants
 export const SCREEN = {
   TABLE: 'table',
   STATS: 'stats',
+  HISTORY: 'history',
+  SESSIONS: 'sessions',
+  PLAYERS: 'players',
+  SETTINGS: 'settings',
 };
 
 // Initial state
