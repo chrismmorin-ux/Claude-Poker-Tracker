@@ -10,6 +10,10 @@
           },
           {
             "type": "command",
+            "command": "node .claude/hooks/backlog-check.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/new-work-check.cjs"
           },
           {
@@ -90,6 +94,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/new-file-test-reminder.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/delegation-check.cjs"
           },
           {
             "type": "command",

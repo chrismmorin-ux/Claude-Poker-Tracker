@@ -1,5 +1,5 @@
 # Project Backlog - Single Source of Truth
-**Last Updated**: 2025-12-09 | **Updated By**: Claude | **Roadmap**: See `C:\Users\chris\.claude\plans\snug-gathering-flurry.md`
+**Last Updated**: 2025-12-10 | **Updated By**: Claude | **Roadmap**: See `C:\Users\chris\.claude\plans\snug-gathering-flurry.md`
 
 This file is the central registry for ALL work: active, delegated, pending, and planned.
 Both Claude and local models read and update this file.
@@ -36,12 +36,12 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Current Session Tasks
 | ID | Task | Owner | Status | Notes |
 |----|------|-------|--------|-------|
-| - | No active tasks | - | - | - |
+| AUTH-001 | Firebase Auth Phase 4 - Account Management | Claude | pending | Next phase |
 
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| - | No active projects | - | See `docs/projects/` |
+| Firebase Authentication | Phase 4 | 3/6 complete | `docs/projects/firebase-auth.project.md` |
 
 ---
 
@@ -116,17 +116,32 @@ Projects that need `/project start` before beginning.
 │ 1. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
 │ 2. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
 │ 3. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
-│ 4. P2    │ MVP UI Polish                    │ ◀ NEXT UP         │
-│ 5. P3    │ Firebase Cloud Sync              │ Post-MVP          │
-│ 6. P3    │ Player Tendencies Analytics      │ Post-MVP          │
-│ 7. P4    │ Range Analysis Tools             │ Phase 3           │
-│ 8. P4    │ TypeScript Migration             │ Optional          │
+│ 4. P2    │ Firebase Authentication          │ ◀ IN PROGRESS 3/6 │
+│ 5. P2    │ MVP UI Polish                    │ NEXT UP           │
+│ 6. P3    │ Firebase Cloud Sync              │ Post-MVP          │
+│ 7. P3    │ Player Tendencies Analytics      │ Post-MVP          │
+│ 8. P4    │ Range Analysis Tools             │ Phase 3           │
+│ 9. P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Start with: /project start mvp-polish
+Current: Firebase Auth (Phase 4 next)
+Then: /project start mvp-polish
 ```
 
 ### MVP Phase Projects
+
+#### Firebase Authentication (IN PROGRESS)
+- **ID**: firebase-auth
+- **Priority**: P2
+- **Status**: ◀ IN PROGRESS (Phase 4 next)
+- **File**: `docs/projects/firebase-auth.project.md`
+- **Description**: Optional Firebase Auth with email/password + Google OAuth, guest mode preserved
+- **Phases**: 3/6 complete
+- **Completed Phases**:
+  - Phase 1: Firebase Infrastructure Setup
+  - Phase 2: Auth State Management (Reducer + Context)
+  - Phase 3: Authentication Views (Login, Signup, Reset)
+- **Next**: Phase 4 - Account Management in Settings
 
 #### Settings System (COMPLETE)
 - **ID**: settings-system
@@ -216,6 +231,12 @@ Start with: /project start mvp-polish
 Local models append completion updates here. Claude processes these on next session.
 
 ```
+### 2025-12-10T08:00:00Z - Process Enforcement Hooks Added
+- Added backlog-check.cjs hook (reminds to read BACKLOG.md at session start)
+- Added delegation-check.cjs hook (warns when writing files marked for local models)
+- Updated CLAUDE.md with mandatory checklist including backlog and delegation rules
+- Reason: Claude violated delegation policy in Firebase Auth Phase 3 (4 tasks done by Claude that were marked for local models)
+
 ### 2025-12-09T00:00:00Z - Section Created
 - Initial backlog structure created
 - No local model updates yet

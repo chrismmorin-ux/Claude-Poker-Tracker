@@ -33,28 +33,49 @@ Only request full file contents when context summaries are insufficient.
 
 Before writing any code for a multi-file task, follow this checklist:
 
+### 0. Read BACKLOG.md First (CRITICAL)
+```bash
+Read: .claude/BACKLOG.md
+```
+**The backlog is the SINGLE SOURCE OF TRUTH** for all work tracking.
+- Check "Active Work" for current session tasks
+- Check "Active Projects" for ongoing project status
+- Update backlog as you work, not just at the end
+
 ### 1. Create Project File
 ```bash
 /project start <project-name>
 ```
 This creates a tracking file in `docs/projects/` for progress continuity.
 
-### 2. Read Before Write
+### 2. Check Task Delegation (MANDATORY)
+Before writing ANY file, check the project file's **Task Delegation Analysis** table:
+- Tasks marked **"Local Model"** or **"Yes"** → Use `/local-*` commands
+- Tasks marked **"Claude"** or **"No"** → Claude implements directly
+- **NEVER write files marked for local model delegation**
+
+The `delegation-check` hook will warn you if you violate this policy.
+
+### 3. Read Before Write
 - Read ALL potentially affected files in parallel at session start
 - Use `Task` tool with `Explore` agent for unfamiliar areas
 - Never edit a file you haven't read
 
-### 3. Plan Complex Changes
+### 4. Plan Complex Changes
 - **4+ files affected?** Use `EnterPlanMode` to map all touch points
 - **Cross-cutting concerns?** (reducer + hook + UI) Plan first
 - **Data flow changes?** Diagram the flow before coding
 
-### 4. Track Progress
+### 5. Track Progress
+- Update backlog "Current Session Tasks" as you work
 - Update project file as phases complete
 - Run `/review staged` after 3+ files modified
 - Update documentation DURING work, not after
 
-**The `new-work-check` hook will remind you if you forget.**
+**Hooks enforce these rules:**
+- `backlog-check` - Reminds to read BACKLOG.md at session start
+- `delegation-check` - Warns when writing files marked for local models
+- `new-work-check` - Suggests project creation for multi-file work
 
 ---
 
