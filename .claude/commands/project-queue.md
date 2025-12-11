@@ -34,19 +34,28 @@ Commands:
 
 ## Queue Management
 
-**Format**: `{queue}-{priority}-{slug}.project.md`
-- Queue number (1-6): Execution order
-- Priority (P1-P4): Urgency/importance
-- Slug: Project name
+**Format**: `{priority}.{sequence}.{MMDD}-{name}.project.md`
+- Priority (1-4): P1=1, P2=2, P3=3, P4=4
+- Sequence (001-999): Order within priority
+- Date (MMDD): When created
+- Name: Project slug
 
-**To reorder**: Rename files with new queue numbers
-
-**Example**: Move Firebase Auth to #1:
+**Adding new projects**:
 ```bash
-# Swap queue numbers
-mv 1-P1-program-manager.project.md 2-P1-program-manager.project.md
-mv 2-P2-firebase-auth.project.md 1-P2-firebase-auth.project.md
+# New urgent P1 (next sequence in P1)
+touch docs/projects/1.002.1212-security-audit.project.md
+
+# New P3 feature
+touch docs/projects/3.003.1212-new-feature.project.md
 ```
+
+**Changing priority**:
+```bash
+# Promote P2 project to P1
+mv 2.001.1210-firebase-auth.project.md 1.002.1210-firebase-auth.project.md
+```
+
+**Sorting is automatic**: 1.001 < 1.002 < 2.001 < 3.001 < 3.002
 
 ## Integration
 - Startup menu reads queue order from filenames

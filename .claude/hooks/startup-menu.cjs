@@ -36,15 +36,17 @@ function markShown() {
 
 function getProjects() {
   try {
+    // Match format: {priority}.{sequence}.{date}-{name}.project.md
+    // Example: 1.001.1211-program-manager.project.md
     const files = fs.readdirSync(PROJECTS_DIR)
-      .filter(f => f.match(/^\d+-P\d+-.*\.project\.md$/))
+      .filter(f => f.match(/^\d+\.\d+\.\d+-.*\.project\.md$/))
       .sort();
 
     return files.map(filename => {
-      const match = filename.match(/^(\d+)-(P\d+)-(.*)\.project\.md$/);
+      const match = filename.match(/^(\d+)\.(\d+)\.(\d+)-(.*)\.project\.md$/);
       if (!match) return null;
 
-      const [, queue, priority, slug] = match;
+      const [, priority, sequence, date, slug] = match;
       const content = fs.readFileSync(path.join(PROJECTS_DIR, filename), 'utf8');
 
       // Extract status and phase from content
@@ -54,15 +56,21 @@ function getProjects() {
       const status = statusMatch ? statusMatch[1].trim() : 'Unknown';
       const phase = phaseMatch ? `${phaseMatch[1]}/${phaseMatch[2]}` : '0/?';
 
+      // Sort key: priority.sequence (e.g., "1.001" < "2.001" < "3.002")
+      const sortKey = parseFloat(`${priority}.${sequence}`);
+
       return {
-        queue: parseInt(queue),
-        priority,
+        sortKey,
+        priority: `P${priority}`,
+        sequence: parseInt(sequence),
+        date,
         slug: slug.replace(/-/g, ' '),
         filename,
         status,
         phase,
-        isActive: status.includes('Active') || status.includes('NEXT'),
-        isPaused: status.includes('PAUSED') || status.includes('Paused')
+        isActive: status.includes('Active') || status.includes('NEXT') || status.includes('In Progress'),
+        isPaused: status.includes('PAUSED') || status.includes('Paused'),
+        isBlocked: status.includes('Blocked') || status.includes('BLOCKED')
       };
     }).filter(Boolean);
   } catch {
@@ -106,8 +114,11 @@ function displayMenu() {
   const audits = getAudits();
   const backlog = getBacklogStats();
 
-  const currentProject = projects.find(p => p.isActive) || projects[0];
-  const nextProject = projects.find(p => !p.isActive && !p.isPaused) || projects[1];
+  // Find active project, or first non-blocked/non-paused project
+  const currentProject = projects.find(p => p.isActive) ||
+                         projects.find(p => !p.isBlocked && !p.isPaused) ||
+                         projects[0];
+  const nextProject = projects.find(p => p !== currentProject && !p.isBlocked) || projects[1];
 
   console.log('\n╔═══════════════════════════════════════════════════════════╗');
   console.log('║  What would you like to do?                               ║');

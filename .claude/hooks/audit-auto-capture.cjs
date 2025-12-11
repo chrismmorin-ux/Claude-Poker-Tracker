@@ -14,6 +14,9 @@ const AUDIT_COMMANDS = [
   'cto-debt',
   'process-audit',
   'process-review',
+  'process-system-audit',
+  'process-maturity',
+  'process-slim',
   'audit-component',
   'efficiency-analysis',
   'review'  // code-reviewer
@@ -24,6 +27,9 @@ const COMMAND_TO_TYPE = {
   'cto-debt': 'cto-review',
   'process-audit': 'process-specialist',
   'process-review': 'process-specialist',
+  'process-system-audit': 'process-specialist',
+  'process-maturity': 'process-specialist',
+  'process-slim': 'token-optimization',
   'audit-component': 'component-audit',
   'efficiency-analysis': 'efficiency',
   'review': 'code-review'

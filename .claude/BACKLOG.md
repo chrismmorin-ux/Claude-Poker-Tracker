@@ -119,17 +119,29 @@ Projects that need `/project start` before beginning.
 
 ### Project Priority Order
 
-**Source of Truth**: `docs/projects/` file names (`1-P1-slug.project.md` format)
+**Source of Truth**: `docs/projects/` file names
+
+**Naming Format**: `{priority}.{sequence}.{MMDD}-{name}.project.md`
+- Priority: 1=P1, 2=P2, 3=P3, 4=P4
+- Sequence: 001, 002, etc. (per priority)
+- Date: MMDD when created
 
 **Current Queue**:
-1. [P1] Program Manager - Phase 4/4 (Integration & Visibility)
-2. [P2] Firebase Auth - Phase 5/6 (PAUSED)
-3. [P3] Firebase Cloud Sync - Planned
-4. [P3] Player Tendencies - Planned
-5. [P4] Range Analysis - Planned
-6. [P4] TypeScript Migration - Optional
+```
+1.001.1211-program-manager    ← P1, Active
+2.001.1210-firebase-auth      ← P2, Paused (5/6)
+3.001.1209-firebase-cloud-sync
+3.002.1209-player-tendencies
+4.001.1209-range-analysis
+4.002.1209-typescript-migration
+```
 
-**Commands**: `/project-queue` | `/start` (session menu)
+**Adding New Projects**:
+- New P1 urgent: `1.002.MMDD-name.project.md`
+- New P3: `3.003.MMDD-name.project.md`
+- Sorting is automatic (1.001 < 1.002 < 2.001 < 3.001)
+
+**Commands**: `/project-queue` | startup menu
 
 ### Active Projects
 

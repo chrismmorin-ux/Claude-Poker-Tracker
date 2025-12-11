@@ -29,7 +29,9 @@ When using `EnterPlanMode`:
 /project archive <id> # Move to archive
 ```
 
-**Files**: `docs/projects/{queue}-{priority}-{slug}.project.md` (active), `docs/archive/` (completed)
+**Files**: `docs/projects/{priority}.{sequence}.{MMDD}-{name}.project.md` (active), `docs/archive/` (completed)
+
+**Format**: `1.001.1211-program-manager.project.md` = P1, 1st P1 project, Dec 11
 
 ## Audit System (NEW)
 
