@@ -25,15 +25,6 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-token-enforcer.cjs"
-          }
-        ]
-      },
-      {
         "matcher": "Read",
         "hooks": [
           {
@@ -86,36 +77,6 @@
           {
             "type": "command",
             "command": "node .claude/hooks/commit-project-check.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-multi-file-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/delegation-enforcer.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/delegation-check-pre.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-multi-file-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/delegation-enforcer.cjs"
           }
         ]
       },

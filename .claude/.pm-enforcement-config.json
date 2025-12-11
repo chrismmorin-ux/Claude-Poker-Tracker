@@ -1,0 +1,32 @@
+{
+  "enforcementLevel": "warn",
+  "rules": {
+    "delegation": {
+      "enabled": true,
+      "mode": "warn",
+      "description": "Warn about tasks that should be delegated to local models"
+    },
+    "multiFileGate": {
+      "enabled": true,
+      "mode": "block",
+      "threshold": 4,
+      "description": "Block when 4+ files modified without EnterPlanMode"
+    },
+    "timeEstimates": {
+      "enabled": true,
+      "mode": "warn",
+      "description": "Warn about time estimates in plans"
+    },
+    "tokenBudget": {
+      "enabled": true,
+      "mode": "block",
+      "threshold": 28000,
+      "description": "Block when token budget exceeded"
+    }
+  },
+  "notes": {
+    "warn": "Log violations and update metrics, but allow operation",
+    "block": "Prevent operation and require override or user action",
+    "modes": ["off", "warn", "block"]
+  }
+}

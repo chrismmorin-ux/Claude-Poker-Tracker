@@ -106,7 +106,7 @@ async function main() {
     // Only check Write and Edit tools
     if (tool !== 'Write' && tool !== 'Edit') {
       console.log(JSON.stringify({ continue: true }));
-      return;
+      process.exit(0);
     }
 
     const filePath = input?.file_path || '';
@@ -116,14 +116,14 @@ async function main() {
     if (!state) {
       // No state = allow (don't block on missing state)
       console.log(JSON.stringify({ continue: true }));
-      return;
+      process.exit(0);
     }
 
     // Check if EnterPlanMode has been used
     if (state.enterPlanModeUsed) {
       // Plan exists - allow
       console.log(JSON.stringify({ continue: true }));
-      return;
+      process.exit(0);
     }
 
     // Check if this would be the 4th+ file
@@ -175,10 +175,12 @@ async function main() {
 
     // Under threshold - allow
     console.log(JSON.stringify({ continue: true }));
+    process.exit(0);
 
   } catch (e) {
     // On any error, allow the action (don't block on hook failure)
     console.log(JSON.stringify({ continue: true }));
+    process.exit(0);
   }
 }
 

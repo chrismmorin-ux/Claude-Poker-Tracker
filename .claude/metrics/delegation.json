@@ -71,11 +71,179 @@
       "decision": "allowed",
       "classification": "claude_required",
       "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:26:25.750Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\src\\utils\\testUtility.js"
+    },
+    {
+      "timestamp": "2025-12-11T20:30:36.729Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-audit-capture.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:34:53.572Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-audit-capture.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:34:54.713Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-audit-capture.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:34:55.812Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-audit-capture.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:35:32.305Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-audit-capture.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:36:16.544Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:36:17.440Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:37:31.300Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:37:34.610Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:40:02.156Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:41:39.323Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:41:53.806Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:42:16.529Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:42:25.913Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\pm-dashboard.sh"
+    },
+    {
+      "timestamp": "2025-12-11T20:45:44.585Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:45:48.391Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:45:51.731Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\delegation-enforcer.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:47:47.306Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\src\\utils\\testHelper.js"
+    },
+    {
+      "timestamp": "2025-12-11T20:50:15.989Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\src\\utils\\mathHelper.js"
+    },
+    {
+      "timestamp": "2025-12-11T20:51:21.577Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\pm-multi-file-gate.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:58:25.653Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\pm-multi-file-gate.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:58:32.997Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\pm-multi-file-gate.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:58:43.481Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\pm-multi-file-gate.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:59:28.988Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\pm-multi-file-gate.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T21:02:13.362Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\test-file.txt"
+    },
+    {
+      "timestamp": "2025-12-11T21:07:23.360Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\test-fast-block.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T21:08:53.471Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\test-no-interruption.txt"
     }
   ],
   "summary": {
     "delegated": 0,
     "bypassed": 0,
-    "allowed": 12
+    "allowed": 40
   }
 }

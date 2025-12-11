@@ -54,15 +54,12 @@ CURRENT_PROJECT=$(get_json_value "currentProject" "none")
 CURRENT_PHASE=$(get_json_value "currentPhase" "none")
 ENTER_PLAN_USED=$(get_json_value "enterPlanModeUsed" "false")
 
-# Count files modified
-FILES_COUNT=$(grep -c "filesModified" "$STATE_FILE" 2>/dev/null || echo "0")
-if [ "$FILES_COUNT" = "0" ]; then
-  FILES_COUNT=$(grep -o '"filesModified": \[' "$STATE_FILE" | wc -l)
-fi
+# Count files modified (count entries in filesModified array)
+FILES_COUNT=$(awk '/"filesModified": \[/,/\]/ {if (/\./) count++} END {print count+0}' "$STATE_FILE")
 
-# Count warnings and blocks
-WARNINGS_COUNT=$(grep -o '"warnings": \[' "$STATE_FILE" | head -1)
-BLOCKS_COUNT=$(grep -o '"blocks": \[' "$STATE_FILE" | head -1)
+# Count warnings and blocks (count entries in arrays)
+WARNINGS_COUNT=$(awk '/"warnings": \[/,/\]/ {if (/"timestamp":/) count++} END {print count+0}' "$STATE_FILE")
+BLOCKS_COUNT=$(awk '/"blocks": \[/,/\]/ {if (/"rule":/) count++} END {print count+0}' "$STATE_FILE")
 
 # Build progress bar (30 chars)
 build_bar() {
@@ -109,9 +106,7 @@ echo "  Blocked: $TASKS_BLOCKED tasks"
 echo "  Bypassed ([CLAUDE]): $TASKS_BYPASSED tasks"
 echo ""
 echo "FILES MODIFIED"
-# Count actual files in array
-FILES_LIST=$(grep -o '"filesModified": \[[^]]*\]' "$STATE_FILE" 2>/dev/null | grep -o '"[^"]*\..*"' | wc -l)
-echo "  Total: $FILES_LIST files"
+echo "  Total: $FILES_COUNT files"
 echo ""
 echo "CURRENT CONTEXT"
 echo "  Project: $CURRENT_PROJECT"
@@ -119,11 +114,7 @@ echo "  Phase: $CURRENT_PHASE"
 echo "  EnterPlanMode: $ENTER_PLAN_USED"
 echo ""
 
-# Count actual warnings/blocks in arrays
-WARN_COUNT=$(grep -o '"warnings": \[[^]]*\]' "$STATE_FILE" 2>/dev/null | grep -o '"[^"]*"' | grep -v "warnings" | wc -l)
-BLOCK_COUNT=$(grep -o '"blocks": \[[^]]*\]' "$STATE_FILE" 2>/dev/null | grep -o '"[^"]*"' | grep -v "blocks" | wc -l)
-
-echo "WARNINGS: $WARN_COUNT | BLOCKS: $BLOCK_COUNT"
+echo "WARNINGS: $WARNINGS_COUNT | BLOCKS: $BLOCKS_COUNT"
 echo ""
 
 # Determine overall status
@@ -168,18 +159,18 @@ if [ "$TASKS_SEEN" -gt 0 ] && [ "$TASKS_DELEGATED" -gt 0 ]; then
 fi
 
 # File modification suggestions
-if [ "$FILES_LIST" -ge 3 ] && [ "$ENTER_PLAN_USED" = "false" ]; then
-  echo "  $FILES_LIST files modified: Consider using EnterPlanMode for better organization"
+if [ "$FILES_COUNT" -ge 3 ] && [ "$ENTER_PLAN_USED" = "false" ]; then
+  echo "  $FILES_COUNT files modified: Consider using EnterPlanMode for better organization"
   SUGGESTIONS=$((SUGGESTIONS + 1))
 fi
 
-if [ "$FILES_LIST" -ge 6 ]; then
-  echo "  Large change set ($FILES_LIST files): Run tests and use /gen-tests for coverage"
+if [ "$FILES_COUNT" -ge 6 ]; then
+  echo "  Large change set ($FILES_COUNT files): Run tests and use /gen-tests for coverage"
   SUGGESTIONS=$((SUGGESTIONS + 1))
 fi
 
 # Project suggestions
-if [ "$CURRENT_PROJECT" = "none" ] && [ "$FILES_LIST" -ge 5 ]; then
+if [ "$CURRENT_PROJECT" = "none" ] && [ "$FILES_COUNT" -ge 5 ]; then
   echo "  Multi-file work without project: Use /project start for tracking"
   SUGGESTIONS=$((SUGGESTIONS + 1))
 fi

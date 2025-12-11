@@ -28,6 +28,7 @@ const STATE_FILE = path.join(PROJECT_ROOT, '.claude', '.pm-state.json');
 const CLASSIFIER_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'task-classifier-v3.sh');
 const AUTO_SPEC_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'auto-generate-task-spec.sh');
 const METRICS_FILE = path.join(PROJECT_ROOT, '.claude', 'metrics', 'delegation.json');
+const ENFORCEMENT_CONFIG = path.join(PROJECT_ROOT, '.claude', '.pm-enforcement-config.json');
 
 // Categories that should delegate (not Claude)
 const DELEGATABLE_CATEGORIES = [
@@ -156,6 +157,18 @@ function classifyTask(description, filePath) {
   }
 }
 
+function loadEnforcementConfig() {
+  try {
+    if (fs.existsSync(ENFORCEMENT_CONFIG)) {
+      const config = JSON.parse(fs.readFileSync(ENFORCEMENT_CONFIG, 'utf8'));
+      return config.rules?.delegation?.mode || 'warn';
+    }
+  } catch (e) {
+    // Ignore errors, default to warn
+  }
+  return 'warn';
+}
+
 function checkForClaudeTag(conversationContext) {
   // Check if [CLAUDE] tag appears in recent conversation
   if (!conversationContext) return false;
@@ -205,21 +218,21 @@ async function main() {
     const event = JSON.parse(inputData);
     const tool = event.tool_name || event.tool;
     const input = event.tool_input || event.input || {};
-    const conversationContext = event.conversation_context || event.context || '';
-
-    // Only check Write and Edit tools
-    if (tool !== 'Write' && tool !== 'Edit') {
-      console.log(JSON.stringify({ continue: true }));
-      return;
-    }
-
     const filePath = input?.file_path || '';
 
-    // Check if file is in always-allow list
+    // EARLY EXIT: Only check Write and Edit tools
+    if (tool !== 'Write' && tool !== 'Edit') {
+      console.log(JSON.stringify({ continue: true }));
+      process.exit(0);
+    }
+
+    // EARLY EXIT: Check if file is in always-allow list (before any other processing)
     if (isAlwaysAllowed(filePath)) {
       console.log(JSON.stringify({ continue: true }));
-      return;
+      process.exit(0);
     }
+
+    const conversationContext = event.conversation_context || event.context || '';
 
     // Check for [CLAUDE] bypass tag
     if (checkForClaudeTag(conversationContext)) {
@@ -227,10 +240,8 @@ async function main() {
       updateStateWithDelegation(state, 'bypassed', 'claude_tagged');
       updateMetrics('bypassed', 'claude_tagged', filePath);
 
-      console.log(JSON.stringify({
-        continue: true,
-        message: '✅ [CLAUDE] tag detected - bypass approved'
-      }));
+      // Allow with bypass (don't show message to avoid halting)
+      console.log(JSON.stringify({ continue: true }));
       return;
     }
 
@@ -265,16 +276,31 @@ async function main() {
         ''
       ].join('\n');
 
-      // For now, WARN but don't block (Phase 2 is warnings-only)
-      // Phase 3 will change continue:true to continue:false
-      updateStateWithDelegation(state, 'warned', classification.category);
-      updateMetrics('warned', classification.category, filePath);
+      // Check enforcement mode from config
+      const enforcementMode = loadEnforcementConfig();
 
-      console.log(JSON.stringify({
-        continue: true,  // Change to false in Phase 3 for blocking
-        message: message
-      }));
-      return;
+      if (enforcementMode === 'block') {
+        // BLOCK mode - prevent the operation
+        updateStateWithDelegation(state, 'blocked', classification.category);
+        updateMetrics('blocked', classification.category, filePath);
+
+        console.log(JSON.stringify({
+          continue: false,
+          message: message
+        }));
+        return;
+      } else if (enforcementMode === 'warn') {
+        // WARN mode - log but allow
+        updateStateWithDelegation(state, 'warned', classification.category);
+        updateMetrics('warned', classification.category, filePath);
+
+        console.log(JSON.stringify({ continue: true }));
+        return;
+      } else {
+        // OFF mode - just allow without logging
+        console.log(JSON.stringify({ continue: true }));
+        return;
+      }
     }
 
     // Claude-required task - allow
