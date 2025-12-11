@@ -4,10 +4,12 @@ Review an audit and create actionable items.
 
 ## Usage
 ```
-/audit-review [audit-id]
-/audit-review --next         # Review oldest pending
-/audit-review --list         # List all pending
-/audit-review AUD-001 --dismiss  # Dismiss without action
+/audit-review [audit-id]              # Review specific audit
+/audit-review --next                  # Review oldest pending
+/audit-review --type cto-review       # Review all CTO audits
+/audit-review --list                  # List all pending
+/audit-review <id> --dismiss          # Dismiss without action
+/audit-review <id> --archive          # Archive after actioning
 ```
 
 ## What Happens
@@ -22,32 +24,51 @@ Review an audit and create actionable items.
 
 ## Example Flow
 ```
-> /audit-review 1211.003
+> /audit-review cto-review.002
 
 ╔═══════════════════════════════════════════════════════════╗
-║  AUDIT: 1211.003 - Token optimization (HIGH)              ║
+║  AUDIT: cto-review.002.1212-auth-flow-issues              ║
 ╠═══════════════════════════════════════════════════════════╣
-║  Created: 2025-12-11                                      ║
-║  Type: token-optimization                                 ║
-║  File: 1211.003-token-optimization.md                     ║
+║  Created: 2025-12-12                                      ║
+║  Type: cto-review                                         ║
+║  Severity: HIGH                                           ║
 ║                                                           ║
-║  Summary: Session used 86k tokens vs 30k budget           ║
+║  Summary: Auth flow has several architectural concerns    ║
 ║                                                           ║
 ║  Recommendations:                                         ║
-║  [1] R-001: Add context file caching (P1)                 ║
-║  [2] R-002: Reduce Explore agent scope (P2)               ║
-║  [3] R-003: Batch file reads (P2)                         ║
+║  [1] R-001: Extract auth logic to dedicated hook (P1)     ║
+║  [2] R-002: Add token refresh handling (P1)               ║
+║  [3] R-003: Improve error recovery flow (P2)              ║
 ╚═══════════════════════════════════════════════════════════╝
 
 Which recommendations to action? (1,2,3 or 'all' or 'dismiss')
 > 1,2
 
 Created:
-- BACKLOG: TOK-004 "Add context file caching"
-- BACKLOG: TOK-005 "Reduce Explore agent scope"
+- BACKLOG: AUTH-005 "Extract auth logic to dedicated hook"
+- BACKLOG: AUTH-006 "Add token refresh handling"
 
-Audit 1211.003 marked as actioned.
+Audit cto-review.002 marked as actioned.
+File moved to: .claude/audits/actioned/
 ```
+
+## Review All of Type
+```
+> /audit-review --type cto-review
+
+Found 3 cto-review audits:
+1. cto-review.001.1211-architecture-concerns (pending)
+2. cto-review.002.1212-auth-flow-issues (pending)
+3. cto-review.003.1212-reducer-patterns (actioned)
+
+Review which? (1, 2, or 'all pending')
+```
+
+## Archive Workflow
+- **Actioned**: Reviewed, tasks created → moved to `.claude/audits/actioned/`
+- **Dismissed**: Reviewed, no action needed → moved to `.claude/audits/dismissed/`
+- **Files stay** in archive folders for audit trail (searchable)
+- **Registry** tracks status and linked tasks
 
 ## Linking
 Actioned audits are linked to their created tasks in registry.json.

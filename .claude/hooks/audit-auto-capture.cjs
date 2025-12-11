@@ -52,14 +52,35 @@ function writeRegistry(registry) {
   fs.writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2));
 }
 
-function getNextAuditId(registry) {
-  const id = registry.nextId || 1;
+function getNextSequenceForType(registry, type) {
+  // Count existing audits of this type to get next sequence
+  const typeAudits = registry.audits.filter(a => a.type === type);
+  return typeAudits.length + 1;
+}
+
+function getDateString() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  const seq = String(id).padStart(3, '0');
-  // Format: MMDD.sequence (e.g., 1211.001)
-  return `${month}${day}.${seq}`;
+  return `${month}${day}`;
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
+    .replace(/\s+/g, '-')           // Spaces to dashes
+    .replace(/-+/g, '-')            // Collapse multiple dashes
+    .substring(0, 40)               // Limit length
+    .replace(/-$/, '');             // Remove trailing dash
+}
+
+function generateAuditId(registry, type, title) {
+  const seq = String(getNextSequenceForType(registry, type)).padStart(3, '0');
+  const date = getDateString();
+  const titleSlug = slugify(title);
+  // Format: {type}.{sequence}.{MMDD}-{title} (e.g., cto-review.001.1211-architecture-concerns)
+  return `${type}.${seq}.${date}-${titleSlug}`;
 }
 
 function detectSeverity(output) {
@@ -168,14 +189,16 @@ async function main() {
 
   // This is an audit command - capture it
   const registry = readRegistry();
-  const auditId = getNextAuditId(registry);
   const type = COMMAND_TO_TYPE[command] || 'general';
   const severity = detectSeverity(output);
   const title = extractTitle(command, output);
 
+  // Generate audit ID: {type}.{sequence}.{MMDD}-{title}
+  const auditId = generateAuditId(registry, type, title);
+
   // Create audit report
   const report = createAuditReport(auditId, type, title, severity, output, command);
-  const reportPath = path.join(PENDING_DIR, `${auditId}-${type}.md`);
+  const reportPath = path.join(PENDING_DIR, `${auditId}.md`);
 
   // Ensure pending directory exists
   if (!fs.existsSync(PENDING_DIR)) {
@@ -199,8 +222,10 @@ async function main() {
     reviewedDate: null
   });
 
-  registry.nextId = (registry.nextId || 1) + 1;
+  // Update stats (sequence is tracked per-type, not globally)
   registry.stats.pending = registry.audits.filter(a => a.status === 'pending').length;
+  registry.stats.actioned = registry.audits.filter(a => a.status === 'actioned').length;
+  registry.stats.dismissed = registry.audits.filter(a => a.status === 'dismissed').length;
 
   writeRegistry(registry);
 

@@ -15,29 +15,40 @@ Display all audits and their current status.
 ╔═══════════════════════════════════════════════════════════╗
 ║                    AUDIT QUEUE STATUS                      ║
 ╠═══════════════════════════════════════════════════════════╣
-║ PENDING (3):                                               ║
-║  ├─ 1211.015 [HIGH] Token optimization (2 days old)       ║
-║  ├─ 1211.016 [MED]  Process specialist review (1 day)     ║
-║  └─ 1212.001 [LOW]  Component audit (today)               ║
+║ PENDING (4):                                               ║
+║  ├─ cto-review.001.1211-architecture-concerns [HIGH]      ║
+║  ├─ cto-review.002.1212-auth-flow-issues [MED]            ║
+║  ├─ process-specialist.001.1210-delegation-gaps [HIGH]    ║
+║  └─ token-optimization.001.1211-budget-exceeded [MED]     ║
 ║                                                            ║
 ║ RECENTLY ACTIONED (2):                                     ║
-║  ├─ 1210.014 [HIGH] CTO review → TOK-003, TOK-004         ║
-║  └─ 1210.013 [MED]  Refactoring → REFACT-001              ║
+║  ├─ cto-review.003 → Created ARCH-001, ARCH-002           ║
+║  └─ component-audit.001 → Created PERF-001                ║
 ║                                                            ║
 ║ STATS:                                                     ║
-║  ├─ Pending: 3                                             ║
-║  ├─ Actioned this week: 5                                  ║
-║  ├─ Dismissed: 2                                           ║
-║  └─ Avg time to action: 1.8 days                           ║
+║  ├─ Pending: 4                                             ║
+║  ├─ Actioned this week: 2                                  ║
+║  ├─ Dismissed: 0                                           ║
+║  └─ By type: cto-review(2), process-specialist(1), token(1)║
 ╚═══════════════════════════════════════════════════════════╝
 
-Commands: /audit-review --next | /audit-review 1211.015
+Commands: /audit-review cto-review.001 | /audit-review --type cto-review
 ```
 
 ## File Naming
-Format: `{MMDD}.{sequence}-{type}.md`
-- `1211.001-cto-review.md` = Dec 11, 1st audit, CTO review
-- `1212.003-token-optimization.md` = Dec 12, 3rd audit, token optimization
+Format: `{type}.{sequence}.{MMDD}-{title}.md`
+- Groups by type for easy review: `ls cto-review.*`
+- Sequence per type: cto-review.001, cto-review.002, ...
+- Date for context: 1211 = Dec 11
+- Title for quick identification
+
+**Examples:**
+```
+cto-review.001.1211-architecture-concerns.md
+cto-review.002.1212-auth-flow-issues.md
+process-specialist.001.1210-delegation-compliance.md
+token-optimization.001.1211-session-exceeded-budget.md
+```
 
 ## Integration
 - Startup menu shows pending count

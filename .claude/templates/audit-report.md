@@ -29,7 +29,10 @@
 
 ---
 
-**File naming**: `{MMDD}.{sequence}-{type}.md` (e.g., `1211.001-cto-review.md`)
+**File naming**: `{type}.{sequence}.{MMDD}-{title}.md`
+- Example: `cto-review.001.1211-architecture-concerns.md`
+- Groups by type for easy batch review
 
 **To review**: `/audit-review {AUDIT_ID}`
 **To dismiss**: `/audit-review {AUDIT_ID} --dismiss`
+**To archive**: Files automatically move to actioned/ or dismissed/

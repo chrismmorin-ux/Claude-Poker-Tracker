@@ -52,9 +52,12 @@ When using `EnterPlanMode`:
 
 **Files**: `.claude/audits/{pending,actioned,dismissed}/`, `registry.json`
 
-**File Naming**: `{MMDD}.{sequence}-{type}.md`
-- Example: `1211.001-cto-review.md` = Dec 11, 1st audit, CTO review
-- Sorts chronologically: 1211.001 < 1211.002 < 1212.001
+**File Naming**: `{type}.{sequence}.{MMDD}-{title}.md`
+- Groups by type: `ls cto-review.*` shows all CTO audits
+- Example: `cto-review.001.1211-architecture-concerns.md`
+- Sequence per type: cto-review.001, cto-review.002, ...
+
+**Archive**: Actioned/dismissed audits move to respective folders but stay searchable
 
 ## Local Model Delegation (MANDATORY)
 

@@ -53,11 +53,29 @@
       "decision": "allowed",
       "classification": "claude_required",
       "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:00:29.943Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:00:57.845Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T20:01:11.451Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
     }
   ],
   "summary": {
     "delegated": 0,
     "bypassed": 0,
-    "allowed": 9
+    "allowed": 12
   }
 }
