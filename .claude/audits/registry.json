@@ -1,10 +1,157 @@
 {
-  "audits": [],
+  "audits": [
+    {
+      "id": 1,
+      "filename": "system-audit.001.1209-persistence-storage-schema.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "info",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 1: Complete IndexedDB schema documentation"
+    },
+    {
+      "id": 2,
+      "filename": "system-audit.002.1209-persistence-write-semantics.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "high",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 1: Transaction analysis and race conditions"
+    },
+    {
+      "id": 3,
+      "filename": "system-audit.003.1209-persistence-read-paths.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "info",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 1: Data flow from DB to state"
+    },
+    {
+      "id": 4,
+      "filename": "system-audit.004.1209-persistence-migrations.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "critical",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 1: Schema version migrations (loadLatestHand bug fixed)"
+    },
+    {
+      "id": 5,
+      "filename": "system-audit.005.1209-state-machine-game.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "high",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 2: gameReducer transitions and invariants"
+    },
+    {
+      "id": 6,
+      "filename": "system-audit.006.1209-state-machine-session.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "critical",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 2: sessionReducer lifecycle (HYDRATE defaults bug fixed)"
+    },
+    {
+      "id": 7,
+      "filename": "system-audit.007.1209-state-machine-card.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "critical",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 2: cardReducer uniqueness (duplicate cards bug fixed)"
+    },
+    {
+      "id": 8,
+      "filename": "system-audit.008.1209-cross-reducer-analysis.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "info",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 2: Inter-reducer dependencies analysis"
+    },
+    {
+      "id": 9,
+      "filename": "system-audit.009.1209-hydration-flow.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "info",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 3: Complete startup sequence documentation"
+    },
+    {
+      "id": 10,
+      "filename": "system-audit.010.1209-version-compatibility.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "info",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 3: Forward/backward compatibility analysis"
+    },
+    {
+      "id": 11,
+      "filename": "system-audit.011.1209-hydration-edge-cases.md",
+      "type": "system-audit",
+      "status": "actioned",
+      "severity": "high",
+      "created": "2025-12-09",
+      "actioned": "2025-12-09",
+      "summary": "Phase 3: Error scenarios and handling (session reconciliation fixed)"
+    },
+    {
+      "id": 12,
+      "filename": "system-audit.012.1209-invariant-catalog.md",
+      "type": "system-audit",
+      "status": "pending",
+      "severity": "medium",
+      "created": "2025-12-09",
+      "summary": "Phase 4: All 36 runtime invariants - validation layer not fully implemented"
+    },
+    {
+      "id": 13,
+      "filename": "system-audit.013.1209-validation-proposal.md",
+      "type": "system-audit",
+      "status": "pending",
+      "severity": "medium",
+      "created": "2025-12-09",
+      "summary": "Phase 4: Lightweight validation layer design proposal"
+    },
+    {
+      "id": 14,
+      "filename": "system-audit.014.1209-schema-design.md",
+      "type": "system-audit",
+      "status": "pending",
+      "severity": "low",
+      "created": "2025-12-09",
+      "summary": "Phase 5: TypeScript interfaces and validators (future work)"
+    },
+    {
+      "id": 15,
+      "filename": "system-audit.015.1209-schema-roadmap.md",
+      "type": "system-audit",
+      "status": "pending",
+      "severity": "low",
+      "created": "2025-12-09",
+      "summary": "Phase 5: TypeScript migration implementation plan (future work)"
+    }
+  ],
   "stats": {
-    "pending": 0,
-    "actioned": 0,
+    "pending": 4,
+    "actioned": 11,
     "dismissed": 0,
-    "lastUpdated": null
+    "lastUpdated": "2025-12-11"
   },
-  "nextId": 1
+  "nextId": 16
 }
