@@ -51,11 +51,14 @@ See `.claude/agents/explore-agent-rules.md` for full guidelines.
 - Use parallel tool calls for independent operations
 - Prefer one agent with multiple questions over multiple agents
 
-### Output Summaries (Phase 6)
-Test and lint commands automatically append compact summaries.
-Focus on the summary block at the end of output:
-- `npm test` → TEST SUMMARY block with pass/fail counts
-- `npm run lint` → LINT SUMMARY block with error/warning counts
+### Smart Test Runner (Token Optimization)
+**ALWAYS use token-optimized test runner before commits:**
+```bash
+bash scripts/smart-test-runner.sh  # 98% token reduction on passing tests
+```
+- **Passing tests**: Compact summary only (~100 tokens vs ~5000 tokens)
+- **Failing tests**: Detailed error context with file locations
+- See `docs/TOKEN_OPTIMIZED_TESTING.md` for details
 
 ---
 
@@ -94,10 +97,11 @@ Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 
 ## Key Commands
 ```bash
-npm install    # Install dependencies
-npm run dev    # Start dev server (localhost:5173)
-npm run build  # Production build
-npm test       # Run test suite (2,310 tests)
+npm install                          # Install dependencies
+npm run dev                          # Start dev server (localhost:5173)
+npm run build                        # Production build
+bash scripts/smart-test-runner.sh    # Run tests (token-optimized, use for commits)
+npm test                             # Run tests (verbose, use for detailed debugging)
 ```
 
 ## Architecture (v117)

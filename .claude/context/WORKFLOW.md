@@ -130,9 +130,12 @@ A task is delegable to local model if ALL:
 
 ## Post-Edit Workflow
 1. **3+ files modified** → `/review staged`
-2. **Reducer changed** → `npm test`
-3. **State shape changed** → Update STATE_SCHEMAS.md
-4. **New constants** → Update QUICK_REF.md
+2. **Before commit** → `bash scripts/smart-test-runner.sh` (token-optimized)
+3. **Reducer changed** → Run tests (see #2)
+4. **State shape changed** → Update STATE_SCHEMAS.md
+5. **New constants** → Update QUICK_REF.md
+
+**Note**: Use `npm test` only for detailed debugging. Smart runner is mandatory for commits.
 
 ## Hooks Reference
 | Hook | Purpose |
