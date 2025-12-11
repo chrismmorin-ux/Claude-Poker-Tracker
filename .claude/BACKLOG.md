@@ -124,7 +124,7 @@ Projects that need `/project start` before beginning.
 ├──────────┬──────────────────────────────────┬───────────────────┤
 │ Priority │ Project                          │ Status            │
 ├──────────┼──────────────────────────────────┼───────────────────┤
-│ 1. P0    │ Architecture Health & Actions    │ ◀ IN PROGRESS 0/6 │
+│ 1. P0    │ Architecture Health & Actions    │ ◀ IN PROGRESS 4/5 │
 │ 2. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
 │ 3. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
 │ 4. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
@@ -136,7 +136,7 @@ Projects that need `/project start` before beginning.
 │ 10.P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Current: Architecture Health (Phase 1)
+Current: Architecture Health (Phase 5 - Migration & Integration)
 Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 ```
 
@@ -145,16 +145,16 @@ Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 #### Architecture Health & Action System Refactor (IN PROGRESS)
 - **ID**: architecture-health
 - **Priority**: P0 (Critical for future features)
-- **Status**: ◀ IN PROGRESS (Phase 1)
+- **Status**: ◀ IN PROGRESS (Phase 5 - Final)
 - **File**: `docs/projects/architecture-health.project.md`
 - **Plan**: `C:\Users\chris\.claude\plans\frolicking-cooking-glacier.md`
 - **Description**: CTO review fixes + action system refactor (primitive actions → pattern recognition)
-- **Phases**: 0/5 complete (30+ tasks, 24 local / 6 Claude)
-- **Phase 1**: Architecture Cleanup (IndexedDB userId, main component decomposition, deps update)
-- **Phase 2**: Primitive Action System (check/bet/call/raise/fold only)
-- **Phase 3**: Action Sequence Storage (ordered actions, not aggregated)
-- **Phase 4**: Pattern Recognition Engine (derive 3bet, cbet, check-raise, etc.)
-- **Phase 5**: Migration & Integration
+- **Phases**: 4/5 complete
+- **Phase 1**: ✅ Architecture Cleanup (IndexedDB userId, main component decomposition, deps update)
+- **Phase 2**: ✅ Primitive Action System (check/bet/call/raise/fold only)
+- **Phase 3**: ✅ Action Sequence Storage (ordered actions, not aggregated)
+- **Phase 4**: ✅ Pattern Recognition Engine (derive 3bet, cbet, check-raise, etc.)
+- **Phase 5**: ◀ NEXT - Migration & Integration
 - **Deferred**: Hand Strength (separate project), Bet Sizing (separate project)
 - **Blocks**: Player Tendencies, Range Analysis, Cloud Sync
 
