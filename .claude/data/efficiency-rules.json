@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "PREP_FIRST",
+      "name": "Read context files first",
+      "condition": {
+        "metric": "preparationRatio",
+        "operator": "<",
+        "threshold": 0.1
+      },
+      "recommendation": "Read .claude/index/*.md before exploring source files",
+      "estimatedSavings": "1500-2000 tokens",
+      "confidence": 0.90,
+      "source": "research",
+      "triggerCount": 0,
+      "successCount": 0
+    },
+    {
+      "id": "ITERATION_LIMIT",
+      "name": "Context reset at 20 iterations",
+      "condition": {
+        "metric": "iterationCount",
+        "operator": ">=",
+        "threshold": 20
+      },
+      "recommendation": "Use /clear to reset context - quality degrades after 20 iterations",
+      "estimatedSavings": "Prevents quality degradation",
+      "confidence": 0.92,
+      "source": "research",
+      "triggerCount": 0,
+      "successCount": 0
+    },
+    {
+      "id": "SCAN_THEN_DRILL",
+      "name": "Grep before full file reads",
+      "condition": {
+        "metric": "tokensPerFileModified",
+        "operator": ">",
+        "threshold": 2500
+      },
+      "recommendation": "Use Grep/Glob to find specific sections before reading full files",
+      "estimatedSavings": "500-1000 tokens per file",
+      "confidence": 0.85,
+      "source": "research",
+      "triggerCount": 0,
+      "successCount": 0
+    },
+    {
+      "id": "HIGH_EXPLORATION",
+      "name": "Excessive exploration phase",
+      "condition": {
+        "metric": "explorationPercent",
+        "operator": ">",
+        "threshold": 30
+      },
+      "recommendation": "Create better index files to reduce exploration needs",
+      "estimatedSavings": "2000-3000 tokens",
+      "confidence": 0.80,
+      "source": "research",
+      "triggerCount": 0,
+      "successCount": 0
+    },
+    {
+      "id": "LOW_TESTING",
+      "name": "Insufficient testing phase",
+      "condition": {
+        "metric": "testingPercent",
+        "operator": "<",
+        "threshold": 5,
+        "additionalCondition": {
+          "metric": "executionPercent",
+          "operator": ">",
+          "threshold": 25
+        }
+      },
+      "recommendation": "Add testing to execution workflow - use smart-test-runner.sh",
+      "estimatedSavings": "Prevents rework",
+      "confidence": 0.75,
+      "source": "research",
+      "triggerCount": 0,
+      "successCount": 0
+    }
+  ],
+  "customRules": [],
+  "lastUpdated": null
+}

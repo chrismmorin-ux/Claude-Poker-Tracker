@@ -19,6 +19,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/pm-project-required.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/efficiency-advisor.cjs"
           }
         ]
       }

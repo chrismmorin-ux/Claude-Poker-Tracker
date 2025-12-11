@@ -375,5 +375,21 @@ fi
 echo ""
 echo "================================================================"
 echo ""
-echo "Commands: /pm-override [type] | /session-advisor | /process-audit"
+# Efficiency Rules Status (from learning engine)
+RULES_FILE=".claude/data/efficiency-rules.json"
+if [ -f "$RULES_FILE" ]; then
+  echo "EFFICIENCY RULES STATUS"
+  # Check if any rules have been triggered
+  RULES_TRIGGERED=$(grep -o '"triggerCount": [0-9]*' "$RULES_FILE" | awk -F': ' '{sum+=$2} END {print sum}')
+  if [ "$RULES_TRIGGERED" -gt 0 ]; then
+    echo "  Historical rule triggers: $RULES_TRIGGERED across all sessions"
+    echo "  Run 'bash scripts/efficiency-learner.sh' for detailed analysis"
+    echo "  Run 'bash scripts/generate-efficiency-report.sh' for full report"
+  else
+    echo "  No rule data yet - accumulating session history"
+  fi
+  echo ""
+fi
+
+echo "Commands: /pm-override [type] | /session-advisor | /efficiency-report"
 echo "================================================================"
