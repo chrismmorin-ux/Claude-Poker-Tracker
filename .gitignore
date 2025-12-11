@@ -57,3 +57,5 @@ nul
 .claude/.scan-session.json
 .claude/.session-budget.json
 .claude/metrics/session-*.json
+.claude/metrics/test-pass-timestamp.txt
+.claude/.pm-state.json
