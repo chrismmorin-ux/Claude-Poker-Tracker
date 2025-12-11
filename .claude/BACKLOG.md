@@ -88,7 +88,7 @@ When delegating, Claude outputs:
 ### P1 - High Priority
 | ID | Task | Owner | Est. Effort | Dependencies |
 |----|------|-------|-------------|--------------|
-| - | None | - | - | - |
+| TOK-002 | Token Optimization Phase 2 - Budget Metrics Dashboard | Claude | 1hr | None |
 
 ### P2 - Medium Priority
 | ID | Task | Owner | Est. Effort | Dependencies |
