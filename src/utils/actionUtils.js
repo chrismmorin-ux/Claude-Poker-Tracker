@@ -270,3 +270,223 @@ export const getActionSequenceDisplay = (actions, getActionDisplayName) => {
   if (!actions || actions.length === 0) return '';
   return actions.map(a => getActionDisplayName(a)).join(' → ');
 };
+
+// =============================================================================
+// PATTERN-BASED DISPLAY FUNCTIONS (Phase 4)
+// =============================================================================
+
+/**
+ * Pattern display names for UI (from pattern recognition system)
+ */
+export const PATTERN_DISPLAY_NAMES = {
+  // Preflop patterns
+  fold: 'Fold',
+  limp: 'Limp',
+  open: 'Open',
+  '3bet': '3-Bet',
+  '4bet': '4-Bet',
+  '5bet': '5-Bet',
+  'cold-call': 'Cold Call',
+  squeeze: 'Squeeze',
+  'over-limp': 'Over-Limp',
+  'iso-raise': 'Iso-Raise',
+
+  // Postflop basic
+  check: 'Check',
+  call: 'Call',
+  bet: 'Bet',
+  raise: 'Raise',
+
+  // Postflop specific
+  'cbet-ip': 'C-Bet (IP)',
+  'cbet-oop': 'C-Bet (OOP)',
+  donk: 'Donk',
+  probe: 'Probe',
+  stab: 'Stab',
+  'check-raise': 'Check-Raise',
+  'raise-vs-cbet': 'Raise vs C-Bet',
+  're-raise': 'Re-Raise',
+  'float-call': 'Float',
+  'float-bet': 'Float Bet',
+  'fold-to-cbet': 'Fold to C-Bet',
+  'call-cbet': 'Call C-Bet',
+  'fold-to-cr': 'Fold to C/R',
+};
+
+/**
+ * Pattern abbreviations (3-4 chars) for compact badge display
+ */
+export const PATTERN_ABBREVIATIONS = {
+  // Preflop
+  fold: 'FLD',
+  limp: 'LMP',
+  open: 'OPN',
+  '3bet': '3BT',
+  '4bet': '4BT',
+  '5bet': '5BT',
+  'cold-call': 'CC',
+  squeeze: 'SQZ',
+  'over-limp': 'OL',
+  'iso-raise': 'ISO',
+
+  // Postflop basic
+  check: 'CHK',
+  call: 'CAL',
+  bet: 'BET',
+  raise: 'RSE',
+
+  // Postflop specific
+  'cbet-ip': 'CB',
+  'cbet-oop': 'CB',
+  donk: 'DNK',
+  probe: 'PRB',
+  stab: 'STB',
+  'check-raise': 'C/R',
+  'raise-vs-cbet': 'RVC',
+  're-raise': 'RR',
+  'float-call': 'FLT',
+  'float-bet': 'FLB',
+  'fold-to-cbet': 'F/C',
+  'call-cbet': 'CC',
+  'fold-to-cr': 'FCR',
+};
+
+/**
+ * Gets display name for a pattern
+ * @param {string} pattern - Pattern constant from patternRecognition
+ * @returns {string} - Human-readable display name
+ */
+export const getPatternDisplayName = (pattern) => {
+  return PATTERN_DISPLAY_NAMES[pattern] || pattern || '';
+};
+
+/**
+ * Gets abbreviation for a pattern (3-4 chars for badge display)
+ * @param {string} pattern - Pattern constant
+ * @returns {string} - Abbreviated pattern name
+ */
+export const getPatternAbbreviation = (pattern) => {
+  return PATTERN_ABBREVIATIONS[pattern] || pattern?.substring(0, 3).toUpperCase() || '???';
+};
+
+/**
+ * Gets Tailwind color classes for a pattern
+ * @param {string} pattern - Pattern constant
+ * @returns {string} - Tailwind classes for background and text color
+ */
+export const getPatternColor = (pattern) => {
+  // Fold patterns
+  if (pattern === 'fold' || pattern === 'fold-to-cbet' || pattern === 'fold-to-cr') {
+    return 'bg-red-300 text-red-900';
+  }
+
+  // Passive calling patterns
+  if (pattern === 'limp' || pattern === 'over-limp') {
+    return 'bg-gray-300 text-gray-900';
+  }
+
+  if (pattern === 'call' || pattern === 'check' || pattern === 'cold-call' ||
+      pattern === 'call-cbet' || pattern === 'float-call') {
+    return 'bg-blue-200 text-blue-900';
+  }
+
+  // Opening aggression
+  if (pattern === 'open' || pattern === 'iso-raise') {
+    return 'bg-green-300 text-green-900';
+  }
+
+  // C-bet patterns
+  if (pattern === 'cbet-ip' || pattern === 'cbet-oop') {
+    return 'bg-green-200 text-green-900';
+  }
+
+  // 3-bet and medium aggression
+  if (pattern === '3bet' || pattern === 'stab' || pattern === 'probe' ||
+      pattern === 'bet' || pattern === 'float-bet') {
+    return 'bg-yellow-300 text-yellow-900';
+  }
+
+  // High aggression (4bet+, check-raise, donk)
+  if (pattern === '4bet' || pattern === '5bet' || pattern === 'squeeze' ||
+      pattern === 'check-raise' || pattern === 'donk' || pattern === 'raise' ||
+      pattern === 'raise-vs-cbet' || pattern === 're-raise') {
+    return 'bg-orange-300 text-orange-900';
+  }
+
+  return 'bg-gray-100 text-gray-900';
+};
+
+/**
+ * Gets seat background and ring colors for a pattern (table view styling)
+ * @param {string} pattern - Pattern constant
+ * @returns {Object} - {bg, ring} with Tailwind classes
+ */
+export const getPatternSeatStyle = (pattern) => {
+  // Fold patterns
+  if (pattern === 'fold' || pattern === 'fold-to-cbet' || pattern === 'fold-to-cr') {
+    return { bg: 'bg-red-400', ring: 'ring-red-300' };
+  }
+
+  // Passive
+  if (pattern === 'limp' || pattern === 'over-limp') {
+    return { bg: 'bg-gray-400', ring: 'ring-gray-300' };
+  }
+
+  if (pattern === 'call' || pattern === 'check' || pattern === 'cold-call' ||
+      pattern === 'call-cbet' || pattern === 'float-call') {
+    return { bg: 'bg-blue-300', ring: 'ring-blue-200' };
+  }
+
+  // Opening
+  if (pattern === 'open' || pattern === 'iso-raise') {
+    return { bg: 'bg-green-400', ring: 'ring-green-300' };
+  }
+
+  // C-bet
+  if (pattern === 'cbet-ip' || pattern === 'cbet-oop') {
+    return { bg: 'bg-green-500', ring: 'ring-green-300' };
+  }
+
+  // Medium aggression
+  if (pattern === '3bet' || pattern === 'stab' || pattern === 'probe' ||
+      pattern === 'bet' || pattern === 'float-bet') {
+    return { bg: 'bg-yellow-400', ring: 'ring-yellow-300' };
+  }
+
+  // High aggression
+  if (pattern === '4bet' || pattern === '5bet' || pattern === 'squeeze' ||
+      pattern === 'check-raise' || pattern === 'donk' || pattern === 'raise' ||
+      pattern === 'raise-vs-cbet' || pattern === 're-raise') {
+    return { bg: 'bg-orange-400', ring: 'ring-orange-300' };
+  }
+
+  return { bg: 'bg-green-500', ring: 'ring-green-300' };
+};
+
+/**
+ * Checks if a pattern represents aggressive action
+ * @param {string} pattern - Pattern constant
+ * @returns {boolean}
+ */
+export const isAggressivePattern = (pattern) => {
+  const aggressivePatterns = [
+    'open', '3bet', '4bet', '5bet', 'squeeze', 'iso-raise',
+    'bet', 'raise', 'cbet-ip', 'cbet-oop', 'donk', 'probe',
+    'stab', 'check-raise', 'raise-vs-cbet', 're-raise', 'float-bet',
+  ];
+  return aggressivePatterns.includes(pattern);
+};
+
+/**
+ * Checks if a pattern represents passive action
+ * @param {string} pattern - Pattern constant
+ * @returns {boolean}
+ */
+export const isPassivePattern = (pattern) => {
+  const passivePatterns = [
+    'fold', 'fold-to-cbet', 'fold-to-cr',
+    'limp', 'over-limp', 'cold-call',
+    'check', 'call', 'call-cbet', 'float-call',
+  ];
+  return passivePatterns.includes(pattern);
+};
