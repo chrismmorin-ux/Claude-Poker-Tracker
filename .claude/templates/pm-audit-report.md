@@ -27,6 +27,27 @@
 ### Token Efficiency
 {token_efficiency_notes}
 
+## Token Usage by Phase
+
+| Phase | Tool Calls | Est. Tokens | % of Total |
+|-------|------------|-------------|------------|
+| preparation | {prep_calls} | {prep_tokens} | {prep_pct}% |
+| exploration | {explore_calls} | {explore_tokens} | {explore_pct}% |
+| planning | {plan_calls} | {plan_tokens} | {plan_pct}% |
+| research | {research_calls} | {research_tokens} | {research_pct}% |
+| file_reading | {fileread_calls} | {fileread_tokens} | {fileread_pct}% |
+| execution | {exec_calls} | {exec_tokens} | {exec_pct}% |
+| testing | {test_calls} | {test_tokens} | {test_pct}% |
+| commits | {commit_calls} | {commit_tokens} | {commit_pct}% |
+| other | {other_calls} | {other_tokens} | {other_pct}% |
+| **Total** | | **{total_phase_tokens}** | **100%** |
+
+### Phase Analysis
+
+**Highest consumption**: {highest_phase} ({highest_pct}%)
+
+{phase_recommendations}
+
 ## Delegation Compliance
 
 | Metric | Count | Rate |
