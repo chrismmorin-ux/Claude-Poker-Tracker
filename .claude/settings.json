@@ -167,6 +167,14 @@
           },
           {
             "type": "command",
+            "command": "node .claude/hooks/test-summary.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/lint-summary.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/process-suggest.cjs"
           }
         ]

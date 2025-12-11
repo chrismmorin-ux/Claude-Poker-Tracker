@@ -51,6 +51,12 @@ See `.claude/agents/explore-agent-rules.md` for full guidelines.
 - Use parallel tool calls for independent operations
 - Prefer one agent with multiple questions over multiple agents
 
+### Output Summaries (Phase 6)
+Test and lint commands automatically append compact summaries.
+Focus on the summary block at the end of output:
+- `npm test` → TEST SUMMARY block with pass/fail counts
+- `npm run lint` → LINT SUMMARY block with error/warning counts
+
 ---
 
 ## Project Overview
