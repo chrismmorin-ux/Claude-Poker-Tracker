@@ -53,3 +53,5 @@ coverage/
 .claude/.delegation-violations.json
 .claude/.process-suggest-state.json
 nul
+.claude/.context-cache.json
+.claude/.scan-session.json

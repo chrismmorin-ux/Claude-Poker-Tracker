@@ -28,6 +28,24 @@ THEN DRILL: Read only matched files, only relevant sections
 NEVER: Read full large files without scanning first
 ```
 
+### Pre-Search Index Check
+Before launching Explore agent or searching:
+1. Is answer in `.claude/index/SYMBOLS.md`? → Return directly
+2. Is answer in `.claude/context/*.md`? → Return directly
+3. Is this a "where is X" question? → Grep/Glob only, no agent
+4. Only launch Explore agent if above fail
+
+### Explore Agent Budget Tiers
+| Mode | Max Files | Max Lines/File | Use Case |
+|------|-----------|----------------|----------|
+| quick | 3 | 50 | Simple lookups, "where is X" |
+| medium | 8 | 100 | Feature understanding |
+| thorough | 15 | 200 | Architecture analysis |
+
+**Default**: `quick` - Specify in agent prompt: `Explore (medium): ...`
+
+See `.claude/agents/explore-agent-rules.md` for full guidelines.
+
 ### Batch Operations
 - Group similar tasks before decomposition
 - Use parallel tool calls for independent operations

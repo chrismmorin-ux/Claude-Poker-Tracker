@@ -29,6 +29,37 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/scan-first-check.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/cache-first-read.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/scan-first-check.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/scan-first-check.cjs"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -59,6 +90,15 @@
           {
             "type": "command",
             "command": "node .claude/hooks/delegation-check-pre.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/index-first-check.cjs"
           }
         ]
       }
