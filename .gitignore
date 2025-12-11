@@ -60,6 +60,7 @@ nul
 .claude/metrics/test-pass-timestamp.txt
 .claude/.pm-state.json
 .claude/.advisor-suggestions.json
+.claude/.startup-menu-shown.json
 
 # Personal notes
 docs/chris-notes
