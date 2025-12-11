@@ -10,15 +10,7 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/project-status.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/backlog-check.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/new-work-check.cjs"
+            "command": "node .claude/hooks/startup-menu.cjs"
           },
           {
             "type": "command",
@@ -283,6 +275,15 @@
           {
             "type": "command",
             "command": "node .claude/hooks/metrics-collector.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "SlashCommand",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/audit-auto-capture.cjs"
           }
         ]
       }

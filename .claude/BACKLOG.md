@@ -117,29 +117,19 @@ When delegating, Claude outputs:
 
 Projects that need `/project start` before beginning.
 
-### Project Priority Order (for new chat sessions)
+### Project Priority Order
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PROJECT EXECUTION ORDER                       │
-├──────────┬──────────────────────────────────┬───────────────────┤
-│ Priority │ Project                          │ Status            │
-├──────────┼──────────────────────────────────┼───────────────────┤
-│ 1. P0    │ Architecture Health & Actions    │ ✅ COMPLETE (v117)│
-│ 2. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
-│ 3. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
-│ 4. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
-│ 5. P2    │ MVP UI Polish                    │ ✅ COMPLETE       │
-│ 6. P2    │ Firebase Authentication          │ ◀ RESUME (5/6)    │
-│ 7. P3    │ Firebase Cloud Sync              │ Post-MVP          │
-│ 8. P3    │ Player Tendencies Analytics      │ Post-Arch Health  │
-│ 9. P4    │ Range Analysis Tools             │ Post-Arch Health  │
-│ 10.P4    │ TypeScript Migration             │ Optional          │
-└──────────┴──────────────────────────────────┴───────────────────┘
+**Source of Truth**: `docs/projects/` file names (`1-P1-slug.project.md` format)
 
-Current: MVP UI Polish complete! Can resume Firebase Auth or move to analytics
-Note: Firebase Auth paused at Phase 5/6 - Phase 6 (Integration & Testing) remaining
-```
+**Current Queue**:
+1. [P1] Program Manager - Phase 4/4 (Integration & Visibility)
+2. [P2] Firebase Auth - Phase 5/6 (PAUSED)
+3. [P3] Firebase Cloud Sync - Planned
+4. [P3] Player Tendencies - Planned
+5. [P4] Range Analysis - Planned
+6. [P4] TypeScript Migration - Optional
+
+**Commands**: `/project-queue` | `/start` (session menu)
 
 ### Active Projects
 

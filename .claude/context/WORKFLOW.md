@@ -2,11 +2,14 @@
 **For**: Project continuity, local model delegation, documentation sync
 
 ## Starting New Work Checklist
-1. **Read BACKLOG.md** - Single source of truth for work tracking
-2. **Create project file** - `/project start <name>` for multi-file tasks
-3. **Check delegation** - Project file's Task Delegation table determines who implements
-4. **Read before write** - Read all affected files in parallel first
-5. **Plan if complex** - 4+ files or cross-cutting concerns → `EnterPlanMode`
+1. **Session startup** - Review menu or run `/start` to see options
+2. **Check audits** - `/audit-status` for pending reviews
+3. **Read BACKLOG.md** - Single source of truth for work tracking
+4. **Check project queue** - `/project-queue` for priority order
+5. **Create project file** - `/project start <name>` for multi-file tasks
+6. **Check delegation** - Project file's Task Delegation table determines who implements
+7. **Read before write** - Read all affected files in parallel first
+8. **Plan if complex** - 4+ files or cross-cutting concerns → `EnterPlanMode`
 
 ## Planning Mode Guidelines
 When using `EnterPlanMode`:
@@ -18,6 +21,7 @@ When using `EnterPlanMode`:
 
 ## Project Commands
 ```bash
+/project-queue        # View project queue (new!)
 /project status       # View all projects
 /project start <name> # Create new project
 /project resume <id>  # Load project context
@@ -25,7 +29,26 @@ When using `EnterPlanMode`:
 /project archive <id> # Move to archive
 ```
 
-**Files**: `docs/projects/*.project.md` (active), `docs/archive/` (completed)
+**Files**: `docs/projects/{queue}-{priority}-{slug}.project.md` (active), `docs/archive/` (completed)
+
+## Audit System (NEW)
+
+**Purpose**: Persistent tracking of audit reports (token optimization, CTO reviews, process audits, etc.)
+
+### Audit Commands
+```bash
+/audit-status         # View pending audits
+/audit-review [id]    # Process/action an audit
+/audit-log <type> "title"  # Manual audit capture (usually auto-captured)
+```
+
+### How It Works
+1. **Auto-capture**: Audits from `/cto-review`, `/process-audit`, etc. saved automatically
+2. **Queue**: Pending audits tracked in `.claude/audits/registry.json`
+3. **Review**: Use `/audit-review` to create backlog items or dismiss
+4. **Tracking**: Audits linked to tasks for full audit trail
+
+**Files**: `.claude/audits/{pending,actioned,dismissed}/`, `registry.json`
 
 ## Local Model Delegation (MANDATORY)
 

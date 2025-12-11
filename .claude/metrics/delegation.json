@@ -1,0 +1,39 @@
+{
+  "decisions": [
+    {
+      "timestamp": "2025-12-11T19:18:05.862Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\audits\\pending\\.gitkeep"
+    },
+    {
+      "timestamp": "2025-12-11T19:18:22.491Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\audits\\actioned\\.gitkeep"
+    },
+    {
+      "timestamp": "2025-12-11T19:18:28.272Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\audits\\dismissed\\.gitkeep"
+    },
+    {
+      "timestamp": "2025-12-11T19:20:25.926Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T19:22:06.804Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\startup-menu.cjs"
+    }
+  ],
+  "summary": {
+    "delegated": 0,
+    "bypassed": 0,
+    "allowed": 5
+  }
+}
