@@ -41,7 +41,7 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| Firebase Authentication | Phase 5 | 4/6 complete | `docs/projects/firebase-auth.project.md` |
+| MVP UI Polish | Planning | 0/4 complete | `docs/projects/mvp-polish.project.md` |
 
 ---
 
@@ -124,39 +124,32 @@ Projects that need `/project start` before beginning.
 ├──────────┬──────────────────────────────────┬───────────────────┤
 │ Priority │ Project                          │ Status            │
 ├──────────┼──────────────────────────────────┼───────────────────┤
-│ 1. P0    │ Architecture Health & Actions    │ ◀ IN PROGRESS 4/5 │
+│ 1. P0    │ Architecture Health & Actions    │ ✅ COMPLETE (v117)│
 │ 2. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
 │ 3. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
 │ 4. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
 │ 5. P2    │ Firebase Authentication          │ PAUSED 4/6        │
-│ 6. P2    │ MVP UI Polish                    │ After Arch Health │
+│ 6. P2    │ MVP UI Polish                    │ ◀ NEXT UP         │
 │ 7. P3    │ Firebase Cloud Sync              │ Post-MVP          │
 │ 8. P3    │ Player Tendencies Analytics      │ Post-Arch Health  │
 │ 9. P4    │ Range Analysis Tools             │ Post-Arch Health  │
 │ 10.P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Current: Architecture Health (Phase 5 - Migration & Integration)
+Current: MVP UI Polish is next up
 Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 ```
 
 ### Active Projects
 
-#### Architecture Health & Action System Refactor (IN PROGRESS)
-- **ID**: architecture-health
-- **Priority**: P0 (Critical for future features)
-- **Status**: ◀ IN PROGRESS (Phase 5 - Final)
-- **File**: `docs/projects/architecture-health.project.md`
-- **Plan**: `C:\Users\chris\.claude\plans\frolicking-cooking-glacier.md`
-- **Description**: CTO review fixes + action system refactor (primitive actions → pattern recognition)
-- **Phases**: 4/5 complete
-- **Phase 1**: ✅ Architecture Cleanup (IndexedDB userId, main component decomposition, deps update)
-- **Phase 2**: ✅ Primitive Action System (check/bet/call/raise/fold only)
-- **Phase 3**: ✅ Action Sequence Storage (ordered actions, not aggregated)
-- **Phase 4**: ✅ Pattern Recognition Engine (derive 3bet, cbet, check-raise, etc.)
-- **Phase 5**: ◀ NEXT - Migration & Integration
-- **Deferred**: Hand Strength (separate project), Bet Sizing (separate project)
-- **Blocks**: Player Tendencies, Range Analysis, Cloud Sync
+#### MVP UI Polish (NEXT UP)
+- **ID**: mvp-polish
+- **Priority**: P2
+- **Status**: ◀ NEXT UP
+- **File**: `docs/projects/mvp-polish.project.md`
+- **Description**: Toast review, error message polish, UI animations, destructive action confirmations
+- **Phases**: 4 planned
+- **Blocked By**: None
 
 ### MVP Phase Projects
 
@@ -192,14 +185,14 @@ Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
 - **Phases**: 3/3 complete
 - **Result**: v116 - Error log utility, viewer in Settings, Report Bug feature
 
-#### MVP Polish (NEXT UP)
-- **ID**: mvp-polish
-- **Priority**: P2
-- **Status**: ◀ NEXT UP
-- **File**: `docs/projects/mvp-polish.project.md`
-- **Description**: Toast review, error message polish, UI animations, destructive action confirmations
-- **Phases**: 4 planned
-- **Blocked By**: None (can run parallel with settings-system)
+#### Architecture Health & Action System Refactor (COMPLETE)
+- **ID**: architecture-health
+- **Priority**: P0 (Critical for future features)
+- **Status**: ✅ COMPLETE (2025-12-10)
+- **File**: `docs/projects/architecture-health.project.md`
+- **Description**: CTO review fixes + action system refactor (primitive actions → pattern recognition)
+- **Phases**: 5/5 complete
+- **Result**: v117 - Action sequences, pattern recognition, IndexedDB v8
 
 ---
 
