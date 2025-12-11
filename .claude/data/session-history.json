@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "maxSessions": 50,
+  "sessions": [],
+  "aggregateMetrics": {
+    "totalSessions": 0,
+    "avgTokensPerSession": 0,
+    "avgEfficiencyScore": 0,
+    "avgIterationsPerSession": 0,
+    "successRate": 0
+  },
+  "learnedPatterns": {
+    "bestPractices": [],
+    "antiPatterns": [],
+    "lastAnalysis": null
+  }
+}

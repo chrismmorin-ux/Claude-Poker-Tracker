@@ -29,6 +29,31 @@ get_json_number() {
   grep -o "\"$key\": [0-9.]*" "$STATE_FILE" 2>/dev/null | head -1 | sed 's/.*: //' || echo "$default"
 }
 
+# Parse phase token data
+get_phase_tokens() {
+  local phase=$1
+  awk -v phase="$phase" '
+    /"'$phase'"/ {found=1}
+    found && /"estimatedTokens":/ {
+      match($0, /[0-9]+/)
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+  ' "$STATE_FILE" 2>/dev/null || echo "0"
+}
+
+get_phase_calls() {
+  local phase=$1
+  awk -v phase="$phase" '
+    /"'$phase'"/ {found=1}
+    found && /"toolCalls":/ {
+      match($0, /[0-9]+/)
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+  ' "$STATE_FILE" 2>/dev/null || echo "0"
+}
+
 # Extract session data
 SESSION_ID=$(get_json_value "sessionId" "unknown")
 START_TIME=$(get_json_value "startTime" "")
@@ -73,6 +98,76 @@ else
   DELEGATION_RATE=0
   BLOCKED_RATE=0
   BYPASSED_RATE=0
+fi
+
+# Extract phase data
+PREP_TOKENS=$(get_phase_tokens "preparation")
+PREP_CALLS=$(get_phase_calls "preparation")
+EXPLORE_TOKENS=$(get_phase_tokens "exploration")
+EXPLORE_CALLS=$(get_phase_calls "exploration")
+PLAN_TOKENS=$(get_phase_tokens "planning")
+PLAN_CALLS=$(get_phase_calls "planning")
+RESEARCH_TOKENS=$(get_phase_tokens "research")
+RESEARCH_CALLS=$(get_phase_calls "research")
+FILEREAD_TOKENS=$(get_phase_tokens "file_reading")
+FILEREAD_CALLS=$(get_phase_calls "file_reading")
+EXEC_TOKENS=$(get_phase_tokens "execution")
+EXEC_CALLS=$(get_phase_calls "execution")
+TEST_TOKENS=$(get_phase_tokens "testing")
+TEST_CALLS=$(get_phase_calls "testing")
+COMMIT_TOKENS=$(get_phase_tokens "commits")
+COMMIT_CALLS=$(get_phase_calls "commits")
+OTHER_TOKENS=$(get_phase_tokens "other")
+OTHER_CALLS=$(get_phase_calls "other")
+
+# Calculate total and percentages
+TOTAL_PHASE_TOKENS=$((PREP_TOKENS + EXPLORE_TOKENS + PLAN_TOKENS + RESEARCH_TOKENS + FILEREAD_TOKENS + EXEC_TOKENS + TEST_TOKENS + COMMIT_TOKENS + OTHER_TOKENS))
+
+calc_pct() {
+  local val=$1
+  local total=$2
+  if [ "$total" -gt 0 ]; then
+    echo $((val * 100 / total))
+  else
+    echo "0"
+  fi
+}
+
+PREP_PCT=$(calc_pct $PREP_TOKENS $TOTAL_PHASE_TOKENS)
+EXPLORE_PCT=$(calc_pct $EXPLORE_TOKENS $TOTAL_PHASE_TOKENS)
+PLAN_PCT=$(calc_pct $PLAN_TOKENS $TOTAL_PHASE_TOKENS)
+RESEARCH_PCT=$(calc_pct $RESEARCH_TOKENS $TOTAL_PHASE_TOKENS)
+FILEREAD_PCT=$(calc_pct $FILEREAD_TOKENS $TOTAL_PHASE_TOKENS)
+EXEC_PCT=$(calc_pct $EXEC_TOKENS $TOTAL_PHASE_TOKENS)
+TEST_PCT=$(calc_pct $TEST_TOKENS $TOTAL_PHASE_TOKENS)
+COMMIT_PCT=$(calc_pct $COMMIT_TOKENS $TOTAL_PHASE_TOKENS)
+OTHER_PCT=$(calc_pct $OTHER_TOKENS $TOTAL_PHASE_TOKENS)
+
+# Find highest consumption phase
+HIGHEST_PHASE="other"
+HIGHEST_PCT=0
+for phase_check in "preparation:$PREP_PCT" "exploration:$EXPLORE_PCT" "planning:$PLAN_PCT" "research:$RESEARCH_PCT" "file_reading:$FILEREAD_PCT" "execution:$EXEC_PCT" "testing:$TEST_PCT" "commits:$COMMIT_PCT" "other:$OTHER_PCT"; do
+  phase_name="${phase_check%%:*}"
+  phase_pct="${phase_check##*:}"
+  if [ "$phase_pct" -gt "$HIGHEST_PCT" ]; then
+    HIGHEST_PCT=$phase_pct
+    HIGHEST_PHASE=$phase_name
+  fi
+done
+
+# Generate phase recommendations
+PHASE_RECOMMENDATIONS=""
+if [ "$FILEREAD_PCT" -gt 40 ]; then
+  PHASE_RECOMMENDATIONS="$PHASE_RECOMMENDATIONS| R-PHZ-001 | High file_reading (${FILEREAD_PCT}%) - Use index files first | P1 | efficiency |\n"
+fi
+if [ "$PREP_PCT" -lt 5 ] && [ "$FILEREAD_PCT" -gt 20 ]; then
+  PHASE_RECOMMENDATIONS="$PHASE_RECOMMENDATIONS| R-PHZ-002 | Low preparation (${PREP_PCT}%) - Read context files first | P2 | efficiency |\n"
+fi
+if [ "$EXPLORE_PCT" -gt 30 ]; then
+  PHASE_RECOMMENDATIONS="$PHASE_RECOMMENDATIONS| R-PHZ-003 | High exploration (${EXPLORE_PCT}%) - Create better index files | P2 | efficiency |\n"
+fi
+if [ "$EXEC_PCT" -gt 30 ] && [ "$TEST_PCT" -lt 5 ]; then
+  PHASE_RECOMMENDATIONS="$PHASE_RECOMMENDATIONS| R-PHZ-004 | Low testing (${TEST_PCT}%) with high execution (${EXEC_PCT}%) - Add tests | P2 | quality |\n"
 fi
 
 # Determine severity
@@ -191,6 +286,31 @@ cat > "$AUDIT_FILE" <<EOF
 ### Token Efficiency
 $(echo "$TOKEN_EFFICIENCY" | tr '|' '\n' | sed 's/BREAK//')
 
+## Token Usage by Phase
+
+| Phase | Tool Calls | Est. Tokens | % of Total |
+|-------|------------|-------------|------------|
+| preparation | $PREP_CALLS | $PREP_TOKENS | $PREP_PCT% |
+| exploration | $EXPLORE_CALLS | $EXPLORE_TOKENS | $EXPLORE_PCT% |
+| planning | $PLAN_CALLS | $PLAN_TOKENS | $PLAN_PCT% |
+| research | $RESEARCH_CALLS | $RESEARCH_TOKENS | $RESEARCH_PCT% |
+| file_reading | $FILEREAD_CALLS | $FILEREAD_TOKENS | $FILEREAD_PCT% |
+| execution | $EXEC_CALLS | $EXEC_TOKENS | $EXEC_PCT% |
+| testing | $TEST_CALLS | $TEST_TOKENS | $TEST_PCT% |
+| commits | $COMMIT_CALLS | $COMMIT_TOKENS | $COMMIT_PCT% |
+| other | $OTHER_CALLS | $OTHER_TOKENS | $OTHER_PCT% |
+| **Total** | | **$TOTAL_PHASE_TOKENS** | **100%** |
+
+### Phase Analysis
+
+**Highest consumption**: $HIGHEST_PHASE ($HIGHEST_PCT%)
+
+$(if [ -n "$PHASE_RECOMMENDATIONS" ]; then echo "### Phase-Based Recommendations
+
+| ID | Recommendation | Priority | Type |
+|----|----------------|----------|------|
+$(echo -e "$PHASE_RECOMMENDATIONS")"; fi)
+
 ## Delegation Compliance
 
 | Metric | Count | Rate |
@@ -248,3 +368,11 @@ EOF
   echo "  - Severity: $SEVERITY"
   echo ""
   echo "Review with: /audit-review $AUDIT_ID"
+
+# Archive session to history for trend analysis
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/archive-session.sh" ]; then
+  echo ""
+  echo "Archiving session to history..."
+  bash "$SCRIPT_DIR/archive-session.sh"
+fi
