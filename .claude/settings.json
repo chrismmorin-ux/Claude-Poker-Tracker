@@ -23,11 +23,24 @@
           {
             "type": "command",
             "command": "node .claude/hooks/local-model-delegate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-project-required.cjs"
           }
         ]
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-token-enforcer.cjs"
+          }
+        ]
+      },
       {
         "matcher": "Read",
         "hooks": [
@@ -89,7 +102,28 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node .claude/hooks/pm-multi-file-gate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/delegation-enforcer.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/delegation-check-pre.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-multi-file-gate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/delegation-enforcer.cjs"
           }
         ]
       },
@@ -105,8 +139,21 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-session-tracker.cjs"
+          }
+        ]
+      },
+      {
         "matcher": "Edit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-time-estimate-detector.cjs"
+          },
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"
@@ -136,6 +183,10 @@
       {
         "matcher": "Write",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pm-time-estimate-detector.cjs"
+          },
           {
             "type": "command",
             "command": "node .claude/hooks/docs-sync.cjs"

@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Local Model Task Specification",
+  "description": "Template for tasks delegated to local models (DeepSeek/Qwen)",
+  "type": "object",
+  "required": ["task_id", "model", "description", "output_file"],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^T-[0-9]{3}$",
+      "description": "Unique task identifier (e.g., T-001)",
+      "example": "T-001"
+    },
+    "model": {
+      "type": "string",
+      "enum": ["deepseek", "qwen", "auto"],
+      "description": "Local model to use",
+      "default": "deepseek"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "simple_utility",
+        "simple_component",
+        "medium_component",
+        "refactor",
+        "documentation",
+        "test_generation"
+      ],
+      "description": "Classification from task-classifier-v3.sh"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Classification confidence level"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Clear task description for the model",
+      "example": "Create a formatCurrency utility function that formats numbers as USD currency strings"
+    },
+    "output_file": {
+      "type": "string",
+      "description": "Target file path (relative to project root)",
+      "example": "src/utils/formatCurrency.js"
+    },
+    "language": {
+      "type": "string",
+      "enum": ["javascript", "typescript", "css", "json", "markdown", "bash"],
+      "default": "javascript",
+      "description": "Programming language for the output"
+    },
+    "context_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 5,
+      "description": "Related files to provide as context (max 5)",
+      "example": ["src/constants/gameConstants.js", "src/utils/otherUtil.js"]
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Rules the generated code must follow",
+      "example": [
+        "Export named function",
+        "Pure function - no side effects",
+        "Include JSDoc comments"
+      ]
+    },
+    "test_command": {
+      "type": "string",
+      "description": "Optional test command to run after generation",
+      "example": "npx vitest run src/utils/__tests__/formatCurrency.test.js"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp when spec was created"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this spec was auto-generated"
+    }
+  },
+  "examples": [
+    {
+      "task_id": "T-001",
+      "model": "deepseek",
+      "task_type": "simple_utility",
+      "confidence": "high",
+      "description": "Create a formatCurrency utility function that formats numbers as USD currency strings with proper comma separators",
+      "output_file": "src/utils/formatCurrency.js",
+      "language": "javascript",
+      "context_files": [
+        "src/constants/gameConstants.js"
+      ],
+      "constraints": [
+        "Export named function",
+        "Pure function - no side effects",
+        "Handle edge cases (null, undefined, NaN)",
+        "Include JSDoc comments",
+        "Use dependency injection for locale"
+      ],
+      "test_command": "",
+      "created_at": "2025-12-11T18:00:00Z",
+      "auto_generated": true
+    },
+    {
+      "task_id": "T-002",
+      "model": "qwen",
+      "task_type": "simple_component",
+      "confidence": "high",
+      "description": "Create a ChipBadge component that displays a poker chip amount with color coding",
+      "output_file": "src/components/ui/ChipBadge.jsx",
+      "language": "javascript",
+      "context_files": [
+        "src/components/ui/Badge.jsx",
+        "src/constants/gameConstants.js"
+      ],
+      "constraints": [
+        "Use functional component",
+        "Destructure props",
+        "Include PropTypes",
+        "Keep under 100 lines",
+        "Use existing color utilities"
+      ],
+      "test_command": "",
+      "created_at": "2025-12-11T18:05:00Z",
+      "auto_generated": true
+    },
+    {
+      "task_id": "T-003",
+      "model": "qwen",
+      "task_type": "test_generation",
+      "confidence": "high",
+      "description": "Generate unit tests for the formatCurrency utility function",
+      "output_file": "src/utils/__tests__/formatCurrency.test.js",
+      "language": "javascript",
+      "context_files": [
+        "src/utils/formatCurrency.js"
+      ],
+      "constraints": [
+        "Use Vitest syntax",
+        "Include describe and it blocks",
+        "Test edge cases (null, undefined, 0, negative)",
+        "Test formatting with various amounts",
+        "Use proper assertions"
+      ],
+      "test_command": "npx vitest run src/utils/__tests__/formatCurrency.test.js",
+      "created_at": "2025-12-11T18:10:00Z",
+      "auto_generated": true
+    }
+  ]
+}
