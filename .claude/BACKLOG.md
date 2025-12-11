@@ -41,6 +41,7 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
+| Program Management Agent | Phase 1 | 0/4 phases | `docs/projects/program-manager.project.md` |
 | MVP UI Polish | Complete | 4/4 complete | `docs/projects/mvp-polish.project.md` |
 
 ---
