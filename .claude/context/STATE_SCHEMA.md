@@ -1,5 +1,5 @@
 # State Schema Reference
-**Version**: 1.0.6 | **Updated**: 2025-12-09
+**Version**: 1.0.7 | **Updated**: 2025-12-10
 
 Five reducers manage application state. All use validated reducers.
 Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer().
@@ -9,7 +9,10 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
 { currentStreet: 'preflop',     // 'preflop'|'flop'|'turn'|'river'|'showdown'
   dealerButtonSeat: 1,          // 1-9
   mySeat: 5,                    // 1-9
-  seatActions: { [street]: { [seat]: string[] } },  // actions by street/seat
+  seatActions: { [street]: { [seat]: string[] } },  // legacy format
+  actionSequence: [             // v117+: ordered action entries
+    { seat: 5, action: 'raise', street: 'preflop', order: 1 }
+  ],
   absentSeats: [] }             // [1-9]
 ```
 

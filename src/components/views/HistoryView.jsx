@@ -220,6 +220,13 @@ export const HistoryView = ({
   };
 
   const getActionSummary = (hand) => {
+    // Prefer actionSequence (new format) if available
+    const sequence = hand.actionSequence || hand.gameState?.actionSequence;
+    if (sequence && sequence.length > 0) {
+      return `${sequence.length} actions`;
+    }
+
+    // Fallback to counting seatActions (legacy format)
     if (!hand.gameState || !hand.gameState.seatActions) {
       return 'No actions';
     }

@@ -1,6 +1,48 @@
 # Poker Tracker Change Log
 
-## v116 - Error Reporting System (Current)
+## v117 - Architecture Health Phase 5: Migration & Integration (Current)
+
+### Summary
+- **Purpose**: Complete action sequence migration and integrate with UI
+- **Project**: Architecture Health & Action System Refactor (Phase 5 of 5)
+- **DB Migration**: v7 → v8 (adds actionSequence to hands)
+- **New Files**: 3 files (actionMigration.js, actionMigration.test.js, actionSequence.integration.test.js)
+- **Modified Files**: 4 files (database.js, ActionHistoryGrid.jsx, HistoryView.jsx, STATE_SCHEMAS.md)
+
+### Migration System
+- **actionMigration.js** (~75 lines): Convert legacy seatActions to actionSequence
+  - `migrateHandToSequence()`: Single hand conversion (idempotent)
+  - `batchMigrateHands()`: Batch processing
+  - `needsSequenceMigration()`: Check if hand needs conversion
+- **database.js v8 migration**: Auto-converts all hands on DB open
+  - Converts seatActions to ordered actionSequence
+  - Preserves legacy format for backwards compatibility
+
+### View Updates
+- **ActionHistoryGrid.jsx**: Dual-format support
+  - `getActionsForSeatStreet()`: Extract from either format
+  - `hasFoldedInSequence()`: Check folds in sequence
+  - New `actionSequence` prop (optional)
+- **HistoryView.jsx**: Updated action count
+  - Prefers actionSequence.length when available
+  - Falls back to seatActions counting
+
+### Action Sequence Format
+```javascript
+actionSequence: [
+  { seat: 5, action: 'raise', street: 'preflop', order: 1 },
+  { seat: 3, action: 'call',  street: 'preflop', order: 2 },
+  { seat: 1, action: 'fold',  street: 'preflop', order: 3 },
+]
+```
+
+### Tests
+- 22 migration unit tests (actionMigration.test.js)
+- 8 integration tests (actionSequence.integration.test.js)
+
+---
+
+## v116 - Error Reporting System
 
 ### Summary
 - **Purpose**: Add local error logging, viewer, and bug report export feature

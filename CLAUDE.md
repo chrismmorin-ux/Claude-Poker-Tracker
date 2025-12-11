@@ -41,7 +41,7 @@ npm run build  # Production build
 npm test       # Run test suite (2,310 tests)
 ```
 
-## Architecture (v116)
+## Architecture (v117)
 > **Detailed info:** `.claude/context/CONTEXT_SUMMARY.md`
 
 **Main Structure:**
@@ -51,7 +51,7 @@ npm test       # Run test suite (2,310 tests)
 - `src/hooks/` - 12 custom hooks
 - `src/components/views/` - 8 view components
 - `src/components/ui/` - 16 UI components
-- `src/utils/` - Utility functions + persistence layer (IndexedDB v6)
+- `src/utils/` - Utility functions + persistence layer (IndexedDB v8)
 
 **Key Constants:** `ACTIONS.*`, `SEAT_ARRAY`, `SCREEN.*`
 
@@ -98,4 +98,4 @@ Test all 7 views: Table, Card Selector, Showdown, Stats, Sessions, Players, Sett
 ## Version History
 > **Full history:** `docs/CHANGELOG.md` | **Recent:** `.claude/context/RECENT_CHANGES.md`
 
-**v116** (current): Error Reporting System - error logging, viewer, bug report export
+**v117** (current): Architecture Health Phase 5 - action sequence migration, IndexedDB v8

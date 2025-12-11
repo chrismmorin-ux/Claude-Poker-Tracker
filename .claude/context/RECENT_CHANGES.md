@@ -1,11 +1,16 @@
 # Recent Changes
-**Version**: v116 | **Updated**: 2025-12-10
+**Version**: v117 | **Updated**: 2025-12-10
 
-## v116 (Current) - Error Reporting System
+## v117 (Current) - Architecture Health Phase 5: Migration & Integration
+- **Action sequence migration**: IndexedDB v8 auto-converts hands on open
+- **actionMigration.js**: migrateHandToSequence(), batchMigrateHands()
+- **View updates**: ActionHistoryGrid, HistoryView support dual format
+- **Tests**: 30 new tests (22 migration, 8 integration)
+
+## v116 - Error Reporting System
 - **Error logging**: localStorage-based error persistence (FIFO 50 entries)
 - **Error viewer**: Collapsible log in Settings with expandable details
 - **Report Bug**: Copy/download JSON export with privacy-safe data
-- **Tests**: 2,310 tests passing (28 new errorLog tests)
 
 ## v115 - Settings System
 - **Settings infrastructure**: settingsConstants, settingsReducer, SettingsContext
@@ -28,10 +33,12 @@
 ## Files Changed Recently
 | File | Change | Version |
 |------|--------|---------|
+| `src/migrations/actionMigration.js` | Created | v117 |
+| `src/utils/persistence/database.js` | v8 migration | v117 |
+| `src/components/views/ShowdownView/ActionHistoryGrid.jsx` | Dual format | v117 |
+| `src/components/views/HistoryView.jsx` | Sequence count | v117 |
 | `src/utils/errorLog.js` | Created | v116 |
-| `src/components/views/SettingsView.jsx` | Error log UI | v116 |
 | `src/contexts/SettingsContext.jsx` | Created | v115 |
-| `src/contexts/*.jsx` | Created | v114 |
 
 ## Where to Look
 - Full changelog: `docs/CHANGELOG.md`

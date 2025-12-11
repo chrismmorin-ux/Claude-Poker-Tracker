@@ -26,6 +26,8 @@
  * Migration History:
  *   v6 → v7: Added userId field to all stores for multi-user data isolation
  *            Changed settings/activeSession from singleton to per-user keying
+ *   v7 → v8: Added actionSequence field to hands for ordered action storage
+ *            Converts existing seatActions to actionSequence on migration
  */
 
 import { logger } from '../errorHandler';
@@ -35,7 +37,7 @@ import { logger } from '../errorHandler';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 7;
+export const DB_VERSION = 8;
 
 // Guest user ID constant - matches authConstants.GUEST_USER_ID
 export const GUEST_USER_ID = 'guest';
@@ -393,6 +395,82 @@ export const initDB = async () => {
         }
 
         log('v7 migration initiated for all stores');
+      }
+
+      // Migrate to v8: Add actionSequence field to hands
+      if (oldVersion < 8) {
+        log('Upgrading to v8: Adding actionSequence field to hands');
+
+        const transaction = event.target.transaction;
+
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          const handsStore = transaction.objectStore(STORE_NAME);
+
+          // Migrate existing hands to have actionSequence
+          const handsCursor = handsStore.openCursor();
+          handsCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const hand = cursor.value;
+
+              // Skip if already has actionSequence with items
+              if (!hand.actionSequence || hand.actionSequence.length === 0) {
+                // Get seatActions from either top-level or gameState
+                const seatActions = hand.seatActions || hand.gameState?.seatActions;
+
+                if (seatActions && typeof seatActions === 'object') {
+                  // Inline conversion (can't import during migration)
+                  const sequence = [];
+                  const streets = ['preflop', 'flop', 'turn', 'river'];
+                  let order = 1;
+
+                  streets.forEach(street => {
+                    const streetActions = seatActions[street];
+                    if (!streetActions || typeof streetActions !== 'object') return;
+
+                    // Sort seats numerically for consistent ordering
+                    const seats = Object.keys(streetActions)
+                      .map(Number)
+                      .sort((a, b) => a - b);
+
+                    seats.forEach(seat => {
+                      const actions = streetActions[seat];
+                      if (!Array.isArray(actions)) return;
+
+                      actions.forEach(action => {
+                        if (action && typeof action === 'string') {
+                          sequence.push({
+                            seat,
+                            action,
+                            street,
+                            order: order++
+                          });
+                        }
+                      });
+                    });
+                  });
+
+                  hand.actionSequence = sequence;
+                  cursor.update(hand);
+                } else {
+                  // No seatActions - add empty sequence
+                  hand.actionSequence = [];
+                  cursor.update(hand);
+                }
+              }
+
+              cursor.continue();
+            } else {
+              log('v8 migration: hands actionSequence added');
+            }
+          };
+
+          handsCursor.onerror = (e) => {
+            logError('v8 migration failed:', e.target.error);
+          };
+        }
+
+        log('v8 migration initiated for hands store');
       }
     };
   });

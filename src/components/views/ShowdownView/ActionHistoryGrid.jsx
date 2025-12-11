@@ -3,6 +3,39 @@ import PropTypes from 'prop-types';
 import { ActionSequence } from '../../ui/ActionSequence';
 
 /**
+ * Extract actions for a specific seat/street from either format
+ * Prefers actionSequence (new format), falls back to seatActions (legacy)
+ *
+ * @param {Array} actionSequence - New ordered action sequence format
+ * @param {Object} seatActions - Legacy seatActions format
+ * @param {string} street - Street to get actions for
+ * @param {number} seat - Seat number to get actions for
+ * @returns {Array} Array of action strings
+ */
+const getActionsForSeatStreet = (actionSequence, seatActions, street, seat) => {
+  // Prefer actionSequence if available
+  if (actionSequence && actionSequence.length > 0) {
+    return actionSequence
+      .filter(e => e.street === street && e.seat === seat)
+      .map(e => e.action);
+  }
+  // Fallback to legacy seatActions
+  return seatActions?.[street]?.[seat] || [];
+};
+
+/**
+ * Check if a seat has folded in the action sequence
+ *
+ * @param {Array} actionSequence - Ordered action sequence
+ * @param {number} seat - Seat number to check
+ * @returns {boolean} True if seat has folded
+ */
+const hasFoldedInSequence = (actionSequence, seat) => {
+  if (!actionSequence || actionSequence.length === 0) return false;
+  return actionSequence.some(e => e.seat === seat && e.action === 'fold');
+};
+
+/**
  * ActionHistoryGrid - Street-by-street action history display
  */
 export const ActionHistoryGrid = ({
@@ -13,6 +46,7 @@ export const ActionHistoryGrid = ({
   ACTION_ABBREV,
   SEAT_STATUS,
   seatActions,
+  actionSequence = [],
   allPlayerCards,
   holeCards,
   mySeat,
@@ -43,7 +77,8 @@ export const ActionHistoryGrid = ({
           </div>
           <div className="grid grid-cols-9 gap-2">
             {SEAT_ARRAY.map(seat => {
-              const actionArray = seatActions[street]?.[seat] || [];
+              // Use helper to get actions from either format
+              const actionArray = getActionsForSeatStreet(actionSequence, seatActions, street, seat);
               const lastAction = actionArray[actionArray.length - 1];
               const inactiveStatus = isSeatInactive(seat);
               const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
@@ -54,11 +89,14 @@ export const ActionHistoryGrid = ({
               // For showdown street, check if player folded on a previous street
               let effectiveAction = lastAction;
               if (street === 'showdown' && !lastAction) {
-                const hasFolded = BETTING_STREETS.some(prevStreet => {
-                  const prevActions = seatActions[prevStreet]?.[seat];
-                  const prevArray = Array.isArray(prevActions) ? prevActions : (prevActions ? [prevActions] : []);
-                  return prevArray.some(a => isFoldAction(a));
-                });
+                // Check both formats for fold detection
+                const hasFolded = actionSequence.length > 0
+                  ? hasFoldedInSequence(actionSequence, seat)
+                  : BETTING_STREETS.some(prevStreet => {
+                      const prevActions = seatActions[prevStreet]?.[seat];
+                      const prevArray = Array.isArray(prevActions) ? prevActions : (prevActions ? [prevActions] : []);
+                      return prevArray.some(a => isFoldAction(a));
+                    });
                 if (hasFolded) {
                   effectiveAction = ACTIONS.FOLD;
                 }
@@ -134,6 +172,12 @@ ActionHistoryGrid.propTypes = {
   ACTION_ABBREV: PropTypes.object.isRequired,
   SEAT_STATUS: PropTypes.object.isRequired,
   seatActions: PropTypes.object.isRequired,
+  actionSequence: PropTypes.arrayOf(PropTypes.shape({
+    seat: PropTypes.number.isRequired,
+    action: PropTypes.string.isRequired,
+    street: PropTypes.string.isRequired,
+    order: PropTypes.number.isRequired,
+  })),
   allPlayerCards: PropTypes.object.isRequired,
   holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
   mySeat: PropTypes.number.isRequired,

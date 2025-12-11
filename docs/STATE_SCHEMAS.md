@@ -16,7 +16,8 @@ Manages poker game state: street, dealer position, actions.
   currentStreet: 'preflop',      // string: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown'
   dealerButtonSeat: 1,          // number: 1-9
   mySeat: 5,                    // number: 1-9
-  seatActions: {},              // object: { [street]: { [seat]: string[] } }
+  seatActions: {},              // object: { [street]: { [seat]: string[] } } (legacy format)
+  actionSequence: [],           // array: ordered action entries (v117+)
   absentSeats: []               // number[]: array of seat numbers (1-9)
 }
 ```
@@ -33,7 +34,7 @@ export const GAME_STATE_SCHEMA = {
 };
 ```
 
-### seatActions Structure
+### seatActions Structure (Legacy)
 
 Actions are always stored as arrays (normalized on database load):
 
@@ -50,6 +51,26 @@ seatActions: {
   }
 }
 ```
+
+### actionSequence Structure (v117+)
+
+Ordered list of primitive actions with full context:
+
+```javascript
+actionSequence: [
+  { seat: 5, action: 'raise', street: 'preflop', order: 1 },  // Open raise
+  { seat: 3, action: 'call',  street: 'preflop', order: 2 },  // Cold call
+  { seat: 1, action: 'fold',  street: 'preflop', order: 3 },  // Fold
+  { seat: 5, action: 'bet',   street: 'flop',    order: 4 },  // C-bet
+  { seat: 3, action: 'call',  street: 'flop',    order: 5 },  // Call c-bet
+]
+```
+
+**Action Entry Schema:**
+- `seat` (number): Player seat 1-9
+- `action` (string): Primitive action - 'check' | 'bet' | 'call' | 'raise' | 'fold'
+- `street` (string): When action occurred - 'preflop' | 'flop' | 'turn' | 'river'
+- `order` (number): Global action sequence (1-indexed, continuous across streets)
 
 ### Actions
 
@@ -68,6 +89,9 @@ seatActions: {
 | `RESET_HAND` | - | Reset for new hand (keep dealer) |
 | `NEXT_HAND` | - | Reset and advance dealer |
 | `HYDRATE_STATE` | `object` | Restore state from saved data |
+| `RECORD_PRIMITIVE_ACTION` | `{ seat: number, action: string }` | Record primitive action to sequence |
+| `UNDO_SEQUENCE_ACTION` | - | Remove last action from sequence |
+| `CLEAR_SEQUENCE` | - | Clear entire action sequence |
 
 ---
 

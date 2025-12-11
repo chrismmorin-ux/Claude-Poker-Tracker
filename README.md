@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v116** (Error Reporting System)
+Current: **v117** (Architecture Health Phase 5: Migration & Integration)
 
 See `docs/CHANGELOG.md` for full version history.
 
@@ -90,7 +90,7 @@ See `docs/CHANGELOG.md` for full version history.
 
 - **Context API**: 5 context providers reduce prop drilling
 - **State Management**: 5 useReducer hooks (game, UI, card, session, player)
-- **Persistence**: IndexedDB with migration support (v1→v5)
+- **Persistence**: IndexedDB with migration support (v1→v8)
 - **Testing**: 2,199 tests with ~90% coverage
 - **Error Handling**: Structured error codes (E1xx-E4xx) with boundaries
 - **Custom Hooks**: 12 hooks encapsulate component logic
