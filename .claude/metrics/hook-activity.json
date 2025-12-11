@@ -1,0 +1,99 @@
+{
+  "lastUpdated": "2025-12-11T00:00:00Z",
+  "trackingPeriod": {
+    "start": "2025-11-11T00:00:00Z",
+    "end": "2025-12-11T00:00:00Z",
+    "days": 30
+  },
+  "hooks": {
+    "test-gate-enforcer.cjs": {
+      "triggerPoint": "PreToolUse",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    },
+    "delegation-check-pre.cjs": {
+      "triggerPoint": "PreToolUse",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    },
+    "token-budget-warning.cjs": {
+      "triggerPoint": "PostToolUse",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    },
+    "index-first-check.cjs": {
+      "triggerPoint": "PreToolUse",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    },
+    "docs-sync.cjs": {
+      "triggerPoint": "PostToolUse",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    },
+    "context-stale-check.cjs": {
+      "triggerPoint": "UserPromptSubmit",
+      "firingCount": 0,
+      "adviceGivenCount": 0,
+      "adviceFollowedCount": 0,
+      "adoptionRate": 0.0,
+      "estimatedTokensSaved": 0,
+      "estimatedOverhead": 0,
+      "roi": 0.0,
+      "cryingWolf": false,
+      "effectiveness": "unknown"
+    }
+  },
+  "aggregateMetrics": {
+    "totalFirings": 0,
+    "totalAdviceGiven": 0,
+    "totalAdviceFollowed": 0,
+    "overallAdoptionRate": 0.0,
+    "totalTokensSaved": 0,
+    "totalOverhead": 0,
+    "overallROI": 0.0
+  },
+  "insights": {
+    "highestROIHooks": [],
+    "lowestROIHooks": [],
+    "cryingWolfHooks": [],
+    "underutilizedHooks": [],
+    "consolidationOpportunities": []
+  },
+  "recommendations": []
+}

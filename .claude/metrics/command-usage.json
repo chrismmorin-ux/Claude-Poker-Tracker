@@ -1,0 +1,150 @@
+{
+  "lastUpdated": "2025-12-11T00:00:00Z",
+  "trackingPeriod": {
+    "start": "2025-11-11T00:00:00Z",
+    "end": "2025-12-11T00:00:00Z",
+    "days": 30
+  },
+  "commands": {
+    "/process-system-audit": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/process-maturity": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/local": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/local-code": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/local-refactor": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/local-test": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/local-doc": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/route": {
+      "invocations": 0,
+      "lastUsed": null,
+      "recommendationsFollowed": 0,
+      "recommendationsMade": 0,
+      "adoptionRate": 0.0
+    },
+    "/review": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/gen-tests": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/audit-component": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/backlog": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/project": {
+      "invocations": 0,
+      "lastUsed": null,
+      "subcommands": {
+        "start": 0,
+        "status": 0,
+        "complete": 0,
+        "phase-complete": 0,
+        "list": 0
+      }
+    },
+    "/cto-review": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/cto-debt": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/cto-decompose": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/process-audit": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/process-review": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/process-fix": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/process-slim": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    },
+    "/efficiency-analysis": {
+      "invocations": 0,
+      "lastUsed": null,
+      "avgSuccessRate": 0.0,
+      "userSatisfactionImplied": "unknown"
+    }
+  },
+  "insights": {
+    "mostUsedCommands": [],
+    "leastUsedCommands": [],
+    "redundantCommands": [],
+    "chainingOpportunities": [],
+    "confusionPatterns": []
+  },
+  "recommendations": []
+}

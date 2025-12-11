@@ -1,0 +1,85 @@
+{
+  "lastUpdated": "2025-12-11T00:00:00Z",
+  "models": {
+    "deepseek": {
+      "tasksAttempted": 0,
+      "tasksSucceeded": 0,
+      "firstPassRate": 0.0,
+      "avgTokensUsed": 0,
+      "totalTokensUsed": 0,
+      "taskTypes": {
+        "simple_utility": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        },
+        "simple_component": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        },
+        "refactor": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        }
+      },
+      "commonFailures": [],
+      "recommendation": "Insufficient data"
+    },
+    "qwen": {
+      "tasksAttempted": 0,
+      "tasksSucceeded": 0,
+      "firstPassRate": 0.0,
+      "avgTokensUsed": 0,
+      "totalTokensUsed": 0,
+      "taskTypes": {
+        "simple_utility": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        },
+        "simple_component": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        },
+        "refactor": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        }
+      },
+      "commonFailures": [],
+      "recommendation": "Insufficient data"
+    },
+    "claude": {
+      "tasksAttempted": 0,
+      "tasksSucceeded": 0,
+      "firstPassRate": 0.0,
+      "avgTokensUsed": 0,
+      "totalTokensUsed": 0,
+      "taskTypes": {
+        "complex": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        },
+        "claude_required": {
+          "attempted": 0,
+          "succeeded": 0,
+          "firstPassRate": 0.0
+        }
+      },
+      "commonFailures": [],
+      "recommendation": "Primary model for complex tasks"
+    }
+  },
+  "comparisonMetrics": {
+    "bestForUtilities": "insufficient_data",
+    "bestForComponents": "insufficient_data",
+    "bestForRefactoring": "insufficient_data",
+    "mostTokenEfficient": "insufficient_data",
+    "highestQuality": "insufficient_data"
+  }
+}
