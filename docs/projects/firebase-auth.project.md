@@ -1,9 +1,11 @@
 ---
 id: firebase-auth
 name: Firebase Authentication System
-status: pending
+status: paused
 priority: P2
 created: 2025-12-10
+paused: 2025-12-10
+paused_reason: Phase 5 completed via Architecture Health project (IndexedDB v7 userId). Phase 6 deferred until cloud sync needed.
 ---
 
 # Project: Firebase Authentication System
@@ -54,8 +56,8 @@ Files to read before starting work:
 | 2 | [x] | Auth State Management (Reducer + Context) |
 | 3 | [x] | Authentication Views (Login, Signup, Reset) |
 | 4 | [x] | Account Management in Settings |
-| 5 | [ ] | Data Isolation (userId in IndexedDB) |
-| 6 | [ ] | Integration & Testing |
+| 5 | [x] | Data Isolation (userId in IndexedDB) - Completed via Architecture Health |
+| 6 | [ ] | Integration & Testing - DEFERRED until cloud sync |
 
 ---
 
@@ -589,7 +591,7 @@ Add Account section to SettingsView for profile display, password change, and lo
 
 ---
 
-## Phase 5: Data Isolation (userId in IndexedDB) ← CURRENT
+## Phase 5: Data Isolation (userId in IndexedDB) [x] COMPLETE (via Architecture Health)
 
 ### Goal
 Add userId field to all IndexedDB records for data isolation between users.

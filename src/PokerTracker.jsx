@@ -129,7 +129,7 @@ const PokerTrackerWireframes = () => {
       clearAllSeatAssignments
     },
     // Toast functions
-    toast: { toasts, dismissToast, showError, showSuccess, showWarning }
+    toast: { toasts, dismissToast, showError, showSuccess, showWarning, showInfo }
   } = useAppState();
 
   // Local UI state (scale)
@@ -731,6 +731,10 @@ const PokerTrackerWireframes = () => {
             // Local UI state from parent
             setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
             setAutoOpenNewSession={setAutoOpenNewSession}
+            // Toast notifications
+            showSuccess={showSuccess}
+            showWarning={showWarning}
+            showInfo={showInfo}
           />
         </ViewErrorBoundary>
       </>
@@ -752,6 +756,8 @@ const PokerTrackerWireframes = () => {
           dispatchSession={dispatchSession}
           STREETS={STREETS}
           showError={showError}
+          showSuccess={showSuccess}
+          showInfo={showInfo}
           currentSessionId={sessionState.currentSession?.sessionId}
           />
         </ViewErrorBoundary>
@@ -779,6 +785,8 @@ const PokerTrackerWireframes = () => {
           autoOpenNewSession={autoOpenNewSession}
           setAutoOpenNewSession={setAutoOpenNewSession}
           resetTableState={resetHand}
+          showSuccess={showSuccess}
+          showError={showError}
           />
         </ViewErrorBoundary>
       </>
@@ -808,6 +816,7 @@ const PokerTrackerWireframes = () => {
           pendingSeatForPlayerAssignment={pendingSeatForPlayerAssignment}
           setPendingSeatForPlayerAssignment={setPendingSeatForPlayerAssignment}
           showError={showError}
+          showSuccess={showSuccess}
           />
         </ViewErrorBoundary>
       </>

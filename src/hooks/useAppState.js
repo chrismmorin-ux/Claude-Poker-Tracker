@@ -95,7 +95,7 @@ export const useAppState = () => {
   // TOAST NOTIFICATIONS
   // =========================================================================
 
-  const { toasts, dismissToast, showError, showSuccess, showWarning } = useToast();
+  const { toasts, dismissToast, showError, showSuccess, showWarning, showInfo } = useToast();
 
   // =========================================================================
   // RETURN
@@ -166,7 +166,8 @@ export const useAppState = () => {
       dismissToast,
       showError,
       showSuccess,
-      showWarning
+      showWarning,
+      showInfo
     }
   };
 };

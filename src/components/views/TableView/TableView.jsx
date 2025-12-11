@@ -66,6 +66,10 @@ export const TableView = ({
   // Local UI state from parent
   setPendingSeatForPlayerAssignment,
   setAutoOpenNewSession,
+  // Toast notifications
+  showSuccess,
+  showWarning,
+  showInfo,
 }) => {
   // Get state and handlers from contexts
   const {
@@ -151,6 +155,18 @@ export const TableView = ({
     setCurrentScreen(SCREEN.SESSIONS);
   };
 
+  // Wrapped handlers with toast notifications
+  const handleNextHandWithToast = () => {
+    nextHand();
+    const nextHandNumber = (currentSession?.handCount || 0) + 2; // +1 for increment, +1 for display
+    showInfo(`Hand #${nextHandNumber} started`);
+  };
+
+  const handleResetHandWithToast = () => {
+    resetHand();
+    showWarning('Hand reset');
+  };
+
   const handleStreetChange = (street) => {
     setCurrentStreet(street);
     if (street === 'showdown') {
@@ -172,6 +188,7 @@ export const TableView = ({
   const handleAssignPlayer = (seat, playerId) => {
     assignPlayerToSeat(seat, playerId);
     setContextMenu(null);
+    showSuccess(`Player assigned to seat ${seat}`);
   };
 
   const handleClearPlayer = (seat) => {
@@ -233,8 +250,8 @@ export const TableView = ({
             isSidebarCollapsed={isSidebarCollapsed}
             onEndSession={handleEndSession}
             onNewSession={handleNewSession}
-            onNextHand={nextHand}
-            onResetHand={resetHand}
+            onNextHand={handleNextHandWithToast}
+            onResetHand={handleResetHandWithToast}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
@@ -388,4 +405,9 @@ TableView.propTypes = {
   // Local UI state from parent
   setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
   setAutoOpenNewSession: PropTypes.func.isRequired,
+
+  // Toast notifications
+  showSuccess: PropTypes.func.isRequired,
+  showWarning: PropTypes.func.isRequired,
+  showInfo: PropTypes.func.isRequired,
 };

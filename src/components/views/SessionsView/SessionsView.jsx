@@ -35,7 +35,9 @@ export const SessionsView = ({
   SCREEN,
   autoOpenNewSession,
   setAutoOpenNewSession,
-  resetTableState
+  resetTableState,
+  showSuccess,
+  showError
 }) => {
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
@@ -97,8 +99,10 @@ export const SessionsView = ({
       setSessions(sorted);
       setShowCashOutModal(false);
       setCashOutAmount('');
+      showSuccess('Session ended');
     } catch (error) {
       console.error('Failed to end session:', error);
+      showError('Failed to end session');
     }
   };
 
@@ -111,8 +115,10 @@ export const SessionsView = ({
       const allSessions = await loadAllSessions();
       const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
       setSessions(sorted);
+      showSuccess('Session deleted');
     } catch (error) {
       console.error('Failed to delete session:', error);
+      showError('Failed to delete session');
     }
   };
 
@@ -120,9 +126,11 @@ export const SessionsView = ({
   const handleExport = async () => {
     try {
       await downloadBackup();
+      showSuccess('Backup exported');
       setImportStatus({ success: true, message: 'Backup downloaded successfully!' });
       setTimeout(() => setImportStatus(null), 3000);
     } catch (error) {
+      showError('Export failed');
       setImportStatus({ success: false, message: 'Failed to export data: ' + error.message });
     }
   };
@@ -158,6 +166,7 @@ export const SessionsView = ({
       const result = await importAllData(importData);
 
       if (result.success) {
+        showSuccess(`Imported ${result.counts.hands} hands, ${result.counts.sessions} sessions, ${result.counts.players} players`);
         setImportStatus({
           success: true,
           message: `Imported ${result.counts.hands} hands, ${result.counts.sessions} sessions, ${result.counts.players} players`
@@ -166,9 +175,11 @@ export const SessionsView = ({
         const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
         setSessions(sorted);
       } else {
+        showError('Import completed with errors');
         setImportStatus({ success: false, message: 'Import completed with errors: ' + result.errors.join(', ') });
       }
     } catch (error) {
+      showError('Import failed');
       setImportStatus({ success: false, message: 'Import failed: ' + error.message });
     }
 
@@ -372,4 +383,6 @@ SessionsView.propTypes = {
   autoOpenNewSession: PropTypes.bool,
   setAutoOpenNewSession: PropTypes.func.isRequired,
   resetTableState: PropTypes.func,
+  showSuccess: PropTypes.func.isRequired,
+  showError: PropTypes.func.isRequired,
 };

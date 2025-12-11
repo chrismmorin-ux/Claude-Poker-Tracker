@@ -41,7 +41,7 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| MVP UI Polish | Planning | 0/4 complete | `docs/projects/mvp-polish.project.md` |
+| MVP UI Polish | Complete | 4/4 complete | `docs/projects/mvp-polish.project.md` |
 
 ---
 
@@ -128,44 +128,47 @@ Projects that need `/project start` before beginning.
 │ 2. P0    │ MVP Critical Fixes               │ ✅ COMPLETE       │
 │ 3. P1    │ Settings System                  │ ✅ COMPLETE (v115)│
 │ 4. P2    │ Error Reporting                  │ ✅ COMPLETE (v116)│
-│ 5. P2    │ Firebase Authentication          │ PAUSED 4/6        │
-│ 6. P2    │ MVP UI Polish                    │ ◀ NEXT UP         │
+│ 5. P2    │ MVP UI Polish                    │ ✅ COMPLETE       │
+│ 6. P2    │ Firebase Authentication          │ ◀ RESUME (5/6)    │
 │ 7. P3    │ Firebase Cloud Sync              │ Post-MVP          │
 │ 8. P3    │ Player Tendencies Analytics      │ Post-Arch Health  │
 │ 9. P4    │ Range Analysis Tools             │ Post-Arch Health  │
 │ 10.P4    │ TypeScript Migration             │ Optional          │
 └──────────┴──────────────────────────────────┴───────────────────┘
 
-Current: MVP UI Polish is next up
-Note: Firebase Auth paused - Data Isolation merged into Arch Health Phase 1
+Current: MVP UI Polish complete! Can resume Firebase Auth or move to analytics
+Note: Firebase Auth paused at Phase 5/6 - Phase 6 (Integration & Testing) remaining
 ```
 
 ### Active Projects
 
-#### MVP UI Polish (NEXT UP)
-- **ID**: mvp-polish
-- **Priority**: P2
-- **Status**: ◀ NEXT UP
-- **File**: `docs/projects/mvp-polish.project.md`
-- **Description**: Toast review, error message polish, UI animations, destructive action confirmations
-- **Phases**: 4 planned
-- **Blocked By**: None
+None - all MVP projects complete!
 
 ### MVP Phase Projects
 
 #### Firebase Authentication (PAUSED)
 - **ID**: firebase-auth
 - **Priority**: P2
-- **Status**: PAUSED (Phase 5 merged into Architecture Health)
+- **Status**: PAUSED (5/6 phases complete)
 - **File**: `docs/projects/firebase-auth.project.md`
 - **Description**: Optional Firebase Auth with email/password + Google OAuth, guest mode preserved
-- **Phases**: 4/6 complete
+- **Phases**: 5/6 complete
 - **Completed Phases**:
   - Phase 1: Firebase Infrastructure Setup
   - Phase 2: Auth State Management (Reducer + Context)
   - Phase 3: Authentication Views (Login, Signup, Reset)
   - Phase 4: Account Management in Settings
-- **Remaining**: Phase 5 (Data Isolation - now in Arch Health), Phase 6 (Polish)
+  - Phase 5: Data Isolation (via Architecture Health - IndexedDB v7/v8 userId)
+- **Remaining**: Phase 6 (Integration & Testing) - deferred until cloud sync needed
+
+#### MVP UI Polish (COMPLETE)
+- **ID**: mvp-polish
+- **Priority**: P2
+- **Status**: ✅ Complete (2025-12-11)
+- **File**: `docs/projects/mvp-polish.project.md`
+- **Description**: Toast review, error message polish, UI animations, destructive action confirmations
+- **Phases**: 4/4 complete
+- **Result**: All views have toast feedback, error messages polished, destructive actions have confirmations
 
 #### Settings System (COMPLETE)
 - **ID**: settings-system
@@ -291,9 +294,13 @@ Local models append completion updates here. Claude processes these on next sess
 ### Completed Projects
 | Project | Completed | Phases | Archive |
 |---------|-----------|--------|---------|
-| MVP Critical Fixes | 2025-12-09 | 2/2 | `docs/projects/mvp-critical-fixes.project.md` |
-| Audit Fix Implementation | 2025-12-09 | 3/3 | `docs/projects/audit-fix-implementation.project.md` |
-| Core System Audit | 2025-12-09 | 5/5 | `docs/projects/core-system-audit.project.md` |
+| Local Model Orchestration | 2025-12-11 | 6/6 | `docs/archive/local-model-orchestration.project.md` |
+| Architecture Health | 2025-12-10 | 5/5 | `docs/archive/architecture-health.project.md` |
+| Error Reporting | 2025-12-10 | 3/3 | `docs/archive/error-reporting.project.md` |
+| Settings System | 2025-12-09 | 3/3 | `docs/archive/settings-system.project.md` |
+| MVP Critical Fixes | 2025-12-09 | 2/2 | `docs/archive/mvp-critical-fixes.project.md` |
+| Audit Fix Implementation | 2025-12-09 | 3/3 | `docs/archive/audit-fix-implementation.project.md` |
+| Core System Audit | 2025-12-09 | 5/5 | `docs/archive/core-system-audit.project.md` |
 | Comprehensive Refactoring v114 | 2025-12-09 | 4/5 | `docs/archive/comprehensive-refactoring-v114.project.md` |
 | Test Coverage | 2025-12-09 | 13/13 | `docs/archive/test-coverage.project.md` |
 | Debug Infrastructure | 2025-12-07 | 8/8 | `docs/archive/debug-infrastructure.project.md` |

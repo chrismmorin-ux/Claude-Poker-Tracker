@@ -89,10 +89,13 @@ export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => 
       setErrorCount(0);
       setShowClearErrorsConfirm(false);
       setExpandedErrorId(null);
+      if (showSuccess) {
+        showSuccess('Error log cleared');
+      }
     } else {
       setShowClearErrorsConfirm(true);
     }
-  }, [showClearErrorsConfirm]);
+  }, [showClearErrorsConfirm, showSuccess]);
 
   // Bug report state
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
@@ -176,6 +179,9 @@ export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => 
     if (showResetConfirm) {
       resetSettings();
       setShowResetConfirm(false);
+      if (showWarning) {
+        showWarning('Settings reset to defaults');
+      }
     } else {
       setShowResetConfirm(true);
     }

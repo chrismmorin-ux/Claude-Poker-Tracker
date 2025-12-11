@@ -29,6 +29,8 @@ export const HistoryView = ({
   dispatchSession,
   STREETS,
   showError,
+  showSuccess,
+  showInfo,
   currentSessionId
 }) => {
   const [hands, setHands] = useState([]);
@@ -172,6 +174,9 @@ export const HistoryView = ({
 
       // Reload hand list
       await loadHands();
+      if (showSuccess) {
+        showSuccess('Hand deleted');
+      }
     } catch (error) {
       console.error('[HistoryView] Failed to delete hand:', error);
       showError('Failed to delete hand. Please try again.');
@@ -197,6 +202,9 @@ export const HistoryView = ({
 
       // Reload hand list
       await loadHands();
+      if (showSuccess) {
+        showSuccess('History cleared');
+      }
     } catch (error) {
       console.error('[HistoryView] Failed to clear hands:', error);
       showError('Failed to clear hands. Please try again.');

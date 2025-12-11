@@ -49,7 +49,8 @@ export const PlayersView = ({
   pendingSeatForPlayerAssignment,
   setPendingSeatForPlayerAssignment,
   scale = 1,
-  showError
+  showError,
+  showSuccess
 }) => {
   // Player filtering hook
   const {
@@ -113,6 +114,7 @@ export const PlayersView = ({
       const playerId = await createNewPlayer(playerData);
       setShowNewPlayerModal(false);
       setLastCreatedPlayerId(playerId);
+      showSuccess('Player created');
 
       // If a seat is selected, assign the new player to it
       if (selectedSeat) {
@@ -272,6 +274,7 @@ export const PlayersView = ({
     try {
       await updatePlayerById(editingPlayer.playerId, playerData);
       setEditingPlayer(null);
+      showSuccess('Player updated');
     } catch (error) {
       showError(`Failed to update player: ${error.message}`);
     }
@@ -281,6 +284,7 @@ export const PlayersView = ({
     try {
       await deletePlayerById(deletingPlayer.playerId);
       setDeletingPlayer(null);
+      showSuccess('Player deleted');
     } catch (error) {
       showError(`Failed to delete player: ${error.message}`);
     }
