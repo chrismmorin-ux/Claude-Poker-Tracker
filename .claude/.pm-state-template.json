@@ -1,0 +1,32 @@
+{
+  "sessionId": "",
+  "startTime": "",
+  "tokenBudget": {
+    "total": 30000,
+    "used": 0,
+    "remaining": 30000,
+    "percentUsed": 0,
+    "warningThreshold": 24000,
+    "blockThreshold": 28000,
+    "status": "normal"
+  },
+  "delegation": {
+    "tasksSeen": 0,
+    "tasksDelegated": 0,
+    "tasksBlocked": 0,
+    "tasksBypassedWithTag": 0,
+    "complianceRate": 0.0
+  },
+  "filesModified": [],
+  "currentProject": null,
+  "currentPhase": null,
+  "enterPlanModeUsed": false,
+  "warnings": [],
+  "blocks": [],
+  "overrides": [],
+  "lastToolUse": {
+    "tool": null,
+    "timestamp": null,
+    "result": null
+  }
+}
