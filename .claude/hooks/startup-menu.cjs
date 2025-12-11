@@ -15,14 +15,15 @@ const BACKLOG_PATH = path.join(__dirname, '..', 'BACKLOG.md');
 const STATE_FILE = path.join(__dirname, '..', '.startup-menu-shown.json');
 
 function shouldShowMenu() {
-  // Show once per session (2 hour window)
+  // Show on first prompt of each session
+  // Check if this is the first prompt by looking at session state
   try {
     const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-    const lastShown = new Date(state.lastShown);
-    const now = new Date();
-    const hoursSince = (now - lastShown) / (1000 * 60 * 60);
-
-    return hoursSince >= 2;
+    // If already shown this session, skip
+    if (state.sessionId === process.env.CLAUDE_SESSION_ID) {
+      return false;
+    }
+    return true;
   } catch {
     return true; // No state file, show menu
   }
@@ -30,7 +31,8 @@ function shouldShowMenu() {
 
 function markShown() {
   fs.writeFileSync(STATE_FILE, JSON.stringify({
-    lastShown: new Date().toISOString()
+    lastShown: new Date().toISOString(),
+    sessionId: process.env.CLAUDE_SESSION_ID || 'unknown'
   }));
 }
 
