@@ -6,6 +6,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node .claude/hooks/budget-check.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/project-status.cjs"
           },
           {

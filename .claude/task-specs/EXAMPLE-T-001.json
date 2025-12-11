@@ -1,0 +1,24 @@
+{
+  "$schema": "../schemas/task-spec.schema.json",
+  "task_id": "T-001",
+  "created": "2025-12-10T10:00:00Z",
+  "model": "deepseek",
+  "description": "Create utility function to format currency values. Accept cents (integer), return formatted string with $ prefix. Handle negative values with parentheses notation.",
+  "output_file": "src/utils/formatCurrency.js",
+  "context_files": [
+    "src/utils/formatters.js"
+  ],
+  "constraints": [
+    "Use named export: export const formatCurrency",
+    "Accept cents (integer), return string with $ prefix",
+    "Handle negative values with parentheses: ($5.00)",
+    "No external dependencies",
+    "Include JSDoc with @param and @returns",
+    "Use static Tailwind classes only, no template literals"
+  ],
+  "test_command": "npx vitest run src/utils/__tests__/formatCurrency.test.js --reporter=dot",
+  "language": "javascript",
+  "max_lines": 25,
+  "retry_on_fail": true,
+  "fallback_to_claude": true
+}

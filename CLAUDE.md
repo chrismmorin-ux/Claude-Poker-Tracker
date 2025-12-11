@@ -1,5 +1,40 @@
 # CLAUDE.md - Project Context for Claude Code
 
+## TOKEN OPTIMIZATION RULES (MANDATORY)
+
+### Session Budget
+- **Budget**: 30,000 tokens/session (aggressive)
+- **Warning**: 24,000 tokens (80%)
+- **Block**: 30,000 tokens (requires permission)
+
+### Before ANY Code Task
+1. **Check Index First**: Read `.claude/index/SYMBOLS.md` before searching
+2. **Scan Before Drill**: Use Grep/Glob BEFORE Read tool
+3. **Local Model First**: Classify with `bash scripts/task-classifier.sh "description"`
+   - If `simple_utility`, `simple_component`, or `refactor` → Delegate to local model
+   - Create task spec: `.claude/task-specs/T-XXX.json`
+   - Execute: `bash scripts/execute-local-task.sh .claude/task-specs/T-XXX.json`
+   - Only implement directly if task fails twice or is `claude_required`
+
+### Context Hierarchy (Use in Order)
+1. `.claude/index/*.md` - File/symbol lookups (~800 tokens total)
+2. `.claude/context/*.md` - Domain summaries (~2000 tokens total)
+3. Source files - Only after above exhausted
+
+### Exploration Protocol: Scan Then Drill
+```
+SCAN FIRST: Grep/Glob to find files (no Read)
+THEN DRILL: Read only matched files, only relevant sections
+NEVER: Read full large files without scanning first
+```
+
+### Batch Operations
+- Group similar tasks before decomposition
+- Use parallel tool calls for independent operations
+- Prefer one agent with multiple questions over multiple agents
+
+---
+
 ## Project Overview
 Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 

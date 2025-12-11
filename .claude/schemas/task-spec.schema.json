@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "task-spec.schema.json",
+  "title": "Local Model Task Specification",
+  "description": "Schema for tasks delegated to local models (DeepSeek/Qwen)",
+  "type": "object",
+  "required": ["task_id", "model", "description", "output_file"],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier (e.g., T-001)",
+      "pattern": "^T-[0-9]{3,}$"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of task creation"
+    },
+    "model": {
+      "type": "string",
+      "enum": ["deepseek", "qwen", "auto"],
+      "description": "Which local model to use",
+      "default": "deepseek"
+    },
+    "description": {
+      "type": "string",
+      "description": "Clear, specific task description",
+      "minLength": 10,
+      "maxLength": 500
+    },
+    "output_file": {
+      "type": "string",
+      "description": "Relative path to output file from project root",
+      "pattern": "^src/.*\\.(js|jsx|ts|tsx)$"
+    },
+    "context_files": {
+      "type": "array",
+      "description": "List of files to provide as context",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "default": []
+    },
+    "constraints": {
+      "type": "array",
+      "description": "Specific requirements the code must follow",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "test_command": {
+      "type": "string",
+      "description": "Command to run tests (optional)",
+      "default": ""
+    },
+    "language": {
+      "type": "string",
+      "enum": ["javascript", "typescript", "jsx", "tsx"],
+      "default": "javascript"
+    },
+    "max_lines": {
+      "type": "integer",
+      "description": "Maximum lines of code expected",
+      "minimum": 10,
+      "maximum": 200,
+      "default": 80
+    },
+    "retry_on_fail": {
+      "type": "boolean",
+      "description": "Whether to retry if first attempt fails",
+      "default": true
+    },
+    "fallback_to_claude": {
+      "type": "boolean",
+      "description": "Whether to recommend Claude if local model fails",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

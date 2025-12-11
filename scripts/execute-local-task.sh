@@ -299,18 +299,47 @@ fi
 LINES_WRITTEN=$(wc -l < "$FULL_OUTPUT_PATH")
 log_success "File created: $OUTPUT_FILE ($LINES_WRITTEN lines)"
 
+# Validate syntax (Node.js check)
+log_info "Validating syntax..."
+if node --check "$FULL_OUTPUT_PATH" 2>/dev/null; then
+    log_success "Syntax validation passed"
+else
+    log_warn "Syntax validation failed - attempting ESLint fix..."
+    if command -v npx &> /dev/null; then
+        npx eslint --fix "$FULL_OUTPUT_PATH" 2>/dev/null || true
+        if node --check "$FULL_OUTPUT_PATH" 2>/dev/null; then
+            log_success "Syntax fixed by ESLint"
+        else
+            log_warn "Syntax still invalid after ESLint - file may need manual fixes"
+        fi
+    fi
+fi
+
 # Run test if specified
+TEST_PASSED="unknown"
 if [ -n "$TEST_CMD" ]; then
     log_info "Running test: $TEST_CMD"
     cd "$PROJECT_ROOT"
 
-    if eval "$TEST_CMD" > /dev/null 2>&1; then
+    if eval "$TEST_CMD" 2>&1 | tail -5; then
         log_success "Tests passed"
+        TEST_PASSED="true"
     else
         log_warn "Tests failed - file created but may need fixes"
+        TEST_PASSED="false"
     fi
 fi
 
+# Log to metrics
+METRICS_DIR="$PROJECT_ROOT/.claude/metrics"
+mkdir -p "$METRICS_DIR"
+TIMESTAMP=$(date -Iseconds 2>/dev/null || date +%Y-%m-%dT%H:%M:%S)
+echo "[$TIMESTAMP] SUCCESS | Task: $TASK_ID | Model: $MODEL | File: $OUTPUT_FILE | Lines: $LINES_WRITTEN | Tests: $TEST_PASSED" >> "$METRICS_DIR/local-model-tasks.log"
+
 # Output success result
 log_success "Task $TASK_ID completed successfully"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Estimated tokens saved: ~1,500"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 output_result "success" "$OUTPUT_FILE" "" "$BACKUP_FILE"
