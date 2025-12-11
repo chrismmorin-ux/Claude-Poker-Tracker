@@ -88,7 +88,7 @@ When delegating, Claude outputs:
 ### P1 - High Priority
 | ID | Task | Owner | Est. Effort | Dependencies |
 |----|------|-------|-------------|--------------|
-| TOK-002 | Token Optimization Phase 2 - Budget Metrics Dashboard | Claude | 1hr | None |
+| - | None | - | - | - |
 
 ### P2 - Medium Priority
 | ID | Task | Owner | Est. Effort | Dependencies |
@@ -270,6 +270,13 @@ Local models append completion updates here. Claude processes these on next sess
 ---
 
 ## Completed (Archive)
+
+### 2025-12-10
+- [x] TOK-002: Token Optimization Phase 2 - Budget Metrics Dashboard
+  - Created `.claude/hooks/metrics-collector.cjs` (PostToolUse hook)
+  - Created `.claude/commands/metrics.md` (slash command)
+  - Updated `.claude/metrics/dashboard.md` with weekly rollup template
+  - Registered hook for all tools in settings.json
 
 ### 2025-12-09
 - [x] Create `.claude/context/` directory structure

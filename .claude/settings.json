@@ -126,6 +126,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/project-update.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
           }
         ]
       },
@@ -155,6 +159,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/project-update.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
           }
         ]
       },
@@ -176,6 +184,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/process-suggest.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
           }
         ]
       },
@@ -185,6 +197,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/efficiency-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
           }
         ]
       },
@@ -194,6 +210,28 @@
           {
             "type": "command",
             "command": "node .claude/hooks/efficiency-tracker.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
+          }
+        ]
+      },
+      {
+        "matcher": "Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/metrics-collector.cjs"
           }
         ]
       }
