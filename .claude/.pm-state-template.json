@@ -10,6 +10,18 @@
     "blockThreshold": 28000,
     "status": "normal"
   },
+  "tokensByPhase": {
+    "preparation": { "toolCalls": 0, "estimatedTokens": 0 },
+    "exploration": { "toolCalls": 0, "estimatedTokens": 0 },
+    "planning": { "toolCalls": 0, "estimatedTokens": 0 },
+    "research": { "toolCalls": 0, "estimatedTokens": 0 },
+    "file_reading": { "toolCalls": 0, "estimatedTokens": 0 },
+    "execution": { "toolCalls": 0, "estimatedTokens": 0 },
+    "testing": { "toolCalls": 0, "estimatedTokens": 0 },
+    "commits": { "toolCalls": 0, "estimatedTokens": 0 },
+    "other": { "toolCalls": 0, "estimatedTokens": 0 }
+  },
+  "phaseTransitions": [],
   "delegation": {
     "tasksSeen": 0,
     "tasksDelegated": 0,
@@ -28,5 +40,18 @@
     "tool": null,
     "timestamp": null,
     "result": null
+  },
+  "efficiencyMetrics": {
+    "iterationCount": 0,
+    "tokensPerFileModified": 0,
+    "preparationRatio": 0,
+    "planningROI": 0,
+    "avgTokensPerTurn": 0,
+    "contextResetCount": 0
+  },
+  "qualityIndicators": {
+    "iterationWarningIssued": false,
+    "lastResetTimestamp": null,
+    "degradationRisk": "low"
   }
 }

@@ -80,6 +80,71 @@ get_status_emoji() {
   esac
 }
 
+# Parse phase token data
+get_phase_tokens() {
+  local phase=$1
+  # Extract estimatedTokens for the phase
+  awk -v phase="$phase" '
+    /"'$phase'"/ {found=1}
+    found && /"estimatedTokens":/ {
+      match($0, /[0-9]+/)
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+  ' "$STATE_FILE" 2>/dev/null || echo "0"
+}
+
+get_phase_calls() {
+  local phase=$1
+  # Extract toolCalls for the phase
+  awk -v phase="$phase" '
+    /"'$phase'"/ {found=1}
+    found && /"toolCalls":/ {
+      match($0, /[0-9]+/)
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+  ' "$STATE_FILE" 2>/dev/null || echo "0"
+}
+
+# Read phase data
+PREP_TOKENS=$(get_phase_tokens "preparation")
+PREP_CALLS=$(get_phase_calls "preparation")
+EXPLORE_TOKENS=$(get_phase_tokens "exploration")
+EXPLORE_CALLS=$(get_phase_calls "exploration")
+PLAN_TOKENS=$(get_phase_tokens "planning")
+PLAN_CALLS=$(get_phase_calls "planning")
+RESEARCH_TOKENS=$(get_phase_tokens "research")
+RESEARCH_CALLS=$(get_phase_calls "research")
+FILEREAD_TOKENS=$(get_phase_tokens "file_reading")
+FILEREAD_CALLS=$(get_phase_calls "file_reading")
+EXEC_TOKENS=$(get_phase_tokens "execution")
+EXEC_CALLS=$(get_phase_calls "execution")
+TEST_TOKENS=$(get_phase_tokens "testing")
+TEST_CALLS=$(get_phase_calls "testing")
+COMMIT_TOKENS=$(get_phase_tokens "commits")
+COMMIT_CALLS=$(get_phase_calls "commits")
+OTHER_TOKENS=$(get_phase_tokens "other")
+OTHER_CALLS=$(get_phase_calls "other")
+
+# Calculate total estimated tokens from phases
+TOTAL_PHASE_TOKENS=$((PREP_TOKENS + EXPLORE_TOKENS + PLAN_TOKENS + RESEARCH_TOKENS + FILEREAD_TOKENS + EXEC_TOKENS + TEST_TOKENS + COMMIT_TOKENS + OTHER_TOKENS))
+
+# Build phase bar (16 chars max)
+build_phase_bar() {
+  local tokens=$1
+  local total=$2
+  if [ "$total" -eq 0 ]; then
+    printf "----------------"
+    return
+  fi
+  local percent=$((tokens * 100 / total))
+  local filled=$((percent * 16 / 100))
+  local empty=$((16 - filled))
+  printf "%${filled}s" | tr ' ' '#'
+  printf "%${empty}s" | tr ' ' '-'
+}
+
 # Output dashboard
 echo ""
 echo "================================================================"
@@ -93,6 +158,68 @@ echo "  Remaining: $TOKENS_REMAINING tokens"
 echo "  Warning at 24,000 | Block at 28,000"
 echo "  Status: $(get_status_emoji)"
 echo ""
+
+# Phase breakdown section
+echo "TOKEN USAGE BY PHASE"
+if [ "$TOTAL_PHASE_TOKENS" -gt 0 ]; then
+  # Calculate percentages
+  calc_pct() {
+    local val=$1
+    local total=$2
+    if [ "$total" -gt 0 ]; then
+      echo $((val * 100 / total))
+    else
+      echo "0"
+    fi
+  }
+
+  PREP_PCT=$(calc_pct $PREP_TOKENS $TOTAL_PHASE_TOKENS)
+  EXPLORE_PCT=$(calc_pct $EXPLORE_TOKENS $TOTAL_PHASE_TOKENS)
+  PLAN_PCT=$(calc_pct $PLAN_TOKENS $TOTAL_PHASE_TOKENS)
+  RESEARCH_PCT=$(calc_pct $RESEARCH_TOKENS $TOTAL_PHASE_TOKENS)
+  FILEREAD_PCT=$(calc_pct $FILEREAD_TOKENS $TOTAL_PHASE_TOKENS)
+  EXEC_PCT=$(calc_pct $EXEC_TOKENS $TOTAL_PHASE_TOKENS)
+  TEST_PCT=$(calc_pct $TEST_TOKENS $TOTAL_PHASE_TOKENS)
+  COMMIT_PCT=$(calc_pct $COMMIT_TOKENS $TOTAL_PHASE_TOKENS)
+  OTHER_PCT=$(calc_pct $OTHER_TOKENS $TOTAL_PHASE_TOKENS)
+
+  # Display phases with activity
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "preparation:" "$(build_phase_bar $PREP_TOKENS $TOTAL_PHASE_TOKENS)" "$PREP_TOKENS" "$PREP_PCT" "$PREP_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "exploration:" "$(build_phase_bar $EXPLORE_TOKENS $TOTAL_PHASE_TOKENS)" "$EXPLORE_TOKENS" "$EXPLORE_PCT" "$EXPLORE_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "planning:" "$(build_phase_bar $PLAN_TOKENS $TOTAL_PHASE_TOKENS)" "$PLAN_TOKENS" "$PLAN_PCT" "$PLAN_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "research:" "$(build_phase_bar $RESEARCH_TOKENS $TOTAL_PHASE_TOKENS)" "$RESEARCH_TOKENS" "$RESEARCH_PCT" "$RESEARCH_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "file_reading:" "$(build_phase_bar $FILEREAD_TOKENS $TOTAL_PHASE_TOKENS)" "$FILEREAD_TOKENS" "$FILEREAD_PCT" "$FILEREAD_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "execution:" "$(build_phase_bar $EXEC_TOKENS $TOTAL_PHASE_TOKENS)" "$EXEC_TOKENS" "$EXEC_PCT" "$EXEC_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "testing:" "$(build_phase_bar $TEST_TOKENS $TOTAL_PHASE_TOKENS)" "$TEST_TOKENS" "$TEST_PCT" "$TEST_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "commits:" "$(build_phase_bar $COMMIT_TOKENS $TOTAL_PHASE_TOKENS)" "$COMMIT_TOKENS" "$COMMIT_PCT" "$COMMIT_CALLS"
+  printf "  %-14s [%s] %6d tokens (%2d%%) - %d calls\n" "other:" "$(build_phase_bar $OTHER_TOKENS $TOTAL_PHASE_TOKENS)" "$OTHER_TOKENS" "$OTHER_PCT" "$OTHER_CALLS"
+  echo ""
+  echo "  Total estimated: $TOTAL_PHASE_TOKENS tokens"
+else
+  echo "  No phase data recorded yet"
+fi
+echo ""
+# Efficiency Metrics Section
+echo "EFFICIENCY METRICS"
+ITER_COUNT=$(get_json_number "iterationCount" "0")
+TOKENS_PER_FILE=$(get_json_number "tokensPerFileModified" "0")
+PREP_RATIO=$(get_json_number "preparationRatio" "0")
+PLANNING_ROI=$(get_json_number "planningROI" "0")
+DEGRADATION=$(get_json_value "degradationRisk" "low")
+
+printf "  Iterations:        %d" "$ITER_COUNT"
+if [ "$ITER_COUNT" -ge 20 ]; then
+  printf " [WARN: Consider /clear]"
+elif [ "$ITER_COUNT" -ge 15 ]; then
+  printf " [approaching limit]"
+fi
+echo ""
+printf "  Tokens/file:       %d\n" "$TOKENS_PER_FILE"
+printf "  Preparation ratio: %.2f\n" "$PREP_RATIO"
+printf "  Planning ROI:      %.2f\n" "$PLANNING_ROI"
+printf "  Quality risk:      %s\n" "$DEGRADATION"
+echo ""
+
 echo "DELEGATION COMPLIANCE"
 if [ "$TASKS_SEEN" -gt 0 ]; then
   DEL_PERCENT=$((TASKS_DELEGATED * 100 / TASKS_SEEN))
@@ -133,6 +260,21 @@ echo ""
 echo "RECOMMENDATIONS:"
 SUGGESTIONS=0
 
+# Iteration-based suggestions (research-backed 20-iteration rule)
+if [ "$ITER_COUNT" -ge 20 ]; then
+  echo "  20+ iterations: Quality degrades after 20 - use /clear for fresh context"
+  SUGGESTIONS=$((SUGGESTIONS + 1))
+elif [ "$ITER_COUNT" -ge 15 ]; then
+  echo "  Approaching iteration limit ($ITER_COUNT/20): Plan for context reset soon"
+  SUGGESTIONS=$((SUGGESTIONS + 1))
+fi
+
+# Efficiency ratio suggestions
+if [ "$TOKENS_PER_FILE" -gt 3000 ] 2>/dev/null; then
+  echo "  High tokens/file ($TOKENS_PER_FILE): Use grep to narrow before reading full files"
+  SUGGESTIONS=$((SUGGESTIONS + 1))
+fi
+
 # Token-based suggestions
 if [ "$PERCENT_USED" -ge 80 ]; then
   echo "  Token budget at $PERCENT_USED%: Consider wrapping up or delegating remaining tasks"
@@ -142,6 +284,39 @@ fi
 if [ "$PERCENT_USED" -ge 60 ] && [ "$PERCENT_USED" -lt 80 ]; then
   echo "  Token budget at $PERCENT_USED%: Delegate simple tasks to conserve tokens"
   SUGGESTIONS=$((SUGGESTIONS + 1))
+fi
+
+# Phase-based suggestions
+if [ "$TOTAL_PHASE_TOKENS" -gt 0 ]; then
+  # High file_reading warning
+  if [ "$FILEREAD_PCT" -gt 40 ]; then
+    echo "  High file_reading ($FILEREAD_PCT%): Use index files (.claude/index/) before source files"
+    SUGGESTIONS=$((SUGGESTIONS + 1))
+  fi
+
+  # Low preparation warning
+  if [ "$PREP_PCT" -lt 5 ] && [ "$FILEREAD_PCT" -gt 20 ]; then
+    echo "  Low preparation ($PREP_PCT%): Read context files first to reduce exploration"
+    SUGGESTIONS=$((SUGGESTIONS + 1))
+  fi
+
+  # High exploration warning
+  if [ "$EXPLORE_PCT" -gt 30 ]; then
+    echo "  High exploration ($EXPLORE_PCT%): Consider creating better index files"
+    SUGGESTIONS=$((SUGGESTIONS + 1))
+  fi
+
+  # Good planning feedback
+  if [ "$PLAN_PCT" -ge 10 ] && [ "$PLAN_PCT" -le 25 ]; then
+    echo "  Good planning investment ($PLAN_PCT%): Helps reduce execution rework"
+    SUGGESTIONS=$((SUGGESTIONS + 1))
+  fi
+
+  # Low testing warning
+  if [ "$EXEC_PCT" -gt 30 ] && [ "$TEST_PCT" -lt 5 ]; then
+    echo "  Low testing ($TEST_PCT%) with high execution ($EXEC_PCT%): Consider adding tests"
+    SUGGESTIONS=$((SUGGESTIONS + 1))
+  fi
 fi
 
 # Delegation suggestions

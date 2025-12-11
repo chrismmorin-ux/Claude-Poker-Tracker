@@ -19,7 +19,8 @@ const EDIT_STATE_FILE = path.join(process.cwd(), '.claude', '.last-edit.json');
 function isTestCommand(command) {
   return /npm\s+(test|run\s+test)/.test(command) ||
          /vitest/.test(command) ||
-         /npm\s+run\s+test:coverage/.test(command);
+         /npm\s+run\s+test:coverage/.test(command) ||
+         /smart-test-runner\.sh/.test(command);
 }
 
 function saveTestState(state) {
