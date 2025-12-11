@@ -16,13 +16,18 @@ const STATE_FILE = path.join(__dirname, '..', '.startup-menu-shown.json');
 
 function shouldShowMenu() {
   // Show on first prompt of each session
-  // Check if this is the first prompt by looking at session state
+  // Use CLAUDE_CONVERSATION_ID which is set per conversation
+  const conversationId = process.env.CLAUDE_CONVERSATION_ID || '';
+
   try {
     const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-    // If already shown this session, skip
-    if (state.sessionId === process.env.CLAUDE_SESSION_ID) {
-      return false;
+
+    // If we have a conversation ID, use it for deduplication
+    if (conversationId && state.conversationId === conversationId) {
+      return false; // Already shown this conversation
     }
+
+    // Fallback: if no conversation ID, always show (user can skip with option 6)
     return true;
   } catch {
     return true; // No state file, show menu
@@ -32,7 +37,7 @@ function shouldShowMenu() {
 function markShown() {
   fs.writeFileSync(STATE_FILE, JSON.stringify({
     lastShown: new Date().toISOString(),
-    sessionId: process.env.CLAUDE_SESSION_ID || 'unknown'
+    conversationId: process.env.CLAUDE_CONVERSATION_ID || 'unknown'
   }));
 }
 
@@ -182,12 +187,8 @@ function displayMenu() {
 }
 
 function main() {
-  if (!shouldShowMenu()) {
-    process.exit(0);
-  }
-
-  displayMenu();
-  markShown();
+  // Hook output goes to Claude, not terminal - disabled in favor of scripts/menu.cjs
+  // Run `node scripts/menu.cjs` manually to see the menu in your terminal
   process.exit(0);
 }
 

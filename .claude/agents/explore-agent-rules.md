@@ -1,3 +1,7 @@
+---
+name: explore-agent-rules
+---
+
 # Explore Agent Rules
 
 **Purpose**: Constrain Explore agents to minimize token usage while maintaining effectiveness.
