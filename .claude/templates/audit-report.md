@@ -29,5 +29,7 @@
 
 ---
 
+**File naming**: `{MMDD}.{sequence}-{type}.md` (e.g., `1211.001-cto-review.md`)
+
 **To review**: `/audit-review {AUDIT_ID}`
 **To dismiss**: `/audit-review {AUDIT_ID} --dismiss`

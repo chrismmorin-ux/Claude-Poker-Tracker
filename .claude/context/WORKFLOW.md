@@ -52,6 +52,10 @@ When using `EnterPlanMode`:
 
 **Files**: `.claude/audits/{pending,actioned,dismissed}/`, `registry.json`
 
+**File Naming**: `{MMDD}.{sequence}-{type}.md`
+- Example: `1211.001-cto-review.md` = Dec 11, 1st audit, CTO review
+- Sorts chronologically: 1211.001 < 1211.002 < 1212.001
+
 ## Local Model Delegation (MANDATORY)
 
 **User Mandate**: Local models do 80%+ of implementation. Claude plans, decomposes, and reviews.

@@ -16,13 +16,13 @@ Display all audits and their current status.
 ║                    AUDIT QUEUE STATUS                      ║
 ╠═══════════════════════════════════════════════════════════╣
 ║ PENDING (3):                                               ║
-║  ├─ AUD-015 [HIGH] Token optimization (2 days old)        ║
-║  ├─ AUD-016 [MED]  Process specialist review (1 day)      ║
-║  └─ AUD-017 [LOW]  Component audit (today)                ║
+║  ├─ 1211.015 [HIGH] Token optimization (2 days old)       ║
+║  ├─ 1211.016 [MED]  Process specialist review (1 day)     ║
+║  └─ 1212.001 [LOW]  Component audit (today)               ║
 ║                                                            ║
 ║ RECENTLY ACTIONED (2):                                     ║
-║  ├─ AUD-014 [HIGH] CTO review → TOK-003, TOK-004          ║
-║  └─ AUD-013 [MED]  Refactoring → REFACT-001               ║
+║  ├─ 1210.014 [HIGH] CTO review → TOK-003, TOK-004         ║
+║  └─ 1210.013 [MED]  Refactoring → REFACT-001              ║
 ║                                                            ║
 ║ STATS:                                                     ║
 ║  ├─ Pending: 3                                             ║
@@ -31,8 +31,13 @@ Display all audits and their current status.
 ║  └─ Avg time to action: 1.8 days                           ║
 ╚═══════════════════════════════════════════════════════════╝
 
-Commands: /audit-review --next | /audit-review AUD-015
+Commands: /audit-review --next | /audit-review 1211.015
 ```
+
+## File Naming
+Format: `{MMDD}.{sequence}-{type}.md`
+- `1211.001-cto-review.md` = Dec 11, 1st audit, CTO review
+- `1212.003-token-optimization.md` = Dec 12, 3rd audit, token optimization
 
 ## Integration
 - Startup menu shows pending count

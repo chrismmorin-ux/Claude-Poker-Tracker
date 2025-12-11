@@ -22,13 +22,14 @@ Review an audit and create actionable items.
 
 ## Example Flow
 ```
-> /audit-review AUD-003
+> /audit-review 1211.003
 
 ╔═══════════════════════════════════════════════════════════╗
-║  AUDIT: AUD-003 - Token optimization (HIGH)               ║
+║  AUDIT: 1211.003 - Token optimization (HIGH)              ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  Created: 2025-12-11                                      ║
 ║  Type: token-optimization                                 ║
+║  File: 1211.003-token-optimization.md                     ║
 ║                                                           ║
 ║  Summary: Session used 86k tokens vs 30k budget           ║
 ║                                                           ║
@@ -45,7 +46,7 @@ Created:
 - BACKLOG: TOK-004 "Add context file caching"
 - BACKLOG: TOK-005 "Reduce Explore agent scope"
 
-Audit AUD-003 marked as actioned.
+Audit 1211.003 marked as actioned.
 ```
 
 ## Linking

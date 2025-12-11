@@ -47,11 +47,17 @@
       "decision": "allowed",
       "classification": "claude_required",
       "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\startup-menu.cjs"
+    },
+    {
+      "timestamp": "2025-12-11T19:55:20.920Z",
+      "decision": "allowed",
+      "classification": "claude_required",
+      "filePath": "C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\hooks\\audit-auto-capture.cjs"
     }
   ],
   "summary": {
     "delegated": 0,
     "bypassed": 0,
-    "allowed": 8
+    "allowed": 9
   }
 }
