@@ -10,7 +10,8 @@ import PropTypes from 'prop-types';
 import { User, Mail, LogOut, Trash2, Key, Shield, Link2, Unlink } from 'lucide-react';
 import { useAuth } from '../../contexts';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
-import { AUTH_PROVIDERS } from '../../constants/authConstants';
+import { PasswordInput } from './PasswordInput';
+import { AUTH_PROVIDERS, MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
 
 export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowToast }) => {
   const {
@@ -35,6 +36,19 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Calculate password strength
+  const getPasswordStrength = (password) => {
+    if (!password) return { text: '', color: '' };
+    if (password.length < MIN_PASSWORD_LENGTH) return { text: 'Too short', color: 'text-red-500' };
+    if (password.length < 8) return { text: 'Weak', color: 'text-red-500' };
+    if (password.length < 12 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return { text: 'Medium', color: 'text-yellow-500' };
+    }
+    return { text: 'Strong', color: 'text-green-500' };
+  };
+
+  const passwordStrength = getPasswordStrength(newPassword);
 
   // Delete account modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -290,36 +304,41 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
           {showPasswordForm ? (
             <div className="space-y-3">
               <h4 className="text-sm font-medium text-gray-300">Change Password</h4>
-              <input
-                type="password"
+              <PasswordInput
                 value={currentPassword}
                 onChange={(e) => {
                   setCurrentPassword(e.target.value);
                   setPasswordError('');
                 }}
                 placeholder="Current password"
-                className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                autoComplete="current-password"
+                className="px-3 py-2 bg-gray-700 text-white border-gray-600 focus:border-blue-500 text-sm"
               />
-              <input
-                type="password"
+              <PasswordInput
                 value={newPassword}
                 onChange={(e) => {
                   setNewPassword(e.target.value);
                   setPasswordError('');
                 }}
-                placeholder="New password (min 6 characters)"
-                className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
+                autoComplete="new-password"
+                showStrength={!!newPassword}
+                strengthValue={passwordStrength}
+                className="px-3 py-2 bg-gray-700 text-white border-gray-600 focus:border-blue-500 text-sm"
               />
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
                   setPasswordError('');
                 }}
                 placeholder="Confirm new password"
-                className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                autoComplete="new-password"
+                className="px-3 py-2 bg-gray-700 text-white border-gray-600 focus:border-blue-500 text-sm"
               />
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-yellow-400 text-xs">Passwords do not match</p>
+              )}
               {passwordError && (
                 <p className="text-red-400 text-xs">{passwordError}</p>
               )}

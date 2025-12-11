@@ -9,6 +9,7 @@ import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { GoogleSignInButton } from '../ui/GoogleSignInButton';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth, useUI } from '../../contexts';
 import { LAYOUT } from '../../constants/gameConstants';
 import { MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
@@ -137,23 +138,20 @@ export const SignupView = ({ scale }) => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 placeholder="••••••••"
                 disabled={isLoading}
                 autoComplete="new-password"
+                showStrength={!!password}
+                strengthValue={passwordStrength}
+                className="px-4 py-3 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
               {password && (
-                <div className="flex justify-between items-center mt-1">
+                <div className="mt-1">
                   <span className="text-xs text-gray-500">
                     Minimum {MIN_PASSWORD_LENGTH} characters
-                  </span>
-                  <span className={`text-xs ${passwordStrength.color}`}>
-                    {passwordStrength.text}
                   </span>
                 </div>
               )}
@@ -164,19 +162,17 @@ export const SignupView = ({ scale }) => {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-1 ${
+                placeholder="••••••••"
+                disabled={isLoading}
+                autoComplete="new-password"
+                className={`px-4 py-3 bg-gray-800 text-white placeholder-gray-500 focus:ring-1 ${
                   confirmPassword && password !== confirmPassword
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                     : 'border-gray-700 focus:border-blue-500 focus:ring-blue-500'
                 }`}
-                placeholder="••••••••"
-                disabled={isLoading}
-                autoComplete="new-password"
               />
               {confirmPassword && password !== confirmPassword && (
                 <p className="mt-1 text-xs text-red-400">Passwords do not match</p>

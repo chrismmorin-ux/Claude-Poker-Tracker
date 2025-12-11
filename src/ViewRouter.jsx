@@ -280,6 +280,8 @@ export const ViewRouter = ({
             dispatchSession={dispatchSession}
             STREETS={STREETS}
             showError={showError}
+            showSuccess={showSuccess}
+            showInfo={showWarning}
             currentSessionId={currentSessionId}
           />
         </ViewErrorBoundary>

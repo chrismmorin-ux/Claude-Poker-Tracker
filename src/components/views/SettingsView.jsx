@@ -14,6 +14,7 @@ import {
 import { GAME_TYPES } from '../../constants/sessionConstants';
 import { getRecentErrors, clearErrorLog, getErrorCount, exportErrorLog } from '../../utils/errorLog';
 import { AccountSection } from '../ui/AccountSection';
+import { EmailVerificationBanner } from '../ui/EmailVerificationBanner';
 
 /**
  * SettingsView - App settings configuration interface
@@ -25,7 +26,7 @@ import { AccountSection } from '../ui/AccountSection';
  */
 export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => {
   const { setCurrentScreen, SCREEN } = useUI();
-  const { isInitialized: authInitialized } = useAuth();
+  const { user, isAuthenticated, isInitialized: authInitialized, sendVerificationEmail } = useAuth();
   const {
     settings,
     isLoading,
@@ -238,6 +239,15 @@ export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => 
             Back to Table
           </button>
         </div>
+
+        {/* Email Verification Banner */}
+        {authInitialized && isAuthenticated && user && !user.emailVerified && (
+          <EmailVerificationBanner
+            user={user}
+            onSendVerification={sendVerificationEmail}
+            onShowToast={handleShowToast}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           {/* Account Section */}

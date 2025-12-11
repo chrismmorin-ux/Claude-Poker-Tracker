@@ -14,6 +14,7 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
+  sendEmailVerification as firebaseSendEmailVerification,
   updatePassword as firebaseUpdatePassword,
   deleteUser,
   EmailAuthProvider,
@@ -166,6 +167,23 @@ export const AuthProvider = ({ authState, dispatchAuth, children }) => {
     [dispatchAuth, handleAuthError]
   );
 
+  // Handler: Send email verification
+  const sendVerificationEmail = useCallback(async () => {
+    if (!user || user.emailVerified) {
+      return { success: false, error: 'Email already verified or user not found' };
+    }
+
+    dispatchAuth({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: true } });
+
+    try {
+      await firebaseSendEmailVerification(user);
+      dispatchAuth({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: false } });
+      return { success: true };
+    } catch (err) {
+      return handleAuthError(err);
+    }
+  }, [user, dispatchAuth, handleAuthError]);
+
   // Handler: Update password (requires recent login)
   const updatePassword = useCallback(
     async (currentPassword, newPassword) => {
@@ -310,6 +328,7 @@ export const AuthProvider = ({ authState, dispatchAuth, children }) => {
       signInWithGoogle,
       signOut,
       resetPassword,
+      sendVerificationEmail,
       updatePassword,
       linkGoogleAccount,
       unlinkGoogleAccount,
@@ -333,6 +352,7 @@ export const AuthProvider = ({ authState, dispatchAuth, children }) => {
       signInWithGoogle,
       signOut,
       resetPassword,
+      sendVerificationEmail,
       updatePassword,
       linkGoogleAccount,
       unlinkGoogleAccount,

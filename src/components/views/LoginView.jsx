@@ -9,6 +9,7 @@ import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { GoogleSignInButton } from '../ui/GoogleSignInButton';
+import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth, useUI } from '../../contexts';
 import { LAYOUT } from '../../constants/gameConstants';
 import { MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
@@ -132,15 +133,13 @@ export const LoginView = ({ scale }) => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 placeholder="••••••••"
                 disabled={isLoading}
                 autoComplete="current-password"
+                className="px-4 py-3 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
