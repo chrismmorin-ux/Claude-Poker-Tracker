@@ -50,4 +50,6 @@ coverage/
 .claude/.efficiency-session.json
 .claude/arch-changes.log
 .claude/.backlog-check-shown.json
+.claude/.delegation-violations.json
+.claude/.process-suggest-state.json
 nul
