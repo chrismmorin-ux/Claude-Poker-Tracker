@@ -22,6 +22,7 @@ const path = require('path');
 
 const PROJECTS_FILE = path.join(process.cwd(), '.claude', 'projects.json');
 const VIOLATIONS_FILE = path.join(process.cwd(), '.claude', '.delegation-violations.json');
+const LOCK_FILE = path.join(process.cwd(), '.claude', '.delegation-lock');
 
 function getActiveProjectFile() {
   try {
@@ -88,12 +89,14 @@ function logViolation(filename, projectFile) {
       }
     }
 
-    // Add violation
+    // Add violation with redo tracking
     data.violations.push({
       file: filename,
       project: projectFile,
       timestamp: new Date().toISOString(),
-      estimatedTokensWasted: 800 // Average tokens for simple component
+      estimatedTokensWasted: 800, // Average tokens for simple component
+      redo_status: 'pending',
+      redo_completed_at: null
     });
 
     // Update metrics
@@ -115,6 +118,37 @@ function logViolation(filename, projectFile) {
   } catch (e) {
     // Silent fail - don't break workflow
   }
+}
+
+function createLock(filename, taskId) {
+  try {
+    const lockData = {
+      file: filename,
+      taskId: taskId,
+      timestamp: new Date().toISOString(),
+      message: 'File must be re-created via dispatcher to clear lock'
+    };
+    fs.writeFileSync(LOCK_FILE, JSON.stringify(lockData, null, 2));
+  } catch (e) {
+    // Silent fail
+  }
+}
+
+function checkLock() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      return JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
+    }
+  } catch (e) {}
+  return null;
+}
+
+function clearLock() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      fs.unlinkSync(LOCK_FILE);
+    }
+  } catch (e) {}
 }
 
 async function main() {
@@ -174,11 +208,14 @@ async function main() {
     console.log('│  - /local-refactor for restructuring tasks                 │');
     console.log('│  - /local-test for test generation                         │');
     console.log('│                                                             │');
+    console.log('│  ⚠️  VIOLATION LOCK CREATED                                 │');
+    console.log('│  This file must be re-created via dispatcher to proceed.   │');
     console.log('│  Check project file Task Delegation Analysis before coding │');
     console.log('└─────────────────────────────────────────────────────────────┘');
     console.log('');
 
     logViolation(filename, projectFile);
+    createLock(filename, 'unknown');
   }
 
   process.exit(0);
