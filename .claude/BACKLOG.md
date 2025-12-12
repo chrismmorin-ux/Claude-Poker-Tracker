@@ -1,5 +1,5 @@
 # Project Backlog - Single Source of Truth
-**Last Updated**: 2025-12-11 | **Updated By**: Claude
+**Last Updated**: 2025-12-12 | **Updated By**: Claude
 
 This file is the central registry for ALL work: active, delegated, pending, and planned.
 Both Claude and local models read and update this file.
@@ -45,6 +45,7 @@ When completing a delegated task, append to the `## Local Model Updates` section
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
 | Decomposition Policy | Phase 8 | 8/10 phases | `docs/projects/0.001.1211-decomposition-policy.project.md` |
+| Local Model Enforcement | Phase 1 | 0/7 phases | `docs/projects/0.002.1212-local-model-enforcement.project.md` |
 | Primitive Actions UI | Phase 1 | 0/4 phases | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
 | Firebase Auth | Phase 5 | 4/5 phases | `docs/projects/firebase-auth.project.md` |
 
@@ -61,12 +62,12 @@ Tasks assigned to local models (DeepSeek/Qwen). Local models update status here.
 
 | ID | Task | Model | Status | Command | Output |
 |----|------|-------|--------|---------|--------|
-| T-2.1 | Create primitiveActions.js | Claude* | completed | - | src/constants/primitiveActions.js (85 lines) |
-| T-2.2 | Create primitiveActionValidation.js | Claude* | completed | - | src/utils/primitiveActionValidation.js (117 lines) |
-| T-2.3 | Create primitive action tests | Claude* | completed | - | 52 tests passing |
-| T-2.4 | Add PRIMITIVE_ACTIONS export to gameConstants.js | Claude* | completed | - | Re-export added |
+| T-2.1 | Create primitiveActions.js | local:deepseek | pending | - | Awaiting dispatcher fix, then re-execute |
+| T-2.2 | Create primitiveActionValidation.js | local:deepseek | pending | - | Awaiting dispatcher fix, then re-execute |
+| T-2.3 | Create primitive action tests | local:qwen | pending | - | Awaiting dispatcher fix, then re-execute |
+| T-2.4 | Add PRIMITIVE_ACTIONS export to gameConstants.js | local:qwen | pending | - | Awaiting dispatcher fix, then re-execute |
 
-*Note: Local model delegation attempted but script outputs code without auto-creating files. Claude completed to maintain velocity.
+*Note: If local model outputs code without creating files, this indicates a dispatcher integration bug that must be fixed per DECOMPOSITION_POLICY.md Section 9 (recursive decomposition). Do NOT bypass delegation - troubleshoot and fix the underlying issue.
 
 ### Delegation Template
 When delegating, Claude outputs:
@@ -137,9 +138,10 @@ Projects that need `/project start` before beginning.
 
 **Current Queue**:
 ```
-0.001.1211-decomposition-policy ← P0, Active (57 tasks, 10 phases)
-1.001.1211-primitive-actions-ui ← P1, Active (18 tasks, 4 phases)
-2.001.1210-firebase-auth        ← P2, Paused (5/6)
+0.001.1211-decomposition-policy     ← P0, Active (57 tasks, 10 phases)
+0.002.1212-local-model-enforcement  ← P0, Active (20 tasks, 7 phases) **NEW**
+1.001.1211-primitive-actions-ui     ← P1, Active (18 tasks, 4 phases)
+2.001.1210-firebase-auth            ← P2, Paused (5/6)
 3.001.1209-firebase-cloud-sync
 3.002.1209-player-tendencies
 4.001.1209-range-analysis

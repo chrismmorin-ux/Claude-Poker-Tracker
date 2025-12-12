@@ -1,4 +1,38 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit(**)",
+      "Write(**)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(bash:*)",
+      "Bash(git:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:claudelog.com)",
+      "SlashCommand(/local:*)",
+      "SlashCommand(/local-code:*)",
+      "SlashCommand(/cto-review:*)",
+      "SlashCommand(/review:*)",
+      "SlashCommand(/project:*)",
+      "SlashCommand(/pm-status)",
+      "Bash(for i in 1 2 3 4 5 6)",
+      "Bash(do echo '=== Project $i ===')",
+      "Bash(done)",
+      "Bash(CLAUDE_TOOL_NAME=ExitPlanMode node:*)",
+      "Bash(if not exist \".claude\\audits\" mkdir \".claude\\audits\")"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": []
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -33,6 +67,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node .claude/hooks/plan-mode-edit-check.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/enforce-delegation.cjs"
           },
           {
@@ -48,6 +86,10 @@
       {
         "matcher": "Edit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/plan-mode-edit-check.cjs"
+          },
           {
             "type": "command",
             "command": "node .claude/hooks/enforce-delegation.cjs"

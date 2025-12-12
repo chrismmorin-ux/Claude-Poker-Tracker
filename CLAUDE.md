@@ -66,6 +66,58 @@ bash scripts/smart-test-runner.sh  # 98% token reduction on passing tests
 
 ---
 
+## ⚠️ LOCAL MODEL DELEGATION - MANDATORY ENFORCEMENT ⚠️
+
+**CRITICAL:** All code generation tasks MUST be delegated to local models. Direct file creation/editing by Claude is **BLOCKED** by PreToolUse hooks.
+
+### Mandatory Rules
+
+1. **NEVER bypass delegation** - Hooks will block Write/Edit operations for files assigned to local models
+2. **ALWAYS use dispatcher workflow** - See `.claude/DECOMPOSITION_POLICY.md` Section 10
+3. **NO "velocity" justifications** - Delegation INCREASES velocity (6x capacity improvement)
+
+### Forbidden Justifications
+
+❌ "To maintain velocity" - BLOCKED (delegation is faster)
+❌ "Local model failed" - FIX the issue, don't bypass
+❌ "Simple task" - ALL tasks must be delegated per atomic criteria
+
+### Correct Workflow
+
+1. **Decompose** task into atomic units (see `.claude/DECOMPOSITION_POLICY.md`)
+2. **Create** ///LOCAL_TASKS JSON specification
+3. **Execute** via dispatcher:
+   ```bash
+   cat tasks.json | node scripts/dispatcher.cjs add-tasks
+   node scripts/dispatcher.cjs assign-next
+   ```
+4. **Integrate** output and test
+
+### Enforcement Mechanisms
+
+- ✅ **PreToolUse hooks** - Block Write/Edit before execution
+- ✅ **PostToolUse hooks** - Detect violations and create locks
+- ✅ **Violation locks** - Require dispatcher redo to clear
+- ✅ **Token tracking** - Log efficiency violations
+
+### Quick Commands
+
+```bash
+# Add tasks to dispatcher
+cat tasks.json | node scripts/dispatcher.cjs add-tasks
+
+# Execute next task
+node scripts/dispatcher.cjs assign-next
+
+# Check status
+node scripts/dispatcher.cjs status
+```
+
+**Policy Reference:** `.claude/DECOMPOSITION_POLICY.md` Section 10
+**Quickstart Guide:** `.claude/DISPATCHER_QUICKSTART.md` (if exists)
+
+---
+
 ## Project Overview
 Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 
