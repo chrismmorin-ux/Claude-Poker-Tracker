@@ -10,8 +10,8 @@
       "file": "docs/projects/0.001.1211-decomposition-policy.project.md",
       "priority": "P0",
       "phases": 10,
-      "phasesComplete": 0,
-      "description": "Mandatory enforced decomposition policy for local model delegation - 57 atomic tasks, 49 files"
+      "phasesComplete": 5,
+      "description": "Mandatory enforced decomposition policy for local model delegation - 59 atomic tasks, 49 files. ONE-TIME bootstrap exception (Phase 9), removed in Phase 10"
     },
     {
       "id": "primitive-actions-ui",

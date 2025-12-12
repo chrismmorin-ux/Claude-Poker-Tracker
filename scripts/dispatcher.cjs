@@ -15,6 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { generateInvariantTest } = require('./invariant-test-generator.cjs');
 
 const BACKLOG_PATH = path.join(process.cwd(), '.claude', 'backlog.json');
 const SCHEMA_PATH = path.join(process.cwd(), '.claude', 'schemas', 'local-task.schema.json');
@@ -118,7 +119,7 @@ async function addTasks() {
   }
 
   const backlog = loadBacklog();
-  let added = 0, blocked = 0;
+  let added = 0, blocked = 0, autoTests = 0;
 
   for (const task of tasks) {
     const validation = validateAtomic(task);
@@ -139,10 +140,21 @@ async function addTasks() {
     backlog.tasks.push(task);
     added++;
     console.log(`Added: ${task.id} - ${task.title}`);
+
+    // Auto-generate invariant test if needed
+    const testTask = generateInvariantTest(task);
+    if (testTask) {
+      // Check if test task already exists
+      if (!backlog.tasks.find(t => t.id === testTask.id)) {
+        backlog.tasks.push(testTask);
+        autoTests++;
+        console.log(`  └─ Auto-generated test: ${testTask.id} - ${testTask.title}`);
+      }
+    }
   }
 
   saveBacklog(backlog);
-  console.log(`\nSummary: ${added} added, ${blocked} blocked`);
+  console.log(`\nSummary: ${added} added, ${autoTests} auto-tests created, ${blocked} blocked`);
 
   if (blocked > 0) {
     process.exit(2); // Signal validation failures
