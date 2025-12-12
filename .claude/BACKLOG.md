@@ -44,14 +44,14 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| Decomposition Policy | Phase 8 | 8/10 phases | `docs/projects/0.001.1211-decomposition-policy.project.md` |
-| Local Model Enforcement | Phase 1 | 0/7 phases | `docs/projects/0.002.1212-local-model-enforcement.project.md` |
+| Local Model Enforcement | Phase 4 | 4/7 phases | `docs/projects/0.002.1212-local-model-enforcement.project.md` |
 | Primitive Actions UI | Phase 1 | 0/4 phases | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
 | Firebase Auth | Phase 5 | 4/5 phases | `docs/projects/firebase-auth.project.md` |
 
 ### Completed Projects
 | Project | Completed | File |
 |---------|-----------|------|
+| Decomposition Policy | 2025-12-12 | `docs/projects/0.001.1211-decomposition-policy.project.md` |
 | Program Management Agent | 2025-12-11 | `docs/projects/1.001.1211-program-manager.project.md` |
 
 ---
