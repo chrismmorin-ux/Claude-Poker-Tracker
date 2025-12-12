@@ -61,22 +61,39 @@ When using `EnterPlanMode`:
 
 ## Local Model Delegation (MANDATORY - DEFAULT TO LOCAL)
 
-> **Full Policy**: See `.claude/DECOMPOSITION_POLICY.md` for authoritative rules
+> **Full Policy**: See `.claude/DECOMPOSITION_POLICY.md` Section 10 for authoritative rules
 
-**CRITICAL**: Local models are the DEFAULT. Claude decomposes, delegates, and reviews.
+**CRITICAL**: Local models are the DEFAULT. Auto-execution is MANDATORY.
 **Mindset**: "How do I break this down so local models can do it?" NOT "Can local models do this?"
+
+### Auto-Execution Workflow (NEW)
+
+**When you encounter ANY task:**
+1. Decompose into atomic tasks (if not already decomposed)
+2. Create ///LOCAL_TASKS JSON specs
+3. **Execute automatically via local models** - NO asking, NO confirmation
+4. Report progress only: "Task T-001 completed"
+5. On failure: recursive decomposition per policy
+6. Continue to next task
+
+**DO NOT ask:** "Should I execute these tasks?"
+**DO NOT explain:** "I'm going to execute 6 tasks..."
+**JUST DO IT:** Silent execution with progress reports only
 
 ### The Decomposition Imperative
 EVERY task MUST be decomposed into atomic sub-tasks. No exceptions.
 - A "big" task is just many small tasks
 - If a task seems too complex, decompose further
 - Keep decomposing until each piece is ≤30 lines of focused code
+- ALL tasks (project, backlog, ad-hoc) must be decomposed
 
 ### Claude's Role (STRICTLY LIMITED)
 1. **DECOMPOSE** - Break ANY task into atomic pieces (≤30 lines each)
-2. **DELEGATE** - Create task specs and execute via local model
+2. **AUTO-EXECUTE** - Create specs and execute via local models automatically
 3. **REVIEW** - Check output quality, integrate pieces
 4. **ESCALATE ONLY IF**: Task fails twice with good specs, OR requires real-time debugging
+
+**NEVER bypass delegation with "velocity" arguments** - see DECOMPOSITION_POLICY.md Section 10
 
 ### What Local Models CAN Do (EXPANDED)
 Local models handle ALL of these:
@@ -136,17 +153,20 @@ Local models handle ALL of these:
 }]
 ```
 
-### Execution Flow
+### Execution Flow (AUTOMATIC)
 ```bash
-# For EVERY task in project:
-# 1. Decompose into ≤30 line atomic tasks
+# For EVERY task in project (AUTOMATIC - no asking):
+# 1. Decompose into ≤30 line atomic tasks (if not already)
 # 2. Create task spec JSON for each
-# 3. Execute: ./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
-# 4. Review output (quick scan for obvious issues)
-# 5. If issues: refine spec, retry once
-# 6. If still issues: Claude implements (RARE - document why)
-# 7. Integrate pieces, run tests
+# 3. Execute automatically: ./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
+# 4. Report: "Task T-XXX completed" or "Task T-XXX failed"
+# 5. On failure: recursive decomposition (automatic, max depth 3)
+# 6. If max depth: permission request per policy
+# 7. Continue with next task
+# 8. Integrate pieces, run tests when all complete
 ```
+
+**NO manual intervention. NO asking "should I?". Just execute.**
 
 ### Claude Implements Directly ONLY When
 - Task has failed twice with well-written specs

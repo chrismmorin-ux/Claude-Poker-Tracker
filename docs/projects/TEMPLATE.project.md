@@ -76,6 +76,8 @@ Run this checklist before beginning ANY phase:
 **ALL work MUST be decomposed into atomic tasks for local models.**
 Tasks must meet atomic criteria (see table above). Format: `///LOCAL_TASKS`
 
+**IMPORTANT**: Tasks with model assignments (deepseek/qwen/claude) will **auto-execute automatically** when this project is selected from the menu. NO asking, NO confirmation. Claude will show progress only: "Task T-001 completed".
+
 | Task ID | Description | File | Model | Status |
 |---------|-------------|------|-------|--------|
 | T-P1-001 | [Create/Modify] [function/component name] | `path/file.js` | local:deepseek | [ ] |

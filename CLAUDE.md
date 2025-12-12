@@ -10,12 +10,15 @@
 ### Before ANY Code Task
 1. **Check Index First**: Read `.claude/index/SYMBOLS.md` before searching
 2. **Scan Before Drill**: Use Grep/Glob BEFORE Read tool
-3. **Local Model First**: Classify with `bash scripts/task-classifier.sh "description"`
-   - If `simple_utility`, `simple_component`, or `refactor` → Delegate to local model
-   - Create task spec: `.claude/task-specs/T-XXX.json`
-   - Execute: `bash scripts/execute-local-task.sh .claude/task-specs/T-XXX.json`
-   - Only implement directly if task fails twice or is `claude_required`
-   - **Full policy**: `.claude/DECOMPOSITION_POLICY.md`
+3. **Auto-Execute Tasks (MANDATORY)**: For ANY task:
+   - Decompose into atomic tasks (if not already)
+   - Create ///LOCAL_TASKS JSON specs
+   - **Execute automatically via local models** - NO asking
+   - Report progress only: "Task T-001 completed"
+   - On failure: recursive decomposition per policy
+   - **NEVER ask "should I execute?"** - just execute
+   - **NEVER justify bypassing with "velocity" arguments**
+   - **Full policy**: `.claude/DECOMPOSITION_POLICY.md` Section 10
 
 ### Context Hierarchy (Use in Order)
 1. `.claude/index/*.md` - File/symbol lookups (~800 tokens total)
@@ -92,9 +95,15 @@ Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 **Quick checklist:**
 1. Read `.claude/BACKLOG.md` (single source of truth)
 2. `/project start <name>` for multi-file tasks
-3. Check Task Delegation table before writing
-4. Read all affected files first
-5. 4+ files → `EnterPlanMode`
+3. **Auto-execute pre-decomposed tasks** - if project has tasks with model assignments, execute automatically (no asking)
+4. **Decompose new tasks** - if task not decomposed, decompose into atomic tasks then auto-execute
+5. Read all affected files first (use index/context files)
+6. 4+ files → `EnterPlanMode`
+
+**When you select a project from menu:**
+- Project has pre-decomposed tasks → Execute automatically
+- Show progress: "Task T-001 completed", "Task T-002 failed"
+- NO asking "should I proceed?" - policy mandates auto-execution
 
 ## Key Commands
 ```bash

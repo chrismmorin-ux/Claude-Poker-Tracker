@@ -1,31 +1,41 @@
 # Local Models Guide - Decomposition & Delegation Workflow
 
 **Policy**: ALL tasks MUST be decomposed into atomic pieces for local model execution.
-**Authority**: `.claude/DECOMPOSITION_POLICY.md` (read this first)
+**Authority**: `.claude/DECOMPOSITION_POLICY.md` Section 10 (read this first)
+
+**CRITICAL UPDATE**: Auto-execution is now MANDATORY. Claude executes tasks automatically without asking.
 
 ---
 
 ## Quick Start
 
-### Workflow Overview
+### Auto-Execution Workflow (PRIMARY)
+
+**When you encounter ANY task** (project file, backlog, ad-hoc):
+1. **Decompose** (if not already atomic)
+2. **Execute automatically** via local models
+3. **Report progress only**: "Task T-001 completed"
+4. **Continue** to next task
+5. **NO asking** "should I execute?"
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ DECOMPOSE   │ --> │  BACKLOG    │ --> │  EXECUTE    │
-│ Claude      │     │ dispatcher  │     │ Local Model │
-│             │     │             │     │             │
-│ Create      │     │ Add tasks   │     │ Assign &    │
-│ ///LOCAL_   │     │ Validate    │     │ Run         │
-│ TASKS JSON  │     │ atomic      │     │             │
+│ DETECT TASK │ --> │  DECOMPOSE  │ --> │ AUTO-EXECUTE│
+│ Any source  │     │ If needed   │     │ Local Model │
+│             │     │ (automatic) │     │ (automatic) │
 └─────────────┘     └─────────────┘     └─────────────┘
                                                │
                                                v
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ INTEGRATE   │ <-- │  REVIEW     │ <-- │  COMPLETE   │
-│ Claude      │     │ Claude      │     │ Update      │
-│             │     │             │     │ backlog     │
+│ INTEGRATE   │ <-- │  CONTINUE   │ <-- │  REPORT     │
+│ Claude      │     │ Next task   │     │ Progress    │
+│             │     │ (automatic) │     │ only        │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
+
+### Manual Workflow (FALLBACK ONLY)
+
+Use only when auto-execution infrastructure is unavailable:
 
 ### Basic Example
 

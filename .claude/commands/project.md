@@ -40,11 +40,16 @@ Based on the argument "$ARGUMENTS", perform ONE of the following:
 2. Find the project in `.claude/projects.json`
 3. Read the project file
 4. Identify the current phase (marked with `← CURRENT` or first incomplete `[ ]`)
-5. Display:
+5. Check for pre-decomposed tasks with model assignments
+6. **If tasks have model assignments: AUTO-EXECUTE** (per DECOMPOSITION_POLICY.md Section 10)
+   - DO NOT ask "should I proceed?"
+   - Execute tasks automatically via local models
+   - Report progress only: "Task T-001 completed"
+7. If tasks lack model assignments: decompose per policy, then auto-execute
+8. Display:
    - Project overview
-   - Current phase details
-   - Next actions to take
-6. Read any "Context Files" listed in the project
+   - Current phase details (if not auto-executing)
+9. Read any "Context Files" listed in the project (if needed)
 
 ### If argument starts with "complete":
 1. Extract the project ID

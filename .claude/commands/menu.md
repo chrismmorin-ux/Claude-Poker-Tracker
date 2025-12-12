@@ -31,10 +31,19 @@ Based on the analyzer output:
   4. **Deprioritize** - Push project back in queue (change priority from P1 to P2, or sequence number), so next menu shows a different project first
   5. **Work on something else** - Leave project as-is for now, but show the next project or backlog options
 
-- If `status: "in_progress"`: Show next steps. Display:
-  - Current phase name and number
-  - List of incomplete tasks for that phase (up to 5)
-  - Ask if user wants to proceed with these tasks
+- If `status: "in_progress"`: Check for pre-decomposed atomic tasks:
+  1. **Read the project file** to check if tasks have model assignments (deepseek/qwen/claude)
+  2. **If tasks have model assignments** (pre-decomposed):
+     - Display current phase name and tasks
+     - **Automatically execute via local models** - Do NOT ask for confirmation
+     - Create task spec JSON files in `.claude/task-specs/<project-name>/`
+     - Execute each task: `bash scripts/execute-local-task.sh <spec-file>`
+     - Update project file task status as tasks complete
+     - Run tests if specified in execution order
+  3. **If tasks lack model assignments** (not decomposed):
+     - Display current phase and tasks
+     - Follow decomposition policy: classify tasks, decompose if needed
+     - Do NOT offer to execute directly unless policy authorizes it
 
 - If `status: "not_found"`: Report that no matching project was found
 

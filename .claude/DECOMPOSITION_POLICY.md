@@ -288,6 +288,163 @@ If a task fails local execution:
 
 ---
 
+## 10. Automatic Execution Protocol (MANDATORY)
+
+**Auto-execution is the DEFAULT and ONLY method for task execution.**
+
+### Core Principle
+
+When ANY task exists (project file, backlog, ad-hoc), Claude MUST:
+1. Decompose it into atomic tasks (if not already decomposed)
+2. Execute via local models automatically
+3. **DO NOT ask** "should I execute these tasks?"
+4. **DO NOT explain** what you're doing - just execute silently
+
+### Universal Scope
+
+**ALL tasks must be decomposed and auto-executed:**
+- ✅ Tasks in project files (`docs/projects/*.project.md`)
+- ✅ Tasks in backlog (`.claude/BACKLOG.md`, `.claude/backlog.json`)
+- ✅ Ad-hoc tasks mentioned by user
+- ✅ Any task, anywhere, regardless of source
+
+**There are NO exceptions.** If a task exists, it must be decomposed and executed via local models.
+
+### Execution Flow
+
+```
+1. Detect task (any source: project, backlog, user request)
+2. IF not decomposed: Decompose into atomic tasks per Sections 2-3
+3. Create ///LOCAL_TASKS JSON specs
+4. Execute via dispatcher: node scripts/dispatcher.cjs add-tasks
+5. Report progress ONLY: "Task T-001 completed" or "Task T-001 failed"
+6. On failure: Follow Section 9 (recursive decomposition, max depth 3)
+7. Update source (project file, backlog) with completion status
+8. Continue to next task automatically
+```
+
+### Silent Execution
+
+**NO confirmations. NO explanations. Just execute.**
+
+❌ **Do NOT say:**
+- "Would you like me to execute these tasks?"
+- "Let me explain what I'm going to do..."
+- "I'll execute these 6 tasks for you..."
+
+✅ **DO say:**
+- "Task T-001 completed"
+- "Task T-002 failed: [error message]"
+- [Show progress, report results]
+
+### NO Override Mechanism
+
+**Auto-execution is mandatory. Period.**
+
+- NO `/pm-override auto-execute` command
+- NO "disable auto-execution" setting
+- NO "manual mode" option
+- NO asking permission for pre-decomposed tasks
+
+If tasks are decomposed with model assignments, they execute automatically. End of discussion.
+
+### INVALID Justifications for Bypassing Delegation
+
+**CRITICAL:** The following arguments are FORBIDDEN for justifying direct Claude implementation:
+
+❌ **NEVER use these justifications:**
+- "To maintain velocity"
+- "To save time"
+- "To be more efficient"
+- "Faster if I do it myself"
+- "To maintain momentum"
+- "Simpler to implement directly"
+- "Quicker this way"
+
+**Why these are INVALID:**
+- Token efficiency and velocity **COME FROM** delegation
+- Delegation IS the efficiency mechanism
+- Bypassing delegation REDUCES velocity, not increases it
+- These are rationalizations, not valid technical reasons
+
+**ONLY valid justifications** are documented in Section 7: CLAUDE_REQUEST_FOR_PERMISSION Protocol:
+- Task failed twice with well-written specs
+- Fundamental atomic boundary violation (with evidence)
+- Circular dependencies preventing decomposition (with attempted solutions)
+- Real-time debugging required (with specific reason)
+
+**If you find yourself thinking "I can do this faster":**
+- STOP immediately
+- This is a red flag
+- Decompose instead
+- The policy exists for a reason
+
+### Historical Anti-Patterns to Avoid
+
+**Before this policy was established**, Claude instances would:
+1. See a task that could be decomposed
+2. Justify direct implementation with "velocity" arguments
+3. Bypass delegation under the guise of "efficiency"
+4. Create technical debt and token waste
+
+**Example of what NOT to do:**
+```
+❌ "I could decompose this into 5 tasks for local models, but that would
+   take longer and slow down the project. To maintain velocity, I'll
+   implement it directly."
+```
+
+**Correct approach:**
+```
+✅ "Decomposing into 5 atomic tasks for local models:
+   - Task T-001 completed
+   - Task T-002 completed
+   - ..."
+```
+
+**Remember:** Every time you bypass delegation with a "velocity" argument, you:
+- Waste tokens (defeats the purpose of token budgets)
+- Miss opportunities for optimization
+- Violate the established workflow
+- Create precedent for future violations
+
+### Error Handling
+
+**On task failure, follow this protocol (automatic, no asking):**
+
+1. **First failure:** Recursive decomposition (Section 9)
+   - Break failed task into smaller atomic tasks
+   - Retry with refined specs
+   - Max decomposition depth: 3
+
+2. **Max depth reached:** Follow Section 7 (Permission Request)
+   - Document decomposition attempts
+   - Provide blocking criteria evidence
+   - Request permission with justification
+
+3. **Continue execution:** Don't stop for one failure
+   - Log the failure
+   - Continue with remaining tasks
+   - Report all results at end
+
+### Integration with Existing Sections
+
+This section OVERRIDES any conflicting guidance in earlier sections:
+- **Section 4 (Task Lifecycle):** Add auto-execution to workflow
+- **Section 7 (Permission Protocol):** Only invoke after recursive decomposition fails
+- **Section 9 (Troubleshooting):** Error handling is automatic, not manual
+
+### Compliance Enforcement
+
+**This is not optional guidance. This is mandatory policy.**
+
+- Program Manager agent enforces auto-execution
+- Hooks block violations before they occur
+- Process Specialist audits compliance post-session
+- Non-compliance is treated as a critical workflow violation
+
+---
+
 ## Quick Reference
 
 | Command | Purpose |

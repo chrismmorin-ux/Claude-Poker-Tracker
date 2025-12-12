@@ -25,6 +25,30 @@ node scripts/dispatcher.cjs status
 
 ## Common Issues
 
+### 0. Auto-Execution Not Triggering
+
+#### Symptom
+```
+Tasks exist but Claude asks "should I execute?" instead of executing automatically
+```
+
+#### Root Cause
+Workflow violation - auto-execution is MANDATORY per DECOMPOSITION_POLICY.md Section 10
+
+#### Solution
+**This is a CRITICAL policy violation.** Auto-execution is not optional.
+
+**If you see Claude asking "should I execute?":**
+1. Report this as a workflow compliance failure
+2. Reference DECOMPOSITION_POLICY.md Section 10
+3. Tasks with model assignments MUST auto-execute
+4. NO asking, NO confirmation required
+
+**Correct behavior:**
+- Detect task → decompose (if needed) → execute automatically
+- Report progress only: "Task T-001 completed"
+- Continue to next task without asking
+
 ### 1. Task Fails Atomic Validation
 
 #### Symptom
