@@ -1,0 +1,92 @@
+[
+  {
+    "id": "T-LEARN-022",
+    "title": "Create failure classifier using LLM",
+    "description": "Use local LLM to auto-classify failure types from error messages. Call local model with error message. Return classification: type_error, syntax_error, test_failure, constraint_violation, etc. Fallback to 'unknown' if uncertain. Include confidence score.",
+    "assigned_to": "local:deepseek",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "C",
+    "edit_strategy": "create_new",
+    "files_touched": ["scripts/classify-failure.cjs"],
+    "est_lines_changed": 100,
+    "test_command": "node scripts/classify-failure.cjs --error \"TypeError: Cannot read property\" 2>&1 | grep -qi \"type\\|error\\|classification\"",
+    "constraints": [
+      "Accept --error flag with error message string",
+      "Return JSON with: classification, confidence (0-1), reasoning",
+      "Classifications: type_error, syntax_error, test_failure, constraint_violation, size_guard, unknown",
+      "Use simple pattern matching (no actual LLM call for MVP)"
+    ]
+  },
+  {
+    "id": "T-LEARN-023",
+    "title": "Create auto-pattern proposer",
+    "description": "Scan task log for failures, group by error signature. If 2+ similar failures without existing pattern, generate proposal for human review. Output to stdout, don't auto-add to failure-patterns.json.",
+    "assigned_to": "local:deepseek",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "C",
+    "edit_strategy": "create_new",
+    "files_touched": ["scripts/propose-pattern.cjs"],
+    "est_lines_changed": 120,
+    "test_command": "node scripts/propose-pattern.cjs 2>&1 | grep -qi \"pattern\\|proposal\\|none\"",
+    "constraints": [
+      "Read .claude/logs/local-model-tasks.log",
+      "Group failures by error message similarity",
+      "Only propose if 2+ similar failures exist",
+      "Output JSON pattern template matching failure-pattern.schema.json",
+      "If no patterns to propose, output 'No new patterns detected'"
+    ]
+  },
+  {
+    "id": "T-LEARN-024",
+    "title": "Add post-task dashboard update hook",
+    "description": "Create PostToolUse hook that regenerates dashboard after dispatcher complete command. Run generate-dashboard.cjs silently, don't block on errors.",
+    "assigned_to": "local:qwen",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "B",
+    "edit_strategy": "create_new",
+    "files_touched": [".claude/hooks/dashboard-update.cjs"],
+    "est_lines_changed": 50,
+    "test_command": "grep -q \"generate-dashboard\" .claude/hooks/dashboard-update.cjs",
+    "constraints": [
+      "Hook type: PostToolUse",
+      "Match tool: Bash",
+      "Match pattern: dispatcher.cjs complete",
+      "Run: node scripts/generate-dashboard.cjs silently",
+      "Don't block on errors - wrap in try/catch"
+    ]
+  },
+  {
+    "id": "T-LEARN-025",
+    "title": "Create /dashboard slash command",
+    "description": "Add slash command that regenerates dashboard then displays it. Simple markdown file in .claude/commands/.",
+    "assigned_to": "local:qwen",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "A",
+    "edit_strategy": "create_new",
+    "files_touched": [".claude/commands/dashboard.md"],
+    "est_lines_changed": 20,
+    "test_command": "test -f .claude/commands/dashboard.md && grep -q \"generate-dashboard\" .claude/commands/dashboard.md",
+    "constraints": [
+      "First run: node scripts/generate-dashboard.cjs",
+      "Then read and display: .claude/DASHBOARD.md",
+      "Include brief description of what dashboard shows"
+    ]
+  },
+  {
+    "id": "T-LEARN-026",
+    "title": "Add dashboard to startup menu",
+    "description": "Add '[7] View System Dashboard' option to startup-menu.cjs that triggers /dashboard command.",
+    "assigned_to": "local:qwen",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "A",
+    "edit_strategy": "incremental_edit",
+    "files_touched": [".claude/hooks/startup-menu.cjs"],
+    "est_lines_changed": 15,
+    "test_command": "grep -q \"Dashboard\" .claude/hooks/startup-menu.cjs"
+  }
+]

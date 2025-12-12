@@ -118,6 +118,32 @@ node scripts/dispatcher.cjs status
 
 ---
 
+## System Health Dashboard
+
+Monitor local model execution, failure patterns, and delegation compliance with the auto-generated dashboard.
+
+### Generate Dashboard
+```bash
+node scripts/generate-dashboard.cjs              # Generate .claude/DASHBOARD.md
+node scripts/generate-dashboard.cjs --verbose    # With debug output
+```
+
+### What It Shows
+- **Health Score** (0-100): Composite metric of success rate, compliance, and pattern mitigation
+- **Task Execution**: Success/failure rates, in-progress work
+- **Learning Engine**: Tracked failure patterns (FP-001, FP-002, etc.)
+- **Delegation Compliance**: Violations and enforcement status
+
+### Data Sources
+- `.claude/backlog.json` - Task status
+- `.claude/logs/local-model-tasks.log` - Execution history
+- `.claude/learning/failure-patterns.json` - Pattern tracking
+- `.claude/.delegation-violations.json` - Compliance data
+
+**Note:** `.claude/DASHBOARD.md` is auto-generated and gitignored.
+
+---
+
 ## Project Overview
 Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 

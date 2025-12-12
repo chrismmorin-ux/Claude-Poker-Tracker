@@ -13,6 +13,23 @@ const PROJECTS_DIR = path.join(__dirname, '..', '..', 'docs', 'projects');
 const AUDITS_REGISTRY = path.join(__dirname, '..', 'audits', 'registry.json');
 const BACKLOG_PATH = path.join(__dirname, '..', 'BACKLOG.md');
 const STATE_FILE = path.join(__dirname, '..', '.startup-menu-shown.json');
+const DASHBOARD_GENERATOR = path.join(__dirname, '..', '..', 'scripts', 'generate-dashboard.cjs');
+
+function getDashboardMetrics() {
+  try {
+    const { loadDashboardData, calculateMetrics } = require(DASHBOARD_GENERATOR);
+    const data = loadDashboardData();
+    return calculateMetrics(data);
+  } catch {
+    return null;
+  }
+}
+
+function getHealthEmoji(score) {
+  if (score >= 80) return '🟢';
+  if (score >= 60) return '🟡';
+  return '🔴';
+}
 
 function shouldShowMenu() {
   // Show on first prompt of each session
@@ -144,7 +161,15 @@ function displayMenu() {
                          projects[0];
   const nextProject = projects.find(p => p !== currentProject && !p.isBlocked) || projects[1];
 
+  // Get dashboard metrics for header
+  const metrics = getDashboardMetrics();
+  const healthLine = metrics
+    ? `Health: ${getHealthEmoji(metrics.healthScore)} ${metrics.healthScore}/100 | Tasks: ${metrics.completedTasks}/${metrics.totalTasks}`
+    : 'Health: Run /dashboard for status';
+
   console.log('\n╔═══════════════════════════════════════════════════════════╗');
+  console.log(`║  ${healthLine.padEnd(57)}║`);
+  console.log('╠═══════════════════════════════════════════════════════════╣');
   console.log('║  What would you like to do?                               ║');
   console.log('╠═══════════════════════════════════════════════════════════╣');
 
@@ -190,12 +215,18 @@ function displayMenu() {
   // Option 5: Find refactoring opportunities
   console.log('║  [5] Find refactor opportunities                           ║');
 
-  // Option 6: Skip
-  console.log('║  [6] Skip → proceed with your request                     ║');
+  // Option 6: View System Dashboard
+  console.log('║  [6] View System Dashboard                                 ║');
+
+  // Option 7: Launch dev server for testing
+  console.log('║  [7] Launch dev server → localhost:5173                   ║');
+
+  // Option 8: Skip
+  console.log('║  [8] Skip → proceed with your request                     ║');
 
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
-  console.log('Reply with number (1-6) or just ask your question.');
+  console.log('Reply with number (1-8) or just ask your question.');
   console.log('');
 
   // Quick commands reminder

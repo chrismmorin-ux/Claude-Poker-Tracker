@@ -66,6 +66,10 @@ nul
 .claude/.advisor-suggestions.json
 .claude/.startup-menu-shown.json
 .claude/audits/atomicity_report.json
+# Auto-generated dashboard (regenerated on demand)
+.claude/DASHBOARD.md
+# Dispatcher temp files
+.claude/.temp-task-spec.json
 
 # Personal notes
 docs/chris-notes

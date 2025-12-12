@@ -1,0 +1,110 @@
+[
+  {
+    "id": "T-LEARN-015",
+    "title": "Create dashboard generator script skeleton",
+    "description": "Create generate-dashboard.cjs with data loading functions. Load all 8 data sources (backlog.json, task log, patterns, violations, etc.). Export loadDashboardData() function. Handle missing files gracefully. Return aggregated data object.",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "task_complexity_type": "C",
+    "edit_strategy": "create_new",
+    "files_touched": ["scripts/generate-dashboard.cjs"],
+    "est_lines_changed": 150,
+    "test_command": "node -e \"const g = require('./scripts/generate-dashboard.cjs'); console.log('Loads')\"",
+    "constraints": [
+      "Load these data sources: .claude/backlog.json, .claude/logs/local-model-tasks.log, .claude/learning/failure-patterns.json, .claude/.delegation-violations.json, .claude/metrics/delegation.json, .claude/projects.json",
+      "Handle JSONL format for .log files (one JSON per line)",
+      "Return default empty values if files don't exist",
+      "Export loadDashboardData() and loadFile() functions"
+    ],
+    "output_template": "#!/usr/bin/env node\n\nconst fs = require('fs');\nconst path = require('path');\n\nconst DATA_SOURCES = {\n  backlog: '.claude/backlog.json',\n  taskLog: '.claude/logs/local-model-tasks.log',\n  patterns: '.claude/learning/failure-patterns.json',\n  violations: '.claude/.delegation-violations.json',\n  metrics: '.claude/metrics/delegation.json',\n  projects: '.claude/projects.json'\n};\n\nfunction loadFile(filepath, defaultValue) {\n  // TODO: implement file loading\n}\n\nfunction loadDashboardData() {\n  // TODO: load all data sources\n}\n\nmodule.exports = { loadDashboardData, loadFile, DATA_SOURCES };"
+  },
+  {
+    "id": "T-LEARN-016",
+    "title": "Add metrics calculation to dashboard generator",
+    "description": "Add calculateMetrics(data) function to generate-dashboard.cjs. Return: health_score (0-100), success_rate, delegation_compliance. Handle division by zero.",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "task_complexity_type": "C",
+    "edit_strategy": "incremental_edit",
+    "files_touched": ["scripts/generate-dashboard.cjs"],
+    "est_lines_changed": 80,
+    "test_command": "grep -q \"calculateMetrics\" scripts/generate-dashboard.cjs",
+    "constraints": [
+      "Add function before module.exports",
+      "Health score formula: 40% success rate + 30% compliance + 20% pattern mitigation + 10% active work",
+      "Handle division by zero with defaults",
+      "Export calculateMetrics in module.exports"
+    ]
+  },
+  {
+    "id": "T-LEARN-017",
+    "title": "Add markdown generation to dashboard generator",
+    "description": "Add generateMarkdown(data, metrics) function. Include sections: Executive Summary, Task Execution, Learning Engine, Projects, Compliance. Return markdown string.",
+    "assigned_to": "local:qwen",
+    "priority": "P1",
+    "status": "open",
+    "task_complexity_type": "B",
+    "edit_strategy": "incremental_edit",
+    "files_touched": ["scripts/generate-dashboard.cjs"],
+    "est_lines_changed": 200,
+    "test_command": "grep -q \"generateMarkdown\" scripts/generate-dashboard.cjs",
+    "constraints": [
+      "Add function before module.exports",
+      "Include health score emoji: >=80 green, >=60 yellow, <60 red",
+      "Include timestamp of generation",
+      "Export generateMarkdown in module.exports"
+    ]
+  },
+  {
+    "id": "T-LEARN-018",
+    "title": "Add CLI interface to dashboard generator",
+    "description": "Add CLI interface: Accept --output flag (default: .claude/DASHBOARD.md), Accept --verbose flag. Call loadData → calculateMetrics → generateMarkdown → write file.",
+    "assigned_to": "local:qwen",
+    "priority": "P1",
+    "status": "open",
+    "task_complexity_type": "A",
+    "edit_strategy": "incremental_edit",
+    "files_touched": ["scripts/generate-dashboard.cjs"],
+    "est_lines_changed": 40,
+    "test_command": "node scripts/generate-dashboard.cjs --help 2>&1 | grep -q \"output\"",
+    "constraints": [
+      "Use process.argv for argument parsing",
+      "Default output: .claude/DASHBOARD.md",
+      "--help shows usage",
+      "--verbose prints loaded data counts"
+    ]
+  },
+  {
+    "id": "T-LEARN-020",
+    "title": "Add dashboard to .gitignore",
+    "description": "Add .claude/DASHBOARD.md to .gitignore with comment explaining it's auto-generated.",
+    "assigned_to": "local:qwen",
+    "priority": "P1",
+    "status": "open",
+    "task_complexity_type": "A",
+    "edit_strategy": "incremental_edit",
+    "files_touched": [".gitignore"],
+    "est_lines_changed": 2,
+    "test_command": "grep -q \"DASHBOARD.md\" .gitignore"
+  },
+  {
+    "id": "T-LEARN-021",
+    "title": "Document dashboard usage in CLAUDE.md",
+    "description": "Add '## System Health Dashboard' section after 'Local Model Delegation' section. Explain how to generate and view dashboard.",
+    "assigned_to": "local:qwen",
+    "priority": "P2",
+    "status": "open",
+    "task_complexity_type": "B",
+    "edit_strategy": "incremental_edit",
+    "files_touched": ["CLAUDE.md"],
+    "est_lines_changed": 30,
+    "test_command": "grep -q \"System Health Dashboard\" CLAUDE.md",
+    "constraints": [
+      "Add after '---' divider following 'Local Model Delegation' section",
+      "Include command: node scripts/generate-dashboard.cjs",
+      "Explain that DASHBOARD.md is auto-generated"
+    ]
+  }
+]
