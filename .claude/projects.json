@@ -14,6 +14,15 @@
       "description": "Mandatory enforced decomposition policy for local model delegation - 59 atomic tasks, 49 files. ONE-TIME bootstrap exception (Phase 9), removed in Phase 10"
     },
     {
+      "id": "local-model-enforcement",
+      "name": "Local Model Delegation Enforcement",
+      "file": "docs/projects/0.002.1212-local-model-enforcement.project.md",
+      "priority": "P0",
+      "phases": 7,
+      "phasesComplete": 0,
+      "description": "Implement 6 persistent fixes to close enforcement gaps: pre-write blocking hook, remove escape hatch, test dispatcher, make violations expensive, add warnings, simplify workflow - 20 atomic tasks"
+    },
+    {
       "id": "primitive-actions-ui",
       "name": "Primitive Actions UI",
       "file": "docs/projects/1.001.1211-primitive-actions-ui.project.md",
@@ -169,6 +178,6 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-11T12:00:00Z",
+  "lastUpdated": "2025-12-12T00:00:00Z",
   "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
 }
