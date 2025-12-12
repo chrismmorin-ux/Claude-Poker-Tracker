@@ -57,6 +57,7 @@ async function main() {
   // tool_response is the correct field name (not tool_result)
   const toolResponse = data?.tool_response || {};
   const stdout = toolResponse?.stdout || '';
+  const exitCode = toolResponse?.exit_code;
 
   // Only track test commands
   if (!isTestCommand(command)) {
@@ -75,10 +76,14 @@ async function main() {
   const testsPassed = passedMatch && (!failedMatch || parseInt(failedMatch[1]) === 0);
   const testCount = passedMatch ? parseInt(passedMatch[1]) : 0;
 
+  // ROBUSTNESS FIX: Always update timestamp when test command runs
+  // This prevents stale timestamp issues even if parsing fails
+  const now = Date.now();
+
   if (testsPassed) {
     // Record successful test run
     saveTestState({
-      lastRun: Date.now(),
+      lastRun: now,
       passed: true,
       testCount: testCount,
       command: command
@@ -89,15 +94,33 @@ async function main() {
 
     console.log(`[TEST TRACKER] ${testCount} tests passed - quality gate cleared`);
   } else if (failedMatch) {
-    // Record failed test run
+    // Record failed test run (but still update timestamp)
     saveTestState({
-      lastRun: Date.now(),
+      lastRun: now,
       passed: false,
       failedCount: parseInt(failedMatch[1]),
       command: command
     });
 
     console.log(`[TEST TRACKER] Tests failed - quality gate will block commits`);
+  } else {
+    // FALLBACK: Test command ran but we couldn't parse results
+    // Use exit code as proxy for pass/fail
+    const likelyPassed = exitCode === 0;
+
+    console.log(`[TEST TRACKER] Warning: Could not parse test output, using exit code (${exitCode})`);
+
+    saveTestState({
+      lastRun: now,
+      passed: likelyPassed,
+      testCount: 0,
+      command: command,
+      parseFailure: true
+    });
+
+    if (likelyPassed) {
+      clearEditState();
+    }
   }
 
   process.exit(0);
