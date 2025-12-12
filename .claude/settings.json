@@ -48,10 +48,6 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/local-model-delegate.cjs"
-          },
-          {
-            "type": "command",
             "command": "node .claude/hooks/pm-project-required.cjs"
           },
           {
@@ -71,7 +67,7 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/enforce-delegation.cjs"
+            "command": "node .claude/hooks/delegation-check-pre.cjs"
           },
           {
             "type": "command",
@@ -92,7 +88,7 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/enforce-delegation.cjs"
+            "command": "node .claude/hooks/delegation-check-pre.cjs"
           },
           {
             "type": "command",
