@@ -101,7 +101,14 @@ Optimize the entire workflow system for long-term efficiency by:
 - Files to consolidate or eliminate
 - Tiered context strategy (minimal → standard → full)
 
-### 3. Delegation Compliance Audit
+### 3. Delegation & Auto-Execution Compliance Audit
+
+**UPDATED POLICY**: Per DECOMPOSITION_POLICY.md Section 10, auto-execution is now MANDATORY.
+
+**Check for auto-execution violations:**
+- Did Claude ask "should I execute?" for pre-decomposed tasks? (VIOLATION)
+- Did Claude justify bypassing delegation with "velocity" arguments? (CRITICAL VIOLATION)
+- Were tasks with model assignments auto-executed or did Claude ask first?
 
 **Check .claude/.delegation-violations.json for:**
 - Files written by Claude that were marked for local models

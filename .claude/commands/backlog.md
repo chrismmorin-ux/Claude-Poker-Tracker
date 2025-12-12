@@ -39,8 +39,13 @@ You are managing the unified project backlog at `.claude/BACKLOG.md`.
 
 ### If task description (no keyword):
 1. Analyze the task
-2. Recommend: add to backlog, delegate to local model, or work on directly
-3. If recommending delegation, output `///LOCAL_TASKS` format
+2. **Decompose into atomic tasks** (per DECOMPOSITION_POLICY.md Section 10)
+3. **Auto-execute via local models** - NO asking for confirmation
+4. If task is already atomic and has no model assignment:
+   - Assign model per policy (deepseek/qwen)
+   - Create ///LOCAL_TASKS JSON
+   - Execute automatically
+5. Report progress only: "Task T-001 completed"
 
 ## Local Model Update Processing
 

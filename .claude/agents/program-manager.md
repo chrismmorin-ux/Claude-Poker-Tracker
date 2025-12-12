@@ -25,10 +25,11 @@ Monitor and maintain real-time session state:
 - Warnings and blocks issued
 - Phase transitions history
 
-### 2. Delegation Enforcement (Reverse-Default)
-**Default**: ALL tasks delegate to local models UNLESS marked `[CLAUDE]`
+### 2. Delegation Enforcement (Automatic Execution)
+**Default**: ALL tasks auto-execute via local models - NO asking, NO confirmation
 
-**Policy Reference**: `.claude/DECOMPOSITION_POLICY.md` (authoritative)
+**Policy Reference**: `.claude/DECOMPOSITION_POLICY.md` Section 10 (authoritative)
+**CRITICAL**: Auto-execution is MANDATORY, not optional
 
 **Atomic Criteria (ALL tasks must meet)**:
 | Criterion | Limit | Enforcement |
@@ -109,7 +110,8 @@ Track token consumption across project phases to identify optimization opportuni
 ## ENFORCEMENT ACTIONS
 
 ### Block (Stops Action)
-- Write without `[CLAUDE]` tag (auto-delegates instead)
+- Any attempt to ask "should I execute?" for decomposed tasks
+- Justifying bypassing delegation with "velocity" arguments
 - 4+ files without EnterPlanMode
 - Token budget exceeded (>28k)
 - Time estimates in planning

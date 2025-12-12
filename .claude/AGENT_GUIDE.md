@@ -2,6 +2,8 @@
 
 This guide tells you **when to use which agent** and **what to expect**.
 
+**IMPORTANT**: All task decomposition commands output tasks that **auto-execute automatically** per DECOMPOSITION_POLICY.md Section 10. There is NO asking for confirmation.
+
 ## Quick Decision Tree
 
 ```
