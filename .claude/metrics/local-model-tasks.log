@@ -1,3 +1,0 @@
-[2025-12-11T00:28:43-06:00] SUCCESS | Task: VAL-001 | Model: qwen | File: src/utils/potOdds.js | Lines: 17 | Tests: unknown
-[2025-12-11T22:37:25-06:00] SUCCESS | Task: T-P1-001 | Model: deepseek | File: .claude/schemas/local-task.schema.json | Lines: 44 | Tests: true
-[2025-12-11T22:38:48-06:00] SUCCESS | Task: T-P1-003 | Model: qwen | File: .claude/DECOMPOSITION_POLICY.md | Lines: 13 | Tests: true
