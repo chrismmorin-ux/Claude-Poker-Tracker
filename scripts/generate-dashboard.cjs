@@ -302,19 +302,124 @@ function generateMarkdown(data, metrics) {
   const projects = data.projects;
   const timePeriod = getTimePeriod(metrics.oldestLog, metrics.newestLog);
 
-  // Determine what needs attention
-  const alerts = [];
+  // Get additional metrics early for action items
+  const git = getGitStatus();
+  const techDebt = getTechDebt();
+  const testStatus = getTestStatus();
+  const deps = getDependencyStatus();
+  const sessionBudget = data.sessionBudget?.budget || { total: 30000, used: 0 };
+  const breakdown = data.sessionBudget?.breakdown || { reads: 0, agents: 0, edits: 0, searches: 0, other: 0 };
+  const budgetUsedPct = Math.round((sessionBudget.used / sessionBudget.total) * 100);
+  const audits = data.audits.audits || [];
+  const pendingAudits = audits.filter(a => a.status === 'pending');
+  const criticalAudits = pendingAudits.filter(a => ['critical', 'high'].includes(a.severity));
+  const patterns = data.patterns.patterns || [];
+
+  // Collect action items (red indicators) for detail section
+  const actionItems = [];
+
+  // Check task queue completion
+  const taskQueuePct = metrics.totalTasks > 0 ? Math.round((metrics.completedTasks / metrics.totalTasks) * 100) : 100;
+  const taskEmoji = taskQueuePct >= 100 ? '🟢' : taskQueuePct >= 50 ? '🟡' : '🔴';
+  if (taskQueuePct < 50) {
+    actionItems.push({
+      metric: 'Task Queue',
+      value: `${metrics.completedTasks}/${metrics.totalTasks} (${taskQueuePct}%)`,
+      explanation: `${metrics.totalTasks - metrics.completedTasks} tasks remain in backlog. These are queued for local model execution.`,
+      action: 'Run `node scripts/dispatcher.cjs assign-next` to process tasks, or `/backlog` to review and prioritize.'
+    });
+  }
+
   if (metrics.staleTasks > 0) {
-    alerts.push({ type: 'stale', msg: `${metrics.staleTasks} stale task(s) need cleanup`, action: 'Run `/backlog` to review' });
+    actionItems.push({
+      metric: 'Stale Tasks',
+      value: `${metrics.staleTasks} stuck`,
+      explanation: 'Tasks marked "in progress" for 24+ hours, likely from interrupted sessions.',
+      action: 'Run `/backlog` to mark as done/failed, or `node scripts/dispatcher.cjs status` to review.'
+    });
+  }
+
+  if (metrics.failedTasks > 0) {
+    actionItems.push({
+      metric: 'Failed Tasks',
+      value: `${metrics.failedTasks} failed`,
+      explanation: 'Local model tasks that encountered errors during execution.',
+      action: 'Check `.claude/logs/local-model-tasks.log` for error details, then retry or decompose further.'
+    });
+  }
+
+  if (testStatus.failed > 0) {
+    actionItems.push({
+      metric: 'Test Failures',
+      value: `${testStatus.failed} failing`,
+      explanation: 'Unit tests are failing, which may indicate bugs or regressions.',
+      action: 'Run `npm test` to see details, fix failures before committing.'
+    });
+  }
+
+  if (deps.securityIssues > 0) {
+    actionItems.push({
+      metric: 'Security Issues',
+      value: `${deps.securityIssues} vulnerabilities`,
+      explanation: 'High/critical npm vulnerabilities detected that could pose security risks.',
+      action: 'Run `npm audit` for details, then `npm audit fix` to auto-fix.'
+    });
+  }
+
+  if (criticalAudits.length > 0) {
+    actionItems.push({
+      metric: 'Critical Audits',
+      value: `${criticalAudits.length} pending`,
+      explanation: 'High-priority code reviews flagged for issues like bugs, security, or architecture.',
+      action: 'Run `/audit-status` to see details and address critical items first.'
+    });
+  }
+
+  if (budgetUsedPct >= 80) {
+    actionItems.push({
+      metric: 'Token Budget',
+      value: `${budgetUsedPct}% used`,
+      explanation: 'Session token budget nearly exhausted. Further operations may be blocked.',
+      action: 'Start a new session, or delegate remaining work to local models.'
+    });
+  }
+
+  // Token breakdown analysis - flag high usage areas
+  const totalBreakdown = breakdown.reads + breakdown.agents + breakdown.edits + breakdown.searches + breakdown.other;
+  if (totalBreakdown > 0) {
+    const readsPct = Math.round((breakdown.reads / totalBreakdown) * 100);
+    const agentsPct = Math.round((breakdown.agents / totalBreakdown) * 100);
+    if (readsPct > 50) {
+      actionItems.push({
+        metric: 'High File Reading',
+        value: `${readsPct}% of tokens`,
+        explanation: 'Most tokens spent reading files. Consider using index/context files first.',
+        action: 'Read `.claude/index/*.md` before source files. Use Grep to find sections before full reads.'
+      });
+    }
+    if (agentsPct > 40) {
+      actionItems.push({
+        metric: 'High Agent Usage',
+        value: `${agentsPct}% of tokens`,
+        explanation: 'Agents consume many tokens. Consider direct tool use for simple lookups.',
+        action: 'Use Grep/Glob directly for "where is X" queries instead of Explore agent.'
+      });
+    }
+  }
+
+  // Determine issues for vertical list
+  const issues = [];
+  if (metrics.staleTasks > 0) {
+    issues.push({ msg: `${metrics.staleTasks} stale task(s) need cleanup`, action: '/backlog' });
   }
   if (metrics.failedTasks > 0) {
-    alerts.push({ type: 'failed', msg: `${metrics.failedTasks} failed task(s)`, action: 'Investigate failures or clear them' });
+    issues.push({ msg: `${metrics.failedTasks} failed task(s)`, action: 'Check logs' });
   }
   if (metrics.activePatterns > 0) {
-    alerts.push({ type: 'patterns', msg: `${metrics.activePatterns} unresolved failure pattern(s)`, action: 'Review patterns to prevent repeat issues' });
+    issues.push({ msg: `${metrics.activePatterns} unresolved failure pattern(s)`, action: 'See Known Issues' });
   }
-  if (metrics.violationCount > 0 && metrics.complianceRate < 90) {
-    alerts.push({ type: 'compliance', msg: `Compliance at ${metrics.complianceRate}%`, action: 'Review delegation workflow' });
+  if (git.uncommitted > 0) {
+    issues.push({ msg: `${git.uncommitted} uncommitted file(s)`, action: 'git commit' });
   }
 
   let md = `# 📊 System Health Dashboard
@@ -322,262 +427,190 @@ function generateMarkdown(data, metrics) {
 
 `;
 
-  // Health Score Hero
+  // Health Score with explanation
   const healthStatus = metrics.healthScore >= 80 ? 'System healthy' :
                        metrics.healthScore >= 60 ? 'Minor issues' : 'Needs attention';
-  md += `## ${getHealthEmoji(metrics.healthScore)} Health: ${metrics.healthScore}/100 — ${healthStatus}
+  md += `## ${getHealthEmoji(metrics.healthScore)} Health: ${metrics.healthScore}/100 — ${healthStatus} · *40% success + 30% compliance + 20% patterns + 10% activity*
 
 `;
 
-  // Alerts section (if any)
-  if (alerts.length > 0) {
-    md += `### ⚠️ Needs Attention
-
-`;
-    for (const alert of alerts) {
-      md += `- **${alert.msg}** → ${alert.action}\n`;
+  // Issues section (vertical)
+  if (issues.length > 0) {
+    md += `### ⚠️ Issues\n`;
+    for (const issue of issues) {
+      md += `- ${issue.msg} → \`${issue.action}\`\n`;
     }
     md += '\n';
-  } else {
-    md += `### ✅ All Clear — No issues requiring attention\n\n`;
   }
 
-  // Get additional metrics
-  const git = getGitStatus();
-  const techDebt = getTechDebt();
-  const sessionBudget = data.sessionBudget?.budget || { total: 30000, used: 0 };
-  const budgetUsedPct = Math.round((sessionBudget.used / sessionBudget.total) * 100);
-
-  // === SESSION & TOKEN EFFICIENCY ===
+  // === COMBINED: SESSION, TOKENS, & TASKS ===
   const budgetEmoji = budgetUsedPct < 50 ? '🟢' : budgetUsedPct < 80 ? '🟡' : '🔴';
   const budgetRemaining = sessionBudget.total - sessionBudget.used;
-
-  md += `---
-
-## 💰 Session & Token Efficiency
-
-> Tracks API usage this session. Lower usage = more efficient = lower cost.
-
-| Metric | Status | Good? | Meaning |
-|--------|--------|-------|---------|
-| Budget Used | **${sessionBudget.used.toLocaleString()}/${sessionBudget.total.toLocaleString()}** | ${budgetEmoji} | ${budgetUsedPct}% of session budget |
-| Remaining | **${budgetRemaining.toLocaleString()} tokens** | ${budgetEmoji} | ${budgetUsedPct < 50 ? 'Plenty left' : budgetUsedPct < 80 ? 'Watch usage' : 'Nearly exhausted'} |
-
-`;
-
-  // === LOCAL MODEL DELEGATION ===
-  const taskEmoji = metrics.completedTasks === metrics.totalTasks ? '🟢' :
-                    metrics.completedTasks >= metrics.totalTasks * 0.5 ? '🟡' : '🔴';
   const successEmoji = metrics.successRate >= 90 ? '🟢' : metrics.successRate >= 70 ? '🟡' : '🔴';
   const complianceEmoji = metrics.complianceRate >= 90 ? '🟢' : metrics.complianceRate >= 70 ? '🟡' : '🔴';
 
+  // Token breakdown percentages
+  const readsPct = totalBreakdown > 0 ? Math.round((breakdown.reads / totalBreakdown) * 100) : 0;
+  const agentsPct = totalBreakdown > 0 ? Math.round((breakdown.agents / totalBreakdown) * 100) : 0;
+  const editsPct = totalBreakdown > 0 ? Math.round((breakdown.edits / totalBreakdown) * 100) : 0;
+  const searchesPct = totalBreakdown > 0 ? Math.round((breakdown.searches / totalBreakdown) * 100) : 0;
+  const otherPct = totalBreakdown > 0 ? Math.round((breakdown.other / totalBreakdown) * 100) : 0;
+
+  // Status for token breakdown (flag high usage)
+  const readsStatus = readsPct > 50 ? '🔴' : readsPct > 30 ? '🟡' : '🟢';
+  const agentsStatus = agentsPct > 40 ? '🔴' : agentsPct > 25 ? '🟡' : '🟢';
+  const editsStatus = '🟢'; // Edits are productive
+  const searchesStatus = searchesPct > 30 ? '🟡' : '🟢';
+
   md += `---
 
-## 🤖 Local Model Delegation
+## 💰 Session & Delegation · *This session*
 
-> Tasks delegated to local AI (DeepSeek/Qwen) instead of Claude API. Higher delegation = lower cost.
-
-| Metric | Status | Good? | Meaning |
-|--------|--------|-------|---------|
-| Tasks Done | **${metrics.completedTasks}/${metrics.totalTasks}** | ${taskEmoji} | Delegated work items completed |
-| Success Rate | **${metrics.successRate}%** | ${successEmoji} | ${metrics.successRate >= 90 ? 'Great!' : metrics.successRate >= 70 ? 'Some failures' : 'Many failures - investigate'} |
-| Compliance | **${metrics.complianceRate}%** | ${complianceEmoji} | ${metrics.complianceRate >= 90 ? 'Following rules' : 'Review delegation workflow'} |
+| Metric | Value | | |
+|--------|-------|---|---|
+| **── Tokens ──** | | | |
+| Budget | ${sessionBudget.used.toLocaleString()}/${sessionBudget.total.toLocaleString()} | ${budgetEmoji} | *API cost this session* |
+| Remaining | ${budgetRemaining.toLocaleString()} | ${budgetEmoji} | *Before warning/block* |
+| **── Token Breakdown ──** | | | |
+| Reads | ${breakdown.reads.toLocaleString()} (${readsPct}%) | ${readsStatus} | *File reading - keep <30%* |
+| Agents | ${breakdown.agents.toLocaleString()} (${agentsPct}%) | ${agentsStatus} | *Subagent tasks - keep <25%* |
+| Edits | ${breakdown.edits.toLocaleString()} (${editsPct}%) | ${editsStatus} | *Code changes - productive* |
+| Searches | ${breakdown.searches.toLocaleString()} (${searchesPct}%) | ${searchesStatus} | *Grep/Glob/Web - normal* |
+| Other | ${breakdown.other.toLocaleString()} (${otherPct}%) | ⚪ | *Misc operations* |
+| **── Local Model Tasks ──** | | | |
+| Queue | ${metrics.completedTasks}/${metrics.totalTasks} (${taskQueuePct}%) | ${taskEmoji} | *Backlog completion* |
+| Success | ${metrics.successRate}% | ${successEmoji} | *Of attempted tasks* |
+| Compliance | ${metrics.complianceRate}% | ${complianceEmoji} | *Following delegation rules* |
+| Pending | ${metrics.openTasks} open, ${metrics.inProgressTasks} active${metrics.staleTasks > 0 ? `, ${metrics.staleTasks} stale` : ''} | ${metrics.staleTasks > 0 ? '🟡' : '🟢'} | *Work items queued* |
 
 `;
 
-  // === GIT STATUS ===
-  const gitEmoji = git.uncommitted === 0 && git.ahead === 0 ? '🟢' :
-                   git.uncommitted > 0 ? '🟡' : '🟢';
+  // === COMBINED: CODEBASE STATUS ===
+  const testEmoji = testStatus.failed > 0 ? '🔴' : testStatus.passed > 0 ? '🟢' : '⚪';
   const pushNeeded = git.ahead > 0;
   const pullNeeded = git.behind > 0;
-
-  md += `---
-
-## 🔀 Git Status
-
-> Current repository state. Green = synced, Yellow = changes pending.
-
-| Metric | Status | Good? | Action |
-|--------|--------|-------|--------|
-| Branch | **${git.branch}** | ⚪ | — |
-| Uncommitted | **${git.uncommitted} files** | ${git.uncommitted === 0 ? '🟢' : '🟡'} | ${git.uncommitted > 0 ? 'Commit changes' : 'Clean'} |
-| Push/Pull | **↑${git.ahead} ↓${git.behind}** | ${pushNeeded || pullNeeded ? '🟡' : '🟢'} | ${pushNeeded ? 'Push needed' : pullNeeded ? 'Pull needed' : 'Synced'} |
-| Last Commit | ${git.lastCommit ? `"${git.lastCommit.substring(0, 40)}..."` : 'None'} | ⚪ | ${git.lastCommitTime || '—'} |
-
-`;
-
-  // === TEST STATUS ===
-  const testStatus = getTestStatus();
-  const testEmoji = testStatus.failed > 0 ? '🔴' : testStatus.passed > 0 ? '🟢' : '⚪';
-  const testCoverageEmoji = '⚪'; // Would need coverage tool integration
-
-  md += `---
-
-## 🧪 Test Status
-
-> Shows last test run results. Green = passing, Red = failures need attention.
-
-| Metric | Status | Good? | Action |
-|--------|--------|-------|--------|
-| Last Run | **${testStatus.timeSince || 'Never'}** | ${testStatus.timeSince ? '🟢' : '🟡'} | ${testStatus.timeSince ? '—' : 'Run tests'} |
-| Passed | **${testStatus.passed !== null ? testStatus.passed : '?'}** | ${testEmoji} | ${testStatus.passed > 0 ? 'Tests healthy' : 'Run tests to verify'} |
-| Failed | **${testStatus.failed}** | ${testStatus.failed === 0 ? '🟢' : '🔴'} | ${testStatus.failed > 0 ? 'Fix failing tests!' : 'All passing'} |
-
-`;
-
-  // === DEPENDENCIES ===
-  const deps = getDependencyStatus();
-  const depsEmoji = deps.securityIssues > 0 ? '🔴' : deps.majorUpdates > 0 ? '🟡' : deps.outdatedCount > 0 ? '🟡' : '🟢';
-
-  md += `---
-
-## 📦 Dependencies
-
-> Package health. Security issues are critical, outdated packages may have fixes.
-
-| Metric | Count | Good? | Action |
-|--------|-------|-------|--------|
-| Security Issues | **${deps.securityIssues}** | ${deps.securityIssues === 0 ? '🟢' : '🔴'} | ${deps.securityIssues > 0 ? 'Run `npm audit fix`' : 'Secure'} |
-| Major Updates | **${deps.majorUpdates}** | ${deps.majorUpdates === 0 ? '🟢' : '🟡'} | ${deps.majorUpdates > 0 ? 'Review changelogs' : 'Up to date'} |
-| Outdated Total | **${deps.outdatedCount}** | ${deps.outdatedCount === 0 ? '🟢' : '🟡'} | ${deps.outdatedCount > 0 ? 'Run `npm outdated`' : 'Current'} |
-
-`;
-
-  // === TECHNICAL DEBT ===
   const debtEmoji = (techDebt.todos + techDebt.fixmes) === 0 ? '🟢' :
                     (techDebt.todos + techDebt.fixmes) < 10 ? '🟡' : '🔴';
-  const largeFilesEmoji = techDebt.largeFiles === 0 ? '🟢' : techDebt.largeFiles < 3 ? '🟡' : '🔴';
 
-  md += `---
-
-## 🚧 Technical Debt
-
-> Code markers and complexity. Lower = cleaner codebase.
-
-| Metric | Count | Good? | Action |
-|--------|-------|-------|--------|
-| TODOs | **${techDebt.todos}** | ${techDebt.todos === 0 ? '🟢' : techDebt.todos < 5 ? '🟡' : '🔴'} | ${techDebt.todos > 0 ? 'Review and address' : 'Clean!'} |
-| FIXMEs | **${techDebt.fixmes}** | ${techDebt.fixmes === 0 ? '🟢' : '🔴'} | ${techDebt.fixmes > 0 ? 'Priority fixes needed' : 'None'} |
-| Large Files (>400 lines) | **${techDebt.largeFiles}** | ${largeFilesEmoji} | ${techDebt.largeFiles > 0 ? 'Consider splitting' : 'Good size'} |
-
-`;
-
-  // Task Status with context
-  md += `---
-
-## 🔧 Task Queue
-
-`;
-
-  if (metrics.inProgressTasks === 0 && metrics.openTasks === 0) {
-    md += `**Queue is clear!** No pending work items.\n\n`;
-  } else {
-    if (metrics.staleTasks > 0) {
-      md += `> ⚠️ **${metrics.staleTasks} tasks stuck "in progress"** — These may be from interrupted sessions. Run \`node scripts/dispatcher.cjs status\` to review.\n\n`;
+  // Find last completed audit date
+  const completedAudits = audits.filter(a => a.status === 'completed' || a.status === 'done');
+  let lastAuditDate = 'Never';
+  if (completedAudits.length > 0) {
+    const sorted = completedAudits.sort((a, b) => new Date(b.completed_at || b.updated_at || 0) - new Date(a.completed_at || a.updated_at || 0));
+    const lastDate = sorted[0].completed_at || sorted[0].updated_at;
+    if (lastDate) {
+      const diff = Date.now() - new Date(lastDate).getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      if (days === 0) lastAuditDate = 'Today';
+      else if (days === 1) lastAuditDate = 'Yesterday';
+      else if (days < 7) lastAuditDate = `${days}d ago`;
+      else lastAuditDate = `${Math.floor(days / 7)}w ago`;
     }
-
-    md += `| Status | Count | What this means |
-|--------|-------|-----------------|
-| 🔄 In Progress | ${metrics.inProgressTasks} | ${metrics.staleTasks > 0 ? `⚠️ ${metrics.staleTasks} may be stale` : 'Currently being worked on'} |
-| 📋 Open | ${metrics.openTasks} | Ready to start |
-| ✅ Done | ${metrics.completedTasks} | Completed successfully |
-| ❌ Failed | ${metrics.failedTasks} | ${metrics.failedTasks > 0 ? 'Need investigation' : 'None'} |
-
-`;
   }
 
-  // Learning Engine
-  const patterns = data.patterns.patterns || [];
+  md += `---
+
+## 🔀 Codebase Health · *Last audit: ${lastAuditDate}*
+
+| Metric | Value | | |
+|--------|-------|---|---|
+| **── Git ──** | | | |
+| Branch | ${git.branch} | ⚪ | *Current working branch* |
+| Uncommitted | ${git.uncommitted} files | ${git.uncommitted === 0 ? '🟢' : '🟡'} | *Changes not committed* |
+| Sync | ↑${git.ahead} ↓${git.behind} | ${pushNeeded || pullNeeded ? '🟡' : '🟢'} | *Ahead/behind remote* |
+| **── Quality ──** | | | |
+| Tests | ${testStatus.passed !== null ? testStatus.passed : '?'} pass, ${testStatus.failed} fail | ${testEmoji} | *${testStatus.timeSince || 'Never run'}* |
+| Security | ${deps.securityIssues} vulnerabilities | ${deps.securityIssues === 0 ? '🟢' : '🔴'} | *npm audit high/critical* |
+| Outdated | ${deps.outdatedCount} packages | ${deps.outdatedCount === 0 ? '🟢' : '🟡'} | *Behind latest version* |
+| **── Debt ──** | | | |
+| Markers | ${techDebt.todos} TODO, ${techDebt.fixmes} FIXME | ${debtEmoji} | *Code annotations* |
+| Large Files | ${techDebt.largeFiles} | ${techDebt.largeFiles === 0 ? '🟢' : '🟡'} | *>400 lines, split candidate* |
+
+`;
+
+  // Learning Engine - Known Issues
   if (patterns.length > 0) {
     md += `---
 
-## 🧠 Known Issues Being Tracked
+## 🧠 Known Issues · *Recurring problems by local models tracked by learning engine*
 
-> These are recurring problems. Once fixed, they prevent future failures.
-
-| Problem | Times Seen | Status |
-|---------|-----------|--------|
+| Problem | Seen | Status |
+|---------|------|--------|
 `;
     for (const p of patterns) {
       const count = Array.isArray(p.occurrences) ? p.occurrences.length : (p.occurrences || 0);
       const status = p.mitigation_status === 'resolved' ? '✅ Fixed' : '⚠️ Active';
-      md += `| ${p.name} | ${count} | ${status} |\n`;
+      md += `| ${p.name} | ${count}x | ${status} |\n`;
     }
     md += '\n';
   }
 
-  // Projects section with health indicators
+  // Projects section
   const activeProjects = projects.active || [];
   const completedProjects = (projects.completed || []).slice(0, 3);
 
   md += `---
 
-## 📁 Projects
+## 📁 Projects · *Multi-phase initiatives tracked across sessions*
 
 `;
 
   if (activeProjects.length === 0) {
-    md += `🟢 **No active projects** — All caught up!\n\n`;
+    md += `🟢 **No active projects**\n\n`;
   } else {
-    // Count projects by status
-    const notStarted = activeProjects.filter(p => (p.phasesComplete || 0) === 0).length;
-    const inProgress = activeProjects.filter(p => (p.phasesComplete || 0) > 0 && (p.phasesComplete || 0) < p.phases).length;
-    const almostDone = activeProjects.filter(p => (p.phasesComplete || 0) >= p.phases).length;
-
-    if (notStarted > 0) {
-      md += `> 🟡 **${notStarted} project(s) not yet started** — Select from startup menu to begin\n\n`;
-    }
-
-    md += `| Project | Progress | Status | Action |\n`;
-    md += `|---------|----------|--------|--------|\n`;
-
+    md += `| Project | Progress | Status |
+|---------|----------|--------|
+`;
     for (const p of activeProjects) {
       const health = getProjectHealth(p);
-      const progress = `${p.phasesComplete || 0}/${p.phases} phases`;
-      const action = health.action || '—';
-      // Truncate long names
-      const name = p.name.length > 35 ? p.name.substring(0, 32) + '...' : p.name;
-      md += `| ${health.emoji} ${name} | ${progress} | ${health.status} | ${action} |\n`;
+      const progress = `${p.phasesComplete || 0}/${p.phases}`;
+      const name = p.name.length > 40 ? p.name.substring(0, 37) + '...' : p.name;
+      md += `| ${health.emoji} ${name} | ${progress} | ${health.status} |\n`;
     }
     md += '\n';
   }
 
   if (completedProjects.length > 0) {
-    md += `**✅ Recently Completed:** ${completedProjects.map(p => p.name).join(', ')}\n\n`;
+    md += `**Recently Completed:** ${completedProjects.map(p => p.name).join(', ')}\n\n`;
   }
 
   // Audits section
-  const audits = data.audits.audits || [];
-  const pendingAudits = audits.filter(a => a.status === 'pending');
-  const criticalAudits = pendingAudits.filter(a => ['critical', 'high'].includes(a.severity));
-
   md += `---
 
-## 🔍 Audits
+## 🔍 Audits · *Pending code reviews and quality checks*
 
+| Audit | Severity | Status |
+|-------|----------|--------|
 `;
 
   if (pendingAudits.length === 0) {
-    md += `🟢 **No pending audits** — System reviewed and clear!\n\n`;
+    md += `| 🟢 No pending audits | — | Clear |\n`;
   } else {
-    if (criticalAudits.length > 0) {
-      md += `> 🔴 **${criticalAudits.length} critical/high severity audit(s)** — Address these first!\n\n`;
-    }
-
-    md += `| Audit | Severity | Status | Action |\n`;
-    md += `|-------|----------|--------|--------|\n`;
-
     for (const a of pendingAudits.slice(0, 5)) {
       const emoji = getAuditSeverityEmoji(a.severity);
-      const name = (a.name || a.id || 'Unknown').substring(0, 30);
-      const action = a.severity === 'critical' || a.severity === 'high' ? 'Review now' : 'Review when able';
-      md += `| ${emoji} ${name} | ${a.severity || 'unknown'} | ${a.status} | ${action} |\n`;
+      const name = (a.name || a.id || 'Unknown').substring(0, 35);
+      md += `| ${emoji} ${name} | ${a.severity || 'unknown'} | ${a.status} |\n`;
     }
-
     if (pendingAudits.length > 5) {
-      md += `| ... | +${pendingAudits.length - 5} more | — | Run \`/audit-status\` |\n`;
+      md += `| ... | +${pendingAudits.length - 5} more | Run \`/audit-status\` |\n`;
     }
-    md += '\n';
+  }
+  md += '\n';
+
+  // === ACTION ITEMS DETAIL (for red indicators) ===
+  if (actionItems.length > 0) {
+    md += `---
+
+## 🔴 Action Items · *Details on items needing attention*
+
+`;
+    for (const item of actionItems) {
+      md += `**${item.metric}: ${item.value}**
+    Why: ${item.explanation}
+    Fix: ${item.action}
+
+`;
+    }
   }
 
   // Quick actions footer
@@ -585,12 +618,12 @@ function generateMarkdown(data, metrics) {
 
 ## 🚀 Quick Actions
 
-| Want to... | Command |
-|------------|---------|
-| See full task list | \`node scripts/dispatcher.cjs status\` |
-| Clean up stale tasks | \`/backlog\` then mark as done/failed |
-| Start dev server | Select **[7]** from menu |
-| Run next task | \`node scripts/dispatcher.cjs assign-next\` |
+| Action | Command |
+|--------|---------|
+| Process next task | \`node scripts/dispatcher.cjs assign-next\` |
+| View task queue | \`node scripts/dispatcher.cjs status\` |
+| Clean up backlog | \`/backlog\` |
+| Back to menu | \`/menu\` |
 
 *Last refreshed: ${new Date().toLocaleTimeString()}*
 `;
