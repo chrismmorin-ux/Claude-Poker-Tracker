@@ -19,32 +19,6 @@ const path = require('path');
 const PROJECTS_FILE = path.join(process.cwd(), '.claude', 'projects.json');
 const BACKLOG_FILE = path.join(process.cwd(), '.claude', 'backlog.json');
 
-function checkDecompositionException() {
-  // ONE-TIME EXCEPTION: Allows decomposition-policy to bypass enforcement
-  // while building the enforcement system itself (bootstrapping paradox)
-  // MUST BE REMOVED when project completes (see Phase 10, T-P10-005)
-  try {
-    if (!fs.existsSync(PROJECTS_FILE)) return false;
-    const projects = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
-    const activeProject = projects.active?.find(p => p.id === 'decomposition-policy');
-
-    if (activeProject) {
-      // Check if project is incomplete (phases < total phases expected = 10)
-      const phasesComplete = activeProject.phasesComplete || 0;
-      const totalPhases = activeProject.phases || 10;
-
-      if (phasesComplete < totalPhases) {
-        console.log('');
-        console.log('⚠️  BOOTSTRAP EXCEPTION: decomposition-policy bypassing enforcement');
-        console.log('   This exception will be removed in Phase 10 (T-P10-005)');
-        console.log('');
-        return true;
-      }
-    }
-  } catch (e) {}
-  return false;
-}
-
 function getActiveProjectFile() {
   try {
     if (!fs.existsSync(PROJECTS_FILE)) return null;
@@ -163,11 +137,6 @@ async function main() {
 
   // Skip hook/config files
   if (isHookOrConfigFile(filename)) {
-    process.exit(0);
-  }
-
-  // BOOTSTRAP EXCEPTION: Check if decomposition-policy project is active
-  if (checkDecompositionException()) {
     process.exit(0);
   }
 

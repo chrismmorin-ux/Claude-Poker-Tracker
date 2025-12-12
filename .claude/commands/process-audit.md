@@ -1,6 +1,6 @@
 ---
 description: Run a full process audit analyzing errors, compliance, context efficiency, and workflow patterns
-argument-hint: ["quick" | "full" | "errors" | "context" | "delegation"]
+argument-hint: ["quick" | "full" | "errors" | "context" | "delegation" | "decomposition"]
 ---
 
 Use the **process-specialist** subagent to perform a process audit.
@@ -14,6 +14,7 @@ Based on the argument, focus the audit:
 - **errors**: Focus only on error patterns, recurring bugs, and prevention strategies.
 - **context**: Focus only on context file sizes, redundancy, and efficiency.
 - **delegation**: Focus only on local model delegation compliance.
+- **decomposition**: Focus only on atomic task decomposition health and compliance.
 
 ## Required Analysis
 
@@ -32,7 +33,18 @@ Based on the argument, focus the audit:
    - Review project files for delegation analysis
    - Calculate compliance rate
 
-4. **Workflow Patterns** (full audit only)
+4. **Decomposition Health** (decomposition scope or full audit)
+   - Run `node scripts/decomposition-health.cjs` for automated health check
+   - Review `.claude/backlog.json` for atomic criteria violations
+   - Check `.claude/audits/atomicity_report.json` for detailed violations
+   - Analyze decomposition depth trends (target: <1.5 average)
+   - Review permission request patterns (target: <5% of tasks)
+   - Calculate atomic compliance rate (target: ≥95%)
+   - Check test pass rates for local model tasks
+   - Identify tasks exceeding max decomposition depth (3)
+   - Provide specific remediation for violations
+
+5. **Workflow Patterns** (full audit only)
    - Analyze git commit patterns
    - Check hook effectiveness
    - Review agent utilization

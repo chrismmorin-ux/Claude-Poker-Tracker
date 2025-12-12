@@ -53,28 +53,6 @@ const ALWAYS_ALLOW_PATTERNS = [
   /\.env/,                 // Environment files
 ];
 
-function checkDecompositionException() {
-  // ONE-TIME EXCEPTION: Allows decomposition-policy to bypass enforcement
-  // while building the enforcement system itself (bootstrapping paradox)
-  // MUST BE REMOVED when project completes (see Phase 10, T-P10-005)
-  try {
-    if (!fs.existsSync(PROJECTS_FILE)) return false;
-    const projects = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
-    const activeProject = projects.active?.find(p => p.id === 'decomposition-policy');
-
-    if (activeProject) {
-      // Check if project is incomplete (phases < total phases expected = 10)
-      const phasesComplete = activeProject.phasesComplete || 0;
-      const totalPhases = activeProject.phases || 10;
-
-      if (phasesComplete < totalPhases) {
-        return true; // Allow bypass without logging (silent exception)
-      }
-    }
-  } catch (e) {}
-  return false;
-}
-
 function loadState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
@@ -251,12 +229,6 @@ async function main() {
 
     // EARLY EXIT: Check if file is in always-allow list (before any other processing)
     if (isAlwaysAllowed(filePath)) {
-      console.log(JSON.stringify({ continue: true }));
-      process.exit(0);
-    }
-
-    // BOOTSTRAP EXCEPTION: Check if decomposition-policy project is active
-    if (checkDecompositionException()) {
       console.log(JSON.stringify({ continue: true }));
       process.exit(0);
     }
