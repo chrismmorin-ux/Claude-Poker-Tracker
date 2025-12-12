@@ -1,0 +1,12 @@
+// .claude/logs/.gitkeep
+
+// README.md
+# Log Format
+
+This directory contains log files in JSON Lines (JSONL) format.
+
+## JSONL Format
+
+Each line in a log file is a valid JSON object. The structure of each JSON object depends on the specific application or service generating the logs.
+
+Example:

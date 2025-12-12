@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task Execution Log Entry",
+  "description": "Schema for entries in local-model-tasks.log (JSONL format)",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 datetime when this log entry was created"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^T-[A-Z0-9-]+$",
+      "description": "Task identifier (e.g., T-LEARN-001)"
+    },
+    "model": {
+      "type": "string",
+      "enum": ["qwen", "deepseek"],
+      "description": "Local model that executed the task"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["in_progress", "success", "failed"],
+      "description": "Current execution status"
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution timing details",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When task execution started"
+        },
+        "end": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When task execution ended (null if in_progress)"
+        },
+        "duration_ms": {
+          "type": ["number", "null"],
+          "description": "Execution duration in milliseconds (null if in_progress)"
+        }
+      },
+      "required": ["start"]
+    },
+    "test_result": {
+      "type": ["object", "null"],
+      "description": "Test execution results (null if tests not yet run)",
+      "properties": {
+        "exit_code": {
+          "type": "number",
+          "description": "Test command exit code (0 = pass)"
+        },
+        "tests_run": {
+          "type": "number",
+          "description": "Total number of tests executed"
+        },
+        "tests_passed": {
+          "type": "number",
+          "description": "Number of tests that passed"
+        },
+        "tests_failed": {
+          "type": "number",
+          "description": "Number of tests that failed"
+        },
+        "failure_summary": {
+          "type": ["string", "null"],
+          "description": "First error message (truncated to 500 chars)"
+        },
+        "error_type": {
+          "type": ["string", "null"],
+          "description": "Classified error type (e.g., syntax_error, test_failure)"
+        }
+      }
+    },
+    "failure_classification": {
+      "type": ["string", "null"],
+      "description": "High-level failure classification for pattern matching",
+      "enum": [null, "file_modification_error", "constraint_violation", "syntax_error", "test_failure", "timeout", "unknown"]
+    },
+    "pattern_match": {
+      "type": ["string", "null"],
+      "description": "Matched failure pattern ID (e.g., FP-001) if detected"
+    },
+    "output": {
+      "type": ["object", "null"],
+      "description": "Captured stdout/stderr from execution",
+      "properties": {
+        "stdout": {
+          "type": "string",
+          "description": "Standard output (truncated to 2000 chars)"
+        },
+        "stderr": {
+          "type": "string",
+          "description": "Standard error (truncated to 2000 chars)"
+        }
+      }
+    }
+  },
+  "required": ["timestamp", "task_id", "model", "status"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "timestamp": "2025-12-12T13:30:00.000Z",
+      "task_id": "T-LEARN-001",
+      "model": "qwen",
+      "status": "success",
+      "execution": {
+        "start": "2025-12-12T13:29:50.000Z",
+        "end": "2025-12-12T13:30:00.000Z",
+        "duration_ms": 10000
+      },
+      "test_result": {
+        "exit_code": 0,
+        "tests_run": 1,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "failure_summary": null,
+        "error_type": null
+      },
+      "failure_classification": null,
+      "pattern_match": null
+    }
+  ]
+}

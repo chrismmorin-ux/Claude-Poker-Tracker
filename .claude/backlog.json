@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated_at": "2025-12-12T16:59:06.236Z",
+  "updated_at": "2025-12-12T19:38:24.690Z",
   "tasks": [
     {
       "id": "T-P8-001",
@@ -478,7 +478,8 @@
       "test_command": "node test-dispatcher-output.js",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Debugging task, no longer needed",
       "inputs": [],
       "outputs": [
         "Prints 'Dispatcher test successful!'"
@@ -506,7 +507,8 @@
       "test_command": "echo '{\"tool_input\":{\"file_path\":\"test.js\"}}' | node .claude/hooks/pre-write-delegation-check.cjs",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Duplicate of T-001 which is complete",
       "inputs": [
         ".claude/hooks/delegation-check.cjs"
       ],
@@ -536,7 +538,8 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - duplicate work",
       "inputs": [
         ".claude/hooks/delegation-check.cjs",
         ".claude/projects.json"
@@ -567,7 +570,8 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - duplicate work",
       "inputs": [
         ".claude/hooks/delegation-check.cjs"
       ],
@@ -597,7 +601,8 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - duplicate work",
       "inputs": [],
       "outputs": [
         "Main execution flow"
@@ -626,7 +631,8 @@
       "test_command": "echo '{\"tool_input\":{\"file_path\":\"test.js\"}}' | node .claude/hooks/pre-write-delegation-check.cjs 2>&1 | grep '🚫'",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - duplicate work",
       "inputs": [
         ".claude/hooks/delegation-check.cjs"
       ],
@@ -656,7 +662,8 @@
       "test_command": "node -e \"JSON.parse(require('fs').readFileSync('.vscode/settings.json'))\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - duplicate work",
       "inputs": [
         ".vscode/settings.json"
       ],
@@ -685,7 +692,8 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Parent T-ENF-001 abandoned - T-007 has same functionality",
       "inputs": [
         ".claude/hooks/pre-write-delegation-check.cjs"
       ],
@@ -793,7 +801,8 @@
       "test_command": "test -f .claude/DISPATCHER_QUICKSTART.md",
       "assigned_to": "local:qwen",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "abandoned",
+      "abandoned_reason": "Superseded by T-020-FIX",
       "inputs": [
         "existing dispatcher.cjs commands"
       ],
@@ -861,6 +870,625 @@
         }
       ],
       "assigned_at": "2025-12-12T16:59:06.236Z"
+    },
+    {
+      "id": "T-020-FIX",
+      "title": "Rewrite DISPATCHER_QUICKSTART.md in proper markdown format",
+      "description": "Replace the incorrectly generated JavaScript code with proper markdown documentation showing dispatcher workflow commands",
+      "files_touched": [
+        ".claude/DISPATCHER_QUICKSTART.md"
+      ],
+      "est_lines_changed": 180,
+      "est_local_effort_mins": 25,
+      "test_command": "grep -q '## Adding Tasks Manually' .claude/DISPATCHER_QUICKSTART.md",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "in_progress",
+      "inputs": [
+        "dispatcher.cjs commands",
+        "enforcement project examples"
+      ],
+      "outputs": [
+        "Markdown quickstart guide with sections and code blocks"
+      ],
+      "constraints": [
+        "Pure markdown format (NOT JavaScript)",
+        "Section 1: Adding tasks manually - show cat tasks.json | node scripts/dispatcher.cjs add-tasks",
+        "Section 2: Executing tasks - show node scripts/dispatcher.cjs assign-next",
+        "Section 3: Checking status - show node scripts/dispatcher.cjs status",
+        "Section 4: Troubleshooting - common errors and fixes",
+        "Include examples from local-model-enforcement project",
+        "Use markdown code blocks with bash syntax highlighting",
+        "Keep under 200 lines"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 60
+        },
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 449,
+          "lines_end": 463
+        }
+      ],
+      "assigned_at": "2025-12-12T17:05:53.102Z"
+    },
+    {
+      "id": "T-017-FIX",
+      "title": "Fix auto-execute-project.cjs bugs and simplify implementation",
+      "description": "Rewrite auto-execute-project.cjs without external dependencies (showdown/ajv), fix syntax errors, and implement proper task extraction from project files",
+      "files_touched": [
+        "scripts/auto-execute-project.cjs"
+      ],
+      "est_lines_changed": 150,
+      "est_local_effort_mins": 40,
+      "test_command": "node scripts/auto-execute-project.cjs --help",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "in_progress",
+      "inputs": [
+        "Project markdown files with <details> sections"
+      ],
+      "outputs": [
+        "Working CLI script that extracts and executes tasks"
+      ],
+      "constraints": [
+        "NO external dependencies (remove showdown, ajv)",
+        "Use Node.js built-in modules only (fs, path, child_process)",
+        "Parse markdown using regex to find <details> sections",
+        "Extract JSON from code blocks: ```json ... ```",
+        "Use JSON.parse to validate (no ajv needed)",
+        "Fix path resolution (use process.cwd() + 'docs/projects/')",
+        "Add proper error handling",
+        "Include --help flag showing usage",
+        "Pipe to dispatcher via spawn/exec with proper stdin",
+        "Test with: node scripts/auto-execute-project.cjs --help"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 111,
+          "lines_end": 170
+        },
+        {
+          "path": "docs/projects/0.002.1212-local-model-enforcement.project.md",
+          "lines_start": 130,
+          "lines_end": 160
+        }
+      ],
+      "assigned_at": "2025-12-12T17:06:11.226Z"
+    },
+    {
+      "id": "T-DECOMP-001",
+      "title": "Add Task Complexity Classification to DECOMPOSITION_POLICY.md",
+      "description": "Add Section 2.5 defining Type A-D task complexity with guidelines for each type",
+      "files_touched": [
+        ".claude/DECOMPOSITION_POLICY.md"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 25,
+      "test_command": "grep -q 'Type A: Mechanical Edit' .claude/DECOMPOSITION_POLICY.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "in_progress",
+      "constraints": [
+        "Insert new Section 2.5 after Section 2 (Atomic Criteria)",
+        "Define 4 complexity types: Type A (Mechanical Edit), Type B (Template Fill), Type C (Creative Generation), Type D (Semantic Rewrite)",
+        "For each type: describe characteristics, provide examples, specify when to use",
+        "Add rule: Only Type A/B can be assigned to local models without escalation",
+        "Keep formatting consistent with existing sections",
+        "Use markdown headers, bullet points, and code examples"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 57,
+          "lines_end": 90
+        }
+      ],
+      "assigned_at": "2025-12-12T17:49:30.679Z"
+    },
+    {
+      "id": "T-DECOMP-002",
+      "title": "Extend local-task.schema.json with new optional fields",
+      "description": "Add edit_strategy, edit_operations, output_template, anti_patterns to task schema",
+      "files_touched": [
+        ".claude/schemas/local-task.schema.json"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 35,
+      "test_command": "node -e \"const s=require('./.claude/schemas/local-task.schema.json'); if(!s.properties.edit_strategy) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "in_progress",
+      "constraints": [
+        "Add to properties object (not required array):",
+        "  edit_strategy: {type: string, enum: [incremental_edit, template_fill, create_new, rewrite]}",
+        "  edit_operations: {type: array, items: {type: object, properties: {type, line, content}}}",
+        "  output_template: {type: string}",
+        "  anti_patterns: {type: array, items: {type: string}}",
+        "All new fields are OPTIONAL",
+        "Maintain valid JSON syntax",
+        "Keep existing fields unchanged"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/schemas/local-task.schema.json",
+          "lines_start": 1,
+          "lines_end": 100
+        }
+      ],
+      "assigned_at": "2025-12-12T17:50:06.601Z"
+    },
+    {
+      "id": "T-DECOMP-003",
+      "title": "Add escalation checklist to permission-request.schema.json",
+      "description": "Add REQUIRED decomposition_quality_checklist field with validation questions",
+      "files_touched": [
+        ".claude/schemas/permission-request.schema.json"
+      ],
+      "est_lines_changed": 60,
+      "est_local_effort_mins": 20,
+      "test_command": "node -e \"const s=require('./.claude/schemas/permission-request.schema.json'); if(!s.properties.decomposition_quality_checklist) process.exit(1);\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "in_progress",
+      "constraints": [
+        "Add decomposition_quality_checklist to properties",
+        "Make it type: object with properties:",
+        "  - task_complexity_type: {enum: [A, B, C, D], required: true}",
+        "  - why_not_type_a: {type: string}",
+        "  - decomposition_attempts: {type: number, minimum: 2}",
+        "  - alternative_decompositions: {type: array}",
+        "  - why_local_model_cannot: {type: string, minLength: 100}",
+        "  - tokens_at_stake: {type: number}",
+        "Add decomposition_quality_checklist to required array",
+        "Maintain valid JSON schema syntax"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/schemas/permission-request.schema.json",
+          "lines_start": 1,
+          "lines_end": 80
+        }
+      ],
+      "assigned_at": "2025-12-12T17:50:26.026Z"
+    },
+    {
+      "id": "T-DECOMP-004",
+      "title": "Create ESCALATION_LOG.md with structured template",
+      "description": "Create new markdown file for logging all escalation decisions",
+      "files_touched": [
+        ".claude/ESCALATION_LOG.md"
+      ],
+      "est_lines_changed": 100,
+      "est_local_effort_mins": 20,
+      "test_command": "test -f .claude/ESCALATION_LOG.md && grep -q '## Log Format' .claude/ESCALATION_LOG.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "in_progress",
+      "constraints": [
+        "Create file with title: # Escalation Log",
+        "Add purpose statement explaining what this tracks",
+        "Include ## Log Format section with template entry format",
+        "Include ## Entries section (empty initially)",
+        "Include ## Statistics section with counters (all zero initially)",
+        "Use markdown formatting throughout",
+        "Template should show: Date, Task ID, Complexity Type, Reason, Tokens, Decision, Outcome",
+        "Keep under 150 lines for initial template"
+      ],
+      "assigned_at": "2025-12-12T17:50:55.883Z"
+    },
+    {
+      "id": "T-LEARN-001",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Create logging directory structure",
+      "description": "Create .claude/logs/ directory with .gitkeep and README explaining log format",
+      "files_touched": [
+        ".claude/logs/.gitkeep",
+        ".claude/logs/README.md"
+      ],
+      "est_lines_changed": 30,
+      "est_local_effort_mins": 15,
+      "test_command": "test -d .claude/logs && test -f .claude/logs/.gitkeep && test -f .claude/logs/README.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "None"
+      ],
+      "outputs": [
+        ".claude/logs/ directory with .gitkeep and README.md"
+      ],
+      "constraints": [
+        "README explains JSONL log format",
+        ".gitkeep ensures directory tracked",
+        "Add *.log to .gitignore"
+      ],
+      "task_complexity_type": "A",
+      "assigned_at": "2025-12-12T19:22:42.697Z",
+      "completed_at": "2025-12-12T19:27:04.982Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-002",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Create task execution log schema",
+      "description": "Define JSONL schema for local-model-tasks.log entries with all fields from proposal",
+      "files_touched": [
+        ".claude/schemas/task-execution-log.schema.json"
+      ],
+      "est_lines_changed": 150,
+      "est_local_effort_mins": 25,
+      "test_command": "node -e \"const s = require('./.claude/schemas/task-execution-log.schema.json'); if (!s.properties.failure_classification) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        ".claude/schemas/local-task.schema.json for reference"
+      ],
+      "outputs": [
+        "Complete JSON schema for task execution log entries"
+      ],
+      "constraints": [
+        "Include timestamp, task_id, model, status, execution, test_result, failure_classification",
+        "Use JSON Schema format",
+        "Document each field"
+      ],
+      "task_complexity_type": "B",
+      "needs_context": [
+        {
+          "path": ".claude/schemas/local-task.schema.json",
+          "lines_start": 1,
+          "lines_end": 100
+        }
+      ],
+      "assigned_at": "2025-12-12T19:23:22.010Z",
+      "completed_at": "2025-12-12T19:27:05.032Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-003",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Add logging functions to dispatcher",
+      "description": "Add writeTaskLog() function to dispatcher.cjs that appends JSONL entries",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 30,
+      "test_command": "node -e \"require('./scripts/dispatcher.cjs'); console.log('ok')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "Existing dispatcher.cjs structure"
+      ],
+      "outputs": [
+        "writeTaskLog(entry) function that appends to .claude/logs/local-model-tasks.log"
+      ],
+      "constraints": [
+        "Add LOG_FILE constant after line 26",
+        "Add writeTaskLog after saveBacklog function",
+        "Handle errors silently",
+        "JSONL format (one JSON per line)"
+      ],
+      "task_complexity_type": "C",
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 100
+        }
+      ],
+      "assigned_at": "2025-12-12T19:23:56.424Z",
+      "completed_at": "2025-12-12T19:27:05.081Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-004",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Log task start in assign-next command",
+      "description": "Call writeTaskLog() when task execution starts",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 20,
+      "test_command": "grep -q writeTaskLog scripts/dispatcher.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "Existing assign-next command code"
+      ],
+      "outputs": [
+        "Log entry with status=in_progress at task start"
+      ],
+      "constraints": [
+        "Add after console.log calling local model",
+        "Include timestamp, task_id, model, status, execution.start",
+        "Use try-catch"
+      ],
+      "task_complexity_type": "A",
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 240,
+          "lines_end": 280
+        }
+      ],
+      "completed_at": "2025-12-12T19:27:05.133Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-005",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Log task completion in assign-next command",
+      "description": "Call writeTaskLog() after task execution completes (success or failure)",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 30,
+      "est_local_effort_mins": 25,
+      "test_command": "grep -c writeTaskLog scripts/dispatcher.cjs",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "Existing success/failure paths in assign-next"
+      ],
+      "outputs": [
+        "Log entries in both success and failure paths with duration"
+      ],
+      "constraints": [
+        "Add in both success and failure paths",
+        "Calculate duration_ms from start",
+        "Include execution.end and status"
+      ],
+      "task_complexity_type": "A",
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 270,
+          "lines_end": 300
+        }
+      ],
+      "anti_patterns": [
+        "Don't duplicate entire assign-next function",
+        "Don't remove existing console.log statements"
+      ],
+      "completed_at": "2025-12-12T19:27:05.182Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-006",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Create test result parser utility",
+      "description": "Create utility to parse test output and extract detailed failure info",
+      "files_touched": [
+        "scripts/utils/test-result-parser.cjs"
+      ],
+      "est_lines_changed": 100,
+      "est_local_effort_mins": 40,
+      "test_command": "node -e \"const p = require('./scripts/utils/test-result-parser.cjs'); console.log('ok')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "vitest output format examples",
+        "npm test error format"
+      ],
+      "outputs": [
+        "parseTestOutput(stdout, stderr, exitCode) function returning {tests_run, tests_passed, tests_failed, failure_summary, error_type}"
+      ],
+      "constraints": [
+        "Handle vitest format",
+        "Handle npm test errors",
+        "Truncate error messages to 500 chars",
+        "Return null for unparseable"
+      ],
+      "task_complexity_type": "C",
+      "assigned_at": "2025-12-12T19:27:11.173Z",
+      "completed_at": "2025-12-12T19:28:33.115Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-007",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Integrate test parser with complete command",
+      "description": "Use test-result-parser in complete command to log detailed test results",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 20,
+      "est_local_effort_mins": 20,
+      "test_command": "grep -q parseTestOutput scripts/dispatcher.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "blocked",
+      "inputs": [
+        "test-result-parser.cjs exports",
+        "complete command code"
+      ],
+      "outputs": [
+        "Parser integrated, test_result included in log entries"
+      ],
+      "constraints": [
+        "Import at top of file",
+        "Call in complete command",
+        "Keep existing test pass/fail logic"
+      ],
+      "task_complexity_type": "A",
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 340,
+          "lines_end": 370
+        }
+      ],
+      "assigned_at": "2025-12-12T19:28:33.215Z",
+      "completed_at": "2025-12-12T19:29:10.946Z",
+      "tests_passed": false,
+      "failure_count": 1,
+      "decomposition_depth": 1,
+      "needs_redecomposition": true,
+      "redecompose_requested_at": "2025-12-12T19:29:10.949Z",
+      "redecompose_reason": "Test failure (attempt 1)",
+      "decomposition_history": [
+        {
+          "timestamp": "2025-12-12T19:29:10.949Z",
+          "depth": 1,
+          "reason": "Test failure (attempt 1)"
+        }
+      ]
+    },
+    {
+      "id": "T-LEARN-008",
+      "parent_id": "learning-dashboard-phase1",
+      "title": "Create log viewer utility script",
+      "description": "Create script to view/filter local-model-tasks.log in readable format",
+      "files_touched": [
+        "scripts/view-task-log.cjs"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 35,
+      "test_command": "node scripts/view-task-log.cjs --help",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "done",
+      "inputs": [
+        "JSONL log file format",
+        "CLI argument parsing patterns"
+      ],
+      "outputs": [
+        "CLI tool with --status, --task-id, --model, --last, --verbose filters"
+      ],
+      "constraints": [
+        "Read .claude/logs/local-model-tasks.log",
+        "Table format output",
+        "Handle missing log gracefully"
+      ],
+      "task_complexity_type": "C",
+      "assigned_at": "2025-12-12T19:29:10.999Z",
+      "completed_at": "2025-12-12T19:30:19.599Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-009",
+      "parent_id": "learning-dashboard-phase2",
+      "title": "Create learning directory structure",
+      "description": "Create .claude/learning/ directory with .gitkeep and README explaining failure patterns",
+      "files_touched": [
+        ".claude/learning/.gitkeep",
+        ".claude/learning/README.md"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 15,
+      "test_command": "test -d .claude/learning && test -f .claude/learning/README.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [],
+      "outputs": [
+        ".claude/learning/ directory with README"
+      ],
+      "constraints": [
+        "README explains failure pattern schema and usage"
+      ],
+      "task_complexity_type": "A",
+      "edit_strategy": "create_new",
+      "assigned_at": "2025-12-12T19:35:00.009Z",
+      "completed_at": "2025-12-12T19:36:32.640Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-010",
+      "parent_id": "learning-dashboard-phase2",
+      "title": "Create failure pattern schema",
+      "description": "Define JSON schema for failure-patterns.json with pattern_id, name, occurrences, mitigation_status fields",
+      "files_touched": [
+        ".claude/schemas/failure-pattern.schema.json"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 30,
+      "test_command": "node -e \"const s = require('./.claude/schemas/failure-pattern.schema.json'); if (!s.properties.mitigation_status) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [],
+      "outputs": [
+        "Complete JSON schema for failure patterns"
+      ],
+      "constraints": [
+        "Include pattern_id, name, description, signature, occurrences array, mitigation_status, effectiveness_rate",
+        "Use JSON Schema format"
+      ],
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "assigned_at": "2025-12-12T19:36:32.723Z",
+      "completed_at": "2025-12-12T19:38:24.514Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-011",
+      "parent_id": "learning-dashboard-phase2",
+      "title": "Initialize failure-patterns.json with known patterns",
+      "description": "Create failure-patterns.json with FP-001 (File Modification) and FP-002 (Constraint Ignoring) pre-populated",
+      "files_touched": [
+        ".claude/learning/failure-patterns.json"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 25,
+      "test_command": "node -e \"const f = require('./.claude/learning/failure-patterns.json'); if (f.patterns.length < 2) process.exit(1);\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "FP-001: File Modification Anti-Pattern - local models rewrite entire file instead of editing, 4+ occurrences",
+        "FP-002: Constraint Ignoring - models ignore explicit constraints like pure markdown producing JavaScript"
+      ],
+      "outputs": [
+        "failure-patterns.json with 2 known patterns"
+      ],
+      "constraints": [
+        "Include pattern_id, name, description, signature, occurrences, mitigation_status for each",
+        "FP-001 mitigation_status should be implemented (size guard added)"
+      ],
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "completed_at": "2025-12-12T19:38:24.607Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LEARN-012",
+      "parent_id": "learning-dashboard-phase2",
+      "title": "Create pattern detection script",
+      "description": "Script to detect if a new failure matches existing patterns based on error signatures",
+      "files_touched": [
+        "scripts/detect-failure-pattern.cjs"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 35,
+      "test_command": "node -e \"require('./scripts/detect-failure-pattern.cjs'); console.log('ok')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "done",
+      "inputs": [],
+      "outputs": [
+        "detectPattern(taskLog) function returning pattern_id or null"
+      ],
+      "constraints": [
+        "Export detectPattern function",
+        "Match on error messages and task complexity type",
+        "Return null if no match"
+      ],
+      "task_complexity_type": "C",
+      "edit_strategy": "create_new",
+      "completed_at": "2025-12-12T19:38:24.690Z",
+      "tests_passed": true
     }
   ],
   "projects": {
@@ -882,10 +1510,10 @@
     }
   },
   "stats": {
-    "total_tasks": 24,
+    "total_tasks": 42,
     "open": 0,
-    "in_progress": 12,
-    "done": 12,
+    "in_progress": 9,
+    "done": 23,
     "failed": 0
   }
 }

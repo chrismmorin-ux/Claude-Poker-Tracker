@@ -1,0 +1,69 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2025-12-12T19:40:00.000Z",
+  "patterns": [
+    {
+      "pattern_id": "FP-001",
+      "name": "File Modification Anti-Pattern",
+      "description": "Local models rewrite entire file instead of making incremental edits. When asked to modify an existing file, they output a completely new (often truncated) version instead of the requested changes.",
+      "signature": {
+        "error_contains": ["size guard", "output too small", "overwrit"],
+        "task_type": "incremental_edit"
+      },
+      "occurrences": [
+        {"task_id": "T-DECOMP-001", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-DECOMP-002", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-020-FIX", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-017-FIX", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-LEARN-003", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-LEARN-007", "date": "2025-12-12", "outcome": "failed"}
+      ],
+      "mitigation_status": "implemented",
+      "mitigation_description": "Size guard in execute-local-task.sh blocks writes when output is <50% of original file size. Edit strategy guard blocks incremental_edit tasks on large files.",
+      "effectiveness_rate": null,
+      "first_seen": "2025-12-12",
+      "last_seen": "2025-12-12"
+    },
+    {
+      "pattern_id": "FP-002",
+      "name": "Constraint Ignoring",
+      "description": "Local models ignore explicit constraints in the task specification. Examples: 'pure markdown' produces JavaScript, 'NO dependencies' keeps require() statements.",
+      "signature": {
+        "error_contains": ["constraint", "should be", "expected"],
+        "task_type": null
+      },
+      "occurrences": [
+        {"task_id": "T-020-FIX", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-017-FIX", "date": "2025-12-12", "outcome": "failed"},
+        {"task_id": "T-LEARN-010", "date": "2025-12-12", "outcome": "failed"}
+      ],
+      "mitigation_status": "proposed",
+      "mitigation_description": "Add anti_patterns field to task schema. Strengthen constraint wording in prompts. Consider post-generation validation.",
+      "effectiveness_rate": null,
+      "first_seen": "2025-12-12",
+      "last_seen": "2025-12-12"
+    },
+    {
+      "pattern_id": "FP-003",
+      "name": "Explanation Instead of Code",
+      "description": "Local models output explanatory text instead of code, ignoring the 'code only' system prompt instruction.",
+      "signature": {
+        "error_contains": ["syntax", "invalid", "unexpected token"],
+        "task_type": null
+      },
+      "occurrences": [
+        {"task_id": "T-LEARN-010", "date": "2025-12-12", "outcome": "failed"}
+      ],
+      "mitigation_status": "none",
+      "mitigation_description": null,
+      "effectiveness_rate": null,
+      "first_seen": "2025-12-12",
+      "last_seen": "2025-12-12"
+    }
+  ],
+  "stats": {
+    "total_patterns": 3,
+    "mitigated": 1,
+    "unmitigated": 2
+  }
+}

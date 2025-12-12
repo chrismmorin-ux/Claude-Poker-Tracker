@@ -300,14 +300,38 @@ fi
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
 
+# Get edit strategy from task spec (create_new or incremental_edit)
+EDIT_STRATEGY=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('edit_strategy','create_new'))")
+
 # Backup existing file if it exists
 BACKUP_FILE=""
 FULL_OUTPUT_PATH="$PROJECT_ROOT/$OUTPUT_FILE"
+ORIGINAL_LINES=0
 if [ -f "$FULL_OUTPUT_PATH" ]; then
+    ORIGINAL_LINES=$(wc -l < "$FULL_OUTPUT_PATH")
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="$BACKUP_DIR/$(basename "$OUTPUT_FILE").$TIMESTAMP.bak"
     cp "$FULL_OUTPUT_PATH" "$BACKUP_FILE"
     log_info "Created backup: $BACKUP_FILE"
+fi
+
+# SIZE GUARD: Prevent catastrophic file overwrites (FP-001 mitigation)
+NEW_LINES=$(echo "$CONTENT" | wc -l)
+if [ "$ORIGINAL_LINES" -gt 100 ] && [ "$NEW_LINES" -lt $((ORIGINAL_LINES / 2)) ]; then
+    log_error "SIZE GUARD TRIGGERED: Output ($NEW_LINES lines) is <50% of original ($ORIGINAL_LINES lines)"
+    log_error "This likely indicates the model rewrote instead of edited the file"
+    log_error "Backup preserved at: $BACKUP_FILE"
+    output_result "failed" "$OUTPUT_FILE" "Size guard: output too small ($NEW_LINES vs $ORIGINAL_LINES lines)" "$BACKUP_FILE"
+    exit 1
+fi
+
+# EDIT STRATEGY GUARD: Block incremental_edit tasks on existing files
+if [ "$EDIT_STRATEGY" = "incremental_edit" ] && [ "$ORIGINAL_LINES" -gt 50 ]; then
+    log_error "EDIT STRATEGY GUARD: Task requires incremental_edit but model outputs full file"
+    log_error "incremental_edit tasks on large files should be handled by Claude, not local models"
+    log_error "Backup preserved at: $BACKUP_FILE"
+    output_result "failed" "$OUTPUT_FILE" "Edit strategy mismatch: incremental_edit on $ORIGINAL_LINES line file" "$BACKUP_FILE"
+    exit 1
 fi
 
 # Create directory if needed

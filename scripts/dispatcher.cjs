@@ -24,6 +24,7 @@ const { generateInvariantTest } = require('./invariant-test-generator.cjs');
 const BACKLOG_PATH = path.join(process.cwd(), '.claude', 'backlog.json');
 const SCHEMA_PATH = path.join(process.cwd(), '.claude', 'schemas', 'local-task.schema.json');
 const PERMISSION_REQUESTS_PATH = path.join(process.cwd(), '.claude', 'permission-requests.json');
+const LOG_FILE = path.join(process.cwd(), '.claude', 'logs', 'local-model-tasks.log');
 
 // Atomic criteria limits
 const ATOMIC_LIMITS = {
@@ -54,6 +55,20 @@ function saveBacklog(backlog) {
   backlog.updated_at = new Date().toISOString();
   backlog.stats = calculateStats(backlog.tasks);
   fs.writeFileSync(BACKLOG_PATH, JSON.stringify(backlog, null, 2));
+}
+
+// Write task execution log entry (JSONL format)
+function writeTaskLog(entry) {
+  try {
+    const logDir = path.dirname(LOG_FILE);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const line = JSON.stringify(entry) + '\n';
+    fs.appendFileSync(LOG_FILE, line, 'utf8');
+  } catch (e) {
+    // Silent fail - don't break dispatcher
+  }
 }
 
 // Calculate stats
@@ -194,7 +209,11 @@ function convertToExecutionFormat(task) {
     context_files: task.inputs || [],
     constraints: task.constraints || [],
     test_command: task.test_command || '',
-    language: language
+    language: language,
+    // Pass edit_strategy for FP-001 guards (defaults to create_new)
+    edit_strategy: task.edit_strategy || 'create_new',
+    // Pass needs_context for precise context extraction
+    needs_context: task.needs_context || []
   };
 }
 
@@ -258,6 +277,17 @@ async function assignNext() {
 
   // Execute via execute-local-task.sh
   const scriptPath = path.join(__dirname, 'execute-local-task.sh');
+  const taskStartTime = new Date();
+
+  // Log task start
+  writeTaskLog({
+    timestamp: taskStartTime.toISOString(),
+    task_id: openTask.id,
+    model: execSpec.model,
+    status: 'in_progress',
+    execution: { start: taskStartTime.toISOString(), end: null, duration_ms: null }
+  });
+
   try {
     console.log(`📝 Calling local model: ${execSpec.model}`);
     console.log('');
@@ -272,6 +302,18 @@ async function assignNext() {
     // The script auto-updates backlog, but we'll reload to be sure
     const updatedBacklog = loadBacklog();
     const completedTask = updatedBacklog.tasks.find(t => t.id === openTask.id);
+    const taskEndTime = new Date();
+    const durationMs = taskEndTime - taskStartTime;
+
+    // Log task completion
+    writeTaskLog({
+      timestamp: taskEndTime.toISOString(),
+      task_id: openTask.id,
+      model: execSpec.model,
+      status: completedTask && completedTask.status === 'done' ? 'success' : 'failed',
+      execution: { start: taskStartTime.toISOString(), end: taskEndTime.toISOString(), duration_ms: durationMs },
+      test_result: completedTask ? { exit_code: completedTask.tests_passed ? 0 : 1 } : null
+    });
 
     if (completedTask && completedTask.status === 'done') {
       console.log(`\n✅ Task ${openTask.id} completed successfully`);
@@ -280,6 +322,20 @@ async function assignNext() {
     }
 
   } catch (error) {
+    const taskEndTime = new Date();
+    const durationMs = taskEndTime - taskStartTime;
+
+    // Log task failure
+    writeTaskLog({
+      timestamp: taskEndTime.toISOString(),
+      task_id: openTask.id,
+      model: execSpec.model,
+      status: 'failed',
+      execution: { start: taskStartTime.toISOString(), end: taskEndTime.toISOString(), duration_ms: durationMs },
+      failure_classification: 'unknown',
+      output: { stderr: (error.message || '').slice(0, 2000) }
+    });
+
     console.error(`\n❌ Task ${openTask.id} execution failed`);
     console.error(error.message);
 

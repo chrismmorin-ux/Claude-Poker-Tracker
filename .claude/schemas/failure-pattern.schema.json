@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Failure Patterns Collection",
+  "description": "Schema for .claude/learning/failure-patterns.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FailurePattern"
+      }
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "total_patterns": { "type": "number" },
+        "mitigated": { "type": "number" },
+        "unmitigated": { "type": "number" }
+      }
+    }
+  },
+  "required": ["patterns"],
+  "definitions": {
+    "FailurePattern": {
+      "type": "object",
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "pattern": "^FP-\\d{3}$",
+          "description": "Unique pattern identifier (e.g., FP-001)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable pattern name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the failure pattern"
+        },
+        "signature": {
+          "type": "object",
+          "description": "Pattern matching criteria",
+          "properties": {
+            "error_contains": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Strings that appear in error messages"
+            },
+            "task_type": {
+              "type": "string",
+              "description": "Task complexity type that triggers this pattern"
+            },
+            "file_pattern": {
+              "type": "string",
+              "description": "Glob pattern for affected files"
+            }
+          }
+        },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task_id": { "type": "string" },
+              "date": { "type": "string", "format": "date" },
+              "outcome": { "type": "string", "enum": ["failed", "mitigated", "success"] }
+            },
+            "required": ["task_id", "date", "outcome"]
+          }
+        },
+        "mitigation_status": {
+          "type": "string",
+          "enum": ["none", "proposed", "implemented", "verified"],
+          "description": "Current mitigation status"
+        },
+        "mitigation_description": {
+          "type": "string",
+          "description": "How the pattern is being mitigated"
+        },
+        "effectiveness_rate": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Success rate after mitigation (0-1)"
+        },
+        "first_seen": {
+          "type": "string",
+          "format": "date"
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": ["pattern_id", "name", "description", "mitigation_status"]
+    }
+  }
+}
