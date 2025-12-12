@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-poker-tracker/schemas/permission-request.schema.json",
+  "title": "Permission Request Schema",
+  "description": "Schema for CLAUDE_REQUEST_FOR_PERMISSION protocol - structured escalation when atomic decomposition is not feasible",
+  "type": "object",
+  "required": [
+    "request_id",
+    "timestamp",
+    "task_description",
+    "attempted_decomposition",
+    "blocking_criteria",
+    "justification",
+    "estimated_complexity",
+    "requested_by",
+    "status"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "pattern": "^PR-\\d{4}-\\d{2}-\\d{2}-\\d{3}$",
+      "description": "Unique permission request ID (format: PR-YYYY-MM-DD-NNN)",
+      "examples": ["PR-2025-12-11-001"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of request creation"
+    },
+    "task_description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "Clear description of the task requiring permission"
+    },
+    "attempted_decomposition": {
+      "type": "object",
+      "required": ["decomposition_attempts", "subtasks_proposed", "why_insufficient"],
+      "properties": {
+        "decomposition_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of decomposition attempts made"
+        },
+        "subtasks_proposed": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["title", "blocking_reason"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Proposed subtask title"
+              },
+              "blocking_reason": {
+                "type": "string",
+                "description": "Why this subtask cannot meet atomic criteria"
+              },
+              "failed_criteria": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["files_touched", "est_lines_changed", "test_command", "est_local_effort_mins"]
+                },
+                "description": "Which atomic criteria failed"
+              }
+            }
+          },
+          "description": "List of subtasks attempted during decomposition"
+        },
+        "why_insufficient": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Detailed explanation of why atomic decomposition is not feasible"
+        }
+      },
+      "description": "Evidence of decomposition attempts"
+    },
+    "blocking_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "files_touched",
+          "est_lines_changed",
+          "test_command",
+          "est_local_effort_mins",
+          "circular_dependencies",
+          "requires_real_time_debugging",
+          "requires_interactive_decisions",
+          "requires_multi_file_refactoring",
+          "no_atomic_boundary_exists"
+        ]
+      },
+      "description": "Which atomic criteria or constraints prevent decomposition"
+    },
+    "justification": {
+      "type": "string",
+      "minLength": 50,
+      "maxLength": 1000,
+      "description": "Detailed justification for why Claude must handle this task directly"
+    },
+    "estimated_complexity": {
+      "type": "object",
+      "required": ["files_affected", "lines_affected", "effort_mins"],
+      "properties": {
+        "files_affected": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of files that will be modified"
+        },
+        "lines_affected": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Estimated total lines changed"
+        },
+        "effort_mins": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Estimated effort in minutes"
+        },
+        "risk_level": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Risk level of making changes without decomposition"
+        }
+      },
+      "description": "Complexity estimates for the non-decomposed task"
+    },
+    "requested_by": {
+      "type": "string",
+      "pattern": "^claude:sonnet-4\\.5$",
+      "description": "Always 'claude:sonnet-4.5' for this protocol"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "approved", "rejected", "redecompose"],
+      "description": "Current status of permission request"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "enum": ["human", "program-manager-agent"],
+      "description": "Who reviewed the request (only set after review)"
+    },
+    "review_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the request was reviewed (only set after review)"
+    },
+    "review_decision": {
+      "type": "string",
+      "description": "Detailed review decision notes (only set after review)"
+    },
+    "alternative_approach": {
+      "type": "string",
+      "description": "Alternative decomposition suggested during review (if status=redecompose)"
+    },
+    "approval_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conditions that must be met if approved (e.g., 'must write tests after', 'requires code review')"
+    }
+  },
+  "additionalProperties": false
+}

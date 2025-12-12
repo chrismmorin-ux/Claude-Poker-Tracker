@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "description": "Log of CLAUDE_REQUEST_FOR_PERMISSION escalations",
+  "schema": ".claude/schemas/permission-request.schema.json",
+  "updated_at": "2025-12-11T00:00:00.000Z",
+  "requests": [],
+  "statistics": {
+    "total_requests": 0,
+    "approved": 0,
+    "rejected": 0,
+    "redecompose": 0,
+    "pending": 0
+  },
+  "notes": [
+    "This file tracks permission requests when atomic decomposition is not feasible",
+    "Each request must provide evidence of decomposition attempts",
+    "Human or program-manager-agent reviews and approves/rejects",
+    "Goal: Minimize requests through better decomposition practices"
+  ]
+}

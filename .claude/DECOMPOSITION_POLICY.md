@@ -132,24 +132,117 @@ The dispatcher automatically creates a `T-XXX-TEST` subtask for each task with `
 
 ## 7. CLAUDE_REQUEST_FOR_PERMISSION Protocol
 
-When atomic decomposition is **truly impossible**, Claude produces:
+### When to Use
+
+Use this protocol **only when**:
+- Atomic decomposition attempted ≥2 times and failed
+- Blocking criteria are fundamental (circular dependencies, no atomic boundary)
+- Task genuinely requires real-time debugging or interactive decisions
+- Multi-file refactoring with tight coupling cannot be split
+
+**Do NOT use for**:
+- Tasks that are just "hard" (decompose harder)
+- Laziness or convenience
+- Insufficient decomposition attempts
+- Tasks that could be atomic with better planning
+
+### Schema Structure
+
+Permission requests use `.claude/schemas/permission-request.schema.json`:
 
 ```json
 {
-  "type": "CLAUDE_REQUEST_FOR_PERMISSION",
-  "task_id": "T-XXX-001",
-  "reason": "Cross-cutting concern spanning 7 tightly-coupled files",
-  "attempted_decomposition": [
-    "Tried splitting by file - dependencies prevent isolation",
-    "Tried splitting by function - state shared across all"
-  ],
-  "proposed_approach": "Claude implements with detailed review checkpoints",
-  "estimated_effort": "45 minutes",
-  "files_affected": ["list", "of", "files"]
+  "request_id": "PR-2025-12-11-001",
+  "timestamp": "2025-12-11T10:30:00.000Z",
+  "task_description": "Refactor multi-reducer action coordination layer",
+  "attempted_decomposition": {
+    "decomposition_attempts": 2,
+    "subtasks_proposed": [
+      {
+        "title": "Extract coordination logic to separate file",
+        "blocking_reason": "Circular dependency - reducers import coordinator, coordinator imports reducers",
+        "failed_criteria": ["files_touched", "circular_dependencies"]
+      },
+      {
+        "title": "Inline coordination in each reducer",
+        "blocking_reason": "Duplicates 200+ lines across 5 reducers, violates DRY",
+        "failed_criteria": ["est_lines_changed"]
+      }
+    ],
+    "why_insufficient": "No atomic boundary exists - coordination logic is inherently cross-cutting across all 5 reducers with shared state"
+  },
+  "blocking_criteria": ["circular_dependencies", "no_atomic_boundary_exists"],
+  "justification": "Task requires simultaneous changes to 5 reducers to maintain state consistency. Any partial implementation breaks invariants.",
+  "estimated_complexity": {
+    "files_affected": 5,
+    "lines_affected": 450,
+    "effort_mins": 90,
+    "risk_level": "high"
+  },
+  "requested_by": "claude:sonnet-4.5",
+  "status": "pending"
 }
 ```
 
-**This halts execution** until human approves or suggests alternative decomposition.
+### Required Evidence
+
+**Must provide**:
+1. **attempted_decomposition**: List of ≥1 decomposition attempts with why each failed
+2. **blocking_criteria**: Which atomic criteria or constraints prevent decomposition
+3. **justification**: Detailed (≥50 chars) explanation of why Claude must handle directly
+4. **estimated_complexity**: Honest estimates of scope and risk
+
+**Insufficient justifications** (will be rejected):
+- "This is complex"
+- "Local model can't handle this"
+- "Too many files to split"
+- "Would take too long to decompose"
+
+### Review Process
+
+1. **Submit**: Add entry to `.claude/permission-requests.json`
+2. **Block**: Hook prevents work until reviewed
+3. **Review**: Human or program-manager-agent examines request
+4. **Decision**:
+   - `approved`: Claude proceeds with conditions (e.g., must write tests after)
+   - `rejected`: Request denied, must decompose anyway
+   - `redecompose`: Alternative decomposition approach suggested
+
+### File Locations
+
+| File | Purpose |
+|------|---------|
+| `.claude/permission-requests.json` | Log of all permission requests |
+| `.claude/schemas/permission-request.schema.json` | Validation schema |
+| `.claude/hooks/permission-request-handler.cjs` | Enforcement hook (PreToolUse) |
+
+### CLI Commands
+
+```bash
+# Create permission request template (future)
+node scripts/dispatcher.cjs create-permission-request
+
+# View pending permission requests
+node scripts/dispatcher.cjs list-permissions --status=pending
+
+# Approve a request (human only)
+node scripts/dispatcher.cjs approve-permission PR-2025-12-11-001 --conditions="must write tests"
+
+# Reject with alternative decomposition
+node scripts/dispatcher.cjs reject-permission PR-2025-12-11-001 --suggest="Split by reducer, use event bus"
+```
+
+### Approval Conditions
+
+Approved requests may include conditions:
+- `must write tests after`: Test coverage required post-implementation
+- `requires code review`: Human must review before merge
+- `document decisions`: Must add architectural decision record
+- `pair with human`: Real-time oversight required
+
+### This Halts Execution
+
+**CRITICAL**: Permission requests **BLOCK all work** on related files until reviewed. This is intentional - it forces careful consideration of decomposition alternatives.
 
 ---
 
