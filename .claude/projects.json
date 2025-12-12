@@ -48,6 +48,15 @@
       "phases": 4,
       "phasesComplete": 4,
       "description": "Comprehensive logging, learning engine, and dashboard for local model execution tracking - 26 atomic tasks across 4 phases"
+    },
+    {
+      "id": "token-tracking-overhaul",
+      "name": "Token Tracking & Dashboard Overhaul",
+      "file": "docs/projects/0.004.1212-token-tracking-overhaul.project.md",
+      "priority": "P0",
+      "phases": 4,
+      "phasesComplete": 0,
+      "description": "Use actual token data from stats-cache.json, phase attribution, project-level history, and actionable dashboard trends - 17 atomic tasks"
     }
   ],
   "pending": [
