@@ -116,9 +116,10 @@ plan_file: ${planPath}
 
 1. Read this file first
 2. Find the current phase (marked with \`<- CURRENT\`)
-3. Read the "Context Files" for that phase
-4. Execute the checklist items
-5. Update status when complete
+3. **DECOMPOSE** - Break work into atomic tasks (see below)
+4. Read the "Context Files" for that phase
+5. Execute via local models using dispatcher
+6. Update status when complete
 
 ---
 
@@ -130,10 +131,34 @@ Auto-generated from plan file. See plan for details.
 
 ---
 
+## Task Decomposition (MANDATORY)
+
+**All implementation work must be decomposed into atomic tasks.**
+
+### Atomic Criteria
+| Criterion | Limit |
+|-----------|-------|
+| files_touched | ≤ 3 |
+| est_lines_changed | ≤ 300 |
+| test_command | Required |
+| est_local_effort_mins | ≤ 60 |
+
+### Workflow
+1. **Decompose**: Break phase into atomic tasks using ///LOCAL_TASKS format
+2. **Add to backlog**: \`node scripts/dispatcher.cjs add-tasks < tasks.json\`
+3. **Execute**: \`node scripts/dispatcher.cjs assign-next\`
+4. **Review**: Verify output, integrate changes
+5. **Repeat**: Until phase complete
+
+**See**: \`.claude/DECOMPOSITION_POLICY.md\` for full details
+
+---
+
 ## Context Files
 
 Files to read before starting work:
 - See plan file for file list
+- \`.claude/DECOMPOSITION_POLICY.md\` - Decomposition rules
 
 ---
 
@@ -153,7 +178,11 @@ Implement the approved plan.
 ### Files to Modify
 See plan file: \`${planPath}\`
 
+### Atomic Task Decomposition
+(Tasks will be added here in ///LOCAL_TASKS format)
+
 ### Verification
+- [ ] All atomic tasks completed
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] Feature works as expected
@@ -172,6 +201,7 @@ See plan file: \`${planPath}\`
 
 Before marking project complete:
 - [ ] All phases marked [x] COMPLETE
+- [ ] All atomic tasks completed
 - [ ] Tests passing
 - [ ] Documentation updated
 - [ ] Committed with descriptive message

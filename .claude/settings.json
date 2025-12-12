@@ -38,6 +38,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/decomposition-validator.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/permission-request-handler.cjs"
           }
         ]
       },
@@ -51,6 +55,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/decomposition-validator.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/permission-request-handler.cjs"
           }
         ]
       },
