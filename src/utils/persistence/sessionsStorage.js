@@ -16,6 +16,11 @@ import {
   logError,
 } from './database';
 
+import {
+  validateSessionRecord,
+  logValidationErrors,
+} from './validation';
+
 /**
  * Get the active session key for a user
  * @param {string} userId - User ID (or 'guest')
@@ -53,6 +58,13 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
       userId,
       version: '1.4.0'  // Updated version for v7 schema (userId)
     };
+
+    // Validate session record before saving
+    const validation = validateSessionRecord(sessionRecord);
+    if (!validation.valid) {
+      logValidationErrors('createSession', validation.errors);
+      throw new Error(`Invalid session data: ${validation.errors.join(', ')}`);
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');

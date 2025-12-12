@@ -114,43 +114,47 @@
       "id": 12,
       "filename": "system-audit.012.1209-invariant-catalog.md",
       "type": "system-audit",
-      "status": "pending",
+      "status": "actioned",
       "severity": "medium",
       "created": "2025-12-09",
-      "summary": "Phase 4: All 36 runtime invariants - validation layer not fully implemented"
+      "actioned": "2025-12-11",
+      "summary": "Phase 4: All 36 runtime invariants - validation wired into persistence layer"
     },
     {
       "id": 13,
       "filename": "system-audit.013.1209-validation-proposal.md",
       "type": "system-audit",
-      "status": "pending",
+      "status": "actioned",
       "severity": "medium",
       "created": "2025-12-09",
-      "summary": "Phase 4: Lightweight validation layer design proposal"
+      "actioned": "2025-12-11",
+      "summary": "Phase 4: Validation layer - all P0/P1 items complete"
     },
     {
       "id": 14,
       "filename": "system-audit.014.1209-schema-design.md",
       "type": "system-audit",
-      "status": "pending",
+      "status": "dismissed",
       "severity": "low",
       "created": "2025-12-09",
-      "summary": "Phase 5: TypeScript interfaces and validators (future work)"
+      "dismissed": "2025-12-11",
+      "summary": "Phase 5: TypeScript interfaces and validators (future work - not current priority)"
     },
     {
       "id": 15,
       "filename": "system-audit.015.1209-schema-roadmap.md",
       "type": "system-audit",
-      "status": "pending",
+      "status": "dismissed",
       "severity": "low",
       "created": "2025-12-09",
-      "summary": "Phase 5: TypeScript migration implementation plan (future work)"
+      "dismissed": "2025-12-11",
+      "summary": "Phase 5: TypeScript migration implementation plan (future work - not current priority)"
     }
   ],
   "stats": {
-    "pending": 4,
-    "actioned": 11,
-    "dismissed": 0,
+    "pending": 0,
+    "actioned": 13,
+    "dismissed": 2,
     "lastUpdated": "2025-12-11"
   },
   "nextId": 16

@@ -59,25 +59,58 @@ Run this checklist before beginning ANY phase:
 ### Goal
 [What this phase accomplishes]
 
-### Task Delegation
-Before implementing, check if tasks can be delegated to local models:
-- [ ] Run `/route <task>` for each subtask
-- Utility functions (<80 lines) → `/local-code`
-- Simple components (<100 lines) → `/local-code`
-- Refactoring → `/local-refactor`
-- Documentation → `/local-doc`
-- Unit tests → `/local-test`
+### Atomic Task Decomposition (MANDATORY)
 
-### Files to Create
-- [ ] `path/to/new/file.js` - Description (owner: Claude | local)
+**ALL work MUST be decomposed into atomic tasks for local models.**
+Each task: ≤30 lines, single function/component, clear inputs/outputs.
 
-### Files to Modify
-- [ ] `path/to/existing/file.js` - What changes (owner: Claude | local)
+| Task ID | Description | File | Model | Status |
+|---------|-------------|------|-------|--------|
+| T-001 | [Create/Modify] [function/component name] | `path/file.js` | deepseek | [ ] |
+| T-002 | [Description] | `path/file.js` | qwen | [ ] |
+| T-003 | Write tests for T-001 | `path/file.test.js` | qwen | [ ] |
 
-### Implementation Details
-[Technical notes, code snippets, decisions]
+**Task Spec Location**: `.claude/task-specs/[project-id]/T-XXX.json`
+
+### Task Specs (Create before executing)
+
+<details>
+<summary>T-001: [Task name]</summary>
+
+```json
+{
+  "task_id": "T-001",
+  "model": "deepseek",
+  "type": "create",
+  "description": "Detailed description of what to create",
+  "output_file": "src/path/to/file.js",
+  "function_name": "functionName",
+  "context_files": ["src/relevant/context.js"],
+  "inputs": "param1: type, param2: type",
+  "outputs": "Return type and description",
+  "constraints": [
+    "Constraint 1",
+    "Constraint 2"
+  ],
+  "example_usage": "functionName(arg1, arg2) => expected",
+  "max_lines": 25
+}
+```
+</details>
+
+### Execution Order
+1. [ ] Execute T-001: `./scripts/execute-local-task.sh .claude/task-specs/[project-id]/T-001.json`
+2. [ ] Review T-001 output
+3. [ ] Execute T-002...
+4. [ ] Integration: Claude assembles pieces if needed
+5. [ ] Execute test tasks (T-00X)
+
+### Claude-Only Tasks (MUST JUSTIFY)
+If any task cannot be delegated, document WHY:
+- [ ] Task X: [Reason - e.g., "Failed twice with refined specs", "Requires debugging"]
 
 ### Verification
+- [ ] All atomic tasks completed
 - [ ] Tests pass
 - [ ] Build succeeds
 - [ ] Feature works as expected

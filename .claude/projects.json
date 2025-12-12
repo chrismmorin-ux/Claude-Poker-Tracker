@@ -5,6 +5,24 @@
   "note": "The BACKLOG.md file is the single source of truth. This file tracks project metadata only.",
   "active": [
     {
+      "id": "decomposition-policy",
+      "name": "Comprehensive Decomposition Policy Integration",
+      "file": "docs/projects/0.001.1211-decomposition-policy.project.md",
+      "priority": "P0",
+      "phases": 10,
+      "phasesComplete": 0,
+      "description": "Mandatory enforced decomposition policy for local model delegation - 57 atomic tasks, 49 files"
+    },
+    {
+      "id": "primitive-actions-ui",
+      "name": "Primitive Actions UI",
+      "file": "docs/projects/1.001.1211-primitive-actions-ui.project.md",
+      "priority": "P1",
+      "phases": 4,
+      "phasesComplete": 0,
+      "description": "Replace pattern-recognized action buttons with context-aware primitive actions (Check, Bet, Call, Raise, Fold)"
+    },
+    {
       "id": "firebase-auth",
       "name": "Firebase Authentication System",
       "file": "docs/projects/firebase-auth.project.md",
@@ -151,6 +169,6 @@
       "phasesComplete": 11
     }
   ],
-  "lastUpdated": "2025-12-10T06:45:00Z",
+  "lastUpdated": "2025-12-11T12:00:00Z",
   "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
 }

@@ -20,6 +20,11 @@ import {
   getSessionHandCount,
 } from './sessionsStorage';
 
+import {
+  validateHandRecord,
+  logValidationErrors,
+} from './validation';
+
 // =============================================================================
 // HAND CRUD OPERATIONS
 // =============================================================================
@@ -34,6 +39,13 @@ import {
  */
 export const saveHand = async (handData, userId = GUEST_USER_ID) => {
   try {
+    // Validate hand data before saving
+    const validation = validateHandRecord(handData);
+    if (!validation.valid) {
+      logValidationErrors('saveHand', validation.errors);
+      throw new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
+    }
+
     const db = await initDB();
 
     // Get active session to auto-link hand (for this user)

@@ -60,6 +60,23 @@ import {
   deletePlayer,
 } from '../persistence';
 
+// Helper to create valid hand data that passes validation
+const createValidHandData = (overrides = {}) => ({
+  timestamp: Date.now(),
+  gameState: {
+    currentStreet: 'preflop',
+    dealerButtonSeat: 1,
+    mySeat: 5,
+    ...overrides.gameState,
+  },
+  cardState: {
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['', ''],
+    ...overrides.cardState,
+  },
+  ...overrides,
+});
+
 describe('persistence', () => {
   // Clear IndexedDB before each test
   beforeEach(async () => {
@@ -92,20 +109,18 @@ describe('persistence', () => {
   describe('Hands CRUD', () => {
     describe('saveHand', () => {
       it('saves a hand and returns handId', async () => {
-        const handData = {
-          timestamp: Date.now(),
-          gameState: { currentStreet: 'preflop' },
-          cardState: { communityCards: ['A♠', 'K♥', '', '', ''] },
-        };
+        const handData = createValidHandData({
+          cardState: { communityCards: ['A♠', 'K♥', '', '', ''], holeCards: ['', ''] },
+        });
 
         const handId = await saveHand(handData);
         expect(handId).toBeGreaterThan(0);
       });
 
       it('saves multiple hands with unique IDs', async () => {
-        const hand1 = await saveHand({ timestamp: Date.now() });
-        const hand2 = await saveHand({ timestamp: Date.now() + 1000 });
-        const hand3 = await saveHand({ timestamp: Date.now() + 2000 });
+        const hand1 = await saveHand(createValidHandData({ timestamp: Date.now() }));
+        const hand2 = await saveHand(createValidHandData({ timestamp: Date.now() + 1000 }));
+        const hand3 = await saveHand(createValidHandData({ timestamp: Date.now() + 2000 }));
 
         expect(hand1).toBe(1);
         expect(hand2).toBe(2);
@@ -115,9 +130,9 @@ describe('persistence', () => {
 
     describe('loadHandById', () => {
       it('loads a saved hand', async () => {
-        const handData = {
-          gameState: { currentStreet: 'flop' },
-        };
+        const handData = createValidHandData({
+          gameState: { currentStreet: 'flop', dealerButtonSeat: 1, mySeat: 5 },
+        });
 
         const handId = await saveHand(handData);
         const loaded = await loadHandById(handId);
@@ -140,9 +155,9 @@ describe('persistence', () => {
       it('returns the most recent hand', async () => {
         // saveHand always sets timestamp to Date.now(), so the last saved hand
         // will have the highest timestamp and be returned as "latest"
-        await saveHand({ note: 'first' });
-        await saveHand({ note: 'second' });
-        const thirdId = await saveHand({ note: 'third' });
+        await saveHand(createValidHandData({ note: 'first' }));
+        await saveHand(createValidHandData({ note: 'second' }));
+        const thirdId = await saveHand(createValidHandData({ note: 'third' }));
 
         const latest = await loadLatestHand();
         // The last saved hand should be returned
@@ -158,9 +173,9 @@ describe('persistence', () => {
 
     describe('getAllHands', () => {
       it('returns all saved hands', async () => {
-        await saveHand({ timestamp: 1000 });
-        await saveHand({ timestamp: 2000 });
-        await saveHand({ timestamp: 3000 });
+        await saveHand(createValidHandData());
+        await saveHand(createValidHandData());
+        await saveHand(createValidHandData());
 
         const hands = await getAllHands();
         expect(hands).toHaveLength(3);
@@ -174,7 +189,7 @@ describe('persistence', () => {
 
     describe('deleteHand', () => {
       it('deletes a hand', async () => {
-        const handId = await saveHand({ timestamp: Date.now() });
+        const handId = await saveHand(createValidHandData());
         await deleteHand(handId);
 
         const loaded = await loadHandById(handId);
@@ -190,9 +205,9 @@ describe('persistence', () => {
 
     describe('clearAllHands', () => {
       it('removes all hands', async () => {
-        await saveHand({ timestamp: 1000 });
-        await saveHand({ timestamp: 2000 });
-        await saveHand({ timestamp: 3000 });
+        await saveHand(createValidHandData());
+        await saveHand(createValidHandData());
+        await saveHand(createValidHandData());
 
         await clearAllHands();
         const hands = await getAllHands();
@@ -204,17 +219,17 @@ describe('persistence', () => {
       it('returns correct count', async () => {
         expect(await getHandCount()).toBe(0);
 
-        await saveHand({ timestamp: 1000 });
+        await saveHand(createValidHandData());
         expect(await getHandCount()).toBe(1);
 
-        await saveHand({ timestamp: 2000 });
+        await saveHand(createValidHandData());
         expect(await getHandCount()).toBe(2);
       });
     });
 
     describe('handExists', () => {
       it('returns true for existing hand', async () => {
-        const handId = await saveHand({ timestamp: Date.now() });
+        const handId = await saveHand(createValidHandData());
         expect(await handExists(handId)).toBe(true);
       });
 
@@ -397,9 +412,9 @@ describe('persistence', () => {
       await setActiveSession(sessionId);
 
       // Save a hand - saveHand automatically links to active session
-      const handId = await saveHand({
-        gameState: { currentStreet: 'flop' },
-      });
+      const handId = await saveHand(createValidHandData({
+        gameState: { currentStreet: 'flop', dealerButtonSeat: 1, mySeat: 5 },
+      }));
 
       const hand = await loadHandById(handId);
       expect(hand.sessionId).toBe(sessionId);
@@ -409,9 +424,9 @@ describe('persistence', () => {
       // Ensure no active session
       await clearActiveSession();
 
-      const handId = await saveHand({
-        gameState: { currentStreet: 'preflop' },
-      });
+      const handId = await saveHand(createValidHandData({
+        gameState: { currentStreet: 'preflop', dealerButtonSeat: 1, mySeat: 5 },
+      }));
 
       const hand = await loadHandById(handId);
       expect(hand.sessionId).toBeNull();
@@ -423,10 +438,9 @@ describe('persistence', () => {
       const player1 = await createPlayer({ name: 'Player 1' });
       const player2 = await createPlayer({ name: 'Player 2' });
 
-      const handId = await saveHand({
-        timestamp: Date.now(),
+      const handId = await saveHand(createValidHandData({
         seatPlayers: { 1: player1, 5: player2 },
-      });
+      }));
 
       const hand = await loadHandById(handId);
       expect(hand.seatPlayers[1]).toBe(player1);

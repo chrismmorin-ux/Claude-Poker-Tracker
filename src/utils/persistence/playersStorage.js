@@ -13,6 +13,11 @@ import {
   logError,
 } from './database';
 
+import {
+  validatePlayerRecord,
+  logValidationErrors,
+} from './validation';
+
 // =============================================================================
 // PLAYER CRUD OPERATIONS
 // =============================================================================
@@ -46,6 +51,13 @@ export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
       handCount: 0,
       stats: null
     };
+
+    // Validate player record before saving
+    const validation = validatePlayerRecord(playerRecord);
+    if (!validation.valid) {
+      logValidationErrors('createPlayer', validation.errors);
+      throw new Error(`Invalid player data: ${validation.errors.join(', ')}`);
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');

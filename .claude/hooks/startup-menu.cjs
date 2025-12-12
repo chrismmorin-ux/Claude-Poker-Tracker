@@ -56,12 +56,29 @@ function getProjects() {
       const [, priority, sequence, date, slug] = match;
       const content = fs.readFileSync(path.join(PROJECTS_DIR, filename), 'utf8');
 
-      // Extract status and phase from content
-      const statusMatch = content.match(/\*\*Status\*\*:\s*(.+)/);
-      const phaseMatch = content.match(/Phase\s+(\d+)\/(\d+)/);
+      // Extract status from YAML frontmatter and phase from content
+      const yamlStatusMatch = content.match(/^---[\s\S]*?status:\s*(\w+)[\s\S]*?---/m);
+      const bodyStatusMatch = content.match(/\*\*Status\*\*:\s*(.+)/);
+      const phaseMatch = content.match(/Phase\s+(\d+)\/(\d+)/) ||
+                         content.match(/\| (\d+) \| \[[ x]\] \|/g);
 
-      const status = statusMatch ? statusMatch[1].trim() : 'Unknown';
-      const phase = phaseMatch ? `${phaseMatch[1]}/${phaseMatch[2]}` : '0/?';
+      // Prefer YAML frontmatter status, fallback to body status
+      let status = yamlStatusMatch ? yamlStatusMatch[1].trim() :
+                   (bodyStatusMatch ? bodyStatusMatch[1].trim() : 'Unknown');
+
+      // Count phases from table if no explicit Phase X/Y found
+      let phase = '0/?';
+      if (phaseMatch && typeof phaseMatch === 'string') {
+        const m = content.match(/Phase\s+(\d+)\/(\d+)/);
+        if (m) phase = `${m[1]}/${m[2]}`;
+      } else {
+        // Count phases from table
+        const phaseRows = content.match(/\| \d+ \| \[[ x]\] \|/g);
+        if (phaseRows) {
+          const complete = phaseRows.filter(r => r.includes('[x]')).length;
+          phase = `${complete}/${phaseRows.length}`;
+        }
+      }
 
       // Sort key: priority.sequence (e.g., "1.001" < "2.001" < "3.002")
       const sortKey = parseFloat(`${priority}.${sequence}`);
@@ -187,9 +204,17 @@ function displayMenu() {
 }
 
 function main() {
-  // Hook output goes to Claude, not terminal - disabled in favor of scripts/menu.cjs
-  // Run `node scripts/menu.cjs` manually to see the menu in your terminal
-  process.exit(0);
+  // Only show menu on first prompt of session
+  if (!shouldShowMenu()) {
+    process.exit(0);
+    return;
+  }
+
+  // Mark that we've shown the menu this session
+  markShown();
+
+  // Display menu to Claude via hook output
+  displayMenu();
 }
 
 main();
