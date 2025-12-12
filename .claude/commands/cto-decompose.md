@@ -20,26 +20,42 @@ $ARGUMENTS
 
 ## Expected Output
 
-For each task, produce JSON in this format:
+Use the **///LOCAL_TASKS** format (see `.claude/DECOMPOSITION_POLICY.md`):
 
 ```json
-{
-  "id": "<short-id>",
-  "title": "<one-line>",
-  "summary": "<one-paragraph>",
-  "type": "<feature|bug|refactor|investigation|research|ops|doc>",
-  "priority": "<P0|P1|P2>",
-  "owner": "<senior|junior|ai:less-capable|ai:research|ai:capable>",
-  "local_command": "</local-code|/local-refactor|/local-doc|/local-test|null>",
-  "inputs": ["required files, APIs, data"],
-  "outputs": ["PR, doc, tests, metrics"],
-  "acceptance_criteria": ["1.", "2.", "3."],
-  "estimated_effort": {"developer_days": "X", "ai_tokens": "low|medium|high"},
-  "risk": "<low|medium|high>",
-  "dependencies": ["task-ids"],
-  "workflow_guidance": "step-by-step for junior/ai:less-capable owners"
-}
+///LOCAL_TASKS
+[
+  {
+    "id": "T-XXX-001",
+    "parent_id": "project-id",
+    "title": "One-line task description",
+    "description": "Detailed description of what to create/modify",
+    "files_touched": ["path/to/file.js"],
+    "est_lines_changed": 50,
+    "est_local_effort_mins": 20,
+    "test_command": "npm test path/to/file.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "inputs": ["Required files, APIs, data"],
+    "outputs": ["Files created, features added"],
+    "constraints": ["Constraint 1", "Constraint 2"],
+    "needs_context": [
+      {"path": "src/relevant/file.js", "lines_start": 10, "lines_end": 50}
+    ],
+    "invariant_test": null
+  }
+]
 ```
+
+### Atomic Criteria (ALL tasks must meet)
+
+| Criterion | Limit | Rationale |
+|-----------|-------|-----------|
+| `files_touched` | ≤ 3 | Limits scope complexity |
+| `est_lines_changed` | ≤ 300 | Keeps tasks focused |
+| `test_command` | Required | Ensures verifiability |
+| `est_local_effort_mins` | ≤ 60 | Prevents runaway tasks |
 
 ### Local Model Mapping (for `ai:less-capable` tasks)
 

@@ -1,328 +1,450 @@
-# Local Models Guide - Token Conservation Strategy
+# Local Models Guide - Decomposition & Delegation Workflow
 
-**Goal**: Maximize local model usage to conserve Claude Code tokens while maintaining code quality.
+**Policy**: ALL tasks MUST be decomposed into atomic pieces for local model execution.
+**Authority**: `.claude/DECOMPOSITION_POLICY.md` (read this first)
 
-## Quick Reference
+---
 
-### When to Use Local Models
+## Quick Start
+
+### Workflow Overview
+
 ```
-✅ Utility functions (< 80 lines)
-✅ Simple React components (< 100 lines, minimal props)
-✅ Data transformations
-✅ Boilerplate generation
-✅ Test data/fixtures
-✅ Simple refactoring (rename, extract)
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ DECOMPOSE   │ --> │  BACKLOG    │ --> │  EXECUTE    │
+│ Claude      │     │ dispatcher  │     │ Local Model │
+│             │     │             │     │             │
+│ Create      │     │ Add tasks   │     │ Assign &    │
+│ ///LOCAL_   │     │ Validate    │     │ Run         │
+│ TASKS JSON  │     │ atomic      │     │             │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                               │
+                                               v
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ INTEGRATE   │ <-- │  REVIEW     │ <-- │  COMPLETE   │
+│ Claude      │     │ Claude      │     │ Update      │
+│             │     │             │     │ backlog     │
+└─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-### When to Use Claude
-```
-❌ State management (reducers, complex hooks)
-❌ Integration code (connecting multiple pieces)
-❌ Complex validation logic
-❌ Components with 5+ props
-❌ Anything touching multiple files
-❌ Business logic requiring project understanding
+### Basic Example
+
+```bash
+# 1. Claude creates ///LOCAL_TASKS JSON
+cat << 'EOF' > tasks.json
+///LOCAL_TASKS
+[
+  {
+    "id": "T-001",
+    "title": "Create formatCurrency utility",
+    "description": "Format number as USD currency string",
+    "files_touched": ["src/utils/formatCurrency.js"],
+    "est_lines_changed": 15,
+    "est_local_effort_mins": 10,
+    "test_command": "npm test src/utils/__tests__/formatCurrency.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "constraints": ["Export named function", "Include JSDoc"],
+    "needs_context": [],
+    "invariant_test": null
+  }
+]
+EOF
+
+# 2. Add to backlog (validates atomic criteria)
+cat tasks.json | node scripts/dispatcher.cjs add-tasks
+
+# 3. Assign and execute
+node scripts/dispatcher.cjs assign-next  # Marks in_progress, outputs task JSON
+
+# 4. Complete task
+node scripts/dispatcher.cjs complete T-001 --tests=passed
 ```
 
 ---
 
-## Model Characteristics
+## Atomic Criteria (MANDATORY)
+
+ALL tasks must meet these limits:
+
+| Criterion | Limit | Enforcement |
+|-----------|-------|-------------|
+| `files_touched` | ≤ 3 | BLOCK if exceeded |
+| `est_lines_changed` | ≤ 300 | BLOCK if exceeded |
+| `test_command` | Required | BLOCK if missing |
+| `est_local_effort_mins` | ≤ 60 | BLOCK if exceeded |
+
+**If ANY criterion fails**: Task is BLOCKED. Must re-decompose.
+
+---
+
+## ///LOCAL_TASKS Format
+
+### Required Fields
+
+```json
+{
+  "id": "T-XXX-001",           // Pattern: T-[A-Z0-9]+-\d{3}
+  "title": "One-line desc",     // Imperative: "Create X", "Update Y"
+  "description": "Details",     // What to create/modify
+  "files_touched": ["path"],    // Max 3 files
+  "est_lines_changed": 50,      // Max 300
+  "est_local_effort_mins": 20,  // Max 60
+  "test_command": "npm test",   // REQUIRED for verification
+  "assigned_to": "local:qwen",  // local:deepseek | local:qwen
+  "priority": "P1",             // P0 | P1 | P2 | P3
+  "status": "open"              // open | in_progress | done | failed
+}
+```
+
+### Optional Fields
+
+```json
+{
+  "parent_id": "project-name",     // Groups related tasks
+  "inputs": ["param1", "param2"],  // Task inputs
+  "outputs": ["Return type"],      // Task outputs
+  "constraints": ["Rule 1"],       // Implementation constraints
+  "needs_context": [               // Exact context protocol (see below)
+    {"path": "src/file.js", "lines_start": 10, "lines_end": 50}
+  ],
+  "invariant_test": {              // Auto-test protocol (see below)
+    "target": "src/reducers/gameReducer.js",
+    "assertions": ["State shape preserved"]
+  }
+}
+```
+
+---
+
+## Dispatcher CLI Commands
+
+### Task Management
+
+```bash
+# Add tasks from ///LOCAL_TASKS JSON (stdin or file)
+cat tasks.json | node scripts/dispatcher.cjs add-tasks
+
+# Assign next open task (priority order: P0 > P1 > P2 > P3)
+node scripts/dispatcher.cjs assign-next
+
+# View backlog status
+node scripts/dispatcher.cjs status
+
+# Mark task complete
+node scripts/dispatcher.cjs complete T-XXX-001 --tests=passed
+node scripts/dispatcher.cjs complete T-XXX-001 --tests=failed  # Auto-redecomposes
+
+# Re-decompose failed task manually
+node scripts/dispatcher.cjs redecompose T-XXX-001
+```
+
+### Auditing & Context
+
+```bash
+# Audit all tasks for atomic criteria violations
+node scripts/dispatcher.cjs audit
+
+# Extract and preview context for a task
+node scripts/dispatcher.cjs extract-context T-XXX-001
+```
+
+### Permission Escalation
+
+```bash
+# Create permission request for non-atomic task
+node scripts/dispatcher.cjs create-permission-request
+
+# List permission requests
+node scripts/dispatcher.cjs list-permissions
+node scripts/dispatcher.cjs list-permissions --status=pending
+
+# Approve/reject permission
+node scripts/dispatcher.cjs approve-permission REQ-001 --conditions="Must add tests"
+node scripts/dispatcher.cjs reject-permission REQ-001 --suggest="Split into 3 tasks"
+```
+
+---
+
+## Protocol 1: needs_context (Exact Context Provision)
+
+**Problem**: Local models get overwhelmed by full files.
+**Solution**: Request exact line ranges needed.
+
+### Usage
+
+```json
+{
+  "needs_context": [
+    {"path": "src/utils/actionUtils.js", "lines_start": 10, "lines_end": 50},
+    {"path": "src/constants/gameConstants.js", "lines_start": 1, "lines_end": 30}
+  ]
+}
+```
+
+### Benefits
+- Reduces context size by ~80%
+- Focuses model on relevant code
+- Avoids import path confusion
+
+### Extraction
+
+```bash
+# Manual extraction via context-provider
+node scripts/dispatcher.cjs extract-context T-XXX-001
+```
+
+---
+
+## Protocol 2: invariant_test (Auto-Test Generation)
+
+**Problem**: Changes to critical files (reducers, persistence) break state integrity.
+**Solution**: Automatically create paired test tasks.
+
+### Automatic Trigger
+
+When a task touches these files, dispatcher auto-creates a test task:
+- `src/reducers/*.js` - State reducers
+- `src/utils/persistence.js` - IndexedDB operations
+- `src/utils/hydration.js` - State hydration
+- `src/contexts/*.jsx` - Context providers
+
+### Specification
+
+```json
+{
+  "id": "T-P1-001",
+  "description": "Update gameReducer to support undo",
+  "files_touched": ["src/reducers/gameReducer.js"],
+  "invariant_test": {
+    "target": "src/reducers/gameReducer.js",
+    "assertions": [
+      "State shape preserved after undo",
+      "No side effects on other state",
+      "History array maintains immutability"
+    ]
+  }
+}
+```
+
+Dispatcher auto-creates: `T-P1-001-TEST` using `.claude/templates/invariant-test.template.js`
+
+---
+
+## Protocol 3: CLAUDE_REQUEST_FOR_PERMISSION (Escalation)
+
+**When**: Atomic decomposition is truly impossible (rare).
+**Process**: Request user permission with justification.
+
+### Permission Request Schema
+
+```json
+{
+  "request_id": "REQ-001",
+  "requested_by": "claude",
+  "task_summary": "Refactor PokerTracker.jsx to extract ViewRouter",
+  "reason": "atomic_violation",
+  "violations": {
+    "files_touched": 8,
+    "est_lines_changed": 450,
+    "complexity": "Requires understanding full component tree"
+  },
+  "justification": "Splitting would create incomplete, non-functional pieces",
+  "alternatives_tried": [
+    "Split by view (7 tasks) - each requires full context",
+    "Split by concern (props, handlers, state) - breaks functionality"
+  ],
+  "effort_estimate": "2-3 hours",
+  "user_decision": "pending"
+}
+```
+
+### Commands
+
+```bash
+# Create request
+node scripts/dispatcher.cjs create-permission-request
+
+# User approves
+node scripts/dispatcher.cjs approve-permission REQ-001 --conditions="Add tests after"
+
+# User rejects
+node scripts/dispatcher.cjs reject-permission REQ-001 --suggest="Use EnterPlanMode first"
+```
+
+---
+
+## Model Selection Guide
 
 ### DeepSeek Coder 7B v1.5
-- **Speed**: ~30-45 seconds per task
-- **Strengths**: Code generation, boilerplate
-- **Weaknesses**: Project conventions, import paths
-- **Best For**: Isolated utility functions, simple components
-- **Max Complexity**: ~100 lines, single responsibility
+**Use for**: New code generation
+
+| Task Type | Max Lines | Strengths | Weaknesses |
+|-----------|-----------|-----------|------------|
+| Utility functions | 200 | Pure logic, algorithms | Import paths, exports |
+| Simple components | 150 | Standard React patterns | Props design |
+| Data transforms | 100 | Array/object operations | Business logic |
+
+**Common Fixes**:
+- Import paths (count directories explicitly)
+- Export style (specify "named export: export const")
+- Props vs constants (pass as parameters)
 
 ### Qwen 2.5 Coder 7B
-- **Speed**: ~3-10 seconds per task
-- **Strengths**: Refactoring, simple transforms
-- **Weaknesses**: New code generation
-- **Best For**: Renaming, extracting functions, format changes
-- **Max Complexity**: ~50 lines, mechanical changes
+**Use for**: Refactoring, tests, docs
+
+| Task Type | Max Lines | Strengths | Weaknesses |
+|-----------|-----------|-----------|------------|
+| Refactoring | 300 | Mechanical changes | Novel patterns |
+| Test generation | Unlimited | Comprehensive coverage | Edge case creativity |
+| Documentation | Unlimited | JSDoc, comments | Architecture understanding |
+
+**Common Fixes**:
+- Overly verbose comments
+- Missing edge cases in tests
 
 ---
 
-## Proven Prompt Patterns
+## Troubleshooting
 
-### Pattern 1: Ultra-Specific Imports
-```
-BAD:  "Import the utilities"
-GOOD: "Import from '../../utils/foo' (count: src/components/ui/ → src/utils/)"
-```
-
-### Pattern 2: Template-First
-```
-Provide the exact code template, then ask for modifications:
-
-"Here's the template:
-[paste exact code structure]
-
-Now modify it to:
-- Add prop X
-- Implement feature Y"
-```
-
-### Pattern 3: Explicit Export Style
-```
-BAD:  "Export the component"
-GOOD: "Use named export: export const Foo = ..."
-```
-
-### Pattern 4: Props as Parameters
-```
-BAD:  "Use ACTIONS constant"
-GOOD: "Receive ACTIONS as a prop parameter (never define locally)"
-```
-
-### Pattern 5: Concrete Examples
-```
-"Format like this example:
-Input: ['open', '3bet', 'call']
-Output: 'open → 3bet → call'
-Use arrow symbol: →"
-```
-
----
-
-## Common Fixes Needed
-
-### DeepSeek Common Errors
-1. **Import paths** (90% of time)
-   - Uses `../utils` instead of `../../utils`
-   - Fix: Count directories explicitly in prompt
-
-2. **Export style** (80% of time)
-   - Uses `export default` instead of `export const`
-   - Fix: Say "MUST use named export" in caps
-
-3. **Props vs locals** (70% of time)
-   - Defines constants locally instead of receiving as props
-   - Fix: List ALL props explicitly, say "receive as props"
-
-4. **Tailwind** (50% of time)
-   - Uses template literals: `bg-${color}`
-   - Fix: Say "static Tailwind classes only, no template literals"
-
-### Qwen Common Errors
-1. **Over-explaining** (60% of time)
-   - Adds verbose comments
-   - Fix: Say "code only, no explanations"
-
-2. **Context missing** (40% of time)
-   - Doesn't preserve surrounding code
-   - Fix: "Show ONLY the changed lines, preserve all else"
-
----
-
-## Workflow: Local Model + Claude Review
-
-### Step 1: Generate with Local Model
-```bash
-bash ./scripts/call-local-model.sh deepseek "$(cat .claude/prompts/react-component.md)
-
-Create ActionBadge component...
-[specific requirements]"
-```
-
-### Step 2: Quick Claude Review
-Use Claude for JUST the review (saves 90% of tokens vs full generation):
-
-```
-Review this DeepSeek output for correctness:
-[paste output]
-
-Fix ONLY:
-1. Import paths
-2. Export style
-3. Obvious bugs
-
-Don't rewrite if 80%+ correct.
-```
-
-### Token Savings
-- Full Claude generation: ~1000-2000 tokens
-- Local model + review: ~200-300 tokens
-- **Savings: 70-85%**
-
----
-
-## Prompt Library Usage
-
-Location: `.claude/prompts/`
-
-### Available Templates
-1. `react-component.md` - React components
-2. `utility-function.md` - Pure functions
-
-### How to Use
-```bash
-# Method 1: Inline
-bash ./scripts/call-local-model.sh deepseek "$(cat .claude/prompts/react-component.md)
-
-Task: Create Foo component..."
-
-# Method 2: Template + specifics file
-# Create prompts/my-task.txt with specific requirements
-bash ./scripts/call-local-model.sh deepseek "$(cat .claude/prompts/react-component.md; cat prompts/my-task.txt)"
-```
-
----
-
-## Performance Benchmarks
-
-From real implementation (Multiple Actions Per Street):
-
-| Task Type | Local Model | Fix Time | Total | Claude Direct | Savings |
-|-----------|-------------|----------|-------|---------------|---------|
-| Simple utility | 30s | 2min | 2.5min | 1min | -60% ⚠️ |
-| Medium component | 40s | 5min | 5.5min | 3min | -45% ⚠️ |
-| Complex component | 45s | 10min | 10.5min | 5min | -52% ⚠️ |
-
-**Current Reality**: Local models are **slower overall** due to fix overhead.
-
-**Target** (with improved prompts):
-| Task Type | Local Model | Fix Time | Total | Claude Direct | Savings |
-|-----------|-------------|----------|-------|---------------|---------|
-| Simple utility | 30s | 30s | 1min | 1min | Break-even ✓ |
-| Medium component | 40s | 2min | 2.5min | 3min | +20% ✓ |
-| Complex component | N/A | N/A | N/A | 5min | Use Claude ✓ |
-
----
-
-## Task Classification Decision Tree
-
-```
-START: Need code generated
-│
-├─ Does it touch state/reducers?
-│  └─ YES → Use Claude (complex)
-│
-├─ Does it integrate multiple pieces?
-│  └─ YES → Use Claude (requires context)
-│
-├─ Is it > 150 lines?
-│  └─ YES → Use Claude (too complex)
-│
-├─ Does it need 5+ props?
-│  └─ YES → Use Claude (too many dependencies)
-│
-├─ Is it pure function < 80 lines?
-│  └─ YES → Try DeepSeek with utility template
-│
-├─ Is it refactoring existing code?
-│  └─ YES → Try Qwen (fast at refactoring)
-│
-├─ Is it UI component < 100 lines with < 5 props?
-│  └─ YES → Try DeepSeek with component template
-│
-└─ Default → Use Claude (safest)
-```
-
----
-
-## Iterative Improvement Log
-
-### 2025-12-06: Initial Implementation
-**Learned**:
-- JSON escaping was broken (fixed with Python)
-- Import paths are consistently wrong
-- Export style defaults to `export default`
-- Props get defined locally instead of received
-
-**Prompt Improvements**:
-1. Added "count directories" for import paths
-2. Added "MUST use named export" in caps
-3. Added "receive ALL as props, NEVER define locally"
-4. Added template code to copy
-
-**Results**: TBD (test on next task)
-
----
-
-## Completed Enhancements
-
-### ✅ Model Selection Auto-Router (2025-12-06)
-```bash
-# IMPLEMENTED: Three routing helper scripts
-bash ./scripts/suggest-command.sh "task"    # Full routing suggestion
-bash ./scripts/task-classifier.sh "task"    # Classification only
-bash ./scripts/select-model.sh "task"       # Model selection only
-
-# Auto-select mode in call-local-model.sh
-bash ./scripts/call-local-model.sh auto "task description..."
-```
-
----
-
-## Future Enhancements
-
-### Priority 1: Auto-Review Script
-```bash
-# scripts/local-gen-review.sh
-# 1. Generate with local model
-# 2. Auto-review with Claude (fixed prompt)
-# 3. Output corrected code
-```
-
-### Priority 2: Prompt Testing Suite
-```bash
-# Test each prompt template
-# Track success rate
-# Auto-update guide with results
-```
-
----
-
-## Success Metrics
-
-Track these for each local model task:
-
-```markdown
-## Task: [Name]
-- Model: DeepSeek / Qwen
-- Generation time: Xs
-- Fix time: Xmin
-- Issues found:
-  - [ ] Import paths
-  - [ ] Export style
-  - [ ] Props vs locals
-  - [ ] Tailwind usage
-  - [ ] Other: ___
-- Would use Claude next time? Y/N
-- Token savings: ~X tokens
-```
-
-**Goal**: 70%+ of simple tasks use local models successfully
-
----
-
-## Quick Command Reference
+### Task Blocked - Atomic Criteria Violated
 
 ```bash
-# Get task routing suggestion (RECOMMENDED - use this first!)
-bash ./scripts/suggest-command.sh "Your task description..."
+# Check what failed
+node scripts/dispatcher.cjs audit
 
-# Auto-select local model (qwen or deepseek)
-bash ./scripts/call-local-model.sh auto "Task description..."
+# Re-decompose
+# Option 1: Manual split
+# Create 2-3 smaller tasks that each meet criteria
 
-# Use template with specific model
-bash ./scripts/call-local-model.sh deepseek "$(cat .claude/prompts/react-component.md)
-
-Task: Create Foo component..."
-
-# DeepSeek for generation
-bash ./scripts/call-local-model.sh deepseek "Create function..."
-
-# Qwen for refactoring
-bash ./scripts/call-local-model.sh qwen "Rename foo to bar in: [code]"
-
-# Test with multi-line prompt
-bash ./scripts/call-local-model.sh qwen "Line 1
-Line 2
-Line 3"
-
-# Just classify (without running)
-bash ./scripts/task-classifier.sh "Your task description..."
+# Option 2: Request permission
+node scripts/dispatcher.cjs create-permission-request
 ```
+
+### Task Failed - Tests Don't Pass
+
+```bash
+# Automatic redecomposition (first failure)
+node scripts/dispatcher.cjs complete T-XXX-001 --tests=failed
+# Dispatcher auto-redecomposes with depth=1
+
+# Manual redecomposition (second failure)
+node scripts/dispatcher.cjs redecompose T-XXX-001
+# Creates 2-3 subtasks with better specs
+```
+
+### Recursive Decomposition Depth Limit
+
+**Max Depth**: 3 levels
+**Triggered**: Task fails 3 times with auto-redecomposition
+
+```bash
+# Error: "Max decomposition depth (3) reached"
+# Solution: Request Claude permission for complex task
+node scripts/dispatcher.cjs create-permission-request
+```
+
+---
+
+## Best Practices
+
+### 1. Decompose Before You Start
+```
+❌ Start coding, realize it's complex, try to delegate mid-way
+✅ Read task → decompose into atoms → add to backlog → execute
+```
+
+### 2. Use needs_context Aggressively
+```
+❌ Include entire 500-line file as context
+✅ Request lines 120-180 where target function lives
+```
+
+### 3. Test Commands Are Non-Negotiable
+```
+❌ "test_command": ""  (BLOCKED)
+✅ "test_command": "npm test src/path/__tests__/file.test.js"
+```
+
+### 4. Group Related Tasks
+```json
+{
+  "parent_id": "primitive-actions-ui",  // Groups all 18 tasks
+  "id": "T-P1-001"
+}
+```
+
+### 5. Review Before Completing
+```bash
+# Don't blindly mark complete
+# 1. Read generated file
+# 2. Run test_command
+# 3. Verify meets constraints
+# THEN: dispatcher.cjs complete T-XXX-001 --tests=passed
+```
+
+---
+
+## Integration with Existing Workflow
+
+### Slash Commands
+
+- `/local-code` - Updated to use ///LOCAL_TASKS
+- `/local-refactor` - Updated to use ///LOCAL_TASKS
+- `/local-test` - Updated with invariant_test protocol
+- `/local-doc` - Updated with needs_context
+- `/cto-decompose` - Outputs ///LOCAL_TASKS format
+
+### Project Files
+
+- `docs/projects/TEMPLATE.project.md` - Shows ///LOCAL_TASKS in Phase sections
+- `.claude/BACKLOG.md` - References machine-readable `.claude/backlog.json`
+
+### Hooks
+
+- `.claude/hooks/decomposition-validator.cjs` - Enforces atomic criteria
+- `.claude/hooks/permission-request-handler.cjs` - Blocks work without permission
+
+---
+
+## Migration from Old Format
+
+### Old Task Spec (DEPRECATED)
+```json
+{
+  "task_id": "T-001",
+  "model": "deepseek",
+  "output_file": "src/utils/foo.js",
+  "context_files": ["src/bar.js"]
+}
+```
+
+### New ///LOCAL_TASKS Format
+```json
+{
+  "id": "T-001",
+  "assigned_to": "local:deepseek",
+  "files_touched": ["src/utils/foo.js"],
+  "needs_context": [
+    {"path": "src/bar.js", "lines_start": 1, "lines_end": 50}
+  ]
+}
+```
+
+**Key Differences**:
+- `needs_context` replaces `context_files` (more precise)
+- `files_touched` replaces `output_file` (multi-file support)
+- Atomic criteria validation (automatic BLOCK)
+- Backlog integration (dispatcher.cjs)
+
+---
+
+## See Also
+
+- `.claude/DECOMPOSITION_POLICY.md` - Full authoritative policy
+- `.claude/schemas/local-task.schema.json` - JSON Schema validation
+- `scripts/dispatcher.cjs` - Task management CLI
+- `scripts/context-provider.cjs` - Context extraction
+- `scripts/invariant-test-generator.cjs` - Auto-test creation
+- `.claude/templates/invariant-test.template.js` - Test template

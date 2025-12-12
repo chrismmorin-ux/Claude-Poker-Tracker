@@ -1,0 +1,281 @@
+///LOCAL_TASKS
+[
+  {
+    "id": "T-P8-001",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update TEMPLATE.project.md with decomposition guidance",
+    "description": "Add section on task decomposition using ///LOCAL_TASKS format, reference DECOMPOSITION_POLICY.md, include atomic criteria reminder",
+    "files_touched": ["docs/projects/TEMPLATE.project.md"],
+    "est_lines_changed": 30,
+    "est_local_effort_mins": 20,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('docs/projects/TEMPLATE.project.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS') || !content.includes('DECOMPOSITION_POLICY')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current template structure", "DECOMPOSITION_POLICY.md reference"],
+    "outputs": ["Updated template with decomposition section"],
+    "constraints": [
+      "Add section after 'Before Starting Each Phase'",
+      "Include reference to .claude/DECOMPOSITION_POLICY.md",
+      "Add atomic criteria reminder table",
+      "Keep changes minimal, preserve existing structure"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 1, "lines_end": 100}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-002",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update program-manager.md agent guide",
+    "description": "Add reference to decomposition policy enforcement in program manager responsibilities",
+    "files_touched": [".claude/agents/program-manager.md"],
+    "est_lines_changed": 15,
+    "est_local_effort_mins": 15,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/agents/program-manager.md', 'utf-8'); if (!content.includes('DECOMPOSITION_POLICY') || !content.includes('atomic criteria')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current program-manager.md", "Decomposition policy requirements"],
+    "outputs": ["Updated agent guide with policy reference"],
+    "constraints": [
+      "Add to responsibilities section",
+      "Reference atomic criteria enforcement",
+      "Keep tone consistent with existing content",
+      "No structural changes"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 19, "lines_end": 31}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-003",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update process-specialist.md with decomposition audit",
+    "description": "Add decomposition audit to process specialist capabilities, reference audit_decomposition.cjs",
+    "files_touched": [".claude/agents/process-specialist.md"],
+    "est_lines_changed": 20,
+    "est_local_effort_mins": 18,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/agents/process-specialist.md', 'utf-8'); if (!content.includes('decomposition audit') || !content.includes('audit_decomposition.cjs')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current process-specialist.md", "audit_decomposition.cjs functionality"],
+    "outputs": ["Updated agent guide with audit capabilities"],
+    "constraints": [
+      "Add decomposition audit to analysis capabilities",
+      "Reference scripts/audit_decomposition.cjs",
+      "Mention atomicity_report.json output",
+      "Preserve existing structure"
+    ],
+    "needs_context": [
+      {"path": "scripts/audit_decomposition.cjs", "lines_start": 1, "lines_end": 50}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-004",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update cto-decompose.md command to use ///LOCAL_TASKS format",
+    "description": "Update output format section to specify ///LOCAL_TASKS JSON format instead of old task spec",
+    "files_touched": [".claude/commands/cto-decompose.md"],
+    "est_lines_changed": 25,
+    "est_local_effort_mins": 20,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/cto-decompose.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS') || content.includes('task-spec.schema.json')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current cto-decompose.md", "///LOCAL_TASKS format specification"],
+    "outputs": ["Updated command with new output format"],
+    "constraints": [
+      "Replace task spec references with ///LOCAL_TASKS",
+      "Include atomic criteria table",
+      "Update example output to use new format",
+      "Reference .claude/schemas/local-task.schema.json"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 34, "lines_end": 68}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-005",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update local.md to reference new protocol",
+    "description": "Replace old task spec workflow with ///LOCAL_TASKS format and dispatcher.cjs references",
+    "files_touched": [".claude/commands/local.md"],
+    "est_lines_changed": 40,
+    "est_local_effort_mins": 25,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/local.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS') || !content.includes('dispatcher.cjs')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current local.md", "New dispatcher workflow"],
+    "outputs": ["Updated command with new workflow"],
+    "constraints": [
+      "Replace auto-generate-task-spec.sh references with dispatcher.cjs",
+      "Update workflow to: decompose → dispatcher add → dispatcher assign-next",
+      "Keep metrics section intact",
+      "Update examples to use ///LOCAL_TASKS format"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 71, "lines_end": 85}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-006",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update local-code.md with ///LOCAL_TASKS format",
+    "description": "Update examples and workflow to use ///LOCAL_TASKS JSON format",
+    "files_touched": [".claude/commands/local-code.md"],
+    "est_lines_changed": 30,
+    "est_local_effort_mins": 20,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/local-code.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current local-code.md", "///LOCAL_TASKS examples"],
+    "outputs": ["Updated command with new format"],
+    "constraints": [
+      "Update all examples to show ///LOCAL_TASKS format",
+      "Reference dispatcher.cjs for task execution",
+      "Preserve DeepSeek-specific guidance",
+      "Keep usage examples practical"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 38, "lines_end": 65}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-007",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update local-refactor.md with ///LOCAL_TASKS format",
+    "description": "Update refactoring task examples to use ///LOCAL_TASKS JSON format",
+    "files_touched": [".claude/commands/local-refactor.md"],
+    "est_lines_changed": 28,
+    "est_local_effort_mins": 18,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/local-refactor.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current local-refactor.md", "Refactoring task patterns"],
+    "outputs": ["Updated command with new format"],
+    "constraints": [
+      "Update examples to ///LOCAL_TASKS format",
+      "Show needs_context usage for refactoring",
+      "Preserve Qwen-specific guidance",
+      "Keep refactoring best practices section"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 87, "lines_end": 120}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-008",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update local-test.md with ///LOCAL_TASKS format",
+    "description": "Update test generation examples to use ///LOCAL_TASKS JSON format with invariant_test protocol",
+    "files_touched": [".claude/commands/local-test.md"],
+    "est_lines_changed": 35,
+    "est_local_effort_mins": 22,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/local-test.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS') || !content.includes('invariant_test')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current local-test.md", "invariant_test protocol"],
+    "outputs": ["Updated command with new format and protocol"],
+    "constraints": [
+      "Update examples to ///LOCAL_TASKS format",
+      "Add invariant_test protocol explanation",
+      "Show automatic test task creation",
+      "Reference invariant-test-generator.cjs"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 122, "lines_end": 155}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-009",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update local-doc.md with ///LOCAL_TASKS format",
+    "description": "Update documentation task examples to use ///LOCAL_TASKS JSON format",
+    "files_touched": [".claude/commands/local-doc.md"],
+    "est_lines_changed": 25,
+    "est_local_effort_mins": 18,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/commands/local-doc.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current local-doc.md", "Documentation task patterns"],
+    "outputs": ["Updated command with new format"],
+    "constraints": [
+      "Update examples to ///LOCAL_TASKS format",
+      "Preserve Qwen-specific documentation guidance",
+      "Show needs_context for API reference tasks",
+      "Keep JSDoc best practices"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 34, "lines_end": 68}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-010",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Rewrite LOCAL_MODELS_GUIDE.md for new protocol",
+    "description": "Comprehensive rewrite to document ///LOCAL_TASKS format, dispatcher CLI, atomic criteria, and all protocols",
+    "files_touched": [".claude/LOCAL_MODELS_GUIDE.md"],
+    "est_lines_changed": 200,
+    "est_local_effort_mins": 45,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/LOCAL_MODELS_GUIDE.md', 'utf-8'); if (!content.includes('///LOCAL_TASKS') || !content.includes('dispatcher.cjs') || !content.includes('atomic criteria')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["DECOMPOSITION_POLICY.md", "All protocols", "Dispatcher CLI commands"],
+    "outputs": ["Completely rewritten guide"],
+    "constraints": [
+      "Replace old task-spec workflow completely",
+      "Document all dispatcher.cjs commands",
+      "Include atomic criteria table",
+      "Document needs_context, invariant_test, permission protocols",
+      "Add troubleshooting section",
+      "Include workflow diagrams",
+      "Max 250 lines total"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 1, "lines_end": 212}
+    ],
+    "invariant_test": null
+  },
+  {
+    "id": "T-P8-011",
+    "parent_id": "decomposition-policy-phase8",
+    "title": "Update AGENT_GUIDE.md with decomposition reference",
+    "description": "Add section on decomposition policy enforcement for all agents",
+    "files_touched": [".claude/AGENT_GUIDE.md"],
+    "est_lines_changed": 20,
+    "est_local_effort_mins": 15,
+    "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/AGENT_GUIDE.md', 'utf-8'); if (!content.includes('DECOMPOSITION_POLICY')) process.exit(1);\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": ["Current AGENT_GUIDE.md", "Decomposition requirements for agents"],
+    "outputs": ["Updated guide with policy section"],
+    "constraints": [
+      "Add decomposition policy section",
+      "Reference atomic criteria requirement",
+      "Add note about permission escalation",
+      "Preserve existing agent documentation structure"
+    ],
+    "needs_context": [
+      {"path": ".claude/DECOMPOSITION_POLICY.md", "lines_start": 1, "lines_end": 31}
+    ],
+    "invariant_test": null
+  }
+]

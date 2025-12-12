@@ -28,6 +28,16 @@ Monitor and maintain real-time session state:
 ### 2. Delegation Enforcement (Reverse-Default)
 **Default**: ALL tasks delegate to local models UNLESS marked `[CLAUDE]`
 
+**Policy Reference**: `.claude/DECOMPOSITION_POLICY.md` (authoritative)
+
+**Atomic Criteria (ALL tasks must meet)**:
+| Criterion | Limit | Enforcement |
+|-----------|-------|-------------|
+| `files_touched` | ≤ 3 | BLOCK if exceeded |
+| `est_lines_changed` | ≤ 300 | BLOCK if exceeded |
+| `test_command` | Required | BLOCK if missing |
+| `est_local_effort_mins` | ≤ 60 | BLOCK if exceeded |
+
 **Delegation Categories (Expanded)**:
 | Category | Line Limit | Model | Description |
 |----------|------------|-------|-------------|

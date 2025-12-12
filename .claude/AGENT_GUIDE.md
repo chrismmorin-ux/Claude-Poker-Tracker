@@ -32,6 +32,60 @@ End of session or encountering issues?
 
 ---
 
+## Decomposition Policy (MANDATORY FOR ALL AGENTS)
+
+**ALL agents must decompose work into atomic tasks for local model execution.**
+
+### Atomic Criteria
+
+Every task must meet these limits:
+
+| Criterion | Limit | Enforcement |
+|-----------|-------|-------------|
+| `files_touched` | ≤ 3 | BLOCK if exceeded |
+| `est_lines_changed` | ≤ 300 | BLOCK if exceeded |
+| `test_command` | Required | BLOCK if missing |
+| `est_local_effort_mins` | ≤ 60 | BLOCK if exceeded |
+
+**If ANY criterion fails**: Task is BLOCKED. Must re-decompose or request permission.
+
+### Output Format: ///LOCAL_TASKS
+
+All task decomposition must use this JSON format:
+
+```json
+///LOCAL_TASKS
+[
+  {
+    "id": "T-XXX-001",
+    "title": "Create utility function",
+    "description": "Detailed description",
+    "files_touched": ["src/utils/file.js"],
+    "est_lines_changed": 50,
+    "est_local_effort_mins": 20,
+    "test_command": "npm test src/utils/__tests__/file.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "constraints": ["Rule 1", "Rule 2"],
+    "needs_context": [],
+    "invariant_test": null
+  }
+]
+```
+
+### Permission Escalation
+
+If atomic decomposition is truly impossible:
+
+```bash
+node scripts/dispatcher.cjs create-permission-request
+```
+
+**See**: `.claude/DECOMPOSITION_POLICY.md` for full policy.
+
+---
+
 ## Available Agents
 
 ### 1. CTO Agent

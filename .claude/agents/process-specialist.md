@@ -63,6 +63,26 @@ Optimize the entire workflow system for long-term efficiency by:
 - Test additions for error-prone areas
 - Prompt improvements for local model tasks
 
+### 1a. Decomposition Audit Analysis (NEW - MANDATORY)
+
+**Measure decomposition compliance:**
+- Run `node scripts/audit_decomposition.cjs` to generate atomicity report
+- Check `.claude/audits/atomicity_report.json` for violations
+- Analyze tasks that exceed atomic criteria limits
+- Review permission escalation requests (`.claude/permission-requests.json`)
+
+**Assess decomposition quality:**
+- What percentage of tasks meet atomic criteria?
+- Are tasks being properly decomposed or worked around?
+- Is the permission escalation protocol being used correctly?
+- Are local models receiving adequate context (via needs_context)?
+
+**Recommend:**
+- Better decomposition strategies for common violations
+- Updates to DECOMPOSITION_POLICY.md if gaps found
+- Improved task templates for atomic compliance
+- Training examples for common decomposition patterns
+
 ### 2. Context Efficiency Analysis
 
 **Measure:**

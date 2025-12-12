@@ -51,6 +51,18 @@ Run this checklist before beginning ANY phase:
 - [ ] **Tests passing** - Run `npm test` before making changes
 - [ ] **Read context files** - Read all files listed in "Context Files" section above
 - [ ] **Plan if needed** - Use `EnterPlanMode` if touching 4+ files
+- [ ] **Decomposition Policy** - Review `.claude/DECOMPOSITION_POLICY.md` for atomic criteria
+
+### Atomic Criteria (ALL tasks must meet these limits)
+
+| Criterion | Limit | Rationale |
+|-----------|-------|-----------|
+| `files_touched` | ≤ 3 | Limits scope complexity |
+| `est_lines_changed` | ≤ 300 | Keeps tasks focused |
+| `test_command` | Required | Ensures verifiability |
+| `est_local_effort_mins` | ≤ 60 | Prevents runaway tasks |
+
+**See full policy**: `.claude/DECOMPOSITION_POLICY.md`
 
 ---
 
@@ -62,48 +74,57 @@ Run this checklist before beginning ANY phase:
 ### Atomic Task Decomposition (MANDATORY)
 
 **ALL work MUST be decomposed into atomic tasks for local models.**
-Each task: ≤30 lines, single function/component, clear inputs/outputs.
+Tasks must meet atomic criteria (see table above). Format: `///LOCAL_TASKS`
 
 | Task ID | Description | File | Model | Status |
 |---------|-------------|------|-------|--------|
-| T-001 | [Create/Modify] [function/component name] | `path/file.js` | deepseek | [ ] |
-| T-002 | [Description] | `path/file.js` | qwen | [ ] |
-| T-003 | Write tests for T-001 | `path/file.test.js` | qwen | [ ] |
+| T-P1-001 | [Create/Modify] [function/component name] | `path/file.js` | local:deepseek | [ ] |
+| T-P1-002 | [Description] | `path/file.js` | local:qwen | [ ] |
+| T-P1-003 | Write tests for T-P1-001 | `path/file.test.js` | local:qwen | [ ] |
 
-**Task Spec Location**: `.claude/task-specs/[project-id]/T-XXX.json`
+**Task Storage**: `.claude/backlog.json` (managed via `dispatcher.cjs`)
 
-### Task Specs (Create before executing)
+### Task Specs (///LOCAL_TASKS format)
 
 <details>
-<summary>T-001: [Task name]</summary>
+<summary>T-P1-001: [Task name]</summary>
 
 ```json
-{
-  "task_id": "T-001",
-  "model": "deepseek",
-  "type": "create",
-  "description": "Detailed description of what to create",
-  "output_file": "src/path/to/file.js",
-  "function_name": "functionName",
-  "context_files": ["src/relevant/context.js"],
-  "inputs": "param1: type, param2: type",
-  "outputs": "Return type and description",
-  "constraints": [
-    "Constraint 1",
-    "Constraint 2"
-  ],
-  "example_usage": "functionName(arg1, arg2) => expected",
-  "max_lines": 25
-}
+///LOCAL_TASKS
+[
+  {
+    "id": "T-P1-001",
+    "parent_id": "project-id-here",
+    "title": "Create utility function",
+    "description": "Detailed description of what to create",
+    "files_touched": ["src/path/to/file.js"],
+    "est_lines_changed": 25,
+    "est_local_effort_mins": 15,
+    "test_command": "npm test src/path/__tests__/file.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P1",
+    "status": "open",
+    "inputs": ["param1: type", "param2: type"],
+    "outputs": ["Return type and description"],
+    "constraints": [
+      "Import from gameConstants",
+      "Include JSDoc with @param and @returns"
+    ],
+    "needs_context": [
+      {"path": "src/relevant/context.js", "lines_start": 1, "lines_end": 50}
+    ],
+    "invariant_test": null
+  }
+]
 ```
 </details>
 
 ### Execution Order
-1. [ ] Execute T-001: `./scripts/execute-local-task.sh .claude/task-specs/[project-id]/T-001.json`
-2. [ ] Review T-001 output
-3. [ ] Execute T-002...
+1. [ ] Add tasks: `cat tasks.json | node scripts/dispatcher.cjs add-tasks`
+2. [ ] Execute: `node scripts/dispatcher.cjs assign-next` (repeat for each task)
+3. [ ] Review outputs
 4. [ ] Integration: Claude assembles pieces if needed
-5. [ ] Execute test tasks (T-00X)
+5. [ ] Verify: All tests pass
 
 ### Claude-Only Tasks (MUST JUSTIFY)
 If any task cannot be delegated, document WHY:
