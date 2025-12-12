@@ -61,6 +61,7 @@ nul
 .claude/.pm-state.json
 .claude/.advisor-suggestions.json
 .claude/.startup-menu-shown.json
+.claude/audits/atomicity_report.json
 
 # Personal notes
 docs/chris-notes
