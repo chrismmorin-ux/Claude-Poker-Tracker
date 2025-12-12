@@ -342,4 +342,27 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Estimated tokens saved: ~1,500"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Update backlog if dispatcher exists and task is in backlog
+if [ -f "$SCRIPT_DIR/dispatcher.cjs" ]; then
+    BACKLOG_FILE="$PROJECT_ROOT/.claude/backlog.json"
+    if [ -f "$BACKLOG_FILE" ]; then
+        # Check if task exists in backlog
+        IN_BACKLOG=$(node -e "
+            const b = require('$BACKLOG_FILE');
+            const t = b.tasks.find(t => t.id === '$TASK_ID');
+            console.log(t ? 'yes' : 'no');
+        " 2>/dev/null || echo "no")
+
+        if [ "$IN_BACKLOG" = "yes" ]; then
+            if [ "$TEST_PASSED" = "true" ]; then
+                node "$SCRIPT_DIR/dispatcher.cjs" complete "$TASK_ID" --tests=passed 2>/dev/null || true
+            else
+                node "$SCRIPT_DIR/dispatcher.cjs" complete "$TASK_ID" --tests=failed 2>/dev/null || true
+            fi
+            log_info "Updated backlog status for $TASK_ID"
+        fi
+    fi
+fi
+
 output_result "success" "$OUTPUT_FILE" "" "$BACKUP_FILE"

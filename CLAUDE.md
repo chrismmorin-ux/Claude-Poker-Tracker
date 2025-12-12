@@ -15,6 +15,7 @@
    - Create task spec: `.claude/task-specs/T-XXX.json`
    - Execute: `bash scripts/execute-local-task.sh .claude/task-specs/T-XXX.json`
    - Only implement directly if task fails twice or is `claude_required`
+   - **Full policy**: `.claude/DECOMPOSITION_POLICY.md`
 
 ### Context Hierarchy (Use in Order)
 1. `.claude/index/*.md` - File/symbol lookups (~800 tokens total)

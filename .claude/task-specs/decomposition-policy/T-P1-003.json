@@ -1,0 +1,23 @@
+{
+  "task_id": "T-P1-003",
+  "model": "qwen",
+  "type": "create",
+  "description": "Create authoritative decomposition policy document covering all mandatory rules for atomic task decomposition and local model delegation",
+  "output_file": ".claude/DECOMPOSITION_POLICY.md",
+  "context_files": [".claude/context/WORKFLOW.md"],
+  "language": "markdown",
+  "constraints": [
+    "Title: Decomposition Policy (Authoritative)",
+    "Section 1: Core Principle - Local models are DEFAULT execution environment",
+    "Section 2: Atomic Criteria table (files_touched ≤3, est_lines_changed ≤300, test_command required, est_local_effort_mins ≤60)",
+    "Section 3: ///LOCAL_TASKS Format with full JSON schema example",
+    "Section 4: Task Lifecycle (Decomposition → Backlog → Execution → Review → Merge)",
+    "Section 5: needs_context Protocol with JSON examples for line-range requests",
+    "Section 6: invariant_test Protocol for reducers/persistence/hydration",
+    "Section 7: CLAUDE_REQUEST_FOR_PERMISSION escalation protocol",
+    "Section 8: Enforcement rules (BLOCK on criteria failure, recursive decomposition)",
+    "Section 9: Troubleshooting common decomposition issues",
+    "Keep concise but comprehensive (~200 lines max)"
+  ],
+  "test_command": "test -f .claude/DECOMPOSITION_POLICY.md && wc -l < .claude/DECOMPOSITION_POLICY.md"
+}

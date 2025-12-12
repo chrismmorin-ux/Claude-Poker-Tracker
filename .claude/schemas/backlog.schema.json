@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "backlog.schema.json",
+  "title": "Backlog Schema",
+  "description": "Schema for .claude/backlog.json - machine-readable task queue",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version (semver)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp (ISO 8601)"
+    },
+    "tasks": {
+      "type": "array",
+      "items": { "$ref": "local-task.schema.json" },
+      "description": "Array of tasks"
+    },
+    "projects": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "complete", "archived"]
+          },
+          "phase": { "type": "integer", "minimum": 1 },
+          "total_phases": { "type": "integer", "minimum": 1 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "file": { "type": "string" }
+        },
+        "required": ["name", "status"]
+      },
+      "description": "Project metadata keyed by project ID"
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "total_tasks": { "type": "integer" },
+        "open": { "type": "integer" },
+        "in_progress": { "type": "integer" },
+        "done": { "type": "integer" },
+        "failed": { "type": "integer" }
+      },
+      "description": "Task statistics (auto-calculated)"
+    }
+  },
+  "required": ["version", "updated_at", "tasks"],
+  "additionalProperties": false
+}

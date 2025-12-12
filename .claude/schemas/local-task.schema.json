@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "local-task.schema.json",
+  "title": "Local Task Schema",
+  "description": "Schema for ///LOCAL_TASKS format - atomic tasks delegated to local models",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^T-[A-Z0-9]+-\\d{3}$",
+      "description": "Task identifier (e.g., T-P1-001)"
+    },
+    "parent_id": {
+      "type": ["string", "null"],
+      "description": "Parent task ID if this is a subtask"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Brief task title"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Detailed task description"
+    },
+    "files_touched": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 3,
+      "description": "Files this task will create or modify (max 3)"
+    },
+    "est_lines_changed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 300,
+      "description": "Estimated lines of code changed (max 300)"
+    },
+    "est_local_effort_mins": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "description": "Estimated effort in minutes (max 60)"
+    },
+    "test_command": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Command to verify task completion"
+    },
+    "assigned_to": {
+      "type": "string",
+      "pattern": "^(local:(deepseek|qwen)|human|claude)$",
+      "description": "Who executes this task"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"],
+      "description": "Task priority"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "in_progress", "review", "done", "blocked", "failed"],
+      "description": "Current task status"
+    },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Required inputs for the task"
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Expected outputs from the task"
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Constraints the implementation must follow"
+    },
+    "needs_context": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "File path" },
+          "lines_start": { "type": "integer", "minimum": 1, "description": "Start line" },
+          "lines_end": { "type": "integer", "minimum": 1, "description": "End line" }
+        },
+        "required": ["path", "lines_start", "lines_end"],
+        "additionalProperties": false
+      },
+      "description": "Specific file ranges needed as context"
+    },
+    "invariant_test": {
+      "type": ["object", "null"],
+      "properties": {
+        "target": { "type": "string", "description": "What to test" },
+        "assertions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Test assertions"
+        }
+      },
+      "required": ["target", "assertions"],
+      "description": "Auto-generated test for reducers/persistence/hydration"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "description",
+    "files_touched",
+    "est_lines_changed",
+    "test_command",
+    "assigned_to",
+    "priority",
+    "status"
+  ],
+  "additionalProperties": false
+}

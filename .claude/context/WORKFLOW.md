@@ -59,59 +59,108 @@ When using `EnterPlanMode`:
 
 **Archive**: Actioned/dismissed audits move to respective folders but stay searchable
 
-## Local Model Delegation (MANDATORY)
+## Local Model Delegation (MANDATORY - DEFAULT TO LOCAL)
 
-**User Mandate**: Local models do 80%+ of implementation. Claude plans, decomposes, and reviews.
+> **Full Policy**: See `.claude/DECOMPOSITION_POLICY.md` for authoritative rules
 
-### Claude's Role
-1. **Decompose** user requests into atomic tasks (≤50 lines each)
-2. **Create task specs** for each delegable task
-3. **Execute** via `./scripts/execute-local-task.sh`
-4. **Review** output quality
-5. **Only implement directly** if task is non-delegable
+**CRITICAL**: Local models are the DEFAULT. Claude decomposes, delegates, and reviews.
+**Mindset**: "How do I break this down so local models can do it?" NOT "Can local models do this?"
 
-### Atomic Task Criteria
-A task is delegable to local model if ALL:
-- ≤50 lines of code
-- ≤2 external imports
-- Affects 1 file only
-- Stateless or simple logic
-- Has clear constraints
+### The Decomposition Imperative
+EVERY task MUST be decomposed into atomic sub-tasks. No exceptions.
+- A "big" task is just many small tasks
+- If a task seems too complex, decompose further
+- Keep decomposing until each piece is ≤30 lines of focused code
 
-### Task Spec Format
+### Claude's Role (STRICTLY LIMITED)
+1. **DECOMPOSE** - Break ANY task into atomic pieces (≤30 lines each)
+2. **DELEGATE** - Create task specs and execute via local model
+3. **REVIEW** - Check output quality, integrate pieces
+4. **ESCALATE ONLY IF**: Task fails twice with good specs, OR requires real-time debugging
+
+### What Local Models CAN Do (EXPANDED)
+Local models handle ALL of these:
+- **Components**: Any React component, any size (decompose into render sections)
+- **Hooks**: Custom hooks (decompose: state logic, effect logic, return value)
+- **Reducers**: Action handlers (one action = one task)
+- **Utils**: Any utility function
+- **Tests**: Unit tests, integration tests
+- **Refactoring**: Rename, extract, restructure
+- **State logic**: Context providers, state updates
+- **UI changes**: Styling, layout, conditional rendering
+- **Documentation**: JSDoc, comments, README updates
+
+### Decomposition Examples
+
+**"Update ActionPanel with new buttons"** decomposes to:
+1. T-001: Create `getValidActions(street, hasBet, isMultiSeat)` helper (15 lines)
+2. T-002: Create `PrimitiveActionButton` component (20 lines)
+3. T-003: Create `hasBetOnStreet(seatActions, street)` detection function (10 lines)
+4. T-004: Update ActionPanel render to use new components (25 lines)
+5. T-005: Update button click handlers to record primitives only (15 lines)
+6. T-006: Write tests for getValidActions (20 lines)
+
+**"Add dark mode"** decomposes to:
+1. T-001: Create ThemeContext with light/dark state (20 lines)
+2. T-002: Create useTheme hook (10 lines)
+3. T-003: Create ThemeToggle component (15 lines)
+4. T-004: Update App.jsx to wrap with ThemeProvider (10 lines)
+5. T-005: Create dark mode CSS variables (25 lines)
+6. T-006-N: Update each component's styles (one task per component)
+
+### ///LOCAL_TASKS Format
+
+> **Schema**: `.claude/schemas/local-task.schema.json`
+> **Full spec**: `.claude/DECOMPOSITION_POLICY.md` Section 3
+
+**Atomic Criteria** (ALL must pass):
+| Criterion | Limit |
+|-----------|-------|
+| `files_touched` | ≤ 3 |
+| `est_lines_changed` | ≤ 300 |
+| `test_command` | Required |
+| `est_local_effort_mins` | ≤ 60 |
+
 ```json
-{
-  "task_id": "T-XXX",
-  "model": "deepseek",
-  "description": "Specific, clear description",
-  "output_file": "src/path/to/file.js",
-  "context_files": ["relevant/file.js"],
-  "constraints": ["Export named function", "Include JSDoc"],
-  "test_command": "npx vitest run path/to/test",
-  "language": "javascript"
-}
+///LOCAL_TASKS
+[{
+  "id": "T-001",
+  "title": "Create getValidActions helper",
+  "description": "Returns array of valid primitive actions",
+  "files_touched": ["src/utils/actionUtils.js"],
+  "est_lines_changed": 25,
+  "test_command": "npm test src/utils/__tests__/actionUtils.test.js",
+  "assigned_to": "local:deepseek",
+  "priority": "P1",
+  "status": "open"
+}]
 ```
 
 ### Execution Flow
 ```bash
-# 1. Create task spec
-# 2. Execute
-./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
-# 3. Review output
-# 4. If quality issues: revise spec and retry (1x) or implement directly
+# For EVERY task in project:
+# 1. Decompose into ≤30 line atomic tasks
+# 2. Create task spec JSON for each
+# 3. Execute: ./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
+# 4. Review output (quick scan for obvious issues)
+# 5. If issues: refine spec, retry once
+# 6. If still issues: Claude implements (RARE - document why)
+# 7. Integrate pieces, run tests
 ```
 
-### Non-Delegable (Claude implements)
-- Reducers, custom hooks, state management
-- Multi-file changes, integration code
-- Bug fixes (need root cause analysis)
-- Tasks requiring deep context understanding
+### Claude Implements Directly ONLY When
+- Task has failed twice with well-written specs
+- Real-time interactive debugging needed
+- Cross-cutting concern spanning 5+ tightly-coupled files
+- Security-critical code requiring careful review
+
+**If you find yourself implementing directly, ASK: "Could I have decomposed this better?"**
 
 ### Model Selection
 | Model | Best For |
 |-------|----------|
-| `deepseek` | New code generation, utilities |
-| `qwen` | Refactoring, documentation, tests |
+| `deepseek` | New code, components, complex logic |
+| `qwen` | Refactoring, tests, documentation, simple modifications |
 
 ## Documentation Sync
 

@@ -1,0 +1,24 @@
+{
+  "task_id": "T-P1-001",
+  "model": "deepseek",
+  "type": "create",
+  "description": "Create JSON Schema for ///LOCAL_TASKS format with all required fields and atomic criteria validation",
+  "output_file": ".claude/schemas/local-task.schema.json",
+  "context_files": [],
+  "language": "json",
+  "constraints": [
+    "Use JSON Schema draft-07",
+    "Required fields: id, title, description, files_touched, est_lines_changed, test_command, assigned_to, priority, status",
+    "id pattern: ^T-[A-Z0-9]+-\\d{3}$",
+    "files_touched is array with maxItems: 3",
+    "est_lines_changed is integer with maximum: 300",
+    "est_local_effort_mins is integer with maximum: 60",
+    "assigned_to pattern: ^(local:(deepseek|qwen)|human|claude)$",
+    "priority enum: P0, P1, P2, P3",
+    "status enum: open, in_progress, review, done, blocked, failed",
+    "Include optional: parent_id, inputs, outputs, constraints (array), needs_context (array), invariant_test (object)",
+    "needs_context items have: path (string), lines_start (integer), lines_end (integer)",
+    "invariant_test has: target (string), assertions (array of strings)"
+  ],
+  "test_command": "node -e \"require('./.claude/schemas/local-task.schema.json')\""
+}

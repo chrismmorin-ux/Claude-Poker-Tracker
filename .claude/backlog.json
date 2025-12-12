@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2025-12-12T04:50:00.000Z",
+  "tasks": [],
+  "projects": {
+    "decomposition-policy": {
+      "name": "Comprehensive Decomposition Policy Integration",
+      "status": "active",
+      "phase": 2,
+      "total_phases": 10,
+      "created_at": "2025-12-11T00:00:00Z",
+      "file": "docs/projects/0.001.1211-decomposition-policy.project.md"
+    },
+    "primitive-actions-ui": {
+      "name": "Primitive Actions UI",
+      "status": "active",
+      "phase": 1,
+      "total_phases": 4,
+      "created_at": "2025-12-11T00:00:00Z",
+      "file": "docs/projects/1.001.1211-primitive-actions-ui.project.md"
+    }
+  },
+  "stats": {
+    "total_tasks": 0,
+    "open": 0,
+    "in_progress": 0,
+    "done": 0,
+    "failed": 0
+  }
+}

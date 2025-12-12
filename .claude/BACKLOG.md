@@ -1,8 +1,11 @@
 # Project Backlog - Single Source of Truth
-**Last Updated**: 2025-12-10 | **Updated By**: Claude | **Roadmap**: See `C:\Users\chris\.claude\plans\snug-gathering-flurry.md`
+**Last Updated**: 2025-12-11 | **Updated By**: Claude
 
 This file is the central registry for ALL work: active, delegated, pending, and planned.
 Both Claude and local models read and update this file.
+
+> **Machine-readable tasks**: `.claude/backlog.json`
+> **Task format**: Use `///LOCAL_TASKS` (see `.claude/DECOMPOSITION_POLICY.md`)
 
 ---
 
@@ -41,8 +44,14 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| Program Management Agent | Phase 1 | 0/4 phases | `docs/projects/program-manager.project.md` |
-| MVP UI Polish | Complete | 4/4 complete | `docs/projects/mvp-polish.project.md` |
+| Decomposition Policy | Phase 1 | 0/10 phases | `docs/projects/0.001.1211-decomposition-policy.project.md` |
+| Primitive Actions UI | Phase 1 | 0/4 phases | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
+| Firebase Auth | Phase 5 | 4/5 phases | `docs/projects/firebase-auth.project.md` |
+
+### Completed Projects
+| Project | Completed | File |
+|---------|-----------|------|
+| Program Management Agent | 2025-12-11 | `docs/projects/1.001.1211-program-manager.project.md` |
 
 ---
 
@@ -128,8 +137,9 @@ Projects that need `/project start` before beginning.
 
 **Current Queue**:
 ```
-1.001.1211-program-manager    ← P1, Active
-2.001.1210-firebase-auth      ← P2, Paused (5/6)
+0.001.1211-decomposition-policy ← P0, Active (57 tasks, 10 phases)
+1.001.1211-primitive-actions-ui ← P1, Active (18 tasks, 4 phases)
+2.001.1210-firebase-auth        ← P2, Paused (5/6)
 3.001.1209-firebase-cloud-sync
 3.002.1209-player-tendencies
 4.001.1209-range-analysis
