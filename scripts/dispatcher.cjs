@@ -150,16 +150,52 @@ async function addTasks() {
 // Command: assign-next
 function assignNext() {
   const backlog = loadBacklog();
-  const openTask = backlog.tasks.find(t => t.status === 'open');
+
+  // Find next open task (priority order: P0 > P1 > P2 > P3)
+  const priorityOrder = ['P0', 'P1', 'P2', 'P3'];
+  let openTask = null;
+
+  for (const priority of priorityOrder) {
+    openTask = backlog.tasks.find(t => t.status === 'open' && t.priority === priority);
+    if (openTask) break;
+  }
+
+  // Fallback to any open task
+  if (!openTask) {
+    openTask = backlog.tasks.find(t => t.status === 'open');
+  }
 
   if (!openTask) {
     console.log('No open tasks in backlog');
     process.exit(0);
   }
 
+  // PRE-ASSIGN AUDIT: Validate task meets atomic criteria before assignment
+  const validation = validateAtomic(openTask);
+  if (!validation.valid) {
+    console.error('\n╔═══════════════════════════════════════════════════════════════╗');
+    console.error('║  🛑 PRE-ASSIGN AUDIT FAILED - Task blocked                    ║');
+    console.error('╚═══════════════════════════════════════════════════════════════╝\n');
+    console.error(`Task: ${openTask.id} - ${openTask.title}`);
+    console.error('\nErrors:');
+    validation.errors.forEach(e => console.error(`  ✗ ${e}`));
+    console.error('\nAction: Re-decompose this task before assignment');
+    console.error('Run: node scripts/dispatcher.cjs redecompose ' + openTask.id);
+
+    // Mark task as blocked
+    openTask.status = 'blocked';
+    openTask.blocked_reason = 'Failed pre-assign audit: ' + validation.errors.join('; ');
+    saveBacklog(backlog);
+
+    process.exit(2);
+  }
+
   openTask.status = 'in_progress';
   openTask.assigned_at = new Date().toISOString();
   saveBacklog(backlog);
+
+  console.log('✓ Task passed pre-assign audit');
+  console.log('');
 
   // Output task as JSON for local model consumption
   console.log(JSON.stringify(openTask, null, 2));

@@ -34,6 +34,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/enforce-delegation.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/decomposition-validator.cjs"
           }
         ]
       },
@@ -43,6 +47,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/enforce-delegation.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/decomposition-validator.cjs"
           }
         ]
       },
@@ -219,6 +227,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/process-suggest.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/decomposition-validator.cjs"
           },
           {
             "type": "command",

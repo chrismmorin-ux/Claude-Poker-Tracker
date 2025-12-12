@@ -44,7 +44,7 @@ When completing a delegated task, append to the `## Local Model Updates` section
 ### Active Projects
 | Project | Phase | Progress | File |
 |---------|-------|----------|------|
-| Decomposition Policy | Phase 1 | 0/10 phases | `docs/projects/0.001.1211-decomposition-policy.project.md` |
+| Decomposition Policy | Phase 4 | 3/10 phases | `docs/projects/0.001.1211-decomposition-policy.project.md` |
 | Primitive Actions UI | Phase 1 | 0/4 phases | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
 | Firebase Auth | Phase 5 | 4/5 phases | `docs/projects/firebase-auth.project.md` |
 
