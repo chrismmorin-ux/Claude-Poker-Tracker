@@ -1,0 +1,24 @@
+///LOCAL_TASKS
+[
+  {
+    "id": "T-ENF-008",
+    "parent_id": null,
+    "title": "Reword backlog escape hatch note",
+    "description": "In BACKLOG.md, replace the note that mentions 'outputs code without creating files' with policy-reinforcing text that instructs to fix the underlying dispatcher issue via recursive decomposition rather than bypassing delegation.",
+    "files_touched": [".claude/BACKLOG.md"],
+    "est_lines_changed": 5,
+    "est_local_effort_mins": 5,
+    "test_command": "grep -q 'dispatcher integration bug' .claude/BACKLOG.md",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/BACKLOG.md"],
+    "outputs": ["Updated .claude/BACKLOG.md with policy-reinforcing note"],
+    "constraints": [
+      "Find and replace note starting with '*Note: Local model delegation attempted...'",
+      "Replace with: '*Note: If local model outputs code without creating files, this indicates a dispatcher integration bug that must be fixed per DECOMPOSITION_POLICY.md Section 9 (recursive decomposition). Do NOT bypass delegation - troubleshoot and fix the underlying issue.'",
+      "Maintain markdown formatting",
+      "Keep in same location (around line 70)"
+    ]
+  }
+]

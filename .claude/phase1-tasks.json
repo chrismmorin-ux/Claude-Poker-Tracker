@@ -1,0 +1,165 @@
+///LOCAL_TASKS
+[
+  {
+    "id": "T-ENF-001",
+    "parent_id": null,
+    "title": "Create pre-write blocking hook",
+    "description": "Create PreToolUse hook that blocks Edit/Write when file assigned to local model. Read stdin as JSON, check if file is assigned to local model, exit 0 to allow or exit 1 to block.",
+    "files_touched": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "est_lines_changed": 200,
+    "est_local_effort_mins": 30,
+    "test_command": "echo '{\"tool_input\":{\"file_path\":\"test.js\"}}' | node .claude/hooks/pre-write-delegation-check.cjs",
+    "assigned_to": "local:deepseek",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/hooks/delegation-check.cjs"],
+    "outputs": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "constraints": [
+      "#!/usr/bin/env node shebang",
+      "Hook Type: PreToolUse (runs BEFORE tool executes)",
+      "Read stdin as JSON containing tool_input",
+      "Exit 0 to allow, Exit 1 to block",
+      "Must be fast (<100ms)",
+      "Include JSDoc header"
+    ]
+  },
+  {
+    "id": "T-ENF-002",
+    "parent_id": "T-ENF-001",
+    "title": "Add active project check logic",
+    "description": "Add function getActiveProjectContent() to check if active project exists by reading .claude/projects.json and returning project file path and content, or null if no active project.",
+    "files_touched": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "est_lines_changed": 40,
+    "est_local_effort_mins": 15,
+    "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/hooks/delegation-check.cjs", ".claude/projects.json"],
+    "outputs": ["getActiveProjectContent() function"],
+    "constraints": [
+      "Read .claude/projects.json to get active project",
+      "If no active project, return null",
+      "Read active project file content",
+      "Handle file not found gracefully",
+      "Function name: getActiveProjectContent()",
+      "Return: {projectFile: string, content: string} or null"
+    ]
+  },
+  {
+    "id": "T-ENF-003",
+    "parent_id": "T-ENF-001",
+    "title": "Add file-to-task matching logic",
+    "description": "Add function isFileAssignedToLocalModel(projectContent, filePath) to parse project markdown tables and check if file basename is assigned to deepseek, qwen, or local:* model.",
+    "files_touched": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "est_lines_changed": 60,
+    "est_local_effort_mins": 20,
+    "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
+    "assigned_to": "local:deepseek",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/hooks/delegation-check.cjs"],
+    "outputs": ["isFileAssignedToLocalModel() function"],
+    "constraints": [
+      "Parse project content for task tables",
+      "Look for | Task | ... | Model | Status | format",
+      "Check if file basename matches task file",
+      "Check if Model column contains 'deepseek' or 'qwen' or 'local:'",
+      "Function name: isFileAssignedToLocalModel(projectContent, filePath)",
+      "Return: {assigned: boolean, taskId: string|null, model: string|null}"
+    ]
+  },
+  {
+    "id": "T-ENF-004",
+    "parent_id": "T-ENF-001",
+    "title": "Add blocking exit logic",
+    "description": "Add main execution logic that reads stdin JSON, calls getActiveProjectContent() and isFileAssignedToLocalModel(), then exits 1 to block if assigned to local model, or exits 0 to allow otherwise.",
+    "files_touched": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "est_lines_changed": 50,
+    "est_local_effort_mins": 15,
+    "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [],
+    "outputs": ["Main execution flow"],
+    "constraints": [
+      "Read stdin JSON to get tool_input.file_path",
+      "Call getActiveProjectContent()",
+      "If no project, exit 0 (allow)",
+      "Call isFileAssignedToLocalModel()",
+      "If assigned to local model, print error and exit 1 (block)",
+      "If not assigned, exit 0 (allow)",
+      "Handle all errors gracefully (exit 0 on error)"
+    ]
+  },
+  {
+    "id": "T-ENF-005",
+    "parent_id": "T-ENF-001",
+    "title": "Create helpful error message",
+    "description": "Add formatted error message function that displays box-formatted message with file name, task ID, assigned model, dispatcher commands, and policy reference when blocking occurs.",
+    "files_touched": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "est_lines_changed": 30,
+    "est_local_effort_mins": 10,
+    "test_command": "echo '{\"tool_input\":{\"file_path\":\"test.js\"}}' | node .claude/hooks/pre-write-delegation-check.cjs 2>&1 | grep '🚫'",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/hooks/delegation-check.cjs"],
+    "outputs": ["Error message formatting function"],
+    "constraints": [
+      "Box format with borders (like delegation-check.cjs lines 163-179)",
+      "Include: file name, task ID, assigned model",
+      "Show dispatcher commands to use instead",
+      "Reference DECOMPOSITION_POLICY.md Section 10",
+      "Error icon: 🚫",
+      "Keep under 15 lines tall"
+    ]
+  },
+  {
+    "id": "T-ENF-006",
+    "parent_id": "T-ENF-001",
+    "title": "Register hooks in settings",
+    "description": "Add PreToolUse hook registrations for Edit, Write, and NotebookEdit tools in .vscode/settings.json pointing to .claude/hooks/pre-write-delegation-check.cjs",
+    "files_touched": [".vscode/settings.json"],
+    "est_lines_changed": 10,
+    "est_local_effort_mins": 5,
+    "test_command": "node -e \"JSON.parse(require('fs').readFileSync('.vscode/settings.json'))\"",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".vscode/settings.json"],
+    "outputs": ["Updated settings.json with hook registrations"],
+    "constraints": [
+      "Add to hooks object",
+      "Register for: PreToolUse:Edit, PreToolUse:Write, PreToolUse:NotebookEdit",
+      "Path: .claude/hooks/pre-write-delegation-check.cjs",
+      "Maintain JSON formatting",
+      "Don't duplicate if already exists"
+    ]
+  },
+  {
+    "id": "T-ENF-007",
+    "parent_id": "T-ENF-001",
+    "title": "Write tests for blocking hook",
+    "description": "Write unit tests using node:test for pre-write blocking hook covering: no active project allows, file not in project allows, file assigned to local model blocks, file assigned to claude allows, error handling allows.",
+    "files_touched": [".claude/hooks/__tests__/pre-write-delegation-check.test.js"],
+    "est_lines_changed": 150,
+    "est_local_effort_mins": 30,
+    "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
+    "assigned_to": "local:qwen",
+    "priority": "P0",
+    "status": "open",
+    "inputs": [".claude/hooks/pre-write-delegation-check.cjs"],
+    "outputs": [".claude/hooks/__tests__/pre-write-delegation-check.test.js"],
+    "constraints": [
+      "Use node:test (built-in test runner)",
+      "Test: No active project → allows (exit 0)",
+      "Test: File not in project → allows",
+      "Test: File assigned to local model → blocks (exit 1)",
+      "Test: File assigned to claude → allows",
+      "Test: Error handling → allows (fail open)",
+      "Mock file reads and stdin"
+    ]
+  }
+]

@@ -169,8 +169,37 @@ async function addTasks() {
   }
 }
 
+// Convert dispatcher task format to execute-local-task.sh format
+function convertToExecutionFormat(task) {
+  // Extract model name from assigned_to (e.g., "local:deepseek" -> "deepseek")
+  let model = 'deepseek'; // default
+  if (task.assigned_to && task.assigned_to.startsWith('local:')) {
+    model = task.assigned_to.replace('local:', '');
+  }
+
+  // Determine language from file extension
+  const outputFile = task.files_touched && task.files_touched[0];
+  let language = 'javascript';
+  if (outputFile) {
+    if (outputFile.endsWith('.ts') || outputFile.endsWith('.tsx')) language = 'typescript';
+    else if (outputFile.endsWith('.py')) language = 'python';
+    else if (outputFile.endsWith('.sh')) language = 'bash';
+  }
+
+  return {
+    task_id: task.id,
+    model: model,
+    description: task.description,
+    output_file: outputFile || '',
+    context_files: task.inputs || [],
+    constraints: task.constraints || [],
+    test_command: task.test_command || '',
+    language: language
+  };
+}
+
 // Command: assign-next
-function assignNext() {
+async function assignNext() {
   const backlog = loadBacklog();
 
   // Find next open task (priority order: P0 > P1 > P2 > P3)
@@ -217,10 +246,60 @@ function assignNext() {
   saveBacklog(backlog);
 
   console.log('✓ Task passed pre-assign audit');
+  console.log(`\n🚀 Executing task: ${openTask.id} - ${openTask.title}`);
   console.log('');
 
-  // Output task as JSON for local model consumption
-  console.log(JSON.stringify(openTask, null, 2));
+  // Convert to execution format
+  const execSpec = convertToExecutionFormat(openTask);
+
+  // Write temp spec file
+  const tempSpecPath = path.join(process.cwd(), '.claude', '.temp-task-spec.json');
+  fs.writeFileSync(tempSpecPath, JSON.stringify(execSpec, null, 2));
+
+  // Execute via execute-local-task.sh
+  const scriptPath = path.join(__dirname, 'execute-local-task.sh');
+  try {
+    console.log(`📝 Calling local model: ${execSpec.model}`);
+    console.log('');
+
+    const result = execSync(`bash "${scriptPath}" "${tempSpecPath}"`, {
+      encoding: 'utf8',
+      stdio: 'inherit',
+      cwd: process.cwd()
+    });
+
+    // Task completed successfully by execute-local-task.sh
+    // The script auto-updates backlog, but we'll reload to be sure
+    const updatedBacklog = loadBacklog();
+    const completedTask = updatedBacklog.tasks.find(t => t.id === openTask.id);
+
+    if (completedTask && completedTask.status === 'done') {
+      console.log(`\n✅ Task ${openTask.id} completed successfully`);
+    } else {
+      console.log(`\n⚠️  Task ${openTask.id} executed but status unclear`);
+    }
+
+  } catch (error) {
+    console.error(`\n❌ Task ${openTask.id} execution failed`);
+    console.error(error.message);
+
+    // Mark task as failed
+    const failedBacklog = loadBacklog();
+    const failedTask = failedBacklog.tasks.find(t => t.id === openTask.id);
+    if (failedTask) {
+      failedTask.status = 'failed';
+      failedTask.error = error.message;
+      failedTask.failed_at = new Date().toISOString();
+      saveBacklog(failedBacklog);
+    }
+
+    process.exit(1);
+  } finally {
+    // Clean up temp file
+    if (fs.existsSync(tempSpecPath)) {
+      fs.unlinkSync(tempSpecPath);
+    }
+  }
 }
 
 // Command: status
@@ -661,13 +740,14 @@ function rejectPermission(requestId, suggestion) {
 // Main
 const [,, command, ...args] = process.argv;
 
-switch (command) {
-  case 'add-tasks':
-    addTasks();
-    break;
-  case 'assign-next':
-    assignNext();
-    break;
+(async function main() {
+  switch (command) {
+    case 'add-tasks':
+      await addTasks();
+      break;
+    case 'assign-next':
+      await assignNext();
+      break;
   case 'status':
     showStatus();
     break;
@@ -751,4 +831,8 @@ Examples:
   node scripts/dispatcher.cjs approve-permission PR-2025-12-11-001 --conditions="must write tests"
   node scripts/dispatcher.cjs reject-permission PR-2025-12-11-001 --suggest="Split by file"
 `);
-}
+  }
+})().catch(error => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});
