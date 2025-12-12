@@ -3,16 +3,18 @@
  * dispatcher.cjs - Task dispatcher CLI for local model delegation
  *
  * Commands:
- *   add-tasks    - Add tasks from ///LOCAL_TASKS JSON (stdin)
- *   assign-next  - Assign next open task to local model
- *   status       - View backlog status
- *   complete     - Mark task complete with result
- *   audit        - Validate all tasks against atomic criteria
- *   redecompose  - Mark task for re-decomposition
+ *   add-tasks       - Add tasks from ///LOCAL_TASKS JSON (stdin)
+ *   assign-next     - Assign next open task to local model
+ *   status          - View backlog status
+ *   complete        - Mark task complete with result
+ *   audit           - Validate all tasks against atomic criteria
+ *   redecompose     - Mark task for re-decomposition
+ *   extract-context - Extract and preview context for a task
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const BACKLOG_PATH = path.join(process.cwd(), '.claude', 'backlog.json');
 const SCHEMA_PATH = path.join(process.cwd(), '.claude', 'schemas', 'local-task.schema.json');
@@ -307,6 +309,60 @@ function redecomposeTask(taskId) {
   console.log(`Task ${taskId} marked for re-decomposition`);
 }
 
+// Command: extract-context
+function extractContext(taskId) {
+  const backlog = loadBacklog();
+  const task = backlog.tasks.find(t => t.id === taskId);
+
+  if (!task) {
+    console.error(`Task not found: ${taskId}`);
+    process.exit(1);
+  }
+
+  // Check if task has needs_context
+  if (!task.needs_context || task.needs_context.length === 0) {
+    console.log(`Task ${taskId} has no needs_context defined`);
+    console.log('Context would be loaded from context_files (legacy) or empty');
+    process.exit(0);
+  }
+
+  console.log(`\n=== Context for Task ${taskId} ===\n`);
+  console.log(`Context requests: ${task.needs_context.length}\n`);
+
+  // Call context-provider.cjs
+  const contextProviderPath = path.join(__dirname, 'context-provider.cjs');
+
+  if (!fs.existsSync(contextProviderPath)) {
+    console.error('Error: context-provider.cjs not found');
+    process.exit(1);
+  }
+
+  try {
+    const needsContextJson = JSON.stringify(task.needs_context);
+    const output = execSync(`node "${contextProviderPath}" '${needsContextJson}'`, {
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024 // 10MB
+    });
+
+    console.log(output);
+
+    // Show summary
+    console.log('\n=== Summary ===');
+    task.needs_context.forEach((ctx, i) => {
+      const lines = ctx.lines_end - ctx.lines_start + 1;
+      console.log(`  [${i + 1}] ${ctx.path} (${lines} lines)`);
+    });
+
+  } catch (error) {
+    console.error('Error extracting context:');
+    console.error(error.message);
+    if (error.stderr) {
+      console.error('\nStderr:', error.stderr);
+    }
+    process.exit(2);
+  }
+}
+
 // Main
 const [,, command, ...args] = process.argv;
 
@@ -338,6 +394,13 @@ switch (command) {
     }
     redecomposeTask(args[0]);
     break;
+  case 'extract-context':
+    if (!args[0]) {
+      console.error('Usage: dispatcher.cjs extract-context <task-id>');
+      process.exit(1);
+    }
+    extractContext(args[0]);
+    break;
   default:
     console.log(`
 Dispatcher CLI - Task management for local model delegation
@@ -349,6 +412,7 @@ Commands:
   complete <id> [opts]   Mark task complete (--tests=passed|failed)
   audit                  Validate all tasks against atomic criteria
   redecompose <id>       Mark task for re-decomposition
+  extract-context <id>   Extract and preview context for a task
 
 Examples:
   echo '///LOCAL_TASKS [{"id":"T-001",...}]' | node scripts/dispatcher.cjs add-tasks
@@ -356,5 +420,6 @@ Examples:
   node scripts/dispatcher.cjs status
   node scripts/dispatcher.cjs complete T-001 --tests=passed
   node scripts/dispatcher.cjs audit
+  node scripts/dispatcher.cjs extract-context T-001
 `);
 }

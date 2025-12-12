@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
-    include: ['src/**/*.{test,spec}.{js,jsx}'],
+    include: ['src/**/*.{test,spec}.{js,jsx}', 'scripts/__tests__/**/*.test.{js,cjs}'],
     testTimeout: 30000, // Increased timeout to handle heavy parallel test runs on Windows
     hookTimeout: 30000,
     maxConcurrency: 3, // Limit parallel tests to avoid resource contention

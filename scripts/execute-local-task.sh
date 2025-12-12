@@ -130,6 +130,9 @@ TEST_CMD=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.
 CONTEXT_FILES=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print('\n'.join(d.get('context_files',[])))")
 CONSTRAINTS=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print('\n'.join(d.get('constraints',[])))")
 
+# Get needs_context array (new protocol)
+NEEDS_CONTEXT=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('needs_context',[])))")
+
 log_info "Task ID: $TASK_ID"
 log_info "Output: $OUTPUT_FILE"
 log_info "Model: $MODEL"
@@ -144,34 +147,60 @@ else
 fi
 
 # Build context section
-log_info "Loading context files..."
+log_info "Loading context..."
 CONTEXT_SECTION=""
 
-while IFS= read -r ctx_file; do
-    [ -z "$ctx_file" ] && continue
+# Check if using new needs_context protocol
+if [ "$NEEDS_CONTEXT" != "[]" ] && [ -n "$NEEDS_CONTEXT" ]; then
+    log_info "Using needs_context protocol (exact line ranges)"
 
-    FULL_PATH="$PROJECT_ROOT/$ctx_file"
-    if [ -f "$FULL_PATH" ]; then
-        # Truncate if too long
-        FILE_CONTENT=$(head -n $MAX_CONTEXT_LINES "$FULL_PATH")
-        LINE_COUNT=$(wc -l < "$FULL_PATH")
+    # Call context-provider.cjs to extract exact line ranges
+    CONTEXT_PROVIDER="$SCRIPT_DIR/context-provider.cjs"
+    if [ -f "$CONTEXT_PROVIDER" ]; then
+        CONTEXT_OUTPUT=$(node "$CONTEXT_PROVIDER" "$NEEDS_CONTEXT" 2>&1)
+        PROVIDER_EXIT=$?
 
-        CONTEXT_SECTION+="
+        if [ $PROVIDER_EXIT -eq 0 ]; then
+            CONTEXT_SECTION="$CONTEXT_OUTPUT"
+            log_info "  Context extracted via needs_context protocol"
+        else
+            log_warn "  Context provider failed, output:"
+            log_warn "$CONTEXT_OUTPUT"
+            # Continue with empty context rather than failing
+        fi
+    else
+        log_warn "  context-provider.cjs not found, skipping needs_context"
+    fi
+else
+    # Fall back to legacy context_files behavior
+    log_info "Using legacy context_files (full file loading)"
+
+    while IFS= read -r ctx_file; do
+        [ -z "$ctx_file" ] && continue
+
+        FULL_PATH="$PROJECT_ROOT/$ctx_file"
+        if [ -f "$FULL_PATH" ]; then
+            # Truncate if too long
+            FILE_CONTENT=$(head -n $MAX_CONTEXT_LINES "$FULL_PATH")
+            LINE_COUNT=$(wc -l < "$FULL_PATH")
+
+            CONTEXT_SECTION+="
 ### File: $ctx_file
 \`\`\`$LANGUAGE
 $FILE_CONTENT
 \`\`\`
 "
-        if [ "$LINE_COUNT" -gt "$MAX_CONTEXT_LINES" ]; then
-            CONTEXT_SECTION+="
+            if [ "$LINE_COUNT" -gt "$MAX_CONTEXT_LINES" ]; then
+                CONTEXT_SECTION+="
 (truncated - showing first $MAX_CONTEXT_LINES of $LINE_COUNT lines)
 "
+            fi
+            log_info "  Loaded: $ctx_file ($LINE_COUNT lines)"
+        else
+            log_warn "  Context file not found: $ctx_file"
         fi
-        log_info "  Loaded: $ctx_file ($LINE_COUNT lines)"
-    else
-        log_warn "  Context file not found: $ctx_file"
-    fi
-done <<< "$CONTEXT_FILES"
+    done <<< "$CONTEXT_FILES"
+fi
 
 # Build constraints section
 CONSTRAINTS_SECTION=""
