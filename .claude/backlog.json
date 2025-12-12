@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated_at": "2025-12-12T16:31:43.138Z",
+  "updated_at": "2025-12-12T16:59:06.236Z",
   "tasks": [
     {
       "id": "T-P8-001",
@@ -597,7 +597,7 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "in_progress",
       "inputs": [],
       "outputs": [
         "Main execution flow"
@@ -610,7 +610,8 @@
         "If assigned to local model, print error and exit 1 (block)",
         "If not assigned, exit 0 (allow)",
         "Handle all errors gracefully (exit 0 on error)"
-      ]
+      ],
+      "assigned_at": "2025-12-12T16:54:46.563Z"
     },
     {
       "id": "T-ENF-005",
@@ -625,7 +626,7 @@
       "test_command": "echo '{\"tool_input\":{\"file_path\":\"test.js\"}}' | node .claude/hooks/pre-write-delegation-check.cjs 2>&1 | grep '🚫'",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "in_progress",
       "inputs": [
         ".claude/hooks/delegation-check.cjs"
       ],
@@ -639,7 +640,8 @@
         "Reference DECOMPOSITION_POLICY.md Section 10",
         "Error icon: 🚫",
         "Keep under 15 lines tall"
-      ]
+      ],
+      "assigned_at": "2025-12-12T16:55:37.646Z"
     },
     {
       "id": "T-ENF-006",
@@ -654,7 +656,7 @@
       "test_command": "node -e \"JSON.parse(require('fs').readFileSync('.vscode/settings.json'))\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "in_progress",
       "inputs": [
         ".vscode/settings.json"
       ],
@@ -667,7 +669,8 @@
         "Path: .claude/hooks/pre-write-delegation-check.cjs",
         "Maintain JSON formatting",
         "Don't duplicate if already exists"
-      ]
+      ],
+      "assigned_at": "2025-12-12T16:56:10.542Z"
     },
     {
       "id": "T-ENF-007",
@@ -682,7 +685,7 @@
       "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "in_progress",
       "inputs": [
         ".claude/hooks/pre-write-delegation-check.cjs"
       ],
@@ -697,7 +700,8 @@
         "Test: File assigned to claude → allows",
         "Test: Error handling → allows (fail open)",
         "Mock file reads and stdin"
-      ]
+      ],
+      "assigned_at": "2025-12-12T16:56:18.012Z"
     },
     {
       "id": "T-ENF-008",
@@ -712,7 +716,7 @@
       "test_command": "grep -q 'dispatcher integration bug' .claude/BACKLOG.md",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "in_progress",
       "inputs": [
         ".claude/BACKLOG.md"
       ],
@@ -724,7 +728,139 @@
         "Replace with: '*Note: If local model outputs code without creating files, this indicates a dispatcher integration bug that must be fixed per DECOMPOSITION_POLICY.md Section 9 (recursive decomposition). Do NOT bypass delegation - troubleshoot and fix the underlying issue.'",
         "Maintain markdown formatting",
         "Keep in same location (around line 70)"
-      ]
+      ],
+      "assigned_at": "2025-12-12T16:56:36.102Z"
+    },
+    {
+      "id": "T-017-combined",
+      "title": "Create auto-execute-project.cjs with spec extraction and dispatcher integration",
+      "description": "Create CLI script that reads project files, extracts task specs from <details> sections, converts to ///LOCAL_TASKS format, and pipes to dispatcher for execution",
+      "files_touched": [
+        "scripts/auto-execute-project.cjs"
+      ],
+      "est_lines_changed": 290,
+      "est_local_effort_mins": 45,
+      "test_command": "node scripts/auto-execute-project.cjs --help",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "in_progress",
+      "inputs": [
+        "project name as CLI argument"
+      ],
+      "outputs": [
+        "Executes all tasks from project file via dispatcher"
+      ],
+      "constraints": [
+        "#!/usr/bin/env node shebang",
+        "Accept project name as argument",
+        "Find project file in docs/projects/",
+        "Parse markdown <details> sections for ```json blocks",
+        "Validate extracted JSON against local-task schema",
+        "Convert to ///LOCAL_TASKS format",
+        "Pipe to dispatcher.cjs add-tasks via child_process",
+        "Call dispatcher.cjs assign-next for each task",
+        "Report progress to console",
+        "Handle errors gracefully"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 111,
+          "lines_end": 170
+        },
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 201,
+          "lines_end": 303
+        },
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 35,
+          "lines_end": 68
+        }
+      ],
+      "assigned_at": "2025-12-12T16:58:00.075Z"
+    },
+    {
+      "id": "T-020",
+      "title": "Create DISPATCHER_QUICKSTART.md guide",
+      "description": "Create quickstart guide with copy-paste commands for common dispatcher workflows",
+      "files_touched": [
+        ".claude/DISPATCHER_QUICKSTART.md"
+      ],
+      "est_lines_changed": 200,
+      "est_local_effort_mins": 30,
+      "test_command": "test -f .claude/DISPATCHER_QUICKSTART.md",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "in_progress",
+      "inputs": [
+        "existing dispatcher.cjs commands"
+      ],
+      "outputs": [
+        "Markdown quickstart guide"
+      ],
+      "constraints": [
+        "Include copy-paste commands for: adding tasks manually, auto-executing project, checking status, troubleshooting",
+        "Section: Adding tasks manually",
+        "Section: Auto-executing project (use T-017 script)",
+        "Section: Checking status",
+        "Section: Troubleshooting common errors",
+        "Include examples from this enforcement project",
+        "Keep under 200 lines",
+        "Use code blocks for all commands"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 50
+        },
+        {
+          "path": "docs/projects/0.002.1212-local-model-enforcement.project.md",
+          "lines_start": 130,
+          "lines_end": 300
+        }
+      ],
+      "assigned_at": "2025-12-12T16:58:43.011Z"
+    },
+    {
+      "id": "T-007",
+      "title": "Write unit tests for pre-write-delegation-check.cjs",
+      "description": "Write unit tests for pre-write blocking hook using node:test",
+      "files_touched": [
+        ".claude/hooks/__tests__/pre-write-delegation-check.test.js"
+      ],
+      "est_lines_changed": 150,
+      "est_local_effort_mins": 40,
+      "test_command": "node .claude/hooks/__tests__/pre-write-delegation-check.test.js",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "in_progress",
+      "inputs": [
+        "pre-write-delegation-check.cjs or delegation-check-pre.cjs"
+      ],
+      "outputs": [
+        "Unit test file with 5+ test cases"
+      ],
+      "constraints": [
+        "Use node:test (built-in test runner)",
+        "Test: No active project → allows (exit 0)",
+        "Test: File not in project → allows",
+        "Test: File assigned to local model → blocks (exit 2)",
+        "Test: File assigned to claude → allows",
+        "Test: Error handling → allows (fail open)",
+        "Mock file reads and stdin using node:test mocking",
+        "Target file: .claude/hooks/delegation-check-pre.cjs (the complete version)"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/delegation-check-pre.cjs",
+          "lines_start": 1,
+          "lines_end": 316
+        }
+      ],
+      "assigned_at": "2025-12-12T16:59:06.236Z"
     }
   ],
   "projects": {
@@ -746,9 +882,9 @@
     }
   },
   "stats": {
-    "total_tasks": 21,
-    "open": 5,
-    "in_progress": 4,
+    "total_tasks": 24,
+    "open": 0,
+    "in_progress": 12,
     "done": 12,
     "failed": 0
   }

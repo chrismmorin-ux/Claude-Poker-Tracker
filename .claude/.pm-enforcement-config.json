@@ -3,8 +3,8 @@
   "rules": {
     "delegation": {
       "enabled": true,
-      "mode": "warn",
-      "description": "Warn about tasks that should be delegated to local models"
+      "mode": "block",
+      "description": "Block writes to files that should be delegated to local models"
     },
     "multiFileGate": {
       "enabled": true,
