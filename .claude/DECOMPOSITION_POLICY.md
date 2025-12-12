@@ -68,6 +68,137 @@ All task decomposition outputs use this JSON format:
 
 ---
 
+## 2.5. Task Complexity Classification
+
+**Added:** 2025-12-12 based on escalation analysis (see `.claude/ESCALATION_LOG.md`)
+
+Before decomposing, classify task complexity to determine if local model delegation is appropriate:
+
+### Type A: Mechanical Edit (BEST for local models)
+
+**Characteristics:**
+- Delete specific lines
+- Replace exact strings
+- Insert content at specific locations
+- Copy-paste with minimal changes
+- No semantic understanding required
+
+**Examples:**
+- Remove dependency: Delete lines 4-6 containing `require('showdown')`
+- Fix typo: Replace "processs" with "process" in line 42
+- Add import: Insert `const path = require('path');` after line 3
+
+**When to use:**
+- Ideal for local models when using `edit_strategy: "incremental_edit"`
+- Provide explicit line numbers and exact content
+- Use `edit_operations` array for structured edits
+
+**Success criteria:** Local models can execute with >90% reliability
+
+---
+
+### Type B: Template Fill (GOOD for local models)
+
+**Characteristics:**
+- Fill in predefined structure
+- Replace placeholders with values
+- Follow strict format rules
+- Minimal creative decisions
+
+**Examples:**
+- Generate function from template with specific parameters
+- Fill test template with test cases
+- Create config file from standard structure
+
+**When to use:**
+- Use `edit_strategy: "template_fill"` with `output_template`
+- Provide complete structure with clear placeholders
+- Specify exact values for each placeholder
+
+**Success criteria:** Local models can execute with >80% reliability when template is clear
+
+---
+
+### Type C: Creative Generation (RISKY for local models)
+
+**Characteristics:**
+- Write new logic from requirements
+- Design data structures
+- Choose algorithms
+- Make architectural decisions
+
+**Examples:**
+- Implement new feature from description
+- Design API interface
+- Write complex business logic
+
+**When to use:**
+- Decompose into Type A/B tasks if possible
+- If atomic and well-specified, attempt with caution
+- Provide extensive examples and context
+- **Expect 50% failure rate** - have backup plan
+
+**Escalation trigger:** Task fails twice → escalate to Claude
+
+---
+
+### Type D: Semantic Rewrite (ESCALATE to Claude)
+
+**Characteristics:**
+- Understand and preserve intent while changing form
+- Convert between formats (markdown ↔ code)
+- Modify existing files while preserving content
+- Fix bugs requiring reasoning
+- Project-specific content generation
+
+**Examples:**
+- Convert JavaScript code to markdown documentation
+- Add section to existing file (must preserve rest)
+- Refactor code while maintaining behavior
+- Fix semantic bugs (not syntax errors)
+
+**Why local models fail:**
+- Cannot preserve existing content during edits ("modify" becomes "rewrite")
+- Generate generic content, not project-specific
+- Ignore explicit constraints when conflicting with training patterns
+- Lack file-level awareness
+
+**When to use:**
+- **DO NOT delegate to local models**
+- Escalate to Claude immediately
+- Document in ESCALATION_LOG.md
+
+**Evidence:** See `.claude/ESCALATION_LOG.md` - 100% failure rate on Type D tasks
+
+---
+
+### Classification Rules
+
+**Before creating task spec:**
+1. Identify task complexity type (A/B/C/D)
+2. If Type D → Skip delegation, escalate to Claude
+3. If Type C → Decompose into Type A/B if possible, otherwise escalate
+4. If Type A/B → Delegate with appropriate `edit_strategy`
+
+**In task spec:**
+```json
+{
+  "task_complexity_type": "A",  // Required field (added 2025-12-12)
+  "edit_strategy": "incremental_edit",  // For Type A
+  // OR
+  "edit_strategy": "template_fill",  // For Type B
+  // OR
+  "edit_strategy": "create_new"  // For Type C (risky)
+}
+```
+
+**Enforcement:**
+- Dispatcher should warn on Type C tasks
+- Dispatcher should block Type D tasks
+- Permission requests require complexity type analysis
+
+---
+
 ## 4. Task Lifecycle
 
 ```

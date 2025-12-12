@@ -104,6 +104,67 @@
       },
       "required": ["target", "assertions"],
       "description": "Auto-generated test for reducers/persistence/hydration"
+    },
+    "task_complexity_type": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D"],
+      "description": "Task complexity classification (A=Mechanical, B=Template, C=Creative, D=Semantic) - Added 2025-12-12"
+    },
+    "edit_strategy": {
+      "type": "string",
+      "enum": ["incremental_edit", "template_fill", "create_new", "rewrite"],
+      "description": "Editing approach for this task - Added 2025-12-12"
+    },
+    "edit_operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["delete_line", "replace_line", "replace_block", "insert_after", "insert_before"],
+            "description": "Type of edit operation"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Line number to operate on"
+          },
+          "start_line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Start line for block operations"
+          },
+          "end_line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "End line for block operations"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content to insert or replacement text"
+          },
+          "old_content": {
+            "type": "string",
+            "description": "Expected old content (for verification)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why this edit is needed"
+          }
+        },
+        "required": ["type"]
+      },
+      "description": "Structured edit operations for incremental_edit strategy - Added 2025-12-12"
+    },
+    "output_template": {
+      "type": "string",
+      "description": "Template structure for template_fill strategy with {placeholders} - Added 2025-12-12"
+    },
+    "anti_patterns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Examples of what NOT to do (negative examples for local models) - Added 2025-12-12"
     }
   },
   "required": [
@@ -117,5 +178,5 @@
     "priority",
     "status"
   ],
-  "additionalProperties": false
+  "additionalProperties": true
 }

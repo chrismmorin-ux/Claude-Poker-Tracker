@@ -9,6 +9,7 @@
     "timestamp",
     "task_description",
     "attempted_decomposition",
+    "decomposition_quality_checklist",
     "blocking_criteria",
     "justification",
     "estimated_complexity",
@@ -76,6 +77,81 @@
         }
       },
       "description": "Evidence of decomposition attempts"
+    },
+    "decomposition_quality_checklist": {
+      "type": "object",
+      "required": [
+        "task_complexity_type",
+        "why_not_type_a",
+        "decomposition_attempts",
+        "alternative_decompositions_considered",
+        "why_local_model_cannot",
+        "tokens_at_stake"
+      ],
+      "properties": {
+        "task_complexity_type": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"],
+          "description": "Task complexity classification from DECOMPOSITION_POLICY.md Section 2.5"
+        },
+        "why_not_type_a": {
+          "type": "string",
+          "minLength": 50,
+          "description": "Detailed explanation of why task cannot be made Type A (Mechanical Edit) - REQUIRED if not Type A"
+        },
+        "decomposition_attempts": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Number of decomposition attempts (minimum 2 required before escalation)"
+        },
+        "alternative_decompositions_considered": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["approach", "why_failed"],
+            "properties": {
+              "approach": {
+                "type": "string",
+                "description": "Description of alternative decomposition approach"
+              },
+              "why_failed": {
+                "type": "string",
+                "minLength": 20,
+                "description": "Detailed explanation of why this approach failed or is inadequate"
+              }
+            }
+          },
+          "description": "At least 2 alternative decomposition strategies that were considered and rejected"
+        },
+        "why_local_model_cannot": {
+          "type": "string",
+          "minLength": 100,
+          "description": "Comprehensive technical analysis of why local models fundamentally cannot handle this task, with evidence from attempts"
+        },
+        "tokens_at_stake": {
+          "type": "object",
+          "required": ["direct_implementation", "delegation_attempt_cost", "net_impact"],
+          "properties": {
+            "direct_implementation": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Estimated tokens for Claude to implement directly"
+            },
+            "delegation_attempt_cost": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Tokens already spent attempting delegation (specs + execution + verification)"
+            },
+            "net_impact": {
+              "type": "integer",
+              "description": "Net token impact (negative means delegation cost more)"
+            }
+          },
+          "description": "Token economics analysis"
+        }
+      },
+      "description": "Comprehensive quality checklist for escalation - Added 2025-12-12 per user requirement"
     },
     "blocking_criteria": {
       "type": "array",
