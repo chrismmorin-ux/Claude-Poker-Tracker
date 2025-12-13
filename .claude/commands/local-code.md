@@ -34,21 +34,17 @@ To generate code with local models, Claude should:
 ]
 ```
 
-2. **Add to backlog**:
-```bash
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
+2. **Route through Dispatcher agent**:
+```
+Task(subagent_type="dispatcher", prompt="Execute task: <description from decomposition>")
 ```
 
-3. **Execute task**:
-```bash
-node scripts/dispatcher.cjs assign-next
-# Then execute via local model infrastructure
-```
+The Dispatcher will:
+1. Validate task is in backlog
+2. Execute via local model (DeepSeek for code generation)
+3. Return result or create permission request if escalation needed
 
-4. **Review output** and complete task:
-```bash
-node scripts/dispatcher.cjs complete T-XXX-001 --tests=passed
-```
+3. **Review output** and report completion to user
 
 **Atomic Criteria** (see `.claude/DECOMPOSITION_POLICY.md`):
 - files_touched ≤ 3

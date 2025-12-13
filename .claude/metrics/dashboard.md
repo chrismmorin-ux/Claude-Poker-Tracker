@@ -7,7 +7,7 @@
 |-----------|--------|------|
 | Budget enforcement | Active | `.claude/hooks/budget-check.cjs` |
 | Metrics collection | Active | `.claude/hooks/metrics-collector.cjs` |
-| Delegation blocking | Active | `.claude/hooks/delegation-check-pre.cjs` |
+| Write blocking | Active | `.claude/hooks/write-gate.cjs` |
 | Efficiency tracking | Active | `.claude/hooks/efficiency-tracker.cjs` |
 | Local model execution | Ready | `scripts/execute-local-task.sh` |
 | Index generation | Ready | `scripts/generate-index.sh` |

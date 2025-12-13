@@ -59,7 +59,64 @@ When using `EnterPlanMode`:
 
 **Archive**: Actioned/dismissed audits move to respective folders but stay searchable
 
-## Local Model Delegation (MANDATORY - DEFAULT TO LOCAL)
+## Multi-Agent Architecture (MANDATORY)
+
+Claude Primary (this session) has **NO file write permissions**. All modifications must route through the Dispatcher agent.
+
+### Agent Roles
+
+| Agent | Model | Purpose | Permissions |
+|-------|-------|---------|-------------|
+| Primary | opus | Plan, decompose, request | Read, Search, TodoWrite |
+| Dispatcher | haiku | Evaluate, execute, escalate | Read, Write, Edit, Bash |
+| Worker | sonnet | Execute approved escalations | Task-specific files only |
+
+### Workflow
+
+1. Claude Primary decomposes task into atomic pieces
+2. Claude Primary calls `Task(subagent_type="dispatcher")`
+3. Dispatcher evaluates: Is task in backlog? Assigned? Policy-compliant?
+4. Dispatcher executes via local model OR creates permission request
+5. If human approves, Dispatcher spawns Worker agent
+6. Worker executes single task and terminates
+
+### Permission Structure
+
+**Claude Primary CAN:**
+- Read any file
+- Search (Glob, Grep)
+- Web search/fetch
+- Create todos
+- Call Dispatcher agent
+- Write to `.claude/plans/**` and `docs/projects/*.project.md`
+
+**Claude Primary CANNOT:**
+- Write/Edit source files (`src/**`, `scripts/**`)
+- Write/Edit hooks (`.claude/hooks/**`)
+- Write/Edit config files (`.claude/settings*.json`, etc.)
+- Use file-modifying Bash commands
+- Spawn Worker agent directly
+
+### Human Approval CLI
+
+```bash
+./scripts/approve.sh              # View pending requests
+./scripts/approve.sh approve ID   # Approve request
+./scripts/approve.sh deny ID      # Deny request
+./scripts/approve-menu.sh         # Interactive menu
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.claude/agents/dispatcher.md` | Dispatcher agent definition |
+| `.claude/agents/worker.md` | Worker agent definition |
+| `.claude/dispatcher-state.json` | Request log and audit trail |
+| `.claude/permission-requests.json` | Escalation queue |
+| `scripts/approve.sh` | Human approval CLI |
+
+## Local Model Delegation (Via Dispatcher)
 
 > **Full Policy**: See `.claude/DECOMPOSITION_POLICY.md` Section 10 for authoritative rules
 
@@ -153,20 +210,17 @@ Local models handle ALL of these:
 }]
 ```
 
-### Execution Flow (AUTOMATIC)
+### Execution Flow (Via Dispatcher)
 ```bash
-# For EVERY task in project (AUTOMATIC - no asking):
-# 1. Decompose into ≤30 line atomic tasks (if not already)
-# 2. Create task spec JSON for each
-# 3. Execute automatically: ./scripts/execute-local-task.sh .claude/task-specs/T-XXX.json
-# 4. Report: "Task T-XXX completed" or "Task T-XXX failed"
-# 5. On failure: recursive decomposition (automatic, max depth 3)
-# 6. If max depth: permission request per policy
-# 7. Continue with next task
-# 8. Integrate pieces, run tests when all complete
+# All tasks route through Dispatcher agent:
+# 1. Claude Primary: Decompose into atomic tasks (≤30 lines each)
+# 2. Claude Primary: Call Task(subagent_type="dispatcher", prompt="Execute T-XXX")
+# 3. Dispatcher: Validates task is in backlog, assigned, policy-compliant
+# 4. Dispatcher: Executes via local model OR creates permission request
+# 5. On failure: Dispatcher retries with auto-recovery (max 3 attempts)
+# 6. If max attempts: Permission request → human approval → Worker agent
+# 7. Report: "Task T-XXX completed" or "Task T-XXX failed"
 ```
-
-**NO manual intervention. NO asking "should I?". Just execute.**
 
 ### Claude Implements Directly ONLY When
 - Task has failed twice with well-written specs
@@ -209,8 +263,8 @@ Local models handle ALL of these:
 ## Hooks Reference
 | Hook | Purpose |
 |------|---------|
+| `write-gate.cjs` | Blocks unauthorized writes (exempts plan/project files) |
 | `backlog-check` | Session start reminder |
-| `delegation-check` | Warns on policy violations |
 | `docs-sync` | Tracks source→doc staleness |
 | `efficiency-tracker` | Session metrics |
 | `project-status` | Shows active projects |

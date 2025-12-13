@@ -3,7 +3,7 @@
 **Policy**: ALL tasks MUST be decomposed into atomic pieces for local model execution.
 **Authority**: `.claude/DECOMPOSITION_POLICY.md` Section 10 (read this first)
 
-**CRITICAL UPDATE**: Auto-execution is now MANDATORY. Claude executes tasks automatically without asking.
+**CRITICAL UPDATE**: Auto-execution is now MANDATORY. Claude delegates tasks to Dispatcher agent, which executes via local models. Claude Primary does NOT execute directly.
 
 ---
 
@@ -13,34 +13,59 @@
 
 **When you encounter ANY task** (project file, backlog, ad-hoc):
 1. **Decompose** (if not already atomic)
-2. **Execute automatically** via local models
-3. **Report progress only**: "Task T-001 completed"
-4. **Continue** to next task
-5. **NO asking** "should I execute?"
+2. **Call Dispatcher agent** via `Task(subagent_type="dispatcher")`
+3. **Dispatcher executes** via local models
+4. **Report progress only**: "Task T-001 completed"
+5. **Continue** to next task
+6. **NO asking** "should I execute?"
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ DETECT TASK │ --> │  DECOMPOSE  │ --> │ AUTO-EXECUTE│
-│ Any source  │     │ If needed   │     │ Local Model │
-│             │     │ (automatic) │     │ (automatic) │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌────────────────┐
+│ DETECT TASK │ --> │  DECOMPOSE  │ --> │CALL DISPATCHER │
+│ Any source  │     │ If needed   │     │Task(dispatcher)│
+│             │     │ (automatic) │     │  (automatic)   │
+└─────────────┘     └─────────────┘     └────────────────┘
                                                │
                                                v
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ INTEGRATE   │ <-- │  CONTINUE   │ <-- │  REPORT     │
-│ Claude      │     │ Next task   │     │ Progress    │
-│             │     │ (automatic) │     │ only        │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌────────────────┐
+│ INTEGRATE   │ <-- │  CONTINUE   │ <-- │ DISPATCHER     │
+│ Claude      │     │ Next task   │     │ EXECUTES VIA   │
+│             │     │ (automatic) │     │ LOCAL MODELS   │
+└─────────────┘     └─────────────┘     └────────────────┘
 ```
+
+**CRITICAL**: Claude Primary does NOT execute local models directly. All execution is mediated by the Dispatcher agent (see `.claude/agents/dispatcher.md` for decision framework).
 
 ### Manual Workflow (FALLBACK ONLY)
 
-Use only when auto-execution infrastructure is unavailable:
+Use only when Dispatcher infrastructure is unavailable:
 
-### Basic Example
+---
+
+## How Execution Works
+
+### Claude Primary → Dispatcher → Local Models
+
+**You (Claude Primary)** do NOT execute local models directly. Instead:
+
+1. **You prepare** the ///LOCAL_TASKS JSON specification
+2. **You call** the Dispatcher agent: `Task(subagent_type="dispatcher", prompt="Execute task T-XXX...")`
+3. **Dispatcher evaluates** the task against the decision framework (`.claude/agents/dispatcher.md`)
+4. **Dispatcher executes** the task via local models
+5. **Dispatcher returns** the result (file created, test passed, etc.)
+6. **You integrate** the result and continue
+
+### Why This Architecture?
+
+- **Prevents bypass**: You cannot directly edit files (hooks block it)
+- **Enforces policy**: Only Dispatcher can execute, only after validation
+- **Scales capacity**: Local models handle code generation, you handle planning
+- **Audit trail**: All decisions logged to `.claude/dispatcher-state.json`
+
+### Example Workflow
 
 ```bash
-# 1. Claude creates ///LOCAL_TASKS JSON
+# 1. YOU detect task or create ///LOCAL_TASKS JSON
 cat << 'EOF' > tasks.json
 ///LOCAL_TASKS
 [
@@ -62,14 +87,24 @@ cat << 'EOF' > tasks.json
 ]
 EOF
 
-# 2. Add to backlog (validates atomic criteria)
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
+# 2. YOU call Dispatcher agent
+Task(subagent_type="dispatcher", prompt="""
+Execute the following task:
+- ID: T-001
+- Add tasks.json to backlog
+- Execute via local models
+- Return result
 
-# 3. Assign and execute
-node scripts/dispatcher.cjs assign-next  # Marks in_progress, outputs task JSON
+Task spec: [see above ///LOCAL_TASKS]
+""")
 
-# 4. Complete task
-node scripts/dispatcher.cjs complete T-001 --tests=passed
+# 3. DISPATCHER validates, executes, returns
+# Result: Task T-001 completed, formatCurrency.js created with tests passing
+
+# 4. YOU integrate result
+# - Review generated file
+# - Verify meets constraints
+# - Continue to next task
 ```
 
 ---
@@ -398,23 +433,38 @@ node scripts/dispatcher.cjs create-permission-request
 
 ## Integration with Existing Workflow
 
+### Dispatcher-Mediated Execution
+
+**Claude Primary** (this agent):
+1. Detects tasks from projects, backlog, ad-hoc requests
+2. Decomposes into atomic ///LOCAL_TASKS JSON
+3. **Calls Dispatcher agent**: `Task(subagent_type="dispatcher", prompt="Execute T-XXX...")`
+4. Reports progress when Dispatcher completes execution
+
+**Dispatcher Agent** (`.claude/agents/dispatcher.md`):
+1. Validates task against backlog.json and atomic criteria
+2. Evaluates decision framework (in backlog? assigned to local? user approved?)
+3. Executes tasks via local models (DeepSeek, Qwen)
+4. Returns results to Claude Primary for integration
+
 ### Slash Commands
 
-- `/local-code` - Updated to use ///LOCAL_TASKS
-- `/local-refactor` - Updated to use ///LOCAL_TASKS
-- `/local-test` - Updated with invariant_test protocol
-- `/local-doc` - Updated with needs_context
-- `/cto-decompose` - Outputs ///LOCAL_TASKS format
+- `/local-code` - Outputs ///LOCAL_TASKS, triggers Dispatcher call
+- `/local-refactor` - Outputs ///LOCAL_TASKS, triggers Dispatcher call
+- `/local-test` - Outputs ///LOCAL_TASKS with invariant_test protocol
+- `/local-doc` - Outputs ///LOCAL_TASKS with needs_context
+- `/cto-decompose` - Outputs ///LOCAL_TASKS format for manual Dispatcher submission
 
 ### Project Files
 
 - `docs/projects/TEMPLATE.project.md` - Shows ///LOCAL_TASKS in Phase sections
 - `.claude/BACKLOG.md` - References machine-readable `.claude/backlog.json`
 
-### Hooks
+### Enforcement Hooks
 
-- `.claude/hooks/decomposition-validator.cjs` - Enforces atomic criteria
-- `.claude/hooks/permission-request-handler.cjs` - Blocks work without permission
+- `.claude/hooks/write-gate.cjs` - Blocks direct file Write/Edit for dispatcher-managed tasks
+- `.claude/hooks/decomposition-validator.cjs` - Enforces atomic criteria before adding to backlog
+- `.claude/hooks/permission-request-handler.cjs` - Requires user approval for escalations
 
 ---
 

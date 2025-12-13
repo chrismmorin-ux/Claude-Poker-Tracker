@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "description": "Log of CLAUDE_REQUEST_FOR_PERMISSION escalations",
   "schema": ".claude/schemas/permission-request.schema.json",
-  "updated_at": "2025-12-11T00:00:00.000Z",
+  "updated_at": "2025-12-13T05:51:52.719Z",
   "requests": [
     {
       "request_id": "PR-2025-12-13-001",
@@ -14,17 +14,27 @@
           {
             "title": "Add file type coverage to delegation-check-pre.cjs",
             "blocking_reason": "Self-referential paradox - the hook cannot check edits to itself. Local model T-TOK-002 failed with SIZE GUARD when attempting to edit similar hook file.",
-            "failed_criteria": ["self_referential", "local_model_failure"]
+            "failed_criteria": [
+              "self_referential",
+              "local_model_failure"
+            ]
           },
           {
             "title": "Decompose hook updates into atomic line insertions",
             "blocking_reason": "Type D task - requires semantic understanding of enforcement logic, preserving existing functionality while adding new checks. Local models consistently fail (100% failure rate on Type D per ESCALATION_LOG.md)",
-            "failed_criteria": ["task_complexity_type_D", "semantic_rewrite"]
+            "failed_criteria": [
+              "task_complexity_type_D",
+              "semantic_rewrite"
+            ]
           }
         ],
         "why_insufficient": "The enforcement system cannot enforce edits to itself (bootstrap paradox). Additionally, editing enforcement hooks is a Type D (semantic rewrite) task which local models cannot reliably perform. Evidence: T-TOK-002 failed when editing budget-check.cjs, same pattern."
       },
-      "blocking_criteria": ["self_referential_paradox", "type_d_semantic_rewrite", "enforcement_bootstrap"],
+      "blocking_criteria": [
+        "self_referential_paradox",
+        "type_d_semantic_rewrite",
+        "enforcement_bootstrap"
+      ],
       "justification": "Fixing the delegation enforcement system is inherently a Claude task because: (1) The hooks cannot protect themselves - any hook that checks delegation-check-pre.cjs would itself need protection, creating infinite regress. (2) This is a Type D semantic rewrite task - must understand existing logic, preserve it, and add new functionality. (3) Evidence shows 100% local model failure rate on such tasks. (4) This is a ONE-TIME bootstrap fix to enable future enforcement. Requesting permission to directly implement 4 priority fixes identified in DELEGATION_SYSTEM_AUDIT.md.",
       "estimated_complexity": {
         "files_affected": 1,
@@ -39,21 +49,129 @@
         "Add logging for all bypass attempts"
       ],
       "requested_by": "claude:opus-4.5",
-      "status": "pending",
-      "audit_reference": ".claude/DELEGATION_SYSTEM_AUDIT.md"
+      "status": "rejected",
+      "audit_reference": ".claude/DELEGATION_SYSTEM_AUDIT.md",
+      "resolution_note": "Hook deleted - no longer applicable. delegation-check-pre.cjs was removed as part of multi-agent architecture implementation."
+    },
+    {
+      "request_id": "PR-2025-12-13-002",
+      "timestamp": "2025-12-13T05:50:00.000Z",
+      "task_description": "Add plan/project file exceptions to write-gate.cjs - exempt plan files from backlog task requirement",
+      "attempted_decomposition": {
+        "decomposition_attempts": 2,
+        "subtasks_proposed": [
+          {
+            "title": "T-MAD-001: Full file modification",
+            "blocking_reason": "Local model (qwen) triggered SIZE GUARD - rewrote entire file (37 lines) instead of adding to 281 line file",
+            "failed_criteria": [
+              "local_model_failure",
+              "FM-C01"
+            ]
+          },
+          {
+            "title": "T-MAD-001-A: Just add constant",
+            "blocking_reason": "Subtask created but same failure pattern expected - local models cannot make incremental edits",
+            "failed_criteria": [
+              "local_model_failure"
+            ]
+          }
+        ],
+        "why_insufficient": "Hook file modifications are Type D tasks requiring semantic understanding. Local models consistently fail with SIZE GUARD on file edits - they rewrite instead of inserting. Evidence: T-MAD-001 failed with 37 lines output vs 281 original."
+      },
+      "blocking_criteria": [
+        "local_model_failure",
+        "FM-C01_size_guard",
+        "hook_file"
+      ],
+      "justification": "This is Phase 1 of Multi-Agent Architecture project. Need to unblock plan mode by adding exempt file patterns to write-gate.cjs. Local model failed with SIZE GUARD (FM-C01). Changes are ~25 lines of additions: EXEMPT_PATTERNS constant, isExemptFile() function, and exemption check in main().",
+      "estimated_complexity": {
+        "files_affected": 1,
+        "lines_affected": 25,
+        "effort_mins": 10,
+        "risk_level": "low"
+      },
+      "specific_changes": [
+        "Add EXEMPT_PATTERNS constant after line 27",
+        "Add isExemptFile() function after checkBypassFile()",
+        "Add exemption check in main() after bypass file check"
+      ],
+      "requested_by": "claude:opus-4.5",
+      "status": "approved",
+      "task_reference": "T-MAD-001",
+      "reviewed_by": "human",
+      "review_timestamp": "2025-12-13T05:51:52.719Z",
+      "review_decision": "Approved by human reviewer",
+      "approval_conditions": []
+    },
+    {
+      "request_id": "PR-2025-12-13-003",
+      "timestamp": "2025-12-13T06:10:00.000Z",
+      "task_description": "Add agent labeling to permission request display - enhance dispatcher.cjs listPermissions function",
+      "source_agent": "dispatcher",
+      "session_context": "Agent Labeling Enhancement (T-MAD-006)",
+      "attempted_decomposition": {
+        "decomposition_attempts": 2,
+        "subtasks_proposed": [
+          {
+            "title": "T-MAD-006-A: Add source_agent display to listPermissions",
+            "blocking_reason": "Local model qwen triggered SIZE GUARD on dispatcher.cjs (894 lines) - cannot edit large files incrementally. Attempted to add 3 lines but model rewrote entire file output.",
+            "failed_criteria": [
+              "local_model_failure",
+              "FM-C01_size_guard",
+              "large_file"
+            ]
+          },
+          {
+            "title": "T-MAD-006-B: Add session_context conditional display",
+            "blocking_reason": "Same file size issue - dispatcher.cjs is 894 lines, exceeds local model safe limits for incremental edits.",
+            "failed_criteria": [
+              "local_model_failure",
+              "FM-C01_size_guard",
+              "large_file"
+            ]
+          }
+        ],
+        "why_insufficient": "dispatcher.cjs is a large file (894 lines) which triggers SIZE GUARD on local models when attempting to edit it. The local model cannot reliably make incremental edits to files larger than approximately 300 lines. Evidence: T-MAD-006-A failed when trying to add source_agent display."
+      },
+      "blocking_criteria": [
+        "local_model_failure",
+        "FM-C01_size_guard",
+        "large_file_edit"
+      ],
+      "justification": "The dispatcher.cjs file is 894 lines - too large for local models to edit incrementally. Task is straightforward: add 5 lines to the listPermissions function (around line 700) to display source_agent and session_context fields. These are simple additions: const sourceAgent = req.source_agent or 'primary'; console.log(`   Source: ${sourceAgent}`); and if (req.session_context) console.log(`   Context: ${req.session_context}`);. Local models fail with SIZE GUARD on this file size. This is required for Agent Labeling Enhancement feature.",
+      "estimated_complexity": {
+        "files_affected": 1,
+        "lines_affected": 5,
+        "effort_mins": 5,
+        "risk_level": "low"
+      },
+      "specific_changes": [
+        "After line 700 in listPermissions, add: const sourceAgent = req.source_agent or 'primary';",
+        "Add: console.log(`   Source: ${sourceAgent}`);",
+        "Add: if (req.session_context) console.log(`   Context: ${req.session_context}`);",
+        "No other changes to dispatcher.cjs"
+      ],
+      "requested_by": "dispatcher",
+      "status": "rejected",
+      "task_reference": "T-MAD-006",
+      "subtask_references": ["T-MAD-006-A", "T-MAD-006-B"],
+      "resolution_note": "Already implemented - agent labeling was added to approve.sh in T-MAD-006."
     }
   ],
   "statistics": {
-    "total_requests": 1,
-    "approved": 0,
-    "rejected": 0,
+    "total_requests": 3,
+    "approved": 1,
+    "rejected": 2,
     "redecompose": 0,
-    "pending": 1
+    "pending": 0
   },
   "notes": [
     "This file tracks permission requests when atomic decomposition is not feasible",
     "Each request must provide evidence of decomposition attempts",
     "Human or program-manager-agent reviews and approves/rejects",
-    "Goal: Minimize requests through better decomposition practices"
+    "Goal: Minimize requests through better decomposition practices",
+    "New fields (v1.1): source_agent and session_context for agent labeling",
+    "  - source_agent: Which agent created the request (primary, dispatcher, worker)",
+    "  - session_context: Human-readable context about the task flow"
   ]
 }

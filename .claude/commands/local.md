@@ -3,65 +3,51 @@ description: Route task to local model (auto-selects Qwen or DeepSeek)
 argument-hint: [task description]
 ---
 
-## Auto-Delegation Flow (v3)
+## Execution Flow
 
-This command uses the new reverse-default delegation system:
-1. **Classify** task with `task-classifier-v3.sh` (expanded categories)
-2. **Generate** spec automatically with `auto-generate-task-spec.sh`
-3. **Execute** via `execute-local-task.sh`
+1. **Decompose** task into atomic pieces
+2. **Request** via Dispatcher agent:
+   ```
+   Task(subagent_type="dispatcher", prompt="Execute: <description>")
+   ```
+3. **Dispatcher** executes via local model internally
+4. **Integrate** result
 
-### Usage
+## Examples
 
-For a complete task with output file:
+Instead of direct execution, route through Dispatcher:
+
+**Create utility:**
+```
+Task(subagent_type="dispatcher", prompt="Execute task: Create formatCurrency utility in src/utils/formatCurrency.js")
+```
+
+**Create component:**
+```
+Task(subagent_type="dispatcher", prompt="Execute task: Create ChipBadge component in src/components/ui/ChipBadge.jsx")
+```
+
+**Create tests:**
+```
+Task(subagent_type="dispatcher", prompt="Execute task: Write tests for formatCurrency in src/utils/__tests__/formatCurrency.test.js")
+```
+
+## How Dispatcher Routes Tasks
+
+The Dispatcher agent (`subagent_type="dispatcher"`) evaluates each request against:
+
+1. **Task Registry** (`.claude/backlog.json`) - All tasks must be created first
+2. **Assignment** - Task must be assigned to a model (local/Claude)
+3. **Approval** - Human approval required for Claude-assigned tasks
+4. **Execution** - Dispatcher executes via appropriate model
+
+## Task Status Tracking
+
+Monitor task execution via:
 ```bash
-# Step 1: Generate spec (auto-classifies and creates JSON)
-SPEC=$(bash scripts/auto-generate-task-spec.sh "$ARGUMENTS" "src/path/to/output.js")
-
-# Step 2: Execute (if not CLAUDE_REQUIRED)
-if [ "$SPEC" != "CLAUDE_REQUIRED" ]; then
-    bash scripts/execute-local-task.sh "$SPEC"
-fi
+node scripts/dispatcher.cjs status
 ```
 
-### Quick Commands
-
-**Create utility function:**
-```bash
-bash scripts/auto-generate-task-spec.sh "Create formatCurrency utility" "src/utils/formatCurrency.js" | xargs bash scripts/execute-local-task.sh
-```
-
-**Create simple component:**
-```bash
-bash scripts/auto-generate-task-spec.sh "Create ChipBadge component" "src/components/ui/ChipBadge.jsx" | xargs bash scripts/execute-local-task.sh
-```
-
-**Generate tests:**
-```bash
-bash scripts/auto-generate-task-spec.sh "Write tests for formatCurrency" "src/utils/__tests__/formatCurrency.test.js" | xargs bash scripts/execute-local-task.sh
-```
-
-### Expanded Categories (v3)
-
-| Category | Line Limit | Model | Examples |
-|----------|------------|-------|----------|
-| `simple_utility` | <200 | DeepSeek | Pure functions, helpers |
-| `simple_component` | <150 | Qwen | Buttons, badges, cards |
-| `medium_component` | <300 | Qwen | Forms, lists with state |
-| `refactor` | Any | Qwen | Rename, extract, move |
-| `documentation` | Any | Qwen | JSDoc, comments |
-| `test_generation` | Any | Qwen | Unit tests |
-| `claude_required` | - | Claude | State, hooks, integration |
-
-### [CLAUDE] Bypass
-
-Add `[CLAUDE]` to task description to skip delegation:
-```
-[CLAUDE] Implement complex reducer logic for session management
-```
-
-### Metrics
-
-Task outcomes logged to:
-- `.claude/metrics/local-model-tasks.log` - Execution history
-- `.claude/metrics/delegation.json` - Decision tracking
-- `.claude/.pm-state.json` - Session delegation stats
+View execution logs:
+- `.claude/logs/local-model-tasks.log` - Execution history
+- `.claude/dispatcher-state.json` - Decision audit trail

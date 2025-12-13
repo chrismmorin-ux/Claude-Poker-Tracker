@@ -85,10 +85,6 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/delegation-check-pre.cjs"
-          },
-          {
-            "type": "command",
             "command": "node .claude/hooks/decomposition-validator.cjs"
           },
           {
@@ -107,10 +103,6 @@
           {
             "type": "command",
             "command": "node .claude/hooks/write-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/delegation-check-pre.cjs"
           },
           {
             "type": "command",
@@ -254,10 +246,6 @@
           {
             "type": "command",
             "command": "node .claude/hooks/new-file-test-reminder.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/delegation-check.cjs"
           },
           {
             "type": "command",

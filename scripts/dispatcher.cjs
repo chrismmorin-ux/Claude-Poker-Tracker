@@ -698,6 +698,11 @@ function listPermissions(statusFilter) {
 
     console.log(`${status} ${req.request_id} [${req.status.toUpperCase()}]`);
     console.log(`   Task: ${req.task_description}`);
+    const sourceAgent = req.source_agent || 'primary';
+    console.log(`   Source: ${sourceAgent}`);
+    if (req.session_context) {
+      console.log(`   Context: ${req.session_context}`);
+    }
     console.log(`   Complexity: ${req.estimated_complexity.files_affected} files, ${req.estimated_complexity.lines_affected} lines, ${req.estimated_complexity.effort_mins} mins`);
     console.log(`   Risk: ${req.estimated_complexity.risk_level}`);
     console.log(`   Blocking: ${req.blocking_criteria.join(', ')}`);

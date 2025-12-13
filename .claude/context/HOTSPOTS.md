@@ -37,6 +37,22 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 - `src/constants/*.js` - Constants (add, don't remove)
 - `src/utils/displayUtils.js` - Pure formatting functions
 
+## Multi-Agent Architecture (NEW)
+
+Critical files for the dispatcher-based execution model:
+
+| File | Risk | Notes |
+|------|------|-------|
+| `.claude/agents/dispatcher.md` | HIGH | Dispatcher agent definition - changes affect all task execution |
+| `.claude/agents/worker.md` | HIGH | Worker agent definition - changes affect escalation handling |
+| `.claude/settings.local.json` | HIGH | Permission restrictions - blocks Primary writes |
+| `.claude/permission-requests.json` | MEDIUM | Escalation queue - must not corrupt |
+| `.claude/dispatcher-state.json` | LOW | Audit log - append-only |
+| `scripts/approve.sh` | MEDIUM | Human approval CLI |
+| `.claude/hooks/write-gate.cjs` | HIGH | Enforcement hook - blocks unauthorized writes |
+
+**Warning**: Changes to dispatcher.md or worker.md affect system-wide behavior. Test thoroughly.
+
 ## Where to Look
 - Test suite: `src/test/*.test.js`
 - State schemas: `docs/STATE_SCHEMAS.md`

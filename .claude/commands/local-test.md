@@ -58,11 +58,18 @@ Example - if you modify `src/reducers/gameReducer.js`:
 
 The dispatcher will auto-create task `T-XXX-001-TEST` with the invariant test.
 
-3. **Execute via dispatcher**:
-```bash
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
-# Automatically creates test task if invariant_test specified
-node scripts/dispatcher.cjs assign-next
+3. **Execute via Dispatcher agent**:
+
+Route through Dispatcher agent:
+```
+Task(subagent_type="dispatcher", prompt="Execute test generation task: [description from decomposition]")
+```
+
+The Dispatcher will:
+1. Validate task is in backlog
+2. Execute via local model (Qwen for tests)
+3. Automatically create invariant tests if needed
+4. Return result or create permission request if escalation needed
 ```
 
 **Critical Files** (auto-trigger invariant tests):

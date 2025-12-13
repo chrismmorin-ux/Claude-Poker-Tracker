@@ -40,7 +40,7 @@ You are managing the unified project backlog at `.claude/BACKLOG.md`.
 ### If task description (no keyword):
 1. Analyze the task
 2. **Decompose into atomic tasks** (per DECOMPOSITION_POLICY.md Section 10)
-3. **Auto-execute via local models** - NO asking for confirmation
+3. **Route through Dispatcher** - Call Task(subagent_type="dispatcher") for execution
 4. If task is already atomic and has no model assignment:
    - Assign model per policy (deepseek/qwen)
    - Create ///LOCAL_TASKS JSON

@@ -1,5 +1,23 @@
 # CLAUDE.md - Project Context for Claude Code
 
+## MANDATORY ARCHITECTURE CONSTRAINT
+
+**You do NOT have file write permissions. This is intentional.**
+
+To modify ANY file:
+1. Call `Task(subagent_type="dispatcher")` with your request
+2. Wait for Dispatcher's decision
+3. Report result to user
+
+**THERE IS NO ALTERNATIVE PATH.** All file-modifying Bash commands are blocked.
+
+Your role: **Plan, decompose, request.**
+Dispatcher's role: **Evaluate, execute.**
+
+See `.claude/agents/dispatcher.md` for the full decision framework.
+
+---
+
 ## TOKEN OPTIMIZATION RULES (MANDATORY)
 
 ### Session Budget
@@ -85,36 +103,30 @@ bash scripts/smart-test-runner.sh  # 98% token reduction on passing tests
 ### Correct Workflow
 
 1. **Decompose** task into atomic units (see `.claude/DECOMPOSITION_POLICY.md`)
-2. **Create** ///LOCAL_TASKS JSON specification
-3. **Execute** via dispatcher:
-   ```bash
-   cat tasks.json | node scripts/dispatcher.cjs add-tasks
-   node scripts/dispatcher.cjs assign-next
+2. **Request** execution via Dispatcher agent:
    ```
-4. **Integrate** output and test
+   Task(subagent_type="dispatcher", prompt="Execute task T-XXX: <description>")
+   ```
+3. **Dispatcher** validates and executes (via local model or Worker agent)
+4. **Integrate** output and run tests
 
 ### Enforcement Mechanisms
 
-- ✅ **PreToolUse hooks** - Block Write/Edit before execution
-- ✅ **PostToolUse hooks** - Detect violations and create locks
-- ✅ **Violation locks** - Require dispatcher redo to clear
-- ✅ **Token tracking** - Log efficiency violations
+- ✅ **settings.local.json** - Blocks Write/Edit for Claude Primary
+- ✅ **write-gate.cjs** - Blocks writes without backlog task
+- ✅ **Dispatcher agent** - Validates all modification requests
+- ✅ **Permission requests** - Human approval for escalations
 
-### Quick Commands
+### Human Approval Commands
 
 ```bash
-# Add tasks to dispatcher
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
-
-# Execute next task
-node scripts/dispatcher.cjs assign-next
-
-# Check status
-node scripts/dispatcher.cjs status
+./scripts/approve.sh              # View pending requests
+./scripts/approve.sh approve ID   # Approve escalation
+./scripts/approve.sh deny ID      # Deny request
 ```
 
 **Policy Reference:** `.claude/DECOMPOSITION_POLICY.md` Section 10
-**Quickstart Guide:** `.claude/DISPATCHER_QUICKSTART.md` (if exists)
+**Dispatcher Guide:** `.claude/agents/dispatcher.md`
 
 ---
 

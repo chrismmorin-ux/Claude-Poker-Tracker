@@ -446,12 +446,14 @@ When ANY task exists (project file, backlog, ad-hoc), Claude MUST:
 ```
 1. Detect task (any source: project, backlog, user request)
 2. IF not decomposed: Decompose into atomic tasks per Sections 2-3
-3. Create ///LOCAL_TASKS JSON specs
-4. Execute via dispatcher: node scripts/dispatcher.cjs add-tasks
-5. Report progress ONLY: "Task T-001 completed" or "Task T-001 failed"
-6. On failure: Follow Section 9 (recursive decomposition, max depth 3)
-7. Update source (project file, backlog) with completion status
-8. Continue to next task automatically
+3. Create task description and context
+4. Call Dispatcher agent: Task(subagent_type="dispatcher", prompt="Execute T-XXX...")
+5. Dispatcher validates: backlog task exists, assigned, policy-compliant
+6. Dispatcher executes via local model (with auto-recovery on failure)
+7. On local model failure (3x): Dispatcher creates permission request
+8. Human approves → Dispatcher spawns Worker agent
+9. Report: "Task T-001 completed" or "Task T-001 failed"
+10. Continue to next task
 ```
 
 ### Silent Execution
@@ -467,6 +469,25 @@ When ANY task exists (project file, backlog, ad-hoc), Claude MUST:
 - "Task T-001 completed"
 - "Task T-002 failed: [error message]"
 - [Show progress, report results]
+
+### Dispatcher-Mediated Execution
+
+All task execution is mediated by the Dispatcher agent:
+
+| Step | Actor | Action |
+|------|-------|--------|
+| 1 | Primary | Decompose task, call Task(dispatcher) |
+| 2 | Dispatcher | Validate backlog entry exists |
+| 3 | Dispatcher | Execute via local model |
+| 4 | Dispatcher | On failure: auto-recovery (3 attempts) |
+| 5 | Dispatcher | On 3x failure: create permission request |
+| 6 | Human | Approve/deny via `./scripts/approve.sh` |
+| 7 | Dispatcher | Spawn Worker agent for approved tasks |
+| 8 | Worker | Execute and terminate |
+
+**See also:**
+- `.claude/agents/dispatcher.md` - Dispatcher decision framework
+- `.claude/agents/worker.md` - Worker agent constraints
 
 ### NO Override Mechanism
 

@@ -11,6 +11,20 @@ Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 - **Views**: 7 screens (Table, Stats, History, Sessions, Players, CardSelector, Showdown)
 - **Persistence**: IndexedDB v5 with 4 stores (hands, sessions, players, activeSession)
 
+## Multi-Agent Architecture
+
+Claude Primary has **no file write permissions**. All modifications route through:
+
+| Agent | Model | Role |
+|-------|-------|------|
+| Primary | opus | Plan, decompose, request |
+| Dispatcher | haiku | Validate, execute, escalate |
+| Worker | sonnet | Execute approved escalations |
+
+**Workflow**: Primary → Task(dispatcher) → local model OR permission request → Worker
+
+**See**: `.claude/context/WORKFLOW.md` for full details
+
 ## Key Patterns
 - useReducer for state, useContext for cross-component access
 - useCallback for all handlers (prevent re-renders)

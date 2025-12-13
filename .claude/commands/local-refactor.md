@@ -43,16 +43,17 @@ To execute refactoring with local models (Qwen), Claude should:
 - Include relevant imports and dependencies
 - Avoid sending entire files
 
-3. **Execute via dispatcher**:
-```bash
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
-node scripts/dispatcher.cjs assign-next
+3. **Execute via Dispatcher agent**:
+
+Route through Dispatcher agent:
+```
+Task(subagent_type="dispatcher", prompt="Execute task: <description from decomposition>")
 ```
 
-4. **Complete after verification**:
-```bash
-node scripts/dispatcher.cjs complete T-XXX-001 --tests=passed
-```
+The Dispatcher will:
+1. Validate task is in backlog
+2. Execute via local model (Qwen for refactoring)
+3. Return result or create permission request if escalation needed
 
 **Refactoring Best Practices**:
 - One refactoring pattern per task

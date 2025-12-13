@@ -37,7 +37,7 @@ Based on the analyzer output:
      - Display current phase name and tasks
      - **Automatically execute via local models** - Do NOT ask for confirmation
      - Create task spec JSON files in `.claude/task-specs/<project-name>/`
-     - Execute each task: `bash scripts/execute-local-task.sh <spec-file>`
+     - Execute via Dispatcher: `Task(subagent_type="dispatcher", prompt="Execute task T-XXX")`
      - Update project file task status as tasks complete
      - Run tests if specified in execution order
   3. **If tasks lack model assignments** (not decomposed):

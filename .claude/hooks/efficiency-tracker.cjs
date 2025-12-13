@@ -84,7 +84,7 @@ function createEmptySession() {
 
     // Hook effectiveness metrics
     hookMetrics: {
-      delegationBlocks: 0,        // Files blocked by delegation-check-pre
+      delegationBlocks: 0,        // Files blocked by write-gate
       delegationViolations: 0,    // Files written despite delegation marking
       qualityGateBlocks: 0,       // Commits blocked by quality-gate
       contextFirstReminders: 0,   // Times reminded to read context first

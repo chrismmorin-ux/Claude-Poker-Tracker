@@ -44,11 +44,15 @@ To add documentation with local models (Qwen), Claude should:
 - Include usage examples from calling code if available
 - Keep line ranges focused on documentation target
 
-3. **Execute via dispatcher**:
-```bash
-cat tasks.json | node scripts/dispatcher.cjs add-tasks
-node scripts/dispatcher.cjs assign-next
+3. **Execute via Dispatcher agent**:
 ```
+Task(subagent_type="dispatcher", prompt="Execute task: Add JSDoc documentation to utility functions as described in the decomposed task spec")
+```
+
+The Dispatcher will:
+1. Validate task is in backlog
+2. Execute via local model (Qwen for documentation)
+3. Return result or create permission request if escalation needed
 
 **JSDoc Best Practices**:
 - Always include @param with types for parameters

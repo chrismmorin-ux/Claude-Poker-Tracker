@@ -239,6 +239,26 @@
         "type": "string"
       },
       "description": "Conditions that must be met if approved (e.g., 'must write tests after', 'requires code review')"
+    },
+    "source_agent": {
+      "type": "string",
+      "enum": ["primary", "dispatcher", "worker", "program-manager-agent"],
+      "description": "Which agent created this permission request (v1.1 - optional field for agent labeling)"
+    },
+    "session_context": {
+      "type": "string",
+      "description": "Human-readable context about the task flow and project phase (v1.1 - optional field for agent labeling)"
+    },
+    "task_reference": {
+      "type": "string",
+      "description": "Reference to the backlog task ID this permission request is for"
+    },
+    "subtask_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of subtask IDs that failed and led to this escalation"
     }
   },
   "additionalProperties": false

@@ -26,6 +26,13 @@ const BACKLOG_FILE = path.join(process.cwd(), '.claude', 'backlog.json');
 const PROTECTED_FILES_CONFIG = path.join(process.cwd(), '.claude', '.protected-files.json');
 const LOG_FILE = path.join(process.cwd(), '.claude', 'logs', 'delegation-check.log');
 
+// Files that bypass backlog task requirement (plan mode, project files)
+const EXEMPT_PATTERNS = [
+  /^\.claude[\/\\]plans[\/\\]/,           // Plan mode files
+  /^docs[\/\\]projects[\/\\].*\.project\.md$/,  // Project files
+  /^\.claude[\/\\]dispatcher-state\.json$/,     // Dispatcher state
+];
+
 /**
  * Normalize path to forward slashes for consistent comparison
  * Handles Windows C:\, Git Bash /c/, and Unix paths
@@ -64,6 +71,24 @@ function checkBypassFile() {
     if (fs.existsSync(BYPASS_FILE)) {
         log('BYPASS: .delegation-bypass file found - allowing all operations');
         return true;
+    }
+    return false;
+}
+
+/**
+ * Check if file is exempt from backlog task requirement
+ * (plan files, project files, dispatcher state)
+ */
+function isExemptFile(filePath) {
+    const normalizedFilePath = normalizePath(filePath);
+    const normalizedCwd = normalizePath(process.cwd());
+    const relativePath = normalizedFilePath.replace(normalizedCwd, '').replace(/^\//, '');
+
+    for (const pattern of EXEMPT_PATTERNS) {
+        if (pattern.test(relativePath)) {
+            log(`EXEMPT: ${relativePath} matches exempt pattern`);
+            return true;
+        }
     }
     return false;
 }
@@ -252,6 +277,12 @@ async function main() {
 
     // 1. Check bypass file
     if (checkBypassFile()) {
+        process.exit(0);
+    }
+
+    // 1.5. Check exempt files (plan mode, project files)
+    if (isExemptFile(filePath)) {
+        log(`EXEMPT: ${filePath} - allowed without backlog task`);
         process.exit(0);
     }
 

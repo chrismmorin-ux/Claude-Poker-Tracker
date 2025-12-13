@@ -26,7 +26,7 @@ Monitor and maintain real-time session state:
 - Phase transitions history
 
 ### 2. Delegation Enforcement (Automatic Execution)
-**Default**: ALL tasks auto-execute via local models - NO asking, NO confirmation
+**Default**: ALL tasks route through Dispatcher agent - NO asking, NO confirmation
 
 **Policy Reference**: `.claude/DECOMPOSITION_POLICY.md` Section 10 (authoritative)
 **CRITICAL**: Auto-execution is MANDATORY, not optional
