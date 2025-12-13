@@ -374,11 +374,16 @@ if [ -n "$TEST_CMD" ]; then
     log_info "Running test: $TEST_CMD"
     cd "$PROJECT_ROOT"
 
-    if eval "$TEST_CMD" 2>&1 | tail -5; then
+    # Capture test output and exit code separately (pipe masks exit code)
+    TEST_OUTPUT=$(eval "$TEST_CMD" 2>&1)
+    TEST_EXIT_CODE=$?
+    echo "$TEST_OUTPUT" | tail -5
+
+    if [ $TEST_EXIT_CODE -eq 0 ]; then
         log_success "Tests passed"
         TEST_PASSED="true"
     else
-        log_warn "Tests failed - file created but may need fixes"
+        log_warn "Tests failed (exit code $TEST_EXIT_CODE) - file created but may need fixes"
         TEST_PASSED="false"
     fi
 fi

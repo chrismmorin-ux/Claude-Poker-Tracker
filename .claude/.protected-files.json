@@ -1,0 +1,11 @@
+{
+  "files": [
+    ".claude/hooks/*.cjs",
+    ".claude/settings.json",
+    ".claude/backlog.json",
+    ".claude/DECOMPOSITION_POLICY.md",
+    ".claude/.delegation-bypass",
+    ".claude/.protected-files.json"
+  ],
+  "description": "These files require human approval to modify. Claude cannot create or edit these without human-created approval files."
+}

@@ -81,6 +81,10 @@
           },
           {
             "type": "command",
+            "command": "node .claude/hooks/write-gate.cjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/delegation-check-pre.cjs"
           },
           {
@@ -99,6 +103,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/plan-mode-edit-check.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/write-gate.cjs"
           },
           {
             "type": "command",
