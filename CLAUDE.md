@@ -156,6 +156,27 @@ node scripts/generate-dashboard.cjs --verbose    # With debug output
 
 ---
 
+## Delegation System Thresholds
+
+**Quick question: Is the delegation system right for this project?**
+
+Use this quick reference to decide. Full analysis in `.claude/THRESHOLD_GUIDELINES.md`.
+
+| Project Size | Recommendation | Setup Effort | ROI Timeline |
+|--------------|-----------------|----------|-------------|
+| < 500 LOC | Skip entirely | 0 hours | N/A |
+| 500-2K LOC | Optional | 4 hours | 6-12 weeks |
+| 2K-10K LOC | **Recommended** | 12 hours | 3-6 weeks |
+| 10K+ LOC | Required | 20 hours | 1-2 weeks |
+
+**This project (4.7K LOC):** Standard system recommended and implemented.
+
+**Key Insight:** Overhead is heaviest for small tasks. Below 300 LOC, direct implementation may be faster. Above 2K LOC, delegation pays for itself within weeks.
+
+**See also:** `.claude/THRESHOLD_GUIDELINES.md` for full cost-benefit analysis, decision trees, and practical examples.
+
+---
+
 ## Project Overview
 Poker Tracker - A React-based hand tracker for live 9-handed poker games.
 
