@@ -43,11 +43,36 @@ Request received from Primary
            | YES
            v
 +----------------------------------+
-| 4. Has human approved?           |
+| 4. Bootstrap mode enabled?       |
+|    Check .claude/config/         |
+|    bootstrap-mode.json           |
+|    YES -> Auto-approve, spawn    |
+|           Worker agent            |
+|    NO -> Continue to step 5      |
++----------------------------------+
+           |
+           v
++----------------------------------+
+| 5. Has human approved?           |
 |    YES -> Spawn Worker agent      |
 |    NO -> Create permission req    |
 |         DENY: "Awaiting human"    |
 +----------------------------------+
+```
+
+## Bootstrap Mode
+
+When `.claude/config/bootstrap-mode.json` exists with `enabled: true`:
+- Skip human approval for escalations to Worker agent
+- Auto-approve projects listed in `auto_approve_projects`
+- Used for bootstrapping delegation infrastructure
+
+```javascript
+// Check bootstrap mode
+const bootstrapConfig = JSON.parse(fs.readFileSync('.claude/config/bootstrap-mode.json'));
+if (bootstrapConfig.enabled && bootstrapConfig.auto_approve_projects.includes(projectId)) {
+  // Auto-approve - spawn Worker directly
+}
 ```
 
 ## State Files You Own

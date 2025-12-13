@@ -213,7 +213,9 @@ function convertToExecutionFormat(task) {
     // Pass edit_strategy for FP-001 guards (defaults to create_new)
     edit_strategy: task.edit_strategy || 'create_new',
     // Pass needs_context for precise context extraction
-    needs_context: task.needs_context || []
+    needs_context: task.needs_context || [],
+    // Pass test_first for TDD workflow
+    test_first: task.test_first || null
   };
 }
 
@@ -275,8 +277,16 @@ async function assignNext() {
   const tempSpecPath = path.join(process.cwd(), '.claude', '.temp-task-spec.json');
   fs.writeFileSync(tempSpecPath, JSON.stringify(execSpec, null, 2));
 
-  // Execute via execute-local-task.sh
-  const scriptPath = path.join(__dirname, 'execute-local-task.sh');
+  // Determine execution script - use TDD script if task has test_first field
+  const isTddTask = openTask.test_first && openTask.test_first.test_file;
+  const scriptPath = isTddTask
+    ? path.join(__dirname, 'tdd-execute-task.sh')
+    : path.join(__dirname, 'execute-local-task.sh');
+
+  if (isTddTask) {
+    console.log('📋 TDD task detected - using test-first workflow');
+  }
+
   const taskStartTime = new Date();
 
   // Log task start
