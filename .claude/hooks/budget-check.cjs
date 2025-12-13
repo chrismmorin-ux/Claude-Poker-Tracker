@@ -21,9 +21,13 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const readline = require('readline');
 
 const BUDGET_FILE = path.join(process.cwd(), '.claude', '.session-budget.json');
+const STATS_CACHE_PATH = path.join(os.homedir(), '.claude', 'stats-cache.json');
+const SNAPSHOT_FILE = path.join(process.cwd(), '.claude', '.session-start-snapshot.json');
+const LOG_FILE = path.join(process.cwd(), '.claude', 'logs', 'budget-check.log');
 const CONFIG = {
   TOTAL_BUDGET: 30000,
   WARNING_THRESHOLD: 24000,  // 80%
@@ -39,6 +43,111 @@ const TOKEN_ESTIMATES = {
   EDIT_PER_LINE: 1,          // Editing overhead
   RESPONSE_PER_CHAR: 0.25,   // Response generation
 };
+
+/**
+ * Log diagnostic messages to file for debugging hook execution
+ */
+function log(message) {
+  try {
+    const logDir = path.dirname(LOG_FILE);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(LOG_FILE, `[${timestamp}] ${message}\n`);
+  } catch (e) {
+    // Silent fail - don't break hook on log errors
+  }
+}
+
+/**
+ * Read actual token data from Claude Code's stats-cache.json
+ * @returns {Object|null} Stats cache data or null on error
+ */
+function readStatsCache() {
+  try {
+    if (!fs.existsSync(STATS_CACHE_PATH)) {
+      log('Stats cache not found: ' + STATS_CACHE_PATH);
+      return null;
+    }
+    const data = JSON.parse(fs.readFileSync(STATS_CACHE_PATH, 'utf8'));
+    log('Stats cache read: success');
+    return data;
+  } catch (e) {
+    log('Stats cache read error: ' + e.message);
+    return null;
+  }
+}
+
+/**
+ * Capture baseline token snapshot from stats-cache
+ * @param {string} sessionId - Current session ID
+ * @returns {Object|null} Snapshot data or null on error
+ */
+function captureBaseline(sessionId) {
+  const statsCache = readStatsCache();
+  if (!statsCache) {
+    return null;
+  }
+
+  // Get project name from package.json or cwd
+  let projectName = path.basename(process.cwd());
+  try {
+    const pkgPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      projectName = pkg.name || projectName;
+    }
+  } catch (e) {
+    // Use cwd basename as fallback
+  }
+
+  // Extract baseline from stats cache
+  const baseline = {
+    dailyTokens: {},
+    totalInput: 0,
+    totalOutput: 0,
+    cacheRead: 0,
+    cacheCreation: 0,
+  };
+
+  // Get today's tokens from dailyModelTokens
+  const today = new Date().toISOString().slice(0, 10);
+  if (statsCache.dailyModelTokens) {
+    const todayEntry = statsCache.dailyModelTokens.find(e => e.date === today);
+    if (todayEntry && todayEntry.tokensByModel) {
+      baseline.dailyTokens = todayEntry.tokensByModel;
+    }
+  }
+
+  // Sum up modelUsage totals
+  if (statsCache.modelUsage) {
+    for (const model of Object.values(statsCache.modelUsage)) {
+      baseline.totalInput += model.inputTokens || 0;
+      baseline.totalOutput += model.outputTokens || 0;
+      baseline.cacheRead += model.cacheReadInputTokens || 0;
+      baseline.cacheCreation += model.cacheCreationInputTokens || 0;
+    }
+  }
+
+  const snapshot = {
+    capturedAt: new Date().toISOString(),
+    project: projectName,
+    sessionId,
+    baseline,
+  };
+
+  // Write snapshot
+  try {
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(snapshot, null, 2));
+    log('Snapshot written: ' + SNAPSHOT_FILE);
+  } catch (e) {
+    log('Snapshot write error: ' + e.message);
+    return null;
+  }
+
+  return snapshot;
+}
 
 function loadBudget() {
   try {
@@ -182,9 +291,20 @@ function formatPermissionRequest(budget, requestedAction, estimatedCost) {
 }
 
 async function main() {
+  log('Hook started');
+
   // Load or create budget
   let budget = loadBudget();
   const isNewSession = budget.history.length === 0;
+
+  // Capture baseline on session start
+  if (isNewSession) {
+    const snapshot = captureBaseline(budget.sessionId);
+    if (snapshot) {
+      const totalTokens = Object.values(snapshot.baseline.dailyTokens).reduce((a, b) => a + b, 0);
+      log(`Baseline captured: ${totalTokens.toLocaleString()} tokens today`);
+    }
+  }
 
   // Show status on session start
   if (isNewSession) {
@@ -253,6 +373,7 @@ async function main() {
   // Save updated budget
   saveBudget(budget);
 
+  log('Hook completed');
   process.exit(0);
 }
 

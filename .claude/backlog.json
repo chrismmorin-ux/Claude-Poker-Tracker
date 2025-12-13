@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2025-12-12T19:59:47.515Z",
+  "version": "1.0.0-test",
+  "updated_at": "2025-12-13T02:41:50.016Z",
   "tasks": [
     {
       "id": "T-P8-001",
@@ -1732,6 +1732,661 @@
       "failed_at": "2025-12-12T19:58:33.139Z",
       "completed_at": "2025-12-12T19:59:47.515Z",
       "tests_passed": true
+    },
+    {
+      "id": "T-TOK-001",
+      "title": "Create session snapshot schema",
+      "description": "Create .claude/.session-start-snapshot.json with schema for capturing baseline token data from stats-cache.json on session start. Schema includes: capturedAt (ISO timestamp), project (from package.json), sessionId, baseline object with dailyTokens, totalInput, totalOutput, cacheRead, cacheCreation.",
+      "files_touched": [
+        ".claude/.session-start-snapshot.json"
+      ],
+      "est_lines_changed": 20,
+      "test_command": "node -e \"const s = require('./.claude/.session-start-snapshot.json'); console.log(s.schema ? 'OK' : 'FAIL')\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "output_template": "{\n  \"$schema\": \"...\",\n  \"schema\": {\n    \"capturedAt\": \"ISO timestamp\",\n    \"project\": \"string\",\n    \"sessionId\": \"string\",\n    \"baseline\": {\n      \"dailyTokens\": {},\n      \"totalInput\": 0,\n      \"totalOutput\": 0,\n      \"cacheRead\": 0,\n      \"cacheCreation\": 0\n    }\n  },\n  \"example\": { ... }\n}",
+      "assigned_at": "2025-12-12T22:56:22.301Z",
+      "completed_at": "2025-12-13T00:48:06.939Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-TOK-002",
+      "title": "Add readStatsCache function to budget-check.cjs",
+      "description": "Add function to read actual token data from ~/.claude/stats-cache.json. Requirements: 1) Add STATS_CACHE_PATH constant using os.homedir() + '/.claude/stats-cache.json', 2) Create readStatsCache() function that reads/parses the file, 3) Handle file not found (return null), 4) Handle JSON parse errors (return null), 5) Return object with dailyTokens and modelUsage extracted from the cache.",
+      "files_touched": [
+        ".claude/hooks/budget-check.cjs"
+      ],
+      "est_lines_changed": 40,
+      "test_command": "node -e \"const fs=require('fs');const c=fs.readFileSync('.claude/hooks/budget-check.cjs','utf8');console.log(c.includes('readStatsCache')&&c.includes('stats-cache.json')?'OK':'FAIL')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "needs_context": [
+        {
+          "path": ".claude/hooks/budget-check.cjs",
+          "lines_start": 1,
+          "lines_end": 45
+        }
+      ],
+      "edit_operations": [
+        {
+          "type": "insert_after",
+          "line": 24,
+          "content": "const os = require('os');",
+          "reason": "Need os.homedir() for stats-cache path"
+        },
+        {
+          "type": "insert_after",
+          "line": 25,
+          "content": "const STATS_CACHE_PATH = path.join(os.homedir(), '.claude', 'stats-cache.json');",
+          "reason": "Path to actual token data"
+        },
+        {
+          "type": "insert_after",
+          "line": 42,
+          "content": "// readStatsCache function here (lines 43-70)",
+          "reason": "Function to read actual tokens"
+        }
+      ],
+      "inputs": [
+        "Stats cache format: {dailyModelTokens: [{date, tokensByModel}], modelUsage: {model: {inputTokens, outputTokens, cacheReadInputTokens, cacheCreationInputTokens}}}"
+      ],
+      "assigned_at": "2025-12-12T23:39:40.681Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-12T23:40:31.403Z",
+      "completed_at": "2025-12-13T00:48:06.991Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-TOK-003",
+      "title": "Store baseline tokens on session start",
+      "description": "Modify budget-check.cjs to capture baseline from stats-cache on session start. In main(), when isNewSession is true: 1) Call readStatsCache(), 2) Create snapshot with capturedAt, project (from package.json or cwd basename), sessionId, baseline data, 3) Write to SNAPSHOT_FILE (.claude/.session-start-snapshot.json), 4) Log 'Baseline captured: X tokens' message.",
+      "files_touched": [
+        ".claude/hooks/budget-check.cjs"
+      ],
+      "est_lines_changed": 35,
+      "test_command": "node -e \"const fs=require('fs');const c=fs.readFileSync('.claude/hooks/budget-check.cjs','utf8');console.log(c.includes('SNAPSHOT_FILE')&&c.includes('capturedAt')?'OK':'FAIL')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "needs_context": [
+        {
+          "path": ".claude/hooks/budget-check.cjs",
+          "lines_start": 184,
+          "lines_end": 210
+        }
+      ],
+      "inputs": [
+        "T-TOK-002 must be completed first - readStatsCache() function must exist"
+      ],
+      "constraints": [
+        "Insert snapshot logic AFTER 'const isNewSession' line 187",
+        "Insert BEFORE the 'if (isNewSession)' status display block",
+        "Use path.basename(process.cwd()) as fallback for project name"
+      ],
+      "completed_at": "2025-12-13T00:48:07.044Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-TOK-004",
+      "title": "Add diagnostic logging to budget-check.cjs",
+      "description": "Add stderr logging for debugging hook execution. 1) Add LOG_FILE constant for .claude/logs/budget-check.log, 2) Create log(message) function that appends timestamped lines, 3) Ensure logs directory exists, 4) Log at key points: hook started, stats cache read result, snapshot written, hook completed.",
+      "files_touched": [
+        ".claude/hooks/budget-check.cjs"
+      ],
+      "est_lines_changed": 30,
+      "test_command": "node .claude/hooks/budget-check.cjs && test -f .claude/logs/budget-check.log && echo OK || echo FAIL",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "needs_context": [
+        {
+          "path": ".claude/hooks/budget-check.cjs",
+          "lines_start": 22,
+          "lines_end": 35
+        },
+        {
+          "path": ".claude/hooks/budget-check.cjs",
+          "lines_start": 184,
+          "lines_end": 262
+        }
+      ],
+      "constraints": [
+        "Use fs.appendFileSync for logging",
+        "Create logs directory if not exists using fs.mkdirSync with recursive: true",
+        "Timestamp format: ISO string"
+      ],
+      "completed_at": "2025-12-13T00:48:07.099Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-TOK-005",
+      "title": "Create phase detection logic",
+      "description": "Create .claude/hooks/phase-detector.cjs with logic to classify tool calls into work phases. Phases: exploration (Grep, Glob, Read initial), planning (Task with Plan agent, EnterPlanMode), execution (Write, Edit), testing (Bash with test/build commands), git (Bash with git commands). Export detectPhase(toolName, toolInput) function.",
+      "files_touched": [
+        ".claude/hooks/phase-detector.cjs"
+      ],
+      "est_lines_changed": 50,
+      "test_command": "node -e \"const {detectPhase}=require('./.claude/hooks/phase-detector.cjs'); console.log(detectPhase('Grep',{})=='exploration' && detectPhase('Edit',{})=='execution' ? 'OK' : 'FAIL')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "in_progress",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "inputs": [
+        "Phase mappings: exploration=[Grep,Glob,Read], planning=[Task(Plan),EnterPlanMode], execution=[Write,Edit], testing=[Bash(test|npm test|build)], git=[Bash(git)]"
+      ],
+      "assigned_at": "2025-12-13T01:14:00.930Z"
+    },
+    {
+      "id": "T-TOK-006",
+      "title": "Add phase tracking to metrics-collector.cjs",
+      "description": "Update metrics-collector.cjs to track tool usage by work phase using phase-detector.cjs. Replace token estimation focus with phase attribution. Add phase field to toolCall records, add byPhase breakdown to session and daily totals.",
+      "files_touched": [
+        ".claude/hooks/metrics-collector.cjs"
+      ],
+      "est_lines_changed": 40,
+      "test_command": "node -e \"const fs=require('fs');const c=fs.readFileSync('.claude/hooks/metrics-collector.cjs','utf8');console.log(c.includes('detectPhase')&&c.includes('byPhase')?'OK':'FAIL')\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "needs_context": [
+        {
+          "path": ".claude/hooks/metrics-collector.cjs",
+          "lines_start": 1,
+          "lines_end": 50
+        },
+        {
+          "path": ".claude/hooks/metrics-collector.cjs",
+          "lines_start": 200,
+          "lines_end": 250
+        }
+      ],
+      "assigned_at": "2025-12-13T01:14:41.124Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T01:15:00.955Z"
+    },
+    {
+      "id": "T-TOK-007",
+      "title": "Create session phases schema",
+      "description": "Create .claude/.session-phases.json schema file documenting the session phases log format. Schema includes: sessionId, toolCalls array with timestamp/tool/phase, phaseSummary with counts and percentages per phase.",
+      "files_touched": [
+        ".claude/.session-phases.json"
+      ],
+      "est_lines_changed": 30,
+      "test_command": "node -e \"const s=require('./.claude/.session-phases.json');console.log(s.schema&&s.schema.phaseSummary?'OK':'FAIL')\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "in_progress",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "assigned_at": "2025-12-13T01:15:15.077Z"
+    },
+    {
+      "id": "T-TOK-008",
+      "title": "Add diagnostic logging to metrics-collector.cjs",
+      "description": "Add diagnostic logging to metrics-collector.cjs similar to budget-check.cjs. Add LOG_FILE constant, log() function, log hook execution at key points: hook started, data parsed, phase detected, metrics saved, hook completed.",
+      "files_touched": [
+        ".claude/hooks/metrics-collector.cjs"
+      ],
+      "est_lines_changed": 25,
+      "test_command": "node -e \"const fs=require('fs');const c=fs.readFileSync('.claude/hooks/metrics-collector.cjs','utf8');console.log(c.includes('LOG_FILE')&&c.includes('log(')? 'OK':'FAIL')\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "assigned_at": "2025-12-13T02:04:06.263Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:04:14.993Z"
+    },
+    {
+      "id": "T-ENF-101",
+      "parent_id": "enforcement-overhaul",
+      "title": "Create write-gate.cjs hook skeleton",
+      "description": "Create new PreToolUse hook with block-by-default architecture. Skeleton includes: PROTECTED_FILES array, BYPASS_FILE path check, BACKLOG_FILE path, basic stdin parsing for tool_input, exit 0/2 logic structure, JSDoc documentation.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 150,
+      "est_local_effort_mins": 40,
+      "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('PROTECTED_FILES') || !c.includes('exit')) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "in_progress",
+      "task_complexity_type": "C",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "#!/usr/bin/env node shebang",
+        "Include PROTECTED_FILES array with hook files",
+        "Include BYPASS_FILE constant (.claude/.delegation-bypass)",
+        "Include BACKLOG_FILE constant (.claude/backlog.json)",
+        "Read stdin and parse as JSON",
+        "Extract file_path from tool_input",
+        "Exit 0 to allow, exit 2 to block",
+        "Include JSDoc header explaining the hook"
+      ],
+      "output_template": "#!/usr/bin/env node\n/**\n * write-gate.cjs - Block-by-default delegation enforcement\n * ...\n */\nconst fs = require('fs');\nconst path = require('path');\n\nconst PROTECTED_FILES = [...];\nconst BYPASS_FILE = path.join(process.cwd(), '.claude', '.delegation-bypass');\nconst BACKLOG_FILE = path.join(process.cwd(), '.claude', 'backlog.json');\n\n// Main execution\nasync function main() { ... }\nmain();",
+      "assigned_at": "2025-12-13T02:04:34.697Z"
+    },
+    {
+      "id": "T-ENF-102",
+      "parent_id": "enforcement-overhaul",
+      "title": "Add protected files check to write-gate.cjs",
+      "description": "Add function checkProtectedFile(filePath) that returns true if file is in PROTECTED_FILES or matches pattern. Check for human approval file existence (.claude/.human-approved-{basename}). Return {blocked: bool, reason: string}.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 25,
+      "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('checkProtectedFile') || !c.includes('human-approved')) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Function name: checkProtectedFile(filePath)",
+        "Check if file basename matches PROTECTED_FILES entries",
+        "Check for .claude/.human-approved-{basename} file",
+        "Return {blocked: true, reason: 'Human approval required'} if protected without approval",
+        "Return {blocked: false} if not protected or approval exists"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/write-gate.cjs",
+          "lines_start": 1,
+          "lines_end": 50
+        }
+      ],
+      "assigned_at": "2025-12-13T02:05:18.587Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:07:31.392Z"
+    },
+    {
+      "id": "T-ENF-103",
+      "parent_id": "enforcement-overhaul",
+      "title": "Add bypass file check to write-gate.cjs",
+      "description": "Add function checkBypassFile() that returns true if .delegation-bypass file exists. This allows human-created session bypass. Log bypass usage to delegation-check.log.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 15,
+      "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('checkBypassFile')) process.exit(1);\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Function name: checkBypassFile()",
+        "Check fs.existsSync(BYPASS_FILE)",
+        "If exists, log to .claude/logs/delegation-check.log with timestamp",
+        "Return true if bypass file exists, false otherwise"
+      ],
+      "assigned_at": "2025-12-13T02:07:39.544Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:08:02.873Z"
+    },
+    {
+      "id": "T-ENF-104",
+      "parent_id": "enforcement-overhaul",
+      "title": "Create .protected-files.json",
+      "description": "Create JSON file listing all enforcement-critical files that require human approval to modify. Include all hooks, settings.json, backlog.json, and policy files.",
+      "files_touched": [
+        ".claude/.protected-files.json"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 10,
+      "test_command": "node -e \"const p=require('./.claude/.protected-files.json'); if(!p.files || p.files.length < 5) process.exit(1);\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "in_progress",
+      "task_complexity_type": "A",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "JSON object with 'files' array and 'description' field",
+        "Include: all files in .claude/hooks/, .claude/settings.json, .claude/backlog.json, .claude/DECOMPOSITION_POLICY.md",
+        "Use glob patterns where appropriate (e.g., '.claude/hooks/*.cjs')",
+        "Add description explaining these files require human approval"
+      ],
+      "assigned_at": "2025-12-13T02:08:08.109Z"
+    },
+    {
+      "id": "T-ENF-105",
+      "parent_id": "enforcement-overhaul",
+      "title": "Register write-gate.cjs in settings.json",
+      "description": "Add PreToolUse hooks for Edit, Write, and NotebookEdit tools pointing to write-gate.cjs. Keep existing hooks, add new ones.",
+      "files_touched": [
+        ".claude/settings.json"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 10,
+      "test_command": "node -e \"const s=require('./.claude/settings.json'); if(!JSON.stringify(s).includes('write-gate.cjs')) process.exit(1);\"",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Add to hooks array, don't replace existing",
+        "Add PreToolUse:Edit with matcher type=tool, pattern=Edit",
+        "Add PreToolUse:Write with matcher type=tool, pattern=Write",
+        "Add PreToolUse:NotebookEdit with matcher type=tool, pattern=NotebookEdit",
+        "All point to .claude/hooks/write-gate.cjs"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/settings.json",
+          "lines_start": 1,
+          "lines_end": 100
+        }
+      ],
+      "assigned_at": "2025-12-13T02:11:06.533Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:11:39.881Z"
+    },
+    {
+      "id": "T-ENF-701",
+      "parent_id": "enforcement-overhaul",
+      "title": "Add violation check to pre-commit-gate.cjs",
+      "description": "Modify pre-commit-gate.cjs to check for pending delegation violations before allowing commits. Read .delegation-violations.json, block if unresolved violations exist, show violation count and guidance to resolve.",
+      "files_touched": [
+        ".claude/hooks/pre-commit-gate.cjs"
+      ],
+      "est_lines_changed": 50,
+      "est_local_effort_mins": 30,
+      "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/pre-commit-gate.cjs','utf8'); if(!c.includes('delegation-violations')) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Add check at beginning of hook",
+        "Read .claude/.delegation-violations.json",
+        "If violations array has items with status !== 'resolved', block commit",
+        "Show count of pending violations",
+        "Exit 2 to block, exit 0 to allow"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/pre-commit-gate.cjs",
+          "lines_start": 1,
+          "lines_end": 80
+        }
+      ],
+      "assigned_at": "2025-12-13T02:16:13.809Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:16:49.046Z"
+    },
+    {
+      "id": "T-ENF-801",
+      "parent_id": "enforcement-overhaul",
+      "title": "Create delegation-reminder.cjs hook",
+      "description": "Create PostToolUse hook that periodically reminds about delegation policy. After every 10 tool uses, show reminder about local model delegation. Track tool count in memory.",
+      "files_touched": [
+        ".claude/hooks/delegation-reminder.cjs"
+      ],
+      "est_lines_changed": 60,
+      "est_local_effort_mins": 25,
+      "test_command": "node -e \"require('./.claude/hooks/delegation-reminder.cjs'); console.log('OK');\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "in_progress",
+      "task_complexity_type": "C",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "PostToolUse hook",
+        "Track tool call count in process memory or temp file",
+        "Every 10 calls, output reminder message",
+        "Reminder text: 'Remember: All code tasks should be delegated to local models via dispatcher'",
+        "Exit 0 always (informational only)"
+      ],
+      "assigned_at": "2025-12-13T02:16:54.690Z"
+    },
+    {
+      "id": "T-DEC-001",
+      "parent_id": "decomposition-system-fix",
+      "title": "Fix test exit code bug in execute-local-task.sh",
+      "description": "Fix the pipe bug where tail -5 exit code (always 0) masks the actual test command exit code. Capture test output and exit code separately.",
+      "files_touched": [
+        "scripts/execute-local-task.sh"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 15,
+      "task_complexity_type": "A",
+      "test_command": "bash -c 'source scripts/execute-local-task.sh 2>/dev/null; echo test'",
+      "assigned_to": "claude",
+      "priority": "P0",
+      "status": "done",
+      "escalation_reason": "SIZE GUARD triggered - local model truncated 421-line file",
+      "completed_at": "2025-12-13T03:45:00.000Z",
+      "tests_passed": true,
+      "inputs": [
+        "Current lines 377-383 in execute-local-task.sh"
+      ],
+      "outputs": [
+        "Fixed test result capture with proper exit code handling"
+      ],
+      "constraints": [
+        "Replace lines 377-383 only",
+        "Capture test output to variable first: TEST_OUTPUT=$(eval \"$TEST_CMD\" 2>&1)",
+        "Capture exit code immediately: TEST_EXIT_CODE=$?",
+        "Then pipe to tail for display: echo \"$TEST_OUTPUT\" | tail -5",
+        "Use TEST_EXIT_CODE in condition: if [ $TEST_EXIT_CODE -eq 0 ]; then",
+        "Keep same log messages but add exit code to failure: log_warn \"Tests failed (exit code $TEST_EXIT_CODE)\"",
+        "Maintain TEST_PASSED variable behavior"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/execute-local-task.sh",
+          "lines_start": 370,
+          "lines_end": 400
+        }
+      ],
+      "assigned_at": "2025-12-13T02:38:27.416Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:38:39.319Z"
+    },
+    {
+      "id": "T-DEC-002",
+      "parent_id": "decomposition-system-fix",
+      "title": "Add Type D task blocking in dispatcher assignNext",
+      "description": "Block Type D (Semantic Rewrite) tasks from being assigned to local models. Per policy, Type D has 100% failure rate.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 20,
+      "task_complexity_type": "B",
+      "test_command": "node -e \"const c = require('fs').readFileSync('scripts/dispatcher.cjs','utf8'); if(!c.includes('task_complexity_type') || !c.includes('Type D')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "priority": "P0",
+      "status": "in_progress",
+      "escalation_reason": "SIZE GUARD - 894-line file too large for local model",
+      "inputs": [
+        "dispatcher.cjs assignNext function",
+        "DECOMPOSITION_POLICY.md Type D definition"
+      ],
+      "outputs": [
+        "Type D blocking code inserted after line 241, before PRE-ASSIGN AUDIT"
+      ],
+      "constraints": [
+        "Insert AFTER line 241 (after if (!openTask) check), BEFORE line 243 (PRE-ASSIGN AUDIT)",
+        "Check: if (openTask.task_complexity_type === 'D')",
+        "Block with console.error box showing TYPE D TASK BLOCKED",
+        "Set openTask.status = 'blocked'",
+        "Set openTask.blocked_reason with reference to DECOMPOSITION_POLICY.md Section 2.5",
+        "Call saveBacklog(backlog)",
+        "Exit with code 4: process.exit(4)",
+        "Also add Type C warning (warn but allow): if (openTask.task_complexity_type === 'C')",
+        "Type C should show warning but NOT block"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 230,
+          "lines_end": 270
+        },
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 145,
+          "lines_end": 175
+        }
+      ],
+      "assigned_at": "2025-12-13T02:41:32.920Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T02:41:50.016Z"
+    },
+    {
+      "id": "T-DEC-004",
+      "parent_id": "decomposition-system-fix",
+      "title": "Add permission blocking check in dispatcher assignNext",
+      "description": "Check for pending permission requests that touch same files as task. Block assignment if related permission is pending.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 35,
+      "est_local_effort_mins": 25,
+      "task_complexity_type": "B",
+      "test_command": "node -e \"const c = require('fs').readFileSync('scripts/dispatcher.cjs','utf8'); if(!c.includes('pendingPermissions') || !c.includes('PERMISSION BLOCKING')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "open",
+      "escalation_reason": "SIZE GUARD - 894-line file too large for local model",
+      "inputs": [
+        "dispatcher.cjs assignNext function",
+        "permission-requests.json structure"
+      ],
+      "outputs": [
+        "Permission blocking code inserted after Type D check, before PRE-ASSIGN AUDIT"
+      ],
+      "constraints": [
+        "Insert AFTER Type D/C checks (T-DEC-002), BEFORE PRE-ASSIGN AUDIT comment",
+        "Load permission file: const permData = JSON.parse(fs.readFileSync(PERMISSION_REQUESTS_PATH, 'utf-8'))",
+        "Wrap in try-catch, continue on error",
+        "Filter pending: permData.requests.filter(r => r.status === 'pending')",
+        "Check file overlap between task.files_touched and perm.specific_changes",
+        "Use path.basename for comparison to handle different path formats",
+        "If overlap found: show PERMISSION BLOCKING console.error box",
+        "Set openTask.status = 'blocked'",
+        "Set openTask.blocked_reason with permission request ID",
+        "Set openTask.blocked_by_permission = perm.request_id",
+        "Call saveBacklog(backlog)",
+        "Exit with code 5: process.exit(5)"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 19,
+          "lines_end": 40
+        },
+        {
+          "path": ".claude/permission-requests.json",
+          "lines_start": 1,
+          "lines_end": 50
+        }
+      ]
+    },
+    {
+      "id": "T-DEC-003A",
+      "parent_id": "decomposition-system-fix",
+      "title": "Add generateSubtaskTemplates helper function to dispatcher",
+      "description": "Create helper function that generates subtask templates when max decomposition depth is reached.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 35,
+      "est_local_effort_mins": 25,
+      "task_complexity_type": "B",
+      "test_command": "node -e \"const c = require('fs').readFileSync('scripts/dispatcher.cjs','utf8'); if(!c.includes('function generateSubtaskTemplates')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "open",
+      "escalation_reason": "SIZE GUARD - 894-line file too large for local model",
+      "inputs": [
+        "Task object structure from backlog"
+      ],
+      "outputs": [
+        "generateSubtaskTemplates function added after line 37 (MAX_DECOMPOSITION_DEPTH)"
+      ],
+      "constraints": [
+        "Add function after line 37, before loadBacklog function",
+        "Function signature: function generateSubtaskTemplates(task)",
+        "Returns array of subtask template objects",
+        "Strategy 1: If task.files_touched.length > 1, split by file",
+        "Strategy 2: If only 1 file, split by operation phase (READ, PROC, WRITE)",
+        "Each template has: id (parent-F01 or parent-READ), parent_id, title, task_complexity_type ('B' or 'A'), status ('suggested')",
+        "For file split: use path.basename for title, distribute est_lines_changed",
+        "For phase split: create 3 subtasks (Read/validate, Process/transform, Write outputs)",
+        "Return empty array on error"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 30,
+          "lines_end": 60
+        }
+      ]
+    },
+    {
+      "id": "T-DEC-003B",
+      "parent_id": "decomposition-system-fix",
+      "title": "Add autoCreatePermissionRequest helper function to dispatcher",
+      "description": "Create helper function that automatically generates a permission request when max decomposition depth is exceeded.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 30,
+      "task_complexity_type": "B",
+      "test_command": "node -e \"const c = require('fs').readFileSync('scripts/dispatcher.cjs','utf8'); if(!c.includes('function autoCreatePermissionRequest')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "open",
+      "escalation_reason": "SIZE GUARD - 894-line file too large for local model",
+      "inputs": [
+        "Task object structure",
+        "permission-requests.json structure"
+      ],
+      "outputs": [
+        "autoCreatePermissionRequest function added after generateSubtaskTemplates"
+      ],
+      "constraints": [
+        "Add function right after generateSubtaskTemplates",
+        "Function signature: function autoCreatePermissionRequest(task)",
+        "Returns permission request object (does NOT save to file)",
+        "Generate request_id: PR-YYYY-MM-DD-NNN format",
+        "Load existing permission file to get sequence number",
+        "Include task_description from task.id and task.title",
+        "Include attempted_decomposition with decomposition_history",
+        "Include blocking_criteria: ['max_decomposition_depth']",
+        "Include justification explaining auto-escalation",
+        "Include estimated_complexity from task fields",
+        "Include specific_changes from task.files_touched",
+        "Set requested_by: 'dispatcher:auto-escalation'",
+        "Set status: 'pending'"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/permission-requests.json",
+          "lines_start": 1,
+          "lines_end": 80
+        }
+      ]
     }
   ],
   "projects": {
@@ -1753,10 +2408,10 @@
     }
   },
   "stats": {
-    "total_tasks": 53,
-    "open": 0,
-    "in_progress": 17,
-    "done": 26,
-    "failed": 0
+    "total_tasks": 73,
+    "open": 3,
+    "in_progress": 22,
+    "done": 31,
+    "failed": 7
   }
 }
