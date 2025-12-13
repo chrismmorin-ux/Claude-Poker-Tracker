@@ -65,6 +65,33 @@ function log(message) {
 }
 
 /**
+ * Create or append to violation lockfile for audit trail
+ */
+function createViolationLockfile(filePath, reason, toolName = 'write-gate') {
+    try {
+        const LOCKFILE_PATH = path.join(process.cwd(), '.claude', '.delegation-violation.lock');
+        const violation = {
+            timestamp: new Date().toISOString(),
+            file_path: filePath,
+            reason: reason,
+            tool_name: toolName
+        };
+
+        let violations = [];
+        if (fs.existsSync(LOCKFILE_PATH)) {
+            const content = fs.readFileSync(LOCKFILE_PATH, 'utf-8');
+            violations = JSON.parse(content);
+        }
+
+        violations.push(violation);
+        fs.writeFileSync(LOCKFILE_PATH, JSON.stringify(violations, null, 2));
+        log(`VIOLATION RECORDED: ${filePath}`);
+    } catch (e) {
+        log(`WARNING: Could not create violation lockfile: ${e.message}`);
+    }
+}
+
+/**
  * Check if bypass file exists (human-created session bypass)
  */
 function checkBypassFile() {
@@ -291,6 +318,7 @@ async function main() {
     if (protectedCheck.blocked) {
         console.error(`\n🚫 BLOCKED: ${protectedCheck.reason}\n`);
         log(`BLOCKED (protected): ${filePath}`);
+        createViolationLockfile(filePath, protectedCheck.reason, 'write-gate');
         process.exit(2);
     }
 
@@ -301,6 +329,7 @@ async function main() {
     if (assignmentCheck.blocked) {
         console.error(`\n🚫 BLOCKED: ${assignmentCheck.reason}\n`);
         log(`BLOCKED (assignment): ${filePath} - ${assignmentCheck.reason}`);
+        createViolationLockfile(filePath, assignmentCheck.reason, 'write-gate');
         process.exit(2);
     }
 

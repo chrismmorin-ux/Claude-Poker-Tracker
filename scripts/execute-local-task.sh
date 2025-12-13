@@ -181,6 +181,15 @@ fi
 
 log_info "Using Python: $PYTHON_CMD"
 
+# Read LM Studio endpoint from config if available
+CONFIG_FILE="$PROJECT_ROOT/.claude/config/lm-studio.json"
+if [ -f "$CONFIG_FILE" ]; then
+    LM_STUDIO_URL=$($PYTHON_CMD -c "import sys,json; d=json.load(open('$CONFIG_FILE')); print(d.get('endpoint','http://10.0.0.230:1234'))" 2>/dev/null || echo 'http://10.0.0.230:1234')
+    log_info "Using LM Studio endpoint from config: $LM_STUDIO_URL"
+else
+    log_info "Using default LM Studio endpoint: $LM_STUDIO_URL"
+fi
+
 # Extract fields from JSON
 TASK_ID=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('task_id',''))")
 MODEL=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('model','deepseek'))")

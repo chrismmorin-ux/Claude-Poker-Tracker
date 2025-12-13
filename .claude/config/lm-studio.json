@@ -1,0 +1,7 @@
+{
+  "endpoint": "http://10.0.0.230:1234",
+  "auto_launch": false,
+  "launch_command": "C:/path/to/LMStudio.exe",
+  "health_timeout_ms": 5000,
+  "retry_attempts": 3
+}

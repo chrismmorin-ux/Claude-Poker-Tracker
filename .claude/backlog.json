@@ -1,6 +1,6 @@
 {
   "version": "1.0.0-test",
-  "updated_at": "2025-12-13T08:47:30.561Z",
+  "updated_at": "2025-12-13T10:36:40.284Z",
   "tasks": [
     {
       "id": "T-P8-001",
@@ -724,7 +724,7 @@
       "test_command": "grep -q 'dispatcher integration bug' .claude/BACKLOG.md",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "inputs": [
         ".claude/BACKLOG.md"
       ],
@@ -972,7 +972,7 @@
       "test_command": "grep -q 'Type A: Mechanical Edit' .claude/DECOMPOSITION_POLICY.md",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "constraints": [
         "Insert new Section 2.5 after Section 2 (Atomic Criteria)",
         "Define 4 complexity types: Type A (Mechanical Edit), Type B (Template Fill), Type C (Creative Generation), Type D (Semantic Rewrite)",
@@ -1002,7 +1002,7 @@
       "test_command": "node -e \"const s=require('./.claude/schemas/local-task.schema.json'); if(!s.properties.edit_strategy) process.exit(1);\"",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "constraints": [
         "Add to properties object (not required array):",
         "  edit_strategy: {type: string, enum: [incremental_edit, template_fill, create_new, rewrite]}",
@@ -1034,7 +1034,7 @@
       "test_command": "node -e \"const s=require('./.claude/schemas/permission-request.schema.json'); if(!s.properties.decomposition_quality_checklist) process.exit(1);\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "constraints": [
         "Add decomposition_quality_checklist to properties",
         "Make it type: object with properties:",
@@ -1068,7 +1068,7 @@
       "test_command": "test -f .claude/ESCALATION_LOG.md && grep -q '## Log Format' .claude/ESCALATION_LOG.md",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "constraints": [
         "Create file with title: # Escalation Log",
         "Add purpose statement explaining what this tracks",
@@ -1497,7 +1497,7 @@
       "description": "Create generate-dashboard.cjs with data loading functions. Load all 8 data sources (backlog.json, task log, patterns, violations, etc.). Export loadDashboardData() function. Handle missing files gracefully. Return aggregated data object.",
       "assigned_to": "local:deepseek",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "C",
       "edit_strategy": "create_new",
       "files_touched": [
@@ -1520,7 +1520,7 @@
       "description": "Add calculateMetrics(data) function to generate-dashboard.cjs. Return: health_score (0-100), success_rate, delegation_compliance. Handle division by zero.",
       "assigned_to": "local:deepseek",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "C",
       "edit_strategy": "incremental_edit",
       "files_touched": [
@@ -1542,7 +1542,7 @@
       "description": "Add generateMarkdown(data, metrics) function. Include sections: Executive Summary, Task Execution, Learning Engine, Projects, Compliance. Return markdown string.",
       "assigned_to": "local:qwen",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "B",
       "edit_strategy": "incremental_edit",
       "files_touched": [
@@ -1564,7 +1564,7 @@
       "description": "Add CLI interface: Accept --output flag (default: .claude/DASHBOARD.md), Accept --verbose flag. Call loadData → calculateMetrics → generateMarkdown → write file.",
       "assigned_to": "local:qwen",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "A",
       "edit_strategy": "incremental_edit",
       "files_touched": [
@@ -1631,7 +1631,7 @@
       "description": "Use local LLM to auto-classify failure types from error messages. Call local model with error message. Return classification: type_error, syntax_error, test_failure, constraint_violation, etc. Fallback to 'unknown' if uncertain. Include confidence score.",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "C",
       "edit_strategy": "create_new",
       "files_touched": [
@@ -1653,7 +1653,7 @@
       "description": "Scan task log for failures, group by error signature. If 2+ similar failures without existing pattern, generate proposal for human review. Output to stdout, don't auto-add to failure-patterns.json.",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "C",
       "edit_strategy": "create_new",
       "files_touched": [
@@ -1676,7 +1676,7 @@
       "description": "Create PostToolUse hook that regenerates dashboard after dispatcher complete command. Run generate-dashboard.cjs silently, don't block on errors.",
       "assigned_to": "local:qwen",
       "priority": "P2",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "B",
       "edit_strategy": "create_new",
       "files_touched": [
@@ -1699,7 +1699,7 @@
       "description": "Add slash command that regenerates dashboard then displays it. Simple markdown file in .claude/commands/.",
       "assigned_to": "local:qwen",
       "priority": "P2",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "A",
       "edit_strategy": "create_new",
       "files_touched": [
@@ -1965,7 +1965,7 @@
       "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('PROTECTED_FILES') || !c.includes('exit')) process.exit(1);\"",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "done",
       "task_complexity_type": "C",
       "edit_strategy": "create_new",
       "constraints": [
@@ -1979,7 +1979,9 @@
         "Include JSDoc header explaining the hook"
       ],
       "output_template": "#!/usr/bin/env node\n/**\n * write-gate.cjs - Block-by-default delegation enforcement\n * ...\n */\nconst fs = require('fs');\nconst path = require('path');\n\nconst PROTECTED_FILES = [...];\nconst BYPASS_FILE = path.join(process.cwd(), '.claude', '.delegation-bypass');\nconst BACKLOG_FILE = path.join(process.cwd(), '.claude', 'backlog.json');\n\n// Main execution\nasync function main() { ... }\nmain();",
-      "assigned_at": "2025-12-13T02:04:34.697Z"
+      "assigned_at": "2025-12-13T02:04:34.697Z",
+      "completed_at": "2025-12-13T10:20:02.811Z",
+      "tests_passed": true
     },
     {
       "id": "T-ENF-102",
@@ -1994,7 +1996,7 @@
       "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('checkProtectedFile') || !c.includes('human-approved')) process.exit(1);\"",
       "assigned_to": "local:deepseek",
       "priority": "P0",
-      "status": "failed",
+      "status": "done",
       "task_complexity_type": "B",
       "edit_strategy": "incremental_edit",
       "constraints": [
@@ -2013,7 +2015,9 @@
       ],
       "assigned_at": "2025-12-13T02:05:18.587Z",
       "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
-      "failed_at": "2025-12-13T02:07:31.392Z"
+      "failed_at": "2025-12-13T02:07:31.392Z",
+      "completed_at": "2025-12-13T10:21:14.130Z",
+      "tests_passed": true
     },
     {
       "id": "T-ENF-103",
@@ -2028,7 +2032,7 @@
       "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf8'); if(!c.includes('checkBypassFile')) process.exit(1);\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "failed",
+      "status": "done",
       "task_complexity_type": "A",
       "edit_strategy": "incremental_edit",
       "constraints": [
@@ -2039,7 +2043,9 @@
       ],
       "assigned_at": "2025-12-13T02:07:39.544Z",
       "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
-      "failed_at": "2025-12-13T02:08:02.873Z"
+      "failed_at": "2025-12-13T02:08:02.873Z",
+      "completed_at": "2025-12-13T10:21:14.217Z",
+      "tests_passed": true
     },
     {
       "id": "T-ENF-104",
@@ -2054,7 +2060,7 @@
       "test_command": "node -e \"const p=require('./.claude/.protected-files.json'); if(!p.files || p.files.length < 5) process.exit(1);\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "A",
       "edit_strategy": "create_new",
       "constraints": [
@@ -2146,7 +2152,7 @@
       "test_command": "node -e \"require('./.claude/hooks/delegation-reminder.cjs'); console.log('OK');\"",
       "assigned_to": "local:deepseek",
       "priority": "P1",
-      "status": "in_progress",
+      "status": "pending",
       "task_complexity_type": "C",
       "edit_strategy": "create_new",
       "constraints": [
@@ -2434,7 +2440,7 @@
       "est_local_effort_mins": 5,
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "blocked",
+      "status": "done",
       "test_command": "grep -q EXEMPT_PATTERNS .claude/hooks/write-gate.cjs",
       "constraints": [
         "Add after line 27 (after const LOG_FILE)",
@@ -2455,7 +2461,9 @@
           "depth": 1,
           "reason": "Manual request"
         }
-      ]
+      ],
+      "completed_at": "2025-12-13T10:21:20.654Z",
+      "tests_passed": true
     },
     {
       "id": "T-MAD-006",
@@ -2563,7 +2571,7 @@
       "estimated_effort": "5 minutes",
       "est_lines_changed": 8,
       "priority": "low",
-      "status": "open",
+      "status": "failed",
       "test_command": "node scripts/dispatcher.cjs status && jq '.requests[] | select(.request_id==\"PR-2025-12-13-001\" or .request_id==\"PR-2025-12-13-003\") | {id:.request_id, status, resolution_note}' .claude/permission-requests.json",
       "acceptance_criteria": [
         "PR-2025-12-13-001 status changed to 'rejected'",
@@ -2573,7 +2581,10 @@
         "File remains valid JSON"
       ],
       "assigned_to": "local",
-      "context": "These permission requests are obsolete. PR-001 requested deletion of delegation-check-pre.cjs which was already removed. PR-003 requested agent labeling which was already implemented in T-MAD-006."
+      "context": "These permission requests are obsolete. PR-001 requested deletion of delegation-check-pre.cjs which was already removed. PR-003 requested agent labeling which was already implemented in T-MAD-006.",
+      "assigned_at": "2025-12-13T10:04:29.644Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T10:05:07.234Z"
     },
     {
       "id": "T-UNBLOCK-001",
@@ -2586,14 +2597,19 @@
       "estimated_effort": "2 minutes",
       "est_lines_changed": 2,
       "priority": "high",
-      "status": "open",
+      "status": "done",
       "test_command": "grep 'permission' .claude/hooks/write-gate.cjs | grep -c json || echo 'not found'",
       "acceptance_criteria": [
         "permission-requests.json pattern added to EXEMPT_PATTERNS",
         "File remains valid JavaScript"
       ],
       "assigned_to": "local",
-      "context": "The write-gate.cjs hook blocks edits to files without backlog task. Permission-requests.json should be exempt since it is a management file that may need updates outside of normal task workflow."
+      "context": "The write-gate.cjs hook blocks edits to files without backlog task. Permission-requests.json should be exempt since it is a management file that may need updates outside of normal task workflow.",
+      "assigned_at": "2025-12-13T10:07:13.378Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T10:08:48.777Z",
+      "completed_at": "2025-12-13T10:21:14.363Z",
+      "tests_passed": true
     },
     {
       "id": "T-PROJ-001",
@@ -3122,7 +3138,7 @@
       "test_command": "node scripts/dispatcher.cjs metrics | grep -q 'Success Rate'",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "open",
+      "status": "failed",
       "inputs": [
         ".claude/logs/local-model-tasks.log",
         "Backlog task status data"
@@ -3137,7 +3153,10 @@
         "Show most common failure classifications",
         "Format as table for readability"
       ],
-      "needs_context": []
+      "needs_context": [],
+      "assigned_at": "2025-12-13T09:34:59.249Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:35:59.231Z"
     },
     {
       "id": "T-ITER-003",
@@ -3152,7 +3171,7 @@
       "test_command": "test -f .claude/config/auto-escalate.json && node -e 'JSON.parse(require(\"fs\").readFileSync(\".claude/config/auto-escalate.json\"))'",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "open",
+      "status": "pending",
       "inputs": [
         "DECOMPOSITION_POLICY.md section on escalation",
         "atomic-limits.json structure"
@@ -3166,7 +3185,8 @@
         "Include escalation_target options: claude, human",
         "Include priority levels: auto, warning, critical"
       ],
-      "needs_context": []
+      "needs_context": [],
+      "assigned_at": "2025-12-13T09:41:02.418Z"
     },
     {
       "id": "T-ITER-004",
@@ -3181,7 +3201,7 @@
       "test_command": "grep -q 'load_prompt_template' scripts/execute-local-task.sh",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "open",
+      "status": "failed",
       "inputs": [
         "Current execute-local-task.sh structure",
         "Prompt template directory structure"
@@ -3196,7 +3216,10 @@
         "Fallback to default prompt if template not found",
         "Cache loaded templates to avoid repeated reads"
       ],
-      "needs_context": []
+      "needs_context": [],
+      "assigned_at": "2025-12-13T09:42:04.558Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:42:56.470Z"
     },
     {
       "id": "T-ITER-005",
@@ -3211,7 +3234,7 @@
       "test_command": "node scripts/generate-iteration-report.cjs | grep -q 'Iteration Report'",
       "assigned_to": "local:deepseek",
       "priority": "P2",
-      "status": "open",
+      "status": "failed",
       "inputs": [
         ".claude/logs/local-model-tasks.log",
         "backlog.json",
@@ -3227,7 +3250,470 @@
         "Generate markdown report",
         "Output to .claude/reports/iteration-timestamp.md"
       ],
-      "needs_context": []
+      "needs_context": [],
+      "assigned_at": "2025-12-13T09:47:17.288Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:48:31.750Z"
+    },
+    {
+      "id": "T-LMS-002",
+      "title": "Add health check to dispatcher",
+      "description": "Add a checkLmStudioHealth() function to dispatcher.cjs that:\n1. Loads config from .claude/config/lm-studio.json\n2. Makes HTTP GET request to ${endpoint}/v1/models (LM Studio health endpoint)\n3. Uses health_timeout_ms from config (default 5000)\n4. Retries up to retry_attempts from config (default 3)\n5. Returns { healthy: boolean, error?: string }\n6. Add 'health' command to CLI that displays health status\n7. Call health check in assignNext() BEFORE task assignment - if unhealthy, show error and exit\n\nUse Node's built-in http module (no external deps).\nOn failure, show: \"LM Studio not available at {endpoint}. Start LM Studio or check config.\"",
+      "task_complexity_type": "C",
+      "status": "done",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 45,
+      "test_command": "npm test 2>&1 | grep -E '(passing|failing|error)'",
+      "inputs": [
+        "scripts/dispatcher.cjs",
+        ".claude/config/lm-studio.json"
+      ],
+      "constraints": [
+        "Use only Node.js built-in http module",
+        "Add checkLmStudioHealth() function BEFORE assignNext()",
+        "Add 'health' command to CLI handler",
+        "Call health check at start of assignNext()",
+        "Handle config file missing gracefully",
+        "Implement exponential backoff for retries",
+        "Log health check results to console"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 100,
+          "description": "File structure and existing patterns"
+        },
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 289,
+          "lines_end": 340,
+          "description": "assignNext() function - where health check will be called"
+        }
+      ],
+      "assigned_at": "2025-12-13T08:58:49.715Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:02:31.137Z",
+      "completed_at": "2025-12-13T09:13:51.628Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LMS-003",
+      "title": "Add auto-launch logic to dispatcher",
+      "description": "Add launchLmStudio() function to dispatcher.cjs that checks auto_launch config and starts LM Studio with process spawning and health checking. Integrate into assignNext() workflow to auto-launch on health check failure.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 45,
+      "test_command": "bash scripts/smart-test-runner.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "C",
+      "inputs": [
+        "scripts/dispatcher.cjs (existing code)",
+        ".claude/config/lm-studio.json (config format)"
+      ],
+      "outputs": [
+        "Updated dispatcher.cjs with launchLmStudio() function"
+      ],
+      "constraints": [
+        "Use child_process.spawn with detached:true, stdio:'ignore'",
+        "Call unref() on child process to allow parent to exit",
+        "Poll health check every 2 seconds for up to 30 seconds",
+        "Handle Windows paths with spaces properly",
+        "Integrate into assignNext() at line 371 (health check failure point)",
+        "Return { launched: boolean, error?: string }",
+        "If auto_launch is true and health fails, attempt launch and retry health check",
+        "If still unhealthy after launch, exit with error message"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 290,
+          "lines_end": 376
+        },
+        {
+          "path": ".claude/config/lm-studio.json",
+          "lines_start": 1,
+          "lines_end": 8
+        }
+      ],
+      "assigned_at": "2025-12-13T09:14:56.535Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:17:08.359Z",
+      "completed_at": "2025-12-13T09:18:31.455Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LMS-004",
+      "title": "Add user prompt on failure to dispatcher",
+      "description": "Add promptUserOnFailure() async function with interactive prompts for LM Studio unavailability. Shows options to retry, launch manually, or skip. Integrate into assignNext() workflow after auto-launch fails.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 45,
+      "test_command": "grep -q 'promptUserOnFailure' C:/Users/chris/OneDrive/Desktop/Claude-Poker-Tracker/scripts/dispatcher.cjs && grep -q 'readline' C:/Users/chris/OneDrive/Desktop/Claude-Poker-Tracker/scripts/dispatcher.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "blocked",
+      "task_complexity_type": "C",
+      "inputs": [
+        "Current dispatcher.cjs structure (lines 290-440)",
+        "Health check and launch logic implementation"
+      ],
+      "outputs": [
+        "promptUserOnFailure() function with interactive input",
+        "Updated assignNext() with user prompt integration"
+      ],
+      "constraints": [
+        "Use Node.js readline for interactive input",
+        "Add before assignNext() function definition",
+        "Display formatted box with Unicode borders as specified",
+        "Return user choice ('R', 'L', 'S') for integration",
+        "Handle user choice in assignNext() after auto-launch fails or when auto_launch=false",
+        "Do NOT modify test infrastructure"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 290,
+          "lines_end": 440
+        },
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 30
+        }
+      ],
+      "assigned_at": "2025-12-13T09:21:13.132Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:22:07.661Z",
+      "decomposition_depth": 1,
+      "needs_redecomposition": true,
+      "redecompose_requested_at": "2025-12-13T09:23:53.578Z",
+      "redecompose_reason": "Manual request",
+      "decomposition_history": [
+        {
+          "timestamp": "2025-12-13T09:23:53.578Z",
+          "depth": 1,
+          "reason": "Manual request"
+        }
+      ]
+    },
+    {
+      "id": "T-LMS-004-01",
+      "title": "Add promptUserOnFailure() function to dispatcher (before assignNext)",
+      "description": "Add new async function promptUserOnFailure(endpoint) that uses readline to show an interactive menu. Function should be added BEFORE the assignNext() function definition around line 418. The function must import readline, return a Promise that resolves to user choice, display formatted box with endpoint and options.",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 50,
+      "est_local_effort_mins": 30,
+      "test_command": "grep -q 'promptUserOnFailure' C:/Users/chris/OneDrive/Desktop/Claude-Poker-Tracker/scripts/dispatcher.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "C",
+      "edit_strategy": "add_new",
+      "inputs": [
+        "Dispatcher structure (especially lines 1-30 for imports, lines 418 for assignNext location)"
+      ],
+      "outputs": [
+        "promptUserOnFailure() async function with readline integration"
+      ],
+      "constraints": [
+        "ADD NEW CODE ONLY - insert before line 418 (before 'Command: assign-next' comment)",
+        "Use const readline = require('readline') at module level (check if already imported)",
+        "Function signature: async function promptUserOnFailure(endpoint)",
+        "Display box with Unicode borders exactly as specified in requirements",
+        "Function returns Promise resolving to 'R', 'L', or 'S'",
+        "Use readline.createInterface() for input/output"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 1,
+          "lines_end": 30
+        },
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 410,
+          "lines_end": 425
+        }
+      ],
+      "assigned_at": "2025-12-13T09:23:57.230Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:24:28.792Z",
+      "completed_at": "2025-12-13T09:25:22.849Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LMS-004-02",
+      "title": "Integrate promptUserOnFailure() into assignNext() workflow",
+      "description": "Modify the assignNext() function to call promptUserOnFailure() when LM Studio is not available. The function should handle choice R (retry health check), L (launch manually then retry), and S (skip/exit).",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 30,
+      "est_local_effort_mins": 20,
+      "test_command": "grep -q 'promptUserOnFailure(endpoint)' C:/Users/chris/OneDrive/Desktop/Claude-Poker-Tracker/scripts/dispatcher.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "C",
+      "edit_strategy": "modify",
+      "inputs": [
+        "Updated assignNext() function location (after T-LMS-004-01 completion)",
+        "Current auto-launch failure handling logic"
+      ],
+      "outputs": [
+        "Updated assignNext() with user prompt integration"
+      ],
+      "constraints": [
+        "MODIFY EXISTING CODE ONLY - replace the error handling in assignNext after line 436",
+        "Extract endpoint from config (already available from launchLmStudio)",
+        "For choice R: Call checkLmStudioHealth() again with retry loop",
+        "For choice L: Print user instruction, wait, then call checkLmStudioHealth()",
+        "For choice S: Print skip message and exit(0)",
+        "Do NOT modify other parts of assignNext() function"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/dispatcher.cjs",
+          "lines_start": 418,
+          "lines_end": 445
+        }
+      ],
+      "completed_at": "2025-12-13T09:25:26.248Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-LMS-005",
+      "title": "Update execute-local-task.sh for config",
+      "description": "Update execute-local-task.sh to read LM Studio endpoint from lm-studio.json config instead of hardcoded URL",
+      "files_touched": [
+        "scripts/execute-local-task.sh"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 10,
+      "test_command": "bash -n scripts/execute-local-task.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "A",
+      "constraints": [
+        "Read endpoint from .claude/config/lm-studio.json",
+        "Use Python for JSON parsing (already available in script)",
+        "Keep hardcoded default as fallback if config missing",
+        "Add log message showing which endpoint is used"
+      ],
+      "assigned_at": "2025-12-13T09:27:15.420Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:27:48.140Z",
+      "completed_at": "2025-12-13T09:30:37.913Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-UX-001",
+      "title": "Add numbered list display to approve.sh",
+      "description": "Modify approve.sh to show numbered list of pending requests instead of raw output, allowing single-number selection",
+      "files_touched": [
+        "scripts/approve.sh"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 15,
+      "test_command": "bash -n scripts/approve.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "C",
+      "constraints": [
+        "Parse output of dispatcher list-permissions to extract request IDs",
+        "Display numbered list: [1] PR-xxx, [2] PR-yyy, etc.",
+        "Store request IDs in array for later selection",
+        "If no pending requests, show message and exit"
+      ],
+      "assigned_at": "2025-12-13T09:33:24.666Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:33:24.896Z",
+      "completed_at": "2025-12-13T09:39:52.809Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-UX-002",
+      "title": "Add single-key approve to approve.sh",
+      "description": "Add interactive mode where user can type a number to approve that request",
+      "files_touched": [
+        "scripts/approve.sh"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 10,
+      "test_command": "bash -n scripts/approve.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "C",
+      "constraints": [
+        "Use bash read command to get user input",
+        "If input is a number, approve request at that index",
+        "Use dispatcher.cjs approve-permission command",
+        "Show confirmation message after approval"
+      ],
+      "assigned_at": "2025-12-13T09:33:38.458Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T09:33:38.740Z",
+      "completed_at": "2025-12-13T09:49:30.665Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-UX-003",
+      "title": "Add deny shortcut (Nd) to approve.sh",
+      "description": "Allow user to type number followed by d (e.g., 1d) to deny a request",
+      "files_touched": [
+        "scripts/approve.sh"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 10,
+      "test_command": "bash -n scripts/approve.sh",
+      "assigned_to": null,
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "C",
+      "constraints": [
+        "Parse input for pattern: number + d (e.g., 1d, 2d)",
+        "If matches, deny request at that index",
+        "Use dispatcher.cjs reject-permission command",
+        "Show confirmation message after denial"
+      ],
+      "assigned_at": null,
+      "completed_at": "2025-12-13T09:48:55.892Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-UX-004",
+      "title": "Add batch approve command to approve.sh",
+      "description": "Add ability to approve multiple requests at once (e.g., typing 1,2,3 or all)",
+      "files_touched": [
+        "scripts/approve.sh"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 15,
+      "test_command": "bash -n scripts/approve.sh",
+      "assigned_to": "local:qwen",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "C",
+      "constraints": [
+        "Support comma-separated numbers: 1,2,3",
+        "Support all keyword to approve all pending",
+        "Loop through and approve each request",
+        "Show summary: Approved N requests"
+      ],
+      "assigned_at": "2025-12-13T09:34:33.305Z",
+      "completed_at": "2025-12-13T09:49:18.164Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-ENF-LOCK-001",
+      "title": "Add violation lockfile mechanism to write-gate",
+      "description": "Create or update write-gate.cjs to add a violation lockfile mechanism. When write-gate detects a violation (blocks an operation), it should create a lockfile at .claude/.delegation-violation.lock with timestamp, file path that was blocked, and reason for blocking. This provides a persistent record of violations for auditing.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 20,
+      "test_command": "node -e \"const fs = require('fs'); const content = fs.readFileSync('.claude/hooks/write-gate.cjs', 'utf-8'); if (!content.includes('violation') || !content.includes('lock')) process.exit(1);\"",
+      "assigned_to": "local:deepseek",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "constraints": [
+        "Lockfile format should be JSON with fields: timestamp, file_path, reason, tool_name",
+        "Append to lockfile if it exists (array of violations)",
+        "Only create lockfile on exit code 2 (block)",
+        "Lockfile path: .claude/.delegation-violation.lock",
+        "Add function createViolationLockfile() to write-gate.cjs",
+        "Call createViolationLockfile() before process.exit(2) calls"
+      ],
+      "assigned_at": "2025-12-13T10:07:12.018Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T10:08:14.682Z",
+      "completed_at": "2025-12-13T10:21:14.287Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-ENF-LOCK-CLAUDE",
+      "title": "Add violation lockfile mechanism to write-gate",
+      "description": "Add createViolationLockfile() function to write-gate.cjs that records violations to .claude/.delegation-violation.lock",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 25,
+      "est_local_effort_mins": 10,
+      "test_command": "node -e \"const fs=require('fs'); const c=fs.readFileSync('.claude/hooks/write-gate.cjs','utf-8'); if(!c.includes('createViolationLockfile')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "constraints": [
+        "Add function after log() function (~line 66)",
+        "Add violation recording before each process.exit(2) call",
+        "Lockfile format: JSON array of {timestamp, file_path, reason, tool_name}",
+        "Append to lockfile if exists"
+      ],
+      "assigned_at": "2025-12-13T10:18:16.204Z",
+      "completed_at": "2025-12-13T10:23:58.399Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-E2E-TEST",
+      "title": "E2E test task",
+      "description": "Simple test task for E2E validation",
+      "files_touched": [
+        ".claude/test-e2e.txt"
+      ],
+      "est_lines_changed": 1,
+      "est_local_effort_mins": 1,
+      "test_command": "echo ok",
+      "assigned_to": "claude",
+      "priority": "P2",
+      "status": "done",
+      "task_complexity_type": "A",
+      "completed_at": "2025-12-13T10:24:55.171Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-THR-001",
+      "title": "Create THRESHOLD_GUIDELINES.md",
+      "description": "Document when the delegation system is warranted vs overkill based on project size",
+      "files_touched": [
+        ".claude/THRESHOLD_GUIDELINES.md"
+      ],
+      "est_lines_changed": 100,
+      "est_local_effort_mins": 45,
+      "test_command": "test -f .claude/THRESHOLD_GUIDELINES.md && grep -q 'Size-Based Recommendations' .claude/THRESHOLD_GUIDELINES.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "Include size-based recommendations table: <500 LOC (Skip), 500-2000 LOC (Minimal), 2000-10000 LOC (Standard), >10000 LOC (Extended)",
+        "Include decision tree for when to use the system",
+        "Document overhead costs vs benefits",
+        "Include examples of appropriate and inappropriate use cases",
+        "Reference .claude/policy/ modules as the full system"
+      ],
+      "completed_at": "2025-12-13T10:36:40.284Z",
+      "tests_passed": true
     }
   ],
   "projects": {
@@ -3249,10 +3735,10 @@
     }
   },
   "stats": {
-    "total_tasks": 100,
-    "open": 6,
-    "in_progress": 24,
-    "done": 44,
-    "failed": 14
+    "total_tasks": 114,
+    "open": 0,
+    "in_progress": 8,
+    "done": 62,
+    "failed": 16
   }
 }
