@@ -6,6 +6,7 @@
  *   add-tasks                    - Add tasks from ///LOCAL_TASKS JSON (stdin)
  *   assign-next                  - Assign next open task to local model
  *   status                       - View backlog status
+ *   metrics                      - Show task success rates (--by-type, --by-model)
  *   complete                     - Mark task complete with result
  *   audit                        - Validate all tasks against atomic criteria
  *   redecompose                  - Mark task for re-decomposition
@@ -48,6 +49,72 @@ function loadBacklog() {
     };
   }
   return JSON.parse(fs.readFileSync(BACKLOG_PATH, 'utf8'));
+}
+
+// Command: metrics
+function showMetrics(byType = false, byModel = false) {
+  const backlog = loadBacklog();
+
+  // Calculate overall metrics
+  const done = backlog.tasks.filter(t => t.status === 'done').length;
+  const failed = backlog.tasks.filter(t => t.status === 'failed').length;
+  const open = backlog.tasks.filter(t => t.status === 'open').length;
+  const inProgress = backlog.tasks.filter(t => t.status === 'in_progress').length;
+  const total = backlog.tasks.length;
+
+  const successCount = done + failed;
+  const successRate = successCount > 0 ? ((done / successCount) * 100).toFixed(1) : '0.0';
+
+  console.log('\nTask Metrics');
+  console.log('============');
+  console.log(`Total: ${total}  Done: ${done}  Failed: ${failed}  Open: ${open}  In Progress: ${inProgress}`);
+  console.log(`Success Rate: ${successRate}% (${done}/${successCount})`);
+
+  // Group by task_complexity_type if requested
+  if (byType) {
+    console.log('\nBy Type:');
+    const byTypeMap = {};
+
+    backlog.tasks.forEach(task => {
+      const type = task.task_complexity_type || 'Unknown';
+      if (!byTypeMap[type]) {
+        byTypeMap[type] = { done: 0, failed: 0 };
+      }
+      if (task.status === 'done') byTypeMap[type].done++;
+      if (task.status === 'failed') byTypeMap[type].failed++;
+    });
+
+    Object.keys(byTypeMap).sort().forEach(type => {
+      const stats = byTypeMap[type];
+      const count = stats.done + stats.failed;
+      const rate = count > 0 ? ((stats.done / count) * 100).toFixed(1) : '0.0';
+      console.log(`  Type ${type}: ${rate}% (${stats.done}/${count})`);
+    });
+  }
+
+  // Group by assigned_to model if requested
+  if (byModel) {
+    console.log('\nBy Model:');
+    const byModelMap = {};
+
+    backlog.tasks.forEach(task => {
+      const model = task.assigned_to || 'unassigned';
+      if (!byModelMap[model]) {
+        byModelMap[model] = { done: 0, failed: 0 };
+      }
+      if (task.status === 'done') byModelMap[model].done++;
+      if (task.status === 'failed') byModelMap[model].failed++;
+    });
+
+    Object.keys(byModelMap).sort().forEach(model => {
+      const stats = byModelMap[model];
+      const count = stats.done + stats.failed;
+      const rate = count > 0 ? ((stats.done / count) * 100).toFixed(1) : '0.0';
+      console.log(`  ${model}: ${rate}% (${stats.done}/${count})`);
+    });
+  }
+
+  console.log('');
 }
 
 // Save backlog
@@ -819,6 +886,11 @@ const [,, command, ...args] = process.argv;
     case 'assign-next':
       await assignNext();
       break;
+  case 'metrics':
+    const byType = args.includes('--by-type');
+    const byModel = args.includes('--by-model');
+    showMetrics(byType, byModel);
+    break;
   case 'status':
     showStatus();
     break;
@@ -881,6 +953,7 @@ Commands:
   add-tasks                         Add tasks from ///LOCAL_TASKS JSON (stdin)
   assign-next                       Assign next open task to local model
   status                            View backlog status
+  metrics [opts]                    Show task success rates (--by-type, --by-model)
   complete <id> [opts]              Mark task complete (--tests=passed|failed)
   audit                             Validate all tasks against atomic criteria
   redecompose <id>                  Mark task for re-decomposition
@@ -894,6 +967,9 @@ Examples:
   echo '///LOCAL_TASKS [{"id":"T-001",...}]' | node scripts/dispatcher.cjs add-tasks
   node scripts/dispatcher.cjs assign-next
   node scripts/dispatcher.cjs status
+  node scripts/dispatcher.cjs metrics
+  node scripts/dispatcher.cjs metrics --by-type
+  node scripts/dispatcher.cjs metrics --by-model
   node scripts/dispatcher.cjs complete T-001 --tests=passed
   node scripts/dispatcher.cjs audit
   node scripts/dispatcher.cjs extract-context T-001

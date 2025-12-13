@@ -1,6 +1,6 @@
 {
   "version": "1.0.0-test",
-  "updated_at": "2025-12-13T07:41:35.578Z",
+  "updated_at": "2025-12-13T08:47:30.561Z",
   "tasks": [
     {
       "id": "T-P8-001",
@@ -2738,7 +2738,7 @@
       "test_command": "node -e \"const fs = require('fs'); const p = JSON.parse(fs.readFileSync('.claude/projects.json')); if (p.lastUpdated==='2025-12-13T00:00:00Z') process.exit(0); else process.exit(1);\"",
       "assigned_to": "local:qwen",
       "priority": "P0",
-      "status": "open",
+      "status": "failed",
       "inputs": [
         ".claude/projects.json"
       ],
@@ -2750,7 +2750,10 @@
         "Single field update only",
         "Preserve all other content exactly"
       ],
-      "needs_context": []
+      "needs_context": [],
+      "assigned_at": "2025-12-13T07:53:05.928Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T07:57:10.278Z"
     },
     {
       "id": "T-TDD-001",
@@ -2862,6 +2865,369 @@
       "task_complexity_type": "B",
       "completed_at": "2025-12-13T07:41:35.578Z",
       "tests_passed": true
+    },
+    {
+      "id": "T-DOC-001",
+      "parent_id": null,
+      "title": "Create PRINCIPLES.md from DECOMPOSITION_POLICY.md Section 1",
+      "description": "Extract core principle and philosophy from DECOMPOSITION_POLICY.md Section 1 (lines 7-16) into a new stable PRINCIPLES.md file that documents the fundamental philosophy underpinning the delegation system. Include the 4 core roles: DECOMPOSE, DELEGATE, REVIEW, ESCALATE.",
+      "files_touched": [
+        ".claude/policy/PRINCIPLES.md"
+      ],
+      "est_lines_changed": 50,
+      "est_local_effort_mins": 15,
+      "test_command": "test -f .claude/policy/PRINCIPLES.md && grep -q 'Core Principle' .claude/policy/PRINCIPLES.md && grep -q 'DECOMPOSE' .claude/policy/PRINCIPLES.md && grep -q 'DELEGATE' .claude/policy/PRINCIPLES.md && grep -q 'REVIEW' .claude/policy/PRINCIPLES.md && grep -q 'ESCALATE' .claude/policy/PRINCIPLES.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "inputs": [
+        "DECOMPOSITION_POLICY.md Section 1 (Core Principle)"
+      ],
+      "outputs": [
+        ".claude/policy/PRINCIPLES.md - ~50 line constitution document"
+      ],
+      "constraints": [
+        "Create ~50 line file with core philosophy",
+        "Include the 4 roles: DECOMPOSE, DELEGATE, REVIEW, ESCALATE",
+        "Make it the stable constitution that rarely changes",
+        "Use clean markdown formatting",
+        "Stable document for reference in other policies"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 7,
+          "lines_end": 16
+        }
+      ],
+      "invariant_test": null,
+      "assigned_at": "2025-12-13T08:00:00.000Z",
+      "completed_at": "2025-12-13T07:58:03.144Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-DOC-005",
+      "parent_id": "delegation-system-v2-phase2",
+      "title": "Create type-a.md prompt",
+      "description": "Create prompt template for Type A tasks (mechanical edits). Include placeholder variables for local model injection: {{TASK_TITLE}}, {{FILE_PATH}}, {{EDIT_OPERATIONS}}, {{CONTEXT}}. Content from DECOMPOSITION_POLICY.md Section 2.5 Type A (lines 77-98): delete specific lines, replace exact strings, insert at locations, explicit line numbers, edit_operations array. Target >90% reliability.",
+      "files_touched": [
+        ".claude/config/prompts/type-a.md"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 20,
+      "test_command": "test -f .claude/config/prompts/type-a.md && grep -q 'edit_operations' .claude/config/prompts/type-a.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "inputs": [
+        "Type A task characteristics",
+        "DECOMPOSITION_POLICY.md Section 2.5"
+      ],
+      "outputs": [
+        "type-a.md prompt template"
+      ],
+      "constraints": [
+        "Template should describe mechanical edits",
+        "Include {{file_path}}, {{edit_operations}}, {{output_format}} placeholders",
+        "Show examples of Type A tasks",
+        "Reference Section 2.5 of DECOMPOSITION_POLICY.md",
+        "Format as markdown with clear structure"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 77,
+          "lines_end": 98
+        }
+      ],
+      "invariant_test": null,
+      "assigned_at": "2025-12-13T08:13:59.227Z",
+      "completed_at": "2025-12-13T08:14:36.424Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-DOC-006",
+      "parent_id": "delegation-system-v2-phase2",
+      "title": "Create type-b.md prompt",
+      "description": "Create prompt template for Type B tasks (template fill). Include placeholder variables: {{template_structure}}, {{placeholder_values}}, {{constraints}}",
+      "files_touched": [
+        ".claude/config/prompts/type-b.md"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 20,
+      "test_command": "test -f .claude/config/prompts/type-b.md && grep -q 'template_structure' .claude/config/prompts/type-b.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "B",
+      "inputs": [
+        "Type B task characteristics",
+        "DECOMPOSITION_POLICY.md Section 2.5"
+      ],
+      "outputs": [
+        "type-b.md prompt template"
+      ],
+      "constraints": [
+        "Template should describe template fill tasks",
+        "Include {{template_structure}}, {{placeholder_values}}, {{constraints}} placeholders",
+        "Show examples of Type B tasks",
+        "Reference Section 2.5 of DECOMPOSITION_POLICY.md",
+        "Format as markdown with clear structure"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 100,
+          "lines_end": 119
+        }
+      ],
+      "invariant_test": null,
+      "assigned_at": "2025-12-13T08:09:46.234Z",
+      "completed_at": "2025-12-13T08:15:00.000Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-DOC-007",
+      "parent_id": "delegation-system-v2-phase2",
+      "title": "Create type-c.md prompt",
+      "description": "Create prompt template for Type C tasks (creative generation). Include placeholder variables: {{requirements}}, {{examples}}, {{constraints}}, {{escalation_criteria}}",
+      "files_touched": [
+        ".claude/config/prompts/type-c.md"
+      ],
+      "est_lines_changed": 90,
+      "est_local_effort_mins": 20,
+      "test_command": "test -f .claude/config/prompts/type-c.md && grep -q 'escalation_criteria' .claude/config/prompts/type-c.md",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "B",
+      "inputs": [
+        "Type C task characteristics",
+        "DECOMPOSITION_POLICY.md Section 2.5"
+      ],
+      "outputs": [
+        "type-c.md prompt template"
+      ],
+      "constraints": [
+        "Template should describe creative generation tasks",
+        "Include {{requirements}}, {{examples}}, {{constraints}}, {{escalation_criteria}} placeholders",
+        "Show examples of Type C tasks",
+        "Include escalation trigger guidance (50% failure rate expectation)",
+        "Reference Section 2.5 of DECOMPOSITION_POLICY.md",
+        "Format as markdown with clear structure"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 122,
+          "lines_end": 142
+        }
+      ],
+      "invariant_test": null,
+      "assigned_at": "2025-12-13T08:12:14.508Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T08:12:29.992Z"
+    },
+    {
+      "id": "T-DOC-008",
+      "parent_id": "delegation-system-v2-phase2",
+      "title": "Refactor DECOMPOSITION_POLICY.md to index",
+      "description": "Refactor 600+ line DECOMPOSITION_POLICY.md into ~50 line index that references modular policy files (.claude/policy/*.md and .claude/config/prompts/*.md)",
+      "files_touched": [
+        ".claude/DECOMPOSITION_POLICY.md"
+      ],
+      "est_lines_changed": 550,
+      "est_local_effort_mins": 40,
+      "test_command": "test -f .claude/DECOMPOSITION_POLICY.md && wc -l .claude/DECOMPOSITION_POLICY.md | awk '{if ($1 <= 100) exit 0; else exit 1}'",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "blocked",
+      "task_complexity_type": "D",
+      "inputs": [
+        "Current DECOMPOSITION_POLICY.md",
+        "New modular structure"
+      ],
+      "outputs": [
+        "Refactored index file (~50 lines)"
+      ],
+      "constraints": [
+        "Transform into index/navigation file only",
+        "Keep core principles, task lifecycle, atomic criteria brief",
+        "Reference .claude/policy/PRINCIPLES.md for core philosophy",
+        "Reference .claude/policy/TASK_TYPES.md for Type A/B/C/D definitions",
+        "Reference .claude/policy/TASK_FORMAT.md for JSON schema",
+        "Reference .claude/policy/ESCALATION.md for permission protocol",
+        "Reference .claude/config/prompts/type-a.md, type-b.md, type-c.md for task prompts",
+        "Preserve all critical information via links (no deletion)",
+        "Target: ~50 lines total"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/DECOMPOSITION_POLICY.md",
+          "lines_start": 1,
+          "lines_end": 100
+        }
+      ],
+      "invariant_test": null,
+      "blocked_reason": "Failed pre-assign audit: est_lines_changed (550) exceeds limit (300)"
+    },
+    {
+      "id": "T-ITER-001",
+      "parent_id": "phase-3-iteration-infrastructure",
+      "title": "Create tune CLI command in dispatcher.cjs",
+      "description": "Add tune subcommand to dispatcher.cjs that modifies atomic-limits.json. Supports: tune --files-touched N, tune --lines N, tune --reset",
+      "files_touched": [
+        "scripts/dispatcher.cjs",
+        ".claude/config/atomic-limits.json"
+      ],
+      "est_lines_changed": 60,
+      "est_local_effort_mins": 30,
+      "test_command": "bash scripts/test-tune-command.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P1",
+      "status": "failed",
+      "inputs": [
+        "Current dispatcher.cjs structure",
+        "Current atomic-limits.json schema"
+      ],
+      "outputs": [
+        "dispatcher.cjs with tune subcommand",
+        "Confirmation messages for tune operations"
+      ],
+      "constraints": [
+        "Add tune case to switch statement before default",
+        "Support --files-touched N flag to set limits.files_touched.max",
+        "Support --lines N flag to set limits.est_lines_changed.max",
+        "Support --reset flag to reset to defaults: files_touched=3, est_lines_changed=300, est_local_effort_mins=60",
+        "Print confirmation for each operation",
+        "Validate N is a positive integer, reject invalid values",
+        "Update last_modified timestamp in atomic-limits.json metadata"
+      ],
+      "needs_context": [],
+      "assigned_at": "2025-12-13T08:33:27.465Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-13T08:47:30.561Z"
+    },
+    {
+      "id": "T-ITER-002",
+      "parent_id": "phase-3-iteration-infrastructure",
+      "title": "Create metrics CLI command in dispatcher.cjs",
+      "description": "Add metrics subcommand showing success rates, execution time stats, and decomposition depth patterns from local-model-tasks.log",
+      "files_touched": [
+        "scripts/dispatcher.cjs"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 40,
+      "test_command": "node scripts/dispatcher.cjs metrics | grep -q 'Success Rate'",
+      "assigned_to": "local:deepseek",
+      "priority": "P2",
+      "status": "open",
+      "inputs": [
+        ".claude/logs/local-model-tasks.log",
+        "Backlog task status data"
+      ],
+      "outputs": [
+        "Metrics display showing success rates and statistics"
+      ],
+      "constraints": [
+        "Parse local-model-tasks.log in JSONL format",
+        "Show success rate percentage, average duration, task count, failed count",
+        "Show decomposition depth distribution",
+        "Show most common failure classifications",
+        "Format as table for readability"
+      ],
+      "needs_context": []
+    },
+    {
+      "id": "T-ITER-003",
+      "parent_id": "phase-3-iteration-infrastructure",
+      "title": "Create auto-escalate.json config file",
+      "description": "Create configuration file for auto-escalation rules defining when tasks escalate from local models to Claude",
+      "files_touched": [
+        ".claude/config/auto-escalate.json"
+      ],
+      "est_lines_changed": 50,
+      "est_local_effort_mins": 20,
+      "test_command": "test -f .claude/config/auto-escalate.json && node -e 'JSON.parse(require(\"fs\").readFileSync(\".claude/config/auto-escalate.json\"))'",
+      "assigned_to": "local:deepseek",
+      "priority": "P2",
+      "status": "open",
+      "inputs": [
+        "DECOMPOSITION_POLICY.md section on escalation",
+        "atomic-limits.json structure"
+      ],
+      "outputs": [
+        "auto-escalate.json with escalation rules and thresholds"
+      ],
+      "constraints": [
+        "Define escalation rules: decomposition_depth_exceeded, success_rate_below, timeout_exceeded",
+        "Define thresholds: max_decomposition_attempts, min_success_rate_pct, max_task_duration_ms",
+        "Include escalation_target options: claude, human",
+        "Include priority levels: auto, warning, critical"
+      ],
+      "needs_context": []
+    },
+    {
+      "id": "T-ITER-004",
+      "parent_id": "phase-3-iteration-infrastructure",
+      "title": "Add prompt template loader to execute-local-task.sh",
+      "description": "Enhance execute-local-task.sh to load prompt templates from .claude/config/prompts/ directory",
+      "files_touched": [
+        "scripts/execute-local-task.sh"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 25,
+      "test_command": "grep -q 'load_prompt_template' scripts/execute-local-task.sh",
+      "assigned_to": "local:deepseek",
+      "priority": "P2",
+      "status": "open",
+      "inputs": [
+        "Current execute-local-task.sh structure",
+        "Prompt template directory structure"
+      ],
+      "outputs": [
+        "Updated execute-local-task.sh with prompt loader function"
+      ],
+      "constraints": [
+        "Add load_prompt_template function",
+        "Load from .claude/config/prompts directory",
+        "Support template variables: task_id, model, description",
+        "Fallback to default prompt if template not found",
+        "Cache loaded templates to avoid repeated reads"
+      ],
+      "needs_context": []
+    },
+    {
+      "id": "T-ITER-005",
+      "parent_id": "phase-3-iteration-infrastructure",
+      "title": "Create iteration metrics report generator",
+      "description": "Create generate-iteration-report.cjs script to analyze Phase 3 iteration metrics and track improvement patterns",
+      "files_touched": [
+        "scripts/generate-iteration-report.cjs"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 45,
+      "test_command": "node scripts/generate-iteration-report.cjs | grep -q 'Iteration Report'",
+      "assigned_to": "local:deepseek",
+      "priority": "P2",
+      "status": "open",
+      "inputs": [
+        ".claude/logs/local-model-tasks.log",
+        "backlog.json",
+        "atomic-limits.json"
+      ],
+      "outputs": [
+        "Iteration report showing metrics, trends, and recommendations"
+      ],
+      "constraints": [
+        "Parse execution logs and backlog data",
+        "Calculate success rate, average iterations per task, improvement trend",
+        "Identify bottleneck patterns",
+        "Generate markdown report",
+        "Output to .claude/reports/iteration-timestamp.md"
+      ],
+      "needs_context": []
     }
   ],
   "projects": {
@@ -2883,10 +3249,10 @@
     }
   },
   "stats": {
-    "total_tasks": 90,
-    "open": 3,
+    "total_tasks": 100,
+    "open": 6,
     "in_progress": 24,
-    "done": 41,
-    "failed": 11
+    "done": 44,
+    "failed": 14
   }
 }

@@ -1,0 +1,37 @@
+{
+  "$schema": "./schemas/atomic-limits.schema.json",
+  "version": "1.0.0",
+  "metadata": {
+    "created": "2025-12-13",
+    "last_modified": "2025-12-13",
+    "source": "DECOMPOSITION_POLICY.md Section 2 (Atomic Criteria)",
+    "description": "Tunable atomic task limits for dispatcher validation"
+  },
+  "limits": {
+    "files_touched": {
+      "max": 3,
+      "description": "Maximum number of files a single task can touch. Limits scope complexity."
+    },
+    "est_lines_changed": {
+      "max": 300,
+      "description": "Maximum estimated lines changed in a task. Keeps tasks focused and manageable."
+    },
+    "test_command_required": {
+      "value": true,
+      "description": "Whether test_command is mandatory in all tasks. Ensures verifiability and quality gates."
+    },
+    "est_local_effort_mins": {
+      "max": 60,
+      "description": "Maximum estimated effort in minutes. Prevents runaway tasks and ensures timely completion."
+    },
+    "decomposition_max_depth": {
+      "max": 3,
+      "description": "Maximum recursive decomposition depth before escalation to Claude. Prevents infinite decomposition loops."
+    }
+  },
+  "enforcement": {
+    "validation_blocking": "If ANY criterion fails, task is BLOCKED immediately and requires re-decomposition",
+    "dispatcher_behavior": "dispatcher.cjs must validate all limits before assigning to local model",
+    "escalation_trigger": "On third decomposition failure (depth 3), create permission request and escalate to Claude"
+  }
+}

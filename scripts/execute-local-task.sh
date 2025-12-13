@@ -3,14 +3,17 @@
 #
 # This script orchestrates local model code generation:
 # 1. Reads task specification JSON
-# 2. Loads context files
-# 3. Builds structured prompt
-# 4. Calls LM Studio API
-# 5. Extracts code from response
-# 6. Creates backup of existing file
-# 7. Writes new file
-# 8. Runs optional test command
-# 9. Returns structured result
+# 2. Extracts task_complexity_type (A, B, or C)
+# 3. Loads prompt template from .claude/config/prompts/type-{A|B|C}.md if available
+# 4. Injects task variables into template placeholders
+# 5. Loads context files
+# 6. Builds structured prompt (template-based or generic fallback)
+# 7. Calls LM Studio API
+# 8. Extracts code from response
+# 9. Creates backup of existing file
+# 10. Writes new file
+# 11. Runs optional test command
+# 12. Returns structured result
 #
 # Usage: ./scripts/execute-local-task.sh <task-spec.json>
 #
@@ -18,6 +21,7 @@
 # {
 #   "task_id": "T-001",
 #   "model": "deepseek|qwen|auto",
+#   "task_complexity_type": "A|B|C",
 #   "description": "Create utility function",
 #   "output_file": "src/utils/myUtil.js",
 #   "context_files": ["src/constants/gameConstants.js"],
@@ -25,6 +29,13 @@
 #   "test_command": "npx vitest run src/utils/__tests__/myUtil.test.js",
 #   "language": "javascript"
 # }
+#
+# Prompt Templates:
+# Type A (Mechanical Edit): Template-based edits with explicit line numbers
+# Type B (Template Fill): Replace placeholders in predefined structures
+# Type C (Creative Generation): Write new logic from requirements (default fallback)
+#
+# Templates are loaded from .claude/config/prompts/type-{A|B|C}.md
 
 set -e
 
@@ -67,11 +78,63 @@ output_result() {
 EOF
 }
 
-# Validate arguments
-if [ -z "$1" ]; then
-    log_error "Usage: $0 <task-spec.json>"
-    output_result "failed" "" "No task spec provided" ""
-    exit 1
+# Validate arguments and handle help
+if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    cat << EOF
+execute-local-task.sh - Execute code generation tasks via local LM Studio models
+
+USAGE: $0 <task-spec.json>
+
+DESCRIPTION:
+This script executes code generation tasks using local language models (deepseek or qwen).
+It supports prompt templates for different task complexity types to improve model reliability.
+
+FEATURES:
+- Task complexity type support (A, B, C) with template-based prompts
+- Prompt template loading from .claude/config/prompts/type-{A|B|C}.md
+- Template variable injection ({{TASK_TITLE}}, {{FILE_PATH}}, {{CONTEXT}}, {{CONSTRAINTS}})
+- Generic fallback prompt if template unavailable
+- Automatic syntax validation (Node.js)
+- Backup creation before file overwriting
+- Optional test execution with results
+- Size guard to prevent catastrophic overwrites
+
+TASK SPEC JSON FORMAT:
+{
+  "task_id": "T-001",
+  "model": "deepseek|qwen",
+  "task_complexity_type": "A|B|C",
+  "description": "Task description",
+  "output_file": "path/to/file.js",
+  "context_files": ["context/file1.js", "context/file2.js"],
+  "constraints": ["Constraint 1", "Constraint 2"],
+  "test_command": "npm test -- file.test.js",
+  "language": "javascript"
+}
+
+PROMPT TEMPLATES:
+Type A - Mechanical Edit: Template-based edits with explicit line numbers and operations
+Type B - Template Fill: Replace placeholders in predefined output structures
+Type C - Creative Generation: Write new logic from requirements (default fallback)
+
+TEMPLATES LOCATION: .claude/config/prompts/type-{A|B|C}.md
+
+EXAMPLES:
+  $0 ./.claude/temp-tasks/T-001.json
+  $0 ./task-specs/my-task.json
+
+EXIT CODES:
+  0 - Success
+  1 - Error (check output for details)
+
+For more information, see: .claude/agents/dispatcher.md
+EOF
+    if [ -z "$1" ]; then
+        output_result "failed" "" "No task spec provided" ""
+        exit 1
+    else
+        exit 0
+    fi
 fi
 
 TASK_SPEC_FILE="$1"
@@ -125,6 +188,7 @@ DESCRIPTION=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(s
 OUTPUT_FILE=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('output_file',''))")
 LANGUAGE=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('language','javascript'))")
 TEST_CMD=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('test_command',''))")
+TASK_COMPLEXITY_TYPE=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print(d.get('task_complexity_type','C'))")
 
 # Get arrays
 CONTEXT_FILES=$(echo "$TASK_JSON" | $PYTHON_CMD -c "import sys,json; d=json.load(sys.stdin); print('\n'.join(d.get('context_files',[])))")
@@ -145,6 +209,40 @@ elif [ "$MODEL" = "deepseek" ]; then
 else
     MODEL_NAME="$DEEPSEEK_MODEL"
 fi
+
+# Helper: Load and inject prompt template
+load_prompt_template() {
+    local template_type="$1"
+    local task_title="$2"
+    local file_path="$3"
+    local context_section="$4"
+    local constraints_section="$5"
+
+    local template_file="$PROJECT_ROOT/.claude/config/prompts/type-${template_type}.md"
+
+    if [ ! -f "$template_file" ]; then
+        log_warn "Prompt template not found: $template_file"
+        return 1
+    fi
+
+    # Read template and extract the prompt template section
+    local template_content=$(sed -n '/^## Prompt Template/,/^---/p' "$template_file" | sed '1d;$d')
+
+    if [ -z "$template_content" ]; then
+        log_warn "No 'Prompt Template' section found in template file"
+        return 1
+    fi
+
+    # Replace placeholders
+    template_content="${template_content//\{\{TASK_TITLE\}\}/$task_title}"
+    template_content="${template_content//\{\{FILE_PATH\}\}/$file_path}"
+    template_content="${template_content//\{\{CONSTRAINTS\}\}/$constraints_section}"
+    template_content="${template_content//\{\{CONTEXT\}\}/$context_section}"
+
+    # Output the processed template
+    echo "$template_content"
+    return 0
+}
 
 # Build context section
 log_info "Loading context..."
@@ -210,8 +308,18 @@ while IFS= read -r constraint; do
 "
 done <<< "$CONSTRAINTS"
 
-# Build the prompt - be VERY explicit about code-only output
-PROMPT="Write the complete code for file: $OUTPUT_FILE
+# Build the prompt - try loading from template first
+log_info "Attempting to load prompt template for type $TASK_COMPLEXITY_TYPE..."
+TEMPLATE_PROMPT=$(load_prompt_template "$TASK_COMPLEXITY_TYPE" "$DESCRIPTION" "$OUTPUT_FILE" "$CONTEXT_SECTION" "$CONSTRAINTS_SECTION" 2>/dev/null)
+TEMPLATE_LOAD_EXIT=$?
+
+if [ $TEMPLATE_LOAD_EXIT -eq 0 ] && [ -n "$TEMPLATE_PROMPT" ]; then
+    log_success "Using template-based prompt for type $TASK_COMPLEXITY_TYPE"
+    PROMPT="$TEMPLATE_PROMPT"
+else
+    log_info "Falling back to generic prompt (template type $TASK_COMPLEXITY_TYPE not available)"
+    # Build the prompt - be VERY explicit about code-only output
+    PROMPT="Write the complete code for file: $OUTPUT_FILE
 
 TASK: $DESCRIPTION
 
@@ -228,6 +336,7 @@ RULES - YOU MUST FOLLOW THESE:
 $CONTEXT_SECTION
 
 Now write the complete code:"
+fi
 
 # Build JSON payload for API
 log_info "Calling LM Studio API..."

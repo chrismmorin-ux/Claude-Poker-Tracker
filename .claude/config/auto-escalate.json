@@ -1,0 +1,78 @@
+{
+  "$schema": "./schemas/auto-escalate.schema.json",
+  "version": "1.0.0",
+  "metadata": {
+    "created": "2025-12-13T00:00:00Z",
+    "updated": "2025-12-13T00:00:00Z",
+    "description": "Automatic escalation rules for dispatcher task execution failures",
+    "maintainer": "dispatcher-agent"
+  },
+  "rules": {
+    "max_retries_before_escalate": {
+      "value": 3,
+      "description": "Maximum number of local model retries before escalating to Worker agent"
+    },
+    "auto_escalate_type_d": {
+      "value": true,
+      "description": "Automatically escalate Type D failures (anti-pattern violations) to Worker agent"
+    },
+    "auto_escalate_on_timeout": {
+      "value": true,
+      "description": "Automatically escalate tasks that exceed timeout threshold"
+    },
+    "timeout_threshold_mins": {
+      "value": 10,
+      "description": "Timeout threshold in minutes before escalating stalled tasks"
+    }
+  },
+  "failure_patterns": {
+    "syntax_error": {
+      "action": "retry",
+      "max_retries": 2,
+      "description": "Syntax errors can usually be fixed with self-correction"
+    },
+    "missing_context": {
+      "action": "add_context_and_retry",
+      "max_retries": 2,
+      "description": "Add referenced files to context and retry execution"
+    },
+    "model_hallucination": {
+      "action": "escalate",
+      "max_retries": 0,
+      "description": "Hallucinations require human review - escalate immediately"
+    },
+    "file_not_found": {
+      "action": "retry_with_glob",
+      "max_retries": 1,
+      "description": "Search for file using glob patterns before escalating"
+    },
+    "anti_pattern_violation": {
+      "action": "escalate",
+      "max_retries": 0,
+      "description": "Anti-pattern violations require Worker agent with different approach"
+    },
+    "insufficient_permissions": {
+      "action": "escalate",
+      "max_retries": 0,
+      "description": "Permission errors require human approval before retry"
+    }
+  },
+  "notifications": {
+    "escalation_alert": {
+      "enabled": true,
+      "description": "Send alert when task is escalated to Worker agent"
+    },
+    "success_summary": {
+      "enabled": false,
+      "description": "Send summary when task completes successfully via retry"
+    },
+    "retry_attempt": {
+      "enabled": false,
+      "description": "Log each retry attempt"
+    }
+  },
+  "escalation_criteria": {
+    "failure_mode_type": ["FM-A02", "FM-C01", "FM-C02", "FM-D02"],
+    "description": "Task is escalated if failure matches any of these failure mode types"
+  }
+}
