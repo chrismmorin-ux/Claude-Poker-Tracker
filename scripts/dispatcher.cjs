@@ -19,7 +19,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const http = require('http');
+const readline = require('readline');
+const { execSync, spawn } = require('child_process');
 const { generateInvariantTest } = require('./invariant-test-generator.cjs');
 
 const BACKLOG_PATH = path.join(process.cwd(), '.claude', 'backlog.json');
@@ -286,8 +288,236 @@ function convertToExecutionFormat(task) {
   };
 }
 
+// Check LM Studio health
+async function checkLmStudioHealth() {
+  const configPath = path.join(process.cwd(), '.claude', 'config', 'lm-studio.json');
+
+  // If config doesn't exist, return healthy (optional feature)
+  if (!fs.existsSync(configPath)) {
+    return { healthy: true, error: null };
+  }
+
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const endpoint = config.endpoint || 'http://localhost:1234';
+    const timeoutMs = config.health_timeout_ms || 5000;
+    const retryAttempts = config.retry_attempts || 3;
+
+    let lastError = null;
+    let retryCount = 0;
+
+    while (retryCount < retryAttempts) {
+      try {
+        const healthResult = await new Promise((resolve, reject) => {
+          const url = new URL(`${endpoint}/v1/models`);
+          const options = {
+            hostname: url.hostname,
+            port: url.port,
+            path: url.pathname + url.search,
+            method: 'GET',
+            timeout: timeoutMs
+          };
+
+          const req = http.request(options, (res) => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              resolve({ healthy: true });
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}`));
+            }
+          });
+
+          req.on('timeout', () => {
+            req.abort();
+            reject(new Error('Request timeout'));
+          });
+
+          req.on('error', (err) => {
+            reject(err);
+          });
+
+          req.end();
+        });
+
+        return { healthy: true, error: null };
+      } catch (error) {
+        lastError = error.message;
+        retryCount++;
+
+        if (retryCount < retryAttempts) {
+          // Exponential backoff: 100ms * 2^retry
+          const delayMs = 100 * Math.pow(2, retryCount - 1);
+          await new Promise(r => setTimeout(r, delayMs));
+        }
+      }
+    }
+
+    return {
+      healthy: false,
+      error: `LM Studio not available at ${endpoint}. Start LM Studio or check config. (${lastError})`
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      error: `Failed to load LM Studio config: ${error.message}`
+    };
+  }
+}
+
+// Launch LM Studio if auto_launch is enabled
+async function launchLmStudio() {
+  const configPath = path.join(process.cwd(), '.claude', 'config', 'lm-studio.json');
+
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+    if (!config.auto_launch) {
+      return { launched: false, error: 'auto_launch is disabled in config' };
+    }
+
+    const launchCommand = config.launch_command;
+    if (!launchCommand) {
+      return { launched: false, error: 'launch_command not specified in config' };
+    }
+
+    console.log(`Attempting to launch LM Studio: ${launchCommand}`);
+
+    // Spawn process in detached mode (doesn't block dispatcher)
+    const child = spawn(launchCommand, [], {
+      detached: true,
+      stdio: 'ignore',
+      shell: true
+    });
+
+    // Allow parent process to exit independently
+    child.unref();
+
+    console.log('LM Studio launch initiated (PID: ' + child.pid + ')');
+
+    // Wait for LM Studio to become healthy (poll every 2s, up to 30s)
+    console.log('Waiting for LM Studio to become healthy...');
+    const maxWaitMs = 30000;
+    const pollIntervalMs = 2000;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitMs) {
+      const healthStatus = await checkLmStudioHealth();
+      if (healthStatus.healthy) {
+        console.log('✓ LM Studio is now healthy');
+        return { launched: true, error: null };
+      }
+
+      // Wait before next poll
+      await new Promise(r => setTimeout(r, pollIntervalMs));
+    }
+
+    return { launched: true, error: 'LM Studio launched but failed to become healthy within 30 seconds' };
+  } catch (error) {
+    return { launched: false, error: `Failed to launch LM Studio: ${error.message}` };
+  }
+}
+
+// Prompt user when LM Studio is unavailable
+async function promptUserOnFailure(endpoint) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    console.log('\n╔═══════════════════════════════════════════════════════════════╗');
+    console.log('║  ⚠️  LM Studio not available                                   ║');
+    console.log('╠═══════════════════════════════════════════════════════════════╣');
+    console.log(`║  Endpoint: ${endpoint.padEnd(55)}║`);
+    console.log('║                                                               ║');
+    console.log('║  Options:                                                     ║');
+    console.log('║  [R] Retry health check                                       ║');
+    console.log('║  [L] Launch LM Studio manually, then retry                    ║');
+    console.log('║  [S] Skip - exit without running task                         ║');
+    console.log('╚═══════════════════════════════════════════════════════════════╝');
+
+    rl.question('Choice (R/L/S): ', (answer) => {
+      rl.close();
+      const choice = answer.toUpperCase().trim();
+      if (['R', 'L', 'S'].includes(choice)) {
+        resolve(choice);
+      } else {
+        console.log('Invalid choice. Defaulting to Skip.');
+        resolve('S');
+      }
+    });
+  });
+}
+
 // Command: assign-next
 async function assignNext() {
+  // Check LM Studio health before assignment
+  console.log('Checking LM Studio health...');
+  let healthStatus = await checkLmStudioHealth();
+
+  if (!healthStatus.healthy) {
+    // Health check failed - attempt auto-launch if enabled
+    const launchResult = await launchLmStudio();
+
+    if (launchResult.launched && !launchResult.error) {
+      // Successfully launched and became healthy
+      healthStatus = { healthy: true, error: null };
+    } else if (launchResult.launched && launchResult.error) {
+      // Launched but unhealthy after timeout - prompt user
+      const configPath = path.join(process.cwd(), '.claude', 'config', 'lm-studio.json');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const endpoint = config.endpoint || 'http://localhost:1234';
+
+      const choice = await promptUserOnFailure(endpoint);
+
+      if (choice === 'R') {
+        console.log('\nRetrying health check...');
+        healthStatus = await checkLmStudioHealth();
+      } else if (choice === 'L') {
+        console.log('\nWaiting for you to launch LM Studio...');
+        console.log('Once launched, press Enter to retry...');
+        await new Promise(r => setTimeout(r, 5000));
+        healthStatus = await checkLmStudioHealth();
+      } else {
+        console.log('\nTask skipped - exiting.');
+        process.exit(0);
+      }
+
+      if (!healthStatus.healthy) {
+        console.error('\n' + healthStatus.error);
+        process.exit(1);
+      }
+    } else {
+      // auto_launch is disabled or failed - prompt user
+      const configPath = path.join(process.cwd(), '.claude', 'config', 'lm-studio.json');
+      let endpoint = 'http://localhost:1234';
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        endpoint = config.endpoint || endpoint;
+      }
+
+      const choice = await promptUserOnFailure(endpoint);
+
+      if (choice === 'R') {
+        console.log('\nRetrying health check...');
+        healthStatus = await checkLmStudioHealth();
+      } else if (choice === 'L') {
+        console.log('\nWaiting for you to launch LM Studio...');
+        console.log('Once launched, press Enter to retry...');
+        await new Promise(r => setTimeout(r, 5000));
+        healthStatus = await checkLmStudioHealth();
+      } else {
+        console.log('\nTask skipped - exiting.');
+        process.exit(0);
+      }
+
+      if (!healthStatus.healthy) {
+        console.error('\n' + healthStatus.error);
+        process.exit(1);
+      }
+    }
+  }
+  console.log('✓ LM Studio is healthy\n');
+
   const backlog = loadBacklog();
 
   // Find next open task (priority order: P0 > P1 > P2 > P3)
@@ -936,6 +1166,18 @@ const [,, command, ...args] = process.argv;
     const conditions = conditionsArg ? conditionsArg.split('=')[1].replace(/^"|"$/g, '') : null;
     approvePermission(args[0], conditions);
     break;
+  case 'health':
+    (async () => {
+      const result = await checkLmStudioHealth();
+      if (result.healthy) {
+        console.log('✓ LM Studio is healthy');
+        process.exit(0);
+      } else {
+        console.error('✗ ' + result.error);
+        process.exit(1);
+      }
+    })();
+    break;
   case 'reject-permission':
     if (!args[0]) {
       console.error('Usage: dispatcher.cjs reject-permission <request-id> [--suggest="alternative approach"]');
@@ -958,6 +1200,7 @@ Commands:
   audit                             Validate all tasks against atomic criteria
   redecompose <id>                  Mark task for re-decomposition
   extract-context <id>              Extract and preview context for a task
+  health                            Check LM Studio health status
   create-permission-request         Create permission request template
   list-permissions [--status=...]   List permission requests (pending|approved|rejected|redecompose)
   approve-permission <id> [opts]    Approve permission request (--conditions="cond1,cond2")
@@ -973,6 +1216,7 @@ Examples:
   node scripts/dispatcher.cjs complete T-001 --tests=passed
   node scripts/dispatcher.cjs audit
   node scripts/dispatcher.cjs extract-context T-001
+  node scripts/dispatcher.cjs health
   node scripts/dispatcher.cjs create-permission-request
   node scripts/dispatcher.cjs list-permissions --status=pending
   node scripts/dispatcher.cjs approve-permission PR-2025-12-11-001 --conditions="must write tests"
