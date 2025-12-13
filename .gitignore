@@ -70,6 +70,18 @@ nul
 .claude/DASHBOARD.md
 # Dispatcher temp files
 .claude/.temp-task-spec.json
+.claude/decomposition-fix-tasks.json
+.claude/tasks/
+
+# Session state files
+.claude/.session-phases.json
+.claude/.session-start-snapshot.json
+
+# Work-in-progress hooks (not ready for commit)
+.claude/hooks/phase-detector.cjs
+
+# Session-specific audit docs
+.claude/DELEGATION_SYSTEM_AUDIT.md
 
 # Personal notes
 docs/chris-notes
