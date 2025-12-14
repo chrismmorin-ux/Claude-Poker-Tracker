@@ -160,7 +160,7 @@ node scripts/generate-dashboard.cjs --verbose    # With debug output
 
 **Quick question: Is the delegation system right for this project?**
 
-Use this quick reference to decide. Full analysis in `.claude/THRESHOLD_GUIDELINES.md`.
+Use this quick reference to decide. Full analysis in `docs/reference/DELEGATION_THRESHOLDS.md`.
 
 | Project Size | Recommendation | Setup Effort | ROI Timeline |
 |--------------|-----------------|----------|-------------|
@@ -173,7 +173,7 @@ Use this quick reference to decide. Full analysis in `.claude/THRESHOLD_GUIDELIN
 
 **Key Insight:** Overhead is heaviest for small tasks. Below 300 LOC, direct implementation may be faster. Above 2K LOC, delegation pays for itself within weeks.
 
-**See also:** `.claude/THRESHOLD_GUIDELINES.md` for full cost-benefit analysis, decision trees, and practical examples.
+**See also:** `docs/reference/DELEGATION_THRESHOLDS.md` for full cost-benefit analysis, decision trees, and practical examples.
 
 ---
 

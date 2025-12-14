@@ -1,5 +1,7 @@
 # Threshold Guidelines - When to Use the Delegation System
 
+> **Note:** This is reference documentation for evaluating whether to adopt the delegation system. Once adopted, delegation is **MANDATORY** - see `.claude/DECOMPOSITION_POLICY.md` for operational rules.
+
 This document answers the critical question: **When is the delegation system warranted vs overkill?**
 
 The answer depends on project size, team composition, and task complexity. This guide provides data-driven thresholds for making that decision.
@@ -224,7 +226,7 @@ START: Does your project exist?
 - Complex reducer state management
 - Frequent feature additions require coordination
 
-**Status:** ✅ System implemented and active.
+**Status:** System implemented and active.
 
 ---
 

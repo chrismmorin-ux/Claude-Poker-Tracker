@@ -1,6 +1,6 @@
 {
   "version": "1.0.0-test",
-  "updated_at": "2025-12-14T16:52:29.965Z",
+  "updated_at": "2025-12-14T17:08:59.709Z",
   "tasks": [
     {
       "id": "T-ENF-008",
@@ -838,6 +838,55 @@
           "reason": "Manual request"
         }
       ]
+    },
+    {
+      "id": "T-P1-003",
+      "title": "Update CLAUDE.md threshold section",
+      "description": "Update the two references to THRESHOLD_GUIDELINES.md in CLAUDE.md: Line 163 and Line 176. Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+      "files_touched": [
+        "CLAUDE.md"
+      ],
+      "est_lines_changed": 2,
+      "est_local_effort_mins": 5,
+      "test_command": "grep -c 'docs/reference/DELEGATION_THRESHOLDS.md' CLAUDE.md | grep -q 2",
+      "assigned_to": "local:qwen",
+      "status": "done",
+      "priority": "P1",
+      "constraints": [
+        "Update line 163: Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+        "Update line 176: Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+        "Preserve all other formatting and content"
+      ],
+      "completed_at": "2025-12-14T17:04:43.642Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-P1-004",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Add clarification header to docs/reference/DELEGATION_THRESHOLDS.md",
+      "description": "Add a clarification note after line 1 (the title) that makes clear this is reference/evaluation documentation, NOT operational guidance. The delegation system is MANDATORY once adopted.",
+      "files_touched": [
+        "docs/reference/DELEGATION_THRESHOLDS.md"
+      ],
+      "est_lines_changed": 3,
+      "est_local_effort_mins": 5,
+      "test_command": "grep -q 'This is reference documentation for evaluating' docs/reference/DELEGATION_THRESHOLDS.md",
+      "assigned_to": "claude",
+      "status": "done",
+      "priority": "P1",
+      "constraints": [
+        "Add note after line 1 (the title)",
+        "Note should state: 'This is reference documentation for evaluating whether to adopt the delegation system. Once adopted, delegation is **MANDATORY** - see `.claude/DECOMPOSITION_POLICY.md` for operational rules.'",
+        "Use blockquote format: > **Note:** ...",
+        "Preserve all other content and formatting"
+      ],
+      "assigned_at": "2025-12-14T17:07:47.941Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T17:07:55.218Z",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "completed_at": "2025-12-14T17:08:59.709Z",
+      "tests_passed": true
     }
   ],
   "projects": {
@@ -859,10 +908,10 @@
     }
   },
   "stats": {
-    "total_tasks": 115,
+    "total_tasks": 29,
     "open": 0,
     "in_progress": 8,
-    "done": 63,
-    "failed": 16
+    "done": 2,
+    "failed": 0
   }
 }
