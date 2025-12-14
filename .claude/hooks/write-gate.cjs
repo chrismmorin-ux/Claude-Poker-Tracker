@@ -217,9 +217,26 @@ function findTaskForFile(filePath) {
 /**
  * Check if task assignment allows Claude to edit
  */
-function checkTaskAssignment(task) {
+function checkTaskAssignment(task, filePath) {
     if (!task) {
-        return { blocked: true, reason: 'No task found for this file. Create a task in backlog first.' };
+        const basename = path.basename(filePath);
+        const reason = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  DECOMPOSITION POLICY REMINDER
+File: ${basename}
+
+No related task found in backlog.
+
+If this is NEW work:
+  1. Decompose into atomic tasks (see .claude/DECOMPOSITION_POLICY.md)
+  2. Add tasks to backlog: node scripts/dispatcher.cjs add-tasks
+  3. Execute via local model: node scripts/dispatcher.cjs assign-next
+
+If atomic decomposition is impossible:
+  - Create permission request in .claude/permission-requests.json
+  - Use template: node scripts/dispatcher.cjs create-permission-request
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        return { blocked: true, reason };
     }
 
     const assignedTo = task.assigned_to || '';
@@ -248,9 +265,24 @@ function checkTaskAssignment(task) {
 
     // Check assignment
     if (assignedTo.startsWith('local:')) {
+        const basename = path.basename(filePath);
+        const reason = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  DELEGATION POLICY VIOLATION
+File: ${basename}
+Related Task: ${task.id} - ${task.title}
+Status: ${status}
+Assigned To: ${assignedTo}
+
+BLOCKED: This file is part of an open task in backlog.
+
+To proceed, choose one option:
+  1. Execute via local model: node scripts/dispatcher.cjs assign-next
+  2. Request permission: Create entry in .claude/permission-requests.json
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
         return {
             blocked: true,
-            reason: `Task ${task.id} is assigned to ${assignedTo}. Use dispatcher: 'node scripts/dispatcher.cjs assign-next'`
+            reason
         };
     }
 
@@ -324,7 +356,7 @@ async function main() {
 
     // 3. Find task and check assignment
     const task = findTaskForFile(filePath);
-    const assignmentCheck = checkTaskAssignment(task);
+    const assignmentCheck = checkTaskAssignment(task, filePath);
 
     if (assignmentCheck.blocked) {
         console.error(`\n🚫 BLOCKED: ${assignmentCheck.reason}\n`);

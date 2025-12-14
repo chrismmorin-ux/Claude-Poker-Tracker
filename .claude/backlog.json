@@ -1,6 +1,6 @@
 {
   "version": "1.0.0-test",
-  "updated_at": "2025-12-14T17:08:59.709Z",
+  "updated_at": "2025-12-14T17:35:05.287Z",
   "tasks": [
     {
       "id": "T-ENF-008",
@@ -887,6 +887,122 @@
       "edit_strategy": "incremental_edit",
       "completed_at": "2025-12-14T17:08:59.709Z",
       "tests_passed": true
+    },
+    {
+      "id": "T-P2-001",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Add verbose error messages to write-gate.cjs",
+      "description": "Update write-gate.cjs to include helpful, verbose error messages that guide users when blocked. Merge guidance from permission-request-handler.cjs into write-gate.cjs.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 15,
+      "test_command": "node -c .claude/hooks/write-gate.cjs",
+      "assigned_to": "local:qwen",
+      "status": "done",
+      "priority": "P1",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Update line 222 'No task found' message with DECOMPOSITION POLICY REMINDER box",
+        "Update lines 250-254 'Task assigned to local model' message with DELEGATION POLICY VIOLATION box",
+        "Include helpful guidance and command examples in both messages",
+        "Maintain valid JavaScript syntax",
+        "Keep function parameter list intact (update checkTaskAssignment to accept filePath)"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/write-gate.cjs",
+          "lines_start": 217,
+          "lines_end": 275
+        }
+      ],
+      "assigned_at": "2025-12-14T17:15:00.000Z",
+      "completed_at": "2025-12-14T17:20:00.000Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-P2-002",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Remove permission-request-handler from settings.json",
+      "description": "Remove permission-request-handler.cjs references from .claude/settings.json hooks",
+      "files_touched": [
+        ".claude/settings.json"
+      ],
+      "est_lines_changed": 8,
+      "est_local_effort_mins": 5,
+      "test_command": "node -e \"const s = JSON.parse(require('fs').readFileSync('./.claude/settings.json')); const str = JSON.stringify(s); if (str.includes('permission-request-handler')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "status": "done",
+      "priority": "P1",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Remove lines 91-93 from Write matcher hooks array (permission-request-handler.cjs hook)",
+        "Remove lines 111-114 from Edit matcher hooks array (same hook)",
+        "Preserve valid JSON structure",
+        "Keep surrounding hooks intact",
+        "Validate JSON syntax after edit"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/settings.json",
+          "lines_start": 85,
+          "lines_end": 120
+        }
+      ],
+      "assigned_at": "2025-12-14T17:20:03.972Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T17:20:27.523Z",
+      "needs_redecomposition": false,
+      "completed_at": "2025-12-14T17:22:37.360Z",
+      "tests_passed": true
+    },
+    {
+      "id": "T-P4-001",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Create test script for Phase 4 validation (write-gate.cjs)",
+      "description": "Create scripts/test-write-gate.cjs that validates the write-gate.cjs hook with 5 test scenarios: no task, local-assigned task, claude-assigned task, exempt plan file, exempt project file",
+      "files_touched": [
+        "scripts/test-write-gate.cjs"
+      ],
+      "est_lines_changed": 180,
+      "est_local_effort_mins": 30,
+      "test_command": "node scripts/test-write-gate.cjs",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "Create test script that uses child_process.spawn to run write-gate.cjs",
+        "Test 1: Write without task (expect exit code 2)",
+        "Test 2: Write with local-assigned task (expect exit code 2)",
+        "Test 3: Write with claude-assigned task (expect exit code 0)",
+        "Test 4: Write to exempt plan file (expect exit code 0)",
+        "Test 5: Write to exempt project file (expect exit code 0)",
+        "Pipe JSON input via stdin: {\"tool_input\": {\"file_path\": \"...\"}}",
+        "Capture exit codes and verify",
+        "Create/destroy temporary test tasks in backlog.json",
+        "Restore original backlog after tests",
+        "Output clear PASS/FAIL for each scenario",
+        "Target: ~100-180 lines max"
+      ],
+      "assigned_at": "2025-12-14T17:32:52.054Z",
+      "decomposition_depth": 1,
+      "needs_redecomposition": true,
+      "redecompose_requested_at": "2025-12-14T17:34:04.000Z",
+      "redecompose_reason": "Manual request",
+      "decomposition_history": [
+        {
+          "timestamp": "2025-12-14T17:34:04.001Z",
+          "depth": 1,
+          "reason": "Manual request"
+        }
+      ],
+      "completed_at": "2025-12-14T17:35:05.287Z",
+      "tests_passed": true
     }
   ],
   "projects": {
@@ -908,10 +1024,10 @@
     }
   },
   "stats": {
-    "total_tasks": 29,
+    "total_tasks": 32,
     "open": 0,
     "in_progress": 8,
-    "done": 2,
+    "done": 5,
     "failed": 0
   }
 }
