@@ -94,6 +94,15 @@ bash scripts/smart-test-runner.sh  # 98% token reduction on passing tests
 2. **ALWAYS use dispatcher workflow** - See `.claude/DECOMPOSITION_POLICY.md` Section 10
 3. **NO "velocity" justifications** - Delegation INCREASES velocity (6x capacity improvement)
 
+### Local Model Limitations (Phase 3)
+
+| Limitation | Threshold | Action |
+|------------|-----------|--------|
+| File size for edits | >200 lines | Escalate to Claude |
+| FP-001: Catastrophic rewrites | Size guard triggers | Dispatcher auto-escalates |
+
+**Key Learning:** Local models (deepseek/qwen) cannot do incremental edits on files >200 lines. They rewrite the entire file, triggering the FP-001 size guard. For large file edits, the dispatcher auto-escalates to Claude.
+
 ### Forbidden Justifications
 
 ❌ "To maintain velocity" - BLOCKED (delegation is faster)
@@ -107,7 +116,7 @@ bash scripts/smart-test-runner.sh  # 98% token reduction on passing tests
    ```
    Task(subagent_type="dispatcher", prompt="Execute task T-XXX: <description>")
    ```
-3. **Dispatcher** validates and executes (via local model or Worker agent)
+3. **Dispatcher** validates and executes (auto-escalates files >200 lines to Claude, otherwise uses local model or Worker agent)
 4. **Integrate** output and run tests
 
 ### Enforcement Mechanisms

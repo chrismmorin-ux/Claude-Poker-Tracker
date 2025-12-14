@@ -80,6 +80,20 @@ Claude Primary (this session) has **NO file write permissions**. All modificatio
 5. If human approves, Dispatcher spawns Worker agent
 6. Worker executes single task and terminates
 
+### Local Model Limitations (Phase 3 Learnings)
+
+**FP-001: Size Guard Limitation**
+
+Local models cannot reliably make incremental edits to files exceeding 200 lines. When a file is too large, the model tends to output a complete rewrite instead of targeted edits.
+
+| Limitation | Threshold | Recovery |
+|------------|-----------|----------|
+| Incremental file edits | >200 lines | Escalate to Claude or split into smaller changes |
+| FP-001 triggering | File size guard activates | Use edit_strategy='create_new' or escalate |
+| Catastrophic rewrite risk | Large files with complex logic | Human review of changes recommended |
+
+**Escalation Path for Size Guard:** Files >200 lines → dispatcher detects → creates permission request → human reviews → escalates to Claude Primary or Worker agent with full-file write capability.
+
 ### Permission Structure
 
 **Claude Primary CAN:**
@@ -216,10 +230,12 @@ Local models handle ALL of these:
 # 1. Claude Primary: Decompose into atomic tasks (≤30 lines each)
 # 2. Claude Primary: Call Task(subagent_type="dispatcher", prompt="Execute T-XXX")
 # 3. Dispatcher: Validates task is in backlog, assigned, policy-compliant
-# 4. Dispatcher: Executes via local model OR creates permission request
-# 5. On failure: Dispatcher retries with auto-recovery (max 3 attempts)
-# 6. If max attempts: Permission request → human approval → Worker agent
-# 7. Report: "Task T-XXX completed" or "Task T-XXX failed"
+# 4. Dispatcher: Check file sizes - if any file >200 lines, create permission request
+#    (FP-001 size guard: local models cannot reliably edit large files)
+# 5. Dispatcher: Executes via local model OR creates permission request
+# 6. On failure: Dispatcher retries with auto-recovery (max 3 attempts)
+# 7. If max attempts OR size guard triggered: Permission request → human approval → Worker agent
+# 8. Report: "Task T-XXX completed" or "Task T-XXX failed"
 ```
 
 ### Claude Implements Directly ONLY When
@@ -283,3 +299,27 @@ Local models handle ALL of these:
 ### PROC-003: Backlog Consistency
 - Phase counts in BACKLOG.md must match project file
 - Verify after any project file update
+
+## Token Optimization Practices (Project 0.007 Learnings)
+
+### Phase 1: Token Tracking Foundation
+- `~/.claude/stats-cache.json` contains actual API token data
+- Session finalization via `scripts/finalize-session.cjs` captures historical trends
+- Dashboard shows 7-day/30-day trends from `.claude/data/token-history.json`
+
+### Phase 2: Backlog Optimization
+- Archive completed tasks to `.claude/backlog-archive.json` (3500+ lines archived)
+- `write-gate.cjs` uses O(1) file-to-task index (was O(n) scan)
+- Archive utility: `node scripts/archive-backlog-tasks.cjs`
+
+### Phase 3: Dispatcher Context Optimization
+- Backlog loaded once per session (caching added)
+- All tasks use `needs_context` protocol (minimal context injection)
+- Execution format stripped of unused fields (test_first removed)
+- Local models escalate files >200 lines to Claude (FP-001 guard)
+
+### Smart Test Runner
+Always use `bash scripts/smart-test-runner.sh` before commits:
+- Passing tests: ~100 tokens (compact summary)
+- Failing tests: Full error context with file locations
+- 98% token reduction on typical test runs

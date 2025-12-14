@@ -182,3 +182,4 @@ Before marking project complete:
   - [ ] docs/STATE_SCHEMAS.md (if reducer changes)
 - [ ] Code reviewed or self-reviewed
 - [ ] Committed with descriptive message
+- [ ] **Archive project**: Run `/project complete <id>` to archive and remove from active queue
