@@ -15,6 +15,7 @@
  *   list-permissions             - List permission requests
  *   approve-permission           - Approve permission request
  *   reject-permission            - Reject permission request
+ *   archive                      - Archive completed/failed/abandoned tasks
  */
 
 const fs = require('fs');
@@ -28,6 +29,8 @@ const BACKLOG_PATH = path.join(process.cwd(), '.claude', 'backlog.json');
 const SCHEMA_PATH = path.join(process.cwd(), '.claude', 'schemas', 'local-task.schema.json');
 const PERMISSION_REQUESTS_PATH = path.join(process.cwd(), '.claude', 'permission-requests.json');
 const LOG_FILE = path.join(process.cwd(), '.claude', 'logs', 'local-model-tasks.log');
+const ARCHIVE_PATH = path.join(process.cwd(), '.claude', 'backlog-archive.json');
+const ARCHIVE_SCRIPT = path.join(__dirname, 'archive-old-tasks.cjs');
 
 // Atomic criteria limits
 const ATOMIC_LIMITS = {
@@ -713,6 +716,17 @@ function completeTask(taskId, testsPassed) {
     task.tests_passed = true;
     saveBacklog(backlog);
     console.log(`✅ Task ${taskId} completed successfully`);
+
+    // Auto-archive when done tasks exceed threshold
+    const doneCount = backlog.tasks.filter(t => t.status === 'done').length;
+    if (doneCount >= 10) {
+      console.log(`\n📦 Auto-archiving ${doneCount} completed tasks...`);
+      try {
+        execSync(`node "${ARCHIVE_SCRIPT}"`, { stdio: 'inherit' });
+      } catch (e) {
+        console.warn('Auto-archive failed (non-blocking):', e.message);
+      }
+    }
   } else {
     // Tests failed - trigger automatic redecomposition
     task.status = 'failed';
@@ -1105,6 +1119,17 @@ function rejectPermission(requestId, suggestion) {
   console.log('\nClaude must decompose this task atomically.');
 }
 
+// Command: archive
+function archiveTasks() {
+  console.log('Archiving completed tasks...\n');
+  try {
+    execSync(`node "${ARCHIVE_SCRIPT}"`, { stdio: 'inherit' });
+  } catch (error) {
+    console.error('Archive failed:', error.message);
+    process.exit(1);
+  }
+}
+
 // Main
 const [,, command, ...args] = process.argv;
 
@@ -1178,6 +1203,9 @@ const [,, command, ...args] = process.argv;
       }
     })();
     break;
+  case 'archive':
+    archiveTasks();
+    break;
   case 'reject-permission':
     if (!args[0]) {
       console.error('Usage: dispatcher.cjs reject-permission <request-id> [--suggest="alternative approach"]');
@@ -1201,6 +1229,7 @@ Commands:
   redecompose <id>                  Mark task for re-decomposition
   extract-context <id>              Extract and preview context for a task
   health                            Check LM Studio health status
+  archive                           Archive done/failed/abandoned tasks
   create-permission-request         Create permission request template
   list-permissions [--status=...]   List permission requests (pending|approved|rejected|redecompose)
   approve-permission <id> [opts]    Approve permission request (--conditions="cond1,cond2")
