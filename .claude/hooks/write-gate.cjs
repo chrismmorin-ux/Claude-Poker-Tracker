@@ -176,7 +176,44 @@ function checkProtectedFile(filePath) {
 }
 
 /**
+ * Build file-to-task index for O(1) lookup
+ * Maps file basenames to task IDs that touch them
+ */
+let fileToTaskIndex = null;
+
+function buildFileIndex() {
+    if (!fs.existsSync(BACKLOG_FILE)) {
+        return {};
+    }
+
+    try {
+        const backlog = JSON.parse(fs.readFileSync(BACKLOG_FILE, 'utf-8'));
+        const tasks = backlog.tasks || [];
+        const index = {};
+
+        for (const task of tasks) {
+            const filesTouched = task.files_touched || [];
+            for (const file of filesTouched) {
+                const basename = path.basename(file);
+                if (!index[basename]) {
+                    index[basename] = [];
+                }
+                if (!index[basename].includes(task.id)) {
+                    index[basename].push(task.id);
+                }
+            }
+        }
+
+        return index;
+    } catch (e) {
+        log(`WARNING: Could not build file index: ${e.message}`);
+        return {};
+    }
+}
+
+/**
  * Find task in backlog that touches this file
+ * Uses indexed lookup for O(1) performance instead of O(n) scan
  */
 function findTaskForFile(filePath) {
     try {
@@ -187,22 +224,44 @@ function findTaskForFile(filePath) {
         const backlog = JSON.parse(fs.readFileSync(BACKLOG_FILE, 'utf-8'));
         const tasks = backlog.tasks || [];
         const basename = path.basename(filePath);
-        // Normalize paths for consistent comparison
-        const normalizedFilePath = normalizePath(filePath);
-        const normalizedCwd = normalizePath(process.cwd());
-        const relativePath = normalizedFilePath.replace(normalizedCwd, '').replace(/^\//, '');
 
-        // Find matching task, prefer non-done tasks
-        let matchingTask = null;
-        for (const task of tasks) {
-            const filesTouched = task.files_touched || [];
-            for (const touched of filesTouched) {
-                const touchedBasename = path.basename(touched);
-                if (touchedBasename === basename || touched === relativePath || relativePath.endsWith(touched)) {
-                    // Prefer open/in_progress tasks over done tasks
-                    if (!matchingTask || (task.status !== 'done' && matchingTask.status === 'done')) {
-                        matchingTask = task;
+        // Lazy initialize index on first call
+        if (fileToTaskIndex === null) {
+            fileToTaskIndex = buildFileIndex();
+        }
+
+        // Look up candidate tasks by basename (O(1))
+        const candidateTaskIds = fileToTaskIndex[basename] || [];
+
+        if (candidateTaskIds.length === 0) {
+            // No candidates in index, fall back to full scan for relative path matching
+            log(`[INDEX MISS] ${basename} not in index, falling back to full scan`);
+            const normalizedFilePath = normalizePath(filePath);
+            const normalizedCwd = normalizePath(process.cwd());
+            const relativePath = normalizedFilePath.replace(normalizedCwd, '').replace(/^\//, '');
+
+            let matchingTask = null;
+            for (const task of tasks) {
+                const filesTouched = task.files_touched || [];
+                for (const touched of filesTouched) {
+                    if (touched === relativePath || relativePath.endsWith(touched)) {
+                        if (!matchingTask || (task.status !== 'done' && matchingTask.status === 'done')) {
+                            matchingTask = task;
+                        }
                     }
+                }
+            }
+            return matchingTask;
+        }
+
+        // Find task by ID from candidate list, prefer non-done tasks
+        log(`[INDEX HIT] ${basename} -> ${candidateTaskIds.join(', ')}`);
+        let matchingTask = null;
+        for (const taskId of candidateTaskIds) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                if (!matchingTask || (task.status !== 'done' && matchingTask.status === 'done')) {
+                    matchingTask = task;
                 }
             }
         }

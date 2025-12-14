@@ -46,7 +46,7 @@ LM_STUDIO_URL="http://10.0.0.230:1234"
 QWEN_MODEL="qwen2.5-coder-7b-instruct"
 DEEPSEEK_MODEL="deepseek-coder-7b-instruct-v1.5"
 BACKUP_DIR="$PROJECT_ROOT/.local-model-backups"
-MAX_CONTEXT_LINES=200
+MAX_CONTEXT_LINES=500
 
 # Colors for output
 RED='\033[0;31m'

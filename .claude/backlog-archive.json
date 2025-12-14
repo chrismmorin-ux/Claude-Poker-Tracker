@@ -3025,7 +3025,522 @@
       "created_at": "2025-12-14T16:49:57.283Z",
       "completed_at": "2025-12-14T16:50:15.398Z",
       "archived_at": "2025-12-14T16:52:29.964Z"
+    },
+    {
+      "id": "T-P1-003",
+      "title": "Update CLAUDE.md threshold section",
+      "description": "Update the two references to THRESHOLD_GUIDELINES.md in CLAUDE.md: Line 163 and Line 176. Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+      "files_touched": [
+        "CLAUDE.md"
+      ],
+      "est_lines_changed": 2,
+      "est_local_effort_mins": 5,
+      "test_command": "grep -c 'docs/reference/DELEGATION_THRESHOLDS.md' CLAUDE.md | grep -q 2",
+      "assigned_to": "local:qwen",
+      "status": "done",
+      "priority": "P1",
+      "constraints": [
+        "Update line 163: Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+        "Update line 176: Change `.claude/THRESHOLD_GUIDELINES.md` to `docs/reference/DELEGATION_THRESHOLDS.md`",
+        "Preserve all other formatting and content"
+      ],
+      "completed_at": "2025-12-14T17:04:43.642Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-P1-004",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Add clarification header to docs/reference/DELEGATION_THRESHOLDS.md",
+      "description": "Add a clarification note after line 1 (the title) that makes clear this is reference/evaluation documentation, NOT operational guidance. The delegation system is MANDATORY once adopted.",
+      "files_touched": [
+        "docs/reference/DELEGATION_THRESHOLDS.md"
+      ],
+      "est_lines_changed": 3,
+      "est_local_effort_mins": 5,
+      "test_command": "grep -q 'This is reference documentation for evaluating' docs/reference/DELEGATION_THRESHOLDS.md",
+      "assigned_to": "claude",
+      "status": "done",
+      "priority": "P1",
+      "constraints": [
+        "Add note after line 1 (the title)",
+        "Note should state: 'This is reference documentation for evaluating whether to adopt the delegation system. Once adopted, delegation is **MANDATORY** - see `.claude/DECOMPOSITION_POLICY.md` for operational rules.'",
+        "Use blockquote format: > **Note:** ...",
+        "Preserve all other content and formatting"
+      ],
+      "assigned_at": "2025-12-14T17:07:47.941Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T17:07:55.218Z",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "completed_at": "2025-12-14T17:08:59.709Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-P2-001",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Add verbose error messages to write-gate.cjs",
+      "description": "Update write-gate.cjs to include helpful, verbose error messages that guide users when blocked. Merge guidance from permission-request-handler.cjs into write-gate.cjs.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 40,
+      "est_local_effort_mins": 15,
+      "test_command": "node -c .claude/hooks/write-gate.cjs",
+      "assigned_to": "local:qwen",
+      "status": "done",
+      "priority": "P1",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Update line 222 'No task found' message with DECOMPOSITION POLICY REMINDER box",
+        "Update lines 250-254 'Task assigned to local model' message with DELEGATION POLICY VIOLATION box",
+        "Include helpful guidance and command examples in both messages",
+        "Maintain valid JavaScript syntax",
+        "Keep function parameter list intact (update checkTaskAssignment to accept filePath)"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/write-gate.cjs",
+          "lines_start": 217,
+          "lines_end": 275
+        }
+      ],
+      "assigned_at": "2025-12-14T17:15:00.000Z",
+      "completed_at": "2025-12-14T17:20:00.000Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-P2-002",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Remove permission-request-handler from settings.json",
+      "description": "Remove permission-request-handler.cjs references from .claude/settings.json hooks",
+      "files_touched": [
+        ".claude/settings.json"
+      ],
+      "est_lines_changed": 8,
+      "est_local_effort_mins": 5,
+      "test_command": "node -e \"const s = JSON.parse(require('fs').readFileSync('./.claude/settings.json')); const str = JSON.stringify(s); if (str.includes('permission-request-handler')) process.exit(1);\"",
+      "assigned_to": "claude",
+      "status": "done",
+      "priority": "P1",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Remove lines 91-93 from Write matcher hooks array (permission-request-handler.cjs hook)",
+        "Remove lines 111-114 from Edit matcher hooks array (same hook)",
+        "Preserve valid JSON structure",
+        "Keep surrounding hooks intact",
+        "Validate JSON syntax after edit"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/settings.json",
+          "lines_start": 85,
+          "lines_end": 120
+        }
+      ],
+      "assigned_at": "2025-12-14T17:20:03.972Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T17:20:27.523Z",
+      "needs_redecomposition": false,
+      "completed_at": "2025-12-14T17:22:37.360Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-P4-001",
+      "parent_id": "0.006.1214-delegation-system-cleanup",
+      "title": "Create test script for Phase 4 validation (write-gate.cjs)",
+      "description": "Create scripts/test-write-gate.cjs that validates the write-gate.cjs hook with 5 test scenarios: no task, local-assigned task, claude-assigned task, exempt plan file, exempt project file",
+      "files_touched": [
+        "scripts/test-write-gate.cjs"
+      ],
+      "est_lines_changed": 180,
+      "est_local_effort_mins": 30,
+      "test_command": "node scripts/test-write-gate.cjs",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "Create test script that uses child_process.spawn to run write-gate.cjs",
+        "Test 1: Write without task (expect exit code 2)",
+        "Test 2: Write with local-assigned task (expect exit code 2)",
+        "Test 3: Write with claude-assigned task (expect exit code 0)",
+        "Test 4: Write to exempt plan file (expect exit code 0)",
+        "Test 5: Write to exempt project file (expect exit code 0)",
+        "Pipe JSON input via stdin: {\"tool_input\": {\"file_path\": \"...\"}}",
+        "Capture exit codes and verify",
+        "Create/destroy temporary test tasks in backlog.json",
+        "Restore original backlog after tests",
+        "Output clear PASS/FAIL for each scenario",
+        "Target: ~100-180 lines max"
+      ],
+      "assigned_at": "2025-12-14T17:32:52.054Z",
+      "decomposition_depth": 1,
+      "needs_redecomposition": true,
+      "redecompose_requested_at": "2025-12-14T17:34:04.000Z",
+      "redecompose_reason": "Manual request",
+      "decomposition_history": [
+        {
+          "timestamp": "2025-12-14T17:34:04.001Z",
+          "depth": 1,
+          "reason": "Manual request"
+        }
+      ],
+      "completed_at": "2025-12-14T17:35:05.287Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-MENU-001",
+      "title": "Add completed project detection to menu.cjs",
+      "description": "Add getCompletedActiveProjects() function and constant PROJECTS_JSON, then call it in displayMenu() to show green banner with completed projects ready for archiving",
+      "files_touched": [
+        "scripts/menu.cjs"
+      ],
+      "est_lines_changed": 30,
+      "est_local_effort_mins": 15,
+      "test_command": "node scripts/menu.cjs 2>&1 | grep -q 'READY TO ARCHIVE' || echo 'No completed projects'",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Add constant: const PROJECTS_JSON = path.join(__dirname, '..', '.claude', 'projects.json');",
+        "Add function getCompletedActiveProjects() that reads projects.json and filters active projects where phasesComplete === phases and phases > 0",
+        "In displayMenu(), after line 76 (after getting projects/audits/backlog), add: const completedProjects = getCompletedActiveProjects();",
+        "Before line 84 (before menu header), add green banner if completedProjects.length > 0",
+        "Banner must include each project name with proper formatting",
+        "Maintain existing menu structure and colors"
+      ],
+      "needs_context": [
+        {
+          "path": "scripts/menu.cjs",
+          "lines_start": 1,
+          "lines_end": 50
+        },
+        {
+          "path": ".claude/projects.json",
+          "lines_start": 1,
+          "lines_end": 30
+        }
+      ],
+      "assigned_at": "2025-12-14T17:48:30.085Z",
+      "completed_at": "2025-12-14T17:49:49.079Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-MENU-002",
+      "title": "Update menu.md with completed project detection workflow",
+      "description": "Add section to menu.md documenting automatic completed project detection and prompting behavior",
+      "files_touched": [
+        ".claude/commands/menu.md"
+      ],
+      "est_lines_changed": 15,
+      "est_local_effort_mins": 10,
+      "test_command": "grep -q 'Completed Project Detection' .claude/commands/menu.md",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Add new section '### Completed Project Detection (Automatic)' after 'Handling User Selection' header",
+        "Include 3 bullet points describing the behavior: acknowledge, recommend archiving, prompt user",
+        "Use markdown formatting consistent with rest of file",
+        "Keep section under 20 lines"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/commands/menu.md",
+          "lines_start": 15,
+          "lines_end": 50
+        }
+      ],
+      "completed_at": "2025-12-14T17:49:49.133Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-OPT-001a",
+      "title": "Fix metrics-collector field name bug",
+      "description": "Change tool_result to tool_response on line 190",
+      "files_touched": [
+        ".claude/hooks/metrics-collector.cjs"
+      ],
+      "est_lines_changed": 1,
+      "est_local_effort_mins": 2,
+      "test_command": "grep -q tool_response .claude/hooks/metrics-collector.cjs",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "done",
+      "constraints": [
+        "Line 190: change data.tool_result to data.tool_response"
+      ],
+      "assigned_at": "2025-12-14T18:21:59.948Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T18:22:09.651Z",
+      "edit_strategy": "incremental_edit",
+      "task_complexity_type": "A",
+      "needs_context": [
+        {
+          "path": ".claude/hooks/metrics-collector.cjs",
+          "lines_start": 185,
+          "lines_end": 195
+        }
+      ],
+      "completed_at": "2025-12-14T18:24:33.207Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-OPT-001-FIX",
+      "title": "Fix metrics-collector.cjs tool_name field",
+      "description": "Change line 179 from 'const tool = data?.tool;' to 'const tool = data?.tool_name;' to fix critical bug where metrics collection fails",
+      "files_touched": [
+        ".claude/hooks/metrics-collector.cjs"
+      ],
+      "est_lines_changed": 1,
+      "est_local_effort_mins": 2,
+      "test_command": "grep -q 'data?.tool_name' .claude/hooks/metrics-collector.cjs",
+      "assigned_to": "claude",
+      "priority": "P0",
+      "status": "done",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Line 179: Change 'const tool = data?.tool;' to 'const tool = data?.tool_name;'",
+        "This is a single character change: tool → tool_name",
+        "Claude Code PostToolUse sends tool_name, not tool"
+      ],
+      "assigned_at": "2025-12-14T18:29:58.868Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T18:30:02.911Z",
+      "edit_operations": [
+        {
+          "type": "replace_line",
+          "line": 179,
+          "old_string": "  const tool = data?.tool;",
+          "new_string": "  const tool = data?.tool_name;"
+        }
+      ],
+      "escalation_reason": "SIZE GUARD failure - model rewrote instead of editing. Single-line fix requires Claude precision.",
+      "completed_at": "2025-12-14T18:31:20.368Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-OPT-002",
+      "title": "Create session finalization script",
+      "description": "Create scripts/finalize-session.cjs that reads actual token data from ~/.claude/stats-cache.json and session metrics to persist finalized session data to token history",
+      "files_touched": [
+        "scripts/finalize-session.cjs"
+      ],
+      "est_lines_changed": 100,
+      "est_local_effort_mins": 25,
+      "test_command": "node scripts/finalize-session.cjs && test -f .claude/data/token-history.json",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "Read actual token data from ~/.claude/stats-cache.json (totalInputTokens, totalOutputTokens)",
+        "Read todays session metrics from .claude/metrics/session-YYYY-MM-DD.json",
+        "Create .claude/data directory if needed",
+        "Append finalized session to .claude/data/token-history.json (create if needed)",
+        "Include: date, sessionId, actualInput, actualOutput, actualTotal, estimatedTokens, accuracy, toolBreakdown",
+        "Calculate delta from previous session (if any)",
+        "Output summary to console with actual tokens vs estimates",
+        "Script usage: node scripts/finalize-session.cjs",
+        "Keep under 100 lines, use Node.js built-in modules only"
+      ],
+      "assigned_at": "2025-12-14T18:33:30.443Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T18:35:59.409Z",
+      "escalation_reason": "LOCAL_MODEL_INFRASTRUCTURE_FAILURE - execute-local-task.sh failing on Windows. Task is atomic (100 lines) utility for token optimization.",
+      "completed_at": "2025-12-14T18:40:10.377Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T18:40:10.437Z"
+    },
+    {
+      "id": "T-OPT-004",
+      "title": "Add 7-day/30-day trends to generate-dashboard.cjs",
+      "description": "Add token trend calculations to dashboard generator. Read token history from .claude/data/token-history.json, calculate 7-day and 30-day average tokens per session, accuracy trends, and most expensive tools. Add new 'Token Trends' section to markdown output.",
+      "files_touched": [
+        "scripts/generate-dashboard.cjs"
+      ],
+      "est_lines_changed": 100,
+      "est_local_effort_mins": 30,
+      "test_command": "grep -q 'Token Trends' .claude/DASHBOARD.md",
+      "assigned_to": "local:deepseek",
+      "priority": "P2",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "inputs": [
+        ".claude/data/token-history.json structure",
+        "Current generate-dashboard.cjs generateMarkdown function"
+      ],
+      "outputs": [
+        "Enhanced dashboard with Token Trends section showing 7-day and 30-day metrics"
+      ],
+      "constraints": [
+        "Load token history from .claude/data/token-history.json",
+        "Calculate 7-day average tokens per session",
+        "Calculate 30-day average tokens per session",
+        "Estimate accuracy trend (percentage of sessions with data)",
+        "Track most expensive tools over time",
+        "Add new 'Token Trends' section before Quick Actions",
+        "Format as markdown table with Period, Avg Tokens, Accuracy, Top Tool columns",
+        "Add daily breakdown for last 7 days below trends table",
+        "Keep changes minimal and focused - no other modifications",
+        "Update generateMarkdown() function only"
+      ],
+      "assigned_at": "2025-12-14T18:47:37.114Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T18:49:40.919Z",
+      "completed_at": "2025-12-14T20:00:00.000Z",
+      "archived_at": "2025-12-14T19:54:07.170Z"
+    },
+    {
+      "id": "T-OPT-004-PERM",
+      "title": "Add approved permission request for T-OPT-004 execution",
+      "description": "Add PR-2025-12-14-OPT004 to permission-requests.json marking T-OPT-004 as approved for execution by user request",
+      "files_touched": [
+        ".claude/permission-requests.json"
+      ],
+      "est_lines_changed": 50,
+      "est_local_effort_mins": 5,
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "test_command": "grep -q 'PR-2025-12-14-OPT004' .claude/permission-requests.json && grep -q 'approved' .claude/permission-requests.json",
+      "constraints": [
+        "Add permission request object with request_id PR-2025-12-14-OPT004, status approved, review_decision indicating user explicit request"
+      ],
+      "assigned_at": "2025-12-14T19:04:22.404Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T19:04:28.103Z",
+      "archived_at": "2025-12-14T19:54:07.170Z"
+    },
+    {
+      "id": "T-OPT-011-C",
+      "title": "Remove T-OPT-004 and T-OPT-004-PERM from backlog.json tasks array",
+      "description": "Edit backlog.json to remove both task objects from tasks array",
+      "files_touched": [
+        ".claude/backlog.json"
+      ],
+      "est_lines_changed": 60,
+      "est_local_effort_mins": 5,
+      "test_command": "! grep -q '\"id\": \"T-OPT-004\"' .claude/backlog.json && ! grep -q '\"id\": \"T-OPT-004-PERM\"' .claude/backlog.json",
+      "assigned_to": "local:qwen",
+      "priority": "P0",
+      "status": "failed",
+      "task_complexity_type": "A",
+      "edit_strategy": "incremental_edit",
+      "constraints": [
+        "Remove T-OPT-004 task object (entire task including commas)",
+        "Remove T-OPT-004-PERM task object (entire task including commas)",
+        "Maintain valid JSON format",
+        "Ensure proper comma handling"
+      ],
+      "assigned_at": "2025-12-14T20:04:22.308Z",
+      "error": "Command failed: bash \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\scripts\\execute-local-task.sh\" \"C:\\Users\\chris\\OneDrive\\Desktop\\Claude-Poker-Tracker\\.claude\\.temp-task-spec.json\"",
+      "failed_at": "2025-12-14T20:04:29.008Z",
+      "archived_at": "2025-12-14T20:24:15.429Z"
+    },
+    {
+      "id": "T-OPT-013",
+      "title": "Add file-to-task index to write-gate.cjs for O(1) lookup",
+      "description": "Optimize findTaskForFile() from O(n) to O(1) by building and using a file-to-task index. Current implementation scans all tasks on every call; add lazy-initialized index that maps file basenames to task IDs.",
+      "files_touched": [
+        ".claude/hooks/write-gate.cjs"
+      ],
+      "est_lines_changed": 80,
+      "est_local_effort_mins": 30,
+      "test_command": "node -e \"const wg = require('./.claude/hooks/write-gate.cjs'); console.log('Module loads successfully');\"",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "incremental_edit",
+      "inputs": [
+        "Current write-gate.cjs with O(n) findTaskForFile() at lines 181-215",
+        "backlog.json with task definitions"
+      ],
+      "outputs": [
+        "write-gate.cjs with buildFileIndex() and optimized findTaskForFile()"
+      ],
+      "constraints": [
+        "Add buildFileIndex() function AFTER line 176 (after existing helper functions)",
+        "Implement lazy initialization: build index on first call only, cache in module-level variable",
+        "Index structure: { basename: [task_id_1, task_id_2, ...] }",
+        "Modify findTaskForFile() to use index: look up basename first (O(1)), then search only matching tasks",
+        "Keep existing path normalization logic from lines 40-49",
+        "Keep existing matching logic from lines 196-208",
+        "Add console.log for debugging: log when using indexed vs full scan",
+        "All operations must be synchronous (file already loaded by hook)",
+        "Test by verifying module loads and no errors in matching logic"
+      ],
+      "needs_context": [
+        {
+          "path": ".claude/hooks/write-gate.cjs",
+          "lines_start": 40,
+          "lines_end": 90
+        },
+        {
+          "path": ".claude/hooks/write-gate.cjs",
+          "lines_start": 176,
+          "lines_end": 215
+        }
+      ],
+      "anti_patterns": [
+        "Async file I/O - must use synchronous fs operations",
+        "Global state mutation without clear initialization",
+        "Rebuilding index on every call - use lazy initialization pattern"
+      ],
+      "completed_at": "2025-12-14T20:16:54.663Z",
+      "archived_at": "2025-12-14T20:24:15.429Z"
+    },
+    {
+      "id": "T-OPT-014",
+      "title": "Create archive-backlog-tasks.cjs utility",
+      "description": "Automate archiving of done/failed/completed-project tasks from backlog.json",
+      "files_touched": [
+        "scripts/archive-backlog-tasks.cjs"
+      ],
+      "est_lines_changed": 120,
+      "est_local_effort_mins": 30,
+      "test_command": "node scripts/archive-backlog-tasks.cjs --help",
+      "assigned_to": "claude",
+      "priority": "P1",
+      "status": "done",
+      "task_complexity_type": "B",
+      "edit_strategy": "create_new",
+      "constraints": [
+        "#!/usr/bin/env node shebang",
+        "Read .claude/backlog.json and .claude/backlog-archive.json",
+        "Find tasks: status === 'done' OR 'failed' OR parent_id matches completed project",
+        "Add archived_at timestamp to each task to archive",
+        "Append to archive tasks array, remove from backlog tasks array",
+        "Recalculate stats: total_tasks (remaining), pending, in_progress, done: 0, failed: 0",
+        "Write both files back",
+        "Output: 'Archived N tasks. Backlog: X tasks remaining.'",
+        "Support --dry-run and --include-in-progress CLI options"
+      ],
+      "completed_at": "2025-12-14T20:23:34.129Z",
+      "tests_passed": true,
+      "archived_at": "2025-12-14T20:24:15.429Z"
     }
   ],
-  "updated_at": "2025-12-14T16:52:29.965Z"
+  "updated_at": "2025-12-14T20:24:15.429Z"
 }

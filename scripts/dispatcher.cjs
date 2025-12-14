@@ -42,18 +42,33 @@ const ATOMIC_LIMITS = {
 // Maximum decomposition depth to prevent infinite recursion
 const MAX_DECOMPOSITION_DEPTH = 3;
 
+// Backlog cache to avoid repeated disk reads
+let backlogCache = null;
+
 // Load backlog
 function loadBacklog() {
+  if (backlogCache !== null) {
+    return backlogCache;
+  }
+
   if (!fs.existsSync(BACKLOG_PATH)) {
-    return {
+    backlogCache = {
       version: '1.0.0',
       updated_at: new Date().toISOString(),
       tasks: [],
       projects: {},
       stats: { total_tasks: 0, open: 0, in_progress: 0, done: 0, failed: 0 }
     };
+    return backlogCache;
   }
-  return JSON.parse(fs.readFileSync(BACKLOG_PATH, 'utf8'));
+
+  backlogCache = JSON.parse(fs.readFileSync(BACKLOG_PATH, 'utf8'));
+  return backlogCache;
+}
+
+// Clear backlog cache (used after write operations)
+function clearBacklogCache() {
+  backlogCache = null;
 }
 
 // Command: metrics
@@ -127,6 +142,7 @@ function saveBacklog(backlog) {
   backlog.updated_at = new Date().toISOString();
   backlog.stats = calculateStats(backlog.tasks);
   fs.writeFileSync(BACKLOG_PATH, JSON.stringify(backlog, null, 2));
+  clearBacklogCache();
 }
 
 // Write task execution log entry (JSONL format)
@@ -285,9 +301,7 @@ function convertToExecutionFormat(task) {
     // Pass edit_strategy for FP-001 guards (defaults to create_new)
     edit_strategy: task.edit_strategy || 'create_new',
     // Pass needs_context for precise context extraction
-    needs_context: task.needs_context || [],
-    // Pass test_first for TDD workflow
-    test_first: task.test_first || null
+    needs_context: task.needs_context || []
   };
 }
 
