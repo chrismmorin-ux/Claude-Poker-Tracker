@@ -7,32 +7,19 @@
       "Bash(npx:*)",
       "Bash(node:*)",
       "Bash(bash:*)",
-      "Bash(cat:*)",
-      "Bash(echo:*)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
-      "Bash(ls:*)",
-      "Bash(dir:*)",
-      "Bash(cd:*)",
-      "Bash(wc:*)",
-      "Bash(tree:*)",
-      "Bash(chmod:*)",
-      "Bash(jq:*)",
-      "Bash(curl:*)",
-      "Bash(python:*)",
-      "Bash(findstr:*)",
-      "Bash(ren:*)",
-      "Bash(xargs:*)",
-      "Bash(timeout:*)",
-      "Bash(test:*)",
-      "Bash(./scripts/*:*)",
-      "Bash(bash scripts/*:*)",
       "Bash(git:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(./scripts/*:*)",
+      "Bash(bash scripts/*:*)",
       "WebSearch",
       "WebFetch(domain:*)",
       "SlashCommand(**)",
@@ -48,95 +35,7 @@
     "deny": []
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/budget-check.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/startup-menu.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-project-required.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/efficiency-advisor.cjs"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/plan-mode-edit-check.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/write-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/decomposition-validator.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/plan-mode-edit-check.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/write-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/decomposition-validator.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/scan-first-check.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/cache-first-read.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/scan-first-check.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/scan-first-check.cjs"
-          }
-        ]
-      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -150,192 +49,7 @@
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/quality-gate.cjs"
-          },
-          {
-            "type": "command",
             "command": "node .claude/hooks/pre-commit-gate.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/commit-project-check.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/index-first-check.cjs"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-session-tracker.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/auto-project-create.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-time-estimate-detector.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/docs-sync.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pr-size-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/agent-suggest.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/project-update.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/pm-time-estimate-detector.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/docs-sync.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/new-file-test-reminder.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/agent-suggest.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/project-update.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/test-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/test-summary.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/lint-summary.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/process-suggest.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/decomposition-validator.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/efficiency-tracker.cjs"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/metrics-collector.cjs"
-          }
-        ]
-      },
-      {
-        "matcher": "SlashCommand",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/audit-auto-capture.cjs"
           }
         ]
       }

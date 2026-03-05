@@ -1,35 +1,14 @@
 {
   "version": "2.0.0",
-  "description": "Project Continuity Registry - References unified backlog for all work tracking",
-  "backlog": ".claude/BACKLOG.md",
-  "note": "The BACKLOG.md file is the single source of truth. This file tracks project metadata only.",
   "active": [
     {
-      "id": "delegation-system-cleanup",
-      "name": "Delegation System Cleanup",
-      "file": "docs/projects/0.006.1214-delegation-system-cleanup.project.md",
+      "id": "claude-infrastructure-cleanup",
+      "name": "Claude Infrastructure Cleanup",
+      "file": "docs/projects/0.008.0305-claude-infrastructure-cleanup.project.md",
       "priority": "P0",
-      "phases": 4,
+      "phases": 12,
       "phasesComplete": 0,
-      "description": "Refactor delegation docs and hooks: move meta-docs, consolidate redundant hooks, archive dead code - 4 phases"
-    },
-    {
-      "id": "decomposition-policy",
-      "name": "Comprehensive Decomposition Policy Integration",
-      "file": "docs/projects/0.001.1211-decomposition-policy.project.md",
-      "priority": "P0",
-      "phases": 10,
-      "phasesComplete": 5,
-      "description": "Mandatory enforced decomposition policy for local model delegation - 59 atomic tasks, 49 files. ONE-TIME bootstrap exception (Phase 9), removed in Phase 10"
-    },
-    {
-      "id": "local-model-enforcement",
-      "name": "Local Model Delegation Enforcement",
-      "file": "docs/projects/0.002.1212-local-model-enforcement.project.md",
-      "priority": "P0",
-      "phases": 7,
-      "phasesComplete": 0,
-      "description": "Implement 6 persistent fixes to close enforcement gaps: pre-write blocking hook, remove escape hatch, test dispatcher, make violations expensive, add warnings, simplify workflow - 20 atomic tasks"
+      "description": "Strip .claude/ to only what adds value"
     },
     {
       "id": "primitive-actions-ui",
@@ -38,173 +17,51 @@
       "priority": "P1",
       "phases": 4,
       "phasesComplete": 0,
-      "description": "Replace pattern-recognized action buttons with context-aware primitive actions (Check, Bet, Call, Raise, Fold)"
+      "description": "Replace pattern-recognized action buttons with context-aware primitive actions"
     },
     {
       "id": "firebase-auth",
       "name": "Firebase Authentication System",
-      "file": "docs/projects/firebase-auth.project.md",
+      "file": "docs/projects/2.001.1210-firebase-auth.project.md",
       "priority": "P2",
       "phases": 6,
-      "phasesComplete": 3,
-      "description": "Optional Firebase Auth with email/password + Google OAuth, guest mode preserved, account management in Settings"
-    },
-    {
-      "id": "learning-dashboard",
-      "name": "Local Model Learning & Dashboard System",
-      "file": "docs/projects/0.003.1212-learning-dashboard.project.md",
-      "priority": "P0",
-      "phases": 4,
       "phasesComplete": 4,
-      "description": "Comprehensive logging, learning engine, and dashboard for local model execution tracking - 26 atomic tasks across 4 phases"
-    },
-    {
-      "id": "token-tracking-overhaul",
-      "name": "Token Tracking & Dashboard Overhaul",
-      "file": "docs/projects/0.004.1212-token-tracking-overhaul.project.md",
-      "priority": "P0",
-      "phases": 4,
-      "phasesComplete": 0,
-      "description": "Use actual token data from stats-cache.json, phase attribution, project-level history, and actionable dashboard trends - 17 atomic tasks"
+      "description": "Optional Firebase Auth, guest mode preserved"
     }
   ],
   "pending": [
     {
-      "id": "mvp-polish",
-      "name": "MVP UI Polish Pass",
-      "file": "docs/projects/mvp-polish.project.md",
-      "priority": "P2",
-      "phases": 4,
-      "phasesComplete": 0,
-      "description": "Toast review, error message polish, UI animations, destructive action confirmations"
-    },
-    {
-      "id": "firebase-cloud-sync",
-      "name": "Firebase Cloud Sync",
-      "file": "docs/projects/firebase-cloud-sync.project.md",
-      "priority": "P3",
-      "phases": 5,
-      "phasesComplete": 0,
-      "description": "Firebase backup/restore, device-based auth, conflict resolution, multi-device sync"
-    },
-    {
       "id": "player-tendencies",
       "name": "Player Tendencies Analytics",
-      "file": "docs/projects/player-tendencies.project.md",
+      "file": "docs/projects/3.002.1209-player-tendencies.project.md",
       "priority": "P3",
       "phases": 5,
       "phasesComplete": 0,
-      "description": "VPIP, PFR, aggression factor, 3-bet%, C-bet% calculations and display"
-    },
-    {
-      "id": "range-analysis",
-      "name": "Range Analysis Tools",
-      "file": "docs/projects/range-analysis.project.md",
-      "priority": "P4",
-      "phases": 4,
-      "phasesComplete": 0,
-      "description": "Hand range input matrix, equity calculator, range comparison"
-    },
-    {
-      "id": "typescript-migration",
-      "name": "TypeScript Migration (Phase D)",
-      "file": "docs/projects/typescript-migration.project.md",
-      "priority": "P4",
-      "phases": 3,
-      "phasesComplete": 0,
-      "description": "Future TypeScript migration - type definitions, type guards, gradual conversion"
+      "description": "VPIP, PFR, aggression factor, 3-bet%, C-bet%"
     }
   ],
   "completed": [
     {
+      "id": "architecture-health",
+      "name": "Architecture Health",
+      "completedAt": "2025-12-10",
+      "description": "v117 - Action sequences, pattern recognition, IndexedDB v8"
+    },
+    {
       "id": "error-reporting",
       "name": "Error Reporting System",
-      "file": "docs/projects/error-reporting.project.md",
-      "priority": "P2",
-      "completedAt": "2025-12-10",
-      "phases": 3,
-      "phasesComplete": 3,
-      "description": "Local error logging, error log viewer, bug report export"
+      "completedAt": "2025-12-10"
     },
     {
       "id": "settings-system",
       "name": "Settings System",
-      "file": "docs/projects/settings-system.project.md",
-      "priority": "P1",
-      "completedAt": "2025-12-09",
-      "phases": 3,
-      "phasesComplete": 3,
-      "description": "Settings infrastructure, preferences UI, venue/game type customization"
-    },
-    {
-      "id": "mvp-critical-fixes",
-      "name": "MVP Critical Fixes (P0+P1 Audit Issues)",
-      "file": "docs/projects/mvp-critical-fixes.project.md",
-      "priority": "P0",
-      "completedAt": "2025-12-09",
-      "phases": 2,
-      "phasesComplete": 2,
-      "description": "Fixed all P0+P1 audit issues: card duplicate prevention, production validation, DB-level player uniqueness, session reconciliation, action/seat validation"
-    },
-    {
-      "id": "audit-fix-implementation",
-      "name": "Audit Fix Implementation (Phases A-C)",
-      "file": "docs/projects/audit-fix-implementation.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-09",
-      "phases": 3,
-      "phasesComplete": 3,
-      "description": "Critical fixes from Core System Audit: normalization, HYDRATE defaults, validators, card duplicates, session atomicity"
-    },
-    {
-      "id": "core-system-audit",
-      "name": "Core System Audit - Poker Tracker Application",
-      "file": "docs/projects/core-system-audit.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-09",
-      "phases": 5,
-      "phasesComplete": 5,
-      "description": "Comprehensive audit with 15 documents covering persistence, reducers, hydration, invariants, and schema proposals"
-    },
-    {
-      "id": "comprehensive-refactoring-v114",
-      "name": "Comprehensive Refactoring v114",
-      "file": "docs/archive/comprehensive-refactoring-v114.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-09",
-      "phases": 5,
-      "phasesComplete": 4,
-      "description": "Context API + component decomposition (Phase 5 deferred)"
+      "completedAt": "2025-12-09"
     },
     {
       "id": "test-coverage",
-      "name": "High Test Coverage Implementation",
-      "file": "docs/archive/test-coverage.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-09",
-      "phases": 13,
-      "phasesComplete": 13,
-      "description": "2,199 tests across 74 files, 90%+ coverage"
-    },
-    {
-      "id": "debug-infrastructure",
-      "name": "Debug Infrastructure",
-      "file": "docs/archive/debug-infrastructure.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-07",
-      "phases": 8,
-      "phasesComplete": 8
-    },
-    {
-      "id": "cto-review-v112",
-      "name": "CTO Review Implementation",
-      "file": "docs/archive/cto-review-v112.project.md",
-      "priority": "high",
-      "completedAt": "2025-12-07",
-      "phases": 11,
-      "phasesComplete": 11
+      "name": "High Test Coverage (2,199 tests)",
+      "completedAt": "2025-12-09"
     }
   ],
-  "lastUpdated": "2025-12-14T16:32:09.585Z",
-  "roadmapFile": "C:\\Users\\chris\\.claude\\plans\\snug-gathering-flurry.md"
+  "lastUpdated": "2026-03-05"
 }
