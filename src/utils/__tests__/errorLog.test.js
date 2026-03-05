@@ -72,7 +72,7 @@ describe('errorLog', () => {
       expect(entry.context.sessionActive).toBe(true);
       expect(entry.context.handCount).toBe(5);
       expect(entry.userAgent).toBeDefined();
-      expect(entry.appVersion).toBe('v115');
+      expect(entry.appVersion).toBe('v117');
     });
 
     it('persists entry to localStorage', () => {
@@ -239,7 +239,7 @@ describe('errorLog', () => {
       const exported = exportErrorLog();
       const parsed = JSON.parse(exported);
 
-      expect(parsed.appVersion).toBe('v115');
+      expect(parsed.appVersion).toBe('v117');
       expect(parsed.exportedAt).toBeDefined();
       expect(parsed.errorCount).toBe(1);
       expect(parsed.errors).toHaveLength(1);

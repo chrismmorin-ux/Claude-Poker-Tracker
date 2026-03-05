@@ -10,7 +10,7 @@
 
 const STORAGE_KEY = 'poker-tracker-error-log';
 const MAX_ENTRIES = 50;
-const APP_VERSION = 'v115';
+const APP_VERSION = 'v117';
 
 /**
  * Error log entry shape

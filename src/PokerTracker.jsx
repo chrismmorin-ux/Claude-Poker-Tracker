@@ -417,7 +417,7 @@ const PokerTrackerWireframes = () => {
       }
     }
 
-    return false;
+    return null;
   }, [absentSeats, seatActions]);
 
   const getSeatActionSummary = (seat) => {

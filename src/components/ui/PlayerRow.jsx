@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { TendencyStats } from './TendencyStats';
 
 /**
  * Get description summary from player data
@@ -63,6 +64,7 @@ const formatRelativeTime = (timestamp) => {
  * @param {Function} props.onClick - Click handler (for seat assignment)
  * @param {Function} props.onEdit - Edit button handler
  * @param {Function} props.onDelete - Delete button handler
+ * @param {Object|null} props.tendencyStats - Calculated tendency stats from usePlayerTendencies
  */
 export const PlayerRow = ({
   player,
@@ -72,7 +74,8 @@ export const PlayerRow = ({
   onDragEnd,
   onClick,
   onEdit,
-  onDelete
+  onDelete,
+  tendencyStats
 }) => {
   const isAssigned = assignedSeat !== null;
 
@@ -113,6 +116,7 @@ export const PlayerRow = ({
             {player.nickname && (
               <div className="text-xs text-gray-500">"{player.nickname}"</div>
             )}
+            <TendencyStats stats={tendencyStats} />
           </div>
         </div>
       </td>

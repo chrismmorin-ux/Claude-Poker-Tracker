@@ -3,8 +3,13 @@
 ## Active Projects
 | Project | Phase | File |
 |---------|-------|------|
-| Primitive Actions UI | 0/4 | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
+| Player Tendencies | 3/7 | `docs/projects/3.002.1209-player-tendencies.project.md` |
 | Firebase Auth | 4/5 (paused) | `docs/projects/2.001.1210-firebase-auth.project.md` |
+
+## Completed Projects
+| Project | Completed | File |
+|---------|-----------|------|
+| Primitive Actions UI | 2025-03 | `docs/projects/1.001.1211-primitive-actions-ui.project.md` |
 
 ## Pending Tasks
 | ID | Task | Priority | Notes |
@@ -14,7 +19,7 @@
 ## Planned Projects (Not Started)
 | Project | Priority | File |
 |---------|----------|------|
-| Player Tendencies | P3 | `docs/projects/3.002.1209-player-tendencies.project.md` |
+| Player Tendencies | P2 (active) | `docs/projects/3.002.1209-player-tendencies.project.md` |
 | Firebase Cloud Sync | P3 | Planned |
 | Range Analysis | P4 | Planned |
 | TypeScript Migration | P4 | Planned |

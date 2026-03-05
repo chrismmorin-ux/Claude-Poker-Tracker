@@ -39,13 +39,6 @@ import {
  */
 export const saveHand = async (handData, userId = GUEST_USER_ID) => {
   try {
-    // Validate hand data before saving
-    const validation = validateHandRecord(handData);
-    if (!validation.valid) {
-      logValidationErrors('saveHand', validation.errors);
-      throw new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
-    }
-
     const db = await initDB();
 
     // Get active session to auto-link hand (for this user)
@@ -76,6 +69,13 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
       sessionHandNumber,  // 1-based index within session (null if no session)
       handDisplayId,      // Searchable identifier
     };
+
+    // Validate the complete hand record (after metadata is added)
+    const validation = validateHandRecord(handRecord);
+    if (!validation.valid) {
+      logValidationErrors('saveHand', validation.errors);
+      throw new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');

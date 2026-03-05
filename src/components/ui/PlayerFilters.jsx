@@ -79,6 +79,7 @@ export const PlayerFilters = ({
           <option value="lastSeen">Last Seen</option>
           <option value="name">Name</option>
           <option value="handCount">Hand Count</option>
+          <option value="vpip">VPIP (Loosest)</option>
         </select>
       </div>
 

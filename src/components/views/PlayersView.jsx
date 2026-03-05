@@ -13,6 +13,7 @@ import { PlayerRow } from '../ui/PlayerRow';
 import { SeatGrid } from '../ui/SeatGrid';
 import { LIMITS } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
+import { usePlayerTendencies } from '../../hooks/usePlayerTendencies';
 
 /**
  * PlayersView component
@@ -52,6 +53,9 @@ export const PlayersView = ({
   showError,
   showSuccess
 }) => {
+  // Player tendency stats
+  const { tendencyMap } = usePlayerTendencies(playerState.allPlayers);
+
   // Player filtering hook
   const {
     filteredPlayers,
@@ -75,7 +79,7 @@ export const PlayersView = ({
     filterSunglasses,
     setFilterSunglasses,
     clearFilters,
-  } = usePlayerFiltering(playerState.allPlayers);
+  } = usePlayerFiltering(playerState.allPlayers, tendencyMap);
 
   // Modal and UI state
   const [showNewPlayerModal, setShowNewPlayerModal] = useState(false);
@@ -390,6 +394,7 @@ export const PlayersView = ({
                     onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
                     onEdit={() => setEditingPlayer(player)}
                     onDelete={() => setDeletingPlayer(player)}
+                    tendencyStats={tendencyMap[player.playerId] || null}
                   />
                 ))}
               </tbody>

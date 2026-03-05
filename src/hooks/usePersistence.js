@@ -145,6 +145,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
             dealerButtonSeat: gameState.dealerButtonSeat,
             mySeat: gameState.mySeat,
             seatActions: gameState.seatActions,
+            actionSequence: gameState.actionSequence,
             absentSeats: gameState.absentSeats
           },
           cardState: {
@@ -202,6 +203,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
           dealerButtonSeat: gameState.dealerButtonSeat,
           mySeat: gameState.mySeat,
           seatActions: gameState.seatActions,
+          actionSequence: gameState.actionSequence,
           absentSeats: gameState.absentSeats
         },
         cardState: {

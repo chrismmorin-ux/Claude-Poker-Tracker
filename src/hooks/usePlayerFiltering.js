@@ -10,9 +10,10 @@ import { useState, useMemo, useCallback } from 'react';
 /**
  * Custom hook for player filtering, searching, and sorting
  * @param {Array} allPlayers - All players from player state
+ * @param {Object} [tendencyMap={}] - Map of playerId -> tendency stats (for VPIP sorting)
  * @returns {Object} Filtered players, filter state, and setters
  */
-export const usePlayerFiltering = (allPlayers = []) => {
+export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTag, setFilterTag] = useState('');
@@ -86,12 +87,16 @@ export const usePlayerFiltering = (allPlayers = []) => {
         return (a.name || '').localeCompare(b.name || '');
       } else if (sortBy === 'handCount') {
         return (b.handCount || 0) - (a.handCount || 0);
+      } else if (sortBy === 'vpip') {
+        const aVpip = tendencyMap[a.playerId]?.vpip ?? -1;
+        const bVpip = tendencyMap[b.playerId]?.vpip ?? -1;
+        return bVpip - aVpip;
       }
       return 0;
     });
 
     return result;
-  }, [allPlayers, searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, sortBy]);
+  }, [allPlayers, searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, sortBy, tendencyMap]);
 
   // Get unique style tags from all players for filter dropdown
   const allStyleTags = useMemo(() => {

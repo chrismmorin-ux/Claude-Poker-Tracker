@@ -531,7 +531,7 @@ export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => 
             {/* Version Info */}
             <div className="mb-4 pt-3 border-t border-gray-700">
               <p className="text-gray-400 text-sm">
-                Version: <span className="text-white font-medium">v116</span>
+                Version: <span className="text-white font-medium">v117</span>
               </p>
             </div>
 
