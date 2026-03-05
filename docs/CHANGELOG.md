@@ -1,6 +1,123 @@
 # Poker Tracker Change Log
 
-## v117 - Architecture Health Phase 5: Migration & Integration (Current)
+## v120 - Range Grid Visualization & Multi-View Access (Current)
+
+### Summary
+- **Purpose**: Visual 13x13 range grids + range access from Table, Stats, and Players views
+- **Plan**: Range Grid Visualization, Multi-View Access, and Simulator Rewrite
+- **New Files**: 2 (RangeGrid.jsx, RangeDetailPanel.jsx)
+- **Modified Files**: 8 (StatsView, TableView, SeatComponent, PlayersView, PlayerRow, rangeMatrix, seedRangeTestData, useRangeProfile)
+
+### New Components
+- **RangeGrid.jsx**: Pure 13x13 grid rendering Float64Array(169) weights with color-coded cells, showdown rings, confidence badges, two size variants (full/compact)
+- **RangeDetailPanel.jsx**: Modal overlay via `createPortal` with position pills, scenario toggles (No Raise Faced / Facing Raise), action pills, grid + summary stats
+
+### Multi-View Integration
+- **TableView**: Click player name badge → opens RangeDetailPanel modal
+- **PlayersView**: "Range" button per player row → opens RangeDetailPanel modal
+- **StatsView**: Inline compact RangeGrid below frequency tables with position/action filter pills
+
+### Simulator Rewrite (`seedRangeTestData.js`)
+- Creates real session records (venue "Seed Table", buy-in $200, cash-out $400)
+- Archetypes define `trueRanges` — actual hand range strings per position/action
+- Hand generation samples from true ranges for range engine validation
+- ~20% showdown rate for confirmed hand data
+- Cleanup deletes all seed data (session, hands, players, range profiles)
+
+### Bug Fixes
+- **RangeGrid index mapping**: Fixed all 3 branches returning identical index (pair/suited/offsuit indistinguishable). Now delegates to canonical `rangeIndex()`.
+- **useRangeProfile cache stale on reopen**: Refs not reset when playerId goes null, causing "No range data" on modal reopen. Fixed by resetting `lastHandCountRef` and `lastPlayerIdRef` in null branch.
+- **Modal not clickable in scaled container**: `fixed inset-0` modal trapped inside `transform: scale()` + `overflow-hidden` containers. Fixed with `createPortal(jsx, document.body)`.
+
+### Other Changes
+- `rangeMatrix.js`: Exported `parseRangeString` (was private const)
+
+---
+
+## v119 - Bayesian Range Engine Phase 1
+
+### Summary
+- **Purpose**: Estimate per-position hand distributions for each player using Bayesian inference
+- **Design Doc**: `docs/RANGE_ENGINE_DESIGN.md`
+- **New Files**: 8 files (6 range engine modules + persistence + hook)
+- **Modified Files**: 3 files (database.js, persistence/index.js, StatsView.jsx)
+- **DB Migration**: v8 → v9 (adds `rangeProfiles` store)
+
+### Range Engine (`src/utils/rangeEngine/`)
+- **rangeProfile.js**: Schema definition — RANGE_ACTIONS, RANGE_POSITIONS, create/serialize/deserialize
+- **populationPriors.js**: Population baselines for typical 1/2 player, split by decision tree
+- **actionExtractor.js**: Extracts preflop actions from hand history with position classification
+- **bayesianUpdater.js**: Core Bayesian update — prior × likelihood with showdown anchors
+- **crossRangeConstraints.js**: Normalizes non-fold actions within each scenario
+- **index.js**: Public API — `buildRangeProfile()`, `getRangeWidthSummary()`
+
+### Key Design: Two Independent Decision Trees
+Preflop actions split into two conditional scenarios (NOT one probability space):
+- **No raise faced**: fold / limp / open (BB excluded)
+- **Facing a raise**: fold / coldCall / threeBet (all positions)
+
+A hand like AA can be 100% in both "open" and "threeBet" ranges — they occur in different game states.
+
+### Bayesian Update Algorithm
+1. Population priors as starting point (PRIOR_WEIGHT=10 pseudocount)
+2. Effective frequency: `(PRIOR_WEIGHT × popFreq + observed) / (PRIOR_WEIGHT + totalObserved)`
+3. Scale prior range grids by frequency ratio
+4. Showdown anchors: confirmed hands set to weight 1.0, semantic boosting of related hands
+5. Cross-range normalization: non-fold actions within each scenario capped at 1.0
+
+### Persistence
+- **database.js**: v9 migration creates `rangeProfiles` store (keyPath: `profileKey`)
+- **rangeProfilesStorage.js**: CRUD operations following playersStorage.js pattern
+- **useRangeProfile.js**: React hook with lazy-load + cache (follows usePlayerTendencies pattern)
+
+### StatsView Integration
+- Range Profile section appears below session stats when a player is selected
+- Two tables: "First In (no raise faced)" and "Facing a Raise"
+- Shows observed frequencies and sample sizes per position
+
+---
+
+## v118 - Table View Exploit Badges
+
+### Summary
+- **Purpose**: Show exploit category indicators on seated players in the table view
+- **Design Doc**: `docs/DESIGN_UX_REVIEW.md` Phase 1
+- **New Files**: 1 file (`ExploitBadges.jsx`)
+- **Modified Files**: 3 files (`SeatComponent.jsx`, `TableView.jsx`, `CHANGELOG.md`)
+
+### ExploitBadges Component
+- **ExploitBadges.jsx** (~120 lines): Colored category pills below player name badge
+  - Categories: weakness (red `!`), strength (blue `*`), tendency (yellow `~`), note (gray `i`)
+  - Confidence-based opacity from `usePlayerTendencies` sample size:
+    - <10 hands: 30% opacity, 10-19: 60%, 20-49: 85%, 50+: 100% + ring glow
+  - Tap badge to expand popover showing exploit text (stays on table view)
+  - `buildExploitSummary()` utility: groups exploit array by category into counts
+  - Outside click closes popover
+
+### Data Flow
+```
+playerState.seatPlayers[seat] → playerId → player.exploits → buildExploitSummary()
+usePlayerTendencies(allPlayers) → tendencyMap[playerId].sampleSize → opacity
+```
+
+### SeatComponent Changes
+- New props: `exploitSummary`, `exploits`, `sampleSize`
+- Renders `ExploitBadges` below player name badge when exploits exist
+
+### TableView Changes
+- Added `usePlayerTendencies` hook for sample size data
+- Added `getSeatPlayer` from PlayerContext for exploit access
+- Precomputes `seatExploitData` memo: per-seat exploit summaries + sample sizes
+
+### Design Decisions (from DESIGN_UX_REVIEW.md)
+- **Two usage modes**: Fast Capture (during play) vs Analytical Review (between hands)
+- Exploit badges serve Fast Capture mode — at-a-glance confidence indicators
+- Popover (not navigation) keeps user on table view during play
+- Opacity scaling gives visual trust calibration without extra UI
+
+---
+
+## v117 - Architecture Health Phase 5: Migration & Integration
 
 ### Summary
 - **Purpose**: Complete action sequence migration and integrate with UI
