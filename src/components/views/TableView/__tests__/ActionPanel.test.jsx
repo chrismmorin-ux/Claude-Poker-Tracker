@@ -1,16 +1,18 @@
 /**
- * ActionPanel.test.jsx - Tests for action panel component
+ * ActionPanel.test.jsx - Tests for primitive action panel component
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ActionPanel } from '../ActionPanel';
-import { ACTIONS } from '../../../../constants/gameConstants';
+import { PRIMITIVE_ACTIONS } from '../../../../constants/primitiveActions';
 import { GameProvider } from '../../../../contexts/GameContext';
 import { initialGameState } from '../../../../reducers/gameReducer';
 
-// Helper to wrap component with GameProvider
+const mockRecordPrimitiveAction = vi.fn();
+
 const renderWithGameContext = (ui, { gameState = initialGameState, dispatchGame = vi.fn() } = {}) => {
+  // Provide recordPrimitiveAction via the GameProvider
   return render(
     <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
       {ui}
@@ -23,7 +25,6 @@ describe('ActionPanel', () => {
     selectedPlayers: [5],
     currentStreet: 'preflop',
     seatActions: {},
-    onRecordAction: vi.fn(),
     onClearSelection: vi.fn(),
     onToggleAbsent: vi.fn(),
     onClearSeatActions: vi.fn(),
@@ -81,171 +82,65 @@ describe('ActionPanel', () => {
     });
   });
 
-  describe('preflop action buttons', () => {
-    it('renders Fold button on preflop', () => {
+  describe('preflop primitive action buttons', () => {
+    it('renders Check, Call, Raise, Fold on preflop', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
+      expect(screen.getByText('Check')).toBeInTheDocument();
+      expect(screen.getByText('Call')).toBeInTheDocument();
+      expect(screen.getByText('Raise')).toBeInTheDocument();
       expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('renders Limp button on preflop', () => {
+    it('does not render Bet on preflop', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.getByText('Limp')).toBeInTheDocument();
+      expect(screen.queryByText('Bet')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('postflop primitive action buttons (no bet)', () => {
+    it('renders Check, Bet, Fold on flop with no bet', () => {
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={{}} />);
+      expect(screen.getByText('Check')).toBeInTheDocument();
+      expect(screen.getByText('Bet')).toBeInTheDocument();
+      expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('renders Call button on preflop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
+    it('does not render Call or Raise when no bet on street', () => {
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={{}} />);
+      expect(screen.queryByText('Call')).not.toBeInTheDocument();
+      expect(screen.queryByText('Raise')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('postflop primitive action buttons (with bet)', () => {
+    it('renders Call, Raise, Fold when bet exists on street', () => {
+      const seatActions = {
+        flop: { 3: ['bet'] },
+      };
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={seatActions} />);
       expect(screen.getByText('Call')).toBeInTheDocument();
+      expect(screen.getByText('Raise')).toBeInTheDocument();
+      expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('renders Open button on preflop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.getByText('Open')).toBeInTheDocument();
-    });
-
-    it('renders 3bet button on preflop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.getByText('3bet')).toBeInTheDocument();
-    });
-
-    it('renders 4bet button on preflop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.getByText('4bet')).toBeInTheDocument();
+    it('does not render Check or Bet when bet exists on street', () => {
+      const seatActions = {
+        flop: { 3: ['bet'] },
+      };
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={seatActions} />);
+      expect(screen.queryByText('Check')).not.toBeInTheDocument();
+      expect(screen.queryByText('Bet')).not.toBeInTheDocument();
     });
   });
 
-  describe('postflop action buttons', () => {
-    it('renders PFR section header on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('IF PFR:')).toBeInTheDocument();
-    });
-
-    it('renders PFC section header on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('IF PFC:')).toBeInTheDocument();
-    });
-
-    it('renders Cbet IP (S) button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Cbet IP (S)')).toBeInTheDocument();
-    });
-
-    it('renders Cbet IP (L) button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Cbet IP (L)')).toBeInTheDocument();
-    });
-
-    it('renders Check button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      // Check appears twice - once for PFR, once for PFC
-      const checkButtons = screen.getAllByText('Check');
-      expect(checkButtons.length).toBe(2);
-    });
-
-    it('renders Donk button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Donk')).toBeInTheDocument();
-    });
-
-    it('renders Stab button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Stab')).toBeInTheDocument();
-    });
-
-    it('renders Check-Raise button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Check-Raise')).toBeInTheDocument();
-    });
-
-    it('renders Fold to Cbet button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Fold to Cbet')).toBeInTheDocument();
-    });
-
-    it('renders Fold to CR button on flop', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      expect(screen.getByText('Fold to CR')).toBeInTheDocument();
-    });
-  });
-
-  describe('preflop action interactions', () => {
-    it('calls onRecordAction with FOLD when Fold clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('Fold'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.FOLD);
-    });
-
-    it('calls onRecordAction with LIMP when Limp clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('Limp'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.LIMP);
-    });
-
-    it('calls onRecordAction with CALL when Call clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('Call'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.CALL);
-    });
-
-    it('calls onRecordAction with OPEN when Open clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('Open'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.OPEN);
-    });
-
-    it('calls onRecordAction with THREE_BET when 3bet clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('3bet'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.THREE_BET);
-    });
-
-    it('calls onRecordAction with FOUR_BET when 4bet clicked', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      fireEvent.click(screen.getByText('4bet'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.FOUR_BET);
-    });
-  });
-
-  describe('postflop action interactions', () => {
-    it('calls onRecordAction with CBET_IP_SMALL', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Cbet IP (S)'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.CBET_IP_SMALL);
-    });
-
-    it('calls onRecordAction with CBET_IP_LARGE', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Cbet IP (L)'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.CBET_IP_LARGE);
-    });
-
-    it('calls onRecordAction with DONK', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Donk'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.DONK);
-    });
-
-    it('calls onRecordAction with STAB', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Stab'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.STAB);
-    });
-
-    it('calls onRecordAction with CHECK_RAISE', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Check-Raise'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.CHECK_RAISE);
-    });
-
-    it('calls onRecordAction with FOLD_TO_CBET', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Fold to Cbet'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.FOLD_TO_CBET);
-    });
-
-    it('calls onRecordAction with FOLD_TO_CR', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
-      fireEvent.click(screen.getByText('Fold to CR'));
-      expect(defaultProps.onRecordAction).toHaveBeenCalledWith(ACTIONS.FOLD_TO_CR);
+  describe('multi-seat mode', () => {
+    it('renders all 5 primitive actions for multi-seat selection', () => {
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[1, 2, 3]} currentStreet="flop" />);
+      expect(screen.getByText('Check')).toBeInTheDocument();
+      expect(screen.getByText('Bet')).toBeInTheDocument();
+      expect(screen.getByText('Call')).toBeInTheDocument();
+      expect(screen.getByText('Raise')).toBeInTheDocument();
+      expect(screen.getByText('Fold')).toBeInTheDocument();
     });
   });
 
@@ -284,9 +179,7 @@ describe('ActionPanel', () => {
         ...defaultProps,
         selectedPlayers: [5],
         seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-          },
+          preflop: { 5: ['raise'] },
         },
       };
       renderWithGameContext(<ActionPanel {...props} />);
@@ -298,10 +191,7 @@ describe('ActionPanel', () => {
         ...defaultProps,
         selectedPlayers: [5, 6],
         seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-            6: [ACTIONS.FOLD],
-          },
+          preflop: { 5: ['raise'], 6: ['fold'] },
         },
       };
       renderWithGameContext(<ActionPanel {...props} />);
@@ -324,11 +214,7 @@ describe('ActionPanel', () => {
       const props = {
         ...defaultProps,
         selectedPlayers: [5],
-        seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-          },
-        },
+        seatActions: { preflop: { 5: ['raise'] } },
       };
       renderWithGameContext(<ActionPanel {...props} />);
       expect(screen.getByText('Clear Seat Actions')).toBeInTheDocument();
@@ -338,11 +224,7 @@ describe('ActionPanel', () => {
       const props = {
         ...defaultProps,
         selectedPlayers: [5],
-        seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-          },
-        },
+        seatActions: { preflop: { 5: ['raise'] } },
       };
       renderWithGameContext(<ActionPanel {...props} />);
       expect(screen.getByText(/Undo Last Action/)).toBeInTheDocument();
@@ -352,11 +234,7 @@ describe('ActionPanel', () => {
       const props = {
         ...defaultProps,
         selectedPlayers: [5],
-        seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-          },
-        },
+        seatActions: { preflop: { 5: ['raise'] } },
       };
       renderWithGameContext(<ActionPanel {...props} />);
       fireEvent.click(screen.getByText('Clear Seat Actions'));
@@ -367,11 +245,7 @@ describe('ActionPanel', () => {
       const props = {
         ...defaultProps,
         selectedPlayers: [5],
-        seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-          },
-        },
+        seatActions: { preflop: { 5: ['raise'] } },
       };
       renderWithGameContext(<ActionPanel {...props} />);
       fireEvent.click(screen.getByText(/Undo Last Action/));
@@ -382,28 +256,11 @@ describe('ActionPanel', () => {
       const props = {
         ...defaultProps,
         selectedPlayers: [5, 6],
-        seatActions: {
-          preflop: {
-            5: [ACTIONS.OPEN],
-            6: [ACTIONS.FOLD],
-          },
-        },
+        seatActions: { preflop: { 5: ['raise'], 6: ['fold'] } },
       };
       renderWithGameContext(<ActionPanel {...props} />);
       expect(screen.queryByText('Clear Seat Actions')).not.toBeInTheDocument();
       expect(screen.queryByText(/Undo Last Action/)).not.toBeInTheDocument();
-    });
-  });
-
-  describe('street-specific behavior', () => {
-    it('shows preflop buttons on turn street (uses postflop layout)', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="turn" />);
-      expect(screen.getByText('IF PFR:')).toBeInTheDocument();
-    });
-
-    it('shows preflop buttons on river street (uses postflop layout)', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="river" />);
-      expect(screen.getByText('IF PFC:')).toBeInTheDocument();
     });
   });
 });

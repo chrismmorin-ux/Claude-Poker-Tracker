@@ -80,6 +80,19 @@ export const PRIMITIVE_ACTION_VALUES = Object.values(PRIMITIVE_ACTIONS);
  * @param {string} action - The action to check
  * @returns {boolean} True if the action is a primitive action
  */
+/**
+ * Button configuration for primitive action buttons.
+ * Maps each primitive action to its display label and Tailwind color classes.
+ * @constant {Object} PRIMITIVE_BUTTON_CONFIG
+ */
+export const PRIMITIVE_BUTTON_CONFIG = {
+  [PRIMITIVE_ACTIONS.CHECK]:  { label: 'Check', bgColor: 'bg-blue-400',   hoverColor: 'hover:bg-blue-500',   textColor: 'text-white' },
+  [PRIMITIVE_ACTIONS.BET]:    { label: 'Bet',   bgColor: 'bg-green-400',  hoverColor: 'hover:bg-green-500',  textColor: 'text-white' },
+  [PRIMITIVE_ACTIONS.CALL]:   { label: 'Call',  bgColor: 'bg-blue-300',   hoverColor: 'hover:bg-blue-400',   textColor: 'text-white' },
+  [PRIMITIVE_ACTIONS.RAISE]:  { label: 'Raise', bgColor: 'bg-orange-400', hoverColor: 'hover:bg-orange-500', textColor: 'text-white' },
+  [PRIMITIVE_ACTIONS.FOLD]:   { label: 'Fold',  bgColor: 'bg-red-400',    hoverColor: 'hover:bg-red-500',    textColor: 'text-white' },
+};
+
 export const isPrimitiveAction = (action) => PRIMITIVE_ACTION_VALUES.includes(action);
 
 /**

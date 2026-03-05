@@ -354,7 +354,6 @@ export const TableView = ({
               selectedPlayers={selectedPlayers}
               currentStreet={currentStreet}
               seatActions={seatActions}
-              onRecordAction={recordAction}
               onClearSelection={handleClearSelection}
               onToggleAbsent={toggleAbsent}
               onClearSeatActions={clearSeatActions}

@@ -2,6 +2,8 @@
  * actionUtils.js - Utility functions for action styling and display
  */
 
+import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+
 /**
  * Gets the display name for an action
  * @param {string} action - Action constant
@@ -482,6 +484,38 @@ export const isAggressivePattern = (pattern) => {
  * @param {string} pattern - Pattern constant
  * @returns {boolean}
  */
+// =============================================================================
+// PRIMITIVE ACTION UTILITIES (Phase 1)
+// =============================================================================
+
+/**
+ * Returns the valid primitive actions for the current game state.
+ * @param {string} street - Current street ('preflop', 'flop', 'turn', 'river')
+ * @param {boolean} hasBet - Whether there's already a bet on this street
+ * @param {boolean} isMultiSeat - Whether tracking multiple seats simultaneously
+ * @returns {string[]} Array of valid PRIMITIVE_ACTIONS values
+ */
+export function getValidActions(street, hasBet, isMultiSeat) {
+  const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
+  if (isMultiSeat) return [CHECK, BET, CALL, RAISE, FOLD];
+  if (street === 'preflop') return [CHECK, CALL, RAISE, FOLD];
+  return hasBet ? [CALL, RAISE, FOLD] : [CHECK, BET, FOLD];
+}
+
+/**
+ * Checks if any seat has made a bet or raise on the current street.
+ * @param {Object} seatActions - The seatActions object from game state
+ * @param {string} currentStreet - Current street name
+ * @returns {boolean} True if any seat has bet or raised on this street
+ */
+export function hasBetOnStreet(seatActions, currentStreet) {
+  const streetActions = seatActions?.[currentStreet];
+  if (!streetActions) return false;
+  return Object.values(streetActions).flat().some(
+    a => a === PRIMITIVE_ACTIONS.BET || a === PRIMITIVE_ACTIONS.RAISE
+  );
+}
+
 export const isPassivePattern = (pattern) => {
   const passivePatterns = [
     'fold', 'fold-to-cbet', 'fold-to-cr',
