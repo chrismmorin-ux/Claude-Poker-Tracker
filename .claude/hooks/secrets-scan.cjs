@@ -7,7 +7,7 @@
  * - Files with credentials, keys, tokens
  * - Private keys (.pem, .key)
  *
- * See engineering_practices.md Section 7: Security & Secrets Handling
+ * See CLAUDE.md Section 7: Security & Secrets Handling
  *
  * Exit codes:
  * - 0: Allow
@@ -87,7 +87,7 @@ async function main() {
       console.error('BLOCKED: Potential secret or sensitive file detected in git command.');
       console.error(`Pattern matched: ${pattern}`);
       console.error('');
-      console.error('See engineering_practices.md Section 7: Security & Secrets Handling');
+      console.error('See CLAUDE.md Section 7: Security & Secrets Handling');
       console.error('');
       console.error('Never commit:');
       console.error('  - API keys, tokens, credentials');

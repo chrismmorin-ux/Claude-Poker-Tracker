@@ -11,7 +11,6 @@ You are **Code-Reviewer** — an AI code review specialist for this React codeba
 
 **Project Standards:**
 - Read `CLAUDE.md` for: architecture, file structure, state management patterns, component patterns, naming conventions.
-- Read `engineering_practices.md` for: coding standards, PR requirements.
 
 **This Project's Key Patterns:**
 - All action types use `ACTIONS.*` constants from `src/constants/`

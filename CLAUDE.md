@@ -1,6 +1,8 @@
 # CLAUDE.md - Poker Tracker
 
-React-based hand tracker for live 9-handed poker games. Vite + Tailwind, mobile-optimized (1600x720).
+Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table.
+
+React + Vite + Tailwind, mobile-optimized (1600x720).
 
 ## Commands
 ```bash
@@ -18,14 +20,16 @@ Prefer `.claude/context/*.md` over raw source — they're compact summaries:
 
 Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 
-## Architecture (v117)
-- `src/PokerTracker.jsx` (~620 lines) — main component
-- `src/contexts/` — 5 providers (Game, UI, Session, Player, Settings)
-- `src/reducers/` — 6 reducers (game, ui, card, session, player, settings)
-- `src/hooks/` — 12 custom hooks
-- `src/components/views/` — 8 view components
-- `src/components/ui/` — 16 UI components
-- `src/utils/` — utilities + persistence (IndexedDB v8)
+## Architecture
+- `src/PokerTracker.jsx` (~93 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
+- `src/contexts/` — 7 providers + ToastContext (zero prop drilling, persistence hooks inside providers)
+- `src/reducers/` — 7 reducers (game, ui, card, session, player, settings, auth)
+- `src/hooks/` — 20 custom hooks (useGameHandlers, useScale, useRangeProfile, etc.)
+- `src/components/views/` — 9 view screens + 2 overlays (all receive only `scale` prop)
+- `src/components/ui/` — 30 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges)
+- `src/utils/rangeEngine/` — Bayesian range estimation (6 modules)
+- `src/utils/exploitEngine/` — exploit suggestions + range matrix
+- `src/utils/persistence/` — IndexedDB v9 (hands, sessions, players, settings, rangeProfiles)
 
 ## Working Principles
 - **Plan first, code second** — outline your approach before writing code. For non-trivial changes, present the plan and wait for approval
@@ -68,8 +72,22 @@ Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 ## Testing
 Verify across all 7 views: Table, Card Selector, Showdown, Stats, Sessions, Players, Settings
 
+## Analytics Pipeline
+The app builds player models through three layers:
+1. **Session Stats** (`useSessionStats`) — VPIP, PFR, AF, C-Bet from action counts
+2. **Player Tendencies** (`usePlayerTendencies`) — cross-session style classification (TAG, LAG, Fish, etc.)
+3. **Bayesian Range Engine** (`src/utils/rangeEngine/`) — per-position hand distribution estimates
+
+Range Engine key concepts:
+- Two independent decision trees: **no raise faced** (fold/limp/open) and **facing a raise** (fold/coldCall/threeBet)
+- Population priors (typical 1/2 player) as Bayesian starting point, updated with observed frequencies
+- 169-cell hand grids (Float64Array) per action per position
+- Showdown anchors: confirmed hands set to weight 1.0 with semantic boosting
+- Profiles cached in IndexedDB `rangeProfiles` store
+
 ## Docs
 - `docs/SPEC.md` — full specification
 - `docs/QUICK_REF.md` — constants, hooks, utils
 - `docs/DEBUGGING.md` — error codes
 - `docs/CHANGELOG.md` — version history
+- `docs/RANGE_ENGINE_DESIGN.md` — range engine design spec

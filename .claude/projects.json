@@ -2,45 +2,36 @@
   "version": "2.0.0",
   "active": [
     {
-      "id": "claude-infrastructure-cleanup",
-      "name": "Claude Infrastructure Cleanup",
-      "file": "docs/projects/0.008.0305-claude-infrastructure-cleanup.project.md",
-      "priority": "P0",
-      "phases": 12,
-      "phasesComplete": 0,
-      "description": "Strip .claude/ to only what adds value"
-    },
-    {
-      "id": "primitive-actions-ui",
-      "name": "Primitive Actions UI",
-      "file": "docs/projects/1.001.1211-primitive-actions-ui.project.md",
-      "priority": "P1",
-      "phases": 4,
-      "phasesComplete": 0,
-      "description": "Replace pattern-recognized action buttons with context-aware primitive actions"
-    },
-    {
       "id": "firebase-auth",
       "name": "Firebase Authentication System",
       "file": "docs/projects/2.001.1210-firebase-auth.project.md",
       "priority": "P2",
       "phases": 6,
       "phasesComplete": 4,
+      "status": "paused",
       "description": "Optional Firebase Auth, guest mode preserved"
     }
   ],
-  "pending": [
+  "pending": [],
+  "completed": [
+    {
+      "id": "claude-infrastructure-cleanup",
+      "name": "Claude Infrastructure Cleanup",
+      "completedAt": "2026-03-05",
+      "description": "Strip .claude/ to only what adds value"
+    },
+    {
+      "id": "primitive-actions-ui",
+      "name": "Primitive Actions UI",
+      "completedAt": "2026-03-05",
+      "description": "Replace pattern-recognized action buttons with context-aware primitive actions"
+    },
     {
       "id": "player-tendencies",
       "name": "Player Tendencies Analytics",
-      "file": "docs/projects/3.002.1209-player-tendencies.project.md",
-      "priority": "P3",
-      "phases": 5,
-      "phasesComplete": 0,
+      "completedAt": "2026-03-05",
       "description": "VPIP, PFR, aggression factor, 3-bet%, C-bet%"
-    }
-  ],
-  "completed": [
+    },
     {
       "id": "architecture-health",
       "name": "Architecture Health",

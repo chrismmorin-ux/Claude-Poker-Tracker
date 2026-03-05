@@ -19,25 +19,30 @@ You are **Test-Generator** — an AI specialist for writing unit tests in this R
 **Testing Stack:**
 - Vitest (or Jest-compatible) for test runner
 - React Testing Library for hook testing
-- Tests go in `src/__tests__/` mirroring source structure
+- Tests go in colocated `__tests__/` folders next to source files
 
 ## TEST FILE STRUCTURE
 
 ```
 src/
-├── __tests__/
-│   ├── hooks/
+├── hooks/
+│   ├── __tests__/
 │   │   ├── useActionUtils.test.js
-│   │   ├── useSeatUtils.test.js
 │   │   └── ...
-│   ├── utils/
+│   ├── useActionUtils.js
+│   └── ...
+├── utils/
+│   ├── __tests__/
 │   │   ├── actionUtils.test.js
-│   │   ├── cardUtils.test.js
 │   │   └── ...
-│   └── reducers/
-│       ├── gameReducer.test.js
-│       ├── uiReducer.test.js
-│       └── ...
+│   ├── actionUtils.js
+│   └── ...
+├── reducers/
+│   ├── __tests__/
+│   │   ├── gameReducer.test.js
+│   │   └── ...
+│   ├── gameReducer.js
+│   └── ...
 ```
 
 ## TEST PATTERNS
@@ -48,7 +53,7 @@ Utils use dependency injection - pass constants as parameters:
 
 ```javascript
 import { describe, it, expect } from 'vitest';
-import { getActionDisplayName, getActionColor } from '../../utils/actionUtils';
+import { getActionDisplayName, getActionColor } from '../actionUtils';
 import { ACTIONS } from '../../constants/gameConstants';
 
 describe('actionUtils', () => {
@@ -74,7 +79,7 @@ Test state transitions for each action type:
 
 ```javascript
 import { describe, it, expect } from 'vitest';
-import { gameReducer, initialGameState } from '../../reducers/gameReducer';
+import { gameReducer, initialGameState } from '../gameReducer';
 
 describe('gameReducer', () => {
   describe('SET_STREET', () => {
@@ -84,26 +89,6 @@ describe('gameReducer', () => {
         street: 'flop'
       });
       expect(state.currentStreet).toBe('flop');
-    });
-
-    it('preserves other state', () => {
-      const initialWithDealer = { ...initialGameState, dealerButtonSeat: 5 };
-      const state = gameReducer(initialWithDealer, {
-        type: 'SET_STREET',
-        street: 'flop'
-      });
-      expect(state.dealerButtonSeat).toBe(5);
-    });
-  });
-
-  describe('RECORD_ACTION', () => {
-    it('adds action to seat', () => {
-      const state = gameReducer(initialGameState, {
-        type: 'RECORD_ACTION',
-        seat: 1,
-        action: 'FOLD'
-      });
-      expect(state.seatActions[1]).toContain('FOLD');
     });
   });
 });
@@ -115,59 +100,18 @@ Use renderHook from React Testing Library:
 
 ```javascript
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useSeatUtils } from '../../hooks/useSeatUtils';
+import { renderHook } from '@testing-library/react';
+import { useSeatUtils } from '../useSeatUtils';
 
 describe('useSeatUtils', () => {
-  const defaultProps = {
-    currentStreet: 'preflop',
-    dealerButtonSeat: 1,
-    absentSeats: new Set(),
-    seatActions: {},
-    numSeats: 9
-  };
-
   it('calculates small blind seat correctly', () => {
     const { result } = renderHook(() => useSeatUtils(
-      defaultProps.currentStreet,
-      defaultProps.dealerButtonSeat,
-      defaultProps.absentSeats,
-      defaultProps.seatActions,
-      defaultProps.numSeats
+      'preflop', 1, new Set(), {}, 9
     ));
-
     expect(result.current.getSmallBlindSeat()).toBe(2);
-  });
-
-  it('skips absent seats for small blind', () => {
-    const { result } = renderHook(() => useSeatUtils(
-      'preflop',
-      1,
-      new Set([2]), // seat 2 is absent
-      {},
-      9
-    ));
-
-    expect(result.current.getSmallBlindSeat()).toBe(3);
   });
 });
 ```
-
-## TEST CATEGORIES
-
-### 1. Unit Tests (Priority: High)
-- Pure utility functions
-- Reducer state transitions
-- Validation functions
-
-### 2. Hook Tests (Priority: Medium)
-- Custom hook return values
-- Hook state changes via act()
-- Memoization behavior
-
-### 3. Integration Tests (Priority: Lower)
-- Component + hook combinations
-- Reducer + persistence interactions
 
 ## EDGE CASES TO COVER
 
@@ -183,12 +127,6 @@ describe('useSeatUtils', () => {
 - Maximum values (9 seats, all streets)
 - Invalid inputs (seat 0, seat 10)
 - Null/undefined handling
-
-### Card Logic
-- All cards assigned
-- Duplicate card prevention
-- Card slot overflow
-- Community cards vs hole cards
 
 ## OUTPUT FORMAT
 
@@ -209,15 +147,11 @@ When generating tests, provide:
 
 ```bash
 # Run these tests
-npm test -- src/__tests__/path/to/test.js
+npx vitest run src/hooks/__tests__/useExample.test.js
 
 # Run with coverage
-npm test -- --coverage src/__tests__/path/to/test.js
+npx vitest run --coverage src/hooks/__tests__/useExample.test.js
 ```
-
-## Notes
-- [Any assumptions made]
-- [Edge cases that need manual review]
 ```
 
 ## GENERATION PROCESS

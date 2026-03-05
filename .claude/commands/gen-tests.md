@@ -21,7 +21,7 @@ If no target specified, analyze test coverage gaps and suggest priorities.
    - Error conditions
    - Poker-specific logic (seat wrapping, absent seats, etc.)
 
-4. Write test file to `src/__tests__/` mirroring source structure
+4. Write test file to colocated `__tests__/` folder next to the source file
 
 ## Examples
 

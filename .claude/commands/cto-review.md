@@ -12,42 +12,36 @@ $ARGUMENTS
 ## Review Process
 
 1. Read `CLAUDE.md` for current architecture documentation
-2. Read `engineering_practices.md` for standards compliance
-3. Analyze the specified area (or full codebase if "full")
+2. Analyze the specified area (or full codebase if "full")
+3. Read relevant source files before making findings
 
 ## Review Checklist
 
 Evaluate against these criteria:
 
-### Architecture Quality
+### Component Architecture
 - [ ] Component boundaries are well-defined
-- [ ] State management is appropriate for complexity
-- [ ] Dependencies flow in correct direction
-- [ ] No circular dependencies
-- [ ] Separation of concerns maintained
+- [ ] No god-components doing too much
+- [ ] Hook responsibilities are clear and scoped
+- [ ] Reducer scope matches domain boundaries
 
-### Scalability
-- [ ] Can handle 10x current load
-- [ ] No obvious bottlenecks
-- [ ] Caching strategy appropriate
-- [ ] Database queries optimized
+### Engine Integration
+- [ ] Range engine connected to UI properly
+- [ ] Exploit engine consuming range data correctly
+- [ ] No orphaned engine code or dead integrations
 
-### Maintainability
-- [ ] Code follows established patterns
-- [ ] Documentation is current
-- [ ] Tests provide adequate coverage
-- [ ] Technical debt is manageable
+### Persistence Fit
+- [ ] IndexedDB schema matches data model needs
+- [ ] No unnecessary stores or missing indexes
 
-### Security
-- [ ] Input validation in place
-- [ ] No hardcoded secrets
-- [ ] OWASP top 10 addressed
-- [ ] Dependencies audited
+### Simplification Opportunities
+- [ ] No over-abstraction for project scale
+- [ ] Dead code identified for removal
+- [ ] Unnecessary complexity flagged
 
 ## Expected Output
 
 Provide:
 1. **Executive Summary**: One paragraph assessment
-2. **Findings Table**: Issue | Severity | Recommendation
-3. **Top 3 Priority Actions**: With task JSON for each
-4. **ADR Recommendations**: If architectural changes needed
+2. **Findings Table**: Area | Severity | Finding | Recommendation
+3. **Backlog Items**: Formatted for direct insertion into `.claude/BACKLOG.md`

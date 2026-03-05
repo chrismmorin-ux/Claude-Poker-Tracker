@@ -1,22 +1,23 @@
 # Persistence Overview
-**Version**: 1.0.7 | **Updated**: 2025-12-10
+**Version**: 1.1.0 | **Updated**: 2026-03-05
 
 IndexedDB persistence layer with modular domain-specific storage.
-Database: `PokerTrackerDB` v7. Auto-save with 1.5s debounce. Multi-user support via `userId`.
+Database: `PokerTrackerDB` v9. Auto-save with 1.5s debounce. Multi-user support via `userId`.
 
 ## Module Structure
 ```
 src/utils/persistence/
-  database.js       # initDB(), DB constants, GUEST_USER_ID, logging
-  handsStorage.js   # Hand CRUD (saveHand, getAllHands, etc.)
-  sessionsStorage.js # Session CRUD (createSession, endSession, etc.)
-  playersStorage.js  # Player CRUD (createPlayer, updatePlayer, etc.)
-  settingsStorage.js # Settings CRUD (getSettings, saveSettings, etc.)
-  validation.js      # Schema validation helpers
-  index.js          # Central re-export
+  database.js            # initDB(), DB constants, GUEST_USER_ID, logging
+  handsStorage.js        # Hand CRUD (saveHand, getAllHands, etc.)
+  sessionsStorage.js     # Session CRUD (createSession, endSession, etc.)
+  playersStorage.js      # Player CRUD (createPlayer, updatePlayer, etc.)
+  settingsStorage.js     # Settings CRUD (getSettings, saveSettings, etc.)
+  rangeProfilesStorage.js # Range profile CRUD (saveRangeProfile, getRangeProfile, etc.)
+  validation.js          # Schema validation helpers
+  index.js               # Central re-export
 ```
 
-## Object Stores (v7 - Multi-User)
+## Object Stores (v9 - Multi-User + Range Profiles)
 | Store | Key | Indexes | Purpose |
 |-------|-----|---------|---------|
 | `hands` | handId (auto) | timestamp, sessionId, userId, userId_timestamp | Saved poker hands |
@@ -24,6 +25,15 @@ src/utils/persistence/
 | `players` | playerId (auto) | name, lastSeenAt, userId, userId_name | Player profiles |
 | `activeSession` | id (`active_${userId}`) | - | Per-user active session |
 | `settings` | id (`settings_${userId}`) | - | Per-user app settings |
+| `rangeProfiles` | profileKey | playerId, userId | Bayesian range estimation profiles |
+
+## Migration History
+| Version | Changes |
+|---------|---------|
+| v1-v5 | Initial stores (hands, sessions, activeSession, players, settings) |
+| v6→v7 | Added userId to all stores for multi-user data isolation. Settings/activeSession changed from singleton to per-user keying. |
+| v7→v8 | Added actionSequence field to hands for ordered action storage. Converts existing seatActions to actionSequence on migration. |
+| v8→v9 | Added rangeProfiles store (keyPath: profileKey, indexes: playerId, userId) for Bayesian range estimation caching. |
 
 ## Key Functions (all accept optional `userId`, defaults to 'guest')
 ```js
@@ -41,6 +51,10 @@ getPlayerByName(name, userId?)
 
 // Settings
 getSettings(userId?), saveSettings(settings, userId?)
+
+// Range Profiles
+saveRangeProfile(profile, userId?), getRangeProfile(profileKey)
+getAllRangeProfiles(userId?)
 ```
 
 ## Hooks (all accept optional `userId` parameter)
@@ -48,6 +62,7 @@ getSettings(userId?), saveSettings(settings, userId?)
 - `useSessionPersistence.js` - Session lifecycle management
 - `usePlayerPersistence.js` - Player CRUD and seat assignments
 - `useSettingsPersistence.js` - Settings persistence
+- `useAuthPersistence.js` - Firebase auth state listener
 
 ## Where to Look
 - Full persistence API: `src/utils/persistence/index.js`

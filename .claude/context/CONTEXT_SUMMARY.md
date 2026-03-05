@@ -1,29 +1,19 @@
 # Project Context Summary
-**Version**: 1.0.6 | **Updated**: 2025-12-09
+**Version**: 1.3.0 | **Updated**: 2026-03-05
 
-React-based poker hand tracker for live 9-handed games.
-Tracks actions, cards, sessions, and player profiles with IndexedDB persistence.
+Live poker hand tracker and exploit engine for 9-handed games.
+Records actions, builds Bayesian player models, and surfaces maximally exploitative plays.
 Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 
 ## Architecture
-- **Entry**: `src/PokerTracker.jsx` (~620 lines) - orchestrates state and views
-- **State**: 5 reducers (game, ui, card, session, player) + 4 context providers
-- **Views**: 7 screens (Table, Stats, History, Sessions, Players, CardSelector, Showdown)
-- **Persistence**: IndexedDB v5 with 4 stores (hands, sessions, players, activeSession)
-
-## Multi-Agent Architecture
-
-Claude Primary has **no file write permissions**. All modifications route through:
-
-| Agent | Model | Role |
-|-------|-------|------|
-| Primary | opus | Plan, decompose, request |
-| Dispatcher | haiku | Validate, execute, escalate |
-| Worker | sonnet | Execute approved escalations |
-
-**Workflow**: Primary → Task(dispatcher) → local model OR permission request → Worker
-
-**See**: `.claude/context/WORKFLOW.md` for full details
+- **Entry**: `src/PokerTracker.jsx` (~825 lines) - orchestrates state and views
+- **State**: 7 reducers (game, ui, card, session, player, settings, auth) + 7 context providers
+- **Views**: 9 screens (Table, Stats, History, Sessions, Players, Settings, Login, Signup, PasswordReset) + CardSelector + Showdown overlays
+- **Persistence**: IndexedDB v9 with 6 stores (hands, sessions, players, activeSession, settings, rangeProfiles)
+- **UI Components**: 30 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges)
+- **Hooks**: 18 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useAuthPersistence)
+- **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (6 modules)
+- **Exploit Engine**: `src/utils/exploitEngine/` - exploit suggestions + range matrix
 
 ## Key Patterns
 - useReducer for state, useContext for cross-component access

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Git Guard Hook - Enforces version control standards from engineering_practices.md
+ * Git Guard Hook - Enforces version control standards from CLAUDE.md
  *
  * Blocks:
  * - Force push to main/master
@@ -64,7 +64,7 @@ async function main() {
   if (/git\s+push\s+.*--force/.test(cmd) || /git\s+push\s+-f/.test(cmd)) {
     if (/\b(main|master)\b/.test(cmd) || !/\b\w+\/\w+\b/.test(cmd)) {
       console.error('BLOCKED: Force push to main/master is prohibited.');
-      console.error('See engineering_practices.md Section 1: Branch Protection Rules');
+      console.error('See CLAUDE.md Section 1: Branch Protection Rules');
       console.error('');
       console.error('If you need to force push to a feature branch, specify the branch explicitly:');
       console.error('  git push --force origin feature/your-branch');
@@ -77,7 +77,7 @@ async function main() {
     // Check if we're on main/master
     if (/\b(main|master|origin\/main|origin\/master)\b/.test(cmd)) {
       console.error('BLOCKED: Hard reset on main/master is prohibited.');
-      console.error('See engineering_practices.md Section 1: Branch Protection Rules');
+      console.error('See CLAUDE.md Section 1: Branch Protection Rules');
       process.exit(2);
     }
   }
@@ -87,14 +87,14 @@ async function main() {
     console.log('WARNING: Commit message may not follow conventional format.');
     console.log('Expected format: <type>: <description>');
     console.log('Types: feat, fix, refactor, docs, test, style, chore, perf');
-    console.log('See engineering_practices.md Section 2: Commit Format');
+    console.log('See CLAUDE.md Section 2: Commit Format');
     // Don't block, just warn
   }
 
   // WARN: Amending commits (risky if pushed)
   if (/git\s+commit\s+--amend/.test(cmd)) {
     console.log('WARNING: Amending commits. Ensure this commit has not been pushed.');
-    console.log('See engineering_practices.md Section 2: History Hygiene Rules');
+    console.log('See CLAUDE.md Section 2: History Hygiene Rules');
   }
 
   // BLOCK: Rebase with -i (interactive) - not supported in non-interactive shells
@@ -107,7 +107,7 @@ async function main() {
   // BLOCK: Merge to main without PR (direct merge)
   if (/git\s+merge\s+.*\b(main|master)\b/.test(cmd)) {
     console.log('WARNING: Merging to/from main. Ensure this follows PR workflow.');
-    console.log('See engineering_practices.md Section 1: Branch Workflow');
+    console.log('See CLAUDE.md Section 1: Branch Workflow');
   }
 
   // Allow

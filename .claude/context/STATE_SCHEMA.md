@@ -1,8 +1,8 @@
 # State Schema Reference
-**Version**: 1.0.7 | **Updated**: 2025-12-10
+**Version**: 1.1.0 | **Updated**: 2026-03-05
 
-Five reducers manage application state. All use validated reducers.
-Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer().
+Seven reducers manage application state. All use validated reducers.
+Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer(), useSettings(), useAuth().
 
 ## gameReducer
 ```js
@@ -26,7 +26,7 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
 
 ## uiReducer (v114: includes view state)
 ```js
-{ currentView: 'table',         // 'table'|'stats'|'history'|'sessions'|'players'
+{ currentView: 'table',         // 'table'|'stats'|'history'|'sessions'|'players'|'settings'|'login'|'signup'|'password_reset'
   selectedPlayers: [],          // seat numbers
   contextMenu: null,            // {x,y,seat} or null
   isSidebarCollapsed: false,
@@ -49,6 +49,22 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
 { allPlayers: [{ playerId, name, ethnicity, build, styleTags, notes, avatar }],
   seatPlayers: { [seat]: playerId },  // ephemeral assignments
   isLoading: false }
+```
+
+## settingsReducer
+```js
+{ settings: { theme, cardSize, defaultVenue, defaultGameType,
+              customVenues, customGameTypes },
+  isLoading: false,
+  isInitialized: false }
+```
+
+## authReducer
+```js
+{ user: null,          // { uid, email, displayName, photoURL, providerData } or null
+  isLoading: true,     // true during auth operations
+  isInitialized: false // false until first auth state check completes
+}
 ```
 
 ## Where to Look

@@ -1,5 +1,5 @@
 # Hotspots - Critical & Fragile Files
-**Version**: 1.0.6 | **Updated**: 2025-12-09
+**Version**: 1.3.0 | **Updated**: 2026-03-05
 
 Files requiring extra care when modifying. Test thoroughly after changes.
 
@@ -7,7 +7,7 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 | File | Risk | Reason |
 |------|------|--------|
 | `src/reducers/gameReducer.js` | HIGH | Core game state, affects all views |
-| `src/utils/persistence/database.js` | HIGH | DB schema migrations, data loss risk |
+| `src/utils/persistence/database.js` | HIGH | DB schema migrations (v9), data loss risk |
 | `src/hooks/useSessionPersistence.js` | HIGH | Session lifecycle, hydration logic |
 | `src/PokerTracker.jsx` | MEDIUM | Main orchestration, context providers |
 
@@ -15,6 +15,8 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 | File | Complexity | Notes |
 |------|------------|-------|
 | `src/hooks/useShowdownCardSelection.js` | HIGH | Auto-advance logic for multi-player cards |
+| `src/utils/rangeEngine/bayesianUpdater.js` | HIGH | Bayesian range updates, two independent decision trees |
+| `src/utils/rangeEngine/populationPriors.js` | HIGH | Population baselines, hand-strength tier construction |
 | `src/utils/seatUtils.js` | MEDIUM | Blind position calculation with absent seats |
 | `src/reducers/sessionReducer.js` | MEDIUM | Rebuy transactions, hydration |
 | `src/hooks/useSeatColor.js` | MEDIUM | Complex conditional styling |
@@ -24,34 +26,24 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 |------|---------|
 | `src/contexts/GameContext.jsx` | All views using useGame() |
 | `src/contexts/UIContext.jsx` | Navigation, card selector, showdown |
+| `src/contexts/AuthContext.jsx` | Login/signup flow, user-scoped data |
 | `src/utils/persistence/index.js` | All storage operations |
 
 ## Test Requirements
-- **Reducer changes**: Run `npm test` (1,617 tests)
+- **Reducer changes**: Run `npm test` (2,974 tests)
 - **Persistence changes**: Test with IndexedDB, check migrations
 - **Hook changes**: Test in all dependent views
 - **Context changes**: Test all context consumers
 
+## Modals & Portals
+| File | Notes |
+|------|-------|
+| `src/components/ui/RangeDetailPanel.jsx` | Uses `createPortal(jsx, document.body)` — required to escape scaled/overflow containers in TableView |
+
 ## Safe to Modify
-- `src/components/ui/*.jsx` - Isolated UI components
+- `src/components/ui/*.jsx` - Isolated UI components (RangeGrid, RangeDetailPanel, ExploitBadges, etc.)
 - `src/constants/*.js` - Constants (add, don't remove)
 - `src/utils/displayUtils.js` - Pure formatting functions
-
-## Multi-Agent Architecture (NEW)
-
-Critical files for the dispatcher-based execution model:
-
-| File | Risk | Notes |
-|------|------|-------|
-| `.claude/agents/dispatcher.md` | HIGH | Dispatcher agent definition - changes affect all task execution |
-| `.claude/agents/worker.md` | HIGH | Worker agent definition - changes affect escalation handling |
-| `.claude/settings.local.json` | HIGH | Permission restrictions - blocks Primary writes |
-| `.claude/permission-requests.json` | MEDIUM | Escalation queue - must not corrupt |
-| `.claude/dispatcher-state.json` | LOW | Audit log - append-only |
-| `scripts/approve.sh` | MEDIUM | Human approval CLI |
-| `.claude/hooks/write-gate.cjs` | HIGH | Enforcement hook - blocks unauthorized writes |
-
-**Warning**: Changes to dispatcher.md or worker.md affect system-wide behavior. Test thoroughly.
 
 ## Where to Look
 - Test suite: `src/test/*.test.js`

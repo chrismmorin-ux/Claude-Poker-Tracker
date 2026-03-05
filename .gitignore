@@ -88,6 +88,8 @@ docs/chris-notes
 
 # Screenshots
 screenshots/
+audit-*.png
+verify-*.png
 .local-model-backups/
 .claude/metrics/local-model-tasks.log
 .claude/logs/*.log

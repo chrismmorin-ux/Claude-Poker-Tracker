@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v117** (Architecture Health Phase 5: Migration & Integration)
+Current: **v120** (Range Grid Visualization & Multi-View Access)
 
 See `docs/CHANGELOG.md` for full version history.
 
