@@ -18,27 +18,30 @@ import { ActiveSessionCard } from './ActiveSessionCard';
 import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
+import { useToast } from '../../../contexts/ToastContext';
+import { useSession, useUI } from '../../../contexts';
+import { useGameHandlers } from '../../../hooks/useGameHandlers';
 
 /**
  * SessionsView component
  */
-export const SessionsView = ({
-  scale,
-  setCurrentScreen,
-  sessionState,
-  dispatchSession,
-  startNewSession,
-  endCurrentSession,
-  updateSessionField,
-  loadAllSessions,
-  deleteSessionById,
-  SCREEN,
-  autoOpenNewSession,
-  setAutoOpenNewSession,
-  resetTableState,
-  showSuccess,
-  showError
-}) => {
+export const SessionsView = ({ scale }) => {
+  const { showSuccess, showError } = useToast();
+  const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession } = useUI();
+  const { resetHand: resetTableState } = useGameHandlers();
+  const {
+    currentSession,
+    allSessions: sessionAllSessions,
+    dispatchSession,
+    startNewSession,
+    endCurrentSession,
+    updateSessionField,
+    loadAllSessions,
+    deleteSessionById,
+  } = useSession();
+
+  // Build sessionState-like object for compatibility
+  const sessionState = { currentSession, allSessions: sessionAllSessions };
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -371,18 +374,4 @@ export const SessionsView = ({
 
 SessionsView.propTypes = {
   scale: PropTypes.number.isRequired,
-  setCurrentScreen: PropTypes.func.isRequired,
-  sessionState: PropTypes.object.isRequired,
-  dispatchSession: PropTypes.func,
-  startNewSession: PropTypes.func.isRequired,
-  endCurrentSession: PropTypes.func.isRequired,
-  updateSessionField: PropTypes.func.isRequired,
-  loadAllSessions: PropTypes.func.isRequired,
-  deleteSessionById: PropTypes.func.isRequired,
-  SCREEN: PropTypes.object.isRequired,
-  autoOpenNewSession: PropTypes.bool,
-  setAutoOpenNewSession: PropTypes.func.isRequired,
-  resetTableState: PropTypes.func,
-  showSuccess: PropTypes.func.isRequired,
-  showError: PropTypes.func.isRequired,
 };

@@ -5,7 +5,10 @@ import { VisibilityToggle } from '../ui/VisibilityToggle';
 import { isRedSuit } from '../../utils/displayUtils';
 import { LAYOUT } from '../../constants/gameConstants';
 import { useCard, useUI, useGame } from '../../contexts';
+import { useGameHandlers } from '../../hooks/useGameHandlers';
+import { useCardSelection } from '../../hooks/useCardSelection';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
+import { UI_ACTIONS } from '../../reducers/uiReducer';
 
 // Card constants
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -15,13 +18,7 @@ const SUITS = ['♠', '♥', '♦', '♣'];
  * CardSelectorView - Interactive card selection interface
  * Used for selecting community cards and hole cards
  */
-export const CardSelectorView = ({
-  scale,
-  getCardStreet,
-  selectCard,
-  clearCards,
-  handleCloseCardSelector,
-}) => {
+export const CardSelectorView = ({ scale }) => {
   // Get card state from CardContext
   const {
     communityCards,
@@ -36,15 +33,36 @@ export const CardSelectorView = ({
     highlightedBoardIndex,
     setCardSelectorType,
     setHighlightedCardIndex,
+    dispatchUi,
   } = useUI();
 
   // Get game state from GameContext
   const { currentStreet } = useGame();
 
+  // Game handlers for shared logic
+  const { getCardStreet, clearCards } = useGameHandlers();
+
+  // Card selection logic
+  const selectCard = useCardSelection(
+    highlightedBoardIndex,
+    cardSelectorType,
+    communityCards,
+    holeCards,
+    currentStreet,
+    dispatchCard,
+    dispatchUi
+  );
+
+  // Close card selector
+  const handleCloseCardSelector = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
+  }, [dispatchUi]);
+
   // Handler for toggling hole cards visibility
   const handleToggleHoleCardsVisibility = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
   }, [dispatchCard]);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
       <div style={{
@@ -195,14 +213,5 @@ export const CardSelectorView = ({
 };
 
 CardSelectorView.propTypes = {
-  // Layout
   scale: PropTypes.number.isRequired,
-
-  // Utility functions (still passed from parent until further refactoring)
-  getCardStreet: PropTypes.func.isRequired,
-  selectCard: PropTypes.func.isRequired,
-  clearCards: PropTypes.func.isRequired,
-
-  // Handlers
-  handleCloseCardSelector: PropTypes.func.isRequired,
 };

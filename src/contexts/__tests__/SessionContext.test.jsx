@@ -4,8 +4,23 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { SessionProvider, useSession } from '../SessionContext';
 import { SESSION_ACTIONS } from '../../constants/sessionConstants';
+
+// Mock useSessionPersistence to avoid IndexedDB calls in tests
+vi.mock('../../hooks/useSessionPersistence', () => ({
+  useSessionPersistence: (sessionState, dispatchSession) => ({
+    isReady: true,
+    startNewSession: vi.fn(),
+    endCurrentSession: vi.fn(),
+    updateSessionField: vi.fn((field, value) => {
+      dispatchSession({ type: 'UPDATE_SESSION_FIELD', payload: { field, value } });
+    }),
+    loadAllSessions: vi.fn(),
+    deleteSessionById: vi.fn(),
+  }),
+}));
+
+import { SessionProvider, useSession } from '../SessionContext';
 
 // Helper to create a wrapper with SessionProvider
 const createWrapper = (sessionState, dispatchSession = vi.fn()) => {

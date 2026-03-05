@@ -4,6 +4,7 @@ import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
 import { ActionSequence } from '../../ui/ActionSequence';
+import { ExploitBadges } from '../../ui/ExploitBadges';
 import { LAYOUT, ACTIONS, ACTION_ABBREV } from '../../../constants/gameConstants';
 
 /**
@@ -19,6 +20,9 @@ export const SeatComponent = ({
   isBigBlind,
   isMySeat,
   playerName,
+  exploitSummary,
+  exploits,
+  sampleSize,
   holeCards,
   holeCardsVisible,
   getSeatColor,
@@ -27,6 +31,7 @@ export const SeatComponent = ({
   onDealerDragStart,
   onHoleCardClick,
   onToggleVisibility,
+  onOpenRangeDetail,
 }) => {
   // Calculate player name offset based on position badges
   const hasPositionBadge = isDealer || isSmallBlind || isBigBlind;
@@ -123,9 +128,25 @@ export const SeatComponent = ({
           className="absolute top-full left-1/2 transform -translate-x-1/2"
           style={{ marginTop: playerNameMarginTop }}
         >
-          <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+          <div
+            className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap cursor-pointer hover:bg-blue-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onOpenRangeDetail) onOpenRangeDetail(seat);
+            }}
+          >
             {playerName}
           </div>
+          {/* Exploit category badges */}
+          {exploitSummary && (
+            <div className="mt-1">
+              <ExploitBadges
+                exploitSummary={exploitSummary}
+                sampleSize={sampleSize}
+                exploits={exploits}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -142,6 +163,14 @@ SeatComponent.propTypes = {
   isBigBlind: PropTypes.bool.isRequired,
   isMySeat: PropTypes.bool.isRequired,
   playerName: PropTypes.string,
+  exploitSummary: PropTypes.shape({
+    weakness: PropTypes.number,
+    strength: PropTypes.number,
+    tendency: PropTypes.number,
+    note: PropTypes.number,
+  }),
+  exploits: PropTypes.arrayOf(PropTypes.object),
+  sampleSize: PropTypes.number,
   holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
   holeCardsVisible: PropTypes.bool.isRequired,
   getSeatColor: PropTypes.func.isRequired,
@@ -150,4 +179,5 @@ SeatComponent.propTypes = {
   onDealerDragStart: PropTypes.func.isRequired,
   onHoleCardClick: PropTypes.func.isRequired,
   onToggleVisibility: PropTypes.func.isRequired,
+  onOpenRangeDetail: PropTypes.func,
 };

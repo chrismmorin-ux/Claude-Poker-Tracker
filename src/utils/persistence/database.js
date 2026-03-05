@@ -37,7 +37,7 @@ import { logger } from '../errorHandler';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 8;
+export const DB_VERSION = 9;
 
 // Guest user ID constant - matches authConstants.GUEST_USER_ID
 export const GUEST_USER_ID = 'guest';
@@ -46,6 +46,7 @@ export const SESSIONS_STORE_NAME = 'sessions';
 export const ACTIVE_SESSION_STORE_NAME = 'activeSession';
 export const PLAYERS_STORE_NAME = 'players';
 export const SETTINGS_STORE_NAME = 'settings';
+export const RANGE_PROFILES_STORE_NAME = 'rangeProfiles';
 
 const MODULE_NAME = 'Persistence';
 
@@ -471,6 +472,18 @@ export const initDB = async () => {
         }
 
         log('v8 migration initiated for hands store');
+      }
+
+      // Migrate to v9: Add rangeProfiles object store
+      if (oldVersion < 9) {
+        log('Upgrading to v9: Adding rangeProfiles object store');
+
+        if (!db.objectStoreNames.contains(RANGE_PROFILES_STORE_NAME)) {
+          const store = db.createObjectStore(RANGE_PROFILES_STORE_NAME, { keyPath: 'profileKey' });
+          store.createIndex('playerId', 'playerId', { unique: false });
+          store.createIndex('userId', 'userId', { unique: false });
+          log('RangeProfiles object store and indexes created');
+        }
       }
     };
   });

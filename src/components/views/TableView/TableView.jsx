@@ -1,15 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
-import { LAYOUT } from '../../../constants/gameConstants';
-import { useGame, useUI, useSession, usePlayer, useCard } from '../../../contexts';
+import { buildExploitSummary } from '../../ui/ExploitBadges';
+import { analyzeBoardFromStrings } from '../../../utils/exploitEngine/boardTexture';
+import { generateBoardExploits } from '../../../utils/exploitEngine/generateExploits';
+import { filterDismissed } from '../../../utils/exploitSuggestions';
+import { LAYOUT, LIMITS } from '../../../constants/gameConstants';
+import { useGame, useUI, useSession, usePlayer, useCard, useToast } from '../../../contexts';
+import { usePlayerTendencies } from '../../../hooks/usePlayerTendencies';
+import { useGameHandlers } from '../../../hooks/useGameHandlers';
+import { useSeatColor } from '../../../hooks/useSeatColor';
+import { useSeatUtils } from '../../../hooks/useSeatUtils';
+import { useActionUtils } from '../../../hooks/useActionUtils';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
+import { GAME_ACTIONS } from '../../../reducers/gameReducer';
+import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
 import { ActionPanel } from './ActionPanel';
 import { SeatContextMenu } from './SeatContextMenu';
 import { StreetSelector } from './StreetSelector';
+import { RangeDetailPanel } from '../../ui/RangeDetailPanel';
 
 /**
  * Format relative time from start timestamp
@@ -35,42 +47,43 @@ const formatRelativeTime = (startTime) => {
  * TableView - Main poker table interface
  * Orchestrates sub-components for the poker table display
  */
-export const TableView = ({
-  // Layout (viewport-derived)
-  scale,
-  tableRef,
-  SEAT_POSITIONS,
-  numSeats,
-  // Handlers not in contexts (defined in parent)
-  nextHand,
-  resetHand,
-  handleSeatRightClick,
-  getSeatColor,
-  handleDealerDragStart,
-  handleDealerDrag,
-  handleDealerDragEnd,
-  setCurrentStreet,
-  openShowdownScreen,
-  nextStreet,
-  clearStreetActions,
-  clearSeatActions,
-  undoLastAction,
-  handleSetMySeat,
-  setDealerSeat,
-  recordAction,
-  toggleAbsent,
-  // Player persistence (from usePlayerPersistence, not PlayerContext)
-  getRecentPlayers,
-  clearSeatAssignment,
-  isPlayerAssigned,
-  // Local UI state from parent
-  setPendingSeatForPlayerAssignment,
-  setAutoOpenNewSession,
-  // Toast notifications
-  showSuccess,
-  showWarning,
-  showInfo,
-}) => {
+// Seat positions (percentage-based for responsive layout)
+const SEAT_POSITIONS = [
+  { seat: 1, x: 33, y: 88 },
+  { seat: 2, x: 15, y: 70 },
+  { seat: 3, x: 8, y: 45 },
+  { seat: 4, x: 18, y: 20 },
+  { seat: 5, x: 50, y: 8 },
+  { seat: 6, x: 82, y: 20 },
+  { seat: 7, x: 92, y: 45 },
+  { seat: 8, x: 85, y: 70 },
+  { seat: 9, x: 67, y: 88 },
+];
+
+export const TableView = ({ scale }) => {
+  const tableRef = useRef(null);
+  const numSeats = LIMITS.NUM_SEATS;
+
+  // Toast notifications from context
+  const { showSuccess, showWarning, showInfo } = useToast();
+
+  // Game handlers from hook
+  const {
+    nextHand,
+    resetHand,
+    nextStreet,
+    clearStreetActions,
+    clearSeatActions,
+    undoLastAction,
+    toggleAbsent,
+    openShowdownScreen,
+    handleSetMySeat,
+    recordAction,
+  } = useGameHandlers();
+
+  // Action utils for seat color
+  const { getSeatActionStyle } = useActionUtils();
+
   // Get state and handlers from contexts
   const {
     currentStreet,
@@ -80,6 +93,7 @@ export const TableView = ({
     absentSeats,
     getSmallBlindSeat,
     getBigBlindSeat,
+    dispatchGame,
   } = useGame();
 
   const {
@@ -94,6 +108,10 @@ export const TableView = ({
     openCardSelector,
     setSelectedPlayers,
     SCREEN,
+    dispatchUi,
+    showCardSelector,
+    setPendingSeatForPlayerAssignment,
+    setAutoOpenNewSession,
   } = useUI();
 
   const {
@@ -104,7 +122,12 @@ export const TableView = ({
 
   const {
     getSeatPlayerName,
+    getSeatPlayer,
+    allPlayers,
     assignPlayerToSeat,
+    getRecentPlayers,
+    clearSeatAssignment,
+    isPlayerAssigned,
   } = usePlayer();
 
   // Card state from CardContext
@@ -114,6 +137,120 @@ export const TableView = ({
     holeCardsVisible,
     dispatchCard,
   } = useCard();
+
+  // Seat utils and color
+  const { hasSeatFolded, getFirstActionSeat } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats);
+  const getSeatColor = useSeatColor(hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet, getSeatActionStyle);
+
+  // Dealer drag handlers (need tableRef)
+  const handleDealerDragStart = useCallback((e) => {
+    dispatchUi({ type: UI_ACTIONS.START_DRAGGING_DEALER });
+    e.preventDefault();
+  }, [dispatchUi]);
+
+  const handleDealerDrag = useCallback((e) => {
+    if (!isDraggingDealer || !tableRef.current) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = tableRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    let closestSeat = 1;
+    let minDist = Infinity;
+    SEAT_POSITIONS.forEach(({ seat, x: sx, y: sy }) => {
+      if (absentSeats.includes(seat)) return;
+      const seatX = (sx / 100) * rect.width;
+      const seatY = (sy / 100) * rect.height;
+      const dist = Math.sqrt((x - seatX) ** 2 + (y - seatY) ** 2);
+      if (dist < minDist) { minDist = dist; closestSeat = seat; }
+    });
+    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: closestSeat });
+  }, [isDraggingDealer, absentSeats, dispatchGame]);
+
+  const handleDealerDragEnd = useCallback((e) => {
+    if (isDraggingDealer) { e.stopPropagation(); e.preventDefault(); }
+    dispatchUi({ type: UI_ACTIONS.STOP_DRAGGING_DEALER });
+  }, [isDraggingDealer, dispatchUi]);
+
+  // Seat right-click handler (needs tableRef + SEAT_POSITIONS)
+  const handleSeatRightClick = useCallback((e, seat) => {
+    e.preventDefault();
+    const seatPos = SEAT_POSITIONS.find(s => s.seat === seat);
+    if (!seatPos) return;
+    const seatX = (seatPos.x / 100) * LAYOUT.FELT_WIDTH + LAYOUT.TABLE_OFFSET_X;
+    const seatY = (seatPos.y / 100) * LAYOUT.FELT_HEIGHT + LAYOUT.TABLE_OFFSET_Y;
+    dispatchUi({
+      type: UI_ACTIONS.SET_CONTEXT_MENU,
+      payload: { x: seatX + LAYOUT.CONTEXT_MENU_OFFSET_X, y: seatY + LAYOUT.CONTEXT_MENU_OFFSET_Y, seat }
+    });
+  }, [dispatchUi]);
+
+  const setDealerSeat = useCallback((seat) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
+  }, [dispatchGame]);
+
+  const setCurrentStreet = useCallback((street) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
+  }, [dispatchGame]);
+
+  // Auto-select first action seat when street changes or card selector closes
+  useEffect(() => {
+    if (!showCardSelector && currentStreet !== 'showdown') {
+      if (selectedPlayers.length === 0) {
+        const firstSeat = getFirstActionSeat();
+        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
+      }
+    }
+  }, [currentStreet, showCardSelector, selectedPlayers, getFirstActionSeat, dispatchUi]);
+
+  // Player tendency stats for confidence opacity
+  const { tendencyMap } = usePlayerTendencies(allPlayers);
+
+  // Range detail modal state
+  const [rangeDetailSeat, setRangeDetailSeat] = useState(null);
+  const rangeDetailPlayerId = rangeDetailSeat ? (getSeatPlayer(rangeDetailSeat)?.playerId || null) : null;
+  const rangeDetailTendencies = rangeDetailPlayerId ? tendencyMap[rangeDetailPlayerId] : null;
+  const rangeDetailProfile = rangeDetailTendencies?.rangeProfile || null;
+  const rangeDetailSummary = rangeDetailTendencies?.rangeSummary || null;
+
+  // Board texture from community cards
+  const boardTexture = useMemo(() => {
+    const cards = communityCards.filter(c => c && c !== '');
+    if (cards.length < 3) return null;
+    return analyzeBoardFromStrings(cards);
+  }, [communityCards]);
+
+  // Precompute exploit data for all seats (persisted + live suggestions)
+  const seatExploitData = useMemo(() => {
+    const data = {};
+    for (let seat = 1; seat <= numSeats; seat++) {
+      const player = getSeatPlayer(seat);
+      if (!player) continue;
+
+      const persisted = player.exploits || [];
+      const tendencies = tendencyMap[player.playerId];
+
+      let liveSuggestions = [];
+      if (tendencies?.exploits) {
+        liveSuggestions = filterDismissed(tendencies.exploits, player.dismissedSuggestions);
+      }
+      // Board-texture rules (ephemeral, computed locally)
+      if (boardTexture && tendencies) {
+        const boardExploits = generateBoardExploits(tendencies, boardTexture);
+        liveSuggestions = [...liveSuggestions, ...boardExploits];
+      }
+
+      const combined = [...persisted, ...liveSuggestions];
+      if (combined.length > 0) {
+        data[seat] = {
+          summary: buildExploitSummary(combined),
+          exploits: combined,
+          sampleSize: tendencies?.sampleSize || 0,
+        };
+      }
+    }
+    return data;
+  }, [numSeats, getSeatPlayer, tendencyMap, boardTexture]);
 
   // Derived session values
   const handCount = currentSession?.handCount || 0;
@@ -304,6 +441,9 @@ export const TableView = ({
                   isBigBlind={getBigBlindSeat() === seat}
                   isMySeat={seat === mySeat}
                   playerName={getSeatPlayerName(seat)}
+                  exploitSummary={seatExploitData[seat]?.summary || null}
+                  exploits={seatExploitData[seat]?.exploits || []}
+                  sampleSize={seatExploitData[seat]?.sampleSize || 0}
                   holeCards={holeCards}
                   holeCardsVisible={holeCardsVisible}
                   getSeatColor={getSeatColor}
@@ -312,6 +452,7 @@ export const TableView = ({
                   onDealerDragStart={handleDealerDragStart}
                   onHoleCardClick={handleHoleCardClick}
                   onToggleVisibility={handleToggleHoleCardsVisibility}
+                  onOpenRangeDetail={setRangeDetailSeat}
                 />
               ))}
 
@@ -360,53 +501,22 @@ export const TableView = ({
               onUndoLastAction={undoLastAction}
             />
           </div>
+
         </div>
       </div>
+
+      {/* Range Detail Modal — renders via portal to document.body */}
+      <RangeDetailPanel
+        rangeProfile={rangeDetailProfile}
+        rangeSummary={rangeDetailSummary}
+        playerName={rangeDetailSeat ? (getSeatPlayerName(rangeDetailSeat) || `Seat ${rangeDetailSeat}`) : ''}
+        onClose={() => setRangeDetailSeat(null)}
+        isOpen={rangeDetailSeat !== null}
+      />
     </div>
   );
 };
 
 TableView.propTypes = {
-  // Layout (viewport-derived)
   scale: PropTypes.number.isRequired,
-  tableRef: PropTypes.object,
-  SEAT_POSITIONS: PropTypes.arrayOf(PropTypes.shape({
-    seat: PropTypes.number,
-    x: PropTypes.number,
-    y: PropTypes.number,
-  })).isRequired,
-  numSeats: PropTypes.number.isRequired,
-
-  // Handlers not in contexts (defined in parent)
-  nextHand: PropTypes.func.isRequired,
-  resetHand: PropTypes.func.isRequired,
-  handleSeatRightClick: PropTypes.func.isRequired,
-  getSeatColor: PropTypes.func.isRequired,
-  handleDealerDragStart: PropTypes.func.isRequired,
-  handleDealerDrag: PropTypes.func.isRequired,
-  handleDealerDragEnd: PropTypes.func.isRequired,
-  setCurrentStreet: PropTypes.func.isRequired,
-  openShowdownScreen: PropTypes.func.isRequired,
-  nextStreet: PropTypes.func.isRequired,
-  clearStreetActions: PropTypes.func.isRequired,
-  clearSeatActions: PropTypes.func.isRequired,
-  undoLastAction: PropTypes.func.isRequired,
-  handleSetMySeat: PropTypes.func.isRequired,
-  setDealerSeat: PropTypes.func.isRequired,
-  recordAction: PropTypes.func.isRequired,
-  toggleAbsent: PropTypes.func.isRequired,
-
-  // Player persistence (from usePlayerPersistence, not PlayerContext)
-  getRecentPlayers: PropTypes.func.isRequired,
-  clearSeatAssignment: PropTypes.func.isRequired,
-  isPlayerAssigned: PropTypes.func.isRequired,
-
-  // Local UI state from parent
-  setPendingSeatForPlayerAssignment: PropTypes.func.isRequired,
-  setAutoOpenNewSession: PropTypes.func.isRequired,
-
-  // Toast notifications
-  showSuccess: PropTypes.func.isRequired,
-  showWarning: PropTypes.func.isRequired,
-  showInfo: PropTypes.func.isRequired,
 };

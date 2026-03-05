@@ -124,5 +124,24 @@ export const PLAYER_FIELDS = {
 // AVATAR CONSTRAINTS
 // =============================================================================
 
+// =============================================================================
+// EXPLOIT NOTE CONSTANTS
+// =============================================================================
+
+export const EXPLOIT_CATEGORIES = ['weakness', 'strength', 'tendency', 'note'];
+
+export const EXPLOIT_CATEGORY_CONFIG = {
+  weakness: { label: 'Weakness', icon: '!', color: 'text-red-700 bg-red-100 border-red-200' },
+  strength: { label: 'Strength', icon: '*', color: 'text-blue-700 bg-blue-100 border-blue-200' },
+  tendency: { label: 'Tendency', icon: '~', color: 'text-yellow-700 bg-yellow-100 border-yellow-200' },
+  note:     { label: 'Note',     icon: 'i', color: 'text-gray-600 bg-gray-100 border-gray-200' }
+};
+
+export const STREET_OPTIONS = ['all', 'preflop', 'flop', 'turn', 'river'];
+
+// =============================================================================
+// AVATAR CONSTRAINTS
+// =============================================================================
+
 export const AVATAR_MAX_SIZE_MB = 2;
 export const AVATAR_MAX_SIZE_BYTES = AVATAR_MAX_SIZE_MB * 1024 * 1024;

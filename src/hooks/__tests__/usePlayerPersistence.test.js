@@ -482,22 +482,6 @@ describe('usePlayerPersistence', () => {
     });
   });
 
-  describe('getAssignedPlayerIds', () => {
-    it('returns set of assigned player IDs', () => {
-      playerState = createMockPlayerState({
-        seatPlayers: { 1: 101, 3: 102, 5: null },
-      });
-
-      const { result, unmount } = createHook();
-
-      const assigned = result.current.getAssignedPlayerIds();
-      expect(assigned.has(101)).toBe(true);
-      expect(assigned.has(102)).toBe(true);
-      expect(assigned.has(null)).toBe(false);
-      unmount();
-    });
-  });
-
   describe('isPlayerAssigned', () => {
     it('returns true when player is assigned', () => {
       playerState = createMockPlayerState({
@@ -577,7 +561,6 @@ describe('usePlayerPersistence', () => {
       expect(typeof result.current.clearSeatAssignment).toBe('function');
       expect(typeof result.current.getSeatPlayerName).toBe('function');
       expect(typeof result.current.getRecentPlayers).toBe('function');
-      expect(typeof result.current.getAssignedPlayerIds).toBe('function');
       expect(typeof result.current.isPlayerAssigned).toBe('function');
       expect(typeof result.current.getPlayerSeat).toBe('function');
       expect(typeof result.current.clearAllSeatAssignments).toBe('function');

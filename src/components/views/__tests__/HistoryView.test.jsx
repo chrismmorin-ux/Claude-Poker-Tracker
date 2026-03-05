@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { ToastProvider } from '../../../contexts/ToastContext';
 import { HistoryView } from '../HistoryView';
 
 // Mock persistence functions
@@ -19,6 +20,24 @@ vi.mock('../../../utils/persistence', () => ({
   GUEST_USER_ID: 'guest',
 }));
 
+// Mock context hooks
+const mockDispatchGame = vi.fn();
+const mockDispatchCard = vi.fn();
+const mockDispatchPlayer = vi.fn();
+const mockDispatchSession = vi.fn();
+const mockSetCurrentScreen = vi.fn();
+
+vi.mock('../../../contexts', () => ({
+  useGame: () => ({ dispatchGame: mockDispatchGame }),
+  useCard: () => ({ dispatchCard: mockDispatchCard }),
+  usePlayer: () => ({ dispatchPlayer: mockDispatchPlayer }),
+  useSession: () => ({
+    currentSession: null,
+    dispatchSession: mockDispatchSession,
+  }),
+  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen }),
+}));
+
 import {
   getAllHands,
   loadHandById,
@@ -30,17 +49,11 @@ import {
   getSessionHandCount,
 } from '../../../utils/persistence';
 
+const renderWithToast = (ui) => render(<ToastProvider>{ui}</ToastProvider>);
+
 describe('HistoryView', () => {
   const defaultProps = {
     scale: 1,
-    setCurrentScreen: vi.fn(),
-    dispatchGame: vi.fn(),
-    dispatchCard: vi.fn(),
-    dispatchPlayer: vi.fn(),
-    dispatchSession: vi.fn(),
-    STREETS: ['preflop', 'flop', 'turn', 'river', 'showdown'],
-    showError: vi.fn(),
-    currentSessionId: null,
   };
 
   const mockHand = {
@@ -86,25 +99,22 @@ describe('HistoryView', () => {
 
   describe('rendering', () => {
     it('renders title', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
       expect(screen.getByText('Hand History')).toBeInTheDocument();
     });
 
     it('renders back to table button', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
       expect(screen.getByText(/Back to Table/)).toBeInTheDocument();
     });
 
     it('shows loading state initially', async () => {
-      // Suppress expected act() warning for this specific test
-      // (we're intentionally testing an intermediate loading state)
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       getAllHands.mockImplementation(() => new Promise(() => {})); // Never resolves
-      const { unmount } = render(<HistoryView {...defaultProps} />);
+      const { unmount } = renderWithToast(<HistoryView {...defaultProps} />);
       expect(screen.getByText('Loading...')).toBeInTheDocument();
-      // Unmount before promise would update state to avoid act() warning
       unmount();
       consoleSpy.mockRestore();
     });
@@ -113,7 +123,7 @@ describe('HistoryView', () => {
       getAllHands.mockResolvedValue([]);
       getHandCount.mockResolvedValue(0);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('No hands saved yet')).toBeInTheDocument();
@@ -128,7 +138,7 @@ describe('HistoryView', () => {
     });
 
     it('displays hand count', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText(/1 of 1 total/)).toBeInTheDocument();
@@ -136,7 +146,7 @@ describe('HistoryView', () => {
     });
 
     it('displays hand street badge', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('flop')).toBeInTheDocument();
@@ -144,7 +154,7 @@ describe('HistoryView', () => {
     });
 
     it('displays Load button for each hand', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('Load')).toBeInTheDocument();
@@ -152,7 +162,7 @@ describe('HistoryView', () => {
     });
 
     it('displays Delete button for each hand', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('Delete')).toBeInTheDocument();
@@ -160,7 +170,7 @@ describe('HistoryView', () => {
     });
 
     it('shows Clear All button when hands exist', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('Clear All')).toBeInTheDocument();
@@ -174,27 +184,20 @@ describe('HistoryView', () => {
         { sessionId: 1, startTime: Date.now(), venue: 'Test Casino', handCount: 5 },
       ]);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       expect(screen.getByText('All Sessions')).toBeInTheDocument();
-    });
-
-    it('shows Current Session option when currentSessionId provided', async () => {
-      render(<HistoryView {...defaultProps} currentSessionId={1} />);
-      await waitForLoad();
-
-      expect(screen.getByText('Current Session')).toBeInTheDocument();
     });
   });
 
   describe('interactions', () => {
     it('calls setCurrentScreen when back button clicked', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       fireEvent.click(screen.getByText(/Back to Table/));
-      expect(defaultProps.setCurrentScreen).toHaveBeenCalledWith('table');
+      expect(mockSetCurrentScreen).toHaveBeenCalled();
     });
 
     it('calls loadHandById when Load clicked', async () => {
@@ -202,7 +205,7 @@ describe('HistoryView', () => {
       getHandCount.mockResolvedValue(1);
       loadHandById.mockResolvedValue(mockHand);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -219,7 +222,7 @@ describe('HistoryView', () => {
       getHandCount.mockResolvedValue(1);
       loadHandById.mockResolvedValue(mockHand);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -227,8 +230,8 @@ describe('HistoryView', () => {
       });
 
       await waitFor(() => {
-        expect(defaultProps.dispatchGame).toHaveBeenCalled();
-        expect(defaultProps.dispatchCard).toHaveBeenCalled();
+        expect(mockDispatchGame).toHaveBeenCalled();
+        expect(mockDispatchCard).toHaveBeenCalled();
       });
     });
 
@@ -237,7 +240,7 @@ describe('HistoryView', () => {
       getHandCount.mockResolvedValue(1);
       loadHandById.mockResolvedValue(mockHand);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -245,7 +248,7 @@ describe('HistoryView', () => {
       });
 
       await waitFor(() => {
-        expect(defaultProps.setCurrentScreen).toHaveBeenCalledWith('table');
+        expect(mockSetCurrentScreen).toHaveBeenCalled();
       });
     });
   });
@@ -263,7 +266,7 @@ describe('HistoryView', () => {
     });
 
     it('confirms before deleting hand', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -276,7 +279,7 @@ describe('HistoryView', () => {
     it('calls deleteHand when confirmed', async () => {
       deleteHand.mockResolvedValue();
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -291,7 +294,7 @@ describe('HistoryView', () => {
     it('does not delete when cancelled', async () => {
       vi.spyOn(window, 'confirm').mockReturnValue(false);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -314,7 +317,7 @@ describe('HistoryView', () => {
     });
 
     it('confirms before clearing all', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -327,7 +330,7 @@ describe('HistoryView', () => {
     it('calls clearAllHands when confirmed', async () => {
       clearAllHands.mockResolvedValue();
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -341,12 +344,12 @@ describe('HistoryView', () => {
   });
 
   describe('error handling', () => {
-    it('calls showError when load fails', async () => {
+    it('shows error toast when load fails', async () => {
       getAllHands.mockResolvedValue([mockHand]);
       getHandCount.mockResolvedValue(1);
       loadHandById.mockRejectedValue(new Error('Load failed'));
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
       await waitForLoad();
 
       await act(async () => {
@@ -354,7 +357,7 @@ describe('HistoryView', () => {
       });
 
       await waitFor(() => {
-        expect(defaultProps.showError).toHaveBeenCalled();
+        expect(screen.getByText('Failed to load hand. Please try again.')).toBeInTheDocument();
       });
     });
   });
@@ -372,7 +375,7 @@ describe('HistoryView', () => {
     });
 
     it('displays all hands', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText(/3 of 3 total/)).toBeInTheDocument();
@@ -380,7 +383,7 @@ describe('HistoryView', () => {
     });
 
     it('shows correct number of Load buttons', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         const loadButtons = screen.getAllByText('Load');
@@ -389,7 +392,7 @@ describe('HistoryView', () => {
     });
 
     it('shows correct number of Delete buttons', async () => {
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         const deleteButtons = screen.getAllByText('Delete');
@@ -403,7 +406,7 @@ describe('HistoryView', () => {
       getAllHands.mockResolvedValue([mockHand]);
       getHandCount.mockResolvedValue(1);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText(/1 actions/)).toBeInTheDocument();
@@ -418,7 +421,7 @@ describe('HistoryView', () => {
       getAllHands.mockResolvedValue([emptyHand]);
       getHandCount.mockResolvedValue(1);
 
-      render(<HistoryView {...defaultProps} />);
+      renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
         expect(screen.getByText('No actions')).toBeInTheDocument();

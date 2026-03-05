@@ -16,7 +16,8 @@ import {
   PlayerProvider,
   CardProvider,
   SettingsProvider,
-  AuthProvider
+  AuthProvider,
+  ToastProvider
 } from './contexts';
 
 /**
@@ -55,21 +56,23 @@ export const AppProviders = ({
   settingsState,
   dispatchSettings,
 }) => (
-  <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
-    <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
-      <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
-        <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
-          <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-            <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-              <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                {children}
-              </SettingsProvider>
-            </CardProvider>
-          </PlayerProvider>
-        </SessionProvider>
-      </UIProvider>
-    </GameProvider>
-  </AuthProvider>
+  <ToastProvider>
+    <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
+      <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+        <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
+          <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
+            <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
+              <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+                <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                  {children}
+                </SettingsProvider>
+              </CardProvider>
+            </PlayerProvider>
+          </SessionProvider>
+        </UIProvider>
+      </GameProvider>
+    </AuthProvider>
+  </ToastProvider>
 );
 
 export default AppProviders;

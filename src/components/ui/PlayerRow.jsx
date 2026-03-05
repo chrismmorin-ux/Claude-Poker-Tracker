@@ -4,8 +4,10 @@
  * Extracted from PlayersView.jsx for better maintainability.
  */
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { TendencyStats } from './TendencyStats';
+import { ExploitList } from './ExploitList';
+import { filterDismissed } from '../../utils/exploitSuggestions';
 
 /**
  * Get description summary from player data
@@ -65,6 +67,8 @@ const formatRelativeTime = (timestamp) => {
  * @param {Function} props.onEdit - Edit button handler
  * @param {Function} props.onDelete - Delete button handler
  * @param {Object|null} props.tendencyStats - Calculated tendency stats from usePlayerTendencies
+ * @param {Function} props.onUpdateExploits - Callback with updated exploits array
+ * @param {Function} props.onDismissSuggestion - Callback with (suggestionId) to dismiss
  */
 export const PlayerRow = ({
   player,
@@ -75,11 +79,22 @@ export const PlayerRow = ({
   onClick,
   onEdit,
   onDelete,
-  tendencyStats
+  tendencyStats,
+  onUpdateExploits,
+  onDismissSuggestion,
+  onOpenRangeDetail,
 }) => {
   const isAssigned = assignedSeat !== null;
+  const [showExploits, setShowExploits] = useState(false);
+  const exploits = player.exploits || [];
+
+  const suggestions = useMemo(() => {
+    if (!tendencyStats?.exploits) return [];
+    return filterDismissed(tendencyStats.exploits, player.dismissedSuggestions);
+  }, [tendencyStats?.exploits, player.dismissedSuggestions]);
 
   return (
+    <>
     <tr
       className={`transition-colors ${
         isAssigned ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
@@ -164,6 +179,17 @@ export const PlayerRow = ({
       {/* Actions */}
       <td className="px-4 py-3">
         <div className="flex gap-3 justify-end">
+          {onOpenRangeDetail && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenRangeDetail(player.playerId);
+              }}
+              className="text-green-600 hover:text-green-800 text-sm font-medium"
+            >
+              Range
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -182,9 +208,32 @@ export const PlayerRow = ({
           >
             Delete
           </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowExploits(!showExploits);
+            }}
+            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            title="Toggle exploit notes"
+          >
+            {showExploits ? '▴' : '▾'}
+          </button>
         </div>
       </td>
     </tr>
+    {showExploits && (
+      <tr className={isAssigned ? 'bg-blue-50' : 'bg-white'}>
+        <td colSpan={6} className="px-4 pb-3 pt-0">
+          <ExploitList
+            exploits={exploits}
+            onUpdate={(updated) => onUpdateExploits(updated)}
+            suggestions={suggestions}
+            onDismissSuggestion={(id) => onDismissSuggestion && onDismissSuggestion(id)}
+          />
+        </td>
+      </tr>
+    )}
+    </>
   );
 };
 

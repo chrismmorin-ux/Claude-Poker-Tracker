@@ -1,7 +1,7 @@
 /**
  * GameContext.jsx - Game state context provider
  * Provides: currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats, actionSequence
- * Plus derived values: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded, isSeatInactive
+ * Plus derived values: getSmallBlindSeat, getBigBlindSeat, hasSeatFolded
  * Plus action helpers: recordPrimitiveAction
  */
 
@@ -39,13 +39,6 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     return actions.some(action => FOLD_ACTIONS.includes(action));
   }, [seatActions, currentStreet]);
 
-  // Derived: Check if seat is inactive (folded OR absent)
-  const isSeatInactive = useCallback((seat) => {
-    if (absentSeats.includes(seat)) return 'absent';
-    if (hasSeatFolded(seat)) return 'folded';
-    return null;
-  }, [absentSeats, hasSeatFolded]);
-
   // Derived: Get all actions for a seat across all streets
   const getSeatAllActions = useCallback((seat) => {
     const allActions = {};
@@ -80,7 +73,6 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     getSmallBlindSeat,
     getBigBlindSeat,
     hasSeatFolded,
-    isSeatInactive,
     getSeatAllActions,
     // Action helpers
     recordPrimitiveAction,  // New: record primitive action
@@ -95,7 +87,6 @@ export const GameProvider = ({ gameState, dispatchGame, children }) => {
     getSmallBlindSeat,
     getBigBlindSeat,
     hasSeatFolded,
-    isSeatInactive,
     getSeatAllActions,
     recordPrimitiveAction,
   ]);

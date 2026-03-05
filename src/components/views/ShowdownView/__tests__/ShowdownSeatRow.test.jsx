@@ -296,18 +296,19 @@ describe('ShowdownSeatRow', () => {
       expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(
         SEAT_STATUS.FOLDED,
         false,
-        false
+        false,
+        SEAT_STATUS
       );
     });
 
     it('passes mucked status to getOverlayStatus', () => {
       render(<ShowdownSeatRow {...defaultProps} isMucked={true} />);
-      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, true, false);
+      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, true, false, SEAT_STATUS);
     });
 
     it('passes won status to getOverlayStatus', () => {
       render(<ShowdownSeatRow {...defaultProps} hasWon={true} />);
-      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, false, true);
+      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, false, true, SEAT_STATUS);
     });
   });
 });

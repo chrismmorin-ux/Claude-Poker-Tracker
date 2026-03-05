@@ -28,6 +28,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
+    pendingSeatForPlayerAssignment,
+    autoOpenNewSession,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -104,6 +106,16 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
   }, [dispatchUi]);
 
+  // Handler: Set pending seat for player assignment (cross-view navigation)
+  const setPendingSeatForPlayerAssignment = useCallback((seat) => {
+    dispatchUi({ type: UI_ACTIONS.SET_PENDING_SEAT_FOR_PLAYER, payload: seat });
+  }, [dispatchUi]);
+
+  // Handler: Set auto-open new session flag (cross-view navigation)
+  const setAutoOpenNewSession = useCallback((value) => {
+    dispatchUi({ type: UI_ACTIONS.SET_AUTO_OPEN_NEW_SESSION, payload: value });
+  }, [dispatchUi]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -137,6 +149,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
+    pendingSeatForPlayerAssignment,
+    setPendingSeatForPlayerAssignment,
+    autoOpenNewSession,
+    setAutoOpenNewSession,
   }), [
     currentView,
     selectedPlayers,
@@ -164,6 +180,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
+    pendingSeatForPlayerAssignment,
+    setPendingSeatForPlayerAssignment,
+    autoOpenNewSession,
+    setAutoOpenNewSession,
   ]);
 
   return (

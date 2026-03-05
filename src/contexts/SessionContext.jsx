@@ -6,6 +6,7 @@
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
+import { useSessionPersistence } from '../hooks/useSessionPersistence';
 
 // Create context
 const SessionContext = createContext(null);
@@ -16,6 +17,16 @@ const SessionContext = createContext(null);
  */
 export const SessionProvider = ({ sessionState, dispatchSession, children }) => {
   const { currentSession, allSessions, isLoading } = sessionState;
+
+  // Session persistence (CRUD, ready flag)
+  const {
+    isReady: sessionPersistenceReady,
+    startNewSession,
+    endCurrentSession,
+    updateSessionField: persistenceUpdateSessionField,
+    loadAllSessions,
+    deleteSessionById,
+  } = useSessionPersistence(sessionState, dispatchSession);
 
   // Derived: Is there an active session?
   const hasActiveSession = useMemo(() => {
@@ -73,10 +84,16 @@ export const SessionProvider = ({ sessionState, dispatchSession, children }) => 
     // Dispatch
     dispatchSession,
     // Handlers
-    updateSessionField,
+    updateSessionField: persistenceUpdateSessionField,
     addRebuy,
     incrementHandCount,
     setHandCount,
+    // Persistence operations
+    sessionPersistenceReady,
+    startNewSession,
+    endCurrentSession,
+    loadAllSessions,
+    deleteSessionById,
   }), [
     currentSession,
     allSessions,
@@ -84,10 +101,15 @@ export const SessionProvider = ({ sessionState, dispatchSession, children }) => 
     hasActiveSession,
     totalInvestment,
     dispatchSession,
-    updateSessionField,
+    persistenceUpdateSessionField,
     addRebuy,
     incrementHandCount,
     setHandCount,
+    sessionPersistenceReady,
+    startNewSession,
+    endCurrentSession,
+    loadAllSessions,
+    deleteSessionById,
   ]);
 
   return (

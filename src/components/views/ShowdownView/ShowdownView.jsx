@@ -8,36 +8,29 @@ import {
   SEAT_ARRAY,
   STREETS,
   BETTING_STREETS,
+  LIMITS,
   isFoldAction,
 } from '../../../constants/gameConstants';
 import { useCard, useGame, useUI } from '../../../contexts';
+import { GAME_ACTIONS } from '../../../reducers/gameReducer';
+import { useGameHandlers } from '../../../hooks/useGameHandlers';
+import { useShowdownHandlers } from '../../../hooks/useShowdownHandlers';
+import { useShowdownCardSelection } from '../../../hooks/useShowdownCardSelection';
+import { getOverlayStatus, getActionColor, getActionDisplayName } from '../../../utils/actionUtils';
+import { getHandAbbreviation } from '../../../utils/displayUtils';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { ShowdownHeader } from './ShowdownHeader';
 import { ShowdownSeatRow } from './ShowdownSeatRow';
 import { CardGrid } from './CardGrid';
 import { ActionHistoryGrid } from './ActionHistoryGrid';
 
+const log = (...args) => console.debug('[ShowdownView]', ...args);
+
 /**
  * ShowdownView - Showdown card assignment and summary interface
  * Two modes: card selection (assigns cards to players) and summary (shows action history)
  */
-export const ShowdownView = ({
-  scale,
-  // Handlers defined in parent
-  handleNextHandFromShowdown,
-  handleClearShowdownCards,
-  handleCloseShowdown,
-  allCardsAssigned,
-  isSeatInactive,
-  handleMuckSeat,
-  handleWonSeat,
-  selectCardForShowdown,
-  // Utility functions
-  getOverlayStatus,
-  getActionColor,
-  getActionDisplayName,
-  getHandAbbreviation,
-}) => {
+export const ShowdownView = ({ scale }) => {
   // Get card state from CardContext
   const {
     communityCards,
@@ -54,6 +47,7 @@ export const ShowdownView = ({
     seatActions,
     getSmallBlindSeat,
     getBigBlindSeat,
+    dispatchGame,
   } = useGame();
 
   // Get UI state from UIContext
@@ -62,7 +56,50 @@ export const ShowdownView = ({
     highlightedHoleSlot,
     setHighlightedSeat,
     setHighlightedHoleSlot,
+    dispatchUi,
   } = useUI();
+
+  // Game handlers for shared logic
+  const {
+    isSeatInactive,
+    allCardsAssigned,
+    recordSeatAction,
+    nextHand,
+  } = useGameHandlers();
+
+  // Showdown-specific handlers
+  const {
+    handleClearShowdownCards,
+    handleMuckSeat,
+    handleWonSeat,
+    handleNextHandFromShowdown,
+    handleCloseShowdown,
+  } = useShowdownHandlers(
+    dispatchCard,
+    dispatchUi,
+    dispatchGame,
+    isSeatInactive,
+    seatActions,
+    recordSeatAction,
+    nextHand,
+    LIMITS.NUM_SEATS,
+    log
+  );
+
+  // Showdown card selection
+  const selectCardForShowdown = useShowdownCardSelection(
+    highlightedSeat,
+    highlightedHoleSlot,
+    mySeat,
+    holeCards,
+    allPlayerCards,
+    communityCards,
+    seatActions,
+    isSeatInactive,
+    dispatchCard,
+    dispatchUi,
+    LIMITS.NUM_SEATS
+  );
 
   // Handler for setting hole cards visibility
   const setHoleCardsVisible = useCallback((visible) => {
@@ -184,22 +221,5 @@ export const ShowdownView = ({
 };
 
 ShowdownView.propTypes = {
-  // Layout
   scale: PropTypes.number.isRequired,
-
-  // Handlers (still passed from parent)
-  handleNextHandFromShowdown: PropTypes.func.isRequired,
-  handleClearShowdownCards: PropTypes.func.isRequired,
-  handleCloseShowdown: PropTypes.func.isRequired,
-  handleMuckSeat: PropTypes.func.isRequired,
-  handleWonSeat: PropTypes.func.isRequired,
-  selectCardForShowdown: PropTypes.func.isRequired,
-
-  // Utility functions (still passed from parent)
-  allCardsAssigned: PropTypes.func.isRequired,
-  isSeatInactive: PropTypes.func.isRequired,
-  getOverlayStatus: PropTypes.func.isRequired,
-  getActionColor: PropTypes.func.isRequired,
-  getActionDisplayName: PropTypes.func.isRequired,
-  getHandAbbreviation: PropTypes.func.isRequired,
 };

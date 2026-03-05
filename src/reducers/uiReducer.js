@@ -29,6 +29,9 @@ export const UI_ACTIONS = {
   SET_HIGHLIGHTED_SEAT: 'SET_HIGHLIGHTED_SEAT',
   SET_HIGHLIGHTED_HOLE_SLOT: 'SET_HIGHLIGHTED_HOLE_SLOT',
   ADVANCE_SHOWDOWN_HIGHLIGHT: 'ADVANCE_SHOWDOWN_HIGHLIGHT',
+  // Cross-view navigation state
+  SET_PENDING_SEAT_FOR_PLAYER: 'SET_PENDING_SEAT_FOR_PLAYER',
+  SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
 };
 
 // Screen constants
@@ -60,6 +63,9 @@ export const initialUiState = {
   isShowdownViewOpen: false,
   highlightedSeat: 1,
   highlightedHoleSlot: 0,
+  // Cross-view navigation state
+  pendingSeatForPlayerAssignment: null,
+  autoOpenNewSession: false,
 };
 
 // =============================================================================
@@ -84,6 +90,9 @@ export const UI_STATE_SCHEMA = {
   isShowdownViewOpen: { type: 'boolean' },
   highlightedSeat: { type: 'number', required: false }, // Can be null
   highlightedHoleSlot: { type: 'number', required: false }, // Can be null
+  // Cross-view navigation state
+  pendingSeatForPlayerAssignment: { type: 'number', required: false }, // Can be null
+  autoOpenNewSession: { type: 'boolean' },
 };
 
 // =============================================================================
@@ -254,6 +263,19 @@ const rawUiReducer = (state, action) => {
         highlightedHoleSlot: newSlot,
       };
     }
+
+    // Cross-view navigation
+    case UI_ACTIONS.SET_PENDING_SEAT_FOR_PLAYER:
+      return {
+        ...state,
+        pendingSeatForPlayerAssignment: action.payload,
+      };
+
+    case UI_ACTIONS.SET_AUTO_OPEN_NEW_SESSION:
+      return {
+        ...state,
+        autoOpenNewSession: action.payload,
+      };
 
     default:
       return state;

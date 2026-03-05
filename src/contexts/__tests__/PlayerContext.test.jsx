@@ -4,8 +4,29 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { PlayerProvider, usePlayer } from '../PlayerContext';
 import { PLAYER_ACTIONS } from '../../constants/playerConstants';
+
+// Mock usePlayerPersistence to avoid IndexedDB calls in tests
+vi.mock('../../hooks/usePlayerPersistence', () => ({
+  usePlayerPersistence: (playerState, dispatchPlayer) => ({
+    isReady: true,
+    createNewPlayer: vi.fn(),
+    updatePlayerById: vi.fn(),
+    deletePlayerById: vi.fn(),
+    loadAllPlayers: vi.fn(),
+    assignPlayerToSeat: vi.fn((seat, playerId) => {
+      dispatchPlayer({ type: 'SET_SEAT_PLAYER', payload: { seat, playerId } });
+    }),
+    clearSeatAssignment: vi.fn(),
+    getSeatPlayerName: vi.fn(),
+    getRecentPlayers: vi.fn(() => []),
+    isPlayerAssigned: vi.fn(() => false),
+    getPlayerSeat: vi.fn(() => null),
+    clearAllSeatAssignments: vi.fn(),
+  }),
+}));
+
+import { PlayerProvider, usePlayer } from '../PlayerContext';
 
 // Helper to create a wrapper with PlayerProvider
 const createWrapper = (playerState, dispatchPlayer = vi.fn()) => {

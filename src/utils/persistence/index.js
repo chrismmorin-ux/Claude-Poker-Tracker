@@ -59,3 +59,11 @@ export {
   resetSettings,
   clearSettings,
 } from './settingsStorage';
+
+// Range Profile CRUD operations
+export {
+  saveRangeProfile,
+  getRangeProfile,
+  deleteRangeProfile,
+  getAllRangeProfiles,
+} from './rangeProfilesStorage';

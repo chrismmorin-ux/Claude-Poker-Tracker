@@ -8,6 +8,7 @@ import { CardSelectorView } from '../CardSelectorView';
 
 // Mock the contexts
 const mockDispatchCard = vi.fn();
+const mockDispatchUi = vi.fn();
 const mockSetCardSelectorType = vi.fn();
 const mockSetHighlightedCardIndex = vi.fn();
 
@@ -23,19 +24,46 @@ vi.mock('../../../contexts', () => ({
     highlightedBoardIndex: 0,
     setCardSelectorType: mockSetCardSelectorType,
     setHighlightedCardIndex: mockSetHighlightedCardIndex,
+    dispatchUi: mockDispatchUi,
   }),
   useGame: () => ({
     currentStreet: 'flop',
+  }),
+  useSession: () => ({
+    dispatchSession: vi.fn(),
+  }),
+}));
+
+// Mock useGameHandlers
+const mockGetCardStreet = vi.fn().mockReturnValue(null);
+const mockClearCards = vi.fn();
+
+vi.mock('../../../hooks/useGameHandlers', () => ({
+  useGameHandlers: () => ({
+    getCardStreet: mockGetCardStreet,
+    clearCards: mockClearCards,
+  }),
+}));
+
+// Mock useCardSelection
+const mockSelectCard = vi.fn();
+vi.mock('../../../hooks/useCardSelection', () => ({
+  useCardSelection: () => mockSelectCard,
+}));
+
+// Mock ToastContext
+vi.mock('../../../contexts/ToastContext', () => ({
+  useToast: () => ({
+    showError: vi.fn(),
+    showSuccess: vi.fn(),
+    showWarning: vi.fn(),
+    showInfo: vi.fn(),
   }),
 }));
 
 describe('CardSelectorView', { timeout: 15000 }, () => {
   const defaultProps = {
     scale: 1,
-    getCardStreet: vi.fn().mockReturnValue(null),
-    selectCard: vi.fn(),
-    clearCards: vi.fn(),
-    handleCloseCardSelector: vi.fn(),
   };
 
   beforeEach(() => {
@@ -85,7 +113,7 @@ describe('CardSelectorView', { timeout: 15000 }, () => {
     const clearBoardBtn = screen.getByRole('button', { name: /Clear Board/i });
     fireEvent.click(clearBoardBtn);
 
-    expect(defaultProps.clearCards).toHaveBeenCalledWith('community');
+    expect(mockClearCards).toHaveBeenCalledWith('community');
   });
 
   it('calls clearCards with "hole" when Clear Hole clicked', () => {
@@ -94,16 +122,18 @@ describe('CardSelectorView', { timeout: 15000 }, () => {
     const clearHoleBtn = screen.getByRole('button', { name: /Clear Hole/i });
     fireEvent.click(clearHoleBtn);
 
-    expect(defaultProps.clearCards).toHaveBeenCalledWith('hole');
+    expect(mockClearCards).toHaveBeenCalledWith('hole');
   });
 
-  it('calls handleCloseCardSelector when Table View clicked', () => {
+  it('dispatches CLOSE_CARD_SELECTOR when Table View clicked', () => {
     render(<CardSelectorView {...defaultProps} />);
 
     const tableViewBtn = screen.getByRole('button', { name: /Table View/i });
     fireEvent.click(tableViewBtn);
 
-    expect(defaultProps.handleCloseCardSelector).toHaveBeenCalled();
+    expect(mockDispatchUi).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringContaining('CLOSE_CARD_SELECTOR') })
+    );
   });
 
   it('renders all 13 ranks in header', () => {
@@ -146,7 +176,7 @@ describe('CardSelectorView', { timeout: 15000 }, () => {
     // First row (♠), 6th column (9)
     fireEvent.click(cardButtons[5]); // Index 5 = 9♠ (0-indexed: A=0, K=1, Q=2, J=3, T=4, 9=5)
 
-    expect(defaultProps.selectCard).toHaveBeenCalledWith('9♠');
+    expect(mockSelectCard).toHaveBeenCalledWith('9♠');
   });
 
   it('accepts scale prop', () => {

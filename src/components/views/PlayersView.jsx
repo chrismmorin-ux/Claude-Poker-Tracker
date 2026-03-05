@@ -13,48 +13,48 @@ import { PlayerRow } from '../ui/PlayerRow';
 import { SeatGrid } from '../ui/SeatGrid';
 import { LIMITS } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
+import { useToast } from '../../contexts/ToastContext';
+import { usePlayer, useUI } from '../../contexts';
 import { usePlayerTendencies } from '../../hooks/usePlayerTendencies';
+import { useRangeProfile } from '../../hooks/useRangeProfile';
+import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
-/**
- * PlayersView component
- * @param {Object} props
- * @param {Function} props.onBackToTable - Callback to return to table view
- * @param {Object} props.playerState - Player state from reducer
- * @param {Function} props.createNewPlayer - Create new player function
- * @param {Function} props.updatePlayerById - Update player function
- * @param {Function} props.deletePlayerById - Delete player function
- * @param {Function} props.loadAllPlayers - Load all players function
- * @param {Function} props.assignPlayerToSeat - Assign player to seat function
- * @param {Function} props.clearSeatAssignment - Clear seat assignment function
- * @param {Function} props.getSeatPlayerName - Get player name for seat function
- * @param {Function} props.isPlayerAssigned - Check if player is assigned
- * @param {Function} props.getPlayerSeat - Get seat number for player
- * @param {Function} props.clearAllSeatAssignments - Clear all seat assignments
- * @param {number|null} props.pendingSeatForPlayerAssignment - Seat waiting for player assignment
- * @param {Function} props.setPendingSeatForPlayerAssignment - Clear pending seat
- * @param {number} props.scale - Scale factor for responsive design
- */
-export const PlayersView = ({
-  onBackToTable,
-  playerState,
-  createNewPlayer,
-  updatePlayerById,
-  deletePlayerById,
-  loadAllPlayers,
-  assignPlayerToSeat,
-  clearSeatAssignment,
-  getSeatPlayerName,
-  isPlayerAssigned,
-  getPlayerSeat,
-  clearAllSeatAssignments,
-  pendingSeatForPlayerAssignment,
-  setPendingSeatForPlayerAssignment,
-  scale = 1,
-  showError,
-  showSuccess
-}) => {
+/** PlayersView - Player management view. All state via context hooks. */
+export const PlayersView = ({ scale = 1 }) => {
+  const { showError, showSuccess } = useToast();
+  const {
+    setCurrentScreen,
+    SCREEN,
+    pendingSeatForPlayerAssignment,
+    setPendingSeatForPlayerAssignment,
+  } = useUI();
+  const {
+    allPlayers,
+    seatPlayers,
+    createNewPlayer,
+    updatePlayerById,
+    deletePlayerById,
+    loadAllPlayers,
+    assignPlayerToSeat,
+    clearSeatAssignment,
+    getSeatPlayerName,
+    isPlayerAssigned,
+    getPlayerSeat,
+    clearAllSeatAssignments,
+  } = usePlayer();
+
+  // Build a playerState-like object for compatibility with hooks that expect it
+  const playerState = { allPlayers, seatPlayers };
+
   // Player tendency stats
-  const { tendencyMap } = usePlayerTendencies(playerState.allPlayers);
+  const { tendencyMap } = usePlayerTendencies(allPlayers);
+
+  // Range detail modal
+  const [rangeDetailPlayerId, setRangeDetailPlayerId] = useState(null);
+  const { rangeProfile: rangeDetailProfile, rangeSummary: rangeDetailSummary } = useRangeProfile(rangeDetailPlayerId);
+  const rangeDetailPlayerName = rangeDetailPlayerId
+    ? (playerState.allPlayers.find(p => p.playerId === rangeDetailPlayerId)?.name || 'Unknown')
+    : '';
 
   // Player filtering hook
   const {
@@ -274,6 +274,28 @@ export const PlayersView = ({
     }
   };
 
+  const handleUpdateExploits = async (playerId, exploits) => {
+    try {
+      await updatePlayerById(playerId, { exploits });
+    } catch (error) {
+      showError(`Failed to update exploits: ${error.message}`);
+    }
+  };
+
+  const handleDismissSuggestion = async (playerId, suggestionId) => {
+    try {
+      const player = playerState.allPlayers.find(p => p.playerId === playerId);
+      const dismissed = player?.dismissedSuggestions || [];
+      if (!dismissed.includes(suggestionId)) {
+        await updatePlayerById(playerId, {
+          dismissedSuggestions: [...dismissed, suggestionId]
+        });
+      }
+    } catch (error) {
+      showError(`Failed to dismiss suggestion: ${error.message}`);
+    }
+  };
+
   const handleEditPlayer = async (playerData) => {
     try {
       await updatePlayerById(editingPlayer.playerId, playerData);
@@ -301,7 +323,7 @@ export const PlayersView = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={onBackToTable}
+              onClick={() => setCurrentScreen(SCREEN.TABLE)}
               className="flex items-center gap-1 px-3 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
             >
               <ChevronLeft size={18} />
@@ -395,6 +417,9 @@ export const PlayersView = ({
                     onEdit={() => setEditingPlayer(player)}
                     onDelete={() => setDeletingPlayer(player)}
                     tendencyStats={tendencyMap[player.playerId] || null}
+                    onUpdateExploits={(exploits) => handleUpdateExploits(player.playerId, exploits)}
+                    onDismissSuggestion={(suggestionId) => handleDismissSuggestion(player.playerId, suggestionId)}
+                    onOpenRangeDetail={setRangeDetailPlayerId}
                   />
                 ))}
               </tbody>
@@ -487,6 +512,15 @@ export const PlayersView = ({
           </div>
         </div>
       )}
+
+      {/* Range Detail Modal */}
+      <RangeDetailPanel
+        rangeProfile={rangeDetailProfile}
+        rangeSummary={rangeDetailSummary}
+        playerName={rangeDetailPlayerName}
+        onClose={() => setRangeDetailPlayerId(null)}
+        isOpen={rangeDetailPlayerId !== null}
+      />
 
       {/* Replace Prompt */}
       {showReplacePrompt && replacePromptData && (

@@ -7,8 +7,12 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllHands, GUEST_USER_ID } from '../utils/persistence';
+import { getAllHands, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence';
 import { buildPlayerStats, derivePercentages } from '../utils/tendencyCalculations';
+import { buildPositionStats } from '../utils/exploitEngine/positionStats';
+import { countLimps } from '../utils/sessionStats';
+import { buildRangeProfile, getRangeWidthSummary, getSubActionSummary, PROFILE_VERSION } from '../utils/rangeEngine';
+import { generateExploits } from '../utils/exploitEngine/generateExploits';
 
 /**
  * @param {Array} allPlayers - Player list from playerState
@@ -40,11 +44,47 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
 
       const map = {};
       for (const player of allPlayers) {
-        const stats = buildPlayerStats(player.playerId, hands);
-        const pct = derivePercentages(stats);
+        const rawStats = buildPlayerStats(player.playerId, hands);
+        const pct = derivePercentages(rawStats);
+        const positionStats = buildPositionStats(player.playerId, hands);
+        const limpData = countLimps(player.playerId, hands);
+
+        // Build/cache range profile
+        let rangeProfile = null;
+        let rangeSummary = null;
+        let subActionSummary = null;
+        try {
+          const cached = await getRangeProfile(player.playerId, userId);
+          if (cached && cached.handsProcessed === hands.length && cached.profileVersion === PROFILE_VERSION) {
+            rangeProfile = cached;
+          } else {
+            rangeProfile = buildRangeProfile(player.playerId, hands, userId);
+            await saveRangeProfile(rangeProfile, userId);
+          }
+          rangeSummary = getRangeWidthSummary(rangeProfile);
+          subActionSummary = getSubActionSummary(rangeProfile);
+        } catch (e) {
+          // Range profile is non-critical
+        }
+
+        // Generate scored exploits (NOT dismiss-filtered — that's a UI concern)
+        const exploits = generateExploits({
+          rawStats, percentages: pct, positionStats, limpData,
+          rangeProfile, rangeSummary, subActionSummary,
+          traits: rangeProfile?.traits || null,
+          pips: rangeProfile?.pips || null,
+        });
+
         map[player.playerId] = {
           ...pct,
+          rawStats,
+          positionStats,
+          limpData,
           style: classifyStyle(pct),
+          exploits,
+          rangeProfile,
+          rangeSummary,
+          subActionSummary,
         };
       }
 
@@ -87,8 +127,8 @@ export const classifyStyle = (pct) => {
   if (vpip > 30 && pfr > 20) return 'LAG';
   if (vpip > 30 && pfr < 10) return 'LP';
   if (vpip < 15 && pfr < 10) return 'Nit';
-  if (vpip >= 15 && vpip <= 25 && pfr > 15) return 'TAG';
   if (vpip >= 20 && vpip <= 30 && pfr >= 15 && pfr <= 25 && af !== null && af > 1.5) return 'Reg';
+  if (vpip >= 15 && vpip <= 30 && pfr >= 10 && pfr <= 25) return 'TAG';
 
   return 'Unknown';
 };

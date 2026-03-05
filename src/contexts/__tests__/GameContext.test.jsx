@@ -244,61 +244,6 @@ describe('GameContext', () => {
     });
   });
 
-  describe('isSeatInactive', () => {
-    it('returns null for active seat', () => {
-      const gameState = createDefaultGameState();
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.isSeatInactive(1)).toBeNull();
-    });
-
-    it('returns "absent" for absent seat', () => {
-      const gameState = createDefaultGameState({
-        absentSeats: [3],
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.isSeatInactive(3)).toBe('absent');
-    });
-
-    it('returns "folded" for folded seat', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            2: [ACTIONS.FOLD],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.isSeatInactive(2)).toBe('folded');
-    });
-
-    it('prioritizes absent over folded', () => {
-      const gameState = createDefaultGameState({
-        absentSeats: [4],
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            4: [ACTIONS.FOLD],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.isSeatInactive(4)).toBe('absent');
-    });
-  });
-
   describe('getSeatAllActions', () => {
     it('returns empty object for seat with no actions', () => {
       const gameState = createDefaultGameState();
@@ -400,7 +345,6 @@ describe('GameContext', () => {
       expect(result.current).toHaveProperty('getSmallBlindSeat');
       expect(result.current).toHaveProperty('getBigBlindSeat');
       expect(result.current).toHaveProperty('hasSeatFolded');
-      expect(result.current).toHaveProperty('isSeatInactive');
       expect(result.current).toHaveProperty('getSeatAllActions');
     });
   });

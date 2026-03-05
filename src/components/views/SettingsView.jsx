@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { ChevronDown, ChevronRight, Trash2, AlertTriangle, Bug, Copy, Download, Check } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { LAYOUT } from '../../constants/gameConstants';
-import { useSettings, useAuth } from '../../contexts';
-import { useUI } from '../../contexts';
+import { useSettings, useAuth, useUI, useToast } from '../../contexts';
 import {
   THEMES,
   CARD_SIZES,
@@ -24,7 +23,8 @@ import { EmailVerificationBanner } from '../ui/EmailVerificationBanner';
  * - Data: Export all, Import, Clear all (with confirmation)
  * - About: Version info, Error reporting toggle, Reset to defaults
  */
-export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => {
+export const SettingsView = ({ scale }) => {
+  const { showSuccess, showError, showWarning } = useToast();
   const { setCurrentScreen, SCREEN } = useUI();
   const { user, isAuthenticated, isInitialized: authInitialized, sendVerificationEmail } = useAuth();
   const {
@@ -754,7 +754,4 @@ export const SettingsView = ({ scale, showSuccess, showError, showWarning }) => 
 
 SettingsView.propTypes = {
   scale: PropTypes.number.isRequired,
-  showSuccess: PropTypes.func,
-  showError: PropTypes.func,
-  showWarning: PropTypes.func,
 };

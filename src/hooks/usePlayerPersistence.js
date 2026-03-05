@@ -258,14 +258,6 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
   }, [playerState.allPlayers, playerState.seatPlayers]);
 
   /**
-   * Get all assigned player IDs
-   * @returns {Set} Set of player IDs that are currently assigned to seats
-   */
-  const getAssignedPlayerIds = useCallback(() => {
-    return new Set(Object.values(playerState.seatPlayers).filter(Boolean));
-  }, [playerState.seatPlayers]);
-
-  /**
    * Check if a player is assigned to any seat
    * @param {number} playerId - Player ID to check
    * @returns {boolean} True if player is assigned to a seat
@@ -311,7 +303,6 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
     clearSeatAssignment,
     getSeatPlayerName,
     getRecentPlayers,
-    getAssignedPlayerIds,
     isPlayerAssigned,
     getPlayerSeat,
     clearAllSeatAssignments

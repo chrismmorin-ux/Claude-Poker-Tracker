@@ -6,6 +6,7 @@
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
+import { usePlayerPersistence } from '../hooks/usePlayerPersistence';
 
 // Create context
 const PlayerContext = createContext(null);
@@ -16,6 +17,21 @@ const PlayerContext = createContext(null);
  */
 export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
   const { allPlayers, seatPlayers, isLoading } = playerState;
+
+  // Player persistence (CRUD, seat operations, ready flag)
+  const {
+    isReady: playerPersistenceReady,
+    createNewPlayer,
+    updatePlayerById,
+    deletePlayerById,
+    loadAllPlayers,
+    assignPlayerToSeat: persistenceAssignPlayerToSeat,
+    clearSeatAssignment,
+    getRecentPlayers,
+    isPlayerAssigned,
+    getPlayerSeat,
+    clearAllSeatAssignments
+  } = usePlayerPersistence(playerState, dispatchPlayer);
 
   // Derived: Get player by ID
   const getPlayerById = useCallback((playerId) => {
@@ -85,11 +101,22 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getPlayerById,
     getSeatPlayerName,
     getSeatPlayer,
-    // Handlers
-    assignPlayerToSeat,
+    // Handlers (context-defined)
+    assignPlayerToSeat: persistenceAssignPlayerToSeat,
     clearSeatPlayer,
     clearAllSeatPlayers,
     hydrateSeatPlayers,
+    // Persistence operations
+    playerPersistenceReady,
+    createNewPlayer,
+    updatePlayerById,
+    deletePlayerById,
+    loadAllPlayers,
+    clearSeatAssignment,
+    getRecentPlayers,
+    isPlayerAssigned,
+    getPlayerSeat,
+    clearAllSeatAssignments,
   }), [
     allPlayers,
     seatPlayers,
@@ -99,10 +126,20 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getPlayerById,
     getSeatPlayerName,
     getSeatPlayer,
-    assignPlayerToSeat,
+    persistenceAssignPlayerToSeat,
     clearSeatPlayer,
     clearAllSeatPlayers,
     hydrateSeatPlayers,
+    playerPersistenceReady,
+    createNewPlayer,
+    updatePlayerById,
+    deletePlayerById,
+    loadAllPlayers,
+    clearSeatAssignment,
+    getRecentPlayers,
+    isPlayerAssigned,
+    getPlayerSeat,
+    clearAllSeatAssignments,
   ]);
 
   return (

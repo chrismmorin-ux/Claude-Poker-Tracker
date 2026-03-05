@@ -26,13 +26,39 @@ export const POSITION_NAMES = [
 ];
 
 /**
- * Position categories for filtering/grouping
+ * Position categories for filtering/grouping (legacy 4-category)
  */
 export const POSITION_CATEGORIES = {
   BLINDS: ['SB', 'BB'],
   EARLY: ['UTG', 'UTG+1'],
   MIDDLE: ['MP1', 'MP2'],
   LATE: ['HJ', 'CO', 'BTN'],
+};
+
+/**
+ * 5-category position model for range analysis.
+ * SB, BB, and LATE play drastically different from each other.
+ */
+export const RANGE_POSITION_CATEGORIES = {
+  EARLY:  ['UTG', 'UTG+1'],
+  MIDDLE: ['MP1', 'MP2'],
+  LATE:   ['HJ', 'CO', 'BTN'],
+  SB:     ['SB'],
+  BB:     ['BB'],
+};
+
+/**
+ * Get the 5-category position for range analysis.
+ * @param {number} seat - Seat number
+ * @param {number} buttonSeat - Button seat number
+ * @returns {string} 'EARLY' | 'MIDDLE' | 'LATE' | 'SB' | 'BB'
+ */
+export const getRangePositionCategory = (seat, buttonSeat) => {
+  const posName = getPositionName(seat, buttonSeat);
+  for (const [category, positions] of Object.entries(RANGE_POSITION_CATEGORIES)) {
+    if (positions.includes(posName)) return category;
+  }
+  return 'LATE'; // Default for BTN
 };
 
 /**

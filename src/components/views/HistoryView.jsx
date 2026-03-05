@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions, getSessionHandCount } from '../../utils/persistence';
-import { LAYOUT } from '../../constants/gameConstants';
+import { LAYOUT, STREETS } from '../../constants/gameConstants';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
 import { SESSION_ACTIONS } from '../../reducers/sessionReducer';
-
-const SCREEN = {
-  TABLE: 'table',
-  HISTORY: 'history',
-};
+import { SCREEN } from '../../reducers/uiReducer';
+import { useToast } from '../../contexts/ToastContext';
+import { useGame, useCard, usePlayer, useSession, useUI } from '../../contexts';
 
 // Filter options
 const FILTER_ALL = 'all';
@@ -20,19 +18,14 @@ const FILTER_CURRENT_SESSION = 'current_session';
  * HistoryView - Displays saved hand history
  * Lists all saved hands with timestamps and allows loading/deleting
  */
-export const HistoryView = ({
-  scale,
-  setCurrentScreen,
-  dispatchGame,
-  dispatchCard,
-  dispatchPlayer,
-  dispatchSession,
-  STREETS,
-  showError,
-  showSuccess,
-  showInfo,
-  currentSessionId
-}) => {
+export const HistoryView = ({ scale }) => {
+  const { showError, showSuccess, showInfo } = useToast();
+  const { dispatchGame } = useGame();
+  const { dispatchCard } = useCard();
+  const { dispatchPlayer } = usePlayer();
+  const { currentSession, dispatchSession } = useSession();
+  const { setCurrentScreen } = useUI();
+  const currentSessionId = currentSession?.sessionId;
   const [hands, setHands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [handCount, setHandCount] = useState(0);
@@ -131,7 +124,7 @@ export const HistoryView = ({
         }
 
         // Hydrate player seat assignments
-        if (hand.seatPlayers && dispatchPlayer) {
+        if (hand.seatPlayers) {
           dispatchPlayer({
             type: PLAYER_ACTIONS.HYDRATE_SEAT_PLAYERS,
             payload: { seatPlayers: hand.seatPlayers }
@@ -159,7 +152,7 @@ export const HistoryView = ({
       console.log(`[HistoryView] Deleted hand ${handId}`);
 
       // If deleted hand was from current session, update the session hand count
-      if (currentSessionId && handSessionId === currentSessionId && dispatchSession) {
+      if (currentSessionId && handSessionId === currentSessionId) {
         try {
           const newCount = await getSessionHandCount(currentSessionId);
           dispatchSession({
@@ -174,9 +167,7 @@ export const HistoryView = ({
 
       // Reload hand list
       await loadHands();
-      if (showSuccess) {
-        showSuccess('Hand deleted');
-      }
+      showSuccess('Hand deleted');
     } catch (error) {
       console.error('[HistoryView] Failed to delete hand:', error);
       showError('Failed to delete hand. Please try again.');
@@ -193,18 +184,14 @@ export const HistoryView = ({
       console.log('[HistoryView] Cleared all hands');
 
       // Reset session hand count since all hands are cleared
-      if (dispatchSession) {
-        dispatchSession({
-          type: SESSION_ACTIONS.SET_HAND_COUNT,
-          payload: { count: 0 }
-        });
-      }
+      dispatchSession({
+        type: SESSION_ACTIONS.SET_HAND_COUNT,
+        payload: { count: 0 }
+      });
 
       // Reload hand list
       await loadHands();
-      if (showSuccess) {
-        showSuccess('History cleared');
-      }
+      showSuccess('History cleared');
     } catch (error) {
       console.error('[HistoryView] Failed to clear hands:', error);
       showError('Failed to clear hands. Please try again.');

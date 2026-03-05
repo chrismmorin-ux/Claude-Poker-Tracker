@@ -88,7 +88,7 @@ export const ShowdownSeatRow = ({
 
         {/* Diagonal Overlay Label */}
         <DiagonalOverlay
-          status={getOverlayStatus(inactiveStatus, isMucked, hasWon)}
+          status={getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)}
           SEAT_STATUS={SEAT_STATUS}
         />
       </div>

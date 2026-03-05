@@ -16,11 +16,9 @@ import { playerReducer, initialPlayerState } from '../reducers/playerReducer';
 import { settingsReducer, initialSettingsState } from '../reducers/settingsReducer';
 import { authReducer, initialAuthState } from '../reducers/authReducer';
 import { usePersistence } from './usePersistence';
-import { useSessionPersistence } from './useSessionPersistence';
-import { usePlayerPersistence } from './usePlayerPersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
-import { useToast } from './useToast';
+
 
 /**
  * useAppState - Initialize all reducers and persistence hooks
@@ -58,44 +56,11 @@ export const useAppState = () => {
     dispatchPlayer
   );
 
-  // Session persistence
-  const {
-    isReady: sessionReady,
-    startNewSession,
-    endCurrentSession,
-    updateSessionField,
-    loadAllSessions,
-    deleteSessionById
-  } = useSessionPersistence(sessionState, dispatchSession);
-
-  // Player persistence
-  const {
-    isReady: playerReady,
-    createNewPlayer,
-    updatePlayerById,
-    deletePlayerById,
-    loadAllPlayers,
-    assignPlayerToSeat,
-    clearSeatAssignment,
-    getSeatPlayerName,
-    getRecentPlayers,
-    getAssignedPlayerIds,
-    isPlayerAssigned,
-    getPlayerSeat,
-    clearAllSeatAssignments
-  } = usePlayerPersistence(playerState, dispatchPlayer);
-
   // Settings persistence
   const {
     isReady: settingsReady,
     resetToDefaults: resetSettingsToDefaults
   } = useSettingsPersistence(settingsState, dispatchSettings);
-
-  // =========================================================================
-  // TOAST NOTIFICATIONS
-  // =========================================================================
-
-  const { toasts, dismissToast, showError, showSuccess, showWarning, showInfo } = useToast();
 
   // =========================================================================
   // RETURN
@@ -124,50 +89,13 @@ export const useAppState = () => {
     isReady: {
       auth: authReady,
       hand: handReady,
-      session: sessionReady,
-      player: playerReady,
       settings: settingsReady,
-      all: authReady && handReady && sessionReady && playerReady && settingsReady
-    },
-
-    // Session persistence functions
-    sessionPersistence: {
-      startNewSession,
-      endCurrentSession,
-      updateSessionField,
-      loadAllSessions,
-      deleteSessionById
-    },
-
-    // Player persistence functions
-    playerPersistence: {
-      createNewPlayer,
-      updatePlayerById,
-      deletePlayerById,
-      loadAllPlayers,
-      assignPlayerToSeat,
-      clearSeatAssignment,
-      getSeatPlayerName,
-      getRecentPlayers,
-      getAssignedPlayerIds,
-      isPlayerAssigned,
-      getPlayerSeat,
-      clearAllSeatAssignments
+      all: authReady && handReady && settingsReady
     },
 
     // Settings persistence functions
     settingsPersistence: {
       resetSettingsToDefaults
-    },
-
-    // Toast functions
-    toast: {
-      toasts,
-      dismissToast,
-      showError,
-      showSuccess,
-      showWarning,
-      showInfo
     }
   };
 };
