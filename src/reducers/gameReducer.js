@@ -303,9 +303,21 @@ const rawGameReducer = (state, action) => {
       // Remove seat from absent if they're taking action
       const newAbsentSeats = state.absentSeats.filter(s => s !== seat);
 
+      // Also write to seatActions for UI consumers (street→seat→[actions] lookup)
+      const newSeatActions = { ...state.seatActions };
+      if (!newSeatActions[state.currentStreet]) {
+        newSeatActions[state.currentStreet] = {};
+      }
+      const currentSeatActions = newSeatActions[state.currentStreet][seat] || [];
+      newSeatActions[state.currentStreet] = {
+        ...newSeatActions[state.currentStreet],
+        [seat]: [...currentSeatActions, primitiveAction],
+      };
+
       return {
         ...state,
         actionSequence: [...state.actionSequence, newEntry],
+        seatActions: newSeatActions,
         absentSeats: newAbsentSeats,
       };
     }
