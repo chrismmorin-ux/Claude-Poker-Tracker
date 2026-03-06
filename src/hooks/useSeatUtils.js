@@ -13,12 +13,12 @@ import { isFoldAction, STREETS } from '../constants/gameConstants';
  * Wraps seatUtils functions with proper dependencies and constant injection
  */
 export const useSeatUtils = (currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats) => {
-  const getSmallBlindSeat = useMemo(() => {
-    return () => utilGetSmallBlindSeat(dealerButtonSeat, absentSeats, numSeats);
+  const smallBlindSeat = useMemo(() => {
+    return utilGetSmallBlindSeat(dealerButtonSeat, absentSeats, numSeats);
   }, [dealerButtonSeat, absentSeats, numSeats]);
 
-  const getBigBlindSeat = useMemo(() => {
-    return () => utilGetBigBlindSeat(dealerButtonSeat, absentSeats, numSeats);
+  const bigBlindSeat = useMemo(() => {
+    return utilGetBigBlindSeat(dealerButtonSeat, absentSeats, numSeats);
   }, [dealerButtonSeat, absentSeats, numSeats]);
 
   const hasSeatFolded = useCallback((seat) => {
@@ -50,8 +50,8 @@ export const useSeatUtils = (currentStreet, dealerButtonSeat, absentSeats, seatA
   }, [absentSeats, currentStreet, seatActions, numSeats]);
 
   return {
-    getSmallBlindSeat,
-    getBigBlindSeat,
+    smallBlindSeat,
+    bigBlindSeat,
     hasSeatFolded,
     getFirstActionSeat,
     getNextActionSeat,

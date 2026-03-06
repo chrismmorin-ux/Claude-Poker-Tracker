@@ -8,12 +8,9 @@
  */
 
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
-
-/**
- * Valid streets in a poker hand
- * @constant {string[]}
- */
-export const STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+import { STREETS } from '../constants/gameConstants';
+// Re-export for consumers that import STREETS from this module
+export { STREETS };
 
 /**
  * ActionEntry - A single action in the sequence

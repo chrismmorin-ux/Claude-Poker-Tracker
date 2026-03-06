@@ -9,11 +9,10 @@
  * and the future range engine.
  */
 
-import { isPrimitiveAction, toPrimitive } from '../constants/primitiveActions';
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { isPrimitiveAction, toPrimitive, PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { BETTING_STREETS } from '../constants/gameConstants';
 
 const NUM_SEATS = 9;
-const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river'];
 
 // =============================================================================
 // TIMELINE BUILDING

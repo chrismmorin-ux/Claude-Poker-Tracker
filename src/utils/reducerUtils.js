@@ -149,11 +149,10 @@ export const createValidatedReducer = (reducer, schema, moduleName) => {
       // Execute the reducer
       const newState = reducer(state, action);
 
-      // Validate state shape after every action
-      if (schema) {
+      // Validate state shape in debug mode only (expensive on every dispatch)
+      if (DEBUG && schema) {
         const errors = validateSchema(newState, schema);
         if (errors.length > 0) {
-          // Always log validation errors (even in production)
           const appError = new AppError(
             ERROR_CODES.STATE_CORRUPTION,
             `State validation failed after ${action.type}`,
@@ -161,7 +160,6 @@ export const createValidatedReducer = (reducer, schema, moduleName) => {
               errors,
               actionType: action.type,
               actionPayload: action.payload,
-              // Include first few keys of state for context
               stateKeys: Object.keys(newState).slice(0, 5),
             }
           );

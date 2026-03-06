@@ -29,15 +29,15 @@ describe('useSeatUtils', () => {
     );
   };
 
-  describe('returns all expected functions', () => {
-    it('returns getSmallBlindSeat function', () => {
+  describe('returns all expected values and functions', () => {
+    it('returns smallBlindSeat value', () => {
       const { result } = createHook();
-      expect(typeof result.current.getSmallBlindSeat).toBe('function');
+      expect(typeof result.current.smallBlindSeat).toBe('number');
     });
 
-    it('returns getBigBlindSeat function', () => {
+    it('returns bigBlindSeat value', () => {
       const { result } = createHook();
-      expect(typeof result.current.getBigBlindSeat).toBe('function');
+      expect(typeof result.current.bigBlindSeat).toBe('number');
     });
 
     it('returns hasSeatFolded function', () => {
@@ -56,42 +56,42 @@ describe('useSeatUtils', () => {
     });
   });
 
-  describe('getSmallBlindSeat', () => {
+  describe('smallBlindSeat', () => {
     it('returns seat after dealer', () => {
       const { result } = createHook({ dealerButtonSeat: 1 });
-      expect(result.current.getSmallBlindSeat()).toBe(2);
+      expect(result.current.smallBlindSeat).toBe(2);
     });
 
     it('wraps from seat 9 to seat 1', () => {
       const { result } = createHook({ dealerButtonSeat: 9 });
-      expect(result.current.getSmallBlindSeat()).toBe(1);
+      expect(result.current.smallBlindSeat).toBe(1);
     });
 
     it('skips absent seats', () => {
       const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2] });
-      expect(result.current.getSmallBlindSeat()).toBe(3);
+      expect(result.current.smallBlindSeat).toBe(3);
     });
 
     it('skips multiple absent seats', () => {
       const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2, 3, 4] });
-      expect(result.current.getSmallBlindSeat()).toBe(5);
+      expect(result.current.smallBlindSeat).toBe(5);
     });
   });
 
-  describe('getBigBlindSeat', () => {
+  describe('bigBlindSeat', () => {
     it('returns seat two positions after dealer', () => {
       const { result } = createHook({ dealerButtonSeat: 1 });
-      expect(result.current.getBigBlindSeat()).toBe(3);
+      expect(result.current.bigBlindSeat).toBe(3);
     });
 
     it('wraps from seat 9 correctly', () => {
       const { result } = createHook({ dealerButtonSeat: 8 });
-      expect(result.current.getBigBlindSeat()).toBe(1);
+      expect(result.current.bigBlindSeat).toBe(1);
     });
 
     it('skips absent SB to find BB', () => {
       const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2] });
-      expect(result.current.getBigBlindSeat()).toBe(4);
+      expect(result.current.bigBlindSeat).toBe(4);
     });
   });
 
@@ -206,17 +206,17 @@ describe('useSeatUtils', () => {
   });
 
   describe('hook updates when dependencies change', () => {
-    it('updates getSmallBlindSeat when dealer changes', () => {
+    it('updates smallBlindSeat when dealer changes', () => {
       const { result, rerender } = renderHook(
         ({ dealer }) => useSeatUtils('preflop', dealer, [], {}, 9),
         { initialProps: { dealer: 1 } }
       );
 
-      expect(result.current.getSmallBlindSeat()).toBe(2);
+      expect(result.current.smallBlindSeat).toBe(2);
 
       rerender({ dealer: 5 });
 
-      expect(result.current.getSmallBlindSeat()).toBe(6);
+      expect(result.current.smallBlindSeat).toBe(6);
     });
 
     it('updates hasSeatFolded when seatActions change', () => {
@@ -238,27 +238,26 @@ describe('useSeatUtils', () => {
         { initialProps: { absent: [] } }
       );
 
-      expect(result.current.getSmallBlindSeat()).toBe(2);
+      expect(result.current.smallBlindSeat).toBe(2);
 
       rerender({ absent: [2] });
 
-      expect(result.current.getSmallBlindSeat()).toBe(3);
+      expect(result.current.smallBlindSeat).toBe(3);
     });
   });
 
-  describe('function stability', () => {
-    it('getSmallBlindSeat is stable when deps unchanged', () => {
+  describe('value stability', () => {
+    it('smallBlindSeat is stable when deps unchanged', () => {
       const { result, rerender } = createHook();
-      const first = result.current.getSmallBlindSeat;
+      const first = result.current.smallBlindSeat;
       rerender();
-      expect(result.current.getSmallBlindSeat).toBe(first);
+      expect(result.current.smallBlindSeat).toBe(first);
     });
 
-    it('getBigBlindSeat is stable when deps unchanged', () => {
-      const { result, rerender } = createHook();
-      const first = result.current.getBigBlindSeat;
-      rerender();
-      expect(result.current.getBigBlindSeat).toBe(first);
+    it('bigBlindSeat is stable when deps unchanged', () => {
+      const { result } = createHook();
+      const first = result.current.bigBlindSeat;
+      expect(result.current.bigBlindSeat).toBe(first);
     });
   });
 });

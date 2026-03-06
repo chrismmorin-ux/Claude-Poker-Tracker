@@ -5,13 +5,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { GameProvider, useGame } from '../GameContext';
-import { ACTIONS, FOLD_ACTIONS } from '../../constants/gameConstants';
 
-// Streets are strings (array values), not object properties
 const PREFLOP = 'preflop';
-const FLOP = 'flop';
-const TURN = 'turn';
-const RIVER = 'river';
 
 // Helper to create a wrapper with GameProvider
 const createWrapper = (gameState, dispatchGame = vi.fn()) => {
@@ -73,14 +68,14 @@ describe('GameContext', () => {
     });
   });
 
-  describe('getSmallBlindSeat', () => {
+  describe('smallBlindSeat', () => {
     it('returns seat after dealer (seat 2 when dealer is seat 1)', () => {
       const gameState = createDefaultGameState({ dealerButtonSeat: 1 });
       const { result } = renderHook(() => useGame(), {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getSmallBlindSeat()).toBe(2);
+      expect(result.current.smallBlindSeat).toBe(2);
     });
 
     it('wraps around from seat 9 to seat 1', () => {
@@ -89,7 +84,7 @@ describe('GameContext', () => {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getSmallBlindSeat()).toBe(1);
+      expect(result.current.smallBlindSeat).toBe(1);
     });
 
     it('skips absent seats', () => {
@@ -101,7 +96,7 @@ describe('GameContext', () => {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getSmallBlindSeat()).toBe(3);
+      expect(result.current.smallBlindSeat).toBe(3);
     });
 
     it('skips multiple absent seats', () => {
@@ -113,18 +108,18 @@ describe('GameContext', () => {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getSmallBlindSeat()).toBe(5);
+      expect(result.current.smallBlindSeat).toBe(5);
     });
   });
 
-  describe('getBigBlindSeat', () => {
+  describe('bigBlindSeat', () => {
     it('returns seat two positions after dealer', () => {
       const gameState = createDefaultGameState({ dealerButtonSeat: 1 });
       const { result } = renderHook(() => useGame(), {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getBigBlindSeat()).toBe(3);
+      expect(result.current.bigBlindSeat).toBe(3);
     });
 
     it('wraps around correctly', () => {
@@ -133,7 +128,7 @@ describe('GameContext', () => {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getBigBlindSeat()).toBe(1);
+      expect(result.current.bigBlindSeat).toBe(1);
     });
 
     it('skips absent seats', () => {
@@ -145,182 +140,7 @@ describe('GameContext', () => {
         wrapper: createWrapper(gameState),
       });
 
-      expect(result.current.getBigBlindSeat()).toBe(4);
-    });
-  });
-
-  describe('hasSeatFolded', () => {
-    it('returns false when seat has no actions', () => {
-      const gameState = createDefaultGameState();
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.hasSeatFolded(1)).toBe(false);
-    });
-
-    it('returns false when seat has non-fold actions', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.CALL],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.hasSeatFolded(1)).toBe(false);
-    });
-
-    it('returns true when seat has folded', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.FOLD],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.hasSeatFolded(1)).toBe(true);
-    });
-
-    it('returns true for FOLD_TO_CBET action', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.FOLD_TO_CBET],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.hasSeatFolded(1)).toBe(true);
-    });
-
-    it('returns true when fold is among multiple actions', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: PREFLOP,
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.CALL, ACTIONS.FOLD],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.hasSeatFolded(1)).toBe(true);
-    });
-
-    it('only checks current street', () => {
-      const gameState = createDefaultGameState({
-        currentStreet: FLOP,
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.FOLD],
-          },
-          [FLOP]: {
-            1: [ACTIONS.CALL],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      // On flop, seat 1 called (but folded on preflop)
-      expect(result.current.hasSeatFolded(1)).toBe(false);
-    });
-  });
-
-  describe('getSeatAllActions', () => {
-    it('returns empty object for seat with no actions', () => {
-      const gameState = createDefaultGameState();
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.getSeatAllActions(1)).toEqual({});
-    });
-
-    it('returns actions for single street', () => {
-      const gameState = createDefaultGameState({
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.CALL],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.getSeatAllActions(1)).toEqual({
-        [PREFLOP]: [ACTIONS.CALL],
-      });
-    });
-
-    it('returns actions across multiple streets', () => {
-      const gameState = createDefaultGameState({
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.CALL],
-            2: [ACTIONS.OPEN],
-          },
-          [FLOP]: {
-            1: [ACTIONS.CHECK],
-            2: [ACTIONS.DONK],
-          },
-          [TURN]: {
-            1: [ACTIONS.FOLD],
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      expect(result.current.getSeatAllActions(1)).toEqual({
-        [PREFLOP]: [ACTIONS.CALL],
-        [FLOP]: [ACTIONS.CHECK],
-        [TURN]: [ACTIONS.FOLD],
-      });
-
-      expect(result.current.getSeatAllActions(2)).toEqual({
-        [PREFLOP]: [ACTIONS.OPEN],
-        [FLOP]: [ACTIONS.DONK],
-      });
-    });
-
-    it('does not include streets where seat has no actions', () => {
-      const gameState = createDefaultGameState({
-        seatActions: {
-          [PREFLOP]: {
-            1: [ACTIONS.CALL],
-          },
-          [FLOP]: {
-            2: [ACTIONS.DONK], // seat 1 has no flop actions
-          },
-        },
-      });
-      const { result } = renderHook(() => useGame(), {
-        wrapper: createWrapper(gameState),
-      });
-
-      const seat1Actions = result.current.getSeatAllActions(1);
-      expect(Object.keys(seat1Actions)).toEqual([PREFLOP]);
-      expect(seat1Actions[FLOP]).toBeUndefined();
+      expect(result.current.bigBlindSeat).toBe(4);
     });
   });
 
@@ -342,10 +162,8 @@ describe('GameContext', () => {
       expect(result.current).toHaveProperty('dispatchGame');
 
       // Derived utilities
-      expect(result.current).toHaveProperty('getSmallBlindSeat');
-      expect(result.current).toHaveProperty('getBigBlindSeat');
-      expect(result.current).toHaveProperty('hasSeatFolded');
-      expect(result.current).toHaveProperty('getSeatAllActions');
+      expect(result.current).toHaveProperty('smallBlindSeat');
+      expect(result.current).toHaveProperty('bigBlindSeat');
     });
   });
 });

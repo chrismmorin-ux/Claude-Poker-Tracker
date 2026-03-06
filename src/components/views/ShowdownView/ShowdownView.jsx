@@ -45,8 +45,8 @@ export const ShowdownView = ({ scale }) => {
     mySeat,
     dealerButtonSeat,
     seatActions,
-    getSmallBlindSeat,
-    getBigBlindSeat,
+    smallBlindSeat,
+    bigBlindSeat,
     dispatchGame,
   } = useGame();
 
@@ -158,8 +158,8 @@ export const ShowdownView = ({ scale }) => {
                     cards={cards}
                     isMySeat={mySeat === seat}
                     isDealer={dealerButtonSeat === seat}
-                    isSB={getSmallBlindSeat() === seat}
-                    isBB={getBigBlindSeat() === seat}
+                    isSB={smallBlindSeat === seat}
+                    isBB={bigBlindSeat === seat}
                     holeCardsVisible={holeCardsVisible}
                     inactiveStatus={inactiveStatus}
                     isMucked={isMucked}

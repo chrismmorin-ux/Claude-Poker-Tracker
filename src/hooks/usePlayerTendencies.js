@@ -42,8 +42,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       }
       lastHandCountRef.current = hands.length;
 
-      const map = {};
-      for (const player of allPlayers) {
+      const entries = await Promise.all(allPlayers.map(async (player) => {
         const rawStats = buildPlayerStats(player.playerId, hands);
         const pct = derivePercentages(rawStats);
         const positionStats = buildPositionStats(player.playerId, hands);
@@ -75,7 +74,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           pips: rangeProfile?.pips || null,
         });
 
-        map[player.playerId] = {
+        return [player.playerId, {
           ...pct,
           rawStats,
           positionStats,
@@ -85,10 +84,10 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           rangeProfile,
           rangeSummary,
           subActionSummary,
-        };
-      }
+        }];
+      }));
 
-      setTendencyMap(map);
+      setTendencyMap(Object.fromEntries(entries));
     } catch (error) {
       // Fail silently — stats are non-critical
       console.error('usePlayerTendencies: calculation failed', error);

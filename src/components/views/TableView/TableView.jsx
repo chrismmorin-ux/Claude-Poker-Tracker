@@ -91,8 +91,8 @@ export const TableView = ({ scale }) => {
     dealerButtonSeat,
     seatActions,
     absentSeats,
-    getSmallBlindSeat,
-    getBigBlindSeat,
+    smallBlindSeat,
+    bigBlindSeat,
     dispatchGame,
   } = useGame();
 
@@ -437,8 +437,8 @@ export const TableView = ({ scale }) => {
                   y={y}
                   actionArray={seatActions[currentStreet]?.[seat] || []}
                   isDealer={dealerButtonSeat === seat}
-                  isSmallBlind={getSmallBlindSeat() === seat}
-                  isBigBlind={getBigBlindSeat() === seat}
+                  isSmallBlind={smallBlindSeat === seat}
+                  isBigBlind={bigBlindSeat === seat}
                   isMySeat={seat === mySeat}
                   playerName={getSeatPlayerName(seat)}
                   exploitSummary={seatExploitData[seat]?.summary || null}

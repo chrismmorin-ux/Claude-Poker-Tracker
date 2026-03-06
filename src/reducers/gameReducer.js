@@ -13,9 +13,7 @@ import { createActionEntry, getNextOrder, isValidActionEntry } from '../types/ac
 // Action types
 export const GAME_ACTIONS = {
   SET_STREET: 'SET_STREET',
-  NEXT_STREET: 'NEXT_STREET',
   SET_DEALER: 'SET_DEALER',
-  ADVANCE_DEALER: 'ADVANCE_DEALER',
   SET_MY_SEAT: 'SET_MY_SEAT',
   RECORD_ACTION: 'RECORD_ACTION',
   CLEAR_STREET_ACTIONS: 'CLEAR_STREET_ACTIONS',
@@ -25,10 +23,7 @@ export const GAME_ACTIONS = {
   RESET_HAND: 'RESET_HAND',
   NEXT_HAND: 'NEXT_HAND',
   HYDRATE_STATE: 'HYDRATE_STATE',
-  // New action sequence actions (Phase 3)
   RECORD_PRIMITIVE_ACTION: 'RECORD_PRIMITIVE_ACTION',
-  UNDO_SEQUENCE_ACTION: 'UNDO_SEQUENCE_ACTION',
-  CLEAR_SEQUENCE: 'CLEAR_SEQUENCE',
 };
 
 // Initial state
@@ -41,8 +36,6 @@ export const initialGameState = {
   actionSequence: [], // New: ordered list of { seat, action, street, order }
 };
 
-// Street progression order
-const STREET_ORDER = ['preflop', 'flop', 'turn', 'river', 'showdown'];
 // Use centralized LIMITS.NUM_SEATS instead of hardcoded value
 const NUM_SEATS = LIMITS.NUM_SEATS;
 
@@ -76,27 +69,10 @@ const rawGameReducer = (state, action) => {
         currentStreet: action.payload,
       };
 
-    case GAME_ACTIONS.NEXT_STREET: {
-      const currentIndex = STREET_ORDER.indexOf(state.currentStreet);
-      const nextStreet = currentIndex < STREET_ORDER.length - 1
-        ? STREET_ORDER[currentIndex + 1]
-        : state.currentStreet;
-      return {
-        ...state,
-        currentStreet: nextStreet,
-      };
-    }
-
     case GAME_ACTIONS.SET_DEALER:
       return {
         ...state,
         dealerButtonSeat: action.payload,
-      };
-
-    case GAME_ACTIONS.ADVANCE_DEALER:
-      return {
-        ...state,
-        dealerButtonSeat: (state.dealerButtonSeat % NUM_SEATS) + 1,
       };
 
     case GAME_ACTIONS.SET_MY_SEAT:
@@ -150,10 +126,23 @@ const rawGameReducer = (state, action) => {
       // Remove seats from absent if they're taking action
       const newAbsentSeats = state.absentSeats.filter(s => !validSeats.includes(s));
 
+      // Also populate actionSequence for each seat
+      let newSequence = [...state.actionSequence];
+      validSeats.forEach(seat => {
+        const entry = createActionEntry({
+          seat,
+          action: playerAction,
+          street: state.currentStreet,
+          order: getNextOrder(newSequence),
+        });
+        newSequence.push(entry);
+      });
+
       return {
         ...state,
         seatActions: newSeatActions,
         absentSeats: newAbsentSeats,
+        actionSequence: newSequence,
       };
     }
 
@@ -164,6 +153,9 @@ const rawGameReducer = (state, action) => {
       return {
         ...state,
         seatActions: newSeatActions,
+        actionSequence: state.actionSequence.filter(
+          entry => entry.street !== state.currentStreet
+        ),
       };
     }
 
@@ -182,6 +174,9 @@ const rawGameReducer = (state, action) => {
       return {
         ...state,
         seatActions: newSeatActions,
+        actionSequence: state.actionSequence.filter(
+          entry => !(entry.street === state.currentStreet && seats.includes(entry.seat))
+        ),
       };
     }
 
@@ -209,9 +204,19 @@ const rawGameReducer = (state, action) => {
         };
       }
 
+      // Remove the last actionSequence entry for this seat+street
+      const newSequence = [...state.actionSequence];
+      for (let i = newSequence.length - 1; i >= 0; i--) {
+        if (newSequence[i].seat === seat && newSequence[i].street === state.currentStreet) {
+          newSequence.splice(i, 1);
+          break;
+        }
+      }
+
       return {
         ...state,
         seatActions: newSeatActions,
+        actionSequence: newSequence,
       };
     }
 
@@ -260,10 +265,6 @@ const rawGameReducer = (state, action) => {
         ...state,             // Current state
         ...action.payload     // Loaded data overwrites
       };
-
-    // =========================================================================
-    // NEW: Action Sequence Actions (Phase 3)
-    // =========================================================================
 
     case GAME_ACTIONS.RECORD_PRIMITIVE_ACTION: {
       const { seat, action: primitiveAction } = action.payload;
@@ -321,26 +322,6 @@ const rawGameReducer = (state, action) => {
         absentSeats: newAbsentSeats,
       };
     }
-
-    case GAME_ACTIONS.UNDO_SEQUENCE_ACTION: {
-      if (state.actionSequence.length === 0) {
-        return state; // Nothing to undo
-      }
-
-      // Remove the last action from the sequence
-      const newSequence = state.actionSequence.slice(0, -1);
-
-      return {
-        ...state,
-        actionSequence: newSequence,
-      };
-    }
-
-    case GAME_ACTIONS.CLEAR_SEQUENCE:
-      return {
-        ...state,
-        actionSequence: [],
-      };
 
     default:
       return state;
