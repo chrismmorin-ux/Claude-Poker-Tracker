@@ -18,7 +18,7 @@ import {
   deletePlayer as dbDeletePlayer,
   getPlayerByName,
   GUEST_USER_ID
-} from '../utils/persistence';
+} from '../utils/persistence/index';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 
@@ -42,7 +42,7 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  * @param {Object} playerState - Player state from playerReducer
  * @param {Function} dispatchPlayer - Player state dispatcher
  * @param {string} userId - User ID for data isolation (defaults to 'guest')
- * @returns {Object} { isReady, createNewPlayer, updatePlayerById, deletePlayerById, loadAllPlayers, assignPlayerToSeat, clearSeatAssignment, getSeatPlayerName }
+ * @returns {Object} { isReady, createNewPlayer, updatePlayerById, deletePlayerById, loadAllPlayers, assignPlayerToSeat, getRecentPlayers, isPlayerAssigned, getPlayerSeat }
  */
 export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST_USER_ID) => {
   // State
@@ -209,33 +209,6 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
   }, [dispatchPlayer]);
 
   /**
-   * Clear player assignment from a seat
-   * @param {number} seat - Seat number (1-9)
-   * @returns {void}
-   */
-  const clearSeatAssignment = useCallback((seat) => {
-    log(`Clearing player from seat ${seat}`);
-
-    dispatchPlayer({
-      type: PLAYER_ACTIONS.CLEAR_SEAT_PLAYER,
-      payload: { seat }
-    });
-  }, [dispatchPlayer]);
-
-  /**
-   * Get the name of the player assigned to a seat
-   * @param {number} seat - Seat number (1-9)
-   * @returns {string|null} Player name or null if no player assigned
-   */
-  const getSeatPlayerName = useCallback((seat) => {
-    const playerId = playerState.seatPlayers[seat];
-    if (!playerId) return null;
-
-    const player = playerState.allPlayers.find(p => p.playerId === playerId);
-    return player ? player.name : null;
-  }, [playerState.seatPlayers, playerState.allPlayers]);
-
-  /**
    * Get all players sorted by lastSeenAt (most recent first)
    * @param {number} limit - Optional limit on number of players returned
    * @param {boolean} excludeAssigned - If true, exclude players already assigned to seats
@@ -280,15 +253,6 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
     return null;
   }, [playerState.seatPlayers]);
 
-  /**
-   * Clear all seat assignments
-   */
-  const clearAllSeatAssignments = useCallback(() => {
-    dispatchPlayer({
-      type: PLAYER_ACTIONS.CLEAR_ALL_SEAT_PLAYERS
-    });
-  }, [dispatchPlayer]);
-
   // ==========================================================================
   // RETURN VALUES
   // ==========================================================================
@@ -300,11 +264,8 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
     deletePlayerById,
     loadAllPlayers,
     assignPlayerToSeat,
-    clearSeatAssignment,
-    getSeatPlayerName,
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
-    clearAllSeatAssignments
   };
 };

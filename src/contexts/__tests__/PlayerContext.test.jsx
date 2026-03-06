@@ -17,12 +17,9 @@ vi.mock('../../hooks/usePlayerPersistence', () => ({
     assignPlayerToSeat: vi.fn((seat, playerId) => {
       dispatchPlayer({ type: 'SET_SEAT_PLAYER', payload: { seat, playerId } });
     }),
-    clearSeatAssignment: vi.fn(),
-    getSeatPlayerName: vi.fn(),
     getRecentPlayers: vi.fn(() => []),
     isPlayerAssigned: vi.fn(() => false),
     getPlayerSeat: vi.fn(() => null),
-    clearAllSeatAssignments: vi.fn(),
   }),
 }));
 
@@ -216,7 +213,7 @@ describe('PlayerContext', () => {
     });
   });
 
-  describe('clearSeatPlayer', () => {
+  describe('clearSeatAssignment', () => {
     it('dispatches CLEAR_SEAT_PLAYER action', () => {
       const mockDispatch = vi.fn();
       const playerState = createDefaultPlayerState({
@@ -227,7 +224,7 @@ describe('PlayerContext', () => {
       });
 
       act(() => {
-        result.current.clearSeatPlayer(4);
+        result.current.clearSeatAssignment(4);
       });
 
       expect(mockDispatch).toHaveBeenCalledWith({
@@ -237,7 +234,7 @@ describe('PlayerContext', () => {
     });
   });
 
-  describe('clearAllSeatPlayers', () => {
+  describe('clearAllSeatAssignments', () => {
     it('dispatches CLEAR_ALL_SEAT_PLAYERS action', () => {
       const mockDispatch = vi.fn();
       const playerState = createDefaultPlayerState({
@@ -248,7 +245,7 @@ describe('PlayerContext', () => {
       });
 
       act(() => {
-        result.current.clearAllSeatPlayers();
+        result.current.clearAllSeatAssignments();
       });
 
       expect(mockDispatch).toHaveBeenCalledWith({
@@ -342,8 +339,8 @@ describe('PlayerContext', () => {
 
       // Handlers
       expect(result.current).toHaveProperty('assignPlayerToSeat');
-      expect(result.current).toHaveProperty('clearSeatPlayer');
-      expect(result.current).toHaveProperty('clearAllSeatPlayers');
+      expect(result.current).toHaveProperty('clearSeatAssignment');
+      expect(result.current).toHaveProperty('clearAllSeatAssignments');
       expect(result.current).toHaveProperty('hydrateSeatPlayers');
     });
   });

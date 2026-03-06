@@ -9,8 +9,8 @@
  * - Hydration of reducer state from persisted data
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { initDB, saveHand, loadLatestHand, GUEST_USER_ID } from '../utils/persistence';
+import { useEffect, useRef, useState } from 'react';
+import { initDB, saveHand, loadLatestHand, GUEST_USER_ID } from '../utils/persistence/index';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../reducers/playerReducer';
@@ -42,7 +42,7 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  * @param {Function} dispatchSession - Session state dispatcher (optional, for hand count)
  * @param {Function} dispatchPlayer - Player state dispatcher (optional, for seat assignments)
  * @param {string} userId - User ID for data isolation (defaults to 'guest')
- * @returns {Object} { isReady, saveNow, clearHistory, lastSavedAt }
+ * @returns {Object} { isReady, lastSavedAt }
  */
 export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession = null, dispatchPlayer = null, userId = GUEST_USER_ID) => {
   // State
@@ -178,80 +178,11 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
   }, [gameState, cardState, playerState, isReady, userId]);
 
   // ==========================================================================
-  // EXPORTED FUNCTIONS
-  // ==========================================================================
-
-  /**
-   * Force immediate save (bypassing debounce)
-   * Future use: manual save button
-   */
-  const saveNow = useCallback(async () => {
-    if (!isReady) {
-      log('Cannot save - persistence not ready');
-      return;
-    }
-
-    try {
-      // Clear pending timer
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
-
-      const handData = {
-        gameState: {
-          currentStreet: gameState.currentStreet,
-          dealerButtonSeat: gameState.dealerButtonSeat,
-          mySeat: gameState.mySeat,
-          seatActions: gameState.seatActions,
-          actionSequence: gameState.actionSequence,
-          absentSeats: gameState.absentSeats
-        },
-        cardState: {
-          communityCards: cardState.communityCards,
-          holeCards: cardState.holeCards,
-          holeCardsVisible: cardState.holeCardsVisible,
-          allPlayerCards: cardState.allPlayerCards
-        }
-      };
-
-      const handId = await saveHand(handData, userId);
-      setLastSavedAt(new Date());
-      log(`Manual save completed - hand ${handId} for user ${userId}`);
-
-      // Note: Hand count is NOT incremented here - it's only incremented
-      // when explicitly calling nextHand() to advance to a new hand
-    } catch (error) {
-      logError('Manual save failed:', error);
-    }
-  }, [gameState, cardState, isReady, userId]);
-
-  /**
-   * Clear all hand history for this user
-   * Future use: "Clear History" button
-   */
-  const clearHistory = useCallback(async () => {
-    if (!isReady) {
-      log('Cannot clear - persistence not ready');
-      return;
-    }
-
-    try {
-      const { clearAllHands } = await import('../utils/persistence');
-      await clearAllHands(userId);
-      log(`Hand history cleared for user ${userId}`);
-    } catch (error) {
-      logError('Failed to clear history:', error);
-    }
-  }, [isReady, userId]);
-
-  // ==========================================================================
   // RETURN
   // ==========================================================================
 
   return {
     isReady,
-    saveNow,
-    clearHistory,
     lastSavedAt
   };
 };

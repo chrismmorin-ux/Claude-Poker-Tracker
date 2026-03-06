@@ -17,11 +17,10 @@ import {
 } from '../../test/utils';
 
 // Mock the persistence module
-vi.mock('../../utils/persistence', () => ({
+vi.mock('../../utils/persistence/index', () => ({
   initDB: vi.fn(() => Promise.resolve()),
   saveHand: vi.fn(() => Promise.resolve(1)),
   loadLatestHand: vi.fn(() => Promise.resolve(null)),
-  clearAllHands: vi.fn(() => Promise.resolve()),
   GUEST_USER_ID: 'guest',
 }));
 
@@ -37,7 +36,7 @@ vi.mock('../../utils/errorHandler', () => ({
   ERROR_CODES: {},
 }));
 
-import { initDB, saveHand, loadLatestHand, clearAllHands } from '../../utils/persistence';
+import { initDB, saveHand, loadLatestHand } from '../../utils/persistence/index';
 
 describe('usePersistence', () => {
   let dispatchers;
@@ -55,7 +54,6 @@ describe('usePersistence', () => {
     vi.mocked(initDB).mockResolvedValue(undefined);
     vi.mocked(saveHand).mockResolvedValue(1);
     vi.mocked(loadLatestHand).mockResolvedValue(null);
-    vi.mocked(clearAllHands).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -329,107 +327,6 @@ describe('usePersistence', () => {
     });
   });
 
-  describe('saveNow', () => {
-    it('saves immediately bypassing debounce', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      vi.mocked(saveHand).mockClear();
-
-      await act(async () => {
-        await result.current.saveNow();
-      });
-
-      expect(saveHand).toHaveBeenCalled();
-    });
-
-    it('clears pending debounce timer', async () => {
-      const { result, rerender } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      vi.mocked(saveHand).mockClear();
-
-      // Trigger auto-save timer
-      gameState = createMockGameState({ currentStreet: 'flop' });
-      rerender();
-
-      // Immediately call saveNow before debounce completes
-      await act(async () => {
-        await result.current.saveNow();
-      });
-
-      // Advance past debounce - should not trigger another save
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      });
-
-      // Only one save should have happened (from saveNow)
-      expect(saveHand).toHaveBeenCalledTimes(1);
-    });
-
-    it('does nothing when not ready', async () => {
-      vi.mocked(initDB).mockImplementation(() => new Promise(() => {})); // Never resolves
-
-      const { result } = createHook();
-
-      await act(async () => {
-        await result.current.saveNow();
-      });
-
-      expect(saveHand).not.toHaveBeenCalled();
-    });
-
-    it('updates lastSavedAt after manual save', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      expect(result.current.lastSavedAt).toBeNull();
-
-      await act(async () => {
-        await result.current.saveNow();
-      });
-
-      expect(result.current.lastSavedAt).toBeInstanceOf(Date);
-    });
-  });
-
-  describe('clearHistory', () => {
-    it('clears all hands from database', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      await act(async () => {
-        await result.current.clearHistory();
-      });
-
-      expect(clearAllHands).toHaveBeenCalled();
-    });
-
-    it('does nothing when not ready', async () => {
-      vi.mocked(initDB).mockImplementation(() => new Promise(() => {}));
-
-      const { result } = createHook();
-
-      await act(async () => {
-        await result.current.clearHistory();
-      });
-
-      expect(clearAllHands).not.toHaveBeenCalled();
-    });
-  });
-
   describe('return values', () => {
     it('returns isReady boolean', async () => {
       const { result, unmount } = createHook();
@@ -438,54 +335,11 @@ describe('usePersistence', () => {
       unmount();
     });
 
-    it('returns saveNow function', async () => {
-      const { result, unmount } = createHook();
-
-      expect(typeof result.current.saveNow).toBe('function');
-      unmount();
-    });
-
-    it('returns clearHistory function', async () => {
-      const { result, unmount } = createHook();
-
-      expect(typeof result.current.clearHistory).toBe('function');
-      unmount();
-    });
-
     it('returns lastSavedAt (initially null)', async () => {
       const { result, unmount } = createHook();
 
       expect(result.current.lastSavedAt).toBeNull();
       unmount();
-    });
-  });
-
-  describe('function stability', () => {
-    it('returns stable saveNow reference', async () => {
-      const { result, rerender } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      const first = result.current.saveNow;
-      rerender();
-
-      // Note: saveNow depends on gameState/cardState, so it may change
-      // This test verifies it's a function
-      expect(typeof result.current.saveNow).toBe('function');
-    });
-
-    it('returns stable clearHistory reference when ready state unchanged', async () => {
-      const { result, rerender } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      const first = result.current.clearHistory;
-      rerender();
-      expect(result.current.clearHistory).toBe(first);
     });
   });
 });

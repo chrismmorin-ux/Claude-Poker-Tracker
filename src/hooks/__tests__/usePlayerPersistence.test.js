@@ -9,7 +9,7 @@ import { PLAYER_ACTIONS } from '../../constants/playerConstants';
 import { createMockPlayer, createMockPlayerState } from '../../test/utils';
 
 // Mock the persistence module
-vi.mock('../../utils/persistence', () => ({
+vi.mock('../../utils/persistence/index', () => ({
   createPlayer: vi.fn(() => Promise.resolve(1)),
   getAllPlayers: vi.fn(() => Promise.resolve([])),
   getPlayerById: vi.fn(() => Promise.resolve(null)),
@@ -38,7 +38,7 @@ import {
   updatePlayer,
   deletePlayer,
   getPlayerByName,
-} from '../../utils/persistence';
+} from '../../utils/persistence/index';
 
 describe('usePlayerPersistence', () => {
   let dispatchPlayer;
@@ -371,63 +371,6 @@ describe('usePlayerPersistence', () => {
     });
   });
 
-  describe('clearSeatAssignment', () => {
-    it('dispatches CLEAR_SEAT_PLAYER action', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      });
-
-      act(() => {
-        result.current.clearSeatAssignment(5);
-      });
-
-      expect(dispatchPlayer).toHaveBeenCalledWith({
-        type: PLAYER_ACTIONS.CLEAR_SEAT_PLAYER,
-        payload: { seat: 5 },
-      });
-    });
-  });
-
-  describe('getSeatPlayerName', () => {
-    it('returns player name when assigned', () => {
-      playerState = createMockPlayerState({
-        allPlayers: [createMockPlayer({ playerId: 101, name: 'Frank' })],
-        seatPlayers: { 3: 101 },
-      });
-
-      const { result, unmount } = createHook();
-
-      expect(result.current.getSeatPlayerName(3)).toBe('Frank');
-      unmount(); // Prevent async state updates after test
-    });
-
-    it('returns null when seat is empty', () => {
-      playerState = createMockPlayerState({
-        allPlayers: [createMockPlayer({ playerId: 101, name: 'Frank' })],
-        seatPlayers: {},
-      });
-
-      const { result, unmount } = createHook();
-
-      expect(result.current.getSeatPlayerName(3)).toBeNull();
-      unmount();
-    });
-
-    it('returns null when player not found', () => {
-      playerState = createMockPlayerState({
-        allPlayers: [],
-        seatPlayers: { 3: 999 },
-      });
-
-      const { result, unmount } = createHook();
-
-      expect(result.current.getSeatPlayerName(3)).toBeNull();
-      unmount();
-    });
-  });
-
   describe('getRecentPlayers', () => {
     it('returns players sorted by lastSeenAt', () => {
       const now = Date.now();
@@ -530,24 +473,6 @@ describe('usePlayerPersistence', () => {
     });
   });
 
-  describe('clearAllSeatAssignments', () => {
-    it('dispatches CLEAR_ALL_SEAT_PLAYERS action', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      });
-
-      act(() => {
-        result.current.clearAllSeatAssignments();
-      });
-
-      expect(dispatchPlayer).toHaveBeenCalledWith({
-        type: PLAYER_ACTIONS.CLEAR_ALL_SEAT_PLAYERS,
-      });
-    });
-  });
-
   describe('return values', () => {
     it('returns all expected functions', async () => {
       const { result, unmount } = createHook();
@@ -558,12 +483,9 @@ describe('usePlayerPersistence', () => {
       expect(typeof result.current.deletePlayerById).toBe('function');
       expect(typeof result.current.loadAllPlayers).toBe('function');
       expect(typeof result.current.assignPlayerToSeat).toBe('function');
-      expect(typeof result.current.clearSeatAssignment).toBe('function');
-      expect(typeof result.current.getSeatPlayerName).toBe('function');
       expect(typeof result.current.getRecentPlayers).toBe('function');
       expect(typeof result.current.isPlayerAssigned).toBe('function');
       expect(typeof result.current.getPlayerSeat).toBe('function');
-      expect(typeof result.current.clearAllSeatAssignments).toBe('function');
       unmount();
     });
   });

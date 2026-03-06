@@ -43,10 +43,10 @@ export const useAppState = () => {
   // =========================================================================
 
   // Auth persistence (Firebase auth state listener)
-  const { isReady: authReady } = useAuthPersistence(dispatchAuth);
+  useAuthPersistence(dispatchAuth);
 
   // Hand persistence (auto-save + auto-restore)
-  const { isReady: handReady } = usePersistence(
+  usePersistence(
     gameState,
     cardState,
     playerState,
@@ -57,10 +57,7 @@ export const useAppState = () => {
   );
 
   // Settings persistence
-  const {
-    isReady: settingsReady,
-    resetToDefaults: resetSettingsToDefaults
-  } = useSettingsPersistence(settingsState, dispatchSettings);
+  useSettingsPersistence(settingsState, dispatchSettings);
 
   // =========================================================================
   // RETURN
@@ -85,18 +82,6 @@ export const useAppState = () => {
     dispatchSettings,
     dispatchAuth,
 
-    // Ready flags
-    isReady: {
-      auth: authReady,
-      hand: handReady,
-      settings: settingsReady,
-      all: authReady && handReady && settingsReady
-    },
-
-    // Settings persistence functions
-    settingsPersistence: {
-      resetSettingsToDefaults
-    }
   };
 };
 

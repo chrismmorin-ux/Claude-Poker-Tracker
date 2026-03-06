@@ -1,7 +1,7 @@
 /**
  * PlayerContext.jsx - Player state context provider
  * Provides: allPlayers, seatPlayers, isLoading
- * Plus player operations: assignPlayerToSeat, clearSeatPlayer, getSeatPlayerName
+ * Plus player operations: assignPlayerToSeat, clearSeatAssignment, getSeatPlayerName
  */
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
@@ -26,11 +26,9 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     deletePlayerById,
     loadAllPlayers,
     assignPlayerToSeat: persistenceAssignPlayerToSeat,
-    clearSeatAssignment,
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
-    clearAllSeatAssignments
   } = usePlayerPersistence(playerState, dispatchPlayer);
 
   // Derived: Get player by ID
@@ -53,16 +51,8 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     return getPlayerById(playerId);
   }, [seatPlayers, getPlayerById]);
 
-  // Handler: Assign player to seat
-  const assignPlayerToSeat = useCallback((seat, playerId) => {
-    dispatchPlayer({
-      type: PLAYER_ACTIONS.SET_SEAT_PLAYER,
-      payload: { seat, playerId }
-    });
-  }, [dispatchPlayer]);
-
   // Handler: Clear player from seat
-  const clearSeatPlayer = useCallback((seat) => {
+  const clearSeatAssignment = useCallback((seat) => {
     dispatchPlayer({
       type: PLAYER_ACTIONS.CLEAR_SEAT_PLAYER,
       payload: { seat }
@@ -70,7 +60,7 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
   }, [dispatchPlayer]);
 
   // Handler: Clear all seat assignments
-  const clearAllSeatPlayers = useCallback(() => {
+  const clearAllSeatAssignments = useCallback(() => {
     dispatchPlayer({ type: PLAYER_ACTIONS.CLEAR_ALL_SEAT_PLAYERS });
   }, [dispatchPlayer]);
 
@@ -103,8 +93,8 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getSeatPlayer,
     // Handlers (context-defined)
     assignPlayerToSeat: persistenceAssignPlayerToSeat,
-    clearSeatPlayer,
-    clearAllSeatPlayers,
+    clearSeatAssignment,
+    clearAllSeatAssignments,
     hydrateSeatPlayers,
     // Persistence operations
     playerPersistenceReady,
@@ -112,11 +102,9 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     updatePlayerById,
     deletePlayerById,
     loadAllPlayers,
-    clearSeatAssignment,
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
-    clearAllSeatAssignments,
   }), [
     allPlayers,
     seatPlayers,
@@ -127,19 +115,17 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getSeatPlayerName,
     getSeatPlayer,
     persistenceAssignPlayerToSeat,
-    clearSeatPlayer,
-    clearAllSeatPlayers,
+    clearSeatAssignment,
+    clearAllSeatAssignments,
     hydrateSeatPlayers,
     playerPersistenceReady,
     createNewPlayer,
     updatePlayerById,
     deletePlayerById,
     loadAllPlayers,
-    clearSeatAssignment,
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
-    clearAllSeatAssignments,
   ]);
 
   return (

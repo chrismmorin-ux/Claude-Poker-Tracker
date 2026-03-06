@@ -5,11 +5,11 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v7
+ *   Database: "PokerTrackerDB" v9
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
- *       Fields: seatPlayers, userId (for multi-user data isolation)
+ *       Fields: seatPlayers, actionSequence, userId (for multi-user data isolation)
  *     - "sessions" (keyPath: "sessionId", autoIncrement: true)
  *       Indexes: startTime, endTime, isActive, userId, userId_startTime (compound)
  *       Fields: venue, gameType, buyIn, rebuyTransactions (array), cashOut, goal, notes, userId
@@ -22,12 +22,16 @@
  *     - "settings" (keyPath: "id")
  *       Per-user store: id = `settings_${userId}` (e.g., "settings_guest")
  *       Fields: theme, cardSize, defaultVenue, defaultGameType, customVenues, customGameTypes, userId
+ *     - "rangeProfiles" (keyPath: "profileKey")
+ *       Indexes: playerId, userId
+ *       Fields: profileKey, playerId, userId, ranges, showdownAnchors, handsProcessed
  *
  * Migration History:
  *   v6 → v7: Added userId field to all stores for multi-user data isolation
  *            Changed settings/activeSession from singleton to per-user keying
  *   v7 → v8: Added actionSequence field to hands for ordered action storage
  *            Converts existing seatActions to actionSequence on migration
+ *   v8 → v9: Added rangeProfiles object store for cached Bayesian range estimates
  */
 
 import { logger } from '../errorHandler';
