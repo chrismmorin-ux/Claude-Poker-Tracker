@@ -131,6 +131,7 @@ export const CollapsibleSidebar = ({
     { screen: SCREEN.HISTORY, label: 'Hand History', icon: '📚', color: 'bg-purple-600 hover:bg-purple-700' },
     { screen: SCREEN.SESSIONS, label: 'Sessions', icon: '🎯', color: 'bg-orange-600 hover:bg-orange-700' },
     { screen: SCREEN.PLAYERS, label: 'Players', icon: '👥', color: 'bg-teal-600 hover:bg-teal-700' },
+    { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: '🔬', color: 'bg-indigo-600 hover:bg-indigo-700' },
     { screen: SCREEN.SETTINGS, label: 'Settings', icon: '⚙️', color: 'bg-gray-600 hover:bg-gray-500' },
   ];
 

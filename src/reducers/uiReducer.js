@@ -42,6 +42,7 @@ export const SCREEN = {
   SESSIONS: 'sessions',
   PLAYERS: 'players',
   SETTINGS: 'settings',
+  ANALYSIS: 'analysis',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

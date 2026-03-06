@@ -3,7 +3,7 @@
 Master execution list. Items ordered by dependency chain and priority.
 Start any item with `/project start <id>` or ask Claude to implement it directly.
 
-**Last updated:** 2026-03-05 | **Current version:** v119
+**Last updated:** 2026-03-06 | **Current version:** v120
 
 ---
 
@@ -38,32 +38,31 @@ Core analytics pipeline. Phases 1-7 shipped. Phase 6 superseded by exploit engin
 
 ## 2. Stats View — Real Session Data (P2) — from `docs/DESIGN_UX_REVIEW.md` Change 2
 
-StatsView currently shows 100% hardcoded placeholder data. Needs real session-scoped stats.
+StatsView shows real session-scoped stats via `useSessionStats` hook, with seat grid, detail panel, and range profile integration.
 
 | Step | Status | Description | What to build |
 |------|--------|-------------|---------------|
-| 2a | READY | Session stats utility | `src/utils/sessionStats.js`: `buildSessionStats(sessionHandIds, allHands)` -> per-seat stats. Filter `getAllHands()` by current session, run `buildPlayerStats`/`derivePercentages` scoped to that subset |
-| 2b | READY | Seat grid with real data | Replace hardcoded "45 hands" with actual per-seat hand count. Show player name if assigned. Mini stat line: VPIP / PFR / AF |
-| 2c | READY | Selected seat detail panel | Tap a seat -> show preflop stats (VPIP, PFR, 3-bet, Limp) and postflop stats (C-bet IP/OOP, AF, WTSD, Fold to C-bet) for that seat this session |
-| 2d | READY | Table dynamics placeholder | Static stub section: "Table Dynamics (Coming Soon)" below seat stats. Future: aggregate table-level tendencies |
+| 2a | DONE | Session stats utility | `useSessionStats` hook: per-seat VPIP/PFR/AF/3-bet/C-bet from session hands |
+| 2b | DONE | Seat grid with real data | 9-seat clickable grid with hand count, player name, mini stat line |
+| 2c | DONE | Selected seat detail panel | Preflop + postflop stats + range profile with grid visualization |
+| 2d | DONE | Table dynamics placeholder | Static stub section: "Table Dynamics (Coming Soon)" below seat stats. Future: aggregate table-level tendencies |
 
-**Depends on:** Nothing — tendencyCalculations.js already has the stat engine.
-**Key insight:** Session-scoped stats reuse the same `buildPlayerStats`/`derivePercentages` pipeline but filter hands by `sessionId` first.
+**Complete.**
 
 ---
 
 ## 3. Analysis View Stub (P3) — from `docs/DESIGN_UX_REVIEW.md` Change 3
 
-New view for deliberate between-session analysis. Start as a stub with real UI but placeholder computation.
+Between-session analysis screen. Player selection, session filter, three panels (range real, two stubs).
 
 | Step | Status | Description | What to build |
 |------|--------|-------------|---------------|
-| 3a | READY | Analysis view component | `src/components/views/AnalysisView.jsx`: player dropdown, session filter, three placeholder panels (Range Estimation, Board Equity, Exploit Generation) |
-| 3b | READY | Navigation + routing | Add `SCREEN.ANALYSIS` to ViewRouter, add nav link to CollapsibleSidebar (chart/grid icon) |
-| 3c | READY | 13x13 range grid (display only) | `src/components/ui/RangeMatrix.jsx`: standard poker range matrix. Pairs on diagonal, suited above, offsuit below. Color-coded cells. Display only — no computation yet. Shows "Requires 20+ hands" when insufficient data |
-| 3d | BLOCKED | Player/session selection UI | Dropdown of players with hands, session filter. Wire to range grid display. Blocked on: range grid component (3c) |
+| 3a | DONE | Analysis view component | `src/components/views/AnalysisView.jsx`: player dropdown, session filter, three panels |
+| 3b | DONE | Navigation + routing | `SCREEN.ANALYSIS` in uiReducer, sidebar nav button, ViewRouter case |
+| 3c | DONE | Range grid panel (real) | Reuses `RangeGrid` + `useRangeProfile`. Position/action pills, 20-hand threshold gate |
+| 3d | DONE | Player/session selection UI | Player dropdown from `allPlayers`, session dropdown from `allSessions` (cosmetic filter) |
 
-**Depends on:** Nothing for the stub. Computation comes in Phase 4.
+**Complete.** Board Equity and Exploit Generation panels are placeholder stubs.
 
 ---
 
@@ -78,7 +77,7 @@ Heavy computation. Core modules now exist in `src/utils/exploitEngine/`. UI inte
 | 4c | DONE | Board equity computation | `equityCalculator.js`: Monte Carlo hand-vs-range, range-vs-range. `boardTexture.js`: wet/dry/paired classification |
 | 4d | DONE | Algorithmic exploit generation | `exploitSuggestionsV2.js`: 11 advanced rules (position, board, range-equity). Orphaned — needs wiring |
 
-**Key insight:** Computation layer is built. What's missing is UI integration (item 9) and data quality fixes (item 9.1).
+**Key insight:** Computation layer is built and wired via `usePlayerTendencies` + `TableView`. Only 4b (showdown observations) remains open.
 
 ---
 
@@ -90,61 +89,61 @@ Interactive range tools. Computation layer now exists; UI layer still needed.
 |-------|--------|-------------|-------|
 | 1 | BLOCKED | Interactive range matrix UI | Extends 3c (display-only grid -> interactive). `rangeMatrix.js` provides data layer |
 | 2 | DONE | Equity calculator | `equityCalculator.js` — Monte Carlo, chunked async |
-| 3 | BLOCKED | Range vs range comparison UI | `rangeVsRange()` exists but needs UI + tests |
+| 3 | BLOCKED | Range vs range comparison UI | `rangeVsRange()` exists with tests; needs UI |
 | 4 | BLOCKED | Save/load custom ranges + presets | Needs range matrix UI first |
 
 **Recommendation:** Item 3c (range grid display) is the next blocker. Once that ships, interactive tools build on existing engine.
 
 ---
 
-## 9. Exploit Engine — Integration & Quality (P1)
+## 9. Exploit Engine — Integration & Quality (P1) — DONE
 
-Engine modules built in `src/utils/exploitEngine/` (6 modules, 62 tests). Audit revealed critical integration gaps and code quality issues. This is the highest-priority work item.
+Engine modules built in `src/utils/exploitEngine/` (13 modules). All integration, bugs, data validation, test coverage, and cleanup items complete.
 
 ### 9.1 Integration Wiring (CRITICAL — engine is orphaned)
 
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
-| EE-INT-1 | READY | Wire `getSuggestionsV2` into `PlayerRow.jsx` | Replace V1 `getSuggestions` import with V2. Pass `positionStats` + `boardTexture` through. Backward-compatible output shape. |
-| EE-INT-2 | READY | Wire `useExploitEngine` into component tree | Either replace `usePlayerTendencies` in consumers, or merge engine features into existing hook. Must provide `positionStats` per player + `boardTexture` + `calculateEquity`. |
-| EE-INT-3 | READY | Add `deriveCategoryPercentages` to barrel export | Missing from `exploitEngine/index.js`. Used by `exploitSuggestionsV2.js` via direct import. |
+| EE-INT-1 | DONE | Wire `getSuggestionsV2` into `PlayerRow.jsx` | Replace V1 `getSuggestions` import with V2. Pass `positionStats` + `boardTexture` through. Backward-compatible output shape. |
+| EE-INT-2 | DONE | Wire `useExploitEngine` into component tree | Either replace `usePlayerTendencies` in consumers, or merge engine features into existing hook. Must provide `positionStats` per player + `boardTexture` + `calculateEquity`. |
+| EE-INT-3 | DONE | Add `deriveCategoryPercentages` to barrel export | Missing from `exploitEngine/index.js`. Used by `exploitSuggestionsV2.js` via direct import. |
 
 ### 9.2 Source Code Bugs (HIGH)
 
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
-| EE-BUG-1 | READY | Fix `adjustRangeByStats` tighter-player logic | `rangeMatrix.js:154-175`: mixes hand count with VPIP ratio, double-penalizes weak hands. Replace with uniform proportional scaling. |
-| EE-BUG-2 | READY | Track/compensate skipped trials in equity calculator | `equityCalculator.js:82-83`: villain card conflicts silently reduce sample size. Add skip counter, increase batch to compensate. |
-| EE-BUG-3 | READY | Fix misleading fold comment in `narrowByAction` | `rangeMatrix.js:219-221`: comment says opposite of what code does. |
-| EE-BUG-4 | READY | Guard `observedVpip < 0` in `adjustRangeByStats` | `rangeMatrix.js:136`: negative ratio would produce NaN. |
+| EE-BUG-1 | DONE | Fix `adjustRangeByStats` tighter-player logic | `rangeMatrix.js:154-175`: mixes hand count with VPIP ratio, double-penalizes weak hands. Replace with uniform proportional scaling. |
+| EE-BUG-2 | DONE | Track/compensate skipped trials in equity calculator | `equityCalculator.js`: adaptive batch sizing in `handVsRange`, while-loop with maxAttempts in `rangeVsRange`. |
+| EE-BUG-3 | DONE | Fix misleading fold comment in `narrowByAction` | `rangeMatrix.js:219-221`: comment says opposite of what code does. |
+| EE-BUG-4 | DONE | Guard `observedVpip < 0` in `adjustRangeByStats` | `rangeMatrix.js:136`: negative ratio would produce NaN. |
 
 ### 9.3 Preflop Chart Validation (HIGH)
 
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
-| EE-DATA-1 | READY | Validate all 9 preflop charts against GTO ranges | UTG was originally 6% (should be ~15%), manually expanded. Other positions may be off. Add test asserting each position's width within ±5% of expected. |
-| EE-DATA-2 | READY | Board texture wetness formula calibration | Baseline needed manual tuning (50->30) to make AK2r dry. Validate against known board textures: 10+ boards with expected classifications. |
+| EE-DATA-1 | DONE | Validate all 9 preflop charts against GTO ranges | `preflopCharts.validation.test.js` — 11 tests, all 9 positions validated. BTN expanded from ~32% to ~40% GTO. |
+| EE-DATA-2 | DONE | Board texture wetness formula calibration | `boardTexture.calibration.test.js` — 12 tests, 10+ boards covered |
 
 ### 9.4 Test Coverage Gaps (HIGH)
 
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
-| EE-TEST-1 | READY | Test `rangeVsRange()` | Exported function with zero tests. Add basic equity sanity checks. |
-| EE-TEST-2 | READY | Test 8 untested V2 rules | `btn-too-wide`, `oop-aggro-ip-passive`, `wet-board-equity`, `paired-board-check`, `continue-range-wide`, `high-fold-equity`, `3bet-polarized`, `capped-calling-range` |
-| EE-TEST-3 | READY | Test IP/OOP position routing | `positionStats.byRelativePosition` structure exists but correctness unverified. |
-| EE-TEST-4 | READY | Test hand evaluator kicker ordering | AAKKQ vs AAKK5, flush kicker comparison, full hierarchy edge cases. |
-| EE-TEST-5 | READY | Test board texture on 4-card and 5-card boards | Only 3-card flop tested. Turn/river boards need coverage. |
-| EE-TEST-6 | READY | Test equity with board cards | All equity tests use empty board. Add flop/turn/river scenarios. |
-| EE-TEST-7 | READY | Test `useExploitEngine` hook | Zero test coverage. Test `calculateEquity` callback, board texture memoization. |
-| EE-TEST-8 | READY | Tighten equity test tolerances | AA vs random allows 75-95% (true ~85%). Increase trials or narrow bounds. |
+| EE-TEST-1 | DONE | Test `rangeVsRange()` | 6 tests in `equityCalculator.test.js` |
+| EE-TEST-2 | DONE | Test 8 untested V2 rules | All 8 V2 rules tested in `generateExploits.test.js` |
+| EE-TEST-3 | DONE | Test IP/OOP position routing | IP/OOP routing tested in `positionStats.test.js` |
+| EE-TEST-4 | DONE | Test hand evaluator kicker ordering | Kicker edge cases tested (AAKKQ vs AAKK5, flush kicker) |
+| EE-TEST-5 | DONE | Test board texture on 4-card and 5-card boards | 4-card and 5-card board tests in `boardTexture.test.js` |
+| EE-TEST-6 | DONE | Test equity with board cards | Equity with board cards tested (AA on A-high flop) |
+| EE-TEST-7 | DONE | Test `useActionAdvisor` hook | 6 tests in `useActionAdvisor.test.js`: initial state, compute, error, clear, abort |
+| EE-TEST-8 | DONE | Tighten equity test tolerances | 72o vs AA (8-16%), AKs vs QQ (41-51%) at 5000 trials |
 
 ### 9.5 Cleanup (LOW)
 
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
-| EE-CLEAN-1 | READY | Remove unused exports | `createPositionStats`, `POSITION_CATS` from `positionStats.js` and `index.js` |
-| EE-CLEAN-2 | READY | Add logging for hands missing `seatPlayers` | `positionStats.js`: old hands silently skipped by `findPlayerSeat()` returning null |
-| EE-CLEAN-3 | READY | `narrowByAction` postflop heuristic note | Preflop-only hand-strength normalization doesn't account for board interaction. Add JSDoc warning. Known limitation, not a bug. |
+| EE-CLEAN-1 | N/A | Remove unused exports | `createPositionStats`, `POSITION_CATS` are internal (not exported), no action needed |
+| EE-CLEAN-2 | DONE | Add logging for hands missing `seatPlayers` | `positionStats.js:41`: `console.warn` before returning. Test verifies warning fires. |
+| EE-CLEAN-3 | DONE | `narrowByAction` postflop heuristic note | Already has `@deprecated` JSDoc warning pointing to `narrowByBoard()`, not exported |
 
 ---
 
@@ -174,26 +173,26 @@ CTO review identified ~1,300 lines of dead/orphaned code and stale documentation
 
 ---
 
-## 11. Context Migration Completion (P2) — Project 0.009
+## 11. Context Migration Completion (P2) — Project 0.009 — DONE
 
-PokerTracker.jsx (861 lines) prop-drills 20+ handlers to views that already import contexts. Complete the migration.
+PokerTracker.jsx reduced from 861 to 93 lines. All views consume contexts directly via zero-prop-drilling pattern.
 
 | Phase | Status | Description | Details |
 |-------|--------|-------------|---------|
-| 1 | READY | Audit & plan | Map every prop drilled from PokerTracker.jsx to child views. Identify which are already available via contexts. Design handler migration. |
-| 2 | BLOCKED | Migrate views | Move remaining handlers into contexts/hooks. Update all views to consume contexts directly. Target: PokerTracker.jsx < 200 lines. Blocked on: Phase 1 audit. |
+| 1 | DONE | Audit & plan | All props mapped, contexts identified |
+| 2 | DONE | Migrate views | 7 providers, all views receive only `scale` prop. AppRoot + ViewRouter pattern. |
 
-**Risk:** Medium — touches all views, requires comprehensive testing.
+**Complete.**
 
 ---
 
 ## 12. Exploit Engine UI Integration Research (P3) — Project 0.010
 
-Equity calculator + hand evaluator (~800 lines) are built but not wired to any UI.
+AnalysisView panels 2 & 3 are functional end-to-end. Action advisor pipeline wired through `useActionAdvisor`. Remaining work is UX polish and refinement.
 
 | Phase | Status | Description | Details |
 |-------|--------|-------------|---------|
-| 1 | READY | Research & recommend | Evaluate whether equity calculations provide user-facing value in a live tracking context. 1-page recommendation with mockup. |
+| 1 | READY | UX polish & refinement | Evaluate AnalysisView UX: loading states, result formatting, mobile layout. Rescoped from pure research to polish. |
 
 ---
 
@@ -211,7 +210,7 @@ Not blocking any analytics work. Resume when core analytics pipeline is complete
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| ARCH-001 | PokerTracker.jsx decomposition | READY | Currently ~861 lines. Project 0.009 (context migration) addresses this — target <200 lines. |
+| ARCH-001 | PokerTracker.jsx decomposition | DONE | 861 -> 93 lines. Completed via Project 0.009 (context migration). |
 | TS-001 | TypeScript migration | BLOCKED | `docs/projects/4.002.1209-typescript-migration.project.md`. Low priority, do after feature work stabilizes |
 
 ---
@@ -230,17 +229,19 @@ Ideas that need design work before they become backlog items.
 
 ---
 
-## 13. Range Equity & EV Analysis (P1) -- Project 0.011
+## 13. Range Equity & EV Analysis (P1) -- Project 0.011 — DONE
 
 Board-aware range narrowing, equity segmentation, fold equity EV, bet sizing optimization.
 
-| Phase | Status | Description | Entry Criteria |
-|-------|--------|-------------|----------------|
-| 1 | DONE | Board-aware postflop range narrowing | None |
-| 1b | BLOCKED | Replace hardcoded action multipliers with equity-derived weights | Phase 3 (needs per-combo equity) |
-| 2 | BLOCKED | Range equity segmentation (buckets) | Phase 1 merged |
-| 3 | BLOCKED | Fold equity & EV calculator | Phase 2 merged |
-| 4 | BLOCKED | Bet sizing optimization + UI | Phase 3 merged |
+| Phase | Status | Description | Key Deliverable |
+|-------|--------|-------------|-----------------|
+| 1 | DONE | Board-aware postflop range narrowing | `postflopNarrower.js` — `narrowByBoard()` with hand evaluation + draw detection |
+| 1b | DONE | Score-based continuous multipliers + player adaptation | `comboMultiplier()`, `adaptMultipliers()`, `classifyComboFull()` |
+| 2 | DONE | Range equity segmentation (buckets) | `rangeSegmenter.js` — nuts/strong/marginal/draw/air bucketing |
+| 3 | DONE | Fold equity & EV calculator | `foldEquityCalculator.js` — `estimateFoldPct()`, `calculateFoldEquityEV()` |
+| 4 | DONE | Action advisor pipeline orchestrator | `actionAdvisor.js` — `getActionAdvice()` end-to-end pipeline |
+
+**Complete.** All 6 modules built, 62+ tests passing. Engine is computation-ready but not yet wired to UI (see item 9.1).
 
 ---
 
@@ -249,18 +250,17 @@ Board-aware range narrowing, equity segmentation, fold equity EV, bet sizing opt
 1. **Range grid interactivity** — Should the 13x13 grid be interactive (click to toggle combos)? Start display-only (3c), add interactivity later (5.1)?
 2. **Showdown Bayesian updates** — How should range estimates update when a player shows cards? Need observation data model.
 3. **Table-level exploits surface** — Show on table view, stats view, or both? Currently only per-player exploits exist.
-4. **useExploitEngine vs usePlayerTendencies** — Replace existing hook or keep both? Engine hook is a superset but doubles computation. Recommend: extend `usePlayerTendencies` to optionally compute position stats, keep single hook.
+4. **~~useExploitEngine vs usePlayerTendencies~~** — Resolved. `usePlayerTendencies` imports `generateExploits` directly. Single hook, no duplication.
 
 ---
 
 ## Recommended Execution Order
 
 ```
-NOW:    10.1 Dead code removal (DC-1..6) — low risk, immediate codebase hygiene
-NEXT:   10.2 Documentation sync (DOC-1..4) — context files match reality
-THEN:   9.1 Exploit Engine integration (EE-INT-1..3) — engine is built but orphaned
-THEN:   9.2 Bug fixes (EE-BUG-1..4) — fix before users see bad data
-THEN:   11 Context migration — reduce PokerTracker.jsx, complete provider pattern
-LATER:  9.3-9.4 Data validation + test coverage
-DEFER:  2, 3, 5-8, 12 — resume after engine is stable and codebase is clean
+NEXT:   12 UX polish for AnalysisView panels
+LATER:  5 Range Analysis Tools (interactive UI on top of engine)
+DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
+DONE:   1, 2, 3, 4a/c/d, 9, 10, 11, 13
+BLOCKED: 4b (showdown observations)
+PAUSED: 6 (Firebase auth)
 ```

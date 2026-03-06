@@ -39,12 +39,11 @@ const logError = (error) => logger.error(MODULE_NAME, error);
  * @param {Object} playerState - Player state from playerReducer
  * @param {Function} dispatchGame - Game state dispatcher
  * @param {Function} dispatchCard - Card state dispatcher
- * @param {Function} dispatchSession - Session state dispatcher (optional, for hand count)
  * @param {Function} dispatchPlayer - Player state dispatcher (optional, for seat assignments)
  * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, lastSavedAt }
  */
-export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchSession = null, dispatchPlayer = null, userId = GUEST_USER_ID) => {
+export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchPlayer = null, userId = GUEST_USER_ID) => {
   // State
   const [isReady, setIsReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);

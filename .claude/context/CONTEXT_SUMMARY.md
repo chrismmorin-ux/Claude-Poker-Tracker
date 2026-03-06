@@ -1,19 +1,19 @@
 # Project Context Summary
-**Version**: 1.3.0 | **Updated**: 2026-03-05
+**Version**: 1.3.0 | **Updated**: 2026-03-06
 
 Live poker hand tracker and exploit engine for 9-handed games.
 Records actions, builds Bayesian player models, and surfaces maximally exploitative plays.
 Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 
 ## Architecture
-- **Entry**: `src/PokerTracker.jsx` (~825 lines) - orchestrates state and views
+- **Entry**: `src/PokerTracker.jsx` (~95 lines) - orchestrates state and views
 - **State**: 7 reducers (game, ui, card, session, player, settings, auth) + 7 context providers
-- **Views**: 9 screens (Table, Stats, History, Sessions, Players, Settings, Login, Signup, PasswordReset) + CardSelector + Showdown overlays
+- **Views**: 10 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, Login, Signup, PasswordReset) + CardSelector + Showdown overlays
 - **Persistence**: IndexedDB v9 with 6 stores (hands, sessions, players, activeSession, settings, rangeProfiles)
-- **UI Components**: 30 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges)
-- **Hooks**: 18 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useAuthPersistence)
+- **UI Components**: 29 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges)
+- **Hooks**: 20 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useAuthPersistence)
 - **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (6 modules)
-- **Exploit Engine**: `src/utils/exploitEngine/` - exploit suggestions + range matrix
+- **Exploit Engine**: `src/utils/exploitEngine/` - 13 modules (~2,878 LOC): exploit suggestions, range matrix, action advisor, fold equity, range segmentation, board texture, postflop narrowing
 
 ## Key Patterns
 - useReducer for state, useContext for cross-component access

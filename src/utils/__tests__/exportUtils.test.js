@@ -14,7 +14,7 @@ import {
 } from '../exportUtils';
 
 // Mock the persistence module
-vi.mock('../persistence', () => ({
+vi.mock('../persistence/index', () => ({
   getAllHands: vi.fn(),
   getAllSessions: vi.fn(),
   getAllPlayers: vi.fn(),
@@ -37,7 +37,7 @@ import {
   createPlayer,
   deleteSession,
   deletePlayer,
-} from '../persistence';
+} from '../persistence/index';
 
 describe('exportAllData', () => {
   beforeEach(() => {

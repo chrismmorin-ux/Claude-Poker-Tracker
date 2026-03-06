@@ -9,7 +9,7 @@ import { SESSION_ACTIONS } from '../../constants/sessionConstants';
 import { createMockSession, createMockDispatchers } from '../../test/utils';
 
 // Mock the persistence module
-vi.mock('../../utils/persistence', () => ({
+vi.mock('../../utils/persistence/index', () => ({
   createSession: vi.fn(() => Promise.resolve(1)),
   endSession: vi.fn(() => Promise.resolve()),
   getActiveSession: vi.fn(() => Promise.resolve(null)),
@@ -44,7 +44,7 @@ import {
   getSessionById,
   updateSession,
   deleteSession,
-} from '../../utils/persistence';
+} from '../../utils/persistence/index';
 
 describe('useSessionPersistence', () => {
   let dispatchSession;

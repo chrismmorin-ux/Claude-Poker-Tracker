@@ -43,7 +43,7 @@ const SegmentationBar = ({ buckets }) => {
 export const AnalysisView = ({ scale }) => {
   const { setCurrentScreen, SCREEN } = useUI();
   const { allPlayers } = usePlayer();
-  const { activeSession } = useSession();
+  const { currentSession } = useSession();
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [gridPosition, setGridPosition] = useState('LATE');
@@ -79,11 +79,11 @@ export const AnalysisView = ({ scale }) => {
   }, [rangeProfile, gridPosition, gridAction]);
 
   const defaultPot = useMemo(() => {
-    const gt = activeSession?.gameType;
+    const gt = currentSession?.gameType;
     if (!gt) return 6;
     const { bigBlind } = parseBlinds(gt);
     return bigBlind * 3;
-  }, [activeSession]);
+  }, [currentSession]);
 
   const effectivePot = potSize !== '' ? Number(potSize) : defaultPot;
 

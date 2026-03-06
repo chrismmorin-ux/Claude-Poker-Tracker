@@ -8,7 +8,7 @@ import { ToastProvider } from '../../../contexts/ToastContext';
 import { HistoryView } from '../HistoryView';
 
 // Mock persistence functions
-vi.mock('../../../utils/persistence', () => ({
+vi.mock('../../../utils/persistence/index', () => ({
   getAllHands: vi.fn(() => Promise.resolve([])),
   loadHandById: vi.fn(() => Promise.resolve(null)),
   deleteHand: vi.fn(() => Promise.resolve()),
@@ -47,7 +47,7 @@ import {
   getHandsBySessionId,
   getAllSessions,
   getSessionHandCount,
-} from '../../../utils/persistence';
+} from '../../../utils/persistence/index';
 
 const renderWithToast = (ui) => render(<ToastProvider>{ui}</ToastProvider>);
 

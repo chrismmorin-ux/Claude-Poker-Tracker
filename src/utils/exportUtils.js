@@ -15,7 +15,7 @@ import {
   createPlayer,
   deleteSession,
   deletePlayer,
-} from './persistence';
+} from './persistence/index';
 
 // Current export version - increment when schema changes
 const EXPORT_VERSION = '1.0.0';

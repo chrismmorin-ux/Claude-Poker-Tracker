@@ -67,7 +67,6 @@ describe('usePersistence', () => {
       playerState,
       dispatchGame: dispatchers.dispatchGame,
       dispatchCard: dispatchers.dispatchCard,
-      dispatchSession: dispatchers.dispatchSession,
       dispatchPlayer: dispatchers.dispatchPlayer,
       ...overrides,
     };
@@ -78,7 +77,6 @@ describe('usePersistence', () => {
         params.playerState,
         params.dispatchGame,
         params.dispatchCard,
-        params.dispatchSession,
         params.dispatchPlayer
       )
     );

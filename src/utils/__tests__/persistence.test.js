@@ -58,7 +58,7 @@ import {
   getAllPlayers,
   getPlayerById,
   deletePlayer,
-} from '../persistence';
+} from '../persistence/index';
 
 // Helper to create valid hand data that passes validation
 const createValidHandData = (overrides = {}) => ({

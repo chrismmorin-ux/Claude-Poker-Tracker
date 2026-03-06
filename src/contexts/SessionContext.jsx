@@ -43,14 +43,6 @@ export const SessionProvider = ({ sessionState, dispatchSession, children }) => 
     return buyIn + rebuys;
   }, [currentSession]);
 
-  // Handler: Update a session field
-  const updateSessionField = useCallback((field, value) => {
-    dispatchSession({
-      type: SESSION_ACTIONS.UPDATE_SESSION_FIELD,
-      payload: { field, value }
-    });
-  }, [dispatchSession]);
-
   // Handler: Add rebuy transaction
   const addRebuy = useCallback((amount) => {
     dispatchSession({

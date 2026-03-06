@@ -52,7 +52,6 @@ export const useAppState = () => {
     playerState,
     dispatchGame,
     dispatchCard,
-    dispatchSession,
     dispatchPlayer
   );
 

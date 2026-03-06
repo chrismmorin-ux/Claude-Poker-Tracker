@@ -14,6 +14,7 @@ import { HistoryView } from './components/views/HistoryView';
 import { SessionsView } from './components/views/SessionsView';
 import { PlayersView } from './components/views/PlayersView';
 import { SettingsView } from './components/views/SettingsView';
+import { AnalysisView } from './components/views/AnalysisView';
 import { LoginView } from './components/views/LoginView';
 import { SignupView } from './components/views/SignupView';
 import { PasswordResetView } from './components/views/PasswordResetView';
@@ -55,6 +56,7 @@ const ViewRouter = () => {
     case SCREEN.SESSIONS: return <VEB viewName="Sessions"><SessionsView scale={scale} /></VEB>;
     case SCREEN.PLAYERS: return <VEB viewName="Players"><PlayersView scale={scale} /></VEB>;
     case SCREEN.SETTINGS: return <VEB viewName="Settings"><SettingsView scale={scale} /></VEB>;
+    case SCREEN.ANALYSIS: return <VEB viewName="Analysis"><AnalysisView scale={scale} /></VEB>;
     default: return <VEB viewName="Stats"><StatsView scale={scale} /></VEB>;
   }
 };

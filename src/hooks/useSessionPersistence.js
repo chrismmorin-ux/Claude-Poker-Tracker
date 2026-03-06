@@ -21,7 +21,7 @@ import {
   updateSession,
   deleteSession as dbDeleteSession,
   GUEST_USER_ID
-} from '../utils/persistence';
+} from '../utils/persistence/index';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 

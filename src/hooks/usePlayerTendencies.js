@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllHands, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence';
+import { getAllHands, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
 import { buildPlayerStats, derivePercentages } from '../utils/tendencyCalculations';
 import { buildPositionStats } from '../utils/exploitEngine/positionStats';
 import { countLimps } from '../utils/sessionStats';

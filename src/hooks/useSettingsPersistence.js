@@ -20,7 +20,7 @@ import {
   saveSettings,
   resetSettings as dbResetSettings,
   GUEST_USER_ID,
-} from '../utils/persistence';
+} from '../utils/persistence/index';
 import { SETTINGS_ACTIONS, DEFAULT_SETTINGS } from '../constants/settingsConstants';
 import { logger } from '../utils/errorHandler';
 

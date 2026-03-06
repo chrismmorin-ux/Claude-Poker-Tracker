@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getHandsBySessionId } from '../utils/persistence';
+import { getHandsBySessionId } from '../utils/persistence/index';
 import { buildSessionStats } from '../utils/sessionStats';
 
 /**

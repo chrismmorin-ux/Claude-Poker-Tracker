@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScaledContainer } from '../ui/ScaledContainer';
-import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions, getSessionHandCount } from '../../utils/persistence';
+import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions, getSessionHandCount } from '../../utils/persistence/index';
 import { LAYOUT, STREETS } from '../../constants/gameConstants';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';

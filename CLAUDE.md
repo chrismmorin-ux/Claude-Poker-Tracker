@@ -20,7 +20,7 @@ Prefer `.claude/context/*.md` over raw source — they're compact summaries:
 
 Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 
-## Architecture
+## Architecture (v120)
 - `src/PokerTracker.jsx` (~93 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
 - `src/contexts/` — 7 providers + ToastContext (zero prop drilling, persistence hooks inside providers)
 - `src/reducers/` — 7 reducers (game, ui, card, session, player, settings, auth)
