@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { SkipForward, RotateCcw } from 'lucide-react';
 
 /**
- * TableHeader - Header bar with hand count, session timer, and control buttons
+ * TableHeader - Compact info bar with hand count, session timer, and session controls
+ * Hand controls (Next Hand, Reset, Hand Over) moved to CommandStrip
  */
 export const TableHeader = ({
   handCount,
@@ -12,19 +12,21 @@ export const TableHeader = ({
   isSidebarCollapsed,
   onEndSession,
   onNewSession,
-  onNextHand,
-  onResetHand,
 }) => {
   return (
-    <div className={`flex justify-between items-center px-4 py-2 bg-black bg-opacity-40 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
-      <div className="flex items-center gap-4">
-        <div className="text-white text-xl font-bold">Hand #{handCount + 1}</div>
+    <div
+      className={`flex justify-between items-center px-4 py-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}
+      style={{ marginRight: '450px', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(212,168,71,0.15)' }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="font-bold" style={{ color: 'var(--gold)', fontSize: '15px' }}>Hand #{handCount + 1}</div>
         {hasActiveSession ? (
           <>
-            <div className="text-green-300 text-base">{sessionTimeDisplay}</div>
+            <div className="text-sm" style={{ color: '#6dba8a' }}>{sessionTimeDisplay}</div>
             <button
               onClick={onEndSession}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-semibold"
+              className="px-2 py-0.5 rounded text-xs font-semibold text-white"
+              style={{ background: '#991b1b' }}
             >
               End Session
             </button>
@@ -32,27 +34,12 @@ export const TableHeader = ({
         ) : (
           <button
             onClick={onNewSession}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold"
+            className="px-2 py-0.5 rounded text-xs font-semibold text-white"
+            style={{ background: '#15803d' }}
           >
             New Session
           </button>
         )}
-      </div>
-      <div className="flex gap-2 items-center">
-        <button
-          onClick={onNextHand}
-          className="bg-yellow-600 text-white px-3 py-2 rounded flex items-center gap-2"
-        >
-          <SkipForward size={18} />
-          Next Hand
-        </button>
-        <button
-          onClick={onResetHand}
-          className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2"
-        >
-          <RotateCcw size={18} />
-          Reset Hand
-        </button>
       </div>
     </div>
   );
@@ -65,6 +52,4 @@ TableHeader.propTypes = {
   isSidebarCollapsed: PropTypes.bool.isRequired,
   onEndSession: PropTypes.func.isRequired,
   onNewSession: PropTypes.func.isRequired,
-  onNextHand: PropTypes.func.isRequired,
-  onResetHand: PropTypes.func.isRequired,
 };

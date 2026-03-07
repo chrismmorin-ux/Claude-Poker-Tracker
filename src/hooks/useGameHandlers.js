@@ -11,17 +11,16 @@ import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { UI_ACTIONS } from '../reducers/uiReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { SESSION_ACTIONS } from '../reducers/sessionReducer';
-import { validateActionSequence } from '../utils/actionValidation';
+import { allCardsAssigned as allCardsAssignedUtil } from '../utils/actionUtils';
+import { isSeatInactive as seatUtilsIsSeatInactive } from '../utils/seatUtils';
+import { getSeatContributions } from '../utils/potCalculator';
 import {
-  ACTIONS,
-  SEAT_STATUS,
+  SEAT_ARRAY,
   STREETS,
-  BETTING_STREETS,
-  isFoldAction,
   LIMITS,
 } from '../constants/gameConstants';
+import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
 import { useGame, useUI, useCard, useSession } from '../contexts';
-import { useToast } from '../contexts/ToastContext';
 import { useSeatUtils } from './useSeatUtils';
 
 const MODULE_NAME = 'GameHandlers';
@@ -31,14 +30,18 @@ export const useGameHandlers = () => {
   const {
     currentStreet,
     mySeat,
-    seatActions,
     absentSeats,
     dealerButtonSeat,
+    actionSequence,
     dispatchGame,
+    blinds,
+    smallBlindSeat,
+    bigBlindSeat,
   } = useGame();
 
   const {
     selectedPlayers,
+    openCardSelector,
     dispatchUi,
   } = useUI();
 
@@ -52,54 +55,15 @@ export const useGameHandlers = () => {
 
   const { dispatchSession } = useSession();
 
-  const { showError } = useToast();
-
   const {
     getFirstActionSeat,
-    getNextActionSeat,
-  } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, seatActions, LIMITS.NUM_SEATS);
-
-  const recordAction = useCallback((action) => {
-    if (selectedPlayers.length === 0) return;
-
-    const invalidSeats = [];
-    selectedPlayers.forEach(seat => {
-      const currentActions = seatActions[currentStreet]?.[seat] || [];
-      const validation = validateActionSequence(currentActions, action, currentStreet, ACTIONS);
-      if (!validation.valid) {
-        invalidSeats.push({ seat, error: validation.error });
-      }
-    });
-
-    if (invalidSeats.length > 0) {
-      const errorMsg = invalidSeats.map(s => `Seat ${s.seat}: ${s.error}`).join('\n');
-      showError(`Invalid action:\n${errorMsg}`);
-      return;
-    }
-
-    selectedPlayers.forEach(seat => {
-      log(`Seat ${seat}: ${action} on ${currentStreet}`);
-    });
-
-    dispatchGame({
-      type: GAME_ACTIONS.RECORD_ACTION,
-      payload: { seats: selectedPlayers, action }
-    });
-
-    const lastSelectedSeat = Math.max(...selectedPlayers);
-    const nextSeat = getNextActionSeat(lastSelectedSeat);
-    if (nextSeat) {
-      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
-    } else {
-      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
-    }
-  }, [selectedPlayers, currentStreet, seatActions, dispatchGame, dispatchUi, getNextActionSeat, showError]);
+  } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
 
   const recordSeatAction = useCallback((seat, action) => {
     log(`Seat ${seat}: ${action} on ${currentStreet}`);
     dispatchGame({
-      type: GAME_ACTIONS.RECORD_ACTION,
-      payload: { seats: [seat], action }
+      type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+      payload: { seat, action }
     });
   }, [currentStreet, dispatchGame]);
 
@@ -134,14 +98,6 @@ export const useGameHandlers = () => {
     dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
   }, [dispatchGame, dispatchUi, getFirstActionSeat]);
 
-  const openCardSelector = useCallback((type, index) => {
-    log('openCardSelector::', type, index);
-    dispatchUi({
-      type: UI_ACTIONS.OPEN_CARD_SELECTOR,
-      payload: { type, index }
-    });
-  }, [dispatchUi]);
-
   const openShowdownScreen = useCallback(() => {
     dispatchUi({ type: UI_ACTIONS.OPEN_SHOWDOWN_VIEW });
   }, [dispatchUi]);
@@ -166,37 +122,14 @@ export const useGameHandlers = () => {
   }, [currentStreet, dispatchGame, dispatchUi, openCardSelector, openShowdownScreen]);
 
   const isSeatInactive = useCallback((seat) => {
-    if (absentSeats.includes(seat)) return SEAT_STATUS.ABSENT;
-
-    for (const street of BETTING_STREETS) {
-      const action = seatActions[street]?.[seat];
-      if (isFoldAction(action)) {
-        return SEAT_STATUS.FOLDED;
-      }
-    }
-
-    return null;
-  }, [absentSeats, seatActions]);
+    return seatUtilsIsSeatInactive(seat, absentSeats, actionSequence);
+  }, [absentSeats, actionSequence]);
 
   const allCardsAssigned = useCallback(() => {
-    for (let seat = 1; seat <= LIMITS.NUM_SEATS; seat++) {
-      const inactiveStatus = isSeatInactive(seat);
-      const showdownActions = seatActions['showdown']?.[seat];
-      const showdownActionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
-      const isMucked = showdownActionsArray.includes(ACTIONS.MUCKED);
-      const hasWon = showdownActionsArray.includes(ACTIONS.WON);
-
-      if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked || hasWon) {
-        continue;
-      }
-
-      const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-      if (!cards[0] || !cards[1]) {
-        return false;
-      }
-    }
-    return true;
-  }, [isSeatInactive, seatActions, mySeat, holeCards, allPlayerCards]);
+    return allCardsAssignedUtil(
+      LIMITS.NUM_SEATS, isSeatInactive, actionSequence, mySeat, holeCards, allPlayerCards
+    );
+  }, [isSeatInactive, actionSequence, mySeat, holeCards, allPlayerCards]);
 
   const clearCards = useCallback((type) => {
     if (type === 'community') {
@@ -238,14 +171,104 @@ export const useGameHandlers = () => {
     dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
   }, [dispatchGame, dispatchUi]);
 
+  const getRemainingSeats = useCallback(() => {
+    // Find the last bet/raise on this street to determine who needs to respond
+    const streetEntries = actionSequence.filter(e => e.street === currentStreet);
+    let lastAggressorIndex = -1;
+    for (let i = streetEntries.length - 1; i >= 0; i--) {
+      if (streetEntries[i].action === PRIMITIVE_ACTIONS.BET || streetEntries[i].action === PRIMITIVE_ACTIONS.RAISE) {
+        lastAggressorIndex = i;
+        break;
+      }
+    }
+
+    return SEAT_ARRAY.filter(seat => {
+      if (isSeatInactive(seat)) return false;
+      // Check if this seat folded on current street
+      const foldedThisStreet = streetEntries.some(
+        e => e.seat === seat && e.action === PRIMITIVE_ACTIONS.FOLD
+      );
+      if (foldedThisStreet) return false;
+
+      if (lastAggressorIndex === -1) {
+        // No bet/raise — only seats that haven't acted at all remain
+        const hasActed = streetEntries.some(e => e.seat === seat);
+        return !hasActed;
+      }
+
+      // There was a bet/raise — seat needs to respond if it hasn't acted AFTER the last aggression
+      const lastAggressorOrder = streetEntries[lastAggressorIndex].order;
+      const actedAfterAggression = streetEntries.some(
+        e => e.seat === seat && e.order > lastAggressorOrder
+      );
+      // Aggressor themselves don't need to act again
+      if (streetEntries[lastAggressorIndex].seat === seat) return false;
+      return !actedAfterAggression;
+    });
+  }, [isSeatInactive, actionSequence, currentStreet]);
+
+  const restFold = useCallback(() => {
+    const remaining = getRemainingSeats();
+    remaining.forEach(seat => {
+      dispatchGame({
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat, action: 'fold' },
+      });
+    });
+    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    return remaining.length;
+  }, [getRemainingSeats, dispatchGame, dispatchUi]);
+
+  const checkAround = useCallback(() => {
+    const remaining = getRemainingSeats();
+    remaining.forEach(seat => {
+      dispatchGame({
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat, action: 'check' },
+      });
+    });
+    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    return remaining.length;
+  }, [getRemainingSeats, dispatchGame, dispatchUi]);
+
+  const foldToInvested = useCallback(() => {
+    const remaining = getRemainingSeats();
+    if (remaining.length === 0) return 0;
+
+    const contributions = getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat);
+
+    // Sort remaining seats in action order (starting from first-to-act, wrapping around)
+    const firstSeat = getFirstActionSeat();
+    const n = LIMITS.NUM_SEATS;
+    const sorted = [...remaining].sort((a, b) =>
+      ((a - firstSeat + n) % n) - ((b - firstSeat + n) % n)
+    );
+
+    let count = 0;
+    for (const seat of sorted) {
+      // Stop BEFORE the first invested seat
+      if ((contributions[seat] || 0) > 0) {
+        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [seat] });
+        break;
+      }
+      dispatchGame({
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat, action: 'fold' },
+      });
+      count++;
+    }
+    if (count > 0 && !sorted.some(s => (contributions[s] || 0) > 0)) {
+      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    }
+    return count;
+  }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame, dispatchUi]);
+
   return {
-    recordAction,
     recordSeatAction,
     clearSeatActions,
     undoLastAction,
     toggleAbsent,
     clearStreetActions,
-    openCardSelector,
     openShowdownScreen,
     nextStreet,
     isSeatInactive,
@@ -255,5 +278,9 @@ export const useGameHandlers = () => {
     nextHand,
     resetHand,
     handleSetMySeat,
+    getRemainingSeats,
+    restFold,
+    checkAround,
+    foldToInvested,
   };
 };

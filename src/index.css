@@ -1,19 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700;800&family=Playfair+Display:wght@700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Casino palette */
+  --felt-base: #1a5c32;
+  --felt-spotlight: #228b46;
+  --felt-shadow: #0f3d22;
+  --rail-dark: #2a1808;
+  --rail-mid: #3d2510;
+  --rail-light: #5c3a1a;
+  --gold: #d4a847;
+  --gold-dim: #a68632;
+  --panel-bg: #14171c;
+  --panel-surface: #1c2028;
+  --panel-border: #2a2f3a;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #1f2937;
+  font-family: 'Barlow Semi Condensed', system-ui, sans-serif;
+}
+
 /* Toast slide-in animation */
 @keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+/* Thumb-friendly button press feedback */
+.btn-press:active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease-out;
 }

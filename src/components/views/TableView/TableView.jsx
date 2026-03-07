@@ -70,6 +70,7 @@ export const TableView = ({ scale }) => {
     getRemainingSeats,
     restFold,
     checkAround,
+    foldToInvested,
     getCardStreet,
     clearCards,
   } = useGameHandlers();
@@ -398,6 +399,13 @@ export const TableView = ({ scale }) => {
     showInfo(`${count} seat${count !== 1 ? 's' : ''} checked`);
   };
 
+  const handleFoldToInvested = () => {
+    const count = foldToInvested();
+    if (count > 0) {
+      showInfo(`${count} seat${count !== 1 ? 's' : ''} folded`);
+    }
+  };
+
   // HE-1b: Card selector overlay
   const selectCard = useCardSelection(
     highlightedBoardIndex,
@@ -595,6 +603,7 @@ export const TableView = ({ scale }) => {
             canCheckAround={canCheckAround}
             onRestFold={handleRestFold}
             onCheckAround={handleCheckAround}
+            onFoldToInvested={handleFoldToInvested}
             onNextHand={handleNextHandWithToast}
             onResetHand={handleResetHandWithToast}
             showCardSelector={showCardSelector}
