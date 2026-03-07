@@ -7,7 +7,7 @@
  * @module actionTypes
  */
 
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS, isShowdownAction } from '../constants/primitiveActions';
 import { STREETS } from '../constants/gameConstants';
 // Re-export for consumers that import STREETS from this module
 export { STREETS };
@@ -20,6 +20,7 @@ export { STREETS };
  * @property {string} action - Primitive action (check/bet/call/raise/fold)
  * @property {string} street - Current street (preflop/flop/turn/river)
  * @property {number} order - Action order within the hand (1-indexed)
+ * @property {number} [amount] - Optional dollar amount for the action
  * @property {number} [timestamp] - Optional timestamp for timing analysis
  */
 
@@ -33,13 +34,19 @@ export { STREETS };
  * @param {number} params.order - Action order
  * @returns {ActionEntry}
  */
-export const createActionEntry = ({ seat, action, street, order }) => ({
-  seat,
-  action,
-  street,
-  order,
-  timestamp: Date.now(),
-});
+export const createActionEntry = ({ seat, action, street, order, amount }) => {
+  const entry = {
+    seat,
+    action,
+    street,
+    order,
+    timestamp: Date.now(),
+  };
+  if (amount !== undefined && amount !== null) {
+    entry.amount = amount;
+  }
+  return entry;
+};
 
 /**
  * ActionSequence - The complete action sequence for a hand
@@ -68,15 +75,18 @@ export const isValidActionEntry = (entry) => {
   // Validate seat (1-9)
   if (!Number.isInteger(seat) || seat < 1 || seat > 9) return false;
 
-  // Validate action is a primitive
+  // Validate action is a primitive or showdown action
   const primitiveValues = Object.values(PRIMITIVE_ACTIONS);
-  if (!primitiveValues.includes(action)) return false;
+  if (!primitiveValues.includes(action) && !isShowdownAction(action)) return false;
 
   // Validate street
   if (!STREETS.includes(street)) return false;
 
   // Validate order (positive integer)
   if (!Number.isInteger(order) || order < 1) return false;
+
+  // Soft check: if amount present, must be number >= 0
+  if (entry.amount !== undefined && (typeof entry.amount !== 'number' || entry.amount < 0)) return false;
 
   return true;
 };
@@ -114,17 +124,6 @@ export const getActionsByStreet = (sequence, street) => {
 export const getActionsBySeat = (sequence, seat) => {
   if (!sequence) return [];
   return sequence.filter(entry => entry.seat === seat);
-};
-
-/**
- * Get the last action in the sequence
- *
- * @param {ActionSequence} sequence - Current sequence
- * @returns {ActionEntry|null}
- */
-export const getLastAction = (sequence) => {
-  if (!sequence || sequence.length === 0) return null;
-  return sequence[sequence.length - 1];
 };
 
 /**

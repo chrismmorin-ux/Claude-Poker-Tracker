@@ -8,23 +8,15 @@ import {
   getActionColor,
   getSeatActionStyle,
   getOverlayStatus,
-  getSeatActionSummary,
   allCardsAssigned,
   getActionAbbreviation,
-  getLastAction,
-  normalizeActionData,
-  getActionSequenceDisplay,
 } from '../actionUtils';
 import {
   ACTIONS,
   ACTION_ABBREV,
   SEAT_STATUS,
-  STREETS,
   isFoldAction,
-} from '../../test/utils';
-import {
   createEmptyPlayerCards,
-  createMockIsSeatInactive,
 } from '../../test/utils';
 
 describe('getActionDisplayName', () => {
@@ -376,209 +368,16 @@ describe('getOverlayStatus', () => {
   });
 });
 
-describe('getSeatActionSummary', () => {
-  const mockGetActionDisplayName = (action) => getActionDisplayName(action, isFoldAction, ACTIONS);
-  const mockGetHandAbbreviation = (cards) => {
-    if (!cards || cards.length !== 2 || !cards[0] || !cards[1]) return '';
-    return `${cards[0]}${cards[1]}`;
-  };
-
-  it('returns empty array when no actions', () => {
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      {},
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual([]);
-  });
-
-  it('formats single action on single street', () => {
-    const seatActions = {
-      preflop: { 1: [ACTIONS.FOLD] }
-    };
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['preflop fold']);
-  });
-
-  it('formats multiple actions on single street', () => {
-    const seatActions = {
-      preflop: { 1: [ACTIONS.OPEN, ACTIONS.CALL] }
-    };
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['preflop open', 'preflop call']);
-  });
-
-  it('formats actions across multiple streets', () => {
-    const seatActions = {
-      preflop: { 1: [ACTIONS.OPEN] },
-      flop: { 1: [ACTIONS.CHECK] },
-      turn: { 1: [ACTIONS.CALL] }
-    };
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['preflop open', 'flop check', 'turn call']);
-  });
-
-  it('formats showdown action with cards for my seat', () => {
-    const seatActions = {
-      showdown: { 5: [ACTIONS.WON] }
-    };
-    const result = getSeatActionSummary(
-      5,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['A♠', 'K♠'],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['showdown show A♠K♠']);
-  });
-
-  it('formats showdown action with cards for other seat', () => {
-    const allPlayerCards = createEmptyPlayerCards();
-    allPlayerCards[3] = ['Q♥', 'Q♦'];
-    const seatActions = {
-      showdown: { 3: [ACTIONS.WON] }
-    };
-    const result = getSeatActionSummary(
-      3,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      allPlayerCards,
-      ACTIONS
-    );
-    expect(result).toEqual(['showdown show Q♥Q♦']);
-  });
-
-  it('formats showdown action without cards as "show"', () => {
-    const seatActions = {
-      showdown: { 3: [ACTIONS.WON] }
-    };
-    const result = getSeatActionSummary(
-      3,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['showdown show']);
-  });
-
-  it('formats showdown MUCKED action as "muck" not "show"', () => {
-    const seatActions = {
-      showdown: { 3: [ACTIONS.MUCKED] }
-    };
-    const result = getSeatActionSummary(
-      3,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['showdown muck']);
-  });
-
-  it('handles old format (single value instead of array)', () => {
-    const seatActions = {
-      preflop: { 1: ACTIONS.FOLD } // Old format: single value
-    };
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual(['preflop fold']);
-  });
-
-  it('skips seats with no actions on a street', () => {
-    const seatActions = {
-      preflop: { 2: [ACTIONS.FOLD] }, // Different seat
-      flop: {} // No actions on flop
-    };
-    const result = getSeatActionSummary(
-      1,
-      STREETS,
-      seatActions,
-      mockGetActionDisplayName,
-      mockGetHandAbbreviation,
-      5,
-      ['', ''],
-      createEmptyPlayerCards(),
-      ACTIONS
-    );
-    expect(result).toEqual([]);
-  });
-});
-
 describe('allCardsAssigned', () => {
-  const mockIsSeatInactive = createMockIsSeatInactive([]);
-
   it('returns true when all active seats have cards', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
     allPlayerCards[2] = ['Q♥', 'J♥'];
 
-    const seatActions = {};
     const result = allCardsAssigned(
-      2, // only 2 seats
-      () => null, // no inactive seats
-      seatActions,
+      2,
+      () => null,
+      [], // empty actionSequence
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -591,13 +390,12 @@ describe('allCardsAssigned', () => {
   it('returns false when any active seat missing cards', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
-    allPlayerCards[2] = ['', '']; // Missing cards
+    allPlayerCards[2] = ['', ''];
 
-    const seatActions = {};
     const result = allCardsAssigned(
       2,
       () => null,
-      seatActions,
+      [],
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -610,15 +408,11 @@ describe('allCardsAssigned', () => {
   it('skips folded seats', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
-    // Seat 2 is folded and has no cards - should be skipped
-
-    const seatActions = {};
-    const mockIsSeatInactiveFolded = (seat) => seat === 2 ? SEAT_STATUS.FOLDED : null;
 
     const result = allCardsAssigned(
       2,
-      mockIsSeatInactiveFolded,
-      seatActions,
+      (seat) => seat === 2 ? SEAT_STATUS.FOLDED : null,
+      [],
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -631,15 +425,11 @@ describe('allCardsAssigned', () => {
   it('skips absent seats', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
-    // Seat 2 is absent and has no cards - should be skipped
-
-    const seatActions = {};
-    const mockIsSeatInactiveAbsent = (seat) => seat === 2 ? SEAT_STATUS.ABSENT : null;
 
     const result = allCardsAssigned(
       2,
-      mockIsSeatInactiveAbsent,
-      seatActions,
+      (seat) => seat === 2 ? SEAT_STATUS.ABSENT : null,
+      [],
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -652,16 +442,15 @@ describe('allCardsAssigned', () => {
   it('skips mucked seats', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
-    // Seat 2 is mucked and has no cards - should be skipped
 
-    const seatActions = {
-      showdown: { 2: [ACTIONS.MUCKED] }
-    };
+    const actionSequence = [
+      { seat: 2, action: ACTIONS.MUCKED, street: 'showdown', order: 1 },
+    ];
 
     const result = allCardsAssigned(
       2,
       () => null,
-      seatActions,
+      actionSequence,
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -674,16 +463,15 @@ describe('allCardsAssigned', () => {
   it('skips won seats', () => {
     const allPlayerCards = createEmptyPlayerCards();
     allPlayerCards[1] = ['A♠', 'K♠'];
-    // Seat 2 won and has no cards - should be skipped
 
-    const seatActions = {
-      showdown: { 2: [ACTIONS.WON] }
-    };
+    const actionSequence = [
+      { seat: 2, action: ACTIONS.WON, street: 'showdown', order: 1 },
+    ];
 
     const result = allCardsAssigned(
       2,
       () => null,
-      seatActions,
+      actionSequence,
       ACTIONS,
       SEAT_STATUS,
       1,
@@ -697,14 +485,13 @@ describe('allCardsAssigned', () => {
     const allPlayerCards = createEmptyPlayerCards();
     const holeCards = ['A♠', 'K♠'];
 
-    const seatActions = {};
     const result = allCardsAssigned(
       1,
       () => null,
-      seatActions,
+      [],
       ACTIONS,
       SEAT_STATUS,
-      1, // mySeat
+      1,
       holeCards,
       allPlayerCards
     );
@@ -715,39 +502,17 @@ describe('allCardsAssigned', () => {
     const allPlayerCards = createEmptyPlayerCards();
     const holeCards = ['', ''];
 
-    const seatActions = {};
     const result = allCardsAssigned(
       1,
       () => null,
-      seatActions,
+      [],
       ACTIONS,
       SEAT_STATUS,
-      1, // mySeat
+      1,
       holeCards,
       allPlayerCards
     );
     expect(result).toBe(false);
-  });
-
-  it('handles old format showdown actions (single value)', () => {
-    const allPlayerCards = createEmptyPlayerCards();
-    allPlayerCards[1] = ['A♠', 'K♠'];
-
-    const seatActions = {
-      showdown: { 2: ACTIONS.MUCKED } // Old format: single value
-    };
-
-    const result = allCardsAssigned(
-      2,
-      () => null,
-      seatActions,
-      ACTIONS,
-      SEAT_STATUS,
-      1,
-      ['A♠', 'K♠'],
-      allPlayerCards
-    );
-    expect(result).toBe(true);
   });
 });
 
@@ -796,90 +561,3 @@ describe('getActionAbbreviation', () => {
   });
 });
 
-describe('getLastAction', () => {
-  it('returns last action from array', () => {
-    expect(getLastAction([ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.FOLD])).toBe(ACTIONS.FOLD);
-  });
-
-  it('returns single action from single-element array', () => {
-    expect(getLastAction([ACTIONS.FOLD])).toBe(ACTIONS.FOLD);
-  });
-
-  it('returns null for empty array', () => {
-    expect(getLastAction([])).toBeNull();
-  });
-
-  it('returns null for undefined', () => {
-    expect(getLastAction(undefined)).toBeNull();
-  });
-
-  it('returns null for null', () => {
-    expect(getLastAction(null)).toBeNull();
-  });
-
-  it('returns null for non-array input', () => {
-    expect(getLastAction('not-an-array')).toBeNull();
-    expect(getLastAction(123)).toBeNull();
-    expect(getLastAction({})).toBeNull();
-  });
-});
-
-describe('normalizeActionData', () => {
-  it('converts string to array', () => {
-    expect(normalizeActionData(ACTIONS.FOLD)).toEqual([ACTIONS.FOLD]);
-    expect(normalizeActionData('custom')).toEqual(['custom']);
-  });
-
-  it('returns array as-is', () => {
-    expect(normalizeActionData([ACTIONS.FOLD])).toEqual([ACTIONS.FOLD]);
-    expect(normalizeActionData([ACTIONS.OPEN, ACTIONS.CALL])).toEqual([ACTIONS.OPEN, ACTIONS.CALL]);
-  });
-
-  it('returns empty array for undefined', () => {
-    expect(normalizeActionData(undefined)).toEqual([]);
-  });
-
-  it('returns empty array for null', () => {
-    expect(normalizeActionData(null)).toEqual([]);
-  });
-
-  it('returns empty array for empty string', () => {
-    expect(normalizeActionData('')).toEqual([]);
-  });
-
-  it('returns empty array for non-string non-array inputs', () => {
-    expect(normalizeActionData(123)).toEqual([]);
-    expect(normalizeActionData({})).toEqual([]);
-    expect(normalizeActionData(true)).toEqual([]);
-  });
-});
-
-describe('getActionSequenceDisplay', () => {
-  const mockGetActionDisplayName = (action) => getActionDisplayName(action, isFoldAction, ACTIONS);
-
-  it('formats single action', () => {
-    expect(getActionSequenceDisplay([ACTIONS.FOLD], mockGetActionDisplayName)).toBe('fold');
-  });
-
-  it('formats multiple actions with arrow separator', () => {
-    const actions = [ACTIONS.OPEN, ACTIONS.THREE_BET, ACTIONS.CALL];
-    expect(getActionSequenceDisplay(actions, mockGetActionDisplayName)).toBe('open → 3bet → call');
-  });
-
-  it('returns empty string for empty array', () => {
-    expect(getActionSequenceDisplay([], mockGetActionDisplayName)).toBe('');
-  });
-
-  it('returns empty string for null', () => {
-    expect(getActionSequenceDisplay(null, mockGetActionDisplayName)).toBe('');
-  });
-
-  it('returns empty string for undefined', () => {
-    expect(getActionSequenceDisplay(undefined, mockGetActionDisplayName)).toBe('');
-  });
-
-  it('handles complex action sequences', () => {
-    const actions = [ACTIONS.OPEN, ACTIONS.THREE_BET, ACTIONS.FOUR_BET, ACTIONS.CALL];
-    expect(getActionSequenceDisplay(actions, mockGetActionDisplayName)).toBe('open → 3bet → 4bet → call');
-  });
-});

@@ -131,65 +131,10 @@ export const getOverlayStatus = (inactiveStatus, isMucked, hasWon, SEAT_STATUS) 
 };
 
 /**
- * Gets seat action summary for display
- * @param {number} seat - Seat number
- * @param {Array} streets - Array of street names
- * @param {Object} seatActions - Seat actions object
- * @param {Function} getActionDisplayName - Function to get action display name
- * @param {Function} getHandAbbreviation - Function to get hand abbreviation
- * @param {number} mySeat - Player's seat
- * @param {Array} holeCards - Player's hole cards
- * @param {Object} allPlayerCards - All player cards
- * @param {Object} ACTIONS - Actions constants
- * @returns {Array} - Array of action strings
- */
-export const getSeatActionSummary = (
-  seat,
-  streets,
-  seatActions,
-  getActionDisplayName,
-  getHandAbbreviation,
-  mySeat,
-  holeCards,
-  allPlayerCards,
-  ACTIONS
-) => {
-  const actions = [];
-
-  streets.forEach(street => {
-    const streetActions = seatActions[street]?.[seat];
-    // Handle both array (new format) and single value (old format)
-    const actionArray = Array.isArray(streetActions) ? streetActions : (streetActions ? [streetActions] : []);
-
-    if (actionArray.length > 0) {
-      // For hand history, show all actions in sequence
-      actionArray.forEach(action => {
-        let displayAction = getActionDisplayName(action);
-
-        if (street === 'showdown' && action !== ACTIONS.MUCKED) {
-          // For showdown, add cards if available
-          const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
-          const handAbbr = getHandAbbreviation(cards);
-          if (handAbbr) {
-            displayAction = `show ${handAbbr}`;
-          } else {
-            displayAction = 'show';
-          }
-        }
-
-        actions.push(`${street} ${displayAction}`);
-      });
-    }
-  });
-
-  return actions;
-};
-
-/**
  * Checks if all cards are assigned in showdown
  * @param {number} numSeats - Total number of seats
  * @param {Function} isSeatInactive - Function to check if seat is inactive
- * @param {Object} seatActions - Seat actions object
+ * @param {Array} actionSequence - Action sequence array
  * @param {Object} ACTIONS - Actions constants
  * @param {Object} SEAT_STATUS - Seat status constants
  * @param {number} mySeat - Player's seat
@@ -200,7 +145,7 @@ export const getSeatActionSummary = (
 export const allCardsAssigned = (
   numSeats,
   isSeatInactive,
-  seatActions,
+  actionSequence,
   ACTIONS,
   SEAT_STATUS,
   mySeat,
@@ -209,10 +154,8 @@ export const allCardsAssigned = (
 ) => {
   for (let seat = 1; seat <= numSeats; seat++) {
     const inactiveStatus = isSeatInactive(seat);
-    const showdownActions = seatActions['showdown']?.[seat];
-    const actionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
-    const isMucked = actionsArray.includes(ACTIONS.MUCKED);
-    const hasWon = actionsArray.includes(ACTIONS.WON);
+    const isMucked = actionSequence.some(e => e.seat === seat && e.street === 'showdown' && e.action === ACTIONS.MUCKED);
+    const hasWon = actionSequence.some(e => e.seat === seat && e.street === 'showdown' && e.action === ACTIONS.WON);
 
     // Skip folded, absent, mucked, and won seats
     if (inactiveStatus === SEAT_STATUS.FOLDED || inactiveStatus === SEAT_STATUS.ABSENT || isMucked || hasWon) {
@@ -239,41 +182,6 @@ export const getActionAbbreviation = (action, ACTION_ABBREV) => {
 };
 
 /**
- * Gets the last action from an action array
- * Note: seatActions are always arrays (normalized on load from database)
- * @param {string[]|undefined} actions - Action array
- * @returns {string|null} - Last action or null
- */
-export const getLastAction = (actions) => {
-  if (!actions || !Array.isArray(actions)) return null;
-  return actions[actions.length - 1] || null;
-};
-
-/**
- * Normalizes action data for backward compatibility
- * Converts string actions to arrays for new format
- * @param {string|string[]|undefined} action - Action data
- * @returns {string[]} - Array of actions
- */
-export const normalizeActionData = (action) => {
-  if (!action) return [];
-  if (typeof action === 'string') return [action]; // Old format → convert to array
-  if (Array.isArray(action)) return action; // New format → return as-is
-  return [];
-};
-
-/**
- * Gets action sequence display string
- * @param {string[]} actions - Array of actions
- * @param {Function} getActionDisplayName - Display name function
- * @returns {string} - Formatted sequence (e.g., "open → 3bet → call")
- */
-export const getActionSequenceDisplay = (actions, getActionDisplayName) => {
-  if (!actions || actions.length === 0) return '';
-  return actions.map(a => getActionDisplayName(a)).join(' → ');
-};
-
-/**
  * Checks if a pattern represents aggressive action
  * @param {string} pattern - Pattern constant
  * @returns {boolean}
@@ -287,11 +195,6 @@ export const isAggressivePattern = (pattern) => {
   return aggressivePatterns.includes(pattern);
 };
 
-/**
- * Checks if a pattern represents passive action
- * @param {string} pattern - Pattern constant
- * @returns {boolean}
- */
 // =============================================================================
 // PRIMITIVE ACTION UTILITIES (Phase 1)
 // =============================================================================
@@ -306,29 +209,7 @@ export const isAggressivePattern = (pattern) => {
 export function getValidActions(street, hasBet, isMultiSeat) {
   const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
   if (isMultiSeat) return [CHECK, BET, CALL, RAISE, FOLD];
-  if (street === 'preflop') return [CHECK, CALL, RAISE, FOLD];
+  if (street === 'preflop') return [CALL, RAISE, FOLD]; // Blinds are forced bets — no CHECK or BET preflop
   return hasBet ? [CALL, RAISE, FOLD] : [CHECK, BET, FOLD];
 }
 
-/**
- * Checks if any seat has made a bet or raise on the current street.
- * @param {Object} seatActions - The seatActions object from game state
- * @param {string} currentStreet - Current street name
- * @returns {boolean} True if any seat has bet or raised on this street
- */
-export function hasBetOnStreet(seatActions, currentStreet) {
-  const streetActions = seatActions?.[currentStreet];
-  if (!streetActions) return false;
-  return Object.values(streetActions).flat().some(
-    a => a === PRIMITIVE_ACTIONS.BET || a === PRIMITIVE_ACTIONS.RAISE
-  );
-}
-
-export const isPassivePattern = (pattern) => {
-  const passivePatterns = [
-    'fold', 'fold-to-cbet', 'fold-to-cr',
-    'limp', 'over-limp', 'cold-call',
-    'check', 'call', 'call-cbet', 'float-call',
-  ];
-  return passivePatterns.includes(pattern);
-};

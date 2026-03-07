@@ -11,7 +11,6 @@ import {
   getNextOrder,
   getActionsByStreet,
   getActionsBySeat,
-  getLastAction,
   getLastActionOnStreet,
   getBetLevel,
   hasAggressionOnStreet,
@@ -169,24 +168,6 @@ describe('actionTypes', () => {
 
     it('returns empty array for null sequence', () => {
       expect(getActionsBySeat(null, 1)).toEqual([]);
-    });
-  });
-
-  describe('getLastAction', () => {
-    it('returns the last action in sequence', () => {
-      const sequence = [
-        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
-        { seat: 2, action: 'raise', street: 'preflop', order: 2 },
-      ];
-      expect(getLastAction(sequence)).toEqual(sequence[1]);
-    });
-
-    it('returns null for empty sequence', () => {
-      expect(getLastAction([])).toBe(null);
-    });
-
-    it('returns null for null sequence', () => {
-      expect(getLastAction(null)).toBe(null);
     });
   });
 

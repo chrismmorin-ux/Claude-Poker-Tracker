@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { getValidActions, hasBetOnStreet } from '../actionUtils';
+import { getValidActions } from '../actionUtils';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
@@ -18,9 +18,9 @@ describe('getValidActions', () => {
   });
 
   describe('preflop (single seat)', () => {
-    it('returns CHECK, CALL, RAISE, FOLD regardless of hasBet', () => {
-      expect(getValidActions('preflop', false, false)).toEqual([CHECK, CALL, RAISE, FOLD]);
-      expect(getValidActions('preflop', true, false)).toEqual([CHECK, CALL, RAISE, FOLD]);
+    it('returns CALL, RAISE, FOLD regardless of hasBet (blinds are forced bets)', () => {
+      expect(getValidActions('preflop', false, false)).toEqual([CALL, RAISE, FOLD]);
+      expect(getValidActions('preflop', true, false)).toEqual([CALL, RAISE, FOLD]);
     });
   });
 
@@ -50,77 +50,5 @@ describe('getValidActions', () => {
     it('returns CALL, RAISE, FOLD on river', () => {
       expect(getValidActions('river', true, false)).toEqual([CALL, RAISE, FOLD]);
     });
-  });
-});
-
-describe('hasBetOnStreet', () => {
-  it('returns false for null/undefined seatActions', () => {
-    expect(hasBetOnStreet(null, 'flop')).toBe(false);
-    expect(hasBetOnStreet(undefined, 'flop')).toBe(false);
-  });
-
-  it('returns false when street has no actions', () => {
-    expect(hasBetOnStreet({}, 'flop')).toBe(false);
-    expect(hasBetOnStreet({ preflop: {} }, 'flop')).toBe(false);
-  });
-
-  it('returns false when only checks and calls on street', () => {
-    const seatActions = {
-      flop: {
-        1: [CHECK],
-        2: [CALL],
-        3: [CHECK],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'flop')).toBe(false);
-  });
-
-  it('returns true when a bet exists on street', () => {
-    const seatActions = {
-      flop: {
-        1: [CHECK],
-        2: [BET],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'flop')).toBe(true);
-  });
-
-  it('returns true when a raise exists on street', () => {
-    const seatActions = {
-      flop: {
-        1: [BET],
-        2: [RAISE],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'flop')).toBe(true);
-  });
-
-  it('returns false for a different street', () => {
-    const seatActions = {
-      flop: {
-        1: [BET],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'turn')).toBe(false);
-  });
-
-  it('handles single action values (non-array)', () => {
-    const seatActions = {
-      flop: {
-        1: [FOLD],
-        2: [CHECK],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'flop')).toBe(false);
-  });
-
-  it('detects bet in multi-action sequences', () => {
-    const seatActions = {
-      flop: {
-        1: [CHECK, RAISE],
-        2: [BET],
-      },
-    };
-    expect(hasBetOnStreet(seatActions, 'flop')).toBe(true);
   });
 });

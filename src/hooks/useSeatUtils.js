@@ -1,59 +1,61 @@
 import { useCallback, useMemo } from 'react';
 import {
-  getSmallBlindSeat as utilGetSmallBlindSeat,
-  getBigBlindSeat as utilGetBigBlindSeat,
   hasSeatFolded as utilHasSeatFolded,
   getFirstActionSeat as utilGetFirstActionSeat,
-  getNextActionSeat as utilGetNextActionSeat
+  getNextActionSeat as utilGetNextActionSeat,
+  isStreetActionComplete as utilIsStreetActionComplete,
+  getActiveSeatCount as utilGetActiveSeatCount
 } from '../utils/seatUtils';
-import { isFoldAction, STREETS } from '../constants/gameConstants';
 
 /**
  * Custom hook for seat-related utility functions
- * Wraps seatUtils functions with proper dependencies and constant injection
+ * Wraps seatUtils functions with proper dependencies
+ * Note: smallBlindSeat/bigBlindSeat live in GameContext (useGame())
  */
-export const useSeatUtils = (currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats) => {
-  const smallBlindSeat = useMemo(() => {
-    return utilGetSmallBlindSeat(dealerButtonSeat, absentSeats, numSeats);
-  }, [dealerButtonSeat, absentSeats, numSeats]);
-
-  const bigBlindSeat = useMemo(() => {
-    return utilGetBigBlindSeat(dealerButtonSeat, absentSeats, numSeats);
-  }, [dealerButtonSeat, absentSeats, numSeats]);
-
+export const useSeatUtils = (currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats) => {
   const hasSeatFolded = useCallback((seat) => {
-    return utilHasSeatFolded(seat, currentStreet, STREETS, seatActions, isFoldAction);
-  }, [currentStreet, seatActions]);
+    return utilHasSeatFolded(actionSequence, seat);
+  }, [actionSequence]);
 
   const getFirstActionSeat = useCallback(() => {
     return utilGetFirstActionSeat(
       currentStreet,
       dealerButtonSeat,
       absentSeats,
-      seatActions,
-      STREETS,
-      isFoldAction,
+      actionSequence,
       numSeats
     );
-  }, [currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats]);
+  }, [currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats]);
 
   const getNextActionSeat = useCallback((currentSeat) => {
     return utilGetNextActionSeat(
       currentSeat,
       absentSeats,
       currentStreet,
-      seatActions,
-      STREETS,
-      isFoldAction,
+      actionSequence,
       numSeats
     );
-  }, [absentSeats, currentStreet, seatActions, numSeats]);
+  }, [absentSeats, currentStreet, actionSequence, numSeats]);
+
+  const isStreetComplete = useCallback((seq) => {
+    return utilIsStreetActionComplete(
+      currentStreet,
+      seq,
+      absentSeats,
+      numSeats
+    );
+  }, [currentStreet, absentSeats, numSeats]);
+
+  const activeSeatCount = useMemo(
+    () => utilGetActiveSeatCount(actionSequence, absentSeats, numSeats),
+    [actionSequence, absentSeats, numSeats]
+  );
 
   return {
-    smallBlindSeat,
-    bigBlindSeat,
     hasSeatFolded,
     getFirstActionSeat,
     getNextActionSeat,
+    isStreetComplete,
+    activeSeatCount,
   };
 };

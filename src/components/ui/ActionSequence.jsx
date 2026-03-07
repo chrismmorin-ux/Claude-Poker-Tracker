@@ -6,6 +6,8 @@
 import React from 'react';
 import { ActionBadge } from './ActionBadge';
 import { isPrimitiveAction, PRIMITIVE_BUTTON_CONFIG } from '../../constants/primitiveActions';
+import { isFoldAction } from '../../constants/gameConstants';
+import { getActionDisplayName } from '../../utils/actionUtils';
 
 /** Abbreviations for primitive actions */
 const PRIMITIVE_ABBREV = {
@@ -51,31 +53,11 @@ export const ActionSequence = ({
 
   // Get display name for tooltip
   const getDisplayName = (action) => {
-    if (!ACTIONS && isPrimitiveAction(action)) {
+    if (isPrimitiveAction(action)) {
       return PRIMITIVE_BUTTON_CONFIG[action]?.label || action;
     }
     if (!ACTIONS) return action;
-    const displayNames = {
-      [ACTIONS.FOLD]: 'fold',
-      [ACTIONS.LIMP]: 'limp',
-      [ACTIONS.CALL]: 'call',
-      [ACTIONS.OPEN]: 'open',
-      [ACTIONS.THREE_BET]: '3bet',
-      [ACTIONS.FOUR_BET]: '4bet',
-      [ACTIONS.CBET_IP_SMALL]: 'cbet IP (S)',
-      [ACTIONS.CBET_IP_LARGE]: 'cbet IP (L)',
-      [ACTIONS.CBET_OOP_SMALL]: 'cbet OOP (S)',
-      [ACTIONS.CBET_OOP_LARGE]: 'cbet OOP (L)',
-      [ACTIONS.CHECK]: 'check',
-      [ACTIONS.CHECK_RAISE]: 'check-raise',
-      [ACTIONS.DONK]: 'donk',
-      [ACTIONS.STAB]: 'stab',
-      [ACTIONS.FOLD_TO_CBET]: 'fold to cbet',
-      [ACTIONS.FOLD_TO_CR]: 'fold to CR',
-      [ACTIONS.MUCKED]: 'muck',
-      [ACTIONS.WON]: 'won',
-    };
-    return displayNames[action] || action;
+    return getActionDisplayName(action, isFoldAction, ACTIONS);
   };
 
   const tooltipText = actions.map(a => getDisplayName(a)).join(' → ');
@@ -89,10 +71,10 @@ export const ActionSequence = ({
   const gapClass = size === 'small' ? 'gap-0.5' : size === 'medium' ? 'gap-1' : 'gap-1.5';
 
   const renderBadge = (action) => {
-    // Use primitive rendering only when ACTIONS prop is not provided (new path)
-    if (!ACTIONS && isPrimitiveAction(action)) {
+    // Primitive actions always use primitive rendering (check, bet, call, raise, fold)
+    if (isPrimitiveAction(action)) {
       return (
-        <div className={`inline-flex items-center justify-center rounded font-bold ${sizeStyles[size]} ${PRIMITIVE_COLORS[action]}`}>
+        <div data-testid="action-badge" className={`inline-flex items-center justify-center rounded font-bold ${sizeStyles[size]} ${PRIMITIVE_COLORS[action]}`}>
           {PRIMITIVE_ABBREV[action]}
         </div>
       );
