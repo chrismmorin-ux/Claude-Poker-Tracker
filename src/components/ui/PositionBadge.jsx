@@ -26,6 +26,12 @@ const BADGE_CONFIG = {
     text: 'text-white',
     label: 'ME',
   },
+  pfr: {
+    bg: 'bg-orange-500',
+    border: 'border-orange-700',
+    text: 'text-white',
+    label: 'PFR',
+  },
 };
 
 /**

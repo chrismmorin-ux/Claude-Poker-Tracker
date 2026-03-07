@@ -1,63 +1,52 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { getActionsForSeatOnStreet, hasBetOrRaiseOnStreet, getPreflopAggressor } from '../../../utils/sequenceUtils';
+import { getSeatContributions } from '../../../utils/potCalculator';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { buildExploitSummary } from '../../ui/ExploitBadges';
 import { analyzeBoardFromStrings } from '../../../utils/exploitEngine/boardTexture';
-import { generateBoardExploits } from '../../../utils/exploitEngine/generateExploits';
-import { filterDismissed } from '../../../utils/exploitSuggestions';
+import { generateBoardExploits, enrichExploitsWithEquity } from '../../../utils/exploitEngine/generateExploits';
+import { filterDismissed } from '../../../utils/exploitEngine/generateExploits';
 import { LAYOUT, LIMITS } from '../../../constants/gameConstants';
 import { useGame, useUI, useSession, usePlayer, useCard, useToast } from '../../../contexts';
 import { usePlayerTendencies } from '../../../hooks/usePlayerTendencies';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatColor } from '../../../hooks/useSeatColor';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
-import { useActionUtils } from '../../../hooks/useActionUtils';
+import { useSessionTimer } from '../../../hooks/useSessionTimer';
+import { useAutoSeatSelection } from '../../../hooks/useAutoSeatSelection';
+import { useAutoStreetAdvance } from '../../../hooks/useAutoStreetAdvance';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
 import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
-import { ActionPanel } from './ActionPanel';
 import { SeatContextMenu } from './SeatContextMenu';
-import { StreetSelector } from './StreetSelector';
+import { CommandStrip } from './CommandStrip';
 import { RangeDetailPanel } from '../../ui/RangeDetailPanel';
+import { PotDisplay } from '../../ui/PotDisplay';
+import { useCardSelection } from '../../../hooks/useCardSelection';
+import { useLiveEquity } from '../../../hooks/useLiveEquity';
+import { EquityBadge } from '../../ui/EquityBadge';
 
-/**
- * Format relative time from start timestamp
- */
-const formatRelativeTime = (startTime) => {
-  if (!startTime) return '';
-
-  const now = Date.now();
-  const diff = now - startTime;
-
-  if (diff < 0) return '';
-
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 60) return `Started ${minutes}m ago`;
-  if (hours < 24) return `Started ${hours}h ago`;
-  return `Started ${days}d ago`;
-};
 
 /**
  * TableView - Main poker table interface
  * Orchestrates sub-components for the poker table display
  */
 // Seat positions (percentage-based for responsive layout)
+// Equidistant around stadium perimeter (860×450, r=225), half-gap at TABLE label edges
 const SEAT_POSITIONS = [
-  { seat: 1, x: 33, y: 88 },
-  { seat: 2, x: 15, y: 70 },
-  { seat: 3, x: 8, y: 45 },
-  { seat: 4, x: 18, y: 20 },
-  { seat: 5, x: 50, y: 8 },
-  { seat: 6, x: 82, y: 20 },
-  { seat: 7, x: 92, y: 45 },
-  { seat: 8, x: 85, y: 70 },
-  { seat: 9, x: 67, y: 88 },
+  { seat: 1, x: 20, y: 96 },
+  { seat: 2, x: 2,  y: 69 },
+  { seat: 3, x: 4,  y: 23 },
+  { seat: 4, x: 25, y: 2 },
+  { seat: 5, x: 50, y: 2 },
+  { seat: 6, x: 75, y: 2 },
+  { seat: 7, x: 96, y: 23 },
+  { seat: 8, x: 98, y: 69 },
+  { seat: 9, x: 80, y: 96 },
 ];
 
 export const TableView = ({ scale }) => {
@@ -78,22 +67,25 @@ export const TableView = ({ scale }) => {
     toggleAbsent,
     openShowdownScreen,
     handleSetMySeat,
-    recordAction,
+    getRemainingSeats,
+    restFold,
+    checkAround,
+    getCardStreet,
+    clearCards,
   } = useGameHandlers();
-
-  // Action utils for seat color
-  const { getSeatActionStyle } = useActionUtils();
 
   // Get state and handlers from contexts
   const {
     currentStreet,
     mySeat,
     dealerButtonSeat,
-    seatActions,
     absentSeats,
     smallBlindSeat,
     bigBlindSeat,
+    actionSequence,
     dispatchGame,
+    potInfo,
+    blinds,
   } = useGame();
 
   const {
@@ -110,6 +102,10 @@ export const TableView = ({ scale }) => {
     SCREEN,
     dispatchUi,
     showCardSelector,
+    cardSelectorType,
+    highlightedBoardIndex,
+    setCardSelectorType,
+    setHighlightedCardIndex,
     setPendingSeatForPlayerAssignment,
     setAutoOpenNewSession,
   } = useUI();
@@ -139,8 +135,8 @@ export const TableView = ({ scale }) => {
   } = useCard();
 
   // Seat utils and color
-  const { hasSeatFolded, getFirstActionSeat } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, seatActions, numSeats);
-  const getSeatColor = useSeatColor(hasSeatFolded, selectedPlayers, mySeat, absentSeats, seatActions, currentStreet, getSeatActionStyle);
+  const { hasSeatFolded, getFirstActionSeat, getNextActionSeat, isStreetComplete, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats);
+  const getSeatColor = useSeatColor({ hasSeatFolded, selectedPlayers, mySeat, absentSeats, actionSequence, currentStreet });
 
   // Dealer drag handlers (need tableRef)
   const handleDealerDragStart = useCallback((e) => {
@@ -193,18 +189,29 @@ export const TableView = ({ scale }) => {
     dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
   }, [dispatchGame]);
 
-  // Auto-select first action seat when street changes or card selector closes
-  useEffect(() => {
-    if (!showCardSelector && currentStreet !== 'showdown') {
-      if (selectedPlayers.length === 0) {
-        const firstSeat = getFirstActionSeat();
-        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
-      }
-    }
-  }, [currentStreet, showCardSelector, selectedPlayers, getFirstActionSeat, dispatchUi]);
+  // Auto-select first action seat on mount, street change, or card selector close
+  const { scheduleAutoSelect } = useAutoSeatSelection(showCardSelector, currentStreet, getFirstActionSeat, dispatchUi);
+
+  // Auto-advance to next street when all actions are complete
+  useAutoStreetAdvance(
+    actionSequence, currentStreet, showCardSelector,
+    isStreetComplete, nextStreet, activeSeatCount,
+    setCurrentStreet, openShowdownScreen
+  );
 
   // Player tendency stats for confidence opacity
   const { tendencyMap } = usePlayerTendencies(allPlayers);
+
+  // Live equity computation
+  const liveEquity = useLiveEquity({
+    holeCards,
+    communityCards,
+    mySeat,
+    dealerSeat: dealerButtonSeat,
+    actionSequence,
+    tendencyMap,
+    getSeatPlayer,
+  });
 
   // Range detail modal state
   const [rangeDetailSeat, setRangeDetailSeat] = useState(null);
@@ -240,7 +247,13 @@ export const TableView = ({ scale }) => {
         liveSuggestions = [...liveSuggestions, ...boardExploits];
       }
 
-      const combined = [...persisted, ...liveSuggestions];
+      let combined = [...persisted, ...liveSuggestions];
+
+      // Enrich with live equity for the focused villain
+      if (liveEquity.equity != null && liveEquity.villainSeat === seat && combined.length > 0) {
+        combined = enrichExploitsWithEquity([...combined], { heroEquity: liveEquity.equity, foldPct: liveEquity.foldPct });
+      }
+
       if (combined.length > 0) {
         data[seat] = {
           summary: buildExploitSummary(combined),
@@ -250,7 +263,7 @@ export const TableView = ({ scale }) => {
       }
     }
     return data;
-  }, [numSeats, getSeatPlayer, tendencyMap, boardTexture]);
+  }, [numSeats, getSeatPlayer, tendencyMap, boardTexture, liveEquity.equity, liveEquity.villainSeat]);
 
   // Derived session values
   const handCount = currentSession?.handCount || 0;
@@ -258,31 +271,22 @@ export const TableView = ({ scale }) => {
   const currentSessionVenue = currentSession?.venue;
   const currentSessionGameType = currentSession?.gameType;
 
-  // Update session time display every minute
-  const [sessionTimeDisplay, setSessionTimeDisplay] = useState(() => formatRelativeTime(sessionStartTime));
+  // Session timer
+  const sessionTimeDisplay = useSessionTimer(sessionStartTime);
 
   // Convert absentSeats array to Set for CollapsibleSidebar
   const absentSeatsSet = useMemo(() => new Set(absentSeats || []), [absentSeats]);
+
+  // Per-seat bet amounts for chip display
+  const seatContributions = useMemo(
+    () => getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat),
+    [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
+  );
 
   // Handle seat change from sidebar navigation
   const handleSeatChange = (seat) => {
     setSelectedPlayers([seat]);
   };
-
-  useEffect(() => {
-    if (!sessionStartTime) {
-      setSessionTimeDisplay('');
-      return;
-    }
-
-    setSessionTimeDisplay(formatRelativeTime(sessionStartTime));
-
-    const interval = setInterval(() => {
-      setSessionTimeDisplay(formatRelativeTime(sessionStartTime));
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [sessionStartTime]);
 
   // Handler callbacks for sub-components
   const handleEndSession = () => setCurrentScreen(SCREEN.SESSIONS);
@@ -292,16 +296,26 @@ export const TableView = ({ scale }) => {
     setCurrentScreen(SCREEN.SESSIONS);
   };
 
-  // Wrapped handlers with toast notifications
   const handleNextHandWithToast = () => {
+    const handNumber = (currentSession?.handCount || 0) + 1;
     nextHand();
-    const nextHandNumber = (currentSession?.handCount || 0) + 2; // +1 for increment, +1 for display
-    showInfo(`Hand #${nextHandNumber} started`);
+    if (hasActions) {
+      showSuccess(`Hand #${handNumber} completed`);
+    } else {
+      showInfo(`Hand #${handNumber + 1} started`);
+    }
+    scheduleAutoSelect();
   };
 
   const handleResetHandWithToast = () => {
     resetHand();
     showWarning('Hand reset');
+    scheduleAutoSelect();
+  };
+
+  const handleClearStreetWithAutoSelect = () => {
+    clearStreetActions();
+    // clearStreetActions already auto-selects in useGameHandlers
   };
 
   const handleStreetChange = (street) => {
@@ -345,8 +359,62 @@ export const TableView = ({ scale }) => {
     setSelectedPlayers([]);
   };
 
+  // Auto-advance to next action seat after recording an action
+  const handleAdvanceSeat = useCallback((currentSeat) => {
+    // Use setTimeout so the reducer processes the action first,
+    // then we compute the next seat from updated state on next render.
+    // Instead, we compute optimistically: next seat after current.
+    const nextSeat = getNextActionSeat(currentSeat);
+    if (nextSeat) {
+      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
+    } else {
+      // No more seats to act — clear selection
+      setSelectedPlayers([]);
+    }
+  }, [getNextActionSeat, dispatchUi, setSelectedPlayers]);
+
+  // Pot correction handler
+  const handlePotCorrection = useCallback((amount) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_POT_OVERRIDE, payload: amount });
+  }, [dispatchGame]);
+
+  // PFR badge: show on postflop streets
+  const pfrSeat = currentStreet !== 'preflop' ? getPreflopAggressor(actionSequence) : null;
+
+  const hasActions = actionSequence.length > 0;
+
+  // HE-1a: Batch action handlers
+  const remainingSeats = getRemainingSeats();
+  const remainingCount = remainingSeats.length;
+  const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
+
+  const handleRestFold = () => {
+    const count = restFold();
+    showInfo(`${count} seat${count !== 1 ? 's' : ''} folded`);
+  };
+
+  const handleCheckAround = () => {
+    const count = checkAround();
+    showInfo(`${count} seat${count !== 1 ? 's' : ''} checked`);
+  };
+
+  // HE-1b: Card selector overlay
+  const selectCard = useCardSelection(
+    highlightedBoardIndex,
+    cardSelectorType,
+    communityCards,
+    holeCards,
+    currentStreet,
+    dispatchCard,
+    dispatchUi
+  );
+
+  const handleCloseCardSelector = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
+  }, [dispatchUi]);
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
+    <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
       <div style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
@@ -354,8 +422,12 @@ export const TableView = ({ scale }) => {
         transformOrigin: 'center center'
       }}>
         <div
-          className="bg-gradient-to-br from-green-800 to-green-900 flex flex-col"
-          style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
+          className="flex flex-col"
+          style={{
+            width: `${LAYOUT.TABLE_WIDTH}px`,
+            height: `${LAYOUT.TABLE_HEIGHT}px`,
+            background: 'radial-gradient(ellipse 70% 60% at 40% 50%, #1a2030 0%, #0d1117 100%)',
+          }}
           onClick={() => {
             if (!isDraggingDealer) {
               setContextMenu(null);
@@ -387,21 +459,21 @@ export const TableView = ({ scale }) => {
             isSidebarCollapsed={isSidebarCollapsed}
             onEndSession={handleEndSession}
             onNewSession={handleNewSession}
-            onNextHand={handleNextHandWithToast}
-            onResetHand={handleResetHandWithToast}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
             {/* Felt table */}
             <div
               ref={tableRef}
-              className="absolute bg-green-700 shadow-2xl"
+              className="absolute"
               style={{
                 top: `${LAYOUT.TABLE_OFFSET_Y}px`,
                 left: `${LAYOUT.TABLE_OFFSET_X}px`,
                 width: `${LAYOUT.FELT_WIDTH}px`,
                 height: `${LAYOUT.FELT_HEIGHT}px`,
-                borderRadius: `${LAYOUT.FELT_HEIGHT / 2}px`
+                borderRadius: `${LAYOUT.FELT_HEIGHT / 2}px`,
+                background: 'linear-gradient(160deg, #5c3a1a 0%, #3d2510 30%, #2a1808 70%, #3d2510 100%)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,100,0.08)',
               }}
               onMouseMove={handleDealerDrag}
               onMouseUp={handleDealerDragEnd}
@@ -409,11 +481,16 @@ export const TableView = ({ scale }) => {
             >
               {/* Inner felt with community cards */}
               <div
-                className="absolute inset-4 bg-green-600 border-8 border-green-800 shadow-inner"
-                style={{ borderRadius: `${LAYOUT.FELT_HEIGHT / 2 - 8}px` }}
+                className="absolute inset-3"
+                style={{
+                  borderRadius: `${LAYOUT.FELT_HEIGHT / 2 - 12}px`,
+                  background: 'radial-gradient(ellipse 90% 70% at 50% 45%, #228b46 0%, #1a6b3c 40%, #145a30 70%, #0f4d2a 100%)',
+                  boxShadow: 'inset 0 2px 40px rgba(0,0,0,0.35), inset 0 0 80px rgba(0,0,0,0.15)',
+                  border: '2px solid rgba(0,0,0,0.3)',
+                }}
               >
                 {/* Community cards */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-2 relative w-fit">
                   {[0, 1, 2, 3, 4].map((idx) => (
                     <CardSlot
                       key={idx}
@@ -425,7 +502,19 @@ export const TableView = ({ scale }) => {
                       }}
                     />
                   ))}
+                  <EquityBadge
+                    equity={liveEquity.equity}
+                    isComputing={liveEquity.isComputing}
+                    villainName={liveEquity.villainName}
+                  />
                 </div>
+
+                {/* Pot display */}
+                <PotDisplay
+                  potTotal={potInfo.total}
+                  isEstimated={potInfo.isEstimated}
+                  onCorrect={handlePotCorrection}
+                />
               </div>
 
               {/* Seats */}
@@ -435,11 +524,12 @@ export const TableView = ({ scale }) => {
                   seat={seat}
                   x={x}
                   y={y}
-                  actionArray={seatActions[currentStreet]?.[seat] || []}
+                  actionArray={getActionsForSeatOnStreet(actionSequence, seat, currentStreet)}
                   isDealer={dealerButtonSeat === seat}
                   isSmallBlind={smallBlindSeat === seat}
                   isBigBlind={bigBlindSeat === seat}
                   isMySeat={seat === mySeat}
+                  isPFR={pfrSeat === seat}
                   playerName={getSeatPlayerName(seat)}
                   exploitSummary={seatExploitData[seat]?.summary || null}
                   exploits={seatExploitData[seat]?.exploits || []}
@@ -447,6 +537,7 @@ export const TableView = ({ scale }) => {
                   holeCards={holeCards}
                   holeCardsVisible={holeCardsVisible}
                   getSeatColor={getSeatColor}
+                  seatBet={seatContributions[seat] || 0}
                   onSeatClick={togglePlayerSelection}
                   onSeatRightClick={handleSeatRightClick}
                   onDealerDragStart={handleDealerDragStart}
@@ -458,25 +549,21 @@ export const TableView = ({ scale }) => {
 
               {/* Table label */}
               <div
-                className="absolute transform -translate-x-1/2 bg-amber-800 border-4 border-amber-900 rounded-lg shadow-xl flex items-center justify-center"
+                className="absolute transform -translate-x-1/2 flex items-center justify-center"
                 style={{
                   left: '50%',
                   bottom: `${LAYOUT.TABLE_LABEL_BOTTOM}px`,
                   width: `${LAYOUT.TABLE_LABEL_WIDTH}px`,
-                  height: `${LAYOUT.TABLE_LABEL_HEIGHT}px`
+                  height: `${LAYOUT.TABLE_LABEL_HEIGHT}px`,
+                  background: 'linear-gradient(180deg, #3d2510 0%, #2a1808 100%)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(212,168,71,0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                 }}
               >
-                <div className="text-white font-bold text-2xl">TABLE</div>
+                <div style={{ fontFamily: "'Playfair Display', serif", color: '#d4a847', fontSize: '20px', fontWeight: 700, letterSpacing: '4px' }}>TABLE</div>
               </div>
             </div>
-
-            {/* Street selector and controls */}
-            <StreetSelector
-              currentStreet={currentStreet}
-              onStreetChange={handleStreetChange}
-              onNextStreet={nextStreet}
-              onClearStreet={clearStreetActions}
-            />
 
             {/* Context menu */}
             <SeatContextMenu
@@ -489,18 +576,44 @@ export const TableView = ({ scale }) => {
               recentPlayers={getRecentPlayers(20, true)}
               getSeatPlayerName={getSeatPlayerName}
             />
-
-            {/* Action panel */}
-            <ActionPanel
-              selectedPlayers={selectedPlayers}
-              currentStreet={currentStreet}
-              seatActions={seatActions}
-              onClearSelection={handleClearSelection}
-              onToggleAbsent={toggleAbsent}
-              onClearSeatActions={clearSeatActions}
-              onUndoLastAction={undoLastAction}
-            />
           </div>
+
+          {/* Command Strip - unified right panel */}
+          <CommandStrip
+            currentStreet={currentStreet}
+            onStreetChange={handleStreetChange}
+            onNextStreet={nextStreet}
+            onClearStreet={handleClearStreetWithAutoSelect}
+            selectedPlayers={selectedPlayers}
+            dealerButtonSeat={dealerButtonSeat}
+            onClearSelection={handleClearSelection}
+            onToggleAbsent={toggleAbsent}
+            onClearSeatActions={clearSeatActions}
+            onUndoLastAction={undoLastAction}
+            onAdvanceSeat={handleAdvanceSeat}
+            remainingCount={remainingCount}
+            canCheckAround={canCheckAround}
+            onRestFold={handleRestFold}
+            onCheckAround={handleCheckAround}
+            onNextHand={handleNextHandWithToast}
+            onResetHand={handleResetHandWithToast}
+            showCardSelector={showCardSelector}
+            communityCards={communityCards}
+            holeCards={holeCards}
+            holeCardsVisible={holeCardsVisible}
+            cardSelectorType={cardSelectorType}
+            highlightedBoardIndex={highlightedBoardIndex}
+            onSelectCard={selectCard}
+            onCloseCardSelector={handleCloseCardSelector}
+            getCardStreet={getCardStreet}
+            setCardSelectorType={setCardSelectorType}
+            setHighlightedCardIndex={setHighlightedCardIndex}
+            onToggleHoleVisibility={handleToggleHoleCardsVisibility}
+            onClearBoard={() => clearCards('community')}
+            onClearHole={() => clearCards('hole')}
+            nextActionSeat={selectedPlayers.length === 1 ? getNextActionSeat(selectedPlayers[0]) : null}
+            getSeatPlayerName={getSeatPlayerName}
+          />
 
         </div>
       </div>
@@ -513,6 +626,8 @@ export const TableView = ({ scale }) => {
         onClose={() => setRangeDetailSeat(null)}
         isOpen={rangeDetailSeat !== null}
       />
+
+      {/* Card selector is now inline in CommandStrip */}
     </div>
   );
 };

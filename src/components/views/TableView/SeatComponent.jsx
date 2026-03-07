@@ -5,7 +5,7 @@ import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { ExploitBadges } from '../../ui/ExploitBadges';
-import { LAYOUT, ACTIONS, ACTION_ABBREV } from '../../../constants/gameConstants';
+import { LAYOUT } from '../../../constants/gameConstants';
 
 /**
  * SeatComponent - Individual seat with action badges, position badges, and hole cards
@@ -32,10 +32,13 @@ export const SeatComponent = ({
   onHoleCardClick,
   onToggleVisibility,
   onOpenRangeDetail,
+  seatBet,
+  isPFR,
 }) => {
   // Calculate player name offset based on position badges
-  const hasPositionBadge = isDealer || isSmallBlind || isBigBlind;
-  const playerNameMarginTop = hasPositionBadge ? '36px' : '4px';
+  const hasOtherBadge = isDealer || isSmallBlind || isBigBlind;
+  const hasPositionBadge = hasOtherBadge || isPFR;
+  const playerNameMarginTop = (hasOtherBadge && isPFR) ? '64px' : hasPositionBadge ? '36px' : '4px';
 
   return (
     <div
@@ -49,21 +52,50 @@ export const SeatComponent = ({
             actions={actionArray}
             size="small"
             maxVisible={2}
-            ACTIONS={ACTIONS}
-            ACTION_ABBREV={ACTION_ABBREV}
           />
         </div>
       )}
 
-      {/* Seat button */}
-      <button
-        onClick={() => onSeatClick(seat)}
-        onContextMenu={(e) => onSeatRightClick(e, seat)}
-        className={`rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
-        style={{ width: `${LAYOUT.SEAT_SIZE}px`, height: `${LAYOUT.SEAT_SIZE}px` }}
-      >
-        {seat}
-      </button>
+      {/* Chip bet indicator — placed on inner concentric stadium (60% scale) */}
+      {seatBet > 0 && (
+        <div
+          className="absolute z-10 pointer-events-none"
+          style={(() => {
+            const INNER_SCALE = 0.75;
+            const half = LAYOUT.SEAT_SIZE / 2;
+            // Chip position on inner stadium (scaled toward felt center)
+            const chipX = 50 + (x - 50) * INNER_SCALE;
+            const chipY = 50 + (y - 50) * INNER_SCALE;
+            // Pixel offset from seat center
+            const ox = ((chipX - x) / 100) * LAYOUT.FELT_WIDTH;
+            const oy = ((chipY - y) / 100) * LAYOUT.FELT_HEIGHT;
+            return {
+              left: `${half + ox}px`,
+              top: `${half + oy}px`,
+              transform: 'translate(-50%, -50%)',
+            };
+          })()}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-4 h-4 rounded-full bg-yellow-400 border-2 border-yellow-600 shadow" />
+            <div className="bg-black/70 text-yellow-300 text-xs font-bold px-1 rounded whitespace-nowrap -mt-0.5">
+              ${seatBet}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Seat button with expanded hit area */}
+      <div className="relative" style={{ width: `${LAYOUT.SEAT_SIZE}px`, height: `${LAYOUT.SEAT_SIZE}px` }}>
+        <button
+          onClick={() => onSeatClick(seat)}
+          onContextMenu={(e) => onSeatRightClick(e, seat)}
+          className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
+          style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px` }}
+        >
+          {seat}
+        </button>
+      </div>
 
       {/* Dealer button */}
       {isDealer && (
@@ -83,6 +115,16 @@ export const SeatComponent = ({
       {isBigBlind && (
         <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2">
           <PositionBadge type="bb" size="large" />
+        </div>
+      )}
+
+      {/* PFR badge — shown on postflop streets */}
+      {isPFR && (
+        <div
+          className="absolute top-full left-1/2 transform -translate-x-1/2"
+          style={{ marginTop: (isDealer || isSmallBlind || isBigBlind) ? '36px' : '8px' }}
+        >
+          <PositionBadge type="pfr" size="large" />
         </div>
       )}
 
@@ -180,4 +222,6 @@ SeatComponent.propTypes = {
   onHoleCardClick: PropTypes.func.isRequired,
   onToggleVisibility: PropTypes.func.isRequired,
   onOpenRangeDetail: PropTypes.func,
+  seatBet: PropTypes.number,
+  isPFR: PropTypes.bool,
 };
