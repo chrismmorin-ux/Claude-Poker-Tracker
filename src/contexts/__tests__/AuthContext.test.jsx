@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * AuthContext.test.jsx - Tests for authentication state context provider
  */

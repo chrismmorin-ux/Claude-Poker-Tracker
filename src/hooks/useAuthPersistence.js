@@ -15,17 +15,13 @@ import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { AUTH_ACTIONS } from '../constants/authConstants';
-import { logger } from '../utils/errorHandler';
+import { createPersistenceLogger } from '../utils/persistence/index';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const MODULE_NAME = 'useAuthPersistence';
-
-// Backward-compatible logging wrappers
-const log = (...args) => logger.debug(MODULE_NAME, ...args);
-const logError = (error) => logger.error(MODULE_NAME, error);
+const { log, logError } = createPersistenceLogger('useAuthPersistence');
 
 // =============================================================================
 // AUTH PERSISTENCE HOOK

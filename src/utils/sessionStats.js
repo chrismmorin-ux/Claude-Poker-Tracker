@@ -5,10 +5,9 @@
  * Computes per-seat stats for a single session's hands.
  */
 
-import { buildPlayerStats, derivePercentages, findPlayerSeat } from './tendencyCalculations';
+import { buildPlayerStats, derivePercentages, findPlayerSeat, classifyStyle } from './tendencyCalculations';
 import { buildTimeline, getStreetTimeline } from './handTimeline';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
-import { classifyStyle } from '../hooks/usePlayerTendencies';
 
 /**
  * Count preflop limps for a player across hands.

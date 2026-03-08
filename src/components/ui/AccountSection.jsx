@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { PasswordInput } from './PasswordInput';
 import { AUTH_PROVIDERS, MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
+import { GOLD } from '../../constants/designTokens';
 
 export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowToast }) => {
   const {
@@ -153,7 +154,7 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
   if (isGuest) {
     return (
       <div className="bg-gray-800 rounded-lg p-5">
-        <h3 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD }}>
           <User className="w-5 h-5" />
           Account
         </h3>
@@ -188,7 +189,7 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
   // AUTHENTICATED VIEW: Show profile and account management
   return (
     <div className="bg-gray-800 rounded-lg p-5">
-      <h3 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD }}>
         <User className="w-5 h-5" />
         Account
       </h3>

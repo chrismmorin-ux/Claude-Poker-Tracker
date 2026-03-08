@@ -4,7 +4,6 @@ import {
   extractPreflopStats,
   extractPostflopAggression,
   buildPlayerStats,
-  updatePlayerStats,
   createEmptyStats,
   derivePercentages,
 } from '../tendencyCalculations';
@@ -467,45 +466,6 @@ describe('buildPlayerStats (C-bet)', () => {
 });
 
 // =============================================================================
-// updatePlayerStats (incremental)
-// =============================================================================
-
-describe('updatePlayerStats', () => {
-  it('incrementally adds one hand to existing stats', () => {
-    const existing = createEmptyStats();
-    existing.handsSeenPreflop = 5;
-    existing.vpipCount = 3;
-    existing.pfrCount = 2;
-    existing.totalBets = 1;
-    existing.totalRaises = 1;
-    existing.totalCalls = 2;
-    existing.lastCalculatedHandId = 5;
-
-    const newHand = makeHand(
-      { '3': 10 },
-      { preflop: { '3': ['call'] }, flop: { '3': ['call'] } },
-      6
-    );
-
-    const updated = updatePlayerStats(existing, 10, newHand);
-    expect(updated.handsSeenPreflop).toBe(6);
-    expect(updated.vpipCount).toBe(4);
-    expect(updated.pfrCount).toBe(2);
-    expect(updated.totalCalls).toBe(3);
-    expect(updated.lastCalculatedHandId).toBe(6);
-  });
-
-  it('does not mutate existing stats', () => {
-    const existing = createEmptyStats();
-    const hand = makeHand({ '3': 10 }, { preflop: { '3': ['raise'] } }, 1);
-
-    const updated = updatePlayerStats(existing, 10, hand);
-    expect(existing.handsSeenPreflop).toBe(0);
-    expect(updated.handsSeenPreflop).toBe(1);
-  });
-});
-
-// =============================================================================
 // derivePercentages
 // =============================================================================
 
@@ -644,5 +604,156 @@ describe('derivePercentages', () => {
     const result = derivePercentages(stats);
     expect(result.vpip).toBe(33);
     expect(result.pfr).toBe(33);
+  });
+
+  it('returns foldToCbet: null when facedCbet === 0', () => {
+    const stats = createEmptyStats();
+    stats.handsSeenPreflop = 10;
+
+    const result = derivePercentages(stats);
+    expect(result.foldToCbet).toBeNull();
+  });
+
+  it('returns correct foldToCbet percentage', () => {
+    const stats = createEmptyStats();
+    Object.assign(stats, {
+      handsSeenPreflop: 20,
+      facedCbet: 10,
+      foldedToCbet: 6,
+    });
+
+    const result = derivePercentages(stats);
+    expect(result.foldToCbet).toBe(60); // 6/10 = 60%
+  });
+
+  it('rounds foldToCbet to whole number', () => {
+    const stats = createEmptyStats();
+    Object.assign(stats, {
+      handsSeenPreflop: 20,
+      facedCbet: 3,
+      foldedToCbet: 2,
+    });
+
+    const result = derivePercentages(stats);
+    expect(result.foldToCbet).toBe(67); // 2/3 = 66.7 -> 67%
+  });
+});
+
+// =============================================================================
+// createEmptyStats — foldToCbet fields
+// =============================================================================
+
+describe('createEmptyStats (foldToCbet fields)', () => {
+  it('includes facedCbet: 0', () => {
+    const stats = createEmptyStats();
+    expect(stats.facedCbet).toBe(0);
+  });
+
+  it('includes foldedToCbet: 0', () => {
+    const stats = createEmptyStats();
+    expect(stats.foldedToCbet).toBe(0);
+  });
+});
+
+// =============================================================================
+// buildPlayerStats — foldToCbet accumulation
+// =============================================================================
+
+describe('buildPlayerStats (fold-to-cbet)', () => {
+  it('accumulates facedCbet when player calls a c-bet', () => {
+    // Seat 3 raises preflop, seat 7 calls. Seat 3 bets flop (c-bet), seat 7 calls.
+    const hand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'bet', street: 'flop', order: 3 },
+        { seat: '7', action: 'call', street: 'flop', order: 4 },
+      ]
+    );
+
+    const stats = buildPlayerStats(20, [hand]);
+    expect(stats.facedCbet).toBe(1);
+    expect(stats.foldedToCbet).toBe(0);
+  });
+
+  it('accumulates foldedToCbet when player folds to a c-bet', () => {
+    const hand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'bet', street: 'flop', order: 3 },
+        { seat: '7', action: 'fold', street: 'flop', order: 4 },
+      ]
+    );
+
+    const stats = buildPlayerStats(20, [hand]);
+    expect(stats.facedCbet).toBe(1);
+    expect(stats.foldedToCbet).toBe(1);
+  });
+
+  it('does not accumulate facedCbet for the preflop raiser', () => {
+    // Seat 3 is the preflop raiser — they cannot face their own c-bet
+    const hand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'bet', street: 'flop', order: 3 },
+        { seat: '7', action: 'call', street: 'flop', order: 4 },
+      ]
+    );
+
+    const stats = buildPlayerStats(10, [hand]);
+    expect(stats.facedCbet).toBe(0);
+    expect(stats.foldedToCbet).toBe(0);
+  });
+
+  it('does not accumulate facedCbet when no c-bet occurred', () => {
+    // Preflop raiser checks the flop — no c-bet
+    const hand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'check', street: 'flop', order: 3 },
+        { seat: '7', action: 'bet', street: 'flop', order: 4 },
+      ]
+    );
+
+    const stats = buildPlayerStats(20, [hand]);
+    expect(stats.facedCbet).toBe(0);
+    expect(stats.foldedToCbet).toBe(0);
+  });
+
+  it('accumulates correctly across multiple hands', () => {
+    const foldHand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'bet', street: 'flop', order: 3 },
+        { seat: '7', action: 'fold', street: 'flop', order: 4 },
+      ],
+      1
+    );
+    const callHand = makeSequenceHand(
+      { '3': 10, '7': 20 },
+      [
+        { seat: '3', action: 'raise', street: 'preflop', order: 1 },
+        { seat: '7', action: 'call', street: 'preflop', order: 2 },
+        { seat: '3', action: 'bet', street: 'flop', order: 3 },
+        { seat: '7', action: 'call', street: 'flop', order: 4 },
+      ],
+      2
+    );
+
+    const stats = buildPlayerStats(20, [foldHand, callHand]);
+    expect(stats.facedCbet).toBe(2);
+    expect(stats.foldedToCbet).toBe(1);
+
+    const pct = derivePercentages(stats);
+    expect(pct.foldToCbet).toBe(50); // 1/2 = 50%
   });
 });

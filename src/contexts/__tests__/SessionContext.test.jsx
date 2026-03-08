@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SessionContext.test.jsx - Tests for session state context provider
  */

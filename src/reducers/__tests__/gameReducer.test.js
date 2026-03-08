@@ -1,5 +1,8 @@
 /**
  * gameReducer.test.js - Tests for game state reducer
+ *
+ * Note: seatActions and showdownActions are derived in GameContext from actionSequence.
+ * The reducer only manages actionSequence as the single source of truth.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -22,8 +25,13 @@ describe('gameReducer', () => {
       expect(initialGameState.currentStreet).toBe('preflop');
       expect(initialGameState.dealerButtonSeat).toBe(1);
       expect(initialGameState.mySeat).toBe(5);
-      expect(initialGameState.seatActions).toEqual({});
       expect(initialGameState.absentSeats).toEqual([]);
+      expect(initialGameState.actionSequence).toEqual([]);
+    });
+
+    it('does not have legacy fields in state', () => {
+      expect(initialGameState).not.toHaveProperty('seatActions');
+      expect(initialGameState).not.toHaveProperty('showdownActions');
     });
   });
 
@@ -66,169 +74,88 @@ describe('gameReducer', () => {
     });
   });
 
-  describe('RECORD_ACTION', () => {
-    it('records action for single seat', () => {
+  describe('RECORD_SHOWDOWN_ACTION', () => {
+    it('appends showdown action to actionSequence', () => {
       const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [3], action: 'fold' },
-      });
-      expect(newState.seatActions.preflop[3]).toEqual(['fold']);
-    });
-
-    it('records action for multiple seats', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [1, 2, 3], action: 'fold' },
-      });
-      expect(newState.seatActions.preflop[1]).toEqual(['fold']);
-      expect(newState.seatActions.preflop[2]).toEqual(['fold']);
-      expect(newState.seatActions.preflop[3]).toEqual(['fold']);
-    });
-
-    it('appends multiple actions for same seat', () => {
-      state.seatActions = { preflop: { 5: ['call'] } };
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [5], action: '3bet' },
-      });
-      expect(newState.seatActions.preflop[5]).toEqual(['call', '3bet']);
-    });
-
-    it('removes seat from absent list when action recorded', () => {
-      state.absentSeats = [3, 5, 7];
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [5], action: 'fold' },
-      });
-      expect(newState.absentSeats).toEqual([3, 7]);
-    });
-
-    it('records actions for correct street', () => {
-      state.currentStreet = 'flop';
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [2], action: 'check' },
-      });
-      expect(newState.seatActions.flop[2]).toEqual(['check']);
-      expect(newState.seatActions.preflop).toBeUndefined();
-    });
-
-    it('rejects invalid action type', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [3], action: 'invalid_action_xyz' },
-      });
-      // State should be unchanged
-      expect(newState.seatActions).toEqual({});
-    });
-
-    it('rejects if all seats are invalid', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [0, 10, -1], action: 'fold' },
-      });
-      // State should be unchanged
-      expect(newState.seatActions).toEqual({});
-    });
-
-    it('filters out invalid seats but processes valid ones', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [0, 3, 10, 5], action: 'fold' },
-      });
-      // Only seats 3 and 5 should be recorded (valid seats)
-      expect(newState.seatActions.preflop[3]).toEqual(['fold']);
-      expect(newState.seatActions.preflop[5]).toEqual(['fold']);
-      // Invalid seats should not be recorded
-      expect(newState.seatActions.preflop[0]).toBeUndefined();
-      expect(newState.seatActions.preflop[10]).toBeUndefined();
-    });
-
-    it('populates actionSequence for single seat', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [3], action: 'fold' },
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 3, action: 'mucked' },
       });
       expect(newState.actionSequence).toHaveLength(1);
       expect(newState.actionSequence[0].seat).toBe(3);
-      expect(newState.actionSequence[0].action).toBe('fold');
-      expect(newState.actionSequence[0].street).toBe('preflop');
-      expect(newState.actionSequence[0].order).toBe(1);
+      expect(newState.actionSequence[0].action).toBe('mucked');
+      expect(newState.actionSequence[0].street).toBe('showdown');
     });
 
-    it('populates actionSequence for multiple seats with incrementing order', () => {
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [1, 2, 3], action: 'fold' },
+    it('appends multiple showdown actions', () => {
+      let s = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 5, action: 'won' },
       });
-      expect(newState.actionSequence).toHaveLength(3);
-      expect(newState.actionSequence[0].seat).toBe(1);
-      expect(newState.actionSequence[1].seat).toBe(2);
-      expect(newState.actionSequence[2].seat).toBe(3);
-      expect(newState.actionSequence[0].order).toBe(1);
-      expect(newState.actionSequence[1].order).toBe(2);
-      expect(newState.actionSequence[2].order).toBe(3);
+      s = gameReducer(s, {
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 3, action: 'mucked' },
+      });
+      expect(s.actionSequence).toHaveLength(2);
+      expect(s.actionSequence[0].action).toBe('won');
+      expect(s.actionSequence[1].action).toBe('mucked');
     });
 
-    it('appends to existing actionSequence', () => {
-      state.actionSequence = [
-        { seat: 1, action: 'call', street: 'preflop', order: 1 },
-      ];
+    it('rejects invalid seat', () => {
       const newState = gameReducer(state, {
-        type: GAME_ACTIONS.RECORD_ACTION,
-        payload: { seats: [5], action: 'fold' },
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 0, action: 'mucked' },
       });
-      expect(newState.actionSequence).toHaveLength(2);
-      expect(newState.actionSequence[1].seat).toBe(5);
-      expect(newState.actionSequence[1].order).toBe(2);
+      expect(newState.actionSequence).toEqual([]);
+    });
+
+    it('rejects non-showdown actions', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 2, action: 'fold' },
+      });
+      expect(newState.actionSequence).toEqual([]);
+    });
+
+    it('always writes with street showdown regardless of currentStreet', () => {
+      state.currentStreet = 'flop';
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 2, action: 'won' },
+      });
+      expect(newState.actionSequence[0].street).toBe('showdown');
     });
   });
 
   describe('CLEAR_STREET_ACTIONS', () => {
-    it('clears actions for current street', () => {
-      state.seatActions = {
-        preflop: { 1: ['fold'], 2: ['call'] },
-        flop: { 3: ['check'] },
-      };
-      const newState = gameReducer(state, { type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
-      expect(newState.seatActions.preflop).toBeUndefined();
-      expect(newState.seatActions.flop).toEqual({ 3: ['check'] });
-    });
-
     it('removes matching street entries from actionSequence', () => {
       state.actionSequence = [
         { seat: 1, action: 'fold', street: 'preflop', order: 1 },
         { seat: 2, action: 'call', street: 'preflop', order: 2 },
         { seat: 3, action: 'check', street: 'flop', order: 3 },
       ];
-      state.seatActions = { preflop: { 1: ['fold'], 2: ['call'] }, flop: { 3: ['check'] } };
       const newState = gameReducer(state, { type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
       expect(newState.actionSequence).toHaveLength(1);
       expect(newState.actionSequence[0].street).toBe('flop');
     });
+
+    it('preserves showdown entries in actionSequence', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 3, action: 'won', street: 'showdown', order: 2 },
+      ];
+      const newState = gameReducer(state, { type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
+      expect(newState.actionSequence).toHaveLength(1);
+      expect(newState.actionSequence[0].street).toBe('showdown');
+    });
   });
 
   describe('CLEAR_SEAT_ACTIONS', () => {
-    it('clears actions for specified seats on current street', () => {
-      state.seatActions = {
-        preflop: { 1: ['fold'], 2: ['call'], 3: ['open'] },
-      };
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.CLEAR_SEAT_ACTIONS,
-        payload: [1, 3],
-      });
-      expect(newState.seatActions.preflop[1]).toBeUndefined();
-      expect(newState.seatActions.preflop[2]).toEqual(['call']);
-      expect(newState.seatActions.preflop[3]).toBeUndefined();
-    });
-
     it('removes matching seat+street entries from actionSequence', () => {
       state.actionSequence = [
         { seat: 1, action: 'fold', street: 'preflop', order: 1 },
         { seat: 2, action: 'call', street: 'preflop', order: 2 },
         { seat: 3, action: 'fold', street: 'preflop', order: 3 },
       ];
-      state.seatActions = { preflop: { 1: ['fold'], 2: ['call'], 3: ['fold'] } };
       const newState = gameReducer(state, {
         type: GAME_ACTIONS.CLEAR_SEAT_ACTIONS,
         payload: [1, 3],
@@ -239,35 +166,7 @@ describe('gameReducer', () => {
   });
 
   describe('UNDO_LAST_ACTION', () => {
-    it('removes last action from seat', () => {
-      state.seatActions = { preflop: { 5: ['call', '3bet'] } };
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.UNDO_LAST_ACTION,
-        payload: 5,
-      });
-      expect(newState.seatActions.preflop[5]).toEqual(['call']);
-    });
-
-    it('removes seat entry when no actions left', () => {
-      state.seatActions = { preflop: { 5: ['call'] } };
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.UNDO_LAST_ACTION,
-        payload: 5,
-      });
-      expect(newState.seatActions.preflop[5]).toBeUndefined();
-    });
-
-    it('returns same state if no actions to undo', () => {
-      state.seatActions = { preflop: {} };
-      const newState = gameReducer(state, {
-        type: GAME_ACTIONS.UNDO_LAST_ACTION,
-        payload: 5,
-      });
-      expect(newState).toBe(state);
-    });
-
-    it('removes corresponding entry from actionSequence', () => {
-      state.seatActions = { preflop: { 5: ['call', 'raise'] } };
+    it('removes last action for seat from actionSequence', () => {
       state.actionSequence = [
         { seat: 5, action: 'call', street: 'preflop', order: 1 },
         { seat: 5, action: 'raise', street: 'preflop', order: 2 },
@@ -278,6 +177,28 @@ describe('gameReducer', () => {
       });
       expect(newState.actionSequence).toHaveLength(1);
       expect(newState.actionSequence[0].action).toBe('call');
+    });
+
+    it('returns same state if no actions to undo', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_LAST_ACTION,
+        payload: 5,
+      });
+      expect(newState).toBe(state);
+    });
+
+    it('only removes from current street', () => {
+      state.currentStreet = 'flop';
+      state.actionSequence = [
+        { seat: 5, action: 'call', street: 'preflop', order: 1 },
+        { seat: 5, action: 'bet', street: 'flop', order: 2 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_LAST_ACTION,
+        payload: 5,
+      });
+      expect(newState.actionSequence).toHaveLength(1);
+      expect(newState.actionSequence[0].street).toBe('preflop');
     });
   });
 
@@ -316,14 +237,17 @@ describe('gameReducer', () => {
   describe('RESET_HAND', () => {
     it('resets street and actions but keeps dealer', () => {
       state.currentStreet = 'river';
-      state.seatActions = { preflop: { 1: ['fold'] }, flop: { 2: ['check'] } };
       state.absentSeats = [5, 7];
       state.dealerButtonSeat = 4;
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 3, action: 'won', street: 'showdown', order: 2 },
+      ];
 
       const newState = gameReducer(state, { type: GAME_ACTIONS.RESET_HAND });
 
       expect(newState.currentStreet).toBe('preflop');
-      expect(newState.seatActions).toEqual({});
+      expect(newState.actionSequence).toEqual([]);
       expect(newState.absentSeats).toEqual([]);
       expect(newState.dealerButtonSeat).toBe(4);
     });
@@ -332,14 +256,17 @@ describe('gameReducer', () => {
   describe('NEXT_HAND', () => {
     it('resets for new hand and advances dealer', () => {
       state.currentStreet = 'showdown';
-      state.seatActions = { preflop: { 1: ['call'] } };
       state.absentSeats = [3];
       state.dealerButtonSeat = 5;
+      state.actionSequence = [
+        { seat: 1, action: 'call', street: 'preflop', order: 1 },
+        { seat: 1, action: 'won', street: 'showdown', order: 2 },
+      ];
 
       const newState = gameReducer(state, { type: GAME_ACTIONS.NEXT_HAND });
 
       expect(newState.currentStreet).toBe('preflop');
-      expect(newState.seatActions).toEqual({});
+      expect(newState.actionSequence).toEqual([]);
       expect(newState.dealerButtonSeat).toBe(6);
       // absentSeats should be preserved
       expect(newState.absentSeats).toEqual([3]);
@@ -353,11 +280,13 @@ describe('gameReducer', () => {
   });
 
   describe('HYDRATE_STATE', () => {
-    it('merges loaded state', () => {
+    it('merges loaded state with new format', () => {
       const loadedState = {
         currentStreet: 'turn',
         dealerButtonSeat: 8,
-        seatActions: { preflop: { 1: ['fold'] } },
+        actionSequence: [
+          { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        ],
       };
       const newState = gameReducer(state, {
         type: GAME_ACTIONS.HYDRATE_STATE,
@@ -366,8 +295,88 @@ describe('gameReducer', () => {
 
       expect(newState.currentStreet).toBe('turn');
       expect(newState.dealerButtonSeat).toBe(8);
-      expect(newState.seatActions).toEqual({ preflop: { 1: ['fold'] } });
+      expect(newState.actionSequence).toHaveLength(1);
       expect(newState.mySeat).toBe(5); // Original value preserved
+      expect(newState).not.toHaveProperty('seatActions');
+      expect(newState).not.toHaveProperty('showdownActions');
+    });
+
+    it('migrates legacy showdownActions into actionSequence', () => {
+      const loadedState = {
+        currentStreet: 'showdown',
+        showdownActions: { 3: ['won'], 5: ['mucked'] },
+        actionSequence: [
+          { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        ],
+      };
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.HYDRATE_STATE,
+        payload: loadedState,
+      });
+
+      // showdownActions should be converted to actionSequence entries
+      const showdownEntries = newState.actionSequence.filter(e => e.street === 'showdown');
+      expect(showdownEntries).toHaveLength(2);
+      expect(showdownEntries.find(e => e.seat === 3).action).toBe('won');
+      expect(showdownEntries.find(e => e.seat === 5).action).toBe('mucked');
+      expect(newState).not.toHaveProperty('showdownActions');
+    });
+
+    it('migrates legacy seatActions with showdown data', () => {
+      const loadedState = {
+        currentStreet: 'turn',
+        dealerButtonSeat: 8,
+        seatActions: {
+          preflop: { 1: ['fold'], 2: ['call'] },
+          showdown: { 3: ['won'] },
+        },
+      };
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.HYDRATE_STATE,
+        payload: loadedState,
+      });
+
+      // Showdown data migrated into actionSequence
+      const showdownEntries = newState.actionSequence.filter(e => e.street === 'showdown');
+      expect(showdownEntries).toHaveLength(1);
+      expect(showdownEntries[0].seat).toBe(3);
+      expect(showdownEntries[0].action).toBe('won');
+      expect(newState.actionSequence.length).toBeGreaterThan(1); // betting + showdown
+      expect(newState).not.toHaveProperty('seatActions');
+    });
+
+    it('migrates legacy seatActions without showdown data', () => {
+      const loadedState = {
+        currentStreet: 'flop',
+        seatActions: {
+          preflop: { 1: ['fold'] },
+        },
+      };
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.HYDRATE_STATE,
+        payload: loadedState,
+      });
+
+      expect(newState.actionSequence).toHaveLength(1);
+      expect(newState).not.toHaveProperty('seatActions');
+      expect(newState).not.toHaveProperty('showdownActions');
+    });
+
+    it('preserves actionSequence when present alongside legacy seatActions', () => {
+      const loadedState = {
+        seatActions: { preflop: { 1: ['fold'] } },
+        actionSequence: [
+          { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+          { seat: 2, action: 'call', street: 'preflop', order: 2 },
+        ],
+      };
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.HYDRATE_STATE,
+        payload: loadedState,
+      });
+
+      // Should keep the actionSequence as-is (not re-derive from legacy)
+      expect(newState.actionSequence).toHaveLength(2);
     });
   });
 
@@ -384,14 +393,15 @@ describe('gameReducer', () => {
       expect(GAME_STATE_SCHEMA).toHaveProperty('currentStreet');
       expect(GAME_STATE_SCHEMA).toHaveProperty('dealerButtonSeat');
       expect(GAME_STATE_SCHEMA).toHaveProperty('mySeat');
-      expect(GAME_STATE_SCHEMA).toHaveProperty('seatActions');
+      expect(GAME_STATE_SCHEMA).not.toHaveProperty('showdownActions');
       expect(GAME_STATE_SCHEMA).toHaveProperty('absentSeats');
       expect(GAME_STATE_SCHEMA).toHaveProperty('actionSequence');
+      expect(GAME_STATE_SCHEMA).not.toHaveProperty('seatActions');
     });
   });
 
   // ===========================================================================
-  // Phase 3: Action Sequence Tests
+  // Action Sequence Tests
   // ===========================================================================
 
   describe('RECORD_PRIMITIVE_ACTION', () => {

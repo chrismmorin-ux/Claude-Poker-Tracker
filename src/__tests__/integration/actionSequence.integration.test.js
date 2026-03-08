@@ -212,6 +212,160 @@ describe('Action Sequence Integration', () => {
     });
   });
 
+  describe('Undo and Clear operations', () => {
+    it('undo removes the last action for a seat on current street', () => {
+      let state = {
+        ...initialGameState,
+        currentStreet: 'preflop',
+      };
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 3, action: 'call' },
+      });
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 3, action: 'raise' },
+      });
+
+      expect(state.actionSequence).toHaveLength(2);
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_LAST_ACTION,
+        payload: 3,
+      });
+
+      expect(state.actionSequence).toHaveLength(1);
+      expect(state.actionSequence[0].action).toBe('call');
+    });
+
+    it('undo does nothing when no actions exist for seat', () => {
+      let state = { ...initialGameState, currentStreet: 'preflop' };
+
+      const beforeState = state;
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_LAST_ACTION,
+        payload: 5,
+      });
+
+      expect(state).toBe(beforeState);
+    });
+
+    it('clear seat actions removes only that seat on current street', () => {
+      let state = { ...initialGameState, currentStreet: 'preflop' };
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 3, action: 'call' },
+      });
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 5, action: 'raise' },
+      });
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.CLEAR_SEAT_ACTIONS,
+        payload: [3],
+      });
+
+      expect(state.actionSequence).toHaveLength(1);
+      expect(state.actionSequence[0].seat).toBe(5);
+    });
+
+    it('clear street actions removes all actions on current street', () => {
+      let state = { ...initialGameState, currentStreet: 'preflop' };
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 1, action: 'fold' },
+      });
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 2, action: 'call' },
+      });
+
+      state = gameReducer(state, { type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
+
+      expect(state.actionSequence).toHaveLength(0);
+    });
+  });
+
+  describe('Next hand lifecycle', () => {
+    it('NEXT_HAND clears actionSequence and advances dealer', () => {
+      let state = {
+        ...initialGameState,
+        currentStreet: 'flop',
+        dealerButtonSeat: 3,
+      };
+
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 1, action: 'check' },
+      });
+
+      state = gameReducer(state, { type: GAME_ACTIONS.NEXT_HAND });
+
+      expect(state.actionSequence).toEqual([]);
+      expect(state.currentStreet).toBe('preflop');
+      expect(state.dealerButtonSeat).toBe(4);
+      expect(state.actionSequence).toEqual([]);
+    });
+
+    it('NEXT_HAND preserves absentSeats', () => {
+      let state = {
+        ...initialGameState,
+        absentSeats: [2, 7],
+      };
+
+      state = gameReducer(state, { type: GAME_ACTIONS.NEXT_HAND });
+
+      expect(state.absentSeats).toEqual([2, 7]);
+    });
+
+    it('RESET_HAND clears absentSeats unlike NEXT_HAND', () => {
+      let state = {
+        ...initialGameState,
+        absentSeats: [2, 7],
+      };
+
+      state = gameReducer(state, { type: GAME_ACTIONS.RESET_HAND });
+
+      expect(state.absentSeats).toEqual([]);
+      expect(state.actionSequence).toEqual([]);
+    });
+
+    it('multi-street hand then next hand starts clean', () => {
+      let state = { ...initialGameState };
+
+      // Preflop
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 3, action: 'raise', amount: 8 },
+      });
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 5, action: 'call', amount: 8 },
+      });
+
+      // Advance to flop
+      state = gameReducer(state, { type: GAME_ACTIONS.SET_STREET, payload: 'flop' });
+
+      // Flop
+      state = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+        payload: { seat: 3, action: 'bet', amount: 10 },
+      });
+
+      expect(state.actionSequence).toHaveLength(3);
+
+      // Next hand
+      state = gameReducer(state, { type: GAME_ACTIONS.NEXT_HAND });
+
+      expect(state.actionSequence).toEqual([]);
+      expect(state.currentStreet).toBe('preflop');
+    });
+  });
+
   describe('Backwards compatibility', () => {
     it('handles hand with only seatActions (pre-migration)', () => {
       const legacyHand = {

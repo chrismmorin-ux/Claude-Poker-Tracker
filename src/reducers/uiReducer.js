@@ -34,20 +34,9 @@ export const UI_ACTIONS = {
   SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
 };
 
-// Screen constants
-export const SCREEN = {
-  TABLE: 'table',
-  STATS: 'stats',
-  HISTORY: 'history',
-  SESSIONS: 'sessions',
-  PLAYERS: 'players',
-  SETTINGS: 'settings',
-  ANALYSIS: 'analysis',
-  // Auth screens
-  LOGIN: 'login',
-  SIGNUP: 'signup',
-  PASSWORD_RESET: 'passwordReset',
-};
+// Import and re-export SCREEN from its canonical location
+import { SCREEN } from '../constants/uiConstants';
+export { SCREEN };
 
 // Initial state
 export const initialUiState = {
@@ -55,7 +44,7 @@ export const initialUiState = {
   selectedPlayers: [],
   contextMenu: null, // { x, y, seat }
   isDraggingDealer: false,
-  isSidebarCollapsed: false, // Sidebar starts expanded
+  isSidebarCollapsed: true, // Sidebar starts collapsed
   // Card selector state (moved from cardReducer)
   showCardSelector: false,
   cardSelectorType: 'community', // 'community' or 'hole'

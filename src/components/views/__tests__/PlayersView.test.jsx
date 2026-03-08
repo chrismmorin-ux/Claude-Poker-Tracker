@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PlayersView.test.jsx - Tests for player management view component
  */
@@ -10,6 +11,7 @@ import { PlayersView } from '../PlayersView';
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
   ChevronLeft: () => <span data-testid="chevron-left-icon">←</span>,
+  Users: () => <span data-testid="users-icon">U</span>,
   AlertCircle: () => <span>!</span>,
   CheckCircle: () => <span>✓</span>,
   Info: () => <span>i</span>,
@@ -98,6 +100,16 @@ const mockUIContext = {
 vi.mock('../../../contexts', () => ({
   usePlayer: () => mockPlayerContext,
   useUI: () => mockUIContext,
+}));
+
+// Mock persistence to suppress IndexedDB not supported warnings
+vi.mock('../../../utils/persistence/index', () => ({
+  getAllHands: vi.fn(() => Promise.resolve([])),
+  getHandsBySessionId: vi.fn(() => Promise.resolve([])),
+  savePlayer: vi.fn(() => Promise.resolve()),
+  deletePlayer: vi.fn(() => Promise.resolve()),
+  getAllPlayers: vi.fn(() => Promise.resolve([])),
+  GUEST_USER_ID: 'guest',
 }));
 
 // Mock usePlayerFiltering hook
@@ -217,7 +229,7 @@ describe('PlayersView', () => {
     it('shows empty state when no players', () => {
       mockPlayerContext.allPlayers = [];
       renderWithToast(<PlayersView {...defaultProps} />);
-      expect(screen.getByText(/No players yet/)).toBeInTheDocument();
+      expect(screen.getByText('No Players Yet')).toBeInTheDocument();
     });
   });
 

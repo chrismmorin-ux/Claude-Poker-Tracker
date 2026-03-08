@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * HistoryView.test.jsx - Tests for history view component
  */
@@ -126,7 +127,7 @@ describe('HistoryView', () => {
       renderWithToast(<HistoryView {...defaultProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText('No hands saved yet')).toBeInTheDocument();
+        expect(screen.getByText('No Hands Saved')).toBeInTheDocument();
       });
     });
   });

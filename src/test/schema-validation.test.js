@@ -115,7 +115,7 @@ describe('Schema Validation - Documentation Drift Detection', () => {
       expect(initialGameState).toHaveProperty('currentStreet');
       expect(initialGameState).toHaveProperty('dealerButtonSeat');
       expect(initialGameState).toHaveProperty('mySeat');
-      expect(initialGameState).toHaveProperty('seatActions');
+      expect(initialGameState).toHaveProperty('actionSequence');
       expect(initialGameState).toHaveProperty('absentSeats');
     });
 

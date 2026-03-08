@@ -137,7 +137,7 @@ export const TableView = ({ scale }) => {
 
   // Seat utils and color
   const { hasSeatFolded, getFirstActionSeat, getNextActionSeat, isStreetComplete, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats);
-  const getSeatColor = useSeatColor({ hasSeatFolded, selectedPlayers, mySeat, absentSeats, actionSequence, currentStreet });
+  const getSeatColor = useSeatColor({ hasSeatFolded, selectedPlayers, mySeat, absentSeats, actionSequence, currentStreet, smallBlindSeat, bigBlindSeat });
 
   // Dealer drag handlers (need tableRef)
   const handleDealerDragStart = useCallback((e) => {

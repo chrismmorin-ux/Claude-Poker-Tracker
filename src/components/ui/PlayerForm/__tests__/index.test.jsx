@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PlayerForm/index.test.jsx - Tests for main player form component
  */

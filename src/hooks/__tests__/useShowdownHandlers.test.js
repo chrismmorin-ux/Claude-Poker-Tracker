@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useShowdownHandlers.test.js - Tests for showdown handlers hook
  */
@@ -10,13 +11,14 @@ import { UI_ACTIONS } from '../../reducers/uiReducer';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { ACTIONS } from '../../constants/gameConstants';
 
-// Mock the seatNavigation module
-vi.mock('../../utils/seatNavigation', () => ({
+// Mock the seatUtils module
+vi.mock('../../utils/seatUtils', () => ({
   findFirstActiveSeat: vi.fn(() => 1),
   findNextActiveSeat: vi.fn(() => null),
+  isSeatShowdownActive: vi.fn(() => false),
 }));
 
-import { findFirstActiveSeat, findNextActiveSeat } from '../../utils/seatNavigation';
+import { findFirstActiveSeat, findNextActiveSeat, isSeatShowdownActive } from '../../utils/seatUtils';
 
 describe('useShowdownHandlers', () => {
   let dispatchCard;
@@ -37,26 +39,27 @@ describe('useShowdownHandlers', () => {
     log = vi.fn();
     vi.mocked(findFirstActiveSeat).mockReturnValue(1);
     vi.mocked(findNextActiveSeat).mockReturnValue(null);
+    vi.mocked(isSeatShowdownActive).mockReturnValue(false);
   });
 
   const createHook = (overrides = {}) => {
     const defaults = {
-      seatActions: {},
+      actionSequence: [],
       numSeats: 9,
     };
     const params = { ...defaults, ...overrides };
     return renderHook(() =>
-      useShowdownHandlers(
+      useShowdownHandlers({
         dispatchCard,
         dispatchUi,
         dispatchGame,
         isSeatInactive,
-        params.seatActions,
+        actionSequence: params.actionSequence,
         recordSeatAction,
         nextHand,
-        params.numSeats,
-        log
-      )
+        numSeats: params.numSeats,
+        log,
+      })
     );
   };
 
@@ -171,7 +174,9 @@ describe('useShowdownHandlers', () => {
       expect(recordSeatAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
     });
 
-    it('advances to next active seat', () => {
+    it('advances to next active seat when multiple remain', () => {
+      // Seats 5 and 7 are active (2 remaining after mucking 3)
+      vi.mocked(isSeatShowdownActive).mockImplementation((s) => s === 5 || s === 7);
       vi.mocked(findNextActiveSeat).mockReturnValue(5);
       const { result } = createHook();
 
@@ -189,7 +194,21 @@ describe('useShowdownHandlers', () => {
       });
     });
 
+    it('auto-wins last remaining seat on heads-up muck', () => {
+      // Only seat 5 remains active after mucking 3
+      vi.mocked(isSeatShowdownActive).mockImplementation((s) => s === 5);
+      const { result } = createHook();
+
+      act(() => {
+        result.current.handleMuckSeat(3);
+      });
+
+      expect(recordSeatAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
+      expect(recordSeatAction).toHaveBeenCalledWith(5, ACTIONS.WON);
+    });
+
     it('clears highlight when no more active seats', () => {
+      vi.mocked(isSeatShowdownActive).mockReturnValue(false);
       vi.mocked(findNextActiveSeat).mockReturnValue(null);
       const { result } = createHook();
 

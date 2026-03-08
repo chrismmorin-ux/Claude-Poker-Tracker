@@ -11,30 +11,27 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  createSession,
-  endSession as dbEndSession,
+  createSessionAtomic,
+  endSessionAtomic,
   getActiveSession,
-  setActiveSession,
   clearActiveSession,
   getAllSessions,
   getSessionById,
   updateSession,
   deleteSession as dbDeleteSession,
-  GUEST_USER_ID
+  GUEST_USER_ID,
+  createPersistenceLogger,
 } from '../utils/persistence/index';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
-import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
+import { AppError, ERROR_CODES } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 const DEBOUNCE_DELAY = 1500; // 1.5 seconds
-const MODULE_NAME = 'useSessionPersistence';
 
-// Backward-compatible logging wrappers
-const log = (...args) => logger.debug(MODULE_NAME, ...args);
-const logError = (error) => logger.error(MODULE_NAME, error);
+const { log, logError } = createPersistenceLogger('useSessionPersistence');
 
 // =============================================================================
 // SESSION PERSISTENCE HOOK
@@ -69,14 +66,12 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
         const activeSession = await getActiveSession(userId);
         const activeSessionId = activeSession?.sessionId || null;
 
-        // P1 Fix: Reconcile dual source of truth
-        // The activeSession store is the single source of truth.
-        // If any sessions have isActive=true but don't match, fix them.
+        // Safety net: reconcile isActive mismatches (indicates prior crash or legacy write)
         const allSessions = await getAllSessions(userId);
         for (const session of allSessions) {
           const shouldBeActive = session.sessionId === activeSessionId;
           if (session.isActive !== shouldBeActive) {
-            log(`Fixing isActive mismatch for session ${session.sessionId}: ${session.isActive} -> ${shouldBeActive}`);
+            log(`WARNING: isActive mismatch for session ${session.sessionId} (prior crash or legacy write) — fixing: ${session.isActive} -> ${shouldBeActive}`);
             await updateSession(session.sessionId, { isActive: shouldBeActive });
           }
         }
@@ -184,22 +179,14 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
    * If step 3 fails, steps 1-2 are rolled back to prevent orphan sessions.
    */
   const startNewSession = useCallback(async (sessionData = {}) => {
-    let sessionId = null;
-    let activeSessionSet = false;
-
     try {
       log(`Starting new session for user ${userId}...`);
 
-      // Step 1: Create session in database for this user
-      sessionId = await createSession(sessionData, userId);
-      log(`Session ${sessionId} created in database`);
+      // Atomic: create session + set active in single transaction
+      const sessionId = await createSessionAtomic(sessionData, userId);
+      log(`Session ${sessionId} created atomically`);
 
-      // Step 2: Set as active session for this user
-      await setActiveSession(sessionId, userId);
-      activeSessionSet = true;
-      log(`Session ${sessionId} set as active`);
-
-      // Step 3: Update reducer state (could fail)
+      // Update reducer state
       dispatchSession({
         type: SESSION_ACTIONS.START_SESSION,
         payload: {
@@ -218,31 +205,11 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
       log('New session started successfully');
       return sessionId;
     } catch (error) {
-      // Rollback: Clean up DB state if any step failed
       logError(new AppError(
         ERROR_CODES.OPERATION_FAILED,
-        'Failed to start new session, attempting rollback',
-        { sessionId, error: error.message }
+        'Failed to start new session',
+        { error: error.message }
       ));
-
-      try {
-        if (activeSessionSet) {
-          await clearActiveSession(userId);
-          log('Rollback: cleared active session');
-        }
-        if (sessionId) {
-          await dbDeleteSession(sessionId);
-          log(`Rollback: deleted session ${sessionId}`);
-        }
-      } catch (rollbackError) {
-        // Log but don't throw - original error is more important
-        logError(new AppError(
-          ERROR_CODES.OPERATION_FAILED,
-          'Rollback failed',
-          { rollbackError: rollbackError.message }
-        ));
-      }
-
       throw error;
     }
   }, [dispatchSession, userId]);
@@ -263,13 +230,9 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
 
       log(`Ending session ${sessionId} with cashOut: ${cashOut}...`);
 
-      // End session in database with cashOut
-      await dbEndSession(sessionId, cashOut);
-      log(`Session ${sessionId} ended in database`);
-
-      // Clear active session for this user
-      await clearActiveSession(userId);
-      log('Active session cleared');
+      // Atomic: end session + clear active marker in single transaction
+      await endSessionAtomic(sessionId, cashOut, userId);
+      log(`Session ${sessionId} ended atomically`);
 
       // Update reducer state
       dispatchSession({

@@ -2,58 +2,63 @@ import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { UI_ACTIONS } from '../reducers/uiReducer';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
-import { ACTIONS } from '../constants/gameConstants';
-import { findFirstActiveSeat, findNextActiveSeat } from '../utils/seatNavigation';
+import { ACTIONS, SEAT_ARRAY } from '../constants/gameConstants';
+import { findFirstActiveSeat, findNextActiveSeat, isSeatShowdownActive } from '../utils/seatUtils';
 
 /**
  * Custom hook for showdown view handlers
  * Encapsulates all showdown-specific handler logic
- * NOTE: View state actions moved from cardReducer to uiReducer in v114
  */
-export const useShowdownHandlers = (
+export const useShowdownHandlers = ({
   dispatchCard,
   dispatchUi,
   dispatchGame,
   isSeatInactive,
-  seatActions,
+  actionSequence,
   recordSeatAction,
   nextHand,
   numSeats,
-  log
-) => {
+  log,
+}) => {
   // Handler: Clear all player cards in showdown view
   const handleClearShowdownCards = useCallback(() => {
-    // Reset all player cards
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
-
-    // Clear showdown actions
     dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
 
-    // Find first active seat using unified utility
-    const firstActive = findFirstActiveSeat(numSeats, isSeatInactive, seatActions) || 1;
+    const firstActive = findFirstActiveSeat(numSeats, isSeatInactive, actionSequence) || 1;
     dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActive });
     dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
     log('handleClearShowdownCards: cards cleared, first active seat selected');
-  }, [dispatchCard, dispatchUi, dispatchGame, isSeatInactive, seatActions, numSeats, log]);
+  }, [dispatchCard, dispatchUi, dispatchGame, isSeatInactive, actionSequence, numSeats, log]);
 
   // Helper: Advance to next active seat in showdown (skips folded/absent/mucked/won)
   const advanceToNextActiveSeat = useCallback((fromSeat) => {
-    const nextSeat = findNextActiveSeat(fromSeat, numSeats, isSeatInactive, seatActions);
+    const nextSeat = findNextActiveSeat(fromSeat, numSeats, isSeatInactive, actionSequence);
     if (nextSeat !== null) {
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
     } else {
-      // No more active seats, deselect
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
     }
-  }, [isSeatInactive, seatActions, dispatchUi, numSeats]);
+  }, [isSeatInactive, actionSequence, dispatchUi, numSeats]);
 
-  // Handler: Mark seat as mucked and advance
+  // Handler: Mark seat as mucked and advance (auto-win on heads-up)
   const handleMuckSeat = useCallback((seat) => {
     recordSeatAction(seat, ACTIONS.MUCKED);
-    advanceToNextActiveSeat(seat);
-  }, [recordSeatAction, advanceToNextActiveSeat]);
+
+    // HE-2c: After mucking, count remaining active seats (exclude just-mucked seat)
+    const remaining = SEAT_ARRAY.filter(
+      s => s !== seat && isSeatShowdownActive(s, isSeatInactive, actionSequence)
+    );
+    if (remaining.length === 1) {
+      // Auto-mark last player as winner
+      recordSeatAction(remaining[0], ACTIONS.WON);
+      log('Auto-win: Seat', remaining[0], '(last active after muck)');
+    } else {
+      advanceToNextActiveSeat(seat);
+    }
+  }, [recordSeatAction, advanceToNextActiveSeat, isSeatInactive, actionSequence, log]);
 
   // Handler: Mark seat as winner and advance
   const handleWonSeat = useCallback((seat) => {

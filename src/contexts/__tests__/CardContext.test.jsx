@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * CardContext.test.jsx - Tests for card state context provider
  */

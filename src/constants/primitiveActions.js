@@ -82,15 +82,15 @@ export const PRIMITIVE_ACTION_VALUES = Object.values(PRIMITIVE_ACTIONS);
  */
 /**
  * Button configuration for primitive action buttons.
- * Maps each primitive action to its display label and Tailwind color classes.
+ * Colors sourced from designTokens.ACTION_COLORS.
  * @constant {Object} PRIMITIVE_BUTTON_CONFIG
  */
 export const PRIMITIVE_BUTTON_CONFIG = {
-  [PRIMITIVE_ACTIONS.CHECK]:  { label: 'Check', bgColor: 'bg-blue-400',   hoverColor: 'hover:bg-blue-500',   textColor: 'text-white' },
-  [PRIMITIVE_ACTIONS.BET]:    { label: 'Bet',   bgColor: 'bg-green-400',  hoverColor: 'hover:bg-green-500',  textColor: 'text-white' },
-  [PRIMITIVE_ACTIONS.CALL]:   { label: 'Call',  bgColor: 'bg-blue-300',   hoverColor: 'hover:bg-blue-400',   textColor: 'text-white' },
-  [PRIMITIVE_ACTIONS.RAISE]:  { label: 'Raise', bgColor: 'bg-orange-400', hoverColor: 'hover:bg-orange-500', textColor: 'text-white' },
-  [PRIMITIVE_ACTIONS.FOLD]:   { label: 'Fold',  bgColor: 'bg-red-400',    hoverColor: 'hover:bg-red-500',    textColor: 'text-white' },
+  [PRIMITIVE_ACTIONS.CHECK]:  { label: 'Check', bg: '#0891b2', hover: '#0e7490' },
+  [PRIMITIVE_ACTIONS.BET]:    { label: 'Bet',   bg: '#16a34a', hover: '#15803d' },
+  [PRIMITIVE_ACTIONS.CALL]:   { label: 'Call',  bg: '#2563eb', hover: '#1d4ed8' },
+  [PRIMITIVE_ACTIONS.RAISE]:  { label: 'Raise', bg: '#ea580c', hover: '#c2410c' },
+  [PRIMITIVE_ACTIONS.FOLD]:   { label: 'Fold',  bg: '#dc2626', hover: '#b91c1c' },
 };
 
 export const isPrimitiveAction = (action) => PRIMITIVE_ACTION_VALUES.includes(action);
@@ -101,3 +101,19 @@ export const isPrimitiveAction = (action) => PRIMITIVE_ACTION_VALUES.includes(ac
  * @returns {string|null} The primitive action, or null for showdown states
  */
 export const toPrimitive = (legacyAction) => LEGACY_TO_PRIMITIVE[legacyAction] ?? null;
+
+/**
+ * Showdown action constants (not betting actions, but tracked in actionSequence)
+ */
+export const SHOWDOWN_ACTIONS = {
+  MUCKED: 'mucked',
+  WON: 'won',
+};
+
+/**
+ * Check if a value is a showdown action
+ * @param {string} action - The action to check
+ * @returns {boolean}
+ */
+export const isShowdownAction = (action) =>
+  action === SHOWDOWN_ACTIONS.MUCKED || action === SHOWDOWN_ACTIONS.WON;

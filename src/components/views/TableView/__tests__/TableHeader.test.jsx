@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
 /**
  * TableHeader.test.jsx - Tests for table header component
+ * Header is now info-only (hand controls moved to CommandStrip)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -14,8 +16,6 @@ describe('TableHeader', () => {
     isSidebarCollapsed: false,
     onEndSession: vi.fn(),
     onNewSession: vi.fn(),
-    onNextHand: vi.fn(),
-    onResetHand: vi.fn(),
   };
 
   beforeEach(() => {
@@ -36,16 +36,6 @@ describe('TableHeader', () => {
     it('renders session time display when active session', () => {
       render(<TableHeader {...defaultProps} />);
       expect(screen.getByText('1:30:00')).toBeInTheDocument();
-    });
-
-    it('renders Next Hand button', () => {
-      render(<TableHeader {...defaultProps} />);
-      expect(screen.getByText('Next Hand')).toBeInTheDocument();
-    });
-
-    it('renders Reset Hand button', () => {
-      render(<TableHeader {...defaultProps} />);
-      expect(screen.getByText('Reset Hand')).toBeInTheDocument();
     });
   });
 
@@ -94,18 +84,6 @@ describe('TableHeader', () => {
       fireEvent.click(screen.getByText('New Session'));
       expect(defaultProps.onNewSession).toHaveBeenCalledTimes(1);
     });
-
-    it('calls onNextHand when Next Hand button clicked', () => {
-      render(<TableHeader {...defaultProps} />);
-      fireEvent.click(screen.getByText('Next Hand'));
-      expect(defaultProps.onNextHand).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls onResetHand when Reset Hand button clicked', () => {
-      render(<TableHeader {...defaultProps} />);
-      fireEvent.click(screen.getByText('Reset Hand'));
-      expect(defaultProps.onResetHand).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('edge cases', () => {
@@ -121,7 +99,6 @@ describe('TableHeader', () => {
 
     it('renders with empty session time', () => {
       render(<TableHeader {...defaultProps} sessionTimeDisplay="" />);
-      // Should not crash, but time display should be empty
       expect(screen.queryByText('1:30:00')).not.toBeInTheDocument();
     });
   });

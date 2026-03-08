@@ -4,6 +4,7 @@ import { Undo2, SkipForward, RotateCcw } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, STREETS, ACTIONS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
+import { getActionGradient, BATCH_COLORS, ACTION_COLORS } from '../../../constants/designTokens';
 import { PrimitiveActionButton } from '../../ui/PrimitiveActionButton';
 import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
@@ -214,6 +215,7 @@ export const CommandStrip = ({
       {/* Card Selector — full-screen overlay (position:fixed) */}
       {showCardSelector && (
         <CardSelectorPanel
+          currentStreet={currentStreet}
           communityCards={communityCards}
           holeCards={holeCards}
           holeCardsVisible={holeCardsVisible}
@@ -279,14 +281,7 @@ export const CommandStrip = ({
                 if (action === PRIMITIVE_ACTIONS.FOLD) return 'Fold';
                 return action;
               };
-              const getStyle = () => {
-                if (action === PRIMITIVE_ACTIONS.FOLD) return { background: 'linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)' };
-                if (action === PRIMITIVE_ACTIONS.CHECK) return { background: 'linear-gradient(180deg, #0891b2 0%, #0e7490 100%)' };
-                if (action === PRIMITIVE_ACTIONS.CALL) return { background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)' };
-                if (action === PRIMITIVE_ACTIONS.BET) return { background: 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)' };
-                if (action === PRIMITIVE_ACTIONS.RAISE) return { background: 'linear-gradient(180deg, #ea580c 0%, #c2410c 100%)' };
-                return { background: '#4b5563' };
-              };
+              const getStyle = () => ({ background: getActionGradient(action) });
               return (
                 <button
                   key={action}
@@ -310,7 +305,7 @@ export const CommandStrip = ({
                     key={label}
                     onClick={() => handleSizeSelected(amount)}
                     className="btn-press rounded-md font-bold text-white shadow"
-                    style={{ height: '68px', background: 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)', fontSize: '15px' }}
+                    style={{ height: '68px', background: getActionGradient('bet'), fontSize: '15px' }}
                   >
                     <div>{label}</div>
                     <div style={{ fontSize: '11px', opacity: 0.75 }}>${amount}</div>
@@ -335,7 +330,7 @@ export const CommandStrip = ({
                   type="submit"
                   disabled={!customValue || parseFloat(customValue) < minRaise}
                   className="btn-press px-5 rounded font-bold text-white"
-                  style={{ height: '48px', fontSize: '15px', background: !customValue || parseFloat(customValue) < minRaise ? '#374151' : '#16a34a' }}
+                    style={{ height: '48px', fontSize: '15px', background: !customValue || parseFloat(customValue) < minRaise ? '#374151' : ACTION_COLORS.bet.base }}
                 >
                   GO
                 </button>
@@ -349,7 +344,7 @@ export const CommandStrip = ({
               <button
                 onClick={onRestFold}
                 className="btn-press flex-1 rounded-lg font-bold text-white"
-                style={{ height: '68px', fontSize: '16px', background: 'linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%)' }}
+                style={{ height: '68px', fontSize: '16px', background: `linear-gradient(180deg, ${BATCH_COLORS.restFold.base} 0%, ${BATCH_COLORS.restFold.dark} 100%)` }}
               >
                 {lastRaiserSeat ? `Fold to S${lastRaiserSeat} (${remainingCount})` : `Rest Fold (${remainingCount})`}
               </button>
@@ -357,7 +352,7 @@ export const CommandStrip = ({
                 <button
                   onClick={onFoldToInvested}
                   className="btn-press flex-1 rounded-lg font-bold text-white"
-                  style={{ height: '68px', fontSize: '14px', background: 'linear-gradient(180deg, #78350f 0%, #5c2d0e 100%)' }}
+                  style={{ height: '68px', fontSize: '14px', background: `linear-gradient(180deg, ${BATCH_COLORS.foldCold.base} 0%, ${BATCH_COLORS.foldCold.dark} 100%)` }}
                 >
                   Fold Cold
                 </button>
@@ -366,7 +361,7 @@ export const CommandStrip = ({
                 <button
                   onClick={onCheckAround}
                   className="btn-press flex-1 rounded-lg font-bold text-white"
-                  style={{ height: '68px', fontSize: '16px', background: 'linear-gradient(180deg, #1d4ed8 0%, #1e3a8a 100%)' }}
+                  style={{ height: '68px', fontSize: '16px', background: `linear-gradient(180deg, ${BATCH_COLORS.checkAll.base} 0%, ${BATCH_COLORS.checkAll.dark} 100%)` }}
                 >
                   Check All ({remainingCount})
                 </button>

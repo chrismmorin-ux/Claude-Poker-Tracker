@@ -5,8 +5,15 @@
 
 set -o pipefail
 
+# Optional workspace project filter (e.g., "unit", "component", "hooks")
+PROJECT="${1:-}"
+
 # Run tests and capture output
-npm test 2>&1 | tee .test-output.tmp
+if [ -n "$PROJECT" ]; then
+  npm test -- --project "$PROJECT" 2>&1 | tee .test-output.tmp
+else
+  npm test 2>&1 | tee .test-output.tmp
+fi
 
 TEST_EXIT=${PIPESTATUS[0]}
 

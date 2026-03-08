@@ -35,6 +35,7 @@
  */
 
 import { logger } from '../errorHandler';
+import { GUEST_USER_ID } from '../../constants/authConstants';
 
 // =============================================================================
 // CONSTANTS
@@ -43,8 +44,7 @@ import { logger } from '../errorHandler';
 export const DB_NAME = 'PokerTrackerDB';
 export const DB_VERSION = 9;
 
-// Guest user ID constant - matches authConstants.GUEST_USER_ID
-export const GUEST_USER_ID = 'guest';
+export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
 export const SESSIONS_STORE_NAME = 'sessions';
 export const ACTIVE_SESSION_STORE_NAME = 'activeSession';

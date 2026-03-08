@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PhysicalSection.test.jsx - Tests for physical description inputs
  */

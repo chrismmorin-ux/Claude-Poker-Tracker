@@ -9,6 +9,7 @@
 import { createValidatedReducer } from '../utils/reducerUtils';
 import { isCardInUse } from '../utils/validation';
 import { logger, DEBUG } from '../utils/errorHandler';
+import { SEAT_ARRAY } from '../constants/gameConstants';
 
 // Action types (card data only)
 export const CARD_ACTIONS = {
@@ -24,17 +25,8 @@ export const CARD_ACTIONS = {
 };
 
 // Helper function to create empty player cards
-const createEmptyPlayerCards = () => ({
-  1: ['', ''],
-  2: ['', ''],
-  3: ['', ''],
-  4: ['', ''],
-  5: ['', ''],
-  6: ['', ''],
-  7: ['', ''],
-  8: ['', ''],
-  9: ['', '']
-});
+const createEmptyPlayerCards = () =>
+  Object.fromEntries(SEAT_ARRAY.map(seat => [seat, ['', '']]));
 
 // Initial state (card data only - view state moved to uiReducer)
 export const initialCardState = {

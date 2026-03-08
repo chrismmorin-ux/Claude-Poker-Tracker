@@ -131,10 +131,10 @@ export const PLAYER_FIELDS = {
 export const EXPLOIT_CATEGORIES = ['weakness', 'strength', 'tendency', 'note'];
 
 export const EXPLOIT_CATEGORY_CONFIG = {
-  weakness: { label: 'Weakness', icon: '!', color: 'text-red-700 bg-red-100 border-red-200' },
-  strength: { label: 'Strength', icon: '*', color: 'text-blue-700 bg-blue-100 border-blue-200' },
-  tendency: { label: 'Tendency', icon: '~', color: 'text-yellow-700 bg-yellow-100 border-yellow-200' },
-  note:     { label: 'Note',     icon: 'i', color: 'text-gray-600 bg-gray-100 border-gray-200' }
+  weakness: { label: 'Weakness', icon: '!', colorStyle: { color: '#b91c1c', backgroundColor: '#fee2e2', borderColor: '#fecaca' } },
+  strength: { label: 'Strength', icon: '*', colorStyle: { color: '#1d4ed8', backgroundColor: '#dbeafe', borderColor: '#bfdbfe' } },
+  tendency: { label: 'Tendency', icon: '~', colorStyle: { color: '#a16207', backgroundColor: '#fef9c3', borderColor: '#fde68a' } },
+  note:     { label: 'Note',     icon: 'i', colorStyle: { color: '#4b5563', backgroundColor: '#f3f4f6', borderColor: '#e5e7eb' } },
 };
 
 export const STREET_OPTIONS = ['all', 'preflop', 'flop', 'turn', 'river'];

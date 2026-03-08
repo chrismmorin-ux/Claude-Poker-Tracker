@@ -6,7 +6,7 @@
  */
 
 import { RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex, PREFLOP_CHARTS } from '../exploitEngine/rangeMatrix';
+import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../exploitEngine/rangeMatrix';
 
 const GRID_SIZE = 169;
 
@@ -108,30 +108,6 @@ export const computePips = (playerRange, gtoRange) => {
   return result;
 };
 
-// Map 5-category positions to averaged GTO charts
-const POSITION_GTO_KEYS = {
-  EARLY: ['UTG', 'UTG+1'],
-  MIDDLE: ['MP1', 'MP2'],
-  LATE: ['HJ', 'CO', 'BTN'],
-  SB: ['SB'],
-  BB: ['BB'],
-};
-
-/**
- * Average multiple GTO chart ranges.
- */
-const averageRanges = (keys) => {
-  const result = new Float64Array(GRID_SIZE);
-  const n = keys.length;
-  for (const key of keys) {
-    const chart = PREFLOP_CHARTS[key];
-    if (!chart) continue;
-    for (let i = 0; i < GRID_SIZE; i++) {
-      result[i] += chart[i] / n;
-    }
-  }
-  return result;
-};
 
 /**
  * Compute PIPs for all positions in a range profile.
@@ -163,7 +139,7 @@ export const computeAllPips = (rangeProfile) => {
     const gtoKeys = POSITION_GTO_KEYS[pos];
     if (!gtoKeys) continue;
 
-    const gtoRange = averageRanges(gtoKeys);
+    const gtoRange = averageCharts(...gtoKeys);
     result[pos] = computePips(playerRange, gtoRange);
   }
   return result;

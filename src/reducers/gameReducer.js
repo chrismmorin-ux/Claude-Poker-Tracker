@@ -1,21 +1,22 @@
 /**
  * gameReducer.js - Game state management
- * Manages: currentStreet, dealerButtonSeat, mySeat, seatActions, absentSeats, actionSequence
+ * Manages: currentStreet, dealerButtonSeat, mySeat, absentSeats, actionSequence
+ * Note: seatActions and showdownActions are derived in GameContext from actionSequence
  */
 
 import { createValidatedReducer, SCHEMA_RULES } from '../utils/reducerUtils';
-import { LIMITS, ACTIONS } from '../constants/gameConstants';
-import { PRIMITIVE_ACTIONS, isPrimitiveAction } from '../constants/primitiveActions';
-import { isValidSeat, isValidAction } from '../utils/validation';
+import { LIMITS } from '../constants/gameConstants';
+import { PRIMITIVE_ACTIONS, isPrimitiveAction, isShowdownAction } from '../constants/primitiveActions';
+import { isValidSeat } from '../utils/validation';
 import { logger, DEBUG } from '../utils/errorHandler';
-import { createActionEntry, getNextOrder, isValidActionEntry } from '../types/actionTypes';
+import { createActionEntry, getNextOrder, isValidActionEntry, legacyToSequence } from '../utils/sequenceUtils';
 
 // Action types
 export const GAME_ACTIONS = {
   SET_STREET: 'SET_STREET',
   SET_DEALER: 'SET_DEALER',
   SET_MY_SEAT: 'SET_MY_SEAT',
-  RECORD_ACTION: 'RECORD_ACTION',
+  RECORD_SHOWDOWN_ACTION: 'RECORD_SHOWDOWN_ACTION',
   CLEAR_STREET_ACTIONS: 'CLEAR_STREET_ACTIONS',
   CLEAR_SEAT_ACTIONS: 'CLEAR_SEAT_ACTIONS',
   UNDO_LAST_ACTION: 'UNDO_LAST_ACTION',
@@ -24,6 +25,7 @@ export const GAME_ACTIONS = {
   NEXT_HAND: 'NEXT_HAND',
   HYDRATE_STATE: 'HYDRATE_STATE',
   RECORD_PRIMITIVE_ACTION: 'RECORD_PRIMITIVE_ACTION',
+  SET_POT_OVERRIDE: 'SET_POT_OVERRIDE',
 };
 
 // Initial state
@@ -31,9 +33,9 @@ export const initialGameState = {
   currentStreet: 'preflop',
   dealerButtonSeat: 1,
   mySeat: 5,
-  seatActions: {}, // Legacy: { street: { seat: [actions] } }
   absentSeats: [],
-  actionSequence: [], // New: ordered list of { seat, action, street, order }
+  actionSequence: [], // Ordered list of { seat, action, street, order, amount? } — single source of truth for all actions (betting + showdown)
+  potOverride: null, // Manual pot correction (number or null)
 };
 
 // Use centralized LIMITS.NUM_SEATS instead of hardcoded value
@@ -51,9 +53,9 @@ export const GAME_STATE_SCHEMA = {
   currentStreet: SCHEMA_RULES.street,
   dealerButtonSeat: SCHEMA_RULES.seat,
   mySeat: SCHEMA_RULES.seat,
-  seatActions: SCHEMA_RULES.object,
   absentSeats: SCHEMA_RULES.seatArray,
   actionSequence: SCHEMA_RULES.array,
+  potOverride: SCHEMA_RULES.optionalNumber,
 };
 
 // =============================================================================
@@ -81,78 +83,40 @@ const rawGameReducer = (state, action) => {
         mySeat: action.payload,
       };
 
-    case GAME_ACTIONS.RECORD_ACTION: {
-      const { seats, action: playerAction } = action.payload;
+    case GAME_ACTIONS.RECORD_SHOWDOWN_ACTION: {
+      const { seat, action: showdownAction } = action.payload;
 
-      // P1 Fix: Validate action type
-      if (!isValidAction(playerAction, ACTIONS)) {
+      if (!isValidSeat(seat, NUM_SEATS)) {
         if (DEBUG) {
-          logger.warn('gameReducer', `Invalid action rejected: ${playerAction}`);
+          logger.warn('gameReducer', `Invalid seat in RECORD_SHOWDOWN_ACTION: ${seat}`);
         }
-        return state; // Reject invalid action
+        return state;
       }
 
-      // P1 Fix: Validate and filter seat numbers
-      const validSeats = seats.filter(seat => isValidSeat(seat, NUM_SEATS));
-      if (validSeats.length === 0) {
+      if (!isShowdownAction(showdownAction)) {
         if (DEBUG) {
-          logger.warn('gameReducer', `No valid seats in RECORD_ACTION: ${seats}`);
+          logger.warn('gameReducer', `Invalid showdown action: ${showdownAction}`);
         }
-        return state; // Reject if no valid seats
+        return state;
       }
 
-      if (validSeats.length !== seats.length && DEBUG) {
-        logger.warn('gameReducer', `Invalid seats filtered out: ${seats.filter(s => !validSeats.includes(s))}`);
-      }
-
-      const newSeatActions = { ...state.seatActions };
-
-      // Structure: seatActions[street][seat] = [action1, action2, ...]
-      if (!newSeatActions[state.currentStreet]) {
-        newSeatActions[state.currentStreet] = {};
-      }
-
-      validSeats.forEach(seat => {
-        // Get current actions for this seat (array)
-        const currentActions = newSeatActions[state.currentStreet][seat] || [];
-
-        // Append new action to array
-        newSeatActions[state.currentStreet] = {
-          ...newSeatActions[state.currentStreet],
-          [seat]: [...currentActions, playerAction]
-        };
-      });
-
-      // Remove seats from absent if they're taking action
-      const newAbsentSeats = state.absentSeats.filter(s => !validSeats.includes(s));
-
-      // Also populate actionSequence for each seat
-      let newSequence = [...state.actionSequence];
-      validSeats.forEach(seat => {
-        const entry = createActionEntry({
-          seat,
-          action: playerAction,
-          street: state.currentStreet,
-          order: getNextOrder(newSequence),
-        });
-        newSequence.push(entry);
+      // Append to actionSequence with street: 'showdown'
+      const showdownEntry = createActionEntry({
+        seat,
+        action: showdownAction,
+        street: 'showdown',
+        order: getNextOrder(state.actionSequence),
       });
 
       return {
         ...state,
-        seatActions: newSeatActions,
-        absentSeats: newAbsentSeats,
-        actionSequence: newSequence,
+        actionSequence: [...state.actionSequence, showdownEntry],
       };
     }
 
     case GAME_ACTIONS.CLEAR_STREET_ACTIONS: {
-      const newSeatActions = { ...state.seatActions };
-      delete newSeatActions[state.currentStreet];
-
       return {
         ...state,
-        seatActions: newSeatActions,
         actionSequence: state.actionSequence.filter(
           entry => entry.street !== state.currentStreet
         ),
@@ -161,19 +125,8 @@ const rawGameReducer = (state, action) => {
 
     case GAME_ACTIONS.CLEAR_SEAT_ACTIONS: {
       const seats = action.payload;
-      const newSeatActions = { ...state.seatActions };
-
-      if (newSeatActions[state.currentStreet]) {
-        const updatedStreet = { ...newSeatActions[state.currentStreet] };
-        seats.forEach(seat => {
-          delete updatedStreet[seat];
-        });
-        newSeatActions[state.currentStreet] = updatedStreet;
-      }
-
       return {
         ...state,
-        seatActions: newSeatActions,
         actionSequence: state.actionSequence.filter(
           entry => !(entry.street === state.currentStreet && seats.includes(entry.seat))
         ),
@@ -182,40 +135,25 @@ const rawGameReducer = (state, action) => {
 
     case GAME_ACTIONS.UNDO_LAST_ACTION: {
       const seat = action.payload;
-      const currentActions = [...(state.seatActions[state.currentStreet]?.[seat] || [])];
 
-      if (currentActions.length === 0) {
-        return state; // Nothing to undo
-      }
-
-      currentActions.pop(); // Remove last action
-      const newSeatActions = { ...state.seatActions };
-
-      if (currentActions.length === 0) {
-        // Remove seat entry if no actions left
-        const updatedStreet = { ...newSeatActions[state.currentStreet] };
-        delete updatedStreet[seat];
-        newSeatActions[state.currentStreet] = updatedStreet;
-      } else {
-        // Update with remaining actions
-        newSeatActions[state.currentStreet] = {
-          ...newSeatActions[state.currentStreet],
-          [seat]: currentActions
-        };
-      }
-
-      // Remove the last actionSequence entry for this seat+street
-      const newSequence = [...state.actionSequence];
-      for (let i = newSequence.length - 1; i >= 0; i--) {
-        if (newSequence[i].seat === seat && newSequence[i].street === state.currentStreet) {
-          newSequence.splice(i, 1);
+      // Find the last entry for this seat+street in actionSequence
+      let removeIndex = -1;
+      for (let i = state.actionSequence.length - 1; i >= 0; i--) {
+        if (state.actionSequence[i].seat === seat && state.actionSequence[i].street === state.currentStreet) {
+          removeIndex = i;
           break;
         }
       }
 
+      if (removeIndex === -1) {
+        return state; // Nothing to undo
+      }
+
+      const newSequence = [...state.actionSequence];
+      newSequence.splice(removeIndex, 1);
+
       return {
         ...state,
-        seatActions: newSeatActions,
         actionSequence: newSequence,
       };
     }
@@ -242,9 +180,9 @@ const rawGameReducer = (state, action) => {
       return {
         ...state,
         currentStreet: 'preflop',
-        seatActions: {},
         absentSeats: [],
         actionSequence: [],
+        potOverride: null,
       };
 
     case GAME_ACTIONS.NEXT_HAND:
@@ -252,22 +190,71 @@ const rawGameReducer = (state, action) => {
         ...state,
         currentStreet: 'preflop',
         dealerButtonSeat: (state.dealerButtonSeat % NUM_SEATS) + 1,
-        seatActions: {},
         actionSequence: [],
+        potOverride: null,
         // Keep absentSeats as-is (don't clear)
       };
 
     // Hydrate game state from database (on app startup)
     // Merges with defaults to ensure all fields exist (handles old records lacking new fields)
-    case GAME_ACTIONS.HYDRATE_STATE:
+    // Migrates legacy seatActions: extracts showdown data and converts betting to actionSequence
+    case GAME_ACTIONS.HYDRATE_STATE: {
+      const payload = action.payload;
+      let merged = {
+        ...initialGameState,
+        ...state,
+        ...payload,
+      };
+
+      // Migration: if payload has legacy seatActions but no showdownActions, extract showdown
+      if (payload.seatActions && !payload.showdownActions) {
+        const { showdown, ...bettingStreets } = payload.seatActions;
+        merged.showdownActions = showdown || {};
+        // If no actionSequence was saved, derive from legacy betting streets
+        if (!payload.actionSequence || payload.actionSequence.length === 0) {
+          merged.actionSequence = legacyToSequence(bettingStreets);
+        }
+      }
+
+      // Migration: convert showdownActions object into actionSequence entries
+      if (merged.showdownActions && Object.keys(merged.showdownActions).length > 0) {
+        let order = getNextOrder(merged.actionSequence);
+        const showdownEntries = [];
+        for (const [seatStr, actions] of Object.entries(merged.showdownActions)) {
+          const seat = Number(seatStr);
+          const actionArray = Array.isArray(actions) ? actions : [actions];
+          for (const act of actionArray) {
+            if (isShowdownAction(act)) {
+              showdownEntries.push(createActionEntry({
+                seat,
+                action: act,
+                street: 'showdown',
+                order: order++,
+              }));
+            }
+          }
+        }
+        if (showdownEntries.length > 0) {
+          merged.actionSequence = [...merged.actionSequence, ...showdownEntries];
+        }
+        merged.showdownActions = {};
+      }
+
+      // Remove legacy fields from state (now derived in GameContext)
+      delete merged.seatActions;
+      delete merged.showdownActions;
+
+      return merged;
+    }
+
+    case GAME_ACTIONS.SET_POT_OVERRIDE:
       return {
-        ...initialGameState,  // Defaults first
-        ...state,             // Current state
-        ...action.payload     // Loaded data overwrites
+        ...state,
+        potOverride: action.payload,
       };
 
     case GAME_ACTIONS.RECORD_PRIMITIVE_ACTION: {
-      const { seat, action: primitiveAction } = action.payload;
+      const { seat, action: primitiveAction, amount } = action.payload;
 
       // Validate seat
       if (!isValidSeat(seat, NUM_SEATS)) {
@@ -291,6 +278,7 @@ const rawGameReducer = (state, action) => {
         action: primitiveAction,
         street: state.currentStreet,
         order: getNextOrder(state.actionSequence),
+        amount,
       });
 
       // Validate the entry
@@ -304,21 +292,9 @@ const rawGameReducer = (state, action) => {
       // Remove seat from absent if they're taking action
       const newAbsentSeats = state.absentSeats.filter(s => s !== seat);
 
-      // Also write to seatActions for UI consumers (street→seat→[actions] lookup)
-      const newSeatActions = { ...state.seatActions };
-      if (!newSeatActions[state.currentStreet]) {
-        newSeatActions[state.currentStreet] = {};
-      }
-      const currentSeatActions = newSeatActions[state.currentStreet][seat] || [];
-      newSeatActions[state.currentStreet] = {
-        ...newSeatActions[state.currentStreet],
-        [seat]: [...currentSeatActions, primitiveAction],
-      };
-
       return {
         ...state,
         actionSequence: [...state.actionSequence, newEntry],
-        seatActions: newSeatActions,
         absentSeats: newAbsentSeats,
       };
     }

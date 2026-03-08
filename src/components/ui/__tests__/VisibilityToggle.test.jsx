@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * VisibilityToggle.test.jsx - Tests for VisibilityToggle component
  */

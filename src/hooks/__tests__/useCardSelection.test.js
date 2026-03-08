@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useCardSelection.test.js - Tests for card selection hook
  */

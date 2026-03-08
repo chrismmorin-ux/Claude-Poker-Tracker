@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * BasicInfoSection.test.jsx - Tests for name and nickname inputs
  */

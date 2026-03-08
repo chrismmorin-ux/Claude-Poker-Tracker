@@ -1,43 +1,37 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { UI_ACTIONS } from '../reducers/uiReducer';
-import { findNextEmptySlot } from '../utils/seatNavigation';
+import { findNextEmptySlot } from '../utils/seatUtils';
 
 /**
  * Custom hook for showdown card selection logic
  * Handles card assignment with auto-advance to next empty slot
- * More complex than regular card selection due to multi-player logic
- * NOTE: View state actions moved from cardReducer to uiReducer in v114
  */
-export const useShowdownCardSelection = (
+export const useShowdownCardSelection = ({
   highlightedSeat,
   highlightedHoleSlot,
   mySeat,
   holeCards,
   allPlayerCards,
   communityCards,
-  seatActions,
+  actionSequence,
   isSeatInactive,
   dispatchCard,
   dispatchUi,
-  numSeats
-) => {
+  numSeats,
+}) => {
   const selectCardForShowdown = useCallback((card) => {
     const seat = highlightedSeat;
     const slot = highlightedHoleSlot;
 
     // For my seat, update holeCards instead of allPlayerCards
     if (seat === mySeat) {
-      // Remove card from other slot if it's there
       const existingIndex = holeCards.indexOf(card);
       if (existingIndex !== -1 && existingIndex !== slot) {
         dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: existingIndex, card: '' } });
       }
-
-      // Assign to current slot
       dispatchCard({ type: CARD_ACTIONS.SET_HOLE_CARD, payload: { index: slot, card } });
     } else {
-      // Remove card from any other player's hand
       for (let s = 1; s <= numSeats; s++) {
         const cards = allPlayerCards[s];
         const cardIndex = cards.indexOf(card);
@@ -45,8 +39,6 @@ export const useShowdownCardSelection = (
           dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat: s, slotIndex: cardIndex, card: '' } });
         }
       }
-
-      // Assign to current slot
       dispatchCard({ type: CARD_ACTIONS.SET_PLAYER_CARD, payload: { seat, slotIndex: slot, card } });
     }
 
@@ -56,7 +48,7 @@ export const useShowdownCardSelection = (
       dispatchCard({ type: CARD_ACTIONS.SET_COMMUNITY_CARD, payload: { index: communityIndex, card: '' } });
     }
 
-    // Auto-advance logic - use unified seatNavigation utility
+    // Auto-advance logic
     const nextEmpty = findNextEmptySlot(
       seat,
       slot,
@@ -65,17 +57,16 @@ export const useShowdownCardSelection = (
       allPlayerCards,
       numSeats,
       isSeatInactive,
-      seatActions
+      actionSequence
     );
     if (nextEmpty) {
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextEmpty.seat });
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: nextEmpty.slot });
     } else {
-      // No more empty slots
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
       dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
     }
-  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, seatActions, dispatchCard, dispatchUi, isSeatInactive, numSeats]);
+  }, [highlightedSeat, highlightedHoleSlot, mySeat, holeCards, allPlayerCards, communityCards, actionSequence, dispatchCard, dispatchUi, isSeatInactive, numSeats]);
 
   return selectCardForShowdown;
 };

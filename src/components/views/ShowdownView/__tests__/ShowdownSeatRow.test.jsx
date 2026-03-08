@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ShowdownSeatRow.test.jsx - Tests for showdown seat row component
  */
@@ -6,6 +7,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ShowdownSeatRow } from '../ShowdownSeatRow';
 import { SEAT_STATUS, ACTIONS } from '../../../../constants/gameConstants';
+
+// Mock getOverlayStatus so we can verify overlay rendering
+vi.mock('../../../../utils/actionUtils', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getOverlayStatus: vi.fn(actual.getOverlayStatus),
+  };
+});
+
+import { getOverlayStatus } from '../../../../utils/actionUtils';
 
 describe('ShowdownSeatRow', () => {
   const defaultProps = {
@@ -23,14 +35,11 @@ describe('ShowdownSeatRow', () => {
     highlightedSeat: null,
     highlightedHoleSlot: null,
     mode: 'selection',
-    SEAT_STATUS,
-    ACTIONS,
-    seatActions: [],
+    showdownActionsArray: [],
     onSetHoleCardsVisible: vi.fn(),
     onHighlightSlot: vi.fn(),
     onMuck: vi.fn(),
     onWon: vi.fn(),
-    getOverlayStatus: vi.fn(() => null),
   };
 
   beforeEach(() => {
@@ -246,36 +255,24 @@ describe('ShowdownSeatRow', () => {
   });
 
   describe('seat statuses', () => {
-    it('handles WON action in seatActions', () => {
+    it('handles WON action in showdownActionsArray', () => {
       render(
         <ShowdownSeatRow
           {...defaultProps}
           mode="selection"
-          seatActions={[ACTIONS.WON]}
+          showdownActionsArray={[ACTIONS.WON]}
         />
       );
       // Won button should be hidden when seat has WON action
       expect(screen.queryByText('Won')).not.toBeInTheDocument();
     });
 
-    it('handles seatActions as array', () => {
+    it('handles showdownActionsArray with non-showdown actions', () => {
       render(
         <ShowdownSeatRow
           {...defaultProps}
           mode="selection"
-          seatActions={[ACTIONS.CALL, ACTIONS.RAISE]}
-        />
-      );
-      // Should still show Muck/Won buttons
-      expect(screen.getByText('Muck')).toBeInTheDocument();
-    });
-
-    it('handles seatActions as string', () => {
-      render(
-        <ShowdownSeatRow
-          {...defaultProps}
-          mode="selection"
-          seatActions={ACTIONS.CALL}
+          showdownActionsArray={[]}
         />
       );
       // Should still show Muck/Won buttons
@@ -293,22 +290,21 @@ describe('ShowdownSeatRow', () => {
           hasWon={false}
         />
       );
-      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(
+      expect(getOverlayStatus).toHaveBeenCalledWith(
         SEAT_STATUS.FOLDED,
         false,
-        false,
-        SEAT_STATUS
+        false
       );
     });
 
     it('passes mucked status to getOverlayStatus', () => {
       render(<ShowdownSeatRow {...defaultProps} isMucked={true} />);
-      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, true, false, SEAT_STATUS);
+      expect(getOverlayStatus).toHaveBeenCalledWith(null, true, false);
     });
 
     it('passes won status to getOverlayStatus', () => {
       render(<ShowdownSeatRow {...defaultProps} hasWon={true} />);
-      expect(defaultProps.getOverlayStatus).toHaveBeenCalledWith(null, false, true, SEAT_STATUS);
+      expect(getOverlayStatus).toHaveBeenCalledWith(null, false, true);
     });
   });
 });

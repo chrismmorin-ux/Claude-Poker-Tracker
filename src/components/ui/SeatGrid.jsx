@@ -30,9 +30,9 @@ export const SeatGrid = ({
   onDrop
 }) => {
   return (
-    <div className="bg-white border-b border-gray-200 p-4">
+    <div className="bg-gray-800 border-b border-gray-700 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-800">Current Seat Assignments</h2>
+        <h2 className="text-lg font-bold text-gray-200">Current Seat Assignments</h2>
         <button
           onClick={onClearAllSeats}
           className="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium"
@@ -49,10 +49,10 @@ export const SeatGrid = ({
               key={seat}
               className={`border-2 rounded-lg p-3 text-center transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-yellow-400 bg-yellow-50 ring-4 ring-yellow-400 scale-110'
+                  ? 'border-yellow-400 bg-yellow-900/30 ring-4 ring-yellow-400 scale-110'
                   : playerName
-                  ? 'border-blue-500 bg-blue-50 hover:bg-blue-100'
-                  : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                  ? 'border-blue-500 bg-blue-900/20 hover:bg-blue-900/30'
+                  : 'border-gray-600 bg-gray-700 hover:bg-gray-600'
               }`}
               draggable={!!playerName}
               onClick={() => onSeatClick(seat)}
@@ -64,12 +64,12 @@ export const SeatGrid = ({
                 onDrop(seat);
               }}
             >
-              <div className="text-xs font-semibold text-gray-600 mb-1">
+              <div className="text-xs font-semibold text-gray-400 mb-1">
                 Seat {seat}
               </div>
               {playerName ? (
                 <div className="flex flex-col items-center gap-1">
-                  <div className="text-sm font-semibold text-blue-800 truncate w-full" title={playerName}>
+                  <div className="text-sm font-semibold text-blue-300 truncate w-full" title={playerName}>
                     {playerName}
                   </div>
                   <button
@@ -92,7 +92,7 @@ export const SeatGrid = ({
         })}
       </div>
       {selectedSeat && (
-        <div className="mt-2 text-sm text-green-700 font-medium text-center">
+        <div className="mt-2 text-sm text-green-400 font-medium text-center">
           Seat {selectedSeat} selected - Click a player below to assign
         </div>
       )}

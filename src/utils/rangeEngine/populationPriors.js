@@ -13,7 +13,7 @@
  * these are conditional on different game states, not competing.
  */
 
-import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS } from '../exploitEngine/rangeMatrix';
+import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../exploitEngine/rangeMatrix';
 
 const GRID_SIZE = 169;
 
@@ -76,35 +76,12 @@ const handStrengthTier = (idx) => {
 };
 
 /**
- * Average multiple GTO chart ranges into one.
- * @param {string[]} positionKeys - Keys into PREFLOP_CHARTS
- * @returns {Float64Array}
- */
-const averageCharts = (...positionKeys) => {
-  const result = createRange();
-  const n = positionKeys.length;
-  for (const key of positionKeys) {
-    const chart = PREFLOP_CHARTS[key];
-    if (!chart) continue;
-    for (let i = 0; i < GRID_SIZE; i++) {
-      result[i] += chart[i] / n;
-    }
-  }
-  return result;
-};
-
-/**
- * Map 5-category positions to averaged GTO charts.
+ * Get the base GTO chart for a 5-category position.
  */
 const getBaseChart = (position) => {
-  switch (position) {
-    case 'EARLY':  return averageCharts('UTG', 'UTG+1');
-    case 'MIDDLE': return averageCharts('MP1', 'MP2');
-    case 'LATE':   return averageCharts('HJ', 'CO', 'BTN');
-    case 'SB':     return PREFLOP_CHARTS.SB;
-    case 'BB':     return PREFLOP_CHARTS.BB;
-    default:       return createRange();
-  }
+  const keys = { EARLY: ['UTG', 'UTG+1'], MIDDLE: ['MP1', 'MP2'], LATE: ['HJ', 'CO', 'BTN'], SB: ['SB'], BB: ['BB'] }[position];
+  if (!keys) return createRange();
+  return keys.length === 1 ? PREFLOP_CHARTS[keys[0]] : averageCharts(...keys);
 };
 
 /**

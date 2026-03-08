@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PlayerContext.test.jsx - Tests for player state context provider
  */

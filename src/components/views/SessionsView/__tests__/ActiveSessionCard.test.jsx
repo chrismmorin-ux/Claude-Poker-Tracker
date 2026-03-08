@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ActiveSessionCard.test.jsx - Tests for active session card component
  */

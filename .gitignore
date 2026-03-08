@@ -86,8 +86,10 @@ nul
 # Personal notes
 docs/chris-notes
 
-# Screenshots
+# Screenshots (debug artifacts)
 screenshots/
+*.png
+!public/*.png
 audit-*.png
 verify-*.png
 .local-model-backups/

@@ -6,14 +6,9 @@ import { describe, it, expect } from 'vitest';
 import {
   isValidSeat,
   isValidCard,
-  isValidStreet,
-  isValidAction,
-  isValidCommunityCards,
-  isValidHoleCards,
   isCardInUse,
   isValidPlayerCards,
 } from '../validation';
-import { ACTIONS } from '../../constants/gameConstants';
 
 describe('isValidSeat', () => {
   it('accepts valid seat numbers 1-9', () => {
@@ -95,102 +90,6 @@ describe('isValidCard', () => {
     expect(isValidCard(null)).toBe(false);
     expect(isValidCard(undefined)).toBe(false);
     expect(isValidCard(123)).toBe(false);
-  });
-});
-
-describe('isValidStreet', () => {
-  it('accepts valid streets', () => {
-    expect(isValidStreet('preflop')).toBe(true);
-    expect(isValidStreet('flop')).toBe(true);
-    expect(isValidStreet('turn')).toBe(true);
-    expect(isValidStreet('river')).toBe(true);
-    expect(isValidStreet('showdown')).toBe(true);
-  });
-
-  it('rejects invalid streets', () => {
-    expect(isValidStreet('pre-flop')).toBe(false);
-    expect(isValidStreet('PREFLOP')).toBe(false);
-    expect(isValidStreet('fifth')).toBe(false);
-    expect(isValidStreet('')).toBe(false);
-  });
-
-  it('respects custom validStreets parameter', () => {
-    const customStreets = ['betting', 'closed'];
-    expect(isValidStreet('betting', customStreets)).toBe(true);
-    expect(isValidStreet('preflop', customStreets)).toBe(false);
-  });
-});
-
-describe('isValidAction', () => {
-  it('accepts valid actions', () => {
-    expect(isValidAction('fold', ACTIONS)).toBe(true);
-    expect(isValidAction('call', ACTIONS)).toBe(true);
-    expect(isValidAction('open', ACTIONS)).toBe(true);
-    expect(isValidAction('check', ACTIONS)).toBe(true);
-    expect(isValidAction('won', ACTIONS)).toBe(true);
-  });
-
-  it('rejects invalid actions', () => {
-    expect(isValidAction('FOLD', ACTIONS)).toBe(false);
-    expect(isValidAction('raise', ACTIONS)).toBe(false);
-    expect(isValidAction('', ACTIONS)).toBe(false);
-    expect(isValidAction('bet', ACTIONS)).toBe(false);
-  });
-});
-
-describe('isValidCommunityCards', () => {
-  it('accepts empty array', () => {
-    expect(isValidCommunityCards([])).toBe(true);
-  });
-
-  it('accepts array with valid cards', () => {
-    expect(isValidCommunityCards(['A♠', 'K♥', 'Q♦'])).toBe(true);
-    expect(isValidCommunityCards(['A♠', 'K♥', 'Q♦', 'J♣', 'T♠'])).toBe(true);
-  });
-
-  it('accepts array with empty strings (placeholders)', () => {
-    expect(isValidCommunityCards(['', '', ''])).toBe(true);
-    expect(isValidCommunityCards(['A♠', '', 'Q♦'])).toBe(true);
-  });
-
-  it('rejects arrays with more than 5 cards', () => {
-    expect(isValidCommunityCards(['A♠', 'K♥', 'Q♦', 'J♣', 'T♠', '9♥'])).toBe(false);
-  });
-
-  it('rejects arrays with invalid cards', () => {
-    expect(isValidCommunityCards(['A♠', 'invalid', 'Q♦'])).toBe(false);
-  });
-
-  it('rejects non-array inputs', () => {
-    expect(isValidCommunityCards(null)).toBe(false);
-    expect(isValidCommunityCards('A♠')).toBe(false);
-    expect(isValidCommunityCards({})).toBe(false);
-  });
-});
-
-describe('isValidHoleCards', () => {
-  it('accepts valid 2-card array', () => {
-    expect(isValidHoleCards(['A♠', 'K♥'])).toBe(true);
-  });
-
-  it('accepts array with empty strings', () => {
-    expect(isValidHoleCards(['', ''])).toBe(true);
-    expect(isValidHoleCards(['A♠', ''])).toBe(true);
-  });
-
-  it('rejects arrays with wrong length', () => {
-    expect(isValidHoleCards(['A♠'])).toBe(false);
-    expect(isValidHoleCards(['A♠', 'K♥', 'Q♦'])).toBe(false);
-    expect(isValidHoleCards([])).toBe(false);
-  });
-
-  it('rejects arrays with invalid cards', () => {
-    expect(isValidHoleCards(['A♠', 'invalid'])).toBe(false);
-  });
-
-  it('rejects non-array inputs', () => {
-    expect(isValidHoleCards(null)).toBe(false);
-    expect(isValidHoleCards('AK')).toBe(false);
   });
 });
 

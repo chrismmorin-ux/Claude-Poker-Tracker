@@ -10,22 +10,18 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { initDB, saveHand, loadLatestHand, GUEST_USER_ID } from '../utils/persistence/index';
+import { initDB, saveHand, loadLatestHand, GUEST_USER_ID, createPersistenceLogger } from '../utils/persistence/index';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../reducers/playerReducer';
-import { logger } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 const DEBOUNCE_DELAY = 1500; // 1.5 seconds
-const MODULE_NAME = 'usePersistence';
 
-// Backward-compatible logging wrappers
-const log = (...args) => logger.debug(MODULE_NAME, ...args);
-const logError = (error) => logger.error(MODULE_NAME, error);
+const { log, logError } = createPersistenceLogger('usePersistence');
 
 // =============================================================================
 // PERSISTENCE HOOK
@@ -51,6 +47,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
   // Refs
   const saveTimerRef = useRef(null);
   const isInitializedRef = useRef(false);
+  const lastSnapshotRef = useRef(null);
 
   // ==========================================================================
   // INITIALIZATION (on mount)
@@ -130,6 +127,29 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       return;
     }
 
+    const handData = {
+      gameState: {
+        currentStreet: gameState.currentStreet,
+        dealerButtonSeat: gameState.dealerButtonSeat,
+        mySeat: gameState.mySeat,
+        actionSequence: gameState.actionSequence,
+        absentSeats: gameState.absentSeats
+      },
+      cardState: {
+        communityCards: cardState.communityCards,
+        holeCards: cardState.holeCards,
+        holeCardsVisible: cardState.holeCardsVisible,
+        allPlayerCards: cardState.allPlayerCards
+      },
+      seatPlayers: playerState.seatPlayers
+    };
+
+    // Skip save if data hasn't actually changed
+    const snapshot = JSON.stringify(handData);
+    if (snapshot === lastSnapshotRef.current) {
+      return;
+    }
+
     // Clear existing timer
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -138,33 +158,12 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
     // Set new debounced save
     saveTimerRef.current = setTimeout(async () => {
       try {
-        const handData = {
-          gameState: {
-            currentStreet: gameState.currentStreet,
-            dealerButtonSeat: gameState.dealerButtonSeat,
-            mySeat: gameState.mySeat,
-            seatActions: gameState.seatActions,
-            actionSequence: gameState.actionSequence,
-            absentSeats: gameState.absentSeats
-          },
-          cardState: {
-            communityCards: cardState.communityCards,
-            holeCards: cardState.holeCards,
-            holeCardsVisible: cardState.holeCardsVisible,
-            allPlayerCards: cardState.allPlayerCards
-          },
-          seatPlayers: playerState.seatPlayers
-        };
-
+        lastSnapshotRef.current = snapshot;
         const handId = await saveHand(handData, userId);
         setLastSavedAt(new Date());
         log(`Auto-saved hand ${handId} for user ${userId}`);
-
-        // Note: Hand count is NOT incremented here - it's only incremented
-        // when explicitly calling nextHand() to advance to a new hand
       } catch (error) {
         logError('Auto-save failed:', error);
-        // Fail silently - app continues working
       }
     }, DEBOUNCE_DELAY);
 

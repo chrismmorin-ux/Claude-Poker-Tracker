@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * CardGrid.test.jsx - Tests for card selection grid component
  */

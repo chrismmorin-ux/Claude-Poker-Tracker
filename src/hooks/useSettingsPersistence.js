@@ -20,19 +20,15 @@ import {
   saveSettings,
   resetSettings as dbResetSettings,
   GUEST_USER_ID,
+  createPersistenceLogger,
 } from '../utils/persistence/index';
 import { SETTINGS_ACTIONS, DEFAULT_SETTINGS } from '../constants/settingsConstants';
-import { logger } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const MODULE_NAME = 'useSettingsPersistence';
-
-// Backward-compatible logging wrappers
-const log = (...args) => logger.debug(MODULE_NAME, ...args);
-const logError = (error) => logger.error(MODULE_NAME, error);
+const { log, logError } = createPersistenceLogger('useSettingsPersistence');
 
 // =============================================================================
 // SETTINGS PERSISTENCE HOOK

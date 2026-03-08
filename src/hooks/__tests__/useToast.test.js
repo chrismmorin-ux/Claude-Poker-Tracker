@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useToast.test.js - Tests for toast notification hook
  */

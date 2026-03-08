@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { TendencyStats } from './TendencyStats';
 import { ExploitList } from './ExploitList';
-import { filterDismissed } from '../../utils/exploitSuggestions';
+import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
 
 /**
  * Get description summary from player data
@@ -97,7 +97,7 @@ export const PlayerRow = ({
     <>
     <tr
       className={`transition-colors ${
-        isAssigned ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
+        isAssigned ? 'bg-blue-900/20 hover:bg-blue-900/30' : 'hover:bg-gray-700/30'
       } ${isSelecting ? 'cursor-pointer' : ''}`}
       draggable
       onDragStart={onDragStart}
@@ -121,13 +121,13 @@ export const PlayerRow = ({
               className="w-10 h-10 rounded-full object-cover border border-gray-300 flex-shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-gray-300 font-semibold flex-shrink-0">
               {player.name.charAt(0).toUpperCase()}
             </div>
           )}
           {/* Name */}
           <div>
-            <div className="font-semibold text-gray-800">{player.name}</div>
+            <div className="font-semibold text-gray-200">{player.name}</div>
             {player.nickname && (
               <div className="text-xs text-gray-500">"{player.nickname}"</div>
             )}
@@ -138,7 +138,7 @@ export const PlayerRow = ({
 
       {/* Description */}
       <td className="px-4 py-3">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-400">
           {getDescriptionSummary(player)}
         </div>
       </td>
@@ -150,13 +150,13 @@ export const PlayerRow = ({
             {player.styleTags.slice(0, 2).map(tag => (
               <span
                 key={tag}
-                className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
+                className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded"
               >
                 {tag}
               </span>
             ))}
             {player.styleTags.length > 2 && (
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+              <span className="px-2 py-0.5 bg-gray-700 text-gray-400 text-xs rounded">
                 +{player.styleTags.length - 2}
               </span>
             )}
@@ -168,12 +168,12 @@ export const PlayerRow = ({
 
       {/* Hand Count */}
       <td className="px-4 py-3">
-        <div className="text-sm text-gray-700">{player.handCount || 0}</div>
+        <div className="text-sm text-gray-300">{player.handCount || 0}</div>
       </td>
 
       {/* Last Seen */}
       <td className="px-4 py-3">
-        <div className="text-sm text-gray-600">{formatRelativeTime(player.lastSeenAt)}</div>
+        <div className="text-sm text-gray-400">{formatRelativeTime(player.lastSeenAt)}</div>
       </td>
 
       {/* Actions */}
@@ -222,7 +222,7 @@ export const PlayerRow = ({
       </td>
     </tr>
     {showExploits && (
-      <tr className={isAssigned ? 'bg-blue-50' : 'bg-white'}>
+      <tr className={isAssigned ? 'bg-blue-900/20' : 'bg-gray-800'}>
         <td colSpan={6} className="px-4 pb-3 pt-0">
           <ExploitList
             exploits={exploits}

@@ -17,20 +17,17 @@ import {
   updatePlayer,
   deletePlayer as dbDeletePlayer,
   getPlayerByName,
-  GUEST_USER_ID
+  GUEST_USER_ID,
+  createPersistenceLogger,
 } from '../utils/persistence/index';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
-import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
+import { AppError, ERROR_CODES } from '../utils/errorHandler';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const MODULE_NAME = 'usePlayerPersistence';
-
-// Backward-compatible logging wrappers
-const log = (...args) => logger.debug(MODULE_NAME, ...args);
-const logError = (error) => logger.error(MODULE_NAME, error);
+const { log, logError } = createPersistenceLogger('usePlayerPersistence');
 
 // =============================================================================
 // PLAYER PERSISTENCE HOOK

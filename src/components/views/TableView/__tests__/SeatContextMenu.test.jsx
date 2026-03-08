@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SeatContextMenu.test.jsx - Tests for seat context menu component
  */

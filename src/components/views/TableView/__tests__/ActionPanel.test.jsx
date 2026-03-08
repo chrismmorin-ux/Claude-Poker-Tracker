@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ActionPanel.test.jsx - Tests for primitive action panel component
  */
@@ -11,24 +12,30 @@ import { initialGameState } from '../../../../reducers/gameReducer';
 
 const mockRecordPrimitiveAction = vi.fn();
 
-const renderWithGameContext = (ui, { gameState = initialGameState, dispatchGame = vi.fn() } = {}) => {
-  // Provide recordPrimitiveAction via the GameProvider
+const defaultBlinds = { sb: 1, bb: 2 };
+
+const renderWithGameContext = (ui, { gameState = initialGameState, dispatchGame = vi.fn(), blinds = defaultBlinds } = {}) => {
   return render(
-    <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+    <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
       {ui}
     </GameProvider>
   );
 };
 
+// Helper to create an action entry
+const entry = (seat, action, street = 'preflop', order = 1) => ({
+  seat, action, street, order, timestamp: Date.now(),
+});
+
 describe('ActionPanel', () => {
   const defaultProps = {
     selectedPlayers: [5],
     currentStreet: 'preflop',
-    seatActions: {},
     onClearSelection: vi.fn(),
     onToggleAbsent: vi.fn(),
     onClearSeatActions: vi.fn(),
     onUndoLastAction: vi.fn(),
+    onAdvanceSeat: vi.fn(),
   };
 
   beforeEach(() => {
@@ -83,184 +90,177 @@ describe('ActionPanel', () => {
   });
 
   describe('preflop primitive action buttons', () => {
-    it('renders Check, Call, Raise, Fold on preflop', () => {
+    it('renders Call with amount and Fold on preflop (Raise shown via sizing)', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.getByText('Check')).toBeInTheDocument();
-      expect(screen.getByText('Call')).toBeInTheDocument();
-      expect(screen.getByText('Raise')).toBeInTheDocument();
+      expect(screen.getByText('Call $2')).toBeInTheDocument();
       expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('does not render Bet on preflop', () => {
+    it('shows raise sizing options inline on preflop', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="preflop" />);
-      expect(screen.queryByText('Bet')).not.toBeInTheDocument();
+      expect(screen.getByText('Raise Size:')).toBeInTheDocument();
     });
   });
 
   describe('postflop primitive action buttons (no bet)', () => {
-    it('renders Check, Bet, Fold on flop with no bet', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={{}} />);
+    it('renders Check, Fold on flop with no bet (Bet shown via sizing)', () => {
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
       expect(screen.getByText('Check')).toBeInTheDocument();
-      expect(screen.getByText('Bet')).toBeInTheDocument();
       expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('does not render Call or Raise when no bet on street', () => {
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={{}} />);
-      expect(screen.queryByText('Call')).not.toBeInTheDocument();
-      expect(screen.queryByText('Raise')).not.toBeInTheDocument();
+    it('shows bet sizing options inline when no bet on street', () => {
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />);
+      expect(screen.getByText('Bet Size:')).toBeInTheDocument();
     });
   });
 
   describe('postflop primitive action buttons (with bet)', () => {
-    it('renders Call, Raise, Fold when bet exists on street', () => {
-      const seatActions = {
-        flop: { 3: ['bet'] },
+    it('renders Call, Fold when bet exists (Raise shown via sizing)', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(3, 'bet', 'flop')],
       };
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={seatActions} />);
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />, { gameState });
       expect(screen.getByText('Call')).toBeInTheDocument();
-      expect(screen.getByText('Raise')).toBeInTheDocument();
       expect(screen.getByText('Fold')).toBeInTheDocument();
     });
 
-    it('does not render Check or Bet when bet exists on street', () => {
-      const seatActions = {
-        flop: { 3: ['bet'] },
+    it('shows raise sizing options inline when bet exists', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(3, 'bet', 'flop')],
       };
-      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" seatActions={seatActions} />);
-      expect(screen.queryByText('Check')).not.toBeInTheDocument();
-      expect(screen.queryByText('Bet')).not.toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} currentStreet="flop" />, { gameState });
+      expect(screen.getByText('Raise Size:')).toBeInTheDocument();
     });
   });
 
   describe('multi-seat mode', () => {
-    it('renders all 5 primitive actions for multi-seat selection', () => {
+    it('renders non-sizing actions for multi-seat selection', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[1, 2, 3]} currentStreet="flop" />);
       expect(screen.getByText('Check')).toBeInTheDocument();
-      expect(screen.getByText('Bet')).toBeInTheDocument();
       expect(screen.getByText('Call')).toBeInTheDocument();
-      expect(screen.getByText('Raise')).toBeInTheDocument();
       expect(screen.getByText('Fold')).toBeInTheDocument();
+      expect(screen.queryByText('Bet')).not.toBeInTheDocument();
+      expect(screen.queryByText('Raise')).not.toBeInTheDocument();
     });
   });
 
   describe('control buttons', () => {
-    it('renders Clear Selection button', () => {
+    it('renders Clear button', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      expect(screen.getByText('Clear Selection')).toBeInTheDocument();
+      expect(screen.getByText('Clear')).toBeInTheDocument();
     });
 
-    it('renders Mark as Absent button', () => {
+    it('renders Absent button', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      expect(screen.getByText('Mark as Absent')).toBeInTheDocument();
+      expect(screen.getByText('Absent')).toBeInTheDocument();
     });
 
     it('calls onClearSelection when clicked', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      fireEvent.click(screen.getByText('Clear Selection'));
+      fireEvent.click(screen.getByText('Clear'));
       expect(defaultProps.onClearSelection).toHaveBeenCalledTimes(1);
     });
 
     it('calls onToggleAbsent when clicked', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      fireEvent.click(screen.getByText('Mark as Absent'));
+      fireEvent.click(screen.getByText('Absent'));
       expect(defaultProps.onToggleAbsent).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('action sequence display', () => {
-    it('does not show current actions when no actions recorded', () => {
+    it('does not show action sequence when no actions recorded', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      expect(screen.queryByText('Current Actions:')).not.toBeInTheDocument();
+      const panel = screen.getByText('Seat 5').closest('div');
+      expect(panel.querySelector('.bg-blue-50')).not.toBeInTheDocument();
     });
 
-    it('shows current actions section when seat has actions', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5],
-        seatActions: {
-          preflop: { 5: ['raise'] },
-        },
+    it('shows action sequence when seat has actions', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(5, 'raise', 'preflop')],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      expect(screen.getByText('Current Actions:')).toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5]} />, { gameState });
+      const container = document.querySelector('.bg-blue-50');
+      expect(container).toBeInTheDocument();
     });
 
-    it('does not show current actions for multiple seats', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5, 6],
-        seatActions: {
-          preflop: { 5: ['raise'], 6: ['fold'] },
-        },
+    it('does not show action sequence for multiple seats', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [
+          entry(5, 'raise', 'preflop'),
+          entry(6, 'fold', 'preflop', 2),
+        ],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      expect(screen.queryByText('Current Actions:')).not.toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5, 6]} />, { gameState });
+      const container = document.querySelector('.bg-blue-50');
+      expect(container).not.toBeInTheDocument();
     });
   });
 
   describe('clear and undo buttons', () => {
-    it('does not show Clear Seat Actions when no actions', () => {
+    it('does not show Clear Actions when no actions', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      expect(screen.queryByText('Clear Seat Actions')).not.toBeInTheDocument();
+      expect(screen.queryByText('Clear Actions')).not.toBeInTheDocument();
     });
 
-    it('does not show Undo Last Action when no actions', () => {
+    it('does not show Undo when no actions', () => {
       renderWithGameContext(<ActionPanel {...defaultProps} />);
-      expect(screen.queryByText(/Undo Last Action/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Undo/)).not.toBeInTheDocument();
     });
 
-    it('shows Clear Seat Actions when seat has actions', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5],
-        seatActions: { preflop: { 5: ['raise'] } },
+    it('shows Clear Actions when seat has actions', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(5, 'raise', 'preflop')],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      expect(screen.getByText('Clear Seat Actions')).toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5]} />, { gameState });
+      expect(screen.getByText('Clear Actions')).toBeInTheDocument();
     });
 
-    it('shows Undo Last Action when seat has actions', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5],
-        seatActions: { preflop: { 5: ['raise'] } },
+    it('shows Undo when seat has actions', () => {
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(5, 'raise', 'preflop')],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      expect(screen.getByText(/Undo Last Action/)).toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5]} />, { gameState });
+      expect(screen.getByText(/Undo/)).toBeInTheDocument();
     });
 
     it('calls onClearSeatActions with seat array when clicked', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5],
-        seatActions: { preflop: { 5: ['raise'] } },
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(5, 'raise', 'preflop')],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      fireEvent.click(screen.getByText('Clear Seat Actions'));
-      expect(props.onClearSeatActions).toHaveBeenCalledWith([5]);
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5]} />, { gameState });
+      fireEvent.click(screen.getByText('Clear Actions'));
+      expect(defaultProps.onClearSeatActions).toHaveBeenCalledWith([5]);
     });
 
     it('calls onUndoLastAction with seat number when clicked', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5],
-        seatActions: { preflop: { 5: ['raise'] } },
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [entry(5, 'raise', 'preflop')],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      fireEvent.click(screen.getByText(/Undo Last Action/));
-      expect(props.onUndoLastAction).toHaveBeenCalledWith(5);
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5]} />, { gameState });
+      fireEvent.click(screen.getByText(/Undo/));
+      expect(defaultProps.onUndoLastAction).toHaveBeenCalledWith(5);
     });
 
     it('does not show clear/undo for multiple seats even with actions', () => {
-      const props = {
-        ...defaultProps,
-        selectedPlayers: [5, 6],
-        seatActions: { preflop: { 5: ['raise'], 6: ['fold'] } },
+      const gameState = {
+        ...initialGameState,
+        actionSequence: [
+          entry(5, 'raise', 'preflop'),
+          entry(6, 'fold', 'preflop', 2),
+        ],
       };
-      renderWithGameContext(<ActionPanel {...props} />);
-      expect(screen.queryByText('Clear Seat Actions')).not.toBeInTheDocument();
-      expect(screen.queryByText(/Undo Last Action/)).not.toBeInTheDocument();
+      renderWithGameContext(<ActionPanel {...defaultProps} selectedPlayers={[5, 6]} />, { gameState });
+      expect(screen.queryByText('Clear Actions')).not.toBeInTheDocument();
     });
   });
 });

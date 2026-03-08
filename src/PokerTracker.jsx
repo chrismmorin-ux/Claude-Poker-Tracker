@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
 import { useAppState } from './hooks/useAppState';
 import { AppProviders } from './AppProviders';
+import { parseBlinds } from './utils/potCalculator';
 import { useUI, useAuth } from './contexts';
-import { SCREEN } from './reducers/uiReducer';
+import { SCREEN } from './constants/uiConstants';
 // View components
 import { StatsView } from './components/views/StatsView';
-import { CardSelectorView } from './components/views/CardSelectorView';
 import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
 import { HistoryView } from './components/views/HistoryView';
@@ -25,39 +25,40 @@ import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
 // ROUTER — Pure view selection based on UI state
 // =============================================================================
 
+const VEB = ({ viewName, onReturnToTable, children }) => (
+  <ViewErrorBoundary viewName={viewName} onReturnToTable={onReturnToTable}>
+    {children}
+  </ViewErrorBoundary>
+);
+
 const ViewRouter = () => {
   const scale = useScale();
-  const { currentView, showCardSelector, isShowdownViewOpen, setCurrentScreen } = useUI();
+  const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
 
   if (!isInitialized) {
     return <AuthLoadingScreen />;
   }
 
-  const VEB = ({ viewName, children }) => (
-    <ViewErrorBoundary viewName={viewName} onReturnToTable={() => setCurrentScreen(SCREEN.TABLE)}>
-      {children}
-    </ViewErrorBoundary>
-  );
+  const onReturnToTable = () => setCurrentScreen(SCREEN.TABLE);
 
   // Auth screens
-  if (currentView === SCREEN.LOGIN) return <VEB viewName="Login"><LoginView scale={scale} /></VEB>;
-  if (currentView === SCREEN.SIGNUP) return <VEB viewName="Signup"><SignupView scale={scale} /></VEB>;
-  if (currentView === SCREEN.PASSWORD_RESET) return <VEB viewName="Password Reset"><PasswordResetView scale={scale} /></VEB>;
+  if (currentView === SCREEN.LOGIN) return <VEB viewName="Login" onReturnToTable={onReturnToTable}><LoginView scale={scale} /></VEB>;
+  if (currentView === SCREEN.SIGNUP) return <VEB viewName="Signup" onReturnToTable={onReturnToTable}><SignupView scale={scale} /></VEB>;
+  if (currentView === SCREEN.PASSWORD_RESET) return <VEB viewName="Password Reset" onReturnToTable={onReturnToTable}><PasswordResetView scale={scale} /></VEB>;
 
-  // Overlay screens
-  if (isShowdownViewOpen) return <VEB viewName="Showdown"><ShowdownView scale={scale} /></VEB>;
-  if (showCardSelector) return <VEB viewName="Card Selector"><CardSelectorView scale={scale} /></VEB>;
+  // Overlay screens (card selector is now inline on TableView)
+  if (isShowdownViewOpen) return <VEB viewName="Showdown" onReturnToTable={onReturnToTable}><ShowdownView scale={scale} /></VEB>;
 
   // Main views — all with scale only
   switch (currentView) {
-    case SCREEN.TABLE: return <VEB viewName="Table"><TableView scale={scale} /></VEB>;
-    case SCREEN.HISTORY: return <VEB viewName="History"><HistoryView scale={scale} /></VEB>;
-    case SCREEN.SESSIONS: return <VEB viewName="Sessions"><SessionsView scale={scale} /></VEB>;
-    case SCREEN.PLAYERS: return <VEB viewName="Players"><PlayersView scale={scale} /></VEB>;
-    case SCREEN.SETTINGS: return <VEB viewName="Settings"><SettingsView scale={scale} /></VEB>;
-    case SCREEN.ANALYSIS: return <VEB viewName="Analysis"><AnalysisView scale={scale} /></VEB>;
-    default: return <VEB viewName="Stats"><StatsView scale={scale} /></VEB>;
+    case SCREEN.TABLE: return <VEB viewName="Table" onReturnToTable={onReturnToTable}><TableView scale={scale} /></VEB>;
+    case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><HistoryView scale={scale} /></VEB>;
+    case SCREEN.SESSIONS: return <VEB viewName="Sessions" onReturnToTable={onReturnToTable}><SessionsView scale={scale} /></VEB>;
+    case SCREEN.PLAYERS: return <VEB viewName="Players" onReturnToTable={onReturnToTable}><PlayersView scale={scale} /></VEB>;
+    case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
+    case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
+    default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
   }
 };
 
@@ -71,10 +72,16 @@ const AppRoot = () => {
     dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth,
   } = useAppState();
 
+  const blinds = useMemo(
+    () => parseBlinds(sessionState.currentSession?.gameType),
+    [sessionState.currentSession?.gameType]
+  );
+
   return (
     <AppProviders
       authState={authState} dispatchAuth={dispatchAuth}
       gameState={gameState} dispatchGame={dispatchGame}
+      blinds={blinds}
       uiState={uiState} dispatchUi={dispatchUi}
       sessionState={sessionState} dispatchSession={dispatchSession}
       playerState={playerState} dispatchPlayer={dispatchPlayer}

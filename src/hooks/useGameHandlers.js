@@ -237,11 +237,21 @@ export const useGameHandlers = () => {
 
     const contributions = getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat);
 
-    // Sort remaining seats in action order (starting from first-to-act, wrapping around)
-    const firstSeat = getFirstActionSeat();
+    // Find the last aggressor so we walk from the seat AFTER them
+    const streetEntries = actionSequence.filter(e => e.street === currentStreet);
+    let aggressorSeat = null;
+    for (let i = streetEntries.length - 1; i >= 0; i--) {
+      if (streetEntries[i].action === PRIMITIVE_ACTIONS.BET || streetEntries[i].action === PRIMITIVE_ACTIONS.RAISE) {
+        aggressorSeat = streetEntries[i].seat;
+        break;
+      }
+    }
+
+    // Sort remaining seats starting from the seat after the aggressor
+    const startSeat = aggressorSeat !== null ? (aggressorSeat % LIMITS.NUM_SEATS) + 1 : getFirstActionSeat();
     const n = LIMITS.NUM_SEATS;
     const sorted = [...remaining].sort((a, b) =>
-      ((a - firstSeat + n) % n) - ((b - firstSeat + n) % n)
+      ((a - startSeat + n) % n) - ((b - startSeat + n) % n)
     );
 
     let count = 0;

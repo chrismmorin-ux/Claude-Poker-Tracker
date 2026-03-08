@@ -95,7 +95,7 @@ export class ErrorBoundary extends React.Component {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '100vh',
+            height: '100dvh',
             padding: '20px',
             backgroundColor: '#1a1a2e',
             color: '#eee',

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * CashOutModal.test.jsx - Tests for cash out modal component
  */
@@ -138,7 +139,7 @@ describe('CashOutModal', () => {
     it('Cancel button has gray styling', () => {
       render(<CashOutModal {...defaultProps} />);
       const cancelButton = screen.getByText('Cancel');
-      expect(cancelButton).toHaveClass('bg-gray-200');
+      expect(cancelButton).toHaveClass('bg-gray-700');
     });
 
     it('End Session button has green styling', () => {

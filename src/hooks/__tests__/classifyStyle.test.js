@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyStyle } from '../usePlayerTendencies';
+import { classifyStyle } from '../../utils/tendencyCalculations';
 
 const makePct = (vpip, pfr, af = null, sampleSize = 50) => ({
   vpip, pfr, af, sampleSize,

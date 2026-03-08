@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ShowdownHeader.test.jsx - Tests for showdown header component
  */

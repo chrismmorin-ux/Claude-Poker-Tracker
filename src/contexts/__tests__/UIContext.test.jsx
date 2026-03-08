@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * UIContext.test.jsx - Tests for UI state context provider
  */

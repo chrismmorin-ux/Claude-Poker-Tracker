@@ -6,9 +6,9 @@
  */
 
 import { buildTimeline, getStreetTimeline, didPlayerFaceRaise } from '../handTimeline';
-import { getRangePositionCategory } from '../patternRecognition/positionUtils';
+import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS, SHOWDOWN_ACTIONS } from '../../constants/primitiveActions';
 import { parseCard } from '../exploitEngine/cardParser';
 import { rangeIndex } from '../exploitEngine/rangeMatrix';
 
@@ -16,7 +16,7 @@ import { rangeIndex } from '../exploitEngine/rangeMatrix';
  * Extract a single player's preflop action from one hand.
  * @param {number|string} playerId
  * @param {Object} hand - Hand record from DB
- * @returns {{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null } | null}
+ * @returns {{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null, showdownOutcome: string|null } | null}
  */
 export const extractPreflopAction = (playerId, hand) => {
   const seat = findPlayerSeat(playerId, hand);
@@ -33,7 +33,7 @@ export const extractPreflopAction = (playerId, hand) => {
   const playerActions = preflopActions.filter(e => e.seat === seat);
   if (playerActions.length === 0) {
     // Player was in hand but took no action — treat as fold
-    return { position, rangeAction: 'fold', facedRaise: false, showdownIndex: null };
+    return { position, rangeAction: 'fold', facedRaise: false, showdownIndex: null, showdownOutcome: null };
   }
 
   const firstAction = playerActions[0].action;
@@ -76,7 +76,19 @@ export const extractPreflopAction = (playerId, hand) => {
     }
   }
 
-  return { position, rangeAction, facedRaise, showdownIndex };
+  // Determine showdown outcome (won/lost/null)
+  let showdownOutcome = null;
+  if (showdownIndex !== null) {
+    const actionSeq = hand.gameState?.actionSequence;
+    if (Array.isArray(actionSeq)) {
+      const seatWon = actionSeq.some(
+        e => String(e.seat) === String(seat) && e.action === SHOWDOWN_ACTIONS.WON
+      );
+      showdownOutcome = seatWon ? 'won' : 'lost';
+    }
+  }
+
+  return { position, rangeAction, facedRaise, showdownIndex, showdownOutcome };
 };
 
 /**

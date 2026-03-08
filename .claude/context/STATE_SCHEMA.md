@@ -9,11 +9,13 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
 { currentStreet: 'preflop',     // 'preflop'|'flop'|'turn'|'river'|'showdown'
   dealerButtonSeat: 1,          // 1-9
   mySeat: 5,                    // 1-9
-  seatActions: { [street]: { [seat]: string[] } },  // legacy format
-  actionSequence: [             // v117+: ordered action entries
-    { seat: 5, action: 'raise', street: 'preflop', order: 1 }
+  actionSequence: [             // single source of truth for ALL actions (betting + showdown)
+    { seat: 5, action: 'raise', street: 'preflop', order: 1 },
+    { seat: 3, action: 'mucked', street: 'showdown', order: 5 }
   ],
   absentSeats: [] }             // [1-9]
+// No seatActions or showdownActions — actionSequence is the sole format
+// Query helpers: getActionsForSeatOnStreet(), hasSeatFolded(), hasShowdownAction() in sequenceUtils.js
 ```
 
 ## cardReducer

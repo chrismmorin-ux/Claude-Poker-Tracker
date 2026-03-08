@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ImportConfirmModal.test.jsx - Tests for import confirmation modal
  */
@@ -143,13 +144,13 @@ describe('ImportConfirmModal', () => {
     it('warning text has red color', () => {
       render(<ImportConfirmModal {...defaultProps} />);
       const warning = screen.getByText('Warning: This will replace ALL existing data!');
-      expect(warning).toHaveClass('text-red-600');
+      expect(warning).toHaveClass('text-red-400');
     });
 
     it('Cancel button has gray styling', () => {
       render(<ImportConfirmModal {...defaultProps} />);
       const cancelButton = screen.getByText('Cancel');
-      expect(cancelButton).toHaveClass('bg-gray-200');
+      expect(cancelButton).toHaveClass('bg-gray-700');
     });
 
     it('Import button has red styling', () => {

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * usePlayerPersistence.test.js - Tests for player persistence hook
  */
@@ -17,6 +18,7 @@ vi.mock('../../utils/persistence/index', () => ({
   deletePlayer: vi.fn(() => Promise.resolve()),
   getPlayerByName: vi.fn(() => Promise.resolve(null)),
   GUEST_USER_ID: 'guest',
+  createPersistenceLogger: () => ({ log: vi.fn(), logError: vi.fn() }),
 }));
 
 // Mock the errorHandler module

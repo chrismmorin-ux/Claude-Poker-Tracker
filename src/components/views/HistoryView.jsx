@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BookOpen } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { getAllHands, loadHandById, deleteHand, clearAllHands, getHandCount, getHandsBySessionId, getAllSessions, getSessionHandCount } from '../../utils/persistence/index';
 import { LAYOUT, STREETS } from '../../constants/gameConstants';
@@ -6,7 +7,7 @@ import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
 import { SESSION_ACTIONS } from '../../reducers/sessionReducer';
-import { SCREEN } from '../../reducers/uiReducer';
+import { SCREEN } from '../../constants/uiConstants';
 import { useToast } from '../../contexts/ToastContext';
 import { useGame, useCard, usePlayer, useSession, useUI } from '../../contexts';
 
@@ -264,13 +265,13 @@ export const HistoryView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="bg-gray-50 overflow-y-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
+      <div className="bg-gray-900 overflow-y-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
         {/* Header */}
-        <div className="bg-white border-b border-gray-300 p-6 sticky top-0 z-10">
+        <div className="bg-gray-800 border-b border-gray-700 p-6 sticky top-0 z-10">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Hand History</h2>
-              <p className="text-gray-600 mt-1">
+              <h2 className="text-2xl font-bold text-white">Hand History</h2>
+              <p className="text-gray-400 mt-1">
                 {loading ? 'Loading...' : `${hands.length} ${sessionFilter === FILTER_ALL ? 'of ' + handCount + ' total' : ''} ${hands.length === 1 ? 'hand' : 'hands'}`}
               </p>
             </div>
@@ -279,7 +280,7 @@ export const HistoryView = ({ scale }) => {
               <select
                 value={sessionFilter}
                 onChange={(e) => setSessionFilter(e.target.value)}
-                className="px-4 py-3 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-medium focus:border-blue-500 focus:outline-none"
+                className="px-4 py-3 rounded-lg border border-gray-600 bg-gray-700 text-gray-200 font-medium focus:border-blue-500 focus:outline-none"
               >
                 {currentSessionId && (
                   <option value={FILTER_CURRENT_SESSION}>Current Session</option>
@@ -304,9 +305,9 @@ export const HistoryView = ({ scale }) => {
               )}
               <button
                 onClick={() => setCurrentScreen(SCREEN.TABLE)}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold"
+                className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                ⬅ Back to Table
+                Back to Table
               </button>
             </div>
           </div>
@@ -319,9 +320,10 @@ export const HistoryView = ({ scale }) => {
               <div className="text-gray-500 text-xl">Loading hands...</div>
             </div>
           ) : hands.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-gray-400 text-2xl mb-2">No hands saved yet</div>
-              <div className="text-gray-500">Play a hand and it will be automatically saved here</div>
+            <div className="text-center py-20 flex flex-col items-center">
+              <BookOpen size={48} className="text-gray-600 mb-3" />
+              <div className="text-xl font-semibold text-gray-400">No Hands Saved</div>
+              <div className="text-sm text-gray-500">Play a hand and it will appear here</div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2">
@@ -350,19 +352,19 @@ export const HistoryView = ({ scale }) => {
                     {/* Session Header - shown when session changes */}
                     {showSessionHeader && (
                       <div className="mt-4 mb-2 first:mt-0">
-                        <div className={`bg-gray-100 rounded-lg px-4 py-3 border-l-4 ${borderColor}`}>
+                        <div className={`bg-gray-800 rounded-lg px-4 py-3 border-l-4 ${borderColor}`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <span className="text-lg font-bold text-gray-700">
+                              <span className="text-lg font-bold text-gray-200">
                                 {hand.sessionId ? getSessionLabel(hand.sessionId) : 'No Session'}
                               </span>
                               {hand.sessionId && sessionsMap[hand.sessionId] && (
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-gray-400">
                                   {sessionsMap[hand.sessionId].gameType || '1/2'}
                                 </span>
                               )}
                             </div>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-400">
                               {hands.filter(h => h.sessionId === hand.sessionId).length} hands
                             </span>
                           </div>
@@ -372,7 +374,7 @@ export const HistoryView = ({ scale }) => {
 
                     {/* Hand Card */}
                     <div
-                      className={`bg-white rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-colors ${
+                      className={`bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors ${
                         sessionFilter === FILTER_ALL ? `border-l-4 ${borderColor}` : ''
                       }`}
                     >
@@ -380,21 +382,21 @@ export const HistoryView = ({ scale }) => {
                         {/* Hand Info */}
                         <div className="flex-1">
                           <div className="flex items-center gap-4">
-                            <div className="text-2xl font-bold text-gray-700">
+                            <div className="text-2xl font-bold text-gray-200">
                               {/* Display session hand number if available, otherwise fall back to handId */}
                               #{hand.sessionHandNumber || hand.handId}
                             </div>
                             {/* Show handDisplayId for reference/search */}
                             {hand.handDisplayId && (
-                              <div className="text-xs text-gray-400 font-mono">
+                              <div className="text-xs text-gray-500 font-mono">
                                 {hand.handDisplayId}
                               </div>
                             )}
                             <div className="flex items-center gap-3">
-                              <span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">
+                              <span className="bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
                                 {getStreetDisplay(hand.gameState?.currentStreet)}
                               </span>
-                              <span className="text-gray-600 text-sm">
+                              <span className="text-gray-400 text-sm">
                                 {formatTimestamp(hand.timestamp)}
                               </span>
                               <span className="text-gray-500 text-sm">

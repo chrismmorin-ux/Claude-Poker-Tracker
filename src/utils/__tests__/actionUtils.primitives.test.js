@@ -10,10 +10,10 @@ const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
 
 describe('getValidActions', () => {
   describe('multi-seat mode', () => {
-    it('returns all 5 actions regardless of street or bet state', () => {
-      expect(getValidActions('preflop', false, true)).toEqual([CHECK, BET, CALL, RAISE, FOLD]);
-      expect(getValidActions('flop', true, true)).toEqual([CHECK, BET, CALL, RAISE, FOLD]);
-      expect(getValidActions('river', false, true)).toEqual([CHECK, BET, CALL, RAISE, FOLD]);
+    it('returns non-sizing actions (CHECK, CALL, FOLD) regardless of street or bet state', () => {
+      expect(getValidActions('preflop', false, true)).toEqual([CHECK, CALL, FOLD]);
+      expect(getValidActions('flop', true, true)).toEqual([CHECK, CALL, FOLD]);
+      expect(getValidActions('river', false, true)).toEqual([CHECK, CALL, FOLD]);
     });
   });
 

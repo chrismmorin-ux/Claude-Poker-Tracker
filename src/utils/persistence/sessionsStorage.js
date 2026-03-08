@@ -440,6 +440,165 @@ export const updateSession = async (sessionId, updates) => {
   }
 };
 
+// =============================================================================
+// ATOMIC SESSION OPERATIONS (multi-store transactions)
+// =============================================================================
+
+/**
+ * Create a session and set it as active in a single atomic transaction.
+ * Both writes commit or both abort — no drift between stores.
+ * @param {Object} sessionData - Session data (buyIn, goal, notes, etc.)
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<number>} The auto-generated sessionId
+ */
+export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_ID) => {
+  try {
+    const db = await initDB();
+
+    const sessionRecord = {
+      startTime: Date.now(),
+      endTime: null,
+      isActive: true,
+      venue: sessionData.venue || 'Online',
+      gameType: sessionData.gameType || '1/2',
+      buyIn: sessionData.buyIn || null,
+      rebuyTransactions: sessionData.rebuyTransactions || [],
+      cashOut: null,
+      reUp: sessionData.reUp || 0,
+      goal: sessionData.goal || null,
+      notes: sessionData.notes || null,
+      handCount: 0,
+      userId,
+      version: '1.4.0'
+    };
+
+    const validation = validateSessionRecord(sessionRecord);
+    if (!validation.valid) {
+      logValidationErrors('createSessionAtomic', validation.errors);
+      throw new Error(`Invalid session data: ${validation.errors.join(', ')}`);
+    }
+
+    const activeKey = `active_${userId || GUEST_USER_ID}`;
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
+        'readwrite'
+      );
+
+      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+      const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
+
+      const addRequest = sessionsStore.add(sessionRecord);
+
+      addRequest.onsuccess = (event) => {
+        const sessionId = event.target.result;
+
+        activeStore.put({
+          id: activeKey,
+          sessionId,
+          userId,
+          lastUpdated: Date.now()
+        });
+
+        // Resolve with sessionId after full transaction commits
+        transaction.oncomplete = () => {
+          log(`Session ${sessionId} created and set active atomically`);
+          db.close();
+          resolve(sessionId);
+        };
+      };
+
+      addRequest.onerror = (event) => {
+        reject(event.target.error);
+      };
+
+      transaction.onerror = (event) => {
+        logError('Atomic createSession failed:', event.target.error);
+        db.close();
+        reject(event.target.error);
+      };
+
+      transaction.onabort = (event) => {
+        logError('Atomic createSession aborted:', event.target.error);
+        db.close();
+        reject(event.target.error || new Error('Transaction aborted'));
+      };
+    });
+  } catch (error) {
+    logError('Error in createSessionAtomic:', error);
+    throw error;
+  }
+};
+
+/**
+ * End a session and clear the active marker in a single atomic transaction.
+ * Both writes commit or both abort — no drift between stores.
+ * @param {number} sessionId - The session ID to end
+ * @param {number|null} cashOut - Optional cash out amount
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<void>}
+ */
+export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID) => {
+  try {
+    const db = await initDB();
+    const activeKey = `active_${userId || GUEST_USER_ID}`;
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
+        'readwrite'
+      );
+
+      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+      const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
+
+      const getRequest = sessionsStore.get(sessionId);
+
+      getRequest.onsuccess = (event) => {
+        const session = event.target.result;
+
+        if (!session) {
+          reject(new Error(`Session ${sessionId} not found`));
+          return;
+        }
+
+        session.endTime = Date.now();
+        session.isActive = false;
+        session.cashOut = cashOut;
+
+        sessionsStore.put(session);
+        activeStore.delete(activeKey);
+
+        transaction.oncomplete = () => {
+          log(`Session ${sessionId} ended and active marker cleared atomically`);
+          db.close();
+          resolve();
+        };
+      };
+
+      getRequest.onerror = (event) => {
+        reject(event.target.error);
+      };
+
+      transaction.onerror = (event) => {
+        logError('Atomic endSession failed:', event.target.error);
+        db.close();
+        reject(event.target.error);
+      };
+
+      transaction.onabort = (event) => {
+        logError('Atomic endSession aborted:', event.target.error);
+        db.close();
+        reject(event.target.error || new Error('Transaction aborted'));
+      };
+    });
+  } catch (error) {
+    logError('Error in endSessionAtomic:', error);
+    throw error;
+  }
+};
+
 /**
  * Get the count of hands for a specific session
  * @param {number} sessionId - The session ID

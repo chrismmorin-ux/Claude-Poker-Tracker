@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * AvatarSection.test.jsx - Tests for avatar upload and preview
  */

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * StreetSelector.test.jsx - Tests for street selection component
  */

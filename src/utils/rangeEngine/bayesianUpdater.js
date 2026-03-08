@@ -70,10 +70,11 @@ export const updateProfileFromActions = (profile, extractions) => {
     );
   }
 
-  // 3. Apply showdown anchors
+  // 3. Apply showdown anchors and count showdowns
   for (const ext of extractions) {
     if (ext.showdownIndex !== null) {
-      applyShowdownAnchor(profile, ext.position, ext.rangeAction, ext.showdownIndex);
+      applyShowdownAnchor(profile, ext.position, ext.rangeAction, ext.showdownIndex, ext.showdownOutcome);
+      profile.opportunities[ext.position].showdownsSeen++;
     }
   }
 
@@ -131,12 +132,18 @@ const updateScenarioRanges = (ranges, counts, actions, popFreqs, totalObserved, 
  * @param {string} position
  * @param {string} action
  * @param {number} handGridIndex - 0-168 grid index
+ * @param {string|null} outcome - 'won', 'lost', or null (backward compat)
  */
-export const applyShowdownAnchor = (profile, position, action, handGridIndex) => {
+export const applyShowdownAnchor = (profile, position, action, handGridIndex, outcome = null) => {
   if (!profile.ranges[position] || !profile.ranges[position][action]) return;
 
   const range = profile.ranges[position][action];
   const { rank1, rank2, suited, isPair } = decodeIndex(handGridIndex);
+
+  // Outcome-aware boost levels
+  const altSuitBoost = outcome === 'won' ? 0.30 : outcome === 'lost' ? 0.15 : 0.25;
+  const adjPairBoost = outcome === 'won' ? 0.25 : outcome === 'lost' ? 0.10 : 0.20;
+  const adjKickerBoost = outcome === 'won' ? 0.20 : outcome === 'lost' ? 0.08 : 0.15;
 
   // Set confirmed hand to weight 1.0
   range[handGridIndex] = 1.0;
@@ -144,18 +151,18 @@ export const applyShowdownAnchor = (profile, position, action, handGridIndex) =>
   // Boost the other suitedness variant (AKs seen → boost AKo, and vice versa)
   if (!isPair) {
     const altIdx = rangeIndex(rank1, rank2, !suited);
-    range[altIdx] = Math.min(1.0, range[altIdx] + 0.25);
+    range[altIdx] = Math.min(1.0, range[altIdx] + altSuitBoost);
   }
 
   // Boost adjacent pairs (if we see TT, boost 99 and JJ)
   if (isPair) {
     if (rank1 > 0) {
       const lowerPair = rangeIndex(rank1 - 1, rank1 - 1, false);
-      range[lowerPair] = Math.min(1.0, range[lowerPair] + 0.2);
+      range[lowerPair] = Math.min(1.0, range[lowerPair] + adjPairBoost);
     }
     if (rank1 < 12) {
       const higherPair = rangeIndex(rank1 + 1, rank1 + 1, false);
-      range[higherPair] = Math.min(1.0, range[higherPair] + 0.2);
+      range[higherPair] = Math.min(1.0, range[higherPair] + adjPairBoost);
     }
   } else {
     // Boost same high card with adjacent kickers (AKs → AQs, AJs get small boost)
@@ -163,7 +170,7 @@ export const applyShowdownAnchor = (profile, position, action, handGridIndex) =>
       const adjKicker = rank2 + delta;
       if (adjKicker >= 0 && adjKicker < rank1) {
         const adjIdx = rangeIndex(rank1, adjKicker, suited);
-        range[adjIdx] = Math.min(1.0, range[adjIdx] + 0.15);
+        range[adjIdx] = Math.min(1.0, range[adjIdx] + adjKickerBoost);
       }
     }
   }
@@ -173,6 +180,7 @@ export const applyShowdownAnchor = (profile, position, action, handGridIndex) =>
     position,
     action,
     handIndex: handGridIndex,
+    outcome,
   });
 };
 

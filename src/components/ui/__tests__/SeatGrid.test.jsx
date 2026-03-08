@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SeatGrid.test.jsx - Tests for SeatGrid component
  */
@@ -215,7 +216,7 @@ describe('SeatGrid', () => {
 
     it('has white background', () => {
       const { container } = render(<SeatGrid {...defaultProps} />);
-      expect(container.firstChild.className).toContain('bg-white');
+      expect(container.firstChild.className).toContain('bg-gray-800');
     });
 
     it('has border-b for separation', () => {
@@ -225,7 +226,7 @@ describe('SeatGrid', () => {
 
     it('empty seats have gray styling', () => {
       const { container } = render(<SeatGrid {...defaultProps} />);
-      const emptySeats = container.querySelectorAll('.border-gray-300');
+      const emptySeats = container.querySelectorAll('.bg-gray-700');
       expect(emptySeats.length).toBe(9);
     });
 

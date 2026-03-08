@@ -1,28 +1,27 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import {
   LAYOUT,
   ACTIONS,
-  ACTION_ABBREV,
   SEAT_STATUS,
   SEAT_ARRAY,
   STREETS,
-  BETTING_STREETS,
   LIMITS,
-  isFoldAction,
 } from '../../../constants/gameConstants';
 import { useCard, useGame, useUI } from '../../../contexts';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useShowdownHandlers } from '../../../hooks/useShowdownHandlers';
 import { useShowdownCardSelection } from '../../../hooks/useShowdownCardSelection';
-import { getOverlayStatus, getActionColor, getActionDisplayName } from '../../../utils/actionUtils';
+
 import { getHandAbbreviation } from '../../../utils/displayUtils';
+import { getShowdownActions, hasShowdownAction } from '../../../utils/sequenceUtils';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { ShowdownHeader } from './ShowdownHeader';
 import { ShowdownSeatRow } from './ShowdownSeatRow';
 import { CardGrid } from './CardGrid';
 import { ActionHistoryGrid } from './ActionHistoryGrid';
+import { useShowdownEquity } from '../../../hooks/useShowdownEquity';
 
 const log = (...args) => console.debug('[ShowdownView]', ...args);
 
@@ -44,7 +43,7 @@ export const ShowdownView = ({ scale }) => {
   const {
     mySeat,
     dealerButtonSeat,
-    seatActions,
+    actionSequence,
     smallBlindSeat,
     bigBlindSeat,
     dispatchGame,
@@ -74,32 +73,50 @@ export const ShowdownView = ({ scale }) => {
     handleWonSeat,
     handleNextHandFromShowdown,
     handleCloseShowdown,
-  } = useShowdownHandlers(
+  } = useShowdownHandlers({
     dispatchCard,
     dispatchUi,
     dispatchGame,
     isSeatInactive,
-    seatActions,
+    actionSequence,
     recordSeatAction,
     nextHand,
-    LIMITS.NUM_SEATS,
-    log
-  );
+    numSeats: LIMITS.NUM_SEATS,
+    log,
+  });
 
   // Showdown card selection
-  const selectCardForShowdown = useShowdownCardSelection(
+  const selectCardForShowdown = useShowdownCardSelection({
     highlightedSeat,
     highlightedHoleSlot,
     mySeat,
     holeCards,
     allPlayerCards,
     communityCards,
-    seatActions,
+    actionSequence,
     isSeatInactive,
     dispatchCard,
     dispatchUi,
-    LIMITS.NUM_SEATS
-  );
+    numSeats: LIMITS.NUM_SEATS,
+  });
+
+  // Showdown hand rankings
+  const { rankings } = useShowdownEquity({
+    allPlayerCards,
+    holeCards,
+    mySeat,
+    communityCards,
+    actionSequence,
+  });
+
+  // Build a lookup map for seat -> ranking
+  const rankingBySeat = useMemo(() => {
+    const map = {};
+    for (const r of rankings) {
+      map[r.seat] = r;
+    }
+    return map;
+  }, [rankings]);
 
   // Handler for setting hole cards visibility
   const setHoleCardsVisible = useCallback((visible) => {
@@ -108,10 +125,17 @@ export const ShowdownView = ({ scale }) => {
   const isAllCardsAssigned = allCardsAssigned();
   const mode = isAllCardsAssigned ? 'summary' : 'selection';
 
+  // HE-2c: Filter to active seats in selection mode
+  const activeSeats = useMemo(
+    () => SEAT_ARRAY.filter(seat => !isSeatInactive(seat)),
+    [isSeatInactive]
+  );
+  const displaySeats = mode === 'selection' ? activeSeats : SEAT_ARRAY;
+
   // Check if anyone has won (for hiding Won button)
-  const anyoneHasWon = Object.values(seatActions['showdown'] || {}).some(actions => {
-    return (actions || []).includes(ACTIONS.WON);
-  });
+  const anyoneHasWon = actionSequence.some(
+    e => e.street === 'showdown' && e.action === ACTIONS.WON
+  );
 
   // Handler to highlight a slot
   const handleHighlightSlot = (seat, cardSlot) => {
@@ -120,7 +144,7 @@ export const ShowdownView = ({ scale }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
+    <div className="flex items-center justify-center h-dvh bg-gray-800 overflow-hidden">
       <div style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
@@ -142,13 +166,12 @@ export const ShowdownView = ({ scale }) => {
 
           <div className="bg-gray-100 p-4">
             {/* Player Cards Display - Used in both modes */}
-            <div className="grid grid-cols-9 gap-2 mb-4">
-              {SEAT_ARRAY.map(seat => {
+            <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${displaySeats.length}, minmax(0, 1fr))` }}>
+              {displaySeats.map(seat => {
                 const inactiveStatus = isSeatInactive(seat);
-                const showdownActions = seatActions['showdown']?.[seat];
-                const showdownActionsArray = Array.isArray(showdownActions) ? showdownActions : (showdownActions ? [showdownActions] : []);
-                const isMucked = showdownActionsArray.includes(ACTIONS.MUCKED);
-                const hasWon = showdownActionsArray.includes(ACTIONS.WON);
+                const showdownActionsArray = getShowdownActions(actionSequence, seat);
+                const isMucked = hasShowdownAction(actionSequence, seat, 'mucked');
+                const hasWon = hasShowdownAction(actionSequence, seat, 'won');
                 const cards = seat === mySeat ? holeCards : allPlayerCards[seat];
 
                 return (
@@ -168,14 +191,12 @@ export const ShowdownView = ({ scale }) => {
                     highlightedSeat={highlightedSeat}
                     highlightedHoleSlot={highlightedHoleSlot}
                     mode={mode}
-                    SEAT_STATUS={SEAT_STATUS}
-                    ACTIONS={ACTIONS}
-                    seatActions={showdownActions}
+                    showdownActionsArray={showdownActionsArray}
+                    ranking={rankingBySeat[seat] || null}
                     onSetHoleCardsVisible={setHoleCardsVisible}
                     onHighlightSlot={handleHighlightSlot}
                     onMuck={handleMuckSeat}
                     onWon={handleWonSeat}
-                    getOverlayStatus={getOverlayStatus}
                   />
                 );
               })}
@@ -187,18 +208,11 @@ export const ShowdownView = ({ scale }) => {
               <ActionHistoryGrid
                 SEAT_ARRAY={SEAT_ARRAY}
                 STREETS={STREETS}
-                BETTING_STREETS={BETTING_STREETS}
-                ACTIONS={ACTIONS}
-                ACTION_ABBREV={ACTION_ABBREV}
-                SEAT_STATUS={SEAT_STATUS}
-                seatActions={seatActions}
+                actionSequence={actionSequence}
                 allPlayerCards={allPlayerCards}
                 holeCards={holeCards}
                 mySeat={mySeat}
                 isSeatInactive={isSeatInactive}
-                getActionColor={getActionColor}
-                getActionDisplayName={getActionDisplayName}
-                isFoldAction={isFoldAction}
                 getHandAbbreviation={getHandAbbreviation}
               />
             ) : (

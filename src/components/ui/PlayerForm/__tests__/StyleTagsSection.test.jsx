@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * StyleTagsSection.test.jsx - Tests for playing style checkboxes
  */

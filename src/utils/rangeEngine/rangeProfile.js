@@ -8,7 +8,7 @@
 const GRID_SIZE = 169;
 
 /** Bump when profile schema changes to invalidate cached profiles */
-export const PROFILE_VERSION = 2;
+export const PROFILE_VERSION = 3;
 
 export const RANGE_ACTIONS = ['fold', 'limp', 'open', 'coldCall', 'threeBet'];
 export const RANGE_POSITIONS = ['EARLY', 'MIDDLE', 'LATE', 'SB', 'BB'];
@@ -31,7 +31,7 @@ export const createEmptyProfile = (playerId, userId) => {
     for (const action of RANGE_ACTIONS) {
       actionCounts[pos][action] = 0;
     }
-    opportunities[pos] = { noRaiseFaced: 0, facedRaise: 0, total: 0 };
+    opportunities[pos] = { noRaiseFaced: 0, facedRaise: 0, total: 0, showdownsSeen: 0 };
     ranges[pos] = {};
     for (const action of RANGE_ACTIONS) {
       ranges[pos][action] = new Float64Array(GRID_SIZE);

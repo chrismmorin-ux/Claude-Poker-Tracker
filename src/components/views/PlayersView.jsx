@@ -6,17 +6,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { PlayerForm } from '../ui/PlayerForm/index';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
 import { SeatGrid } from '../ui/SeatGrid';
-import { LIMITS } from '../../constants/gameConstants';
+import { ScaledContainer } from '../ui/ScaledContainer';
+import { LIMITS, LAYOUT } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
 import { useToast } from '../../contexts/ToastContext';
 import { usePlayer, useUI } from '../../contexts';
 import { usePlayerTendencies } from '../../hooks/usePlayerTendencies';
-import { useRangeProfile } from '../../hooks/useRangeProfile';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
 /** PlayersView - Player management view. All state via context hooks. */
@@ -51,7 +51,9 @@ export const PlayersView = ({ scale = 1 }) => {
 
   // Range detail modal
   const [rangeDetailPlayerId, setRangeDetailPlayerId] = useState(null);
-  const { rangeProfile: rangeDetailProfile, rangeSummary: rangeDetailSummary } = useRangeProfile(rangeDetailPlayerId);
+  const rangeDetailTendencies = rangeDetailPlayerId ? tendencyMap[rangeDetailPlayerId] : null;
+  const rangeDetailProfile = rangeDetailTendencies?.rangeProfile || null;
+  const rangeDetailSummary = rangeDetailTendencies?.rangeSummary || null;
   const rangeDetailPlayerName = rangeDetailPlayerId
     ? (playerState.allPlayers.find(p => p.playerId === rangeDetailPlayerId)?.name || 'Unknown')
     : '';
@@ -317,19 +319,20 @@ export const PlayersView = ({ scale = 1 }) => {
   };
 
   return (
-    <div className="w-full h-full bg-gray-100 overflow-auto">
+    <ScaledContainer scale={scale}>
+    <div className="bg-gray-900 overflow-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
+      <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setCurrentScreen(SCREEN.TABLE)}
-              className="flex items-center gap-1 px-3 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+              className="flex items-center gap-1 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded-lg font-medium transition-colors"
             >
               <ChevronLeft size={18} />
               Table View
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Player Management</h1>
+            <h1 className="text-2xl font-bold text-white">Player Management</h1>
           </div>
 
           <button
@@ -364,7 +367,7 @@ export const PlayersView = ({ scale = 1 }) => {
         />
 
         {/* Stats */}
-        <div className="mt-3 text-sm text-gray-600">
+        <div className="mt-3 text-sm text-gray-400">
           Showing {filteredPlayers.length} of {playerState.allPlayers.length} players
         </div>
       </div>
@@ -384,27 +387,31 @@ export const PlayersView = ({ scale = 1 }) => {
       {/* Player List */}
       <div className="p-4">
         {filteredPlayers.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
+          <div className="text-center py-12 flex flex-col items-center">
+            <Users size={48} className="text-gray-600 mb-3" />
+            <div className="text-xl font-semibold text-gray-400">
+              {playerState.allPlayers.length === 0 ? 'No Players Yet' : 'No Matches'}
+            </div>
+            <div className="text-sm text-gray-500">
               {playerState.allPlayers.length === 0
-                ? 'No players yet. Click "New Player" to create one.'
-                : 'No players match your search criteria.'}
-            </p>
+                ? 'Click "New Player" to create one'
+                : 'No players match your search criteria'}
+            </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-800 border-b border-gray-700">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Player</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Style</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Hands</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Last Seen</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Player</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Description</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Style</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Hands</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Last Seen</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {filteredPlayers.map(player => (
                   <PlayerRow
                     key={player.playerId}
@@ -455,18 +462,18 @@ export const PlayersView = ({ scale = 1 }) => {
           onClick={() => setDeletingPlayer(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
+            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold mb-4">Delete Player</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Delete Player</h2>
+            <p className="text-gray-300 mb-6">
               Are you sure you want to delete <strong>{deletingPlayer.name}</strong>?
               This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeletingPlayer(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -488,17 +495,17 @@ export const PlayersView = ({ scale = 1 }) => {
           onClick={handleDismissPendingAssignment}
         >
           <div
-            className="bg-white rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
+            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold mb-4">Assign to Seat?</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Assign to Seat?</h2>
+            <p className="text-gray-300 mb-6">
               Would you like to assign the newly created player to Seat {pendingSeatForPlayerAssignment}?
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleDismissPendingAssignment}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
               >
                 No, Skip
               </button>
@@ -529,11 +536,11 @@ export const PlayersView = ({ scale = 1 }) => {
           onClick={handleCancelReplace}
         >
           <div
-            className="bg-white rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
+            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold mb-4">Replace Player?</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Replace Player?</h2>
+            <p className="text-gray-300 mb-6">
               Seat {replacePromptData.targetSeat} is already occupied by{' '}
               <strong>{getSeatPlayerName(replacePromptData.targetSeat)}</strong>.
               Replace them with the dragged player?
@@ -541,7 +548,7 @@ export const PlayersView = ({ scale = 1 }) => {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelReplace}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -556,5 +563,6 @@ export const PlayersView = ({ scale = 1 }) => {
         </div>
       )}
     </div>
+    </ScaledContainer>
   );
 };

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SessionForm.test.jsx - Tests for SessionForm component
  *
@@ -298,7 +299,7 @@ describe('SessionForm', () => {
   describe('styling', () => {
     it('applies scale from props', () => {
       const { container } = renderWithSettings(<SessionForm {...defaultProps} scale={0.8} />);
-      const form = container.querySelector('.bg-white.rounded-lg');
+      const form = container.querySelector('.bg-gray-800.rounded-lg');
       expect(form.style.transform).toBe('scale(0.8)');
     });
 

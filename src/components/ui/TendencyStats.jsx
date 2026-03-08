@@ -7,28 +7,10 @@
  */
 
 import React from 'react';
+import { STYLE_COLORS_LIGHT } from '../../constants/designTokens';
 
 const MIN_DISPLAY_SAMPLE = 10;
 const MIN_STYLE_SAMPLE = 20;
-
-/**
- * Get color class for style classification
- */
-const getStyleColor = (style) => {
-  switch (style) {
-    case 'Fish':
-    case 'LP':
-      return 'text-green-700 bg-green-100'; // exploitable
-    case 'TAG':
-    case 'Reg':
-      return 'text-yellow-700 bg-yellow-100'; // reg
-    case 'LAG':
-    case 'Nit':
-      return 'text-red-700 bg-red-100'; // danger/tricky
-    default:
-      return 'text-gray-600 bg-gray-100';
-  }
-};
 
 /**
  * Format a stat value for display
@@ -82,7 +64,13 @@ export const TendencyStats = ({ stats }) => {
 
       {/* Style badge */}
       {style && sampleSize >= MIN_STYLE_SAMPLE && (
-        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${getStyleColor(style)}`}>
+        <span
+          className="px-1.5 py-0.5 rounded text-xs font-medium"
+          style={{
+            backgroundColor: (STYLE_COLORS_LIGHT[style] || STYLE_COLORS_LIGHT.Unknown).bg,
+            color: (STYLE_COLORS_LIGHT[style] || STYLE_COLORS_LIGHT.Unknown).text,
+          }}
+        >
           {style}
         </span>
       )}

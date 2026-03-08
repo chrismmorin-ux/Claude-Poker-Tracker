@@ -17,6 +17,7 @@ import {
   getStreetTimeline,
   didPlayerFaceRaise,
   getCbetInfo,
+  findLastRaiser,
 } from './handTimeline';
 
 // =============================================================================
@@ -129,6 +130,36 @@ const extractCbetStats = (seat, timeline) => {
   return getCbetInfo(timeline, seat);
 };
 
+/**
+ * Extract fold-to-cbet data from a single hand for a player.
+ * "Faced c-bet" = preflop raiser bet the flop AND this player was in the hand on the flop.
+ * "Folded to c-bet" = player folded on the flop facing that c-bet.
+ * @param {string} seat
+ * @param {Array} timeline
+ * @returns {{ facedCbet: boolean, foldedToCbet: boolean } | null}
+ */
+const extractFoldToCbet = (seat, timeline) => {
+  const s = String(seat);
+
+  // Find the preflop aggressor
+  const pfRaiser = findLastRaiser(timeline, 'preflop');
+  if (!pfRaiser || pfRaiser === s) return null; // no cbet possible if we're the raiser
+
+  // Check if preflop raiser bet the flop (= c-bet)
+  const flopActions = getStreetTimeline(timeline, 'flop');
+  const raiserBetFlop = flopActions.some(e => e.seat === pfRaiser && e.action === PRIMITIVE_ACTIONS.BET);
+  if (!raiserBetFlop) return null; // no c-bet happened
+
+  // Check if this player was in the hand on the flop
+  const playerFlopActions = flopActions.filter(e => e.seat === s);
+  if (playerFlopActions.length === 0) return null; // not in hand on flop
+
+  // Player faced a c-bet. Did they fold?
+  const foldedToCbet = playerFlopActions.some(e => e.action === PRIMITIVE_ACTIONS.FOLD);
+
+  return { facedCbet: true, foldedToCbet };
+};
+
 // =============================================================================
 // STATS BUILDING
 // =============================================================================
@@ -148,6 +179,8 @@ export const createEmptyStats = () => ({
   threeBetCount: 0,
   pfAggressorFlops: 0,
   cbetCount: 0,
+  facedCbet: 0,
+  foldedToCbet: 0,
   lastCalculatedHandId: null,
 });
 
@@ -215,22 +248,16 @@ const accumulateHand = (stats, playerId, hand) => {
     if (cbet.cbet) stats.cbetCount++;
   }
 
+  // Fold to c-bet
+  const ftc = extractFoldToCbet(seat, timeline);
+  if (ftc) {
+    stats.facedCbet++;
+    if (ftc.foldedToCbet) stats.foldedToCbet++;
+  }
+
   stats.lastCalculatedHandId = hand.handId ?? null;
 };
 
-/**
- * Update existing stats with a single new hand (incremental).
- * Returns a new stats object (does not mutate).
- * @param {Object} existingStats
- * @param {number|string} playerId
- * @param {Object} hand
- * @returns {Object} Updated stats
- */
-export const updatePlayerStats = (existingStats, playerId, hand) => {
-  const stats = { ...existingStats };
-  accumulateHand(stats, playerId, hand);
-  return stats;
-};
 
 // =============================================================================
 // DERIVED PERCENTAGES
@@ -241,8 +268,40 @@ export const updatePlayerStats = (existingStats, playerId, hand) => {
  * @param {Object} stats - Stats with running totals
  * @returns {Object} Display values with percentages and sample size
  */
+// =============================================================================
+// STYLE CLASSIFICATION
+// =============================================================================
+
+const MIN_STYLE_SAMPLE = 20;
+
+/**
+ * Classify player style from derived percentages.
+ * @param {{ vpip: number|null, pfr: number|null, af: number|null, sampleSize: number }} pct
+ * @returns {string|null} Style label or null if insufficient data
+ */
+export const classifyStyle = (pct) => {
+  if (!pct || pct.sampleSize < MIN_STYLE_SAMPLE) return null;
+
+  const { vpip, pfr, af } = pct;
+  if (vpip === null || pfr === null) return null;
+
+  // Order matters: most specific first
+  if (vpip > 40) return 'Fish';
+  if (vpip > 30 && pfr > 20) return 'LAG';
+  if (vpip > 30 && pfr < 10) return 'LP';
+  if (vpip < 15 && pfr < 10) return 'Nit';
+  if (vpip >= 20 && vpip <= 30 && pfr >= 15 && pfr <= 25 && af !== null && af > 1.5) return 'Reg';
+  if (vpip >= 15 && vpip <= 30 && pfr >= 10 && pfr <= 25) return 'TAG';
+
+  return 'Unknown';
+};
+
+// =============================================================================
+// DERIVED PERCENTAGES
+// =============================================================================
+
 export const derivePercentages = (stats) => {
-  if (!stats) return { vpip: null, pfr: null, af: null, threeBet: null, cbet: null, sampleSize: 0 };
+  if (!stats) return { vpip: null, pfr: null, af: null, threeBet: null, cbet: null, foldToCbet: null, sampleSize: 0 };
 
   const sampleSize = stats.handsSeenPreflop;
 
@@ -267,5 +326,9 @@ export const derivePercentages = (stats) => {
     ? Math.round((stats.cbetCount / stats.pfAggressorFlops) * 100)
     : null;
 
-  return { vpip, pfr, af, threeBet, cbet, sampleSize };
+  const foldToCbet = stats.facedCbet > 0
+    ? Math.round((stats.foldedToCbet / stats.facedCbet) * 100)
+    : null;
+
+  return { vpip, pfr, af, threeBet, cbet, foldToCbet, sampleSize };
 };

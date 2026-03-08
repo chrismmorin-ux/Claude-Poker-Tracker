@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SeatComponent.test.jsx - Tests for individual seat component
  */
@@ -5,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SeatComponent } from '../SeatComponent';
-import { ACTIONS } from '../../../../constants/gameConstants';
+// Primitive action strings (no longer uses legacy ACTIONS constants)
 
 describe('SeatComponent', () => {
   const defaultProps = {
@@ -20,7 +21,7 @@ describe('SeatComponent', () => {
     playerName: null,
     holeCards: ['', ''],
     holeCardsVisible: true,
-    getSeatColor: vi.fn(() => 'bg-gray-500'),
+    getSeatColor: vi.fn(() => ({ className: 'text-white', style: { backgroundColor: '#6b7280' } })),
     onSeatClick: vi.fn(),
     onSeatRightClick: vi.fn(),
     onDealerDragStart: vi.fn(),
@@ -44,12 +45,12 @@ describe('SeatComponent', () => {
     });
 
     it('applies seat color from getSeatColor', () => {
-      const getSeatColor = vi.fn(() => 'bg-green-500');
+      const getSeatColor = vi.fn(() => ({ className: 'text-white ring-4', style: { backgroundColor: '#16a34a' } }));
       render(<SeatComponent {...defaultProps} getSeatColor={getSeatColor} />);
 
       expect(getSeatColor).toHaveBeenCalledWith(5);
       const seatButton = screen.getByText('5');
-      expect(seatButton).toHaveClass('bg-green-500');
+      expect(seatButton).toHaveStyle({ backgroundColor: '#16a34a' });
     });
 
     it('positions seat at correct percentage', () => {
@@ -105,15 +106,15 @@ describe('SeatComponent', () => {
     });
 
     it('renders action badges when actions present', () => {
-      render(<SeatComponent {...defaultProps} actionArray={[ACTIONS.OPEN]} />);
-      // Action badge should be visible - uses abbreviation from ACTION_ABBREV
-      expect(screen.getByText('OPN')).toBeInTheDocument();
+      render(<SeatComponent {...defaultProps} actionArray={['raise']} />);
+      // Primitive actions use single-letter abbreviation in ActionSequence
+      expect(screen.getByText('R')).toBeInTheDocument();
     });
 
     it('renders multiple action badges', () => {
-      render(<SeatComponent {...defaultProps} actionArray={[ACTIONS.OPEN, ACTIONS.CALL]} />);
-      expect(screen.getByText('OPN')).toBeInTheDocument();
-      expect(screen.getByText('CAL')).toBeInTheDocument();
+      render(<SeatComponent {...defaultProps} actionArray={['raise', 'call']} />);
+      expect(screen.getByText('R')).toBeInTheDocument();
+      expect(screen.getByText('C')).toBeInTheDocument();
     });
   });
 

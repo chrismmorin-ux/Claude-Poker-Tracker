@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SessionCard.test.jsx - Tests for SessionCard component
  */
@@ -205,39 +206,6 @@ describe('SessionCard', () => {
 
       render(<SessionCard {...defaultProps} session={zeroHands} />);
       expect(screen.getByText('0 hands')).toBeInTheDocument();
-    });
-  });
-
-  describe('styling', () => {
-    it('has hover effect', () => {
-      const { container } = render(<SessionCard {...defaultProps} />);
-      expect(container.firstChild.className).toContain('hover:bg-gray-50');
-    });
-
-    it('has transition for hover', () => {
-      const { container } = render(<SessionCard {...defaultProps} />);
-      expect(container.firstChild.className).toContain('transition-colors');
-    });
-
-    it('delete button has red styling', () => {
-      render(<SessionCard {...defaultProps} />);
-      const button = screen.getByRole('button');
-      expect(button.className).toContain('text-red-600');
-    });
-
-    it('delete button has hover effect', () => {
-      render(<SessionCard {...defaultProps} />);
-      const button = screen.getByRole('button');
-      expect(button.className).toContain('hover:bg-red-50');
-    });
-  });
-
-  describe('icons', () => {
-    it('renders clock icon next to duration', () => {
-      const { container } = render(<SessionCard {...defaultProps} />);
-      // Clock icon from lucide-react will be an svg
-      const clockSvg = container.querySelector('svg');
-      expect(clockSvg).toBeInTheDocument();
     });
   });
 

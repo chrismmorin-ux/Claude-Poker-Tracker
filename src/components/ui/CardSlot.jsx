@@ -25,7 +25,7 @@ export const CardSlot = ({
 }) => {
   // Size configurations for different variants
   const sizeConfig = {
-    'table': { width: 70, height: 100, fontSize: 'text-2xl', plusSize: 'text-4xl' },
+    'table': { width: 56, height: 80, fontSize: 'text-xl', plusSize: 'text-3xl' },
     'hole-table': { width: 40, height: 58, fontSize: 'text-xl', plusSize: 'text-2xl' },
     'showdown': { width: 50, height: 70, fontSize: 'text-lg', plusSize: 'text-2xl' },
     'selector': { width: 60, height: 85, fontSize: 'text-xl', plusSize: 'text-3xl' },

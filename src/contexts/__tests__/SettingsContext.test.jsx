@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SettingsContext.test.jsx - Tests for settings state context provider
  */

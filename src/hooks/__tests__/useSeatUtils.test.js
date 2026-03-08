@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useSeatUtils.test.js - Tests for seat utilities hook
  */
@@ -5,14 +6,19 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useSeatUtils } from '../useSeatUtils';
-import { ACTIONS, STREETS } from '../../test/utils';
+import { ACTIONS } from '../../test/utils';
+
+// Helper to create actionSequence entries
+const entry = (seat, action, street = 'preflop', order = 1) => ({
+  seat, action, street, order,
+});
 
 describe('useSeatUtils', () => {
   const defaultParams = {
     currentStreet: 'preflop',
     dealerButtonSeat: 1,
     absentSeats: [],
-    seatActions: {},
+    actionSequence: [],
     numSeats: 9,
   };
 
@@ -23,23 +29,13 @@ describe('useSeatUtils', () => {
         params.currentStreet,
         params.dealerButtonSeat,
         params.absentSeats,
-        params.seatActions,
+        params.actionSequence,
         params.numSeats
       )
     );
   };
 
   describe('returns all expected values and functions', () => {
-    it('returns smallBlindSeat value', () => {
-      const { result } = createHook();
-      expect(typeof result.current.smallBlindSeat).toBe('number');
-    });
-
-    it('returns bigBlindSeat value', () => {
-      const { result } = createHook();
-      expect(typeof result.current.bigBlindSeat).toBe('number');
-    });
-
     it('returns hasSeatFolded function', () => {
       const { result } = createHook();
       expect(typeof result.current.hasSeatFolded).toBe('function');
@@ -56,45 +52,6 @@ describe('useSeatUtils', () => {
     });
   });
 
-  describe('smallBlindSeat', () => {
-    it('returns seat after dealer', () => {
-      const { result } = createHook({ dealerButtonSeat: 1 });
-      expect(result.current.smallBlindSeat).toBe(2);
-    });
-
-    it('wraps from seat 9 to seat 1', () => {
-      const { result } = createHook({ dealerButtonSeat: 9 });
-      expect(result.current.smallBlindSeat).toBe(1);
-    });
-
-    it('skips absent seats', () => {
-      const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2] });
-      expect(result.current.smallBlindSeat).toBe(3);
-    });
-
-    it('skips multiple absent seats', () => {
-      const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2, 3, 4] });
-      expect(result.current.smallBlindSeat).toBe(5);
-    });
-  });
-
-  describe('bigBlindSeat', () => {
-    it('returns seat two positions after dealer', () => {
-      const { result } = createHook({ dealerButtonSeat: 1 });
-      expect(result.current.bigBlindSeat).toBe(3);
-    });
-
-    it('wraps from seat 9 correctly', () => {
-      const { result } = createHook({ dealerButtonSeat: 8 });
-      expect(result.current.bigBlindSeat).toBe(1);
-    });
-
-    it('skips absent SB to find BB', () => {
-      const { result } = createHook({ dealerButtonSeat: 1, absentSeats: [2] });
-      expect(result.current.bigBlindSeat).toBe(4);
-    });
-  });
-
   describe('hasSeatFolded', () => {
     it('returns false when seat has no actions', () => {
       const { result } = createHook();
@@ -104,9 +61,7 @@ describe('useSeatUtils', () => {
     it('returns true when seat has folded on preflop', () => {
       const { result } = createHook({
         currentStreet: 'preflop',
-        seatActions: {
-          preflop: { 5: [ACTIONS.FOLD] },
-        },
+        actionSequence: [entry(5, ACTIONS.FOLD, 'preflop')],
       });
       expect(result.current.hasSeatFolded(5)).toBe(true);
     });
@@ -114,10 +69,7 @@ describe('useSeatUtils', () => {
     it('returns true when seat folded on earlier street', () => {
       const { result } = createHook({
         currentStreet: 'flop',
-        seatActions: {
-          preflop: { 5: [ACTIONS.FOLD] },
-          flop: {},
-        },
+        actionSequence: [entry(5, ACTIONS.FOLD, 'preflop')],
       });
       expect(result.current.hasSeatFolded(5)).toBe(true);
     });
@@ -125,9 +77,7 @@ describe('useSeatUtils', () => {
     it('returns false when seat called but did not fold', () => {
       const { result } = createHook({
         currentStreet: 'preflop',
-        seatActions: {
-          preflop: { 5: [ACTIONS.CALL] },
-        },
+        actionSequence: [entry(5, 'call', 'preflop')],
       });
       expect(result.current.hasSeatFolded(5)).toBe(false);
     });
@@ -135,11 +85,8 @@ describe('useSeatUtils', () => {
     it('returns false for MUCK action (muck is not a fold)', () => {
       const { result } = createHook({
         currentStreet: 'showdown',
-        seatActions: {
-          showdown: { 5: [ACTIONS.MUCKED] },
-        },
+        actionSequence: [entry(5, ACTIONS.MUCKED, 'showdown')],
       });
-      // MUCK is not in FOLD_ACTIONS, so it doesn't count as folded
       expect(result.current.hasSeatFolded(5)).toBe(false);
     });
   });
@@ -168,10 +115,7 @@ describe('useSeatUtils', () => {
       const { result } = createHook({
         dealerButtonSeat: 1,
         currentStreet: 'flop',
-        seatActions: {
-          preflop: { 2: [ACTIONS.FOLD] },
-          flop: {},
-        },
+        actionSequence: [entry(2, ACTIONS.FOLD, 'preflop')],
       });
       expect(result.current.getFirstActionSeat()).toBe(3);
     });
@@ -196,68 +140,24 @@ describe('useSeatUtils', () => {
     it('skips folded seats', () => {
       const { result } = createHook({
         currentStreet: 'flop',
-        seatActions: {
-          preflop: { 2: [ACTIONS.FOLD] },
-          flop: {},
-        },
+        actionSequence: [entry(2, ACTIONS.FOLD, 'preflop')],
       });
       expect(result.current.getNextActionSeat(1)).toBe(3);
     });
   });
 
   describe('hook updates when dependencies change', () => {
-    it('updates smallBlindSeat when dealer changes', () => {
+    it('updates hasSeatFolded when actionSequence changes', () => {
       const { result, rerender } = renderHook(
-        ({ dealer }) => useSeatUtils('preflop', dealer, [], {}, 9),
-        { initialProps: { dealer: 1 } }
-      );
-
-      expect(result.current.smallBlindSeat).toBe(2);
-
-      rerender({ dealer: 5 });
-
-      expect(result.current.smallBlindSeat).toBe(6);
-    });
-
-    it('updates hasSeatFolded when seatActions change', () => {
-      const { result, rerender } = renderHook(
-        ({ seatActions }) => useSeatUtils('preflop', 1, [], seatActions, 9),
-        { initialProps: { seatActions: {} } }
+        ({ actionSequence }) => useSeatUtils('preflop', 1, [], actionSequence, 9),
+        { initialProps: { actionSequence: [] } }
       );
 
       expect(result.current.hasSeatFolded(5)).toBe(false);
 
-      rerender({ seatActions: { preflop: { 5: [ACTIONS.FOLD] } } });
+      rerender({ actionSequence: [entry(5, ACTIONS.FOLD, 'preflop')] });
 
       expect(result.current.hasSeatFolded(5)).toBe(true);
-    });
-
-    it('updates when absentSeats change', () => {
-      const { result, rerender } = renderHook(
-        ({ absent }) => useSeatUtils('preflop', 1, absent, {}, 9),
-        { initialProps: { absent: [] } }
-      );
-
-      expect(result.current.smallBlindSeat).toBe(2);
-
-      rerender({ absent: [2] });
-
-      expect(result.current.smallBlindSeat).toBe(3);
-    });
-  });
-
-  describe('value stability', () => {
-    it('smallBlindSeat is stable when deps unchanged', () => {
-      const { result, rerender } = createHook();
-      const first = result.current.smallBlindSeat;
-      rerender();
-      expect(result.current.smallBlindSeat).toBe(first);
-    });
-
-    it('bigBlindSeat is stable when deps unchanged', () => {
-      const { result } = createHook();
-      const first = result.current.bigBlindSeat;
-      expect(result.current.bigBlindSeat).toBe(first);
     });
   });
 });

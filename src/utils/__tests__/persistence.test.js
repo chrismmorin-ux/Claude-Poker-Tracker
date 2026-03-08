@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * persistence.test.js - Tests for IndexedDB persistence layer
  *

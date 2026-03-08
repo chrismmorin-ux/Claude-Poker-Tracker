@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PlayerRow.test.jsx - Tests for PlayerRow component
  */
@@ -152,7 +153,7 @@ describe('PlayerRow', () => {
         </tbody></table>
       );
       const row = container.querySelector('tr');
-      expect(row.className).toContain('bg-blue-50');
+      expect(row.className).toContain('bg-blue-900/20');
     });
   });
 

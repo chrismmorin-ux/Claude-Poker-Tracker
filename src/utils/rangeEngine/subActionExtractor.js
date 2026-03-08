@@ -9,7 +9,7 @@
  */
 
 import { buildTimeline, getStreetTimeline } from '../handTimeline';
-import { getRangePositionCategory } from '../patternRecognition/positionUtils';
+import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 import { parseCard } from '../exploitEngine/cardParser';

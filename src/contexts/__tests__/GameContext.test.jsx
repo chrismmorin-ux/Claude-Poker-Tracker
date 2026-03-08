@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * GameContext.test.jsx - Tests for game state context provider
  */
@@ -8,10 +9,12 @@ import { GameProvider, useGame } from '../GameContext';
 
 const PREFLOP = 'preflop';
 
+const defaultBlinds = { sb: 1, bb: 2 };
+
 // Helper to create a wrapper with GameProvider
 const createWrapper = (gameState, dispatchGame = vi.fn()) => {
   const Wrapper = ({ children }) => (
-    <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+    <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={defaultBlinds}>
       {children}
     </GameProvider>
   );
@@ -23,8 +26,9 @@ const createDefaultGameState = (overrides = {}) => ({
   currentStreet: PREFLOP,
   dealerButtonSeat: 1,
   mySeat: 5,
-  seatActions: {},
   absentSeats: [],
+  actionSequence: [],
+  potOverride: null,
   ...overrides,
 });
 
@@ -50,7 +54,7 @@ describe('GameContext', () => {
       expect(result.current.currentStreet).toBe(PREFLOP);
       expect(result.current.dealerButtonSeat).toBe(1);
       expect(result.current.mySeat).toBe(5);
-      expect(result.current.seatActions).toEqual({});
+      expect(result.current.actionSequence).toEqual([]);
       expect(result.current.absentSeats).toEqual([]);
     });
 
@@ -155,7 +159,7 @@ describe('GameContext', () => {
       expect(result.current).toHaveProperty('currentStreet');
       expect(result.current).toHaveProperty('dealerButtonSeat');
       expect(result.current).toHaveProperty('mySeat');
-      expect(result.current).toHaveProperty('seatActions');
+      expect(result.current).toHaveProperty('actionSequence');
       expect(result.current).toHaveProperty('absentSeats');
 
       // Dispatch

@@ -24,6 +24,8 @@ export const useActionAdvisor = () => {
     heroCardStrings,
     potSize,
     villainAction,
+    villainBet = 0,
+    playerStats,
     trials = 2000,
   }) => {
     const callId = ++abortRef.current;
@@ -48,6 +50,8 @@ export const useActionAdvisor = () => {
         heroCards,
         potSize,
         villainAction: villainAction || undefined,
+        villainBet,
+        playerStats,
         trials,
       });
 

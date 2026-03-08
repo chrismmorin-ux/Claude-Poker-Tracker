@@ -3,126 +3,50 @@
  */
 
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { ACTIONS, ACTION_ABBREV, SEAT_STATUS, isFoldAction } from '../constants/gameConstants';
+import { getActionBadgeStyle as _getActionBadgeStyle, getActionSeatStyle as _getActionSeatStyle } from '../constants/designTokens';
 
 /**
  * Gets the display name for an action
- * @param {string} action - Action constant
- * @param {Function} isFoldAction - Function to check if action is a fold
- * @param {Object} ACTIONS - Actions constants
+ * @param {string} action - Action string (primitive or showdown)
  * @returns {string} - Display name for the action
  */
-export const getActionDisplayName = (action, isFoldAction, ACTIONS) => {
+export const getActionDisplayName = (action) => {
   if (isFoldAction(action)) return 'fold';
 
   switch (action) {
-    case ACTIONS.LIMP: return 'limp';
-    case ACTIONS.CALL: return 'call';
-    case ACTIONS.OPEN: return 'open';
-    case ACTIONS.THREE_BET: return '3bet';
-    case ACTIONS.FOUR_BET: return '4bet';
-    case ACTIONS.CBET_IP_SMALL: return 'cbet IP (S)';
-    case ACTIONS.CBET_IP_LARGE: return 'cbet IP (L)';
-    case ACTIONS.CBET_OOP_SMALL: return 'cbet OOP (S)';
-    case ACTIONS.CBET_OOP_LARGE: return 'cbet OOP (L)';
-    case ACTIONS.CHECK: return 'check';
-    case ACTIONS.CHECK_RAISE: return 'check-raise';
-    case ACTIONS.DONK: return 'donk';
-    case ACTIONS.STAB: return 'stab';
-    case ACTIONS.MUCKED: return 'muck';
-    case ACTIONS.WON: return 'won';
-    case ACTIONS.FOLD_TO_CBET: return 'fold to cbet';
-    case ACTIONS.FOLD_TO_CR: return 'fold to CR';
+    case 'check': return 'check';
+    case 'call': return 'call';
+    case 'bet': return 'bet';
+    case 'raise': return 'raise';
+    case 'mucked': return 'muck';
+    case 'won': return 'won';
     default: return action || '';
   }
 };
 
 /**
- * Gets Tailwind classes for action color (used in showdown summary)
- * @param {string} action - Action constant
- * @param {Function} isFoldAction - Function to check if action is a fold
- * @param {Object} ACTIONS - Actions constants
- * @returns {string} - Tailwind classes
+ * Gets inline style object for action color (badge display)
+ * @param {string} action - Action string
+ * @returns {{ backgroundColor: string, color: string }}
  */
-export const getActionColor = (action, isFoldAction, ACTIONS) => {
-  if (isFoldAction(action)) {
-    return 'bg-red-300 text-red-900';
-  }
-
-  switch (action) {
-    case ACTIONS.LIMP:
-      return 'bg-gray-300 text-gray-900';
-    case ACTIONS.CALL:
-    case ACTIONS.CHECK:
-      return 'bg-blue-200 text-blue-900';
-    case ACTIONS.OPEN:
-      return 'bg-green-300 text-green-900';
-    case ACTIONS.THREE_BET:
-    case ACTIONS.STAB:
-      return 'bg-yellow-300 text-yellow-900';
-    case ACTIONS.FOUR_BET:
-    case ACTIONS.DONK:
-    case ACTIONS.CHECK_RAISE:
-      return 'bg-orange-300 text-orange-900';
-    case ACTIONS.CBET_IP_SMALL:
-    case ACTIONS.CBET_IP_LARGE:
-    case ACTIONS.CBET_OOP_SMALL:
-    case ACTIONS.CBET_OOP_LARGE:
-      return 'bg-green-200 text-green-900';
-    case ACTIONS.MUCKED:
-      return 'bg-gray-400 text-gray-900';
-    case ACTIONS.WON:
-      return 'bg-green-400 text-green-900';
-    default:
-      return 'bg-gray-100 text-gray-900';
-  }
-};
+export const getActionColor = (action) => _getActionBadgeStyle(action);
 
 /**
- * Gets seat background and ring colors based on action (used in table view)
- * @param {string} action - Action constant
- * @param {Function} isFoldAction - Function to check if action is a fold
- * @param {Object} ACTIONS - Actions constants
- * @returns {Object} - {bg, ring} with Tailwind classes
+ * Gets seat background and ring hex colors based on action (used in table view)
+ * @param {string} action - Action string
+ * @returns {{ bg: string, ring: string }} - hex color values
  */
-export const getSeatActionStyle = (action, isFoldAction, ACTIONS) => {
-  if (isFoldAction(action)) {
-    return { bg: 'bg-red-400', ring: 'ring-red-300' };
-  }
-
-  switch (action) {
-    case ACTIONS.LIMP:
-      return { bg: 'bg-gray-400', ring: 'ring-gray-300' };
-    case ACTIONS.CALL:
-    case ACTIONS.CHECK:
-      return { bg: 'bg-blue-300', ring: 'ring-blue-200' };
-    case ACTIONS.OPEN:
-      return { bg: 'bg-green-400', ring: 'ring-green-300' };
-    case ACTIONS.THREE_BET:
-    case ACTIONS.STAB:
-      return { bg: 'bg-yellow-400', ring: 'ring-yellow-300' };
-    case ACTIONS.FOUR_BET:
-    case ACTIONS.DONK:
-    case ACTIONS.CHECK_RAISE:
-      return { bg: 'bg-orange-400', ring: 'ring-orange-300' };
-    case ACTIONS.CBET_IP_SMALL:
-    case ACTIONS.CBET_IP_LARGE:
-    case ACTIONS.CBET_OOP_SMALL:
-    case ACTIONS.CBET_OOP_LARGE:
-      return { bg: 'bg-green-500', ring: 'ring-green-300' };
-    default:
-      return { bg: 'bg-green-500', ring: 'ring-green-300' };
-  }
-};
+export const getSeatActionStyle = (action) => _getActionSeatStyle(action);
 
 /**
  * Determines overlay status for showdown view
  * @param {string} inactiveStatus - Inactive status (SEAT_STATUS.FOLDED or SEAT_STATUS.ABSENT)
  * @param {boolean} isMucked - Whether seat mucked
  * @param {boolean} hasWon - Whether seat won
- * @param {Object} SEAT_STATUS - Seat status constants
  * @returns {string|null} - Status string or null
  */
-export const getOverlayStatus = (inactiveStatus, isMucked, hasWon, SEAT_STATUS) => {
+export const getOverlayStatus = (inactiveStatus, isMucked, hasWon) => {
   if (inactiveStatus === SEAT_STATUS.FOLDED) return SEAT_STATUS.FOLDED;
   if (inactiveStatus === SEAT_STATUS.ABSENT) return SEAT_STATUS.ABSENT;
   if (isMucked) return 'mucked';
@@ -135,8 +59,6 @@ export const getOverlayStatus = (inactiveStatus, isMucked, hasWon, SEAT_STATUS) 
  * @param {number} numSeats - Total number of seats
  * @param {Function} isSeatInactive - Function to check if seat is inactive
  * @param {Array} actionSequence - Action sequence array
- * @param {Object} ACTIONS - Actions constants
- * @param {Object} SEAT_STATUS - Seat status constants
  * @param {number} mySeat - Player's seat
  * @param {Array} holeCards - Player's hole cards
  * @param {Object} allPlayerCards - All player cards
@@ -146,8 +68,6 @@ export const allCardsAssigned = (
   numSeats,
   isSeatInactive,
   actionSequence,
-  ACTIONS,
-  SEAT_STATUS,
   mySeat,
   holeCards,
   allPlayerCards
@@ -173,26 +93,11 @@ export const allCardsAssigned = (
 
 /**
  * Gets action abbreviation (3-4 chars max) for badge display
- * @param {string} action - Action constant
- * @param {Object} ACTION_ABBREV - Abbreviation map
+ * @param {string} action - Action string
  * @returns {string} - Abbreviated action
  */
-export const getActionAbbreviation = (action, ACTION_ABBREV) => {
+export const getActionAbbreviation = (action) => {
   return ACTION_ABBREV[action] || action?.substring(0, 3).toUpperCase() || '???';
-};
-
-/**
- * Checks if a pattern represents aggressive action
- * @param {string} pattern - Pattern constant
- * @returns {boolean}
- */
-export const isAggressivePattern = (pattern) => {
-  const aggressivePatterns = [
-    'open', '3bet', '4bet', '5bet', 'squeeze', 'iso-raise',
-    'bet', 'raise', 'cbet-ip', 'cbet-oop', 'donk', 'probe',
-    'stab', 'check-raise', 'raise-vs-cbet', 're-raise', 'float-bet',
-  ];
-  return aggressivePatterns.includes(pattern);
 };
 
 // =============================================================================
@@ -208,8 +113,7 @@ export const isAggressivePattern = (pattern) => {
  */
 export function getValidActions(street, hasBet, isMultiSeat) {
   const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
-  if (isMultiSeat) return [CHECK, BET, CALL, RAISE, FOLD];
+  if (isMultiSeat) return [CHECK, CALL, FOLD]; // Multi-seat: only non-sizing actions
   if (street === 'preflop') return [CALL, RAISE, FOLD]; // Blinds are forced bets — no CHECK or BET preflop
   return hasBet ? [CALL, RAISE, FOLD] : [CHECK, BET, FOLD];
 }
-

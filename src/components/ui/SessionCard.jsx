@@ -50,16 +50,16 @@ export const SessionCard = ({ session, onDelete }) => {
     : null;
 
   return (
-    <div className="p-4 hover:bg-gray-50 transition-colors">
+    <div className="p-4 hover:bg-gray-700/30 transition-colors">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-gray-200">
               {formatDate(session.startTime)} - {session.venue} - {session.gameType} - {formatTime12Hour(session.startTime)}
             </h3>
           </div>
 
-          <div className="flex gap-6 text-sm text-gray-600 flex-wrap">
+          <div className="flex gap-6 text-sm text-gray-400 flex-wrap">
             {/* Duration */}
             <div className="flex items-center gap-1">
               <Clock size={14} />
@@ -77,7 +77,7 @@ export const SessionCard = ({ session, onDelete }) => {
                 <DollarSign size={14} />
                 Buy-in: ${session.buyIn}
                 {session.rebuyTransactions && session.rebuyTransactions.length > 0 && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 ml-1">
                     (+${totalRebuys} rebuy)
                   </span>
                 )}
@@ -111,7 +111,7 @@ export const SessionCard = ({ session, onDelete }) => {
 
         <button
           onClick={() => onDelete(session.sessionId)}
-          className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+          className="ml-4 p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"
         >
           <Trash2 size={16} />
         </button>

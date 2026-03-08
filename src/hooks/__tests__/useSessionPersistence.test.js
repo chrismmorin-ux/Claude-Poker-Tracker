@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useSessionPersistence.test.js - Tests for session persistence hook
  */
@@ -10,16 +11,16 @@ import { createMockSession, createMockDispatchers } from '../../test/utils';
 
 // Mock the persistence module
 vi.mock('../../utils/persistence/index', () => ({
-  createSession: vi.fn(() => Promise.resolve(1)),
-  endSession: vi.fn(() => Promise.resolve()),
+  createSessionAtomic: vi.fn(() => Promise.resolve(1)),
+  endSessionAtomic: vi.fn(() => Promise.resolve()),
   getActiveSession: vi.fn(() => Promise.resolve(null)),
-  setActiveSession: vi.fn(() => Promise.resolve()),
   clearActiveSession: vi.fn(() => Promise.resolve()),
   getAllSessions: vi.fn(() => Promise.resolve([])),
   getSessionById: vi.fn(() => Promise.resolve(null)),
   updateSession: vi.fn(() => Promise.resolve()),
   deleteSession: vi.fn(() => Promise.resolve()),
   GUEST_USER_ID: 'guest',
+  createPersistenceLogger: () => ({ log: vi.fn(), logError: vi.fn() }),
 }));
 
 // Mock the errorHandler module
@@ -35,10 +36,9 @@ vi.mock('../../utils/errorHandler', () => ({
 }));
 
 import {
-  createSession,
-  endSession,
+  createSessionAtomic,
+  endSessionAtomic,
   getActiveSession,
-  setActiveSession,
   clearActiveSession,
   getAllSessions,
   getSessionById,
@@ -155,36 +155,20 @@ describe('useSessionPersistence', () => {
   });
 
   describe('startNewSession', () => {
-    it('creates session in database', async () => {
+    it('creates session atomically in database', async () => {
       const { result } = createHook();
 
       await act(async () => {
         await vi.runAllTimersAsync();
       });
 
-      vi.mocked(createSession).mockResolvedValue(42);
+      vi.mocked(createSessionAtomic).mockResolvedValue(42);
 
       await act(async () => {
         await result.current.startNewSession({ buyIn: 200, venue: 'Horseshoe Casino' });
       });
 
-      expect(createSession).toHaveBeenCalledWith({ buyIn: 200, venue: 'Horseshoe Casino' }, 'guest');
-    });
-
-    it('sets session as active', async () => {
-      const { result } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      vi.mocked(createSession).mockResolvedValue(42);
-
-      await act(async () => {
-        await result.current.startNewSession({});
-      });
-
-      expect(setActiveSession).toHaveBeenCalledWith(42, 'guest');
+      expect(createSessionAtomic).toHaveBeenCalledWith({ buyIn: 200, venue: 'Horseshoe Casino' }, 'guest');
     });
 
     it('dispatches START_SESSION action', async () => {
@@ -194,7 +178,7 @@ describe('useSessionPersistence', () => {
         await vi.runAllTimersAsync();
       });
 
-      vi.mocked(createSession).mockResolvedValue(42);
+      vi.mocked(createSessionAtomic).mockResolvedValue(42);
 
       await act(async () => {
         await result.current.startNewSession({
@@ -224,7 +208,7 @@ describe('useSessionPersistence', () => {
         await vi.runAllTimersAsync();
       });
 
-      vi.mocked(createSession).mockResolvedValue(99);
+      vi.mocked(createSessionAtomic).mockResolvedValue(99);
 
       let sessionId;
       await act(async () => {
@@ -241,7 +225,7 @@ describe('useSessionPersistence', () => {
         await vi.runAllTimersAsync();
       });
 
-      vi.mocked(createSession).mockRejectedValue(new Error('Creation failed'));
+      vi.mocked(createSessionAtomic).mockRejectedValue(new Error('Creation failed'));
 
       await expect(
         act(async () => {
@@ -252,7 +236,7 @@ describe('useSessionPersistence', () => {
   });
 
   describe('endCurrentSession', () => {
-    it('ends session in database with cashOut', async () => {
+    it('ends session atomically in database with cashOut', async () => {
       sessionState = {
         ...sessionState,
         currentSession: { ...sessionState.currentSession, sessionId: 10 },
@@ -268,26 +252,7 @@ describe('useSessionPersistence', () => {
         await result.current.endCurrentSession(500);
       });
 
-      expect(endSession).toHaveBeenCalledWith(10, 500);
-    });
-
-    it('clears active session', async () => {
-      sessionState = {
-        ...sessionState,
-        currentSession: { ...sessionState.currentSession, sessionId: 10 },
-      };
-
-      const { result } = createHook();
-
-      await act(async () => {
-        await vi.runAllTimersAsync();
-      });
-
-      await act(async () => {
-        await result.current.endCurrentSession(null);
-      });
-
-      expect(clearActiveSession).toHaveBeenCalled();
+      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest');
     });
 
     it('dispatches END_SESSION action', async () => {
@@ -325,7 +290,7 @@ describe('useSessionPersistence', () => {
         await result.current.endCurrentSession(100);
       });
 
-      expect(endSession).not.toHaveBeenCalled();
+      expect(endSessionAtomic).not.toHaveBeenCalled();
     });
   });
 

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * exportUtils.test.js - Tests for data export and import utilities
  */

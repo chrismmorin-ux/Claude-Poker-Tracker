@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ActionSequence.test.jsx - Tests for ActionSequence component
  */
@@ -6,7 +7,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ActionSequence } from '../ActionSequence';
-import { ACTIONS, ACTION_ABBREV } from '../../../test/utils';
+import { ACTION_ABBREV } from '../../../test/utils';
 
 // Mock ActionBadge to simplify testing
 vi.mock('../ActionBadge', () => ({
@@ -17,8 +18,7 @@ vi.mock('../ActionBadge', () => ({
 
 describe('ActionSequence', () => {
   const defaultProps = {
-    actions: [ACTIONS.OPEN, ACTIONS.CALL],
-    ACTIONS,
+    actions: ['raise', 'call'],
     ACTION_ABBREV,
   };
 
@@ -39,19 +39,19 @@ describe('ActionSequence', () => {
     });
 
     it('renders single action', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN]} />);
+      render(<ActionSequence {...defaultProps} actions={['raise']} />);
       expect(screen.getAllByTestId('action-badge')).toHaveLength(1);
     });
 
     it('renders multiple actions', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.FOLD]} />);
+      render(<ActionSequence {...defaultProps} actions={['raise', 'call', 'fold']} />);
       expect(screen.getAllByTestId('action-badge')).toHaveLength(3);
     });
   });
 
   describe('overflow handling', () => {
     it('shows all actions when under maxVisible limit', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN, ACTIONS.CALL]} maxVisible={3} />);
+      render(<ActionSequence {...defaultProps} actions={['raise', 'call']} maxVisible={3} />);
       expect(screen.getAllByTestId('action-badge')).toHaveLength(2);
       expect(screen.queryByText(/\+\d/)).not.toBeInTheDocument();
     });
@@ -60,7 +60,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD]}
+          actions={['raise', 'call', 'raise', 'fold']}
           maxVisible={3}
         />
       );
@@ -73,7 +73,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD, ACTIONS.CHECK]}
+          actions={['raise', 'call', 'raise', 'fold', 'check']}
           maxVisible={3}
         />
       );
@@ -85,7 +85,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD]}
+          actions={['raise', 'call', 'raise', 'fold']}
         />
       );
       expect(screen.getAllByTestId('action-badge')).toHaveLength(2);
@@ -96,7 +96,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET]}
+          actions={['raise', 'call', 'raise']}
           maxVisible={2}
         />
       );
@@ -108,7 +108,7 @@ describe('ActionSequence', () => {
 
   describe('arrow separators', () => {
     it('renders arrow between actions', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN, ACTIONS.CALL]} />);
+      render(<ActionSequence {...defaultProps} actions={['raise', 'call']} />);
       expect(screen.getByText('→')).toBeInTheDocument();
     });
 
@@ -116,7 +116,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD]}
+          actions={['raise', 'call', 'raise', 'fold']}
           maxVisible={3}
         />
       );
@@ -126,7 +126,7 @@ describe('ActionSequence', () => {
     });
 
     it('does not render arrow for single action', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN]} />);
+      render(<ActionSequence {...defaultProps} actions={['raise']} />);
       expect(screen.queryByText('→')).not.toBeInTheDocument();
     });
   });
@@ -156,7 +156,7 @@ describe('ActionSequence', () => {
   describe('tooltip', () => {
     it('sets tooltip with full action sequence', () => {
       const { container } = render(
-        <ActionSequence {...defaultProps} actions={[ACTIONS.OPEN, ACTIONS.CALL]} />
+        <ActionSequence {...defaultProps} actions={['raise', 'call']} />
       );
       expect(container.firstChild).toHaveAttribute('title');
     });
@@ -165,7 +165,7 @@ describe('ActionSequence', () => {
       const { container } = render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD]}
+          actions={['raise', 'call', 'raise', 'fold']}
           maxVisible={2}
         />
       );
@@ -189,7 +189,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL, ACTIONS.THREE_BET, ACTIONS.FOLD]}
+          actions={['raise', 'call', 'raise', 'fold']}
           maxVisible={3}
         />
       );
@@ -198,7 +198,7 @@ describe('ActionSequence', () => {
     });
 
     it('arrow has gray text', () => {
-      render(<ActionSequence {...defaultProps} actions={[ACTIONS.OPEN, ACTIONS.CALL]} />);
+      render(<ActionSequence {...defaultProps} actions={['raise', 'call']} />);
       const arrow = screen.getByText('→');
       expect(arrow.className).toContain('text-gray-500');
     });
@@ -209,7 +209,7 @@ describe('ActionSequence', () => {
       render(
         <ActionSequence
           {...defaultProps}
-          actions={[ACTIONS.OPEN, ACTIONS.CALL]}
+          actions={['raise', 'call']}
           maxVisible={1}
         />
       );
@@ -219,7 +219,7 @@ describe('ActionSequence', () => {
     });
 
     it('handles large number of actions', () => {
-      const manyActions = new Array(10).fill(ACTIONS.OPEN);
+      const manyActions = new Array(10).fill('raise');
       render(<ActionSequence {...defaultProps} actions={manyActions} maxVisible={3} />);
       expect(screen.getByText('+8')).toBeInTheDocument();
     });

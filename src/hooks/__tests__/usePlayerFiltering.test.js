@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * usePlayerFiltering.test.js - Tests for player filtering hook
  */

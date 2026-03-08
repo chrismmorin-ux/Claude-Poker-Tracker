@@ -176,7 +176,10 @@ export const AuthProvider = ({ authState, dispatchAuth, children }) => {
     dispatchAuth({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: true } });
 
     try {
-      await firebaseSendEmailVerification(user);
+      if (!auth.currentUser) {
+        return handleAuthError(new Error('No authenticated user'));
+      }
+      await firebaseSendEmailVerification(auth.currentUser);
       dispatchAuth({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: false } });
       return { success: true };
     } catch (err) {

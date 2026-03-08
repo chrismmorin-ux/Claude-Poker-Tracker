@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ActionHistoryGrid.test.jsx - Tests for action history grid component
  */
@@ -5,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ActionHistoryGrid } from '../ActionHistoryGrid';
-import { ACTIONS, SEAT_STATUS, ACTION_ABBREV } from '../../../../constants/gameConstants';
+import { ACTIONS, SEAT_STATUS } from '../../../../constants/gameConstants';
 
 // Mock ActionSequence component
 vi.mock('../../../ui/ActionSequence', () => ({
@@ -19,6 +20,11 @@ vi.mock('../../../ui/ActionSequence', () => ({
     </div>
   ),
 }));
+
+// Helper to create actionSequence entries
+const entry = (seat, action, street, order = 1) => ({
+  seat, action, street, order,
+});
 
 describe('ActionHistoryGrid', () => {
   const SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -36,24 +42,11 @@ describe('ActionHistoryGrid', () => {
   const defaultProps = {
     SEAT_ARRAY,
     STREETS,
-    BETTING_STREETS,
-    ACTIONS,
-    ACTION_ABBREV,
-    SEAT_STATUS,
-    seatActions: {
-      preflop: {},
-      flop: {},
-      turn: {},
-      river: {},
-      showdown: {},
-    },
+    actionSequence: [],
     allPlayerCards: createEmptyPlayerCards(),
     holeCards: ['', ''],
     mySeat: 5,
     isSeatInactive: vi.fn(() => null),
-    getActionColor: vi.fn(() => 'bg-gray-100 text-gray-900'),
-    getActionDisplayName: vi.fn((action) => action || ''),
-    isFoldAction: vi.fn((action) => action === ACTIONS.FOLD),
     getHandAbbreviation: vi.fn((cards) =>
       cards && cards[0] && cards[1] ? `${cards[0]}${cards[1]}` : ''
     ),
@@ -85,14 +78,13 @@ describe('ActionHistoryGrid', () => {
     it('renders dashes for empty actions', () => {
       render(<ActionHistoryGrid {...defaultProps} />);
       const dashes = screen.getAllByText('—');
-      // Each street has 9 seats, and with no actions, most will show dashes
       expect(dashes.length).toBeGreaterThan(0);
     });
   });
 
   describe('street headers', () => {
     it('renders street names with correct styling', () => {
-      const { container } = render(<ActionHistoryGrid {...defaultProps} />);
+      render(<ActionHistoryGrid {...defaultProps} />);
       STREETS.forEach((street) => {
         const header = screen.getByText(street);
         expect(header).toHaveClass('uppercase', 'font-bold');
@@ -104,13 +96,10 @@ describe('ActionHistoryGrid', () => {
     it('renders ActionSequence for betting street actions', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 3: [ACTIONS.OPEN, ACTIONS.CALL] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [
+          entry(3, 'raise', 'preflop', 1),
+          entry(3, 'call', 'preflop', 2),
+        ],
       };
       render(<ActionHistoryGrid {...props} />);
       expect(screen.getByTestId('action-sequence')).toBeInTheDocument();
@@ -119,31 +108,19 @@ describe('ActionHistoryGrid', () => {
     it('displays single action', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 5: [ACTIONS.CALL] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [entry(5, 'call', 'preflop')],
       };
       render(<ActionHistoryGrid {...props} />);
       expect(screen.getByTestId('action-sequence')).toBeInTheDocument();
     });
 
-    it('calls getActionColor for actions', () => {
+    it('renders action sequence for betting streets', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 1: [ACTIONS.OPEN] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [entry(1, 'raise', 'preflop')],
       };
       render(<ActionHistoryGrid {...props} />);
-      expect(props.getActionColor).toHaveBeenCalled();
+      expect(screen.getByTestId('action-sequence')).toBeInTheDocument();
     });
   });
 
@@ -151,57 +128,37 @@ describe('ActionHistoryGrid', () => {
     it('displays won with hand abbreviation', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: {},
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: { 3: [ACTIONS.WON] },
-        },
+        actionSequence: [entry(3, ACTIONS.WON, 'showdown')],
         allPlayerCards: {
           ...createEmptyPlayerCards(),
           3: ['A♠', 'K♥'],
         },
       };
       render(<ActionHistoryGrid {...props} />);
-      expect(props.getActionDisplayName).toHaveBeenCalledWith(ACTIONS.WON);
+      expect(screen.getByText(/won/)).toBeInTheDocument();
     });
 
     it('displays muck for mucked hands', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: {},
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: { 2: [ACTIONS.MUCKED] },
-        },
+        actionSequence: [entry(2, ACTIONS.MUCKED, 'showdown')],
       };
       render(<ActionHistoryGrid {...props} />);
-      // Should show 'muck' for mucked hands
       expect(screen.getByText('muck')).toBeInTheDocument();
     });
 
     it('displays fold with hand when folded in previous street', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 4: [ACTIONS.FOLD] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [entry(4, 'fold', 'preflop')],
         allPlayerCards: {
           ...createEmptyPlayerCards(),
           4: ['Q♦', 'J♦'],
         },
-        isFoldAction: vi.fn((action) => action === ACTIONS.FOLD),
       };
       render(<ActionHistoryGrid {...props} />);
-      // Should check if player folded
-      expect(props.isFoldAction).toHaveBeenCalled();
+      const foldElements = screen.getAllByText(/fold/);
+      expect(foldElements.length).toBeGreaterThan(0);
     });
 
     it('displays show with hand for active players', () => {
@@ -213,7 +170,6 @@ describe('ActionHistoryGrid', () => {
         },
       };
       render(<ActionHistoryGrid {...props} />);
-      // getHandAbbreviation should be called for showdown display
       expect(props.getHandAbbreviation).toHaveBeenCalled();
     });
 
@@ -225,7 +181,6 @@ describe('ActionHistoryGrid', () => {
         allPlayerCards: createEmptyPlayerCards(),
       };
       render(<ActionHistoryGrid {...props} />);
-      // My seat should use holeCards instead of allPlayerCards
       expect(props.getHandAbbreviation).toHaveBeenCalledWith(['A♥', 'A♦']);
     });
   });
@@ -233,7 +188,6 @@ describe('ActionHistoryGrid', () => {
   describe('inactive seat handling', () => {
     it('checks inactive status for each seat', () => {
       render(<ActionHistoryGrid {...defaultProps} />);
-      // isSeatInactive should be called for each seat in each street
       expect(defaultProps.isSeatInactive).toHaveBeenCalled();
     });
 
@@ -243,7 +197,6 @@ describe('ActionHistoryGrid', () => {
         isSeatInactive: vi.fn((seat) => (seat === 7 ? SEAT_STATUS.ABSENT : null)),
       };
       render(<ActionHistoryGrid {...props} />);
-      // Absent seats should show empty in showdown
       expect(props.isSeatInactive).toHaveBeenCalledWith(7);
     });
 
@@ -261,7 +214,6 @@ describe('ActionHistoryGrid', () => {
     it('renders 9 columns for seats', () => {
       const { container } = render(<ActionHistoryGrid {...defaultProps} />);
       const grids = container.querySelectorAll('.grid-cols-9');
-      // One for labels, one for each street
       expect(grids.length).toBe(STREETS.length + 1);
     });
   });
@@ -270,13 +222,11 @@ describe('ActionHistoryGrid', () => {
     it('displays multiple actions per street', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 1: [ACTIONS.OPEN, ACTIONS.RAISE, ACTIONS.CALL] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [
+          entry(1, 'raise', 'preflop', 1),
+          entry(1, 'raise', 'preflop', 2),
+          entry(1, 'call', 'preflop', 3),
+        ],
       };
       render(<ActionHistoryGrid {...props} />);
       const sequence = screen.getByTestId('action-sequence');
@@ -286,42 +236,18 @@ describe('ActionHistoryGrid', () => {
     it('passes correct props to ActionSequence', () => {
       const props = {
         ...defaultProps,
-        seatActions: {
-          preflop: { 2: [ACTIONS.CALL] },
-          flop: {},
-          turn: {},
-          river: {},
-          showdown: {},
-        },
+        actionSequence: [entry(2, 'call', 'preflop')],
       };
       render(<ActionHistoryGrid {...props} />);
       const sequence = screen.getByTestId('action-sequence');
-      expect(sequence.querySelector(`[data-action="${ACTIONS.CALL}"]`)).toBeInTheDocument();
+      expect(sequence.querySelector(`[data-action="${'call'}"]`)).toBeInTheDocument();
     });
   });
 
   describe('edge cases', () => {
-    it('handles empty seatActions object', () => {
-      const props = {
-        ...defaultProps,
-        seatActions: {},
-      };
-      render(<ActionHistoryGrid {...props} />);
-      // Should render without errors
+    it('handles empty actionSequence', () => {
+      render(<ActionHistoryGrid {...defaultProps} actionSequence={[]} />);
       expect(screen.getAllByText('—').length).toBeGreaterThan(0);
-    });
-
-    it('handles missing street in seatActions', () => {
-      const props = {
-        ...defaultProps,
-        seatActions: {
-          preflop: { 1: [ACTIONS.OPEN] },
-          // Other streets missing
-        },
-      };
-      render(<ActionHistoryGrid {...props} />);
-      // Should render without errors
-      expect(screen.getByTestId('action-sequence')).toBeInTheDocument();
     });
 
     it('handles null cards', () => {
@@ -333,7 +259,6 @@ describe('ActionHistoryGrid', () => {
         },
       };
       render(<ActionHistoryGrid {...props} />);
-      // Should render without errors
       expect(props.getHandAbbreviation).toHaveBeenCalled();
     });
   });

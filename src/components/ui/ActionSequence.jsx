@@ -6,8 +6,8 @@
 import React from 'react';
 import { ActionBadge } from './ActionBadge';
 import { isPrimitiveAction, PRIMITIVE_BUTTON_CONFIG } from '../../constants/primitiveActions';
-import { isFoldAction } from '../../constants/gameConstants';
 import { getActionDisplayName } from '../../utils/actionUtils';
+import { getActionBadgeStyle } from '../../constants/designTokens';
 
 /** Abbreviations for primitive actions */
 const PRIMITIVE_ABBREV = {
@@ -18,29 +18,16 @@ const PRIMITIVE_ABBREV = {
   fold: 'F',
 };
 
-/** Color classes for primitive action badges */
-const PRIMITIVE_COLORS = {
-  check: 'bg-blue-400 text-white',
-  bet: 'bg-green-400 text-white',
-  call: 'bg-blue-300 text-white',
-  raise: 'bg-orange-400 text-white',
-  fold: 'bg-red-400 text-white',
-};
-
 /**
  * ActionSequence - Displays a horizontal sequence of action badges
  * @param {Array<string>} actions - Array of action constants (legacy or primitive)
  * @param {string} size - Size variant: 'small' | 'medium' | 'large'
  * @param {number} maxVisible - Maximum badges to show before overflow (default: 3)
- * @param {Object} ACTIONS - Actions constants (optional, for legacy actions)
- * @param {Object} ACTION_ABBREV - Action abbreviations map (optional, for legacy actions)
  */
 export const ActionSequence = ({
   actions = [],
   size = 'medium',
   maxVisible = 3,
-  ACTIONS,
-  ACTION_ABBREV
 }) => {
   if (!actions || actions.length === 0) {
     return null;
@@ -56,8 +43,7 @@ export const ActionSequence = ({
     if (isPrimitiveAction(action)) {
       return PRIMITIVE_BUTTON_CONFIG[action]?.label || action;
     }
-    if (!ACTIONS) return action;
-    return getActionDisplayName(action, isFoldAction, ACTIONS);
+    return getActionDisplayName(action);
   };
 
   const tooltipText = actions.map(a => getDisplayName(a)).join(' → ');
@@ -74,7 +60,7 @@ export const ActionSequence = ({
     // Primitive actions always use primitive rendering (check, bet, call, raise, fold)
     if (isPrimitiveAction(action)) {
       return (
-        <div data-testid="action-badge" className={`inline-flex items-center justify-center rounded font-bold ${sizeStyles[size]} ${PRIMITIVE_COLORS[action]}`}>
+        <div data-testid="action-badge" className={`inline-flex items-center justify-center rounded font-bold ${sizeStyles[size]}`} style={getActionBadgeStyle(action)}>
           {PRIMITIVE_ABBREV[action]}
         </div>
       );
@@ -84,8 +70,6 @@ export const ActionSequence = ({
         action={action}
         size={size}
         showArrow={false}
-        ACTIONS={ACTIONS}
-        ACTION_ABBREV={ACTION_ABBREV}
       />
     );
   };

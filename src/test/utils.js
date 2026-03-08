@@ -61,8 +61,9 @@ export const createMockGameState = (overrides = {}) => ({
   currentStreet: 'preflop',
   dealerButtonSeat: 1,
   mySeat: 5,
-  seatActions: {},
   absentSeats: [],
+  actionSequence: [],
+  potOverride: null,
   ...overrides,
 });
 

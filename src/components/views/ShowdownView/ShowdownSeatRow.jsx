@@ -4,6 +4,8 @@ import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
 import { DiagonalOverlay } from '../../ui/DiagonalOverlay';
+import { ACTIONS, SEAT_STATUS } from '../../../constants/gameConstants';
+import { getOverlayStatus } from '../../../utils/actionUtils';
 
 /**
  * ShowdownSeatRow - Individual seat display for showdown view
@@ -24,25 +26,26 @@ export const ShowdownSeatRow = ({
   highlightedSeat,
   highlightedHoleSlot,
   mode, // 'selection' or 'summary'
-  SEAT_STATUS,
-  ACTIONS,
-  seatActions,
+  showdownActionsArray = [],
+  ranking = null,
   onSetHoleCardsVisible,
   onHighlightSlot,
   onMuck,
   onWon,
-  getOverlayStatus,
 }) => {
-  const showdownActionsArray = Array.isArray(seatActions) ? seatActions : (seatActions ? [seatActions] : []);
   const canInteract = mode === 'selection' && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked;
+  const isFolded = inactiveStatus === SEAT_STATUS.FOLDED;
 
   // Check if any seat has won (for hiding Won button on other seats)
   const someoneHasWon = mode === 'selection' && anyoneHasWon;
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Seat Number */}
-      <div className="text-sm font-bold mb-1">Seat {seat}</div>
+    <div className={`flex flex-col items-center ${isFolded ? 'opacity-40' : ''}`}>
+      {/* Seat Number + Folded Badge */}
+      <div className="text-sm font-bold mb-1">
+        Seat {seat}
+        {isFolded && <span className="ml-1 text-xs text-red-600 font-normal">(F)</span>}
+      </div>
 
       {/* Position Badges + Visibility Toggle */}
       <div className="flex gap-1 mb-1 items-center" style={{ minHeight: '24px' }}>
@@ -88,10 +91,19 @@ export const ShowdownSeatRow = ({
 
         {/* Diagonal Overlay Label */}
         <DiagonalOverlay
-          status={getOverlayStatus(inactiveStatus, isMucked, hasWon, SEAT_STATUS)}
+          status={getOverlayStatus(inactiveStatus, isMucked, hasWon)}
           SEAT_STATUS={SEAT_STATUS}
         />
       </div>
+
+      {/* Hand ranking badge */}
+      {ranking && (
+        <div className={`text-xs font-semibold mb-1 ${ranking.isWinner ? 'text-green-600' : 'text-gray-600'}`}>
+          <span className={`inline-block px-1.5 py-0.5 rounded ${ranking.isWinner ? 'bg-green-100' : 'bg-gray-100'}`}>
+            {ranking.rank === 1 ? '1st' : ranking.rank === 2 ? '2nd' : `${ranking.rank}th`} — {ranking.category}
+          </span>
+        </div>
+      )}
 
       {/* Muck/Won Buttons - Only in selection mode for active seats */}
       {mode === 'selection' &&
@@ -136,12 +148,15 @@ ShowdownSeatRow.propTypes = {
   highlightedSeat: PropTypes.number,
   highlightedHoleSlot: PropTypes.number,
   mode: PropTypes.oneOf(['selection', 'summary']).isRequired,
-  SEAT_STATUS: PropTypes.object.isRequired,
-  ACTIONS: PropTypes.object.isRequired,
-  seatActions: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+  showdownActionsArray: PropTypes.arrayOf(PropTypes.string),
+  ranking: PropTypes.shape({
+    rank: PropTypes.number,
+    category: PropTypes.string,
+    isWinner: PropTypes.bool,
+    score: PropTypes.number,
+  }),
   onSetHoleCardsVisible: PropTypes.func.isRequired,
   onHighlightSlot: PropTypes.func,
   onMuck: PropTypes.func,
   onWon: PropTypes.func,
-  getOverlayStatus: PropTypes.func.isRequired,
 };

@@ -6,7 +6,7 @@ import { LAYOUT } from '../../constants/gameConstants';
  * Used by all view components to maintain consistent sizing across devices
  */
 export const ScaledContainer = ({ scale, children }) => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-800 overflow-hidden">
+  <div className="flex items-center justify-center h-dvh bg-gray-800 overflow-hidden">
     <div
       style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,

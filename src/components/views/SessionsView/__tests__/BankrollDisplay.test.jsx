@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * BankrollDisplay.test.jsx - Tests for bankroll display component
  */

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ViewErrorBoundary.test.jsx - Tests for ViewErrorBoundary component
  */
@@ -330,7 +331,7 @@ describe('ViewErrorBoundary', () => {
         </ViewErrorBoundary>
       );
 
-      expect(container.firstChild.className).toContain('min-h-screen');
+      expect(container.firstChild.className).toContain('h-dvh');
     });
   });
 

@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:component": "vitest run --project component",
+    "test:hooks": "vitest run --project hooks",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
@@ -36,6 +39,7 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "vite": "^7.2.7",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.15"
   }
 }

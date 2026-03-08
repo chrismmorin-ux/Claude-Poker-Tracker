@@ -2,7 +2,8 @@
  * useScale.js - Viewport scale calculation hook
  *
  * Calculates scale factor to fit the design dimensions (1600x720)
- * within the current viewport with 95% padding.
+ * within the current viewport. Uses visualViewport API on mobile
+ * for stable dimensions that account for browser chrome (URL bars).
  */
 
 import { useState, useEffect } from 'react';
@@ -13,21 +14,35 @@ export const useScale = () => {
 
   useEffect(() => {
     const calculateScale = () => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      // Prefer visualViewport (stable on mobile, ignores URL bar changes)
+      const vv = window.visualViewport;
+      const viewportWidth = vv ? vv.width : window.innerWidth;
+      const viewportHeight = vv ? vv.height : window.innerHeight;
       const designWidth = LAYOUT.TABLE_WIDTH;
       const designHeight = LAYOUT.TABLE_HEIGHT;
 
-      const scaleX = (viewportWidth * 0.95) / designWidth;
-      const scaleY = (viewportHeight * 0.95) / designHeight;
+      const scaleX = viewportWidth / designWidth;
+      const scaleY = viewportHeight / designHeight;
       const newScale = Math.min(scaleX, scaleY, 1);
 
       setScale(newScale);
     };
 
     calculateScale();
+
+    // Listen to both window resize and visualViewport resize
     window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', calculateScale);
+    }
+
+    return () => {
+      window.removeEventListener('resize', calculateScale);
+      if (vv) {
+        vv.removeEventListener('resize', calculateScale);
+      }
+    };
   }, []);
 
   return scale;

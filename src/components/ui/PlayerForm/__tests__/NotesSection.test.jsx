@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * NotesSection.test.jsx - Tests for notes textarea
  */

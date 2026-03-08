@@ -5,7 +5,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   legacyToSequence,
-  sequenceToLegacy,
   summarizeByStreet,
   getPreflopAggressor,
   getActivePlayers,
@@ -95,56 +94,6 @@ describe('sequenceUtils', () => {
       expect(result[0].order).toBe(1);
       expect(result[1].order).toBe(2);
       expect(result[2].order).toBe(3);
-    });
-  });
-
-  describe('sequenceToLegacy', () => {
-    it('converts empty sequence to empty object', () => {
-      expect(sequenceToLegacy([])).toEqual({});
-    });
-
-    it('returns empty object for null/undefined', () => {
-      expect(sequenceToLegacy(null)).toEqual({});
-      expect(sequenceToLegacy(undefined)).toEqual({});
-    });
-
-    it('converts sequence to legacy format', () => {
-      const sequence = [
-        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
-        { seat: 2, action: 'raise', street: 'preflop', order: 2 },
-        { seat: 3, action: 'call', street: 'preflop', order: 3 },
-      ];
-      const result = sequenceToLegacy(sequence);
-
-      expect(result).toEqual({
-        preflop: {
-          1: ['fold'],
-          2: ['raise'],
-          3: ['call'],
-        },
-      });
-    });
-
-    it('groups multiple actions per seat', () => {
-      const sequence = [
-        { seat: 1, action: 'call', street: 'preflop', order: 1 },
-        { seat: 2, action: 'raise', street: 'preflop', order: 2 },
-        { seat: 1, action: 'raise', street: 'preflop', order: 3 },
-      ];
-      const result = sequenceToLegacy(sequence);
-
-      expect(result.preflop[1]).toEqual(['call', 'raise']);
-    });
-
-    it('handles multi-street sequences', () => {
-      const sequence = [
-        { seat: 1, action: 'raise', street: 'preflop', order: 1 },
-        { seat: 1, action: 'bet', street: 'flop', order: 2 },
-      ];
-      const result = sequenceToLegacy(sequence);
-
-      expect(result.preflop[1]).toEqual(['raise']);
-      expect(result.flop[1]).toEqual(['bet']);
     });
   });
 

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
+import { hasSeatFolded as utilHasSeatFolded } from '../utils/sequenceUtils';
 import {
-  hasSeatFolded as utilHasSeatFolded,
   getFirstActionSeat as utilGetFirstActionSeat,
   getNextActionSeat as utilGetNextActionSeat,
   isStreetActionComplete as utilIsStreetActionComplete,
@@ -31,11 +31,10 @@ export const useSeatUtils = (currentStreet, dealerButtonSeat, absentSeats, actio
     return utilGetNextActionSeat(
       currentSeat,
       absentSeats,
-      currentStreet,
       actionSequence,
       numSeats
     );
-  }, [absentSeats, currentStreet, actionSequence, numSeats]);
+  }, [absentSeats, actionSequence, numSeats]);
 
   const isStreetComplete = useCallback((seq) => {
     return utilIsStreetActionComplete(

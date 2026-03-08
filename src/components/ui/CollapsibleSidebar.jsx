@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
+import { NAV_COLORS } from '../../constants/designTokens';
 
 /**
  * Get the position name for a seat relative to the dealer
@@ -127,12 +128,12 @@ export const CollapsibleSidebar = ({
   const [editingGameType, setEditingGameType] = useState(false);
 
   const navItems = [
-    { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, color: 'bg-blue-600 hover:bg-blue-700' },
-    { screen: SCREEN.HISTORY, label: 'Hand History', icon: '📚', color: 'bg-purple-600 hover:bg-purple-700' },
-    { screen: SCREEN.SESSIONS, label: 'Sessions', icon: '🎯', color: 'bg-orange-600 hover:bg-orange-700' },
-    { screen: SCREEN.PLAYERS, label: 'Players', icon: '👥', color: 'bg-teal-600 hover:bg-teal-700' },
-    { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: '🔬', color: 'bg-indigo-600 hover:bg-indigo-700' },
-    { screen: SCREEN.SETTINGS, label: 'Settings', icon: '⚙️', color: 'bg-gray-600 hover:bg-gray-500' },
+    { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, navKey: 'stats' },
+    { screen: SCREEN.HISTORY, label: 'Hand History', icon: <BookOpen size={20} />, navKey: 'history' },
+    { screen: SCREEN.SESSIONS, label: 'Sessions', icon: <Target size={20} />, navKey: 'sessions' },
+    { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
+    { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },
+    { screen: SCREEN.SETTINGS, label: 'Settings', icon: <Settings size={20} />, navKey: 'settings' },
   ];
 
   // Get highlighted seat info
@@ -284,19 +285,25 @@ export const CollapsibleSidebar = ({
 
       {/* Navigation Items - Bottom of sidebar */}
       <div className="flex flex-col gap-2 p-2 pb-4">
-        {navItems.map(({ screen, label, icon, color }) => (
-          <button
-            key={screen}
-            onClick={() => onNavigate(screen)}
-            className={`${color} text-white rounded-lg flex items-center gap-2 transition-all ${
-              isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'
-            }`}
-            title={isCollapsed ? label : undefined}
-          >
-            <span className="text-lg">{icon}</span>
-            {!isCollapsed && <span className="font-semibold text-sm">{label}</span>}
-          </button>
-        ))}
+        {navItems.map(({ screen, label, icon, navKey }) => {
+          const colors = NAV_COLORS[navKey];
+          return (
+            <button
+              key={screen}
+              onClick={() => onNavigate(screen)}
+              className={`text-white rounded-lg flex items-center gap-2 transition-all ${
+                isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'
+              }`}
+              style={{ backgroundColor: colors.base }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.base; }}
+              title={isCollapsed ? label : undefined}
+            >
+              {icon}
+              {!isCollapsed && <span className="font-semibold text-sm">{label}</span>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

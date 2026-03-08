@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllHands, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
-import { buildPlayerStats, derivePercentages } from '../utils/tendencyCalculations';
+import { buildPlayerStats, derivePercentages, classifyStyle } from '../utils/tendencyCalculations';
 import { buildPositionStats } from '../utils/exploitEngine/positionStats';
 import { countLimps } from '../utils/sessionStats';
 import { buildRangeProfile, getRangeWidthSummary, getSubActionSummary, PROFILE_VERSION } from '../utils/rangeEngine';
@@ -102,32 +102,4 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
   }, [calculate]);
 
   return { tendencyMap, isLoading, refresh: calculate };
-};
-
-// =============================================================================
-// STYLE CLASSIFICATION
-// =============================================================================
-
-const MIN_STYLE_SAMPLE = 20;
-
-/**
- * Classify player style from derived percentages.
- * @param {{ vpip: number|null, pfr: number|null, af: number|null, sampleSize: number }} pct
- * @returns {string|null} Style label or null if insufficient data
- */
-export const classifyStyle = (pct) => {
-  if (!pct || pct.sampleSize < MIN_STYLE_SAMPLE) return null;
-
-  const { vpip, pfr, af } = pct;
-  if (vpip === null || pfr === null) return null;
-
-  // Order matters: most specific first
-  if (vpip > 40) return 'Fish';
-  if (vpip > 30 && pfr > 20) return 'LAG';
-  if (vpip > 30 && pfr < 10) return 'LP';
-  if (vpip < 15 && pfr < 10) return 'Nit';
-  if (vpip >= 20 && vpip <= 30 && pfr >= 15 && pfr <= 25 && af !== null && af > 1.5) return 'Reg';
-  if (vpip >= 15 && vpip <= 30 && pfr >= 10 && pfr <= 25) return 'TAG';
-
-  return 'Unknown';
 };

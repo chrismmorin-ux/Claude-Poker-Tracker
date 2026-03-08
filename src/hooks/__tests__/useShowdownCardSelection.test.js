@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useShowdownCardSelection.test.js - Tests for showdown card selection hook
  */
@@ -9,12 +10,12 @@ import { CARD_ACTIONS } from '../../reducers/cardReducer';
 import { UI_ACTIONS } from '../../reducers/uiReducer';
 import { createEmptyPlayerCards } from '../../test/utils';
 
-// Mock the seatNavigation module
-vi.mock('../../utils/seatNavigation', () => ({
+// Mock the seatUtils module
+vi.mock('../../utils/seatUtils', () => ({
   findNextEmptySlot: vi.fn(() => null),
 }));
 
-import { findNextEmptySlot } from '../../utils/seatNavigation';
+import { findNextEmptySlot } from '../../utils/seatUtils';
 
 describe('useShowdownCardSelection', () => {
   let dispatchCard;
@@ -36,24 +37,24 @@ describe('useShowdownCardSelection', () => {
       holeCards: ['', ''],
       allPlayerCards: createEmptyPlayerCards(),
       communityCards: ['', '', '', '', ''],
-      seatActions: {},
+      actionSequence: [],
       numSeats: 9,
     };
     const params = { ...defaults, ...overrides };
     return renderHook(() =>
-      useShowdownCardSelection(
-        params.highlightedSeat,
-        params.highlightedHoleSlot,
-        params.mySeat,
-        params.holeCards,
-        params.allPlayerCards,
-        params.communityCards,
-        params.seatActions,
+      useShowdownCardSelection({
+        highlightedSeat: params.highlightedSeat,
+        highlightedHoleSlot: params.highlightedHoleSlot,
+        mySeat: params.mySeat,
+        holeCards: params.holeCards,
+        allPlayerCards: params.allPlayerCards,
+        communityCards: params.communityCards,
+        actionSequence: params.actionSequence,
         isSeatInactive,
         dispatchCard,
         dispatchUi,
-        params.numSeats
-      )
+        numSeats: params.numSeats,
+      })
     );
   };
 
@@ -240,7 +241,7 @@ describe('useShowdownCardSelection', () => {
         allPlayerCards,
         9, // numSeats
         isSeatInactive,
-        {} // seatActions
+        [] // actionSequence
       );
     });
   });

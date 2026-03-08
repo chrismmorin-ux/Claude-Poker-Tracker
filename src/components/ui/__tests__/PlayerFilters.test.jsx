@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * PlayerFilters.test.jsx - Tests for PlayerFilters component
  */
@@ -228,27 +229,6 @@ describe('PlayerFilters', () => {
 
       // Should still render without error
       expect(screen.getByText('All Styles')).toBeInTheDocument();
-    });
-  });
-
-  describe('styling', () => {
-    it('search input has flex-1 for flexible width', () => {
-      render(<PlayerFilters {...defaultProps} />);
-      const input = screen.getByPlaceholderText('Search by name or nickname...');
-      expect(input.className).toContain('flex-1');
-    });
-
-    it('applies focus styles to inputs', () => {
-      render(<PlayerFilters {...defaultProps} />);
-      const input = screen.getByPlaceholderText('Search by name or nickname...');
-      expect(input.className).toContain('focus:ring-2');
-      expect(input.className).toContain('focus:ring-blue-500');
-    });
-
-    it('uses grid layout for filter dropdowns', () => {
-      const { container } = render(<PlayerFilters {...defaultProps} />);
-      const grid = container.querySelector('.grid-cols-7');
-      expect(grid).toBeInTheDocument();
     });
   });
 

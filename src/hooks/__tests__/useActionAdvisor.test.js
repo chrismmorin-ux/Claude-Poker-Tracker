@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * useActionAdvisor.test.js - Tests for action advisor React hook
  */

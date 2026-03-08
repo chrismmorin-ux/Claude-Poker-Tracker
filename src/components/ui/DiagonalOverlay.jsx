@@ -1,4 +1,5 @@
 import React from 'react';
+import { OVERLAY_COLORS } from '../../constants/designTokens';
 
 /**
  * DiagonalOverlay - Displays FOLD/ABSENT/MUCK/WON labels diagonally across cards
@@ -11,11 +12,11 @@ export const DiagonalOverlay = ({ status, SEAT_STATUS = null }) => {
 
   const overlayConfig = {
     ...(SEAT_STATUS ? {
-      [SEAT_STATUS.FOLDED]: { bg: 'bg-red-600', label: 'FOLD' },
-      [SEAT_STATUS.ABSENT]: { bg: 'bg-gray-600', label: 'ABSENT' },
+      [SEAT_STATUS.FOLDED]: { bg: OVERLAY_COLORS.folded, label: 'FOLD' },
+      [SEAT_STATUS.ABSENT]: { bg: OVERLAY_COLORS.absent, label: 'ABSENT' },
     } : {}),
-    mucked: { bg: 'bg-gray-700', label: 'MUCK' },
-    won: { bg: 'bg-green-600', label: 'WON' },
+    mucked: { bg: OVERLAY_COLORS.mucked, label: 'MUCK' },
+    won: { bg: OVERLAY_COLORS.won, label: 'WON' },
   };
 
   const config = overlayConfig[status];
@@ -23,7 +24,10 @@ export const DiagonalOverlay = ({ status, SEAT_STATUS = null }) => {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className={`transform -rotate-45 text-xs font-bold px-3 py-1 rounded shadow-lg ${config.bg} text-white`}>
+      <div
+        className="transform -rotate-45 text-xs font-bold px-3 py-1 rounded shadow-lg text-white"
+        style={{ backgroundColor: config.bg }}
+      >
         {config.label}
       </div>
     </div>

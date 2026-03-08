@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * usePersistence.test.js - Tests for persistence hook
  */
@@ -22,6 +23,7 @@ vi.mock('../../utils/persistence/index', () => ({
   saveHand: vi.fn(() => Promise.resolve(1)),
   loadLatestHand: vi.fn(() => Promise.resolve(null)),
   GUEST_USER_ID: 'guest',
+  createPersistenceLogger: () => ({ log: vi.fn(), logError: vi.fn() }),
 }));
 
 // Mock the errorHandler module

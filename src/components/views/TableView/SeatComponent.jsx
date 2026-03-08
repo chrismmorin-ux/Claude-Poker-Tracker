@@ -35,6 +35,9 @@ export const SeatComponent = ({
   seatBet,
   isPFR,
 }) => {
+  // Seat color (returns { className, style })
+  const seatColor = getSeatColor(seat);
+
   // Calculate player name offset based on position badges
   const hasOtherBadge = isDealer || isSmallBlind || isBigBlind;
   const hasPositionBadge = hasOtherBadge || isPFR;
@@ -90,8 +93,8 @@ export const SeatComponent = ({
         <button
           onClick={() => onSeatClick(seat)}
           onContextMenu={(e) => onSeatRightClick(e, seat)}
-          className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${getSeatColor(seat)}`}
-          style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px` }}
+          className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${seatColor.className}`}
+          style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px`, ...seatColor.style }}
         >
           {seat}
         </button>

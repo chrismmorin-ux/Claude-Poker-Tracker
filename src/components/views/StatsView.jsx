@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { BarChart3 } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { RangeGrid } from '../ui/RangeGrid';
 import { LAYOUT, SEAT_ARRAY } from '../../constants/gameConstants';
@@ -9,21 +10,13 @@ import { useRangeProfile } from '../../hooks/useRangeProfile';
 import { RANGE_POSITIONS } from '../../utils/rangeEngine';
 
 const StatRow = ({ label, value }) => (
-  <div className="flex justify-between p-2 bg-gray-50 rounded">
-    <span>{label}</span>
-    <span className="font-bold">{value !== null && value !== undefined ? `${value}%` : '--'}</span>
+  <div className="flex justify-between p-2 bg-gray-700/50 rounded">
+    <span className="text-gray-300">{label}</span>
+    <span className="font-bold text-gray-200">{value !== null && value !== undefined ? `${value}%` : '--'}</span>
   </div>
 );
 
-const STYLE_COLORS = {
-  Fish: 'bg-red-100 text-red-700',
-  LAG: 'bg-orange-100 text-orange-700',
-  LP: 'bg-yellow-100 text-yellow-700',
-  Nit: 'bg-blue-100 text-blue-700',
-  TAG: 'bg-green-100 text-green-700',
-  Reg: 'bg-purple-100 text-purple-700',
-  Unknown: 'bg-gray-100 text-gray-600',
-};
+import { STYLE_COLORS as STYLE_COLORS_TOKENS } from '../../constants/designTokens';
 
 const fmtPct = (v) => (v !== null && v > 0) ? `${v}%` : '--';
 
@@ -31,10 +24,10 @@ const RangeProfileTable = ({ rangeSummary }) => (
   <div className="space-y-4">
     {/* No raise faced: fold / limp / open */}
     <div>
-      <h4 className="text-sm font-semibold text-blue-700 mb-2">First In (no raise faced)</h4>
-      <table className="w-full text-sm">
+      <h4 className="text-sm font-semibold text-blue-400 mb-2">First In (no raise faced)</h4>
+      <table className="w-full text-sm text-gray-300">
         <thead>
-          <tr className="border-b-2 border-gray-200">
+          <tr className="border-b-2 border-gray-600">
             <th className="text-left p-1.5">Pos</th>
             <th className="text-right p-1.5">Fold</th>
             <th className="text-right p-1.5">Limp</th>
@@ -48,7 +41,7 @@ const RangeProfileTable = ({ rangeSummary }) => (
             if (!row) return null;
             const f = row.noRaiseFreqs;
             return (
-              <tr key={pos} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={pos} className="border-b border-gray-700 hover:bg-gray-700/30">
                 <td className="p-1.5 font-semibold">{pos}</td>
                 <td className="p-1.5 text-right text-gray-500">{fmtPct(f.fold)}</td>
                 <td className="p-1.5 text-right">{fmtPct(f.limp)}</td>
@@ -63,10 +56,10 @@ const RangeProfileTable = ({ rangeSummary }) => (
 
     {/* Facing a raise: fold / cold-call / 3-bet */}
     <div>
-      <h4 className="text-sm font-semibold text-orange-700 mb-2">Facing a Raise</h4>
-      <table className="w-full text-sm">
+      <h4 className="text-sm font-semibold text-orange-400 mb-2">Facing a Raise</h4>
+      <table className="w-full text-sm text-gray-300">
         <thead>
-          <tr className="border-b-2 border-gray-200">
+          <tr className="border-b-2 border-gray-600">
             <th className="text-left p-1.5">Pos</th>
             <th className="text-right p-1.5">Fold</th>
             <th className="text-right p-1.5">Cold-Call</th>
@@ -80,7 +73,7 @@ const RangeProfileTable = ({ rangeSummary }) => (
             if (!row) return null;
             const f = row.facedRaiseFreqs;
             return (
-              <tr key={pos} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={pos} className="border-b border-gray-700 hover:bg-gray-700/30">
                 <td className="p-1.5 font-semibold">{pos}</td>
                 <td className="p-1.5 text-right text-gray-500">{fmtPct(f.fold)}</td>
                 <td className="p-1.5 text-right">{fmtPct(f.coldCall)}</td>
@@ -127,14 +120,18 @@ export const StatsView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="bg-gray-50 overflow-y-auto p-6" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
+      <div className="bg-gray-900 overflow-y-auto p-6" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Session Stats</h2>
-          <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-green-600 text-white px-4 py-2 rounded-lg">Back to Table</button>
+          <h2 className="text-2xl font-bold text-white">Session Stats</h2>
+          <button onClick={() => setCurrentScreen(SCREEN.TABLE)} className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors">Back to Table</button>
         </div>
 
         {!sessionId ? (
-          <div className="text-center text-gray-500 mt-12 text-lg">No active session</div>
+          <div className="text-center mt-12 flex flex-col items-center">
+            <BarChart3 size={48} className="text-gray-600 mb-3" />
+            <div className="text-xl font-semibold text-gray-400">No Active Session</div>
+            <div className="text-sm text-gray-500">Start a session to track stats</div>
+          </div>
         ) : isLoading ? (
           <div className="text-center text-gray-500 mt-12 text-lg">Loading stats...</div>
         ) : (
@@ -150,12 +147,12 @@ export const StatsView = ({ scale }) => {
                     key={seat}
                     onClick={() => setSelectedSeat(seat)}
                     className={`p-3 rounded-lg border-2 text-center transition-colors
-                      ${isSelected ? 'border-blue-500 ring-2 ring-blue-300' : 'hover:border-blue-400'}
-                      ${isMySeat ? 'bg-blue-50 border-blue-400' : 'bg-white border-gray-300'}
+                      ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/50' : 'hover:border-blue-400'}
+                      ${isMySeat ? 'bg-blue-900/30 border-blue-500' : 'bg-gray-800 border-gray-700'}
                     `}
                   >
                     <div className="text-xs text-gray-500">Seat {seat}</div>
-                    <div className="font-semibold text-sm truncate">{name || '--'}</div>
+                    <div className="font-semibold text-sm truncate text-gray-200">{name || '--'}</div>
                     <div className="text-xs text-gray-500 mt-1">
                       {stats ? `${stats.handCount} hands` : '0 hands'}
                     </div>
@@ -169,8 +166,8 @@ export const StatsView = ({ scale }) => {
               })}
             </div>
 
-            <div className="bg-white p-5 rounded-lg border-2 border-gray-300">
-              <h3 className="text-lg font-bold mb-3">
+            <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
+              <h3 className="text-lg font-bold text-gray-200 mb-3">
                 {selectedName}{isYou ? ' (You)' : ''} — Seat {selectedSeat}
               </h3>
 
@@ -179,7 +176,7 @@ export const StatsView = ({ scale }) => {
               ) : (
                 <div className="grid grid-cols-3 gap-6">
                   <div>
-                    <h4 className="font-semibold text-blue-700 mb-2">Preflop</h4>
+                    <h4 className="font-semibold text-blue-400 mb-2">Preflop</h4>
                     <div className="space-y-2">
                       <StatRow label="VPIP" value={selectedStats.vpip} />
                       <StatRow label="PFR" value={selectedStats.pfr} />
@@ -189,12 +186,12 @@ export const StatsView = ({ scale }) => {
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-green-700 mb-2">Postflop</h4>
+                    <h4 className="font-semibold text-green-400 mb-2">Postflop</h4>
                     <div className="space-y-2">
                       <StatRow label="C-Bet" value={selectedStats.cbet} />
-                      <div className="flex justify-between p-2 bg-gray-50 rounded">
-                        <span>AF</span>
-                        <span className="font-bold">
+                      <div className="flex justify-between p-2 bg-gray-700/50 rounded">
+                        <span className="text-gray-300">AF</span>
+                        <span className="font-bold text-gray-200">
                           {selectedStats.af !== null
                             ? selectedStats.af === Infinity ? 'INF' : selectedStats.af
                             : '--'}
@@ -204,16 +201,22 @@ export const StatsView = ({ scale }) => {
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-purple-700 mb-2">Profile</h4>
+                    <h4 className="font-semibold text-purple-400 mb-2">Profile</h4>
                     <div className="space-y-2">
                       {selectedStats.style && (
-                        <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${STYLE_COLORS[selectedStats.style] || STYLE_COLORS.Unknown}`}>
+                        <div
+                          className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
+                          style={{
+                            backgroundColor: (STYLE_COLORS_TOKENS[selectedStats.style] || STYLE_COLORS_TOKENS.Unknown).bg,
+                            color: (STYLE_COLORS_TOKENS[selectedStats.style] || STYLE_COLORS_TOKENS.Unknown).text,
+                          }}
+                        >
                           {selectedStats.style}
                         </div>
                       )}
-                      <div className="flex justify-between p-2 bg-gray-50 rounded">
-                        <span>Sample</span>
-                        <span className="font-bold">{selectedStats.sampleSize} hands</span>
+                      <div className="flex justify-between p-2 bg-gray-700/50 rounded">
+                        <span className="text-gray-300">Sample</span>
+                        <span className="font-bold text-gray-200">{selectedStats.sampleSize} hands</span>
                       </div>
                     </div>
                   </div>
@@ -222,8 +225,8 @@ export const StatsView = ({ scale }) => {
             </div>
 
             {selectedPlayerId && rangeSummary && (
-              <div className="bg-white p-5 rounded-lg border-2 border-gray-300 mt-4">
-                <h3 className="text-lg font-bold mb-3">Range Profile</h3>
+              <div className="bg-gray-800 p-5 rounded-lg border border-gray-700 mt-4">
+                <h3 className="text-lg font-bold text-gray-200 mb-3">Range Profile</h3>
                 {rangeLoading ? (
                   <div className="text-center text-gray-400 py-4">Loading range data...</div>
                 ) : (
@@ -232,8 +235,8 @@ export const StatsView = ({ scale }) => {
 
                     {/* Visual Range Grid */}
                     {rangeProfile && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Range Grid</h4>
+                      <div className="mt-4 pt-4 border-t border-gray-700">
+                        <h4 className="text-sm font-semibold text-gray-400 mb-2">Range Grid</h4>
                         {/* Position pills */}
                         <div className="flex gap-1 mb-2">
                           {RANGE_POSITIONS.map((pos) => (
@@ -243,7 +246,7 @@ export const StatsView = ({ scale }) => {
                               className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
                                 gridPosition === pos
                                   ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                               }`}
                             >
                               {pos}
@@ -259,7 +262,7 @@ export const StatsView = ({ scale }) => {
                               className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                                 gridAction === act
                                   ? 'bg-green-600 text-white'
-                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                  : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                               }`}
                             >
                               {act === 'coldCall' ? 'Cold-Call' : act === 'threeBet' ? '3-Bet' : act.charAt(0).toUpperCase() + act.slice(1)}

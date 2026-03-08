@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ToastContext.test.jsx - Tests for toast notification context provider
  */

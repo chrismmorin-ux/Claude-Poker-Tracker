@@ -45,6 +45,7 @@ export const AppProviders = ({
   dispatchAuth,
   gameState,
   dispatchGame,
+  blinds,
   uiState,
   dispatchUi,
   sessionState,
@@ -58,7 +59,7 @@ export const AppProviders = ({
 }) => (
   <ToastProvider>
     <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
-      <GameProvider gameState={gameState} dispatchGame={dispatchGame}>
+      <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
         <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
           <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
             <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>

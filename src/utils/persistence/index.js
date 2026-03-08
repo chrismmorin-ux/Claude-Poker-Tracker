@@ -11,8 +11,20 @@
  *   - playersStorage.js: Player CRUD operations
  */
 
+import { logger } from '../errorHandler';
+
 // Database initialization and constants
 export { initDB, GUEST_USER_ID } from './database';
+
+/**
+ * Creates a persistence logger for a module
+ * @param {string} moduleName - Module name for log prefix
+ * @returns {{ log: Function, logError: Function }}
+ */
+export const createPersistenceLogger = (moduleName) => ({
+  log: (...args) => logger.debug(moduleName, ...args),
+  logError: (error) => logger.error(moduleName, error),
+});
 
 // Hand CRUD operations
 export {
@@ -39,6 +51,8 @@ export {
   deleteSession,
   updateSession,
   getSessionHandCount,
+  createSessionAtomic,
+  endSessionAtomic,
 } from './sessionsStorage';
 
 // Player CRUD operations

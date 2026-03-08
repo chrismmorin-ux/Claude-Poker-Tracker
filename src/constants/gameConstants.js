@@ -10,6 +10,8 @@ export {
   PRIMITIVE_ACTION_VALUES,
   isPrimitiveAction,
   toPrimitive,
+  SHOWDOWN_ACTIONS,
+  isShowdownAction,
 } from './primitiveActions';
 
 // Street definitions
@@ -21,55 +23,26 @@ export const SUITS = ['♠', '♥', '♦', '♣'];
 export const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 export const SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
 
-// Action type constants
+// Action type constants (only actions stored in state — primitives use string literals)
 export const ACTIONS = {
-  // Preflop actions
   FOLD: 'fold',
-  LIMP: 'limp',
-  CALL: 'call',
-  OPEN: 'open',
-  THREE_BET: '3bet',
-  FOUR_BET: '4bet',
-
-  // Postflop actions - PFR
-  CBET_IP_SMALL: 'cbet_ip_small',
-  CBET_IP_LARGE: 'cbet_ip_large',
-  CBET_OOP_SMALL: 'cbet_oop_small',
-  CBET_OOP_LARGE: 'cbet_oop_large',
-  CHECK: 'check',
   FOLD_TO_CR: 'fold_to_cr',
-
-  // Postflop actions - PFC
-  DONK: 'donk',
-  STAB: 'stab',
-  CHECK_RAISE: 'check_raise',
   FOLD_TO_CBET: 'fold_to_cbet',
-
-  // Showdown actions
   MUCKED: 'mucked',
   WON: 'won',
 };
 
 // Action abbreviations (3-4 chars max) for display in badges
 export const ACTION_ABBREV = {
-  [ACTIONS.FOLD]: 'FLD',
-  [ACTIONS.LIMP]: 'LMP',
-  [ACTIONS.CALL]: 'CAL',
-  [ACTIONS.OPEN]: 'OPN',
-  [ACTIONS.THREE_BET]: '3BT',
-  [ACTIONS.FOUR_BET]: '4BT',
-  [ACTIONS.CBET_IP_SMALL]: 'C-S',
-  [ACTIONS.CBET_IP_LARGE]: 'C-L',
-  [ACTIONS.CBET_OOP_SMALL]: 'CO-S',
-  [ACTIONS.CBET_OOP_LARGE]: 'CO-L',
-  [ACTIONS.CHECK]: 'CHK',
-  [ACTIONS.CHECK_RAISE]: 'C/R',
-  [ACTIONS.DONK]: 'DNK',
-  [ACTIONS.STAB]: 'STB',
-  [ACTIONS.FOLD_TO_CBET]: 'F/C',
-  [ACTIONS.FOLD_TO_CR]: 'F/CR',
-  [ACTIONS.MUCKED]: 'MCK',
-  [ACTIONS.WON]: 'WON',
+  fold: 'FLD',
+  check: 'CHK',
+  call: 'CAL',
+  bet: 'BET',
+  raise: 'RSE',
+  fold_to_cr: 'F/CR',
+  fold_to_cbet: 'F/C',
+  mucked: 'MCK',
+  won: 'WON',
 };
 
 // All actions that count as a fold (for checking fold status)
@@ -124,12 +97,12 @@ export const LAYOUT = {
   TABLE_HEIGHT: 720,
 
   // Felt (playing area) dimensions
-  FELT_WIDTH: 900,
+  FELT_WIDTH: 860,
   FELT_HEIGHT: 450,
 
   // Table positioning offsets
-  TABLE_OFFSET_X: 200,
-  TABLE_OFFSET_Y: 50,
+  TABLE_OFFSET_X: 117,
+  TABLE_OFFSET_Y: 95,
 
   // Context menu positioning
   CONTEXT_MENU_OFFSET_X: -160,
@@ -145,7 +118,7 @@ export const LAYOUT = {
 
   // UI element dimensions
   BADGE_SIZE: 16,
-  SEAT_SIZE: 40,
+  SEAT_SIZE: 56,
   DEALER_BUTTON_SIZE: 28,
   TOGGLE_BUTTON_SIZE: 24,
 
@@ -155,6 +128,6 @@ export const LAYOUT = {
   TABLE_LABEL_HEIGHT: 60,
 
   // Action panel positioning
-  ACTION_PANEL_WIDTH: 480,
-  ACTION_PANEL_TOP: 80,
+  ACTION_PANEL_WIDTH: 450,
+  ACTION_PANEL_TOP: 0,
 };

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * StatsView.test.jsx - Tests for statistics view component
  */

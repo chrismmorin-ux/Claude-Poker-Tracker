@@ -5,7 +5,7 @@
  * Views consume via useToast() instead of prop drilling.
  */
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useToast as useToastState } from '../hooks/useToast';
 import { ToastContainer } from '../components/ui/Toast';
 
@@ -13,9 +13,10 @@ const ToastContext = createContext(null);
 
 export const ToastProvider = ({ children }) => {
   const toast = useToastState();
+  const value = useMemo(() => toast, [toast.toasts]);
 
   return (
-    <ToastContext.Provider value={toast}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </ToastContext.Provider>

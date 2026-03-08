@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Play, Square, Download, Upload } from 'lucide-react';
+import { Play, Square, Download, Upload, PlayCircle, Calendar } from 'lucide-react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { SessionForm } from '../../ui/SessionForm';
 import { SessionCard } from '../../ui/SessionCard';
@@ -208,12 +208,12 @@ export const SessionsView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="w-full h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
+      <div className="w-full h-screen bg-gray-900 relative">
         {/* Scrollable Content */}
         <div className="w-full h-full pt-8 px-8 pb-24 overflow-y-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Sessions</h1>
+            <h1 className="text-2xl font-bold text-white">Sessions</h1>
             <div className="flex gap-3">
               {sessionState.currentSession.isActive ? (
                 <button
@@ -255,7 +255,7 @@ export const SessionsView = ({ scale }) => {
               />
               <button
                 onClick={() => setCurrentScreen(SCREEN.TABLE)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Back to Table
               </button>
@@ -264,7 +264,7 @@ export const SessionsView = ({ scale }) => {
 
           {/* Import/Export Status */}
           {importStatus && (
-            <div className={`mb-4 p-4 rounded-lg ${importStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            <div className={`mb-4 p-4 rounded-lg ${importStatus.success ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'}`}>
               {importStatus.message}
               <button
                 onClick={() => setImportStatus(null)}
@@ -284,8 +284,9 @@ export const SessionsView = ({ scale }) => {
 
           {/* No Active Session */}
           {!sessionState.currentSession.isActive && (
-            <div className="mb-6 bg-white rounded-lg shadow-lg p-8 text-center">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4">No Active Session</h2>
+            <div className="mb-6 bg-gray-800 border border-gray-700 rounded-lg p-8 text-center flex flex-col items-center">
+              <PlayCircle size={48} className="text-gray-600 mb-3" />
+              <h2 className="text-xl font-semibold text-gray-400 mb-4">No Active Session</h2>
               <button
                 onClick={() => setShowNewSessionForm(true)}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto font-medium"
@@ -297,12 +298,12 @@ export const SessionsView = ({ scale }) => {
           )}
 
           {/* Past Sessions */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Past Sessions</h2>
+          <div className="bg-gray-800 border border-gray-700 rounded-lg">
+            <div className="p-4 border-b border-gray-700">
+              <h2 className="text-lg font-bold text-gray-200">Past Sessions</h2>
             </div>
 
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-700">
               {sessions
                 .filter((s) => !s.isActive)
                 .map((session) => (
@@ -314,8 +315,10 @@ export const SessionsView = ({ scale }) => {
                 ))}
 
               {sessions.filter((s) => !s.isActive).length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  No past sessions yet
+                <div className="p-8 text-center flex flex-col items-center">
+                  <Calendar size={48} className="text-gray-600 mb-3" />
+                  <div className="text-xl font-semibold text-gray-400">No Past Sessions</div>
+                  <div className="text-sm text-gray-500">Complete a session to see it here</div>
                 </div>
               )}
             </div>
@@ -343,12 +346,12 @@ export const SessionsView = ({ scale }) => {
           completedSessionCount={completedSessionCount}
         />
 
-        {/* Pre-session Drills Button */}
+        {/* Pre-session Drills Button (disabled) */}
         <button
-          onClick={() => {/* Dead button for now */}}
-          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg font-medium z-10"
+          disabled
+          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 text-white rounded-lg shadow-lg font-medium z-10 opacity-50 cursor-not-allowed"
         >
-          Pre-session Drills
+          Pre-session Drills (Coming Soon)
         </button>
 
         {/* Import Confirmation Modal */}

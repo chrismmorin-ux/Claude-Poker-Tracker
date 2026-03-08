@@ -67,14 +67,14 @@ export const PlayerFilters = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by name or nickname..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         {/* Sort */}
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-40"
+          className="px-3 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-40"
         >
           <option value="lastSeen">Last Seen</option>
           <option value="name">Name</option>
@@ -89,7 +89,7 @@ export const PlayerFilters = ({
         <select
           value={filterGender}
           onChange={(e) => setFilterGender(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Genders</option>
           {GENDER_OPTIONS.map(opt => (
@@ -101,7 +101,7 @@ export const PlayerFilters = ({
         <select
           value={filterBuild}
           onChange={(e) => setFilterBuild(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Builds</option>
           {BUILD_OPTIONS.map(opt => (
@@ -113,7 +113,7 @@ export const PlayerFilters = ({
         <select
           value={filterEthnicity}
           onChange={(e) => setFilterEthnicity(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Ethnicities</option>
           {ETHNICITY_OPTIONS.map(eth => (
@@ -125,7 +125,7 @@ export const PlayerFilters = ({
         <select
           value={filterFacialHair}
           onChange={(e) => setFilterFacialHair(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Facial Hair</option>
           {FACIAL_HAIR_OPTIONS.map(fh => (
@@ -137,7 +137,7 @@ export const PlayerFilters = ({
         <select
           value={filterHat}
           onChange={(e) => setFilterHat(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Hat?</option>
           <option value="yes">Wears Hat</option>
@@ -148,7 +148,7 @@ export const PlayerFilters = ({
         <select
           value={filterSunglasses}
           onChange={(e) => setFilterSunglasses(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">Sunglasses?</option>
           <option value="yes">Wears Sunglasses</option>
@@ -159,7 +159,7 @@ export const PlayerFilters = ({
         <select
           value={filterTag}
           onChange={(e) => setFilterTag(e.target.value)}
-          className="px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Styles</option>
           {allStyleTags.map(tag => (

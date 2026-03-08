@@ -83,16 +83,16 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-lg shadow-xl p-6 w-96"
+        className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-96"
         style={{ transform: `scale(${scale})` }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Start New Session</h2>
+          <h2 className="text-xl font-bold text-white">Start New Session</h2>
           <button
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            className="text-gray-400 hover:text-gray-200 text-2xl leading-none"
           >
             ×
           </button>
@@ -102,7 +102,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Game Type - First field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Game Type <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -114,7 +114,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
                   className={`px-3 py-2 rounded font-medium transition-colors ${
                     gameType === key
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   {allGameTypes[key].label}
@@ -128,14 +128,14 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
 
           {/* Venue */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Venue
             </label>
             <select
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
-              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.venue ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 bg-gray-700 text-gray-200 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.venue ? 'border-red-500' : 'border-gray-600'
               }`}
             >
               <option value="">Select venue...</option>
@@ -150,11 +150,11 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
 
           {/* Buy-in */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Buy-in
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 $
               </span>
               <input
@@ -162,8 +162,8 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
                 value={buyIn}
                 onChange={(e) => setBuyIn(e.target.value)}
                 placeholder="200"
-                className={`w-full pl-7 pr-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.buyIn ? 'border-red-500' : 'border-gray-300'
+                className={`w-full pl-7 pr-3 py-2 bg-gray-700 text-gray-200 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.buyIn ? 'border-red-500' : 'border-gray-600'
                 }`}
               />
             </div>
@@ -174,13 +174,13 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
 
           {/* Goal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Goal (optional)
             </label>
             <select
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a goal...</option>
               {SESSION_GOALS.map((g) => (
@@ -194,7 +194,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
           {/* Custom Goal Input */}
           {goal === 'Custom goal...' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Custom Goal
               </label>
               <input
@@ -202,14 +202,14 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
                 value={customGoal}
                 onChange={(e) => setCustomGoal(e.target.value)}
                 placeholder="Enter your custom goal"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Notes (optional)
             </label>
             <textarea
@@ -226,7 +226,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
             >
               Cancel
             </button>

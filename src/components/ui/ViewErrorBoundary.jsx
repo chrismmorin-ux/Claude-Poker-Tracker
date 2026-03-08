@@ -96,7 +96,7 @@ export class ViewErrorBoundary extends React.Component {
 
     if (hasError) {
       return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6">
+        <div className="h-dvh bg-gray-900 flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center">
             {/* Error Icon */}
             <div className="flex justify-center mb-4">
