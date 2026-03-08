@@ -96,3 +96,4 @@ verify-*.png
 .claude/metrics/local-model-tasks.log
 .claude/logs/*.log
 .playwright-mcp/
+.firebase
