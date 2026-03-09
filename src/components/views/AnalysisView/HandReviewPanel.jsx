@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { usePlayer } from '../../../contexts';
+import { usePlayer, useTendency } from '../../../contexts';
 import { useHandReview } from '../../../hooks/useHandReview';
-import { usePlayerTendencies } from '../../../hooks/usePlayerTendencies';
+import { useHandReplayAnalysis } from '../../../hooks/useHandReplayAnalysis';
 import { analyzeDecisionPoint } from '../../../utils/handReviewAnalyzer';
 import { HandBrowser } from './HandBrowser';
 import { HandWalkthrough } from './HandWalkthrough';
@@ -9,7 +9,7 @@ import { ReviewObservations } from './ReviewObservations';
 
 export const HandReviewPanel = () => {
   const { allPlayers } = usePlayer();
-  const { tendencyMap } = usePlayerTendencies(allPlayers);
+  const { tendencyMap } = useTendency();
 
   const {
     hands, selectedHand, selectedHandId,
@@ -22,7 +22,10 @@ export const HandReviewPanel = () => {
     setFilterPlayerId, setFilterSessionId,
   } = useHandReview();
 
-  // Compute analysis for focused action
+  // Per-action range/equity analysis
+  const { actionAnalysis, isComputing } = useHandReplayAnalysis(selectedHand, timeline, tendencyMap);
+
+  // Compute rule-based analysis for focused action
   const analysis = useMemo(() => {
     if (!focusedAction || !selectedHand) return null;
     const boardCards = selectedHand?.cardState?.communityCards ||
@@ -37,8 +40,15 @@ export const HandReviewPanel = () => {
     });
   }, [focusedAction, selectedHand, timeline, heroSeat, tendencyMap]);
 
+  // Get the actionAnalysis entry for the focused action
+  const focusedAnalysisEntry = useMemo(() => {
+    if (focusedActionIndex === null || !actionAnalysis) return null;
+    // Match by order since actionAnalysis maps 1:1 to timeline
+    return actionAnalysis[focusedActionIndex] || null;
+  }, [focusedActionIndex, actionAnalysis]);
+
   return (
-    <div className="grid grid-cols-[280px_1fr_1fr] gap-4 h-[540px]">
+    <div className="grid grid-cols-[minmax(200px,240px)_1fr_1fr] gap-3 h-[540px]">
       {/* Left: Hand Browser */}
       <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 overflow-hidden">
         <h3 className="text-sm font-bold mb-2 text-indigo-400">Hands</h3>
@@ -60,7 +70,10 @@ export const HandReviewPanel = () => {
 
       {/* Center: Hand Walkthrough */}
       <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 overflow-hidden">
-        <h3 className="text-sm font-bold mb-2 text-indigo-400">Walkthrough</h3>
+        <h3 className="text-sm font-bold mb-2 text-indigo-400">
+          Walkthrough
+          {isComputing && <span className="ml-2 text-[10px] text-gray-500">(analyzing...)</span>}
+        </h3>
         <HandWalkthrough
           selectedHand={selectedHand}
           streetActions={streetActions}
@@ -70,6 +83,8 @@ export const HandReviewPanel = () => {
           heroSeat={heroSeat}
           focusedActionIndex={focusedActionIndex}
           timeline={timeline}
+          allPlayers={allPlayers}
+          actionAnalysis={actionAnalysis}
           onSetStreet={setCurrentStreet}
           onFocusAction={focusAction}
           onPrevStreet={prevStreet}
@@ -80,7 +95,10 @@ export const HandReviewPanel = () => {
       {/* Right: Review Observations */}
       <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 overflow-hidden overflow-y-auto">
         <h3 className="text-sm font-bold mb-2 text-indigo-400">Observations</h3>
-        <ReviewObservations analysis={analysis} />
+        <ReviewObservations
+          analysis={analysis}
+          actionAnalysisEntry={focusedAnalysisEntry}
+        />
       </div>
     </div>
   );

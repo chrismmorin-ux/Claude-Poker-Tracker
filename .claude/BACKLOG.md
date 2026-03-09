@@ -3,7 +3,7 @@
 Master execution list. Items ordered by dependency chain and priority.
 Start any item with `/project start <id>` or ask Claude to implement it directly.
 
-**Last updated:** 2026-03-07 | **Current version:** v120
+**Last updated:** 2026-03-09 | **Current version:** v121
 
 ---
 
@@ -95,7 +95,7 @@ Interactive range tools. Display layer exists (RangeGrid in StatsView + Analysis
 | 3 | READY | Range vs range comparison UI | `rangeVsRange()` exists but is orphaned (never imported). Needs UI to surface it. |
 | 4 | BLOCKED | Save/load custom ranges + presets | Needs interactive range matrix UI first (Phase 1) |
 
-**Note:** `rangeVsRange()` and `adjustRangeByStats()` in exploit engine are orphaned exports — wire or delete.
+**Note:** `rangeVsRange()` in exploit engine is an orphaned export — wire or delete.
 
 ---
 
@@ -196,8 +196,8 @@ AnalysisView fully functional: PlayerAnalysisPanel (range grids + equity + actio
 | Phase | Status | Description | Details |
 |-------|--------|-------------|---------|
 | 1 | DONE | AnalysisView functional | PlayerAnalysisPanel: range grids, board equity, action recommendations. HandReviewPanel: hand browser, street walkthrough, 7 observation rules. |
-| 2 | READY | Live action advice on table | Wire `useActionAdvisor` into CommandStrip for compact EV display during active hands (see ARCH-005). Highest user-facing impact. |
-| 3 | READY | Hand review polish | HandReviewPanel needs: player names (currently shows P{id}), hand count badges, observation severity styling, mobile layout optimization. |
+| 2 | DONE | Live action advice on table | Compact equity/fold%/action badge (VALUE/BLUFF/CHECK) in CommandStrip, driven by `useLiveEquity`. Shows when hero has 2 hole cards + 3+ board cards vs best villain. |
+| 3 | DONE | Hand review polish | Player names resolved via allPlayers, hand count badge in HandBrowser, observation severity coloring (major=red, minor=yellow), responsive grid layout. |
 | 4 | READY | Table-level exploit aggregation | Aggregate tendencies across all seats ("table is too tight preflop"). Currently only per-player exploits exist. |
 
 ---
@@ -235,7 +235,7 @@ Ideas that need design work before they become backlog items.
 | Swipe gestures | Swipe left on seat = fold, swipe right = call/check, tap = action panel | Hand entry speed (item 14) |
 | Template hands | Quick-entry templates: "limped pot", "standard open + 1 caller", etc. | Hand entry speed (item 14) |
 | More hand review rules | Expand beyond 7 rules: pot odds vs call size, SPR checks, multi-way adjustments | Item 12.3 |
-| Orphaned engine cleanup | Delete or wire `rangeVsRange()`, `adjustRangeByStats()`, `calcBluffEV()` | Item 5 or standalone |
+| Orphaned engine cleanup | Delete or wire `rangeVsRange()`, `calcBluffEV()` | Item 5 or standalone |
 | Multi-villain equity | Compute equity vs multiple non-folded opponents simultaneously (currently single-villain upper bound) | useLiveEquity refactor |
 
 ---
@@ -298,23 +298,50 @@ Deferred findings from CTO review. No action unless triggers are hit.
 
 ---
 
+## 16. Weakness Detection Layer (P1)
+
+Situational weakness detection backed by range equity analysis. Per-hand EV analysis + cross-hand pattern accumulation.
+
+| Phase | Status | Description | Key Deliverable |
+|-------|--------|-------------|-----------------|
+| 1 | DONE | Hand replay EV analysis | `useHandReplayAnalysis` hook: per-action range/equity/segmentation/EV assessment. All actions clickable in HandWalkthrough. ReviewObservations enhanced with equity bars, segmentation, EV badges. |
+| 2 | DONE | Weakness detection module | `decisionAccumulator.js` + `weaknessDetector.js`: situational + preflop weakness detection. 14 tests. Integrated into `usePlayerTendencies`, displayed in PlayerAnalysisPanel. |
+| 3 | DONE | Exploit-weakness linkage | `runWeaknessRules()` in `generateExploits.js` — 10 weakness→exploit mappings, deduplication via `WEAKNESS_SUPERSEDES`, weakness-enriched briefings. 10 integration tests. |
+| 4 | DONE | Full UI integration | Weakness count badge on SeatComponent (16.4a), briefing annotations (16.4b), mini range grid in HandWalkthrough (16.4c), player names in walkthrough (16.4d). Remaining: sizing tell tracking (future). |
+
+**Dependencies:** Phase 3 requires Phases 1+2 validated. Phase 4 requires Phase 3.
+**Key files:** `generateExploits.js`, `briefingBuilder.js`, `SeatComponent.jsx`, `ExploitBriefingCard.jsx`
+
+---
+
+## 17. CTO Audit Fixes — TendencyProvider, Dead Code, Doc Sync (P0-P2) — DONE
+
+| ID | Status | Description | Details |
+|----|--------|-------------|---------|
+| 17.1 | DONE | TendencyProvider (P0+P1) | Shared `TendencyContext.jsx` — single `usePlayerTendencies` instance for entire app. `patchTendency()` for optimistic briefing updates. Fixes P0 stale briefing state + P1 4x redundant computation. |
+| 17.2 | DONE | Dead reducer code (P1) | Removed 5 dead briefing action constants + 5 case blocks from `playerReducer.js` (~85 lines). Never dispatched. |
+| 17.3 | DONE | Duplicate `parseBlinds` (P1) | Deleted `src/utils/parseBlinds.js`. `PlayerAnalysisPanel` now imports from `potCalculator.js`. |
+| 17.4 | DONE | Orphaned `adjustRangeByStats` (P1) | Deleted function + export from `rangeMatrix.js`, removed test cases. |
+| 17.5 | DONE | Documentation sync (P2) | CLAUDE.md v121, CONTEXT_SUMMARY v1.4.0, BACKLOG cleaned. |
+
+---
+
 ## Open Design Questions
 
 1. **Range grid interactivity** — Should the 13x13 grid be interactive (click to toggle combos)? Display-only exists in StatsView + AnalysisView. Interactive editing would enable custom range construction (5.1).
 2. ~~**Showdown Bayesian updates**~~ — Resolved. Full pipeline: shown cards → `actionExtractor` → `applyShowdownAnchor()` → semantic boosting → cached in IndexedDB.
 3. **Table-level exploits surface** — Show on table view, stats view, or both? Currently only per-player exploits exist. See item 12.4.
 4. ~~**useExploitEngine vs usePlayerTendencies**~~ — Resolved. `usePlayerTendencies` imports `generateExploits` directly. Single hook.
-5. **Live EV during play** — How prominent should action advice be on TableView? Compact badge vs expandable panel? (See ARCH-005 / item 12.2)
+5. ~~**Live EV during play**~~ — Resolved. Compact badge in CommandStrip showing equity %, fold %, and VALUE/BLUFF/CHECK label. Driven by `useLiveEquity`.
 
 ---
 
 ## Recommended Execution Order
 
 ```
-NEXT:   12.2 (live action advice on table), 12.3 (hand review polish)
-THEN:   14 Phase 2 (HE-2a, HE-2b, HE-2c)
-LATER:  12.4 (table-level exploits), 5 (Range Analysis Tools)
+NEXT:   14 Phase 2 (HE-2a, HE-2b, HE-2c), 12.4 (table-level exploits)
+LATER:  5 (Range Analysis Tools)
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
-DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 13, 14-Phase 1
+DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17
 PAUSED: 6 (Firebase auth)
 ```

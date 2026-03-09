@@ -48,5 +48,20 @@ export const parseBoard = (communityCards) => {
     .filter(c => c >= 0);
 };
 
+/**
+ * Get community cards visible up to a given street.
+ */
+export const getCardsForStreet = (communityCards, street) => {
+  if (!communityCards) return [];
+  const filled = communityCards.filter(c => c && c.trim().length >= 2);
+  switch (street) {
+    case 'preflop': return [];
+    case 'flop': return filled.slice(0, 3);
+    case 'turn': return filled.slice(0, 4);
+    case 'river': return filled.slice(0, 5);
+    default: return filled;
+  }
+};
+
 export const TOTAL_CARDS = 52;
 export { RANK_VALUES, SUIT_VALUES };

@@ -11,7 +11,7 @@ vi.mock('../../utils/exploitEngine/actionAdvisor', () => ({
   getActionAdvice: vi.fn(),
 }));
 
-vi.mock('../../utils/exploitEngine/cardParser', () => ({
+vi.mock('../../utils/pokerCore/cardParser', () => ({
   parseAndEncode: vi.fn((str) => {
     const map = { As: 48, Kh: 45, '7c': 19, '2d': 2, Td: 34 };
     return map[str] ?? -1;

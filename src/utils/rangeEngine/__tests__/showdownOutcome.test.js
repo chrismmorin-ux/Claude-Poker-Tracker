@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { extractPreflopAction, extractAllActions } from '../actionExtractor';
 import { applyShowdownAnchor, updateProfileFromActions } from '../bayesianUpdater';
 import { createEmptyProfile } from '../rangeProfile';
-import { rangeIndex, decodeIndex } from '../../exploitEngine/rangeMatrix';
+import { rangeIndex, decodeIndex } from '../../pokerCore/rangeMatrix';
 
 // Helper: build a hand record with optional showdown cards and WON action
 const makeHand = (playerId, seat, dealerSeat, actions, { cards = null, wonSeat = null } = {}) => {

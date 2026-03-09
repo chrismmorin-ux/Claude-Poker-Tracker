@@ -13,7 +13,7 @@
  * these are conditional on different game states, not competing.
  */
 
-import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../exploitEngine/rangeMatrix';
+import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../pokerCore/rangeMatrix';
 
 const GRID_SIZE = 169;
 

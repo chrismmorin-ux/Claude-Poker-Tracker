@@ -5,12 +5,11 @@ import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { buildExploitSummary } from '../../ui/ExploitBadges';
-import { analyzeBoardFromStrings } from '../../../utils/exploitEngine/boardTexture';
+import { analyzeBoardFromStrings } from '../../../utils/pokerCore/boardTexture';
 import { generateBoardExploits, enrichExploitsWithEquity } from '../../../utils/exploitEngine/generateExploits';
 import { filterDismissed } from '../../../utils/exploitEngine/generateExploits';
 import { LAYOUT, LIMITS } from '../../../constants/gameConstants';
-import { useGame, useUI, useSession, usePlayer, useCard, useToast } from '../../../contexts';
-import { usePlayerTendencies } from '../../../hooks/usePlayerTendencies';
+import { useGame, useUI, useSession, usePlayer, useCard, useToast, useTendency } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatColor } from '../../../hooks/useSeatColor';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
@@ -201,7 +200,7 @@ export const TableView = ({ scale }) => {
   );
 
   // Player tendency stats for confidence opacity
-  const { tendencyMap } = usePlayerTendencies(allPlayers);
+  const { tendencyMap } = useTendency();
 
   // Live equity computation
   const liveEquity = useLiveEquity({
@@ -255,11 +254,37 @@ export const TableView = ({ scale }) => {
         combined = enrichExploitsWithEquity([...combined], { heroEquity: liveEquity.equity, foldPct: liveEquity.foldPct });
       }
 
-      if (combined.length > 0) {
+      // Filter briefings: only show accepted on seat badges
+      const briefings = tendencies?.briefings || player.exploitBriefings || [];
+      const acceptedBriefings = briefings.filter(b => b.reviewStatus === 'accepted');
+      const pendingCount = briefings.filter(b =>
+        b.reviewStatus === 'pending' || b.reviewStatus === 'stale'
+      ).length;
+
+      // Add accepted briefing labels to combined exploits for badge display
+      for (const b of acceptedBriefings) {
+        if (!combined.some(e => e.id === b.ruleId)) {
+          combined.push({
+            id: b.ruleId,
+            label: b.label,
+            category: b.category,
+            street: b.street,
+            scoring: b.scoring,
+            source: 'briefing',
+          });
+        }
+      }
+
+      const weaknessCount = tendencies?.weaknesses?.length || 0;
+
+      if (combined.length > 0 || weaknessCount > 0) {
         data[seat] = {
           summary: buildExploitSummary(combined),
           exploits: combined,
           sampleSize: tendencies?.sampleSize || 0,
+          pendingBriefingCount: pendingCount,
+          hasStale: briefings.some(b => b.reviewStatus === 'stale'),
+          weaknessCount,
         };
       }
     }
@@ -542,6 +567,8 @@ export const TableView = ({ scale }) => {
                   exploitSummary={seatExploitData[seat]?.summary || null}
                   exploits={seatExploitData[seat]?.exploits || []}
                   sampleSize={seatExploitData[seat]?.sampleSize || 0}
+                  pendingBriefingCount={seatExploitData[seat]?.pendingBriefingCount || 0}
+                  weaknessCount={seatExploitData[seat]?.weaknessCount || 0}
                   holeCards={holeCards}
                   holeCardsVisible={holeCardsVisible}
                   getSeatColor={getSeatColor}
@@ -622,6 +649,7 @@ export const TableView = ({ scale }) => {
             onClearHole={() => clearCards('hole')}
             nextActionSeat={selectedPlayers.length === 1 ? getNextActionSeat(selectedPlayers[0]) : null}
             getSeatPlayerName={getSeatPlayerName}
+            liveEquity={liveEquity}
           />
 
         </div>

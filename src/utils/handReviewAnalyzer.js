@@ -10,7 +10,8 @@
  */
 
 import { getPositionName, isInPosition } from './positionUtils';
-import { analyzeBoardFromStrings } from './exploitEngine/boardTexture';
+import { analyzeBoardFromStrings } from './pokerCore/boardTexture';
+import { getCardsForStreet } from './pokerCore/cardParser';
 import { findLastRaiser, getStreetTimeline } from './handTimeline';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
 
@@ -235,13 +236,15 @@ const rules = [
  * @returns {Object} DecisionAnalysis
  */
 export const analyzeDecisionPoint = ({ timeline, focusedAction, heroSeat, hand, tendencyMap, boardCards }) => {
-  if (!focusedAction || !timeline || !heroSeat) {
+  if (!focusedAction || !timeline) {
     return null;
   }
 
   const buttonSeat = hand?.gameState?.dealerButtonSeat ?? 1;
   const seatPlayers = hand?.seatPlayers || {};
-  const heroPos = getPositionName(heroSeat, buttonSeat);
+  const focusedSeat = Number(focusedAction.seat);
+  const isHeroAction = heroSeat && focusedSeat === heroSeat;
+  const focusedPos = getPositionName(focusedSeat, buttonSeat);
   const street = focusedAction.street;
   const action = focusedAction.action;
 
@@ -249,76 +252,95 @@ export const analyzeDecisionPoint = ({ timeline, focusedAction, heroSeat, hand, 
   const cardsForStreet = getCardsForStreet(boardCards, street);
   const boardTexture = cardsForStreet.length > 0 ? analyzeBoardFromStrings(cardsForStreet) : null;
 
-  // Find relevant villain
-  const villainInfo = findRelevantVillain(timeline, focusedAction, heroSeat, seatPlayers);
-  let villainStats = null;
-  let villainName = null;
-  let villainPos = null;
+  // For hero actions, find villain context. For villain actions, show villain's own stats.
+  let opponentInfo = null;
+  let opponentStats = null;
+  let opponentName = null;
+  let opponentPos = null;
 
-  if (villainInfo) {
-    villainPos = getPositionName(villainInfo.villainSeat, buttonSeat);
-    if (villainInfo.villainPlayerId && tendencyMap) {
-      villainStats = tendencyMap[villainInfo.villainPlayerId] || null;
+  if (isHeroAction) {
+    // Hero action: find the relevant villain
+    opponentInfo = findRelevantVillain(timeline, focusedAction, heroSeat, seatPlayers);
+    if (opponentInfo) {
+      opponentPos = getPositionName(opponentInfo.villainSeat, buttonSeat);
+      if (opponentInfo.villainPlayerId && tendencyMap) {
+        opponentStats = tendencyMap[opponentInfo.villainPlayerId] || null;
+      }
+      opponentName = opponentStats?.name || `Seat ${opponentInfo.villainSeat}`;
     }
-    // Try to find villain name from the hand's seatPlayers + tendencyMap
-    if (villainStats) {
-      villainName = villainStats.name || `Seat ${villainInfo.villainSeat}`;
-    } else {
-      villainName = `Seat ${villainInfo.villainSeat}`;
+  } else {
+    // Villain action: show this player's own stats
+    const focusedPlayerId = seatPlayers?.[focusedAction.seat] || seatPlayers?.[focusedSeat];
+    if (focusedPlayerId && tendencyMap) {
+      opponentStats = tendencyMap[focusedPlayerId] || null;
     }
+    opponentName = opponentStats?.name || `Seat ${focusedSeat}`;
+    opponentPos = focusedPos;
   }
 
   // Position (IP/OOP)
   let positionNote = null;
-  if (villainInfo && street !== 'preflop') {
-    const ip = isInPosition(heroSeat, villainInfo.villainSeat, buttonSeat);
-    positionNote = ip ? 'Hero is in position (IP)' : 'Hero is out of position (OOP)';
+  if (heroSeat && street !== 'preflop') {
+    if (isHeroAction && opponentInfo) {
+      const ip = isInPosition(heroSeat, opponentInfo.villainSeat, buttonSeat);
+      positionNote = ip ? 'Hero is in position (IP)' : 'Hero is out of position (OOP)';
+    } else if (!isHeroAction) {
+      const ip = isInPosition(focusedSeat, heroSeat, buttonSeat);
+      positionNote = ip ? `${opponentName} is in position (IP)` : `${opponentName} is out of position (OOP)`;
+    }
   }
 
   // Situation description
-  const situation = describeSituation(heroPos, villainPos, villainName, action, street);
+  const situation = isHeroAction
+    ? describeSituation(focusedPos, opponentPos, opponentName, action, street)
+    : describeSituation(focusedPos, null, null, action, street);
 
   // Board texture description
   const boardDescription = describeBoardTexture(boardTexture);
 
-  // Villain profile summary
+  // Profile summary
   let villainProfile = null;
-  if (villainStats) {
+  if (opponentStats) {
     const parts = [];
-    if (villainStats.vpip !== null) parts.push(`VPIP ${villainStats.vpip}%`);
-    if (villainStats.pfr !== null) parts.push(`PFR ${villainStats.pfr}%`);
-    if (villainStats.af !== null) parts.push(`AF ${villainStats.af}`);
-    if (villainStats.style) parts.push(villainStats.style);
-    villainProfile = parts.join(' / ');
+    const label = isHeroAction ? '' : `${opponentName}: `;
+    if (opponentStats.vpip !== null) parts.push(`VPIP ${opponentStats.vpip}%`);
+    if (opponentStats.pfr !== null) parts.push(`PFR ${opponentStats.pfr}%`);
+    if (opponentStats.af !== null) parts.push(`AF ${opponentStats.af}`);
+    if (opponentStats.style) parts.push(opponentStats.style);
+    villainProfile = label + parts.join(' / ');
   }
 
   // Range estimate
   let rangeNote = null;
-  if (villainStats?.rangeProfile) {
-    const totalHands = villainStats.rangeProfile.handsProcessed || 0;
+  if (opponentStats?.rangeProfile) {
+    const totalHands = opponentStats.rangeProfile.handsProcessed || 0;
     if (totalHands >= 20) {
-      rangeNote = `Villain's range based on ${totalHands} observed hands`;
+      const who = isHeroAction ? "Villain's" : `${opponentName}'s`;
+      rangeNote = `${who} range based on ${totalHands} observed hands`;
     }
   }
 
   // Street actions for rule context
   const streetActions = getStreetTimeline(timeline, street);
 
-  // Run analysis rules
+  // Run analysis rules (only for hero actions — rules are hero-centric)
   const observations = [];
   let mistakeFlag = null;
 
-  for (const rule of rules) {
-    const result = rule.check({
-      action, street, heroPos, heroSeat, villainStats, boardTexture,
-      streetActions, focusedAction, timeline, seatPlayers,
-    });
-    if (result) {
-      observations.push({ id: rule.id, text: result.text });
-      if (result.severity === 'major' && !mistakeFlag) {
-        mistakeFlag = { severity: 'major', text: result.text };
-      } else if (result.severity === 'minor' && !mistakeFlag) {
-        mistakeFlag = { severity: 'minor', text: result.text };
+  if (isHeroAction) {
+    const heroPos = getPositionName(heroSeat, buttonSeat);
+    for (const rule of rules) {
+      const result = rule.check({
+        action, street, heroPos, heroSeat, villainStats: opponentStats, boardTexture,
+        streetActions, focusedAction, timeline, seatPlayers,
+      });
+      if (result) {
+        observations.push({ id: rule.id, text: result.text });
+        if (result.severity === 'major' && !mistakeFlag) {
+          mistakeFlag = { severity: 'major', text: result.text };
+        } else if (result.severity === 'minor' && !mistakeFlag) {
+          mistakeFlag = { severity: 'minor', text: result.text };
+        }
       }
     }
   }
@@ -337,21 +359,6 @@ export const analyzeDecisionPoint = ({ timeline, focusedAction, heroSeat, hand, 
 // =============================================================================
 // HELPERS
 // =============================================================================
-
-/**
- * Get community cards visible up to a given street.
- */
-const getCardsForStreet = (communityCards, street) => {
-  if (!communityCards) return [];
-  const filled = communityCards.filter(c => c && c.trim().length >= 2);
-  switch (street) {
-    case 'preflop': return [];
-    case 'flop': return filled.slice(0, 3);
-    case 'turn': return filled.slice(0, 4);
-    case 'river': return filled.slice(0, 5);
-    default: return filled;
-  }
-};
 
 /**
  * Get the streets that have actions in a hand.

@@ -9,8 +9,8 @@ import { buildTimeline, getStreetTimeline, didPlayerFaceRaise } from '../handTim
 import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
 import { PRIMITIVE_ACTIONS, SHOWDOWN_ACTIONS } from '../../constants/primitiveActions';
-import { parseCard } from '../exploitEngine/cardParser';
-import { rangeIndex } from '../exploitEngine/rangeMatrix';
+import { parseCard } from '../pokerCore/cardParser';
+import { rangeIndex } from '../pokerCore/rangeMatrix';
 
 /**
  * Extract a single player's preflop action from one hand.

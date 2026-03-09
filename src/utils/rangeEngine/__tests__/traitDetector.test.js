@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { detectTraits } from '../traitDetector';
 import { createEmptyProfile, RANGE_POSITIONS } from '../rangeProfile';
-import { rangeIndex } from '../../exploitEngine/rangeMatrix';
+import { rangeIndex } from '../../pokerCore/rangeMatrix';
 
 const makeProfile = (overrides = {}) => {
   const profile = createEmptyProfile('test-player', 'test-user');

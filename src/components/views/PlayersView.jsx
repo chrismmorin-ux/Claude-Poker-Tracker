@@ -15,8 +15,7 @@ import { ScaledContainer } from '../ui/ScaledContainer';
 import { LIMITS, LAYOUT } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
 import { useToast } from '../../contexts/ToastContext';
-import { usePlayer, useUI } from '../../contexts';
-import { usePlayerTendencies } from '../../hooks/usePlayerTendencies';
+import { usePlayer, useUI, useTendency } from '../../contexts';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
 /** PlayersView - Player management view. All state via context hooks. */
@@ -46,8 +45,8 @@ export const PlayersView = ({ scale = 1 }) => {
   // Build a playerState-like object for compatibility with hooks that expect it
   const playerState = { allPlayers, seatPlayers };
 
-  // Player tendency stats
-  const { tendencyMap } = usePlayerTendencies(allPlayers);
+  // Player tendency stats (shared via TendencyProvider)
+  const { tendencyMap, patchTendency } = useTendency();
 
   // Range detail modal
   const [rangeDetailPlayerId, setRangeDetailPlayerId] = useState(null);
@@ -298,6 +297,60 @@ export const PlayersView = ({ scale = 1 }) => {
     }
   };
 
+  // Briefing review actions
+  const handleAcceptBriefing = async (playerId, briefingId) => {
+    try {
+      const tendency = tendencyMap[playerId];
+      const briefings = (tendency?.briefings || []).map(b =>
+        b.briefingId === briefingId
+          ? { ...b, reviewStatus: 'accepted', reviewedAt: Date.now() }
+          : b
+      );
+      await updatePlayerById(playerId, { exploitBriefings: briefings });
+      patchTendency(playerId, { briefings });
+    } catch (error) {
+      showError(`Failed to accept briefing: ${error.message}`);
+    }
+  };
+
+  const handleDismissBriefing = async (playerId, briefingId) => {
+    try {
+      const tendency = tendencyMap[playerId];
+      const currentBriefings = tendency?.briefings || [];
+      const briefings = currentBriefings.map(b =>
+        b.briefingId === briefingId
+          ? { ...b, reviewStatus: 'dismissed', reviewedAt: Date.now() }
+          : b
+      );
+      // Also add ruleId to dismissed list to prevent regeneration
+      const targetBriefing = currentBriefings.find(b => b.briefingId === briefingId);
+      const player = playerState.allPlayers.find(p => p.playerId === playerId);
+      const dismissedBriefingIds = [...(player?.dismissedBriefingIds || [])];
+      if (targetBriefing?.ruleId && !dismissedBriefingIds.includes(targetBriefing.ruleId)) {
+        dismissedBriefingIds.push(targetBriefing.ruleId);
+      }
+      await updatePlayerById(playerId, { exploitBriefings: briefings, dismissedBriefingIds });
+      patchTendency(playerId, { briefings });
+    } catch (error) {
+      showError(`Failed to dismiss briefing: ${error.message}`);
+    }
+  };
+
+  const handleDeferBriefing = async (playerId, briefingId) => {
+    try {
+      const tendency = tendencyMap[playerId];
+      const briefings = (tendency?.briefings || []).map(b =>
+        b.briefingId === briefingId
+          ? { ...b, reviewStatus: 'deferred' }
+          : b
+      );
+      await updatePlayerById(playerId, { exploitBriefings: briefings });
+      patchTendency(playerId, { briefings });
+    } catch (error) {
+      showError(`Failed to defer briefing: ${error.message}`);
+    }
+  };
+
   const handleEditPlayer = async (playerData) => {
     try {
       await updatePlayerById(editingPlayer.playerId, playerData);
@@ -427,6 +480,9 @@ export const PlayersView = ({ scale = 1 }) => {
                     onUpdateExploits={(exploits) => handleUpdateExploits(player.playerId, exploits)}
                     onDismissSuggestion={(suggestionId) => handleDismissSuggestion(player.playerId, suggestionId)}
                     onOpenRangeDetail={setRangeDetailPlayerId}
+                    onAcceptBriefing={handleAcceptBriefing}
+                    onDismissBriefing={handleDismissBriefing}
+                    onDeferBriefing={handleDeferBriefing}
                   />
                 ))}
               </tbody>

@@ -12,8 +12,8 @@ import { buildTimeline, getStreetTimeline } from '../handTimeline';
 import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
-import { parseCard } from '../exploitEngine/cardParser';
-import { rangeIndex } from '../exploitEngine/rangeMatrix';
+import { parseCard } from '../pokerCore/cardParser';
+import { rangeIndex } from '../pokerCore/rangeMatrix';
 
 /**
  * Extract a player's sub-action after limping in a single hand.

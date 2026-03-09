@@ -66,6 +66,13 @@ export const HandBrowser = ({
         </select>
       </div>
 
+      {/* Hand count badge */}
+      {hands.length > 0 && (
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] text-gray-500">{hands.length} hand{hands.length !== 1 ? 's' : ''}</span>
+        </div>
+      )}
+
       {/* Hand list */}
       <div className="flex-1 overflow-y-auto space-y-1">
         {hands.length === 0 ? (

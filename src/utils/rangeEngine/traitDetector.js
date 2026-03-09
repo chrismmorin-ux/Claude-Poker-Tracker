@@ -8,7 +8,7 @@
  */
 
 import { RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex } from '../exploitEngine/rangeMatrix';
+import { decodeIndex } from '../pokerCore/rangeMatrix';
 
 const GRID_SIZE = 169;
 
@@ -22,8 +22,8 @@ const initPremiums = () => {
     if (isPair && rank1 >= 8) { PREMIUM_INDICES.add(i); continue; }
     // AK suited/offsuit (A=12, K=11)
     if (rank1 === 12 && rank2 === 11) { PREMIUM_INDICES.add(i); continue; }
-    // AQ suited (A=12, Q=10)
-    if (rank1 === 12 && rank2 === 10 && suited) { PREMIUM_INDICES.add(i); continue; }
+    // AQ suited/offsuit (A=12, Q=10)
+    if (rank1 === 12 && rank2 === 10) { PREMIUM_INDICES.add(i); continue; }
   }
 };
 

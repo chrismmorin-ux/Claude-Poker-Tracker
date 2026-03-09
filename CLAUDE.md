@@ -17,18 +17,29 @@ Prefer `.claude/context/*.md` over raw source — they're compact summaries:
 - `CONTEXT_SUMMARY.md` — project overview
 - `STATE_SCHEMA.md` — all reducer shapes
 - `HOTSPOTS.md` — critical/fragile files
+- `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 
 Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 
-## Architecture (v120)
+## Poker Analysis Guardrail
+**Before editing ANY file in `src/utils/exploitEngine/` or `src/utils/rangeEngine/`:**
+1. Read `.claude/context/POKER_THEORY.md` (poker theory reference)
+2. Read the sub-directory `CLAUDE.md` in the engine you're editing (domain rules + anti-patterns)
+3. Read `docs/RANGE_ENGINE_DESIGN.md` if touching range estimation logic
+4. Verify your changes don't regress any poker concept listed in the anti-patterns section
+
+Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is almost always WRONG for poker. The codebase uses Bayesian methods, population priors, consequence-weighted confidence, and range-based thinking for specific theoretical reasons. Do not simplify.
+
+## Architecture (v121)
 - `src/PokerTracker.jsx` (~93 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
-- `src/contexts/` — 7 providers + ToastContext (zero prop drilling, persistence hooks inside providers)
+- `src/contexts/` — 8 providers + ToastContext (zero prop drilling, TendencyProvider for shared computation)
 - `src/reducers/` — 7 reducers (game, ui, card, session, player, settings, auth)
-- `src/hooks/` — 20 custom hooks (useGameHandlers, useScale, useRangeProfile, etc.)
+- `src/hooks/` — 21 custom hooks (useGameHandlers, useScale, useRangeProfile, useHandReplayAnalysis, etc.)
 - `src/components/views/` — 9 view screens + 2 overlays (all receive only `scale` prop)
 - `src/components/ui/` — 30 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges)
+- `src/utils/pokerCore/` — shared poker infrastructure (cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (6 modules)
-- `src/utils/exploitEngine/` — exploit suggestions + range matrix
+- `src/utils/exploitEngine/` — exploit suggestions + range segmentation + weakness detection
 - `src/utils/persistence/` — IndexedDB v9 (hands, sessions, players, settings, rangeProfiles)
 
 ## Working Principles

@@ -15,7 +15,7 @@
 
 import { createPlayer, getAllPlayers, createSession, endSession, updateSession, deleteRangeProfile } from './persistence/index';
 import { initDB, GUEST_USER_ID } from './persistence/database';
-import { parseRangeString, rangeIndex } from './exploitEngine/rangeMatrix';
+import { parseRangeString, rangeIndex } from './pokerCore/rangeMatrix';
 
 // =============================================================================
 // CARD HELPERS

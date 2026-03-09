@@ -225,9 +225,10 @@ describe('analyzeDecisionPoint', () => {
     const hand = makeHand({
       cardState: { communityCards: ['A♠', '7♦', '2♣', '', ''] },
     });
+    // Focus on hero's check (seat 3) — rules run for hero actions
     const result = analyzeDecisionPoint({
       timeline,
-      focusedAction: timeline[0],
+      focusedAction: timeline[1],
       heroSeat: 3,
       hand,
       tendencyMap,

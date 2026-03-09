@@ -103,9 +103,10 @@ export const extractPostflopAggression = (playerId, hand, timeline) => {
 
 /**
  * Extract 3-bet data from a single hand for a player.
+ * Also tracks whether the player folded when facing a raise (fold to 3-bet).
  * @param {string} seat
  * @param {Array} timeline
- * @returns {{ facedRaise: boolean, threeBet: boolean } | null}
+ * @returns {{ facedRaise: boolean, threeBet: boolean, foldedTo3Bet: boolean } | null}
  */
 const extract3BetStats = (seat, timeline) => {
   const preflopActions = getStreetTimeline(timeline, 'preflop')
@@ -114,10 +115,11 @@ const extract3BetStats = (seat, timeline) => {
   if (preflopActions.length === 0) return null;
 
   const facedRaise = didPlayerFaceRaise(timeline, seat, 'preflop');
-  if (!facedRaise) return { facedRaise: false, threeBet: false };
+  if (!facedRaise) return { facedRaise: false, threeBet: false, foldedTo3Bet: false };
 
   const threeBet = preflopActions.some(e => e.action === PRIMITIVE_ACTIONS.RAISE);
-  return { facedRaise: true, threeBet };
+  const foldedTo3Bet = !threeBet && preflopActions.some(e => e.action === PRIMITIVE_ACTIONS.FOLD);
+  return { facedRaise: true, threeBet, foldedTo3Bet };
 };
 
 /**
@@ -181,6 +183,7 @@ export const createEmptyStats = () => ({
   cbetCount: 0,
   facedCbet: 0,
   foldedToCbet: 0,
+  foldTo3BetCount: 0,
   lastCalculatedHandId: null,
 });
 
@@ -232,12 +235,13 @@ const accumulateHand = (stats, playerId, hand) => {
     stats.totalCalls += aggression.calls;
   }
 
-  // 3-bet
+  // 3-bet and fold-to-3bet
   const threeBet = extract3BetStats(seat, timeline);
   if (threeBet) {
     if (threeBet.facedRaise) {
       stats.facedRaisePreflop++;
       if (threeBet.threeBet) stats.threeBetCount++;
+      if (threeBet.foldedTo3Bet) stats.foldTo3BetCount++;
     }
   }
 
@@ -301,7 +305,7 @@ export const classifyStyle = (pct) => {
 // =============================================================================
 
 export const derivePercentages = (stats) => {
-  if (!stats) return { vpip: null, pfr: null, af: null, threeBet: null, cbet: null, foldToCbet: null, sampleSize: 0 };
+  if (!stats) return { vpip: null, pfr: null, af: null, threeBet: null, cbet: null, foldToCbet: null, foldTo3Bet: null, sampleSize: 0 };
 
   const sampleSize = stats.handsSeenPreflop;
 
@@ -330,5 +334,9 @@ export const derivePercentages = (stats) => {
     ? Math.round((stats.foldedToCbet / stats.facedCbet) * 100)
     : null;
 
-  return { vpip, pfr, af, threeBet, cbet, foldToCbet, sampleSize };
+  const foldTo3Bet = stats.facedRaisePreflop > 0
+    ? Math.round((stats.foldTo3BetCount / stats.facedRaisePreflop) * 100)
+    : null;
+
+  return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize };
 };

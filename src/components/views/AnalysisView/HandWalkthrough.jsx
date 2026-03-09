@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { getPositionName } from '../../../utils/positionUtils';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
+import { RangeGrid } from '../../ui/RangeGrid';
 
 const STREET_LABELS = {
   preflop: 'Preflop',
@@ -30,6 +31,8 @@ export const HandWalkthrough = ({
   heroSeat,
   focusedActionIndex,
   timeline,
+  allPlayers,
+  actionAnalysis,
   onSetStreet,
   onFocusAction,
   onPrevStreet,
@@ -38,15 +41,20 @@ export const HandWalkthrough = ({
   const buttonSeat = selectedHand?.gameState?.dealerButtonSeat ?? 1;
   const seatPlayers = selectedHand?.seatPlayers || {};
 
-  // Build a name map: seat -> player name
+  // Build a name map: seat -> player name (resolve via allPlayers)
   const seatNames = useMemo(() => {
     const names = {};
-    for (const [seat, playerId] of Object.entries(seatPlayers)) {
-      names[seat] = `P${playerId}`;
+    const playerMap = {};
+    if (allPlayers) {
+      for (const p of allPlayers) {
+        playerMap[p.playerId] = p.name;
+      }
     }
-    // Override with known names if available (we don't have allPlayers here, use seat fallback)
+    for (const [seat, playerId] of Object.entries(seatPlayers)) {
+      names[seat] = playerMap[playerId] || `P${playerId}`;
+    }
     return names;
-  }, [seatPlayers]);
+  }, [seatPlayers, allPlayers]);
 
   if (!selectedHand) {
     return (
@@ -102,14 +110,14 @@ export const HandWalkthrough = ({
             return (
               <button
                 key={entry.order}
-                onClick={() => isHero && onFocusAction(globalIndex)}
-                className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                onClick={() => onFocusAction(globalIndex)}
+                className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors cursor-pointer ${
                   isFocused
                     ? 'bg-indigo-900/30 border border-indigo-500'
                     : isHero
-                      ? 'bg-yellow-900/20 border border-yellow-700 hover:bg-yellow-900/30 cursor-pointer'
-                      : 'bg-gray-700 border border-gray-600'
-                }${!isHero ? ' cursor-default' : ''}`}
+                      ? 'bg-yellow-900/20 border border-yellow-700 hover:bg-yellow-900/30'
+                      : 'bg-gray-700 border border-gray-600 hover:bg-gray-600'
+                }`}
               >
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                   isHero ? 'bg-yellow-500 text-yellow-900' : 'bg-gray-600 text-gray-300'
@@ -120,7 +128,7 @@ export const HandWalkthrough = ({
                   {isHero ? 'Hero' : playerName}
                 </span>
                 <ActionBadge action={entry.action} />
-                {isHero && isFocused && (
+                {isFocused && (
                   <span className="text-indigo-500 text-[10px]">&#9664;</span>
                 )}
               </button>
@@ -128,6 +136,21 @@ export const HandWalkthrough = ({
           })
         )}
       </div>
+
+      {/* Mini Range Grid for focused action */}
+      {focusedActionIndex !== null && actionAnalysis?.[focusedActionIndex]?.rangeAtPoint && (
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+            {seatNames[actionAnalysis[focusedActionIndex].seat] || `S${actionAnalysis[focusedActionIndex].seat}`} Range
+          </div>
+          <div className="flex justify-center">
+            <RangeGrid
+              weights={actionAnalysis[focusedActionIndex].rangeAtPoint}
+              size="compact"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Prev/Next navigation */}
       <div className="flex justify-between mt-3 pt-2 border-t border-gray-700">

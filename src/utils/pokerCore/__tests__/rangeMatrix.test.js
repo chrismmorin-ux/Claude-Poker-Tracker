@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
   createRange, rangeIndex, decodeIndex,
   PREFLOP_CHARTS, rangeWidth,
-  adjustRangeByStats, enumerateCombos,
+  enumerateCombos,
 } from '../rangeMatrix';
 
 describe('rangeMatrix', () => {
@@ -52,24 +52,6 @@ describe('rangeMatrix', () => {
         expect(PREFLOP_CHARTS[pos]).toBeDefined();
         expect(rangeWidth(PREFLOP_CHARTS[pos])).toBeGreaterThan(0);
       }
-    });
-  });
-
-  describe('adjustRangeByStats', () => {
-    test('wider VPIP expands range', () => {
-      const base = PREFLOP_CHARTS.UTG;
-      const baseWidth = rangeWidth(base);
-      const adjusted = adjustRangeByStats(base, 45, 15);
-      const adjustedWidth = rangeWidth(adjusted);
-      expect(adjustedWidth).toBeGreaterThan(baseWidth);
-    });
-
-    test('tighter VPIP shrinks range', () => {
-      const base = PREFLOP_CHARTS.BTN;
-      const baseWidth = rangeWidth(base);
-      const adjusted = adjustRangeByStats(base, 15, 45);
-      const adjustedWidth = rangeWidth(adjusted);
-      expect(adjustedWidth).toBeLessThan(baseWidth);
     });
   });
 

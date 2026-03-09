@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { getActionAdvice } from '../utils/exploitEngine/actionAdvisor';
-import { parseAndEncode } from '../utils/exploitEngine/cardParser';
+import { parseAndEncode } from '../utils/pokerCore/cardParser';
 
 /**
  * @returns {{ advice: object|null, isComputing: boolean, error: string|null, compute: Function, clear: Function }}

@@ -9,7 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { RangeGrid } from './RangeGrid';
 import { RANGE_POSITIONS } from '../../utils/rangeEngine';
-import { rangeWidth } from '../../utils/exploitEngine/rangeMatrix';
+import { rangeWidth } from '../../utils/pokerCore/rangeMatrix';
 
 const DISPLAY_ACTIONS = {
   noRaise: [
@@ -73,8 +73,8 @@ export const RangeDetailPanel = ({
     if (!rangeProfile?.showdownAnchors) return new Set();
     const indices = new Set();
     for (const anchor of rangeProfile.showdownAnchors) {
-      if (anchor.position === position && anchor.action === effectiveAction && anchor.gridIndex != null) {
-        indices.add(anchor.gridIndex);
+      if (anchor.position === position && anchor.action === effectiveAction && anchor.handIndex != null) {
+        indices.add(anchor.handIndex);
       }
     }
     return indices;
@@ -101,7 +101,7 @@ export const RangeDetailPanel = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl p-5 max-w-[480px] w-[95vw]"
+        className="bg-white rounded-lg shadow-xl p-5 max-w-[480px] w-[95vw] max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

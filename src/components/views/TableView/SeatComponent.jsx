@@ -23,6 +23,8 @@ export const SeatComponent = ({
   exploitSummary,
   exploits,
   sampleSize,
+  pendingBriefingCount = 0,
+  weaknessCount = 0,
   holeCards,
   holeCardsVisible,
   getSeatColor,
@@ -189,6 +191,8 @@ export const SeatComponent = ({
                 exploitSummary={exploitSummary}
                 sampleSize={sampleSize}
                 exploits={exploits}
+                pendingBriefingCount={pendingBriefingCount}
+                weaknessCount={weaknessCount}
               />
             </div>
           )}
@@ -225,6 +229,7 @@ SeatComponent.propTypes = {
   onHoleCardClick: PropTypes.func.isRequired,
   onToggleVisibility: PropTypes.func.isRequired,
   onOpenRangeDetail: PropTypes.func,
+  weaknessCount: PropTypes.number,
   seatBet: PropTypes.number,
   isPFR: PropTypes.bool,
 };

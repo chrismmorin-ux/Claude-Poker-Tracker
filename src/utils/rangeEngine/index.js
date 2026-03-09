@@ -9,7 +9,7 @@ import { extractAllActions } from './actionExtractor';
 import { extractAllSubActions } from './subActionExtractor';
 import { updateProfileFromActions, updateSubActionCounts } from './bayesianUpdater';
 import { normalizeAllPositions } from './crossRangeConstraints';
-import { rangeWidth } from '../exploitEngine/rangeMatrix';
+import { rangeWidth } from '../pokerCore/rangeMatrix';
 import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
 import { detectTraits } from './traitDetector';
 import { computeAllPips } from './pipCalculator';

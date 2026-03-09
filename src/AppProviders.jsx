@@ -17,7 +17,8 @@ import {
   CardProvider,
   SettingsProvider,
   AuthProvider,
-  ToastProvider
+  ToastProvider,
+  TendencyProvider
 } from './contexts';
 
 /**
@@ -63,11 +64,13 @@ export const AppProviders = ({
         <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
           <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
             <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-              <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-                <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                  {children}
-                </SettingsProvider>
-              </CardProvider>
+              <TendencyProvider>
+                <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+                  <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                    {children}
+                  </SettingsProvider>
+                </CardProvider>
+              </TendencyProvider>
             </PlayerProvider>
           </SessionProvider>
         </UIProvider>

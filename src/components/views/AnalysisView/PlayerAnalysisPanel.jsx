@@ -1,45 +1,19 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { RangeGrid } from '../../ui/RangeGrid';
+import { SegmentationBar } from '../../ui/SegmentationBar';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
-import { usePlayer, useSession } from '../../../contexts';
+import { usePlayer, useSession, useTendency } from '../../../contexts';
 import { useRangeProfile } from '../../../hooks/useRangeProfile';
 import { useActionAdvisor } from '../../../hooks/useActionAdvisor';
-import { usePlayerTendencies } from '../../../hooks/usePlayerTendencies';
 import { RANGE_POSITIONS } from '../../../utils/rangeEngine';
-import { parseBlinds } from '../../../utils/parseBlinds';
+import { parseBlinds } from '../../../utils/potCalculator';
 
 const MIN_HANDS_THRESHOLD = 20;
 
 const CARD_SLOTS = ['', '', '', '', ''];
 const HERO_SLOTS = ['', ''];
 const VILLAIN_ACTIONS = ['check', 'bet', 'call', 'raise'];
-
-const SegmentationBar = ({ buckets }) => {
-  if (!buckets) return null;
-  const colors = {
-    nuts: 'bg-red-600', strong: 'bg-orange-500', marginal: 'bg-yellow-400',
-    draw: 'bg-blue-400', air: 'bg-gray-300',
-  };
-  return (
-    <div className="flex h-5 rounded overflow-hidden w-full">
-      {['nuts', 'strong', 'marginal', 'draw', 'air'].map((b) => {
-        const pct = buckets[b]?.pct || 0;
-        if (pct < 1) return null;
-        return (
-          <div
-            key={b}
-            className={`${colors[b]} flex items-center justify-center text-[9px] font-bold text-white`}
-            style={{ width: `${pct}%` }}
-            title={`${b}: ${Math.round(pct)}%`}
-          >
-            {pct >= 8 ? `${Math.round(pct)}%` : ''}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 export const PlayerAnalysisPanel = () => {
   const { allPlayers } = usePlayer();
@@ -56,7 +30,7 @@ export const PlayerAnalysisPanel = () => {
 
   const { rangeProfile, rangeSummary, isLoading } = useRangeProfile(selectedPlayerId);
   const { advice, isComputing, error, compute, clear } = useActionAdvisor();
-  const { tendencyMap } = usePlayerTendencies(allPlayers);
+  const { tendencyMap } = useTendency();
 
   const selectedPlayer = useMemo(
     () => allPlayers.find(p => p.playerId === selectedPlayerId) || null,
@@ -81,8 +55,8 @@ export const PlayerAnalysisPanel = () => {
   const defaultPot = useMemo(() => {
     const gt = currentSession?.gameType;
     if (!gt) return 6;
-    const { bigBlind } = parseBlinds(gt);
-    return bigBlind * 3;
+    const { bb } = parseBlinds(gt);
+    return bb * 3;
   }, [currentSession]);
 
   const effectivePot = potSize !== '' ? Number(potSize) : defaultPot;
@@ -329,8 +303,8 @@ export const PlayerAnalysisPanel = () => {
             )}
           </div>
 
-          {/* Panel 3: Action Recommendations */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+          {/* Panel 3: Action Recommendations + Weaknesses */}
+          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 overflow-y-auto max-h-[500px]">
             <h3 className="text-lg font-bold mb-3 text-indigo-400">Action Recommendations</h3>
             {!advice ? (
               <div className="text-center text-gray-400 py-8">
@@ -385,9 +359,109 @@ export const PlayerAnalysisPanel = () => {
                 </div>
               </div>
             )}
+
+            {/* Weaknesses Section */}
+            <WeaknessesSection playerId={selectedPlayerId} tendencyMap={tendencyMap} />
           </div>
         </div>
       )}
     </>
+  );
+};
+
+// =============================================================================
+// Weaknesses Section
+// =============================================================================
+
+const CATEGORY_LABELS = {
+  situational: 'Situational',
+  preflop: 'Preflop',
+  structural: 'Structural',
+  sizing: 'Sizing',
+};
+
+const CATEGORY_COLORS = {
+  situational: 'border-orange-600 bg-orange-900/20',
+  preflop: 'border-blue-600 bg-blue-900/20',
+  structural: 'border-purple-600 bg-purple-900/20',
+  sizing: 'border-yellow-600 bg-yellow-900/20',
+};
+
+const ContextBadge = ({ text }) => (
+  <span className="px-1.5 py-0.5 rounded bg-gray-600 text-gray-300 text-[9px] font-semibold uppercase">
+    {text}
+  </span>
+);
+
+const SeverityBar = ({ severity }) => {
+  const pct = Math.round(severity * 100);
+  const color = pct >= 70 ? 'bg-red-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-green-500';
+  return (
+    <div className="flex items-center gap-1">
+      <div className="h-1.5 w-16 bg-gray-700 rounded overflow-hidden">
+        <div className={`h-full ${color} rounded`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[9px] text-gray-500">{pct}%</span>
+    </div>
+  );
+};
+
+const WeaknessesSection = ({ playerId, tendencyMap }) => {
+  const tendency = playerId ? tendencyMap?.[playerId] : null;
+  const weaknesses = tendency?.weaknesses || [];
+
+  if (!playerId || weaknesses.length === 0) return null;
+
+  // Group by category
+  const grouped = {};
+  for (const w of weaknesses) {
+    const cat = w.category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(w);
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-gray-700">
+      <h4 className="text-sm font-bold mb-2 text-amber-400">
+        Weaknesses ({weaknesses.length})
+      </h4>
+      <div className="space-y-2">
+        {Object.entries(grouped).map(([category, items]) => (
+          <div key={category}>
+            <div className="text-[10px] font-bold text-gray-500 uppercase mb-1">
+              {CATEGORY_LABELS[category] || category}
+            </div>
+            {items.map((w) => (
+              <div
+                key={w.id}
+                className={`p-2 rounded border mb-1.5 ${CATEGORY_COLORS[category] || 'border-gray-600 bg-gray-700/50'}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-gray-200">{w.label}</span>
+                  <SeverityBar severity={w.severity} />
+                </div>
+                <div className="text-[10px] text-gray-400 mb-1">{w.description}</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {w.context && <ContextBadge text={w.context} />}
+                  {w.position && <ContextBadge text={w.position} />}
+                  {w.street && <ContextBadge text={w.street} />}
+                  {w.exploitable && (
+                    <span className="px-1.5 py-0.5 rounded bg-red-900/50 text-red-300 text-[9px] font-semibold">
+                      Exploitable
+                    </span>
+                  )}
+                </div>
+                {w.evidence && (
+                  <div className="text-[9px] text-gray-500 mt-1">
+                    {w.evidence.metric}: observed {w.evidence.observed}% vs profitable {w.evidence.profitable}%
+                    {w.evidence.delta > 0 ? ` (delta: +${w.evidence.delta}%)` : ''}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };

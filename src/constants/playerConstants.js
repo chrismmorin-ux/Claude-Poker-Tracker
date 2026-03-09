@@ -22,7 +22,7 @@ export const PLAYER_ACTIONS = {
   HYDRATE_SEAT_PLAYERS: 'HYDRATE_SEAT_PLAYERS',
 
   // Loading state
-  SET_LOADING: 'SET_LOADING'
+  SET_LOADING: 'SET_LOADING',
 };
 
 // =============================================================================
@@ -138,6 +138,26 @@ export const EXPLOIT_CATEGORY_CONFIG = {
 };
 
 export const STREET_OPTIONS = ['all', 'preflop', 'flop', 'turn', 'river'];
+
+// =============================================================================
+// EXPLOIT BRIEFING CONSTANTS
+// =============================================================================
+
+export const REVIEW_STATUS = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  DISMISSED: 'dismissed',
+  DEFERRED: 'deferred',
+  STALE: 'stale',
+};
+
+export const RECOGNIZABILITY_LABELS = {
+  1: 'Hard to spot',
+  2: 'Requires focus',
+  3: 'Moderate',
+  4: 'Easy to spot',
+  5: 'Obvious',
+};
 
 // =============================================================================
 // AVATAR CONSTRAINTS

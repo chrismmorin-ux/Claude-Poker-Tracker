@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { rangeIndex } from '../../utils/exploitEngine/rangeMatrix';
+import { rangeIndex } from '../../utils/pokerCore/rangeMatrix';
 
 const RANK_LABELS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 
@@ -130,7 +130,7 @@ export const RangeGrid = ({
                     ? `hsla(${colorHue}, 76%, 36%, ${Math.max(0.08, weight)})`
                     : 'transparent',
                   color: weight > 0.5 ? 'white' : weight > 0 ? '#1a1a1a' : '#ccc',
-                  boxShadow: isShowdown ? 'inset 0 0 0 1px white' : 'none',
+                  boxShadow: isShowdown ? 'inset 0 0 0 2px #f59e0b' : 'none',
                 }}
                 title={`${label}: ${(weight * 100).toFixed(0)}%${isShowdown ? ' (confirmed)' : ''}`}
               >

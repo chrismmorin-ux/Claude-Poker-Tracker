@@ -69,44 +69,47 @@ export const parseRangeString = (str) => {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    if (trimmed.length === 2) {
-      // Pair: "AA"
-      const r = rankFromChar(trimmed[0]);
-      if (r >= 0) range[rangeIndex(r, r, false)] = 1.0;
-    } else if (trimmed.length === 3) {
-      const r1 = rankFromChar(trimmed[0]);
-      const r2 = rankFromChar(trimmed[1]);
-      const suited = trimmed[2] === 's';
-      if (r1 >= 0 && r2 >= 0) range[rangeIndex(r1, r2, suited)] = 1.0;
-    } else if (trimmed.includes('+')) {
-      // Pair+: "TT+"
+    if (trimmed.includes('+')) {
+      // Range notation: "TT+" or "ATs+"
       const base = trimmed.replace('+', '');
       if (base.length === 2 && base[0] === base[1]) {
+        // Pair+: "66+" means 66,77,88,...,AA
         const r = rankFromChar(base[0]);
         for (let i = r; i <= 12; i++) range[rangeIndex(i, i, false)] = 1.0;
       } else if (base.length === 3) {
-        // "ATs+" means AT,AJ,AQ,AK suited
+        // "ATs+" means ATs,AJs,AQs,AKs (keep high card, raise kicker)
         const high = rankFromChar(base[0]);
         const low = rankFromChar(base[1]);
         const suited = base[2] === 's';
         for (let i = low; i < high; i++) range[rangeIndex(high, i, suited)] = 1.0;
       }
+    } else if (trimmed.length === 2) {
+      // Pair: "AA"
+      const r = rankFromChar(trimmed[0]);
+      if (r >= 0) range[rangeIndex(r, r, false)] = 1.0;
+    } else if (trimmed.length === 3) {
+      // Single hand: "AKs" or "AKo"
+      const r1 = rankFromChar(trimmed[0]);
+      const r2 = rankFromChar(trimmed[1]);
+      const suited = trimmed[2] === 's';
+      if (r1 >= 0 && r2 >= 0) range[rangeIndex(r1, r2, suited)] = 1.0;
     }
   }
   return range;
 };
 
-// Standard GTO-approximate opening ranges
+// GTO-approximate opening (RFI) ranges from solver data, 9-max 100bb cash
+// Sources: PokerCoaching 9-max charts, TightPoker range guides, RangeConverter
 export const PREFLOP_CHARTS = {
-  UTG: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,AKs,AQs,AJs,ATs,A9s,KQs,KJs,QJs,AKo,AQo,AJo,KQo'),
-  'UTG+1': parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,AKo,AQo,AJo,ATo,KQo'),
-  MP1: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,AKs,AQs,AJs,ATs,A9s,A8s,KQs,KJs,KTs,QJs,QTs,JTs,AKo,AQo,AJo,KQo'),
-  MP2: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,AKs,AQs,AJs,ATs,A9s,A8s,A7s,KQs,KJs,KTs,K9s,QJs,QTs,JTs,T9s,AKo,AQo,AJo,ATo,KQo,KJo'),
-  HJ: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,55,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,AKo,AQo,AJo,ATo,KQo,KJo,QJo'),
-  CO: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,55,44,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,K8s,QJs,QTs,Q9s,JTs,J9s,T9s,T8s,98s,87s,76s,AKo,AQo,AJo,ATo,A9o,KQo,KJo,KTo,QJo,QTo,JTo'),
-  BTN: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,K8s,K7s,K6s,K5s,QJs,QTs,Q9s,Q8s,JTs,J9s,J8s,T9s,T8s,98s,97s,87s,86s,76s,75s,65s,54s,53s,43s,AKo,AQo,AJo,ATo,A9o,A8o,A7o,A6o,A5o,K8o,KQo,KJo,KTo,K9o,QJo,QTo,Q9o,Q8o,JTo,J9o,J8o,T9o,T8o,97o,86o,75o,64o'),
-  SB: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,55,44,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,KQs,KJs,KTs,K9s,QJs,QTs,Q9s,JTs,J9s,T9s,98s,87s,76s,AKo,AQo,AJo,ATo,A9o,KQo,KJo,KTo,QJo'),
-  BB: parseRangeString('AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,KQs,KJs,KTs,K9s,K8s,K7s,K6s,K5s,K4s,QJs,QTs,Q9s,Q8s,Q7s,JTs,J9s,J8s,J7s,T9s,T8s,T7s,98s,97s,87s,86s,76s,75s,65s,64s,54s,53s,43s,AKo,AQo,AJo,ATo,A9o,A8o,A7o,A6o,KQo,KJo,KTo,K9o,QJo,QTo,Q9o,JTo,J9o,T9o,98o,87o'),
+  UTG: parseRangeString('66+,A9s+,A5s,KTs+,QTs+,JTs,T9s,98s,AQo+'),
+  'UTG+1': parseRangeString('66+,A4s+,K9s+,Q9s+,J9s+,T9s,98s,AJo+,KQo'),
+  MP1: parseRangeString('66+,A2s+,K9s+,Q9s+,J9s+,T9s,98s,87s,76s,AJo+,KQo'),
+  MP2: parseRangeString('44+,A2s+,K9s+,Q9s+,J9s+,T9s,98s,87s,76s,65s,ATo+,KJo+'),
+  HJ: parseRangeString('22+,A2s+,K8s+,Q9s+,J9s+,T9s,98s,87s,76s,65s,54s,ATo+,KJo+'),
+  CO: parseRangeString('22+,A2s+,K7s+,Q8s+,J8s+,T8s+,97s+,86s+,75s+,64s+,54s,43s,A9o+,KJo+'),
+  BTN: parseRangeString('22+,A2s+,K2s+,Q2s+,J6s+,T6s+,96s+,85s+,75s+,64s+,53s+,43s,32s,A2o+,K7o+,Q8o+,J8o+,T8o+,97o+,87o,76o'),
+  SB: parseRangeString('22+,A2s+,K8s+,Q9s+,J9s+,T8s+,97s+,86s+,76s,65s,54s,A8o+,KTo+,QTo+,JTo,T9o'),
+  BB: parseRangeString('22+,A2s+,K4s+,Q7s+,J7s+,T7s+,97s+,86s+,76s,75s,65s,64s,54s,53s,43s,A6o+,K9o+,Q9o+,J9o+,T9o,98o,87o'),
 };
 
 /**
@@ -122,57 +125,6 @@ export const rangeWidth = (range) => {
     totalCombos += combos * range[idx];
   }
   return Math.round((totalCombos / 1326) * 100);
-};
-
-/**
- * Adjust range by observed vs expected VPIP.
- * Scales range width wider/narrower based on how loose/tight the player is.
- * @param {Float64Array} baseRange - Starting range
- * @param {number} observedVpip - Observed VPIP (0-100)
- * @param {number} expectedVpip - Expected VPIP for this position (0-100)
- * @returns {Float64Array} Adjusted range
- */
-// Exported for tests only — no production consumers
-export const adjustRangeByStats = (baseRange, observedVpip, expectedVpip) => {
-  if (!Number.isFinite(expectedVpip) || expectedVpip <= 0) return baseRange;
-  if (!Number.isFinite(observedVpip) || observedVpip < 0) return baseRange;
-
-  const ratio = observedVpip / expectedVpip;
-  const adjusted = createRange();
-
-  if (ratio >= 1) {
-    // Player is looser: scale all weights up by ratio, cap at 1.0
-    for (let idx = 0; idx < GRID_SIZE; idx++) {
-      adjusted[idx] = Math.min(1.0, baseRange[idx] * ratio);
-    }
-    // Fill empty cells proportionally to reach target width
-    if (ratio > 1.2) {
-      let existingSum = 0;
-      let existingCount = 0;
-      for (let idx = 0; idx < GRID_SIZE; idx++) {
-        if (adjusted[idx] > 0) {
-          existingSum += adjusted[idx];
-          existingCount++;
-        }
-      }
-      const avgWeight = existingCount > 0 ? existingSum / existingCount : 0;
-      const fillWeight = Math.min(1.0, avgWeight * (ratio - 1) / ratio);
-      for (let idx = 0; idx < GRID_SIZE; idx++) {
-        if (adjusted[idx] === 0) adjusted[idx] = fillWeight;
-      }
-    }
-    // Final cap at 1.0
-    for (let idx = 0; idx < GRID_SIZE; idx++) {
-      if (adjusted[idx] > 1.0) adjusted[idx] = 1.0;
-    }
-  } else {
-    // Player is tighter: uniform proportional shrink
-    for (let idx = 0; idx < GRID_SIZE; idx++) {
-      adjusted[idx] = baseRange[idx] * ratio;
-    }
-  }
-
-  return adjusted;
 };
 
 /**

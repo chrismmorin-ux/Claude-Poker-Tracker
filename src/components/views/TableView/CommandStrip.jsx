@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Undo2, SkipForward, RotateCcw } from 'lucide-react';
+import { Undo2, SkipForward, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, STREETS, ACTIONS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
@@ -79,6 +79,8 @@ export const CommandStrip = ({
   // HE-2a: Next-to-act display
   nextActionSeat,
   getSeatPlayerName,
+  // Live equity data
+  liveEquity,
 }) => {
   const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat } = useGame();
   const [customValue, setCustomValue] = useState('');
@@ -155,6 +157,16 @@ export const CommandStrip = ({
   const actionArray = singleSeat ? getActionsForSeatOnStreet(actionSequence, singleSeat, currentStreet) : [];
   const positionLabel = singleSeat ? getPositionName(singleSeat, dealerButtonSeat) : '';
 
+  // Live action advice classification
+  const actionAdvice = useMemo(() => {
+    if (!liveEquity || liveEquity.equity === null) return null;
+    const eq = liveEquity.equity;
+    const fp = liveEquity.foldPct;
+    if (eq >= 0.55) return { label: 'VALUE', color: '#22c55e', icon: 'up' };
+    if (eq < 0.40 && fp !== null && fp >= 0.40) return { label: 'BLUFF', color: '#f59e0b', icon: 'down' };
+    return { label: 'CHECK', color: '#6b7280', icon: 'flat' };
+  }, [liveEquity]);
+
   // Show "Fold Cold" when there's aggression (raise preflop, or bet/raise postflop)
   const hasAggression = currentStreet === 'preflop'
     ? actionSequence.some(e => e.street === 'preflop' && e.action === 'raise')
@@ -230,6 +242,42 @@ export const CommandStrip = ({
           onClearBoard={onClearBoard}
           onClearHole={onClearHole}
         />
+      )}
+
+      {/* Live Action Advice — compact equity + suggestion bar */}
+      {(actionAdvice || liveEquity?.isComputing) && (
+        <div
+          className="flex items-center justify-between px-2 py-1.5"
+          style={{ borderBottom: '1px solid var(--panel-border)', background: 'var(--panel-surface)' }}
+        >
+          {liveEquity?.isComputing ? (
+            <span className="text-gray-400 animate-pulse" style={{ fontSize: '12px' }}>Computing equity...</span>
+          ) : actionAdvice && (
+            <>
+              <div className="flex items-center gap-1.5">
+                {actionAdvice.icon === 'up' && <TrendingUp size={14} color={actionAdvice.color} />}
+                {actionAdvice.icon === 'down' && <TrendingDown size={14} color={actionAdvice.color} />}
+                {actionAdvice.icon === 'flat' && <Minus size={14} color={actionAdvice.color} />}
+                <span className="font-extrabold" style={{ fontSize: '14px', color: actionAdvice.color, letterSpacing: '1px' }}>
+                  {actionAdvice.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-gray-300" style={{ fontSize: '12px' }}>
+                  Eq <span className="font-bold text-white">{Math.round(liveEquity.equity * 100)}%</span>
+                </span>
+                {liveEquity.foldPct !== null && (
+                  <span className="text-gray-300" style={{ fontSize: '12px' }}>
+                    Fold <span className="font-bold text-white">{Math.round(liveEquity.foldPct * 100)}%</span>
+                  </span>
+                )}
+                <span className="text-gray-500" style={{ fontSize: '10px' }}>
+                  vs {liveEquity.villainName}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* ═══ ACTION ZONE (top) — recording what happened ═══ */}
@@ -473,4 +521,11 @@ CommandStrip.propTypes = {
   onClearHole: PropTypes.func.isRequired,
   nextActionSeat: PropTypes.number,
   getSeatPlayerName: PropTypes.func,
+  liveEquity: PropTypes.shape({
+    equity: PropTypes.number,
+    foldPct: PropTypes.number,
+    isComputing: PropTypes.bool,
+    villainName: PropTypes.string,
+    villainSeat: PropTypes.number,
+  }),
 };

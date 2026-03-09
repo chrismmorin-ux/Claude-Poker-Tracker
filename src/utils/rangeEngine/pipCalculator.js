@@ -6,7 +6,7 @@
  */
 
 import { RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../exploitEngine/rangeMatrix';
+import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../pokerCore/rangeMatrix';
 
 const GRID_SIZE = 169;
 
@@ -130,7 +130,7 @@ export const computeAllPips = (rangeProfile) => {
     if (limpRange) {
       playerRange = new Float64Array(GRID_SIZE);
       for (let i = 0; i < GRID_SIZE; i++) {
-        playerRange[i] = Math.max(openRange[i], limpRange[i]);
+        playerRange[i] = Math.min(1.0, (openRange[i] || 0) + (limpRange[i] || 0));
       }
     } else {
       playerRange = openRange;

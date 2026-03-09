@@ -83,10 +83,17 @@ export const PlayerRow = ({
   onUpdateExploits,
   onDismissSuggestion,
   onOpenRangeDetail,
+  onAcceptBriefing,
+  onDismissBriefing,
+  onDeferBriefing,
 }) => {
   const isAssigned = assignedSeat !== null;
   const [showExploits, setShowExploits] = useState(false);
   const exploits = player.exploits || [];
+  const briefings = tendencyStats?.briefings || player.exploitBriefings || [];
+  const pendingBriefingCount = briefings.filter(b =>
+    b.reviewStatus === 'pending' || b.reviewStatus === 'stale'
+  ).length;
 
   const suggestions = useMemo(() => {
     if (!tendencyStats?.exploits) return [];
@@ -213,10 +220,15 @@ export const PlayerRow = ({
               e.stopPropagation();
               setShowExploits(!showExploits);
             }}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            className="text-gray-500 hover:text-gray-700 text-sm font-medium relative"
             title="Toggle exploit notes"
           >
             {showExploits ? '▴' : '▾'}
+            {pendingBriefingCount > 0 && (
+              <span className="absolute -top-1 -right-2 w-4 h-4 bg-amber-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                {pendingBriefingCount}
+              </span>
+            )}
           </button>
         </div>
       </td>
@@ -229,6 +241,11 @@ export const PlayerRow = ({
             onUpdate={(updated) => onUpdateExploits(updated)}
             suggestions={suggestions}
             onDismissSuggestion={(id) => onDismissSuggestion && onDismissSuggestion(id)}
+            briefings={briefings}
+            weaknesses={tendencyStats?.weaknesses || []}
+            onAcceptBriefing={onAcceptBriefing ? (id) => onAcceptBriefing(player.playerId, id) : undefined}
+            onDismissBriefing={onDismissBriefing ? (id) => onDismissBriefing(player.playerId, id) : undefined}
+            onDeferBriefing={onDeferBriefing ? (id) => onDeferBriefing(player.playerId, id) : undefined}
           />
         </td>
       </tr>

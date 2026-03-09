@@ -5,7 +5,7 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v9
+ *   Database: "PokerTrackerDB" v10
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
@@ -32,6 +32,7 @@
  *   v7 → v8: Added actionSequence field to hands for ordered action storage
  *            Converts existing seatActions to actionSequence on migration
  *   v8 → v9: Added rangeProfiles object store for cached Bayesian range estimates
+ *   v9 → v10: Added exploitBriefings[] and dismissedBriefingIds[] to player records
  */
 
 import { logger } from '../errorHandler';
@@ -42,7 +43,7 @@ import { GUEST_USER_ID } from '../../constants/authConstants';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 9;
+export const DB_VERSION = 10;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -487,6 +488,35 @@ export const initDB = async () => {
           store.createIndex('playerId', 'playerId', { unique: false });
           store.createIndex('userId', 'userId', { unique: false });
           log('RangeProfiles object store and indexes created');
+        }
+      }
+
+      // Migrate to v10: Add exploitBriefings and dismissedBriefingIds to players
+      if (oldVersion < 10) {
+        log('Upgrading to v10: Adding exploitBriefings to players');
+
+        const transaction = event.target.transaction;
+
+        if (db.objectStoreNames.contains(PLAYERS_STORE_NAME)) {
+          const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
+          const playersCursor = playersStore.openCursor();
+          playersCursor.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              const record = cursor.value;
+              if (!record.exploitBriefings) {
+                record.exploitBriefings = [];
+                record.dismissedBriefingIds = [];
+                cursor.update(record);
+              }
+              cursor.continue();
+            } else {
+              log('v10 migration: exploitBriefings initialized on all players');
+            }
+          };
+          playersCursor.onerror = (e) => {
+            logError('v10 migration failed:', e.target.error);
+          };
         }
       }
     };

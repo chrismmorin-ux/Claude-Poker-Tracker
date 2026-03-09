@@ -5,8 +5,8 @@
  */
 
 import { useMemo } from 'react';
-import { bestFiveFromSeven, handCategory } from '../utils/exploitEngine/handEvaluator';
-import { parseAndEncode, parseBoard } from '../utils/exploitEngine/cardParser';
+import { bestFiveFromSeven, handCategory } from '../utils/pokerCore/handEvaluator';
+import { parseAndEncode, parseBoard } from '../utils/pokerCore/cardParser';
 import { ACTIONS } from '../constants/gameConstants';
 
 /**

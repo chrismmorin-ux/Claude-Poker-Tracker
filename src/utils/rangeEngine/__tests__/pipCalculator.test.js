@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { classifyHand, computePips, computeAllPips, formatPips } from '../pipCalculator';
 import { createEmptyProfile, RANGE_POSITIONS } from '../rangeProfile';
-import { rangeIndex, createRange, PREFLOP_CHARTS } from '../../exploitEngine/rangeMatrix';
+import { rangeIndex, createRange, PREFLOP_CHARTS } from '../../pokerCore/rangeMatrix';
 
 describe('classifyHand', () => {
   it('classifies pocket pairs', () => {

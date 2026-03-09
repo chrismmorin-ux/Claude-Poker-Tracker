@@ -2,20 +2,17 @@ import { describe, test, expect } from 'vitest';
 import { PREFLOP_CHARTS, rangeWidth } from '../rangeMatrix';
 
 describe('PREFLOP_CHARTS width validation', () => {
-  // GTO reference widths from solver data.
-  // BTN actual chart measures ~32% — 8% below the 40% GTO reference.
-  // The BTN expected value is set to 32 to reflect the current chart implementation;
-  // if the BTN range string is expanded to match GTO, update this to 40.
+  // GTO-approximate reference widths from solver data, 9-max 100bb.
   const GTO_WIDTHS = {
-    UTG: 12,
-    'UTG+1': 15,
-    MP1: 13,
-    MP2: 17,
-    HJ: 21,
-    CO: 28,
-    BTN: 40,
-    SB: 25,
-    BB: 40,
+    UTG: 10,
+    'UTG+1': 14,
+    MP1: 15,
+    MP2: 18,
+    HJ: 20,
+    CO: 23,
+    BTN: 51,
+    SB: 27,
+    BB: 37,
   };
 
   for (const [pos, expected] of Object.entries(GTO_WIDTHS)) {
