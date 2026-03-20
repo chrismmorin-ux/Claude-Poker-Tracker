@@ -57,6 +57,7 @@ export const PositionBadge = ({ type, size = 'small', draggable = false, onDragS
       }`}
       style={size === 'small' ? { width: '16px', height: '16px' } : { width: '28px', height: '28px' }}
       onMouseDown={draggable ? onDragStart : undefined}
+      onTouchStart={draggable ? onDragStart : undefined}
     >
       <div className={`${textSize} font-bold ${config.text}`}>{config.label}</div>
     </div>

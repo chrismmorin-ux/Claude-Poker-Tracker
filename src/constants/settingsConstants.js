@@ -52,6 +52,15 @@ export const DEFAULT_SETTINGS = {
   customVenues: [],
   customGameTypes: [],
 
+  // Custom bet sizing presets (null = use built-in defaults)
+  // Values are multipliers (preflop) or pot fractions (postflop bet)
+  customBetSizes: {
+    preflop_open: null,    // e.g. [2.5, 4, 5, 10] — multipliers of BB
+    preflop_raise: null,   // e.g. [2, 3, 4, 5] — multipliers of current bet
+    postflop_bet: null,    // e.g. [0.25, 0.5, 0.75, 1.0] — fractions of pot
+    postflop_raise: null,  // e.g. [2, 3, 4, 5] — multipliers of current bet
+  },
+
   // Privacy/telemetry
   errorReportingEnabled: true,
 };

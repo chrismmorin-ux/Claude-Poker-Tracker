@@ -10,6 +10,7 @@ import { PRIMITIVE_ACTIONS, isPrimitiveAction, isShowdownAction } from '../const
 import { isValidSeat } from '../utils/validation';
 import { logger, DEBUG } from '../utils/errorHandler';
 import { createActionEntry, getNextOrder, isValidActionEntry, legacyToSequence } from '../utils/sequenceUtils';
+import { getNextActiveSeat } from '../utils/seatUtils';
 
 // Action types
 export const GAME_ACTIONS = {
@@ -189,7 +190,7 @@ const rawGameReducer = (state, action) => {
       return {
         ...state,
         currentStreet: 'preflop',
-        dealerButtonSeat: (state.dealerButtonSeat % NUM_SEATS) + 1,
+        dealerButtonSeat: getNextActiveSeat(state.dealerButtonSeat, state.absentSeats, NUM_SEATS),
         actionSequence: [],
         potOverride: null,
         // Keep absentSeats as-is (don't clear)

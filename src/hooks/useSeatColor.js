@@ -48,7 +48,7 @@ export const useSeatColor = ({
     if (foldedPreviously) {
       const sel = getSelectionRing();
       return {
-        className: `ring-4 text-white`,
+        className: `ring-4 text-white opacity-60`,
         style: {
           backgroundColor: ACTION_COLORS.fold.base,
           '--tw-ring-color': sel ? sel.ringHex : '#fca5a5', // red-300 default

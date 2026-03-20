@@ -144,13 +144,12 @@ export const TableView = ({ scale }) => {
     e.preventDefault();
   }, [dispatchUi]);
 
-  const handleDealerDrag = useCallback((e) => {
-    if (!isDraggingDealer || !tableRef.current) return;
-    e.stopPropagation();
-    e.preventDefault();
+  // Shared drag logic — finds nearest seat from pointer coordinates
+  const findNearestSeat = useCallback((clientX, clientY) => {
+    if (!tableRef.current) return null;
     const rect = tableRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     let closestSeat = 1;
     let minDist = Infinity;
     SEAT_POSITIONS.forEach(({ seat, x: sx, y: sy }) => {
@@ -160,8 +159,25 @@ export const TableView = ({ scale }) => {
       const dist = Math.sqrt((x - seatX) ** 2 + (y - seatY) ** 2);
       if (dist < minDist) { minDist = dist; closestSeat = seat; }
     });
-    dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: closestSeat });
-  }, [isDraggingDealer, absentSeats, dispatchGame]);
+    return closestSeat;
+  }, [absentSeats]);
+
+  const handleDealerDrag = useCallback((e) => {
+    if (!isDraggingDealer) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const seat = findNearestSeat(e.clientX, e.clientY);
+    if (seat) dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
+  }, [isDraggingDealer, findNearestSeat, dispatchGame]);
+
+  const handleDealerTouchMove = useCallback((e) => {
+    if (!isDraggingDealer) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const touch = e.touches[0];
+    const seat = findNearestSeat(touch.clientX, touch.clientY);
+    if (seat) dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
+  }, [isDraggingDealer, findNearestSeat, dispatchGame]);
 
   const handleDealerDragEnd = useCallback((e) => {
     if (isDraggingDealer) { e.stopPropagation(); e.preventDefault(); }
@@ -511,6 +527,8 @@ export const TableView = ({ scale }) => {
               onMouseMove={handleDealerDrag}
               onMouseUp={handleDealerDragEnd}
               onMouseLeave={handleDealerDragEnd}
+              onTouchMove={handleDealerTouchMove}
+              onTouchEnd={handleDealerDragEnd}
             >
               {/* Inner felt with community cards */}
               <div

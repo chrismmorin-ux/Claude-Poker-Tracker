@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Undo2, SkipForward, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
@@ -10,7 +10,7 @@ import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getSeatContributions, getMinRaise } from '../../../utils/potCalculator';
 import { getPositionName } from '../../../utils/positionUtils';
-import { useGame } from '../../../contexts';
+import { useGame, useSettings } from '../../../contexts';
 import { CardSelectorPanel } from './CardSelectorPanel';
 
 /**
@@ -83,12 +83,26 @@ export const CommandStrip = ({
   liveEquity,
 }) => {
   const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat } = useGame();
+  const { settings, updateSetting } = useSettings();
   const [customValue, setCustomValue] = useState('');
+  const [sizingEditorOpen, setSizingEditorOpen] = useState(false);
+  const longPressTimer = useRef(null);
 
   const isMultiSeat = selectedPlayers.length > 1;
   const hasSeatSelected = selectedPlayers.length > 0;
   const hasBet = currentStreet !== 'preflop' ? hasBetOrRaiseOnStreet(actionSequence, currentStreet) : false;
-  const validActions = hasSeatSelected ? getValidActions(currentStreet, hasBet, isMultiSeat) : [];
+  const rawValidActions = hasSeatSelected ? getValidActions(currentStreet, hasBet, isMultiSeat) : [];
+
+  // BB option: when BB faces no raise preflop, they CHECK (not CALL) since blind is already posted
+  const isBBOption = currentStreet === 'preflop'
+    && !isMultiSeat
+    && selectedPlayers.length === 1
+    && selectedPlayers[0] === bigBlindSeat
+    && !actionSequence.some(e => e.street === 'preflop' && e.action === 'raise');
+
+  const validActions = isBBOption
+    ? rawValidActions.map(a => a === PRIMITIVE_ACTIONS.CALL ? PRIMITIVE_ACTIONS.CHECK : a)
+    : rawValidActions;
 
   // Sizing
   const sizingAction = !isMultiSeat
@@ -115,8 +129,19 @@ export const CommandStrip = ({
     [actionSequence, currentStreet, blinds]
   );
 
+  // Determine sizing key and custom multipliers
+  const sizingKey = useMemo(() => {
+    if (!sizingAction) return null;
+    if (currentStreet === 'preflop') {
+      return currentBet <= blinds.bb ? 'preflop_open' : 'preflop_raise';
+    }
+    return sizingAction === PRIMITIVE_ACTIONS.BET ? 'postflop_bet' : 'postflop_raise';
+  }, [sizingAction, currentStreet, currentBet, blinds.bb]);
+
+  const customMultipliers = sizingKey ? (settings.customBetSizes?.[sizingKey] || null) : null;
+
   const sizingOptions = sizingAction
-    ? getSizingOptions(currentStreet, sizingAction, blinds, potInfo.total, currentBet)
+    ? getSizingOptions(currentStreet, sizingAction, blinds, potInfo.total, currentBet, customMultipliers)
     : [];
 
   const handleRecordAction = useCallback((action) => {
@@ -153,6 +178,55 @@ export const CommandStrip = ({
       setCustomValue('');
     }
   }, [customValue, handleSizeSelected, minRaise]);
+
+  // Long-press handlers for sizing button customization
+  const handleSizingLongPressStart = useCallback(() => {
+    longPressTimer.current = setTimeout(() => {
+      setSizingEditorOpen(true);
+    }, 500);
+  }, []);
+
+  const handleSizingLongPressEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  // Editor state for sizing customization
+  const [editorValues, setEditorValues] = useState([]);
+
+  const openSizingEditor = useCallback(() => {
+    // Pre-fill with current values (custom or defaults)
+    const current = sizingOptions.map(o => o.label);
+    if (sizingKey === 'postflop_bet') {
+      // Extract fractions from labels
+      const fracs = sizingOptions.map(o => {
+        const pot = potInfo.total || 1;
+        return parseFloat((o.amount / pot).toFixed(2));
+      });
+      setEditorValues(customMultipliers || fracs);
+    } else {
+      // Extract multipliers from labels
+      const mults = sizingOptions.map(o => parseFloat(o.label.replace('x', '').replace('/', '')));
+      setEditorValues(customMultipliers || mults);
+    }
+    setSizingEditorOpen(true);
+  }, [sizingOptions, sizingKey, customMultipliers, potInfo.total]);
+
+  const handleSaveSizing = useCallback(() => {
+    if (!sizingKey) return;
+    const newCustom = { ...(settings.customBetSizes || {}), [sizingKey]: editorValues };
+    updateSetting('customBetSizes', newCustom);
+    setSizingEditorOpen(false);
+  }, [sizingKey, editorValues, settings.customBetSizes, updateSetting]);
+
+  const handleResetSizing = useCallback(() => {
+    if (!sizingKey) return;
+    const newCustom = { ...(settings.customBetSizes || {}), [sizingKey]: null };
+    updateSetting('customBetSizes', newCustom);
+    setSizingEditorOpen(false);
+  }, [sizingKey, settings.customBetSizes, updateSetting]);
 
   const actionArray = singleSeat ? getActionsForSeatOnStreet(actionSequence, singleSeat, currentStreet) : [];
   const positionLabel = singleSeat ? getPositionName(singleSeat, dealerButtonSeat) : '';
@@ -352,14 +426,75 @@ export const CommandStrip = ({
                   <button
                     key={label}
                     onClick={() => handleSizeSelected(amount)}
+                    onMouseDown={handleSizingLongPressStart}
+                    onMouseUp={handleSizingLongPressEnd}
+                    onMouseLeave={handleSizingLongPressEnd}
+                    onTouchStart={handleSizingLongPressStart}
+                    onTouchEnd={handleSizingLongPressEnd}
                     className="btn-press rounded-md font-bold text-white shadow"
                     style={{ height: '68px', background: getActionGradient('bet'), fontSize: '15px' }}
                   >
-                    <div>{label}</div>
-                    <div style={{ fontSize: '11px', opacity: 0.75 }}>${amount}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800 }}>${amount}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.65 }}>{label}</div>
                   </button>
                 ))}
               </div>
+
+              {/* Sizing Editor Popup */}
+              {sizingEditorOpen && (
+                <div className="mb-2 p-2 rounded-lg" style={{ background: '#1a1d23', border: '1px solid var(--gold)' }}>
+                  <div className="text-white font-bold mb-2" style={{ fontSize: '13px' }}>
+                    Customize {sizingKey?.replace('_', ' ')}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 mb-2">
+                    {editorValues.map((val, idx) => {
+                      const isPostflopBet = sizingKey === 'postflop_bet';
+                      const base = isPostflopBet ? (potInfo.total || 1) : (sizingKey === 'preflop_open' ? blinds.bb : currentBet || blinds.bb);
+                      const dollarAmount = Math.round(base * val);
+                      return (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <input
+                            type="number"
+                            value={val}
+                            onChange={(e) => {
+                              const newVals = [...editorValues];
+                              newVals[idx] = parseFloat(e.target.value) || 0;
+                              setEditorValues(newVals);
+                            }}
+                            step="any"
+                            className="w-full px-1 rounded text-white text-center font-semibold focus:outline-none"
+                            style={{ height: '36px', fontSize: '14px', background: '#374151', border: '1px solid var(--panel-border)' }}
+                          />
+                          <span className="text-gray-400" style={{ fontSize: '11px' }}>${dollarAmount}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={handleSaveSizing}
+                      className="btn-press flex-1 rounded font-bold text-white"
+                      style={{ height: '36px', fontSize: '13px', background: '#166534' }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleResetSizing}
+                      className="btn-press flex-1 rounded font-bold text-white"
+                      style={{ height: '36px', fontSize: '13px', background: '#374151' }}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={() => setSizingEditorOpen(false)}
+                      className="btn-press flex-1 rounded font-bold text-white"
+                      style={{ height: '36px', fontSize: '13px', background: '#374151' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleCustomSubmit} className="flex gap-1.5">
                 <div className="flex-1 flex items-center gap-1">
                   <span className="text-gray-500 font-bold" style={{ fontSize: '15px' }}>$</span>

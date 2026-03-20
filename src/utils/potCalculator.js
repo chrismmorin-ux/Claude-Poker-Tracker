@@ -174,6 +174,21 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
   return contributions;
 };
 
+// Default multiplier/fraction arrays for each sizing scenario
+const DEFAULT_PREFLOP_OPEN = [2.5, 4, 5, 10];
+const DEFAULT_PREFLOP_RAISE = [2, 3, 4, 5];
+const DEFAULT_POSTFLOP_BET = [0.25, 0.5, 0.75, 1.0];
+const DEFAULT_POSTFLOP_RAISE = [2, 3, 4, 5];
+
+// Labels for pot fraction sizing
+const fractionLabel = (f) => {
+  if (f === 0.25) return '1/4';
+  if (f === 0.5) return '1/2';
+  if (f === 0.75) return '3/4';
+  if (f === 1.0) return '1x';
+  return `${f}x`;
+};
+
 /**
  * Get sizing option buttons for bet/raise actions.
  *
@@ -182,49 +197,34 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
  * @param {{ sb: number, bb: number }} blinds - Blind amounts
  * @param {number} potTotal - Current pot total
  * @param {number} currentBet - Current bet to face
+ * @param {number[]|null} customMultipliers - Optional custom multipliers/fractions to override defaults
  * @returns {Array<{ label: string, amount: number }>}
  */
-export const getSizingOptions = (street, actionType, blinds, potTotal, currentBet) => {
+export const getSizingOptions = (street, actionType, blinds, potTotal, currentBet, customMultipliers) => {
   const { bb } = blinds || { sb: 1, bb: 2 };
 
   if (street === 'preflop') {
     if (actionType === PRIMITIVE_ACTIONS.RAISE && currentBet <= bb) {
       // Preflop open (facing only blinds)
-      return [
-        { label: '2.5x', amount: Math.round(bb * 2.5) },
-        { label: '4x', amount: bb * 4 },
-        { label: '5x', amount: bb * 5 },
-        { label: '10x', amount: bb * 10 },
-      ];
+      const mults = customMultipliers || DEFAULT_PREFLOP_OPEN;
+      return mults.map(m => ({ label: `${m}x`, amount: Math.round(bb * m) }));
     }
     // Preflop raise facing a bet
-    return [
-      { label: '2x', amount: currentBet * 2 },
-      { label: '3x', amount: currentBet * 3 },
-      { label: '4x', amount: currentBet * 4 },
-      { label: '5x', amount: currentBet * 5 },
-    ];
+    const mults = customMultipliers || DEFAULT_PREFLOP_RAISE;
+    return mults.map(m => ({ label: `${m}x`, amount: Math.round(currentBet * m) }));
   }
 
   // Postflop
   if (actionType === PRIMITIVE_ACTIONS.BET) {
     // Bet into pot (no current bet)
     const pot = potTotal || 1;
-    return [
-      { label: '1/4', amount: Math.round(pot * 0.25) },
-      { label: '1/2', amount: Math.round(pot * 0.5) },
-      { label: '3/4', amount: Math.round(pot * 0.75) },
-      { label: '1x', amount: pot },
-    ];
+    const fracs = customMultipliers || DEFAULT_POSTFLOP_BET;
+    return fracs.map(f => ({ label: fractionLabel(f), amount: Math.round(pot * f) }));
   }
 
   // Raise facing a bet (postflop)
-  return [
-    { label: '2x', amount: currentBet * 2 },
-    { label: '3x', amount: currentBet * 3 },
-    { label: '4x', amount: currentBet * 4 },
-    { label: '5x', amount: currentBet * 5 },
-  ];
+  const mults = customMultipliers || DEFAULT_POSTFLOP_RAISE;
+  return mults.map(m => ({ label: `${m}x`, amount: Math.round(currentBet * m) }));
 };
 
 /**
