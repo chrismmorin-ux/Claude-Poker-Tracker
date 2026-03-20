@@ -38,7 +38,7 @@ describe('CollapsibleSidebar', () => {
       render(<CollapsibleSidebar {...defaultProps} />);
       expect(screen.getByText('◀')).toBeInTheDocument();
       expect(screen.getByText('Stats')).toBeInTheDocument();
-      expect(screen.getByText('Hand History')).toBeInTheDocument();
+      expect(screen.getByText('Hand Review')).toBeInTheDocument();
       expect(screen.getByText('Sessions')).toBeInTheDocument();
       expect(screen.getByText('Players')).toBeInTheDocument();
     });
@@ -58,7 +58,7 @@ describe('CollapsibleSidebar', () => {
     it('hides nav labels when collapsed', () => {
       render(<CollapsibleSidebar {...defaultProps} isCollapsed={true} />);
       expect(screen.queryByText('Stats')).not.toBeInTheDocument();
-      expect(screen.queryByText('Hand History')).not.toBeInTheDocument();
+      expect(screen.queryByText('Hand Review')).not.toBeInTheDocument();
     });
 
     it('shows abbreviated position when collapsed', () => {
@@ -85,7 +85,7 @@ describe('CollapsibleSidebar', () => {
   describe('navigation', () => {
     it.each([
       ['Stats', 'stats'],
-      ['Hand History', 'history'],
+      ['Hand Review', 'history'],
       ['Sessions', 'sessions'],
       ['Players', 'players'],
     ])('calls onNavigate with %s screen', (label, screen_key) => {

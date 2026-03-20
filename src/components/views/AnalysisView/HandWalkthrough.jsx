@@ -138,16 +138,26 @@ export const HandWalkthrough = ({
       </div>
 
       {/* Mini Range Grid for focused action */}
-      {focusedActionIndex !== null && actionAnalysis?.[focusedActionIndex]?.rangeAtPoint && (
+      {focusedActionIndex !== null && (actionAnalysis?.[focusedActionIndex]?.preActionRanges || actionAnalysis?.[focusedActionIndex]?.rangeAtPoint) && (
         <div className="mt-2 pt-2 border-t border-gray-700">
           <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">
-            {seatNames[actionAnalysis[focusedActionIndex].seat] || `S${actionAnalysis[focusedActionIndex].seat}`} Range
+            {actionAnalysis[focusedActionIndex].preActionRanges
+              ? (actionAnalysis[focusedActionIndex].preActionLabel || 'Preflop Decision')
+              : (actionAnalysis[focusedActionIndex].rangeLabel
+                || `${seatNames[actionAnalysis[focusedActionIndex].seat] || `S${actionAnalysis[focusedActionIndex].seat}`} Range`)}
           </div>
           <div className="flex justify-center">
-            <RangeGrid
-              weights={actionAnalysis[focusedActionIndex].rangeAtPoint}
-              size="compact"
-            />
+            {actionAnalysis[focusedActionIndex].preActionRanges ? (
+              <RangeGrid
+                actionRanges={actionAnalysis[focusedActionIndex].preActionRanges}
+                size="compact"
+              />
+            ) : (
+              <RangeGrid
+                weights={actionAnalysis[focusedActionIndex].rangeAtPoint}
+                size="compact"
+              />
+            )}
           </div>
         </div>
       )}

@@ -18,7 +18,7 @@ const GRID_SIZE = 169;
  * Hand categories with tier definitions.
  * Each category maps grid indices to tiers (ordered by strength).
  */
-const HAND_CATEGORIES = {
+export const HAND_CATEGORIES = {
   pocketPairs: { label: 'Pairs' },
   suitedAces: { label: 'Suited Aces' },
   suitedBroadways: { label: 'Suited Broadways' },

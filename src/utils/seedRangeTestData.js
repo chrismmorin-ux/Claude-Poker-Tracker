@@ -326,6 +326,7 @@ const generateAllHands = (playerIds, sessionId) => {
     const allPlayerCards = {};
     let order = 0;
     let anyRaiseSeen = false;
+    let currentBet = 2; // BB
 
     const playerPositions = {};
     for (const arch of ARCHETYPES) {
@@ -352,8 +353,12 @@ const generateAllHands = (playerIds, sessionId) => {
       if (action === 'raise') {
         anyRaiseSeen = true;
         const isThreeBet = facedRaise;
-        actionSequence[actionSequence.length - 1].amount = isThreeBet ? 25 : 8;
+        const raiseAmount = isThreeBet ? 25 : 8;
+        actionSequence[actionSequence.length - 1].amount = raiseAmount;
         actionSequence[actionSequence.length - 1].potRelative = isThreeBet ? 3.0 : 4.0;
+        currentBet = raiseAmount;
+      } else if (action === 'call') {
+        actionSequence[actionSequence.length - 1].amount = currentBet;
       }
 
       // Sample cards from true range for non-fold actions
@@ -382,6 +387,7 @@ const generateAllHands = (playerIds, sessionId) => {
     seatActions.preflop[String(MY_SEAT)] = ['call'];
     actionSequence.push({
       seat: MY_SEAT, action: 'call', street: 'preflop', order: ++order,
+      amount: currentBet,
     });
 
     // Postflop actions for non-folded players
@@ -394,6 +400,7 @@ const generateAllHands = (playerIds, sessionId) => {
         if (street === 'turn' && seededRandom() < 0.25) break;
         if (street === 'river' && seededRandom() < 0.35) break;
 
+        let streetBet = 0;
         for (const seat of activePlayers) {
           const r = seededRandom();
           let action;
@@ -410,6 +417,9 @@ const generateAllHands = (playerIds, sessionId) => {
             const fraction = potFractions[Math.floor(seededRandom() * potFractions.length)];
             entry.amount = Math.round(fraction * 20);
             entry.potRelative = fraction;
+            streetBet = entry.amount;
+          } else if (action === 'call' && streetBet > 0) {
+            entry.amount = streetBet;
           }
 
           actionSequence.push(entry);
@@ -424,6 +434,7 @@ const generateAllHands = (playerIds, sessionId) => {
         currentStreet: 'showdown',
         dealerButtonSeat: dealerButton,
         mySeat: MY_SEAT,
+        blindsPosted: { sb: 1, bb: 2 },
         seatActions,
         actionSequence,
         absentSeats: [],
@@ -440,7 +451,7 @@ const generateAllHands = (playerIds, sessionId) => {
       userId: GUEST_USER_ID,
       sessionId,
       sessionHandNumber: handNumber,
-      handDisplayId: `R${sessionId}-H${handNumber}`,
+      handDisplayId: `S${sessionId}-H${handNumber}`,
     });
   }
 

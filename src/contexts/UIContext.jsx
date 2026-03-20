@@ -30,6 +30,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     highlightedHoleSlot,
     pendingSeatForPlayerAssignment,
     autoOpenNewSession,
+    replayHandId,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -153,6 +154,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setPendingSeatForPlayerAssignment,
     autoOpenNewSession,
     setAutoOpenNewSession,
+    replayHandId,
   }), [
     currentView,
     selectedPlayers,
@@ -184,6 +186,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setPendingSeatForPlayerAssignment,
     autoOpenNewSession,
     setAutoOpenNewSession,
+    replayHandId,
   ]);
 
   return (

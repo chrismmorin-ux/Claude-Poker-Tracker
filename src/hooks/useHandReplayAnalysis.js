@@ -16,6 +16,7 @@ import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { buildSituationKey } from '../utils/exploitEngine/decisionAccumulator';
 import { handVsRange } from '../utils/exploitEngine/equityCalculator';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { getPopulationPrior } from '../utils/rangeEngine/populationPriors';
 
 /**
  * Determine if a player's hand at showdown was a value bet or bluff
@@ -133,6 +134,7 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
 
       // Build per-seat range tracking: start from preflop range
       const seatRanges = {}; // seat -> current Float64Array range
+      const seatRangeLabels = {}; // seat -> descriptive label for current range
 
       // Initialize ranges from tendencyMap for each seat
       for (const [seat, playerId] of Object.entries(seatPlayers)) {
@@ -140,11 +142,22 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
         const rangeProfile = tendency?.rangeProfile;
         if (rangeProfile) {
           const posCategory = getRangePositionCategory(Number(seat), buttonSeat);
+          const posName = getPositionName(Number(seat), buttonSeat);
           // Start with the player's preflop opening range as baseline
           const openRange = rangeProfile.ranges?.[posCategory]?.open;
           if (openRange) {
             seatRanges[seat] = new Float64Array(openRange);
+            seatRangeLabels[seat] = `${posName} open range`;
           }
+        }
+      }
+
+      // Store range profiles per seat for pre-action distribution
+      const seatRangeProfiles = {};
+      for (const [seat, playerId] of Object.entries(seatPlayers)) {
+        const tendency = tendencyMap?.[playerId];
+        if (tendency?.rangeProfile) {
+          seatRangeProfiles[seat] = tendency.rangeProfile;
         }
       }
 
@@ -170,6 +183,51 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
         let heroEquity = null;
         let actionClass = null;
         let evAssessment = null;
+        let preActionRanges = null;
+        let preActionLabel = null;
+
+        // Build pre-action decision distribution for preflop
+        if (street === 'preflop') {
+          const rangeProfile = seatRangeProfiles[seat];
+          const posRanges = rangeProfile?.ranges?.[posCategory];
+
+          // Did this player face a raise before this action?
+          const facedRaise = timeline.slice(0, i).some(
+            a => a.street === 'preflop' && a.seat !== seat && a.action === 'raise'
+          );
+
+          // Use player's profile ranges, or fall back to population priors
+          const getRange = (action) => {
+            const profileRange = posRanges?.[action];
+            if (profileRange && profileRange.some(w => w > 0)) {
+              return new Float64Array(profileRange);
+            }
+            return getPopulationPrior(posCategory, action);
+          };
+
+          if (facedRaise) {
+            preActionRanges = {
+              raise: getRange('threeBet'),
+              call: getRange('coldCall'),
+              fold: getRange('fold'),
+            };
+            preActionLabel = `${posName} vs raise`;
+          } else {
+            preActionRanges = {
+              raise: getRange('open'),
+              call: getRange('limp'),
+              fold: getRange('fold'),
+            };
+            preActionLabel = `${posName} unopened`;
+          }
+        }
+
+        // Update range label for preflop actions (post-action narrowed range)
+        if (street === 'preflop' && rangeAtPoint) {
+          const actionLabel = action === 'raise' ? 'open-raise'
+            : action === 'call' ? 'call' : action;
+          seatRangeLabels[seat] = `${posName} ${actionLabel} range`;
+        }
 
         if (rangeAtPoint && street !== 'preflop' && cardsForStreet.length >= 3) {
           const board = parseBoard(cardsForStreet);
@@ -185,6 +243,9 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
             const narrowed = narrowByBoard(rangeAtPoint, action, board, [], { playerStats, boardTexture });
             seatRanges[seat] = narrowed;
             rangeAtPoint = narrowed;
+            // Append narrowing step to label
+            const streetLabel = street.charAt(0).toUpperCase() + street.slice(1);
+            seatRangeLabels[seat] = `${posName} range after ${streetLabel} ${action}`;
           } catch (e) {
             // Keep existing range if narrowing fails
           }
@@ -248,6 +309,9 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
           posName,
           posCategory,
           rangeAtPoint: rangeAtPoint ? new Float64Array(rangeAtPoint) : null,
+          rangeLabel: seatRangeLabels[seat] || null,
+          preActionRanges,
+          preActionLabel,
           segmentation,
           boardTexture,
           rangeEquity,

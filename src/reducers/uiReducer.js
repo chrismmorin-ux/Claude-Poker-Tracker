@@ -32,6 +32,7 @@ export const UI_ACTIONS = {
   // Cross-view navigation state
   SET_PENDING_SEAT_FOR_PLAYER: 'SET_PENDING_SEAT_FOR_PLAYER',
   SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
+  SET_REPLAY_HAND: 'SET_REPLAY_HAND',
 };
 
 // Import and re-export SCREEN from its canonical location
@@ -56,6 +57,7 @@ export const initialUiState = {
   // Cross-view navigation state
   pendingSeatForPlayerAssignment: null,
   autoOpenNewSession: false,
+  replayHandId: null,
 };
 
 // =============================================================================
@@ -83,6 +85,7 @@ export const UI_STATE_SCHEMA = {
   // Cross-view navigation state
   pendingSeatForPlayerAssignment: { type: 'number', required: false }, // Can be null
   autoOpenNewSession: { type: 'boolean' },
+  replayHandId: { type: 'number', required: false }, // Can be null
 };
 
 // =============================================================================
@@ -265,6 +268,12 @@ const rawUiReducer = (state, action) => {
       return {
         ...state,
         autoOpenNewSession: action.payload,
+      };
+
+    case UI_ACTIONS.SET_REPLAY_HAND:
+      return {
+        ...state,
+        replayHandId: action.payload,
       };
 
     default:

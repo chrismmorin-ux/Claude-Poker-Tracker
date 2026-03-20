@@ -152,7 +152,7 @@ export { extractPreflopAction, extractAllActions } from './actionExtractor';
 export { updateProfileFromActions, applyShowdownAnchor, updateSubActionCounts } from './bayesianUpdater';
 export { extractSubAction, extractAllSubActions } from './subActionExtractor';
 export { detectTraits } from './traitDetector';
-export { computePips, computeAllPips, formatPips, classifyHand } from './pipCalculator';
+export { computePips, computeAllPips, formatPips, classifyHand, HAND_CATEGORIES } from './pipCalculator';
 export { normalizeAcrossActions, normalizeAllPositions } from './crossRangeConstraints';
 export { getPopulationPrior, NO_RAISE_FREQUENCIES, FACED_RAISE_FREQUENCIES, PRIOR_WEIGHT } from './populationPriors';
 export { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';

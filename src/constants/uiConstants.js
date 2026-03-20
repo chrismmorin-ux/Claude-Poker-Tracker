@@ -11,6 +11,7 @@ export const SCREEN = {
   PLAYERS: 'players',
   SETTINGS: 'settings',
   ANALYSIS: 'analysis',
+  HAND_REPLAY: 'handReplay',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

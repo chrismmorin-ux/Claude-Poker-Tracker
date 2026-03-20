@@ -10,9 +10,9 @@ const TABS = [
   { id: 'review', label: 'Hand Review' },
 ];
 
-export const AnalysisView = ({ scale }) => {
+export const AnalysisView = ({ scale, initialTab = 'player' }) => {
   const { setCurrentScreen, SCREEN } = useUI();
-  const [activeTab, setActiveTab] = useState('player');
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <ScaledContainer scale={scale}>

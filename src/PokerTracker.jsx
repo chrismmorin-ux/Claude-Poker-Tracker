@@ -10,11 +10,12 @@ import { SCREEN } from './constants/uiConstants';
 import { StatsView } from './components/views/StatsView';
 import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
-import { HistoryView } from './components/views/HistoryView';
+
 import { SessionsView } from './components/views/SessionsView';
 import { PlayersView } from './components/views/PlayersView';
 import { SettingsView } from './components/views/SettingsView';
 import { AnalysisView } from './components/views/AnalysisView';
+import { HandReplayView } from './components/views/HandReplayView';
 import { LoginView } from './components/views/LoginView';
 import { SignupView } from './components/views/SignupView';
 import { PasswordResetView } from './components/views/PasswordResetView';
@@ -53,11 +54,12 @@ const ViewRouter = () => {
   // Main views — all with scale only
   switch (currentView) {
     case SCREEN.TABLE: return <VEB viewName="Table" onReturnToTable={onReturnToTable}><TableView scale={scale} /></VEB>;
-    case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><HistoryView scale={scale} /></VEB>;
+    case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} initialTab="review" /></VEB>;
     case SCREEN.SESSIONS: return <VEB viewName="Sessions" onReturnToTable={onReturnToTable}><SessionsView scale={scale} /></VEB>;
     case SCREEN.PLAYERS: return <VEB viewName="Players" onReturnToTable={onReturnToTable}><PlayersView scale={scale} /></VEB>;
     case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
     case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
+    case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
     default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
   }
 };

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { RangeGrid } from '../../ui/RangeGrid';
+import { RangeProvenance } from '../../ui/RangeProvenance';
 import { SegmentationBar } from '../../ui/SegmentationBar';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
 import { usePlayer, useSession, useTendency } from '../../../contexts';
@@ -184,8 +185,15 @@ export const PlayerAnalysisPanel = () => {
                     showdownIndices={gridShowdownIndices}
                     size="compact"
                     sampleSize={rangeSummary?.[gridPosition]?.hands || 0}
+                    hideConfidence
                   />
                 </div>
+                <RangeProvenance
+                  rangeProfile={rangeProfile}
+                  rangeSummary={rangeSummary}
+                  position={gridPosition}
+                  action={gridAction}
+                />
               </>
             )}
           </div>

@@ -9,6 +9,7 @@ import './index.css'
 if (import.meta.env.DEV) {
   import('./utils/seedTestData')
   import('./utils/seedRangeTestData')
+  import('./utils/handSimulator')
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

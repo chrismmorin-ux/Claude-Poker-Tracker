@@ -1,10 +1,27 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BACKUP_FREQUENCIES, SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
+
+const SIM_STORAGE_KEY = '__simState';
+const getSimState = () => {
+  try {
+    const raw = localStorage.getItem(SIM_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
 
 export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarning, showSuccess, showError }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
+  const [simCount, setSimCount] = useState(10);
+  const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
+
+  // Refresh sim total when localStorage changes (e.g. console usage)
+  useEffect(() => {
+    const onStorage = () => setSimTotal(getSimState()?.handCount || 0);
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const handleSeed = useCallback(async (type) => {
     setSeedLoading(type);
@@ -25,6 +42,16 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
         const { clearRangeTestData } = await import('../../../utils/seedRangeTestData');
         await clearRangeTestData();
         showSuccess?.('Cleared range test data');
+      } else if (type === 'sim') {
+        const { sim } = await import('../../../utils/handSimulator');
+        const result = await sim(simCount);
+        setSimTotal(result.handCount);
+        showSuccess?.(`Simulated ${simCount} hands (total: ${result.handCount})`);
+      } else if (type === 'clearSim') {
+        const { simClear } = await import('../../../utils/handSimulator');
+        await simClear();
+        setSimTotal(0);
+        showSuccess?.('Cleared simulator data');
       }
     } catch (err) {
       console.error('[DataAndAbout] Seed error:', err);
@@ -32,7 +59,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
     } finally {
       setSeedLoading(null);
     }
-  }, [showSuccess, showError]);
+  }, [showSuccess, showError, simCount]);
 
   const handleResetSettings = () => {
     if (showResetConfirm) {
@@ -119,6 +146,44 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
           >
             Reset to Defaults
           </button>
+        )}
+      </div>
+
+      {/* Hand Simulator */}
+      <div className="pt-3 border-t border-gray-700">
+        <h4 className="text-sm font-bold mb-2" style={{ color: '#d4a847' }}>Hand Simulator</h4>
+        <p className="text-gray-400 text-xs mb-2">
+          Simulate realistic hands with 6 archetype players. Range-based preflop, equity-driven postflop.
+        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-gray-300 text-xs">Hands:</label>
+          <input
+            type="number"
+            min={1}
+            max={500}
+            value={simCount}
+            onChange={(e) => setSimCount(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+            className="w-16 px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+          />
+          <button
+            onClick={() => handleSeed('sim')}
+            disabled={seedLoading !== null}
+            className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
+          >
+            {seedLoading === 'sim' ? 'Simulating...' : 'Simulate'}
+          </button>
+          <button
+            onClick={() => handleSeed('clearSim')}
+            disabled={seedLoading !== null}
+            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
+          >
+            {seedLoading === 'clearSim' ? 'Clearing...' : 'Clear'}
+          </button>
+        </div>
+        {simTotal > 0 && (
+          <p className="text-gray-400 text-xs">
+            Total simulated: <span className="text-white font-medium">{simTotal}</span> hands
+          </p>
         )}
       </div>
 

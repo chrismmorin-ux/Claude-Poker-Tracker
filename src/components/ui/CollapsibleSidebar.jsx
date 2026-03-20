@@ -129,7 +129,7 @@ export const CollapsibleSidebar = ({
 
   const navItems = [
     { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, navKey: 'stats' },
-    { screen: SCREEN.HISTORY, label: 'Hand History', icon: <BookOpen size={20} />, navKey: 'history' },
+    { screen: SCREEN.HISTORY, label: 'Hand Review', icon: <BookOpen size={20} />, navKey: 'history' },
     { screen: SCREEN.SESSIONS, label: 'Sessions', icon: <Target size={20} />, navKey: 'sessions' },
     { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
     { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },

@@ -1,8 +1,13 @@
-import React, { useMemo } from 'react';
-import { usePlayer, useTendency } from '../../../contexts';
+import React, { useMemo, useCallback } from 'react';
+import { usePlayer, useTendency, useSession, useUI } from '../../../contexts';
+import { useToast } from '../../../contexts/ToastContext';
 import { useHandReview } from '../../../hooks/useHandReview';
 import { useHandReplayAnalysis } from '../../../hooks/useHandReplayAnalysis';
 import { analyzeDecisionPoint } from '../../../utils/handReviewAnalyzer';
+import { deleteHand, getSessionHandCount } from '../../../utils/persistence/index';
+import { SESSION_ACTIONS } from '../../../reducers/sessionReducer';
+import { SCREEN } from '../../../constants/uiConstants';
+import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { HandBrowser } from './HandBrowser';
 import { HandWalkthrough } from './HandWalkthrough';
 import { ReviewObservations } from './ReviewObservations';
@@ -10,6 +15,9 @@ import { ReviewObservations } from './ReviewObservations';
 export const HandReviewPanel = () => {
   const { allPlayers } = usePlayer();
   const { tendencyMap } = useTendency();
+  const { currentSession, dispatchSession } = useSession();
+  const { setCurrentScreen, dispatchUi } = useUI();
+  const { showError, showSuccess } = useToast();
 
   const {
     hands, selectedHand, selectedHandId,
@@ -20,7 +28,34 @@ export const HandReviewPanel = () => {
     selectHand, setCurrentStreet, focusAction,
     nextStreet, prevStreet,
     setFilterPlayerId, setFilterSessionId,
+    refresh,
   } = useHandReview();
+
+  const handleDeleteHand = useCallback(async (handId, sessionId) => {
+    if (!confirm('Delete this hand? This cannot be undone.')) return;
+    try {
+      await deleteHand(handId);
+      const currentSessionId = currentSession?.sessionId;
+      if (currentSessionId && sessionId === currentSessionId) {
+        try {
+          const newCount = await getSessionHandCount(currentSessionId);
+          dispatchSession({ type: SESSION_ACTIONS.SET_HAND_COUNT, payload: { count: newCount } });
+        } catch (e) {
+          console.error('[HandReviewPanel] Failed to update hand count:', e);
+        }
+      }
+      await refresh();
+      showSuccess('Hand deleted');
+    } catch (error) {
+      console.error('[HandReviewPanel] Failed to delete hand:', error);
+      showError('Failed to delete hand.');
+    }
+  }, [currentSession, dispatchSession, refresh, showError, showSuccess]);
+
+  const handleReplayHand = useCallback((handId) => {
+    dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: handId });
+    setCurrentScreen(SCREEN.HAND_REPLAY);
+  }, [dispatchUi, setCurrentScreen]);
 
   // Per-action range/equity analysis
   const { actionAnalysis, isComputing } = useHandReplayAnalysis(selectedHand, timeline, tendencyMap);
@@ -64,6 +99,8 @@ export const HandReviewPanel = () => {
             onFilterPlayerChange={setFilterPlayerId}
             onFilterSessionChange={setFilterSessionId}
             allPlayers={allPlayers}
+            onDeleteHand={handleDeleteHand}
+            onReplayHand={handleReplayHand}
           />
         )}
       </div>
