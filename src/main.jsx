@@ -12,6 +12,16 @@ if (import.meta.env.DEV) {
   import('./utils/handSimulator')
 }
 
+// PWA update listener — reload when new service worker activates
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then((registration) => {
+    registration.addEventListener('controllerchange', () => {
+      // New SW has taken control — reload to get fresh assets
+      window.location.reload()
+    })
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <PokerTrackerWireframes />

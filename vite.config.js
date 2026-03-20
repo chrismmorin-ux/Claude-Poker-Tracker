@@ -24,6 +24,22 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         skipWaiting: true,
         clientsClaim: true,
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^\/$/],
+        runtimeCaching: [
+          {
+            // Network-first for the HTML shell — never serve stale markup
+            urlPattern: /\/index\.html$/,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'html-cache', expiration: { maxEntries: 1 } },
+          },
+          {
+            // Cache-first for hashed assets (immutable by design)
+            urlPattern: /\/assets\/.*\.(js|css)$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'asset-cache', expiration: { maxEntries: 50, maxAgeSeconds: 30 * 24 * 60 * 60 } },
+          },
+        ],
       },
     }),
   ],
