@@ -52,7 +52,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 6 object stores', async () => {
+    it('creates all 7 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -62,7 +62,8 @@ describe('database initialization', () => {
       expect(storeNames).toContain(PLAYERS_STORE_NAME);
       expect(storeNames).toContain(SETTINGS_STORE_NAME);
       expect(storeNames).toContain(RANGE_PROFILES_STORE_NAME);
-      expect(storeNames.length).toBe(6);
+      expect(storeNames).toContain('tournaments');
+      expect(storeNames.length).toBe(7);
       db.close();
     });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings } from 'lucide-react';
+import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 import { NAV_COLORS } from '../../constants/designTokens';
 
@@ -122,6 +122,7 @@ export const CollapsibleSidebar = ({
   currentSessionVenue,
   currentSessionGameType,
   updateSessionField,
+  isTournament,
 }) => {
   // Local editing state for venue and game type
   const [editingVenue, setEditingVenue] = useState(false);
@@ -133,6 +134,7 @@ export const CollapsibleSidebar = ({
     { screen: SCREEN.SESSIONS, label: 'Sessions', icon: <Target size={20} />, navKey: 'sessions' },
     { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
     { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },
+    ...(isTournament ? [{ screen: SCREEN.TOURNAMENT, label: 'Tournament', icon: <Trophy size={20} />, navKey: 'tournament' }] : []),
     { screen: SCREEN.SETTINGS, label: 'Settings', icon: <Settings size={20} />, navKey: 'settings' },
   ];
 
@@ -323,4 +325,5 @@ CollapsibleSidebar.propTypes = {
   currentSessionVenue: PropTypes.string,
   currentSessionGameType: PropTypes.string,
   updateSessionField: PropTypes.func,
+  isTournament: PropTypes.bool,
 };

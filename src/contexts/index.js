@@ -12,3 +12,4 @@ export { CardProvider, useCard } from './CardContext';
 export { SettingsProvider, useSettings } from './SettingsContext';
 export { ToastProvider, useToast } from './ToastContext';
 export { TendencyProvider, useTendency } from './TendencyContext';
+export { TournamentProvider, useTournament } from './TournamentContext';

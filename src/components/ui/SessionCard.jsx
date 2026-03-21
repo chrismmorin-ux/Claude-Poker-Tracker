@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import { Clock, DollarSign, Target, Trash2 } from 'lucide-react';
-import { formatTime12Hour, calculateTotalRebuy } from '../../utils/displayUtils';
+import { Clock, DollarSign, Target, Trash2, Trophy } from 'lucide-react';
+import { formatTime12Hour, calculateTotalRebuy, ordinalSuffix } from '../../utils/displayUtils';
 
 /**
  * Format duration from start to end time
@@ -43,10 +43,15 @@ const formatDate = (timestamp) => {
  * @param {Function} props.onDelete - Delete handler
  */
 export const SessionCard = ({ session, onDelete }) => {
+  const isTournament = session.gameType === 'Tournament';
   const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
   const hasCashOut = session.cashOut !== null && session.cashOut !== undefined;
   const profitLoss = hasCashOut && session.buyIn
     ? session.cashOut - session.buyIn - totalRebuys
+    : null;
+  // Tournament-specific
+  const tournamentROI = isTournament && session.tournamentPayout != null && session.buyIn
+    ? ((session.tournamentPayout - session.buyIn) / session.buyIn * 100)
     : null;
 
   return (
@@ -96,6 +101,31 @@ export const SessionCard = ({ session, onDelete }) => {
             {profitLoss !== null && (
               <div className={`font-medium ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {profitLoss >= 0 ? '+' : ''}${profitLoss.toFixed(2)}
+              </div>
+            )}
+
+            {/* Tournament info */}
+            {isTournament && session.tournamentFinishPosition && (
+              <div className="flex items-center gap-1">
+                <Trophy size={14} className="text-yellow-400" />
+                {session.tournamentFinishPosition}{ordinalSuffix(session.tournamentFinishPosition)}
+                {session.tournamentTotalEntrants && ` / ${session.tournamentTotalEntrants}`}
+              </div>
+            )}
+            {isTournament && session.tournamentPayout != null && (
+              <div className="flex items-center gap-1">
+                <DollarSign size={14} />
+                Payout: ${session.tournamentPayout}
+              </div>
+            )}
+            {tournamentROI !== null && (
+              <div className={`font-medium ${tournamentROI >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ROI: {tournamentROI >= 0 ? '+' : ''}{tournamentROI.toFixed(0)}%
+              </div>
+            )}
+            {isTournament && session.tournamentFormat && (
+              <div className="px-1.5 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded">
+                {session.tournamentFormat}
               </div>
             )}
 

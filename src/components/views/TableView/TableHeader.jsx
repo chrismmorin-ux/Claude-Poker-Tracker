@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { formatMsToTimer } from '../../../utils/displayUtils';
 
 /**
  * TableHeader - Compact info bar with hand count, session timer, and session controls
@@ -12,6 +13,11 @@ export const TableHeader = ({
   isSidebarCollapsed,
   onEndSession,
   onNewSession,
+  // Tournament props (optional)
+  isTournament,
+  tournamentBlinds,
+  levelTimeRemaining,
+  onOpenTournament,
 }) => {
   return (
     <div
@@ -23,6 +29,20 @@ export const TableHeader = ({
         {hasActiveSession ? (
           <>
             <div className="text-sm" style={{ color: '#6dba8a' }}>{sessionTimeDisplay}</div>
+            {isTournament && tournamentBlinds && (
+              <button
+                onClick={onOpenTournament}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
+                style={{ background: 'rgba(59,130,246,0.3)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.4)' }}
+              >
+                <span>{tournamentBlinds.sb}/{tournamentBlinds.bb}</span>
+                {levelTimeRemaining != null && (
+                  <span className={levelTimeRemaining < 120000 ? 'text-red-400' : ''}>
+                    {formatMsToTimer(levelTimeRemaining)}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={onEndSession}
               className="px-2 py-0.5 rounded text-xs font-semibold text-white"

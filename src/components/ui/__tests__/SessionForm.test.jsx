@@ -322,13 +322,17 @@ describe('SessionForm', () => {
   });
 
   describe('tournament game type', () => {
-    it('clears buy-in for tournament', () => {
+    it('hides buy-in field for tournament and shows tournament setup', () => {
       renderWithSettings(<SessionForm {...defaultProps} />);
 
       fireEvent.click(screen.getByText('Tournament'));
 
-      const buyInInput = screen.getByPlaceholderText('200');
-      expect(buyInInput).toHaveValue('');
+      // Buy-in field should be hidden
+      expect(screen.queryByPlaceholderText('200')).not.toBeInTheDocument();
+
+      // Tournament setup fields should be visible
+      expect(screen.getByText('Format')).toBeInTheDocument();
+      expect(screen.getByText('Starting Stack')).toBeInTheDocument();
     });
   });
 });

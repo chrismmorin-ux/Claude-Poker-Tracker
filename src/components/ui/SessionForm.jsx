@@ -8,7 +8,9 @@
 
 import React, { useState } from 'react';
 import { SESSION_GOALS } from '../../constants/sessionConstants';
+import { BLIND_SCHEDULES } from '../../constants/tournamentConstants';
 import { useSettings } from '../../contexts';
+import { TournamentSetupForm } from './TournamentSetupForm';
 
 /**
  * SessionForm component
@@ -34,6 +36,17 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
   const [customGoal, setCustomGoal] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
+  const [tournamentConfig, setTournamentConfig] = useState({
+    format: 'freezeout',
+    startingStack: 10000,
+    entryFee: 0,
+    totalEntrants: null,
+    payoutSlots: null,
+    blindSchedule: BLIND_SCHEDULES.STANDARD_20MIN,
+    handPaceSeconds: 30,
+  });
+
+  const isTournament = gameType === 'TOURNAMENT';
 
   // Handle game type selection
   const handleGameTypeSelect = (key) => {
@@ -69,12 +82,16 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
     const sessionData = {
       venue,
       gameType: allGameTypes[gameType].label,
-      buyIn: buyIn ? parseFloat(buyIn) : null,
+      buyIn: isTournament ? (tournamentConfig.entryFee || null) : (buyIn ? parseFloat(buyIn) : null),
       goal: goal === 'Custom goal...' ? customGoal : goal || null,
       notes: notes || null
     };
 
-    onSubmit(sessionData);
+    if (isTournament) {
+      onSubmit(sessionData, tournamentConfig);
+    } else {
+      onSubmit(sessionData);
+    }
   };
 
   return (
@@ -126,6 +143,11 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
             )}
           </div>
 
+          {/* Tournament Setup (shown when Tournament selected) */}
+          {isTournament && (
+            <TournamentSetupForm config={tournamentConfig} onChange={setTournamentConfig} />
+          )}
+
           {/* Venue */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -148,8 +170,8 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
             )}
           </div>
 
-          {/* Buy-in */}
-          <div>
+          {/* Buy-in (hidden for tournaments - entry fee is in tournament config) */}
+          {!isTournament && <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Buy-in
             </label>
@@ -170,7 +192,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
             {errors.buyIn && (
               <p className="text-red-500 text-xs mt-1">{errors.buyIn}</p>
             )}
-          </div>
+          </div>}
 
           {/* Goal */}
           <div>

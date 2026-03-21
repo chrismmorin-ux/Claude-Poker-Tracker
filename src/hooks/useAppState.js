@@ -15,6 +15,7 @@ import { sessionReducer, initialSessionState } from '../reducers/sessionReducer'
 import { playerReducer, initialPlayerState } from '../reducers/playerReducer';
 import { settingsReducer, initialSettingsState } from '../reducers/settingsReducer';
 import { authReducer, initialAuthState } from '../reducers/authReducer';
+import { tournamentReducer, initialTournamentState } from '../reducers/tournamentReducer';
 import { usePersistence } from './usePersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
@@ -37,6 +38,7 @@ export const useAppState = () => {
   const [playerState, dispatchPlayer] = useReducer(playerReducer, initialPlayerState);
   const [settingsState, dispatchSettings] = useReducer(settingsReducer, initialSettingsState);
   const [authState, dispatchAuth] = useReducer(authReducer, initialAuthState);
+  const [tournamentState, dispatchTournament] = useReducer(tournamentReducer, initialTournamentState);
 
   // =========================================================================
   // PERSISTENCE - Auto-save/restore for all state types
@@ -71,6 +73,7 @@ export const useAppState = () => {
     playerState,
     settingsState,
     authState,
+    tournamentState,
 
     // Dispatchers
     dispatchGame,
@@ -80,6 +83,7 @@ export const useAppState = () => {
     dispatchPlayer,
     dispatchSettings,
     dispatchAuth,
+    dispatchTournament,
 
   };
 };

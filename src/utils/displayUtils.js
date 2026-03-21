@@ -90,3 +90,40 @@ export const calculateTotalRebuy = (rebuyTransactions = []) => {
   if (!Array.isArray(rebuyTransactions)) return 0;
   return rebuyTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 };
+
+/**
+ * Get ordinal suffix for a number (1st, 2nd, 3rd, 4th, etc.)
+ * @param {number} n - The number
+ * @returns {string} Ordinal suffix (st, nd, rd, th)
+ */
+export const ordinalSuffix = (n) => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+};
+
+/**
+ * Formats milliseconds as a compact timer string (M:SS)
+ * @param {number} ms - Milliseconds remaining
+ * @returns {string} - Formatted timer (e.g., "12:05")
+ */
+export const formatMsToTimer = (ms) => {
+  if (ms <= 0) return '0:00';
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+/**
+ * Formats minutes as a human-readable estimate
+ * @param {number} minutes - Number of minutes
+ * @returns {string} - Human-readable string (e.g., "~25 min", "~1h 30m")
+ */
+export const formatMinutesHuman = (minutes) => {
+  if (minutes <= 0) return 'now';
+  if (minutes < 60) return `~${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `~${hours}h ${mins}m` : `~${hours}h`;
+};

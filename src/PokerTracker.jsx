@@ -4,7 +4,7 @@ import { useScale } from './hooks/useScale';
 import { useAppState } from './hooks/useAppState';
 import { AppProviders } from './AppProviders';
 import { parseBlinds } from './utils/potCalculator';
-import { useUI, useAuth } from './contexts';
+import { useUI, useAuth, useTournament } from './contexts';
 import { SCREEN } from './constants/uiConstants';
 // View components
 import { StatsView } from './components/views/StatsView';
@@ -21,6 +21,7 @@ import { SignupView } from './components/views/SignupView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
+import { TournamentView } from './components/views/TournamentView';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -60,6 +61,7 @@ const ViewRouter = () => {
     case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
     case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
     case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
+    case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
     default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
   }
 };
@@ -70,8 +72,8 @@ const ViewRouter = () => {
 
 const AppRoot = () => {
   const {
-    gameState, uiState, cardState, sessionState, playerState, settingsState, authState,
-    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth,
+    gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState,
+    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament,
   } = useAppState();
 
   const blinds = useMemo(
@@ -88,6 +90,7 @@ const AppRoot = () => {
       sessionState={sessionState} dispatchSession={dispatchSession}
       playerState={playerState} dispatchPlayer={dispatchPlayer}
       cardState={cardState} dispatchCard={dispatchCard}
+      tournamentState={tournamentState} dispatchTournament={dispatchTournament}
       settingsState={settingsState} dispatchSettings={dispatchSettings}
     >
       <ViewRouter />

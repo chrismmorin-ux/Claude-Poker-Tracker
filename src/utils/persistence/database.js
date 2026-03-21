@@ -5,7 +5,7 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v10
+ *   Database: "PokerTrackerDB" v11
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
@@ -33,6 +33,7 @@
  *            Converts existing seatActions to actionSequence on migration
  *   v8 → v9: Added rangeProfiles object store for cached Bayesian range estimates
  *   v9 → v10: Added exploitBriefings[] and dismissedBriefingIds[] to player records
+ *   v10 → v11: Added tournaments object store for tournament state persistence
  */
 
 import { logger } from '../errorHandler';
@@ -43,7 +44,7 @@ import { GUEST_USER_ID } from '../../constants/authConstants';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 10;
+export const DB_VERSION = 11;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -52,6 +53,7 @@ export const ACTIVE_SESSION_STORE_NAME = 'activeSession';
 export const PLAYERS_STORE_NAME = 'players';
 export const SETTINGS_STORE_NAME = 'settings';
 export const RANGE_PROFILES_STORE_NAME = 'rangeProfiles';
+export const TOURNAMENTS_STORE_NAME = 'tournaments';
 
 const MODULE_NAME = 'Persistence';
 
@@ -517,6 +519,21 @@ export const initDB = async () => {
           playersCursor.onerror = (e) => {
             logError('v10 migration failed:', e.target.error);
           };
+        }
+      }
+
+      // Migrate to v11: Add tournaments object store
+      if (oldVersion < 11) {
+        log('Upgrading to v11: Adding tournaments object store');
+
+        if (!db.objectStoreNames.contains(TOURNAMENTS_STORE_NAME)) {
+          const tournamentsStore = db.createObjectStore(TOURNAMENTS_STORE_NAME, {
+            keyPath: 'tournamentId',
+            autoIncrement: true,
+          });
+          tournamentsStore.createIndex('sessionId', 'sessionId', { unique: true });
+          tournamentsStore.createIndex('userId', 'userId', { unique: false });
+          log('Tournaments object store and indexes created');
         }
       }
     };

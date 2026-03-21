@@ -75,8 +75,9 @@ export const NAV_COLORS = {
   history:  { base: '#9333ea', hover: '#7e22ce' },  // purple-600/700
   sessions: { base: '#ea580c', hover: '#c2410c' },  // orange-600/700
   players:  { base: '#0d9488', hover: '#0f766e' },  // teal-600/700
-  analysis: { base: '#4f46e5', hover: '#4338ca' },  // indigo-600/700
-  settings: { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
+  analysis:   { base: '#4f46e5', hover: '#4338ca' },  // indigo-600/700
+  tournament: { base: '#ca8a04', hover: '#a16207' },  // yellow-600/700
+  settings:   { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
 };
 
 // =============================================================================
@@ -98,6 +99,17 @@ export const EXPLOIT_BADGE_COLORS = {
   strength: { bg: '#3b82f6', text: '#ffffff' },         // blue-500
   tendency: { bg: '#facc15', text: '#111827' },         // yellow-400, gray-900
   note:     { bg: '#9ca3af', text: '#ffffff' },         // gray-400
+};
+
+// =============================================================================
+// TOURNAMENT M-RATIO — chip stack zone colors
+// =============================================================================
+
+export const TOURNAMENT_M_RATIO = {
+  green: '#22c55e',
+  yellow: '#eab308',
+  orange: '#f97316',
+  red: '#ef4444',
 };
 
 // =============================================================================

@@ -81,3 +81,12 @@ export {
   deleteRangeProfile,
   getAllRangeProfiles,
 } from './rangeProfilesStorage';
+
+// Tournament CRUD operations
+export {
+  createTournament,
+  getTournamentBySessionId,
+  updateTournament,
+  deleteTournament,
+  getAllTournaments,
+} from './tournamentsStorage';

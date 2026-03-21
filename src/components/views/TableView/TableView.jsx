@@ -9,7 +9,7 @@ import { analyzeBoardFromStrings } from '../../../utils/pokerCore/boardTexture';
 import { generateBoardExploits, enrichExploitsWithEquity } from '../../../utils/exploitEngine/generateExploits';
 import { filterDismissed } from '../../../utils/exploitEngine/generateExploits';
 import { LAYOUT, LIMITS } from '../../../constants/gameConstants';
-import { useGame, useUI, useSession, usePlayer, useCard, useToast, useTendency } from '../../../contexts';
+import { useGame, useUI, useSession, usePlayer, useCard, useToast, useTendency, useTournament } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatColor } from '../../../hooks/useSeatColor';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
@@ -217,6 +217,9 @@ export const TableView = ({ scale }) => {
 
   // Player tendency stats for confidence opacity
   const { tendencyMap } = useTendency();
+
+  // Tournament context (timer lives in TournamentContext — single source of truth)
+  const { isTournament, currentBlinds: tournamentBlinds, levelTimeRemaining } = useTournament();
 
   // Live equity computation
   const liveEquity = useLiveEquity({
@@ -498,6 +501,7 @@ export const TableView = ({ scale }) => {
             currentSessionVenue={currentSessionVenue}
             currentSessionGameType={currentSessionGameType}
             updateSessionField={updateSessionField}
+            isTournament={isTournament}
           />
 
           {/* Header Bar */}
@@ -508,6 +512,10 @@ export const TableView = ({ scale }) => {
             isSidebarCollapsed={isSidebarCollapsed}
             onEndSession={handleEndSession}
             onNewSession={handleNewSession}
+            isTournament={isTournament}
+            tournamentBlinds={isTournament ? tournamentBlinds : null}
+            levelTimeRemaining={isTournament ? levelTimeRemaining : null}
+            onOpenTournament={() => setCurrentScreen(SCREEN.TOURNAMENT)}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>

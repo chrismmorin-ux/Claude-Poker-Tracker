@@ -19,7 +19,7 @@ import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
 import { useToast } from '../../../contexts/ToastContext';
-import { useSession, useUI } from '../../../contexts';
+import { useSession, useUI, useTournament } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 
 /**
@@ -29,6 +29,7 @@ export const SessionsView = ({ scale }) => {
   const { showSuccess, showError } = useToast();
   const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession } = useUI();
   const { resetHand: resetTableState } = useGameHandlers();
+  const { initTournament, createNewTournament } = useTournament();
   const {
     currentSession,
     allSessions: sessionAllSessions,
@@ -73,9 +74,13 @@ export const SessionsView = ({ scale }) => {
   }, [autoOpenNewSession, setAutoOpenNewSession]);
 
   // Handle new session submission
-  const handleNewSession = async (sessionData) => {
+  const handleNewSession = async (sessionData, tournamentConfig) => {
     try {
-      await startNewSession(sessionData);
+      const sessionId = await startNewSession(sessionData);
+      if (tournamentConfig) {
+        initTournament(tournamentConfig);
+        await createNewTournament(tournamentConfig, sessionId);
+      }
       setShowNewSessionForm(false);
       if (resetTableState) {
         resetTableState();
