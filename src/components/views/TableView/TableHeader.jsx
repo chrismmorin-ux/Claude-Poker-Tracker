@@ -1,10 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { formatMsToTimer } from '../../../utils/displayUtils';
+import { GOLD } from '../../../constants/designTokens';
+import { getMRatioZone, getGuidanceColor } from '../../../constants/tournamentConstants';
+import { IcmBadge } from '../../ui/IcmBadge';
 
 /**
  * TableHeader - Compact info bar with hand count, session timer, and session controls
- * Hand controls (Next Hand, Reset, Hand Over) moved to CommandStrip
+ * When tournament is active, shows a mini tournament strip with key info.
  */
 export const TableHeader = ({
   handCount,
@@ -18,49 +21,150 @@ export const TableHeader = ({
   tournamentBlinds,
   levelTimeRemaining,
   onOpenTournament,
+  // Enhanced tournament props
+  heroMRatio,
+  lockoutInfo,
+  playersRemaining,
+  currentLevelIndex,
+  levelDurationMs,
+  icmPressure,
+  mRatioGuidance,
 }) => {
+  const isLowTime = levelTimeRemaining != null && levelTimeRemaining < 120000;
+  const levelProgress = levelDurationMs > 0 && levelTimeRemaining != null
+    ? 1 - (levelTimeRemaining / levelDurationMs)
+    : 0;
+
+  // M-ratio zone color (reuse existing helper)
+  const mZone = heroMRatio != null ? getMRatioZone(heroMRatio) : null;
+  const mColor = mZone?.color || null;
+
+  // M-ratio guidance color
+  const guidanceColor = getGuidanceColor(mRatioGuidance?.zone);
+
   return (
     <div
-      className={`flex justify-between items-center px-4 py-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}
-      style={{ marginRight: '450px', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(212,168,71,0.15)' }}
+      className={`flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}
+      style={{ marginRight: '450px' }}
     >
-      <div className="flex items-center gap-3">
-        <div className="font-bold" style={{ color: 'var(--gold)', fontSize: '15px' }}>Hand #{handCount + 1}</div>
-        {hasActiveSession ? (
-          <>
-            <div className="text-sm" style={{ color: '#6dba8a' }}>{sessionTimeDisplay}</div>
-            {isTournament && tournamentBlinds && (
+      {/* Main header row */}
+      <div
+        className="flex justify-between items-center px-4 py-1"
+        style={{ background: 'rgba(0,0,0,0.5)', borderBottom: isTournament && tournamentBlinds ? 'none' : '1px solid rgba(212,168,71,0.15)' }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="font-bold" style={{ color: 'var(--gold)', fontSize: '15px' }}>Hand #{handCount + 1}</div>
+          {hasActiveSession ? (
+            <>
+              <div className="text-sm" style={{ color: '#6dba8a' }}>{sessionTimeDisplay}</div>
               <button
-                onClick={onOpenTournament}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
-                style={{ background: 'rgba(59,130,246,0.3)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.4)' }}
+                onClick={onEndSession}
+                className="px-2 py-0.5 rounded text-xs font-semibold text-white"
+                style={{ background: '#991b1b' }}
               >
-                <span>{tournamentBlinds.sb}/{tournamentBlinds.bb}</span>
-                {levelTimeRemaining != null && (
-                  <span className={levelTimeRemaining < 120000 ? 'text-red-400' : ''}>
+                End Session
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onNewSession}
+              className="px-2 py-0.5 rounded text-xs font-semibold text-white"
+              style={{ background: '#15803d' }}
+            >
+              New Session
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Mini Tournament Strip */}
+      {isTournament && tournamentBlinds && (
+        <div
+          onClick={onOpenTournament}
+          className="relative cursor-pointer overflow-hidden"
+          style={{
+            background: 'rgba(212,168,71,0.08)',
+            borderBottom: '1px solid rgba(212,168,71,0.25)',
+          }}
+        >
+          <div className="flex items-center justify-between px-4 py-1">
+            <div className="flex items-center gap-3">
+              {/* Level */}
+              <span className="text-xs font-bold" style={{ color: GOLD }}>
+                Lvl {(currentLevelIndex || 0) + 1}
+              </span>
+
+              {/* Blinds */}
+              <span className="text-xs font-semibold text-white">
+                {tournamentBlinds.sb}/{tournamentBlinds.bb}
+                {tournamentBlinds.ante > 0 && (
+                  <span className="text-gray-400 ml-0.5">({tournamentBlinds.ante})</span>
+                )}
+              </span>
+
+              {/* Separator */}
+              <span className="text-gray-600">|</span>
+
+              {/* M-ratio */}
+              {heroMRatio != null && (
+                <>
+                  <span className="text-xs font-bold" style={{ color: mColor }}>
+                    M{Math.round(heroMRatio)}
+                  </span>
+                  {/* M-ratio guidance */}
+                  {mRatioGuidance && guidanceColor && (
+                    <span className="text-xs" style={{ color: guidanceColor }}>
+                      {mRatioGuidance.label}
+                    </span>
+                  )}
+                  <span className="text-gray-600">|</span>
+                </>
+              )}
+
+              {/* Timer */}
+              {levelTimeRemaining != null && (
+                <>
+                  <span className={`text-xs font-mono font-bold ${isLowTime ? 'text-red-400' : 'text-green-400'}`}>
                     {formatMsToTimer(levelTimeRemaining)}
                   </span>
-                )}
-              </button>
-            )}
-            <button
-              onClick={onEndSession}
-              className="px-2 py-0.5 rounded text-xs font-semibold text-white"
-              style={{ background: '#991b1b' }}
-            >
-              End Session
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={onNewSession}
-            className="px-2 py-0.5 rounded text-xs font-semibold text-white"
-            style={{ background: '#15803d' }}
-          >
-            New Session
-          </button>
-        )}
-      </div>
+                  <span className="text-gray-600">|</span>
+                </>
+              )}
+
+              {/* Players remaining */}
+              {playersRemaining != null && (
+                <span className="text-xs text-gray-300">
+                  <span className="text-white font-medium">{playersRemaining}</span> left
+                </span>
+              )}
+
+              {/* Lockout badge */}
+              {lockoutInfo?.isApproaching && (
+                <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{
+                  backgroundColor: 'rgba(245,158,11,0.2)',
+                  color: '#f59e0b',
+                }}>
+                  Lockout {lockoutInfo.levelsUntilLockout} lvl
+                </span>
+              )}
+
+              {/* ICM badge */}
+              <IcmBadge icmPressure={icmPressure} />
+            </div>
+          </div>
+
+          {/* Level progress bar */}
+          <div className="w-full h-0.5" style={{ backgroundColor: 'rgba(212,168,71,0.1)' }}>
+            <div
+              className="h-full transition-all"
+              style={{
+                width: `${Math.min(100, Math.max(0, levelProgress * 100))}%`,
+                backgroundColor: GOLD,
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -72,4 +176,15 @@ TableHeader.propTypes = {
   isSidebarCollapsed: PropTypes.bool.isRequired,
   onEndSession: PropTypes.func.isRequired,
   onNewSession: PropTypes.func.isRequired,
+  isTournament: PropTypes.bool,
+  tournamentBlinds: PropTypes.object,
+  levelTimeRemaining: PropTypes.number,
+  onOpenTournament: PropTypes.func,
+  heroMRatio: PropTypes.number,
+  lockoutInfo: PropTypes.object,
+  playersRemaining: PropTypes.number,
+  currentLevelIndex: PropTypes.number,
+  levelDurationMs: PropTypes.number,
+  icmPressure: PropTypes.object,
+  mRatioGuidance: PropTypes.object,
 };

@@ -141,6 +141,22 @@ export const TournamentSetupForm = ({ config, onChange }) => {
         </div>
       </div>
 
+      {/* Rebuy Freeze Level (only for rebuy format) */}
+      {config.format === 'rebuy' && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Rebuy Freeze Level</label>
+            <input
+              type="number"
+              value={config.lockoutLevel || ''}
+              onChange={(e) => updateField('lockoutLevel', Number(e.target.value) || null)}
+              placeholder="e.g. 6"
+              className="w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Blind Schedule */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Blind Schedule</label>

@@ -1,14 +1,13 @@
 /**
  * PredictionsPanel.jsx - Tournament milestone projections
  *
- * Shows milestone estimates, personal blind-out breakdown,
- * and projected finish position with progress bar.
+ * Shows unified vertical timeline with milestone estimates,
+ * lockout/blind-out nodes, and projected finish position.
  */
 
-import React from 'react';
-import { calculateOrbitsUntilBlindOut } from '../../../utils/tournamentEngine';
+import React, { useMemo } from 'react';
 import { ordinalSuffix, formatMinutesHuman } from '../../../utils/displayUtils';
-import { LIMITS } from '../../../constants/gameConstants';
+import { GOLD } from '../../../constants/designTokens';
 
 const MILESTONE_LABELS = {
   final_table: 'Final Table',
@@ -25,6 +24,10 @@ const MILESTONE_LABELS = {
  * @param {number} props.currentLevelIndex - Current blind level
  * @param {number|null} props.playersRemaining - Players remaining
  * @param {number|null} props.totalEntrants - Total entrants
+ * @param {Object|null} props.icmPressure - ICM pressure info
+ * @param {Object|null} props.lockoutInfo - Lockout proximity info
+ * @param {Object|null} props.blindOutInfo - Blind-out projection
+ * @param {number|null} props.heroSeat - Hero's seat number
  */
 export const PredictionsPanel = ({
   predictions,
@@ -33,71 +36,171 @@ export const PredictionsPanel = ({
   currentLevelIndex,
   playersRemaining,
   totalEntrants,
+  icmPressure,
+  lockoutInfo,
+  blindOutInfo,
+  heroSeat,
 }) => {
-  // Personal blind-out calculation
-  const blindOut = heroStack > 0 && config.blindSchedule?.length > 0
-    ? calculateOrbitsUntilBlindOut(
-        heroStack,
-        config.blindSchedule,
-        currentLevelIndex,
-        LIMITS.NUM_SEATS,
-        config.handPaceSeconds
-      )
+  // Hero's projected finish from rankings (match by seat, not stack)
+  const heroRanking = heroSeat != null
+    ? predictions?.finishProjections?.rankings?.find(r => r.seat === heroSeat)
     : null;
-
-  // Hero's projected finish from rankings
-  const heroRanking = predictions?.finishProjections?.rankings?.find(r => r.stack === heroStack);
 
   // Progress percentage
   const progress = totalEntrants && playersRemaining
     ? ((totalEntrants - playersRemaining) / (totalEntrants - 1)) * 100
     : 0;
 
+  // Build unified timeline
+  const timelineNodes = useMemo(() => {
+    const nodes = [];
+
+    // Add milestones from predictions
+    if (predictions?.milestones?.length > 0) {
+      for (const m of predictions.milestones) {
+        const isBubble = m.milestone === 'bubble';
+        const bubbleHighlight = isBubble && icmPressure &&
+          (icmPressure.zone === 'approaching' || icmPressure.zone === 'bubble');
+        nodes.push({
+          type: m.milestone,
+          label: MILESTONE_LABELS[m.milestone] || m.milestone,
+          estimatedMinutes: m.estimatedMinutes,
+          isPast: false,
+          bubbleHighlight,
+        });
+      }
+    }
+
+    // Add lockout node
+    if (lockoutInfo && !lockoutInfo.isPastLockout) {
+      nodes.push({
+        type: 'lockout',
+        label: 'Rebuy Freeze',
+        estimatedMinutes: lockoutInfo.minutesUntilLockout,
+        isPast: false,
+      });
+    }
+
+    // Add blind-out node
+    if (blindOutInfo && heroStack > 0) {
+      nodes.push({
+        type: 'blind_out',
+        label: 'Blind Out',
+        estimatedMinutes: blindOutInfo.wallClockMinutes,
+        isPast: false,
+      });
+    }
+
+    // Sort by estimated minutes ascending
+    nodes.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes);
+
+    return nodes;
+  }, [predictions?.milestones, lockoutInfo, blindOutInfo, heroStack, icmPressure]);
+
+  // Find the next approaching milestone (first non-past)
+  const nextMilestoneIdx = timelineNodes.findIndex(n => !n.isPast);
+
+  const getNodeColor = (node, idx) => {
+    if (node.type === 'lockout') return '#f59e0b'; // amber
+    if (node.type === 'blind_out') return '#ef4444'; // red
+    if (node.bubbleHighlight) return '#ef4444'; // red for bubble pressure
+    if (idx === nextMilestoneIdx) return GOLD;
+    return '#9ca3af'; // gray-400
+  };
+
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-4">
-      {/* Event Projections */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
-          Event Projections
-        </h3>
-        {predictions?.milestones?.length > 0 ? (
-          <div className="space-y-1">
-            {predictions.milestones.map((m) => (
-              <div key={m.milestone} className="flex justify-between text-sm">
-                <span className="text-gray-300">{MILESTONE_LABELS[m.milestone] || m.milestone}</span>
-                <span className="text-white font-medium">{formatMinutesHuman(m.estimatedMinutes)}</span>
-              </div>
-            ))}
+    <div className="bg-gray-800 border rounded-lg p-4 space-y-4" style={{ borderColor: 'rgba(212,168,71,0.3)' }}>
+      {/* Event Projections Header */}
+      <h3 className="text-sm font-medium uppercase tracking-wide" style={{ color: GOLD }}>
+        Event Timeline
+      </h3>
+
+      {/* Vertical Timeline */}
+      {timelineNodes.length > 0 ? (
+        <div className="relative pl-4">
+          {/* Vertical rail */}
+          <div
+            className="absolute left-1 top-1 bottom-1 w-0.5"
+            style={{ backgroundColor: 'rgba(212,168,71,0.3)' }}
+          />
+
+          <div className="space-y-3">
+            {timelineNodes.map((node, idx) => {
+              const color = getNodeColor(node, idx);
+              const isNext = idx === nextMilestoneIdx;
+
+              return (
+                <div key={`${node.type}-${idx}`} className="relative flex items-center gap-3">
+                  {/* Dot on rail */}
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      left: '-13px',
+                      width: isNext ? '10px' : '8px',
+                      height: isNext ? '10px' : '8px',
+                      backgroundColor: isNext ? color : 'transparent',
+                      border: `2px solid ${color}`,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      boxShadow: isNext ? `0 0 6px ${color}` : 'none',
+                    }}
+                  />
+
+                  {/* Label + time */}
+                  <div className="flex-1 flex justify-between items-center">
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: isNext ? '#f3f4f6' : '#9ca3af' }}
+                    >
+                      {node.label}
+                      {node.type === 'lockout' && (
+                        <span className="ml-1 text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: '#f59e0b' }}>
+                          rebuy
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: isNext ? '#ffffff' : '#6b7280' }}
+                    >
+                      {formatMinutesHuman(Math.round(node.estimatedMinutes))}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <p className="text-xs text-gray-500">
-            {predictions?.dropoutRate
-              ? 'Waiting for more data...'
-              : 'Record eliminations to enable projections'}
-          </p>
-        )}
-        {predictions?.dropoutRate && (
-          <div className="mt-1 text-xs text-gray-500">
-            Confidence: <span className={
-              predictions.dropoutRate.confidence === 'high' ? 'text-green-400' :
-              predictions.dropoutRate.confidence === 'medium' ? 'text-yellow-400' :
-              'text-red-400'
-            }>{predictions.dropoutRate.confidence}</span>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500">
+          {predictions?.dropoutRate
+            ? 'Waiting for more data...'
+            : 'Record eliminations to enable projections'}
+        </p>
+      )}
+
+      {/* Confidence */}
+      {predictions?.dropoutRate && (
+        <div className="text-xs text-gray-500">
+          Confidence: <span className={
+            predictions.dropoutRate.confidence === 'high' ? 'text-green-400' :
+            predictions.dropoutRate.confidence === 'medium' ? 'text-yellow-400' :
+            'text-red-400'
+          }>{predictions.dropoutRate.confidence}</span>
+        </div>
+      )}
 
       {/* Your Blind-Out */}
-      {blindOut && heroStack > 0 && (
+      {blindOutInfo && heroStack > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-400 mb-2 uppercase tracking-wide">
+          <h3 className="text-sm font-medium uppercase tracking-wide mb-2" style={{ color: GOLD }}>
             Your Blind-Out
           </h3>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-300">{heroStack.toLocaleString()} chips survives</span>
               <span className="text-white font-medium">
-                {(blindOut.blindOutLevel - currentLevelIndex).toFixed(1)} levels ({formatMinutesHuman(Math.round(blindOut.wallClockMinutes))})
+                {blindOutInfo.levelsRemaining.toFixed(1)} levels ({formatMinutesHuman(blindOutInfo.wallClockMinutes)})
               </span>
             </div>
             {heroRanking && (
@@ -121,8 +224,8 @@ export const PredictionsPanel = ({
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div
-              className="bg-blue-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, progress)}%` }}
+              className="h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(100, progress)}%`, backgroundColor: GOLD }}
             />
           </div>
         </div>
@@ -130,4 +233,3 @@ export const PredictionsPanel = ({
     </div>
   );
 };
-

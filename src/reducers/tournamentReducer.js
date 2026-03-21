@@ -20,6 +20,7 @@ export const initialTournamentState = {
     payoutSlots: null,
     blindSchedule: [],
     handPaceSeconds: 30,
+    lockoutLevel: null,
   },
   currentLevelIndex: 0,
   levelStartTime: null,

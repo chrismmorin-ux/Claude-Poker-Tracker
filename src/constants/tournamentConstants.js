@@ -118,3 +118,15 @@ export const getMRatioZone = (mRatio) => {
   if (mRatio >= M_RATIO_ZONES.ORANGE.min) return M_RATIO_ZONES.ORANGE;
   return M_RATIO_ZONES.RED;
 };
+
+/**
+ * Returns the color for M-ratio guidance zone labels.
+ * @param {string|null} zone - 'comfortable'|'caution'|'pushFold'|'shoveOnly'
+ * @returns {string|null} Hex color or null if no guidance needed
+ */
+export const getGuidanceColor = (zone) => {
+  if (zone === 'caution') return TOURNAMENT_M_RATIO.yellow;
+  if (zone === 'pushFold') return TOURNAMENT_M_RATIO.orange;
+  if (zone === 'shoveOnly') return TOURNAMENT_M_RATIO.red;
+  return null;
+};

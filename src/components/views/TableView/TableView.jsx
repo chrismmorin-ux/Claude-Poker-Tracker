@@ -219,7 +219,16 @@ export const TableView = ({ scale }) => {
   const { tendencyMap } = useTendency();
 
   // Tournament context (timer lives in TournamentContext — single source of truth)
-  const { isTournament, currentBlinds: tournamentBlinds, levelTimeRemaining } = useTournament();
+  const {
+    isTournament,
+    currentBlinds: tournamentBlinds,
+    levelTimeRemaining,
+    tournamentState,
+    heroMRatio,
+    lockoutInfo,
+    icmPressure,
+    mRatioGuidance,
+  } = useTournament();
 
   // Live equity computation
   const liveEquity = useLiveEquity({
@@ -516,6 +525,13 @@ export const TableView = ({ scale }) => {
             tournamentBlinds={isTournament ? tournamentBlinds : null}
             levelTimeRemaining={isTournament ? levelTimeRemaining : null}
             onOpenTournament={() => setCurrentScreen(SCREEN.TOURNAMENT)}
+            heroMRatio={heroMRatio}
+            lockoutInfo={lockoutInfo}
+            playersRemaining={isTournament ? tournamentState.playersRemaining : null}
+            currentLevelIndex={isTournament ? tournamentState.currentLevelIndex : null}
+            levelDurationMs={isTournament ? tournamentBlinds.durationMinutes * 60 * 1000 : 0}
+            icmPressure={icmPressure}
+            mRatioGuidance={mRatioGuidance}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>

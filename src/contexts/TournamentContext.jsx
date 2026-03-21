@@ -8,6 +8,7 @@
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { TOURNAMENT_ACTIONS } from '../constants/tournamentConstants';
 import { useSession } from './SessionContext';
+import { useGame } from './GameContext';
 import { useTournamentPersistence } from '../hooks/useTournamentPersistence';
 import { useTournamentTimer } from '../hooks/useTournamentTimer';
 import {
@@ -17,6 +18,7 @@ import {
   computeDropoutRate,
   projectMilestones,
 } from '../utils/tournamentEngine';
+import { LIMITS } from '../constants/gameConstants';
 
 const TournamentContext = createContext(null);
 
@@ -25,6 +27,7 @@ const TournamentContext = createContext(null);
  */
 export const TournamentProvider = ({ tournamentState, dispatchTournament, children }) => {
   const { currentSession } = useSession();
+  const { mySeat } = useGame();
 
   // Derived: is this a tournament session?
   const isTournamentSession = currentSession?.gameType === 'Tournament';
@@ -57,6 +60,77 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     if (!schedule || schedule.length === 0) return null;
     return getBlindLevel(schedule, idx);
   }, [tournamentState.config.blindSchedule, tournamentState.currentLevelIndex]);
+
+  // Derived: hero M-ratio
+  const heroMRatio = useMemo(() => {
+    if (!isTournament) return null;
+    const heroStack = tournamentState.chipStacks[mySeat];
+    if (heroStack == null || heroStack <= 0) return null;
+    const costPerOrbit = currentBlinds.sb + currentBlinds.bb + (currentBlinds.ante * LIMITS.NUM_SEATS);
+    return costPerOrbit > 0 ? heroStack / costPerOrbit : null;
+  }, [isTournament, tournamentState.chipStacks, mySeat, currentBlinds]);
+
+  // Derived: lockout info (for rebuy freeze level)
+  const lockoutInfo = useMemo(() => {
+    if (!isTournament) return null;
+    const { lockoutLevel } = tournamentState.config;
+    if (lockoutLevel == null) return null;
+    const { currentLevelIndex, config } = tournamentState;
+    const levelsUntilLockout = lockoutLevel - currentLevelIndex;
+    const isPastLockout = levelsUntilLockout <= 0;
+    const isApproaching = !isPastLockout && levelsUntilLockout <= 2;
+    // Estimate minutes until lockout
+    let minutesUntilLockout = 0;
+    if (!isPastLockout && config.blindSchedule?.length > 0) {
+      for (let i = currentLevelIndex; i < lockoutLevel; i++) {
+        const level = getBlindLevel(config.blindSchedule, i);
+        minutesUntilLockout += level.durationMinutes;
+      }
+    }
+    return { isApproaching, levelsUntilLockout, minutesUntilLockout, isPastLockout };
+  }, [isTournament, tournamentState.config.lockoutLevel, tournamentState.config.blindSchedule, tournamentState.currentLevelIndex]);
+
+  // Derived: blind-out info for hero
+  const blindOutInfo = useMemo(() => {
+    if (!isTournament) return null;
+    const heroStack = tournamentState.chipStacks[mySeat];
+    if (heroStack == null || heroStack <= 0) return null;
+    const { blindSchedule, handPaceSeconds } = tournamentState.config;
+    if (!blindSchedule?.length) return null;
+    const result = calculateOrbitsUntilBlindOut(
+      heroStack, blindSchedule, tournamentState.currentLevelIndex,
+      LIMITS.NUM_SEATS, handPaceSeconds
+    );
+    return {
+      wallClockMinutes: Math.round(result.wallClockMinutes),
+      blindOutLevel: result.blindOutLevel,
+      levelsRemaining: result.blindOutLevel - tournamentState.currentLevelIndex,
+    };
+  }, [isTournament, tournamentState.chipStacks, mySeat, tournamentState.config.blindSchedule, tournamentState.config.handPaceSeconds, tournamentState.currentLevelIndex]);
+
+  // Derived: ICM pressure
+  const icmPressure = useMemo(() => {
+    if (!isTournament) return { zone: 'standard', playersFromBubble: null };
+    const { playersRemaining } = tournamentState;
+    const { payoutSlots } = tournamentState.config;
+    if (!payoutSlots || !playersRemaining) return { zone: 'standard', playersFromBubble: null };
+    const playersFromBubble = playersRemaining - payoutSlots;
+    if (playersFromBubble <= 0) return { zone: 'itm', playersFromBubble: 0 };
+    if (playersFromBubble <= 3) return { zone: 'bubble', playersFromBubble };
+    // "Approaching" when within 20% of bubble
+    const threshold = Math.ceil(payoutSlots * 0.2);
+    if (playersFromBubble <= threshold) return { zone: 'approaching', playersFromBubble };
+    return { zone: 'standard', playersFromBubble };
+  }, [isTournament, tournamentState.playersRemaining, tournamentState.config.payoutSlots]);
+
+  // Derived: M-ratio action guidance
+  const mRatioGuidance = useMemo(() => {
+    if (heroMRatio == null) return null;
+    if (heroMRatio >= 20) return { label: 'Comfortable', zone: 'comfortable' };
+    if (heroMRatio >= 10) return { label: 'Open/Fold', zone: 'caution' };
+    if (heroMRatio >= 6) return { label: 'Push/Fold', zone: 'pushFold' };
+    return { label: 'Shove/Fold', zone: 'shoveOnly' };
+  }, [heroMRatio]);
 
   // Handlers
   const advanceLevel = useCallback(() => {
@@ -172,6 +246,11 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     nextBlinds,
     levelTimeRemaining,
     predictions,
+    heroMRatio,
+    lockoutInfo,
+    blindOutInfo,
+    icmPressure,
+    mRatioGuidance,
     // Handlers
     initTournament,
     advanceLevel,
@@ -190,6 +269,11 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     nextBlinds,
     levelTimeRemaining,
     predictions,
+    heroMRatio,
+    lockoutInfo,
+    blindOutInfo,
+    icmPressure,
+    mRatioGuidance,
     initTournament,
     advanceLevel,
     pauseTimer,

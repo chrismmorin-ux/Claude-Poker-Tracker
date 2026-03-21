@@ -2,12 +2,13 @@
  * BlindTimerBar.jsx - Tournament blind level timer display
  *
  * Shows current level, SB/BB/ante, countdown, next level preview,
- * pause/resume controls, and players remaining counter.
+ * pause/resume controls, level progress bar, and lockout badge.
  */
 
 import React from 'react';
 import { Pause, Play, SkipForward } from 'lucide-react';
 import { formatMsToTimer } from '../../../utils/displayUtils';
+import { GOLD } from '../../../constants/designTokens';
 
 /**
  * @param {Object} props
@@ -15,9 +16,11 @@ import { formatMsToTimer } from '../../../utils/displayUtils';
  * @param {Object|null} props.nextBlinds - Next level blinds
  * @param {number} props.currentLevelIndex - Current level index
  * @param {number} props.levelTimeRemaining - ms remaining in level
+ * @param {number} props.levelDurationMs - Total level duration in ms
  * @param {boolean} props.isPaused - Timer paused state
  * @param {number|null} props.playersRemaining - Players remaining
  * @param {number|null} props.totalEntrants - Total entrants
+ * @param {Object|null} props.lockoutInfo - Lockout proximity info
  * @param {Function} props.onPause - Pause handler
  * @param {Function} props.onResume - Resume handler
  * @param {Function} props.onSkipLevel - Skip to next level
@@ -27,21 +30,27 @@ export const BlindTimerBar = ({
   nextBlinds,
   currentLevelIndex,
   levelTimeRemaining,
+  levelDurationMs,
   isPaused,
   playersRemaining,
   totalEntrants,
+  lockoutInfo,
   onPause,
   onResume,
   onSkipLevel,
 }) => {
   const isLowTime = levelTimeRemaining < 120000; // < 2 minutes
+  const levelProgress = levelDurationMs > 0 ? 1 - (levelTimeRemaining / levelDurationMs) : 0;
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+    <div className="rounded-lg p-3 relative overflow-hidden" style={{
+      background: '#1f2937',
+      border: '1px solid rgba(212,168,71,0.3)',
+    }}>
       {/* Top row: Level info + timer + controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400 font-medium">
+          <span className="text-sm font-bold" style={{ color: GOLD }}>
             Level {currentLevelIndex + 1}
           </span>
           <span className="text-lg font-bold text-white">
@@ -55,6 +64,16 @@ export const BlindTimerBar = ({
           {nextBlinds && (
             <span className="text-xs text-gray-500">
               Next: {nextBlinds.sb.toLocaleString()}/{nextBlinds.bb.toLocaleString()}
+            </span>
+          )}
+          {/* Lockout badge */}
+          {lockoutInfo?.isApproaching && (
+            <span className="text-xs px-2 py-0.5 rounded font-medium" style={{
+              backgroundColor: 'rgba(245,158,11,0.2)',
+              color: '#f59e0b',
+              border: '1px solid rgba(245,158,11,0.3)',
+            }}>
+              Lockout in {lockoutInfo.levelsUntilLockout} lvl{lockoutInfo.levelsUntilLockout !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -89,13 +108,24 @@ export const BlindTimerBar = ({
         </div>
       </div>
 
-      {/* Bottom row: Players remaining */}
+      {/* Players remaining */}
       {playersRemaining != null && (
         <div className="mt-1 text-sm text-gray-400">
           Players: <span className="text-white font-medium">{playersRemaining}</span>
           {totalEntrants && <span>/{totalEntrants}</span>} remaining
         </div>
       )}
+
+      {/* Level progress bar */}
+      <div className="mt-2 w-full h-0.5 rounded-full" style={{ backgroundColor: 'rgba(212,168,71,0.15)' }}>
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${Math.min(100, Math.max(0, levelProgress * 100))}%`,
+            backgroundColor: GOLD,
+          }}
+        />
+      </div>
     </div>
   );
 };

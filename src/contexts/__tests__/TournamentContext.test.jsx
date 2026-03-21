@@ -3,20 +3,25 @@ import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { TournamentProvider, useTournament } from '../TournamentContext';
 import { SessionProvider } from '../SessionContext';
+import { GameProvider } from '../GameContext';
 import { initialTournamentState } from '../../reducers/tournamentReducer';
 import { initialSessionState } from '../../reducers/sessionReducer';
+import { initialGameState } from '../../reducers/gameReducer';
 
 // Wrapper that provides required context
 const createWrapper = (tournamentState = initialTournamentState) => {
   const dispatchTournament = vi.fn();
   const dispatchSession = vi.fn();
+  const dispatchGame = vi.fn();
 
   const Wrapper = ({ children }) => (
-    <SessionProvider sessionState={initialSessionState} dispatchSession={dispatchSession}>
-      <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
-        {children}
-      </TournamentProvider>
-    </SessionProvider>
+    <GameProvider gameState={initialGameState} dispatchGame={dispatchGame} blinds={{ sb: 1, bb: 2 }}>
+      <SessionProvider sessionState={initialSessionState} dispatchSession={dispatchSession}>
+        <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
+          {children}
+        </TournamentProvider>
+      </SessionProvider>
+    </GameProvider>
   );
 
   return { Wrapper, dispatchTournament };

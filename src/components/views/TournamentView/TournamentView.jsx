@@ -29,6 +29,10 @@ export const TournamentView = ({ scale }) => {
     nextBlinds,
     levelTimeRemaining,
     predictions,
+    lockoutInfo,
+    blindOutInfo,
+    icmPressure,
+    mRatioGuidance,
     advanceLevel,
     pauseTimer,
     resumeTimer,
@@ -92,9 +96,11 @@ export const TournamentView = ({ scale }) => {
           nextBlinds={nextBlinds}
           currentLevelIndex={currentLevelIndex}
           levelTimeRemaining={levelTimeRemaining}
+          levelDurationMs={currentBlinds.durationMinutes * 60 * 1000}
           isPaused={isPaused}
           playersRemaining={playersRemaining}
           totalEntrants={config.totalEntrants}
+          lockoutInfo={lockoutInfo}
           onPause={pauseTimer}
           onResume={resumeTimer}
           onSkipLevel={advanceLevel}
@@ -106,10 +112,14 @@ export const TournamentView = ({ scale }) => {
             <PredictionsPanel
               predictions={predictions}
               heroStack={heroStack}
+              heroSeat={mySeat}
               config={config}
               currentLevelIndex={currentLevelIndex}
               playersRemaining={playersRemaining}
               totalEntrants={config.totalEntrants}
+              icmPressure={icmPressure}
+              lockoutInfo={lockoutInfo}
+              blindOutInfo={blindOutInfo}
             />
           </div>
 
@@ -119,6 +129,10 @@ export const TournamentView = ({ scale }) => {
               currentBlinds={currentBlinds}
               rankings={predictions?.finishProjections?.rankings || []}
               playersRemaining={playersRemaining}
+              heroSeat={mySeat}
+              totalEntrants={config.totalEntrants}
+              mRatioGuidance={mRatioGuidance}
+              icmPressure={icmPressure}
               onUpdateStack={updateStack}
               onEliminate={handleEliminate}
               onSetPlayersRemaining={setPlayersRemaining}
