@@ -213,7 +213,7 @@ export const SessionsView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="w-full h-screen bg-gray-900 relative">
+      <div className="w-full bg-gray-900 relative" style={{ width: 1600, height: 720 }}>
         {/* Scrollable Content */}
         <div className="w-full h-full pt-8 px-8 pb-24 overflow-y-auto">
           {/* Header */}

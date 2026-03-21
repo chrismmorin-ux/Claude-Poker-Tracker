@@ -133,13 +133,14 @@ export const HandReplayView = ({ scale }) => {
   });
 
   return (
+    <div className="flex items-center justify-center h-dvh bg-gray-950 overflow-hidden">
     <div
-      className="relative overflow-hidden bg-gray-950"
+      className="relative overflow-hidden"
       style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
         transform: `scale(${scale})`,
-        transformOrigin: 'top left',
+        transformOrigin: 'center center',
       }}
     >
       {/* Header bar */}
@@ -341,7 +342,7 @@ export const HandReplayView = ({ scale }) => {
         </div>
 
         {/* Right: Review Panel */}
-        <div className="w-[450px] border-l border-gray-800 bg-gray-900/50 overflow-hidden">
+        <div className="w-[450px] border-l border-gray-800 bg-gray-900/50 overflow-y-auto">
           <ReviewPanel
             replay={replay}
             hand={hand}
@@ -355,6 +356,7 @@ export const HandReplayView = ({ scale }) => {
           />
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -164,7 +164,7 @@ export const ShowdownView = ({ scale }) => {
             SEAT_STATUS={SEAT_STATUS}
           />
 
-          <div className="bg-gray-100 p-4">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-4">
             {/* Player Cards Display - Used in both modes */}
             <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${displaySeats.length}, minmax(0, 1fr))` }}>
               {displaySeats.map(seat => {
