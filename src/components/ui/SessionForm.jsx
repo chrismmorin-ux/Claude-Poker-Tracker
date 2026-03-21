@@ -239,7 +239,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any notes for this session..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 

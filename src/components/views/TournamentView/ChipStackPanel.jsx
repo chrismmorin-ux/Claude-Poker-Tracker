@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Layers } from 'lucide-react';
 import { getMRatioZone, getGuidanceColor } from '../../../constants/tournamentConstants';
 import { SEAT_ARRAY, LIMITS } from '../../../constants/gameConstants';
 import { ordinalSuffix } from '../../../utils/displayUtils';
@@ -51,7 +51,7 @@ export const ChipStackPanel = ({
   };
 
   const commitEdit = () => {
-    if (editingSeat && editValue) {
+    if (editingSeat != null && editValue !== '') {
       onUpdateStack(editingSeat, Number(editValue) || 0);
     }
     setEditingSeat(null);
@@ -158,7 +158,8 @@ export const ChipStackPanel = ({
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => onSetPlayersRemaining(Math.max(1, (playersRemaining || 2) - 1))}
-            className="w-9 h-9 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded flex items-center justify-center text-xl font-bold transition-colors"
+            className="w-10 h-10 hover:bg-gray-600 text-gray-300 rounded-lg flex items-center justify-center text-xl font-bold transition-colors"
+            style={{ backgroundColor: '#374151', border: `1px solid rgba(212,168,71,0.3)` }}
           >
             -
           </button>
@@ -172,7 +173,8 @@ export const ChipStackPanel = ({
           </div>
           <button
             onClick={() => onSetPlayersRemaining((playersRemaining || 0) + 1)}
-            className="w-9 h-9 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded flex items-center justify-center text-xl font-bold transition-colors"
+            className="w-10 h-10 hover:bg-gray-600 text-gray-300 rounded-lg flex items-center justify-center text-xl font-bold transition-colors"
+            style={{ backgroundColor: '#374151', border: `1px solid rgba(212,168,71,0.3)` }}
           >
             +
           </button>
@@ -184,6 +186,7 @@ export const ChipStackPanel = ({
         <div className="rounded-lg p-3 relative overflow-hidden" style={{
           background: 'rgba(212,168,71,0.05)',
           borderLeft: `4px solid ${GOLD}`,
+          boxShadow: `0 0 12px rgba(212,168,71,0.15), inset 0 1px 0 rgba(212,168,71,0.1)`,
         }}>
           <div className="flex items-center justify-between">
             <div>
@@ -230,7 +233,11 @@ export const ChipStackPanel = ({
           otherSeats.map((seat) => renderStackRow(seat))
         ) : (
           seatsWithStacks.length === 0 && (
-            <p className="text-xs text-gray-500">Tap "Add Stack" to enter chip counts</p>
+            <div className="flex flex-col items-center py-4 text-center">
+              <Layers size={24} className="text-gray-600 mb-2" />
+              <p className="text-sm text-gray-400">No chip stacks tracked</p>
+              <p className="text-xs text-gray-500 mt-1">Add seats below to track chip counts</p>
+            </div>
           )
         )}
       </div>
@@ -241,8 +248,16 @@ export const ChipStackPanel = ({
           {SEAT_ARRAY.filter(s => chipStacks[s] == null).slice(0, 3).map(seat => (
             <button
               key={seat}
-              onClick={() => startEdit(seat, 0)}
-              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+              onClick={() => {
+                onUpdateStack(seat, 0);
+                startEdit(seat, 0);
+              }}
+              className="text-xs px-2.5 py-1.5 hover:bg-gray-600 rounded-lg transition-colors"
+              style={{
+                backgroundColor: '#374151',
+                border: `1px solid rgba(212,168,71,0.3)`,
+                color: GOLD,
+              }}
             >
               + Seat {seat}
             </button>

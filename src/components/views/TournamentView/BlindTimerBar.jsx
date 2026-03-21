@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Pause, Play, SkipForward } from 'lucide-react';
+import { Pause, Play, SkipForward, PauseCircle } from 'lucide-react';
 import { formatMsToTimer } from '../../../utils/displayUtils';
 import { GOLD } from '../../../constants/designTokens';
 
@@ -45,13 +45,30 @@ export const BlindTimerBar = ({
   return (
     <div className="rounded-lg p-3 relative overflow-hidden" style={{
       background: '#1f2937',
-      border: '1px solid rgba(212,168,71,0.3)',
+      border: isPaused
+        ? '1px solid rgba(234,179,8,0.4)'
+        : '1px solid rgba(212,168,71,0.3)',
     }}>
+      {/* Paused overlay badge */}
+      {isPaused && (
+        <div className="absolute top-1 right-1 flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold z-10" style={{
+          backgroundColor: 'rgba(234,179,8,0.2)',
+          color: '#eab308',
+          border: '1px solid rgba(234,179,8,0.3)',
+        }}>
+          <PauseCircle size={12} />
+          PAUSED
+        </div>
+      )}
+
       {/* Top row: Level info + timer + controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-sm font-bold" style={{ color: GOLD }}>
-            Level {currentLevelIndex + 1}
+          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
+            backgroundColor: 'rgba(212,168,71,0.2)',
+            color: GOLD,
+          }}>
+            Lvl {currentLevelIndex + 1}
           </span>
           <span className="text-lg font-bold text-white">
             {currentBlinds.sb.toLocaleString()}/{currentBlinds.bb.toLocaleString()}
@@ -80,16 +97,21 @@ export const BlindTimerBar = ({
 
         <div className="flex items-center gap-3">
           {/* Timer countdown */}
-          <span className={`text-2xl font-mono font-bold ${
-            isLowTime ? 'text-red-400' : 'text-green-400'
-          }`}>
+          <span
+            className={`text-2xl font-mono font-bold ${
+              isPaused ? 'opacity-50' : isLowTime ? 'text-red-400 animate-pulse' : 'text-green-400'
+            }`}
+            style={isLowTime && !isPaused ? {
+              textShadow: '0 0 8px rgba(248,113,113,0.5)',
+            } : undefined}
+          >
             {formatMsToTimer(levelTimeRemaining)}
           </span>
 
           {/* Pause/Resume */}
           <button
             onClick={isPaused ? onResume : onPause}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2.5 rounded-lg transition-colors ${
               isPaused
                 ? 'bg-green-600 hover:bg-green-700 text-white'
                 : 'bg-yellow-600 hover:bg-yellow-700 text-white'
@@ -101,7 +123,7 @@ export const BlindTimerBar = ({
           {/* Skip level */}
           <button
             onClick={onSkipLevel}
-            className="p-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+            className="p-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
           >
             <SkipForward size={16} />
           </button>

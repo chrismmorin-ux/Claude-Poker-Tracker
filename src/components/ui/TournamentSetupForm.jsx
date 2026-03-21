@@ -14,6 +14,7 @@ import {
   BLIND_SCHEDULE_KEYS,
   BLIND_SCHEDULE_LABELS,
 } from '../../constants/tournamentConstants';
+import { GOLD } from '../../constants/designTokens';
 
 /**
  * @param {Object} props
@@ -69,7 +70,7 @@ export const TournamentSetupForm = ({ config, onChange }) => {
   };
 
   return (
-    <div className="space-y-3 border-t border-gray-600 pt-3 mt-3">
+    <div className="space-y-3 pt-3 mt-3" style={{ borderTop: '1px solid rgba(212,168,71,0.2)' }}>
       {/* Format */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Format</label>
@@ -81,9 +82,10 @@ export const TournamentSetupForm = ({ config, onChange }) => {
               onClick={() => updateField('format', key.toLowerCase())}
               className={`px-3 py-2 rounded font-medium transition-colors text-sm ${
                 config.format === key.toLowerCase()
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
+              style={config.format === key.toLowerCase() ? { backgroundColor: GOLD } : undefined}
             >
               {TOURNAMENT_FORMATS[key].label}
             </button>
@@ -168,9 +170,10 @@ export const TournamentSetupForm = ({ config, onChange }) => {
               onClick={() => handleScheduleChange(key)}
               className={`px-2 py-2 rounded font-medium transition-colors text-xs ${
                 scheduleKey === key && !showCustomEditor
-                  ? 'bg-blue-600 text-white'
+                  ? 'text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
+              style={scheduleKey === key && !showCustomEditor ? { backgroundColor: GOLD } : undefined}
             >
               {BLIND_SCHEDULE_LABELS[key]}
             </button>
@@ -180,9 +183,10 @@ export const TournamentSetupForm = ({ config, onChange }) => {
             onClick={() => handleScheduleChange('CUSTOM')}
             className={`px-2 py-2 rounded font-medium transition-colors text-xs ${
               showCustomEditor
-                ? 'bg-blue-600 text-white'
+                ? 'text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
+            style={showCustomEditor ? { backgroundColor: GOLD } : undefined}
           >
             Custom
           </button>

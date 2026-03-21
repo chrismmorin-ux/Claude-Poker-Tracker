@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { Clock } from 'lucide-react';
 import { ordinalSuffix, formatMinutesHuman } from '../../../utils/displayUtils';
 import { GOLD } from '../../../constants/designTokens';
 
@@ -130,7 +131,9 @@ export const PredictionsPanel = ({
               const isNext = idx === nextMilestoneIdx;
 
               return (
-                <div key={`${node.type}-${idx}`} className="relative flex items-center gap-3">
+                <div key={`${node.type}-${idx}`} className="relative flex items-center gap-3 rounded px-1 py-0.5"
+                  style={isNext ? { backgroundColor: 'rgba(212,168,71,0.08)' } : undefined}
+                >
                   {/* Dot on rail */}
                   <div
                     className="absolute rounded-full"
@@ -172,11 +175,15 @@ export const PredictionsPanel = ({
           </div>
         </div>
       ) : (
-        <p className="text-xs text-gray-500">
-          {predictions?.dropoutRate
-            ? 'Waiting for more data...'
-            : 'Record eliminations to enable projections'}
-        </p>
+        <div className="flex flex-col items-center py-4 text-center">
+          <Clock size={24} className="text-gray-600 mb-2" />
+          <p className="text-sm text-gray-400">
+            {predictions?.dropoutRate
+              ? 'Waiting for more data...'
+              : 'No projections yet'}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Record eliminations to build the timeline</p>
+        </div>
       )}
 
       {/* Confidence */}
@@ -192,7 +199,14 @@ export const PredictionsPanel = ({
 
       {/* Your Blind-Out */}
       {blindOutInfo && heroStack > 0 && (
-        <div>
+        <div className="rounded-lg p-2.5" style={{
+          backgroundColor: blindOutInfo.levelsRemaining < 3
+            ? 'rgba(239,68,68,0.08)'
+            : 'transparent',
+          border: blindOutInfo.levelsRemaining < 3
+            ? '1px solid rgba(239,68,68,0.2)'
+            : 'none',
+        }}>
           <h3 className="text-sm font-medium uppercase tracking-wide mb-2" style={{ color: GOLD }}>
             Your Blind-Out
           </h3>
@@ -222,11 +236,16 @@ export const PredictionsPanel = ({
             <span>Progress</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="relative w-full bg-gray-700 rounded-full h-2.5">
             <div
-              className="h-2 rounded-full transition-all"
+              className="h-full rounded-full transition-all"
               style={{ width: `${Math.min(100, progress)}%`, backgroundColor: GOLD }}
             />
+            {progress > 20 && (
+              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-gray-900">
+                {Math.round(progress)}%
+              </span>
+            )}
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ArrowLeft, XCircle } from 'lucide-react';
+import { ArrowLeft, XCircle, AlertTriangle, Trophy } from 'lucide-react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { BlindTimerBar } from './BlindTimerBar';
 import { PredictionsPanel } from './PredictionsPanel';
@@ -142,39 +142,56 @@ export const TournamentView = ({ scale }) => {
 
         {/* Bottom controls / End tournament form */}
         {showEndForm ? (
-          <div className="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-lg p-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-400">Finish:</label>
-              <input
-                type="number"
-                value={finishPosition}
-                onChange={(e) => setFinishPosition(e.target.value)}
-                placeholder="#"
-                className="w-16 px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-              />
+          <div className="rounded-lg p-4 space-y-3" style={{
+            background: '#1f2937',
+            border: '1px solid rgba(239,68,68,0.3)',
+          }}>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle size={18} className="text-red-400" />
+              <span className="text-sm font-bold text-red-400 uppercase tracking-wide">End Tournament</span>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-400">Payout: $</label>
-              <input
-                type="number"
-                value={payoutAmount}
-                onChange={(e) => setPayoutAmount(e.target.value)}
-                placeholder="0"
-                className="w-20 px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Finish Position</label>
+                <div className="relative">
+                  <Trophy size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="number"
+                    value={finishPosition}
+                    onChange={(e) => setFinishPosition(e.target.value)}
+                    placeholder="e.g. 3"
+                    className="w-full pl-8 pr-3 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Payout</label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                  <input
+                    type="number"
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full pl-7 pr-3 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
             </div>
-            <button
-              onClick={handleConfirmEnd}
-              className="px-4 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowEndForm(false)}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
-            >
-              Cancel
-            </button>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={() => setShowEndForm(false)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmEnd}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Confirm End
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex justify-between items-center">

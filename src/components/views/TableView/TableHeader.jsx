@@ -81,16 +81,22 @@ export const TableHeader = ({
       {isTournament && tournamentBlinds && (
         <div
           onClick={onOpenTournament}
-          className="relative cursor-pointer overflow-hidden"
+          className="relative cursor-pointer overflow-hidden transition-colors"
           style={{
             background: 'rgba(212,168,71,0.08)',
             borderBottom: '1px solid rgba(212,168,71,0.25)',
+            borderLeft: `3px solid ${GOLD}`,
           }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212,168,71,0.14)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212,168,71,0.08)'}
         >
-          <div className="flex items-center justify-between px-4 py-1">
+          <div className="flex items-center justify-between px-4 py-1.5">
             <div className="flex items-center gap-3">
               {/* Level */}
-              <span className="text-xs font-bold" style={{ color: GOLD }}>
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{
+                color: GOLD,
+                backgroundColor: 'rgba(212,168,71,0.15)',
+              }}>
                 Lvl {(currentLevelIndex || 0) + 1}
               </span>
 
