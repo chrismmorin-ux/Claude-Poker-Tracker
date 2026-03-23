@@ -37,6 +37,8 @@ export {
   clearAllHands,
   getHandCount,
   handExists,
+  saveOnlineHand,
+  getHandsBySource,
 } from './handsStorage';
 
 // Session CRUD operations
@@ -53,6 +55,7 @@ export {
   getSessionHandCount,
   createSessionAtomic,
   endSessionAtomic,
+  getOrCreateOnlineSession,
 } from './sessionsStorage';
 
 // Player CRUD operations

@@ -13,6 +13,7 @@ export const SCREEN = {
   ANALYSIS: 'analysis',
   HAND_REPLAY: 'handReplay',
   TOURNAMENT: 'tournament',
+  ONLINE: 'online',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

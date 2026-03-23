@@ -62,6 +62,11 @@ export const SessionCard = ({ session, onDelete }) => {
             <h3 className="text-lg font-semibold text-gray-200">
               {formatDate(session.startTime)} - {session.venue} - {session.gameType} - {formatTime12Hour(session.startTime)}
             </h3>
+            {session.source === 'ignition' && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-800 text-emerald-300">
+                Online
+              </span>
+            )}
           </div>
 
           <div className="flex gap-6 text-sm text-gray-400 flex-wrap">

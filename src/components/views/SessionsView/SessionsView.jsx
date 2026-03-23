@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Play, Square, Download, Upload, PlayCircle, Calendar } from 'lucide-react';
+import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { SessionForm } from '../../ui/SessionForm';
 import { SessionCard } from '../../ui/SessionCard';
@@ -19,8 +19,10 @@ import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
 import { useToast } from '../../../contexts/ToastContext';
-import { useSession, useUI, useTournament } from '../../../contexts';
+import { useSession, useUI, useTournament, useAuth } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
+import useSyncBridge from '../../../hooks/useSyncBridge';
+import { GUEST_USER_ID } from '../../../utils/persistence/database';
 
 /**
  * SessionsView component
@@ -43,6 +45,11 @@ export const SessionsView = ({ scale }) => {
 
   // Build sessionState-like object for compatibility
   const sessionState = { currentSession, allSessions: sessionAllSessions };
+
+  // Online play sync
+  const { user } = useAuth();
+  const userId = user?.uid || GUEST_USER_ID;
+  const { isExtensionConnected, importedCount } = useSyncBridge(userId);
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -299,6 +306,32 @@ export const SessionsView = ({ scale }) => {
                 <Play size={18} />
                 New Session
               </button>
+            </div>
+          )}
+
+          {/* Online Play Card */}
+          {(isExtensionConnected || sessions.some(s => s.source === 'ignition')) && (
+            <div className="mb-6 bg-gray-800 border border-emerald-800 rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Wifi size={20} className="text-emerald-500" />
+                  <div>
+                    <h3 className="text-sm font-bold text-emerald-400">Online Play</h3>
+                    <p className="text-xs text-gray-400">
+                      {isExtensionConnected
+                        ? `Extension connected · ${importedCount} hands captured`
+                        : `${sessions.filter(s => s.source === 'ignition').length} online session(s) recorded`
+                      }
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCurrentScreen(SCREEN.ONLINE)}
+                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium"
+                >
+                  {isExtensionConnected ? 'View Live Table' : 'View Online Sessions'}
+                </button>
+              </div>
             </div>
           )}
 

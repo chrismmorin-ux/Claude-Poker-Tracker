@@ -5,7 +5,7 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v11
+ *   Database: "PokerTrackerDB" v12
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
@@ -34,6 +34,7 @@
  *   v8 → v9: Added rangeProfiles object store for cached Bayesian range estimates
  *   v9 → v10: Added exploitBriefings[] and dismissedBriefingIds[] to player records
  *   v10 → v11: Added tournaments object store for tournament state persistence
+ *   v11 → v12: Added source/tableId indexes to hands/sessions for online play integration
  */
 
 import { logger } from '../errorHandler';
@@ -44,7 +45,7 @@ import { GUEST_USER_ID } from '../../constants/authConstants';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 11;
+export const DB_VERSION = 12;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -535,6 +536,32 @@ export const initDB = async () => {
           tournamentsStore.createIndex('userId', 'userId', { unique: false });
           log('Tournaments object store and indexes created');
         }
+      }
+
+      // Migrate to v12: Add source field + index to hands and sessions for online play
+      if (oldVersion < 12) {
+        log('Upgrading to v12: Adding source indexes for online play');
+
+        // Add source index to hands store
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          const handsStore = transaction.objectStore(STORE_NAME);
+          if (!handsStore.indexNames.contains('source')) {
+            handsStore.createIndex('source', 'source', { unique: false });
+          }
+        }
+
+        // Add source index to sessions store
+        if (db.objectStoreNames.contains(SESSIONS_STORE_NAME)) {
+          const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+          if (!sessionsStore.indexNames.contains('source')) {
+            sessionsStore.createIndex('source', 'source', { unique: false });
+          }
+          if (!sessionsStore.indexNames.contains('tableId')) {
+            sessionsStore.createIndex('tableId', 'tableId', { unique: false });
+          }
+        }
+
+        log('v12 migration complete: source + tableId indexes added');
       }
     };
   });

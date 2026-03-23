@@ -22,6 +22,7 @@ import { PasswordResetView } from './components/views/PasswordResetView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
 import { TournamentView } from './components/views/TournamentView';
+import { OnlineView } from './components/views/OnlineView';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -62,6 +63,7 @@ const ViewRouter = () => {
     case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
     case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
     case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
+    case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
     default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
   }
 };

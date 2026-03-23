@@ -634,3 +634,95 @@ export const getSessionHandCount = async (sessionId) => {
     return 0;
   }
 };
+
+// =============================================================================
+// ONLINE SESSION OPERATIONS (for Ignition integration)
+// =============================================================================
+
+/**
+ * Get or create an online session for a specific table.
+ * Each Ignition table gets its own session, identified by tableId.
+ * Reuses existing session if one exists for this tableId.
+ *
+ * @param {string} tableId - Unique table identifier from extension
+ * @param {string} userId - User ID
+ * @returns {Promise<number>} Session ID
+ */
+export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) => {
+  try {
+    const db = await initDB();
+
+    // Look for existing session with this tableId
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
+      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+
+      // Check if tableId index exists (v12+)
+      let existingSession = null;
+      if (sessionsStore.indexNames.contains('tableId')) {
+        const tableIdIndex = sessionsStore.index('tableId');
+        const getRequest = tableIdIndex.get(tableId);
+
+        getRequest.onsuccess = (event) => {
+          existingSession = event.target.result;
+
+          if (existingSession && existingSession.userId === userId) {
+            // Reuse existing session
+            log(`Reusing online session ${existingSession.sessionId} for table ${tableId}`);
+            resolve(existingSession.sessionId);
+          } else {
+            // Create new session
+            createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
+          }
+        };
+
+        getRequest.onerror = () => {
+          // Index query failed — create new
+          createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
+        };
+      } else {
+        // No tableId index (pre-v12) — just create
+        createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
+      }
+
+      transaction.oncomplete = () => db.close();
+    });
+  } catch (error) {
+    logError('Error in getOrCreateOnlineSession:', error);
+    throw error;
+  }
+};
+
+function createOnlineSession(store, tableId, userId, resolve, reject) {
+  const sessionRecord = {
+    startTime: Date.now(),
+    endTime: null,
+    isActive: false, // Online sessions don't use active session tracking
+    venue: 'Ignition',
+    gameType: 'NL Holdem',
+    buyIn: null,
+    rebuyTransactions: [],
+    cashOut: null,
+    reUp: 0,
+    goal: null,
+    notes: null,
+    handCount: 0,
+    userId,
+    version: '1.4.0',
+    source: 'ignition',
+    tableId,
+  };
+
+  const addRequest = store.add(sessionRecord);
+
+  addRequest.onsuccess = (event) => {
+    const sessionId = event.target.result;
+    log(`Created online session ${sessionId} for table ${tableId}`);
+    resolve(sessionId);
+  };
+
+  addRequest.onerror = (event) => {
+    logError('Failed to create online session:', event.target.error);
+    reject(event.target.error);
+  };
+}

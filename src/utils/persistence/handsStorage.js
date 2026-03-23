@@ -419,3 +419,116 @@ export const handExists = async (handId) => {
     return false;
   }
 };
+
+// =============================================================================
+// ONLINE HAND OPERATIONS (for Ignition integration)
+// =============================================================================
+
+/**
+ * Save a hand from online play (Ignition extension).
+ * Unlike saveHand(), does NOT auto-link to active session — uses provided sessionId.
+ * Adds source: 'ignition' and generates display IDs.
+ *
+ * @param {Object} handData - Hand record from extension (gameState, cardState, seatPlayers)
+ * @param {number} sessionId - Online session ID (from getOrCreateOnlineSession)
+ * @param {string} userId - User ID
+ * @returns {Promise<number>} The auto-generated handId
+ */
+export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID) => {
+  try {
+    const db = await initDB();
+
+    // Calculate sessionHandNumber
+    let sessionHandNumber = null;
+    if (sessionId) {
+      const existingCount = await getSessionHandCount(sessionId);
+      sessionHandNumber = existingCount + 1;
+    }
+
+    const timestamp = handData.timestamp || Date.now();
+    const handDisplayId = sessionId
+      ? `S${sessionId}-H${sessionHandNumber}`
+      : `H${timestamp}`;
+
+    const handRecord = {
+      ...handData,
+      timestamp,
+      version: '1.3.0',
+      userId,
+      sessionId,
+      sessionHandNumber,
+      handDisplayId,
+      source: 'ignition',
+    };
+
+    // Strip extension-only metadata before validation
+    delete handRecord.captureId;
+    delete handRecord.capturedAt;
+
+    const validation = validateHandRecord(handRecord);
+    if (!validation.valid) {
+      logValidationErrors('saveOnlineHand', validation.errors);
+      throw new Error(`Invalid online hand: ${validation.errors.join(', ')}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.add(handRecord);
+
+      request.onsuccess = (event) => {
+        resolve(event.target.result);
+      };
+
+      request.onerror = (event) => {
+        logError('Failed to save online hand:', event.target.error);
+        reject(event.target.error);
+      };
+
+      transaction.oncomplete = () => db.close();
+    });
+  } catch (error) {
+    logError('Error in saveOnlineHand:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all hands for a specific source (e.g., 'ignition', 'live')
+ * Uses the source index added in v12 migration.
+ *
+ * @param {string} source - Data source ('live' | 'ignition')
+ * @param {string} userId - User ID
+ * @returns {Promise<Object[]>} Array of hand records
+ */
+export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
+  try {
+    const db = await initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const objectStore = transaction.objectStore(STORE_NAME);
+
+      // Use userId index and filter by source in memory
+      // (compound index userId_source would be ideal but source index is new)
+      const index = objectStore.index('userId');
+      const request = index.getAll(userId);
+
+      request.onsuccess = (event) => {
+        const hands = event.target.result.filter(h => h.source === source);
+        log(`Loaded ${hands.length} ${source} hands for user ${userId}`);
+        resolve(hands.map(normalizeHandRecord));
+      };
+
+      request.onerror = (event) => {
+        logError('Failed to load hands by source:', event.target.error);
+        reject(event.target.error);
+      };
+
+      transaction.oncomplete = () => db.close();
+    });
+  } catch (error) {
+    logError('Error in getHandsBySource:', error);
+    return [];
+  }
+};
