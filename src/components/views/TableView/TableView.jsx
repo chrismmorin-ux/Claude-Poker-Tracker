@@ -654,6 +654,7 @@ export const TableView = ({ scale }) => {
             nextActionSeat={selectedPlayers.length === 1 ? getNextActionSeat(selectedPlayers[0]) : null}
             getSeatPlayerName={getSeatPlayerName}
             liveEquity={liveEquity}
+            seatContributions={seatContributions}
           />
 
         </div>

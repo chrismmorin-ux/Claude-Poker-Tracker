@@ -9,7 +9,6 @@ import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise } from '../../../utils/potCalculator';
 import { getPositionName } from '../../../utils/positionUtils';
-import { getSeatContributions } from '../../../utils/potCalculator';
 import { useGame, useSettings, useUI, useCard } from '../../../contexts';
 import { CardSelectorPanel } from './CardSelectorPanel';
 
@@ -65,17 +64,14 @@ export const CommandStrip = ({
   getSeatPlayerName,
   // Live equity data
   liveEquity,
+  // Computed seat contributions (passed from TableView to avoid duplicate computation)
+  seatContributions,
 }) => {
   const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat } = useGame();
   const { settings, updateSetting } = useSettings();
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible } = useCard();
 
-  // Computed from context (previously passed as props)
-  const seatContributions = useMemo(
-    () => getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat),
-    [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
-  );
   const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
   const [customValue, setCustomValue] = useState('');
   const [sizingEditorOpen, setSizingEditorOpen] = useState(false);
