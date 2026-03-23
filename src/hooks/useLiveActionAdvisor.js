@@ -16,23 +16,7 @@ import { handVsRange } from '../utils/exploitEngine/equityCalculator';
 import { getPopulationPrior } from '../utils/rangeEngine/populationPriors';
 import { createRange } from '../utils/pokerCore/rangeMatrix';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
-
-// =========================================================================
-// POSITION MAPPING
-// =========================================================================
-
-/**
- * Map villain seat to approximate position category using dealer seat.
- * Seats after dealer: SB(+1), BB(+2), UTG(+3), ..., BTN(+0)
- */
-const getVillainPosition = (villainSeat, dealerSeat) => {
-  const dist = ((villainSeat - dealerSeat - 1 + 9) % 9); // 0=SB, 1=BB, 2=UTG...
-  if (dist === 0) return 'SB';
-  if (dist === 1) return 'BB';
-  if (dist <= 3) return 'EARLY';
-  if (dist <= 5) return 'MIDDLE';
-  return 'LATE';
-};
+import { getRangePositionCategory } from '../utils/positionUtils';
 
 // =========================================================================
 // BASELINE RANGE BUILDER
@@ -276,7 +260,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       villainRange = grids.noRaise?.open || grids.facedRaise?.coldCall || null;
     }
     if (!villainRange) {
-      const position = getVillainPosition(targetSeat, dealerSeat || 1);
+      const position = getRangePositionCategory(targetSeat, dealerSeat || 1);
       villainRange = buildBaselineRange(villainData.vpip, villainData.pfr, position);
     }
 
