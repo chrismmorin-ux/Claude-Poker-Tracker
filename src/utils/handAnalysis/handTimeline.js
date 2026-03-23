@@ -9,8 +9,8 @@
  * and the future range engine.
  */
 
-import { isPrimitiveAction, toPrimitive, PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
-import { BETTING_STREETS } from '../constants/gameConstants';
+import { isPrimitiveAction, toPrimitive, PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { BETTING_STREETS } from '../../constants/gameConstants';
 
 const NUM_SEATS = 9;
 

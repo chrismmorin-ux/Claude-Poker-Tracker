@@ -6,15 +6,15 @@
  * The hook (useHandReplayAnalysis) is now a thin orchestrator calling these.
  */
 
-import { getPositionName, getRangePositionCategory, isInPosition } from './positionUtils';
-import { parseBoard, parseAndEncode, getCardsForStreet } from './pokerCore/cardParser';
-import { analyzeBoardFromStrings } from './pokerCore/boardTexture';
-import { narrowByBoard } from './exploitEngine/postflopNarrower';
-import { segmentRange } from './exploitEngine/rangeSegmenter';
-import { buildSituationKey } from './exploitEngine/decisionAccumulator';
-import { handVsRange } from './exploitEngine/equityCalculator';
-import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../constants/primitiveActions';
-import { getPopulationPrior } from './rangeEngine/populationPriors';
+import { getPositionName, getRangePositionCategory, isInPosition } from '../positionUtils';
+import { parseBoard, parseAndEncode, getCardsForStreet } from '../pokerCore/cardParser';
+import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
+import { narrowByBoard } from '../exploitEngine/postflopNarrower';
+import { segmentRange } from '../exploitEngine/rangeSegmenter';
+import { buildSituationKey } from '../exploitEngine/decisionAccumulator';
+import { handVsRange } from '../exploitEngine/equityCalculator';
+import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
+import { getPopulationPrior } from '../rangeEngine/populationPriors';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
 
 /**

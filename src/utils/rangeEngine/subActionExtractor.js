@@ -8,7 +8,7 @@
  * - limpNoRaise: limped, no raise followed (saw flop unraised)
  */
 
-import { buildTimeline, getStreetTimeline } from '../handTimeline';
+import { buildTimeline, getStreetTimeline } from '../handAnalysis';
 import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { analyzeWithHindsight } from '../utils/hindsightAnalysis';
+import { analyzeWithHindsight } from '../utils/handAnalysis';
 
 /**
  * @param {string[]|null} villainCards - Villain's hole cards (null if not revealed)

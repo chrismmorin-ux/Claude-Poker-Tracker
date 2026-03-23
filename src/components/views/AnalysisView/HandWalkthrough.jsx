@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { getPositionName } from '../../../utils/positionUtils';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { STREET_LABELS } from '../../../constants/gameConstants';
-import { buildSeatNameMap } from '../../../utils/playerNameMap';
+import { buildSeatNameMap } from '../../../utils/handAnalysis';
 import { RangeGrid } from '../../ui/RangeGrid';
 
 const ActionBadge = ({ action }) => {

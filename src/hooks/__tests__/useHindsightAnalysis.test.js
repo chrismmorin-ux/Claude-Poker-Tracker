@@ -9,7 +9,7 @@ import { useHindsightAnalysis } from '../useHindsightAnalysis';
 
 // Mock the analysis function
 const mockAnalyzeWithHindsight = vi.fn();
-vi.mock('../../utils/hindsightAnalysis', () => ({
+vi.mock('../../utils/handAnalysis', () => ({
   analyzeWithHindsight: (...args) => mockAnalyzeWithHindsight(...args),
 }));
 

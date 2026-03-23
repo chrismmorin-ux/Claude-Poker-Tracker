@@ -18,7 +18,7 @@ import {
   didPlayerFaceRaise,
   getCbetInfo,
   findLastRaiser,
-} from './handTimeline';
+} from './handAnalysis';
 
 // =============================================================================
 // HELPERS

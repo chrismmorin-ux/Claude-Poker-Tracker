@@ -20,7 +20,7 @@ vi.mock('../../utils/pokerCore/cardParser', () => ({
 }));
 
 // Mock handTimeline's sortByPositionalOrder to pass through
-vi.mock('../../utils/handTimeline', () => ({
+vi.mock('../../utils/handAnalysis', () => ({
   sortByPositionalOrder: vi.fn((timeline) => [...timeline]),
 }));
 

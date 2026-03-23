@@ -10,7 +10,7 @@ import { getPositionName } from '../../../utils/positionUtils';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { STREET_LABELS_SHORT } from '../../../constants/gameConstants';
 import { EV_COLORS } from '../../../constants/designTokens';
-import { getPlayerName } from '../../../utils/playerNameMap';
+import { getPlayerName } from '../../../utils/handAnalysis';
 import { HeroCoachingCard } from './HeroCoachingCard';
 import { VillainAnalysisSection } from './VillainAnalysisSection';
 

@@ -10,7 +10,7 @@
  * when available since it uses actual range computations rather than heuristics.
  */
 
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 /**
  * Assess whether hero's action was +EV/-EV given their equity.

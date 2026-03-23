@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { initializeSeatRanges, analyzeTimelineAction } from '../utils/replayAnalysis';
+import { initializeSeatRanges, analyzeTimelineAction } from '../utils/handAnalysis';
 
 /**
  * @param {Object|null} selectedHand - The hand record

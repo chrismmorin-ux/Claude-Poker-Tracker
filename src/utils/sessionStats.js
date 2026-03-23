@@ -6,7 +6,7 @@
  */
 
 import { buildPlayerStats, derivePercentages, findPlayerSeat, classifyStyle } from './tendencyCalculations';
-import { buildTimeline, getStreetTimeline } from './handTimeline';
+import { buildTimeline, getStreetTimeline } from './handAnalysis';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
 
 /**

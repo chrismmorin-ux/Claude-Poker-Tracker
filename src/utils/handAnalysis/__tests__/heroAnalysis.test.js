@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from '../heroAnalysis';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 
 // ─── assessHeroEV ───────────────────────────────────────────────────────────
 

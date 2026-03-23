@@ -5,7 +5,7 @@
  * with position context for range engine consumption.
  */
 
-import { buildTimeline, getStreetTimeline, didPlayerFaceRaise } from '../handTimeline';
+import { buildTimeline, getStreetTimeline, didPlayerFaceRaise } from '../handAnalysis';
 import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
 import { PRIMITIVE_ACTIONS, SHOWDOWN_ACTIONS } from '../../constants/primitiveActions';

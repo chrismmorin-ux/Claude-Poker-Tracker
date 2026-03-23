@@ -7,8 +7,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getAllHands, getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
-import { buildTimeline, getStreetTimeline } from '../utils/handTimeline';
-import { getAvailableStreets } from '../utils/handReviewAnalyzer';
+import { buildTimeline, getStreetTimeline, getAvailableStreets } from '../utils/handAnalysis';
 import { getCardsForStreet } from '../utils/pokerCore/cardParser';
 
 export const useHandReview = (userId = GUEST_USER_ID) => {

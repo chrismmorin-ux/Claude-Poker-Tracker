@@ -3,7 +3,7 @@ import { usePlayer, useTendency, useSession, useUI } from '../../../contexts';
 import { useToast } from '../../../contexts/ToastContext';
 import { useHandReview } from '../../../hooks/useHandReview';
 import { useHandReplayAnalysis } from '../../../hooks/useHandReplayAnalysis';
-import { analyzeDecisionPoint } from '../../../utils/handReviewAnalyzer';
+import { analyzeDecisionPoint } from '../../../utils/handAnalysis';
 import { deleteHand, getSessionHandCount } from '../../../utils/persistence/index';
 import { SESSION_ACTIONS } from '../../../reducers/sessionReducer';
 import { SCREEN } from '../../../constants/uiConstants';

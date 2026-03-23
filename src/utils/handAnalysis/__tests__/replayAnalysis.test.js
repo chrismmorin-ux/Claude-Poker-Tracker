@@ -1,16 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 
 // Mock heavy dependencies
-vi.mock('../exploitEngine/equityCalculator', () => ({
+vi.mock('../../exploitEngine/equityCalculator', () => ({
   handVsRange: vi.fn().mockResolvedValue({ equity: 0.5 }),
 }));
 
-vi.mock('../exploitEngine/postflopNarrower', () => ({
+vi.mock('../../exploitEngine/postflopNarrower', () => ({
   narrowByBoard: vi.fn((range) => new Float64Array(range)),
 }));
 
-vi.mock('../exploitEngine/rangeSegmenter', () => ({
+vi.mock('../../exploitEngine/rangeSegmenter', () => ({
   segmentRange: vi.fn(() => ({
     buckets: {
       nuts: { pct: 10 },
@@ -22,15 +22,15 @@ vi.mock('../exploitEngine/rangeSegmenter', () => ({
   })),
 }));
 
-vi.mock('../exploitEngine/decisionAccumulator', () => ({
+vi.mock('../../exploitEngine/decisionAccumulator', () => ({
   buildSituationKey: vi.fn((...args) => args.join(':')),
 }));
 
-vi.mock('../pokerCore/boardTexture', () => ({
+vi.mock('../../pokerCore/boardTexture', () => ({
   analyzeBoardFromStrings: vi.fn(() => ({ texture: 'dry' })),
 }));
 
-vi.mock('../rangeEngine/populationPriors', () => ({
+vi.mock('../../rangeEngine/populationPriors', () => ({
   getPopulationPrior: vi.fn(() => new Float64Array(169).fill(0.1)),
 }));
 
@@ -41,7 +41,7 @@ vi.mock('../heroAnalysis', () => ({
 }));
 
 // Mock cardParser to return valid encoded values for test cards
-vi.mock('../pokerCore/cardParser', async (importOriginal) => {
+vi.mock('../../pokerCore/cardParser', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,

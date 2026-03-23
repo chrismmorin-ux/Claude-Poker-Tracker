@@ -10,7 +10,7 @@ import { getPositionName } from '../../../utils/positionUtils';
 import { LUCKY_COLORS } from '../../../constants/designTokens';
 import { useHindsightAnalysis } from '../../../hooks/useHindsightAnalysis';
 import { getCardsForStreet } from '../../../utils/pokerCore/cardParser';
-import { getPlayerName } from '../../../utils/playerNameMap';
+import { getPlayerName } from '../../../utils/handAnalysis';
 import { RangeGrid } from '../../ui/RangeGrid';
 import { SegmentationBar } from '../../ui/SegmentationBar';
 

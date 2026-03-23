@@ -10,9 +10,9 @@
  * C. Structural Factors (0.25) — hand complexity and pot size
  */
 
-import { BETTING_STREETS } from '../constants/gameConstants';
-import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../constants/primitiveActions';
-import { getRangePositionCategory } from './positionUtils';
+import { BETTING_STREETS } from '../../constants/gameConstants';
+import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
+import { getRangePositionCategory } from '../positionUtils';
 
 /**
  * Build approximate situationKeys from action sequence without full board texture.

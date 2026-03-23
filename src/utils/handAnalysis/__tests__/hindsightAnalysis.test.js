@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 
 // Mock the equity calculator before importing
-vi.mock('../exploitEngine/equityCalculator', () => ({
+vi.mock('../../exploitEngine/equityCalculator', () => ({
   handVsRange: vi.fn(),
 }));
 
 // Mock cardParser encoding functions
-vi.mock('../pokerCore/cardParser', () => ({
+vi.mock('../../pokerCore/cardParser', () => ({
   parseAndEncode: vi.fn((str) => {
     // Simple deterministic encoding for test cards
     const cards = { 'Ah': 0, 'Kd': 1, 'Qs': 2, 'Jc': 3, 'Td': 4, '9h': 5, '8s': 6, '2c': 7 };
@@ -17,7 +17,7 @@ vi.mock('../pokerCore/cardParser', () => ({
 }));
 
 import { analyzeWithHindsight } from '../hindsightAnalysis';
-import { handVsRange } from '../exploitEngine/equityCalculator';
+import { handVsRange } from '../../exploitEngine/equityCalculator';
 
 const heroRange = new Float64Array(169).fill(1 / 169);
 

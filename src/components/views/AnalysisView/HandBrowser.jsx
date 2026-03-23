@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllSessions, GUEST_USER_ID } from '../../../utils/persistence/index';
 import { BETTING_STREETS } from '../../../constants/gameConstants';
-import { computeHandSignificance } from '../../../utils/handSignificance';
+import { computeHandSignificance } from '../../../utils/handAnalysis';
 
 const formatTime = (timestamp) => {
   if (!timestamp) return '';

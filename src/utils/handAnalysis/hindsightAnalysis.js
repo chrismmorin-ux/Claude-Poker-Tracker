@@ -5,9 +5,9 @@
  * runout equity on full board, and lucky/unlucky assessment.
  */
 
-import { handVsRange } from './exploitEngine/equityCalculator';
-import { parseBoard, parseAndEncode } from './pokerCore/cardParser';
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { handVsRange } from '../exploitEngine/equityCalculator';
+import { parseBoard, parseAndEncode } from '../pokerCore/cardParser';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 /**
  * Analyze a villain's action knowing their actual cards and the full runout.
