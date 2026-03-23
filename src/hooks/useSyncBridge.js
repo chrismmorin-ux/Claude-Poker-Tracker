@@ -139,6 +139,7 @@ const useSyncBridge = (userId) => {
         if (key !== lastHandStateKey.current) {
           lastHandStateKey.current = key;
           setLiveHandState(event.data);
+          console.log('[SyncBridge] Hand state received:', event.data.currentStreet, 'actions:', event.data.actionSequence?.length, 'hero:', event.data.holeCards);
         }
       }
     };

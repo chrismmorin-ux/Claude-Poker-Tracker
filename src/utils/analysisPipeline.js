@@ -43,8 +43,8 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     }
     rangeSummary = getRangeWidthSummary(rangeProfile);
     subActionSummary = getSubActionSummary(rangeProfile);
-  } catch (_) {
-    // Range profile is non-critical
+  } catch (e) {
+    console.warn('analysisPipeline: range profile failed', e.message);
   }
 
   // Weaknesses
@@ -64,8 +64,8 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       pips: rangeProfile?.pips || null,
       positionStats,
     });
-  } catch (_) {
-    // Weakness detection is non-critical
+  } catch (e) {
+    console.warn('analysisPipeline: weakness detection failed', e.message);
   }
 
   // Exploits
@@ -87,8 +87,8 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       weaknesses,
     };
     briefings = buildBriefings(exploits, briefingContext);
-  } catch (_) {
-    // Briefing generation is non-critical
+  } catch (e) {
+    console.warn('analysisPipeline: briefing generation failed', e.message);
   }
 
   return {

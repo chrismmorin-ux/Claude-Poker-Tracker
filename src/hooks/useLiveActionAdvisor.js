@@ -212,6 +212,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
   const compute = useCallback(async () => {
     if (!liveHandState || !tendencyMap) {
+      console.log('[LiveActionAdvisor] Skip: no handState or tendencyMap', { hasHS: !!liveHandState, hasTM: !!tendencyMap, tmKeys: tendencyMap ? Object.keys(tendencyMap) : [] });
       setAdvice(null);
       return;
     }
@@ -223,19 +224,26 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
     // Skip if not in a live hand
     if (!state || state === 'IDLE' || state === 'COMPLETE') {
+      console.log('[LiveActionAdvisor] Skip: not live hand, state=', state);
       setAdvice(null);
       return;
     }
 
     // Skip if no hero cards
-    if (!holeCards || !holeCards[0] || !holeCards[1]) return;
+    if (!holeCards || !holeCards[0] || !holeCards[1]) {
+      console.log('[LiveActionAdvisor] Skip: no hero cards', holeCards);
+      return;
+    }
 
     // Detect situation
     const { situation, villainSeat, villainAction, villainBet } = detectSituation(
       actionSequence, heroSeat, currentStreet, pfAggressor
     );
 
-    if (situation === 'waiting' || situation === 'hero_acted') return;
+    if (situation === 'waiting' || situation === 'hero_acted') {
+      console.log('[LiveActionAdvisor] Skip: situation=', situation, 'street=', currentStreet, 'actions=', actionSequence?.length);
+      return;
+    }
 
     // Find target villain
     let targetSeat = villainSeat;
@@ -243,8 +251,12 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       const activeSeatNumbers = liveHandState.activeSeatNumbers || [];
       const foldedSet = new Set(liveHandState.foldedSeats || []);
       targetSeat = activeSeatNumbers.find(s => s !== heroSeat && !foldedSet.has(s));
+      console.log('[LiveActionAdvisor] No villain from action, fallback target=', targetSeat, 'active=', activeSeatNumbers, 'folded=', liveHandState.foldedSeats);
     }
-    if (!targetSeat) return;
+    if (!targetSeat) {
+      console.log('[LiveActionAdvisor] Skip: no target seat');
+      return;
+    }
 
     // Debounce
     const computeKey = `${liveHandState.handNumber}:${currentStreet}:${actionSequence?.length}:${targetSeat}`;
@@ -253,6 +265,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
     // Look up villain data (Fix 3: allow zero-sample — baseline range handles it)
     const villainData = tendencyMap[String(targetSeat)] || {};
+    console.log('[LiveActionAdvisor] Computing:', { street: currentStreet, situation, villain: targetSeat, vpip: villainData.vpip, sample: villainData.sampleSize, pot });
     const confidence = (villainData.sampleSize || 0) >= 50 ? 'high'
       : (villainData.sampleSize || 0) >= 20 ? 'medium' : 'low';
 
@@ -348,6 +361,11 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         villainBet: villainBet || 0,
         playerStats,
         timestamp: Date.now(),
+      });
+      console.log('[LiveActionAdvisor] Advice computed:', {
+        street: currentStreet, situation, villain: targetSeat,
+        heroEq: Math.round(result.heroEquity * 100) + '%',
+        recs: result.recommendations.map(r => `${r.action}:${r.ev.toFixed(2)}`),
       });
     } catch (e) {
       console.warn('[LiveActionAdvisor] Error:', e.message);

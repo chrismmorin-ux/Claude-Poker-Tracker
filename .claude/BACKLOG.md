@@ -59,7 +59,7 @@ Between-session analysis screen. Two tabs: Player Analysis and Hand Review.
 |------|--------|-------------|---------------|
 | 3a | DONE | Analysis view component | `src/components/views/AnalysisView/index.jsx`: tab router (Player Analysis / Hand Review) |
 | 3b | DONE | Navigation + routing | `SCREEN.ANALYSIS` in uiReducer, sidebar nav button, ViewRouter case |
-| 3c | DONE | Range grid panel | Reuses `RangeGrid` + `useRangeProfile`. Position/action pills, 20-hand threshold gate |
+| 3c | DONE | Range grid panel | Reuses `RangeGrid` + range data from TendencyContext. Position/action pills, 20-hand threshold gate |
 | 3d | DONE | Player/session selection UI | Player dropdown from `allPlayers`, session dropdown from `allSessions` |
 | 3e | DONE | Board Equity panel | Board + hero card input, Monte Carlo equity via `useActionAdvisor` |
 | 3f | DONE | Action Recommendations panel | Ranked actions with EV/reasoning via `getActionAdvice()` pipeline |
@@ -92,10 +92,8 @@ Interactive range tools. Display layer exists (RangeGrid in StatsView + Analysis
 |-------|--------|-------------|-------|
 | 1 | READY | Interactive range matrix UI | Extends existing `RangeGrid` (display-only → click-to-toggle). `rangeMatrix.js` provides data layer. |
 | 2 | DONE | Equity calculator | `equityCalculator.js` — Monte Carlo, chunked async |
-| 3 | READY | Range vs range comparison UI | `rangeVsRange()` exists but is orphaned (never imported). Needs UI to surface it. |
+| 3 | N/A | ~~Range vs range comparison UI~~ | `rangeVsRange()` removed from codebase. Re-evaluate if needed. |
 | 4 | BLOCKED | Save/load custom ranges + presets | Needs interactive range matrix UI first (Phase 1) |
-
-**Note:** `rangeVsRange()` in exploit engine is an orphaned export — wire or delete.
 
 ---
 
@@ -235,7 +233,7 @@ Ideas that need design work before they become backlog items.
 | Swipe gestures | Swipe left on seat = fold, swipe right = call/check, tap = action panel | Hand entry speed (item 14) |
 | Template hands | Quick-entry templates: "limped pot", "standard open + 1 caller", etc. | Hand entry speed (item 14) |
 | More hand review rules | Expand beyond 7 rules: pot odds vs call size, SPR checks, multi-way adjustments | Item 12.3 |
-| Orphaned engine cleanup | Delete or wire `rangeVsRange()`, `calcBluffEV()` | Item 5 or standalone |
+| ~~Orphaned engine cleanup~~ | ~~`calcBluffEV()` is actively used (briefingBuilder.js, decisionTreeBuilder.js — 5+ call sites). `rangeVsRange` already removed.~~ | N/A |
 | Multi-villain equity | Compute equity vs multiple non-folded opponents simultaneously (currently single-villain upper bound) | useLiveEquity refactor |
 
 ---
@@ -392,6 +390,23 @@ Structural improvements identified by CTO architecture review. Not urgent but wi
 | CH-4 | P2 | READY | Remove raw `dispatchUi` from UIContext public API | Expose named action dispatchers instead of raw dispatch. Prevents consumers from dispatching arbitrary actions. |
 | CH-5 | P2 | DONE | Use `getHandCount()` early-exit in usePlayerTendencies | O(1) count check skips expensive getAllHands() when nothing changed. |
 | CH-6 | P3 | READY | Add structured error logging to usePlayerTendencies | Catch blocks currently swallow errors silently. Add structured logging for debugging tendency computation failures. |
+
+---
+
+## 20. Ignition Extension Audit (P1-P3) — CTO Audit 2026-03-23
+
+Cleanup and quality findings from CTO architecture review of `ignition-poker-tracker/`.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| IG-1 | P1 | DONE | Delete dead DOM probe file | `capture-dom-probe.js` (316 lines) never loaded — spike concluded WS-only. |
+| IG-2 | P1 | DONE | Fix ReferenceError in storage-writer | `captureCounter` undeclared variable in `clearCapturedHands()`. |
+| IG-3 | P1 | DONE | Remove unused `mapIgnitionAction` from hand-format.js | Dead code — actual decoding uses `protocol.js:decodeAction()` bitmask. |
+| IG-4 | P2 | DONE | Remove unused `saveTableStates`/`getTableStates` from storage-writer.js | Dead exports never called. |
+| IG-5 | P2 | DONE | Consolidate PID constants in protocol.js | `CO_TABLE_INFO`, `CO_OPTION_INFO`, `PLAY_SEAT_INFO` added to PID; string literals replaced; duplicate `CO_LAST_HAND_NUMBER` removed. |
+| IG-6 | P2 | DONE | Fix misleading popup stat label | "WS Messages" renamed to "Pipeline Hands" — was showing `completedHands`, same as "Hands Captured". |
+| IG-7 | P2 | READY | Add unit tests for extension pure-function modules | Zero test coverage. `protocol.js`, `hand-format.js`, `hand-state-machine.js` are all pure functions. |
+| IG-8 | P3 | READY | Consolidate extension version string | Three different versions: service-worker.js "0.3.0", app-bridge.js "0.5.0", manifest.json "0.6.0". |
 
 ---
 

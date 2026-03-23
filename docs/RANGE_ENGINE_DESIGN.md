@@ -684,7 +684,6 @@ src/utils/rangeExploits/       // SEPARATE from analysis
     betSizing.test.js
 
 src/hooks/
-  useRangeProfile.js          // Load/compute range profiles
   useBetSizing.js             // Bet sizing quick-click calculations
 
 src/components/ui/

@@ -137,7 +137,7 @@ export const initDB = async () => {
       }
 
       // Migrate to v3: Add venue, gameType, and convert rebuy to rebuyTransactions
-      if (oldVersion < 3) {
+      if (oldVersion < 3 && oldVersion > 0) {
         log('Upgrading to v3: Adding venue, gameType, and rebuyTransactions');
 
         const transaction = event.target.transaction;
@@ -191,7 +191,7 @@ export const initDB = async () => {
       }
 
       // Migrate to v4: Add cashOut field
-      if (oldVersion < 4) {
+      if (oldVersion < 4 && oldVersion > 0) {
         log('Upgrading to v4: Adding cashOut field');
 
         const transaction = event.target.transaction;
@@ -262,7 +262,7 @@ export const initDB = async () => {
 
         const transaction = event.target.transaction;
 
-        // Add userId index to hands store
+        // Add userId indexes to all stores (synchronous, always needed)
         if (db.objectStoreNames.contains(STORE_NAME)) {
           const handsStore = transaction.objectStore(STORE_NAME);
           if (!handsStore.indexNames.contains('userId')) {
@@ -273,25 +273,8 @@ export const initDB = async () => {
             handsStore.createIndex('userId_timestamp', ['userId', 'timestamp'], { unique: false });
             log('Created userId_timestamp compound index on hands store');
           }
-
-          // Migrate existing hands to have userId = 'guest'
-          const handsCursor = handsStore.openCursor();
-          handsCursor.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              const record = cursor.value;
-              if (!record.userId) {
-                record.userId = GUEST_USER_ID;
-                cursor.update(record);
-              }
-              cursor.continue();
-            } else {
-              log('v7 migration: hands userId added');
-            }
-          };
         }
 
-        // Add userId index to sessions store
         if (db.objectStoreNames.contains(SESSIONS_STORE_NAME)) {
           const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
           if (!sessionsStore.indexNames.contains('userId')) {
@@ -302,25 +285,8 @@ export const initDB = async () => {
             sessionsStore.createIndex('userId_startTime', ['userId', 'startTime'], { unique: false });
             log('Created userId_startTime compound index on sessions store');
           }
-
-          // Migrate existing sessions to have userId = 'guest'
-          const sessionsCursor = sessionsStore.openCursor();
-          sessionsCursor.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              const record = cursor.value;
-              if (!record.userId) {
-                record.userId = GUEST_USER_ID;
-                cursor.update(record);
-              }
-              cursor.continue();
-            } else {
-              log('v7 migration: sessions userId added');
-            }
-          };
         }
 
-        // Add userId index to players store
         if (db.objectStoreNames.contains(PLAYERS_STORE_NAME)) {
           const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
           if (!playersStore.indexNames.contains('userId')) {
@@ -331,83 +297,118 @@ export const initDB = async () => {
             playersStore.createIndex('userId_name', ['userId', 'name'], { unique: false });
             log('Created userId_name compound index on players store');
           }
+        }
+
+        // Cursor-based data migrations — only needed when upgrading existing data
+        // On fresh install (oldVersion=0) stores are empty, so these are no-ops
+        if (oldVersion > 0) {
+          // Migrate existing hands to have userId = 'guest'
+          if (db.objectStoreNames.contains(STORE_NAME)) {
+            const handsStore = transaction.objectStore(STORE_NAME);
+            const handsCursor = handsStore.openCursor();
+            handsCursor.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                const record = cursor.value;
+                if (!record.userId) {
+                  record.userId = GUEST_USER_ID;
+                  cursor.update(record);
+                }
+                cursor.continue();
+              } else {
+                log('v7 migration: hands userId added');
+              }
+            };
+          }
+
+          // Migrate existing sessions to have userId = 'guest'
+          if (db.objectStoreNames.contains(SESSIONS_STORE_NAME)) {
+            const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+            const sessionsCursor = sessionsStore.openCursor();
+            sessionsCursor.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                const record = cursor.value;
+                if (!record.userId) {
+                  record.userId = GUEST_USER_ID;
+                  cursor.update(record);
+                }
+                cursor.continue();
+              } else {
+                log('v7 migration: sessions userId added');
+              }
+            };
+          }
 
           // Migrate existing players to have userId = 'guest'
-          const playersCursor = playersStore.openCursor();
-          playersCursor.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              const record = cursor.value;
-              if (!record.userId) {
-                record.userId = GUEST_USER_ID;
-                cursor.update(record);
+          if (db.objectStoreNames.contains(PLAYERS_STORE_NAME)) {
+            const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
+            const playersCursor = playersStore.openCursor();
+            playersCursor.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                const record = cursor.value;
+                if (!record.userId) {
+                  record.userId = GUEST_USER_ID;
+                  cursor.update(record);
+                }
+                cursor.continue();
+              } else {
+                log('v7 migration: players userId added');
               }
-              cursor.continue();
-            } else {
-              log('v7 migration: players userId added');
-            }
-          };
-        }
+            };
+          }
 
-        // Add userId index to settings store
-        // Settings changes from singleton (id:1) to per-user (id: `settings_${userId}`)
-        if (db.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
-          const settingsStore = transaction.objectStore(SETTINGS_STORE_NAME);
-
-          // Migrate existing settings record (id: 1) to guest user
-          const settingsCursor = settingsStore.openCursor();
-          settingsCursor.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              const record = cursor.value;
-              // Migrate old singleton record (id: 1) to guest user format
-              if (record.id === 1 && !record.userId) {
-                // Delete old record with id: 1
-                settingsStore.delete(1);
-                // Create new record with userId-based key
-                record.id = `settings_${GUEST_USER_ID}`;
-                record.userId = GUEST_USER_ID;
-                settingsStore.add(record);
-                log('v7 migration: settings migrated to userId-based key');
+          // Settings: migrate singleton (id:1) to per-user (id: `settings_${userId}`)
+          if (db.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
+            const settingsStore = transaction.objectStore(SETTINGS_STORE_NAME);
+            const settingsCursor = settingsStore.openCursor();
+            settingsCursor.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                const record = cursor.value;
+                if (record.id === 1 && !record.userId) {
+                  settingsStore.delete(1);
+                  record.id = `settings_${GUEST_USER_ID}`;
+                  record.userId = GUEST_USER_ID;
+                  settingsStore.add(record);
+                  log('v7 migration: settings migrated to userId-based key');
+                }
+                cursor.continue();
+              } else {
+                log('v7 migration: settings userId added');
               }
-              cursor.continue();
-            } else {
-              log('v7 migration: settings userId added');
-            }
-          };
-        }
+            };
+          }
 
-        // ActiveSession changes from singleton (id:1) to per-user (id: `active_${userId}`)
-        if (db.objectStoreNames.contains(ACTIVE_SESSION_STORE_NAME)) {
-          const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-
-          const activeCursor = activeStore.openCursor();
-          activeCursor.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              const record = cursor.value;
-              // Migrate old singleton record (id: 1) to guest user format
-              if (record.id === 1 && !record.userId) {
-                // Delete old record with id: 1
-                activeStore.delete(1);
-                // Create new record with userId-based key
-                record.id = `active_${GUEST_USER_ID}`;
-                record.userId = GUEST_USER_ID;
-                activeStore.add(record);
-                log('v7 migration: activeSession migrated to userId-based key');
+          // ActiveSession: migrate singleton (id:1) to per-user (id: `active_${userId}`)
+          if (db.objectStoreNames.contains(ACTIVE_SESSION_STORE_NAME)) {
+            const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
+            const activeCursor = activeStore.openCursor();
+            activeCursor.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) {
+                const record = cursor.value;
+                if (record.id === 1 && !record.userId) {
+                  activeStore.delete(1);
+                  record.id = `active_${GUEST_USER_ID}`;
+                  record.userId = GUEST_USER_ID;
+                  activeStore.add(record);
+                  log('v7 migration: activeSession migrated to userId-based key');
+                }
+                cursor.continue();
+              } else {
+                log('v7 migration: activeSession userId added');
               }
-              cursor.continue();
-            } else {
-              log('v7 migration: activeSession userId added');
-            }
-          };
+            };
+          }
         }
 
         log('v7 migration initiated for all stores');
       }
 
       // Migrate to v8: Add actionSequence field to hands
-      if (oldVersion < 8) {
+      if (oldVersion < 8 && oldVersion > 0) {
         log('Upgrading to v8: Adding actionSequence field to hands');
 
         const transaction = event.target.transaction;
@@ -495,7 +496,7 @@ export const initDB = async () => {
       }
 
       // Migrate to v10: Add exploitBriefings and dismissedBriefingIds to players
-      if (oldVersion < 10) {
+      if (oldVersion < 10 && oldVersion > 0) {
         log('Upgrading to v10: Adding exploitBriefings to players');
 
         const transaction = event.target.transaction;
@@ -541,6 +542,8 @@ export const initDB = async () => {
       // Migrate to v12: Add source field + index to hands and sessions for online play
       if (oldVersion < 12) {
         log('Upgrading to v12: Adding source indexes for online play');
+
+        const transaction = event.target.transaction;
 
         // Add source index to hands store
         if (db.objectStoreNames.contains(STORE_NAME)) {

@@ -11,7 +11,7 @@ Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 - **Views**: 13 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online, Login, Signup, PasswordReset) + Showdown overlay
 - **Persistence**: IndexedDB v12 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments)
 - **UI Components**: 37 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
-- **Hooks**: 32 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useOnlineAnalysis, useHandReplayAnalysis, useTournamentPersistence)
+- **Hooks**: 31 custom hooks in `src/hooks/` (including usePlayerTendencies, useOnlineAnalysis, useHandReplayAnalysis, useTournamentPersistence)
 - **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (6 modules)
 - **Exploit Engine**: `src/utils/exploitEngine/` - 13 modules (~2,878 LOC): exploit suggestions, range matrix, action advisor, fold equity, range segmentation, board texture, postflop narrowing
 

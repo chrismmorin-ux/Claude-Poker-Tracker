@@ -8,7 +8,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { isFoldAction } from '../constants/gameConstants';
-import { sortByPositionalOrder } from '../utils/handAnalysis';
+import { sortByPositionalOrder } from '../utils/handAnalysis/handTimeline';
 import { getCardsForStreet } from '../utils/pokerCore/cardParser';
 
 /**

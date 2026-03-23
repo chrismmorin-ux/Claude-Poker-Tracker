@@ -20,7 +20,7 @@ vi.mock('../../utils/pokerCore/cardParser', () => ({
 }));
 
 // Mock handTimeline's sortByPositionalOrder to pass through
-vi.mock('../../utils/handAnalysis', () => ({
+vi.mock('../../utils/handAnalysis/handTimeline', () => ({
   sortByPositionalOrder: vi.fn((timeline) => [...timeline]),
 }));
 
@@ -44,35 +44,36 @@ const makeHand = () => ({
   cardState: { communityCards: ['Ah', 'Kd', 'Qs', '5c', '2h'] },
 });
 
+// Helper: renderHook with stable references to prevent infinite re-render loops.
+// Creating new objects inside renderHook's callback causes new refs every render,
+// which triggers useMemo/useEffect cycles that never stabilize.
+const renderReplayHook = (timelineOverride, handOverride, analysis = null) => {
+  const timeline = timelineOverride ?? makeTimeline();
+  const hand = handOverride ?? makeHand();
+  return renderHook(() => useReplayState(timeline, hand, analysis));
+};
+
 describe('useReplayState', () => {
   describe('initial state', () => {
     it('starts at index 0 when timeline has actions', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
       expect(result.current.currentActionIndex).toBe(0);
     });
 
     it('starts at -1 for empty timeline', () => {
-      const { result } = renderHook(() =>
-        useReplayState([], makeHand(), null)
-      );
+      const { result } = renderReplayHook([], makeHand());
       expect(result.current.currentActionIndex).toBe(-1);
     });
 
     it('returns correct available streets', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
       expect(result.current.availableStreets).toEqual(['preflop', 'flop', 'turn']);
     });
   });
 
   describe('stepping', () => {
     it('stepForward increments currentActionIndex', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
       expect(result.current.currentActionIndex).toBe(0);
 
       act(() => result.current.stepForward());
@@ -83,9 +84,7 @@ describe('useReplayState', () => {
     });
 
     it('stepBack decrements currentActionIndex', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.stepForward());
       act(() => result.current.stepForward());
@@ -97,9 +96,7 @@ describe('useReplayState', () => {
 
     it('stepForward clamps at max index', () => {
       const timeline = makeTimeline();
-      const { result } = renderHook(() =>
-        useReplayState(timeline, makeHand(), null)
-      );
+      const { result } = renderReplayHook(timeline);
 
       // Step to end
       for (let i = 0; i < timeline.length + 5; i++) {
@@ -109,9 +106,7 @@ describe('useReplayState', () => {
     });
 
     it('stepBack clamps at 0', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.stepBack());
       expect(result.current.currentActionIndex).toBe(0);
@@ -120,9 +115,7 @@ describe('useReplayState', () => {
 
   describe('jumpToStreet', () => {
     it('jumps to flop start', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.jumpToStreet('flop'));
       expect(result.current.currentActionIndex).toBe(3); // first flop action
@@ -130,9 +123,7 @@ describe('useReplayState', () => {
     });
 
     it('jumps to turn start', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.jumpToStreet('turn'));
       expect(result.current.currentActionIndex).toBe(5);
@@ -140,9 +131,7 @@ describe('useReplayState', () => {
     });
 
     it('does nothing for non-existent street', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.jumpToStreet('river'));
       // Should stay at initial index since river doesn't exist in this timeline
@@ -152,9 +141,7 @@ describe('useReplayState', () => {
 
   describe('jumpToStart / jumpToEnd', () => {
     it('jumpToStart goes to index 0', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.stepForward());
       act(() => result.current.stepForward());
@@ -164,9 +151,7 @@ describe('useReplayState', () => {
 
     it('jumpToEnd goes to last index', () => {
       const timeline = makeTimeline();
-      const { result } = renderHook(() =>
-        useReplayState(timeline, makeHand(), null)
-      );
+      const { result } = renderReplayHook(timeline);
 
       act(() => result.current.jumpToEnd());
       expect(result.current.currentActionIndex).toBe(timeline.length - 1);
@@ -175,17 +160,13 @@ describe('useReplayState', () => {
 
   describe('villain selection', () => {
     it('auto-selects villain when current action is by a non-hero seat', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
       // First action is seat 3 (not hero seat 5)
       expect(result.current.selectedVillainSeat).toBe(3);
     });
 
     it('persists last villain across hero actions', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       // Step to seat 5 action (hero) — index 1
       act(() => result.current.stepForward());
@@ -194,9 +175,7 @@ describe('useReplayState', () => {
     });
 
     it('pinned villain overrides auto-selection', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.selectVillain(1));
       expect(result.current.pinnedVillainSeat).toBe(1);
@@ -204,9 +183,7 @@ describe('useReplayState', () => {
     });
 
     it('toggling same pinned seat unpins it', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       act(() => result.current.selectVillain(1));
       expect(result.current.pinnedVillainSeat).toBe(1);
@@ -218,9 +195,7 @@ describe('useReplayState', () => {
 
   describe('seat states', () => {
     it('tracks folded seats', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       // Advance past the fold action (index 2)
       act(() => result.current.stepForward());
@@ -231,9 +206,7 @@ describe('useReplayState', () => {
     });
 
     it('accumulates bet totals', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       // Jump to end to see all bets
       act(() => result.current.jumpToEnd());
@@ -245,9 +218,7 @@ describe('useReplayState', () => {
 
   describe('pot calculation', () => {
     it('includes blinds in pot', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
       // At index 0, pot should include blinds (1+2=3) + first action amount
       expect(result.current.potAtPoint).toBeGreaterThanOrEqual(3);
     });
@@ -255,9 +226,7 @@ describe('useReplayState', () => {
 
   describe('reveal toggle', () => {
     it('toggles seat reveal on and off', () => {
-      const { result } = renderHook(() =>
-        useReplayState(makeTimeline(), makeHand(), null)
-      );
+      const { result } = renderReplayHook();
 
       expect(result.current.revealedSeats.has(3)).toBe(false);
 

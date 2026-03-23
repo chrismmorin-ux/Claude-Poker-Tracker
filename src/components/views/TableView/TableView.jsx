@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { getActionsForSeatOnStreet, hasBetOrRaiseOnStreet, getPreflopAggressor } from '../../../utils/sequenceUtils';
+import { getActionsForSeatOnStreet, getPreflopAggressor } from '../../../utils/sequenceUtils';
 import { getSeatContributions } from '../../../utils/potCalculator';
 import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
@@ -395,10 +395,6 @@ export const TableView = ({ scale }) => {
     dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
   };
 
-  const handleClearSelection = () => {
-    setSelectedPlayers([]);
-  };
-
   // Auto-advance to next action seat after recording an action
   const handleAdvanceSeat = useCallback((currentSeat) => {
     // Use setTimeout so the reducer processes the action first,
@@ -426,7 +422,6 @@ export const TableView = ({ scale }) => {
   // HE-1a: Batch action handlers
   const remainingSeats = getRemainingSeats();
   const remainingCount = remainingSeats.length;
-  const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
 
   const handleRestFold = () => {
     const count = restFold();
@@ -455,10 +450,6 @@ export const TableView = ({ scale }) => {
     dispatchCard,
     dispatchUi
   );
-
-  const handleCloseCardSelector = useCallback(() => {
-    dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
-  }, [dispatchUi]);
 
   return (
     <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
@@ -643,35 +634,20 @@ export const TableView = ({ scale }) => {
 
           {/* Command Strip - unified right panel */}
           <CommandStrip
-            currentStreet={currentStreet}
             onStreetChange={handleStreetChange}
-            onNextStreet={nextStreet}
             onClearStreet={handleClearStreetWithAutoSelect}
-            selectedPlayers={selectedPlayers}
-            dealerButtonSeat={dealerButtonSeat}
-            onClearSelection={handleClearSelection}
             onToggleAbsent={toggleAbsent}
             onClearSeatActions={clearSeatActions}
             onUndoLastAction={undoLastAction}
             onAdvanceSeat={handleAdvanceSeat}
             remainingCount={remainingCount}
-            canCheckAround={canCheckAround}
             onRestFold={handleRestFold}
             onCheckAround={handleCheckAround}
             onFoldToInvested={handleFoldToInvested}
             onNextHand={handleNextHandWithToast}
             onResetHand={handleResetHandWithToast}
-            showCardSelector={showCardSelector}
-            communityCards={communityCards}
-            holeCards={holeCards}
-            holeCardsVisible={holeCardsVisible}
-            cardSelectorType={cardSelectorType}
-            highlightedBoardIndex={highlightedBoardIndex}
             onSelectCard={selectCard}
-            onCloseCardSelector={handleCloseCardSelector}
             getCardStreet={getCardStreet}
-            setCardSelectorType={setCardSelectorType}
-            setHighlightedCardIndex={setHighlightedCardIndex}
             onToggleHoleVisibility={handleToggleHoleCardsVisibility}
             onClearBoard={() => clearCards('community')}
             onClearHole={() => clearCards('hole')}

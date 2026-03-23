@@ -25,6 +25,11 @@ vi.mock('../../../contexts', () => ({
     seatPlayers: { 5: 'player-5' },
     getSeatPlayerName: (seat) => seat === 5 ? 'Hero' : null,
   }),
+  useTendency: () => ({
+    tendencyMap: {},
+    isLoading: false,
+    refresh: vi.fn(),
+  }),
 }));
 
 // Mock useSessionStats

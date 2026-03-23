@@ -69,7 +69,7 @@ else
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Use the Vitest output parser
-  node scripts/format-test-failures.js .test-output.tmp
+  node scripts/format-test-failures.cjs .test-output.tmp
 
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

@@ -5,7 +5,6 @@ import { RangeProvenance } from '../../ui/RangeProvenance';
 import { SegmentationBar } from '../../ui/SegmentationBar';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
 import { usePlayer, useSession, useTendency } from '../../../contexts';
-import { useRangeProfile } from '../../../hooks/useRangeProfile';
 import { useActionAdvisor } from '../../../hooks/useActionAdvisor';
 import { RANGE_POSITIONS } from '../../../utils/rangeEngine';
 import { parseBlinds } from '../../../utils/potCalculator';
@@ -29,9 +28,10 @@ export const PlayerAnalysisPanel = () => {
   const [potSize, setPotSize] = useState('');
   const [villainAction, setVillainAction] = useState('check');
 
-  const { rangeProfile, rangeSummary, isLoading } = useRangeProfile(selectedPlayerId);
   const { advice, isComputing, error, compute, clear } = useActionAdvisor();
-  const { tendencyMap } = useTendency();
+  const { tendencyMap, isLoading } = useTendency();
+  const rangeProfile = tendencyMap[selectedPlayerId]?.rangeProfile ?? null;
+  const rangeSummary = tendencyMap[selectedPlayerId]?.rangeSummary ?? null;
 
   const selectedPlayer = useMemo(
     () => allPlayers.find(p => p.playerId === selectedPlayerId) || null,

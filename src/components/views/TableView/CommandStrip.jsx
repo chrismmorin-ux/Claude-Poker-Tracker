@@ -5,12 +5,12 @@ import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, STREETS, ACTIONS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 import { getActionGradient, BATCH_COLORS, ACTION_COLORS } from '../../../constants/designTokens';
-import { PrimitiveActionButton } from '../../ui/PrimitiveActionButton';
 import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
-import { getSizingOptions, getCurrentBet, getSeatContributions, getMinRaise } from '../../../utils/potCalculator';
+import { getSizingOptions, getCurrentBet, getMinRaise } from '../../../utils/potCalculator';
 import { getPositionName } from '../../../utils/positionUtils';
-import { useGame, useSettings } from '../../../contexts';
+import { getSeatContributions } from '../../../utils/potCalculator';
+import { useGame, useSettings, useUI, useCard } from '../../../contexts';
 import { CardSelectorPanel } from './CardSelectorPanel';
 
 /**
@@ -39,22 +39,15 @@ const STREET_LABELS = {
  */
 export const CommandStrip = ({
   // Street
-  currentStreet,
   onStreetChange,
-  onNextStreet,
   onClearStreet,
-  // Seat selection
-  selectedPlayers,
-  dealerButtonSeat,
   // Action panel
-  onClearSelection,
   onToggleAbsent,
   onClearSeatActions,
   onUndoLastAction,
   onAdvanceSeat,
   // Batch actions
   remainingCount,
-  canCheckAround,
   onRestFold,
   onCheckAround,
   onFoldToInvested,
@@ -62,17 +55,8 @@ export const CommandStrip = ({
   onNextHand,
   onResetHand,
   // Card selector
-  showCardSelector,
-  communityCards,
-  holeCards,
-  holeCardsVisible,
-  cardSelectorType,
-  highlightedBoardIndex,
   onSelectCard,
-  onCloseCardSelector,
   getCardStreet,
-  setCardSelectorType,
-  setHighlightedCardIndex,
   onToggleHoleVisibility,
   onClearBoard,
   onClearHole,
@@ -82,8 +66,17 @@ export const CommandStrip = ({
   // Live equity data
   liveEquity,
 }) => {
-  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat } = useGame();
+  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat } = useGame();
   const { settings, updateSetting } = useSettings();
+  const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
+  const { communityCards, holeCards, holeCardsVisible } = useCard();
+
+  // Computed from context (previously passed as props)
+  const seatContributions = useMemo(
+    () => getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat),
+    [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
+  );
+  const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
   const [customValue, setCustomValue] = useState('');
   const [sizingEditorOpen, setSizingEditorOpen] = useState(false);
   const longPressTimer = useRef(null);
@@ -112,12 +105,6 @@ export const CommandStrip = ({
 
   const currentBet = getCurrentBet(actionSequence, currentStreet);
   const effectiveBet = currentStreet === 'preflop' && currentBet === 0 ? blinds.bb : currentBet;
-
-  // Per-seat contributions for correct call amounts
-  const seatContributions = useMemo(
-    () => getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat),
-    [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
-  );
 
   const singleSeat = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
   const seatAlreadyIn = singleSeat ? (seatContributions[singleSeat] || 0) : 0;
@@ -308,7 +295,7 @@ export const CommandStrip = ({
           cardSelectorType={cardSelectorType}
           highlightedBoardIndex={highlightedBoardIndex}
           onSelectCard={onSelectCard}
-          onClose={onCloseCardSelector}
+          onClose={closeCardSelector}
           getCardStreet={getCardStreet}
           setCardSelectorType={setCardSelectorType}
           setHighlightedCardIndex={setHighlightedCardIndex}
@@ -581,7 +568,7 @@ export const CommandStrip = ({
         {/* Utility row — seat/street management */}
         <div className={`flex gap-1.5 px-2 pb-1 ${singleSeat && actionArray.length > 0 ? 'pt-1' : 'pt-2'}`}>
           {hasSeatSelected && (
-            <button onClick={onClearSelection} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
+            <button onClick={() => setSelectedPlayers([])} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
           )}
           {hasSeatSelected && (
             <button onClick={onToggleAbsent} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}>Absent</button>
@@ -622,35 +609,20 @@ export const CommandStrip = ({
 };
 
 CommandStrip.propTypes = {
-  currentStreet: PropTypes.string.isRequired,
   onStreetChange: PropTypes.func.isRequired,
-  onNextStreet: PropTypes.func.isRequired,
   onClearStreet: PropTypes.func.isRequired,
-  selectedPlayers: PropTypes.arrayOf(PropTypes.number).isRequired,
-  dealerButtonSeat: PropTypes.number.isRequired,
-  onClearSelection: PropTypes.func.isRequired,
   onToggleAbsent: PropTypes.func.isRequired,
   onClearSeatActions: PropTypes.func.isRequired,
   onUndoLastAction: PropTypes.func.isRequired,
   onAdvanceSeat: PropTypes.func.isRequired,
   remainingCount: PropTypes.number.isRequired,
-  canCheckAround: PropTypes.bool.isRequired,
   onRestFold: PropTypes.func.isRequired,
   onCheckAround: PropTypes.func.isRequired,
   onFoldToInvested: PropTypes.func.isRequired,
   onNextHand: PropTypes.func.isRequired,
   onResetHand: PropTypes.func.isRequired,
-  showCardSelector: PropTypes.bool.isRequired,
-  communityCards: PropTypes.array.isRequired,
-  holeCards: PropTypes.array.isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  cardSelectorType: PropTypes.string,
-  highlightedBoardIndex: PropTypes.number,
   onSelectCard: PropTypes.func.isRequired,
-  onCloseCardSelector: PropTypes.func.isRequired,
   getCardStreet: PropTypes.func.isRequired,
-  setCardSelectorType: PropTypes.func.isRequired,
-  setHighlightedCardIndex: PropTypes.func.isRequired,
   onToggleHoleVisibility: PropTypes.func.isRequired,
   onClearBoard: PropTypes.func.isRequired,
   onClearHole: PropTypes.func.isRequired,

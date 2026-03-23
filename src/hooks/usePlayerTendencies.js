@@ -57,8 +57,8 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           if (cached && cached.handsProcessed === hands.length && cached.profileVersion === PROFILE_VERSION) {
             cachedRangeProfile = cached;
           }
-        } catch (_) {
-          // Cache miss is fine
+        } catch (e) {
+          console.warn('usePlayerTendencies: range profile cache read failed', e.message);
         }
 
         const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
@@ -67,8 +67,8 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
         if (result.rangeProfile && !cachedRangeProfile) {
           try {
             await saveRangeProfile(result.rangeProfile, userId);
-          } catch (_) {
-            // Non-critical
+          } catch (e) {
+            console.warn('usePlayerTendencies: range profile save failed', e.message);
           }
         }
 
@@ -106,8 +106,8 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
 
           // Persist updated briefings
           await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
-        } catch (_) {
-          // Briefing persistence is non-critical
+        } catch (e) {
+          console.warn('usePlayerTendencies: briefing persistence failed', e.message);
         }
 
         return [player.playerId, {

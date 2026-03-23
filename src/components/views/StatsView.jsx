@@ -3,10 +3,9 @@ import { BarChart3 } from 'lucide-react';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { RangeGrid } from '../ui/RangeGrid';
 import { LAYOUT, SEAT_ARRAY } from '../../constants/gameConstants';
-import { useGame, useSession, usePlayer } from '../../contexts';
+import { useGame, useSession, usePlayer, useTendency } from '../../contexts';
 import { useUI } from '../../contexts';
 import { useSessionStats } from '../../hooks/useSessionStats';
-import { useRangeProfile } from '../../hooks/useRangeProfile';
 import { RANGE_POSITIONS } from '../../utils/rangeEngine';
 
 const StatRow = ({ label, value }) => (
@@ -98,7 +97,9 @@ export const StatsView = ({ scale }) => {
   const [selectedSeat, setSelectedSeat] = useState(mySeat);
 
   const selectedPlayerId = seatPlayers[selectedSeat] || null;
-  const { rangeProfile, rangeSummary, isLoading: rangeLoading } = useRangeProfile(selectedPlayerId);
+  const { tendencyMap, isLoading: rangeLoading } = useTendency();
+  const rangeProfile = tendencyMap[selectedPlayerId]?.rangeProfile ?? null;
+  const rangeSummary = tendencyMap[selectedPlayerId]?.rangeSummary ?? null;
   const [gridPosition, setGridPosition] = useState('LATE');
   const [gridAction, setGridAction] = useState('open');
 
