@@ -13,6 +13,7 @@ import { getOrCreateOnlineSession } from '../utils/persistence/sessionsStorage';
 const MSG_TYPE_HANDS = 'POKER_SYNC_HANDS';
 const MSG_TYPE_ACK = 'POKER_SYNC_ACK';
 const MSG_TYPE_STATUS = 'POKER_SYNC_STATUS';
+const MSG_TYPE_HAND_STATE = 'POKER_SYNC_HAND_STATE';
 
 /**
  * @param {string} userId - Current user ID
@@ -24,10 +25,13 @@ const useSyncBridge = (userId) => {
   const [importedCount, setImportedCount] = useState(0);
   const [syncError, setSyncError] = useState(null);
 
+  const [liveHandState, setLiveHandState] = useState(null);
+
   const processedIds = useRef(new Set());
   const sessionCache = useRef(new Map()); // tableId → sessionId
   const lastStatusTime = useRef(0);
   const isProcessing = useRef(false);
+  const lastHandStateKey = useRef(null);
 
   // Restore processed IDs from sessionStorage (survives hot reload)
   useEffect(() => {
@@ -128,6 +132,15 @@ const useSyncBridge = (userId) => {
         lastStatusTime.current = Date.now();
         setIsExtensionConnected(true);
       }
+
+      if (event.data?.type === MSG_TYPE_HAND_STATE) {
+        // Debounce: only update if hand state actually changed
+        const key = `${event.data.handNumber}:${event.data.currentStreet}:${event.data.actionSequence?.length}`;
+        if (key !== lastHandStateKey.current) {
+          lastHandStateKey.current = key;
+          setLiveHandState(event.data);
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
@@ -150,6 +163,7 @@ const useSyncBridge = (userId) => {
     importedCount,
     syncError,
     importFromJson,
+    liveHandState,
   };
 };
 

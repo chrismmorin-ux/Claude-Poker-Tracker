@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
 import { useAppState } from './hooks/useAppState';
@@ -34,10 +34,29 @@ const VEB = ({ viewName, onReturnToTable, children }) => (
   </ViewErrorBoundary>
 );
 
+// Map URL hash to SCREEN constant for deep-linking (e.g., #online)
+const HASH_TO_SCREEN = {
+  '#online': 'online',
+  '#sessions': 'sessions',
+  '#players': 'players',
+  '#settings': 'settings',
+};
+
 const ViewRouter = () => {
   const scale = useScale();
   const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
+
+  // Deep-link support: navigate to view from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    const screen = HASH_TO_SCREEN[hash];
+    if (screen) {
+      setCurrentScreen(screen);
+      // Clear hash so refreshes don't re-navigate
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [setCurrentScreen]);
 
   if (!isInitialized) {
     return <AuthLoadingScreen />;

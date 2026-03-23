@@ -5,13 +5,15 @@
  * Data flows from the extension via useSyncBridge → IndexedDB → useOnlineAnalysis.
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts';
 import useSyncBridge from '../../hooks/useSyncBridge';
 import useOnlineAnalysis from '../../hooks/useOnlineAnalysis';
+import useLiveActionAdvisor from '../../hooks/useLiveActionAdvisor';
 import { getHandsBySource } from '../../utils/persistence/handsStorage';
 import { getAllSessions } from '../../utils/persistence/sessionsStorage';
 import { GUEST_USER_ID } from '../../utils/persistence/database';
+import { SEAT_ARRAY } from '../../constants/gameConstants';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { TendencyStats } from '../ui/TendencyStats';
 import { ExploitBadges } from '../ui/ExploitBadges';
@@ -31,7 +33,7 @@ export const OnlineView = ({ scale }) => {
   const { user } = useAuth();
   const userId = user?.uid || GUEST_USER_ID;
 
-  const { isExtensionConnected, importedCount, syncError, importFromJson } = useSyncBridge(userId);
+  const { isExtensionConnected, importedCount, syncError, importFromJson, liveHandState } = useSyncBridge(userId);
 
   // Track online sessions
   const [onlineSessions, setOnlineSessions] = useState([]);
@@ -59,6 +61,70 @@ export const OnlineView = ({ scale }) => {
 
   // Analysis pipeline for selected session
   const { tendencyMap, handCount, isLoading } = useOnlineAnalysis(selectedSessionId, userId);
+
+  // Push exploit data to extension via window.postMessage
+  useEffect(() => {
+    if (!isExtensionConnected) return;
+    const entries = Object.entries(tendencyMap);
+    if (entries.length === 0) return;
+
+    const seats = entries.map(([seat, data]) => ({
+      seat,
+      style: data.style || null,
+      sampleSize: data.sampleSize || 0,
+      exploits: (data.exploits || []).map(e => ({
+        id: e.id, label: e.label, category: e.category,
+        street: e.street, statBasis: e.statBasis,
+        scoring: e.scoring || null,
+      })),
+      weaknesses: (data.weaknesses || []).slice(0, 10).map(w => ({
+        id: w.id, label: w.label, category: w.category,
+        severity: w.severity, confidence: w.confidence,
+      })),
+      briefings: (data.briefings || []).slice(0, 5).map(b => ({
+        ruleId: b.ruleId, label: b.label,
+        scoring: b.scoring || null,
+        evidenceBreakdown: b.evidenceBreakdown || null,
+        handExamples: b.handExamples || null,
+        riskAnalysis: b.riskAnalysis || null,
+      })),
+    }));
+
+    window.postMessage({
+      type: 'POKER_SYNC_EXPLOITS',
+      seats,
+      handCount,
+      timestamp: Date.now(),
+    }, window.location.origin);
+  }, [tendencyMap, isExtensionConnected, handCount]);
+
+  // Live action advisor — runs getActionAdvice() against primary villain
+  const { advice } = useLiveActionAdvisor(liveHandState, tendencyMap);
+
+  // Push action advice to extension
+  useEffect(() => {
+    if (!advice || !isExtensionConnected) return;
+    window.postMessage({
+      type: 'POKER_SYNC_ACTION_ADVICE',
+      advice: {
+        villainSeat: advice.villainSeat,
+        villainStyle: advice.villainStyle,
+        villainSampleSize: advice.villainSampleSize,
+        situation: advice.situation,
+        situationLabel: advice.situationLabel,
+        heroEquity: advice.heroEquity,
+        boardTexture: advice.boardTexture,
+        segmentation: advice.segmentation,
+        foldPct: advice.foldPct,
+        recommendations: advice.recommendations,
+        currentStreet: advice.currentStreet,
+        potSize: advice.potSize,
+        villainBet: advice.villainBet,
+        playerStats: advice.playerStats,
+      },
+      timestamp: Date.now(),
+    }, window.location.origin);
+  }, [advice, isExtensionConnected]);
 
   // File import handler
   const handleFileImport = useCallback(async (e) => {
@@ -165,7 +231,7 @@ export const OnlineView = ({ scale }) => {
               gap: 6,
               marginBottom: 12,
             }}>
-              {[1,2,3,4,5,6,7,8,9].map(seat => {
+              {SEAT_ARRAY.map(seat => {
                 const seatStr = String(seat);
                 const data = tendencyMap[seatStr];
                 const isSelected = selectedSeat === seatStr;
