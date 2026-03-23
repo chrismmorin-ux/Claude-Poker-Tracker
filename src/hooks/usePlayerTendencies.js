@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllHands, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
+import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
 import { buildPlayerStats, derivePercentages, classifyStyle } from '../utils/tendencyCalculations';
 import { buildPositionStats } from '../utils/exploitEngine/positionStats';
 import { countLimps } from '../utils/sessionStats';
@@ -38,13 +38,14 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
 
     setIsLoading(true);
     try {
-      const hands = await getAllHands(userId);
-
-      // Skip recalculation if hand count hasn't changed
-      if (hands.length === lastHandCountRef.current) {
+      // O(1) count check — skip expensive getAllHands if nothing changed
+      const count = await getHandCount(userId);
+      if (count === lastHandCountRef.current) {
         setIsLoading(false);
         return;
       }
+
+      const hands = await getAllHands(userId);
       lastHandCountRef.current = hands.length;
 
       // Batch-load all player records from DB (single transaction for briefing data)

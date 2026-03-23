@@ -12,6 +12,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 // Mock persistence
 vi.mock('../../utils/persistence/index', () => ({
   getAllHands: vi.fn(() => Promise.resolve([])),
+  getHandCount: vi.fn(() => Promise.resolve(0)),
   getRangeProfile: vi.fn(() => Promise.resolve(null)),
   saveRangeProfile: vi.fn(() => Promise.resolve()),
   GUEST_USER_ID: 'guest',
