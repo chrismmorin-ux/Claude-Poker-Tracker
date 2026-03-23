@@ -7,9 +7,9 @@ import './index.css'
 // Usage: window.__seedTestData() / window.__clearTestData()
 // Range engine seed data: window.__seedRangeData() / window.__clearRangeData()
 if (import.meta.env.DEV) {
-  import('./utils/seedTestData')
-  import('./utils/seedRangeTestData')
-  import('./utils/handSimulator')
+  import('./__dev__/seedTestData')
+  import('./__dev__/seedRangeTestData')
+  import('./__dev__/handSimulator')
 }
 
 // PWA update listener — reload when new service worker activates

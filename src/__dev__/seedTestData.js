@@ -13,8 +13,8 @@
  *        window.__clearTestData()
  */
 
-import { createPlayer, updatePlayer, getAllPlayers } from './persistence/index';
-import { initDB, GUEST_USER_ID } from './persistence/database';
+import { createPlayer, updatePlayer, getAllPlayers } from '../utils/persistence/index';
+import { initDB, GUEST_USER_ID } from '../utils/persistence/database';
 
 // =============================================================================
 // PLAYER ARCHETYPES
@@ -303,7 +303,7 @@ export const clearTestData = async () => {
 
   for (const player of allPlayers) {
     if (seedNames.has(player.name)) {
-      const { deletePlayer } = await import('./persistence/index');
+      const { deletePlayer } = await import('../utils/persistence/index');
       await deletePlayer(player.playerId);
       console.log(`[clearTestData] Deleted player: ${player.name} (ID ${player.playerId})`);
     }

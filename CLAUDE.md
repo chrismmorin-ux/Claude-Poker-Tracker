@@ -30,17 +30,17 @@ Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 
 Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is almost always WRONG for poker. The codebase uses Bayesian methods, population priors, consequence-weighted confidence, and range-based thinking for specific theoretical reasons. Do not simplify.
 
-## Architecture (v121)
-- `src/PokerTracker.jsx` (~93 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
-- `src/contexts/` — 8 providers + ToastContext (zero prop drilling, TendencyProvider for shared computation)
-- `src/reducers/` — 7 reducers (game, ui, card, session, player, settings, auth)
-- `src/hooks/` — 21 custom hooks (useGameHandlers, useScale, useRangeProfile, useHandReplayAnalysis, etc.)
-- `src/components/views/` — 9 view screens + 2 overlays (all receive only `scale` prop)
-- `src/components/ui/` — 30 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges)
+## Architecture (v122)
+- `src/PokerTracker.jsx` (~109 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
+- `src/contexts/` — 10 providers (incl. ToastContext, TendencyProvider, TournamentContext)
+- `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
+- `src/hooks/` — 32 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useTournamentPersistence, etc.)
+- `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
+- `src/components/ui/` — 37 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - `src/utils/pokerCore/` — shared poker infrastructure (cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (6 modules)
 - `src/utils/exploitEngine/` — exploit suggestions + range segmentation + weakness detection
-- `src/utils/persistence/` — IndexedDB v9 (hands, sessions, players, settings, rangeProfiles)
+- `src/utils/persistence/` — IndexedDB v12 (hands, sessions, players, settings, rangeProfiles, tournaments)
 
 ## Working Principles
 - **Plan first, code second** — outline your approach before writing code. For non-trivial changes, present the plan and wait for approval
@@ -97,7 +97,6 @@ Range Engine key concepts:
 - Profiles cached in IndexedDB `rangeProfiles` store
 
 ## Docs
-- `docs/SPEC.md` — full specification
 - `docs/QUICK_REF.md` — constants, hooks, utils
 - `docs/DEBUGGING.md` — error codes
 - `docs/CHANGELOG.md` — version history

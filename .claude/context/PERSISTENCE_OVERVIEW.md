@@ -1,8 +1,8 @@
 # Persistence Overview
-**Version**: 1.1.0 | **Updated**: 2026-03-05
+**Version**: 1.2.0 | **Updated**: 2026-03-23
 
 IndexedDB persistence layer with modular domain-specific storage.
-Database: `PokerTrackerDB` v9. Auto-save with 1.5s debounce. Multi-user support via `userId`.
+Database: `PokerTrackerDB` v12. Auto-save with 1.5s debounce. Multi-user support via `userId`.
 
 ## Module Structure
 ```
@@ -17,15 +17,16 @@ src/utils/persistence/
   index.js               # Central re-export
 ```
 
-## Object Stores (v9 - Multi-User + Range Profiles)
+## Object Stores (v12)
 | Store | Key | Indexes | Purpose |
 |-------|-----|---------|---------|
-| `hands` | handId (auto) | timestamp, sessionId, userId, userId_timestamp | Saved poker hands |
-| `sessions` | sessionId (auto) | startTime, endTime, userId, userId_startTime | Poker sessions |
+| `hands` | handId (auto) | timestamp, sessionId, userId, userId_timestamp, source, tableId | Saved poker hands |
+| `sessions` | sessionId (auto) | startTime, endTime, userId, userId_startTime, source, tableId | Poker sessions |
 | `players` | playerId (auto) | name, lastSeenAt, userId, userId_name | Player profiles |
 | `activeSession` | id (`active_${userId}`) | - | Per-user active session |
 | `settings` | id (`settings_${userId}`) | - | Per-user app settings |
 | `rangeProfiles` | profileKey | playerId, userId | Bayesian range estimation profiles |
+| `tournaments` | tournamentId (auto) | sessionId, userId | Tournament state persistence |
 
 ## Migration History
 | Version | Changes |
@@ -34,6 +35,9 @@ src/utils/persistence/
 | v6→v7 | Added userId to all stores for multi-user data isolation. Settings/activeSession changed from singleton to per-user keying. |
 | v7→v8 | Added actionSequence field to hands for ordered action storage. Converts existing seatActions to actionSequence on migration. |
 | v8→v9 | Added rangeProfiles store (keyPath: profileKey, indexes: playerId, userId) for Bayesian range estimation caching. |
+| v9→v10 | Added exploitBriefings[] and dismissedBriefingIds[] to player records. |
+| v10→v11 | Added tournaments object store for tournament state persistence. |
+| v11→v12 | Added source/tableId indexes to hands/sessions for online play integration. |
 
 ## Key Functions (all accept optional `userId`, defaults to 'guest')
 ```js

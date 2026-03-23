@@ -1,17 +1,17 @@
 # Project Context Summary
-**Version**: 1.4.0 | **Updated**: 2026-03-09
+**Version**: 1.5.0 | **Updated**: 2026-03-23
 
 Live poker hand tracker and exploit engine for 9-handed games.
 Records actions, builds Bayesian player models, and surfaces maximally exploitative plays.
 Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 
 ## Architecture
-- **Entry**: `src/PokerTracker.jsx` (~95 lines) - orchestrates state and views
-- **State**: 7 reducers (game, ui, card, session, player, settings, auth) + 8 context providers (incl. TendencyProvider)
-- **Views**: 10 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, Login, Signup, PasswordReset) + CardSelector + Showdown overlays
-- **Persistence**: IndexedDB v9 with 6 stores (hands, sessions, players, activeSession, settings, rangeProfiles)
-- **UI Components**: 29 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges)
-- **Hooks**: 21 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useAuthPersistence, useHandReplayAnalysis)
+- **Entry**: `src/PokerTracker.jsx` (~109 lines) - orchestrates state and views
+- **State**: 8 reducers (game, ui, card, session, player, settings, auth, tournament) + 10 context providers (incl. TendencyProvider, TournamentContext)
+- **Views**: 13 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online, Login, Signup, PasswordReset) + Showdown overlay
+- **Persistence**: IndexedDB v12 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments)
+- **UI Components**: 37 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
+- **Hooks**: 32 custom hooks in `src/hooks/` (including usePlayerTendencies, useRangeProfile, useOnlineAnalysis, useHandReplayAnalysis, useTournamentPersistence)
 - **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (6 modules)
 - **Exploit Engine**: `src/utils/exploitEngine/` - 13 modules (~2,878 LOC): exploit suggestions, range matrix, action advisor, fold equity, range segmentation, board texture, postflop narrowing
 
@@ -32,4 +32,3 @@ Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 ## Where to Look
 - State shapes: `docs/STATE_SCHEMAS.md` or `.claude/context/STATE_SCHEMA.md`
 - Quick refs: `docs/QUICK_REF.md`
-- Full spec: `docs/SPEC.md`

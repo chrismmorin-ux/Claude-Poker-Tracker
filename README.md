@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v120** (Range Grid Visualization & Multi-View Access)
+Current: **v122** (CTO Architecture Refactor)
 
 See `docs/CHANGELOG.md` for full version history.
 

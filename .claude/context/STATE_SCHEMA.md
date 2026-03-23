@@ -1,8 +1,8 @@
 # State Schema Reference
-**Version**: 1.1.0 | **Updated**: 2026-03-05
+**Version**: 1.2.0 | **Updated**: 2026-03-23
 
-Seven reducers manage application state. All use validated reducers.
-Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer(), useSettings(), useAuth().
+Eight reducers manage application state. All use validated reducers.
+Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer(), useSettings(), useAuth(), useTournament().
 
 ## gameReducer
 ```js
@@ -67,6 +67,29 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
   isLoading: true,     // true during auth operations
   isInitialized: false // false until first auth state check completes
 }
+```
+
+## tournamentReducer
+```js
+{ config: {
+    format: 'freezeout',       // 'freezeout'|'rebuy'|'turbo'
+    startingStack: 10000,
+    entryFee: 0,
+    totalEntrants: null,
+    payoutSlots: null,
+    blindSchedule: [],         // [{sb, bb, ante, durationMinutes}]
+    handPaceSeconds: 30,
+    lockoutLevel: null,
+  },
+  currentLevelIndex: 0,
+  levelStartTime: null,
+  isPaused: false,
+  pauseStartTime: null,
+  totalPausedMs: 0,
+  chipStacks: {},              // { [seat]: stackAmount }
+  playersRemaining: null,
+  eliminations: [],            // [{seat, level, timestamp}]
+  isActive: false }
 ```
 
 ## Where to Look

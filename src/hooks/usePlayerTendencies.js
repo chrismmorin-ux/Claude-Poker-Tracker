@@ -4,20 +4,17 @@
  * Lazy-loads hand history and computes stats per player.
  * Returns a map of playerId -> derived percentages.
  * Cached: only recalculates when hand count changes.
+ *
+ * Uses the shared analysis pipeline with added caching (range profiles in
+ * IndexedDB) and persistence (briefings saved to player records).
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
-import { buildPlayerStats, derivePercentages, classifyStyle } from '../utils/tendencyCalculations';
-import { buildPositionStats } from '../utils/exploitEngine/positionStats';
-import { countLimps } from '../utils/sessionStats';
-import { buildRangeProfile, getRangeWidthSummary, getSubActionSummary, PROFILE_VERSION } from '../utils/rangeEngine';
-import { generateExploits } from '../utils/exploitEngine/generateExploits';
-import { buildBriefings } from '../utils/exploitEngine/briefingBuilder';
+import { PROFILE_VERSION } from '../utils/rangeEngine';
 import { evaluateStaleness } from '../utils/exploitEngine/reEvaluationEngine';
-import { accumulateDecisions } from '../utils/exploitEngine/decisionAccumulator';
-import { detectWeaknesses } from '../utils/exploitEngine/weaknessDetector';
 import { getAllPlayers as getAllPlayersFromDB, updatePlayer } from '../utils/persistence/playersStorage';
+import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
 /**
  * @param {Array} allPlayers - Player list from playerState
@@ -53,83 +50,42 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       const dbPlayerMap = new Map(dbPlayers.map(p => [p.playerId, p]));
 
       const entries = await Promise.all(allPlayers.map(async (player) => {
-        const rawStats = buildPlayerStats(player.playerId, hands);
-        const pct = derivePercentages(rawStats);
-        const positionStats = buildPositionStats(player.playerId, hands);
-        const limpData = countLimps(player.playerId, hands);
-
-        // Build/cache range profile
-        let rangeProfile = null;
-        let rangeSummary = null;
-        let subActionSummary = null;
+        // Try to use cached range profile
+        let cachedRangeProfile = null;
         try {
           const cached = await getRangeProfile(player.playerId, userId);
           if (cached && cached.handsProcessed === hands.length && cached.profileVersion === PROFILE_VERSION) {
-            rangeProfile = cached;
-          } else {
-            rangeProfile = buildRangeProfile(player.playerId, hands, userId);
-            await saveRangeProfile(rangeProfile, userId);
+            cachedRangeProfile = cached;
           }
-          rangeSummary = getRangeWidthSummary(rangeProfile);
-          subActionSummary = getSubActionSummary(rangeProfile);
-        } catch (e) {
-          // Range profile is non-critical
+        } catch (_) {
+          // Cache miss is fine
         }
 
-        // Accumulate situational decisions and detect weaknesses FIRST
-        // (weaknesses feed into exploit generation as an 8th rule source)
-        let decisionSummary = null;
-        let weaknesses = [];
-        try {
-          if (rangeProfile) {
-            decisionSummary = accumulateDecisions(player.playerId, hands, rangeProfile, userId);
+        const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
+
+        // Cache range profile if it was freshly built
+        if (result.rangeProfile && !cachedRangeProfile) {
+          try {
+            await saveRangeProfile(result.rangeProfile, userId);
+          } catch (_) {
+            // Non-critical
           }
-          weaknesses = detectWeaknesses({
-            decisionSummary,
-            percentages: pct,
-            rangeProfile,
-            rangeSummary,
-            subActionSummary,
-            traits: rangeProfile?.traits || null,
-            pips: rangeProfile?.pips || null,
-            positionStats,
-          });
-        } catch (e) {
-          // Weakness detection is non-critical
         }
 
-        // Generate scored exploits (NOT dismiss-filtered — that's a UI concern)
-        const exploits = generateExploits({
-          rawStats, percentages: pct, positionStats, limpData,
-          rangeProfile, rangeSummary, subActionSummary,
-          traits: rangeProfile?.traits || null,
-          pips: rangeProfile?.pips || null,
-          weaknesses,
-        });
-
-        // Build exploit briefings
-        let briefings = [];
+        // Merge briefings with existing persisted briefings
+        let briefings = result.briefings;
         try {
-          const briefingContext = {
-            rawStats, percentages: pct, rangeSummary, rangeProfile,
-            traits: rangeProfile?.traits || null,
-            handsProcessed: hands.length,
-            weaknesses,
-          };
-          const newBriefings = buildBriefings(exploits, briefingContext);
-
-          // Load existing briefings from batch-loaded player record
           const dbPlayer = dbPlayerMap.get(player.playerId);
           const existingBriefings = dbPlayer?.exploitBriefings || [];
           const dismissedIds = new Set(dbPlayer?.dismissedBriefingIds || []);
 
           // Evaluate staleness of existing accepted/deferred briefings
-          const { staleIds } = evaluateStaleness(existingBriefings, exploits, {
+          const { staleIds } = evaluateStaleness(existingBriefings, result.exploits, {
             handsProcessed: hands.length,
-            traits: rangeProfile?.traits || null,
+            traits: result.rangeProfile?.traits || null,
           });
 
-          // Mark stale briefings (staleIds is plain object { briefingId: reason })
+          // Mark stale briefings
           const updatedExisting = existingBriefings.map(b => {
             if (staleIds[b.briefingId]) {
               return { ...b, reviewStatus: 'stale', staleReason: staleIds[b.briefingId] };
@@ -143,30 +99,30 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
               .filter(b => b.reviewStatus !== 'dismissed')
               .map(b => b.ruleId)
           );
-          const freshPending = newBriefings.filter(b =>
+          const freshPending = result.briefings.filter(b =>
             !existingRuleIds.has(b.ruleId) && !dismissedIds.has(b.ruleId)
           );
           briefings = [...updatedExisting.filter(b => b.reviewStatus !== 'dismissed'), ...freshPending];
 
           // Persist updated briefings
           await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
-        } catch (e) {
-          // Briefing generation is non-critical
+        } catch (_) {
+          // Briefing persistence is non-critical
         }
 
         return [player.playerId, {
-          ...pct,
-          rawStats,
-          positionStats,
-          limpData,
-          style: classifyStyle(pct),
-          exploits,
+          ...result.pct,
+          rawStats: result.rawStats,
+          positionStats: result.positionStats,
+          limpData: result.limpData,
+          style: result.style,
+          exploits: result.exploits,
           briefings,
-          rangeProfile,
-          rangeSummary,
-          subActionSummary,
-          decisionSummary,
-          weaknesses,
+          rangeProfile: result.rangeProfile,
+          rangeSummary: result.rangeSummary,
+          subActionSummary: result.subActionSummary,
+          decisionSummary: result.decisionSummary,
+          weaknesses: result.weaknesses,
         }];
       }));
 

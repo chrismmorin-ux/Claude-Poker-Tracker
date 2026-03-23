@@ -1,6 +1,35 @@
 # Poker Tracker Change Log
 
-## v120 - Range Grid Visualization & Multi-View Access (Current)
+## v122 - CTO Architecture Refactor (Current)
+
+### Summary
+- **Dead code removal**: Deleted `actionMigration.js` (superseded by `normalizeSeatActions.js`) and stale `docs/SPEC.md`
+- **Analysis pipeline dedup**: Extracted shared `analysisPipeline.js` — both `usePlayerTendencies` and `useOnlineAnalysis` are now thin wrappers
+- **Dev utilities relocated**: Moved `handSimulator.js`, `seedTestData.js`, `seedRangeTestData.js` to `src/__dev__/`
+- **Context docs synced**: Updated all `.claude/context/` files to reflect v12 DB, 8 reducers, 10 providers, 32 hooks, 37 UI components
+
+## v121 - Ignition Casino Online Play Integration
+
+### Summary
+- **Purpose**: Chrome extension for real-time WebSocket capture from Ignition Casino, side panel HUD, and app sync
+- **New Directory**: `ignition-poker-tracker/` — Chrome extension (Manifest V3)
+- **New App Files**: `OnlineView.jsx`, `useSyncBridge.js`, `useOnlineAnalysis.js`
+
+### Extension Architecture
+- WebSocket interception via content script (MAIN world) patching at document_start
+- Protocol decoder: `protocol.js` — card/action/blind bitmask decoders, wire format parser
+- State machine: `hand-state-machine.js` — per-table FSM (IDLE → DEALING → PREFLOP → ... → COMPLETE)
+- Hand format bridge: `hand-format.js` — normalizes Ignition data to main app schema
+- Side panel HUD: real-time VPIP/PFR/AF per seat, board/hero cards display
+- App sync: BroadcastChannel (primary) / chrome.storage.local (fallback)
+
+### Key Technical Decisions
+- Session-only opponent models (Ignition anonymizes players)
+- Strict data segregation: online vs live data never mix
+- Split compute: extension handles live stats, main app handles deep analysis
+- Stealth: generic extension naming, no external network calls
+
+## v120 - Range Grid Visualization & Multi-View Access
 
 ### Summary
 - **Purpose**: Visual 13x13 range grids + range access from Table, Stats, and Players views
@@ -323,7 +352,7 @@ actionSequence: [
 
 ---
 
-## v114 (Current) - Context API + State Consolidation
+## v114 - Context API + State Consolidation
 
 ### Summary
 - **Purpose**: Reduce prop drilling and consolidate view state management for future features

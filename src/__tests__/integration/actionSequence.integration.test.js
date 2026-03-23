@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { gameReducer, initialGameState, GAME_ACTIONS } from '../../reducers/gameReducer';
-import { migrateHandToSequence } from '../../migrations/actionMigration';
+import { legacyToSequence } from '../../utils/sequenceUtils';
 
 // Mock IndexedDB for integration tests
 const mockIndexedDB = () => {
@@ -119,65 +119,36 @@ describe('Action Sequence Integration', () => {
     });
   });
 
-  describe('Migration integration', () => {
-    it('migrates legacy hand to actionSequence format', () => {
-      const legacyHand = {
-        handId: 1,
-        timestamp: Date.now(),
-        gameState: {
-          seatActions: {
-            preflop: {
-              1: ['fold'],
-              2: ['call'],
-              3: ['open'],  // 'open' → 'raise'
-            },
-            flop: {
-              2: ['check'],
-              3: ['donk'],  // 'donk' → 'bet'
-            },
-          },
+  describe('Legacy conversion integration', () => {
+    it('converts legacy seatActions to actionSequence format', () => {
+      const seatActions = {
+        preflop: {
+          1: ['fold'],
+          2: ['call'],
+          3: ['open'],  // 'open' → 'raise'
+        },
+        flop: {
+          2: ['check'],
+          3: ['donk'],  // 'donk' → 'bet'
         },
       };
 
-      const migrated = migrateHandToSequence(legacyHand);
+      const actionSequence = legacyToSequence(seatActions);
 
-      expect(migrated.actionSequence).toBeDefined();
-      expect(migrated.actionSequence.length).toBeGreaterThan(0);
+      expect(actionSequence).toBeDefined();
+      expect(actionSequence.length).toBeGreaterThan(0);
 
       // Verify preflop actions
-      const preflopActions = migrated.actionSequence.filter(a => a.street === 'preflop');
+      const preflopActions = actionSequence.filter(a => a.street === 'preflop');
       expect(preflopActions.length).toBe(3);
 
       // Verify flop actions
-      const flopActions = migrated.actionSequence.filter(a => a.street === 'flop');
+      const flopActions = actionSequence.filter(a => a.street === 'flop');
       expect(flopActions.length).toBe(2);
 
       // Verify primitive conversion
-      const raises = migrated.actionSequence.filter(a => a.action === 'raise');
+      const raises = actionSequence.filter(a => a.action === 'raise');
       expect(raises.length).toBe(1); // 'open' → 'raise'
-    });
-
-    it('preserves hand data during migration', () => {
-      const legacyHand = {
-        handId: 123,
-        timestamp: 1702000000000,
-        userId: 'test-user',
-        sessionId: 5,
-        gameState: {
-          seatActions: {
-            preflop: { 1: ['fold'] },
-          },
-          currentStreet: 'flop',
-        },
-      };
-
-      const migrated = migrateHandToSequence(legacyHand);
-
-      expect(migrated.handId).toBe(123);
-      expect(migrated.timestamp).toBe(1702000000000);
-      expect(migrated.userId).toBe('test-user');
-      expect(migrated.sessionId).toBe(5);
-      expect(migrated.gameState.currentStreet).toBe('flop');
     });
   });
 
@@ -367,36 +338,15 @@ describe('Action Sequence Integration', () => {
   });
 
   describe('Backwards compatibility', () => {
-    it('handles hand with only seatActions (pre-migration)', () => {
-      const legacyHand = {
-        seatActions: {
-          preflop: { 1: ['fold'] },
-        },
-        // No actionSequence field
+    it('converts legacy seatActions to actionSequence via legacyToSequence', () => {
+      const seatActions = {
+        preflop: { 1: ['fold'] },
       };
 
-      // Migration should add actionSequence
-      const migrated = migrateHandToSequence(legacyHand);
-      expect(migrated.actionSequence).toBeDefined();
-      expect(migrated.actionSequence.length).toBe(1);
-
-      // Original seatActions should still exist for backwards compat
-      expect(migrated.seatActions).toBeDefined();
-    });
-
-    it('handles hand with both formats (post-migration)', () => {
-      const hand = {
-        seatActions: {
-          preflop: { 1: ['fold'] },
-        },
-        actionSequence: [
-          { seat: 1, action: 'fold', street: 'preflop', order: 1 },
-        ],
-      };
-
-      // Should skip migration and return unchanged
-      const result = migrateHandToSequence(hand);
-      expect(result).toBe(hand); // Same object reference
+      const actionSequence = legacyToSequence(seatActions);
+      expect(actionSequence).toBeDefined();
+      expect(actionSequence.length).toBe(1);
+      expect(actionSequence[0]).toMatchObject({ seat: 1, action: 'fold', street: 'preflop' });
     });
   });
 });

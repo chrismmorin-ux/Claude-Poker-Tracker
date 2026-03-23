@@ -2,10 +2,8 @@
  * useOnlineAnalysis.js — Per-table exploit pipeline for online play
  *
  * Loads hands for a specific online session, builds pseudo-players from
- * seat numbers, and runs the full analysis pipeline:
- * stats → range profile → weaknesses → exploits → briefings
+ * seat numbers, and runs the full analysis pipeline.
  *
- * Reuses all existing pure functions from the live play pipeline.
  * Key differences from usePlayerTendencies:
  * - Players are ephemeral (seat numbers, not persistent player records)
  * - Range profiles are NOT cached to IndexedDB
@@ -15,14 +13,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
-import { buildPlayerStats, derivePercentages, classifyStyle } from '../utils/tendencyCalculations';
-import { buildPositionStats } from '../utils/exploitEngine/positionStats';
-import { countLimps } from '../utils/sessionStats';
-import { buildRangeProfile, getRangeWidthSummary, getSubActionSummary } from '../utils/rangeEngine';
-import { generateExploits } from '../utils/exploitEngine/generateExploits';
-import { buildBriefings } from '../utils/exploitEngine/briefingBuilder';
-import { accumulateDecisions } from '../utils/exploitEngine/decisionAccumulator';
-import { detectWeaknesses } from '../utils/exploitEngine/weaknessDetector';
+import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
 /**
  * @param {number|null} sessionId - Online session ID
@@ -76,80 +67,20 @@ const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
         const playerId = `seat_${seatStr}`;
 
         try {
-          const rawStats = buildPlayerStats(playerId, hands);
-          const pct = derivePercentages(rawStats);
-          const style = classifyStyle(pct);
-          const positionStats = buildPositionStats(playerId, hands);
-          const limpData = countLimps(playerId, hands);
-
-          // Build range profile (ephemeral, not cached)
-          let rangeProfile = null;
-          let rangeSummary = null;
-          let subActionSummary = null;
-          try {
-            rangeProfile = buildRangeProfile(playerId, hands, userId);
-            rangeSummary = getRangeWidthSummary(rangeProfile);
-            subActionSummary = getSubActionSummary(rangeProfile);
-          } catch (_) {
-            // Range profile is non-critical
-          }
-
-          // Weaknesses
-          let decisionSummary = null;
-          let weaknesses = [];
-          try {
-            if (rangeProfile) {
-              decisionSummary = accumulateDecisions(playerId, hands, rangeProfile, userId);
-            }
-            weaknesses = detectWeaknesses({
-              decisionSummary,
-              percentages: pct,
-              rangeProfile,
-              rangeSummary,
-              subActionSummary,
-              traits: rangeProfile?.traits || null,
-              pips: rangeProfile?.pips || null,
-              positionStats,
-            });
-          } catch (_) {
-            // Weakness detection is non-critical
-          }
-
-          // Exploits
-          const exploits = generateExploits({
-            rawStats, percentages: pct, positionStats, limpData,
-            rangeProfile, rangeSummary, subActionSummary,
-            traits: rangeProfile?.traits || null,
-            pips: rangeProfile?.pips || null,
-            weaknesses,
-          });
-
-          // Briefings (ephemeral, not persisted)
-          let briefings = [];
-          try {
-            const briefingContext = {
-              rawStats, percentages: pct, rangeSummary, rangeProfile,
-              traits: rangeProfile?.traits || null,
-              handsProcessed: hands.length,
-              weaknesses,
-            };
-            briefings = buildBriefings(exploits, briefingContext);
-          } catch (_) {
-            // Briefing generation is non-critical
-          }
+          const result = runAnalysisPipeline(playerId, hands, userId);
 
           map[seatStr] = {
             playerId,
             name: `Seat ${seatStr}`,
-            ...pct,
-            style,
-            rawStats,
-            positionStats,
-            exploits,
-            briefings,
-            weaknesses,
-            rangeProfile,
-            rangeSummary,
+            ...result.pct,
+            style: result.style,
+            rawStats: result.rawStats,
+            positionStats: result.positionStats,
+            exploits: result.exploits,
+            briefings: result.briefings,
+            weaknesses: result.weaknesses,
+            rangeProfile: result.rangeProfile,
+            rangeSummary: result.rangeSummary,
           };
         } catch (e) {
           // Skip this seat on error, don't break the whole analysis

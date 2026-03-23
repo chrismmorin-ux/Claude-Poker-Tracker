@@ -27,28 +27,28 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
     setSeedLoading(type);
     try {
       if (type === 'basic') {
-        const { seedTestData } = await import('../../../utils/seedTestData');
+        const { seedTestData } = await import('../../../__dev__/seedTestData');
         const result = await seedTestData();
         showSuccess?.(`Seeded ${result.handCount} hands with ${Object.keys(result.playerIds).length} players`);
       } else if (type === 'range') {
-        const { seedRangeTestData } = await import('../../../utils/seedRangeTestData');
+        const { seedRangeTestData } = await import('../../../__dev__/seedRangeTestData');
         const result = await seedRangeTestData();
         showSuccess?.(`Seeded ${result.handCount} range hands with session #${result.sessionId}`);
       } else if (type === 'clearBasic') {
-        const { clearTestData } = await import('../../../utils/seedTestData');
+        const { clearTestData } = await import('../../../__dev__/seedTestData');
         await clearTestData();
         showSuccess?.('Cleared basic test data');
       } else if (type === 'clearRange') {
-        const { clearRangeTestData } = await import('../../../utils/seedRangeTestData');
+        const { clearRangeTestData } = await import('../../../__dev__/seedRangeTestData');
         await clearRangeTestData();
         showSuccess?.('Cleared range test data');
       } else if (type === 'sim') {
-        const { sim } = await import('../../../utils/handSimulator');
+        const { sim } = await import('../../../__dev__/handSimulator');
         const result = await sim(simCount);
         setSimTotal(result.handCount);
         showSuccess?.(`Simulated ${simCount} hands (total: ${result.handCount})`);
       } else if (type === 'clearSim') {
-        const { simClear } = await import('../../../utils/handSimulator');
+        const { simClear } = await import('../../../__dev__/handSimulator');
         await simClear();
         setSimTotal(0);
         showSuccess?.('Cleared simulator data');

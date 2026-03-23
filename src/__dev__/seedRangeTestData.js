@@ -13,9 +13,9 @@
  *   window.__clearRangeData()   // Remove seed data
  */
 
-import { createPlayer, getAllPlayers, createSession, endSession, updateSession, deleteRangeProfile } from './persistence/index';
-import { initDB, GUEST_USER_ID } from './persistence/database';
-import { parseRangeString, rangeIndex } from './pokerCore/rangeMatrix';
+import { createPlayer, getAllPlayers, createSession, endSession, updateSession, deleteRangeProfile } from '../utils/persistence/index';
+import { initDB, GUEST_USER_ID } from '../utils/persistence/database';
+import { parseRangeString, rangeIndex } from '../utils/pokerCore/rangeMatrix';
 
 // =============================================================================
 // CARD HELPERS
@@ -560,14 +560,14 @@ export const clearRangeTestData = async () => {
       } catch {
         // Profile may not exist
       }
-      const { deletePlayer } = await import('./persistence/index');
+      const { deletePlayer } = await import('../utils/persistence/index');
       await deletePlayer(player.playerId);
       console.log(`  Deleted player: ${player.name}`);
     }
   }
 
   // 2. Find and delete seed session + hands
-  const { getAllSessions } = await import('./persistence/index');
+  const { getAllSessions } = await import('../utils/persistence/index');
   const sessions = await getAllSessions();
   const seedSessions = sessions.filter(s => s.venue === SEED_VENUE);
 
