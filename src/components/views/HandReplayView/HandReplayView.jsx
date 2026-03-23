@@ -14,44 +14,33 @@ import { useReplayState } from '../../../hooks/useReplayState';
 import { loadHandById } from '../../../utils/persistence/index';
 import { buildTimeline } from '../../../utils/handTimeline';
 import { getPositionName } from '../../../utils/positionUtils';
-import { LAYOUT, SEAT_ARRAY } from '../../../constants/gameConstants';
+import { buildSeatNameMap, getPlayerName } from '../../../utils/playerNameMap';
+import { LAYOUT, SEAT_ARRAY, SEAT_POSITIONS } from '../../../constants/gameConstants';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { SCREEN } from '../../../constants/uiConstants';
 import { CardSlot } from '../../ui/CardSlot';
 import { ReviewPanel } from './ReviewPanel';
 
-// Same positions as TableView
-const SEAT_POSITIONS = [
-  { seat: 1, x: 20, y: 96 },
-  { seat: 2, x: 2,  y: 69 },
-  { seat: 3, x: 4,  y: 23 },
-  { seat: 4, x: 25, y: 2 },
-  { seat: 5, x: 50, y: 2 },
-  { seat: 6, x: 75, y: 2 },
-  { seat: 7, x: 96, y: 23 },
-  { seat: 8, x: 98, y: 69 },
-  { seat: 9, x: 80, y: 96 },
-];
-
 const POSITION_BADGES = { D: '#d4a847', SB: '#9ca3af', BB: '#60a5fa' };
 
 export const HandReplayView = ({ scale }) => {
-  const { replayHandId, setCurrentScreen, dispatchUi } = useUI();
+  const { replayHandId, replayHand, setCurrentScreen, dispatchUi } = useUI();
   const { allPlayers } = usePlayer();
   const { tendencyMap } = useTendency();
 
-  const [hand, setHand] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [hand, setHand] = useState(replayHand || null);
+  const [loading, setLoading] = useState(!replayHand);
 
-  // Load the hand from IndexedDB
+  // Load from IndexedDB only when hand not passed via UI state (e.g., browser refresh)
   useEffect(() => {
+    if (replayHand) { setHand(replayHand); setLoading(false); return; }
     if (!replayHandId) { setLoading(false); return; }
     setLoading(true);
     loadHandById(replayHandId)
       .then(h => setHand(h || null))
       .catch(() => setHand(null))
       .finally(() => setLoading(false));
-  }, [replayHandId]);
+  }, [replayHandId, replayHand]);
 
   // Build timeline from hand (memoize to avoid infinite re-render)
   const timeline = useMemo(() => hand ? buildTimeline(hand) : [], [hand]);
@@ -90,13 +79,8 @@ export const HandReplayView = ({ scale }) => {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
-  // Get player name for seat
-  const getPlayerName = (seat) => {
-    const playerId = seatPlayers[seat];
-    if (!playerId) return `Seat ${seat}`;
-    const player = allPlayers.find(p => String(p.playerId) === String(playerId));
-    return player?.name || `P${seat}`;
-  };
+  // Seat-to-name lookup
+  const seatNames = useMemo(() => buildSeatNameMap(seatPlayers, allPlayers), [seatPlayers, allPlayers]);
 
   // Get position badge for seat
   const getPosBadge = (seat) => {
@@ -224,7 +208,7 @@ export const HandReplayView = ({ scale }) => {
               const isVillainPinned = replay.pinnedVillainSeat === seat;
               const isHero = seat === heroSeat;
               const posBadge = getPosBadge(seat);
-              const playerName = getPlayerName(seat);
+              const playerName = getPlayerName(seatNames, seat);
               const seatCards = allPlayerCards[seat] || [];
               const hasCards = seatCards[0] && seatCards[1];
               const isRevealed = replay.revealedSeats.has(seat);
@@ -349,7 +333,7 @@ export const HandReplayView = ({ scale }) => {
             heroSeat={heroSeat}
             buttonSeat={buttonSeat}
             seatPlayers={seatPlayers}
-            allPlayers={allPlayers}
+            seatNames={seatNames}
             tendencyMap={tendencyMap}
             actionAnalysis={actionAnalysis}
             allPlayerCards={allPlayerCards}

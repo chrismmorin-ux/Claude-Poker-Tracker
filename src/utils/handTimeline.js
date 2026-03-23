@@ -64,6 +64,7 @@ const buildFromActionSequence = (actionSequence) => {
       seat: String(entry.seat),
       action,
       street: entry.street,
+      amount: entry.amount,
     });
   }
 
@@ -134,6 +135,66 @@ const buildFromSeatActions = (seatActions, dealerSeat) => {
   }
 
   return timeline;
+};
+
+// =============================================================================
+// POSITIONAL RE-SORTING
+// =============================================================================
+
+/**
+ * Re-sort a timeline into correct poker positional order.
+ * Within each street, actions are ordered by position (not recording order).
+ * Multiple actions by the same seat on the same street preserve their relative order.
+ *
+ * @param {Array} timeline - From buildTimeline()
+ * @param {number} dealerSeat - Dealer button seat (1-9)
+ * @returns {Array} Timeline sorted by positional order
+ */
+export const sortByPositionalOrder = (timeline, dealerSeat) => {
+  if (!timeline.length || !dealerSeat) return timeline;
+
+  // Group actions by street, preserving original order within each group
+  const streetGroups = {};
+  const streetOrder = [];
+  for (const entry of timeline) {
+    if (!streetGroups[entry.street]) {
+      streetGroups[entry.street] = [];
+      streetOrder.push(entry.street);
+    }
+    streetGroups[entry.street].push(entry);
+  }
+
+  const sorted = [];
+  for (const street of streetOrder) {
+    const entries = streetGroups[street];
+    const posOrder = getPositionalOrder(dealerSeat, street);
+
+    // Build seat priority map: lower = acts first
+    const seatPriority = {};
+    posOrder.forEach((seat, idx) => { seatPriority[seat] = idx; });
+
+    // Group by seat, preserving intra-seat order
+    const bySeat = {};
+    for (const entry of entries) {
+      const seat = Number(entry.seat);
+      if (!bySeat[seat]) bySeat[seat] = [];
+      bySeat[seat].push(entry);
+    }
+
+    // Walk through in positional order, emitting first action for each seat.
+    // Then repeat for seats with multiple actions (e.g., check then call).
+    let remaining = { ...bySeat };
+    while (Object.keys(remaining).length > 0) {
+      for (const seat of posOrder) {
+        if (remaining[seat] && remaining[seat].length > 0) {
+          sorted.push(remaining[seat].shift());
+          if (remaining[seat].length === 0) delete remaining[seat];
+        }
+      }
+    }
+  }
+
+  return sorted;
 };
 
 // =============================================================================

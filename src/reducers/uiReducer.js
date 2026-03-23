@@ -58,6 +58,7 @@ export const initialUiState = {
   pendingSeatForPlayerAssignment: null,
   autoOpenNewSession: false,
   replayHandId: null,
+  replayHand: null,
 };
 
 // =============================================================================
@@ -86,6 +87,7 @@ export const UI_STATE_SCHEMA = {
   pendingSeatForPlayerAssignment: { type: 'number', required: false }, // Can be null
   autoOpenNewSession: { type: 'boolean' },
   replayHandId: { type: 'number', required: false }, // Can be null
+  replayHand: { type: 'object', required: false }, // Can be null
 };
 
 // =============================================================================
@@ -273,7 +275,8 @@ const rawUiReducer = (state, action) => {
     case UI_ACTIONS.SET_REPLAY_HAND:
       return {
         ...state,
-        replayHandId: action.payload,
+        replayHandId: action.payload.handId ?? action.payload,
+        replayHand: action.payload.hand ?? null,
       };
 
     default:

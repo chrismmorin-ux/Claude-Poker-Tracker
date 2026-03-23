@@ -66,52 +66,74 @@ export const ReviewObservations = ({ analysis, actionAnalysisEntry }) => {
     );
   }
 
+  // When equity-based analysis is available, de-emphasize rule-based observations
+  const hasEquityAnalysis = actionAnalysisEntry && (
+    actionAnalysisEntry.heroEquity !== null && actionAnalysisEntry.heroEquity !== undefined
+    || actionAnalysisEntry.segmentation?.buckets
+  );
+
   return (
     <div className="space-y-3 text-xs">
-      {/* Situation */}
-      {analysis?.situation && (
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Situation</div>
-          <div className="text-gray-200 font-semibold">{analysis.situation}</div>
-        </div>
-      )}
-
-      {/* Villain Profile */}
-      {analysis?.villainProfile && (
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Villain Profile</div>
-          <div className="text-gray-300">{analysis.villainProfile}</div>
-        </div>
-      )}
-
-      {/* Range Estimate */}
-      {analysis?.rangeNote && (
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Range Estimate</div>
-          <div className="text-gray-400">{analysis.rangeNote}</div>
-        </div>
-      )}
-
-      {/* Position */}
-      {analysis?.positionNote && (
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Position</div>
-          <div className="text-gray-300">{analysis.positionNote}</div>
-        </div>
-      )}
-
-      {/* Board Texture — enhanced with range advantage context */}
-      {(analysis?.boardDescription || actionAnalysisEntry?.boardTexture) && (
-        <div>
-          <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Board Texture</div>
-          <div className="text-gray-300">
-            {analysis?.boardDescription}
-            {actionAnalysisEntry?.boardTexture && actionAnalysisEntry.rangeEquity !== null && (
-              <span className="text-gray-500 ml-1">
-                ({Math.round(actionAnalysisEntry.rangeEquity)}% of range has profitable equity)
-              </span>
-            )}
+      {/* Rule-based context section — dimmed when equity analysis available */}
+      <div style={{ opacity: hasEquityAnalysis ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+        {hasEquityAnalysis && (
+          <div className="text-[9px] text-indigo-400 font-semibold uppercase mb-1.5 tracking-wide">
+            Rule-based context
           </div>
+        )}
+
+        {/* Situation */}
+        {analysis?.situation && (
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Situation</div>
+            <div className="text-gray-200 font-semibold">{analysis.situation}</div>
+          </div>
+        )}
+
+        {/* Villain Profile */}
+        {analysis?.villainProfile && (
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Villain Profile</div>
+            <div className="text-gray-300">{analysis.villainProfile}</div>
+          </div>
+        )}
+
+        {/* Range Estimate */}
+        {analysis?.rangeNote && (
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Range Estimate</div>
+            <div className="text-gray-400">{analysis.rangeNote}</div>
+          </div>
+        )}
+
+        {/* Position */}
+        {analysis?.positionNote && (
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Position</div>
+            <div className="text-gray-300">{analysis.positionNote}</div>
+          </div>
+        )}
+
+        {/* Board Texture — enhanced with range advantage context */}
+        {(analysis?.boardDescription || actionAnalysisEntry?.boardTexture) && (
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Board Texture</div>
+            <div className="text-gray-300">
+              {analysis?.boardDescription}
+              {actionAnalysisEntry?.boardTexture && actionAnalysisEntry.rangeEquity !== null && (
+                <span className="text-gray-500 ml-1">
+                  ({Math.round(actionAnalysisEntry.rangeEquity)}% of range has profitable equity)
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Equity-based analysis label */}
+      {hasEquityAnalysis && (
+        <div className="text-[9px] text-cyan-400 font-semibold uppercase tracking-wide">
+          Equity-based analysis
         </div>
       )}
 

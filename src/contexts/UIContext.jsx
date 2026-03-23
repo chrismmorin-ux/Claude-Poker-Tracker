@@ -31,6 +31,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     pendingSeatForPlayerAssignment,
     autoOpenNewSession,
     replayHandId,
+    replayHand,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -155,6 +156,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     autoOpenNewSession,
     setAutoOpenNewSession,
     replayHandId,
+    replayHand,
   }), [
     currentView,
     selectedPlayers,
@@ -187,6 +189,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     autoOpenNewSession,
     setAutoOpenNewSession,
     replayHandId,
+    replayHand,
   ]);
 
   return (

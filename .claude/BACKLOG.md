@@ -265,7 +265,7 @@ Speed-of-entry audit identified ~39 clicks and 4 screen transitions per hand. Go
 | ID | Status | Description | Details |
 |----|--------|-------------|---------|
 | HE-1a | DONE | "Rest Fold" / "Check Around" batch buttons | `BatchActionBar.jsx` built, integrated into `CommandStrip.jsx`. |
-| HE-1b | DONE | Inline card overlay on table view | `CardSelectorPanel.jsx` (full-screen overlay) + `CardSelectorOverlay.jsx` (portal overlay) built, wired into `CommandStrip.jsx`. |
+| HE-1b | DONE | Inline card overlay on table view | `CardSelectorPanel.jsx` (full-screen overlay) wired into `CommandStrip.jsx`. `CardSelectorOverlay.jsx` deleted (dead code, replaced by CardSelectorPanel). |
 | HE-1c | DONE | Auto-select first seat after card close | `TableView.jsx` useEffect (lines 206-239): auto-selects first-to-act on card close, street change, and mount. |
 | HE-1d | CUT | ~~"Hand Over" early termination button~~ | Redundant — "Rest Fold" already ends the hand when remaining players fold. |
 
@@ -336,11 +336,70 @@ Situational weakness detection backed by range equity analysis. Per-hand EV anal
 
 ---
 
+## 18. Hand Replay Health — CTO Audit 2026-03-21
+
+Structural issues in hand replay feature identified by CTO audit. Root causes: monolithic analysis hook, missing prop wiring, duplicated utilities.
+
+### Phase 1 — Decompose useHandReplayAnalysis (P1, ai:capable)
+
+The 449-line monolithic hook mixes range init, postflop narrowing, equity calc, hero coaching, and showdown classification in one loop. A bug in any phase silently breaks downstream analysis. This is the root cause of most testability and maintainability issues.
+
+| ID | Status | Description | Details |
+|----|--------|-------------|---------|
+| HR-1a | READY | Extract `initSeatRanges()` pure function | Lines 141-163: seat range initialization from tendencyMap/rangeProfiles. Pure fn: `(seatPlayers, tendencyMap, buttonSeat) → { seatRanges, seatRangeProfiles }` |
+| HR-1b | READY | Extract `analyzeAction()` pure function | Lines 167-432: per-action analysis loop body. Takes entry + state, returns analysis result + mutated ranges. Separate postflop narrowing, segmentation, equity, EV assessment |
+| HR-1c | READY | Extract `computeHeroCoaching()` pure function | Lines 314-405: hero EV assessment, optimal play, weakness matching. Already self-contained within the loop body |
+| HR-1d | READY | Extract `classifyShowdownAction()` pure function | Lines 288-308: showdown card equity vs opponent range. Small, isolated concern |
+| HR-1e | READY | Hook becomes orchestrator | `useHandReplayAnalysis` calls phases in sequence, wiring state between them. ~80 lines max |
+
+### Phase 2 — Fix broken wiring & dedup (P1, ai:capable)
+
+| ID | Status | Description | Details |
+|----|--------|-------------|---------|
+| HR-2a | READY | Pass `heroPlayerId` to HandBrowser | `HandReviewPanel` never passes `heroPlayerId` prop → significance scoring degrades (hero learning factor=0, "Key Hands" sort broken). Derive from `seatPlayers[heroSeat]` on selectedHand |
+| HR-2b | READY | Deduplicate `getPositionalOrder` | Identical in `useReplayState.js:20-31` and `handTimeline.js:82-97`. Delete from useReplayState, import from handTimeline |
+| HR-2c | READY | Replace hand-coded card-to-street with `getCardsForStreet` | `useHandReview.js:81-92` and `useReplayState.js:153-164` hand-code the same switch. Import `getCardsForStreet` from `pokerCore/cardParser.js` |
+| HR-2d | READY | Deduplicate `getPlayerName` across replay components | Linear scan in `HandReplayView.jsx:94`, `ReviewPanel.jsx:86`, vs `HandWalkthrough.jsx` useMemo map. Extract shared `buildSeatNameMap()` utility |
+
+### Phase 3 — Dead code & component extraction (P2, ai:capable)
+
+| ID | Status | Description | Details |
+|----|--------|-------------|---------|
+| HR-3a | READY | Remove unused `heroDecisionPoints` from useHandReview | Computed (line 98-101) but never consumed. Dead code on hot path |
+| HR-3b | READY | Extract HeroCoachingCard from ReviewPanel | ReviewPanel.jsx is 513 lines. Hero coaching (lines 215-282) has clear prop boundaries — extract to sibling component |
+| HR-3c | READY | Extract VillainAnalysisSection from ReviewPanel | Villain analysis (lines 284-509) is the largest section. Self-contained props, extract to sibling component |
+
+### Phase 4 — Test coverage (P2, ai:capable)
+
+| ID | Status | Description | Details |
+|----|--------|-------------|---------|
+| HR-4a | READY | Test heroAnalysis.js | Pure functions: `assessHeroEV`, `suggestOptimalPlay`, `matchHeroWeakness`. Sync, trivial to test |
+| HR-4b | READY | Test handSignificance.js | Pure function: `computeHandSignificance`. Sync, well-defined inputs/outputs |
+| HR-4c | READY | Test hindsightAnalysis.js | Needs `handVsRange` mock. Test equity delta and luck classification |
+| HR-4d | READY | Test extracted Phase 1 functions | `initSeatRanges`, `analyzeAction`, `computeHeroCoaching` — enabled by Phase 1 decomposition |
+
+---
+
+## 19. Codebase Health Refactors (P1-P3) — CTO Audit 2026-03-22
+
+Structural improvements identified by CTO architecture review. Not urgent but will reduce maintenance burden.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| CH-1 | P1 | READY | Deduplicate `getSeatContributions` | Identical logic in `TableView.jsx` and `CommandStrip.jsx`. Extract to shared utility. |
+| CH-2 | P1 | READY | Reduce CommandStrip prop explosion | CommandStrip takes ~40 props. Should consume contexts directly instead of prop-drilling from TableView. |
+| CH-3 | P1 | READY | Organize analysis utils into `src/utils/handAnalysis/` | 6 analysis files (1,643 LOC) loose in `src/utils/`: `handReviewAnalyzer`, `heroAnalysis`, `hindsightAnalysis`, `replayAnalysis`, `handSignificance`, `handTimeline`. Group into subdirectory. |
+| CH-4 | P2 | READY | Remove raw `dispatchUi` from UIContext public API | Expose named action dispatchers instead of raw dispatch. Prevents consumers from dispatching arbitrary actions. |
+| CH-5 | P2 | READY | Add `getHandCount()` to persistence layer | Tendency optimization: count hands without loading full hand objects. Avoids unnecessary deserialization. |
+| CH-6 | P3 | READY | Add structured error logging to usePlayerTendencies | Catch blocks currently swallow errors silently. Add structured logging for debugging tendency computation failures. |
+
+---
+
 ## Recommended Execution Order
 
 ```
-NEXT:   14 Phase 2 (HE-2a, HE-2b, HE-2c), 12.4 (table-level exploits)
-LATER:  5 (Range Analysis Tools)
+NEXT:   18 Phase 1-2 (hand replay health), 14 Phase 2 (HE-2a, HE-2b, HE-2c), 12.4 (table-level exploits)
+LATER:  18 Phase 3-4, 5 (Range Analysis Tools)
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
 DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17
 PAUSED: 6 (Firebase auth)

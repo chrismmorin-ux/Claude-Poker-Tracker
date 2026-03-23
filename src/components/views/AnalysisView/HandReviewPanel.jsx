@@ -31,6 +31,14 @@ export const HandReviewPanel = () => {
     refresh,
   } = useHandReview();
 
+  // Derive heroPlayerId for HandBrowser significance scoring
+  const heroPlayerId = useMemo(() => {
+    if (!selectedHand) return null;
+    const mySeat = selectedHand.gameState?.mySeat;
+    if (!mySeat) return null;
+    return selectedHand.seatPlayers?.[mySeat] || selectedHand.seatPlayers?.[String(mySeat)] || null;
+  }, [selectedHand]);
+
   const handleDeleteHand = useCallback(async (handId, sessionId) => {
     if (!confirm('Delete this hand? This cannot be undone.')) return;
     try {
@@ -53,12 +61,15 @@ export const HandReviewPanel = () => {
   }, [currentSession, dispatchSession, refresh, showError, showSuccess]);
 
   const handleReplayHand = useCallback((handId) => {
-    dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: handId });
+    // Find the hand object to pass along, avoiding a redundant IndexedDB fetch in HandReplayView
+    const hand = hands.find(h => h.handId === handId) || null;
+    dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
     setCurrentScreen(SCREEN.HAND_REPLAY);
-  }, [dispatchUi, setCurrentScreen]);
+  }, [dispatchUi, setCurrentScreen, hands]);
 
-  // Per-action range/equity analysis
-  const { actionAnalysis, isComputing } = useHandReplayAnalysis(selectedHand, timeline, tendencyMap);
+  // Per-action range/equity analysis — lazy: only compute when an action is focused
+  const analysisHand = focusedActionIndex !== null ? selectedHand : null;
+  const { actionAnalysis, isComputing } = useHandReplayAnalysis(analysisHand, timeline, tendencyMap);
 
   // Compute rule-based analysis for focused action
   const analysis = useMemo(() => {
@@ -101,6 +112,8 @@ export const HandReviewPanel = () => {
             allPlayers={allPlayers}
             onDeleteHand={handleDeleteHand}
             onReplayHand={handleReplayHand}
+            tendencyMap={tendencyMap}
+            heroPlayerId={heroPlayerId}
           />
         )}
       </div>

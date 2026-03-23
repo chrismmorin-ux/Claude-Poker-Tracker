@@ -8,7 +8,7 @@ import { buildExploitSummary } from '../../ui/ExploitBadges';
 import { analyzeBoardFromStrings } from '../../../utils/pokerCore/boardTexture';
 import { generateBoardExploits, enrichExploitsWithEquity } from '../../../utils/exploitEngine/generateExploits';
 import { filterDismissed } from '../../../utils/exploitEngine/generateExploits';
-import { LAYOUT, LIMITS } from '../../../constants/gameConstants';
+import { LAYOUT, LIMITS, SEAT_POSITIONS } from '../../../constants/gameConstants';
 import { useGame, useUI, useSession, usePlayer, useCard, useToast, useTendency, useTournament } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatColor } from '../../../hooks/useSeatColor';
@@ -34,20 +34,6 @@ import { EquityBadge } from '../../ui/EquityBadge';
  * TableView - Main poker table interface
  * Orchestrates sub-components for the poker table display
  */
-// Seat positions (percentage-based for responsive layout)
-// Equidistant around stadium perimeter (860×450, r=225), half-gap at TABLE label edges
-const SEAT_POSITIONS = [
-  { seat: 1, x: 20, y: 96 },
-  { seat: 2, x: 2,  y: 69 },
-  { seat: 3, x: 4,  y: 23 },
-  { seat: 4, x: 25, y: 2 },
-  { seat: 5, x: 50, y: 2 },
-  { seat: 6, x: 75, y: 2 },
-  { seat: 7, x: 96, y: 23 },
-  { seat: 8, x: 98, y: 69 },
-  { seat: 9, x: 80, y: 96 },
-];
-
 export const TableView = ({ scale }) => {
   const tableRef = useRef(null);
   const numSeats = LIMITS.NUM_SEATS;

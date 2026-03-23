@@ -42,49 +42,7 @@ coverage/
 
 # Claude Code local/session files
 .claude/settings.local.json
-.claude/.pr-size-session.json
-.claude/.project-status-shown.json
-.claude/.project-update-session.json
-.claude/.agent-suggest-session.json
-.claude/.last-review.json
-.claude/.new-work-check-shown.json
-.claude/.test-state.json
-.claude/.last-edit.json
-.claude/.edit-review-session.json
-.claude/.efficiency-session.json
-.claude/arch-changes.log
-.claude/.backlog-check-shown.json
-.claude/.delegation-violations.json
-.claude/.process-suggest-state.json
 nul
-.claude/.context-cache.json
-.claude/.scan-session.json
-.claude/.session-budget.json
-.claude/metrics/session-*.json
-.claude/metrics/test-pass-timestamp.txt
-.claude/.pm-state.json
-.claude/.advisor-suggestions.json
-.claude/.startup-menu-shown.json
-.claude/audits/atomicity_report.json
-# Auto-generated dashboard (regenerated on demand)
-.claude/DASHBOARD.md
-# Dispatcher temp files
-.claude/.temp-task-spec.json
-.claude/decomposition-fix-tasks.json
-.claude/tasks/
-
-# Session state files
-.claude/.session-phases.json
-.claude/.session-start-snapshot.json
-
-# Work-in-progress hooks (not ready for commit)
-.claude/hooks/phase-detector.cjs
-
-# Session-specific audit docs
-.claude/DELEGATION_SYSTEM_AUDIT.md
-
-# Personal notes
-docs/chris-notes
 
 # Screenshots (debug artifacts)
 screenshots/
@@ -93,7 +51,12 @@ screenshots/
 audit-*.png
 verify-*.png
 .local-model-backups/
-.claude/metrics/local-model-tasks.log
 .claude/logs/*.log
 .playwright-mcp/
 .firebase
+
+# Ignition poker tracker (research spike, separate repo)
+ignition-poker-tracker/
+
+# Personal notes
+docs/chris-notes

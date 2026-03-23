@@ -187,7 +187,8 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
         )}
       </div>
 
-      {/* Dev Tools - Temporary */}
+      {/* Dev Tools - Temporary (dev only) */}
+      {import.meta.env.DEV && (
       <div className="pt-3 border-t border-gray-700">
         <h4 className="text-sm font-bold text-yellow-400 mb-2">Dev Tools (Temporary)</h4>
         <div className="grid grid-cols-2 gap-2">
@@ -222,6 +223,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
         </div>
         <p className="text-gray-500 text-xs mt-1">Each click adds a new batch. Check console for details.</p>
       </div>
+      )}
     </div>
   );
 };

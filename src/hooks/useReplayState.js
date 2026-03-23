@@ -7,81 +7,9 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { isFoldAction, LIMITS } from '../constants/gameConstants';
-import { BETTING_STREETS } from '../constants/gameConstants';
-
-const NUM_SEATS = LIMITS.NUM_SEATS;
-
-/**
- * Get positional acting order for a street.
- * Preflop: UTG (dealer+3) first, BB last.
- * Postflop: SB (dealer+1) first, BTN last.
- */
-const getPositionalOrder = (dealerSeat, street) => {
-  const seats = [];
-  for (let i = 1; i <= NUM_SEATS; i++) {
-    seats.push(((dealerSeat - 1 + i) % NUM_SEATS) + 1);
-  }
-  if (street === 'preflop') {
-    const sb = seats.shift();
-    const bb = seats.shift();
-    seats.push(sb, bb);
-  }
-  return seats;
-};
-
-/**
- * Re-sort a timeline into correct poker positional order.
- * Within each street, actions are ordered by position (not recording order).
- * Multiple actions by the same seat on the same street preserve their relative order.
- */
-const sortByPositionalOrder = (timeline, dealerSeat) => {
-  if (!timeline.length || !dealerSeat) return timeline;
-
-  // Group actions by street, preserving original order within each group
-  const streetGroups = {};
-  const streetOrder = [];
-  for (const entry of timeline) {
-    if (!streetGroups[entry.street]) {
-      streetGroups[entry.street] = [];
-      streetOrder.push(entry.street);
-    }
-    streetGroups[entry.street].push(entry);
-  }
-
-  const sorted = [];
-  for (const street of streetOrder) {
-    const entries = streetGroups[street];
-    const posOrder = getPositionalOrder(dealerSeat, street);
-
-    // Build seat priority map: lower = acts first
-    const seatPriority = {};
-    posOrder.forEach((seat, idx) => { seatPriority[seat] = idx; });
-
-    // Group by seat, preserving intra-seat order
-    const bySeat = {};
-    for (const entry of entries) {
-      const seat = Number(entry.seat);
-      if (!bySeat[seat]) bySeat[seat] = [];
-      bySeat[seat].push(entry);
-    }
-
-    // Walk through in positional order, emitting first action for each seat.
-    // Then repeat for seats with multiple actions (e.g., check then call).
-    // This handles multi-action streets (bet → others respond → possible re-action).
-    let remaining = { ...bySeat };
-    while (Object.keys(remaining).length > 0) {
-      for (const seat of posOrder) {
-        if (remaining[seat] && remaining[seat].length > 0) {
-          sorted.push(remaining[seat].shift());
-          if (remaining[seat].length === 0) delete remaining[seat];
-        }
-      }
-    }
-  }
-
-  return sorted;
-};
+import { isFoldAction } from '../constants/gameConstants';
+import { sortByPositionalOrder } from '../utils/handTimeline';
+import { getCardsForStreet } from '../utils/pokerCore/cardParser';
 
 /**
  * @param {Array} timeline - From buildTimeline()
@@ -93,10 +21,13 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
   const [currentActionIndex, setCurrentActionIndex] = useState(-1);
   const [pinnedVillainSeat, setPinnedVillainSeat] = useState(null);
   const [revealedSeats, setRevealedSeats] = useState(new Set());
+  const [analysisLens, setAnalysisLens] = useState('moment'); // 'moment' | 'hindsight'
 
   const dealerSeat = selectedHand?.gameState?.dealerButtonSeat ?? null;
 
   // Re-sort timeline into positional order for replay
+  // TODO: Dual-timeline (recording order vs positional order) could be unified
+  // if buildTimeline emitted positional order directly. See BACKLOG.md.
   const replayTimeline = useMemo(
     () => sortByPositionalOrder(timeline, dealerSeat),
     [timeline, dealerSeat]
@@ -112,6 +43,7 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
     setCurrentActionIndex(replayTimeline.length > 0 ? 0 : -1);
     setPinnedVillainSeat(null);
     setRevealedSeats(new Set());
+    setAnalysisLens('moment');
     lastAutoVillainRef.current = null;
   }, [replayTimeline]);
 
@@ -151,14 +83,7 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
   const communityCardsAtPoint = useMemo(() => {
     const cards = selectedHand?.cardState?.communityCards ||
                   selectedHand?.gameState?.communityCards || [];
-    const filled = cards.filter(c => c && c.trim().length >= 2);
-    switch (currentStreet) {
-      case 'preflop': return [];
-      case 'flop': return filled.slice(0, 3);
-      case 'turn': return filled.slice(0, 4);
-      case 'river': return filled.slice(0, 5);
-      default: return filled;
-    }
+    return getCardsForStreet(cards, currentStreet);
   }, [selectedHand, currentStreet]);
 
   // Pot at current point (sum of bets + blinds)
@@ -187,30 +112,34 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
     return newVillain;
   }, [pinnedVillainSeat, currentActionEntry, heroSeat]);
 
-  // Map replay index back to original timeline index for actionAnalysis lookup
+  // O(1) lookup: order → analysis result (bypasses timeline index indirection)
+  const orderToAnalysis = useMemo(() => {
+    if (!actionAnalysis) return null;
+    const map = new Map();
+    for (const a of actionAnalysis) {
+      if (a?.order != null) map.set(a.order, a);
+    }
+    return map;
+  }, [actionAnalysis]);
+
+  // Current action's analysis — direct order-based lookup
   const currentAnalysis = useMemo(() => {
-    if (!currentActionEntry || !actionAnalysis) return null;
-    // actionAnalysis is indexed 1:1 with the original timeline (by order field)
-    const origIdx = timeline.findIndex(e => e.order === currentActionEntry.order);
-    return origIdx >= 0 ? actionAnalysis[origIdx] : null;
-  }, [currentActionEntry, actionAnalysis, timeline]);
+    if (!currentActionEntry || !orderToAnalysis) return null;
+    return orderToAnalysis.get(currentActionEntry.order) ?? null;
+  }, [currentActionEntry, orderToAnalysis]);
 
   // Villain analysis: find nearest analysis entry for selected villain at or before current replay index
   const villainAnalysis = useMemo(() => {
-    if (!selectedVillainSeat || !actionAnalysis) return null;
+    if (!selectedVillainSeat || !orderToAnalysis) return null;
     const seatStr = String(selectedVillainSeat);
-    // Walk backwards through replayTimeline up to currentActionIndex,
-    // map each entry back to original timeline to get analysis
     for (let i = currentActionIndex; i >= 0; i--) {
       const entry = replayTimeline[i];
       if (String(entry.seat) !== seatStr) continue;
-      const origIdx = timeline.findIndex(e => e.order === entry.order);
-      if (origIdx >= 0 && actionAnalysis[origIdx]) {
-        return actionAnalysis[origIdx];
-      }
+      const analysis = orderToAnalysis.get(entry.order);
+      if (analysis) return analysis;
     }
     return null;
-  }, [selectedVillainSeat, actionAnalysis, currentActionIndex, replayTimeline, timeline]);
+  }, [selectedVillainSeat, orderToAnalysis, currentActionIndex, replayTimeline]);
 
   // Street start indices for jumpToStreet
   const streetStartIndices = useMemo(() => {
@@ -261,6 +190,7 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
 
   const selectVillain = useCallback((seat) => {
     setPinnedVillainSeat(prev => prev === seat ? null : seat);
+    setAnalysisLens('moment');
   }, []);
 
   const toggleReveal = useCallback((seat) => {
@@ -295,5 +225,7 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
     jumpToEnd,
     selectVillain,
     toggleReveal,
+    analysisLens,
+    setAnalysisLens,
   };
 };

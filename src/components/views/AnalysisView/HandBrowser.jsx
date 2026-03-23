@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllSessions, GUEST_USER_ID } from '../../../utils/persistence/index';
 import { BETTING_STREETS } from '../../../constants/gameConstants';
+import { computeHandSignificance } from '../../../utils/handSignificance';
 
 const formatTime = (timestamp) => {
   if (!timestamp) return '';
@@ -54,26 +55,35 @@ export const HandBrowser = ({
   onFilterPlayerChange, onFilterSessionChange,
   allPlayers,
   onDeleteHand, onReplayHand,
+  tendencyMap, heroPlayerId,
 }) => {
   const [sessions, setSessions] = useState([]);
   const [minPot, setMinPot] = useState(0);
+  const [sortMode, setSortMode] = useState('recent'); // 'recent' | 'significant'
 
   useEffect(() => {
     getAllSessions(GUEST_USER_ID).then(setSessions).catch(() => setSessions([]));
   }, []);
 
-  // Pre-compute pot for each hand and apply pot filter
-  const handsWithPot = useMemo(() => {
+  // Pre-compute pot and significance for each hand
+  const handsWithMetrics = useMemo(() => {
     return hands.map(hand => ({
       hand,
       pot: getPotSize(hand),
+      significance: computeHandSignificance(hand, heroPlayerId, tendencyMap),
     }));
-  }, [hands]);
+  }, [hands, heroPlayerId, tendencyMap]);
 
   const filteredHands = useMemo(() => {
-    if (minPot <= 0) return handsWithPot;
-    return handsWithPot.filter(h => h.pot >= minPot);
-  }, [handsWithPot, minPot]);
+    let result = handsWithMetrics;
+    if (minPot > 0) {
+      result = result.filter(h => h.pot >= minPot);
+    }
+    if (sortMode === 'significant') {
+      result = [...result].sort((a, b) => b.significance.score - a.significance.score);
+    }
+    return result;
+  }, [handsWithMetrics, minPot, sortMode]);
 
   return (
     <div className="flex flex-col h-full">
@@ -114,15 +124,36 @@ export const HandBrowser = ({
         </div>
       </div>
 
-      {/* Hand count badge */}
-      {filteredHands.length > 0 && (
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] text-gray-500">
-            {filteredHands.length} hand{filteredHands.length !== 1 ? 's' : ''}
-            {minPot > 0 && ` (filtered from ${hands.length})`}
-          </span>
+      {/* Sort toggle + hand count */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setSortMode('recent')}
+            className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+              sortMode === 'recent'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+            }`}
+          >
+            Recent
+          </button>
+          <button
+            onClick={() => setSortMode('significant')}
+            className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+              sortMode === 'significant'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+            }`}
+          >
+            Key Hands
+          </button>
         </div>
-      )}
+        {filteredHands.length > 0 && (
+          <span className="text-[10px] text-gray-500">
+            {filteredHands.length}{minPot > 0 ? `/${hands.length}` : ''}
+          </span>
+        )}
+      </div>
 
       {/* Hand list */}
       <div className="flex-1 overflow-y-auto space-y-1">
@@ -131,13 +162,15 @@ export const HandBrowser = ({
             {filterPlayerId || filterSessionId || minPot > 0 ? 'No hands match filters' : 'No hands recorded'}
           </div>
         ) : (
-          filteredHands.map(({ hand, pot }) => {
+          filteredHands.map(({ hand, pot, significance }) => {
             const handId = hand.handId ?? hand.id;
             const isSelected = handId === selectedHandId;
             const streetReached = getStreetReached(hand);
             const actionCount = hand.gameState?.actionSequence?.length || 0;
             const heroCards = hand.cardState?.holeCards || hand.gameState?.holeCards;
             const hasHeroCards = heroCards && heroCards[0] && heroCards[1];
+            const sigColor = significance.score > 0.6 ? '#22c55e'
+              : significance.score > 0.35 ? '#f59e0b' : '#6b7280';
 
             return (
               <div
@@ -150,9 +183,16 @@ export const HandBrowser = ({
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-200">
-                    {hand.handDisplayId || `#${handId}`}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: sigColor }}
+                      title={`Significance: ${Math.round(significance.score * 100)}%`}
+                    />
+                    <span className="font-semibold text-gray-200">
+                      {hand.handDisplayId || `#${handId}`}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-green-400 font-semibold">${pot}</span>
                     <span className="text-gray-400">{formatTime(hand.timestamp)}</span>

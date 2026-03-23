@@ -1,14 +1,9 @@
 import React, { useMemo } from 'react';
 import { getPositionName } from '../../../utils/positionUtils';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
+import { STREET_LABELS } from '../../../constants/gameConstants';
+import { buildSeatNameMap } from '../../../utils/playerNameMap';
 import { RangeGrid } from '../../ui/RangeGrid';
-
-const STREET_LABELS = {
-  preflop: 'Preflop',
-  flop: 'Flop',
-  turn: 'Turn',
-  river: 'River',
-};
 
 const ActionBadge = ({ action }) => {
   const config = PRIMITIVE_BUTTON_CONFIG[action];
@@ -41,20 +36,7 @@ export const HandWalkthrough = ({
   const buttonSeat = selectedHand?.gameState?.dealerButtonSeat ?? 1;
   const seatPlayers = selectedHand?.seatPlayers || {};
 
-  // Build a name map: seat -> player name (resolve via allPlayers)
-  const seatNames = useMemo(() => {
-    const names = {};
-    const playerMap = {};
-    if (allPlayers) {
-      for (const p of allPlayers) {
-        playerMap[p.playerId] = p.name;
-      }
-    }
-    for (const [seat, playerId] of Object.entries(seatPlayers)) {
-      names[seat] = playerMap[playerId] || `P${playerId}`;
-    }
-    return names;
-  }, [seatPlayers, allPlayers]);
+  const seatNames = useMemo(() => buildSeatNameMap(seatPlayers, allPlayers), [seatPlayers, allPlayers]);
 
   if (!selectedHand) {
     return (

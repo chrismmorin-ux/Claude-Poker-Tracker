@@ -1,8 +1,12 @@
 /**
- * handReviewAnalyzer.js - Decision point analysis for hand review
+ * handReviewAnalyzer.js - Rule-based decision point analysis for hand review
  *
- * Pure utility, no React. Analyzes a Hero decision point in the context
- * of villain stats, position, and board texture.
+ * Pure utility, no React, synchronous. Used by AnalysisView (HandReviewPanel).
+ * Produces heuristic observations (position, aggression, pot odds) from stats alone.
+ *
+ * Contrast with heroAnalysis.js which is equity-based, async, and used by
+ * HandReplayView. When both are available, equity-based analysis from
+ * heroAnalysis.js is more authoritative since it uses actual range computations.
  *
  * Public API:
  *   analyzeDecisionPoint({ timeline, focusedAction, heroSeat, hand, tendencyMap, boardCards })

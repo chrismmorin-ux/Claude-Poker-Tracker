@@ -6,6 +6,7 @@ import {
   didPlayerFaceRaise,
   findLastRaiser,
   getCbetInfo,
+  sortByPositionalOrder,
 } from '../handTimeline';
 
 // =============================================================================
@@ -92,6 +93,30 @@ describe('buildTimeline (actionSequence)', () => {
     expect(timeline).toHaveLength(1);
   });
 
+  it('preserves amount field when present in actionSequence', () => {
+    const hand = makeSequenceHand([
+      { seat: 3, action: 'raise', street: 'preflop', order: 1, amount: 15 },
+      { seat: 7, action: 'call', street: 'preflop', order: 2, amount: 15 },
+      { seat: 3, action: 'bet', street: 'flop', order: 3, amount: 25 },
+    ]);
+
+    const timeline = buildTimeline(hand);
+    expect(timeline[0].amount).toBe(15);
+    expect(timeline[1].amount).toBe(15);
+    expect(timeline[2].amount).toBe(25);
+  });
+
+  it('has undefined amount when not present in actionSequence', () => {
+    const hand = makeSequenceHand([
+      { seat: 3, action: 'raise', street: 'preflop', order: 1 },
+      { seat: 7, action: 'fold', street: 'preflop', order: 2 },
+    ]);
+
+    const timeline = buildTimeline(hand);
+    expect(timeline[0].amount).toBeUndefined();
+    expect(timeline[1].amount).toBeUndefined();
+  });
+
   it('prefers actionSequence over seatActions when both present', () => {
     const hand = makeSequenceHand(
       [{ seat: 3, action: 'raise', street: 'preflop', order: 1 }],
@@ -174,6 +199,16 @@ describe('buildTimeline (seatActions fallback)', () => {
   it('returns empty timeline for empty seatActions', () => {
     const hand = makeOldHand({}, 1);
     expect(buildTimeline(hand)).toEqual([]);
+  });
+
+  it('legacy seatActions path has no amount field', () => {
+    const hand = makeOldHand({
+      preflop: { '4': ['raise'], '7': ['call'] },
+    }, 1);
+
+    const timeline = buildTimeline(hand);
+    expect(timeline[0].amount).toBeUndefined();
+    expect(timeline[1].amount).toBeUndefined();
   });
 
   it('assigns sequential order numbers', () => {
@@ -423,5 +458,83 @@ describe('getCbetInfo', () => {
     expect(getCbetInfo(timeline, '3')).toEqual({
       isPfAggressor: false, sawFlop: false, cbet: false,
     });
+  });
+});
+
+// =============================================================================
+// sortByPositionalOrder
+// =============================================================================
+
+describe('sortByPositionalOrder', () => {
+  // Dealer on seat 1: preflop order UTG(4), 5, 6, 7, 8, 9, SB(2), BB(3)
+  //                    postflop order SB(2), BB(3), 4, 5, 6, 7, 8, 9, BTN(1)
+
+  it('preflop: UTG acts first, BB acts last', () => {
+    const timeline = [
+      { order: 1, seat: '3', action: 'fold', street: 'preflop' },  // BB
+      { order: 2, seat: '4', action: 'raise', street: 'preflop' }, // UTG
+      { order: 3, seat: '2', action: 'fold', street: 'preflop' },  // SB
+    ];
+
+    const sorted = sortByPositionalOrder(timeline, 1);
+    expect(sorted[0].seat).toBe('4'); // UTG first
+    expect(sorted[1].seat).toBe('2'); // SB
+    expect(sorted[2].seat).toBe('3'); // BB last
+  });
+
+  it('postflop: SB acts first, BTN acts last', () => {
+    const timeline = [
+      { order: 1, seat: '1', action: 'bet', street: 'flop' },   // BTN
+      { order: 2, seat: '2', action: 'check', street: 'flop' }, // SB
+      { order: 3, seat: '4', action: 'call', street: 'flop' },  // UTG
+    ];
+
+    const sorted = sortByPositionalOrder(timeline, 1);
+    expect(sorted[0].seat).toBe('2'); // SB first
+    expect(sorted[1].seat).toBe('4'); // UTG
+    expect(sorted[2].seat).toBe('1'); // BTN last
+  });
+
+  it('multi-action streets preserve intra-seat relative order', () => {
+    const timeline = [
+      { order: 1, seat: '4', action: 'bet', street: 'flop' },
+      { order: 2, seat: '7', action: 'raise', street: 'flop' },
+      { order: 3, seat: '4', action: 'call', street: 'flop' },
+    ];
+
+    const sorted = sortByPositionalOrder(timeline, 1);
+    // Seat 4 first (positional order), then 7, then 4's second action
+    expect(sorted[0]).toMatchObject({ seat: '4', action: 'bet' });
+    expect(sorted[1]).toMatchObject({ seat: '7', action: 'raise' });
+    expect(sorted[2]).toMatchObject({ seat: '4', action: 'call' });
+  });
+
+  it('cross-street ordering preserved (all preflop before flop)', () => {
+    const timeline = [
+      { order: 1, seat: '4', action: 'raise', street: 'preflop' },
+      { order: 2, seat: '7', action: 'call', street: 'preflop' },
+      { order: 3, seat: '2', action: 'check', street: 'flop' },
+      { order: 4, seat: '4', action: 'bet', street: 'flop' },
+    ];
+
+    const sorted = sortByPositionalOrder(timeline, 1);
+    expect(sorted[0].street).toBe('preflop');
+    expect(sorted[1].street).toBe('preflop');
+    expect(sorted[2].street).toBe('flop');
+    expect(sorted[3].street).toBe('flop');
+    // Postflop: SB(2) before seat 4
+    expect(sorted[2].seat).toBe('2');
+    expect(sorted[3].seat).toBe('4');
+  });
+
+  it('empty timeline returns empty array', () => {
+    expect(sortByPositionalOrder([], 1)).toEqual([]);
+  });
+
+  it('returns original when no dealerSeat', () => {
+    const timeline = [
+      { order: 1, seat: '4', action: 'raise', street: 'preflop' },
+    ];
+    expect(sortByPositionalOrder(timeline, null)).toBe(timeline);
   });
 });

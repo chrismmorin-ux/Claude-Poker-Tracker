@@ -18,6 +18,14 @@ export {
 export const STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown'];
 export const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']; // Streets where betting occurs (excludes showdown)
 
+// Street display labels
+export const STREET_LABELS = {
+  preflop: 'Preflop', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'Showdown',
+};
+export const STREET_LABELS_SHORT = {
+  preflop: 'PF', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'SD',
+};
+
 // Card constants
 export const SUITS = ['♠', '♥', '♦', '♣'];
 export const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -59,6 +67,20 @@ export const SEAT_STATUS = {
 
 // Array of seat numbers for iteration
 export const SEAT_ARRAY = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+// Seat positions (percentage-based for responsive layout)
+// Equidistant around stadium perimeter (860×450, r=225)
+export const SEAT_POSITIONS = [
+  { seat: 1, x: 20, y: 96 },
+  { seat: 2, x: 2,  y: 69 },
+  { seat: 3, x: 4,  y: 23 },
+  { seat: 4, x: 25, y: 2 },
+  { seat: 5, x: 50, y: 2 },
+  { seat: 6, x: 75, y: 2 },
+  { seat: 7, x: 96, y: 23 },
+  { seat: 8, x: 98, y: 69 },
+  { seat: 9, x: 80, y: 96 },
+];
 
 // Helper function: Check if an action is a fold action
 export const isFoldAction = (action) => FOLD_ACTIONS.includes(action);

@@ -102,6 +102,26 @@ export const EXPLOIT_BADGE_COLORS = {
 };
 
 // =============================================================================
+// EV VERDICT COLORS — used in replay action cards and coaching
+// =============================================================================
+
+export const EV_COLORS = {
+  '+EV': { bg: '#166534', text: '#4ade80' },
+  '-EV': { bg: '#7f1d1d', text: '#f87171' },
+  'neutral': { bg: '#374151', text: '#9ca3af' },
+};
+
+// =============================================================================
+// LUCKY/UNLUCKY COLORS — hindsight analysis badges
+// =============================================================================
+
+export const LUCKY_COLORS = {
+  lucky: { bg: '#166534', text: '#4ade80', label: 'Lucky' },
+  unlucky: { bg: '#7f1d1d', text: '#f87171', label: 'Unlucky' },
+  neutral: { bg: '#374151', text: '#9ca3af', label: 'Neutral' },
+};
+
+// =============================================================================
 // TOURNAMENT M-RATIO — chip stack zone colors
 // =============================================================================
 

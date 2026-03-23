@@ -9,6 +9,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getAllHands, getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
 import { buildTimeline, getStreetTimeline } from '../utils/handTimeline';
 import { getAvailableStreets } from '../utils/handReviewAnalyzer';
+import { getCardsForStreet } from '../utils/pokerCore/cardParser';
 
 export const useHandReview = (userId = GUEST_USER_ID) => {
   const [hands, setHands] = useState([]);
@@ -81,24 +82,11 @@ export const useHandReview = (userId = GUEST_USER_ID) => {
   const communityCardsForStreet = useMemo(() => {
     const cards = selectedHand?.cardState?.communityCards ||
                   selectedHand?.gameState?.communityCards || [];
-    const filled = cards.filter(c => c && c.trim().length >= 2);
-    switch (currentStreet) {
-      case 'preflop': return [];
-      case 'flop': return filled.slice(0, 3);
-      case 'turn': return filled.slice(0, 4);
-      case 'river': return filled.slice(0, 5);
-      default: return filled;
-    }
+    return getCardsForStreet(cards, currentStreet);
   }, [selectedHand, currentStreet]);
 
   // Hero seat
   const heroSeat = selectedHand?.gameState?.mySeat ?? null;
-
-  // Hero decision points (actions where hero acts)
-  const heroDecisionPoints = useMemo(() => {
-    if (!heroSeat) return [];
-    return streetActions.filter(e => e.seat === String(heroSeat));
-  }, [streetActions, heroSeat]);
 
   // Focused action
   const focusedAction = useMemo(() => {
@@ -145,7 +133,6 @@ export const useHandReview = (userId = GUEST_USER_ID) => {
     streetActions,
     communityCardsForStreet,
     heroSeat,
-    heroDecisionPoints,
     focusedAction,
     focusedActionIndex,
     isLoading,
