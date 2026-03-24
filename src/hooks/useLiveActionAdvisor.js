@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getActionAdvice } from '../utils/exploitEngine/actionAdvisor';
 import { handVsRange } from '../utils/exploitEngine/equityCalculator';
-import { getPopulationPrior } from '../utils/rangeEngine/populationPriors';
+import { getPopulationPrior, FACED_RAISE_FREQUENCIES } from '../utils/rangeEngine/populationPriors';
 import { createRange } from '../utils/pokerCore/rangeMatrix';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { getRangePositionCategory } from '../utils/positionUtils';
@@ -41,18 +41,52 @@ const buildBaselineRange = (vpip, pfr, position = 'LATE') => {
 // =========================================================================
 
 /**
- * Estimate preflop fold% from player stats (no range segmentation).
+ * Estimate preflop fold% from player stats.
+ *
+ * Priority: (1) observed foldTo3Bet, (2) population prior by position + style adjustment.
+ * NEVER derives fold% from VPIP — VPIP measures how often a player enters pots,
+ * not how they respond to aggression. A 40-VPIP fish calls almost everything.
+ *
+ * @param {object} stats - Player stats (vpip, pfr, style, foldTo3Bet, position)
+ * @param {string} villainAction - 'raise' | 'bet' | etc.
+ * @returns {{ foldPct: number, dataSource: 'observed' | 'population' | 'baseline' }}
  */
 const estimatePreflopFoldPct = (stats, villainAction) => {
-  const vpip = stats?.vpip ?? 25;
-  // Base: high VPIP = low fold rate
-  let foldPct = Math.max(0.1, Math.min(0.8, 1 - vpip / 100));
-  // Villain already raised → they fold less to a 3-bet
-  if (villainAction === 'raise') foldPct *= 0.7;
-  // Style adjustments
-  if (stats?.style === 'Fish') foldPct *= 0.6;
-  if (stats?.style === 'Nit') foldPct *= 1.3;
-  return Math.min(0.85, Math.max(0.05, foldPct));
+  // (1) Best case: observed fold-to-3bet from this player's actual data
+  // Require minimum 5 observations before trusting — with 1-2 observations,
+  // the observed rate is noise and shouldn't override the population prior.
+  const MIN_OBSERVED_SAMPLE = 5;
+  if (stats?.foldTo3Bet != null && stats.foldTo3Bet >= 0
+      && (stats.facedRaisePreflop || 0) >= MIN_OBSERVED_SAMPLE) {
+    let foldPct = stats.foldTo3Bet / 100;
+    // Villain already raised → slightly less likely to fold their own open
+    if (villainAction === 'raise') foldPct *= 0.85;
+    return {
+      foldPct: Math.min(0.90, Math.max(0.05, foldPct)),
+      dataSource: 'observed',
+    };
+  }
+
+  // (2) Population prior: typical fold-to-raise rate by position
+  const position = stats?.position || 'LATE';
+  const posFreqs = FACED_RAISE_FREQUENCIES[position] || FACED_RAISE_FREQUENCIES.LATE;
+  let foldPct = posFreqs.fold; // e.g. EARLY=0.82, BB=0.48
+
+  // Style adjustments: fish/stations fold LESS than population, nits fold MORE
+  const style = stats?.style;
+  if (style === 'Fish' || style === 'LP') foldPct *= 0.6;
+  else if (style === 'LAG') foldPct *= 0.8;
+  else if (style === 'Nit') foldPct *= 1.15;
+  else if (style === 'TAG') foldPct *= 1.05;
+  // Unknown: use population prior unmodified
+
+  // Villain already raised → they fold less to a 3-bet (they have a hand)
+  if (villainAction === 'raise') foldPct *= 0.75;
+
+  return {
+    foldPct: Math.min(0.90, Math.max(0.05, foldPct)),
+    dataSource: 'population',
+  };
 };
 
 /**
@@ -62,7 +96,7 @@ const estimatePreflopFoldPct = (stats, villainAction) => {
 const computePreflopAdvice = async (villainRange, encodedHero, potSize, villainAction, villainBet, playerStats) => {
   const eqResult = await handVsRange(encodedHero, villainRange, [], { trials: 1000 });
   const heroEquity = eqResult.equity;
-  const foldPct = estimatePreflopFoldPct(playerStats, villainAction);
+  const { foldPct, dataSource } = estimatePreflopFoldPct(playerStats, villainAction);
   const recommendations = [];
 
   const facingBet = villainAction === 'raise' || villainAction === 'bet';
@@ -89,10 +123,13 @@ const computePreflopAdvice = async (villainRange, encodedHero, potSize, villainA
     const raiseFoldPct = Math.min(0.85, foldPct + 0.15);
     const raiseEV = raiseFoldPct * potSize
       + (1 - raiseFoldPct) * (heroEquity * (potSize + effectiveBet + raiseSize * 2) - raiseSize);
+    const foldNote = dataSource === 'observed'
+      ? `observed ${Math.round(raiseFoldPct * 100)}% fold`
+      : `estimated ${Math.round(raiseFoldPct * 100)}% fold (population)`;
     recommendations.push({
       action: 'raise', ev: raiseEV,
       sizing: { betSize: raiseSize, betFraction: raiseSize / (potSize || 1), foldPct: raiseFoldPct },
-      reasoning: `3-bet for value + fold equity (${Math.round(raiseFoldPct * 100)}% fold)`,
+      reasoning: `3-bet for value + fold equity (${foldNote})`,
     });
   } else {
     // First to act preflop — open raise or limp
@@ -128,27 +165,38 @@ const computePreflopAdvice = async (villainRange, encodedHero, potSize, villainA
 // SITUATION DETECTION
 // =========================================================================
 
+/**
+ * Detect the decision situation hero faces (or faced) on the current street.
+ * If hero already acted, we still identify the villain action hero responded to
+ * so we can show what the optimal play was (real-time learning).
+ */
 const detectSituation = (actionSequence, heroSeat, currentStreet, pfAggressor) => {
   if (!actionSequence || actionSequence.length === 0) {
-    return { situation: 'waiting', villainSeat: null, villainAction: null, villainBet: 0 };
+    return { situation: 'waiting', villainSeat: null, villainAction: null, villainBet: 0, heroAlreadyActed: false };
   }
 
   const streetActions = actionSequence.filter(a => a.street === currentStreet);
   const heroActed = streetActions.some(a => a.seat === heroSeat);
-  if (heroActed) {
-    return { situation: 'hero_acted', villainSeat: null, villainAction: null, villainBet: 0 };
-  }
 
+  // Find the last villain action BEFORE hero's first action on this street
+  // (or the last villain action overall if hero hasn't acted)
   let lastVillainAction = null;
-  for (let i = streetActions.length - 1; i >= 0; i--) {
-    if (streetActions[i].seat !== heroSeat) {
-      lastVillainAction = streetActions[i];
-      break;
-    }
+  for (const a of streetActions) {
+    if (a.seat === heroSeat) break; // stop at hero's action
+    if (a.seat !== heroSeat) lastVillainAction = a;
   }
 
-  if (!lastVillainAction) {
-    return { situation: 'first_to_act', villainSeat: null, villainAction: null, villainBet: 0 };
+  // If no villain acted before hero on this street, check if hero was first to act
+  if (!lastVillainAction && !heroActed) {
+    return { situation: 'first_to_act', villainSeat: null, villainAction: null, villainBet: 0, heroAlreadyActed: false };
+  }
+  if (!lastVillainAction && heroActed) {
+    // Hero was first to act and already acted — find the first non-hero action to analyze
+    const firstVillain = streetActions.find(a => a.seat !== heroSeat);
+    if (!firstVillain) {
+      return { situation: 'first_to_act', villainSeat: null, villainAction: null, villainBet: 0, heroAlreadyActed: true };
+    }
+    lastVillainAction = firstVillain;
   }
 
   const villainSeat = lastVillainAction.seat;
@@ -167,7 +215,7 @@ const detectSituation = (actionSequence, heroSeat, currentStreet, pfAggressor) =
     situation = 'waiting';
   }
 
-  return { situation, villainSeat, villainAction, villainBet };
+  return { situation, villainSeat, villainAction, villainBet, heroAlreadyActed: heroActed };
 };
 
 const SITUATION_LABELS = {
@@ -219,13 +267,13 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       return;
     }
 
-    // Detect situation
-    const { situation, villainSeat, villainAction, villainBet } = detectSituation(
+    // Detect situation (still computes even if hero already acted — shows optimal play)
+    const { situation, villainSeat, villainAction, villainBet, heroAlreadyActed } = detectSituation(
       actionSequence, heroSeat, currentStreet, pfAggressor
     );
 
-    if (situation === 'waiting' || situation === 'hero_acted') {
-      console.log('[LiveActionAdvisor] Skip: situation=', situation, 'street=', currentStreet, 'actions=', actionSequence?.length);
+    if (situation === 'waiting') {
+      console.log('[LiveActionAdvisor] Skip: situation=waiting, street=', currentStreet, 'actions=', actionSequence?.length);
       return;
     }
 
@@ -264,15 +312,16 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       villainRange = buildBaselineRange(villainData.vpip, villainData.pfr, position);
     }
 
-    // Encode cards
+    // Encode hero cards (extension now sends Unicode format matching cardParser)
     const encodedHero = holeCards.map(c => parseAndEncode(c)).filter(c => c >= 0);
     if (encodedHero.length !== 2) return;
 
-    // Fix 2: HSM pot includes current bets — subtract villain's bet
-    const rawPotSize = (pot || 0) / 100;
+    // HSM pot is already in dollars and includes current bets — subtract villain's bet
+    const rawPotSize = pot || 0;
     if (rawPotSize <= 0) return;
     const adjustedPot = Math.max(0, rawPotSize - (villainBet || 0));
 
+    const villainPosition = getRangePositionCategory(targetSeat, dealerSeat || 1);
     const playerStats = {
       vpip: villainData.vpip ?? null,
       pfr: villainData.pfr ?? null,
@@ -283,7 +332,11 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       foldToCbet: villainData.rawStats?.facedCbet > 0
         ? Math.round((villainData.rawStats.foldedToCbet / villainData.rawStats.facedCbet) * 100)
         : undefined,
+      foldToCbetSampleSize: villainData.rawStats?.facedCbet || 0,
+      foldTo3Bet: villainData.foldTo3Bet ?? null,
+      facedRaisePreflop: villainData.rawStats?.facedRaisePreflop || 0,
       style: villainData.style,
+      position: villainPosition,
     };
 
     const callId = ++abortRef.current;
@@ -323,6 +376,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         villainStyle: villainData.style || null,
         villainSampleSize: villainData.sampleSize || 0,
         confidence,
+        heroAlreadyActed,
         situation,
         situationLabel: SITUATION_LABELS[situation] || situation,
         heroEquity: result.heroEquity,

@@ -410,11 +410,29 @@ Cleanup and quality findings from CTO architecture review of `ignition-poker-tra
 
 ---
 
+## 21. Analysis Quality Overhaul (P0)
+
+Analysis, weakness detection, and exploit layers produce bad recommendations. Fold% estimation is wrong (VPIP used as fold-to-3bet proxy), z-tests used despite being wrong for poker, confidence doesn't gate display, EV is per-street not per-hand, and villain is modeled as a statistical distribution instead of a decision maker.
+
+Plan: `.claude/plans/concurrent-whistling-whisper.md`
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 21.1 | P0 | DONE | Fix preflop fold% estimation | Replace `1-vpip/100` with population priors + observed fold-to-3bet. Fix postflop estimateFoldPct Bayesian blend. 2 files. |
+| 21.2 | P0 | READY | Replace z-tests with Bayesian credible intervals | New `bayesianConfidence.js` Beta-Binomial model. Replace `proportionZTest` in statRules. Replace `sampleConfidence()` step function. 4 files. |
+| 21.3 | P1 | BLOCKED (21.2) | Confidence-weighted display | Replace OR-gated exploit filter with continuous worthiness function. Add quality metadata to live advisor. Confidence indicators in OnlineView. 4 files. |
+| 21.4a | P1 | READY | Contextual decision tracking | Expand decision accumulator situation keys: aggressor, IP/OOP, facing-action, contextual action type (c-bet/donk/stab/check-raise). Derive from hand state. 2 files. |
+| 21.4b | P1 | BLOCKED (21.4a) | Villain decision model | New `villainDecisionModel.js`: per-context action distributions with Bayesian hierarchical smoothing. Population fallback from `ACTION_MULTIPLIERS`. |
+| 21.4c | P2 | BLOCKED (21.4b) | Game tree evaluator | New `gameTreeEvaluator.js`: recursive 2-street look-ahead. Villain decisions from decision model. Range narrowing per branch. 100-200ms budget. |
+| 21.4d | P2 | BLOCKED (21.4c) | Replace actionAdvisor + live advisor | `getActionAdvice()` becomes game tree wrapper. Delete `computePreflopAdvice()`. Unified preflop+postflop pipeline. 2 files. |
+
+---
+
 ## Recommended Execution Order
 
 ```
-NEXT:   18 Phase 1-2 (hand replay health), 14 Phase 2 (HE-2a, HE-2b, HE-2c), 12.4 (table-level exploits)
-LATER:  18 Phase 3-4, 5 (Range Analysis Tools)
+NEXT:   21.1 (P0 fold% fix), 21.2 (P0 Bayesian), 18 Phase 1-2 (hand replay health)
+LATER:  21.3, 21.4a-d, 14 Phase 2, 12.4 (table-level exploits), 18 Phase 3-4, 5 (Range Analysis)
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
 DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17
 PAUSED: 6 (Firebase auth)
