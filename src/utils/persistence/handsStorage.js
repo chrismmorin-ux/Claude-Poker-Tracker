@@ -461,14 +461,30 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
       source: 'ignition',
     };
 
-    // Strip extension-only metadata before validation
-    delete handRecord.captureId;
+    // Keep captureId for dedup, strip extension-only capturedAt
     delete handRecord.capturedAt;
 
     const validation = validateHandRecord(handRecord);
     if (!validation.valid) {
       logValidationErrors('saveOnlineHand', validation.errors);
       throw new Error(`Invalid online hand: ${validation.errors.join(', ')}`);
+    }
+
+    // Dedup check: skip if hand with this captureId already exists
+    if (handRecord.captureId) {
+      const existingHands = await new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_NAME], 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const idx = store.index('sessionId');
+        const req = idx.getAll(sessionId);
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+        tx.oncomplete = () => {};
+      });
+      if (existingHands.some(h => h.captureId === handRecord.captureId)) {
+        log(`Skipping duplicate online hand: ${handRecord.captureId}`);
+        return -1; // Already exists
+      }
     }
 
     return new Promise((resolve, reject) => {

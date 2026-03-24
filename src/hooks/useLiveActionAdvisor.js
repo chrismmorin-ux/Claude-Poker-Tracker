@@ -273,7 +273,8 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
     );
 
     if (situation === 'waiting') {
-      console.log('[LiveActionAdvisor] Skip: situation=waiting, street=', currentStreet, 'actions=', actionSequence?.length);
+      // No actionable situation yet — clear stale advice
+      setAdvice(null);
       return;
     }
 
@@ -297,9 +298,22 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
     // Look up villain data (Fix 3: allow zero-sample — baseline range handles it)
     const villainData = tendencyMap[String(targetSeat)] || {};
-    console.log('[LiveActionAdvisor] Computing:', { street: currentStreet, situation, villain: targetSeat, vpip: villainData.vpip, sample: villainData.sampleSize, pot });
-    const confidence = (villainData.sampleSize || 0) >= 50 ? 'high'
-      : (villainData.sampleSize || 0) >= 20 ? 'medium' : 'low';
+    const sampleSize = villainData.sampleSize || 0;
+    console.log('[LiveActionAdvisor] Computing:', { street: currentStreet, situation, villain: targetSeat, vpip: villainData.vpip, sample: sampleSize, pot });
+
+    // Data quality metadata — richer than old 'high'/'medium'/'low'
+    const dataQuality = {
+      sampleSize,
+      tier: sampleSize === 0 ? 'none'
+        : sampleSize < 10 ? 'speculative'
+        : sampleSize < 30 ? 'developing'
+        : 'established',
+      confidenceNote: sampleSize === 0 ? 'Population defaults only — no player data'
+        : sampleSize < 10 ? 'Early estimate — need more hands'
+        : sampleSize < 30 ? `Based on ${sampleSize} hands`
+        : `Solid read (${sampleSize} hands)`,
+    };
+    const confidence = dataQuality.tier;
 
     // Build villain range (Fix 4: position-aware baseline)
     let villainRange = null;
@@ -371,11 +385,26 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
       if (callId !== abortRef.current) return;
 
+      // Gate recommendations based on data quality
+      let gatedRecs = result.recommendations || [];
+      if (sampleSize === 0) {
+        // No player data: tag all recs as population-based
+        gatedRecs = gatedRecs.map(r => ({
+          ...r, reasoning: r.reasoning + ' [population estimate]',
+        }));
+      } else if (sampleSize < 10) {
+        // Suppress pure bluff recommendations (fold-equity-only raises with marginal EV)
+        gatedRecs = gatedRecs.filter(r =>
+          !(r.action === 'raise' && r.sizing?.foldPct > 0.6 && r.ev < 2)
+        );
+      }
+
       setAdvice({
         villainSeat: targetSeat,
         villainStyle: villainData.style || null,
-        villainSampleSize: villainData.sampleSize || 0,
+        villainSampleSize: sampleSize,
         confidence,
+        dataQuality,
         heroAlreadyActed,
         situation,
         situationLabel: SITUATION_LABELS[situation] || situation,
@@ -393,7 +422,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           totalCombos: result.segmentation.totalCombos,
         } : null,
         foldPct: result.foldPct,
-        recommendations: result.recommendations,
+        recommendations: gatedRecs,
         currentStreet,
         potSize: adjustedPot,
         villainBet: villainBet || 0,

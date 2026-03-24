@@ -419,20 +419,21 @@ Plan: `.claude/plans/concurrent-whistling-whisper.md`
 | ID | Sev | Status | Description | Details |
 |----|-----|--------|-------------|---------|
 | 21.1 | P0 | DONE | Fix preflop fold% estimation | Replace `1-vpip/100` with population priors + observed fold-to-3bet. Fix postflop estimateFoldPct Bayesian blend. 2 files. |
-| 21.2 | P0 | READY | Replace z-tests with Bayesian credible intervals | New `bayesianConfidence.js` Beta-Binomial model. Replace `proportionZTest` in statRules. Replace `sampleConfidence()` step function. 4 files. |
-| 21.3 | P1 | BLOCKED (21.2) | Confidence-weighted display | Replace OR-gated exploit filter with continuous worthiness function. Add quality metadata to live advisor. Confidence indicators in OnlineView. 4 files. |
-| 21.4a | P1 | READY | Contextual decision tracking | Expand decision accumulator situation keys: aggressor, IP/OOP, facing-action, contextual action type (c-bet/donk/stab/check-raise). Derive from hand state. 2 files. |
-| 21.4b | P1 | BLOCKED (21.4a) | Villain decision model | New `villainDecisionModel.js`: per-context action distributions with Bayesian hierarchical smoothing. Population fallback from `ACTION_MULTIPLIERS`. |
+| 21.2 | P0 | DONE | Replace z-tests with Bayesian credible intervals | New `bayesianConfidence.js` Beta-Binomial model. Replaced `proportionZTest` in statRules + generateExploits. Replaced `sampleConfidence()` in weaknessDetector. 5 files. |
+| 21.3 | P1 | DONE | Confidence-weighted display | Continuous worthiness filter, dataQuality metadata in live advisor, confidence dots + quality labels + bluff gating in OnlineView. 4 files. |
+| 21.4a | P1 | DONE | Contextual decision tracking | Expanded situation keys to 7 dimensions (aggressor/IP/facing/contextAction). 2 new weakness rules (donks-without-equity, never-cbets). 2 files. |
+| 21.4b | P1 | READY | Villain decision model | New `villainDecisionModel.js`: per-context action distributions with Bayesian hierarchical smoothing. Population fallback from `ACTION_MULTIPLIERS`. |
 | 21.4c | P2 | BLOCKED (21.4b) | Game tree evaluator | New `gameTreeEvaluator.js`: recursive 2-street look-ahead. Villain decisions from decision model. Range narrowing per branch. 100-200ms budget. |
 | 21.4d | P2 | BLOCKED (21.4c) | Replace actionAdvisor + live advisor | `getActionAdvice()` becomes game tree wrapper. Delete `computePreflopAdvice()`. Unified preflop+postflop pipeline. 2 files. |
+| 21.5 | P1 | BLOCKED (21.4c) | Remove WEAKNESS_EXPLOIT_MAP stopgap | Delete `WEAKNESS_EXPLOIT_MAP`, `weaknessToExploit()`, `runWeaknessRules()`. Weaknesses become villain reads only. Game tree generates situation-specific exploits that reference weaknesses as inputs. Audit all `w-*` exploit IDs in IMPACT/RISK maps, ExploitList, ExploitBadges, briefingBuilder. |
 
 ---
 
 ## Recommended Execution Order
 
 ```
-NEXT:   21.1 (P0 fold% fix), 21.2 (P0 Bayesian), 18 Phase 1-2 (hand replay health)
-LATER:  21.3, 21.4a-d, 14 Phase 2, 12.4 (table-level exploits), 18 Phase 3-4, 5 (Range Analysis)
+NEXT:   21.4b (villain decision model), 18 Phase 1-2 (hand replay health)
+LATER:  21.4c-d, 21.5 (remove weakness→exploit stopgap), 14 Phase 2, 12.4, 18 Phase 3-4, 5
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
 DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17
 PAUSED: 6 (Firebase auth)

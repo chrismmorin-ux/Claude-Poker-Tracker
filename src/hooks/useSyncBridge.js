@@ -1,108 +1,65 @@
 /**
- * useSyncBridge.js — Listens for hand data from the Ignition extension
+ * useSyncBridge.js — Bidirectional bridge between the main app and Ignition extension
  *
- * The extension's app-bridge.js content script posts captured hands
- * via window.postMessage. This hook listens for those messages,
- * deduplicates, creates online sessions, and saves to IndexedDB.
+ * Inbound: listens for hand data + live state from extension via window.postMessage
+ * Outbound: pushes exploit data + action advice back to extension
+ *
+ * The extension uses chrome.runtime.Port for reliable, ordered delivery.
+ * Deduplication is handled by deterministic captureId in saveOnlineHand().
+ *
+ * Protocol constants must stay in sync with:
+ *   ignition-poker-tracker/shared/constants.js (BRIDGE_MSG + PROTOCOL_VERSION)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { saveOnlineHand } from '../utils/persistence/handsStorage';
 import { getOrCreateOnlineSession } from '../utils/persistence/sessionsStorage';
-
-const MSG_TYPE_HANDS = 'POKER_SYNC_HANDS';
-const MSG_TYPE_ACK = 'POKER_SYNC_ACK';
-const MSG_TYPE_STATUS = 'POKER_SYNC_STATUS';
-const MSG_TYPE_HAND_STATE = 'POKER_SYNC_HAND_STATE';
+import { BRIDGE_MSG, PROTOCOL_VERSION } from '../utils/bridgeProtocol';
 
 /**
  * @param {string} userId - Current user ID
- * @returns {{ isExtensionConnected, lastSyncTime, importedCount, syncError, importFromJson }}
+ * @returns {{ isExtensionConnected, versionMismatch, lastSyncTime, importedCount, syncError, importFromJson, liveHandState, pushExploits, pushAdvice }}
  */
 const useSyncBridge = (userId) => {
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
+  const [versionMismatch, setVersionMismatch] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [importedCount, setImportedCount] = useState(0);
   const [syncError, setSyncError] = useState(null);
-
   const [liveHandState, setLiveHandState] = useState(null);
 
-  const processedIds = useRef(new Set());
-  const sessionCache = useRef(new Map()); // tableId → sessionId
-  const lastStatusTime = useRef(0);
-  const isProcessing = useRef(false);
+  const sessionCache = useRef(new Map()); // tableId -> sessionId
   const lastHandStateKey = useRef(null);
 
-  // Restore processed IDs from sessionStorage (survives hot reload)
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem('poker_sync_processed_ids');
-      if (saved) {
-        const ids = JSON.parse(saved);
-        processedIds.current = new Set(ids);
-        setImportedCount(ids.length);
-      }
-    } catch (_) {}
-  }, []);
-
-  // Save processed IDs to sessionStorage
-  const persistProcessedIds = useCallback(() => {
-    try {
-      const ids = Array.from(processedIds.current).slice(-1000); // Keep last 1000
-      sessionStorage.setItem('poker_sync_processed_ids', JSON.stringify(ids));
-    } catch (_) {}
-  }, []);
-
-  // Import a batch of hands
+  // Import a batch of hands — dedup handled by saveOnlineHand (captureId check)
   const importHands = useCallback(async (hands) => {
-    if (isProcessing.current) return;
-    isProcessing.current = true;
+    let imported = 0;
 
-    try {
-      let imported = 0;
-      let lastCaptureId = null;
-
-      for (const hand of hands) {
-        // Dedup by captureId
-        if (!hand.captureId || processedIds.current.has(hand.captureId)) {
-          continue;
+    for (const hand of hands) {
+      try {
+        // Get or create session for this table
+        const tableId = hand.tableId || 'unknown_table';
+        let sessionId = sessionCache.current.get(tableId);
+        if (!sessionId) {
+          sessionId = await getOrCreateOnlineSession(tableId, userId);
+          sessionCache.current.set(tableId, sessionId);
         }
 
-        try {
-          // Get or create session for this table
-          const tableId = hand.tableId || 'unknown_table';
-          let sessionId = sessionCache.current.get(tableId);
-          if (!sessionId) {
-            sessionId = await getOrCreateOnlineSession(tableId, userId);
-            sessionCache.current.set(tableId, sessionId);
-          }
-
-          await saveOnlineHand(hand, sessionId, userId);
-          processedIds.current.add(hand.captureId);
-          lastCaptureId = hand.captureId;
+        const result = await saveOnlineHand(hand, sessionId, userId);
+        if (result !== -1) { // -1 = duplicate, skipped
           imported++;
-        } catch (e) {
-          console.warn('[SyncBridge] Failed to import hand:', e.message);
         }
+      } catch (e) {
+        console.warn('[SyncBridge] Failed to import hand:', hand.captureId, e.message);
       }
-
-      if (imported > 0) {
-        setImportedCount(prev => prev + imported);
-        setLastSyncTime(Date.now());
-        setSyncError(null);
-        persistProcessedIds();
-
-        // ACK back to extension so it advances watermark
-        if (lastCaptureId) {
-          window.postMessage({ type: MSG_TYPE_ACK, lastCaptureId }, '*');
-        }
-      }
-    } catch (e) {
-      setSyncError(e.message);
-    } finally {
-      isProcessing.current = false;
     }
-  }, [userId, persistProcessedIds]);
+
+    if (imported > 0) {
+      setImportedCount(prev => prev + imported);
+      setLastSyncTime(Date.now());
+      setSyncError(null);
+    }
+  }, [userId]);
 
   // Import from JSON file (manual fallback)
   const importFromJson = useCallback(async (jsonData) => {
@@ -116,55 +73,132 @@ const useSyncBridge = (userId) => {
     }
 
     await importHands(hands);
-    return processedIds.current.size;
   }, [importHands]);
 
-  // Listen for messages from extension
+  // Push exploit data to extension
+  const pushExploits = useCallback((tendencyMap, handCount) => {
+    if (!isExtensionConnected) return;
+    const entries = Object.entries(tendencyMap);
+    if (entries.length === 0) return;
+
+    const seats = entries.map(([seat, data]) => ({
+      seat,
+      style: data.style || null,
+      sampleSize: data.sampleSize || 0,
+      exploits: (data.exploits || []).map(e => ({
+        id: e.id, label: e.label, category: e.category,
+        street: e.street, statBasis: e.statBasis,
+        scoring: e.scoring || null,
+        tier: e.tier || 'speculative',
+      })),
+      weaknesses: (data.weaknesses || []).slice(0, 10).map(w => ({
+        id: w.id, label: w.label, category: w.category,
+        severity: w.severity, confidence: w.confidence,
+      })),
+      briefings: (data.briefings || []).slice(0, 5).map(b => ({
+        ruleId: b.ruleId, label: b.label,
+        scoring: b.scoring || null,
+        evidenceBreakdown: b.evidenceBreakdown || null,
+        handExamples: b.handExamples || null,
+        riskAnalysis: b.riskAnalysis || null,
+      })),
+    }));
+
+    window.postMessage({
+      type: BRIDGE_MSG.EXPLOITS,
+      seats,
+      handCount,
+      _v: PROTOCOL_VERSION,
+      timestamp: Date.now(),
+    }, window.location.origin);
+  }, [isExtensionConnected]);
+
+  // Push action advice to extension
+  const pushAdvice = useCallback((advice) => {
+    if (!advice || !isExtensionConnected) return;
+
+    window.postMessage({
+      type: BRIDGE_MSG.ACTION_ADVICE,
+      advice: {
+        villainSeat: advice.villainSeat,
+        villainStyle: advice.villainStyle,
+        villainSampleSize: advice.villainSampleSize,
+        heroAlreadyActed: advice.heroAlreadyActed,
+        confidence: advice.confidence,
+        dataQuality: advice.dataQuality || null,
+        situation: advice.situation,
+        situationLabel: advice.situationLabel,
+        heroEquity: advice.heroEquity,
+        boardTexture: advice.boardTexture,
+        segmentation: advice.segmentation,
+        foldPct: advice.foldPct,
+        recommendations: advice.recommendations,
+        currentStreet: advice.currentStreet,
+        potSize: advice.potSize,
+        villainBet: advice.villainBet,
+        playerStats: advice.playerStats,
+      },
+      _v: PROTOCOL_VERSION,
+      timestamp: Date.now(),
+    }, window.location.origin);
+  }, [isExtensionConnected]);
+
+  // Listen for messages from extension (relayed via app-bridge content script)
   useEffect(() => {
     const handleMessage = (event) => {
       if (event.source !== window) return;
 
-      if (event.data?.type === MSG_TYPE_HANDS) {
+      if (event.data?.type === BRIDGE_MSG.HANDS) {
         importHands(event.data.hands || []);
       }
 
-      if (event.data?.type === MSG_TYPE_STATUS) {
-        lastStatusTime.current = Date.now();
-        setIsExtensionConnected(true);
+      if (event.data?.type === BRIDGE_MSG.STATUS) {
+        setIsExtensionConnected(event.data.connected !== false);
+
+        // Detect protocol version mismatch
+        const extVersion = event.data.protocolVersion;
+        if (extVersion !== undefined && extVersion !== PROTOCOL_VERSION) {
+          setVersionMismatch(true);
+          console.warn('[SyncBridge] Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION);
+        } else {
+          setVersionMismatch(false);
+        }
       }
 
-      if (event.data?.type === MSG_TYPE_HAND_STATE) {
+      if (event.data?.type === BRIDGE_MSG.HAND_STATE) {
         // Debounce: only update if hand state actually changed
         const key = `${event.data.handNumber}:${event.data.currentStreet}:${event.data.actionSequence?.length}`;
         if (key !== lastHandStateKey.current) {
           lastHandStateKey.current = key;
           setLiveHandState(event.data);
-          console.log('[SyncBridge] Hand state received:', event.data.currentStreet, 'actions:', event.data.actionSequence?.length, 'hero:', event.data.holeCards);
         }
       }
     };
 
     window.addEventListener('message', handleMessage);
 
-    // Check connection status — if no status message in 10s, mark disconnected
-    const connectionCheck = setInterval(() => {
-      const elapsed = Date.now() - lastStatusTime.current;
-      setIsExtensionConnected(elapsed < 10000);
-    }, 5000);
+    // Probe for extension on mount — bridge responds if already connected
+    window.postMessage({
+      type: BRIDGE_MSG.STATUS,
+      request: true,
+      _v: PROTOCOL_VERSION,
+    }, window.location.origin);
 
     return () => {
       window.removeEventListener('message', handleMessage);
-      clearInterval(connectionCheck);
     };
   }, [importHands]);
 
   return {
     isExtensionConnected,
+    versionMismatch,
     lastSyncTime,
     importedCount,
     syncError,
     importFromJson,
     liveHandState,
+    pushExploits,
+    pushAdvice,
   };
 };
 

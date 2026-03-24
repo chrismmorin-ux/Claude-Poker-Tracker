@@ -29,11 +29,32 @@ const STYLE_COLORS = {
   Unknown: { bg: '#374151', text: '#9ca3af' },
 };
 
+// Confidence tier dot colors
+const TIER_DOT = {
+  confirmed:   '#22c55e',  // green
+  supported:   '#eab308',  // yellow
+  speculative: '#6b7280',  // gray
+};
+
+// Data quality tier labels + colors
+const QUALITY_CONFIG = {
+  none:        { label: 'no data',    color: '#ef4444' },
+  speculative: { label: 'early',      color: '#f97316' },
+  developing:  { label: 'developing', color: '#eab308' },
+  established: { label: 'solid',      color: '#22c55e' },
+};
+
+const getQualityTier = (n) =>
+  n === 0 ? 'none' : n < 10 ? 'speculative' : n < 30 ? 'developing' : 'established';
+
 export const OnlineView = ({ scale }) => {
   const { user } = useAuth();
   const userId = user?.uid || GUEST_USER_ID;
 
-  const { isExtensionConnected, importedCount, syncError, importFromJson, liveHandState } = useSyncBridge(userId);
+  const {
+    isExtensionConnected, versionMismatch, importedCount, syncError,
+    importFromJson, liveHandState, pushExploits, pushAdvice,
+  } = useSyncBridge(userId);
 
   // Track online sessions
   const [onlineSessions, setOnlineSessions] = useState([]);
@@ -62,69 +83,18 @@ export const OnlineView = ({ scale }) => {
   // Analysis pipeline for selected session
   const { tendencyMap, handCount, isLoading } = useOnlineAnalysis(selectedSessionId, userId);
 
-  // Push exploit data to extension via window.postMessage
+  // Push exploit data to extension when analysis updates or connection established
   useEffect(() => {
-    if (!isExtensionConnected) return;
-    const entries = Object.entries(tendencyMap);
-    if (entries.length === 0) return;
-
-    const seats = entries.map(([seat, data]) => ({
-      seat,
-      style: data.style || null,
-      sampleSize: data.sampleSize || 0,
-      exploits: (data.exploits || []).map(e => ({
-        id: e.id, label: e.label, category: e.category,
-        street: e.street, statBasis: e.statBasis,
-        scoring: e.scoring || null,
-      })),
-      weaknesses: (data.weaknesses || []).slice(0, 10).map(w => ({
-        id: w.id, label: w.label, category: w.category,
-        severity: w.severity, confidence: w.confidence,
-      })),
-      briefings: (data.briefings || []).slice(0, 5).map(b => ({
-        ruleId: b.ruleId, label: b.label,
-        scoring: b.scoring || null,
-        evidenceBreakdown: b.evidenceBreakdown || null,
-        handExamples: b.handExamples || null,
-        riskAnalysis: b.riskAnalysis || null,
-      })),
-    }));
-
-    window.postMessage({
-      type: 'POKER_SYNC_EXPLOITS',
-      seats,
-      handCount,
-      timestamp: Date.now(),
-    }, window.location.origin);
-  }, [tendencyMap, isExtensionConnected, handCount]);
+    pushExploits(tendencyMap, handCount);
+  }, [tendencyMap, handCount, pushExploits, isExtensionConnected]);
 
   // Live action advisor — runs getActionAdvice() against primary villain
   const { advice } = useLiveActionAdvisor(liveHandState, tendencyMap);
 
-  // Push action advice to extension
+  // Push action advice to extension when advice updates or connection established
   useEffect(() => {
-    if (!advice || !isExtensionConnected) return;
-    window.postMessage({
-      type: 'POKER_SYNC_ACTION_ADVICE',
-      advice: {
-        villainSeat: advice.villainSeat,
-        villainStyle: advice.villainStyle,
-        villainSampleSize: advice.villainSampleSize,
-        situation: advice.situation,
-        situationLabel: advice.situationLabel,
-        heroEquity: advice.heroEquity,
-        boardTexture: advice.boardTexture,
-        segmentation: advice.segmentation,
-        foldPct: advice.foldPct,
-        recommendations: advice.recommendations,
-        currentStreet: advice.currentStreet,
-        potSize: advice.potSize,
-        villainBet: advice.villainBet,
-        playerStats: advice.playerStats,
-      },
-      timestamp: Date.now(),
-    }, window.location.origin);
-  }, [advice, isExtensionConnected]);
+    pushAdvice(advice);
+  }, [advice, pushAdvice, isExtensionConnected]);
 
   // File import handler
   const handleFileImport = useCallback(async (e) => {
@@ -166,6 +136,12 @@ export const OnlineView = ({ scale }) => {
             </span>
           </div>
         </div>
+
+        {versionMismatch && (
+          <div style={{ background: '#78350f', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fbbf24' }}>
+            Extension version mismatch — update the extension to match the app
+          </div>
+        )}
 
         {syncError && (
           <div style={{ background: '#7f1d1d', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fca5a5' }}>
@@ -324,21 +300,43 @@ export const OnlineView = ({ scale }) => {
                       </span>
                     )}
                   </h3>
-                  <span style={{ fontSize: 11, color: '#6b7280' }}>{selectedSeatData.sampleSize} hands</span>
+                  <span style={{ fontSize: 11, color: '#6b7280' }}>
+                    {selectedSeatData.sampleSize} hands
+                    {(() => {
+                      const q = QUALITY_CONFIG[getQualityTier(selectedSeatData.sampleSize || 0)];
+                      return q ? <span style={{ fontSize: 10, marginLeft: 4, color: q.color }}>({q.label})</span> : null;
+                    })()}
+                  </span>
                 </div>
+
+                {/* Early estimate warning */}
+                {(selectedSeatData.sampleSize || 0) < 10 && selectedSeatData.exploits?.length > 0 && (
+                  <div style={{ fontSize: 10, color: '#9ca3af', fontStyle: 'italic', marginBottom: 6 }}>
+                    Early estimate — play standard until more data
+                  </div>
+                )}
 
                 {/* Exploits */}
                 {selectedSeatData.exploits?.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
                     <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Exploits</h4>
-                    {selectedSeatData.exploits.slice(0, 8).map((exploit, i) => (
-                      <div key={i} style={{
-                        fontSize: 12, padding: '4px 8px', marginBottom: 3,
-                        background: '#0d1117', borderRadius: 4, borderLeft: '2px solid #d4a847',
-                      }}>
-                        {exploit.label || exploit.description || 'Exploit detected'}
-                      </div>
-                    ))}
+                    {selectedSeatData.exploits.slice(0, 8).map((exploit, i) => {
+                      const dotColor = TIER_DOT[exploit.tier] || TIER_DOT.speculative;
+                      const opacity = Math.max(0.5, Math.min(1, (exploit.scoring?.worthiness || 0.5) * 1.5));
+                      return (
+                        <div key={i} style={{
+                          fontSize: 12, padding: '4px 8px', marginBottom: 3,
+                          background: '#0d1117', borderRadius: 4, borderLeft: '2px solid #d4a847',
+                          display: 'flex', alignItems: 'center', gap: 6, opacity,
+                        }}>
+                          <span style={{
+                            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                            backgroundColor: dotColor,
+                          }} title={exploit.tier || 'speculative'} />
+                          <span>{exploit.label || exploit.description || 'Exploit detected'}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
