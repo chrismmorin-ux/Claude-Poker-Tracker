@@ -1,19 +1,23 @@
 # Project Context Summary
-**Version**: 1.5.0 | **Updated**: 2026-03-23
+**Version**: 1.6.0 | **Updated**: 2026-03-24
 
 Live poker hand tracker and exploit engine for 9-handed games.
 Records actions, builds Bayesian player models, and surfaces maximally exploitative plays.
 Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 
 ## Architecture
-- **Entry**: `src/PokerTracker.jsx` (~109 lines) - orchestrates state and views
+- **Entry**: `src/PokerTracker.jsx` (~128 lines) - orchestrates state and views
 - **State**: 8 reducers (game, ui, card, session, player, settings, auth, tournament) + 10 context providers (incl. TendencyProvider, TournamentContext)
 - **Views**: 13 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online, Login, Signup, PasswordReset) + Showdown overlay
-- **Persistence**: IndexedDB v12 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments)
+- **Persistence**: IndexedDB v12 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments) — 10 modules incl. migrations.js
 - **UI Components**: 37 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
-- **Hooks**: 31 custom hooks in `src/hooks/` (including usePlayerTendencies, useOnlineAnalysis, useHandReplayAnalysis, useTournamentPersistence)
-- **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (6 modules)
-- **Exploit Engine**: `src/utils/exploitEngine/` - 13 modules (~2,878 LOC): exploit suggestions, range matrix, action advisor, fold equity, range segmentation, board texture, postflop narrowing
+- **Hooks**: 32 custom hooks in `src/hooks/` (including usePlayerTendencies, useOnlineAnalysis, useHandReplayAnalysis, useLiveActionAdvisor, useSyncBridge)
+- **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (9 modules)
+- **Exploit Engine**: `src/utils/exploitEngine/` - 16 modules: exploit suggestions, weakness detection, Bayesian confidence, action advisor, fold equity, range segmentation, postflop narrowing, decision accumulator
+- **Hand Analysis**: `src/utils/handAnalysis/` - 7 modules + barrel export (handTimeline, handReviewAnalyzer, heroAnalysis, hindsightAnalysis, replayAnalysis, handSignificance, playerNameMap)
+- **Tournament Engine**: `src/utils/tournamentEngine/` - 4 modules (blindLevelUtils, blindOutCalculator, dropoutPredictor)
+- **Poker Core**: `src/utils/pokerCore/` - 4 shared modules (cardParser, rangeMatrix, handEvaluator, boardTexture)
+- **Tests**: 2,784 tests across 132 test files (Vitest + fake-indexeddb)
 
 ## Key Patterns
 - useReducer for state, useContext for cross-component access

@@ -81,6 +81,8 @@ const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
             weaknesses: result.weaknesses,
             rangeProfile: result.rangeProfile,
             rangeSummary: result.rangeSummary,
+            villainModel: result.villainModel,
+            villainProfile: result.villainProfile,
           };
         } catch (e) {
           // Skip this seat on error, don't break the whole analysis

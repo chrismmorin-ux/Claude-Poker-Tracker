@@ -26,6 +26,8 @@ export const useActionAdvisor = () => {
     villainAction,
     villainBet = 0,
     playerStats,
+    villainModel,
+    personalizedMultipliers,
     trials = 2000,
   }) => {
     const callId = ++abortRef.current;
@@ -52,6 +54,8 @@ export const useActionAdvisor = () => {
         villainAction: villainAction || undefined,
         villainBet,
         playerStats,
+        villainModel,
+        personalizedMultipliers,
         trials,
       });
 

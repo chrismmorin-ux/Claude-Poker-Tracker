@@ -122,6 +122,8 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           rangeSummary: result.rangeSummary,
           subActionSummary: result.subActionSummary,
           decisionSummary: result.decisionSummary,
+          villainModel: result.villainModel,
+          villainProfile: result.villainProfile,
           weaknesses: result.weaknesses,
         }];
       }));

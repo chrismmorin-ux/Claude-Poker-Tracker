@@ -371,6 +371,7 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
         if (encodedBoard.length < 3) return;
 
+        const villainModel = villainData.villainModel || null;
         result = await getActionAdvice({
           villainRange,
           board: encodedBoard,
@@ -380,6 +381,8 @@ const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           villainBet: villainBet || 0,
           trials: 1000,
           playerStats,
+          personalizedMultipliers: villainModel?.personalizedMultipliers,
+          villainModel,
         });
       }
 

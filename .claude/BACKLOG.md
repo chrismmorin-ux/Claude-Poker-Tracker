@@ -3,7 +3,7 @@
 Master execution list. Items ordered by dependency chain and priority.
 Start any item with `/project start <id>` or ask Claude to implement it directly.
 
-**Last updated:** 2026-03-09 | **Current version:** v121
+**Last updated:** 2026-03-24 | **Current version:** v122
 
 ---
 
@@ -292,7 +292,7 @@ Deferred findings from CTO review. No action unless triggers are hit.
 | ARCH-003 | TableView: 594 lines, 25 handlers | >700 lines | Extract useTableDealerLogic, useTableCardActions hooks |
 | ARCH-004 | PlayersView: 562 lines, 15 handlers | >700 lines | Extract useSeatAssignmentFlow, useDragDropSeating hooks |
 | ARCH-005 | actionAdvisor only in AnalysisView | After HE-2a/2b/2c complete | Wire useActionAdvisor into CommandStrip with compact EV display |
-| ARCH-006 | database.js inline migrations (v1-v9) | v10+ migration needed | Extract migration functions into migrations.js |
+| ARCH-006 | ~~database.js inline migrations~~ | DONE | Extracted to `migrations.js` (commit 26cf0fb) |
 
 ---
 
@@ -422,19 +422,19 @@ Plan: `.claude/plans/concurrent-whistling-whisper.md`
 | 21.2 | P0 | DONE | Replace z-tests with Bayesian credible intervals | New `bayesianConfidence.js` Beta-Binomial model. Replaced `proportionZTest` in statRules + generateExploits. Replaced `sampleConfidence()` in weaknessDetector. 5 files. |
 | 21.3 | P1 | DONE | Confidence-weighted display | Continuous worthiness filter, dataQuality metadata in live advisor, confidence dots + quality labels + bluff gating in OnlineView. 4 files. |
 | 21.4a | P1 | DONE | Contextual decision tracking | Expanded situation keys to 7 dimensions (aggressor/IP/facing/contextAction). 2 new weakness rules (donks-without-equity, never-cbets). 2 files. |
-| 21.4b | P1 | READY | Villain decision model | New `villainDecisionModel.js`: per-context action distributions with Bayesian hierarchical smoothing. Population fallback from `ACTION_MULTIPLIERS`. |
-| 21.4c | P2 | BLOCKED (21.4b) | Game tree evaluator | New `gameTreeEvaluator.js`: recursive 2-street look-ahead. Villain decisions from decision model. Range narrowing per branch. 100-200ms budget. |
-| 21.4d | P2 | BLOCKED (21.4c) | Replace actionAdvisor + live advisor | `getActionAdvice()` becomes game tree wrapper. Delete `computePreflopAdvice()`. Unified preflop+postflop pipeline. 2 files. |
-| 21.5 | P1 | BLOCKED (21.4c) | Remove WEAKNESS_EXPLOIT_MAP stopgap | Delete `WEAKNESS_EXPLOIT_MAP`, `weaknessToExploit()`, `runWeaknessRules()`. Weaknesses become villain reads only. Game tree generates situation-specific exploits that reference weaknesses as inputs. Audit all `w-*` exploit IDs in IMPACT/RISK maps, ExploitList, ExploitBadges, briefingBuilder. |
+| 21.4b | P1 | DONE | Villain decision model | `villainDecisionModel.js`: hierarchical Bayesian smoothing over 7-dim decision buckets, personalized ACTION_MULTIPLIERS, contextual fold% estimates. Integrated into analysisPipeline, postflopNarrower, foldEquityCalculator, actionAdvisor, useLiveActionAdvisor. 23 tests. |
+| 21.4c | P2 | DONE | Game tree evaluator | `gameTreeEvaluator.js`: depth-1 tree with equity rollout, algebraic sub-range equity, MC refinement for top 2 candidates, villain response breakdown. ~135ms budget. 22 tests. |
+| 21.4d | P2 | DONE | Replace actionAdvisor with game tree | `actionAdvisor.js` rewritten as thin wrapper around `evaluateGameTree()`. 245→43 lines. All 20 existing tests pass unchanged. |
+| 21.5 | P1 | DONE | Remove WEAKNESS_EXPLOIT_MAP stopgap | Deleted `WEAKNESS_EXPLOIT_MAP`, `weaknessToExploit()`, `runWeaknessRules()`, `WEAKNESS_SUPERSEDES`, `applyWeaknessDeduplication()`. Removed `w-*` IDs from IMPACT/RISK maps and briefingBuilder. Weaknesses are now villain reads only. 4 files. |
 
 ---
 
 ## Recommended Execution Order
 
 ```
-NEXT:   21.4b (villain decision model), 18 Phase 1-2 (hand replay health)
-LATER:  21.4c-d, 21.5 (remove weakness→exploit stopgap), 14 Phase 2, 12.4, 18 Phase 3-4, 5
+NEXT:   18 Phase 1-2 (hand replay health), 14 Phase 2, 12.4
+LATER:  18 Phase 3-4, 5
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
-DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17
+DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17, 21 (all phases)
 PAUSED: 6 (Firebase auth)
 ```

@@ -16,6 +16,8 @@ import { generateExploits } from './exploitEngine/generateExploits';
 import { buildBriefings } from './exploitEngine/briefingBuilder';
 import { accumulateDecisions } from './exploitEngine/decisionAccumulator';
 import { detectWeaknesses } from './exploitEngine/weaknessDetector';
+import { buildVillainDecisionModel } from './exploitEngine/villainDecisionModel';
+import { buildVillainProfile } from './exploitEngine/villainProfileBuilder';
 
 /**
  * Run the full analysis pipeline for a single player.
@@ -47,12 +49,14 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     console.warn('analysisPipeline: range profile failed', e.message);
   }
 
-  // Weaknesses
+  // Decisions + villain model
   let decisionSummary = null;
+  let villainModel = null;
   let weaknesses = [];
   try {
     if (rangeProfile) {
       decisionSummary = accumulateDecisions(playerId, hands, rangeProfile, userId);
+      villainModel = buildVillainDecisionModel(decisionSummary, pct);
     }
     weaknesses = detectWeaknesses({
       decisionSummary,
@@ -68,13 +72,23 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     console.warn('analysisPipeline: weakness detection failed', e.message);
   }
 
+  // Villain profile (hero-facing decision model)
+  let villainProfile = null;
+  try {
+    villainProfile = buildVillainProfile({
+      villainModel, decisionSummary, percentages: pct,
+      positionStats, weaknesses, rangeProfile, style,
+    });
+  } catch (e) {
+    console.warn('analysisPipeline: villain profile build failed', e.message);
+  }
+
   // Exploits
   const exploits = generateExploits({
     rawStats, percentages: pct, positionStats, limpData,
     rangeProfile, rangeSummary, subActionSummary,
     traits: rangeProfile?.traits || null,
     pips: rangeProfile?.pips || null,
-    weaknesses,
   });
 
   // Briefings
@@ -101,6 +115,8 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     rangeSummary,
     subActionSummary,
     decisionSummary,
+    villainModel,
+    villainProfile,
     weaknesses,
     exploits,
     briefings,

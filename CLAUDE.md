@@ -31,16 +31,18 @@ Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is almost always WRONG for poker. The codebase uses Bayesian methods, population priors, consequence-weighted confidence, and range-based thinking for specific theoretical reasons. Do not simplify.
 
 ## Architecture (v122)
-- `src/PokerTracker.jsx` (~109 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
+- `src/PokerTracker.jsx` (~128 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
 - `src/contexts/` — 10 providers (incl. ToastContext, TendencyProvider, TournamentContext)
 - `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
-- `src/hooks/` — 32 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useTournamentPersistence, etc.)
+- `src/hooks/` — 32 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, etc.)
 - `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
 - `src/components/ui/` — 37 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
-- `src/utils/pokerCore/` — shared poker infrastructure (cardParser, rangeMatrix, handEvaluator, boardTexture)
-- `src/utils/rangeEngine/` — Bayesian range estimation (6 modules)
-- `src/utils/exploitEngine/` — exploit suggestions + range segmentation + weakness detection
-- `src/utils/persistence/` — IndexedDB v12 (hands, sessions, players, settings, rangeProfiles, tournaments)
+- `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
+- `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
+- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (16 modules)
+- `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
+- `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
+- `src/utils/persistence/` — IndexedDB v12 (10 modules: database, migrations, 6 domain stores, validation, index)
 
 ## Working Principles
 - **Plan first, code second** — outline your approach before writing code. For non-trivial changes, present the plan and wait for approval
@@ -81,7 +83,8 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - Scale: `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
 
 ## Testing
-Verify across all 7 views: Table, Card Selector, Showdown, Stats, Sessions, Players, Settings
+- 2,784 tests across 132 test files (Vitest + fake-indexeddb)
+- Verify across views: Table, Showdown, Stats, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online
 
 ## Analytics Pipeline
 The app builds player models through three layers:
