@@ -5,7 +5,7 @@
  * Part of the persistence layer, extracted from persistence.js.
  */
 
-import { normalizeHandRecord } from '../../migrations/normalizeSeatActions';
+import { normalizeHandRecord } from './normalizeSeatActions';
 
 import {
   initDB,

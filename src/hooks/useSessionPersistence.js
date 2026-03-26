@@ -1,3 +1,4 @@
+// Instantiated in: SessionContext.jsx
 /**
  * useSessionPersistence.js - React hook for session persistence
  *

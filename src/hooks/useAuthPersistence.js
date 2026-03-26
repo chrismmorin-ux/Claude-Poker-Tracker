@@ -1,3 +1,4 @@
+// Instantiated in: useAppState.js
 /**
  * useAuthPersistence.js - React hook for Firebase auth state persistence
  *

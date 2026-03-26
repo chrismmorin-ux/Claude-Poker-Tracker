@@ -7,8 +7,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useActionAdvisor } from '../useActionAdvisor';
 
-vi.mock('../../utils/exploitEngine/actionAdvisor', () => ({
-  getActionAdvice: vi.fn(),
+vi.mock('../../utils/exploitEngine/gameTreeEvaluator', () => ({
+  evaluateGameTree: vi.fn(),
 }));
 
 vi.mock('../../utils/pokerCore/cardParser', () => ({
@@ -18,7 +18,7 @@ vi.mock('../../utils/pokerCore/cardParser', () => ({
   }),
 }));
 
-import { getActionAdvice } from '../../utils/exploitEngine/actionAdvisor';
+import { evaluateGameTree } from '../../utils/exploitEngine/gameTreeEvaluator';
 
 const validInput = {
   villainRange: new Float64Array(169),
@@ -48,7 +48,7 @@ describe('useActionAdvisor', () => {
   });
 
   it('compute() resolves with advice', async () => {
-    getActionAdvice.mockResolvedValue(mockResult);
+    evaluateGameTree.mockResolvedValue(mockResult);
     const { result } = renderHook(() => useActionAdvisor());
 
     await act(async () => {
@@ -90,7 +90,7 @@ describe('useActionAdvisor', () => {
   });
 
   it('clear() resets state', async () => {
-    getActionAdvice.mockResolvedValue(mockResult);
+    evaluateGameTree.mockResolvedValue(mockResult);
     const { result } = renderHook(() => useActionAdvisor());
 
     await act(async () => {
@@ -110,7 +110,7 @@ describe('useActionAdvisor', () => {
 
   it('rapid double-call only keeps latest result (abort)', async () => {
     let callCount = 0;
-    getActionAdvice.mockImplementation(() => {
+    evaluateGameTree.mockImplementation(() => {
       callCount++;
       const thisCall = callCount;
       return new Promise((resolve) => {

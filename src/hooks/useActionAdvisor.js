@@ -1,12 +1,12 @@
 /**
  * useActionAdvisor.js - React hook for on-demand exploit engine analysis
  *
- * Wraps getActionAdvice() with React state management, abort handling,
+ * Wraps evaluateGameTree() with React state management, abort handling,
  * and card format conversion.
  */
 
 import { useState, useCallback } from 'react';
-import { getActionAdvice } from '../utils/exploitEngine/actionAdvisor';
+import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { useAbortControl } from './useAbortControl';
 
@@ -47,7 +47,7 @@ export const useActionAdvisor = () => {
         throw new Error('At least 3 board cards required');
       }
 
-      const result = await getActionAdvice({
+      const { treeMetadata, ...result } = await evaluateGameTree({
         villainRange,
         board,
         heroCards,

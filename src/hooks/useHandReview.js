@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { logger } from '../utils/errorHandler';
 import { getAllHands, getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
 import { buildTimeline, getStreetTimeline, getAvailableStreets } from '../utils/handAnalysis';
 import { getCardsForStreet } from '../utils/pokerCore/cardParser';
@@ -42,7 +43,7 @@ export const useHandReview = (userId = GUEST_USER_ID) => {
       loaded.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       setHands(loaded);
     } catch (e) {
-      console.error('useHandReview: failed to load hands', e);
+      logger.error('HandReview', e);
       setHands([]);
     } finally {
       setIsLoading(false);

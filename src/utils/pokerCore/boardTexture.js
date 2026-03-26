@@ -5,6 +5,7 @@
  */
 
 import { cardRank, cardSuit, parseBoard } from './cardParser';
+import { clamp } from '../mathUtils';
 
 /**
  * Analyze board texture from encoded card array.
@@ -78,7 +79,7 @@ export const analyzeBoardTexture = (boardCards) => {
   if (rainbow) wetScore -= 15;
   wetScore += highCardCount * 5;
 
-  wetScore = Math.max(0, Math.min(100, wetScore));
+  wetScore = clamp(wetScore, 0, 100);
 
   const texture = wetScore >= 65 ? 'wet' : wetScore >= 40 ? 'medium' : 'dry';
 

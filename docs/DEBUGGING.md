@@ -168,7 +168,7 @@ When `DEBUG = false`:
 
 The app automatically normalizes old data on load via `normalizeHandRecord()`.
 If issues persist:
-1. Check `src/migrations/normalizeSeatActions.js`
+1. Check `src/utils/persistence/normalizeSeatActions.js`
 2. Data is normalized when loaded, not in database
 3. Clear history and re-test if migration fails
 
@@ -202,4 +202,4 @@ Current test coverage:
 | `src/utils/validation.js` | Input validation functions |
 | `src/utils/actionValidation.js` | Poker action sequence validation |
 | `src/utils/persistence.js` | IndexedDB operations |
-| `src/migrations/normalizeSeatActions.js` | Data migration utilities |
+| `src/utils/persistence/normalizeSeatActions.js` | Data migration utilities |

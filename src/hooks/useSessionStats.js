@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/errorHandler';
 import { getHandsBySessionId } from '../utils/persistence/index';
 import { buildSessionStats } from '../utils/sessionStats';
 
@@ -38,7 +39,7 @@ export const useSessionStats = (sessionId, seatPlayers) => {
       const stats = buildSessionStats(hands, seatPlayers);
       setSeatStats(stats);
     } catch (error) {
-      console.error('useSessionStats: calculation failed', error);
+      logger.error('SessionStats', error);
     } finally {
       setIsLoading(false);
     }

@@ -8,7 +8,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePersistence } from '../usePersistence';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
-import { PLAYER_ACTIONS } from '../../reducers/playerReducer';
+import { PLAYER_ACTIONS } from '../../constants/playerConstants';
 import {
   createMockGameState,
   createMockCardState,

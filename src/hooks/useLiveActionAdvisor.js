@@ -11,8 +11,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { DEBUG } from '../utils/errorHandler';
-import { getActionAdvice } from '../utils/exploitEngine/actionAdvisor';
+import { logger } from '../utils/errorHandler';
+import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import {
@@ -40,7 +40,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
   const compute = useCallback(async () => {
     if (!liveHandState || !tendencyMap) {
-      if (DEBUG) console.log('[LiveActionAdvisor] Skip: no handState or tendencyMap', { hasHS: !!liveHandState, hasTM: !!tendencyMap, tmKeys: tendencyMap ? Object.keys(tendencyMap) : [] });
+      logger.debug('LiveActionAdvisor', 'Skip: no handState or tendencyMap', { hasHS: !!liveHandState, hasTM: !!tendencyMap, tmKeys: tendencyMap ? Object.keys(tendencyMap) : [] });
       setAdvice(null);
       return;
     }
@@ -52,14 +52,14 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
 
     // Skip if not in a live hand
     if (!state || state === 'IDLE' || state === 'COMPLETE') {
-      if (DEBUG) console.log('[LiveActionAdvisor] Skip: not live hand, state=', state);
+      logger.debug('LiveActionAdvisor', 'Skip: not live hand, state=', state);
       setAdvice(null);
       return;
     }
 
     // Skip if no hero cards
     if (!holeCards || !holeCards[0] || !holeCards[1]) {
-      if (DEBUG) console.log('[LiveActionAdvisor] Skip: no hero cards', holeCards);
+      logger.debug('LiveActionAdvisor', 'Skip: no hero cards', holeCards);
       return;
     }
 
@@ -80,10 +80,10 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       const activeSeatNumbers = liveHandState.activeSeatNumbers || [];
       const foldedSet = new Set(liveHandState.foldedSeats || []);
       targetSeat = activeSeatNumbers.find(s => s !== heroSeat && !foldedSet.has(s));
-      if (DEBUG) console.log('[LiveActionAdvisor] No villain from action, fallback target=', targetSeat, 'active=', activeSeatNumbers, 'folded=', liveHandState.foldedSeats);
+      logger.debug('LiveActionAdvisor', 'No villain from action, fallback target=', targetSeat, 'active=', activeSeatNumbers, 'folded=', liveHandState.foldedSeats);
     }
     if (!targetSeat) {
-      if (DEBUG) console.log('[LiveActionAdvisor] Skip: no target seat');
+      logger.debug('LiveActionAdvisor', 'Skip: no target seat');
       return;
     }
 
@@ -95,7 +95,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
     // Look up villain data (Fix 3: allow zero-sample — baseline range handles it)
     const villainData = tendencyMap[String(targetSeat)] || {};
     const sampleSize = villainData.sampleSize || 0;
-    if (DEBUG) console.log('[LiveActionAdvisor] Computing:', { street: currentStreet, situation, villain: targetSeat, vpip: villainData.vpip, sample: sampleSize, pot });
+    logger.debug('LiveActionAdvisor', 'Computing:', { street: currentStreet, situation, villain: targetSeat, vpip: villainData.vpip, sample: sampleSize, pot });
 
     // Data quality metadata — richer than old 'high'/'medium'/'low'
     const dataQuality = {
@@ -174,7 +174,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         const relevantObs = (villainData.observations || []).filter(o =>
           o.street === currentStreet || o.street === 'cross' || o.heroContext === 'META'
         );
-        result = await getActionAdvice({
+        const { treeMetadata: _, ...postflopResult } = await evaluateGameTree({
           villainRange,
           board: encodedBoard,
           heroCards: encodedHero,
@@ -190,6 +190,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
             sizingTells: villainData.decisionSummary?.sizingTells,
           },
         });
+        result = postflopResult;
       }
 
       if (!isCurrent(callId)) return;
@@ -238,13 +239,13 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         playerStats,
         timestamp: Date.now(),
       });
-      if (DEBUG) console.log('[LiveActionAdvisor] Advice computed:', {
+      logger.debug('LiveActionAdvisor', 'Advice computed:', {
         street: currentStreet, situation, villain: targetSeat,
         heroEq: Math.round(result.heroEquity * 100) + '%',
         recs: result.recommendations.map(r => `${r.action}:${r.ev.toFixed(2)}`),
       });
     } catch (e) {
-      console.warn('[LiveActionAdvisor] Error:', e.message);
+      logger.warn('LiveActionAdvisor', 'Error:', e.message);
     } finally {
       if (isCurrent(callId)) setIsComputing(false);
     }

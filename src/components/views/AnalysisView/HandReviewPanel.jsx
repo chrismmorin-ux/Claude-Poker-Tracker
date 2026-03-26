@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
+import { logger } from '../../../utils/errorHandler';
 import { usePlayer, useTendency, useSession, useUI } from '../../../contexts';
 import { useToast } from '../../../contexts/ToastContext';
 import { useHandReview } from '../../../hooks/useHandReview';
@@ -49,13 +50,13 @@ export const HandReviewPanel = () => {
           const newCount = await getSessionHandCount(currentSessionId);
           dispatchSession({ type: SESSION_ACTIONS.SET_HAND_COUNT, payload: { count: newCount } });
         } catch (e) {
-          console.error('[HandReviewPanel] Failed to update hand count:', e);
+          logger.error('HandReviewPanel', e);
         }
       }
       await refresh();
       showSuccess('Hand deleted');
     } catch (error) {
-      console.error('[HandReviewPanel] Failed to delete hand:', error);
+      logger.error('HandReviewPanel', error);
       showError('Failed to delete hand.');
     }
   }, [currentSession, dispatchSession, refresh, showError, showSuccess]);

@@ -14,6 +14,7 @@
  */
 
 import { RANGE_POSITIONS } from './rangeProfile';
+import { clamp } from '../mathUtils';
 import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
 
 const GRID_SIZE = 169;
@@ -41,7 +42,7 @@ const normalizeScenario = (ranges, actions) => {
 
     // Clamp
     for (const action of nonFold) {
-      ranges[action][i] = Math.max(0, Math.min(1.0, ranges[action][i]));
+      ranges[action][i] = clamp(ranges[action][i], 0, 1.0);
     }
   }
 };

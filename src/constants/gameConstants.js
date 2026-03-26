@@ -43,9 +43,6 @@ export const ACTION_ABBREV = {
 // All actions that count as a fold (for checking fold status)
 export const FOLD_ACTIONS = [ACTIONS.FOLD, ACTIONS.FOLD_TO_CR, ACTIONS.FOLD_TO_CBET];
 
-// Terminal actions (actions that end a player's participation in the hand)
-export const TERMINAL_ACTIONS = [...FOLD_ACTIONS, ACTIONS.WON];
-
 // Seat status values (returned by isSeatInactive)
 export const SEAT_STATUS = {
   FOLDED: 'folded',

@@ -36,10 +36,10 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
 - `src/hooks/` — 33 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, useAbortControl, etc.)
 - `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
-- `src/components/ui/` — 37 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
+- `src/components/ui/` — 39 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
-- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (29 modules)
+- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (28 modules)
 - `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
 - `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
 - `src/utils/persistence/` — IndexedDB v12 (10 modules: database, migrations, 6 domain stores, validation, index)
@@ -83,7 +83,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - Scale: `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
 
 ## Testing
-- 2,784 tests across 132 test files (Vitest + fake-indexeddb)
+- ~2,800 tests across ~148 test files (Vitest + fake-indexeddb)
 - Verify across views: Table, Showdown, Stats, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online
 
 ## Analytics Pipeline

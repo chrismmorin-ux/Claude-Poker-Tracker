@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
+import { logger } from '../../../utils/errorHandler';
 import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { SessionForm } from '../../ui/SessionForm';
@@ -90,7 +90,7 @@ export const SessionsView = ({ scale }) => {
       }
       setCurrentScreen(SCREEN.TABLE);
     } catch (error) {
-      console.error('Failed to start session:', error);
+      logger.error('SessionsView', error);
     }
   };
 
@@ -112,7 +112,7 @@ export const SessionsView = ({ scale }) => {
       setCashOutAmount('');
       showSuccess('Session ended');
     } catch (error) {
-      console.error('Failed to end session:', error);
+      logger.error('SessionsView', error);
       showError('Failed to end session');
     }
   };
@@ -128,7 +128,7 @@ export const SessionsView = ({ scale }) => {
       setSessions(sorted);
       showSuccess('Session deleted');
     } catch (error) {
-      console.error('Failed to delete session:', error);
+      logger.error('SessionsView', error);
       showError('Failed to delete session');
     }
   };
@@ -409,6 +409,3 @@ export const SessionsView = ({ scale }) => {
   );
 };
 
-SessionsView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};

@@ -31,7 +31,7 @@ vi.mock('../errorHandler', () => ({
 }));
 
 // Mock the migration module
-vi.mock('../../migrations/normalizeSeatActions', () => ({
+vi.mock('../persistence/normalizeSeatActions', () => ({
   normalizeHandRecord: (record) => record,
 }));
 
@@ -45,7 +45,6 @@ import {
   deleteHand,
   clearAllHands,
   getHandCount,
-  handExists,
   createSession,
   endSession,
   getActiveSession,
@@ -60,6 +59,7 @@ import {
   getPlayerById,
   deletePlayer,
 } from '../persistence/index';
+import { handExists } from '../persistence/handsStorage';
 
 // Helper to create valid hand data that passes validation
 const createValidHandData = (overrides = {}) => ({

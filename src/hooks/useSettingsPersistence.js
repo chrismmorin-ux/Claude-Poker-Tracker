@@ -1,3 +1,4 @@
+// Instantiated in: useAppState.js
 /**
  * useSettingsPersistence.js - React hook for settings persistence
  *

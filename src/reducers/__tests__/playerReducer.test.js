@@ -5,10 +5,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   playerReducer,
-  PLAYER_ACTIONS,
   initialPlayerState,
   PLAYER_STATE_SCHEMA,
 } from '../playerReducer';
+import { PLAYER_ACTIONS } from '../../constants/playerConstants';
 
 describe('playerReducer', () => {
   let state;

@@ -116,5 +116,3 @@ export const playerReducer = createValidatedReducer(
   'playerReducer'
 );
 
-// Export action types for convenience
-export { PLAYER_ACTIONS };

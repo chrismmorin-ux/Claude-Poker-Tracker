@@ -8,6 +8,7 @@
  * Each consumer wraps this with its own caching/persistence strategy.
  */
 
+import { logger } from './errorHandler';
 import { buildPlayerStats, derivePercentages, classifyStyle } from './tendencyCalculations';
 import { buildPositionStats } from './exploitEngine/positionStats';
 import { countLimps } from './sessionStats';
@@ -47,7 +48,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     rangeSummary = getRangeWidthSummary(rangeProfile);
     subActionSummary = getSubActionSummary(rangeProfile);
   } catch (e) {
-    console.warn('analysisPipeline: range profile failed', e.message);
+    logger.warn('AnalysisPipeline', 'range profile failed', e.message);
   }
 
   // Decisions + villain model
@@ -70,7 +71,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       positionStats,
     });
   } catch (e) {
-    console.warn('analysisPipeline: weakness detection failed', e.message);
+    logger.warn('AnalysisPipeline', 'weakness detection failed', e.message);
   }
 
   // Villain profile (hero-facing decision model)
@@ -81,7 +82,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       positionStats, weaknesses, rangeProfile, style,
     });
   } catch (e) {
-    console.warn('analysisPipeline: villain profile build failed', e.message);
+    logger.warn('AnalysisPipeline', 'villain profile build failed', e.message);
   }
 
   // Exploits
@@ -100,7 +101,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       decisionSummary, villainModel, rangeSummary,
     });
   } catch (e) {
-    console.warn('analysisPipeline: villain observations failed', e.message);
+    logger.warn('AnalysisPipeline', 'villain observations failed', e.message);
   }
 
   // Briefings
@@ -114,7 +115,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     };
     briefings = buildBriefings(exploits, briefingContext);
   } catch (e) {
-    console.warn('analysisPipeline: briefing generation failed', e.message);
+    logger.warn('AnalysisPipeline', 'briefing generation failed', e.message);
   }
 
   return {

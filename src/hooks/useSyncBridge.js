@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/errorHandler';
 import { saveOnlineHand } from '../utils/persistence/handsStorage';
 import { getOrCreateOnlineSession } from '../utils/persistence/sessionsStorage';
 import { BRIDGE_MSG, PROTOCOL_VERSION } from '../utils/bridgeProtocol';
@@ -53,7 +54,7 @@ export const useSyncBridgeImpl = (userId) => {
           imported++;
         }
       } catch (e) {
-        console.warn('[SyncBridge] Failed to import hand:', hand.captureId, e.message);
+        logger.warn('SyncBridge', 'Failed to import hand:', hand.captureId, e.message);
       }
     }
 
@@ -177,7 +178,7 @@ export const useSyncBridgeImpl = (userId) => {
         const extVersion = event.data.protocolVersion;
         if (extVersion !== undefined && extVersion !== PROTOCOL_VERSION) {
           setVersionMismatch(true);
-          console.warn('[SyncBridge] Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION);
+          logger.warn('SyncBridge', 'Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION);
         } else {
           setVersionMismatch(false);
         }

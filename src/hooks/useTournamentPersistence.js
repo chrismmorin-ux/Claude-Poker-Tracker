@@ -1,3 +1,4 @@
+// Instantiated in: TournamentContext.jsx
 /**
  * useTournamentPersistence.js - Tournament state persistence hook
  *

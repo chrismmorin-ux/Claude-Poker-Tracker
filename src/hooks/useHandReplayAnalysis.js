@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { logger } from '../utils/errorHandler';
 import { initializeSeatRanges, analyzeTimelineAction } from '../utils/handAnalysis';
 
 /**
@@ -70,7 +71,7 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
 
       setActionAnalysis(results);
     } catch (e) {
-      console.error('useHandReplayAnalysis: failed', e);
+      logger.error('HandReplayAnalysis', e);
       setActionAnalysis(null);
     } finally {
       setIsComputing(false);

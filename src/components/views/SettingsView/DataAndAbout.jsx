@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { logger } from '../../../utils/errorHandler';
 import { BACKUP_FREQUENCIES, SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
 
@@ -54,7 +55,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
         showSuccess?.('Cleared simulator data');
       }
     } catch (err) {
-      console.error('[DataAndAbout] Seed error:', err);
+      logger.error('DataAndAbout', err);
       showError?.(`Seed failed: ${err.message}`);
     } finally {
       setSeedLoading(null);

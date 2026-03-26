@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/errorHandler';
 import { getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
 import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
@@ -101,7 +102,7 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
 
       setTendencyMap(map);
     } catch (e) {
-      console.error('[OnlineAnalysis] Pipeline error:', e);
+      logger.error('OnlineAnalysis', e);
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+// Instantiated in: useAppState.js
 /**
  * usePersistence.js - React hook for state persistence
  *
@@ -13,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { initDB, saveHand, loadLatestHand, GUEST_USER_ID, createPersistenceLogger } from '../utils/persistence/index';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
-import { PLAYER_ACTIONS } from '../reducers/playerReducer';
+import { PLAYER_ACTIONS } from '../constants/playerConstants';
 
 // =============================================================================
 // CONSTANTS

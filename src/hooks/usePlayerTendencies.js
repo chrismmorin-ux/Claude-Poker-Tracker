@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/errorHandler';
 import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
 import { PROFILE_VERSION } from '../utils/rangeEngine';
 import { mergeBriefings } from '../utils/exploitEngine/briefingMerge';
@@ -58,7 +59,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
             cachedRangeProfile = cached;
           }
         } catch (e) {
-          console.warn('usePlayerTendencies: range profile cache read failed', e.message);
+          logger.warn('PlayerTendencies', 'range profile cache read failed', e.message);
         }
 
         const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
@@ -68,7 +69,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           try {
             await saveRangeProfile(result.rangeProfile, userId);
           } catch (e) {
-            console.warn('usePlayerTendencies: range profile save failed', e.message);
+            logger.warn('PlayerTendencies', 'range profile save failed', e.message);
           }
         }
 
@@ -87,7 +88,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           // Persist updated briefings
           await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
         } catch (e) {
-          console.warn('usePlayerTendencies: briefing persistence failed', e.message);
+          logger.warn('PlayerTendencies', 'briefing persistence failed', e.message);
         }
 
         return [player.playerId, {
@@ -112,7 +113,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       setTendencyMap(Object.fromEntries(entries));
     } catch (error) {
       // Fail silently — stats are non-critical
-      console.error('usePlayerTendencies: calculation failed', error);
+      logger.error('PlayerTendencies', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+// Instantiated in: PlayerContext.jsx
 /**
  * usePlayerPersistence.js - React hook for player persistence
  *

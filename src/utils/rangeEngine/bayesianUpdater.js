@@ -19,6 +19,7 @@ import {
 } from './populationPriors';
 import { RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
 import { decodeIndex, rangeIndex } from '../pokerCore/rangeMatrix';
+import { logger } from '../errorHandler';
 
 const GRID_SIZE = 169;
 
@@ -100,7 +101,7 @@ const updateScenarioRanges = (ranges, counts, actions, popFreqs, totalObserved, 
   const nonFoldTotal = nonFoldActions.reduce((sum, a) => sum + (counts[a] || 0), 0);
   const rawFoldCount = totalObserved - nonFoldTotal;
   if (rawFoldCount < 0) {
-    console.warn(`[bayesianUpdater] Negative fold count (${rawFoldCount}) at ${pos}: totalObserved=${totalObserved}, nonFoldTotal=${nonFoldTotal}`);
+    logger.warn('BayesianUpdater', `Negative fold count (${rawFoldCount}) at ${pos}: totalObserved=${totalObserved}, nonFoldTotal=${nonFoldTotal}`);
   }
   const scenarioFoldCount = Math.max(0, rawFoldCount);
 
