@@ -4,7 +4,6 @@
 
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
 import { ACTIONS, ACTION_ABBREV, SEAT_STATUS, isFoldAction } from '../constants/gameConstants';
-import { getActionBadgeStyle as _getActionBadgeStyle, getActionSeatStyle as _getActionSeatStyle } from '../constants/designTokens';
 
 /**
  * Gets the display name for an action
@@ -24,20 +23,6 @@ export const getActionDisplayName = (action) => {
     default: return action || '';
   }
 };
-
-/**
- * Gets inline style object for action color (badge display)
- * @param {string} action - Action string
- * @returns {{ backgroundColor: string, color: string }}
- */
-export const getActionColor = (action) => _getActionBadgeStyle(action);
-
-/**
- * Gets seat background and ring hex colors based on action (used in table view)
- * @param {string} action - Action string
- * @returns {{ bg: string, ring: string }} - hex color values
- */
-export const getSeatActionStyle = (action) => _getActionSeatStyle(action);
 
 /**
  * Determines overlay status for showdown view

@@ -6,7 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ShowdownHeader } from '../ShowdownHeader';
-import { SEAT_STATUS } from '../../../../constants/gameConstants';
 
 describe('ShowdownHeader', () => {
   const defaultProps = {
@@ -14,7 +13,6 @@ describe('ShowdownHeader', () => {
     onNextHand: vi.fn(),
     onClearCards: vi.fn(),
     onDone: vi.fn(),
-    SEAT_STATUS,
   };
 
   beforeEach(() => {

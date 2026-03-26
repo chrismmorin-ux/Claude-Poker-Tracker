@@ -3,7 +3,8 @@
  */
 
 import React from 'react';
-import { getActionColor, getActionAbbreviation } from '../../utils/actionUtils';
+import { getActionBadgeStyle } from '../../constants/designTokens';
+import { getActionAbbreviation } from '../../utils/actionUtils';
 
 /**
  * ActionBadge - Displays a single action as a colored badge
@@ -20,7 +21,7 @@ export const ActionBadge = ({ action, size = 'medium', showArrow = false }) => {
   };
 
   // Get inline style from design tokens
-  const colorStyle = getActionColor(action);
+  const colorStyle = getActionBadgeStyle(action);
 
   // Get abbreviated action text
   const abbreviatedAction = getActionAbbreviation(action);

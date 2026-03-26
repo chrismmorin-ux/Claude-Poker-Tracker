@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { isRedCard } from '../../utils/displayUtils';
+import { SEAT_STATUS } from '../../constants/gameConstants';
 
 /**
  * CardSlot - Reusable card display component
@@ -21,7 +22,6 @@ export const CardSlot = ({
   status = null,
   onClick = null,
   canInteract = true,
-  SEAT_STATUS = null, // Pass SEAT_STATUS constant if using status
 }) => {
   // Size configurations for different variants
   const sizeConfig = {
@@ -43,9 +43,9 @@ export const CardSlot = ({
     bgColor = 'bg-gray-400';
   } else if (status === 'won') {
     bgColor = 'bg-green-200';
-  } else if (SEAT_STATUS && status === SEAT_STATUS.FOLDED) {
+  } else if (status === SEAT_STATUS.FOLDED) {
     bgColor = 'bg-red-200';
-  } else if (SEAT_STATUS && status === SEAT_STATUS.ABSENT) {
+  } else if (status === SEAT_STATUS.ABSENT) {
     bgColor = 'bg-gray-300';
   } else if (variant === 'table') {
     bgColor = card ? 'bg-white' : 'bg-gray-700';
@@ -83,8 +83,4 @@ CardSlot.propTypes = {
   status: PropTypes.oneOf(['folded', 'absent', 'mucked', 'won', null]),
   onClick: PropTypes.func,
   canInteract: PropTypes.bool,
-  SEAT_STATUS: PropTypes.shape({
-    FOLDED: PropTypes.string,
-    ABSENT: PropTypes.string,
-  }),
 };

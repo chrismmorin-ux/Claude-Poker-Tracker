@@ -5,12 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   getActionDisplayName,
-  getActionColor,
-  getSeatActionStyle,
   getOverlayStatus,
   allCardsAssigned,
   getActionAbbreviation,
 } from '../actionUtils';
+import { getActionBadgeStyle, getActionSeatStyle } from '../../constants/designTokens';
 import {
   ACTIONS,
   SEAT_STATUS,
@@ -80,111 +79,111 @@ describe('getActionDisplayName', () => {
   });
 });
 
-describe('getActionColor', () => {
+describe('getActionBadgeStyle', () => {
   describe('fold actions', () => {
     it('returns red style object for fold', () => {
-      expect(getActionColor('fold')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
+      expect(getActionBadgeStyle('fold')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
     });
 
     it('returns red style object for fold_to_cbet', () => {
-      expect(getActionColor('fold_to_cbet')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
+      expect(getActionBadgeStyle('fold_to_cbet')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
     });
 
     it('returns red style object for fold_to_cr', () => {
-      expect(getActionColor('fold_to_cr')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
+      expect(getActionBadgeStyle('fold_to_cr')).toEqual({ backgroundColor: '#dc2626', color: '#ffffff' });
     });
   });
 
   describe('action-specific colors', () => {
     it('returns cyan for check', () => {
-      expect(getActionColor('check')).toEqual({ backgroundColor: '#0891b2', color: '#ffffff' });
+      expect(getActionBadgeStyle('check')).toEqual({ backgroundColor: '#0891b2', color: '#ffffff' });
     });
 
     it('returns blue for call', () => {
-      expect(getActionColor('call')).toEqual({ backgroundColor: '#2563eb', color: '#ffffff' });
+      expect(getActionBadgeStyle('call')).toEqual({ backgroundColor: '#2563eb', color: '#ffffff' });
     });
 
     it('returns green for bet', () => {
-      expect(getActionColor('bet')).toEqual({ backgroundColor: '#16a34a', color: '#ffffff' });
+      expect(getActionBadgeStyle('bet')).toEqual({ backgroundColor: '#16a34a', color: '#ffffff' });
     });
 
     it('returns orange for raise', () => {
-      expect(getActionColor('raise')).toEqual({ backgroundColor: '#ea580c', color: '#ffffff' });
+      expect(getActionBadgeStyle('raise')).toEqual({ backgroundColor: '#ea580c', color: '#ffffff' });
     });
 
     it('returns gray for mucked', () => {
-      expect(getActionColor('mucked')).toEqual({ backgroundColor: '#6b7280', color: '#ffffff' });
+      expect(getActionBadgeStyle('mucked')).toEqual({ backgroundColor: '#6b7280', color: '#ffffff' });
     });
 
     it('returns gold for won', () => {
-      expect(getActionColor('won')).toEqual({ backgroundColor: '#d4a847', color: '#ffffff' });
+      expect(getActionBadgeStyle('won')).toEqual({ backgroundColor: '#d4a847', color: '#ffffff' });
     });
   });
 
   describe('default color', () => {
     it('returns default gray for unknown actions', () => {
-      expect(getActionColor('UNKNOWN')).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
-      expect(getActionColor('custom')).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
+      expect(getActionBadgeStyle('UNKNOWN')).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
+      expect(getActionBadgeStyle('custom')).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
     });
 
     it('returns default gray for null', () => {
-      expect(getActionColor(null)).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
+      expect(getActionBadgeStyle(null)).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
     });
 
     it('returns default gray for undefined', () => {
-      expect(getActionColor(undefined)).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
+      expect(getActionBadgeStyle(undefined)).toEqual({ backgroundColor: '#e5e7eb', color: '#111827' });
     });
   });
 });
 
-describe('getSeatActionStyle', () => {
+describe('getActionSeatStyle', () => {
   describe('fold actions', () => {
     it('returns red hex for fold', () => {
-      expect(getSeatActionStyle('fold')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
+      expect(getActionSeatStyle('fold')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
     });
 
     it('returns red hex for fold_to_cbet', () => {
-      expect(getSeatActionStyle('fold_to_cbet')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
+      expect(getActionSeatStyle('fold_to_cbet')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
     });
 
     it('returns red hex for fold_to_cr', () => {
-      expect(getSeatActionStyle('fold_to_cr')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
+      expect(getActionSeatStyle('fold_to_cr')).toEqual({ bg: '#dc2626', ring: '#fca5a5' });
     });
   });
 
   describe('primitive action styles', () => {
     it('returns cyan hex for check', () => {
-      expect(getSeatActionStyle('check')).toEqual({ bg: '#0891b2', ring: '#67e8f9' });
+      expect(getActionSeatStyle('check')).toEqual({ bg: '#0891b2', ring: '#67e8f9' });
     });
 
     it('returns blue hex for call', () => {
-      expect(getSeatActionStyle('call')).toEqual({ bg: '#2563eb', ring: '#93c5fd' });
+      expect(getActionSeatStyle('call')).toEqual({ bg: '#2563eb', ring: '#93c5fd' });
     });
 
     it('returns green hex for bet', () => {
-      expect(getSeatActionStyle('bet')).toEqual({ bg: '#16a34a', ring: '#86efac' });
+      expect(getActionSeatStyle('bet')).toEqual({ bg: '#16a34a', ring: '#86efac' });
     });
 
     it('returns orange hex for raise', () => {
-      expect(getSeatActionStyle('raise')).toEqual({ bg: '#ea580c', ring: '#fdba74' });
+      expect(getActionSeatStyle('raise')).toEqual({ bg: '#ea580c', ring: '#fdba74' });
     });
   });
 
   describe('default style', () => {
     it('returns default green hex for unknown actions', () => {
-      expect(getSeatActionStyle('UNKNOWN')).toEqual({ bg: '#16a34a', ring: '#86efac' });
+      expect(getActionSeatStyle('UNKNOWN')).toEqual({ bg: '#16a34a', ring: '#86efac' });
     });
 
     it('returns default green hex for null', () => {
-      expect(getSeatActionStyle(null)).toEqual({ bg: '#16a34a', ring: '#86efac' });
+      expect(getActionSeatStyle(null)).toEqual({ bg: '#16a34a', ring: '#86efac' });
     });
 
     it('returns mucked hex for mucked', () => {
-      expect(getSeatActionStyle('mucked')).toEqual({ bg: '#6b7280', ring: '#6b7280' });
+      expect(getActionSeatStyle('mucked')).toEqual({ bg: '#6b7280', ring: '#6b7280' });
     });
 
     it('returns won hex for won', () => {
-      expect(getSeatActionStyle('won')).toEqual({ bg: '#d4a847', ring: '#d4a847' });
+      expect(getActionSeatStyle('won')).toEqual({ bg: '#d4a847', ring: '#d4a847' });
     });
   });
 });

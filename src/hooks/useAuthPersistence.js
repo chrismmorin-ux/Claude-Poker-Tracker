@@ -111,4 +111,3 @@ export const useAuthPersistence = (dispatchAuth) => {
   };
 };
 
-export default useAuthPersistence;

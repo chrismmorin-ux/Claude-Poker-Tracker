@@ -20,7 +20,10 @@ import { BRIDGE_MSG, PROTOCOL_VERSION } from '../utils/bridgeProtocol';
  * @param {string} userId - Current user ID
  * @returns {{ isExtensionConnected, versionMismatch, lastSyncTime, importedCount, syncError, importFromJson, liveHandState, pushExploits, pushAdvice }}
  */
-const useSyncBridge = (userId) => {
+// Named useSyncBridgeImpl to avoid collision with the context consumer
+// in SyncBridgeContext.jsx, which also exports `useSyncBridge`.
+// All consumers should import from contexts/, not directly from this hook.
+export const useSyncBridgeImpl = (userId) => {
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
   const [versionMismatch, setVersionMismatch] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -102,6 +105,21 @@ const useSyncBridge = (userId) => {
         handExamples: b.handExamples || null,
         riskAnalysis: b.riskAnalysis || null,
       })),
+      observations: (data.observations || []).slice(0, 15).map(o => ({
+        id: o.id, heroContext: o.heroContext,
+        heroContextLabel: o.heroContextLabel,
+        signal: o.signal, severity: o.severity,
+        confidence: o.confidence, tier: o.tier,
+        street: o.street, evidence: o.evidence,
+      })),
+      stats: {
+        cbet: data.cbet ?? (data.rawStats?.pfAggressorFlops > 0
+          ? Math.round((data.rawStats?.cbetCount || 0) / data.rawStats.pfAggressorFlops * 100) : null),
+        foldToCbet: data.foldToCbet ?? (data.rawStats?.facedCbet > 0
+          ? Math.round((data.rawStats?.foldedToCbet || 0) / data.rawStats.facedCbet * 100) : null),
+        threeBet: data.threeBet ?? null,
+      },
+      villainHeadline: data.villainProfile?.headline || null,
     }));
 
     window.postMessage({
@@ -202,4 +220,3 @@ const useSyncBridge = (userId) => {
   };
 };
 
-export default useSyncBridge;

@@ -6,7 +6,8 @@
  */
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
-import { UI_ACTIONS, SCREEN } from '../reducers/uiReducer';
+import { UI_ACTIONS } from '../reducers/uiReducer';
+import { SCREEN } from '../constants/uiConstants';
 
 // Create context
 const UIContext = createContext(null);

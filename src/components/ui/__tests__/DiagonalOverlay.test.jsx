@@ -4,11 +4,6 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DiagonalOverlay } from '../DiagonalOverlay';
 
-const SEAT_STATUS = {
-  FOLDED: 'folded',
-  ABSENT: 'absent',
-};
-
 describe('DiagonalOverlay', () => {
   it.each([null, undefined, 'unknown'])(
     'returns null for status=%s',
@@ -28,23 +23,13 @@ describe('DiagonalOverlay', () => {
     expect(screen.getByText('WON')).toBeInTheDocument();
   });
 
-  it('renders FOLD label with SEAT_STATUS prop', () => {
-    render(<DiagonalOverlay status={SEAT_STATUS.FOLDED} SEAT_STATUS={SEAT_STATUS} />);
+  it('renders FOLD label for folded status', () => {
+    render(<DiagonalOverlay status="folded" />);
     expect(screen.getByText('FOLD')).toBeInTheDocument();
   });
 
-  it('renders ABSENT label with SEAT_STATUS prop', () => {
-    render(<DiagonalOverlay status={SEAT_STATUS.ABSENT} SEAT_STATUS={SEAT_STATUS} />);
+  it('renders ABSENT label for absent status', () => {
+    render(<DiagonalOverlay status="absent" />);
     expect(screen.getByText('ABSENT')).toBeInTheDocument();
-  });
-
-  it('does not render folded without SEAT_STATUS prop', () => {
-    const { container } = render(<DiagonalOverlay status="folded" />);
-    expect(container.firstChild).toBeNull();
-  });
-
-  it('does not render absent without SEAT_STATUS prop', () => {
-    const { container } = render(<DiagonalOverlay status="absent" />);
-    expect(container.firstChild).toBeNull();
   });
 });

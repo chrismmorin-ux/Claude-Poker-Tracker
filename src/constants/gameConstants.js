@@ -3,17 +3,6 @@
  * Centralized constants for poker game logic, actions, and card definitions
  */
 
-// Re-export primitive actions for unified import
-export {
-  PRIMITIVE_ACTIONS,
-  LEGACY_TO_PRIMITIVE,
-  PRIMITIVE_ACTION_VALUES,
-  isPrimitiveAction,
-  toPrimitive,
-  SHOWDOWN_ACTIONS,
-  isShowdownAction,
-} from './primitiveActions';
-
 // Street definitions
 export const STREETS = ['preflop', 'flop', 'turn', 'river', 'showdown'];
 export const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river']; // Streets where betting occurs (excludes showdown)
@@ -29,8 +18,6 @@ export const STREET_LABELS_SHORT = {
 // Card constants
 export const SUITS = ['♠', '♥', '♦', '♣'];
 export const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-export const SUIT_ABBREV = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
-
 // Action type constants (only actions stored in state — primitives use string literals)
 export const ACTIONS = {
   FOLD: 'fold',

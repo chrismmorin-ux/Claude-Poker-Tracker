@@ -1,8 +1,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import { RangeGrid } from '../../ui/RangeGrid';
 import { RangeProvenance } from '../../ui/RangeProvenance';
 import { SegmentationBar } from '../../ui/SegmentationBar';
+import SeverityBar from '../../ui/SeverityBar';
+import { VillainProfileModal } from '../../ui/VillainProfileModal';
+import { ObservationPanel } from '../../ui/ObservationPanel';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
 import { usePlayer, useSession, useTendency } from '../../../contexts';
 import { useActionAdvisor } from '../../../hooks/useActionAdvisor';
@@ -16,10 +19,11 @@ const HERO_SLOTS = ['', ''];
 const VILLAIN_ACTIONS = ['check', 'bet', 'call', 'raise'];
 
 export const PlayerAnalysisPanel = () => {
-  const { allPlayers } = usePlayer();
+  const { allPlayers, updatePlayerById } = usePlayer();
   const { currentSession } = useSession();
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [gridPosition, setGridPosition] = useState('LATE');
   const [gridAction, setGridAction] = useState('open');
 
@@ -37,6 +41,14 @@ export const PlayerAnalysisPanel = () => {
     () => allPlayers.find(p => p.playerId === selectedPlayerId) || null,
     [allPlayers, selectedPlayerId]
   );
+
+  const villainProfile = tendencyMap[selectedPlayerId]?.villainProfile ?? null;
+
+  const handleNotesChange = useCallback((newNotes) => {
+    if (selectedPlayerId && updatePlayerById) {
+      updatePlayerById(selectedPlayerId, { notes: newNotes });
+    }
+  }, [selectedPlayerId, updatePlayerById]);
 
   const totalHands = rangeProfile?.handsProcessed || 0;
   const hasEnoughData = totalHands >= MIN_HANDS_THRESHOLD;
@@ -123,8 +135,29 @@ export const PlayerAnalysisPanel = () => {
               <option key={p.playerId} value={p.playerId}>{p.name}</option>
             ))}
           </select>
+          {selectedPlayerId && (
+            <button
+              onClick={() => setProfileModalOpen(true)}
+              className="px-3 py-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm flex items-center gap-1.5 transition-colors"
+              title="View villain decision profile"
+            >
+              <User size={14} />
+              Profile
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Villain Profile Modal */}
+      <VillainProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        playerName={selectedPlayer?.name}
+        villainProfile={villainProfile}
+        playerId={selectedPlayerId}
+        notes={selectedPlayer?.notes || ''}
+        onNotesChange={handleNotesChange}
+      />
 
       {/* Three-panel grid */}
       {!selectedPlayerId ? (
@@ -368,7 +401,14 @@ export const PlayerAnalysisPanel = () => {
               </div>
             )}
 
-            {/* Weaknesses Section */}
+            {/* Decision-organized observations */}
+            {tendencyMap?.[selectedPlayerId]?.observations?.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-900 rounded">
+                <ObservationPanel observations={tendencyMap[selectedPlayerId].observations} />
+              </div>
+            )}
+
+            {/* Weaknesses Section (legacy, shown below observations) */}
             <WeaknessesSection playerId={selectedPlayerId} tendencyMap={tendencyMap} />
           </div>
         </div>
@@ -400,19 +440,6 @@ const ContextBadge = ({ text }) => (
     {text}
   </span>
 );
-
-const SeverityBar = ({ severity }) => {
-  const pct = Math.round(severity * 100);
-  const color = pct >= 70 ? 'bg-red-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-green-500';
-  return (
-    <div className="flex items-center gap-1">
-      <div className="h-1.5 w-16 bg-gray-700 rounded overflow-hidden">
-        <div className={`h-full ${color} rounded`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-[9px] text-gray-500">{pct}%</span>
-    </div>
-  );
-};
 
 const WeaknessesSection = ({ playerId, tendencyMap }) => {
   const tendency = playerId ? tendencyMap?.[playerId] : null;

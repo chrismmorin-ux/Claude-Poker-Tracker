@@ -19,10 +19,8 @@ import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
 import { useToast } from '../../../contexts/ToastContext';
-import { useSession, useUI, useTournament, useAuth } from '../../../contexts';
+import { useSession, useUI, useTournament, useSyncBridge } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
-import useSyncBridge from '../../../hooks/useSyncBridge';
-import { GUEST_USER_ID } from '../../../utils/persistence/database';
 
 /**
  * SessionsView component
@@ -47,9 +45,7 @@ export const SessionsView = ({ scale }) => {
   const sessionState = { currentSession, allSessions: sessionAllSessions };
 
   // Online play sync
-  const { user } = useAuth();
-  const userId = user?.uid || GUEST_USER_ID;
-  const { isExtensionConnected, importedCount } = useSyncBridge(userId);
+  const { isExtensionConnected, importedCount } = useSyncBridge();
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
   const [sessions, setSessions] = useState([]);

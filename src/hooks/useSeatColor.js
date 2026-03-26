@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { getActionsForSeatOnStreet } from '../utils/sequenceUtils';
-import { getSeatActionStyle } from '../utils/actionUtils';
-import { ACTION_COLORS } from '../constants/designTokens';
+import { ACTION_COLORS, getActionSeatStyle } from '../constants/designTokens';
 
 /**
  * Custom hook for seat color styling
@@ -65,12 +64,12 @@ export const useSeatColor = ({
     let ringHex = sel ? sel.ringHex : null;
 
     if (lastAction) {
-      const actionStyle = getSeatActionStyle(lastAction);
+      const actionStyle = getActionSeatStyle(lastAction);
       bgHex = actionStyle.bg;
       if (!ringHex) ringHex = actionStyle.ring;
     } else if (currentStreet === 'preflop' && (seat === smallBlindSeat || seat === bigBlindSeat)) {
       // Blind seats on preflop with no action yet — show forced-bet color
-      const blindStyle = getSeatActionStyle('blind');
+      const blindStyle = getActionSeatStyle('blind');
       bgHex = blindStyle.bg;
       if (!ringHex) ringHex = blindStyle.ring;
     }

@@ -3,7 +3,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CardSlot } from '../CardSlot';
-import { SEAT_STATUS } from '../../../test/utils';
+import { SEAT_STATUS } from '../../../constants/gameConstants';
 
 describe('CardSlot', () => {
   describe('rendering', () => {
@@ -83,16 +83,16 @@ describe('CardSlot', () => {
   });
 
   describe('status overlays', () => {
-    it('applies folded background with SEAT_STATUS', () => {
+    it('applies folded background', () => {
       const { container } = render(
-        <CardSlot status={SEAT_STATUS.FOLDED} SEAT_STATUS={SEAT_STATUS} />
+        <CardSlot status={SEAT_STATUS.FOLDED} />
       );
       expect(container.firstChild.className).toContain('bg-red-200');
     });
 
-    it('applies absent background with SEAT_STATUS', () => {
+    it('applies absent background', () => {
       const { container } = render(
-        <CardSlot status={SEAT_STATUS.ABSENT} SEAT_STATUS={SEAT_STATUS} />
+        <CardSlot status={SEAT_STATUS.ABSENT} />
       );
       expect(container.firstChild.className).toContain('bg-gray-300');
     });

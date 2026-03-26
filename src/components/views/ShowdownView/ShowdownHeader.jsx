@@ -11,7 +11,6 @@ export const ShowdownHeader = ({
   onNextHand,
   onClearCards,
   onDone,
-  SEAT_STATUS,
 }) => {
   return (
     <div className="bg-white p-6 flex justify-between items-center">
@@ -29,7 +28,7 @@ export const ShowdownHeader = ({
                 card={communityCards[idx]}
                 variant="selector"
                 canInteract={false}
-                SEAT_STATUS={SEAT_STATUS}
+  
               />
             ))}
           </div>
@@ -63,5 +62,4 @@ ShowdownHeader.propTypes = {
   onNextHand: PropTypes.func.isRequired,
   onClearCards: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
-  SEAT_STATUS: PropTypes.object.isRequired,
 };

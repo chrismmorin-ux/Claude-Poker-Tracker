@@ -90,6 +90,4 @@ export {
   createTournament,
   getTournamentBySessionId,
   updateTournament,
-  deleteTournament,
-  getAllTournaments,
 } from './tournamentsStorage';

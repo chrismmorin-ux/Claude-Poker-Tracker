@@ -7,6 +7,8 @@
  * @module primitiveActions
  */
 
+import { ACTIONS } from './gameConstants';
+
 /**
  * The 5 primitive poker actions - the atomic building blocks of all betting.
  * Every poker action can be decomposed into these primitives.
@@ -103,17 +105,10 @@ export const isPrimitiveAction = (action) => PRIMITIVE_ACTION_VALUES.includes(ac
 export const toPrimitive = (legacyAction) => LEGACY_TO_PRIMITIVE[legacyAction] ?? null;
 
 /**
- * Showdown action constants (not betting actions, but tracked in actionSequence)
- */
-export const SHOWDOWN_ACTIONS = {
-  MUCKED: 'mucked',
-  WON: 'won',
-};
-
-/**
- * Check if a value is a showdown action
+ * Check if a value is a showdown action.
+ * Uses ACTIONS.MUCKED/WON from gameConstants as the single source of truth.
  * @param {string} action - The action to check
  * @returns {boolean}
  */
 export const isShowdownAction = (action) =>
-  action === SHOWDOWN_ACTIONS.MUCKED || action === SHOWDOWN_ACTIONS.WON;
+  action === ACTIONS.MUCKED || action === ACTIONS.WON;

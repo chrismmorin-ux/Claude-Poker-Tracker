@@ -13,16 +13,20 @@ const entry = (seat, action, street = 'preflop', order = 1) => ({
   seat, action, street, order,
 });
 
-// Mock getSeatActionStyle from actionUtils (now returns hex values)
-vi.mock('../../utils/actionUtils', () => ({
-  getSeatActionStyle: vi.fn((action) => {
-    if (action === 'call') return { bg: '#2563eb', ring: '#93c5fd' };
-    if (action === 'raise') return { bg: '#ea580c', ring: '#fdba74' };
-    return { bg: '#16a34a', ring: '#86efac' };
-  }),
-}));
+// Mock getActionSeatStyle from designTokens (returns hex values)
+vi.mock('../../constants/designTokens', async () => {
+  const actual = await vi.importActual('../../constants/designTokens');
+  return {
+    ...actual,
+    getActionSeatStyle: vi.fn((action) => {
+      if (action === 'call') return { bg: '#2563eb', ring: '#93c5fd' };
+      if (action === 'raise') return { bg: '#ea580c', ring: '#fdba74' };
+      return { bg: '#16a34a', ring: '#86efac' };
+    }),
+  };
+});
 
-import { getSeatActionStyle } from '../../utils/actionUtils';
+import { getActionSeatStyle } from '../../constants/designTokens';
 
 describe('useSeatColor', () => {
   // Default mocks
@@ -143,18 +147,18 @@ describe('useSeatColor', () => {
   });
 
   describe('action-based colors', () => {
-    it('uses getSeatActionStyle for seats with actions', () => {
-      vi.mocked(getSeatActionStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
+    it('uses getActionSeatStyle for seats with actions', () => {
+      vi.mocked(getActionSeatStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
       const { result } = createHook({
         actionSequence: [entry(3, 'call', 'preflop')],
       });
       const { style } = result.current(3);
-      expect(getSeatActionStyle).toHaveBeenCalledWith('call');
+      expect(getActionSeatStyle).toHaveBeenCalledWith('call');
       expect(style.backgroundColor).toBe('#2563eb');
     });
 
     it('uses last action from sequence for color', () => {
-      vi.mocked(getSeatActionStyle).mockImplementation((action) => {
+      vi.mocked(getActionSeatStyle).mockImplementation((action) => {
         if (action === 'raise') return { bg: '#ea580c', ring: '#fdba74' };
         return { bg: '#16a34a', ring: '#86efac' };
       });
@@ -165,11 +169,11 @@ describe('useSeatColor', () => {
         ],
       });
       result.current(3);
-      expect(getSeatActionStyle).toHaveBeenCalledWith('raise');
+      expect(getActionSeatStyle).toHaveBeenCalledWith('raise');
     });
 
     it('does not override selection ring with action ring', () => {
-      vi.mocked(getSeatActionStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
+      vi.mocked(getActionSeatStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
       const { result } = createHook({
         actionSequence: [entry(3, 'call', 'preflop')],
         selectedPlayers: [3],
@@ -181,18 +185,18 @@ describe('useSeatColor', () => {
 
   describe('blind seats', () => {
     it('colors SB seat with blind style on preflop with no actions', () => {
-      vi.mocked(getSeatActionStyle).mockImplementation((action) => {
+      vi.mocked(getActionSeatStyle).mockImplementation((action) => {
         if (action === 'blind') return { bg: '#0891b2', ring: '#67e8f9' };
         return { bg: '#16a34a', ring: '#86efac' };
       });
       const { result } = createHook({ smallBlindSeat: 2, bigBlindSeat: 3 });
       const { style } = result.current(2);
-      expect(getSeatActionStyle).toHaveBeenCalledWith('blind');
+      expect(getActionSeatStyle).toHaveBeenCalledWith('blind');
       expect(style.backgroundColor).toBe('#0891b2');
     });
 
     it('colors BB seat with blind style on preflop with no actions', () => {
-      vi.mocked(getSeatActionStyle).mockImplementation((action) => {
+      vi.mocked(getActionSeatStyle).mockImplementation((action) => {
         if (action === 'blind') return { bg: '#0891b2', ring: '#67e8f9' };
         return { bg: '#16a34a', ring: '#86efac' };
       });
@@ -208,14 +212,14 @@ describe('useSeatColor', () => {
     });
 
     it('action color overrides blind color when seat has actions', () => {
-      vi.mocked(getSeatActionStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
+      vi.mocked(getActionSeatStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
       const { result } = createHook({
         smallBlindSeat: 2,
         bigBlindSeat: 3,
         actionSequence: [entry(2, 'call', 'preflop')],
       });
       const { style } = result.current(2);
-      expect(getSeatActionStyle).toHaveBeenCalledWith('call');
+      expect(getActionSeatStyle).toHaveBeenCalledWith('call');
       expect(style.backgroundColor).toBe('#2563eb');
     });
   });
@@ -246,7 +250,7 @@ describe('useSeatColor', () => {
     });
 
     it('does not add hover effect for seats with actions', () => {
-      vi.mocked(getSeatActionStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
+      vi.mocked(getActionSeatStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
       const { result } = createHook({
         actionSequence: [entry(3, 'call', 'preflop')],
       });
@@ -265,7 +269,7 @@ describe('useSeatColor', () => {
 
     it('folded takes priority over action color', () => {
       const hasSeatFolded = vi.fn((seat) => seat === 3);
-      vi.mocked(getSeatActionStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
+      vi.mocked(getActionSeatStyle).mockReturnValue({ bg: '#2563eb', ring: '#93c5fd' });
       const { result } = createHook({
         hasSeatFolded,
         actionSequence: [entry(3, 'call', 'preflop')],

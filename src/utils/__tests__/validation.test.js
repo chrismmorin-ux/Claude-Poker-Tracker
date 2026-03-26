@@ -5,9 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   isValidSeat,
-  isValidCard,
   isCardInUse,
-  isValidPlayerCards,
 } from '../validation';
 
 describe('isValidSeat', () => {
@@ -46,53 +44,6 @@ describe('isValidSeat', () => {
   });
 });
 
-describe('isValidCard', () => {
-  it('accepts valid cards', () => {
-    expect(isValidCard('A♠')).toBe(true);
-    expect(isValidCard('K♥')).toBe(true);
-    expect(isValidCard('Q♦')).toBe(true);
-    expect(isValidCard('J♣')).toBe(true);
-    expect(isValidCard('T♠')).toBe(true);
-    expect(isValidCard('9♥')).toBe(true);
-    expect(isValidCard('2♣')).toBe(true);
-  });
-
-  it('accepts all rank and suit combinations', () => {
-    const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-    const suits = ['♠', '♥', '♦', '♣'];
-
-    ranks.forEach(rank => {
-      suits.forEach(suit => {
-        expect(isValidCard(`${rank}${suit}`)).toBe(true);
-      });
-    });
-  });
-
-  it('rejects invalid ranks', () => {
-    expect(isValidCard('1♠')).toBe(false);
-    expect(isValidCard('X♠')).toBe(false);
-    expect(isValidCard('0♠')).toBe(false);
-  });
-
-  it('rejects invalid suits', () => {
-    expect(isValidCard('As')).toBe(false);
-    expect(isValidCard('Ah')).toBe(false);
-    expect(isValidCard('A@')).toBe(false);
-  });
-
-  it('rejects wrong length strings', () => {
-    expect(isValidCard('A')).toBe(false);
-    expect(isValidCard('A♠♠')).toBe(false);
-    expect(isValidCard('')).toBe(false);
-  });
-
-  it('rejects non-string inputs', () => {
-    expect(isValidCard(null)).toBe(false);
-    expect(isValidCard(undefined)).toBe(false);
-    expect(isValidCard(123)).toBe(false);
-  });
-});
-
 describe('isCardInUse', () => {
   const communityCards = ['A♠', 'K♥', ''];
   const holeCards = ['Q♦', 'J♣'];
@@ -127,51 +78,3 @@ describe('isCardInUse', () => {
   });
 });
 
-describe('isValidPlayerCards', () => {
-  it('accepts valid player cards object', () => {
-    const validCards = {};
-    for (let seat = 1; seat <= 9; seat++) {
-      validCards[seat] = ['', ''];
-    }
-    expect(isValidPlayerCards(validCards)).toBe(true);
-  });
-
-  it('accepts player cards with valid cards', () => {
-    const validCards = {};
-    for (let seat = 1; seat <= 9; seat++) {
-      validCards[seat] = ['A♠', 'K♥'];
-    }
-    expect(isValidPlayerCards(validCards)).toBe(true);
-  });
-
-  it('rejects missing seats', () => {
-    const invalidCards = {};
-    for (let seat = 1; seat <= 8; seat++) {
-      invalidCards[seat] = ['', ''];
-    }
-    // Missing seat 9
-    expect(isValidPlayerCards(invalidCards)).toBe(false);
-  });
-
-  it('rejects non-array seat values', () => {
-    const invalidCards = {};
-    for (let seat = 1; seat <= 9; seat++) {
-      invalidCards[seat] = seat === 5 ? 'invalid' : ['', ''];
-    }
-    expect(isValidPlayerCards(invalidCards)).toBe(false);
-  });
-
-  it('rejects wrong number of cards per seat', () => {
-    const invalidCards = {};
-    for (let seat = 1; seat <= 9; seat++) {
-      invalidCards[seat] = seat === 3 ? ['A♠'] : ['', ''];
-    }
-    expect(isValidPlayerCards(invalidCards)).toBe(false);
-  });
-
-  it('rejects non-object inputs', () => {
-    expect(isValidPlayerCards(null)).toBe(false);
-    expect(isValidPlayerCards([])).toBe(false);
-    expect(isValidPlayerCards('invalid')).toBe(false);
-  });
-});

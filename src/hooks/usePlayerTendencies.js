@@ -12,7 +12,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
 import { PROFILE_VERSION } from '../utils/rangeEngine';
-import { evaluateStaleness } from '../utils/exploitEngine/reEvaluationEngine';
+import { mergeBriefings } from '../utils/exploitEngine/briefingMerge';
 import { getAllPlayers as getAllPlayersFromDB, updatePlayer } from '../utils/persistence/playersStorage';
 import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
@@ -79,30 +79,10 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           const existingBriefings = dbPlayer?.exploitBriefings || [];
           const dismissedIds = new Set(dbPlayer?.dismissedBriefingIds || []);
 
-          // Evaluate staleness of existing accepted/deferred briefings
-          const { staleIds } = evaluateStaleness(existingBriefings, result.exploits, {
+          briefings = mergeBriefings(existingBriefings, result.briefings, dismissedIds, result.exploits, {
             handsProcessed: hands.length,
             traits: result.rangeProfile?.traits || null,
           });
-
-          // Mark stale briefings
-          const updatedExisting = existingBriefings.map(b => {
-            if (staleIds[b.briefingId]) {
-              return { ...b, reviewStatus: 'stale', staleReason: staleIds[b.briefingId] };
-            }
-            return b;
-          });
-
-          // Merge: keep accepted/deferred/stale, add new pending for rules not already covered
-          const existingRuleIds = new Set(
-            updatedExisting
-              .filter(b => b.reviewStatus !== 'dismissed')
-              .map(b => b.ruleId)
-          );
-          const freshPending = result.briefings.filter(b =>
-            !existingRuleIds.has(b.ruleId) && !dismissedIds.has(b.ruleId)
-          );
-          briefings = [...updatedExisting.filter(b => b.reviewStatus !== 'dismissed'), ...freshPending];
 
           // Persist updated briefings
           await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
@@ -125,6 +105,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           villainModel: result.villainModel,
           villainProfile: result.villainProfile,
           weaknesses: result.weaknesses,
+          observations: result.observations,
         }];
       }));
 

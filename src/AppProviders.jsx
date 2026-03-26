@@ -19,7 +19,8 @@ import {
   AuthProvider,
   ToastProvider,
   TendencyProvider,
-  TournamentProvider
+  TournamentProvider,
+  SyncBridgeProvider
 } from './contexts';
 
 /**
@@ -69,11 +70,13 @@ export const AppProviders = ({
             <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
               <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
                 <TendencyProvider>
-                  <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-                    <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                      {children}
-                    </SettingsProvider>
-                  </CardProvider>
+                  <SyncBridgeProvider>
+                    <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+                      <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                        {children}
+                      </SettingsProvider>
+                    </CardProvider>
+                  </SyncBridgeProvider>
                 </TendencyProvider>
               </PlayerProvider>
             </TournamentProvider>

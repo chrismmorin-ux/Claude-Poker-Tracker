@@ -20,7 +20,7 @@ import { runAnalysisPipeline } from '../utils/analysisPipeline';
  * @param {string} userId - User ID
  * @returns {{ tendencyMap, handCount, isLoading, refresh }}
  */
-const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
+export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
   const [tendencyMap, setTendencyMap] = useState({});
   const [handCount, setHandCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,13 +76,17 @@ const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
             style: result.style,
             rawStats: result.rawStats,
             positionStats: result.positionStats,
+            limpData: result.limpData,
             exploits: result.exploits,
             briefings: result.briefings,
             weaknesses: result.weaknesses,
             rangeProfile: result.rangeProfile,
             rangeSummary: result.rangeSummary,
+            subActionSummary: result.subActionSummary,
+            decisionSummary: result.decisionSummary,
             villainModel: result.villainModel,
             villainProfile: result.villainProfile,
+            observations: result.observations,
           };
         } catch (e) {
           // Skip this seat on error, don't break the whole analysis
@@ -122,4 +126,3 @@ const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
   };
 };
 
-export default useOnlineAnalysis;

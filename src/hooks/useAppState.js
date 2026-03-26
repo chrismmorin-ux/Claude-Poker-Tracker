@@ -87,5 +87,3 @@ export const useAppState = () => {
 
   };
 };
-
-export default useAppState;

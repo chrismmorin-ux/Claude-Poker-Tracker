@@ -18,6 +18,7 @@ import { accumulateDecisions } from './exploitEngine/decisionAccumulator';
 import { detectWeaknesses } from './exploitEngine/weaknessDetector';
 import { buildVillainDecisionModel } from './exploitEngine/villainDecisionModel';
 import { buildVillainProfile } from './exploitEngine/villainProfileBuilder';
+import { computeVillainObservations } from './exploitEngine/villainObservations';
 
 /**
  * Run the full analysis pipeline for a single player.
@@ -91,6 +92,17 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     pips: rangeProfile?.pips || null,
   });
 
+  // Villain observations (decision-organized)
+  let observations = [];
+  try {
+    observations = computeVillainObservations({
+      rawStats, pct, positionStats, subActionSummary,
+      decisionSummary, villainModel, rangeSummary,
+    });
+  } catch (e) {
+    console.warn('analysisPipeline: villain observations failed', e.message);
+  }
+
   // Briefings
   let briefings = [];
   try {
@@ -120,5 +132,6 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
     weaknesses,
     exploits,
     briefings,
+    observations,
   };
 };

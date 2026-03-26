@@ -141,7 +141,7 @@ describe('useGameHandlers', () => {
         c => c[0].type === GAME_ACTIONS.RECORD_PRIMITIVE_ACTION && c[0].payload.action === 'fold'
       );
       expect(foldCalls.length).toBe(9);
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLEAR_SELECTION });
+      // Selection NOT cleared — auto-street-advance + auto-seat-selection pipeline handles transition
     });
 
     it('skips absent seats', () => {

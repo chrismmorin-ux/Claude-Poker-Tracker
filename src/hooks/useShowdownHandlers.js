@@ -60,11 +60,23 @@ export const useShowdownHandlers = ({
     }
   }, [recordSeatAction, advanceToNextActiveSeat, isSeatInactive, actionSequence, log]);
 
-  // Handler: Mark seat as winner and advance
+  // Handler: Mark seat as winner and auto-muck remaining opponents (14.2c)
   const handleWonSeat = useCallback((seat) => {
     recordSeatAction(seat, ACTIONS.WON);
-    advanceToNextActiveSeat(seat);
-  }, [recordSeatAction, advanceToNextActiveSeat]);
+
+    // Auto-muck all other active seats (heads-up shortcut + multi-way cleanup)
+    const remaining = SEAT_ARRAY.filter(
+      s => s !== seat && isSeatShowdownActive(s, isSeatInactive, actionSequence)
+    );
+    if (remaining.length > 0) {
+      remaining.forEach(s => {
+        recordSeatAction(s, ACTIONS.MUCKED);
+      });
+      log('Auto-muck:', remaining.length, 'seat(s) after Won on S' + seat);
+    } else {
+      advanceToNextActiveSeat(seat);
+    }
+  }, [recordSeatAction, advanceToNextActiveSeat, isSeatInactive, actionSequence, log]);
 
   // Handler: Close showdown view and advance to next hand
   const handleNextHandFromShowdown = useCallback(() => {

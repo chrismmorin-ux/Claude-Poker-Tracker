@@ -79,37 +79,6 @@ export const GAME_TYPES = {
 export const GAME_TYPE_KEYS = Object.keys(GAME_TYPES);
 
 // =============================================================================
-// SESSION FIELDS
-// =============================================================================
-
-/**
- * Session field identifiers for updates
- */
-export const SESSION_FIELDS = {
-  VENUE: 'venue',
-  GAME_TYPE: 'gameType',
-  BUY_IN: 'buyIn',
-  REBUY: 'rebuy',
-  REBUY_TRANSACTIONS: 'rebuyTransactions',
-  RE_UP: 'reUp',
-  GOAL: 'goal',
-  NOTES: 'notes',
-  HAND_COUNT: 'handCount'
-};
-
-// =============================================================================
-// SESSION STATUS
-// =============================================================================
-
-/**
- * Session status types
- */
-export const SESSION_STATUS = {
-  ACTIVE: 'active',
-  COMPLETED: 'completed'
-};
-
-// =============================================================================
 // SESSION ACTION TYPES
 // =============================================================================
 

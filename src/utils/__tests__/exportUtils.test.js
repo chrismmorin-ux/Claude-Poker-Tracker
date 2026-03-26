@@ -57,7 +57,7 @@ describe('exportAllData', () => {
     const result = await exportAllData();
 
     expect(result).toHaveProperty('version');
-    expect(result.version).toBe('1.0.0');
+    expect(result.version).toBe('1.2.0');
     expect(result).toHaveProperty('exportedAt');
     expect(result).toHaveProperty('exportedAtISO');
     expect(typeof result.exportedAt).toBe('number');

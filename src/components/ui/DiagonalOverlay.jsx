@@ -1,20 +1,18 @@
 import React from 'react';
 import { OVERLAY_COLORS } from '../../constants/designTokens';
+import { SEAT_STATUS } from '../../constants/gameConstants';
 
 /**
  * DiagonalOverlay - Displays FOLD/ABSENT/MUCK/WON labels diagonally across cards
  *
  * @param {string} status - Status to display: 'folded', 'absent', 'mucked', 'won'
- * @param {object} SEAT_STATUS - SEAT_STATUS constant for checking folded/absent states
  */
-export const DiagonalOverlay = ({ status, SEAT_STATUS = null }) => {
+export const DiagonalOverlay = ({ status }) => {
   if (!status) return null;
 
   const overlayConfig = {
-    ...(SEAT_STATUS ? {
-      [SEAT_STATUS.FOLDED]: { bg: OVERLAY_COLORS.folded, label: 'FOLD' },
-      [SEAT_STATUS.ABSENT]: { bg: OVERLAY_COLORS.absent, label: 'ABSENT' },
-    } : {}),
+    [SEAT_STATUS.FOLDED]: { bg: OVERLAY_COLORS.folded, label: 'FOLD' },
+    [SEAT_STATUS.ABSENT]: { bg: OVERLAY_COLORS.absent, label: 'ABSENT' },
     mucked: { bg: OVERLAY_COLORS.mucked, label: 'MUCK' },
     won: { bg: OVERLAY_COLORS.won, label: 'WON' },
   };

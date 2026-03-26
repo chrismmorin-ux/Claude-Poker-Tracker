@@ -35,9 +35,7 @@ export const UI_ACTIONS = {
   SET_REPLAY_HAND: 'SET_REPLAY_HAND',
 };
 
-// Import and re-export SCREEN from its canonical location
 import { SCREEN } from '../constants/uiConstants';
-export { SCREEN };
 
 // Initial state
 export const initialUiState = {

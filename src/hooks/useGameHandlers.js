@@ -215,9 +215,10 @@ export const useGameHandlers = () => {
         payload: { seat, action: 'fold' },
       });
     });
-    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    // Don't clear selection — useAutoStreetAdvance will advance the street,
+    // then useAutoSeatSelection will select the first action seat on the new street.
     return remaining.length;
-  }, [getRemainingSeats, dispatchGame, dispatchUi]);
+  }, [getRemainingSeats, dispatchGame]);
 
   const checkAround = useCallback(() => {
     const remaining = getRemainingSeats();
@@ -227,9 +228,9 @@ export const useGameHandlers = () => {
         payload: { seat, action: 'check' },
       });
     });
-    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    // Don't clear selection — auto-advance pipeline handles the transition.
     return remaining.length;
-  }, [getRemainingSeats, dispatchGame, dispatchUi]);
+  }, [getRemainingSeats, dispatchGame]);
 
   const foldToInvested = useCallback(() => {
     const remaining = getRemainingSeats();
@@ -267,9 +268,8 @@ export const useGameHandlers = () => {
       });
       count++;
     }
-    if (count > 0 && !sorted.some(s => (contributions[s] || 0) > 0)) {
-      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
-    }
+    // If no invested seat found, let auto-advance pipeline handle selection
+    // (previously cleared selection, leaving user stranded)
     return count;
   }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame, dispatchUi]);
 

@@ -13,23 +13,6 @@ export const isValidSeat = (seat, numSeats = 9) => {
 };
 
 /**
- * Validates a card string
- * @param {string} card - Card string (e.g., "A♠", "K♥")
- * @returns {boolean} - True if valid
- */
-export const isValidCard = (card) => {
-  if (typeof card !== 'string' || card.length !== 2) return false;
-
-  const validRanks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-  const validSuits = ['♠', '♥', '♦', '♣'];
-
-  const rank = card[0];
-  const suit = card[1];
-
-  return validRanks.includes(rank) && validSuits.includes(suit);
-};
-
-/**
  * Checks if a card is already in use
  * @param {string} card - Card to check
  * @param {Array} communityCards - Community cards array
@@ -62,26 +45,3 @@ export const isCardInUse = (card, communityCards, holeCards, allPlayerCards, cur
   return inCommunity || inHole || inOtherPlayers;
 };
 
-/**
- * Validates player cards object
- * @param {Object} playerCards - Player cards object
- * @param {number} numSeats - Total number of seats
- * @returns {boolean} - True if valid
- */
-export const isValidPlayerCards = (playerCards, numSeats = 9) => {
-  if (typeof playerCards !== 'object' || playerCards === null) return false;
-
-  // Check all seats 1-9 exist
-  for (let seat = 1; seat <= numSeats; seat++) {
-    if (!playerCards[seat]) return false;
-    if (!Array.isArray(playerCards[seat])) return false;
-    if (playerCards[seat].length !== 2) return false;
-
-    // Check each card is valid or empty
-    if (!playerCards[seat].every(card => card === '' || isValidCard(card))) {
-      return false;
-    }
-  }
-
-  return true;
-};

@@ -8,7 +8,8 @@
 import { buildTimeline, getStreetTimeline, didPlayerFaceRaise } from '../handAnalysis';
 import { getRangePositionCategory } from '../positionUtils';
 import { findPlayerSeat } from '../tendencyCalculations';
-import { PRIMITIVE_ACTIONS, SHOWDOWN_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { ACTIONS } from '../../constants/gameConstants';
 import { parseCard } from '../pokerCore/cardParser';
 import { rangeIndex } from '../pokerCore/rangeMatrix';
 
@@ -82,7 +83,7 @@ export const extractPreflopAction = (playerId, hand) => {
     const actionSeq = hand.gameState?.actionSequence;
     if (Array.isArray(actionSeq)) {
       const seatWon = actionSeq.some(
-        e => String(e.seat) === String(seat) && e.action === SHOWDOWN_ACTIONS.WON
+        e => String(e.seat) === String(seat) && e.action === ACTIONS.WON
       );
       showdownOutcome = seatWon ? 'won' : 'lost';
     }

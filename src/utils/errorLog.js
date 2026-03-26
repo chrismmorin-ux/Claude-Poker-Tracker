@@ -10,7 +10,7 @@
 
 const STORAGE_KEY = 'poker-tracker-error-log';
 const MAX_ENTRIES = 50;
-const APP_VERSION = 'v117';
+const APP_VERSION = 'v122';
 
 /**
  * Error log entry shape
@@ -27,18 +27,6 @@ const APP_VERSION = 'v117';
  * @property {string} userAgent - Browser info
  * @property {string} appVersion - App version
  */
-
-/**
- * Generate a UUID v4
- * @returns {string}
- */
-const generateId = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
 
 /**
  * Get all error log entries from localStorage
@@ -96,7 +84,7 @@ export const logError = ({
   context = {},
 }) => {
   const entry = {
-    id: generateId(),
+    id: crypto.randomUUID(),
     timestamp: Date.now(),
     code,
     message,

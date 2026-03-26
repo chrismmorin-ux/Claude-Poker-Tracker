@@ -34,12 +34,12 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - `src/PokerTracker.jsx` (~128 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
 - `src/contexts/` — 10 providers (incl. ToastContext, TendencyProvider, TournamentContext)
 - `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
-- `src/hooks/` — 32 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, etc.)
+- `src/hooks/` — 33 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, useAbortControl, etc.)
 - `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
 - `src/components/ui/` — 37 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
-- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (16 modules)
+- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (29 modules)
 - `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
 - `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
 - `src/utils/persistence/` — IndexedDB v12 (10 modules: database, migrations, 6 domain stores, validation, index)
@@ -67,7 +67,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 ### Adding a New Action
 1. Add to `ACTIONS` in `src/constants/gameConstants.js`
 2. Add to `getActionDisplayName()` in `src/utils/actionUtils.js`
-3. Add to `getActionColor()` and `getSeatActionStyle()` in `src/utils/actionUtils.js`
+3. Add to `getActionBadgeStyle()` and `getActionSeatStyle()` in `src/constants/designTokens.js`
 
 ### Debug Mode
 `DEBUG = false` at line 8 of `PokerTracker.jsx`

@@ -2,14 +2,18 @@ import React, { useState, useMemo, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Undo2, SkipForward, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
-import { LAYOUT, STREETS, ACTIONS } from '../../../constants/gameConstants';
+import { LAYOUT, STREETS, ACTIONS, LIMITS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 import { getActionGradient, BATCH_COLORS, ACTION_COLORS } from '../../../constants/designTokens';
 import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
-import { getSizingOptions, getCurrentBet, getMinRaise } from '../../../utils/potCalculator';
+import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName } from '../../../utils/positionUtils';
-import { useGame, useSettings, useUI, useCard } from '../../../contexts';
+import { useGame, useSettings, useUI, useCard, usePlayer } from '../../../contexts';
+import { useGameHandlers } from '../../../hooks/useGameHandlers';
+import { useSeatUtils } from '../../../hooks/useSeatUtils';
+import { CARD_ACTIONS } from '../../../reducers/cardReducer';
+import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { CardSelectorPanel } from './CardSelectorPanel';
 
 /**
@@ -37,40 +41,62 @@ const STREET_LABELS = {
  * Consolidates ActionPanel + StreetSelector + BatchActionBar + hand controls
  */
 export const CommandStrip = ({
-  // Street
+  // Only callbacks that require TableView orchestration
   onStreetChange,
   onClearStreet,
-  // Action panel
-  onToggleAbsent,
-  onClearSeatActions,
-  onUndoLastAction,
-  onAdvanceSeat,
-  // Batch actions
-  remainingCount,
-  onRestFold,
-  onCheckAround,
-  onFoldToInvested,
-  // Hand controls
   onNextHand,
   onResetHand,
-  // Card selector
   onSelectCard,
-  getCardStreet,
-  onToggleHoleVisibility,
-  onClearBoard,
-  onClearHole,
-  // HE-2a: Next-to-act display
-  nextActionSeat,
-  getSeatPlayerName,
-  // Live equity data
+  // Shared computation (expensive Monte Carlo — avoid duplicate hook call)
   liveEquity,
-  // Computed seat contributions (passed from TableView to avoid duplicate computation)
-  seatContributions,
 }) => {
-  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat } = useGame();
+  // Contexts — consumed directly (CH-2: eliminated ~18 props from TableView)
+  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats } = useGame();
   const { settings, updateSetting } = useSettings();
-  const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
-  const { communityCards, holeCards, holeCardsVisible } = useCard();
+  const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector, dispatchUi } = useUI();
+  const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
+  const { getSeatPlayerName } = usePlayer();
+
+  // Hooks — consumed directly instead of receiving computed values as props
+  const {
+    toggleAbsent,
+    clearSeatActions,
+    undoLastAction,
+    getRemainingSeats,
+    restFold,
+    checkAround,
+    foldToInvested,
+    getCardStreet,
+    clearCards,
+  } = useGameHandlers();
+
+  const { getNextActionSeat, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
+
+  // Computed locally (previously passed as props)
+  const seatContributions = useMemo(
+    () => getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat),
+    [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
+  );
+  const remainingCount = getRemainingSeats().length;
+  const singleSeatForNext = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
+  const nextActionSeat = singleSeatForNext ? getNextActionSeat(singleSeatForNext) : null;
+
+  // Auto-advance to next seat after recording an action
+  const handleAdvanceSeat = useCallback((currentSeat) => {
+    const nextSeat = getNextActionSeat(currentSeat);
+    if (nextSeat) {
+      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
+    } else {
+      setSelectedPlayers([]);
+    }
+  }, [getNextActionSeat, dispatchUi, setSelectedPlayers]);
+
+  // Card management handlers (previously passed as props)
+  const handleToggleHoleVisibility = useCallback(() => {
+    dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
+  }, [dispatchCard]);
+  const handleClearBoard = useCallback(() => clearCards('community'), [clearCards]);
+  const handleClearHole = useCallback(() => clearCards('hole'), [clearCards]);
 
   const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
   const [customValue, setCustomValue] = useState('');
@@ -139,19 +165,17 @@ export const CommandStrip = ({
         recordPrimitiveAction(seat, action);
       }
     });
-    if (!isMultiSeat && onAdvanceSeat) {
-      onAdvanceSeat(selectedPlayers[0]);
+    if (!isMultiSeat) {
+      handleAdvanceSeat(selectedPlayers[0]);
     }
-  }, [recordPrimitiveAction, isMultiSeat, selectedPlayers, onAdvanceSeat, seatContributions, effectiveBet]);
+  }, [recordPrimitiveAction, isMultiSeat, selectedPlayers, handleAdvanceSeat, seatContributions, effectiveBet]);
 
   const handleSizeSelected = useCallback((amount) => {
     if (!recordPrimitiveAction || !sizingAction) return;
     const seat = selectedPlayers[0];
     recordPrimitiveAction(seat, sizingAction, amount);
-    if (onAdvanceSeat) {
-      onAdvanceSeat(seat);
-    }
-  }, [recordPrimitiveAction, sizingAction, selectedPlayers, onAdvanceSeat]);
+    handleAdvanceSeat(seat);
+  }, [recordPrimitiveAction, sizingAction, selectedPlayers, handleAdvanceSeat]);
 
   const handleCustomSubmit = useCallback((e) => {
     e.preventDefault();
@@ -295,9 +319,9 @@ export const CommandStrip = ({
           getCardStreet={getCardStreet}
           setCardSelectorType={setCardSelectorType}
           setHighlightedCardIndex={setHighlightedCardIndex}
-          onToggleHoleVisibility={onToggleHoleVisibility}
-          onClearBoard={onClearBoard}
-          onClearHole={onClearHole}
+          onToggleHoleVisibility={handleToggleHoleVisibility}
+          onClearBoard={handleClearBoard}
+          onClearHole={handleClearHole}
         />
       )}
 
@@ -339,34 +363,71 @@ export const CommandStrip = ({
 
       {/* ═══ ACTION ZONE (top) — recording what happened ═══ */}
 
-      {/* Seat Indicator — condensed single line */}
-      <div className="px-2 py-1.5" style={{ borderBottom: '1px solid var(--panel-border)' }}>
+      {/* Seat Indicator — prominent next-to-act display (14.2a) */}
+      <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--panel-border)' }}>
         {singleSeat ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-white font-bold" style={{ fontSize: '15px' }}>S{singleSeat}</span>
-              {positionLabel && (
-                <span style={{ color: 'var(--gold)', fontSize: '14px', fontWeight: 700 }}>{positionLabel}</span>
-              )}
-              {getSeatPlayerName && getSeatPlayerName(singleSeat) && (
-                <span className="text-gray-400" style={{ fontSize: '12px' }}>{getSeatPlayerName(singleSeat)}</span>
-              )}
-              {nextActionSeat && (
-                <span className="text-gray-600" style={{ fontSize: '11px' }}>
-                  → S{nextActionSeat}
-                </span>
-              )}
+          <div className="flex items-center gap-3">
+            {/* Large seat number — primary visual anchor */}
+            <div
+              className="flex items-center justify-center font-black text-white"
+              style={{
+                width: '48px', height: '48px', borderRadius: '10px', fontSize: '22px',
+                background: 'linear-gradient(180deg, #d4a847 0%, #b8922e 100%)',
+                color: '#1a1200', flexShrink: 0,
+              }}
+            >
+              {singleSeat}
             </div>
-            {actionArray.length > 0 && (
-              <ActionSequence actions={actionArray} size="small" maxVisible={4} />
+            {/* Seat info + actions */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {positionLabel && (
+                  <span className="font-extrabold" style={{ color: '#d4a847', fontSize: '16px' }}>{positionLabel}</span>
+                )}
+                {getSeatPlayerName(singleSeat) && (
+                  <span className="text-gray-300 truncate" style={{ fontSize: '13px' }}>{getSeatPlayerName(singleSeat)}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                {actionArray.length > 0 && (
+                  <ActionSequence actions={actionArray} size="small" maxVisible={4} />
+                )}
+                {nextActionSeat && (
+                  <span className="text-gray-500" style={{ fontSize: '12px' }}>
+                    → S{nextActionSeat} {getPositionName(nextActionSeat, dealerButtonSeat)}
+                  </span>
+                )}
+              </div>
+            </div>
+            {/* Progress indicator */}
+            {remainingCount > 0 && (
+              <div className="text-right" style={{ flexShrink: 0 }}>
+                <div className="font-bold text-gray-400" style={{ fontSize: '12px' }}>
+                  {activeSeatCount - remainingCount}/{activeSeatCount}
+                </div>
+                <div className="text-gray-600" style={{ fontSize: '10px' }}>acted</div>
+              </div>
             )}
           </div>
         ) : isMultiSeat ? (
-          <span className="text-white font-bold" style={{ fontSize: '13px' }}>
-            {selectedPlayers.length} Seats: {selectedPlayers.sort((a,b) => a-b).join(', ')}
-          </span>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center justify-center font-bold text-white"
+              style={{
+                width: '48px', height: '48px', borderRadius: '10px', fontSize: '16px',
+                background: '#374151', flexShrink: 0,
+              }}
+            >
+              {selectedPlayers.length}
+            </div>
+            <span className="text-white font-bold" style={{ fontSize: '14px' }}>
+              Seats {selectedPlayers.sort((a,b) => a-b).join(', ')}
+            </span>
+          </div>
         ) : (
-          <span className="text-gray-500" style={{ fontSize: '13px' }}>Tap a seat to act</span>
+          <div className="flex items-center justify-center py-1">
+            <span className="text-gray-500 font-semibold" style={{ fontSize: '14px' }}>Tap a seat to record</span>
+          </div>
         )}
       </div>
 
@@ -508,7 +569,7 @@ export const CommandStrip = ({
           {remainingCount > 0 && (
             <div className="flex gap-1.5">
               <button
-                onClick={onRestFold}
+                onClick={restFold}
                 className="btn-press flex-1 rounded-lg font-bold text-white"
                 style={{ height: '68px', fontSize: '16px', background: `linear-gradient(180deg, ${BATCH_COLORS.restFold.base} 0%, ${BATCH_COLORS.restFold.dark} 100%)` }}
               >
@@ -516,7 +577,7 @@ export const CommandStrip = ({
               </button>
               {hasAggression && (
                 <button
-                  onClick={onFoldToInvested}
+                  onClick={foldToInvested}
                   className="btn-press flex-1 rounded-lg font-bold text-white"
                   style={{ height: '68px', fontSize: '14px', background: `linear-gradient(180deg, ${BATCH_COLORS.foldCold.base} 0%, ${BATCH_COLORS.foldCold.dark} 100%)` }}
                 >
@@ -525,7 +586,7 @@ export const CommandStrip = ({
               )}
               {canCheckAround && (
                 <button
-                  onClick={onCheckAround}
+                  onClick={checkAround}
                   className="btn-press flex-1 rounded-lg font-bold text-white"
                   style={{ height: '68px', fontSize: '16px', background: `linear-gradient(180deg, ${BATCH_COLORS.checkAll.base} 0%, ${BATCH_COLORS.checkAll.dark} 100%)` }}
                 >
@@ -545,14 +606,14 @@ export const CommandStrip = ({
         {singleSeat && actionArray.length > 0 && (
           <div className="flex gap-1.5 px-2 pt-2 pb-1">
             <button
-              onClick={() => onClearSeatActions([singleSeat])}
+              onClick={() => clearSeatActions([singleSeat])}
               className="btn-press flex-1 rounded-lg font-semibold text-white"
               style={{ height: '48px', fontSize: '13px', background: '#7f1d1d' }}
             >
               Clear Seat
             </button>
             <button
-              onClick={() => onUndoLastAction(singleSeat)}
+              onClick={() => undoLastAction(singleSeat)}
               className="btn-press flex-1 rounded-lg font-semibold text-white flex items-center justify-center gap-1"
               style={{ height: '48px', fontSize: '13px', background: '#854d0e' }}
             >
@@ -567,7 +628,7 @@ export const CommandStrip = ({
             <button onClick={() => setSelectedPlayers([])} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
           )}
           {hasSeatSelected && (
-            <button onClick={onToggleAbsent} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}>Absent</button>
+            <button onClick={toggleAbsent} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}>Absent</button>
           )}
           {currentStreet !== 'showdown' && remainingCount > 0 && (
             <button
@@ -607,28 +668,8 @@ export const CommandStrip = ({
 CommandStrip.propTypes = {
   onStreetChange: PropTypes.func.isRequired,
   onClearStreet: PropTypes.func.isRequired,
-  onToggleAbsent: PropTypes.func.isRequired,
-  onClearSeatActions: PropTypes.func.isRequired,
-  onUndoLastAction: PropTypes.func.isRequired,
-  onAdvanceSeat: PropTypes.func.isRequired,
-  remainingCount: PropTypes.number.isRequired,
-  onRestFold: PropTypes.func.isRequired,
-  onCheckAround: PropTypes.func.isRequired,
-  onFoldToInvested: PropTypes.func.isRequired,
   onNextHand: PropTypes.func.isRequired,
   onResetHand: PropTypes.func.isRequired,
   onSelectCard: PropTypes.func.isRequired,
-  getCardStreet: PropTypes.func.isRequired,
-  onToggleHoleVisibility: PropTypes.func.isRequired,
-  onClearBoard: PropTypes.func.isRequired,
-  onClearHole: PropTypes.func.isRequired,
-  nextActionSeat: PropTypes.number,
-  getSeatPlayerName: PropTypes.func,
-  liveEquity: PropTypes.shape({
-    equity: PropTypes.number,
-    foldPct: PropTypes.number,
-    isComputing: PropTypes.bool,
-    villainName: PropTypes.string,
-    villainSeat: PropTypes.number,
-  }),
+  liveEquity: PropTypes.object,
 };

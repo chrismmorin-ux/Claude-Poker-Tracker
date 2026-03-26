@@ -18,7 +18,7 @@ import {
 } from './persistence/index';
 
 // Current export version - increment when schema changes
-const EXPORT_VERSION = '1.0.0';
+const EXPORT_VERSION = '1.2.0'; // Aligns with IndexedDB v12 schema
 
 /**
  * Export all application data to a JSON object

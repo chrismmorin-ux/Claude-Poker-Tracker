@@ -103,16 +103,3 @@ export const SETTINGS_FIELDS = {
   ERROR_REPORTING_ENABLED: 'errorReportingEnabled',
 };
 
-// =============================================================================
-// SETTINGS CATEGORIES (for UI grouping)
-// =============================================================================
-
-/**
- * Settings categories for UI organization
- */
-export const SETTINGS_CATEGORIES = {
-  DISPLAY: 'display',
-  GAME_DEFAULTS: 'gameDefaults',
-  DATA: 'data',
-  ABOUT: 'about',
-};

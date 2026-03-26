@@ -88,43 +88,6 @@ export const STYLE_TAGS = [
 ];
 
 // =============================================================================
-// PLAYER FIELD NAMES
-// =============================================================================
-
-export const PLAYER_FIELDS = {
-  // Identity
-  NAME: 'name',
-  NICKNAME: 'nickname',
-
-  // Physical description
-  ETHNICITY: 'ethnicity',
-  BUILD: 'build',
-  GENDER: 'gender',
-  FACIAL_HAIR: 'facialHair',
-  HAT: 'hat',
-  SUNGLASSES: 'sunglasses',
-
-  // Playing style
-  STYLE_TAGS: 'styleTags',
-
-  // Notes and avatar
-  NOTES: 'notes',
-  AVATAR: 'avatar',
-
-  // Metadata
-  CREATED_AT: 'createdAt',
-  LAST_SEEN_AT: 'lastSeenAt',
-  HAND_COUNT: 'handCount',
-
-  // Stats (populated in Phase 2)
-  STATS: 'stats'
-};
-
-// =============================================================================
-// AVATAR CONSTRAINTS
-// =============================================================================
-
-// =============================================================================
 // EXPLOIT NOTE CONSTANTS
 // =============================================================================
 

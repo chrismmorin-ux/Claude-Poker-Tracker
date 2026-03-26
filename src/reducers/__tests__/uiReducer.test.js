@@ -7,9 +7,9 @@ import {
   uiReducer,
   UI_ACTIONS,
   initialUiState,
-  SCREEN,
   UI_STATE_SCHEMA,
 } from '../uiReducer';
+import { SCREEN } from '../../constants/uiConstants';
 
 describe('uiReducer', () => {
   let state;

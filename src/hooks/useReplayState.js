@@ -26,8 +26,6 @@ export const useReplayState = (timeline, selectedHand, actionAnalysis) => {
   const dealerSeat = selectedHand?.gameState?.dealerButtonSeat ?? null;
 
   // Re-sort timeline into positional order for replay
-  // TODO: Dual-timeline (recording order vs positional order) could be unified
-  // if buildTimeline emitted positional order directly. See BACKLOG.md.
   const replayTimeline = useMemo(
     () => sortByPositionalOrder(timeline, dealerSeat),
     [timeline, dealerSeat]

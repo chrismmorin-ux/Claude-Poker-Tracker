@@ -5,13 +5,20 @@ import { render, screen } from '@testing-library/react';
 import { ActionBadge } from '../ActionBadge';
 import { ACTION_ABBREV } from '../../../test/utils';
 
+vi.mock('../../../constants/designTokens', async () => {
+  const actual = await vi.importActual('../../../constants/designTokens');
+  return {
+    ...actual,
+    getActionBadgeStyle: vi.fn((action) => {
+      if (action === 'fold') return { backgroundColor: '#dc2626', color: '#ffffff' };
+      if (action === 'call') return { backgroundColor: '#2563eb', color: '#ffffff' };
+      if (action === 'raise') return { backgroundColor: '#ea580c', color: '#ffffff' };
+      return { backgroundColor: '#e5e7eb', color: '#111827' };
+    }),
+  };
+});
+
 vi.mock('../../../utils/actionUtils', () => ({
-  getActionColor: vi.fn((action) => {
-    if (action === 'fold') return { backgroundColor: '#dc2626', color: '#ffffff' };
-    if (action === 'call') return { backgroundColor: '#2563eb', color: '#ffffff' };
-    if (action === 'raise') return { backgroundColor: '#ea580c', color: '#ffffff' };
-    return { backgroundColor: '#e5e7eb', color: '#111827' };
-  }),
   getActionAbbreviation: vi.fn((action) => {
     const abbrevMap = {
       fold: 'FLD', check: 'CHK', call: 'CAL', bet: 'BET',

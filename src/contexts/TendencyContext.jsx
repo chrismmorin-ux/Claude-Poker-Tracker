@@ -6,7 +6,7 @@
  * Exposes patchTendency() for optimistic briefing updates.
  */
 
-import { createContext, useContext, useCallback } from 'react';
+import { createContext, useContext, useCallback, useMemo } from 'react';
 import { usePlayer } from './PlayerContext';
 import { usePlayerTendencies } from '../hooks/usePlayerTendencies';
 
@@ -27,8 +27,13 @@ export const TendencyProvider = ({ children }) => {
     }));
   }, [setTendencyMap]);
 
+  const value = useMemo(
+    () => ({ tendencyMap, isLoading, refresh, patchTendency }),
+    [tendencyMap, isLoading, refresh, patchTendency]
+  );
+
   return (
-    <TendencyContext.Provider value={{ tendencyMap, isLoading, refresh, patchTendency }}>
+    <TendencyContext.Provider value={value}>
       {children}
     </TendencyContext.Provider>
   );

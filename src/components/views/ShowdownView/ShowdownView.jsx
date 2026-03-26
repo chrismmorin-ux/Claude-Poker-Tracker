@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import {
   LAYOUT,
   ACTIONS,
-  SEAT_STATUS,
   SEAT_ARRAY,
   STREETS,
   LIMITS,
@@ -22,8 +21,6 @@ import { ShowdownSeatRow } from './ShowdownSeatRow';
 import { CardGrid } from './CardGrid';
 import { ActionHistoryGrid } from './ActionHistoryGrid';
 import { useShowdownEquity } from '../../../hooks/useShowdownEquity';
-
-const log = (...args) => console.debug('[ShowdownView]', ...args);
 
 /**
  * ShowdownView - Showdown card assignment and summary interface
@@ -161,7 +158,6 @@ export const ShowdownView = ({ scale }) => {
             onNextHand={handleNextHandFromShowdown}
             onClearCards={handleClearShowdownCards}
             onDone={handleCloseShowdown}
-            SEAT_STATUS={SEAT_STATUS}
           />
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-4">

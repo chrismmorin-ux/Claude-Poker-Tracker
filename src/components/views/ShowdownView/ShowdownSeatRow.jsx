@@ -79,7 +79,7 @@ export const ShowdownSeatRow = ({
               isHidden={shouldHideCard}
               status={cardStatus}
               canInteract={canInteract}
-              SEAT_STATUS={SEAT_STATUS}
+
               onClick={() => {
                 if (canInteract && onHighlightSlot) {
                   onHighlightSlot(seat, cardSlot);

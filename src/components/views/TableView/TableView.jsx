@@ -6,8 +6,7 @@ import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { buildExploitSummary } from '../../ui/ExploitBadges';
 import { analyzeBoardFromStrings } from '../../../utils/pokerCore/boardTexture';
-import { generateBoardExploits, enrichExploitsWithEquity } from '../../../utils/exploitEngine/generateExploits';
-import { filterDismissed } from '../../../utils/exploitEngine/generateExploits';
+import { generateBoardExploits, enrichExploitsWithEquity, filterDismissed } from '../../../utils/exploitEngine/generateExploits';
 import { LAYOUT, LIMITS, SEAT_POSITIONS } from '../../../constants/gameConstants';
 import { useGame, useUI, useSession, usePlayer, useCard, useToast, useTendency, useTournament } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
@@ -47,17 +46,8 @@ export const TableView = ({ scale }) => {
     resetHand,
     nextStreet,
     clearStreetActions,
-    clearSeatActions,
-    undoLastAction,
-    toggleAbsent,
     openShowdownScreen,
     handleSetMySeat,
-    getRemainingSeats,
-    restFold,
-    checkAround,
-    foldToInvested,
-    getCardStreet,
-    clearCards,
   } = useGameHandlers();
 
   // Get state and handlers from contexts
@@ -395,20 +385,6 @@ export const TableView = ({ scale }) => {
     dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
   };
 
-  // Auto-advance to next action seat after recording an action
-  const handleAdvanceSeat = useCallback((currentSeat) => {
-    // Use setTimeout so the reducer processes the action first,
-    // then we compute the next seat from updated state on next render.
-    // Instead, we compute optimistically: next seat after current.
-    const nextSeat = getNextActionSeat(currentSeat);
-    if (nextSeat) {
-      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
-    } else {
-      // No more seats to act — clear selection
-      setSelectedPlayers([]);
-    }
-  }, [getNextActionSeat, dispatchUi, setSelectedPlayers]);
-
   // Pot correction handler
   const handlePotCorrection = useCallback((amount) => {
     dispatchGame({ type: GAME_ACTIONS.SET_POT_OVERRIDE, payload: amount });
@@ -418,27 +394,6 @@ export const TableView = ({ scale }) => {
   const pfrSeat = currentStreet !== 'preflop' ? getPreflopAggressor(actionSequence) : null;
 
   const hasActions = actionSequence.length > 0;
-
-  // HE-1a: Batch action handlers
-  const remainingSeats = getRemainingSeats();
-  const remainingCount = remainingSeats.length;
-
-  const handleRestFold = () => {
-    const count = restFold();
-    showInfo(`${count} seat${count !== 1 ? 's' : ''} folded`);
-  };
-
-  const handleCheckAround = () => {
-    const count = checkAround();
-    showInfo(`${count} seat${count !== 1 ? 's' : ''} checked`);
-  };
-
-  const handleFoldToInvested = () => {
-    const count = foldToInvested();
-    if (count > 0) {
-      showInfo(`${count} seat${count !== 1 ? 's' : ''} folded`);
-    }
-  };
 
   // HE-1b: Card selector overlay
   const selectCard = useCardSelection(
@@ -632,29 +587,14 @@ export const TableView = ({ scale }) => {
             />
           </div>
 
-          {/* Command Strip - unified right panel */}
+          {/* Command Strip - unified right panel (CH-2: consumes contexts directly) */}
           <CommandStrip
             onStreetChange={handleStreetChange}
             onClearStreet={handleClearStreetWithAutoSelect}
-            onToggleAbsent={toggleAbsent}
-            onClearSeatActions={clearSeatActions}
-            onUndoLastAction={undoLastAction}
-            onAdvanceSeat={handleAdvanceSeat}
-            remainingCount={remainingCount}
-            onRestFold={handleRestFold}
-            onCheckAround={handleCheckAround}
-            onFoldToInvested={handleFoldToInvested}
             onNextHand={handleNextHandWithToast}
             onResetHand={handleResetHandWithToast}
             onSelectCard={selectCard}
-            getCardStreet={getCardStreet}
-            onToggleHoleVisibility={handleToggleHoleCardsVisibility}
-            onClearBoard={() => clearCards('community')}
-            onClearHole={() => clearCards('hole')}
-            nextActionSeat={selectedPlayers.length === 1 ? getNextActionSeat(selectedPlayers[0]) : null}
-            getSeatPlayerName={getSeatPlayerName}
             liveEquity={liveEquity}
-            seatContributions={seatContributions}
           />
 
         </div>

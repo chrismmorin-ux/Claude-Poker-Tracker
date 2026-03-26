@@ -5,9 +5,10 @@
  * and card format conversion.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { getActionAdvice } from '../utils/exploitEngine/actionAdvisor';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
+import { useAbortControl } from './useAbortControl';
 
 /**
  * @returns {{ advice: object|null, isComputing: boolean, error: string|null, compute: Function, clear: Function }}
@@ -16,7 +17,7 @@ export const useActionAdvisor = () => {
   const [advice, setAdvice] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
   const [error, setError] = useState(null);
-  const abortRef = useRef(0);
+  const { register, isCurrent, abort } = useAbortControl();
 
   const compute = useCallback(async ({
     villainRange,
@@ -30,7 +31,7 @@ export const useActionAdvisor = () => {
     personalizedMultipliers,
     trials = 2000,
   }) => {
-    const callId = ++abortRef.current;
+    const callId = register();
     setIsComputing(true);
     setError(null);
 
@@ -60,27 +61,27 @@ export const useActionAdvisor = () => {
       });
 
       // Only update if this is still the latest call
-      if (callId === abortRef.current) {
+      if (isCurrent(callId)) {
         setAdvice(result);
       }
     } catch (err) {
-      if (callId === abortRef.current) {
+      if (isCurrent(callId)) {
         setError(err.message);
         setAdvice(null);
       }
     } finally {
-      if (callId === abortRef.current) {
+      if (isCurrent(callId)) {
         setIsComputing(false);
       }
     }
-  }, []);
+  }, [register, isCurrent]);
 
   const clear = useCallback(() => {
-    abortRef.current++;
+    abort();
     setAdvice(null);
     setError(null);
     setIsComputing(false);
-  }, []);
+  }, [abort]);
 
   return { advice, isComputing, error, compute, clear };
 };

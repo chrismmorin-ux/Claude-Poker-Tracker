@@ -168,4 +168,3 @@ export const useSettingsPersistence = (settingsState, dispatchSettings, userId =
   };
 };
 
-export default useSettingsPersistence;

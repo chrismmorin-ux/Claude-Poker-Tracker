@@ -14,6 +14,7 @@ import { estimateFoldPct } from '../utils/exploitEngine/foldEquityCalculator';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getActionsForSeatOnStreet } from '../utils/sequenceUtils';
 import { SEAT_ARRAY, ACTIONS } from '../constants/gameConstants';
+import { useAbortControl } from './useAbortControl';
 
 /**
  * Determine villain's preflop action key from the action sequence.
@@ -85,7 +86,7 @@ export const useLiveEquity = ({
   const [isComputing, setIsComputing] = useState(false);
   const [villainName, setVillainName] = useState(null);
   const [villainSeat, setVillainSeat] = useState(null);
-  const abortRef = useRef(0);
+  const { register, isCurrent } = useAbortControl();
   const debounceRef = useRef(null);
 
   // Parse hero cards
@@ -159,7 +160,7 @@ export const useLiveEquity = ({
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
-      const callId = ++abortRef.current;
+      const callId = register();
       setIsComputing(true);
 
       const position = getRangePositionCategory(villain.seat, dealerSeat);
@@ -167,7 +168,7 @@ export const useLiveEquity = ({
       const range = getVillainRange(villain.tendencies.rangeProfile, position, actionKey);
 
       if (!range) {
-        if (callId === abortRef.current) {
+        if (isCurrent(callId)) {
           setEquity(null);
           setFoldPct(null);
           setIsComputing(false);
@@ -180,7 +181,7 @@ export const useLiveEquity = ({
 
       handVsRange(heroEncoded, range, boardEncoded, { trials: 2000 })
         .then(result => {
-          if (callId === abortRef.current) {
+          if (isCurrent(callId)) {
             setEquity(result.equity);
 
             // Compute fold% from range segmentation (synchronous, cheap)
@@ -196,7 +197,7 @@ export const useLiveEquity = ({
           }
         })
         .catch(() => {
-          if (callId === abortRef.current) {
+          if (isCurrent(callId)) {
             setEquity(null);
             setFoldPct(null);
             setIsComputing(false);

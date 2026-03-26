@@ -6,17 +6,18 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useAuth } from '../../contexts';
-import useSyncBridge from '../../hooks/useSyncBridge';
-import useOnlineAnalysis from '../../hooks/useOnlineAnalysis';
-import useLiveActionAdvisor from '../../hooks/useLiveActionAdvisor';
-import { getHandsBySource } from '../../utils/persistence/handsStorage';
+import { useAuth, useSyncBridge } from '../../contexts';
+import { useOnlineAnalysis } from '../../hooks/useOnlineAnalysis';
+import { useLiveActionAdvisor } from '../../hooks/useLiveActionAdvisor';
 import { getAllSessions } from '../../utils/persistence/sessionsStorage';
 import { GUEST_USER_ID } from '../../utils/persistence/database';
 import { SEAT_ARRAY } from '../../constants/gameConstants';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { TendencyStats } from '../ui/TendencyStats';
 import { ExploitBadges } from '../ui/ExploitBadges';
+import VillainProfileModal from '../ui/VillainProfileModal';
+import { SegmentationBar } from '../ui/SegmentationBar';
+import { ObservationPanel } from '../ui/ObservationPanel';
 
 // Style colors matching the extension's stats-engine
 const STYLE_COLORS = {
@@ -47,6 +48,24 @@ const QUALITY_CONFIG = {
 const getQualityTier = (n) =>
   n === 0 ? 'none' : n < 10 ? 'speculative' : n < 30 ? 'developing' : 'established';
 
+// Data quality explanations for recommendation reliability
+const QUALITY_DETAIL = {
+  none:        'No player data — using population defaults only',
+  speculative: 'Very early — play standard, reads may be noise',
+  developing:  'Building profile — core stats reliable, exploits may shift',
+  established: 'Solid read — exploits and recommendations are calibrated',
+};
+
+// Board texture pill colors
+const TEXTURE_PILLS = {
+  wet:       { bg: '#1e3a5f', color: '#60a5fa' },
+  dry:       { bg: '#3b2f1a', color: '#d4a847' },
+  medium:    { bg: '#1a2e2e', color: '#6ee7b7' },
+  paired:    { bg: '#3b2a1a', color: '#fb923c' },
+  flushDraw: { bg: '#1a2e3b', color: '#67e8f9' },
+  monotone:  { bg: '#1a1a3b', color: '#a78bfa' },
+};
+
 export const OnlineView = ({ scale }) => {
   const { user } = useAuth();
   const userId = user?.uid || GUEST_USER_ID;
@@ -54,12 +73,13 @@ export const OnlineView = ({ scale }) => {
   const {
     isExtensionConnected, versionMismatch, importedCount, syncError,
     importFromJson, liveHandState, pushExploits, pushAdvice,
-  } = useSyncBridge(userId);
+  } = useSyncBridge();
 
   // Track online sessions
   const [onlineSessions, setOnlineSessions] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Load online sessions
@@ -287,19 +307,32 @@ export const OnlineView = ({ scale }) => {
                 borderRadius: 8,
                 padding: 12,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 'bold', color: '#d4a847', margin: 0 }}>
-                    Seat {selectedSeat}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 'bold', color: '#d4a847', margin: 0 }}>
+                      Seat {selectedSeat}
+                    </h3>
                     {selectedSeatData.style && (
                       <span style={{
-                        fontSize: 10, fontWeight: 'bold', padding: '2px 6px', borderRadius: 3, marginLeft: 8,
+                        fontSize: 10, fontWeight: 'bold', padding: '2px 6px', borderRadius: 3,
                         backgroundColor: STYLE_COLORS[selectedSeatData.style]?.bg || '#374151',
                         color: STYLE_COLORS[selectedSeatData.style]?.text || '#9ca3af',
                       }}>
                         {selectedSeatData.style}
                       </span>
                     )}
-                  </h3>
+                    {selectedSeatData.villainProfile && (
+                      <button
+                        onClick={() => setProfileModalOpen(true)}
+                        style={{
+                          padding: '2px 8px', borderRadius: 4, border: '1px solid #4b5563',
+                          background: '#374151', color: '#9ca3af', fontSize: 10, cursor: 'pointer',
+                        }}
+                      >
+                        Profile
+                      </button>
+                    )}
+                  </div>
                   <span style={{ fontSize: 11, color: '#6b7280' }}>
                     {selectedSeatData.sampleSize} hands
                     {(() => {
@@ -309,15 +342,144 @@ export const OnlineView = ({ scale }) => {
                   </span>
                 </div>
 
-                {/* Early estimate warning */}
-                {(selectedSeatData.sampleSize || 0) < 10 && selectedSeatData.exploits?.length > 0 && (
-                  <div style={{ fontSize: 10, color: '#9ca3af', fontStyle: 'italic', marginBottom: 6 }}>
-                    Early estimate — play standard until more data
+                {/* Data quality explanation */}
+                {(() => {
+                  const tier = getQualityTier(selectedSeatData.sampleSize || 0);
+                  const detail = QUALITY_DETAIL[tier];
+                  return detail ? (
+                    <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic', marginBottom: 6 }}>
+                      {detail}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Live Action Advice */}
+                {advice && String(advice.villainSeat) === selectedSeat && (
+                  <div style={{ marginBottom: 10 }}>
+                    <h4 style={{ fontSize: 11, color: '#d4a847', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Live Advice
+                    </h4>
+
+                    {/* Situation + Hero Equity row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                        {advice.situationLabel || advice.situation}
+                        {advice.heroAlreadyActed && (
+                          <span style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginLeft: 4 }}>(review)</span>
+                        )}
+                      </span>
+                      <span style={{
+                        fontSize: 13, fontWeight: 'bold',
+                        color: advice.heroEquity >= 0.5 ? '#22c55e' : '#ef4444',
+                      }}>
+                        {Math.round(advice.heroEquity * 100)}% equity
+                      </span>
+                    </div>
+
+                    {/* Board texture pills */}
+                    {advice.boardTexture && (
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 4, flexWrap: 'wrap' }}>
+                        {[
+                          { key: 'texture', show: true, label: advice.boardTexture.texture },
+                          { key: 'paired', show: advice.boardTexture.isPaired, label: 'paired' },
+                          { key: 'flushDraw', show: advice.boardTexture.flushDraw, label: 'flush draw' },
+                          { key: 'monotone', show: advice.boardTexture.monotone, label: 'monotone' },
+                        ].filter(p => p.show).map(p => {
+                          const pill = TEXTURE_PILLS[p.key] || TEXTURE_PILLS.medium;
+                          return (
+                            <span key={p.key} style={{
+                              fontSize: 9, padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
+                              background: pill.bg, color: pill.color,
+                            }}>
+                              {p.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Segmentation bar (postflop only) */}
+                    {advice.segmentation?.buckets && (
+                      <div style={{ marginBottom: 6 }}>
+                        <SegmentationBar buckets={advice.segmentation.buckets} size="sm" />
+                      </div>
+                    )}
+
+                    {/* Recommendation cards */}
+                    {advice.recommendations?.slice(0, 3).map((rec, i) => {
+                      const isTop = i === 0;
+                      const isPositive = rec.ev > 0;
+                      const vr = rec.villainResponse;
+
+                      return (
+                        <div key={rec.action + i} style={{
+                          padding: '6px 8px', marginBottom: 3, borderRadius: 4,
+                          background: '#0d1117',
+                          borderLeft: `2px solid ${isTop ? '#d4a847' : '#374151'}`,
+                        }}>
+                          {/* Action + EV */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                            <span style={{
+                              fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase',
+                              color: isTop ? '#d4a847' : '#e0e0e0',
+                            }}>
+                              {isTop ? '* ' : ''}{rec.action}
+                            </span>
+                            <span style={{
+                              fontSize: 12, fontWeight: 'bold',
+                              color: isPositive ? '#22c55e' : rec.ev === 0 ? '#6b7280' : '#ef4444',
+                            }}>
+                              EV: {rec.ev >= 0 ? '+' : ''}{rec.ev.toFixed(1)}
+                            </span>
+                          </div>
+
+                          {/* Sizing line */}
+                          {rec.sizing && (
+                            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>
+                              Size: {Math.round(rec.sizing.betFraction * 100)}% pot (${rec.sizing.betSize.toFixed(0)})
+                              {' | '}Fold%: {Math.round(rec.sizing.foldPct * 100)}%
+                            </div>
+                          )}
+
+                          {/* Villain response breakdown */}
+                          {vr && vr.fold && (
+                            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+                              V: folds {Math.round(vr.fold.pct * 100)}%
+                              {' · '}calls {Math.round(vr.call.pct * 100)}%
+                              {' · '}raises {Math.round(vr.raise.pct * 100)}%
+                            </div>
+                          )}
+                          {vr && vr.check && !vr.fold && (
+                            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+                              V: checks {Math.round(vr.check.pct * 100)}%
+                              {' · '}bets {Math.round(vr.bet.pct * 100)}%
+                            </div>
+                          )}
+
+                          {/* Reasoning */}
+                          <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+                            {rec.reasoning}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Data quality note */}
+                    {advice.dataQuality && (
+                      <div style={{ fontSize: 9, color: '#4b5563', marginTop: 4, textAlign: 'right' }}>
+                        {advice.dataQuality.confidenceNote}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Exploits */}
-                {selectedSeatData.exploits?.length > 0 && (
+                {/* Decision-organized observations (new system) */}
+                {selectedSeatData.observations?.length > 0 && (
+                  <ObservationPanel observations={selectedSeatData.observations} />
+                )}
+
+                {/* Legacy exploits (shown when no observations or as supplement) */}
+                {(!selectedSeatData.observations?.length) && selectedSeatData.exploits?.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
                     <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Exploits</h4>
                     {selectedSeatData.exploits.slice(0, 8).map((exploit, i) => {
@@ -340,8 +502,8 @@ export const OnlineView = ({ scale }) => {
                   </div>
                 )}
 
-                {/* Weaknesses */}
-                {selectedSeatData.weaknesses?.length > 0 && (
+                {/* Legacy weaknesses (shown when no observations) */}
+                {(!selectedSeatData.observations?.length) && selectedSeatData.weaknesses?.length > 0 && (
                   <div style={{ marginBottom: 8 }}>
                     <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Weaknesses</h4>
                     {selectedSeatData.weaknesses.slice(0, 5).map((w, i) => (
@@ -355,7 +517,7 @@ export const OnlineView = ({ scale }) => {
                   </div>
                 )}
 
-                {/* Briefings */}
+                {/* Briefings (always shown as supplement) */}
                 {selectedSeatData.briefings?.length > 0 && (
                   <div>
                     <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Briefings</h4>
@@ -399,6 +561,15 @@ export const OnlineView = ({ scale }) => {
           </>
         )}
       </div>
+
+      {/* Villain Profile Modal */}
+      <VillainProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        playerName={'Seat ' + selectedSeat}
+        villainProfile={selectedSeatData?.villainProfile}
+        playerId={selectedSeat}
+      />
     </ScaledContainer>
   );
 };

@@ -6,7 +6,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { UIProvider, useUI } from '../UIContext';
-import { UI_ACTIONS, SCREEN } from '../../reducers/uiReducer';
+import { UI_ACTIONS } from '../../reducers/uiReducer';
+import { SCREEN } from '../../constants/uiConstants';
 
 // Helper to create a wrapper with UIProvider
 const createWrapper = (uiState, dispatchUi = vi.fn()) => {

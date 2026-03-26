@@ -429,6 +429,22 @@ Plan: `.claude/plans/concurrent-whistling-whisper.md`
 
 ---
 
+## 22. Action Advice Quality (P1)
+
+Game tree evaluator improvements for higher-quality action recommendations.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 22.1 | P1 | DONE | Overbet sizing candidates | Added 2.0x pot to bet sizing candidates in `foldEquityCalculator.js`. |
+| 22.2 | P1 | DONE | Multiple raise sizing | Generate min-raise, optimal, pot-size raise candidates when facing a bet. `gameTreeEvaluator.js`. |
+| 22.3 | P1 | DONE | Check EV calibration | Use villain's observed bet sizing instead of hardcoded half-pot. `gameTreeEvaluator.js`. |
+| 22.4 | P1 | DONE | Reasoning quality + observation integration | Rewrite `buildTreeReasoning()` to reference specific numbers and villain observations. Every string includes at least one verifiable number. |
+| 22.5 | P2 | DONE | Call branch depth-2 | Sample next-street cards, categorize villain combos (beats hero / elastic folder / inelastic caller), compute optimal sizing. Handles implied odds, reverse implied odds, nut-changing cards. |
+| 22.6 | P2 | DONE | Preflop advisor upgrade | Positional matchup fold estimation (SB vs UTG ≠ BB vs BTN), multiple sizing candidates, position-aware reasoning strings. |
+| 22.7 | P3 | READY | Multi-street depth-2 for bet/raise branches | Expand bet branch to next street (call branch already has depth-2). |
+
+---
+
 ## Recommended Execution Order
 
 ```
