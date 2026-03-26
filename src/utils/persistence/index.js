@@ -36,9 +36,7 @@ export {
   deleteHand,
   clearAllHands,
   getHandCount,
-  handExists,
   saveOnlineHand,
-  getHandsBySource,
 } from './handsStorage';
 
 // Session CRUD operations
@@ -72,9 +70,7 @@ export {
 export {
   getSettings,
   saveSettings,
-  updateSettings,
   resetSettings,
-  clearSettings,
 } from './settingsStorage';
 
 // Range Profile CRUD operations
@@ -82,7 +78,6 @@ export {
   saveRangeProfile,
   getRangeProfile,
   deleteRangeProfile,
-  getAllRangeProfiles,
 } from './rangeProfilesStorage';
 
 // Tournament CRUD operations

@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * ImportConfirmModal - Confirmation modal for data import with warning
@@ -52,21 +51,3 @@ export const ImportConfirmModal = ({
   );
 };
 
-ImportConfirmModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  importData: PropTypes.shape({
-    counts: PropTypes.shape({
-      hands: PropTypes.number,
-      sessions: PropTypes.number,
-      players: PropTypes.number,
-    }),
-    data: PropTypes.shape({
-      hands: PropTypes.array,
-      sessions: PropTypes.array,
-      players: PropTypes.array,
-    }),
-    exportedAtISO: PropTypes.string,
-  }),
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};

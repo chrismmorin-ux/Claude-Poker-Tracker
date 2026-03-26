@@ -6,7 +6,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * Google "G" logo SVG component
@@ -94,11 +93,5 @@ export const GoogleSignInButton = ({
   );
 };
 
-GoogleSignInButton.propTypes = {
-  onClick: PropTypes.func.isRequired,
-  disabled: PropTypes.bool,
-  isLoading: PropTypes.bool,
-  text: PropTypes.string,
-};
 
 export default GoogleSignInButton;

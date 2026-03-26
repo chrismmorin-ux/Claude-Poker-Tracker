@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { LAYOUT } from '../../../constants/gameConstants';
 import { useSettings, useAuth, useUI, useToast } from '../../../contexts';
@@ -131,6 +130,3 @@ export const SettingsView = ({ scale }) => {
   );
 };
 
-SettingsView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};

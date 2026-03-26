@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * CashOutModal - Modal for entering cash out amount when ending a session
@@ -58,10 +57,3 @@ export const CashOutModal = ({
   );
 };
 
-CashOutModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  cashOutAmount: PropTypes.string.isRequired,
-  onCashOutAmountChange: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};

@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * EquityBadge - Small pill showing live equity vs a villain.
@@ -31,8 +30,3 @@ export const EquityBadge = ({ equity, isComputing, villainName }) => {
   );
 };
 
-EquityBadge.propTypes = {
-  equity: PropTypes.number,
-  isComputing: PropTypes.bool.isRequired,
-  villainName: PropTypes.string,
-};

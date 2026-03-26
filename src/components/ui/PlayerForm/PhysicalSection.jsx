@@ -6,7 +6,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {
   ETHNICITY_OPTIONS,
   BUILD_OPTIONS,
@@ -138,17 +137,3 @@ export const PhysicalSection = ({
   );
 };
 
-PhysicalSection.propTypes = {
-  ethnicity: PropTypes.string.isRequired,
-  setEthnicity: PropTypes.func.isRequired,
-  build: PropTypes.string.isRequired,
-  setBuild: PropTypes.func.isRequired,
-  gender: PropTypes.string.isRequired,
-  setGender: PropTypes.func.isRequired,
-  facialHair: PropTypes.string.isRequired,
-  setFacialHair: PropTypes.func.isRequired,
-  hat: PropTypes.bool.isRequired,
-  setHat: PropTypes.func.isRequired,
-  sunglasses: PropTypes.bool.isRequired,
-  setSunglasses: PropTypes.func.isRequired,
-};

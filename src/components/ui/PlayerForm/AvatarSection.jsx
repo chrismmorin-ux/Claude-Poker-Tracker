@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * AvatarSection - Avatar upload and preview
@@ -42,8 +41,3 @@ export const AvatarSection = ({
   );
 };
 
-AvatarSection.propTypes = {
-  avatar: PropTypes.string,
-  onAvatarChange: PropTypes.func.isRequired,
-  error: PropTypes.string,
-};

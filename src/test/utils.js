@@ -13,14 +13,12 @@ export {
   ACTIONS,
   ACTION_ABBREV,
   FOLD_ACTIONS,
-  TERMINAL_ACTIONS,
   SEAT_STATUS,
   SEAT_ARRAY,
   STREETS,
   BETTING_STREETS,
   SUITS,
   RANKS,
-  SUIT_ABBREV,
   LIMITS,
   LAYOUT,
   isFoldAction,
@@ -75,24 +73,6 @@ export const createMockCardState = (overrides = {}) => ({
   holeCards: ['', ''],
   holeCardsVisible: true,
   allPlayerCards: createEmptyPlayerCards(),
-  ...overrides,
-});
-
-/**
- * Create a mock UI state with optional overrides
- */
-export const createMockUIState = (overrides = {}) => ({
-  currentView: 'table',
-  selectedPlayers: [],
-  contextMenu: null,
-  isDraggingDealer: false,
-  isSidebarCollapsed: false,
-  showCardSelector: false,
-  cardSelectorType: null,
-  highlightedBoardIndex: null,
-  isShowdownViewOpen: false,
-  highlightedSeat: null,
-  highlightedHoleSlot: null,
   ...overrides,
 });
 
@@ -235,37 +215,6 @@ export const createMockDispatchers = () => ({
 // =============================================================================
 // MOCK FUNCTION FACTORIES
 // =============================================================================
-
-/**
- * Create a mock isSeatInactive function
- * @param {Set|Array} inactiveSeats - Seats to treat as inactive
- * @returns {Function}
- */
-export const createMockIsSeatInactive = (inactiveSeats = []) => {
-  const inactiveSet = new Set(inactiveSeats);
-  return vi.fn((seat) => inactiveSet.has(seat) ? 'folded' : null);
-};
-
-/**
- * Create a mock hasSeatFolded function
- * @param {Set|Array} foldedSeats - Seats to treat as folded
- * @returns {Function}
- */
-export const createMockHasSeatFolded = (foldedSeats = []) => {
-  const foldedSet = new Set(foldedSeats);
-  return vi.fn((seat) => foldedSet.has(seat));
-};
-
-/**
- * Create a mock logger
- */
-export const createMockLogger = () => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  action: vi.fn(),
-});
 
 // =============================================================================
 // INDEXEDDB TEST HELPERS

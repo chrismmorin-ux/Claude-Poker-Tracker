@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
@@ -202,34 +201,4 @@ export const SeatComponent = ({
   );
 };
 
-SeatComponent.propTypes = {
-  seat: PropTypes.number.isRequired,
-  x: PropTypes.number.isRequired,
-  y: PropTypes.number.isRequired,
-  actionArray: PropTypes.arrayOf(PropTypes.string).isRequired,
-  isDealer: PropTypes.bool.isRequired,
-  isSmallBlind: PropTypes.bool.isRequired,
-  isBigBlind: PropTypes.bool.isRequired,
-  isMySeat: PropTypes.bool.isRequired,
-  playerName: PropTypes.string,
-  exploitSummary: PropTypes.shape({
-    weakness: PropTypes.number,
-    strength: PropTypes.number,
-    tendency: PropTypes.number,
-    note: PropTypes.number,
-  }),
-  exploits: PropTypes.arrayOf(PropTypes.object),
-  sampleSize: PropTypes.number,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  getSeatColor: PropTypes.func.isRequired,
-  onSeatClick: PropTypes.func.isRequired,
-  onSeatRightClick: PropTypes.func.isRequired,
-  onDealerDragStart: PropTypes.func.isRequired,
-  onHoleCardClick: PropTypes.func.isRequired,
-  onToggleVisibility: PropTypes.func.isRequired,
-  onOpenRangeDetail: PropTypes.func,
-  weaknessCount: PropTypes.number,
-  seatBet: PropTypes.number,
-  isPFR: PropTypes.bool,
-};
+

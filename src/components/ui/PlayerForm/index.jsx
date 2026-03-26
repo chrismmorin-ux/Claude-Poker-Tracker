@@ -6,7 +6,6 @@
  */
 
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { AVATAR_MAX_SIZE_BYTES } from '../../../constants/playerConstants';
 import { BasicInfoSection } from './BasicInfoSection';
 import { PhysicalSection } from './PhysicalSection';
@@ -191,22 +190,3 @@ export const PlayerForm = ({ onSubmit, onCancel, scale = 1, initialData = null, 
   );
 };
 
-PlayerForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  scale: PropTypes.number,
-  initialData: PropTypes.shape({
-    name: PropTypes.string,
-    nickname: PropTypes.string,
-    ethnicity: PropTypes.string,
-    build: PropTypes.string,
-    gender: PropTypes.string,
-    facialHair: PropTypes.string,
-    hat: PropTypes.bool,
-    sunglasses: PropTypes.bool,
-    styleTags: PropTypes.arrayOf(PropTypes.string),
-    notes: PropTypes.string,
-    avatar: PropTypes.string,
-  }),
-  defaultName: PropTypes.string,
-};

@@ -70,8 +70,6 @@ export default defineConfig({
             'src/reducers/__tests__/**/*.test.js',
             'src/utils/**/__tests__/**/*.test.js',
             'src/constants/__tests__/**/*.test.js',
-            'src/types/__tests__/**/*.test.js',
-            'src/migrations/__tests__/**/*.test.js',
             'src/test/**/*.test.js',
             'scripts/__tests__/**/*.test.{js,cjs}',
           ],

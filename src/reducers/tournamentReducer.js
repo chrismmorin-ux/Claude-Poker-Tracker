@@ -6,6 +6,7 @@
  */
 
 import { TOURNAMENT_ACTIONS } from '../constants/tournamentConstants';
+import { createValidatedReducer, SCHEMA_RULES } from '../utils/reducerUtils';
 
 // =============================================================================
 // INITIAL STATE
@@ -34,10 +35,24 @@ export const initialTournamentState = {
 };
 
 // =============================================================================
-// REDUCER
+// SCHEMA
 // =============================================================================
 
-export const tournamentReducer = (state, action) => {
+export const TOURNAMENT_STATE_SCHEMA = {
+  currentLevelIndex: SCHEMA_RULES.optionalNumber,
+  totalPausedMs: { type: 'number', min: 0 },
+  isPaused: SCHEMA_RULES.boolean,
+  isActive: SCHEMA_RULES.boolean,
+  eliminations: SCHEMA_RULES.array,
+  config: SCHEMA_RULES.object,
+  chipStacks: SCHEMA_RULES.object,
+};
+
+// =============================================================================
+// RAW REDUCER
+// =============================================================================
+
+const rawTournamentReducer = (state, action) => {
   switch (action.type) {
     case TOURNAMENT_ACTIONS.INIT_TOURNAMENT: {
       const { config } = action.payload;
@@ -152,3 +167,13 @@ export const tournamentReducer = (state, action) => {
       return state;
   }
 };
+
+// =============================================================================
+// VALIDATED EXPORT
+// =============================================================================
+
+export const tournamentReducer = createValidatedReducer(
+  rawTournamentReducer,
+  TOURNAMENT_STATE_SCHEMA,
+  'tournamentReducer'
+);

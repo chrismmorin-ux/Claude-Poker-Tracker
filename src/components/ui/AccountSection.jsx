@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { User, Mail, LogOut, Trash2, Key, Shield, Link2, Unlink } from 'lucide-react';
 import { useAuth } from '../../contexts';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -429,10 +428,5 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
   );
 };
 
-AccountSection.propTypes = {
-  onNavigateToLogin: PropTypes.func.isRequired,
-  onNavigateToSignup: PropTypes.func.isRequired,
-  onShowToast: PropTypes.func,
-};
 
 export default AccountSection;

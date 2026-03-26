@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { formatMsToTimer } from '../../../utils/displayUtils';
 import { GOLD } from '../../../constants/designTokens';
 import { getMRatioZone, getGuidanceColor } from '../../../constants/tournamentConstants';
@@ -175,22 +174,3 @@ export const TableHeader = ({
   );
 };
 
-TableHeader.propTypes = {
-  handCount: PropTypes.number.isRequired,
-  sessionTimeDisplay: PropTypes.string.isRequired,
-  hasActiveSession: PropTypes.bool.isRequired,
-  isSidebarCollapsed: PropTypes.bool.isRequired,
-  onEndSession: PropTypes.func.isRequired,
-  onNewSession: PropTypes.func.isRequired,
-  isTournament: PropTypes.bool,
-  tournamentBlinds: PropTypes.object,
-  levelTimeRemaining: PropTypes.number,
-  onOpenTournament: PropTypes.func,
-  heroMRatio: PropTypes.number,
-  lockoutInfo: PropTypes.object,
-  playersRemaining: PropTypes.number,
-  currentLevelIndex: PropTypes.number,
-  levelDurationMs: PropTypes.number,
-  icmPressure: PropTypes.object,
-  mRatioGuidance: PropTypes.object,
-};

@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * NotesSection - Notes textarea input
@@ -30,7 +29,3 @@ export const NotesSection = ({
   );
 };
 
-NotesSection.propTypes = {
-  notes: PropTypes.string.isRequired,
-  setNotes: PropTypes.func.isRequired,
-};

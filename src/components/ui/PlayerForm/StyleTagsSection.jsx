@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import { STYLE_TAGS } from '../../../constants/playerConstants';
 
 /**
@@ -37,7 +36,3 @@ export const StyleTagsSection = ({
   );
 };
 
-StyleTagsSection.propTypes = {
-  styleTags: PropTypes.arrayOf(PropTypes.string).isRequired,
-  onToggleTag: PropTypes.func.isRequired,
-};

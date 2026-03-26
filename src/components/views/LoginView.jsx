@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { GoogleSignInButton } from '../ui/GoogleSignInButton';
 import { PasswordInput } from '../ui/PasswordInput';
@@ -214,8 +213,5 @@ export const LoginView = ({ scale }) => {
   );
 };
 
-LoginView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};
 
 export default LoginView;

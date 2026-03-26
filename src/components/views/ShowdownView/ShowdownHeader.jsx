@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { SkipForward } from 'lucide-react';
 import { CardSlot } from '../../ui/CardSlot';
 
@@ -57,9 +56,3 @@ export const ShowdownHeader = ({
   );
 };
 
-ShowdownHeader.propTypes = {
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  onNextHand: PropTypes.func.isRequired,
-  onClearCards: PropTypes.func.isRequired,
-  onDone: PropTypes.func.isRequired,
-};

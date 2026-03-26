@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
 import {
   LAYOUT,
   ACTIONS,
@@ -230,6 +229,3 @@ export const ShowdownView = ({ scale }) => {
   );
 };
 
-ShowdownView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};

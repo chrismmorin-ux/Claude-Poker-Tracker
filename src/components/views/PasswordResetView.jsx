@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { useAuth, useUI } from '../../contexts';
 import { LAYOUT } from '../../constants/gameConstants';
@@ -181,8 +180,5 @@ export const PasswordResetView = ({ scale }) => {
   );
 };
 
-PasswordResetView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};
 
 export default PasswordResetView;

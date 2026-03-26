@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
@@ -133,30 +132,3 @@ export const ShowdownSeatRow = ({
   );
 };
 
-ShowdownSeatRow.propTypes = {
-  seat: PropTypes.number.isRequired,
-  cards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  isMySeat: PropTypes.bool.isRequired,
-  isDealer: PropTypes.bool.isRequired,
-  isSB: PropTypes.bool.isRequired,
-  isBB: PropTypes.bool.isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  inactiveStatus: PropTypes.string,
-  isMucked: PropTypes.bool.isRequired,
-  hasWon: PropTypes.bool.isRequired,
-  anyoneHasWon: PropTypes.bool.isRequired,
-  highlightedSeat: PropTypes.number,
-  highlightedHoleSlot: PropTypes.number,
-  mode: PropTypes.oneOf(['selection', 'summary']).isRequired,
-  showdownActionsArray: PropTypes.arrayOf(PropTypes.string),
-  ranking: PropTypes.shape({
-    rank: PropTypes.number,
-    category: PropTypes.string,
-    isWinner: PropTypes.bool,
-    score: PropTypes.number,
-  }),
-  onSetHoleCardsVisible: PropTypes.func.isRequired,
-  onHighlightSlot: PropTypes.func,
-  onMuck: PropTypes.func,
-  onWon: PropTypes.func,
-};

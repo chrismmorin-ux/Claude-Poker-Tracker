@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { Eye, EyeOff } from 'lucide-react';
 
 /**
@@ -95,16 +94,3 @@ export const PasswordInput = ({
   );
 };
 
-PasswordInput.propTypes = {
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
-  disabled: PropTypes.bool,
-  autoComplete: PropTypes.string,
-  showStrength: PropTypes.bool,
-  strengthValue: PropTypes.shape({
-    text: PropTypes.string.isRequired,
-    color: PropTypes.string.isRequired,
-  }),
-  className: PropTypes.string,
-};

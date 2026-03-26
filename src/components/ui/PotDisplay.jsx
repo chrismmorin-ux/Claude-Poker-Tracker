@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * PotDisplay - Shows running pot total on the felt.
@@ -64,8 +63,3 @@ export const PotDisplay = ({ potTotal, isEstimated, onCorrect }) => {
   );
 };
 
-PotDisplay.propTypes = {
-  potTotal: PropTypes.number.isRequired,
-  isEstimated: PropTypes.bool.isRequired,
-  onCorrect: PropTypes.func.isRequired,
-};

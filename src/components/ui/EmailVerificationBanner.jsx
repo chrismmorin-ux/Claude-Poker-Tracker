@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import { Mail, X, AlertCircle } from 'lucide-react';
 
 const DISMISS_KEY = 'emailVerificationBannerDismissed';
@@ -138,10 +137,3 @@ export const EmailVerificationBanner = ({ user, onSendVerification, onShowToast 
   );
 };
 
-EmailVerificationBanner.propTypes = {
-  user: PropTypes.shape({
-    emailVerified: PropTypes.bool,
-  }),
-  onSendVerification: PropTypes.func.isRequired,
-  onShowToast: PropTypes.func,
-};

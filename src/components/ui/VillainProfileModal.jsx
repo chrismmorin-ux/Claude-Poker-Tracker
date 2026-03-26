@@ -7,7 +7,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import PropTypes from 'prop-types';
 import { X, ChevronDown, ChevronRight, Eye, Shield, Brain, Target, BookOpen, Activity } from 'lucide-react';
 import { auditVillainModel } from '../../utils/exploitEngine/modelAudit';
 import SeverityBar from './SeverityBar';
@@ -499,14 +498,5 @@ export const VillainProfileModal = ({ isOpen, onClose, playerName, villainProfil
   return createPortal(modal, document.body);
 };
 
-VillainProfileModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  playerName: PropTypes.string,
-  villainProfile: PropTypes.object,
-  playerId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  notes: PropTypes.string,
-  onNotesChange: PropTypes.func,
-};
 
 export default VillainProfileModal;

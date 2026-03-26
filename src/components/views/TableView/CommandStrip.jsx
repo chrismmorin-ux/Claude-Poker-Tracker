@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import PropTypes from 'prop-types';
 import { Undo2, SkipForward, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, STREETS, ACTIONS, LIMITS } from '../../../constants/gameConstants';
@@ -665,11 +664,4 @@ export const CommandStrip = ({
   );
 };
 
-CommandStrip.propTypes = {
-  onStreetChange: PropTypes.func.isRequired,
-  onClearStreet: PropTypes.func.isRequired,
-  onNextHand: PropTypes.func.isRequired,
-  onResetHand: PropTypes.func.isRequired,
-  onSelectCard: PropTypes.func.isRequired,
-  liveEquity: PropTypes.object,
-};
+

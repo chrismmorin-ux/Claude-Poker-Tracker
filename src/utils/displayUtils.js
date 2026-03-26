@@ -65,23 +65,6 @@ export const formatTime12Hour = (timestamp) => {
 };
 
 /**
- * Formats date and time together
- * @param {number} timestamp - Unix timestamp
- * @returns {string} - Formatted date and time (e.g., "Dec 6, 2:30 PM")
- */
-export const formatDateTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-};
-
-/**
  * Calculates total from rebuy transactions
  * @param {Array} rebuyTransactions - Array of {timestamp, amount} objects
  * @returns {number} - Total rebuy amount

@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * BasicInfoSection - Name and nickname inputs
@@ -55,10 +54,3 @@ export const BasicInfoSection = ({
   );
 };
 
-BasicInfoSection.propTypes = {
-  name: PropTypes.string.isRequired,
-  setName: PropTypes.func.isRequired,
-  nickname: PropTypes.string.isRequired,
-  setNickname: PropTypes.func.isRequired,
-  errors: PropTypes.object.isRequired,
-};

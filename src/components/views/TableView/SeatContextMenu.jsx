@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * SeatContextMenu - Right-click menu for seat assignment and configuration
@@ -85,20 +84,3 @@ export const SeatContextMenu = ({
   );
 };
 
-SeatContextMenu.propTypes = {
-  contextMenu: PropTypes.shape({
-    x: PropTypes.number,
-    y: PropTypes.number,
-    seat: PropTypes.number,
-  }),
-  onMakeMySeat: PropTypes.func.isRequired,
-  onMakeDealer: PropTypes.func.isRequired,
-  onCreateNewPlayer: PropTypes.func.isRequired,
-  onAssignPlayer: PropTypes.func.isRequired,
-  onClearPlayer: PropTypes.func.isRequired,
-  recentPlayers: PropTypes.arrayOf(PropTypes.shape({
-    playerId: PropTypes.string,
-    name: PropTypes.string,
-  })).isRequired,
-  getSeatPlayerName: PropTypes.func.isRequired,
-};

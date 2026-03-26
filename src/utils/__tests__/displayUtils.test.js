@@ -9,7 +9,6 @@ import {
   getCardAbbreviation,
   getHandAbbreviation,
   formatTime12Hour,
-  formatDateTime,
   calculateTotalRebuy,
 } from '../displayUtils';
 
@@ -212,36 +211,6 @@ describe('formatTime12Hour', () => {
     const result = formatTime12Hour(timestamp);
     expect(result).toBeTruthy();
     expect(typeof result).toBe('string');
-    expect(result).toMatch(/\d{1,2}:\d{2}\s(AM|PM)/);
-  });
-});
-
-describe('formatDateTime', () => {
-  it('formats date and time together', () => {
-    // January 15, 2025, 2:30 PM UTC
-    const timestamp = new Date('2025-01-15T14:30:00Z').getTime();
-    const result = formatDateTime(timestamp);
-    // Result will vary by timezone but should contain date elements
-    expect(result).toBeTruthy();
-    expect(typeof result).toBe('string');
-    expect(result).toMatch(/Jan/);
-  });
-
-  it('returns empty string for null or undefined', () => {
-    expect(formatDateTime(null)).toBe('');
-    expect(formatDateTime(undefined)).toBe('');
-  });
-
-  it('returns empty string for zero timestamp', () => {
-    expect(formatDateTime(0)).toBe('');
-  });
-
-  it('handles valid timestamp format', () => {
-    const timestamp = Date.now();
-    const result = formatDateTime(timestamp);
-    expect(result).toBeTruthy();
-    expect(typeof result).toBe('string');
-    // Should contain month abbreviation and time
     expect(result).toMatch(/\d{1,2}:\d{2}\s(AM|PM)/);
   });
 });

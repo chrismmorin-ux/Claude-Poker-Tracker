@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import { AlertTriangle, X } from 'lucide-react';
 
 export const ConfirmDeleteModal = ({
@@ -80,15 +79,5 @@ export const ConfirmDeleteModal = ({
   );
 };
 
-ConfirmDeleteModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  title: PropTypes.string,
-  message: PropTypes.string,
-  confirmText: PropTypes.string,
-  cancelText: PropTypes.string,
-  isLoading: PropTypes.bool,
-};
 
 export default ConfirmDeleteModal;

@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { isRedSuit } from '../../../utils/displayUtils';
 
 // Card constants
@@ -113,12 +112,3 @@ export const CardGrid = ({
   );
 };
 
-CardGrid.propTypes = {
-  communityCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  allPlayerCards: PropTypes.object.isRequired,
-  mySeat: PropTypes.number.isRequired,
-  highlightedSeat: PropTypes.number,
-  highlightedHoleSlot: PropTypes.number,
-  onSelectCard: PropTypes.func.isRequired,
-};

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { Square } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS, SESSION_GOALS } from '../../../constants/sessionConstants';
 import { formatTime12Hour, calculateTotalRebuy } from '../../../utils/displayUtils';
@@ -300,21 +299,3 @@ export const ActiveSessionCard = ({
   );
 };
 
-ActiveSessionCard.propTypes = {
-  currentSession: PropTypes.shape({
-    isActive: PropTypes.bool,
-    sessionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    startTime: PropTypes.number,
-    venue: PropTypes.string,
-    gameType: PropTypes.string,
-    buyIn: PropTypes.number,
-    handCount: PropTypes.number,
-    goal: PropTypes.string,
-    rebuyTransactions: PropTypes.arrayOf(PropTypes.shape({
-      timestamp: PropTypes.number,
-      amount: PropTypes.number,
-    })),
-  }).isRequired,
-  onEndSession: PropTypes.func.isRequired,
-  onUpdateField: PropTypes.func.isRequired,
-};

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { getActionsForSeatOnStreet, getPreflopAggressor } from '../../../utils/sequenceUtils';
 import { getSeatContributions } from '../../../utils/potCalculator';
-import PropTypes from 'prop-types';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { buildExploitSummary } from '../../ui/ExploitBadges';
@@ -614,6 +613,4 @@ export const TableView = ({ scale }) => {
   );
 };
 
-TableView.propTypes = {
-  scale: PropTypes.number.isRequired,
-};
+

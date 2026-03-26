@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { CardSlot } from '../../ui/CardSlot';
 import { isRedSuit } from '../../../utils/displayUtils';
@@ -172,19 +171,4 @@ export const CardSelectorPanel = ({
   );
 };
 
-CardSelectorPanel.propTypes = {
-  currentStreet: PropTypes.string.isRequired,
-  communityCards: PropTypes.array.isRequired,
-  holeCards: PropTypes.array.isRequired,
-  holeCardsVisible: PropTypes.bool.isRequired,
-  cardSelectorType: PropTypes.string,
-  highlightedBoardIndex: PropTypes.number,
-  onSelectCard: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired,
-  getCardStreet: PropTypes.func.isRequired,
-  setCardSelectorType: PropTypes.func.isRequired,
-  setHighlightedCardIndex: PropTypes.func.isRequired,
-  onToggleHoleVisibility: PropTypes.func.isRequired,
-  onClearBoard: PropTypes.func.isRequired,
-  onClearHole: PropTypes.func.isRequired,
-};
+

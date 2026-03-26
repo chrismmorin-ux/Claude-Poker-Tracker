@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * BankrollDisplay - Running total bankroll display in bottom left corner
@@ -21,7 +20,3 @@ export const BankrollDisplay = ({
   );
 };
 
-BankrollDisplay.propTypes = {
-  totalBankroll: PropTypes.number.isRequired,
-  completedSessionCount: PropTypes.number.isRequired,
-};

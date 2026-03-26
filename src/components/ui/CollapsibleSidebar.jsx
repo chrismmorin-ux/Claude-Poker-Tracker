@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 import { NAV_COLORS } from '../../constants/designTokens';
@@ -311,19 +310,3 @@ export const CollapsibleSidebar = ({
   );
 };
 
-CollapsibleSidebar.propTypes = {
-  isCollapsed: PropTypes.bool.isRequired,
-  onToggle: PropTypes.func.isRequired,
-  onNavigate: PropTypes.func.isRequired,
-  onSeatChange: PropTypes.func.isRequired,
-  SCREEN: PropTypes.object.isRequired,
-  selectedPlayers: PropTypes.arrayOf(PropTypes.number).isRequired,
-  dealerButtonSeat: PropTypes.number.isRequired,
-  absentSeats: PropTypes.instanceOf(Set).isRequired,
-  numSeats: PropTypes.number.isRequired,
-  hasActiveSession: PropTypes.bool,
-  currentSessionVenue: PropTypes.string,
-  currentSessionGameType: PropTypes.string,
-  updateSessionField: PropTypes.func,
-  isTournament: PropTypes.bool,
-};

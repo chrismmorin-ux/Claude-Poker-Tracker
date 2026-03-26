@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { getActionsForSeatOnStreet, hasSeatFolded } from '../../../utils/sequenceUtils';
 import { ACTIONS, SEAT_STATUS, isFoldAction } from '../../../constants/gameConstants';
@@ -117,18 +116,3 @@ export const ActionHistoryGrid = ({
   );
 };
 
-ActionHistoryGrid.propTypes = {
-  SEAT_ARRAY: PropTypes.arrayOf(PropTypes.number).isRequired,
-  STREETS: PropTypes.arrayOf(PropTypes.string).isRequired,
-  actionSequence: PropTypes.arrayOf(PropTypes.shape({
-    seat: PropTypes.number.isRequired,
-    action: PropTypes.string.isRequired,
-    street: PropTypes.string.isRequired,
-    order: PropTypes.number.isRequired,
-  })),
-  allPlayerCards: PropTypes.object.isRequired,
-  holeCards: PropTypes.arrayOf(PropTypes.string).isRequired,
-  mySeat: PropTypes.number.isRequired,
-  isSeatInactive: PropTypes.func.isRequired,
-  getHandAbbreviation: PropTypes.func.isRequired,
-};
