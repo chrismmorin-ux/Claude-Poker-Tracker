@@ -32,17 +32,17 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 
 ## Architecture (v122)
 - `src/PokerTracker.jsx` (~128 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
-- `src/contexts/` — 10 providers (incl. ToastContext, TendencyProvider, TournamentContext)
+- `src/contexts/` — 12 providers (incl. ToastContext, TendencyProvider, TournamentContext, SyncBridgeContext, OnlineSessionContext)
 - `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
 - `src/hooks/` — 33 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, useAbortControl, etc.)
 - `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
-- `src/components/ui/` — 39 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
+- `src/components/ui/` — 40 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
 - `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (28 modules)
 - `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
 - `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
-- `src/utils/persistence/` — IndexedDB v12 (10 modules: database, migrations, 6 domain stores, validation, index)
+- `src/utils/persistence/` — IndexedDB v13 (11 modules: database, migrations, 7 domain stores, validation, index)
 
 ## Working Principles
 - **Plan first, code second** — outline your approach before writing code. For non-trivial changes, present the plan and wait for approval

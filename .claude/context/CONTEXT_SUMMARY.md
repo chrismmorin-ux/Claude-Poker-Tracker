@@ -7,10 +7,10 @@ Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 
 ## Architecture
 - **Entry**: `src/PokerTracker.jsx` (~128 lines) - orchestrates state and views
-- **State**: 8 reducers (game, ui, card, session, player, settings, auth, tournament) + 10 context providers (incl. TendencyProvider, TournamentContext)
+- **State**: 8 reducers (game, ui, card, session, player, settings, auth, tournament) + 12 context providers (incl. TendencyProvider, TournamentContext, SyncBridgeContext, OnlineSessionContext)
 - **Views**: 13 screens (Table, Stats, History, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online, Login, Signup, PasswordReset) + Showdown overlay
-- **Persistence**: IndexedDB v12 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments) — 10 modules incl. migrations.js
-- **UI Components**: 39 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
+- **Persistence**: IndexedDB v13 with 7 stores (hands, sessions, players, activeSession, settings, rangeProfiles, tournaments) — 11 modules incl. migrations.js
+- **UI Components**: 40 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - **Hooks**: 33 custom hooks in `src/hooks/` (including usePlayerTendencies, useOnlineAnalysis, useHandReplayAnalysis, useLiveActionAdvisor, useSyncBridge)
 - **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (9 modules)
 - **Exploit Engine**: `src/utils/exploitEngine/` - 28 modules: exploit suggestions, weakness detection, Bayesian confidence, fold equity, range segmentation, postflop narrowing, decision accumulator, villain decision model, game tree evaluator, board texture rules, position rules, range rules, sub-action rules, preflop advisor, villain observations, model audit
