@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { resolve } from 'path'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@extension-shared': resolve(__dirname, 'ignition-poker-tracker/shared'),
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -43,6 +49,15 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth'],
+        },
+      },
+    },
+  },
   server: {
     host: true,
   },

@@ -5,8 +5,6 @@
  * Part of the persistence layer, extracted from persistence.js.
  */
 
-import { normalizeHandRecord } from './normalizeSeatActions';
-
 import {
   initDB,
   STORE_NAME,
@@ -135,7 +133,7 @@ export const loadLatestHand = async (userId = GUEST_USER_ID) => {
         if (cursor) {
           const hand = cursor.value;
           log(`Loaded latest hand for user ${userId} (ID: ${hand.handId})`);
-          resolve(normalizeHandRecord(hand));
+          resolve(hand);
         } else {
           log(`No hands found for user ${userId}`);
           resolve(null);
@@ -176,8 +174,7 @@ export const loadHandById = async (handId) => {
 
         if (hand) {
           log(`Loaded hand ID ${handId}`);
-          // Normalize seatActions to array format (migration for old data)
-          resolve(normalizeHandRecord(hand));
+          resolve(hand);
         } else {
           log(`Hand ID ${handId} not found`);
           resolve(null);
@@ -219,8 +216,7 @@ export const getAllHands = async (userId = GUEST_USER_ID) => {
       request.onsuccess = (event) => {
         const hands = event.target.result;
         log(`Loaded ${hands.length} hands for user ${userId}`);
-        // Normalize seatActions to array format (migration for old data)
-        resolve(hands.map(normalizeHandRecord));
+        resolve(hands);
       };
 
       request.onerror = (event) => {
@@ -256,7 +252,7 @@ export const getHandsBySessionId = async (sessionId) => {
       request.onsuccess = (event) => {
         const hands = event.target.result;
         log(`Loaded ${hands.length} hands for session ${sessionId}`);
-        resolve(hands.map(normalizeHandRecord));
+        resolve(hands);
       };
 
       request.onerror = (event) => {
@@ -533,7 +529,7 @@ export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
       request.onsuccess = (event) => {
         const hands = event.target.result.filter(h => h.source === source);
         log(`Loaded ${hands.length} ${source} hands for user ${userId}`);
-        resolve(hands.map(normalizeHandRecord));
+        resolve(hands);
       };
 
       request.onerror = (event) => {

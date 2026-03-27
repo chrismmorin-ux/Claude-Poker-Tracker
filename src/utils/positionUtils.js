@@ -80,6 +80,7 @@ export const getPositionName = (seat, buttonSeat) => {
 
 /**
  * Get seat number for a position name relative to button
+ * @internal Not used in production — tested for completeness
  *
  * @param {string} position - Position name (BTN, SB, etc.)
  * @param {number} buttonSeat - Button seat number (1-9)
@@ -123,6 +124,7 @@ export const isInPosition = (mySeat, opponentSeat, buttonSeat) => {
 
 /**
  * Check if seat is out of position (OOP) relative to another seat
+ * @internal Not used in production — tested for completeness
  *
  * @param {number} mySeat - Our seat number
  * @param {number} opponentSeat - Opponent's seat number
@@ -154,6 +156,7 @@ export const getPositionCategory = (seat, buttonSeat) => {
 
 /**
  * Check if a position is a blind position
+ * @internal Not used in production — tested for completeness
  *
  * @param {number} seat - Seat number
  * @param {number} buttonSeat - Button seat number
@@ -167,6 +170,7 @@ export const isBlindPosition = (seat, buttonSeat) => {
 /**
  * Get all seats in their preflop action order
  * Preflop: UTG first, then clockwise, BB last
+ * @internal Used by dev-only handSimulator + tests
  *
  * @param {number} buttonSeat - Button seat number
  * @returns {number[]} Seat numbers in preflop order
@@ -184,6 +188,7 @@ export const getPreflopOrder = (buttonSeat) => {
 /**
  * Get all seats in their postflop action order
  * Postflop: SB first, then clockwise, button last
+ * @internal Used by dev-only handSimulator + tests
  *
  * @param {number} buttonSeat - Button seat number
  * @returns {number[]} Seat numbers in postflop order
@@ -201,6 +206,7 @@ export const getPostflopOrder = (buttonSeat) => {
 /**
  * Determine if seat is "early" in preflop action order
  * (First 3 to act: UTG, UTG+1, MP1)
+ * @internal Not used in production — tested for completeness
  *
  * @param {number} seat - Seat number
  * @param {number} buttonSeat - Button seat number
@@ -215,6 +221,7 @@ export const isEarlyPosition = (seat, buttonSeat) => {
 /**
  * Determine if seat is "late" in preflop action order
  * (Last 3 to act before blinds: HJ, CO, BTN)
+ * @internal Not used in production — tested for completeness
  *
  * @param {number} seat - Seat number
  * @param {number} buttonSeat - Button seat number

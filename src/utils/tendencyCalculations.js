@@ -19,6 +19,7 @@ import {
   getCbetInfo,
   findLastRaiser,
 } from './handAnalysis';
+import { credibleInterval, STAT_PRIORS } from './exploitEngine/bayesianConfidence';
 
 // =============================================================================
 // HELPERS
@@ -338,5 +339,23 @@ export const derivePercentages = (stats) => {
     ? Math.round((stats.foldTo3BetCount / stats.facedRaisePreflop) * 100)
     : null;
 
-  return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize };
+  // Bayesian credible intervals (additive — existing consumers unaffected)
+  let intervals = null;
+  if (sampleSize > 0) {
+    intervals = {};
+    if (stats.vpipCount != null)
+      intervals.vpip = credibleInterval(stats.vpipCount, sampleSize, STAT_PRIORS.vpip.alpha, STAT_PRIORS.vpip.beta);
+    if (stats.pfrCount != null)
+      intervals.pfr = credibleInterval(stats.pfrCount, sampleSize, STAT_PRIORS.pfr.alpha, STAT_PRIORS.pfr.beta);
+    if (stats.threeBetCount != null && stats.facedRaisePreflop > 0)
+      intervals.threeBet = credibleInterval(stats.threeBetCount, stats.facedRaisePreflop, STAT_PRIORS.threeBet.alpha, STAT_PRIORS.threeBet.beta);
+    if (stats.cbetCount != null && stats.pfAggressorFlops > 0)
+      intervals.cbet = credibleInterval(stats.cbetCount, stats.pfAggressorFlops, STAT_PRIORS.cbet.alpha, STAT_PRIORS.cbet.beta);
+    if (stats.foldedToCbet != null && stats.facedCbet > 0)
+      intervals.foldToCbet = credibleInterval(stats.foldedToCbet, stats.facedCbet, STAT_PRIORS.foldToCbet.alpha, STAT_PRIORS.foldToCbet.beta);
+    if (stats.foldTo3BetCount != null && stats.facedRaisePreflop > 0)
+      intervals.foldTo3Bet = credibleInterval(stats.foldTo3BetCount, stats.facedRaisePreflop, STAT_PRIORS.foldTo3Bet.alpha, STAT_PRIORS.foldTo3Bet.beta);
+  }
+
+  return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize, intervals };
 };

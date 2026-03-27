@@ -21,11 +21,6 @@ vi.mock('../../errorHandler', () => ({
   DEBUG: false,
 }));
 
-// Mock normalizeSeatActions so loaded records are returned as-is
-vi.mock('../normalizeSeatActions', () => ({
-  normalizeHandRecord: (record) => record,
-}));
-
 import { initDB } from '../database';
 import {
   saveHand,

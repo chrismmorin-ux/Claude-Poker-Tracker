@@ -426,6 +426,51 @@ const migrateV12 = (db, transaction) => {
   log('v12 migration complete: source + tableId indexes added');
 };
 
+/** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
+const migrateV13 = (db, transaction) => {
+  log('Upgrading to v13: Normalizing seatActions strings to arrays');
+
+  if (!db.objectStoreNames.contains(STORE_NAME)) return;
+
+  const handsStore = transaction.objectStore(STORE_NAME);
+  const cursor = handsStore.openCursor();
+
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (c) {
+      const hand = c.value;
+      const sa = hand.seatActions;
+      if (sa && typeof sa === 'object') {
+        let changed = false;
+        for (const street of Object.keys(sa)) {
+          const streetActions = sa[street];
+          if (!streetActions || typeof streetActions !== 'object') continue;
+          for (const seat of Object.keys(streetActions)) {
+            const val = streetActions[seat];
+            if (typeof val === 'string') {
+              streetActions[seat] = val ? [val] : [];
+              changed = true;
+            } else if (!Array.isArray(val)) {
+              streetActions[seat] = [];
+              changed = true;
+            }
+          }
+        }
+        if (changed) {
+          c.update(hand);
+        }
+      }
+      c.continue();
+    } else {
+      log('v13 migration: seatActions normalization complete');
+    }
+  };
+
+  cursor.onerror = (e) => {
+    logError('v13 migration failed:', e.target.error);
+  };
+};
+
 // =============================================================================
 // MIGRATION ORCHESTRATOR
 // =============================================================================
@@ -470,4 +515,7 @@ export const runMigrations = (db, transaction, oldVersion) => {
 
   // v12: source/tableId indexes
   if (oldVersion < 12) migrateV12(db, transaction);
+
+  // v13: normalize seatActions strings → arrays (data migration, skip fresh install)
+  if (oldVersion < 13 && oldVersion > 0) migrateV13(db, transaction);
 };

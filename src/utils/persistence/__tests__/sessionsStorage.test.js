@@ -20,11 +20,6 @@ vi.mock('../../errorHandler', () => ({
   DEBUG: false,
 }));
 
-// Mock normalizeSeatActions (required by migrations module)
-vi.mock('../normalizeSeatActions', () => ({
-  normalizeHandRecord: (r) => r,
-}));
-
 import {
   initDB,
   STORE_NAME,

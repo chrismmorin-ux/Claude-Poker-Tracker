@@ -5,7 +5,7 @@
  * This is the foundation module that all other persistence modules depend on.
  *
  * Database Schema:
- *   Database: "PokerTrackerDB" v12
+ *   Database: "PokerTrackerDB" v13
  *   Object Stores:
  *     - "hands" (keyPath: "handId", autoIncrement: true)
  *       Indexes: timestamp, sessionId, userId, userId_timestamp (compound)
@@ -46,7 +46,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 12;
+export const DB_VERSION = 13;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';

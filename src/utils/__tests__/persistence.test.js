@@ -30,11 +30,6 @@ vi.mock('../errorHandler', () => ({
   },
 }));
 
-// Mock the migration module
-vi.mock('../persistence/normalizeSeatActions', () => ({
-  normalizeHandRecord: (record) => record,
-}));
-
 // Import functions after mocks are set up
 import {
   initDB,
