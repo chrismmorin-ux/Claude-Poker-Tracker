@@ -16,10 +16,15 @@ import { logger } from '../utils/errorHandler';
 import { saveOnlineHand } from '../utils/persistence/handsStorage';
 import { getOrCreateOnlineSession } from '../utils/persistence/sessionsStorage';
 import { BRIDGE_MSG, PROTOCOL_VERSION } from '../utils/bridgeProtocol';
+import {
+  buildExploitSeat, buildActionAdvice, buildTournament, buildErrorReport,
+  validateHandForRelay, validateLiveContext, validateStatus,
+} from '@extension-shared/wire-schemas.js';
+import { validateHandRecord } from '@extension-shared/hand-format.js';
 
 /**
  * @param {string} userId - Current user ID
- * @returns {{ isExtensionConnected, versionMismatch, lastSyncTime, importedCount, syncError, importFromJson, liveHandState, pushExploits, pushAdvice }}
+ * @returns {{ isExtensionConnected, versionMismatch, lastSyncTime, importedCount, syncError, importFromJson, liveHandState, lastImportedTableSession, pushExploits, pushAdvice, pushTournament }}
  */
 // Named useSyncBridgeImpl to avoid collision with the context consumer
 // in SyncBridgeContext.jsx, which also exports `useSyncBridge`.
@@ -31,17 +36,45 @@ export const useSyncBridgeImpl = (userId) => {
   const [importedCount, setImportedCount] = useState(0);
   const [syncError, setSyncError] = useState(null);
   const [liveHandState, setLiveHandState] = useState(null);
+  const [lastImportedTableSession, setLastImportedTableSession] = useState(null);
 
   const sessionCache = useRef(new Map()); // tableId -> sessionId
   const lastHandStateKey = useRef(null);
+  const lastHeartbeatResponse = useRef(Date.now());
+  const connectedRef = useRef(false);
+  const consecutiveFailures = useRef(0);
+  const circuitBreakerTrippedAt = useRef(null);
+  const versionMismatchRef = useRef(false);
+
+  // Sync ref so push callbacks can read connection state without re-creating
+  useEffect(() => { connectedRef.current = isExtensionConnected; }, [isExtensionConnected]);
 
   // Import a batch of hands — dedup handled by saveOnlineHand (captureId check)
+  // Circuit breaker: stops processing after 3 consecutive failures, auto-resets after 60s
+  const CIRCUIT_BREAKER_THRESHOLD = 3;
+  const CIRCUIT_BREAKER_RESET_MS = 60_000;
+
   const importHands = useCallback(async (hands) => {
+    // Check circuit breaker — auto-reset after timeout
+    if (circuitBreakerTrippedAt.current) {
+      if (Date.now() - circuitBreakerTrippedAt.current > CIRCUIT_BREAKER_RESET_MS) {
+        circuitBreakerTrippedAt.current = null;
+        consecutiveFailures.current = 0;
+        setSyncError(null);
+      } else {
+        // Don't ACK — hands stay in queue for retry after breaker resets
+        logger.warn('SyncBridge', `Circuit breaker active — skipping ${hands.length} hand(s)`);
+        return;
+      }
+    }
+
     let imported = 0;
+    let lastTableId = null;
+    let lastSessionId = null;
+    const handledIds = []; // IDs of hands successfully imported or detected as duplicates
 
     for (const hand of hands) {
       try {
-        // Get or create session for this table
         const tableId = hand.tableId || 'unknown_table';
         let sessionId = sessionCache.current.get(tableId);
         if (!sessionId) {
@@ -53,15 +86,43 @@ export const useSyncBridgeImpl = (userId) => {
         if (result !== -1) { // -1 = duplicate, skipped
           imported++;
         }
+        // Both success and duplicate are "handled" — safe to dequeue
+        if (hand.captureId) handledIds.push(hand.captureId);
+        lastTableId = tableId;
+        lastSessionId = sessionId;
+        consecutiveFailures.current = 0; // Reset on success
       } catch (e) {
-        logger.warn('SyncBridge', 'Failed to import hand:', hand.captureId, e.message);
+        // Failed hands are NOT added to handledIds — they stay in the queue
+        consecutiveFailures.current++;
+        logger.warn('SyncBridge', `Import failed (${consecutiveFailures.current}/${CIRCUIT_BREAKER_THRESHOLD}):`, hand.captureId, e.message);
+        reportError('import', e.message, hand.captureId);
+
+        if (consecutiveFailures.current >= CIRCUIT_BREAKER_THRESHOLD) {
+          circuitBreakerTrippedAt.current = Date.now();
+          setSyncError(`Import circuit breaker tripped after ${CIRCUIT_BREAKER_THRESHOLD} consecutive failures`);
+          logger.warn('SyncBridge', 'Circuit breaker tripped — pausing imports for 60s');
+          break;
+        }
       }
+    }
+
+    // ACK only hands that were successfully handled — failed hands stay in queue
+    if (handledIds.length > 0) {
+      window.postMessage({
+        type: BRIDGE_MSG.ACK,
+        captureIds: handledIds,
+        _v: PROTOCOL_VERSION,
+      }, window.location.origin);
     }
 
     if (imported > 0) {
       setImportedCount(prev => prev + imported);
       setLastSyncTime(Date.now());
       setSyncError(null);
+
+      if (lastTableId && lastSessionId) {
+        setLastImportedTableSession({ tableId: lastTableId, sessionId: lastSessionId });
+      }
     }
   }, [userId]);
 
@@ -79,49 +140,13 @@ export const useSyncBridgeImpl = (userId) => {
     await importHands(hands);
   }, [importHands]);
 
-  // Push exploit data to extension
+  // Push exploit data to extension (stable ref — reads connection state from ref)
   const pushExploits = useCallback((tendencyMap, handCount) => {
-    if (!isExtensionConnected) return;
+    if (!connectedRef.current) return;
     const entries = Object.entries(tendencyMap);
     if (entries.length === 0) return;
 
-    const seats = entries.map(([seat, data]) => ({
-      seat,
-      style: data.style || null,
-      sampleSize: data.sampleSize || 0,
-      exploits: (data.exploits || []).map(e => ({
-        id: e.id, label: e.label, category: e.category,
-        street: e.street, statBasis: e.statBasis,
-        scoring: e.scoring || null,
-        tier: e.tier || 'speculative',
-      })),
-      weaknesses: (data.weaknesses || []).slice(0, 10).map(w => ({
-        id: w.id, label: w.label, category: w.category,
-        severity: w.severity, confidence: w.confidence,
-      })),
-      briefings: (data.briefings || []).slice(0, 5).map(b => ({
-        ruleId: b.ruleId, label: b.label,
-        scoring: b.scoring || null,
-        evidenceBreakdown: b.evidenceBreakdown || null,
-        handExamples: b.handExamples || null,
-        riskAnalysis: b.riskAnalysis || null,
-      })),
-      observations: (data.observations || []).slice(0, 15).map(o => ({
-        id: o.id, heroContext: o.heroContext,
-        heroContextLabel: o.heroContextLabel,
-        signal: o.signal, severity: o.severity,
-        confidence: o.confidence, tier: o.tier,
-        street: o.street, evidence: o.evidence,
-      })),
-      stats: {
-        cbet: data.cbet ?? (data.rawStats?.pfAggressorFlops > 0
-          ? Math.round((data.rawStats?.cbetCount || 0) / data.rawStats.pfAggressorFlops * 100) : null),
-        foldToCbet: data.foldToCbet ?? (data.rawStats?.facedCbet > 0
-          ? Math.round((data.rawStats?.foldedToCbet || 0) / data.rawStats.facedCbet * 100) : null),
-        threeBet: data.threeBet ?? null,
-      },
-      villainHeadline: data.villainProfile?.headline || null,
-    }));
+    const seats = entries.map(([seat, data]) => buildExploitSeat(seat, data));
 
     window.postMessage({
       type: BRIDGE_MSG.EXPLOITS,
@@ -130,37 +155,39 @@ export const useSyncBridgeImpl = (userId) => {
       _v: PROTOCOL_VERSION,
       timestamp: Date.now(),
     }, window.location.origin);
-  }, [isExtensionConnected]);
+  }, []);
 
-  // Push action advice to extension
+  // Push action advice to extension (stable ref)
   const pushAdvice = useCallback((advice) => {
-    if (!advice || !isExtensionConnected) return;
+    if (!advice || !connectedRef.current) return;
 
     window.postMessage({
       type: BRIDGE_MSG.ACTION_ADVICE,
-      advice: {
-        villainSeat: advice.villainSeat,
-        villainStyle: advice.villainStyle,
-        villainSampleSize: advice.villainSampleSize,
-        heroAlreadyActed: advice.heroAlreadyActed,
-        confidence: advice.confidence,
-        dataQuality: advice.dataQuality || null,
-        situation: advice.situation,
-        situationLabel: advice.situationLabel,
-        heroEquity: advice.heroEquity,
-        boardTexture: advice.boardTexture,
-        segmentation: advice.segmentation,
-        foldPct: advice.foldPct,
-        recommendations: advice.recommendations,
-        currentStreet: advice.currentStreet,
-        potSize: advice.potSize,
-        villainBet: advice.villainBet,
-        playerStats: advice.playerStats,
-      },
+      advice: buildActionAdvice(advice),
       _v: PROTOCOL_VERSION,
       timestamp: Date.now(),
     }, window.location.origin);
-  }, [isExtensionConnected]);
+  }, []);
+
+  // Report an error back to the extension for correlation tracking (stable ref)
+  const reportError = useCallback((category, message, correlationId) => {
+    window.postMessage({
+      type: BRIDGE_MSG.ERROR_REPORT,
+      report: buildErrorReport({ category, message, correlationId }),
+      _v: PROTOCOL_VERSION,
+    }, window.location.origin);
+  }, []);
+
+  // Push tournament state to extension (stable ref)
+  const pushTournament = useCallback((tournamentData) => {
+    if (!connectedRef.current) return;
+    window.postMessage({
+      type: BRIDGE_MSG.TOURNAMENT,
+      tournament: buildTournament(tournamentData),
+      _v: PROTOCOL_VERSION,
+      timestamp: Date.now(),
+    }, window.location.origin);
+  }, []);
 
   // Listen for messages from extension (relayed via app-bridge content script)
   useEffect(() => {
@@ -168,23 +195,51 @@ export const useSyncBridgeImpl = (userId) => {
       if (event.source !== window) return;
 
       if (event.data?.type === BRIDGE_MSG.HANDS) {
-        importHands(event.data.hands || []);
+        // Hard stop: refuse hand imports during version mismatch
+        if (versionMismatchRef.current) {
+          logger.warn('SyncBridge', `Dropping ${event.data.hands?.length || 0} hand(s) — protocol version mismatch`);
+          return;
+        }
+        const rawHands = event.data.hands || [];
+        const validHands = rawHands.filter(h => {
+          // Wire-level validation (structure, field types, card formats)
+          const wireV = validateHandForRelay(h);
+          if (!wireV.valid) { logger.warn('SyncBridge', 'Wire validation failed:', wireV.errors); return false; }
+          // App-level validation (record shape matches persistence schema)
+          const appV = validateHandRecord(h);
+          if (!appV.valid) { logger.warn('SyncBridge', 'Record validation failed:', appV.errors); return false; }
+          return true;
+        });
+        if (validHands.length > 0) importHands(validHands);
       }
 
-      if (event.data?.type === BRIDGE_MSG.STATUS) {
+      if (event.data?.type === BRIDGE_MSG.STATUS && !event.data.request) {
+        const sv = validateStatus(event.data);
+        if (!sv.valid) {
+          logger.warn('SyncBridge', 'Invalid status message:', sv.errors);
+          return;
+        }
+        lastHeartbeatResponse.current = Date.now();
         setIsExtensionConnected(event.data.connected !== false);
 
         // Detect protocol version mismatch
         const extVersion = event.data.protocolVersion;
         if (extVersion !== undefined && extVersion !== PROTOCOL_VERSION) {
           setVersionMismatch(true);
-          logger.warn('SyncBridge', 'Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION);
+          versionMismatchRef.current = true;
+          logger.warn('SyncBridge', 'Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION + '. Hand imports halted.');
         } else {
           setVersionMismatch(false);
+          versionMismatchRef.current = false;
         }
       }
 
       if (event.data?.type === BRIDGE_MSG.HAND_STATE) {
+        const lv = validateLiveContext(event.data);
+        if (!lv.valid) {
+          logger.warn('SyncBridge', 'Invalid hand state:', lv.errors);
+          return;
+        }
         // Debounce: only update if hand state actually changed
         const key = `${event.data.handNumber}:${event.data.currentStreet}:${event.data.actionSequence?.length}`;
         if (key !== lastHandStateKey.current) {
@@ -203,21 +258,50 @@ export const useSyncBridgeImpl = (userId) => {
       _v: PROTOCOL_VERSION,
     }, window.location.origin);
 
+    // Heartbeat: poll extension every 60s, mark disconnected after 120s silence.
+    // Connection state is now primarily driven by session storage changes from
+    // the extension. This heartbeat is a fallback safety net.
+    const HEARTBEAT_INTERVAL = 60_000;
+    const HEARTBEAT_TIMEOUT = 120_000;
+    const heartbeat = setInterval(() => {
+      window.postMessage({
+        type: BRIDGE_MSG.STATUS,
+        request: true,
+        _v: PROTOCOL_VERSION,
+      }, window.location.origin);
+
+      if (Date.now() - lastHeartbeatResponse.current > HEARTBEAT_TIMEOUT) {
+        setIsExtensionConnected(false);
+      }
+    }, HEARTBEAT_INTERVAL);
+
     return () => {
       window.removeEventListener('message', handleMessage);
+      clearInterval(heartbeat);
     };
   }, [importHands]);
+
+  // Allow user to force-continue despite version mismatch
+  const dismissVersionMismatch = useCallback(() => {
+    setVersionMismatch(false);
+    versionMismatchRef.current = false;
+    logger.warn('SyncBridge', 'Version mismatch dismissed by user — resuming imports');
+  }, []);
 
   return {
     isExtensionConnected,
     versionMismatch,
+    dismissVersionMismatch,
     lastSyncTime,
     importedCount,
     syncError,
     importFromJson,
     liveHandState,
+    lastImportedTableSession,
     pushExploits,
     pushAdvice,
+    pushTournament,
+    reportError,
   };
 };
 

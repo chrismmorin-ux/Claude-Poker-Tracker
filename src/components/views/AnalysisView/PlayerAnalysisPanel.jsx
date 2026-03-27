@@ -4,6 +4,7 @@ import { RangeGrid } from '../../ui/RangeGrid';
 import { RangeProvenance } from '../../ui/RangeProvenance';
 import { SegmentationBar } from '../../ui/SegmentationBar';
 import SeverityBar from '../../ui/SeverityBar';
+import { VillainModelCard } from '../../ui/VillainModelCard';
 import { VillainProfileModal } from '../../ui/VillainProfileModal';
 import { ObservationPanel } from '../../ui/ObservationPanel';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
@@ -158,6 +159,17 @@ export const PlayerAnalysisPanel = () => {
         notes={selectedPlayer?.notes || ''}
         onNotesChange={handleNotesChange}
       />
+
+      {/* Inline Villain Decision Profile */}
+      {selectedPlayerId && villainProfile && villainProfile.maturity !== 'unknown' && (
+        <div style={{ marginBottom: 12 }}>
+          <VillainModelCard
+            villainProfile={villainProfile}
+            villainStyle={tendencyMap[selectedPlayerId]?.style}
+            onViewFullProfile={() => setProfileModalOpen(true)}
+          />
+        </div>
+      )}
 
       {/* Three-panel grid */}
       {!selectedPlayerId ? (

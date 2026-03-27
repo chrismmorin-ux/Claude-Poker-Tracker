@@ -14,7 +14,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { logger } from '../utils/errorHandler';
 import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
-import { getRangePositionCategory } from '../utils/positionUtils';
+import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
+import { getRangePositionCategory, isInPosition } from '../utils/positionUtils';
 import {
   buildBaselineRange,
   computePreflopAdvice,
@@ -22,6 +23,22 @@ import {
   SITUATION_LABELS,
 } from '../utils/exploitEngine/preflopAdvisor';
 import { useAbortControl } from './useAbortControl';
+
+// =========================================================================
+// HELPERS
+// =========================================================================
+
+/**
+ * Compute trial count based on game context.
+ * Fewer trials when the decision is simpler or data is thin.
+ */
+export const computeTrialCount = ({ spr, street, activeOpponents, sampleSize } = {}) => {
+  if (street === 'river') return 500;
+  if (spr != null && spr < 4) return 500;
+  if (sampleSize != null && sampleSize < 10) return 500;
+  if (activeOpponents != null && activeOpponents >= 3) return 1500;
+  return 1000;
+};
 
 // =========================================================================
 // MAIN HOOK
@@ -126,8 +143,13 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
     const encodedHero = holeCards.map(c => parseAndEncode(c)).filter(c => c >= 0);
     if (encodedHero.length !== 2) return;
 
-    // HSM pot is already in dollars and includes current bets — subtract villain's bet
-    const rawPotSize = pot || 0;
+    // HSM pot is already in dollars and includes current bets — subtract villain's bet.
+    // CO_CHIPTABLE_INFO may not arrive until after betting, so estimate from blinds on preflop.
+    let rawPotSize = pot || 0;
+    if (rawPotSize <= 0 && liveHandState.blinds) {
+      const { sb, bb } = liveHandState.blinds;
+      rawPotSize = (sb || 0) + (bb || 0) + (liveHandState.ante || 0) * (liveHandState.activeSeatNumbers?.length || 2);
+    }
     if (rawPotSize <= 0) return;
     const adjustedPot = Math.max(0, rawPotSize - (villainBet || 0));
 
@@ -170,10 +192,32 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         if (encodedBoard.length < 3) return;
 
         const villainModel = villainData.villainModel || null;
+        // Surface villain model quality in dataQuality
+        dataQuality.villainModelNote = villainModel?._buckets
+          ? 'Calibrated to villain behavior'
+          : villainModel
+            ? 'Partial villain model — some generic assumptions'
+            : 'Generic advice — no villain model';
         // Pass observations + sizing tells for contextual reasoning
         const relevantObs = (villainData.observations || []).filter(o =>
           o.street === currentStreet || o.street === 'cross' || o.heroContext === 'META'
         );
+        const bt = analyzeBoardTexture(encodedBoard);
+        const heroIsIP = isInPosition(heroSeat, targetSeat, dealerSeat || 1);
+
+        // Stack depth: compute effective stack from liveHandState stacks
+        const stacks = liveHandState.stacks || {};
+        const heroStack = stacks[heroSeat] ?? null;
+        const villainStack = stacks[targetSeat] ?? null;
+        const effStack = (heroStack != null && villainStack != null)
+          ? Math.min(heroStack, villainStack)
+          : heroStack ?? villainStack ?? null;
+
+        // Multi-way: count active opponents
+        const activeSeatNumbers = liveHandState.activeSeatNumbers || [];
+        const foldedSet = new Set(liveHandState.foldedSeats || []);
+        const activeOpponents = activeSeatNumbers.filter(s => s !== heroSeat && !foldedSet.has(s)).length;
+
         const { treeMetadata: _, ...postflopResult } = await evaluateGameTree({
           villainRange,
           board: encodedBoard,
@@ -181,13 +225,23 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           potSize: adjustedPot,
           villainAction: (villainAction === 'check' || !villainAction) ? undefined : villainAction,
           villainBet: villainBet || 0,
-          trials: 1000,
+          trials: computeTrialCount({
+            spr: effStack != null && adjustedPot > 0 ? effStack / adjustedPot : null,
+            street: currentStreet,
+            activeOpponents,
+            sampleSize,
+          }),
           playerStats,
           personalizedMultipliers: villainModel?.personalizedMultipliers,
           villainModel,
+          effectiveStack: effStack,
+          numOpponents: Math.max(1, activeOpponents),
           contextHints: {
             observations: relevantObs,
             sizingTells: villainData.decisionSummary?.sizingTells,
+            texture: bt?.texture || '*',
+            posCategory: villainPosition,
+            isIP: heroIsIP,
           },
         });
         result = postflopResult;
@@ -213,6 +267,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         villainSeat: targetSeat,
         villainStyle: villainData.style || null,
         villainSampleSize: sampleSize,
+        villainProfile: villainData.villainProfile || null,
         confidence,
         dataQuality,
         heroAlreadyActed,

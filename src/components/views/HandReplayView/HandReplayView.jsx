@@ -37,7 +37,7 @@ export const HandReplayView = ({ scale }) => {
     setLoading(true);
     loadHandById(replayHandId)
       .then(h => setHand(h || null))
-      .catch(() => setHand(null))
+      .catch(err => { console.warn('[HandReplay] Failed to load hand', replayHandId, err); setHand(null); })
       .finally(() => setLoading(false));
   }, [replayHandId, replayHand]);
 

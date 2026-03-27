@@ -30,6 +30,8 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
   const { mySeat } = useGame();
 
   // Derived: is this a tournament session?
+  // isActive is only set by explicit initTournament() — safe for both manual
+  // sessions (gameType === 'Tournament') and auto-detected online tournaments.
   const isTournamentSession = currentSession?.gameType === 'Tournament';
   const isTournament = useMemo(() => {
     return isTournamentSession && tournamentState.isActive;

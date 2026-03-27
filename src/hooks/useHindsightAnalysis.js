@@ -55,7 +55,8 @@ export const useHindsightAnalysis = (villainCards, heroRange, currentBoard, full
           setHindsight(result);
         }
       })
-      .catch(() => {
+      .catch(err => {
+        console.warn('[useHindsightAnalysis] Equity computation failed', err);
         if (!cancelled) setHindsight(null);
       })
       .finally(() => {

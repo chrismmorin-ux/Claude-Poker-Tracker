@@ -1,23 +1,19 @@
 /**
  * OnlineView.jsx — Online play view for Ignition integration
  *
- * Shows sync status, per-seat stats with exploits, and briefings.
- * Data flows from the extension via useSyncBridge → IndexedDB → useOnlineAnalysis.
+ * Thin consumer of OnlineSessionContext — all analysis, advisor, and
+ * extension push logic runs at app-root level so advice flows even
+ * when this view isn't active.
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useAuth, useSyncBridge } from '../../contexts';
-import { useOnlineAnalysis } from '../../hooks/useOnlineAnalysis';
-import { useLiveActionAdvisor } from '../../hooks/useLiveActionAdvisor';
-import { getAllSessions } from '../../utils/persistence/sessionsStorage';
-import { GUEST_USER_ID } from '../../utils/persistence/database';
+import React, { useState, useCallback, useRef } from 'react';
+import { useSyncBridge, useOnlineSession, useOnlineAnalysis2 } from '../../contexts';
 import { SEAT_ARRAY } from '../../constants/gameConstants';
 import { ScaledContainer } from '../ui/ScaledContainer';
-import { TendencyStats } from '../ui/TendencyStats';
-import { ExploitBadges } from '../ui/ExploitBadges';
 import VillainProfileModal from '../ui/VillainProfileModal';
 import { SegmentationBar } from '../ui/SegmentationBar';
 import { ObservationPanel } from '../ui/ObservationPanel';
+import { VillainModelCard } from '../ui/VillainModelCard';
 
 // Style colors matching the extension's stats-engine
 const STYLE_COLORS = {
@@ -28,6 +24,15 @@ const STYLE_COLORS = {
   LP:   { bg: '#d97706', text: '#fff' },
   Reg:  { bg: '#7c3aed', text: '#fff' },
   Unknown: { bg: '#374151', text: '#9ca3af' },
+};
+
+// Maturity badge colors (matches VillainModelCard)
+const MATURITY_COLORS = {
+  deep:       { bg: '#166534', text: '#86efac' },
+  individual: { bg: '#365314', text: '#a3e635' },
+  typed:      { bg: '#854d0e', text: '#fde047' },
+  coarse:     { bg: '#9a3412', text: '#fdba74' },
+  unknown:    { bg: '#374151', text: '#9ca3af' },
 };
 
 // Confidence tier dot colors
@@ -66,55 +71,43 @@ const TEXTURE_PILLS = {
   monotone:  { bg: '#1a1a3b', color: '#a78bfa' },
 };
 
-export const OnlineView = ({ scale }) => {
-  const { user } = useAuth();
-  const userId = user?.uid || GUEST_USER_ID;
+// Action-specific accent colors for recommendation cards
+const ACTION_ACCENT = {
+  fold:  '#dc2626',
+  check: '#0891b2',
+  call:  '#2563eb',
+  bet:   '#16a34a',
+  raise: '#ea580c',
+};
 
+// Prediction source → human label
+const PRED_SOURCE_LABEL = {
+  'level-1': 'exact match',
+  'level-2': 'street match',
+  'level-3': 'broad match',
+  'level-4': 'broad match',
+  'level-5': 'broad match',
+  'level-6': 'general',
+  prior: 'population estimate',
+};
+
+export const OnlineView = ({ scale }) => {
   const {
-    isExtensionConnected, versionMismatch, importedCount, syncError,
-    importFromJson, liveHandState, pushExploits, pushAdvice,
+    isExtensionConnected, versionMismatch, dismissVersionMismatch,
+    importedCount, syncError, importFromJson,
   } = useSyncBridge();
 
-  // Track online sessions
-  const [onlineSessions, setOnlineSessions] = useState([]);
-  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const {
+    selectedSessionId, setSelectedSessionId, onlineSessions, loadSessions,
+  } = useOnlineSession();
+
+  const { tendencyMap, handCount, isLoading, advice } = useOnlineAnalysis2();
+
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [expandedRec, setExpandedRec] = useState(null);
+  const [recsExpanded, setRecsExpanded] = useState(false);
   const fileInputRef = useRef(null);
-
-  // Load online sessions
-  const loadSessions = useCallback(async () => {
-    try {
-      const allSessions = await getAllSessions(userId);
-      const online = allSessions.filter(s => s.source === 'ignition');
-      setOnlineSessions(online);
-      // Auto-select most recent
-      if (online.length > 0 && !selectedSessionId) {
-        setSelectedSessionId(online[online.length - 1].sessionId);
-      }
-    } catch (_) {}
-  }, [userId, selectedSessionId]);
-
-  // Load sessions on mount and after imports
-  React.useEffect(() => {
-    loadSessions();
-  }, [loadSessions, importedCount]);
-
-  // Analysis pipeline for selected session
-  const { tendencyMap, handCount, isLoading } = useOnlineAnalysis(selectedSessionId, userId);
-
-  // Push exploit data to extension when analysis updates or connection established
-  useEffect(() => {
-    pushExploits(tendencyMap, handCount);
-  }, [tendencyMap, handCount, pushExploits, isExtensionConnected]);
-
-  // Live action advisor — runs getActionAdvice() against primary villain
-  const { advice } = useLiveActionAdvisor(liveHandState, tendencyMap);
-
-  // Push action advice to extension when advice updates or connection established
-  useEffect(() => {
-    pushAdvice(advice);
-  }, [advice, pushAdvice, isExtensionConnected]);
 
   // File import handler
   const handleFileImport = useCallback(async (e) => {
@@ -130,7 +123,6 @@ export const OnlineView = ({ scale }) => {
     e.target.value = '';
   }, [importFromJson, loadSessions]);
 
-  const seatEntries = Object.entries(tendencyMap).sort((a, b) => Number(a[0]) - Number(b[0]));
   const selectedSeatData = selectedSeat ? tendencyMap[selectedSeat] : null;
 
   return (
@@ -158,8 +150,22 @@ export const OnlineView = ({ scale }) => {
         </div>
 
         {versionMismatch && (
-          <div style={{ background: '#78350f', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fbbf24' }}>
-            Extension version mismatch — update the extension to match the app
+          <div style={{ background: '#78350f', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Extension version mismatch — update the extension or reload the page</span>
+            <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0 }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer' }}
+              >
+                Reload Page
+              </button>
+              <button
+                onClick={dismissVersionMismatch}
+                style={{ background: 'transparent', color: '#fbbf24', border: '1px solid #fbbf24', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer' }}
+              >
+                Continue Anyway
+              </button>
+            </div>
           </div>
         )}
 
@@ -263,33 +269,67 @@ export const OnlineView = ({ scale }) => {
                       )}
                     </div>
 
-                    {/* Stats */}
+                    {/* Stats / Headline */}
                     {hasData ? (
                       <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                          <span style={{ color: '#6b7280' }}>VPIP</span>
-                          <span style={{ fontWeight: 'bold', color: data.vpip > 40 ? '#ef4444' : data.vpip < 15 ? '#22c55e' : '#e0e0e0' }}>
-                            {data.vpip}%
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                          <span style={{ color: '#6b7280' }}>PFR</span>
-                          <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>{data.pfr}%</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                          <span style={{ color: '#6b7280' }}>AF</span>
-                          <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>
-                            {data.af === null ? '—' : data.af === Infinity ? '∞' : data.af?.toFixed(1)}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 9, color: '#4b5563', textAlign: 'right', marginTop: 2 }}>
-                          {data.sampleSize}h
-                          {data.exploits?.length > 0 && (
-                            <span style={{ color: '#d4a847', marginLeft: 4 }}>
-                              {data.exploits.length} exploit{data.exploits.length !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </div>
+                        {data.villainProfile && data.villainProfile.maturity !== 'unknown' ? (
+                          <>
+                            {/* Headline-based display */}
+                            <div style={{
+                              fontSize: 10, color: '#e0e0e0', lineHeight: 1.3,
+                              overflow: 'hidden', display: '-webkit-box',
+                              WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                              minHeight: 26,
+                            }}>
+                              {data.villainProfile.headline}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
+                              <span style={{
+                                fontSize: 8, padding: '1px 4px', borderRadius: 2, fontWeight: 'bold',
+                                background: MATURITY_COLORS[data.villainProfile.maturity]?.bg || '#374151',
+                                color: MATURITY_COLORS[data.villainProfile.maturity]?.text || '#9ca3af',
+                              }}>
+                                {data.villainProfile.maturityLabel}
+                              </span>
+                              <span style={{ fontSize: 9, color: '#4b5563' }}>
+                                {data.sampleSize}h
+                                {data.exploits?.length > 0 && (
+                                  <span style={{ color: '#6b7280', marginLeft: 3 }}>
+                                    {data.exploits.length}e
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* Fallback: VPIP/PFR/AF stats */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                              <span style={{ color: '#6b7280' }}>VPIP</span>
+                              <span style={{ fontWeight: 'bold', color: data.vpip > 40 ? '#ef4444' : data.vpip < 15 ? '#22c55e' : '#e0e0e0' }}>
+                                {data.vpip}%
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                              <span style={{ color: '#6b7280' }}>PFR</span>
+                              <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>{data.pfr}%</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                              <span style={{ color: '#6b7280' }}>AF</span>
+                              <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>
+                                {data.af === null ? '—' : data.af === Infinity ? '∞' : data.af?.toFixed(1)}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 9, color: '#4b5563', textAlign: 'right', marginTop: 2 }}>
+                              {data.sampleSize}h
+                              {data.exploits?.length > 0 && (
+                                <span style={{ color: '#d4a847', marginLeft: 4 }}>
+                                  {data.exploits.length} exploit{data.exploits.length !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </>
                     ) : (
                       <div style={{ fontSize: 11, color: '#4b5563', textAlign: 'center', paddingTop: 8 }}>—</div>
@@ -321,17 +361,6 @@ export const OnlineView = ({ scale }) => {
                         {selectedSeatData.style}
                       </span>
                     )}
-                    {selectedSeatData.villainProfile && (
-                      <button
-                        onClick={() => setProfileModalOpen(true)}
-                        style={{
-                          padding: '2px 8px', borderRadius: 4, border: '1px solid #4b5563',
-                          background: '#374151', color: '#9ca3af', fontSize: 10, cursor: 'pointer',
-                        }}
-                      >
-                        Profile
-                      </button>
-                    )}
                   </div>
                   <span style={{ fontSize: 11, color: '#6b7280' }}>
                     {selectedSeatData.sampleSize} hands
@@ -353,130 +382,229 @@ export const OnlineView = ({ scale }) => {
                   ) : null;
                 })()}
 
-                {/* Live Action Advice */}
-                {advice && String(advice.villainSeat) === selectedSeat && (
-                  <div style={{ marginBottom: 10 }}>
-                    <h4 style={{ fontSize: 11, color: '#d4a847', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      Live Advice
-                    </h4>
-
-                    {/* Situation + Hero Equity row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                        {advice.situationLabel || advice.situation}
-                        {advice.heroAlreadyActed && (
-                          <span style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginLeft: 4 }}>(review)</span>
-                        )}
-                      </span>
-                      <span style={{
-                        fontSize: 13, fontWeight: 'bold',
-                        color: advice.heroEquity >= 0.5 ? '#22c55e' : '#ef4444',
-                      }}>
-                        {Math.round(advice.heroEquity * 100)}% equity
-                      </span>
-                    </div>
-
-                    {/* Board texture pills */}
-                    {advice.boardTexture && (
-                      <div style={{ display: 'flex', gap: 4, marginBottom: 4, flexWrap: 'wrap' }}>
-                        {[
-                          { key: 'texture', show: true, label: advice.boardTexture.texture },
-                          { key: 'paired', show: advice.boardTexture.isPaired, label: 'paired' },
-                          { key: 'flushDraw', show: advice.boardTexture.flushDraw, label: 'flush draw' },
-                          { key: 'monotone', show: advice.boardTexture.monotone, label: 'monotone' },
-                        ].filter(p => p.show).map(p => {
-                          const pill = TEXTURE_PILLS[p.key] || TEXTURE_PILLS.medium;
-                          return (
-                            <span key={p.key} style={{
-                              fontSize: 9, padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
-                              background: pill.bg, color: pill.color,
-                            }}>
-                              {p.label}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Segmentation bar (postflop only) */}
-                    {advice.segmentation?.buckets && (
-                      <div style={{ marginBottom: 6 }}>
-                        <SegmentationBar buckets={advice.segmentation.buckets} size="sm" />
-                      </div>
-                    )}
-
-                    {/* Recommendation cards */}
-                    {advice.recommendations?.slice(0, 3).map((rec, i) => {
-                      const isTop = i === 0;
-                      const isPositive = rec.ev > 0;
-                      const vr = rec.villainResponse;
-
-                      return (
-                        <div key={rec.action + i} style={{
-                          padding: '6px 8px', marginBottom: 3, borderRadius: 4,
-                          background: '#0d1117',
-                          borderLeft: `2px solid ${isTop ? '#d4a847' : '#374151'}`,
-                        }}>
-                          {/* Action + EV */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                            <span style={{
-                              fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase',
-                              color: isTop ? '#d4a847' : '#e0e0e0',
-                            }}>
-                              {isTop ? '* ' : ''}{rec.action}
-                            </span>
-                            <span style={{
-                              fontSize: 12, fontWeight: 'bold',
-                              color: isPositive ? '#22c55e' : rec.ev === 0 ? '#6b7280' : '#ef4444',
-                            }}>
-                              EV: {rec.ev >= 0 ? '+' : ''}{rec.ev.toFixed(1)}
-                            </span>
-                          </div>
-
-                          {/* Sizing line */}
-                          {rec.sizing && (
-                            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>
-                              Size: {Math.round(rec.sizing.betFraction * 100)}% pot (${rec.sizing.betSize.toFixed(0)})
-                              {' | '}Fold%: {Math.round(rec.sizing.foldPct * 100)}%
-                            </div>
-                          )}
-
-                          {/* Villain response breakdown */}
-                          {vr && vr.fold && (
-                            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
-                              V: folds {Math.round(vr.fold.pct * 100)}%
-                              {' · '}calls {Math.round(vr.call.pct * 100)}%
-                              {' · '}raises {Math.round(vr.raise.pct * 100)}%
-                            </div>
-                          )}
-                          {vr && vr.check && !vr.fold && (
-                            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
-                              V: checks {Math.round(vr.check.pct * 100)}%
-                              {' · '}bets {Math.round(vr.bet.pct * 100)}%
-                            </div>
-                          )}
-
-                          {/* Reasoning */}
-                          <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
-                            {rec.reasoning}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Data quality note */}
-                    {advice.dataQuality && (
-                      <div style={{ fontSize: 9, color: '#4b5563', marginTop: 4, textAlign: 'right' }}>
-                        {advice.dataQuality.confidenceNote}
-                      </div>
-                    )}
-                  </div>
+                {/* Villain Model Summary */}
+                {selectedSeatData.villainProfile && selectedSeatData.villainProfile.maturity !== 'unknown' && (
+                  <VillainModelCard
+                    villainProfile={selectedSeatData.villainProfile}
+                    currentStreet={advice?.currentStreet}
+                    villainStyle={selectedSeatData.style}
+                    onViewFullProfile={() => setProfileModalOpen(true)}
+                  />
                 )}
 
-                {/* Decision-organized observations (new system) */}
+                {/* Decision-organized observations (profile layer) */}
                 {selectedSeatData.observations?.length > 0 && (
                   <ObservationPanel observations={selectedSeatData.observations} />
                 )}
+
+                {/* Live Recommendations (collapsible when profile exists) */}
+                {advice && String(advice.villainSeat) === selectedSeat && (() => {
+                  const hasProfile = selectedSeatData.villainProfile && selectedSeatData.villainProfile.maturity !== 'unknown';
+                  const isCollapsed = hasProfile && !recsExpanded;
+                  const topRec = advice.recommendations?.[0];
+
+                  return (
+                    <div style={{ marginBottom: 10 }}>
+                      {/* Collapsible header */}
+                      <div
+                        onClick={() => hasProfile && setRecsExpanded(!recsExpanded)}
+                        style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          marginBottom: isCollapsed ? 0 : 6,
+                          cursor: hasProfile ? 'pointer' : 'default',
+                          userSelect: 'none',
+                        }}
+                      >
+                        <h4 style={{ fontSize: 11, color: '#d4a847', margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          {hasProfile && (
+                            <span style={{ marginRight: 4, fontSize: 9 }}>{isCollapsed ? '\u25BC' : '\u25B2'}</span>
+                          )}
+                          Live Recommendations
+                        </h4>
+                        {/* Collapsed summary: top rec action + EV */}
+                        {isCollapsed && topRec && (
+                          <span style={{ fontSize: 10, color: '#9ca3af' }}>
+                            Best: <span style={{
+                              fontWeight: 'bold', textTransform: 'uppercase',
+                              color: ACTION_ACCENT[topRec.action.toLowerCase()] || '#e0e0e0',
+                            }}>{topRec.action}</span>
+                            <span style={{
+                              marginLeft: 4, fontWeight: 'bold',
+                              color: topRec.ev > 0 ? '#22c55e' : topRec.ev === 0 ? '#6b7280' : '#ef4444',
+                            }}>
+                              {topRec.ev >= 0 ? '+' : ''}{topRec.ev.toFixed(1)} EV
+                            </span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Full recommendations (shown when expanded or no profile) */}
+                      {!isCollapsed && (
+                        <>
+                          {/* Situation + Hero Equity row */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                              {advice.situationLabel || advice.situation}
+                              {advice.heroAlreadyActed && (
+                                <span style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginLeft: 4 }}>(review)</span>
+                              )}
+                            </span>
+                            <span style={{
+                              fontSize: 13, fontWeight: 'bold',
+                              color: advice.heroEquity >= 0.5 ? '#22c55e' : '#ef4444',
+                            }}>
+                              {Math.round(advice.heroEquity * 100)}% equity
+                            </span>
+                          </div>
+
+                          {/* Board texture pills */}
+                          {advice.boardTexture && (
+                            <div style={{ display: 'flex', gap: 4, marginBottom: 4, flexWrap: 'wrap' }}>
+                              {[
+                                { key: 'texture', show: true, label: advice.boardTexture.texture },
+                                { key: 'paired', show: advice.boardTexture.isPaired, label: 'paired' },
+                                { key: 'flushDraw', show: advice.boardTexture.flushDraw, label: 'flush draw' },
+                                { key: 'monotone', show: advice.boardTexture.monotone, label: 'monotone' },
+                              ].filter(p => p.show).map(p => {
+                                const pill = TEXTURE_PILLS[p.key] || TEXTURE_PILLS.medium;
+                                return (
+                                  <span key={p.key} style={{
+                                    fontSize: 9, padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
+                                    background: pill.bg, color: pill.color,
+                                  }}>
+                                    {p.label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Segmentation bar (postflop only) */}
+                          {advice.segmentation?.buckets && (
+                            <div style={{ marginBottom: 6 }}>
+                              <SegmentationBar buckets={advice.segmentation.buckets} size="sm" />
+                            </div>
+                          )}
+
+                          {/* Recommendation cards */}
+                          {advice.recommendations?.slice(0, 3).map((rec, i) => {
+                            const isTop = i === 0;
+                            const isPositive = rec.ev > 0;
+                            const vr = rec.villainResponse;
+                            const actionColor = ACTION_ACCENT[rec.action.toLowerCase()] || '#9ca3af';
+                            const isExpanded = expandedRec === i || isTop;
+
+                            return (
+                              <div key={rec.action + i} style={{
+                                padding: '6px 8px', marginBottom: 3, borderRadius: 4,
+                                background: '#0d1117',
+                                borderLeft: `3px solid ${actionColor}`,
+                              }}>
+                                {/* Action + EV with bar */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                                  <span style={{
+                                    fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase',
+                                    color: isTop ? actionColor : '#e0e0e0',
+                                  }}>
+                                    {isTop ? '\u2605 ' : ''}{rec.action}
+                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{
+                                      fontSize: 12, fontWeight: 'bold',
+                                      color: isPositive ? '#22c55e' : rec.ev === 0 ? '#6b7280' : '#ef4444',
+                                    }}>
+                                      EV: {rec.ev >= 0 ? '+' : ''}{rec.ev.toFixed(1)}
+                                    </span>
+                                    {/* EV magnitude bar */}
+                                    <div style={{
+                                      width: 36, height: 3, background: '#374151', borderRadius: 2,
+                                    }}>
+                                      <div style={{
+                                        width: `${Math.min(100, Math.abs(rec.ev) * 8)}%`,
+                                        height: '100%', borderRadius: 2,
+                                        background: isPositive ? '#22c55e' : '#ef4444',
+                                      }} />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Sizing line */}
+                                {rec.sizing && (
+                                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>
+                                    Size: {Math.round(rec.sizing.betFraction * 100)}% pot (${rec.sizing.betSize.toFixed(0)})
+                                    {' | '}Fold%: {Math.round(rec.sizing.foldPct * 100)}%
+                                  </div>
+                                )}
+
+                                {/* Villain response — expandable for non-top recs */}
+                                {vr && vr.fold && isExpanded && (
+                                  <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+                                    V: folds {Math.round(vr.fold.pct * 100)}%
+                                    {' \u00B7 '}calls {Math.round(vr.call.pct * 100)}%
+                                    {' \u00B7 '}raises {Math.round(vr.raise.pct * 100)}%
+                                  </div>
+                                )}
+                                {vr && vr.check && !vr.fold && isExpanded && (
+                                  <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+                                    V: checks {Math.round(vr.check.pct * 100)}%
+                                    {' \u00B7 '}bets {Math.round(vr.bet.pct * 100)}%
+                                  </div>
+                                )}
+                                {/* Collapsed summary for non-top recs */}
+                                {vr && !isExpanded && (
+                                  <div
+                                    onClick={() => setExpandedRec(i)}
+                                    style={{ fontSize: 10, color: '#4b5563', cursor: 'pointer', marginBottom: 2 }}
+                                  >
+                                    {vr.fold
+                                      ? `V: folds ${Math.round(vr.fold.pct * 100)}% \u00B7 calls ${Math.round(vr.call.pct * 100)}%`
+                                      : vr.check
+                                        ? `V: checks ${Math.round(vr.check.pct * 100)}% \u00B7 bets ${Math.round(vr.bet.pct * 100)}%`
+                                        : null}
+                                    <span style={{ color: '#4b8bbf', marginLeft: 4 }}>{'\u25BC'}</span>
+                                  </div>
+                                )}
+
+                                {/* Model prediction confidence */}
+                                {rec.villainPrediction && isExpanded && (
+                                  <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2 }}>
+                                    Model: {rec.villainPrediction.source === 'prior'
+                                      ? 'population estimate'
+                                      : `${Math.round(rec.villainPrediction.effectiveN)} obs (${PRED_SOURCE_LABEL[rec.villainPrediction.source] || rec.villainPrediction.source})`}
+                                  </div>
+                                )}
+
+                                {/* Reasoning */}
+                                {isExpanded && (
+                                  <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+                                    {rec.reasoning}
+                                  </div>
+                                )}
+
+                                {/* Collapse toggle for expanded non-top recs */}
+                                {!isTop && isExpanded && expandedRec === i && (
+                                  <div
+                                    onClick={() => setExpandedRec(null)}
+                                    style={{ fontSize: 9, color: '#4b8bbf', cursor: 'pointer', textAlign: 'right', marginTop: 2 }}
+                                  >
+                                    {'\u25B2 Less'}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Data quality note */}
+                          {advice.dataQuality && (
+                            <div style={{ fontSize: 9, color: '#4b5563', marginTop: 4, textAlign: 'right' }}>
+                              {advice.dataQuality.confidenceNote}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Legacy exploits (shown when no observations or as supplement) */}
                 {(!selectedSeatData.observations?.length) && selectedSeatData.exploits?.length > 0 && (

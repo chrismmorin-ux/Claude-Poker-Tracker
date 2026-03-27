@@ -1,22 +1,11 @@
 /**
  * bridgeProtocol.js — App-side bridge protocol constants
  *
- * Must stay in sync with: ignition-poker-tracker/shared/constants.js
- * (BRIDGE_MSG + PROTOCOL_VERSION).
+ * Single source of truth: ignition-poker-tracker/shared/constants.js
+ * Re-exported here so app code imports from the canonical location.
  *
- * Duplication is intentional — the extension uses IIFE globals and
- * cannot import ES modules. Both files define the same string values.
+ * Requires the `@extension-shared` alias in vite.config.js
+ * (resolves to ignition-poker-tracker/shared/).
  */
 
-export const PROTOCOL_VERSION = 1;
-
-export const BRIDGE_MSG = {
-  // Extension -> App
-  HANDS:         'POKER_SYNC_HANDS',
-  HAND_STATE:    'POKER_SYNC_HAND_STATE',
-  STATUS:        'POKER_SYNC_STATUS',
-  // App -> Extension
-  ACK:           'POKER_SYNC_ACK',
-  EXPLOITS:      'POKER_SYNC_EXPLOITS',
-  ACTION_ADVICE: 'POKER_SYNC_ACTION_ADVICE',
-};
+export { PROTOCOL_VERSION, BRIDGE_MSG } from '@extension-shared/constants.js';

@@ -62,7 +62,10 @@ export const HandBrowser = ({
   const [sortMode, setSortMode] = useState('recent'); // 'recent' | 'significant'
 
   useEffect(() => {
-    getAllSessions(GUEST_USER_ID).then(setSessions).catch(() => setSessions([]));
+    getAllSessions(GUEST_USER_ID).then(setSessions).catch(err => {
+      console.warn('[HandBrowser] Failed to load sessions', err);
+      setSessions([]);
+    });
   }, []);
 
   // Pre-compute pot and significance for each hand

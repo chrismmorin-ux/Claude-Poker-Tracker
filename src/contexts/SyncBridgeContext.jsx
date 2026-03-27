@@ -25,8 +25,9 @@ export const SyncBridgeProvider = ({ children }) => {
     bridge.syncError,
     bridge.importFromJson,
     bridge.liveHandState,
-    bridge.pushExploits,
-    bridge.pushAdvice,
+    bridge.lastImportedTableSession,
+    bridge.dismissVersionMismatch,
+    // pushExploits, pushAdvice, pushTournament omitted — stable refs (connectedRef pattern)
   ]);
 
   return (

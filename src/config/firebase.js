@@ -7,13 +7,11 @@
  * Exports:
  * - app: Firebase App instance
  * - auth: Firebase Auth instance
- * - analytics: Firebase Analytics instance (if available)
  * - googleProvider: GoogleAuthProvider for OAuth
  */
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -38,14 +36,4 @@ googleProvider.setCustomParameters({
   prompt: 'select_account', // Always show account picker
 });
 
-// Initialize Analytics (only in browser and if supported)
-let analytics = null;
-if (typeof window !== 'undefined') {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
-
-export { app, auth, analytics, googleProvider };
+export { app, auth, googleProvider };
