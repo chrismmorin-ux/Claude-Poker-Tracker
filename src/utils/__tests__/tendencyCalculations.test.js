@@ -757,3 +757,125 @@ describe('buildPlayerStats (fold-to-cbet)', () => {
     expect(pct.foldToCbet).toBe(50); // 1/2 = 50%
   });
 });
+
+// =============================================================================
+// derivePercentages — Bayesian credible intervals
+// =============================================================================
+
+describe('derivePercentages — intervals', () => {
+  // Helper: build a stats object with a meaningful sample
+  const makeStats = (overrides = {}) => {
+    const base = createEmptyStats();
+    return Object.assign(base, {
+      handsSeenPreflop: 30,
+      vpipCount: 8,
+      pfrCount: 5,
+      totalBets: 6,
+      totalRaises: 3,
+      totalCalls: 4,
+      facedRaisePreflop: 12,
+      threeBetCount: 2,
+      pfAggressorFlops: 10,
+      cbetCount: 7,
+      facedCbet: 8,
+      foldedToCbet: 4,
+      foldTo3BetCount: 3,
+    }, overrides);
+  };
+
+  it('returns intervals object when sampleSize > 0', () => {
+    const result = derivePercentages(makeStats());
+    expect(result.intervals).not.toBeNull();
+    expect(typeof result.intervals).toBe('object');
+  });
+
+  it('returns null intervals when sampleSize === 0', () => {
+    const stats = createEmptyStats(); // handsSeenPreflop = 0
+    const result = derivePercentages(stats);
+    expect(result.intervals).toBeNull();
+  });
+
+  it('intervals.vpip has lower, upper, mean, level fields', () => {
+    const result = derivePercentages(makeStats());
+    const { vpip } = result.intervals;
+    expect(vpip).toHaveProperty('lower');
+    expect(vpip).toHaveProperty('upper');
+    expect(vpip).toHaveProperty('mean');
+    expect(vpip).toHaveProperty('level');
+  });
+
+  it('intervals.vpip satisfies lower < vpip/100 < upper', () => {
+    const stats = makeStats({ handsSeenPreflop: 30, vpipCount: 8 });
+    const result = derivePercentages(stats);
+    const vpipRate = stats.vpipCount / stats.handsSeenPreflop; // 8/30 ≈ 0.267
+    expect(result.intervals.vpip.lower).toBeLessThan(vpipRate);
+    expect(result.intervals.vpip.upper).toBeGreaterThan(vpipRate);
+  });
+
+  it('intervals.pfr satisfies lower < pfr/100 < upper', () => {
+    const stats = makeStats({ handsSeenPreflop: 30, pfrCount: 5 });
+    const result = derivePercentages(stats);
+    const pfrRate = stats.pfrCount / stats.handsSeenPreflop; // 5/30 ≈ 0.167
+    expect(result.intervals.pfr.lower).toBeLessThan(pfrRate);
+    expect(result.intervals.pfr.upper).toBeGreaterThan(pfrRate);
+  });
+
+  it('all interval fields have {lower, upper, mean, level} shape', () => {
+    const result = derivePercentages(makeStats());
+    const { intervals } = result;
+    for (const key of Object.keys(intervals)) {
+      const interval = intervals[key];
+      expect(interval).toHaveProperty('lower');
+      expect(interval).toHaveProperty('upper');
+      expect(interval).toHaveProperty('mean');
+      expect(interval).toHaveProperty('level');
+      // All values in [0, 1]
+      expect(interval.lower).toBeGreaterThanOrEqual(0);
+      expect(interval.upper).toBeLessThanOrEqual(1);
+      expect(interval.lower).toBeLessThan(interval.upper);
+    }
+  });
+
+  it('interval level defaults to 0.95', () => {
+    const result = derivePercentages(makeStats());
+    expect(result.intervals.vpip.level).toBe(0.95);
+  });
+
+  it('interval width shrinks with more data (same observed proportion)', () => {
+    // ~27% VPIP with 5 hands vs 50 hands
+    const smallStats = makeStats({ handsSeenPreflop: 5, vpipCount: 1 });
+    const largeStats = makeStats({ handsSeenPreflop: 50, vpipCount: 14 });
+
+    const small = derivePercentages(smallStats);
+    const large = derivePercentages(largeStats);
+
+    const widthSmall = small.intervals.vpip.upper - small.intervals.vpip.lower;
+    const widthLarge = large.intervals.vpip.upper - large.intervals.vpip.lower;
+
+    expect(widthLarge).toBeLessThan(widthSmall);
+  });
+
+  it('intervals.threeBet is present when facedRaisePreflop > 0', () => {
+    const result = derivePercentages(makeStats({ facedRaisePreflop: 12, threeBetCount: 2 }));
+    expect(result.intervals).toHaveProperty('threeBet');
+    expect(result.intervals.threeBet.lower).toBeGreaterThanOrEqual(0);
+    expect(result.intervals.threeBet.upper).toBeLessThanOrEqual(1);
+  });
+
+  it('intervals.cbet is present when pfAggressorFlops > 0', () => {
+    const result = derivePercentages(makeStats({ pfAggressorFlops: 10, cbetCount: 7 }));
+    expect(result.intervals).toHaveProperty('cbet');
+    expect(result.intervals.cbet.lower).toBeGreaterThanOrEqual(0);
+    expect(result.intervals.cbet.upper).toBeLessThanOrEqual(1);
+  });
+
+  it('intervals.foldToCbet is present when facedCbet > 0', () => {
+    const result = derivePercentages(makeStats({ facedCbet: 8, foldedToCbet: 4 }));
+    expect(result.intervals).toHaveProperty('foldToCbet');
+  });
+
+  it('returns null intervals for null input without throwing', () => {
+    const result = derivePercentages(null);
+    expect(result.intervals).toBeUndefined();
+  });
+});
