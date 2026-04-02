@@ -13,7 +13,7 @@ Mobile-optimized (1600x720 landscape), uses Vite + Tailwind.
 - **UI Components**: 40 components in `src/components/ui/` (including RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - **Hooks**: 33 custom hooks in `src/hooks/` (including usePlayerTendencies, useOnlineAnalysis, useHandReplayAnalysis, useLiveActionAdvisor, useSyncBridge)
 - **Range Engine**: `src/utils/rangeEngine/` - Bayesian range estimation (9 modules)
-- **Exploit Engine**: `src/utils/exploitEngine/` - 28 modules: exploit suggestions, weakness detection, Bayesian confidence, fold equity, range segmentation, postflop narrowing, decision accumulator, villain decision model, game tree evaluator, board texture rules, position rules, range rules, sub-action rules, preflop advisor, villain observations, model audit
+- **Exploit Engine**: `src/utils/exploitEngine/` - 32 modules: exploit suggestions, weakness detection, Bayesian confidence, fold equity, range segmentation, postflop narrowing, decision accumulator, villain decision model, game tree evaluator, board texture rules, position rules, range rules, sub-action rules, preflop advisor, villain observations, model audit, thought inference, preflop flop EV, briefing builder/merge, re-evaluation engine
 - **Hand Analysis**: `src/utils/handAnalysis/` - 7 modules + barrel export (handTimeline, handReviewAnalyzer, heroAnalysis, hindsightAnalysis, replayAnalysis, handSignificance, playerNameMap)
 - **Tournament Engine**: `src/utils/tournamentEngine/` - 4 modules (blindLevelUtils, blindOutCalculator, dropoutPredictor)
 - **Poker Core**: `src/utils/pokerCore/` - 4 shared modules (cardParser, rangeMatrix, handEvaluator, boardTexture)

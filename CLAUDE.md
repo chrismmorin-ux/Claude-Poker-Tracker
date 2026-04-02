@@ -30,6 +30,8 @@ Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
 
 Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is almost always WRONG for poker. The codebase uses Bayesian methods, population priors, consequence-weighted confidence, and range-based thinking for specific theoretical reasons. Do not simplify.
 
+**First-principles decision modeling (CRITICAL):** Villain decisions derive from equity, pot odds, SPR, and players remaining — NEVER from position labels, bucket labels, or style categories directly. Labels are outputs of the decision process, not inputs. Do not add `if (position === 'EP') foldRate *= 1.05` — compute from game state. Do not use `POP_CALLING_RATES[bucket]` when per-combo equity is available — use the logistic. Do not stack style adjustments on top of the stats that define the style — that's double-counting. See POKER_THEORY.md §7 and exploitEngine/CLAUDE.md anti-patterns.
+
 ## Architecture (v122)
 - `src/PokerTracker.jsx` (~128 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
 - `src/contexts/` — 12 providers (incl. ToastContext, TendencyProvider, TournamentContext, SyncBridgeContext, OnlineSessionContext)
@@ -39,7 +41,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - `src/components/ui/` — 40 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
 - `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
 - `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
-- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (28 modules)
+- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (32 modules)
 - `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
 - `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
 - `src/utils/persistence/` — IndexedDB v13 (11 modules: database, migrations, 7 domain stores, validation, index)
@@ -98,6 +100,19 @@ Range Engine key concepts:
 - 169-cell hand grids (Float64Array) per action per position
 - Showdown anchors: confirmed hands set to weight 1.0 with semantic boosting
 - Profiles cached in IndexedDB `rangeProfiles` store
+
+## Ignition Extension (`ignition-poker-tracker/`)
+Chrome MV3 extension — WebSocket capture, side panel HUD, app sync. Has its own `CLAUDE.md` with architecture, anti-patterns, and troubleshooting.
+
+**Visual verification is mandatory for sidebar changes:**
+```bash
+cd ignition-poker-tracker
+npm test                   # 824+ tests (logic regressions)
+npm run harness            # Serve visual harness on localhost:3333
+# Then use Playwright MCP tools to screenshot all 16 scenarios
+```
+
+Key modules: `render-orchestrator.js` (extracted pure render functions), `render-street-card.js` (street-adaptive), `side-panel.js` (orchestration IIFE). See `ignition-poker-tracker/CLAUDE.md` for full details.
 
 ## Docs
 - `docs/QUICK_REF.md` — constants, hooks, utils

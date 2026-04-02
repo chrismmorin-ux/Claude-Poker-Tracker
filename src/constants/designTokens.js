@@ -77,6 +77,7 @@ export const NAV_COLORS = {
   players:  { base: '#0d9488', hover: '#0f766e' },  // teal-600/700
   analysis:   { base: '#4f46e5', hover: '#4338ca' },  // indigo-600/700
   tournament: { base: '#ca8a04', hover: '#a16207' },  // yellow-600/700
+  extension:  { base: '#059669', hover: '#047857' },  // emerald-600/700
   settings:   { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
 };
 
@@ -122,6 +123,28 @@ export const LUCKY_COLORS = {
 };
 
 // =============================================================================
+// ADVICE COLORS — live action advice UI
+// =============================================================================
+
+export const MATURITY_COLORS = {
+  deep:       { bg: '#166534', text: '#86efac' },
+  individual: { bg: '#365314', text: '#a3e635' },
+  typed:      { bg: '#854d0e', text: '#fde047' },
+  coarse:     { bg: '#9a3412', text: '#fdba74' },
+  unknown:    { bg: '#374151', text: '#9ca3af' },
+};
+
+export const ADVICE_COLORS = {
+  evPositiveBg: '#166534', evPositiveText: '#4ade80',
+  evNegativeBg: '#7f1d1d', evNegativeText: '#f87171',
+  evNeutralBg: '#374151', evNeutralText: '#9ca3af',
+  equityBarBg: '#374151',
+  equityGood: '#22c55e',
+  equityBad: '#ef4444',
+  foldHighlight: '#f59e0b',
+};
+
+// =============================================================================
 // TOURNAMENT M-RATIO — chip stack zone colors
 // =============================================================================
 
@@ -137,6 +160,20 @@ export const TOURNAMENT_M_RATIO = {
 // =============================================================================
 
 export const GOLD = '#d4a847';
+
+// =============================================================================
+// DATA QUALITY — tier classification and display config
+// =============================================================================
+
+export const QUALITY_CONFIG = {
+  none:        { label: 'no data',    color: '#ef4444' },
+  speculative: { label: 'early',      color: '#f97316' },
+  developing:  { label: 'developing', color: '#eab308' },
+  established: { label: 'solid',      color: '#22c55e' },
+};
+
+export const getQualityTier = (n) =>
+  n === 0 ? 'none' : n < 10 ? 'speculative' : n < 30 ? 'developing' : 'established';
 
 // =============================================================================
 // HELPER FUNCTIONS

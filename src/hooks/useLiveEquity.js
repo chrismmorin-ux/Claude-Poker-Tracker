@@ -12,54 +12,9 @@ import { parseAndEncode, parseBoard } from '../utils/pokerCore/cardParser';
 import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { estimateFoldPct } from '../utils/exploitEngine/foldEquityCalculator';
 import { getRangePositionCategory } from '../utils/positionUtils';
-import { getActionsForSeatOnStreet } from '../utils/sequenceUtils';
+import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
 import { SEAT_ARRAY, ACTIONS } from '../constants/gameConstants';
 import { useAbortControl } from './useAbortControl';
-
-/**
- * Determine villain's preflop action key from the action sequence.
- * Maps to range sub-keys: 'open', 'coldCall', 'threeBet'.
- * Returns null to use merged open+coldCall default.
- */
-const getVillainActionKey = (actionSequence, villainSeat) => {
-  const preflopActions = getActionsForSeatOnStreet(actionSequence, villainSeat, 'preflop');
-  if (!preflopActions || preflopActions.length === 0) return null;
-
-  for (const entry of preflopActions) {
-    const action = typeof entry === 'string' ? entry : entry.action;
-    if (action === 'raise' || action === 'open') return 'open';
-    if (action === '3bet' || action === 'threeBet') return 'threeBet';
-    if (action === 'call' || action === 'coldCall') return 'coldCall';
-  }
-  return null;
-};
-
-/**
- * Get a villain's range grid for the given position + action.
- * Falls back to merged open+coldCall if no specific action identified.
- */
-const getVillainRange = (rangeProfile, position, actionKey) => {
-  if (!rangeProfile?.ranges?.[position]) return null;
-
-  const posRanges = rangeProfile.ranges[position];
-
-  if (actionKey && posRanges[actionKey]) {
-    return posRanges[actionKey];
-  }
-
-  // Merge open + coldCall weighted equally as fallback
-  const open = posRanges.open;
-  const coldCall = posRanges.coldCall;
-  if (!open && !coldCall) return null;
-  if (!open) return coldCall;
-  if (!coldCall) return open;
-
-  const merged = new Float64Array(169);
-  for (let i = 0; i < 169; i++) {
-    merged[i] = (open[i] + coldCall[i]) / 2;
-  }
-  return merged;
-};
 
 /**
  * @param {Object} params
@@ -187,8 +142,8 @@ export const useLiveEquity = ({
             // Compute fold% from range segmentation (synchronous, cheap)
             try {
               const seg = segmentRange(range, boardEncoded, heroEncoded);
-              const fp = estimateFoldPct(seg, 'bet');
-              setFoldPct(fp);
+              const fpResult = estimateFoldPct(seg, 'bet');
+              setFoldPct(fpResult.value);
             } catch {
               setFoldPct(null);
             }

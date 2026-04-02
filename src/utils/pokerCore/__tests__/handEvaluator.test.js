@@ -89,6 +89,59 @@ describe('handEvaluator', () => {
       const cards = makeHand([12, 0], [12, 1], [12, 2], [11, 0], [11, 1]);
       expect(bestFiveFromSeven(cards)).toBe(evaluate5(cards));
     });
+
+    test('handles 6 cards (turn board) correctly', () => {
+      // K♠ J♠ on board Q♣ 4♦ 7♥ 4♠ — should be pair of 4s, NOT two pair or flush
+      const cards = makeHand(
+        [11, 0], [9, 0],   // K♠ J♠
+        [10, 3], [2, 2], [5, 1], [2, 0], // Q♣ 4♦ 7♥ 4♠
+      );
+      const score = bestFiveFromSeven(cards);
+      const cat = (score >> 20) & 0xF;
+      // Best hand is K-Q-J-4-4 = pair of 4s
+      expect(cat).toBe(HAND_CATEGORIES.PAIR);
+    });
+
+    test('6-card turn: pocket pair on paired board = two pair (not trips)', () => {
+      // 9♥ 9♦ on board Q♣ 4♦ 7♥ 4♠ — should be two pair (9s and 4s)
+      const cards = makeHand(
+        [7, 1], [7, 2],    // 9♥ 9♦
+        [10, 3], [2, 2], [5, 1], [2, 0], // Q♣ 4♦ 7♥ 4♠
+      );
+      const score = bestFiveFromSeven(cards);
+      const cat = (score >> 20) & 0xF;
+      expect(cat).toBe(HAND_CATEGORIES.TWO_PAIR);
+    });
+
+    test('6-card turn: A2 on paired board is pair, not two pair', () => {
+      // A♥ 2♥ on board Q♣ 4♦ 7♥ 4♠ — should be pair of 4s (not phantom two pair)
+      const cards = makeHand(
+        [12, 1], [0, 1],   // A♥ 2♥
+        [10, 3], [2, 2], [5, 1], [2, 0], // Q♣ 4♦ 7♥ 4♠
+      );
+      const score = bestFiveFromSeven(cards);
+      const cat = (score >> 20) & 0xF;
+      // A2 does NOT pair anything except the board 4s — just one pair
+      expect(cat).toBe(HAND_CATEGORIES.PAIR);
+    });
+
+    test('6-card turn: no phantom flush from undefined card', () => {
+      // K♠ J♠ on board Q♠ 4♠ 7♥ 4♦ — only 2 spade hole + 2 spade board = 4 spades, no flush
+      const cards = makeHand(
+        [11, 0], [9, 0],   // K♠ J♠
+        [10, 0], [2, 0], [5, 1], [2, 2], // Q♠ 4♠ 7♥ 4♦
+      );
+      const score = bestFiveFromSeven(cards);
+      const cat = (score >> 20) & 0xF;
+      // Without bug fix, phantom 2♠ would give 5 spades = flush
+      // With fix, should be two pair (Qs and 4s) or pair
+      // K♠J♠ pairing Q via board: best hand is K-Q-J-4-4 = pair or K-Q-4-4 with J = pair
+      // Actually KJ on Q474: Q pairs nothing in hand. Board has pair of 4s.
+      // Best: K-Q-J-7-4 with pair of 4s = pair. OR two pair? No, KJ doesn't pair Q or 7.
+      // So it's just pair of 4s.
+      expect(cat).toBe(HAND_CATEGORIES.PAIR);
+      expect(cat).not.toBe(HAND_CATEGORIES.FLUSH);
+    });
   });
 
   describe('kicker comparison', () => {

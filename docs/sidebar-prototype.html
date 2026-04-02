@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poker HUD — Side Panel Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     RESET & TOKENS
+     ══════════════════════════════════════════════════════════════ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* Surfaces */
+    --surface-body:     #1a1a2e;
+    --surface-card:     #16213e;
+    --surface-inset:    #0d1117;
+    --surface-elevated: #1e2642;
+    --surface-glass:    rgba(22, 33, 62, 0.85);
+
+    /* Borders */
+    --border-default: #2a2a4a;
+    --border-subtle:  #374151;
+
+    /* Text */
+    --text-primary:   #e0e0e0;
+    --text-secondary: #9ca3af;
+    --text-muted:     #6b7280;
+    --text-faint:     #4b5563;
+
+    /* Gold accent */
+    --gold:      #d4a847;
+    --gold-glow: rgba(212, 168, 71, 0.15);
+    --gold-dim:  #b8922e;
+    --gold-bright: #e8c462;
+
+    /* Actions */
+    --action-fold-bg:    #7f1d1d;  --action-fold-text:  #fca5a5;
+    --action-check-bg:   #1e3a5f;  --action-check-text: #93c5fd;
+    --action-call-bg:    #1e3a8a;  --action-call-text:  #93c5fd;
+    --action-bet-bg:     #14532d;  --action-bet-text:   #86efac;
+    --action-raise-bg:   #7c2d12;  --action-raise-text: #fdba74;
+
+    /* EV */
+    --ev-pos:  #4ade80;  --ev-pos-bg:  #166534;
+    --ev-neg:  #f87171;  --ev-neg-bg:  #7f1d1d;
+
+    /* Semantic */
+    --green:  #22c55e;
+    --yellow: #eab308;
+    --orange: #f97316;
+    --red:    #ef4444;
+    --cyan:   #22d3ee;
+    --purple: #a78bfa;
+
+    /* Bucket colors */
+    --bucket-nuts:     #ef4444;
+    --bucket-strong:   #f97316;
+    --bucket-marginal: #eab308;
+    --bucket-draw:     #22d3ee;
+    --bucket-air:      #6b7280;
+
+    /* Typography */
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+
+    /* Spacing */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+
+    /* Radius */
+    --r-sm: 3px; --r-md: 5px; --r-lg: 8px; --r-xl: 12px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     PAGE FRAME (simulates extension side panel)
+     ══════════════════════════════════════════════════════════════ */
+  html, body {
+    height: 100%;
+    background: #0a0a14;
+    font-family: var(--font-display);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .panel-frame {
+    width: 400px;
+    height: 100vh;
+    background: var(--surface-body);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border-left: 1px solid var(--border-default);
+    border-right: 1px solid var(--border-default);
+  }
+
+  /* Subtle vertical noise texture */
+  .panel-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(255,255,255,0.008) 1px,
+      rgba(255,255,255,0.008) 2px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     TIER 1 — GLANCE STRIP
+     ══════════════════════════════════════════════════════════════ */
+  .glance-strip {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface-inset);
+    border-bottom: 1px solid var(--border-default);
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  /* Animated accent edge */
+  .glance-accent {
+    height: 3px;
+    background: linear-gradient(90deg, var(--action-bet-text), var(--action-bet-bg));
+    animation: accentPulse 3s ease-in-out infinite;
+  }
+  .glance-accent.fold { background: linear-gradient(90deg, var(--action-fold-text), var(--action-fold-bg)); }
+  .glance-accent.check { background: linear-gradient(90deg, var(--action-check-text), var(--action-check-bg)); }
+  .glance-accent.call { background: linear-gradient(90deg, var(--action-call-text), var(--action-call-bg)); }
+  .glance-accent.raise { background: linear-gradient(90deg, var(--action-raise-text), var(--action-raise-bg)); }
+
+  @keyframes accentPulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  .glance-main {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  /* Action badge — the anchor of the whole panel */
+  .action-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: var(--r-md);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 15px;
+    line-height: 1;
+    white-space: nowrap;
+    animation: badgeIn 0.3s ease-out;
+  }
+  .action-badge.bet   { background: var(--action-bet-bg);   color: var(--action-bet-text); }
+  .action-badge.fold  { background: var(--action-fold-bg);  color: var(--action-fold-text); }
+  .action-badge.check { background: var(--action-check-bg); color: var(--action-check-text); }
+  .action-badge.call  { background: var(--action-call-bg);  color: var(--action-call-text); }
+  .action-badge.raise { background: var(--action-raise-bg); color: var(--action-raise-text); }
+
+  .action-sizing {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+
+  @keyframes badgeIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* EV display */
+  .ev-display {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .ev-display.positive { color: var(--ev-pos); }
+  .ev-display.negative { color: var(--ev-neg); }
+
+  .ev-unit {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.6;
+    margin-left: 1px;
+  }
+
+  /* Metadata pills (right side) */
+  .glance-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .pill.depth {
+    background: rgba(162, 139, 250, 0.15);
+    color: var(--purple);
+    border: 1px solid rgba(162, 139, 250, 0.25);
+  }
+  .pill.spr {
+    background: rgba(34, 211, 238, 0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(34, 211, 238, 0.2);
+  }
+
+  .confidence-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .confidence-dot.green  { background: var(--green); box-shadow: 0 0 4px rgba(34,197,94,0.4); }
+  .confidence-dot.yellow { background: var(--yellow); box-shadow: 0 0 4px rgba(234,179,8,0.3); }
+  .confidence-dot.red    { background: var(--red); }
+
+  .confidence-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Board + hero cards inline */
+  .glance-cards {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px 8px;
+  }
+
+  .card-group {
+    display: flex;
+    gap: 3px;
+  }
+
+  .card-group-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    align-self: center;
+    margin-right: 2px;
+  }
+
+  .mini-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 34px;
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .mini-card.red { color: #ef4444; }
+  .mini-card.black { color: var(--text-primary); }
+  .mini-card.hero-card {
+    border-color: var(--gold-dim);
+    background: linear-gradient(180deg, var(--surface-card), #1f1a10);
+  }
+
+  .card-separator {
+    width: 1px;
+    height: 20px;
+    background: var(--border-default);
+  }
+
+  .pot-inline {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SCROLLABLE CONTENT AREA
+     ══════════════════════════════════════════════════════════════ */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Thin scrollbar */
+  .scroll-area::-webkit-scrollbar { width: 4px; }
+  .scroll-area::-webkit-scrollbar-track { background: transparent; }
+  .scroll-area::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 2px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+  /* ══════════════════════════════════════════════════════════════
+     TIER 2 — QUICK CONTEXT
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Villain headline */
+  .villain-brief {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--surface-card);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border-default);
+    margin-bottom: 8px;
+  }
+
+  .villain-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+
+  .villain-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .villain-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+  }
+
+  .villain-headline {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .villain-headline em {
+    font-style: normal;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  /* Hand Plan Tree */
+  .hand-plan {
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .section-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+  }
+
+  .plan-branch {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    position: relative;
+  }
+
+  .plan-branch + .plan-branch {
+    border-top: 1px solid rgba(42, 42, 74, 0.5);
+  }
+
+  .branch-connector {
+    width: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  .branch-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-subtle);
+    flex-shrink: 0;
+  }
+  .branch-dot.favorable { background: var(--green); }
+  .branch-dot.unfavorable { background: var(--red); }
+
+  .branch-line {
+    width: 1px;
+    flex: 1;
+    background: var(--border-default);
+    margin-top: 2px;
+  }
+
+  .branch-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .branch-trigger {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .branch-trigger .action-word {
+    padding: 1px 5px;
+    border-radius: var(--r-sm);
+    font-size: 9px;
+  }
+  .action-word.call  { background: var(--action-call-bg); color: var(--action-call-text); }
+  .action-word.raise { background: var(--action-raise-bg); color: var(--action-raise-text); }
+  .action-word.fold  { background: var(--action-fold-bg); color: var(--action-fold-text); }
+  .action-word.bet   { background: var(--action-bet-bg); color: var(--action-bet-text); }
+  .action-word.check { background: var(--action-check-bg); color: var(--action-check-text); }
+
+  .branch-action {
+    font-size: 11px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  /* Runout bar */
+  .runout-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .runout-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--surface-inset);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .runout-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+  .runout-fill.good { background: var(--green); }
+  .runout-fill.bad  { background: var(--red); opacity: 0.5; }
+
+  .runout-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  /* Blocker insight */
+  .insight-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(34, 211, 238, 0.06);
+    border: 1px solid rgba(34, 211, 238, 0.12);
+    border-radius: var(--r-md);
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .insight-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+    color: var(--cyan);
+    opacity: 0.7;
+  }
+
+  .insight-text .highlight {
+    color: var(--cyan);
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  /* Range Advantage */
+  .range-advantage {
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+
+  .advantage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .advantage-bar-wrap {
+    height: 6px;
+    background: var(--surface-inset);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .advantage-fill {
+    height: 100%;
+    transition: width 0.8s ease;
+  }
+  .advantage-fill.hero {
+    background: linear-gradient(90deg, var(--green), #16a34a);
+    border-radius: 3px 0 0 3px;
+  }
+  .advantage-fill.villain {
+    background: linear-gradient(90deg, #7f1d1d, var(--red));
+    border-radius: 0 3px 3px 0;
+    opacity: 0.6;
+  }
+
+  .advantage-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+  }
+
+  .advantage-labels .hero-side { color: var(--green); }
+  .advantage-labels .villain-side { color: var(--red); opacity: 0.7; }
+
+  /* Vulnerability callout */
+  .vulnerability-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+    border-radius: var(--r-md);
+    margin-bottom: 8px;
+  }
+
+  .vuln-severity {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .vuln-severity.high   { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+  .vuln-severity.medium { background: var(--orange); }
+  .vuln-severity.low    { background: var(--text-muted); }
+
+  .vuln-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .vuln-text .stat {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--red);
+    font-size: 10px;
+  }
+
+  .vuln-text .vs-stat {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--text-faint);
+    font-size: 10px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     TIER 3 — DEEP ANALYSIS (collapsible sections)
+     ══════════════════════════════════════════════════════════════ */
+
+  .deep-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 8px;
+  }
+
+  .deep-divider::before,
+  .deep-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+  }
+
+  .deep-divider-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+  }
+
+  /* Collapsible section */
+  .deep-section {
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    margin-bottom: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+  }
+
+  .deep-section:hover {
+    border-color: var(--border-subtle);
+  }
+
+  .deep-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+  }
+
+  .deep-header:hover {
+    background: var(--surface-elevated);
+  }
+
+  .deep-header-icon {
+    font-size: 11px;
+    color: var(--text-faint);
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .deep-header-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .deep-chevron {
+    font-size: 10px;
+    color: var(--text-faint);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .deep-section.open .deep-chevron {
+    transform: rotate(180deg);
+  }
+
+  .deep-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .deep-section.open .deep-body {
+    max-height: 800px;
+  }
+
+  .deep-content {
+    padding: 0 12px 10px;
+  }
+
+  /* ── Bucket Equity Breakdown ── */
+  .bucket-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  .bucket-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    width: 56px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .bucket-label.nuts     { color: var(--bucket-nuts); }
+  .bucket-label.strong   { color: var(--bucket-strong); }
+  .bucket-label.marginal { color: var(--bucket-marginal); }
+  .bucket-label.draw     { color: var(--bucket-draw); }
+  .bucket-label.air      { color: var(--bucket-air); }
+
+  .bucket-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface-inset);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bucket-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .bucket-bar-fill.nuts     { background: linear-gradient(90deg, var(--bucket-nuts), #dc2626); }
+  .bucket-bar-fill.strong   { background: linear-gradient(90deg, var(--bucket-strong), #ea580c); }
+  .bucket-bar-fill.marginal { background: linear-gradient(90deg, var(--bucket-marginal), #ca8a04); }
+  .bucket-bar-fill.draw     { background: linear-gradient(90deg, var(--bucket-draw), #0891b2); }
+  .bucket-bar-fill.air      { background: linear-gradient(90deg, var(--bucket-air), #4b5563); }
+
+  /* Midpoint marker at 50% */
+  .bucket-bar-track::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: rgba(255,255,255,0.12);
+  }
+
+  .bucket-pct {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+
+  .bucket-hint {
+    font-size: 8px;
+    color: var(--text-faint);
+    text-align: center;
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  /* ── All Recommendations ── */
+  .rec-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  .rec-item + .rec-item {
+    border-top: 1px solid rgba(42, 42, 74, 0.4);
+  }
+
+  .rec-rank {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-faint);
+    width: 12px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .rec-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .rec-detail {
+    flex: 1;
+    min-width: 0;
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+
+  .rec-ev {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .rec-ev.pos { color: var(--ev-pos); }
+  .rec-ev.neg { color: var(--ev-neg); }
+  .rec-ev.neu { color: var(--text-muted); }
+
+  /* Best rec highlight */
+  .rec-item.best {
+    background: rgba(22, 101, 52, 0.08);
+    margin: 0 -12px;
+    padding: 6px 12px;
+    border-radius: var(--r-md);
+  }
+
+  /* ── Villain Street Tendencies ── */
+  .street-tendency {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+
+  .street-tendency + .street-tendency {
+    border-top: 1px solid rgba(42, 42, 74, 0.4);
+  }
+
+  .street-name {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 38px;
+    flex-shrink: 0;
+  }
+
+  .tendency-text {
+    flex: 1;
+    font-size: 10px;
+    color: var(--text-secondary);
+    min-width: 0;
+  }
+
+  .tendency-confidence {
+    width: 40px;
+    height: 4px;
+    background: var(--surface-inset);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .tendency-conf-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Fold Curve ── */
+  .fold-curve-wrap {
+    position: relative;
+    padding: 4px 0;
+  }
+
+  .fold-curve-svg {
+    width: 100%;
+    height: 80px;
+  }
+
+  .fold-curve-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  .fold-curve-marker {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--gold);
+    background: var(--surface-inset);
+    padding: 1px 4px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--gold-dim);
+    pointer-events: none;
+  }
+
+  /* ── Combo Statistics ── */
+  .combo-stats {
+    padding: 4px 0;
+  }
+
+  .combo-bar-wrap {
+    display: flex;
+    height: 14px;
+    border-radius: var(--r-md);
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .combo-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    transition: width 0.8s ease;
+    overflow: hidden;
+  }
+  .combo-segment.ahead  { background: var(--green); }
+  .combo-segment.tied   { background: var(--yellow); opacity: 0.7; }
+  .combo-segment.behind { background: var(--red); opacity: 0.6; }
+
+  .combo-legend {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .combo-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .combo-legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .combo-legend-dot.ahead  { background: var(--green); }
+  .combo-legend-dot.tied   { background: var(--yellow); }
+  .combo-legend-dot.behind { background: var(--red); }
+
+  .combo-legend-count {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  /* ── Model Audit ── */
+  .audit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 10px;
+  }
+
+  .audit-row + .audit-row {
+    border-top: 1px solid rgba(42, 42, 74, 0.3);
+  }
+
+  .audit-key {
+    color: var(--text-muted);
+  }
+
+  .audit-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 10px;
+  }
+
+  .audit-value.source { color: var(--purple); }
+  .audit-value.confidence { color: var(--gold); }
+
+  .ci-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .ci-bracket {
+    font-size: 9px;
+    color: var(--text-faint);
+  }
+
+  /* ── Fold% detail ── */
+  .fold-detail {
+    padding: 4px 0;
+  }
+
+  .fold-base-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .fold-base-label {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .fold-base-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .fold-base-origin {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-faint);
+    margin-left: auto;
+  }
+
+  .fold-adjustment {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    font-size: 9px;
+  }
+
+  .fold-adj-label {
+    color: var(--text-faint);
+    flex: 1;
+  }
+
+  .fold-adj-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 9px;
+  }
+  .fold-adj-value.up   { color: var(--green); }
+  .fold-adj-value.down { color: var(--red); }
+  .fold-adj-value.flat { color: var(--text-faint); }
+
+  /* ══════════════════════════════════════════════════════════════
+     FOOTER STATUS
+     ══════════════════════════════════════════════════════════════ */
+  .panel-footer {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-top: 1px solid var(--border-default);
+    background: var(--surface-inset);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 5;
+  }
+
+  .footer-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-faint);
+    letter-spacing: 0.3px;
+  }
+
+  .footer-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: footerPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes footerPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .footer-compute {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-faint);
+    letter-spacing: 0.3px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     UTILITIES & ANIMATIONS
+     ══════════════════════════════════════════════════════════════ */
+  .hidden { display: none !important; }
+
+  /* Stagger animations for tier 2 items */
+  .tier2-enter {
+    animation: tier2Slide 0.35s ease-out both;
+  }
+
+  @keyframes tier2Slide {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tier2-enter:nth-child(1) { animation-delay: 0.05s; }
+  .tier2-enter:nth-child(2) { animation-delay: 0.1s; }
+  .tier2-enter:nth-child(3) { animation-delay: 0.15s; }
+  .tier2-enter:nth-child(4) { animation-delay: 0.2s; }
+  .tier2-enter:nth-child(5) { animation-delay: 0.25s; }
+
+  /* Responsive: wider screens show sidebar in context */
+  @media (min-width: 900px) {
+    body { background: #08080f; }
+    .panel-frame {
+      box-shadow: 0 0 60px rgba(0,0,0,0.5),
+                  0 0 1px rgba(212,168,71,0.1);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="panel-frame">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TIER 1 — GLANCE STRIP
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="glance-strip">
+    <div class="glance-accent bet"></div>
+
+    <div class="glance-main">
+      <!-- Action Badge -->
+      <div class="action-badge bet">
+        BET<span class="action-sizing">75%</span>
+      </div>
+
+      <!-- EV -->
+      <div class="ev-display positive">
+        +5.2<span class="ev-unit">bb</span>
+      </div>
+
+      <!-- Metadata -->
+      <div class="glance-meta">
+        <div class="meta-row">
+          <span class="pill depth">D2</span>
+          <span class="pill spr">SPR 3.2</span>
+        </div>
+        <div class="meta-row">
+          <span class="confidence-dot yellow"></span>
+          <span class="confidence-label">n=22</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Board + Hero cards -->
+    <div class="glance-cards">
+      <span class="card-group-label">Board</span>
+      <div class="card-group">
+        <span class="mini-card black">Q♠</span>
+        <span class="mini-card black">9♣</span>
+        <span class="mini-card black">4♠</span>
+      </div>
+      <span class="card-separator"></span>
+      <div class="card-group">
+        <span class="mini-card black hero-card">A♠</span>
+        <span class="mini-card red hero-card">K♥</span>
+      </div>
+      <span class="pot-inline">Pot $25</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCROLLABLE TIERS 2 + 3
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="scroll-area">
+
+    <!-- ─── TIER 2 — QUICK CONTEXT ─── -->
+
+    <!-- Villain Brief -->
+    <div class="villain-brief tier2-enter">
+      <div class="villain-icon">👤</div>
+      <div class="villain-content">
+        <div class="villain-label">Villain · Seat 4</div>
+        <div class="villain-headline">
+          Tight passive — <em>folds too much</em> to c-bets on dry boards
+        </div>
+      </div>
+    </div>
+
+    <!-- Hand Plan -->
+    <div class="hand-plan tier2-enter">
+      <div class="section-label">Hand Plan</div>
+
+      <div class="plan-branch">
+        <div class="branch-connector">
+          <div class="branch-dot favorable"></div>
+          <div class="branch-line"></div>
+        </div>
+        <div class="branch-content">
+          <div class="branch-trigger">
+            If <span class="action-word call">CALL</span> →
+          </div>
+          <div class="branch-action">
+            Barrel on safe turns — check flush completions
+          </div>
+          <div class="runout-bar-wrap">
+            <div class="runout-bar">
+              <div class="runout-fill good" style="width: 67%"></div>
+              <div class="runout-fill bad" style="width: 33%"></div>
+            </div>
+            <span class="runout-label">8/12</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="plan-branch">
+        <div class="branch-connector">
+          <div class="branch-dot unfavorable"></div>
+        </div>
+        <div class="branch-content">
+          <div class="branch-trigger">
+            If <span class="action-word raise">RAISE</span> →
+          </div>
+          <div class="branch-action">
+            Fold — 28% equity vs raising range
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blocker Insight -->
+    <div class="insight-strip tier2-enter">
+      <span class="insight-icon">◆</span>
+      <span class="insight-text">
+        Your <span class="highlight">A♠</span> blocks nut flush draws
+        <span class="highlight">−12%</span> villain nuts
+      </span>
+    </div>
+
+    <!-- Range Advantage -->
+    <div class="range-advantage tier2-enter">
+      <div class="section-label">Range Advantage</div>
+      <div class="advantage-bar-wrap">
+        <div class="advantage-fill hero" style="width: 62%"></div>
+        <div class="advantage-fill villain" style="width: 38%"></div>
+      </div>
+      <div class="advantage-labels">
+        <span class="hero-side">Hero 62%</span>
+        <span class="villain-side">Villain 38%</span>
+      </div>
+    </div>
+
+    <!-- Top Vulnerability -->
+    <div class="vulnerability-callout tier2-enter">
+      <div class="vuln-severity high"></div>
+      <div class="vuln-text">
+        Overfolds flop c-bets —
+        <span class="stat">62% fold</span>
+        <span class="vs-stat">vs 40% MDF</span>
+      </div>
+    </div>
+
+
+    <!-- ─── TIER 3 — DEEP ANALYSIS ─── -->
+
+    <div class="deep-divider">
+      <span class="deep-divider-label">Deep Analysis</span>
+    </div>
+
+    <!-- Bucket Equity -->
+    <div class="deep-section open" data-section="buckets">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">⊞</span>
+        <span class="deep-header-title">Bucket Equity vs Villain Range</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="bucket-row">
+            <span class="bucket-label nuts">Nuts</span>
+            <div class="bucket-bar-track">
+              <div class="bucket-bar-fill nuts" style="width: 15%"></div>
+            </div>
+            <span class="bucket-pct">15%</span>
+          </div>
+          <div class="bucket-row">
+            <span class="bucket-label strong">Strong</span>
+            <div class="bucket-bar-track">
+              <div class="bucket-bar-fill strong" style="width: 42%"></div>
+            </div>
+            <span class="bucket-pct">42%</span>
+          </div>
+          <div class="bucket-row">
+            <span class="bucket-label marginal">Marginal</span>
+            <div class="bucket-bar-track">
+              <div class="bucket-bar-fill marginal" style="width: 68%"></div>
+            </div>
+            <span class="bucket-pct">68%</span>
+          </div>
+          <div class="bucket-row">
+            <span class="bucket-label draw">Draw</span>
+            <div class="bucket-bar-track">
+              <div class="bucket-bar-fill draw" style="width: 55%"></div>
+            </div>
+            <span class="bucket-pct">55%</span>
+          </div>
+          <div class="bucket-row">
+            <span class="bucket-label air">Air</span>
+            <div class="bucket-bar-track">
+              <div class="bucket-bar-fill air" style="width: 92%"></div>
+            </div>
+            <span class="bucket-pct">92%</span>
+          </div>
+          <div class="bucket-hint">Hero equity when villain holds each bucket · 50% midline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Recommendations -->
+    <div class="deep-section" data-section="recs">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">☰</span>
+        <span class="deep-header-title">All Recommendations</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="rec-item best">
+            <span class="rec-rank">1</span>
+            <span class="rec-badge" style="background:var(--action-bet-bg);color:var(--action-bet-text)">BET 75%</span>
+            <span class="rec-detail">$18.75 · fold 48% · value vs marginals + air</span>
+            <span class="rec-ev pos">+5.2</span>
+          </div>
+          <div class="rec-item">
+            <span class="rec-rank">2</span>
+            <span class="rec-badge" style="background:var(--action-bet-bg);color:var(--action-bet-text)">BET 50%</span>
+            <span class="rec-detail">$12.50 · fold 38% · thinner value, more calls</span>
+            <span class="rec-ev pos">+3.8</span>
+          </div>
+          <div class="rec-item">
+            <span class="rec-rank">3</span>
+            <span class="rec-badge" style="background:var(--action-check-bg);color:var(--action-check-text)">CHECK</span>
+            <span class="rec-detail">Pot control · villain bets 35% · float turn</span>
+            <span class="rec-ev pos">+1.4</span>
+          </div>
+          <div class="rec-item">
+            <span class="rec-rank">4</span>
+            <span class="rec-badge" style="background:var(--action-bet-bg);color:var(--action-bet-text)">BET 150%</span>
+            <span class="rec-detail">$37.50 · fold 52% · polarized overbet</span>
+            <span class="rec-ev pos">+0.6</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Villain Street Tendencies -->
+    <div class="deep-section" data-section="tendencies">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">📊</span>
+        <span class="deep-header-title">Villain Street Tendencies</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="street-tendency">
+            <span class="street-name">Pre</span>
+            <span class="tendency-text">Tight — VPIP 18% / PFR 14% / 3B 6%</span>
+            <div class="tendency-confidence"><div class="tendency-conf-fill" style="width:85%"></div></div>
+          </div>
+          <div class="street-tendency">
+            <span class="street-name">Flop</span>
+            <span class="tendency-text">Passive — checks 68% when checked to</span>
+            <div class="tendency-confidence"><div class="tendency-conf-fill" style="width:71%"></div></div>
+          </div>
+          <div class="street-tendency">
+            <span class="street-name">Turn</span>
+            <span class="tendency-text">Shutdown — barrels only 22% after flop bet</span>
+            <div class="tendency-confidence"><div class="tendency-conf-fill" style="width:58%"></div></div>
+          </div>
+          <div class="street-tendency">
+            <span class="street-name">River</span>
+            <span class="tendency-text">Honest — bets strong, checks marginals</span>
+            <div class="tendency-confidence"><div class="tendency-conf-fill" style="width:42%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fold Curve -->
+    <div class="deep-section" data-section="foldcurve">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">∿</span>
+        <span class="deep-header-title">Fold Curve · Sizing Response</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="fold-curve-wrap">
+            <svg class="fold-curve-svg" viewBox="0 0 350 80" fill="none">
+              <!-- Grid lines -->
+              <line x1="30" y1="10" x2="340" y2="10" stroke="rgba(42,42,74,0.3)" stroke-width="0.5"/>
+              <line x1="30" y1="25" x2="340" y2="25" stroke="rgba(42,42,74,0.3)" stroke-width="0.5"/>
+              <line x1="30" y1="40" x2="340" y2="40" stroke="rgba(42,42,74,0.5)" stroke-width="0.5" stroke-dasharray="2,3"/>
+              <line x1="30" y1="55" x2="340" y2="55" stroke="rgba(42,42,74,0.3)" stroke-width="0.5"/>
+              <line x1="30" y1="70" x2="340" y2="70" stroke="rgba(42,42,74,0.3)" stroke-width="0.5"/>
+
+              <!-- Y-axis labels -->
+              <text x="26" y="13" fill="#4b5563" font-size="7" text-anchor="end" font-family="IBM Plex Mono">80%</text>
+              <text x="26" y="28" fill="#4b5563" font-size="7" text-anchor="end" font-family="IBM Plex Mono">65%</text>
+              <text x="26" y="43" fill="#4b5563" font-size="7" text-anchor="end" font-family="IBM Plex Mono">50%</text>
+              <text x="26" y="58" fill="#4b5563" font-size="7" text-anchor="end" font-family="IBM Plex Mono">35%</text>
+              <text x="26" y="73" fill="#4b5563" font-size="7" text-anchor="end" font-family="IBM Plex Mono">20%</text>
+
+              <!-- Population curve (reference) -->
+              <path d="M30,62 C80,60 120,55 160,45 C200,35 240,26 280,20 C310,16 340,14 340,13"
+                    stroke="rgba(107,114,128,0.3)" stroke-width="1.5" fill="none" stroke-dasharray="3,3"/>
+
+              <!-- Personalized fold curve (sigmoid) -->
+              <path d="M30,64 C60,63 90,60 120,56 C150,48 180,38 210,30 C240,24 270,20 300,17 C320,15 340,14 340,13"
+                    stroke="var(--gold)" stroke-width="2" fill="none"/>
+
+              <!-- Glow under curve -->
+              <path d="M30,64 C60,63 90,60 120,56 C150,48 180,38 210,30 C240,24 270,20 300,17 C320,15 340,14 340,13 L340,70 L30,70 Z"
+                    fill="url(#curveGlow)" opacity="0.15"/>
+
+              <!-- Current bet size marker -->
+              <circle cx="210" cy="30" r="4" fill="var(--gold)" stroke="var(--surface-inset)" stroke-width="1.5"/>
+              <line x1="210" y1="30" x2="210" y2="70" stroke="var(--gold)" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+
+              <!-- Labels at marker -->
+              <text x="210" y="78" fill="var(--gold)" font-size="7" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600">75% pot</text>
+
+              <defs>
+                <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+
+            <div class="fold-curve-marker" style="left: 208px; top: 18px;">48%</div>
+          </div>
+
+          <div class="fold-curve-labels">
+            <span>33% pot</span>
+            <span>Population (dashed)</span>
+            <span>200% pot</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fold% Breakdown -->
+    <div class="deep-section" data-section="foldpct">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">%</span>
+        <span class="deep-header-title">Fold% Breakdown · 48%</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="fold-detail">
+            <div class="fold-base-row">
+              <span class="fold-base-label">Base estimate</span>
+              <span class="fold-base-value">42%</span>
+              <span class="fold-base-origin">source: model L2</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">Aggression (AF 1.8)</span>
+              <span class="fold-adj-value up">+2%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">VPIP tightness (18%)</span>
+              <span class="fold-adj-value up">+3%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">Position (CO vs BTN)</span>
+              <span class="fold-adj-value flat">0%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">IP disadvantage</span>
+              <span class="fold-adj-value down">−1%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">Range advantage</span>
+              <span class="fold-adj-value up">+1%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">Blocker effect (A♠)</span>
+              <span class="fold-adj-value up">+2%</span>
+            </div>
+            <div class="fold-adjustment">
+              <span class="fold-adj-label">Sizing tells</span>
+              <span class="fold-adj-value down">−1%</span>
+            </div>
+            <div style="border-top:1px solid var(--border-default);margin-top:4px;padding-top:4px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:10px;color:var(--text-muted)">Final fold%</span>
+              <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text-primary)">48%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combo Statistics -->
+    <div class="deep-section" data-section="combos">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">⊕</span>
+        <span class="deep-header-title">Combo Distribution</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="combo-stats">
+            <div class="combo-bar-wrap">
+              <div class="combo-segment ahead" style="width:51.1%">67</div>
+              <div class="combo-segment tied" style="width:9.2%"></div>
+              <div class="combo-segment behind" style="width:39.7%">52</div>
+            </div>
+            <div class="combo-legend">
+              <span class="combo-legend-item">
+                <span class="combo-legend-dot ahead"></span>
+                Ahead <span class="combo-legend-count">67</span>
+              </span>
+              <span class="combo-legend-item">
+                <span class="combo-legend-dot tied"></span>
+                Tied <span class="combo-legend-count">12</span>
+              </span>
+              <span class="combo-legend-item">
+                <span class="combo-legend-dot behind"></span>
+                Behind <span class="combo-legend-count">52</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model Audit -->
+    <div class="deep-section" data-section="audit">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">⚙</span>
+        <span class="deep-header-title">Model Audit</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="audit-row">
+            <span class="audit-key">Data source</span>
+            <span class="audit-value source">Hierarchical L2</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Effective N</span>
+            <span class="audit-value">22 observations</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Model quality</span>
+            <span class="audit-value confidence">Developing</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Bayesian CI (95%)</span>
+            <span class="audit-value">
+              <span class="ci-bar">
+                <span class="ci-bracket">[</span>
+                42% — 54%
+                <span class="ci-bracket">]</span>
+              </span>
+            </span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Prior weight</span>
+            <span class="audit-value">38%</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Tree branches</span>
+            <span class="audit-value">4 actions × D2</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Compute time</span>
+            <span class="audit-value">245ms</span>
+          </div>
+          <div class="audit-row">
+            <span class="audit-key">Fold curve fit</span>
+            <span class="audit-value">Brier 0.18 (n=10)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vulnerabilities List -->
+    <div class="deep-section" data-section="vulns">
+      <div class="deep-header" onclick="toggleSection(this)">
+        <span class="deep-header-icon">⚡</span>
+        <span class="deep-header-title">Active Vulnerabilities</span>
+        <span class="deep-chevron">▾</span>
+      </div>
+      <div class="deep-body">
+        <div class="deep-content">
+          <div class="vulnerability-callout" style="margin-bottom:6px;">
+            <div class="vuln-severity high"></div>
+            <div class="vuln-text">
+              Overfolds flop c-bets —
+              <span class="stat">62% fold</span>
+              <span class="vs-stat">vs 40% MDF</span>
+              <div style="font-size:9px;color:var(--text-faint);margin-top:2px;">
+                → Exploit: c-bet wider, especially dry boards
+              </div>
+            </div>
+          </div>
+          <div class="vulnerability-callout" style="margin-bottom:6px;border-color:rgba(249,115,22,0.12);background:rgba(249,115,22,0.04);">
+            <div class="vuln-severity medium"></div>
+            <div class="vuln-text">
+              Shuts down on turn after calling flop —
+              <span class="stat" style="color:var(--orange)">22% barrel</span>
+              <div style="font-size:9px;color:var(--text-faint);margin-top:2px;">
+                → Exploit: float flop bets, take away turn
+              </div>
+            </div>
+          </div>
+          <div class="vulnerability-callout" style="margin-bottom:0;border-color:rgba(107,114,128,0.12);background:rgba(107,114,128,0.04);">
+            <div class="vuln-severity low"></div>
+            <div class="vuln-text">
+              Honest river value — rarely bluffs river
+              <span class="vs-stat">(bet 8% with air)</span>
+              <div style="font-size:9px;color:var(--text-faint);margin-top:2px;">
+                → Exploit: fold to river bets without strong hand
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom padding -->
+    <div style="height: 20px;"></div>
+
+  </div><!-- /scroll-area -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="panel-footer">
+    <div class="footer-status">
+      <span class="footer-dot"></span>
+      <span>LIVE · FLOP · HAND #47</span>
+    </div>
+    <span class="footer-compute">245ms · 4 branches</span>
+  </div>
+
+</div><!-- /panel-frame -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT — Collapsible sections
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+  function toggleSection(header) {
+    const section = header.closest('.deep-section');
+    section.classList.toggle('open');
+  }
+
+  // Animate bars on load (stagger effect)
+  document.addEventListener('DOMContentLoaded', () => {
+    // Bucket bars
+    document.querySelectorAll('.bucket-bar-fill').forEach((bar, i) => {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => { bar.style.width = w; }, 200 + i * 80);
+    });
+
+    // Advantage bar
+    document.querySelectorAll('.advantage-fill').forEach((bar, i) => {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => { bar.style.width = w; }, 300);
+    });
+
+    // Combo bar
+    document.querySelectorAll('.combo-segment').forEach((seg, i) => {
+      const w = seg.style.width;
+      seg.style.width = '0%';
+      setTimeout(() => { seg.style.width = w; }, 400 + i * 100);
+    });
+  });
+</script>
+
+</body>
+</html>

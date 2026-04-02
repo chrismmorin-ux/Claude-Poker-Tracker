@@ -3,17 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAutoSeatSelection } from '../useAutoSeatSelection';
 
-vi.mock('../../reducers/uiReducer', () => ({
-  UI_ACTIONS: { SET_SELECTION: 'SET_SELECTION' },
-}));
-
 describe('useAutoSeatSelection', () => {
-  let dispatchUi;
+  let setSelectedPlayers;
   let getFirstActionSeat;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    dispatchUi = vi.fn();
+    setSelectedPlayers = vi.fn();
     getFirstActionSeat = vi.fn(() => 3);
   });
 
@@ -26,89 +22,77 @@ describe('useAutoSeatSelection', () => {
       showCardSelector: false,
       currentStreet: 'preflop',
       getFirstActionSeat,
-      dispatchUi,
+      setSelectedPlayers,
     };
     const merged = { ...defaults, ...props };
     return renderHook(
-      ({ showCardSelector, currentStreet, getFirstActionSeat: gfas, dispatchUi: dui }) =>
-        useAutoSeatSelection(showCardSelector, currentStreet, gfas, dui),
+      ({ showCardSelector, currentStreet, getFirstActionSeat: gfas, setSelectedPlayers: ssp }) =>
+        useAutoSeatSelection(showCardSelector, currentStreet, gfas, ssp),
       { initialProps: merged }
     );
   };
 
   it('auto-selects first action seat on mount', () => {
     renderAutoSelect();
-    expect(dispatchUi).toHaveBeenCalledWith({
-      type: 'SET_SELECTION',
-      payload: [3],
-    });
+    expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
   });
 
   it('auto-selects on street change', () => {
     const { rerender } = renderAutoSelect();
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
 
     rerender({
       showCardSelector: false,
       currentStreet: 'flop',
       getFirstActionSeat,
-      dispatchUi,
+      setSelectedPlayers,
     });
 
-    expect(dispatchUi).toHaveBeenCalledWith({
-      type: 'SET_SELECTION',
-      payload: [3],
-    });
+    expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
   });
 
   it('auto-selects when card selector closes', () => {
     const { rerender } = renderAutoSelect({ showCardSelector: true });
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
 
     rerender({
       showCardSelector: false,
       currentStreet: 'preflop',
       getFirstActionSeat,
-      dispatchUi,
+      setSelectedPlayers,
     });
 
-    expect(dispatchUi).toHaveBeenCalledWith({
-      type: 'SET_SELECTION',
-      payload: [3],
-    });
+    expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
   });
 
   it('skips auto-select when card selector is open', () => {
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
     renderAutoSelect({ showCardSelector: true });
-    expect(dispatchUi).not.toHaveBeenCalled();
+    expect(setSelectedPlayers).not.toHaveBeenCalled();
   });
 
   it('skips auto-select on showdown', () => {
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
     renderAutoSelect({ currentStreet: 'showdown' });
-    expect(dispatchUi).not.toHaveBeenCalled();
+    expect(setSelectedPlayers).not.toHaveBeenCalled();
   });
 
   it('does not select when no first action seat', () => {
     getFirstActionSeat.mockReturnValue(null);
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
     renderAutoSelect();
-    expect(dispatchUi).not.toHaveBeenCalled();
+    expect(setSelectedPlayers).not.toHaveBeenCalled();
   });
 
   it('scheduleAutoSelect dispatches after setTimeout', () => {
     const { result } = renderAutoSelect();
-    dispatchUi.mockClear();
+    setSelectedPlayers.mockClear();
 
     act(() => {
       result.current.scheduleAutoSelect();
       vi.runAllTimers();
     });
 
-    expect(dispatchUi).toHaveBeenCalledWith({
-      type: 'SET_SELECTION',
-      payload: [3],
-    });
+    expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
   });
 });

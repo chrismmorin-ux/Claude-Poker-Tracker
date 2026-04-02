@@ -368,7 +368,82 @@ Board cards remove combos. If A♠ is on the board, AA goes from 6 to 3 combos, 
 
 ---
 
-## 7. Common Mistakes This Document Prevents
+## 7. First-Principles Decision Modeling
+
+### 7.1 Every Decision Derives from Game State, Not Labels
+
+A villain's fold/call/raise decision is the OUTPUT of a decision process with these inputs:
+1. **Equity vs perceived range** — how likely they are to win at showdown
+2. **Pot odds** — `betSize / (pot + betSize)` determines the equity threshold for profitable calling
+3. **Implied odds** — future streets' profit potential (f(draw outs, SPR, streets remaining))
+4. **Players remaining to act** — risk of facing further aggression
+5. **Stack-to-pot ratio (SPR)** — commitment level and maneuverability
+
+**No decision is because of a label.** A player in EP doesn't fold more "because they're in EP" — they fold more because there are 7 players behind who might have strong hands, their opening range is already narrow, and continuing OOP with marginal hands has negative implied odds. The label "EP" is a proxy for these factors, not a cause.
+
+### 7.2 Position Labels Are Proxies, Not Causes
+
+When modeling villain behavior, never use position labels (EP/MP/LP/BB) as direct lookup keys for fold rates, calling rates, or aggression. Instead, compute from the actual game state:
+- **Players remaining to act** (not "EP" vs "LP")
+- **Whether this player has positional advantage on remaining streets** (not "IP" vs "OOP" as a binary label — UTG+1 can be IP vs the UTG opener, CO can be OOP vs BTN)
+- **The player's range given their action sequence** (not "EP range is tight")
+
+Position labels can serve as **priors** in a Bayesian framework — they encode typical behavior patterns. But they must never be the final answer, and they must yield to computed game-state factors when those are available.
+
+### 7.3 Bucket Labels Are Relative Approximations
+
+Hand strength buckets (nuts/strong/marginal/draw/air) are **relative to the current range**, not absolute. A top pair is "strong" when villain's range is wide (45% VPIP player) but "marginal" when villain's range is narrow (12% VPIP nit). The same hand shifts buckets depending on who you're against.
+
+When per-combo equity is available (as it is in depth-2/3 evaluation), use the exact equity value rather than the bucket label. A combo with 0.68 equity against hero's hand should not be treated the same as one with 0.52 equity just because both are classified as "strong."
+
+Bucket labels are acceptable for:
+- Range-level aggregation (what % of villain's range is air?)
+- Display and narrative (describing ranges to the user)
+- Situations where per-combo equity is unavailable
+
+Bucket labels are NOT acceptable for:
+- Per-combo action probability computation (use equity ratio instead)
+- Fold/call/raise rate lookups (use logistic of equity ratio instead)
+
+### 7.4 Style Labels Must Not Double-Count
+
+A player's style (Fish/Nit/LAG/TAG) is a **categorization derived from their stats** (VPIP, PFR, AF). Using the style label to apply adjustments AND the underlying stats to apply separate adjustments double-counts the same behavioral information.
+
+**The hierarchy (pick ONE per adjustment):**
+1. **Villain decision model** — personalized from this player's observed actions (highest fidelity)
+2. **Observed aggregate stats** — foldToCbet, AF, VPIP from this player's data
+3. **Style-conditioned parameters** — Fish/Nit/LAG structural model (logistic steepness, raise thresholds)
+4. **Population priors** — what a typical unknown 1/2 player would do
+
+When a higher-fidelity source is present, lower-fidelity redundant adjustments MUST NOT stack on top. The villain model already encodes the Fish's tendency to call too much — applying a Fish steepness modifier on top double-counts it.
+
+**Example of wrong (quadruple-counting):**
+- Style fold ratio: Fish folds less (from STYLE_PRIORS)
+- AF adjustment: low AF → folds less (AF is why they're classified Fish)
+- VPIP adjustment: high VPIP → folds less (VPIP is why they're classified Fish)
+- Villain model: observed fold rate is low (from same hands used for classification)
+- All four encode: "This player folds less." Applied multiplicatively, a legitimate 30% fold rate becomes 23%.
+
+**Example of correct (single-counting):**
+- Villain model present with confidence ≥ 0.3? Use model. Skip style/AF/VPIP adjustments.
+- No model but observed foldToCbet with N ≥ 5? Use observed stat. Skip style.
+- No observed data? Use style-conditioned logistic. Skip AF/VPIP (they're the inputs to the style).
+
+### 7.5 Computed vs Lookup — Decision Framework
+
+Before adding any constant, multiplier, or lookup table, ask:
+
+| Question | If Yes | If No |
+|----------|--------|-------|
+| Can this be computed from equity + pot odds + SPR? | Compute it | Consider lookup |
+| Is the needed input (equity, pot size, etc.) available at the call site? | Compute it | Thread the input, then compute |
+| Does a villain model or observed stat already capture this? | Don't add another adjustment | Add as lowest-priority fallback |
+| Is this a position/IP/OOP adjustment? | Derive from players-remaining and range width | Don't use position label |
+| Is this a per-bucket rate? | Use per-combo equity if available | Bucket label acceptable for range-level |
+
+---
+
+## 8. Common Mistakes This Document Prevents
 
 1. **Treating equity as a percentage to compare**: 55% equity is NOT "barely winning." It's a significant edge that compounds over hundreds of hands.
 
@@ -387,3 +462,11 @@ Board cards remove combos. If A♠ is on the board, AA goes from 6 to 3 combos, 
 8. **Skipping from analysis to exploit without identifying the weakness**: "Player has high VPIP" is an observation. "Player calls with hands below the equity threshold" is the weakness. "Value bet thin, never bluff" is the exploit. Each phase requires the previous one. Generating exploits without first identifying the specific -EV decision is how incorrect recommendations get produced.
 
 9. **Treating MDF as a mandate rather than a baseline**: MDF tells us the theoretically correct defense frequency. But exploitative play deliberately deviates from MDF. Against a player who never bluffs, folding 100% to their bets is correct even though MDF says defend. Against a player who always bluffs, calling 100% is correct even though MDF says fold some.
+
+10. **Using position labels as decision drivers**: "EP folds more" is an observed correlation, not a cause. EP folds more because of players remaining to act, narrow ranges, and OOP disadvantage — all computable from game state. Never use `if (position === 'EP') foldRate *= 1.05`. Instead, compute from the factors that CAUSE the fold rate difference. (See §7.2)
+
+11. **Using bucket labels instead of per-combo equity**: When the game tree evaluates individual combos, it has exact equity. Using `POP_CALLING_RATES['air'] = 0.08` when the combo's actual equity is 0.12 and pot odds are 0.25 discards information. The logistic `f(equity / potOdds)` is always more precise than a bucket lookup. (See §7.3)
+
+12. **Double-counting style and stats**: Style IS stats. A "Fish" is defined by VPIP>40 + PFR<10. Applying a Fish multiplier AND a VPIP>40 multiplier AND a low-AF multiplier counts the same signal 3×. Each behavioral dimension should be counted exactly once — use the highest-fidelity source available and skip the rest. (See §7.4)
+
+13. **Treating IP/OOP as a binary structural fact**: IP/OOP is contextual — UTG+1 is IP vs UTG but OOP vs everyone else. The advantage comes from acting last (better information, free cards, equity realization), not from a label. Whether a player is IP depends on who they're against in the current hand, not their seat number.

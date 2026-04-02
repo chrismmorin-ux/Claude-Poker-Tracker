@@ -8,7 +8,6 @@
 import { useCallback } from 'react';
 import { logger } from '../utils/errorHandler';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
-import { UI_ACTIONS } from '../reducers/uiReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { SESSION_ACTIONS } from '../reducers/sessionReducer';
 import { allCardsAssigned as allCardsAssignedUtil } from '../utils/actionUtils';
@@ -42,7 +41,11 @@ export const useGameHandlers = () => {
   const {
     selectedPlayers,
     openCardSelector,
-    dispatchUi,
+    clearSelection,
+    setSelectedPlayers,
+    openShowdownView,
+    setHighlightedCardIndex,
+    setContextMenu,
   } = useUI();
 
   const {
@@ -89,25 +92,25 @@ export const useGameHandlers = () => {
     });
 
     dispatchGame({ type: GAME_ACTIONS.TOGGLE_ABSENT, payload: selectedPlayers });
-    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
-  }, [selectedPlayers, dispatchGame, dispatchUi]);
+    clearSelection();
+  }, [selectedPlayers, dispatchGame, clearSelection]);
 
   const clearStreetActions = useCallback(() => {
     dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
     const firstSeat = getFirstActionSeat();
-    dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
-  }, [dispatchGame, dispatchUi, getFirstActionSeat]);
+    setSelectedPlayers([firstSeat]);
+  }, [dispatchGame, setSelectedPlayers, getFirstActionSeat]);
 
   const openShowdownScreen = useCallback(() => {
-    dispatchUi({ type: UI_ACTIONS.OPEN_SHOWDOWN_VIEW });
-  }, [dispatchUi]);
+    openShowdownView();
+  }, [openShowdownView]);
 
   const nextStreet = useCallback(() => {
     const currentIndex = STREETS.indexOf(currentStreet);
     if (currentIndex < STREETS.length - 1) {
       const nextStreetName = STREETS[currentIndex + 1];
       dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: nextStreetName });
-      dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+      clearSelection();
 
       if (nextStreetName === 'flop') {
         openCardSelector('community', 0);
@@ -119,7 +122,7 @@ export const useGameHandlers = () => {
         openShowdownScreen();
       }
     }
-  }, [currentStreet, dispatchGame, dispatchUi, openCardSelector, openShowdownScreen]);
+  }, [currentStreet, dispatchGame, clearSelection, openCardSelector, openShowdownScreen]);
 
   const isSeatInactive = useCallback((seat) => {
     return seatUtilsIsSeatInactive(seat, absentSeats, actionSequence);
@@ -137,8 +140,8 @@ export const useGameHandlers = () => {
     } else if (type === 'hole') {
       dispatchCard({ type: CARD_ACTIONS.CLEAR_HOLE_CARDS });
     }
-    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
-  }, [dispatchCard, dispatchUi]);
+    setHighlightedCardIndex(null);
+  }, [dispatchCard, setHighlightedCardIndex]);
 
   const getCardStreet = useCallback((card) => {
     const communityIndex = communityCards.indexOf(card);
@@ -155,21 +158,21 @@ export const useGameHandlers = () => {
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
     dispatchGame({ type: GAME_ACTIONS.NEXT_HAND });
     dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
-    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    clearSelection();
     log('nextHand: dealer advanced, all cards/actions cleared, hand count incremented');
-  }, [dispatchCard, dispatchGame, dispatchSession, dispatchUi]);
+  }, [dispatchCard, dispatchGame, dispatchSession, clearSelection]);
 
   const resetHand = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
     dispatchGame({ type: GAME_ACTIONS.RESET_HAND });
-    dispatchUi({ type: UI_ACTIONS.CLEAR_SELECTION });
+    clearSelection();
     log('resetHand: all state cleared including absent seats');
-  }, [dispatchCard, dispatchGame, dispatchUi]);
+  }, [dispatchCard, dispatchGame, clearSelection]);
 
   const handleSetMySeat = useCallback((seat) => {
     dispatchGame({ type: GAME_ACTIONS.SET_MY_SEAT, payload: seat });
-    dispatchUi({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
-  }, [dispatchGame, dispatchUi]);
+    setContextMenu(null);
+  }, [dispatchGame, setContextMenu]);
 
   const getRemainingSeats = useCallback(() => {
     // Find the last bet/raise on this street to determine who needs to respond
@@ -259,7 +262,7 @@ export const useGameHandlers = () => {
     for (const seat of sorted) {
       // Stop BEFORE the first invested seat
       if ((contributions[seat] || 0) > 0) {
-        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [seat] });
+        setSelectedPlayers([seat]);
         break;
       }
       dispatchGame({
@@ -271,7 +274,7 @@ export const useGameHandlers = () => {
     // If no invested seat found, let auto-advance pipeline handle selection
     // (previously cleared selection, leaving user stranded)
     return count;
-  }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame, dispatchUi]);
+  }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame, setSelectedPlayers]);
 
   return {
     recordSeatAction,

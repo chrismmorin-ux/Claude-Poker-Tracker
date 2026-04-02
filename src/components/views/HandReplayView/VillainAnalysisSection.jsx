@@ -13,6 +13,7 @@ import { getCardsForStreet } from '../../../utils/pokerCore/cardParser';
 import { getPlayerName } from '../../../utils/handAnalysis';
 import { RangeGrid } from '../../ui/RangeGrid';
 import { SegmentationBar } from '../../ui/SegmentationBar';
+import { PRED_SOURCE_SHORT } from '../OnlineView/onlineConstants';
 
 export const VillainAnalysisSection = ({
   selectedVillainSeat,
@@ -205,10 +206,15 @@ export const VillainAnalysisSection = ({
               </div>
             </div>
           )}
+
+          {/* Model prediction vs actual */}
+          {villainAnalysis?.modelPrediction && (
+            <ModelPredictionBar prediction={villainAnalysis.modelPrediction} />
+          )}
         </>
       )}
 
-      {/* "With Hindsight" view */}
+      {/* "With Hindsight" view — below model prediction */}
       {analysisLens === 'hindsight' && villainCards && (
         <div className="space-y-3">
           {isHindsightComputing ? (
@@ -289,6 +295,92 @@ export const VillainAnalysisSection = ({
           )}
         </div>
       )}
+    </div>
+  );
+};
+
+// ─── Model Prediction Bar ───────────────────────────────────────────────────
+
+const PRED_COLORS = {
+  fold:  '#dc2626',
+  call:  '#2563eb',
+  raise: '#ea580c',
+  bet:   '#16a34a',
+  check: '#0891b2',
+};
+
+const SURPRISE_LABEL = (s) =>
+  s <= 1.5 ? { text: 'Expected', color: '#22c55e', bg: '#166534' }
+  : s <= 3.0 ? { text: 'Unusual', color: '#eab308', bg: '#854d0e' }
+  : { text: 'Surprising', color: '#ef4444', bg: '#7f1d1d' };
+
+const ModelPredictionBar = ({ prediction }) => {
+  if (!prediction?.actions) return null;
+
+  const { actions, actualAction, surprise, source, effectiveN } = prediction;
+  const surpriseInfo = SURPRISE_LABEL(surprise);
+
+  // Sort actions by probability descending
+  const sorted = Object.entries(actions)
+    .filter(([, pct]) => pct > 0.01)
+    .sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-gray-500 text-[10px]">Model Prediction</div>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+            style={{ color: surpriseInfo.color, background: surpriseInfo.bg }}
+          >
+            {surpriseInfo.text}
+          </span>
+          <span className="text-[8px] text-gray-600">
+            {PRED_SOURCE_SHORT[source] || source}
+            {effectiveN ? ` n=${Math.round(effectiveN)}` : ''}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal bars */}
+      <div className="space-y-1">
+        {sorted.map(([actionKey, pct]) => {
+          const isActual = actionKey === actualAction;
+          const barColor = PRED_COLORS[actionKey] || '#6b7280';
+          return (
+            <div key={actionKey} className="flex items-center gap-2">
+              <span className="text-[9px] font-semibold w-8 text-right uppercase" style={{
+                color: isActual ? '#d4a847' : '#6b7280',
+              }}>
+                {actionKey.slice(0, 3)}
+              </span>
+              <div className="flex-1 h-3 bg-gray-800 rounded overflow-hidden relative">
+                <div
+                  className="h-full rounded"
+                  style={{
+                    width: `${Math.round(pct * 100)}%`,
+                    backgroundColor: barColor,
+                    opacity: isActual ? 1 : 0.5,
+                  }}
+                />
+                {isActual && (
+                  <div className="absolute inset-0 rounded" style={{
+                    border: '1.5px solid #d4a847',
+                    width: `${Math.round(pct * 100)}%`,
+                  }} />
+                )}
+              </div>
+              <span className="text-[9px] w-7 text-right" style={{
+                color: isActual ? '#d4a847' : '#6b7280',
+                fontWeight: isActual ? 700 : 400,
+              }}>
+                {Math.round(pct * 100)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

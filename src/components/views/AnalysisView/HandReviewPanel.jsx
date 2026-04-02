@@ -8,7 +8,6 @@ import { analyzeDecisionPoint } from '../../../utils/handAnalysis';
 import { deleteHand, getSessionHandCount } from '../../../utils/persistence/index';
 import { SESSION_ACTIONS } from '../../../reducers/sessionReducer';
 import { SCREEN } from '../../../constants/uiConstants';
-import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { HandBrowser } from './HandBrowser';
 import { HandWalkthrough } from './HandWalkthrough';
 import { ReviewObservations } from './ReviewObservations';
@@ -17,7 +16,7 @@ export const HandReviewPanel = () => {
   const { allPlayers } = usePlayer();
   const { tendencyMap } = useTendency();
   const { currentSession, dispatchSession } = useSession();
-  const { setCurrentScreen, dispatchUi } = useUI();
+  const { setCurrentScreen, setReplayHand } = useUI();
   const { showError, showSuccess } = useToast();
 
   const {
@@ -64,9 +63,9 @@ export const HandReviewPanel = () => {
   const handleReplayHand = useCallback((handId) => {
     // Find the hand object to pass along, avoiding a redundant IndexedDB fetch in HandReplayView
     const hand = hands.find(h => h.handId === handId) || null;
-    dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
+    setReplayHand(handId, hand);
     setCurrentScreen(SCREEN.HAND_REPLAY);
-  }, [dispatchUi, setCurrentScreen, hands]);
+  }, [setReplayHand, setCurrentScreen, hands]);
 
   // Per-action range/equity analysis — lazy: only compute when an action is focused
   const analysisHand = focusedActionIndex !== null ? selectedHand : null;

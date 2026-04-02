@@ -178,27 +178,33 @@ export const evaluate5 = (cards) => {
 };
 
 /**
- * All C(7,5) = 21 combinations of 5 from 7.
+ * Pre-computed C(n,5) index combinations for best-hand selection.
  */
-const COMBOS_7_5 = [];
-for (let a = 0; a < 7; a++)
-  for (let b = a + 1; b < 7; b++)
-    for (let c = b + 1; c < 7; c++)
-      for (let d = c + 1; d < 7; d++)
-        for (let e = d + 1; e < 7; e++)
-          COMBOS_7_5.push([a, b, c, d, e]);
+const buildCombos = (n) => {
+  const out = [];
+  for (let a = 0; a < n; a++)
+    for (let b = a + 1; b < n; b++)
+      for (let c = b + 1; c < n; c++)
+        for (let d = c + 1; d < n; d++)
+          for (let e = d + 1; e < n; e++)
+            out.push([a, b, c, d, e]);
+  return out;
+};
+const COMBOS_6_5 = buildCombos(6); // C(6,5) = 6  — turn (2 hole + 4 board)
+const COMBOS_7_5 = buildCombos(7); // C(7,5) = 21 — river (2 hole + 5 board)
 
 /**
- * Find the best 5-card hand from 7 cards.
- * @param {number[]} cards - Array of 7 encoded card integers
+ * Find the best 5-card hand from 5-7 cards.
+ * @param {number[]} cards - Array of 5-7 encoded card integers
  * @returns {number} Best hand score
  */
 export const bestFiveFromSeven = (cards) => {
   if (!cards || cards.length < 5) return 0;
   if (cards.length === 5) return evaluate5(cards);
 
+  const combos = cards.length === 6 ? COMBOS_6_5 : COMBOS_7_5;
   let best = 0;
-  for (const combo of COMBOS_7_5) {
+  for (const combo of combos) {
     for (let k = 0; k < 5; k++) _hand5[k] = cards[combo[k]];
     const score = evaluate5(_hand5);
     if (score > best) best = score;

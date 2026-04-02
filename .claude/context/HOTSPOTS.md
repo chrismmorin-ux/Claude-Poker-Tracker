@@ -7,8 +7,8 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 | File | Risk | Reason |
 |------|------|--------|
 | `src/reducers/gameReducer.js` | HIGH | Core game state, affects all views |
-| `src/utils/persistence/database.js` | HIGH | DB schema migrations (v12), data loss risk |
-| `src/utils/persistence/migrations.js` | HIGH | Extracted migration functions (v1-v12), schema evolution |
+| `src/utils/persistence/database.js` | HIGH | DB schema migrations (v13), data loss risk |
+| `src/utils/persistence/migrations.js` | HIGH | Extracted migration functions (v1-v13), schema evolution |
 | `src/hooks/useSessionPersistence.js` | HIGH | Session lifecycle, hydration logic |
 | `src/PokerTracker.jsx` | MEDIUM | Main orchestration, context providers |
 
@@ -19,7 +19,7 @@ Files requiring extra care when modifying. Test thoroughly after changes.
 | `src/utils/rangeEngine/bayesianUpdater.js` | HIGH | Bayesian range updates, two independent decision trees |
 | `src/utils/rangeEngine/populationPriors.js` | HIGH | Population baselines, hand-strength tier construction |
 | `src/utils/exploitEngine/bayesianConfidence.js` | HIGH | Beta-Binomial credible intervals, replaces z-tests |
-| `src/utils/exploitEngine/weaknessDetector.js` | HIGH | 7 situational + 5 preflop weakness rules, range equity backed |
+| `src/utils/exploitEngine/weaknessDetector.js` | HIGH | 11 situational + 5 preflop weakness rules, range equity backed |
 | `src/utils/exploitEngine/decisionAccumulator.js` | MEDIUM | 7-dimension situation keys, cross-hand pattern accumulation |
 | `src/utils/exploitEngine/generateExploits.js` | MEDIUM | Weakness-exploit linkage, supersedes dedup, briefing enrichment |
 | `src/utils/seatUtils.js` | MEDIUM | Blind position calculation with absent seats |

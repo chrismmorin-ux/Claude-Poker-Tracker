@@ -7,7 +7,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useShowdownCardSelection } from '../useShowdownCardSelection';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
-import { UI_ACTIONS } from '../../reducers/uiReducer';
 import { createEmptyPlayerCards } from '../../test/utils';
 
 // Mock the seatUtils module
@@ -19,12 +18,14 @@ import { findNextEmptySlot } from '../../utils/seatUtils';
 
 describe('useShowdownCardSelection', () => {
   let dispatchCard;
-  let dispatchUi;
+  let setHighlightedSeat;
+  let setHighlightedHoleSlot;
   let isSeatInactive;
 
   beforeEach(() => {
     dispatchCard = vi.fn();
-    dispatchUi = vi.fn();
+    setHighlightedSeat = vi.fn();
+    setHighlightedHoleSlot = vi.fn();
     isSeatInactive = vi.fn(() => null);
     vi.mocked(findNextEmptySlot).mockReturnValue(null);
   });
@@ -52,7 +53,8 @@ describe('useShowdownCardSelection', () => {
         actionSequence: params.actionSequence,
         isSeatInactive,
         dispatchCard,
-        dispatchUi,
+        setHighlightedSeat,
+        setHighlightedHoleSlot,
         numSeats: params.numSeats,
       })
     );
@@ -188,14 +190,8 @@ describe('useShowdownCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 4,
-      });
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: 0,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(4);
+      expect(setHighlightedHoleSlot).toHaveBeenCalledWith(0);
     });
 
     it('clears highlights when no more empty slots', () => {
@@ -207,14 +203,8 @@ describe('useShowdownCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: null,
-      });
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: null,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(null);
+      expect(setHighlightedHoleSlot).toHaveBeenCalledWith(null);
     });
 
     it('calls findNextEmptySlot with correct params', () => {

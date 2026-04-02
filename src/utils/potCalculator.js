@@ -174,6 +174,56 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
   return contributions;
 };
 
+// =============================================================================
+// RAKE & ANTE UTILITIES
+// =============================================================================
+
+/**
+ * Estimate rake taken from a pot.
+ *
+ * Returns 0 when: rakeConfig is null/undefined, or street is preflop
+ * and noFlopNoDrop is true (the standard "no flop, no drop" rule).
+ * Otherwise: min(potSize * pct, cap).
+ *
+ * @param {number} potSize - Total pot at showdown
+ * @param {object|null} rakeConfig - { pct: number (0-1), cap: number ($), noFlopNoDrop: boolean }
+ * @param {string} [street='flop'] - Current street
+ * @returns {number} Estimated rake amount
+ */
+export const estimateRake = (potSize, rakeConfig, street = 'flop') => {
+  if (!rakeConfig || potSize <= 0) return 0;
+  if (street === 'preflop' && rakeConfig.noFlopNoDrop) return 0;
+  const { pct = 0, cap = Infinity } = rakeConfig;
+  return Math.min(potSize * pct, cap);
+};
+
+/**
+ * Calculate the starting pot from blinds and antes.
+ *
+ * Supports two ante formats:
+ * - 'per-player': Each player posts an ante (online tournaments).
+ *   Pot = sb + bb + (ante * seatCount)
+ * - 'bb-ante': BB posts the ante in addition to their blind (live tournaments).
+ *   Pot = sb + bb + ante
+ *
+ * @param {{ sb: number, bb: number }} blinds
+ * @param {{ amount: number, format: 'per-player'|'bb-ante', seatCount: number }} [anteConfig]
+ * @returns {number} Starting pot size
+ */
+export const calculateStartingPot = (blinds, anteConfig) => {
+  const { sb = 0, bb = 0 } = blinds || {};
+  let pot = sb + bb;
+  if (anteConfig && anteConfig.amount > 0) {
+    if (anteConfig.format === 'bb-ante') {
+      pot += anteConfig.amount;
+    } else {
+      // Default: per-player
+      pot += anteConfig.amount * (anteConfig.seatCount || 2);
+    }
+  }
+  return pot;
+};
+
 // Default multiplier/fraction arrays for each sizing scenario
 const DEFAULT_PREFLOP_OPEN = [2.5, 4, 5, 10];
 const DEFAULT_PREFLOP_RAISE = [2, 3, 4, 5];

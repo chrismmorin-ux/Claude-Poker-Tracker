@@ -88,6 +88,7 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
             villainModel: result.villainModel,
             villainProfile: result.villainProfile,
             observations: result.observations,
+            thoughtAnalysis: result.thoughtAnalysis,
           };
         } catch (e) {
           // Skip this seat on error, don't break the whole analysis

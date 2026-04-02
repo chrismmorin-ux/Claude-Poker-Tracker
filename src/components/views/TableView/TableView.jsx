@@ -12,18 +12,15 @@ import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatColor } from '../../../hooks/useSeatColor';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
 import { useSessionTimer } from '../../../hooks/useSessionTimer';
-import { useAutoSeatSelection } from '../../../hooks/useAutoSeatSelection';
 import { useAutoStreetAdvance } from '../../../hooks/useAutoStreetAdvance';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
-import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
 import { SeatContextMenu } from './SeatContextMenu';
 import { CommandStrip } from './CommandStrip';
 import { RangeDetailPanel } from '../../ui/RangeDetailPanel';
 import { PotDisplay } from '../../ui/PotDisplay';
-import { useCardSelection } from '../../../hooks/useCardSelection';
 import { useLiveEquity } from '../../../hooks/useLiveEquity';
 import { EquityBadge } from '../../ui/EquityBadge';
 
@@ -37,14 +34,11 @@ export const TableView = ({ scale }) => {
   const numSeats = LIMITS.NUM_SEATS;
 
   // Toast notifications from context
-  const { showSuccess, showWarning, showInfo } = useToast();
+  const { showSuccess } = useToast();
 
   // Game handlers from hook
   const {
-    nextHand,
-    resetHand,
     nextStreet,
-    clearStreetActions,
     openShowdownScreen,
     handleSetMySeat,
   } = useGameHandlers();
@@ -75,14 +69,11 @@ export const TableView = ({ scale }) => {
     openCardSelector,
     setSelectedPlayers,
     SCREEN,
-    dispatchUi,
     showCardSelector,
-    cardSelectorType,
-    highlightedBoardIndex,
-    setCardSelectorType,
-    setHighlightedCardIndex,
     setPendingSeatForPlayerAssignment,
     setAutoOpenNewSession,
+    startDraggingDealer,
+    stopDraggingDealer,
   } = useUI();
 
   const {
@@ -110,14 +101,14 @@ export const TableView = ({ scale }) => {
   } = useCard();
 
   // Seat utils and color
-  const { hasSeatFolded, getFirstActionSeat, getNextActionSeat, isStreetComplete, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats);
+  const { hasSeatFolded, getNextActionSeat, isStreetComplete, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, numSeats);
   const getSeatColor = useSeatColor({ hasSeatFolded, selectedPlayers, mySeat, absentSeats, actionSequence, currentStreet, smallBlindSeat, bigBlindSeat });
 
   // Dealer drag handlers (need tableRef)
   const handleDealerDragStart = useCallback((e) => {
-    dispatchUi({ type: UI_ACTIONS.START_DRAGGING_DEALER });
+    startDraggingDealer();
     e.preventDefault();
-  }, [dispatchUi]);
+  }, [startDraggingDealer]);
 
   // Shared drag logic — finds nearest seat from pointer coordinates
   const findNearestSeat = useCallback((clientX, clientY) => {
@@ -156,8 +147,8 @@ export const TableView = ({ scale }) => {
 
   const handleDealerDragEnd = useCallback((e) => {
     if (isDraggingDealer) { e.stopPropagation(); e.preventDefault(); }
-    dispatchUi({ type: UI_ACTIONS.STOP_DRAGGING_DEALER });
-  }, [isDraggingDealer, dispatchUi]);
+    stopDraggingDealer();
+  }, [isDraggingDealer, stopDraggingDealer]);
 
   // Seat right-click handler (needs tableRef + SEAT_POSITIONS)
   const handleSeatRightClick = useCallback((e, seat) => {
@@ -166,11 +157,8 @@ export const TableView = ({ scale }) => {
     if (!seatPos) return;
     const seatX = (seatPos.x / 100) * LAYOUT.FELT_WIDTH + LAYOUT.TABLE_OFFSET_X;
     const seatY = (seatPos.y / 100) * LAYOUT.FELT_HEIGHT + LAYOUT.TABLE_OFFSET_Y;
-    dispatchUi({
-      type: UI_ACTIONS.SET_CONTEXT_MENU,
-      payload: { x: seatX + LAYOUT.CONTEXT_MENU_OFFSET_X, y: seatY + LAYOUT.CONTEXT_MENU_OFFSET_Y, seat }
-    });
-  }, [dispatchUi]);
+    setContextMenu({ x: seatX + LAYOUT.CONTEXT_MENU_OFFSET_X, y: seatY + LAYOUT.CONTEXT_MENU_OFFSET_Y, seat });
+  }, [setContextMenu]);
 
   const setDealerSeat = useCallback((seat) => {
     dispatchGame({ type: GAME_ACTIONS.SET_DEALER, payload: seat });
@@ -179,9 +167,6 @@ export const TableView = ({ scale }) => {
   const setCurrentStreet = useCallback((street) => {
     dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
   }, [dispatchGame]);
-
-  // Auto-select first action seat on mount, street change, or card selector close
-  const { scheduleAutoSelect } = useAutoSeatSelection(showCardSelector, currentStreet, getFirstActionSeat, dispatchUi);
 
   // Auto-advance to next street when all actions are complete
   useAutoStreetAdvance(
@@ -325,35 +310,6 @@ export const TableView = ({ scale }) => {
     setCurrentScreen(SCREEN.SESSIONS);
   };
 
-  const handleNextHandWithToast = () => {
-    const handNumber = (currentSession?.handCount || 0) + 1;
-    nextHand();
-    if (hasActions) {
-      showSuccess(`Hand #${handNumber} completed`);
-    } else {
-      showInfo(`Hand #${handNumber + 1} started`);
-    }
-    scheduleAutoSelect();
-  };
-
-  const handleResetHandWithToast = () => {
-    resetHand();
-    showWarning('Hand reset');
-    scheduleAutoSelect();
-  };
-
-  const handleClearStreetWithAutoSelect = () => {
-    clearStreetActions();
-    // clearStreetActions already auto-selects in useGameHandlers
-  };
-
-  const handleStreetChange = (street) => {
-    setCurrentStreet(street);
-    if (street === 'showdown') {
-      openShowdownScreen();
-    }
-  };
-
   const handleMakeDealer = (seat) => {
     setDealerSeat(seat);
     setContextMenu(null);
@@ -391,19 +347,6 @@ export const TableView = ({ scale }) => {
 
   // PFR badge: show on postflop streets
   const pfrSeat = currentStreet !== 'preflop' ? getPreflopAggressor(actionSequence) : null;
-
-  const hasActions = actionSequence.length > 0;
-
-  // HE-1b: Card selector overlay
-  const selectCard = useCardSelection(
-    highlightedBoardIndex,
-    cardSelectorType,
-    communityCards,
-    holeCards,
-    currentStreet,
-    dispatchCard,
-    dispatchUi
-  );
 
   return (
     <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
@@ -588,12 +531,8 @@ export const TableView = ({ scale }) => {
 
           {/* Command Strip - unified right panel (CH-2: consumes contexts directly) */}
           <CommandStrip
-            onStreetChange={handleStreetChange}
-            onClearStreet={handleClearStreetWithAutoSelect}
-            onNextHand={handleNextHandWithToast}
-            onResetHand={handleResetHandWithToast}
-            onSelectCard={selectCard}
             liveEquity={liveEquity}
+            boardTexture={boardTexture}
           />
 
         </div>

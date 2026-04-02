@@ -54,23 +54,27 @@ export const GAME_TYPES = {
   TOURNAMENT: {
     label: 'Tournament',
     buyInDefault: 0,
-    rebuyDefault: 0
+    rebuyDefault: 0,
+    rake: null,
   },
   ONE_TWO: {
     label: '1/2',
     buyInDefault: 200,
-    rebuyDefault: 200
+    rebuyDefault: 200,
+    rake: { pct: 0.10, cap: 8, noFlopNoDrop: true },
   },
   ONE_THREE: {
     label: '1/3',
     buyInDefault: 300,
-    rebuyDefault: 300
+    rebuyDefault: 300,
+    rake: { pct: 0.10, cap: 10, noFlopNoDrop: true },
   },
   TWO_FIVE: {
     label: '2/5',
     buyInDefault: 500,
-    rebuyDefault: 500
-  }
+    rebuyDefault: 500,
+    rake: { pct: 0.05, cap: 15, noFlopNoDrop: true },
+  },
 };
 
 /**

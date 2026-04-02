@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy } from 'lucide-react';
+import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy, MonitorSmartphone } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 import { NAV_COLORS } from '../../constants/designTokens';
 
@@ -134,6 +134,7 @@ export const CollapsibleSidebar = ({
     { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
     { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },
     ...(isTournament ? [{ screen: SCREEN.TOURNAMENT, label: 'Tournament', icon: <Trophy size={20} />, navKey: 'tournament' }] : []),
+    { screen: SCREEN.EXTENSION, label: 'Extension', icon: <MonitorSmartphone size={20} />, navKey: 'extension' },
     { screen: SCREEN.SETTINGS, label: 'Settings', icon: <Settings size={20} />, navKey: 'settings' },
   ];
 

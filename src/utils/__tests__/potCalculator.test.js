@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseBlinds, calculatePot, getCurrentBet, getSizingOptions } from '../potCalculator';
+import { parseBlinds, calculatePot, getCurrentBet, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 describe('parseBlinds', () => {
@@ -161,5 +161,97 @@ describe('getSizingOptions', () => {
     expect(options).toHaveLength(4);
     expect(options[0]).toEqual({ label: '2x', amount: 20 });
     expect(options[1]).toEqual({ label: '3x', amount: 30 });
+  });
+});
+
+// =============================================================================
+// estimateRake
+// =============================================================================
+
+describe('estimateRake', () => {
+  const rakeConfig = { pct: 0.10, cap: 8, noFlopNoDrop: true };
+
+  it('returns 0 for null config', () => {
+    expect(estimateRake(100, null, 'flop')).toBe(0);
+  });
+
+  it('returns 0 for undefined config', () => {
+    expect(estimateRake(100, undefined, 'flop')).toBe(0);
+  });
+
+  it('returns 0 for zero pot', () => {
+    expect(estimateRake(0, rakeConfig, 'flop')).toBe(0);
+  });
+
+  it('returns 0 for negative pot', () => {
+    expect(estimateRake(-10, rakeConfig, 'flop')).toBe(0);
+  });
+
+  it('returns 0 on preflop with noFlopNoDrop', () => {
+    expect(estimateRake(50, rakeConfig, 'preflop')).toBe(0);
+  });
+
+  it('takes rake on preflop when noFlopNoDrop is false', () => {
+    const config = { pct: 0.10, cap: 8, noFlopNoDrop: false };
+    expect(estimateRake(50, config, 'preflop')).toBe(5);
+  });
+
+  it('calculates percentage-based rake', () => {
+    expect(estimateRake(50, rakeConfig, 'flop')).toBe(5);
+  });
+
+  it('caps rake at configured maximum', () => {
+    expect(estimateRake(200, rakeConfig, 'turn')).toBe(8); // 10% of 200 = 20, capped at 8
+  });
+
+  it('handles small pots below cap', () => {
+    expect(estimateRake(30, rakeConfig, 'river')).toBe(3); // 10% of 30 = 3, below cap
+  });
+
+  it('defaults street to flop', () => {
+    expect(estimateRake(40, rakeConfig)).toBe(4);
+  });
+});
+
+// =============================================================================
+// calculateStartingPot
+// =============================================================================
+
+describe('calculateStartingPot', () => {
+  it('calculates pot from blinds only (no ante)', () => {
+    expect(calculateStartingPot({ sb: 1, bb: 2 })).toBe(3);
+  });
+
+  it('calculates pot with per-player ante', () => {
+    const ante = { amount: 1, format: 'per-player', seatCount: 9 };
+    expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(12); // 1 + 2 + 9
+  });
+
+  it('calculates pot with bb-ante', () => {
+    const ante = { amount: 2, format: 'bb-ante', seatCount: 9 };
+    expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(5); // 1 + 2 + 2
+  });
+
+  it('handles zero ante amount', () => {
+    const ante = { amount: 0, format: 'per-player', seatCount: 9 };
+    expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(3);
+  });
+
+  it('handles null ante config', () => {
+    expect(calculateStartingPot({ sb: 5, bb: 10 }, null)).toBe(15);
+  });
+
+  it('handles null blinds', () => {
+    expect(calculateStartingPot(null)).toBe(0);
+  });
+
+  it('defaults to per-player format when format not specified', () => {
+    const ante = { amount: 1, seatCount: 6 };
+    expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(9); // 1 + 2 + 6
+  });
+
+  it('defaults seatCount to 2 when not specified', () => {
+    const ante = { amount: 5, format: 'per-player' };
+    expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(13); // 1 + 2 + 10
   });
 });

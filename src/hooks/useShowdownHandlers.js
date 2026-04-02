@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
-import { UI_ACTIONS } from '../reducers/uiReducer';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { ACTIONS, SEAT_ARRAY } from '../constants/gameConstants';
 import { findFirstActiveSeat, findNextActiveSeat, isSeatShowdownActive } from '../utils/seatUtils';
@@ -11,7 +10,10 @@ import { findFirstActiveSeat, findNextActiveSeat, isSeatShowdownActive } from '.
  */
 export const useShowdownHandlers = ({
   dispatchCard,
-  dispatchUi,
+  setHighlightedSeat,
+  setHighlightedHoleSlot,
+  closeShowdownView,
+  closeCardSelector,
   dispatchGame,
   isSeatInactive,
   actionSequence,
@@ -26,22 +28,22 @@ export const useShowdownHandlers = ({
     dispatchGame({ type: GAME_ACTIONS.CLEAR_STREET_ACTIONS });
 
     const firstActive = findFirstActiveSeat(numSeats, isSeatInactive, actionSequence) || 1;
-    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: firstActive });
-    dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
+    setHighlightedSeat(firstActive);
+    setHighlightedHoleSlot(0);
     log('handleClearShowdownCards: cards cleared, first active seat selected');
-  }, [dispatchCard, dispatchUi, dispatchGame, isSeatInactive, actionSequence, numSeats, log]);
+  }, [dispatchCard, setHighlightedSeat, setHighlightedHoleSlot, dispatchGame, isSeatInactive, actionSequence, numSeats, log]);
 
   // Helper: Advance to next active seat in showdown (skips folded/absent/mucked/won)
   const advanceToNextActiveSeat = useCallback((fromSeat) => {
     const nextSeat = findNextActiveSeat(fromSeat, numSeats, isSeatInactive, actionSequence);
     if (nextSeat !== null) {
-      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: nextSeat });
-      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: 0 });
+      setHighlightedSeat(nextSeat);
+      setHighlightedHoleSlot(0);
     } else {
-      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT, payload: null });
-      dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT, payload: null });
+      setHighlightedSeat(null);
+      setHighlightedHoleSlot(null);
     }
-  }, [isSeatInactive, actionSequence, dispatchUi, numSeats]);
+  }, [isSeatInactive, actionSequence, setHighlightedSeat, setHighlightedHoleSlot, numSeats]);
 
   // Handler: Mark seat as mucked and advance (auto-win on heads-up)
   const handleMuckSeat = useCallback((seat) => {
@@ -81,18 +83,18 @@ export const useShowdownHandlers = ({
   // Handler: Close showdown view and advance to next hand
   const handleNextHandFromShowdown = useCallback(() => {
     nextHand();
-    dispatchUi({ type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-  }, [nextHand, dispatchUi]);
+    closeShowdownView();
+  }, [nextHand, closeShowdownView]);
 
   // Handler: Close showdown view
   const handleCloseShowdown = useCallback(() => {
-    dispatchUi({ type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW });
-  }, [dispatchUi]);
+    closeShowdownView();
+  }, [closeShowdownView]);
 
   // Handler: Close card selector
   const handleCloseCardSelector = useCallback(() => {
-    dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
-  }, [dispatchUi]);
+    closeCardSelector();
+  }, [closeCardSelector]);
 
   return {
     handleClearShowdownCards,

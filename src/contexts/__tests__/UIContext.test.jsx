@@ -410,8 +410,10 @@ describe('UIContext', () => {
       expect(result.current).toHaveProperty('highlightedSeat');
       expect(result.current).toHaveProperty('highlightedHoleSlot');
 
-      // Dispatch
-      expect(result.current).toHaveProperty('dispatchUi');
+      // New named handlers (CH-4)
+      expect(result.current).toHaveProperty('startDraggingDealer');
+      expect(result.current).toHaveProperty('stopDraggingDealer');
+      expect(result.current).toHaveProperty('setReplayHand');
 
       // Constants
       expect(result.current).toHaveProperty('SCREEN');

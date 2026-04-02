@@ -170,6 +170,67 @@ const RangeAwarenessSection = ({ rangeShape, awareness, decisionModelShape, deci
 );
 
 // =============================================================================
+// THOUGHT INFERENCE
+// =============================================================================
+
+const ThoughtInferenceSection = ({ thoughtAnalysis }) => {
+  if (!thoughtAnalysis?.thoughts?.length) {
+    return (
+      <Section title="How They Think" icon={Brain} defaultOpen={false}>
+        <div className="text-sm text-gray-500 italic">Not enough behavioral signals to infer cognitive patterns</div>
+      </Section>
+    );
+  }
+
+  const { thoughts, contradictions, cognitiveProfile, totalSignalsEvaluated } = thoughtAnalysis;
+
+  return (
+    <Section title={`How They Think (${thoughts.length})`} icon={Brain}>
+      {cognitiveProfile && (
+        <div className="text-sm text-gray-400 italic mb-3 pb-2 border-b border-gray-700">
+          {cognitiveProfile}
+        </div>
+      )}
+      <div className="space-y-3">
+        {thoughts.map((t) => (
+          <div key={t.id} className="bg-gray-750 rounded p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold text-amber-400 italic flex-1">
+                &ldquo;{t.thought}&rdquo;
+              </span>
+              <span className="text-xs text-gray-500">{t.supporting} signals</span>
+              <ConfidenceBar confidence={t.confidence} />
+            </div>
+            <div className="text-xs text-gray-400 mb-2">{t.meaning}</div>
+            {t.predicts?.length > 0 && (
+              <div className="pl-2 border-l-2 border-gray-600">
+                <div className="text-xs text-gray-500 font-semibold mb-1">Predicts:</div>
+                {t.predicts.map((p, i) => (
+                  <div key={i} className="text-xs text-gray-400 mb-0.5">• {p}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {contradictions?.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <div className="text-xs text-gray-500 font-semibold">Contradictions:</div>
+          {contradictions.map((c, i) => (
+            <div key={i} className="text-xs text-red-300 bg-red-900/20 rounded p-2 italic">
+              {c.insight}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="text-xs text-gray-600 mt-2">
+        {totalSignalsEvaluated} behavioral signals evaluated
+      </div>
+    </Section>
+  );
+};
+
+// =============================================================================
 // VULNERABILITIES
 // =============================================================================
 
@@ -424,7 +485,7 @@ const HeroNotesSection = ({ notes, onNotesChange }) => {
 // MAIN MODAL
 // =============================================================================
 
-export const VillainProfileModal = ({ isOpen, onClose, playerName, villainProfile, playerId, notes, onNotesChange }) => {
+export const VillainProfileModal = ({ isOpen, onClose, playerName, villainProfile, thoughtAnalysis, playerId, notes, onNotesChange }) => {
   if (!isOpen) return null;
 
   const hasProfile = villainProfile && villainProfile.maturity !== 'unknown';
@@ -480,6 +541,7 @@ export const VillainProfileModal = ({ isOpen, onClose, playerName, villainProfil
                 decisionModelShape={villainProfile.decisionModelShape}
                 decisionModelDescription={villainProfile.decisionModelDescription}
               />
+              <ThoughtInferenceSection thoughtAnalysis={thoughtAnalysis} />
               <VulnerabilitiesSection vulnerabilities={villainProfile.vulnerabilities} />
               <ShowdownSection anchors={villainProfile.showdownAnchors} />
               <AuditSection playerId={playerId} />

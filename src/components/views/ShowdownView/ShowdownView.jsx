@@ -51,7 +51,8 @@ export const ShowdownView = ({ scale }) => {
     highlightedHoleSlot,
     setHighlightedSeat,
     setHighlightedHoleSlot,
-    dispatchUi,
+    closeShowdownView,
+    closeCardSelector,
   } = useUI();
 
   // Game handlers for shared logic
@@ -71,7 +72,10 @@ export const ShowdownView = ({ scale }) => {
     handleCloseShowdown,
   } = useShowdownHandlers({
     dispatchCard,
-    dispatchUi,
+    setHighlightedSeat,
+    setHighlightedHoleSlot,
+    closeShowdownView,
+    closeCardSelector,
     dispatchGame,
     isSeatInactive,
     actionSequence,
@@ -92,7 +96,8 @@ export const ShowdownView = ({ scale }) => {
     actionSequence,
     isSeatInactive,
     dispatchCard,
-    dispatchUi,
+    setHighlightedSeat,
+    setHighlightedHoleSlot,
     numSeats: LIMITS.NUM_SEATS,
   });
 

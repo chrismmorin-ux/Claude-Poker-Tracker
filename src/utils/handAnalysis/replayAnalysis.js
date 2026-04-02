@@ -12,6 +12,7 @@ import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
 import { narrowByBoard } from '../exploitEngine/postflopNarrower';
 import { segmentRange } from '../exploitEngine/rangeSegmenter';
 import { buildSituationKey } from '../exploitEngine/decisionAccumulator';
+import { queryActionDistribution } from '../exploitEngine/villainDecisionModel';
 import { handVsRange } from '../exploitEngine/equityCalculator';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
 import { getPopulationPrior } from '../rangeEngine/populationPriors';
@@ -374,6 +375,49 @@ export const analyzeTimelineAction = async ({
     ? new Float64Array(seatRanges[String(heroSeat)])
     : null;
 
+  // Model prediction for villain actions (non-hero, postflop only)
+  let modelPrediction = null;
+  if (heroSeat && String(seat) !== String(heroSeat) && street !== 'preflop') {
+    const playerId = seatPlayers[seat];
+    const villainModel = tendencyMap?.[playerId]?.villainModel;
+    if (villainModel?._buckets) {
+      // Determine what villain was facing
+      const prevActions = timeline.slice(0, index).filter(a => a.street === street && a.seat !== seat);
+      const lastOpponentAction = prevActions.length > 0 ? prevActions[prevActions.length - 1].action : null;
+      const facingAction = (lastOpponentAction === 'bet' || lastOpponentAction === 'raise') ? 'bet' : 'none';
+      const heroIP = heroSeat ? isInPosition(Number(heroSeat), Number(seat), buttonSeat) : null;
+      const villainIP = heroIP === true ? 'oop' : heroIP === false ? 'ip' : '*';
+
+      try {
+        const dist = queryActionDistribution(
+          villainModel, street, boardTexture?.texture || '*', posCategory, '*', villainIP, facingAction
+        );
+        if (dist.confidence > 0) {
+          // Compute surprise score: -log2(predicted probability of actual action)
+          const primitiveAction = LEGACY_TO_PRIMITIVE[action] || action;
+          const actionKey = primitiveAction === PRIMITIVE_ACTIONS.BET ? 'bet'
+            : primitiveAction === PRIMITIVE_ACTIONS.RAISE ? 'raise'
+            : primitiveAction === PRIMITIVE_ACTIONS.CALL ? 'call'
+            : primitiveAction === PRIMITIVE_ACTIONS.CHECK ? 'check'
+            : 'fold';
+          const predictedPct = dist.actions[actionKey] || 0;
+          const surprise = predictedPct > 0.01 ? -Math.log2(predictedPct) : 5;
+
+          modelPrediction = {
+            actions: dist.actions,
+            confidence: dist.confidence,
+            effectiveN: dist.effectiveN,
+            source: dist.source,
+            actualAction: actionKey,
+            surprise,
+          };
+        }
+      } catch {
+        // Model query is non-critical
+      }
+    }
+  }
+
   return {
     seat,
     street,
@@ -394,5 +438,6 @@ export const analyzeTimelineAction = async ({
     situationKey,
     heroAnalysis,
     heroRangeAtPoint,
+    modelPrediction,
   };
 };

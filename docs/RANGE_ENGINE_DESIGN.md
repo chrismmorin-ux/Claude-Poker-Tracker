@@ -105,7 +105,7 @@ Total Range (100% of hands dealt)
   |-- OPEN RAISE (when no raise faced)
   |-- COLD CALL (vs a raise)
   |-- 3-BET (vs a raise)
-  |-- SQUEEZE (vs raise + caller(s))
+  |-- SQUEEZE (vs raise + caller(s)) — not yet implemented in RANGE_ACTIONS
 ```
 
 ### 4.3 Mixing: A Hard Requirement
@@ -156,8 +156,8 @@ Typical live 1/2 - 1/3 player prior:
 - Cold-calls with medium pairs, suited broadways
 ```
 
-These priors have low effective weight (~5 virtual observations) and get
-overwhelmed by real data quickly. Purpose: reasonable estimates when n < 5.
+These priors have moderate effective weight (~10 virtual observations, `PRIOR_WEIGHT = 10`) and get
+overwhelmed by real data as observations accumulate. Purpose: reasonable estimates when n < 10.
 
 ### 4.5 Bayesian Update Rules
 
@@ -190,8 +190,11 @@ limp-reraise may actually be a bluff or semi-bluff. The system tracks this:
 - Data decides, not assumptions
 
 #### Cross-range constraint:
-All action weights for a given hand must sum to ~1.0 (accounting for noise).
-If the open range gets wider, the fold range must get narrower, etc.
+Action weights are normalized per-scenario, not across all actions:
+- **No raise faced**: `limp + open ≤ 1.0` per hand (fold is the complement)
+- **Facing a raise**: `coldCall + threeBet ≤ 1.0` per hand (fold is the complement)
+
+The two scenarios are independent. Fold is not stored as a grid.
 
 ### 4.6 Confidence Tiers
 
@@ -204,7 +207,7 @@ Moderate      | 15-40             | 2-4       | Data-driven, actionable
 High          | 40+               | 5+        | Strong statistical basis
 ```
 
-Each showdown observation counts as ~5 frequency observations for confidence.
+Showdown observations affect range weights via anchoring (setting weight to 1.0 with outcome-aware semantic boosting), not by inflating frequency counts.
 
 ---
 
@@ -466,7 +469,7 @@ EXPLOIT: Iso-raise his limps
 
 ### 9.1 IndexedDB Store
 
-New object store `rangeProfiles` in IndexedDB v9:
+Object store `rangeProfiles` in IndexedDB (added in v9, current schema v13):
 
 ```js
 {
@@ -476,6 +479,8 @@ New object store `rangeProfiles` in IndexedDB v9:
 ```
 
 ### 9.2 Profile Structure
+
+> **Note**: The schema below is the original design spec. The actual implementation in `rangeProfile.js:createEmptyProfile` stores only `ranges` per position. Fields like `pips`, `showdownLog`, `sizing`, and `rangeWidths` are computed at build time in `index.js:buildRangeProfile`, not persisted. The profile also includes `profileVersion` (currently 3) and `profileKey` (composite of userId + playerId).
 
 ```js
 const rangeProfile = {
@@ -519,7 +524,7 @@ const rangeProfile = {
     },
     positionallyAware: {
       posterior: 0.50,           // P(significantly different by position)
-      chiSquarePValue: null,     // statistical test when enough data
+      // Detected via LP open rate > 1.5x EP open rate (ratio heuristic)
     },
   },
 
@@ -616,10 +621,10 @@ For each position P and action A:
      For each showdown of hand h in action A at P:
        - Set range[A][h] = max(range[A][h], observed_mixing_weight)
        - Boost similar hands in same range
-  4. Apply cross-range constraints:
+  4. Apply cross-range constraints (per-scenario):
      For each hand h:
-       sum = range.limp[h] + range.open[h] + range.coldCall[h] + range.threeBet[h]
-       Normalize so sum + fold_weight ≈ 1.0
+       No-raise scenario: normalize limp[h] + open[h] ≤ 1.0
+       Faced-raise scenario: normalize coldCall[h] + threeBet[h] ≤ 1.0
   5. Compute PIP deviations vs GTO
 ```
 
@@ -656,40 +661,19 @@ TEST:
 
 ```
 src/utils/rangeEngine/
-  index.js                    // Public API
+  index.js                    // Public API (buildRangeProfile)
   rangeProfile.js             // Profile schema, create/serialize/deserialize
-  bayesianUpdater.js          // Core Bayesian update logic
+  bayesianUpdater.js          // Core Bayesian update logic + showdown anchoring
   populationPriors.js         // Default priors for live low-stakes
   actionExtractor.js          // Extract actions from hand timeline
-  showdownAnalyzer.js         // Process showdown evidence
-  crossRangeConstraints.js    // Normalization, mutual exclusivity
+  subActionExtractor.js       // Parse limp follow-up patterns
+  crossRangeConstraints.js    // Per-scenario normalization
   pipCalculator.js            // PIP deviation from GTO
-  confidenceEstimator.js      // Confidence tiers and consequence weighting
+  traitDetector.js            // Behavioral flags (traps, mixing, positional awareness)
   __tests__/
-    bayesianUpdater.test.js
-    actionExtractor.test.js
-    showdownAnalyzer.test.js
-    crossRangeConstraints.test.js
-    pipCalculator.test.js
 
-src/utils/rangeExploits/       // SEPARATE from analysis
-  index.js                    // Public API
-  exploitGenerator.js         // Generate exploits from profiles
-  exploitValidator.js         // Hypothesis testing, consequence checks
-  betSizing.js                // Optimal sizing calculations
-  potOdds.js                  // Pot odds and EV
-  __tests__/
-    exploitGenerator.test.js
-    exploitValidator.test.js
-    betSizing.test.js
-
-src/hooks/
-  useBetSizing.js             // Bet sizing quick-click calculations
-
-src/components/ui/
-  RangeGrid.jsx               // 13x13 interactive range display
-  PipSummary.jsx              // PIP deviation display
-  BetSizeSelector.jsx         // Quick-click bet sizing UI
+src/utils/exploitEngine/       // SEPARATE from analysis (32 modules)
+  // See exploitEngine/CLAUDE.md for full module listing
 ```
 
 ---
@@ -834,7 +818,7 @@ STATION SARAH showdowns:
 
 ## 14. Performance Considerations
 
-- Range profiles: ~21 KB per player (169 * Float64 * 4 actions * 5 positions)
+- Range profiles: ~33 KB per player (169 * Float64 * 5 actions * 5 positions)
 - Analysis: O(N) per player per hand iteration
 - No web workers needed for Phases 1-4
 - Phase 5 (live postflop) may benefit from a worker

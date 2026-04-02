@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
-import { UI_ACTIONS } from '../reducers/uiReducer';
 
 /**
  * Custom hook for card selection logic (community and hole cards)
@@ -14,7 +13,7 @@ export const useCardSelection = (
   holeCards,
   currentStreet,
   dispatchCard,
-  dispatchUi
+  { closeCardSelector, setHighlightedCardIndex }
 ) => {
   const selectCard = useCallback((card) => {
     if (highlightedBoardIndex === null) return;
@@ -36,14 +35,13 @@ export const useCardSelection = (
         (currentStreet === 'river' && highlightedBoardIndex === 4);
 
       if (shouldAutoClose) {
-        // Close card selector and return to table
-        dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
+        closeCardSelector();
       } else {
         // Auto-advance to next community card slot
         if (highlightedBoardIndex < 4) {
-          dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: highlightedBoardIndex + 1 });
+          setHighlightedCardIndex(highlightedBoardIndex + 1);
         } else {
-          dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: null });
+          setHighlightedCardIndex(null);
         }
       }
     } else if (cardSelectorType === 'hole') {
@@ -58,14 +56,13 @@ export const useCardSelection = (
 
       // Check if this was the second hole card
       if (highlightedBoardIndex === 1) {
-        // Close card selector and return to table (without changing street)
-        dispatchUi({ type: UI_ACTIONS.CLOSE_CARD_SELECTOR });
+        closeCardSelector();
       } else {
         // Auto-advance to next hole card slot
-        dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: 1 });
+        setHighlightedCardIndex(1);
       }
     }
-  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard, dispatchUi]);
+  }, [highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard, closeCardSelector, setHighlightedCardIndex]);
 
   return selectCard;
 };

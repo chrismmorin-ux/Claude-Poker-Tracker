@@ -1,8 +1,8 @@
 /**
  * HeroCoachingCard.jsx - Hero coaching analysis card for hand replay
  *
- * Shows EV assessment, equity comparison bar, optimal play suggestion,
- * and weakness pattern callout for hero actions.
+ * Shows EV assessment with numeric value, equity comparison bar,
+ * optimal play suggestion, alternative actions, and weakness pattern callout.
  */
 
 import React from 'react';
@@ -10,6 +10,11 @@ import { EV_COLORS } from '../../../constants/designTokens';
 
 export const HeroCoachingCard = ({ heroCoaching }) => {
   if (!heroCoaching) return null;
+
+  const ev = heroCoaching.evAssessment?.expectedValue;
+  // Only show numeric EV for calls/folds (precise) — bet/raise EV uses full-range equity, not calling range
+  const hasNumericEV = ev != null && isFinite(ev) && heroCoaching.evAssessment?.equityNeeded != null;
+  const alternatives = heroCoaching.evAssessment?.alternatives;
 
   return (
     <div className="shrink-0 bg-cyan-900/20 rounded-lg p-3 border border-cyan-700/40">
@@ -27,6 +32,14 @@ export const HeroCoachingCard = ({ heroCoaching }) => {
           >
             {heroCoaching.evAssessment.verdict}
           </span>
+          {hasNumericEV && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+              color: ev >= 0 ? '#4ade80' : '#f87171',
+            }}>
+              {ev >= 0 ? '+' : ''}{ev.toFixed(1)} EV
+            </span>
+          )}
           <span className="text-gray-400 text-[10px]">
             {heroCoaching.evAssessment.reason}
           </span>
@@ -63,6 +76,23 @@ export const HeroCoachingCard = ({ heroCoaching }) => {
         <div className="text-gray-500 text-[10px] mt-1">
           <span className="text-cyan-300">{heroCoaching.optimalPlay.suggestedAction}</span>
           {' — '}{heroCoaching.optimalPlay.reason}
+        </div>
+      )}
+
+      {/* Alternative actions with EV comparison */}
+      {alternatives && alternatives.length > 0 && (
+        <div style={{
+          display: 'flex', gap: 8, marginTop: 4, paddingTop: 3,
+          borderTop: '1px solid rgba(103, 232, 249, 0.1)',
+        }}>
+          {alternatives.map(alt => (
+            <span key={alt.action} style={{
+              fontSize: 9, fontFamily: 'monospace',
+              color: alt.ev >= 0 ? '#4ade80' : '#f87171',
+            }}>
+              {alt.action}: {alt.ev >= 0 ? '+' : ''}{alt.ev.toFixed(1)}
+            </span>
+          ))}
         </div>
       )}
 

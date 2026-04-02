@@ -12,20 +12,29 @@ We use population priors (what typical 1/2 players do) updated by observations. 
 ### 2. Mixing Is Real — Never Zero Out Hands
 A player can play the same hand different ways. AA can be limped (trap), opened, or 3-bet. When we see AA in the open range, we DO NOT set its weight in the limp range to zero. We only increase confidence that it's in the open range. See `RANGE_ENGINE_DESIGN.md` §4.3.
 
-### 3. Cross-Range Constraint: Weights Sum to ~1.0
-For any hand h at position P: `P(fold|h) + P(limp|h) + P(open|h) + P(coldCall|h) + P(3bet|h) ≈ 1.0`. When one action weight increases, others must decrease proportionally. This is enforced in `crossRangeConstraints.js`.
+### 3. Cross-Range Constraint: Per-Scenario Normalization
+The two decision trees are normalized independently:
+- **No raise faced**: `P(limp|h) + P(open|h) ≤ 1.0` per cell (fold is the complement)
+- **Facing a raise**: `P(coldCall|h) + P(threeBet|h) ≤ 1.0` per cell (fold is the complement)
+
+The two scenarios are independent — a player's open range tells you nothing about their cold-call range. Fold is not stored as a grid; it is derived within each scenario. This is enforced in `crossRangeConstraints.js`.
 
 ### 4. Two Independent Decision Trees
 Preflop has two fundamentally different situations:
 - **No raise faced**: fold / limp / open raise
-- **Facing a raise**: fold / cold-call / 3-bet (/ squeeze)
+- **Facing a raise**: fold / cold-call / 3-bet
 
 These are separate decision trees with separate frequency tracking. A player's open range tells you NOTHING about their cold-call range. See `subActionExtractor.js`.
 
-### 5. Showdown Evidence Is Sacred
+**Note**: Squeeze (vs raise + caller(s)) is documented in the design spec but not yet implemented in `RANGE_ACTIONS`.
+
+### 5. BB Has No Voluntary No-Raise Scenario
+When BB checks without facing a raise, this is not a voluntary action — it's a forced option. BB is excluded from the no-raise decision tree: `NO_RAISE_FREQUENCIES.BB` is all zeros, and `actionExtractor.js` returns null for BB checks with no raise faced. This is correct poker theory — do not attempt to "fix" it.
+
+### 6. Showdown Evidence Is Sacred
 A showdown observation is the strongest possible evidence. When we see a hand at showdown:
 1. Set its weight in the observed action to 1.0 (certainty)
-2. Apply semantic boosting to similar hands (same category, nearby strength)
+2. Apply outcome-aware semantic boosting to similar hands: winning showdowns boost neighbors more strongly (0.30/0.25/0.20 for same category/nearby/broad) than losing showdowns (0.15/0.10/0.08), reflecting that winning hands are more likely to be in the player's intentional range
 3. DO NOT reduce its weight in other action ranges (they might mix)
 4. Record in `showdownAnchors` for permanent reference
 
@@ -44,12 +53,12 @@ AKs and AKo are fundamentally different hands. AKs has ~3% more equity AND much 
 Our priors are POPULATION priors, not GTO. A typical 1/2 player limps small pairs, opens with broadways, and 3-bets only QQ+/AK. GTO opens wider, never limps, and 3-bets a polarized range. Using GTO as the prior would produce wildly wrong estimates for most live players.
 
 ### DO NOT treat observation counts as confidence directly
-5 observations with 2 showdowns is MORE informative than 15 observations with 0 showdowns. Each showdown counts as ~5 frequency observations for confidence estimation. See `RANGE_ENGINE_DESIGN.md` §4.6.
+5 observations with 2 showdowns is MORE informative than 15 observations with 0 showdowns. Showdowns affect range weights via anchoring (setting weight to 1.0 with semantic boosting), providing stronger evidence than frequency observations alone. See `RANGE_ENGINE_DESIGN.md` §4.6.
 
 ## Key Concepts
 
 ### Population Priors
-Starting beliefs based on typical live 1/2 behavior. ~5 virtual observations of weight — overwhelmed quickly by real data. Purpose: reasonable estimates when n < 5.
+Starting beliefs based on typical live 1/2 behavior. ~10 virtual observations of weight (`PRIOR_WEIGHT = 10`) — a player needs ~10 real observations before data dominates the prior. Purpose: reasonable estimates when n < 10.
 
 ### PIPs (Position-relative Incremental Points)
 Quantify how a player deviates from GTO within hand categories. "+2 pips pairs from LATE" = opens two extra pair tiers beyond GTO (e.g., 33+ instead of 55+). Computed in `pipCalculator.js`.
@@ -58,7 +67,7 @@ Quantify how a player deviates from GTO within hand categories. "+2 pips pairs f
 Binary behavioral traits detected from patterns:
 - `trapsPreflop`: plays premiums in passive lines (limp AA, limp-reraise KK)
 - `splitsRangePreflop`: same hand observed in multiple action lines
-- `positionallyAware`: significantly different ranges by position (chi-square test)
+- `positionallyAware`: significantly different ranges by position (LP open rate > 1.5x EP open rate)
 
 These traits are detected in `traitDetector.js` and fed to the exploit engine for modification.
 

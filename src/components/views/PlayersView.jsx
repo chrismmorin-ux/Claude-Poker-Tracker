@@ -10,7 +10,7 @@ import { ChevronLeft, Users } from 'lucide-react';
 import { PlayerForm } from '../ui/PlayerForm/index';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
-import { SeatGrid } from '../ui/SeatGrid';
+import { SeatAssignmentGrid } from '../ui/SeatAssignmentGrid';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { LIMITS, LAYOUT } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
@@ -426,7 +426,7 @@ export const PlayersView = ({ scale = 1 }) => {
       </div>
 
       {/* Seat Management Section */}
-      <SeatGrid
+      <SeatAssignmentGrid
         selectedSeat={selectedSeat}
         getSeatPlayerName={getSeatPlayerName}
         onSeatClick={handleSeatClick}

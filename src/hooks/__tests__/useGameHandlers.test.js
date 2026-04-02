@@ -11,12 +11,15 @@ import { renderHook, act } from '@testing-library/react';
 import { useGameHandlers } from '../useGameHandlers';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
-import { UI_ACTIONS } from '../../reducers/uiReducer';
 import { SESSION_ACTIONS } from '../../reducers/sessionReducer';
 
 // Mock all context hooks
 const mockDispatchGame = vi.fn();
-const mockDispatchUi = vi.fn();
+const mockClearSelection = vi.fn();
+const mockSetSelectedPlayers = vi.fn();
+const mockOpenShowdownView = vi.fn();
+const mockSetHighlightedCardIndex = vi.fn();
+const mockSetContextMenu = vi.fn();
 const mockDispatchCard = vi.fn();
 const mockDispatchSession = vi.fn();
 const mockOpenCardSelector = vi.fn();
@@ -37,7 +40,11 @@ vi.mock('../../contexts', () => ({
   useUI: () => ({
     selectedPlayers: mockUiState.selectedPlayers,
     openCardSelector: mockOpenCardSelector,
-    dispatchUi: mockDispatchUi,
+    clearSelection: mockClearSelection,
+    setSelectedPlayers: mockSetSelectedPlayers,
+    openShowdownView: mockOpenShowdownView,
+    setHighlightedCardIndex: mockSetHighlightedCardIndex,
+    setContextMenu: mockSetContextMenu,
   }),
   useCard: () => ({
     communityCards: mockCardState.communityCards,
@@ -98,7 +105,7 @@ describe('useGameHandlers', () => {
       expect(mockDispatchCard).toHaveBeenCalledWith({ type: CARD_ACTIONS.RESET_CARDS });
       expect(mockDispatchGame).toHaveBeenCalledWith({ type: GAME_ACTIONS.NEXT_HAND });
       expect(mockDispatchSession).toHaveBeenCalledWith({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLEAR_SELECTION });
+      expect(mockClearSelection).toHaveBeenCalled();
     });
   });
 
@@ -112,7 +119,7 @@ describe('useGameHandlers', () => {
 
       expect(mockDispatchCard).toHaveBeenCalledWith({ type: CARD_ACTIONS.RESET_CARDS });
       expect(mockDispatchGame).toHaveBeenCalledWith({ type: GAME_ACTIONS.RESET_HAND });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLEAR_SELECTION });
+      expect(mockClearSelection).toHaveBeenCalled();
     });
 
     it('does not increment hand count', () => {
@@ -197,7 +204,7 @@ describe('useGameHandlers', () => {
         type: GAME_ACTIONS.TOGGLE_ABSENT,
         payload: [3, 5],
       });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLEAR_SELECTION });
+      expect(mockClearSelection).toHaveBeenCalled();
     });
 
     it('does nothing when no players selected', () => {
@@ -283,7 +290,7 @@ describe('useGameHandlers', () => {
         type: GAME_ACTIONS.SET_STREET,
         payload: 'flop',
       });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLEAR_SELECTION });
+      expect(mockClearSelection).toHaveBeenCalled();
       expect(mockOpenCardSelector).toHaveBeenCalledWith('community', 0);
     });
 
@@ -329,7 +336,7 @@ describe('useGameHandlers', () => {
         type: GAME_ACTIONS.SET_STREET,
         payload: 'showdown',
       });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.OPEN_SHOWDOWN_VIEW });
+      expect(mockOpenShowdownView).toHaveBeenCalled();
     });
 
     it('does nothing when already on showdown', () => {
@@ -386,7 +393,7 @@ describe('useGameHandlers', () => {
         type: GAME_ACTIONS.SET_MY_SEAT,
         payload: 3,
       });
-      expect(mockDispatchUi).toHaveBeenCalledWith({ type: UI_ACTIONS.CLOSE_CONTEXT_MENU });
+      expect(mockSetContextMenu).toHaveBeenCalledWith(null);
     });
   });
 });

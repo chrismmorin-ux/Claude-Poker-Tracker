@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { OnlineAnalysisProvider, useOnlineAnalysis2 } from '../OnlineAnalysisContext';
+import { OnlineAnalysisProvider, useOnlineAnalysisContext } from '../OnlineAnalysisContext';
 
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({ user: null }),
@@ -49,7 +49,7 @@ const wrapper = ({ children }) => <OnlineAnalysisProvider>{children}</OnlineAnal
 
 describe('OnlineAnalysisContext', () => {
   it('provides analysis state', () => {
-    const { result } = renderHook(() => useOnlineAnalysis2(), { wrapper });
+    const { result } = renderHook(() => useOnlineAnalysisContext(), { wrapper });
     expect(result.current.tendencyMap).toEqual({});
     expect(result.current.handCount).toBe(0);
     expect(result.current.advice).toBe(null);
@@ -57,7 +57,7 @@ describe('OnlineAnalysisContext', () => {
 
   it('throws when used outside provider', () => {
     expect(() => {
-      renderHook(() => useOnlineAnalysis2());
-    }).toThrow('useOnlineAnalysis2 must be used within OnlineAnalysisProvider');
+      renderHook(() => useOnlineAnalysisContext());
+    }).toThrow('useOnlineAnalysisContext must be used within OnlineAnalysisProvider');
   });
 });

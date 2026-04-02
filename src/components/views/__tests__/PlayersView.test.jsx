@@ -56,8 +56,8 @@ vi.mock('../../ui/PlayerRow', () => ({
   ),
 }));
 
-vi.mock('../../ui/SeatGrid', () => ({
-  SeatGrid: ({ selectedSeat, onSeatClick, onClearAllSeats }) => (
+vi.mock('../../ui/SeatAssignmentGrid', () => ({
+  SeatAssignmentGrid: ({ selectedSeat, onSeatClick, onClearAllSeats }) => (
     <div data-testid="seat-grid">
       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((seat) => (
         <button

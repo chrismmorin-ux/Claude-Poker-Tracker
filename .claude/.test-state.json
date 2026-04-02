@@ -1,0 +1,7 @@
+{
+  "lastRun": 1775143167731,
+  "passed": true,
+  "testCount": 0,
+  "command": "bash scripts/smart-test-runner.sh",
+  "directUpdate": true
+}

@@ -54,6 +54,22 @@ export const ReviewPanel = ({
   const isHeroAction = heroSeat && currentActionEntry && Number(currentActionEntry.seat) === heroSeat;
   const heroCoaching = currentAnalysis?.heroAnalysis || null;
 
+  // Model accuracy summary across all villain actions with predictions
+  const modelAccuracy = useMemo(() => {
+    if (!actionAnalysis || actionAnalysis.length === 0) return null;
+    let correct = 0, total = 0;
+    for (const a of actionAnalysis) {
+      if (!a?.modelPrediction?.actions || !a.modelPrediction.actualAction) continue;
+      total++;
+      // "Correct" = the actual action was the model's most-probable action
+      const entries = Object.entries(a.modelPrediction.actions);
+      const topAction = entries.reduce((best, cur) => cur[1] > best[1] ? cur : best, ['', 0])[0];
+      if (topAction === a.modelPrediction.actualAction) correct++;
+    }
+    if (total < 2) return null;
+    return { correct, total };
+  }, [actionAnalysis]);
+
   return (
     <div className="flex flex-col h-full p-3 gap-3">
       {/* A. Street Progress */}
@@ -184,6 +200,19 @@ export const ReviewPanel = ({
           villainStyle={villainStyle}
         />
       </div>
+
+      {/* F. Model Accuracy Summary */}
+      {modelAccuracy && (
+        <div className="shrink-0 flex items-center justify-between px-3 py-1.5 bg-gray-800/40 rounded text-[10px]">
+          <span className="text-gray-500">Model accuracy</span>
+          <span style={{
+            fontWeight: 700,
+            color: modelAccuracy.correct / modelAccuracy.total >= 0.5 ? '#22c55e' : '#eab308',
+          }}>
+            {modelAccuracy.correct}/{modelAccuracy.total} predicted correctly
+          </span>
+        </div>
+      )}
     </div>
   );
 };

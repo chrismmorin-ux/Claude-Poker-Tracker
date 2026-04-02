@@ -186,6 +186,7 @@ describe('runAnalysisPipeline', () => {
         'rangeProfile', 'rangeSummary', 'subActionSummary',
         'decisionSummary', 'villainModel', 'villainProfile',
         'weaknesses', 'exploits', 'briefings', 'observations',
+        'thoughtAnalysis',
       ];
       expected.forEach(key => {
         expect(result, `missing key: ${key}`).toHaveProperty(key);
@@ -267,7 +268,7 @@ describe('runAnalysisPipeline', () => {
 
     it('calls buildVillainDecisionModel with decisionSummary and pct', async () => {
       runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
-      expect(mocks.buildVillainDecisionModel).toHaveBeenCalledWith(STUB_DECISION_SUM, STUB_PCT);
+      expect(mocks.buildVillainDecisionModel).toHaveBeenCalledWith(STUB_DECISION_SUM, { ...STUB_PCT, style: STUB_STYLE });
     });
 
     it('calls detectWeaknesses with the expected context object', async () => {
@@ -311,6 +312,7 @@ describe('runAnalysisPipeline', () => {
           traits:          STUB_RANGE_PROFILE.traits,
           handsProcessed:  HANDS.length,
           weaknesses:      STUB_WEAKNESSES,
+          villainModel:    STUB_VILLAIN_MODEL,
         }
       );
     });
@@ -560,7 +562,7 @@ describe('runAnalysisPipeline', () => {
     it('logs a warning when villain observations throws', async () => {
       runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
       expect(mocks.logger.warn).toHaveBeenCalledWith(
-        'AnalysisPipeline', 'villain observations failed', 'observations error'
+        'AnalysisPipeline', 'exploit/observation generation failed', 'observations error'
       );
     });
   });
@@ -606,6 +608,7 @@ describe('runAnalysisPipeline', () => {
         'rangeProfile', 'rangeSummary', 'subActionSummary',
         'decisionSummary', 'villainModel', 'villainProfile',
         'weaknesses', 'exploits', 'briefings', 'observations',
+        'thoughtAnalysis', 'diagnostics', 'completeness',
       ];
       expectedKeys.forEach(key => {
         expect(result, `missing key: ${key}`).toHaveProperty(key);
@@ -685,6 +688,44 @@ describe('runAnalysisPipeline', () => {
       const exploitArg = mocks.generateExploits.mock.calls[0][0];
       expect(exploitArg.traits).toBe(STUB_RANGE_PROFILE.traits);
       expect(exploitArg.pips).toBe(STUB_RANGE_PROFILE.pips);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Pipeline diagnostics
+  // -------------------------------------------------------------------------
+
+  describe('pipeline diagnostics', () => {
+    it('returns diagnostics with all steps completed on success', () => {
+      const result = runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
+      expect(result.diagnostics).toBeDefined();
+      expect(result.diagnostics.errors).toEqual([]);
+      expect(result.diagnostics.stepsCompleted).toEqual([
+        'stats', 'positions', 'rangeProfile', 'decisions', 'villainProfile', 'thoughtInference', 'exploits', 'briefings',
+      ]);
+      expect(result.completeness).toBe(1.0);
+    });
+
+    it('records error when range profile throws', () => {
+      mocks.buildRangeProfile.mockImplementation(() => { throw new Error('range fail'); });
+
+      const result = runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
+      expect(result.diagnostics.errors).toContainEqual({
+        step: 'rangeProfile', message: 'range fail',
+      });
+      expect(result.diagnostics.stepsCompleted).not.toContain('rangeProfile');
+      expect(result.completeness).toBeLessThan(1.0);
+    });
+
+    it('completeness reflects fraction of steps completed', () => {
+      mocks.buildRangeProfile.mockImplementation(() => { throw new Error('fail'); });
+      mocks.buildBriefings.mockImplementation(() => { throw new Error('fail'); });
+
+      const result = runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
+      // 2 steps failed out of 7: stats, positions, decisions, villainProfile, exploits still complete
+      expect(result.completeness).toBeGreaterThan(0);
+      expect(result.completeness).toBeLessThan(1.0);
+      expect(result.diagnostics.errors.length).toBe(2);
     });
   });
 });

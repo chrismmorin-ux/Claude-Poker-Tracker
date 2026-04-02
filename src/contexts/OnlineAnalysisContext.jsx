@@ -49,8 +49,8 @@ export const OnlineAnalysisProvider = ({ children }) => {
   );
 };
 
-export const useOnlineAnalysis2 = () => {
+export const useOnlineAnalysisContext = () => {
   const ctx = useContext(OnlineAnalysisContext);
-  if (!ctx) throw new Error('useOnlineAnalysis2 must be used within OnlineAnalysisProvider');
+  if (!ctx) throw new Error('useOnlineAnalysisContext must be used within OnlineAnalysisProvider');
   return ctx;
 };

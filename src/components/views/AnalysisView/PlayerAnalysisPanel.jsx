@@ -155,6 +155,7 @@ export const PlayerAnalysisPanel = () => {
         onClose={() => setProfileModalOpen(false)}
         playerName={selectedPlayer?.name}
         villainProfile={villainProfile}
+        thoughtAnalysis={tendencyMap[selectedPlayerId]?.thoughtAnalysis ?? null}
         playerId={selectedPlayerId}
         notes={selectedPlayer?.notes || ''}
         onNotesChange={handleNotesChange}
@@ -165,6 +166,7 @@ export const PlayerAnalysisPanel = () => {
         <div style={{ marginBottom: 12 }}>
           <VillainModelCard
             villainProfile={villainProfile}
+            thoughtAnalysis={tendencyMap[selectedPlayerId]?.thoughtAnalysis ?? null}
             villainStyle={tendencyMap[selectedPlayerId]?.style}
             onViewFullProfile={() => setProfileModalOpen(true)}
           />

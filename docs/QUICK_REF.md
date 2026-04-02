@@ -4,7 +4,7 @@
 - **Entry**: `src/PokerTracker.jsx` (~128 lines) — AppRoot + ViewRouter
 - **Stack**: React 18 + Vite + Tailwind, mobile-optimized (1600x720)
 - **Tests**: 2,784 tests across 132 files (Vitest + fake-indexeddb)
-- **DB**: IndexedDB v12, 7 object stores
+- **DB**: IndexedDB v13, 7 object stores
 
 ## Must-Read Docs
 1. `CLAUDE.md` — architecture, rules, working principles
@@ -31,7 +31,7 @@ src/components/ui/             37 UI components
 src/constants/                 4 constant files
 src/utils/pokerCore/           4 shared poker modules
 src/utils/rangeEngine/         9 Bayesian range estimation modules
-src/utils/exploitEngine/       16 exploit + weakness detection modules
+src/utils/exploitEngine/       32 exploit + weakness detection modules
 src/utils/handAnalysis/        7 hand review/replay modules
 src/utils/tournamentEngine/    4 tournament modules
 src/utils/persistence/         10 IndexedDB modules (incl. migrations)

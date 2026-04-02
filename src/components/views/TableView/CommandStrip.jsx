@@ -1,19 +1,23 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { Undo2, SkipForward, RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ActionSequence } from '../../ui/ActionSequence';
-import { LAYOUT, STREETS, ACTIONS, LIMITS } from '../../../constants/gameConstants';
+import { LAYOUT, STREETS, LIMITS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
-import { getActionGradient, BATCH_COLORS, ACTION_COLORS } from '../../../constants/designTokens';
+import { getActionGradient, BATCH_COLORS } from '../../../constants/designTokens';
 import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName } from '../../../utils/positionUtils';
-import { useGame, useSettings, useUI, useCard, usePlayer } from '../../../contexts';
+import { useGame, useSettings, useUI, useCard, usePlayer, useOnlineAnalysisContext, useToast, useSession } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
+import { useAutoSeatSelection } from '../../../hooks/useAutoSeatSelection';
+import { useCardSelection } from '../../../hooks/useCardSelection';
+import { GAME_ACTIONS } from '../../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
-import { UI_ACTIONS } from '../../../reducers/uiReducer';
 import { CardSelectorPanel } from './CardSelectorPanel';
+import { LiveAdviceBar } from './LiveAdviceBar';
+import { SizingPresetsPanel } from './SizingPresetsPanel';
+import { ControlZone } from './ControlZone';
 
 /**
  * Street completion state for progress indicator
@@ -40,21 +44,19 @@ const STREET_LABELS = {
  * Consolidates ActionPanel + StreetSelector + BatchActionBar + hand controls
  */
 export const CommandStrip = ({
-  // Only callbacks that require TableView orchestration
-  onStreetChange,
-  onClearStreet,
-  onNextHand,
-  onResetHand,
-  onSelectCard,
   // Shared computation (expensive Monte Carlo — avoid duplicate hook call)
   liveEquity,
+  boardTexture,
 }) => {
-  // Contexts — consumed directly (CH-2: eliminated ~18 props from TableView)
-  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats } = useGame();
+  // Contexts — consumed directly (CH-2: all orchestration callbacks internalized)
+  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, dispatchGame } = useGame();
   const { settings, updateSetting } = useSettings();
-  const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector, dispatchUi } = useUI();
+  const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
   const { getSeatPlayerName } = usePlayer();
+  const { advice: gameTreeAdvice } = useOnlineAnalysisContext();
+  const { showSuccess, showInfo, showWarning } = useToast();
+  const { currentSession } = useSession();
 
   // Hooks — consumed directly instead of receiving computed values as props
   const {
@@ -67,9 +69,19 @@ export const CommandStrip = ({
     foldToInvested,
     getCardStreet,
     clearCards,
+    nextHand,
+    resetHand,
+    clearStreetActions,
+    openShowdownScreen,
   } = useGameHandlers();
 
-  const { getNextActionSeat, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
+  const { getNextActionSeat, getFirstActionSeat, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
+
+  // Auto-select first action seat on mount, street change, or card selector close
+  const { scheduleAutoSelect } = useAutoSeatSelection(showCardSelector, currentStreet, getFirstActionSeat, setSelectedPlayers);
+
+  // Card selection logic (community and hole cards)
+  const selectCard = useCardSelection(highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard, { closeCardSelector, setHighlightedCardIndex });
 
   // Computed locally (previously passed as props)
   const seatContributions = useMemo(
@@ -84,11 +96,11 @@ export const CommandStrip = ({
   const handleAdvanceSeat = useCallback((currentSeat) => {
     const nextSeat = getNextActionSeat(currentSeat);
     if (nextSeat) {
-      dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [nextSeat] });
+      setSelectedPlayers([nextSeat]);
     } else {
       setSelectedPlayers([]);
     }
-  }, [getNextActionSeat, dispatchUi, setSelectedPlayers]);
+  }, [getNextActionSeat, setSelectedPlayers]);
 
   // Card management handlers (previously passed as props)
   const handleToggleHoleVisibility = useCallback(() => {
@@ -96,6 +108,35 @@ export const CommandStrip = ({
   }, [dispatchCard]);
   const handleClearBoard = useCallback(() => clearCards('community'), [clearCards]);
   const handleClearHole = useCallback(() => clearCards('hole'), [clearCards]);
+
+  // Orchestration handlers (previously passed as props from TableView)
+  const handleStreetChange = useCallback((street) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
+    if (street === 'showdown') {
+      openShowdownScreen();
+    }
+  }, [dispatchGame, openShowdownScreen]);
+
+  const handleNextHand = useCallback(() => {
+    const handNumber = (currentSession?.handCount || 0) + 1;
+    nextHand();
+    if (actionSequence.length > 0) {
+      showSuccess(`Hand #${handNumber} completed`);
+    } else {
+      showInfo(`Hand #${handNumber + 1} started`);
+    }
+    scheduleAutoSelect();
+  }, [currentSession, nextHand, actionSequence, showSuccess, showInfo, scheduleAutoSelect]);
+
+  const handleResetHand = useCallback(() => {
+    resetHand();
+    showWarning('Hand reset');
+    scheduleAutoSelect();
+  }, [resetHand, showWarning, scheduleAutoSelect]);
+
+  const handleClearStreet = useCallback(() => {
+    clearStreetActions();
+  }, [clearStreetActions]);
 
   const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
   const [customValue, setCustomValue] = useState('');
@@ -156,7 +197,6 @@ export const CommandStrip = ({
     if (!recordPrimitiveAction) return;
     selectedPlayers.forEach(seat => {
       if (action === PRIMITIVE_ACTIONS.CALL) {
-        // Record explicit call amount (current bet minus what seat already contributed)
         const alreadyIn = seatContributions[seat] || 0;
         const increment = Math.max(0, effectiveBet - alreadyIn);
         recordPrimitiveAction(seat, action, increment);
@@ -203,17 +243,14 @@ export const CommandStrip = ({
   const [editorValues, setEditorValues] = useState([]);
 
   const openSizingEditor = useCallback(() => {
-    // Pre-fill with current values (custom or defaults)
     const current = sizingOptions.map(o => o.label);
     if (sizingKey === 'postflop_bet') {
-      // Extract fractions from labels
       const fracs = sizingOptions.map(o => {
         const pot = potInfo.total || 1;
         return parseFloat((o.amount / pot).toFixed(2));
       });
       setEditorValues(customMultipliers || fracs);
     } else {
-      // Extract multipliers from labels
       const mults = sizingOptions.map(o => parseFloat(o.label.replace('x', '').replace('/', '')));
       setEditorValues(customMultipliers || mults);
     }
@@ -282,7 +319,7 @@ export const CommandStrip = ({
           return (
             <button
               key={street}
-              onClick={() => onStreetChange(street)}
+              onClick={() => handleStreetChange(street)}
               className="btn-press flex-1 rounded-md font-bold transition-all"
               style={{
                 height: '40px',
@@ -313,7 +350,7 @@ export const CommandStrip = ({
           holeCardsVisible={holeCardsVisible}
           cardSelectorType={cardSelectorType}
           highlightedBoardIndex={highlightedBoardIndex}
-          onSelectCard={onSelectCard}
+          onSelectCard={selectCard}
           onClose={closeCardSelector}
           getCardStreet={getCardStreet}
           setCardSelectorType={setCardSelectorType}
@@ -324,49 +361,14 @@ export const CommandStrip = ({
         />
       )}
 
-      {/* Live Action Advice — compact equity + suggestion bar */}
-      {(actionAdvice || liveEquity?.isComputing) && (
-        <div
-          className="flex items-center justify-between px-2 py-1.5"
-          style={{ borderBottom: '1px solid var(--panel-border)', background: 'var(--panel-surface)' }}
-        >
-          {liveEquity?.isComputing ? (
-            <span className="text-gray-400 animate-pulse" style={{ fontSize: '12px' }}>Computing equity...</span>
-          ) : actionAdvice && (
-            <>
-              <div className="flex items-center gap-1.5">
-                {actionAdvice.icon === 'up' && <TrendingUp size={14} color={actionAdvice.color} />}
-                {actionAdvice.icon === 'down' && <TrendingDown size={14} color={actionAdvice.color} />}
-                {actionAdvice.icon === 'flat' && <Minus size={14} color={actionAdvice.color} />}
-                <span className="font-extrabold" style={{ fontSize: '14px', color: actionAdvice.color, letterSpacing: '1px' }}>
-                  {actionAdvice.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-300" style={{ fontSize: '12px' }}>
-                  Eq <span className="font-bold text-white">{Math.round(liveEquity.equity * 100)}%</span>
-                </span>
-                {liveEquity.foldPct !== null && (
-                  <span className="text-gray-300" style={{ fontSize: '12px' }}>
-                    Fold <span className="font-bold text-white">{Math.round(liveEquity.foldPct * 100)}%</span>
-                  </span>
-                )}
-                <span className="text-gray-500" style={{ fontSize: '10px' }}>
-                  vs {liveEquity.villainName}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <LiveAdviceBar actionAdvice={actionAdvice} liveEquity={liveEquity} boardTexture={boardTexture} gameTreeAdvice={gameTreeAdvice} />
 
       {/* ═══ ACTION ZONE (top) — recording what happened ═══ */}
 
-      {/* Seat Indicator — prominent next-to-act display (14.2a) */}
+      {/* Seat Indicator — prominent next-to-act display */}
       <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--panel-border)' }}>
         {singleSeat ? (
           <div className="flex items-center gap-3">
-            {/* Large seat number — primary visual anchor */}
             <div
               className="flex items-center justify-center font-black text-white"
               style={{
@@ -377,7 +379,6 @@ export const CommandStrip = ({
             >
               {singleSeat}
             </div>
-            {/* Seat info + actions */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 {positionLabel && (
@@ -398,7 +399,6 @@ export const CommandStrip = ({
                 )}
               </div>
             </div>
-            {/* Progress indicator */}
             {remainingCount > 0 && (
               <div className="text-right" style={{ flexShrink: 0 }}>
                 <div className="font-bold text-gray-400" style={{ fontSize: '12px' }}>
@@ -461,108 +461,27 @@ export const CommandStrip = ({
             })}
           </div>
 
-          {/* Sizing Presets */}
-          {sizingAction && sizingOptions.length > 0 && (
-            <div className="p-2 rounded-lg" style={{ background: 'var(--panel-surface)', border: '1px solid var(--panel-border)' }}>
-              <div className="grid grid-cols-4 gap-1.5 mb-1.5">
-                {sizingOptions.map(({ label, amount }) => (
-                  <button
-                    key={label}
-                    onClick={() => handleSizeSelected(amount)}
-                    onMouseDown={handleSizingLongPressStart}
-                    onMouseUp={handleSizingLongPressEnd}
-                    onMouseLeave={handleSizingLongPressEnd}
-                    onTouchStart={handleSizingLongPressStart}
-                    onTouchEnd={handleSizingLongPressEnd}
-                    className="btn-press rounded-md font-bold text-white shadow"
-                    style={{ height: '68px', background: getActionGradient('bet'), fontSize: '15px' }}
-                  >
-                    <div style={{ fontSize: '20px', fontWeight: 800 }}>${amount}</div>
-                    <div style={{ fontSize: '11px', opacity: 0.65 }}>{label}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Sizing Editor Popup */}
-              {sizingEditorOpen && (
-                <div className="mb-2 p-2 rounded-lg" style={{ background: '#1a1d23', border: '1px solid var(--gold)' }}>
-                  <div className="text-white font-bold mb-2" style={{ fontSize: '13px' }}>
-                    Customize {sizingKey?.replace('_', ' ')}
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5 mb-2">
-                    {editorValues.map((val, idx) => {
-                      const isPostflopBet = sizingKey === 'postflop_bet';
-                      const base = isPostflopBet ? (potInfo.total || 1) : (sizingKey === 'preflop_open' ? blinds.bb : currentBet || blinds.bb);
-                      const dollarAmount = Math.round(base * val);
-                      return (
-                        <div key={idx} className="flex flex-col items-center gap-1">
-                          <input
-                            type="number"
-                            value={val}
-                            onChange={(e) => {
-                              const newVals = [...editorValues];
-                              newVals[idx] = parseFloat(e.target.value) || 0;
-                              setEditorValues(newVals);
-                            }}
-                            step="any"
-                            className="w-full px-1 rounded text-white text-center font-semibold focus:outline-none"
-                            style={{ height: '36px', fontSize: '14px', background: '#374151', border: '1px solid var(--panel-border)' }}
-                          />
-                          <span className="text-gray-400" style={{ fontSize: '11px' }}>${dollarAmount}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={handleSaveSizing}
-                      className="btn-press flex-1 rounded font-bold text-white"
-                      style={{ height: '36px', fontSize: '13px', background: '#166534' }}
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={handleResetSizing}
-                      className="btn-press flex-1 rounded font-bold text-white"
-                      style={{ height: '36px', fontSize: '13px', background: '#374151' }}
-                    >
-                      Reset
-                    </button>
-                    <button
-                      onClick={() => setSizingEditorOpen(false)}
-                      className="btn-press flex-1 rounded font-bold text-white"
-                      style={{ height: '36px', fontSize: '13px', background: '#374151' }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-              <form onSubmit={handleCustomSubmit} className="flex gap-1.5">
-                <div className="flex-1 flex items-center gap-1">
-                  <span className="text-gray-500 font-bold" style={{ fontSize: '15px' }}>$</span>
-                  <input
-                    type="number"
-                    value={customValue}
-                    onChange={(e) => setCustomValue(e.target.value)}
-                    placeholder={`Min $${minRaise}`}
-                    min={minRaise}
-                    step="any"
-                    className="w-full px-3 rounded text-white font-semibold focus:outline-none"
-                    style={{ height: '48px', fontSize: '15px', background: '#1a1d23', border: '1px solid var(--panel-border)' }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={!customValue || parseFloat(customValue) < minRaise}
-                  className="btn-press px-5 rounded font-bold text-white"
-                    style={{ height: '48px', fontSize: '15px', background: !customValue || parseFloat(customValue) < minRaise ? '#374151' : ACTION_COLORS.bet.base }}
-                >
-                  GO
-                </button>
-              </form>
-            </div>
-          )}
+          <SizingPresetsPanel
+            sizingOptions={sizingOptions}
+            sizingAction={sizingAction}
+            minRaise={minRaise}
+            customValue={customValue}
+            setCustomValue={setCustomValue}
+            sizingEditorOpen={sizingEditorOpen}
+            setSizingEditorOpen={setSizingEditorOpen}
+            editorValues={editorValues}
+            setEditorValues={setEditorValues}
+            sizingKey={sizingKey}
+            potTotal={potInfo.total}
+            currentBet={currentBet}
+            blindsBb={blinds.bb}
+            onSizeSelected={handleSizeSelected}
+            onCustomSubmit={handleCustomSubmit}
+            onSizingLongPressStart={handleSizingLongPressStart}
+            onSizingLongPressEnd={handleSizingLongPressEnd}
+            onSaveSizing={handleSaveSizing}
+            onResetSizing={handleResetSizing}
+          />
 
           {/* Batch recording — Rest Fold / Fold Cold / Check All */}
           {remainingCount > 0 && (
@@ -600,68 +519,20 @@ export const CommandStrip = ({
       {/* ═══ CONTROL ZONE (bottom) — table management ═══ */}
       <div className="flex-1" />
 
-      <div style={{ background: 'var(--panel-surface)', borderTop: '1px solid var(--panel-border)' }}>
-        {/* Clear Seat / Undo — per-seat action management */}
-        {singleSeat && actionArray.length > 0 && (
-          <div className="flex gap-1.5 px-2 pt-2 pb-1">
-            <button
-              onClick={() => clearSeatActions([singleSeat])}
-              className="btn-press flex-1 rounded-lg font-semibold text-white"
-              style={{ height: '48px', fontSize: '13px', background: '#7f1d1d' }}
-            >
-              Clear Seat
-            </button>
-            <button
-              onClick={() => undoLastAction(singleSeat)}
-              className="btn-press flex-1 rounded-lg font-semibold text-white flex items-center justify-center gap-1"
-              style={{ height: '48px', fontSize: '13px', background: '#854d0e' }}
-            >
-              <Undo2 size={14} /> Undo
-            </button>
-          </div>
-        )}
-
-        {/* Utility row — seat/street management */}
-        <div className={`flex gap-1.5 px-2 pb-1 ${singleSeat && actionArray.length > 0 ? 'pt-1' : 'pt-2'}`}>
-          {hasSeatSelected && (
-            <button onClick={() => setSelectedPlayers([])} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
-          )}
-          {hasSeatSelected && (
-            <button onClick={toggleAbsent} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}>Absent</button>
-          )}
-          {currentStreet !== 'showdown' && remainingCount > 0 && (
-            <button
-              onClick={onClearStreet}
-              className="btn-press flex-1 rounded-lg font-semibold text-white"
-              style={{ height: '48px', fontSize: '13px', background: '#4c0519' }}
-            >
-              Reset Street
-            </button>
-          )}
-          <button
-            onClick={onResetHand}
-            className="btn-press flex-1 rounded-lg flex items-center justify-center gap-1 font-semibold text-white"
-            style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}
-          >
-            <RotateCcw size={14} />
-            Reset Hand
-          </button>
-        </div>
-
-        {/* Next Hand — primary CTA, always visible, always at very bottom */}
-        <div className="px-2 pt-1 pb-2">
-          <button
-            onClick={onNextHand}
-            className="btn-press w-full rounded-lg flex items-center justify-center gap-2 font-extrabold shadow-lg"
-            style={{ height: '68px', fontSize: '18px', background: 'linear-gradient(180deg, #d4a847 0%, #b8922e 100%)', color: '#1a1200' }}
-          >
-            <SkipForward size={20} />
-            Next Hand
-          </button>
-        </div>
-      </div>
+      <ControlZone
+        singleSeat={singleSeat}
+        actionArray={actionArray}
+        hasSeatSelected={hasSeatSelected}
+        remainingCount={remainingCount}
+        currentStreet={currentStreet}
+        onClearSeat={clearSeatActions}
+        onUndo={undoLastAction}
+        onDeselect={() => setSelectedPlayers([])}
+        onToggleAbsent={toggleAbsent}
+        onClearStreet={handleClearStreet}
+        onResetHand={handleResetHand}
+        onNextHand={handleNextHand}
+      />
     </div>
   );
 };
-
-

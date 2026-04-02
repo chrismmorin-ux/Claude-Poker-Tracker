@@ -405,8 +405,8 @@ Cleanup and quality findings from CTO architecture review of `ignition-poker-tra
 | IG-4 | P2 | DONE | Remove unused `saveTableStates`/`getTableStates` from storage-writer.js | Dead exports never called. |
 | IG-5 | P2 | DONE | Consolidate PID constants in protocol.js | `CO_TABLE_INFO`, `CO_OPTION_INFO`, `PLAY_SEAT_INFO` added to PID; string literals replaced; duplicate `CO_LAST_HAND_NUMBER` removed. |
 | IG-6 | P2 | DONE | Fix misleading popup stat label | "WS Messages" renamed to "Pipeline Hands" — was showing `completedHands`, same as "Hands Captured". |
-| IG-7 | P2 | READY | Add unit tests for extension pure-function modules | Zero test coverage. `protocol.js`, `hand-format.js`, `hand-state-machine.js` are all pure functions. |
-| IG-8 | P3 | READY | Consolidate extension version string | Three different versions: service-worker.js "0.3.0", app-bridge.js "0.5.0", manifest.json "0.6.0". |
+| IG-7 | P2 | DONE | Add unit tests for extension pure-function modules | 9 test files covering protocol, hand-format, HSM, protocol-adapter, record-builder, stats-engine, table-manager, wire-schemas, integration pipeline. |
+| IG-8 | P3 | DONE | Consolidate extension version string | manifest.json + package.json both 0.9.0; constants.js reads from manifest at runtime. |
 
 ---
 
@@ -441,7 +441,177 @@ Game tree evaluator improvements for higher-quality action recommendations.
 | 22.4 | P1 | DONE | Reasoning quality + observation integration | Rewrite `buildTreeReasoning()` to reference specific numbers and villain observations. Every string includes at least one verifiable number. |
 | 22.5 | P2 | DONE | Call branch depth-2 | Sample next-street cards, categorize villain combos (beats hero / elastic folder / inelastic caller), compute optimal sizing. Handles implied odds, reverse implied odds, nut-changing cards. |
 | 22.6 | P2 | DONE | Preflop advisor upgrade | Positional matchup fold estimation (SB vs UTG ≠ BB vs BTN), multiple sizing candidates, position-aware reasoning strings. |
-| 22.7 | P3 | READY | Multi-street depth-2 for bet/raise branches | Expand bet branch to next street (call branch already has depth-2). |
+| 22.7 | P3 | DONE | Multi-street depth-2 for bet/raise branches | Expanded to depth-3 barrel planning on flop (6 turn cards × 8 river cards × 3 sizings). `gameTreeDepth2.js`. |
+| 22.8 | P1 | DONE | Weighted combo sampling | Systematic weighted sampling in `computePerComboEV`/`computePerComboCheckEV`. `gameTreeHelpers.js`. |
+| 22.9 | P1 | DONE | Check-raise sizing optimization | Multi-candidate CR sizing via `findOptimalBetSize`, SPR-aware shove. `gameTreeEvaluator.js`. |
+| 22.10 | P1 | DONE | Expanded depth-2 sizing | Probe (0.33x) and overbet (2.0x) added to depth-2 candidates. `gameTreeHelpers.js`. |
+| 22.11 | P1 | DONE | Position-conditioned fold estimation | `estimateFoldPct` now uses position context (BB/EP/IP/OOP adjustments). `foldEquityCalculator.js`. |
+| 22.12 | P3 | DONE | Depth-3 for turn (currently flop-only) | Turn depth-3 wired with relaxed combo limit (1200 vs 800). `gameTreeEvaluator.js`. |
+| 22.13 | P1 | DONE | Depth-2 board re-analysis bug fix | Board texture re-analyzed per sampled card in depth-2/3 loops. `cachedTexture()` in board cache. `gameTreeDepth2.js`, `gameTreeHelpers.js`. |
+| 22.14 | P1 | DONE | Range/nut advantage integration | `computeAdvantage()` in `rangeSegmenter.js`, drives sizing candidates (small-bet on range advantage, overbet on nut advantage) and fold estimate adjustments. |
+| 22.15 | P1 | DONE | Continuous draw realization | `comboRealization()` uses continuous function of draw outs + draw-type bonuses (combo > flush > OESD > gutshot). `classifyComboFull` returns `drawType`. |
+| 22.16 | P1 | DONE | Exploitative check-raise frequency | Check-raise equity threshold adjusts based on villain c-bet % (80%+ → 35% threshold, 65%+ → 40%). |
+| 22.17 | P2 | DONE | Multi-street bluff commitment penalty | `bluffCommitmentPenalty()` in depth-3: penalizes bluff barrels when compound fold equity < break-even. |
+| 22.18 | P1 | DONE | Probability-weighted board runouts | `stratifiedSample()` returns `{card, weight}[]` with category-proportional weights. All depth-2/3 loops use weighted averaging. |
+| 22.19 | P1 | DONE | Villain slow-play adjustment | `approximateCheckBackRangeEquity()` — check-check EV uses check-back range equity, not full range. Slow-playing villain's check-back range is stronger. |
+| 22.20 | P1 | DONE | Depth-3 blend calibration | Blend weights equity-dependent (value=0.80 deep, bluff=0.55 deep) + SPR-modulated (±0.05). Replaces fixed 0.3/0.7. |
+| 22.21 | P1 | DONE | Implied odds for drawing hands | `drawImpliedOddsAdjustment()` + `reverseImpliedOddsPenalty()` in call depth-2. SPR-scaled bonus when draw hits, penalty on scary cards. |
+| 22.22 | P2 | DONE | Donk-bet labeling & reasoning | `isDonk` flag on OOP non-aggressor bets. Donk-specific reasoning in `buildTreeReasoning()`. `isPreflopAggressor` passed via contextHints. |
+| 22.23 | P2 | DONE | Mixed strategy hints | `mixFrequency` field via softmax for close EV decisions (within 5% pot). Helps hero randomize. |
+| 22.24 | P1 | DONE | Asymmetric fold response | `logisticFoldResponse()` uses separate `steepnessUp`/`steepnessDown` — fold% rises faster for small bets, flattens for overbets. |
+| 22.25 | P1 | DONE | Bayesian blend weight fix | `estimateFoldPct()` blends model + observed by effective sample size instead of priority-based cutoff at confidence=0.4. |
+| 22.26 | P1 | DONE | Board-texture-aware villain priors | `buildActionPriors()` accepts boardTexture — wet/dry/paired modifiers on action priors. Integrated into `queryActionDistribution()`. |
+| 22.27 | P1 | DONE | Draw outs overlap | `detectDraws()` returns `effectiveOuts` accounting for paired board (−2 flush outs) and straight-heavy board (−1/−2 straight outs). |
+| 22.28 | P1 | DONE | Proportional stratified sampling | `stratifiedSample()` fills remaining slots proportionally by category instead of random, reducing variance. |
+| 22.29 | P1 | DONE | Per-street multiplier derivation | `derivePersonalizedMultipliers()` outputs `_perStreet` with flop/turn/river-specific multipliers. `narrowByBoard()` prefers per-street. |
+| 22.30 | P1 | DONE | Counterdraw realization | `comboRealization()` accepts `villainDrawPct` — discounts hero draw realization when villain also has draws (>15%). |
+| 22.31 | P0 | DONE | Combo-counted equity distribution | `computeComboEquityDistribution()` + `computeFilteredEquity()` + `computeExcludedBucketEquity()` in `gameTreeHelpers.js`. Replaces bucket-anchor approximation with per-combo equity in depth-1 evaluation. |
+| 22.32 | P1 | DONE | Villain model hierarchy reorder | Texture preserved through L3 (was dropped at L2). New order: drop aggressor → IP → texture → position → street. |
+| 22.33 | P1 | DONE | Semi-bluff equity in calcBluffEV | `heroEquity` parameter (default 0) enables semi-bluff EV accounting for equity when called. |
+| 22.34 | P1 | DONE | Texture-aware realization | `adjustedRealization()` accepts `boardTexture`: wet OOP ×0.92, dry OOP ×1.05, paired ×0.97. |
+| 22.35 | P1 | DONE | Analytical equity for sparse ranges | `exactEnumerateEquity()` fast path in `handVsRange()` for ≤20 combos on turn/river. Deterministic, zero MC variance. |
+| 22.36 | P2 | DONE | TPTK wet board conditional downgrade | Only Ace kicker keeps 'strong' on wet non-flush boards; others downgrade to 'marginal'. |
+| 22.37 | P2 | DONE | Overcard outs quality adjustment | Rank-adjusted: A=3, K/Q=2.5, J/T=2, 9-=1.5 outs. Replaces fixed +6. |
+
+---
+
+## 23. Game Tree & Analysis Improvements (P0-P2)
+
+Advanced game tree accuracy, poker-strategic sizing, and preflop modeling improvements.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 23.1 | P0 | DONE | Flop combo equity: miniRollout replaces crude proxy | `computeComboEquityDistribution()` now calls `miniRolloutEquity()` (16 samples) instead of fixed 0.70/0.50/0.25 proxy. `gameTreeHelpers.js`. |
+| 23.2 | P0 | DONE | Check-raise depth-2 refinement | CR gets `needsCRDepth2` flag + depth-2 via `computeBetCallDepth2EV` with tightened 'raise' rates. `gameTreeEvaluator.js`. |
+| 23.3 | P0 | DONE | IP check-back depth-2 | Removed `!isIP` guard — both IP and OOP checks get depth-2 refinement. IP check models delayed c-bet. `gameTreeEvaluator.js`. |
+| 23.4 | P1 | DONE | Polarization-aware sizing | `computePolarization()` in `gameTreeHelpers.js`, integrated into `computeAdvantage()`. Polarized ranges → larger sizes, merged → smaller. |
+| 23.5 | P1 | DONE | Nut-blocker bluff strategy | Blocker-motivated bluff candidates when hero blocks nuts + has low equity. `blockerBluff` flag + dedicated reasoning. `gameTreeEvaluator.js`. |
+| 23.6 | P1 | DONE | River block-bet sizing (0.25x) | 0.25x pot block-bet candidate on river when hero has 35-55% equity (showdown value, not value-bet strength). `gameTreeEvaluator.js`. |
+| 23.7 | P1 | DONE | SPR-conditional calling station exploit | VPIP>40 fold discount now SPR-aware: 0.70 at low SPR, 0.80 medium, 0.85 high. Thin-value boost at low SPR. `foldEquityCalculator.js` + `gameTreeEvaluator.js`. |
+| 23.8 | P1 | DONE | Villain 4-bet modeling | `POSITIONAL_FOLD_TO_4BET` table, `facing_3bet` situation detection, 4-bet sizing candidates + reasoning. `preflopAdvisor.js`. |
+| 23.9 | P0 | DONE | Explicit blocker stats | Replaced heuristic blocker adjustments with baseline vs actual segmentation comparison. Exact combo-counted bucket shifts. `rangeSegmenter.js`. |
+| 23.10 | P2 | DONE | Texture-conditioned depth-2/3 sizing | `textureSizingFractions()` — wet boards get smaller sizes, dry boards include overbets, paired boards cautious. 5 call sites in `gameTreeDepth2.js`. |
+| 23.11 | P2 | DONE | Multi-street value coherence bonus | `valueCommitmentBonus()` rewards value hands with compounding equity advantage across streets. Inverse of `bluffCommitmentPenalty`. `gameTreeHelpers.js` + `gameTreeDepth2.js`. |
+| 23.12 | P2 | DONE | Elastic/inelastic calling range | `comboActionProbabilities()` now modulates fold/call by bet size: marginals/weak draws fold more to large bets, nuts/strong inelastic. `gameTreeDepth2.js`. |
+| 23.13 | P2 | DONE | Equity denial scaling by draw quality | Protection bonus weighted by avg draw outs (4 outs → 0.022, 9 outs → 0.037, 15 outs → 0.055). `gameTreeEvaluator.js`. |
+
+---
+
+## 24. Game Tree Tier 1 Improvements (P0-P1)
+
+River accuracy, empirical calibration, villain-range-driven sizing, and multiway correlation.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 24.1 | P0 | DONE | River per-combo evaluation | `computeRiverCheckEV()` + `computeRiverBetEV()` in `gameTreeDepth2.js`. Step 8a-river in `gameTreeEvaluator.js` refines all river candidates with exact per-combo equity (no MC, no realization). |
+| 24.2 | P1 | DONE | Empirical fold curve fitting | `fitFoldCurveParams()` in `foldEquityCalculator.js`. Grid search (693 combos) over maxDelta/steepness/midpoint with Brier score + L2 regularization. `decisionAccumulator.js` collects `foldCurveData`, `villainDecisionModel.js` stores `personalizedFoldCurve`. |
+| 24.3 | P1 | DONE | Villain range shape–driven sizing | `villainRangeShapeSizing()` in `gameTreeHelpers.js`. Generates preferred/avoided bet sizing candidates based on villain's air-heavy, value-heavy, draw-heavy, capped, or polarized range composition. Integrated into `buildHeroActions()`. |
+| 24.4 | P1 | DONE | Multiway fold correlation | `multiwayFoldPct()` now accepts `betFraction` parameter. Pot-odds vs information cascade adjustment: small bets → fewer folds (pot-odds improve), large bets → more folds (cascade). Backward compatible at default 0.75x. |
+
+---
+
+## 25. Game Tree Wiring & Dynamic Parameters (P0-P2)
+
+Wire unused computation into decision pipeline, replace hardcoded constants with context-aware values.
+
+Plan: `.claude/plans/binary-stargazing-hinton.md`
+
+### Session 1 — Wire Existing Computation (Tier 1)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 25.1 | P0 | DONE | Wire personalizedFoldCurve to findOptimalBetSize | 3 call sites in `gameTreeEvaluator.js` now pass `villainModel?.personalizedFoldCurve` + style + spr + street. |
+| 25.2 | P1 | DONE | Wire blockerEffects into fold estimation | `estimateFoldPct()` now adjusts fold% based on `blockerEffects.nuts/strong/air` deltas. Blocking nuts → +fold%, blocking air → −fold%. |
+| 25.3 | P1 | DONE | Expand sizingTells into fold estimation | `estimateFoldPct()` now uses `sizingTells.correlation` with confidence scaling (`min(1, n/20)`). Positive correlation → +fold%. |
+| 25.4 | P1 | DONE | Thread style-conditioned anchors into fallback path | Bucket equity fallback in evaluator output now uses `anchors` (already style-conditioned) instead of raw `BUCKET_EQUITY_ANCHORS`. |
+
+17 new tests, 4,381 total passing.
+
+### Session 2 — Dynamic Parameters (Tier 2)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 25.5 | P1 | DONE | Structured realization lookup table | `REALIZATION_TABLE` (street × position × sprZone) replaces flat REALIZATION + additive SPR hacks. Texture modifiers now multiplicative via `TEXTURE_REALIZATION`. `REALIZATION` backward compat alias. |
+| 25.6 | P1 | DONE | Style/street base rates in comboActionProbabilities | `STYLE_BASE_RATE_ADJ` (Fish/Nit/LAG/TAG) applied before texture conditioning with confidence scaling. Turn calibration added. `playerStats` threaded to depth-2 functions. |
+| 25.7 | P2 | DONE | Street/position fold curve dimensions + continuous scaling | `FOLD_CURVE_STREET_MODS` + `resolveFoldCurveParams()`. Continuous AF scaling: `1 - 0.05 * clamp((1.5-af)/1.5, -1, 1)`. Continuous VPIP: `1 - 0.08 * clamp((vpip-25)/25, -1, 1)`. LATE position added. |
+| 25.8 | P2 | DONE | Seed adaptMultipliers from villain model | `adaptMultipliers(stats, seedMultipliers)` — when seed provided, dampening=0.5 reduces stat adjustment magnitude. `narrowByBoard` passes personalizedMultipliers as seed. |
+
+---
+
+## 26. Game Tree Calibration & Accuracy (P0-P2)
+
+Calibration tightening and enabling already-built features. CTO audit found no new architecture needed.
+
+Plan: `.claude/plans/generic-brewing-wigderson.md`
+
+### Session 1 — High Impact (P0-P1)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 26.1 | P0 | DONE | Enable depth-2 raise response | `enableDepth2Raise` flipped to `true`, gated by `!isTimeBudgetExceeded()`. `computeRaiseResponseDepth2EV` was already implemented but never called. |
+| 26.2 | P1 | DONE | Fold% compounding sanity clamp | `clamp(estimate, 0.10, 0.85)` inserted after model/observation blend, before 8 multiplicative adjustments. Prevents extreme base values from amplifying. |
+| 26.3 | P1 | DONE | Reduce flop combo equity variance | `miniRolloutEquity` increased from 16→32 samples with flush-stratified turn-card selection. Proportional allocation ensures flush-completing runouts are represented. |
+| 26.4 | P1 | DONE | Skip redundant enrichWithEquity | Moved `enrichWithEquity` (300 MC trials) after `comboDistribution`; only runs when combo distribution unavailable. Saves ~300 MC trials on common path. |
+
+### Session 2 — Accuracy (P2)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 26.5 | P2 | DONE | Donk-bet response modeling | OOP check + check-raise branches query villain model with `contextAction: 'donk'` when hero is preflop aggressor. Falls through hierarchy gracefully. |
+| 26.6 | P2 | DONE | River observation blend by sample size | `obsWeight = min(0.4, sampleSize/20 * 0.4)` — single observation gets ~2% influence instead of 40%. |
+| 26.7 | P2 | DONE | Depth-3 mid-loop time bailout | `startTime` + `timeBudgetMs` threaded into `computeDepth3BarrelEV`. Both turn and flop loops break early with partial weighted average. |
+| 26.8 | P2 | DONE | Correct air calling/betting defaults | `POP_CALLING_RATES.air`: 0.15→0.08, `POP_BETTING_RATES.air`: 0.15→0.25. Theory: air bluffs more than it calls. |
+| 26.9 | P2 | DONE | Squeeze multiway fold equity | Multiplicative per-opponent model: `raiserFoldPct * pow(callerFoldPct, callerCount)`. Replaces flat +0.15 bonus. |
+| 26.10 | P2 | DONE | comboActionProbabilities single-pass refactor | Layers 2-5 accumulate deltas with single renormalization (was 6 independent renormalizations). Layer 6 (model) + 7 (elasticity) + final renorm = 2 total. |
+
+1 new test, 4,411 total passing.
+
+---
+
+## 27. Game Tree & Analysis Accuracy (P0-P2)
+
+Foundation fixes, EV accuracy improvements, and calibration tightening identified by CTO audit.
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 27.1 | P1 | DONE | Fix default parameter in computePerComboCheckEV/computeRiverCheckEV | `bettingRates` defaulted to `POP_CALLING_RATES` instead of `POP_BETTING_RATES`. Latent (all callers pass explicit rates). `gameTreeDepth2.js`. |
+| 27.2 | P1 | DONE | Lower fold curve fitting thresholds | `MIN_FOLD_CURVE_OBS` 15→8, `MIN_DISTINCT_SIZES` 3→2. Live poker villains face 5-8 bets per session. L2 regularization prevents overfitting. `foldEquityCalculator.js`. |
+| 27.3 | P1 | DONE | Add logging to 11 silent catch blocks + depthReached | All `catch (_) {}` replaced with `catch (e) { console.warn(...) }` in `gameTreeEvaluator.js`. Added `treeMetadata.depthReached` field. |
+| 27.4 | P1 | DONE | Cap multiplicative fold% adjustments | 8 sequential adjustments now capped to `[baseEstimate * 0.60, baseEstimate * 1.50]` before final 0.05-0.95 clamp. Prevents compound over-correction. `foldEquityCalculator.js`. |
+| 27.5 | P1 | DONE | Preflop equity realization discount | Call/raise EV now discounted by `PREFLOP_REALIZATION` (IP: 0.85, OOP: 0.70). All 7 EV branches updated. `preflopAdvisor.js`. |
+| 27.6 | P1 | DONE | Category-based Layer 1 in comboActionProbabilities | Score-ratio comparisons replaced with hand category extraction (`(score >> 20) & 0xF`). Fixes intra-category comparisons (top pair vs middle pair). `gameTreeDepth2.js`. |
+| 27.7 | P2 | DONE | Depth-3 completion-weighted blend | `computeDepth3BarrelEV` returns `{ev, completed}`. Full completion: 90/10 blend. Partial (time bailout): 70/30 blend. `gameTreeDepth2.js`, `gameTreeEvaluator.js`. |
+| 27.8 | P2 | DONE | Trap-aware bet sizing | Villain CR rate >15%: add 0.33x probe-bet. CR rate >25%: filter overbets >1.5x. Uses villain decision model. `gameTreeEvaluator.js`. |
+
+18 new tests, 4,429 total passing.
+
+---
+
+## 28. Reasoning Quality & UI Display (P1) — DONE
+
+Engine reasoning and LiveAdviceBar display enhancements. No EV math changes.
+
+### Session 1 — Reasoning Quality (6 improvements)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 28.1 | P1 | DONE | Blocker effects in reasoning | `describeBlockers()` helper, appends "(blocks X% of nut combos)" to bet/raise/bluff reasoning. |
+| 28.2 | P1 | DONE | Breakeven fold% replaces hardcoded 0.50 | Pure bluff section computes `betSize/(pot+betSize)`, shows "need XX%" in reasoning. |
+| 28.3 | P1 | DONE | Model confidence in reasoning | `confidenceSuffix()` appends "(solid read, N obs)", "(N obs)", or "(estimated)" based on villainPrediction. |
+| 28.4 | P1 | DONE | Range/nut advantage in all reasoning | `advantageNote()` adds advantage context to fold/check/call reasoning, not just special-case bets. |
+| 28.5 | P2 | DONE | Trap-aware probe bet reasoning | trapAware flag flows through villainResp, produces "Probe bet (trap-aware)" reasoning. |
+| 28.6 | P2 | DONE | Dynamic check-raise threshold explanation | villainCbetPct stored on CR candidate, reasoning shows "exploiting X% c-bet rate". |
+
+### Session 2 — UI Display (4 improvements)
+
+| ID | Sev | Status | Description | Details |
+|----|-----|--------|-------------|---------|
+| 28.7 | P1 | DONE | Confidence source badge | Green "DATA" / yellow "PARTIAL" / gray "EST" pill badge next to EV in LiveAdviceBar. |
+| 28.8 | P1 | DONE | Fold curve tooltip | "···" tap target next to F:XX% shows 6-row fold curve (33%-200% pot) with personalized/style source. |
+| 28.9 | P1 | DONE | Advantage badges | Green "R+"/"N+" or red "R-"/"N-" pills for range/nut advantage in row 2 of LiveAdviceBar. |
+| 28.10 | P1 | DONE | Reasoning text display | Row 1.5 shows `topRec.reasoning` as 10px single-line text, surfacing all Session 1 improvements. |
+
+24 new tests, 4,479 total passing.
 
 ---
 
@@ -451,6 +621,6 @@ Game tree evaluator improvements for higher-quality action recommendations.
 NEXT:   18 Phase 1-2 (hand replay health), 14 Phase 2, 12.4
 LATER:  18 Phase 3-4, 5
 DEFER:  6 (Firebase), 7 (TypeScript), 8 (Future Ideas)
-DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17, 21 (all phases)
+DONE:   1, 2, 3, 4, 9, 10, 11, 12.1, 12.2, 12.3, 13, 14-Phase 1, 16.1, 16.2, 16.3, 16.4, 17, 21 (all), 22 (all), 23 (all), 24 (all), 25 (all), 26 (all), 27 (all), 28 (all)
 PAUSED: 6 (Firebase auth)
 ```

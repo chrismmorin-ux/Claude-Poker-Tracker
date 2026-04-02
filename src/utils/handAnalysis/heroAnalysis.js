@@ -25,51 +25,59 @@ export const assessHeroEV = (heroEquity, action, potSize, betSize) => {
   if (heroEquity === null || heroEquity === undefined) return null;
   const eqPct = Math.round(heroEquity * 100);
 
+  // Compute numeric expected value where possible
+  const computeCallEV = (eq, pot, bet) => eq * (pot + bet) - bet;
+  const computeFoldEV = () => 0;
+
   if (action === PRIMITIVE_ACTIONS.CALL) {
     if (!betSize || betSize <= 0) return null;
     const equityNeeded = betSize / (potSize + betSize);
     const neededPct = Math.round(equityNeeded * 100);
+    const expectedValue = computeCallEV(heroEquity, potSize, betSize);
 
     if (heroEquity > equityNeeded + 0.10) {
       return {
         verdict: '+EV',
         reason: `Comfortable call — ${eqPct}% equity vs ${neededPct}% needed`,
-        equityNeeded, actualEquity: heroEquity,
+        equityNeeded, actualEquity: heroEquity, expectedValue,
       };
     }
     if (heroEquity > equityNeeded) {
       return {
         verdict: '+EV',
         reason: `Close but profitable — ${eqPct}% equity vs ${neededPct}% needed`,
-        equityNeeded, actualEquity: heroEquity,
+        equityNeeded, actualEquity: heroEquity, expectedValue,
       };
     }
     return {
       verdict: '-EV',
       reason: `Needed ${neededPct}% but had ${eqPct}% — insufficient equity to call`,
-      equityNeeded, actualEquity: heroEquity,
+      equityNeeded, actualEquity: heroEquity, expectedValue,
     };
   }
 
   if (action === PRIMITIVE_ACTIONS.BET || action === PRIMITIVE_ACTIONS.RAISE) {
+    // For bets/raises, EV depends on fold equity which we don't have here.
+    // Provide equity-only estimate: hero equity * pot - bet cost (vs full range)
+    const estimatedEV = heroEquity * (potSize + betSize * 2) - betSize;
     if (heroEquity > 0.5) {
       return {
         verdict: '+EV',
         reason: `${eqPct}% equity vs full range — likely value (calling range may be stronger)`,
-        equityNeeded: null, actualEquity: heroEquity,
+        equityNeeded: null, actualEquity: heroEquity, expectedValue: estimatedEV,
       };
     }
     if (heroEquity >= 0.3) {
       return {
         verdict: 'neutral',
         reason: `Semi-bluff with ${eqPct}% equity — needs fold equity to profit`,
-        equityNeeded: null, actualEquity: heroEquity,
+        equityNeeded: null, actualEquity: heroEquity, expectedValue: estimatedEV,
       };
     }
     return {
       verdict: '-EV',
       reason: `Pure bluff with ${eqPct}% equity — requires significant fold equity`,
-      equityNeeded: null, actualEquity: heroEquity,
+      equityNeeded: null, actualEquity: heroEquity, expectedValue: estimatedEV,
     };
   }
 
@@ -99,17 +107,23 @@ export const assessHeroEV = (heroEquity, action, potSize, betSize) => {
     if (potSize > 0 && betSize > 0) {
       const equityNeeded = betSize / (potSize + betSize);
       const neededPct = Math.round(equityNeeded * 100);
+      const callEV = computeCallEV(heroEquity, potSize, betSize);
+      const foldEV = computeFoldEV();
       if (heroEquity > equityNeeded) {
         return {
           verdict: '-EV',
           reason: `Folded with ${eqPct}% equity — only needed ${neededPct}% to call`,
           equityNeeded, actualEquity: heroEquity,
+          expectedValue: foldEV,
+          alternatives: [{ action: 'Call', ev: callEV }],
         };
       }
       return {
         verdict: '+EV',
         reason: `Correct fold — ${eqPct}% equity vs ${neededPct}% needed`,
         equityNeeded, actualEquity: heroEquity,
+        expectedValue: foldEV,
+        alternatives: [{ action: 'Call', ev: callEV }],
       };
     }
     return null;

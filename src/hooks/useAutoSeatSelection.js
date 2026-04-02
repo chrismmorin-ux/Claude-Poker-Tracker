@@ -1,15 +1,14 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { UI_ACTIONS } from '../reducers/uiReducer';
 
 /**
  * useAutoSeatSelection - Auto-selects first action seat on mount, street change, or card selector close
  * @param {boolean} showCardSelector - Whether card selector is open
  * @param {string} currentStreet - Current street name
  * @param {Function} getFirstActionSeat - Returns first seat that needs to act
- * @param {Function} dispatchUi - UI dispatcher
+ * @param {Function} setSelectedPlayers - Named handler from UIContext
  * @returns {{ scheduleAutoSelect: Function }} Deferred auto-select for use after state resets
  */
-export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstActionSeat, dispatchUi) => {
+export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstActionSeat, setSelectedPlayers) => {
   const getFirstActionSeatRef = useRef(getFirstActionSeat);
   getFirstActionSeatRef.current = getFirstActionSeat;
   const prevShowCardSelectorRef = useRef(showCardSelector);
@@ -28,7 +27,7 @@ export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstAc
     if (wasOpen) {
       const firstSeat = getFirstActionSeatRef.current();
       if (firstSeat) {
-        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
+        setSelectedPlayers([firstSeat]);
       }
       return;
     }
@@ -38,19 +37,19 @@ export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstAc
       hasMountedRef.current = true;
       const firstSeat = getFirstActionSeatRef.current();
       if (firstSeat) {
-        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
+        setSelectedPlayers([firstSeat]);
       }
     }
-  }, [showCardSelector, currentStreet, dispatchUi]);
+  }, [showCardSelector, currentStreet, setSelectedPlayers]);
 
   const scheduleAutoSelect = useCallback(() => {
     setTimeout(() => {
       const firstSeat = getFirstActionSeatRef.current();
       if (firstSeat) {
-        dispatchUi({ type: UI_ACTIONS.SET_SELECTION, payload: [firstSeat] });
+        setSelectedPlayers([firstSeat]);
       }
     }, 0);
-  }, [dispatchUi]);
+  }, [setSelectedPlayers]);
 
   return { scheduleAutoSelect };
 };

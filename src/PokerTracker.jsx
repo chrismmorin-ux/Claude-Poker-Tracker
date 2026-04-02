@@ -6,6 +6,7 @@ import { AppProviders } from './AppProviders';
 import { parseBlinds } from './utils/potCalculator';
 import { useUI, useAuth, useTournament } from './contexts';
 import { SCREEN } from './constants/uiConstants';
+import { useBackButton } from './hooks/useBackButton';
 // View components
 import { StatsView } from './components/views/StatsView';
 import { TableView } from './components/views/TableView';
@@ -23,6 +24,7 @@ import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
 import { TournamentView } from './components/views/TournamentView';
 import { OnlineView } from './components/views/OnlineView';
+import { ExtensionPanel } from './components/views/OnlineView/ExtensionPanel';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -37,6 +39,7 @@ const VEB = ({ viewName, onReturnToTable, children }) => (
 // Map URL hash to SCREEN constant for deep-linking (e.g., #online)
 const HASH_TO_SCREEN = {
   '#online': 'online',
+  '#extension': 'extension',
   '#sessions': 'sessions',
   '#players': 'players',
   '#settings': 'settings',
@@ -46,6 +49,7 @@ const ViewRouter = () => {
   const scale = useScale();
   const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
+  useBackButton();
 
   // Deep-link support: navigate to view from URL hash on mount
   useEffect(() => {
@@ -83,6 +87,8 @@ const ViewRouter = () => {
     case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
     case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
     case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
+    case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
+    case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
     default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
   }
 };

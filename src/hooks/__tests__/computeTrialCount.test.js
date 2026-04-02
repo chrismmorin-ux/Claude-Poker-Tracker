@@ -34,8 +34,8 @@ describe('computeTrialCount', () => {
     expect(computeTrialCount({ spr: 0, street: 'turn', activeOpponents: 1, sampleSize: 50 })).toBe(500);
   });
 
-  it('does NOT return 500 when spr is exactly 4', () => {
-    expect(computeTrialCount({ spr: 4, street: 'flop', activeOpponents: 1, sampleSize: 50 })).toBe(1000);
+  it('returns 800 for MEDIUM SPR zone (spr=4)', () => {
+    expect(computeTrialCount({ spr: 4, street: 'flop', activeOpponents: 1, sampleSize: 50 })).toBe(800);
   });
 
   it('low SPR takes priority over multiway opponents', () => {
@@ -104,8 +104,8 @@ describe('computeTrialCount', () => {
     expect(computeTrialCount({ street: 'flop', spr: 8, activeOpponents: 1, sampleSize: 30 })).toBe(1000);
   });
 
-  it('returns 1000 for turn with solid data and healthy SPR', () => {
-    expect(computeTrialCount({ street: 'turn', spr: 6, activeOpponents: 2, sampleSize: 25 })).toBe(1000);
+  it('returns 800 for turn with MEDIUM SPR zone (spr=6)', () => {
+    expect(computeTrialCount({ street: 'turn', spr: 6, activeOpponents: 2, sampleSize: 25 })).toBe(800);
   });
 
   it('returns 1000 when called with empty object', () => {

@@ -7,7 +7,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useShowdownHandlers } from '../useShowdownHandlers';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
-import { UI_ACTIONS } from '../../reducers/uiReducer';
 import { GAME_ACTIONS } from '../../reducers/gameReducer';
 import { ACTIONS } from '../../constants/gameConstants';
 
@@ -22,7 +21,10 @@ import { findFirstActiveSeat, findNextActiveSeat, isSeatShowdownActive } from '.
 
 describe('useShowdownHandlers', () => {
   let dispatchCard;
-  let dispatchUi;
+  let setHighlightedSeat;
+  let setHighlightedHoleSlot;
+  let closeShowdownView;
+  let closeCardSelector;
   let dispatchGame;
   let isSeatInactive;
   let recordSeatAction;
@@ -31,7 +33,10 @@ describe('useShowdownHandlers', () => {
 
   beforeEach(() => {
     dispatchCard = vi.fn();
-    dispatchUi = vi.fn();
+    setHighlightedSeat = vi.fn();
+    setHighlightedHoleSlot = vi.fn();
+    closeShowdownView = vi.fn();
+    closeCardSelector = vi.fn();
     dispatchGame = vi.fn();
     isSeatInactive = vi.fn(() => null);
     recordSeatAction = vi.fn();
@@ -51,7 +56,10 @@ describe('useShowdownHandlers', () => {
     return renderHook(() =>
       useShowdownHandlers({
         dispatchCard,
-        dispatchUi,
+        setHighlightedSeat,
+        setHighlightedHoleSlot,
+        closeShowdownView,
+        closeCardSelector,
         dispatchGame,
         isSeatInactive,
         actionSequence: params.actionSequence,
@@ -128,14 +136,8 @@ describe('useShowdownHandlers', () => {
         result.current.handleClearShowdownCards();
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 3,
-      });
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: 0,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(3);
+      expect(setHighlightedHoleSlot).toHaveBeenCalledWith(0);
     });
 
     it('uses seat 1 as fallback when no active seat', () => {
@@ -146,10 +148,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleClearShowdownCards();
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 1,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(1);
     });
 
     it('calls log function', () => {
@@ -184,14 +183,8 @@ describe('useShowdownHandlers', () => {
         result.current.handleMuckSeat(3);
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 5,
-      });
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: 0,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(5);
+      expect(setHighlightedHoleSlot).toHaveBeenCalledWith(0);
     });
 
     it('auto-wins last remaining seat on heads-up muck', () => {
@@ -216,14 +209,8 @@ describe('useShowdownHandlers', () => {
         result.current.handleMuckSeat(3);
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: null,
-      });
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_HOLE_SLOT,
-        payload: null,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(null);
+      expect(setHighlightedHoleSlot).toHaveBeenCalledWith(null);
     });
   });
 
@@ -246,10 +233,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleWonSeat(7);
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_SEAT,
-        payload: 9,
-      });
+      expect(setHighlightedSeat).toHaveBeenCalledWith(9);
     });
   });
 
@@ -271,9 +255,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleNextHandFromShowdown();
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW,
-      });
+      expect(closeShowdownView).toHaveBeenCalled();
     });
   });
 
@@ -285,9 +267,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleCloseShowdown();
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_SHOWDOWN_VIEW,
-      });
+      expect(closeShowdownView).toHaveBeenCalled();
     });
 
     it('does not call nextHand', () => {
@@ -309,9 +289,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleCloseCardSelector();
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
   });
 

@@ -119,6 +119,21 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_AUTO_OPEN_NEW_SESSION, payload: value });
   }, [dispatchUi]);
 
+  // Handler: Start dragging dealer button
+  const startDraggingDealer = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.START_DRAGGING_DEALER });
+  }, [dispatchUi]);
+
+  // Handler: Stop dragging dealer button
+  const stopDraggingDealer = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.STOP_DRAGGING_DEALER });
+  }, [dispatchUi]);
+
+  // Handler: Set hand for replay
+  const setReplayHand = useCallback((handId, hand) => {
+    dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
+  }, [dispatchUi]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -133,8 +148,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
-    // Dispatch
-    dispatchUi,
+    pendingSeatForPlayerAssignment,
+    autoOpenNewSession,
+    replayHandId,
+    replayHand,
     // Screen constants
     SCREEN,
     // Handlers
@@ -152,12 +169,11 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
-    pendingSeatForPlayerAssignment,
     setPendingSeatForPlayerAssignment,
-    autoOpenNewSession,
     setAutoOpenNewSession,
-    replayHandId,
-    replayHand,
+    startDraggingDealer,
+    stopDraggingDealer,
+    setReplayHand,
   }), [
     currentView,
     selectedPlayers,
@@ -170,7 +186,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
-    dispatchUi,
+    pendingSeatForPlayerAssignment,
+    autoOpenNewSession,
+    replayHandId,
+    replayHand,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -185,12 +204,11 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
-    pendingSeatForPlayerAssignment,
     setPendingSeatForPlayerAssignment,
-    autoOpenNewSession,
     setAutoOpenNewSession,
-    replayHandId,
-    replayHand,
+    startDraggingDealer,
+    stopDraggingDealer,
+    setReplayHand,
   ]);
 
   return (

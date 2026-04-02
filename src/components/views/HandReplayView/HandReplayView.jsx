@@ -23,7 +23,7 @@ import { ReviewPanel } from './ReviewPanel';
 const POSITION_BADGES = { D: '#d4a847', SB: '#9ca3af', BB: '#60a5fa' };
 
 export const HandReplayView = ({ scale }) => {
-  const { replayHandId, replayHand, setCurrentScreen, dispatchUi } = useUI();
+  const { replayHandId, replayHand, setCurrentScreen } = useUI();
   const { allPlayers } = usePlayer();
   const { tendencyMap } = useTendency();
 

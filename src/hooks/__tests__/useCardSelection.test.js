@@ -7,15 +7,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCardSelection } from '../useCardSelection';
 import { CARD_ACTIONS } from '../../reducers/cardReducer';
-import { UI_ACTIONS } from '../../reducers/uiReducer';
 
 describe('useCardSelection', () => {
   let dispatchCard;
-  let dispatchUi;
+  let closeCardSelector;
+  let setHighlightedCardIndex;
 
   beforeEach(() => {
     dispatchCard = vi.fn();
-    dispatchUi = vi.fn();
+    closeCardSelector = vi.fn();
+    setHighlightedCardIndex = vi.fn();
   });
 
   const createHook = (overrides = {}) => {
@@ -35,7 +36,7 @@ describe('useCardSelection', () => {
         params.holeCards,
         params.currentStreet,
         dispatchCard,
-        dispatchUi
+        { closeCardSelector, setHighlightedCardIndex }
       )
     );
   };
@@ -56,7 +57,8 @@ describe('useCardSelection', () => {
       });
 
       expect(dispatchCard).not.toHaveBeenCalled();
-      expect(dispatchUi).not.toHaveBeenCalled();
+      expect(closeCardSelector).not.toHaveBeenCalled();
+      expect(setHighlightedCardIndex).not.toHaveBeenCalled();
     });
   });
 
@@ -118,10 +120,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
-        payload: 1,
-      });
+      expect(setHighlightedCardIndex).toHaveBeenCalledWith(1);
     });
 
     it('sets null when at last community slot', () => {
@@ -131,9 +130,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
   });
 
@@ -145,9 +142,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
 
     it('closes selector after 4th card on turn', () => {
@@ -157,9 +152,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
 
     it('closes selector after 5th card on river', () => {
@@ -169,9 +162,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
 
     it('does not auto-close on flop before 3rd card', () => {
@@ -181,9 +172,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).not.toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).not.toHaveBeenCalled();
     });
   });
 
@@ -235,10 +224,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX,
-        payload: 1,
-      });
+      expect(setHighlightedCardIndex).toHaveBeenCalledWith(1);
     });
 
     it('closes selector after second hole card', () => {
@@ -251,9 +237,7 @@ describe('useCardSelection', () => {
         result.current('A♠');
       });
 
-      expect(dispatchUi).toHaveBeenCalledWith({
-        type: UI_ACTIONS.CLOSE_CARD_SELECTOR,
-      });
+      expect(closeCardSelector).toHaveBeenCalled();
     });
   });
 
@@ -275,7 +259,7 @@ describe('useCardSelection', () => {
             ['', ''],
             'flop',
             dispatchCard,
-            dispatchUi
+            { closeCardSelector, setHighlightedCardIndex }
           ),
         { initialProps: { index: 0 } }
       );

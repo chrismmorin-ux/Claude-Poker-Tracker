@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { logger } from '../utils/errorHandler';
+import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
 import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USER_ID } from '../utils/persistence/index';
 import { PROFILE_VERSION } from '../utils/rangeEngine';
 import { mergeBriefings } from '../utils/exploitEngine/briefingMerge';
@@ -51,69 +51,82 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       const dbPlayerMap = new Map(dbPlayers.map(p => [p.playerId, p]));
 
       const entries = await Promise.all(allPlayers.map(async (player) => {
-        // Try to use cached range profile
-        let cachedRangeProfile = null;
         try {
-          const cached = await getRangeProfile(player.playerId, userId);
-          if (cached && cached.handsProcessed === hands.length && cached.profileVersion === PROFILE_VERSION) {
-            cachedRangeProfile = cached;
-          }
-        } catch (e) {
-          logger.warn('PlayerTendencies', 'range profile cache read failed', e.message);
-        }
-
-        const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
-
-        // Cache range profile if it was freshly built
-        if (result.rangeProfile && !cachedRangeProfile) {
+          // Try to use cached range profile
+          let cachedRangeProfile = null;
           try {
-            await saveRangeProfile(result.rangeProfile, userId);
+            const cached = await getRangeProfile(player.playerId, userId);
+            if (cached && cached.handsProcessed === hands.length && cached.profileVersion === PROFILE_VERSION) {
+              cachedRangeProfile = cached;
+            }
           } catch (e) {
-            logger.warn('PlayerTendencies', 'range profile save failed', e.message);
+            logger.warn('PlayerTendencies', 'range profile cache read failed', { playerId: player.playerId, error: e.message });
           }
-        }
 
-        // Merge briefings with existing persisted briefings
-        let briefings = result.briefings;
-        try {
-          const dbPlayer = dbPlayerMap.get(player.playerId);
-          const existingBriefings = dbPlayer?.exploitBriefings || [];
-          const dismissedIds = new Set(dbPlayer?.dismissedBriefingIds || []);
+          const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
 
-          briefings = mergeBriefings(existingBriefings, result.briefings, dismissedIds, result.exploits, {
-            handsProcessed: hands.length,
-            traits: result.rangeProfile?.traits || null,
-          });
+          // Cache range profile if it was freshly built
+          if (result.rangeProfile && !cachedRangeProfile) {
+            try {
+              await saveRangeProfile(result.rangeProfile, userId);
+            } catch (e) {
+              logger.warn('PlayerTendencies', 'range profile save failed', { playerId: player.playerId, error: e.message });
+            }
+          }
 
-          // Persist updated briefings
-          await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
+          // Merge briefings with existing persisted briefings
+          let briefings = result.briefings;
+          try {
+            const dbPlayer = dbPlayerMap.get(player.playerId);
+            const existingBriefings = dbPlayer?.exploitBriefings || [];
+            const dismissedIds = new Set(dbPlayer?.dismissedBriefingIds || []);
+
+            briefings = mergeBriefings(existingBriefings, result.briefings, dismissedIds, result.exploits, {
+              handsProcessed: hands.length,
+              traits: result.rangeProfile?.traits || null,
+            });
+
+            // Persist updated briefings
+            await updatePlayer(player.playerId, { exploitBriefings: briefings }, userId);
+          } catch (e) {
+            logger.warn('PlayerTendencies', 'briefing persistence failed', { playerId: player.playerId, handsProcessed: hands.length, error: e.message });
+          }
+
+          return [player.playerId, {
+            ...result.pct,
+            rawStats: result.rawStats,
+            positionStats: result.positionStats,
+            limpData: result.limpData,
+            style: result.style,
+            exploits: result.exploits,
+            briefings,
+            rangeProfile: result.rangeProfile,
+            rangeSummary: result.rangeSummary,
+            subActionSummary: result.subActionSummary,
+            decisionSummary: result.decisionSummary,
+            villainModel: result.villainModel,
+            villainProfile: result.villainProfile,
+            weaknesses: result.weaknesses,
+            observations: result.observations,
+            thoughtAnalysis: result.thoughtAnalysis,
+          }];
         } catch (e) {
-          logger.warn('PlayerTendencies', 'briefing persistence failed', e.message);
+          logger.error('PlayerTendencies', new AppError(
+            ERROR_CODES.HOOK_FAILED,
+            `Tendency calculation failed for player ${player.playerId}`,
+            { playerId: player.playerId, handsAvailable: hands.length, error: e.message }
+          ));
+          return null;
         }
-
-        return [player.playerId, {
-          ...result.pct,
-          rawStats: result.rawStats,
-          positionStats: result.positionStats,
-          limpData: result.limpData,
-          style: result.style,
-          exploits: result.exploits,
-          briefings,
-          rangeProfile: result.rangeProfile,
-          rangeSummary: result.rangeSummary,
-          subActionSummary: result.subActionSummary,
-          decisionSummary: result.decisionSummary,
-          villainModel: result.villainModel,
-          villainProfile: result.villainProfile,
-          weaknesses: result.weaknesses,
-          observations: result.observations,
-        }];
       }));
 
-      setTendencyMap(Object.fromEntries(entries));
+      setTendencyMap(Object.fromEntries(entries.filter(Boolean)));
     } catch (error) {
-      // Fail silently — stats are non-critical
-      logger.error('PlayerTendencies', error);
+      logger.error('PlayerTendencies', new AppError(
+        ERROR_CODES.HOOK_FAILED,
+        'Tendency batch calculation failed',
+        { playerCount: allPlayers.length, error: error.message }
+      ));
     } finally {
       setIsLoading(false);
     }

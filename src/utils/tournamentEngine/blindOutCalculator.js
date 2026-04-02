@@ -36,7 +36,11 @@ export const calculateOrbitsUntilBlindOut = (stack, blindSchedule, currentLevelI
   for (let i = 0; i < maxLevels && remaining > 0; i++) {
     const level = getBlindLevel(blindSchedule, levelIndex);
 
-    const costPerOrbit = level.sb + level.bb + (level.ante * numPlayers);
+    // BB-ante: ante posted once per orbit by BB. Per-player: every player posts each orbit.
+    const anteCost = level.anteFormat === 'bb-ante'
+      ? level.ante
+      : level.ante * numPlayers;
+    const costPerOrbit = level.sb + level.bb + anteCost;
     if (costPerOrbit <= 0) {
       // Free level (shouldn't happen but guard against infinite loop)
       levelIndex++;
