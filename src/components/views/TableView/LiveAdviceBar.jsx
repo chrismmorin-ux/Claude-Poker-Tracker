@@ -224,6 +224,14 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
                 </span>
               )}
               {useGameTree && <ConfidenceBadge villainPrediction={topRec.villainPrediction} />}
+              {useGameTree && topRec.risk?.isHighRisk && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                  background: '#78350f', color: '#fbbf24', letterSpacing: 0.5,
+                }}>
+                  HIGH VARIANCE
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               {displayEq != null && (
@@ -302,6 +310,13 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
                 {' R:'}{Math.round((topRec.villainResponse.raise?.pct ?? 0) * 100)}
               </span>
             )}
+            {useGameTree && topRec.risk?.isHighRisk && topRec.risk.downsideEV < 0 && topRec.risk.upsideEV > 0 && (
+              <span style={{ fontSize: 10, color: '#6b7280' }}>
+                <span style={{ color: '#ef4444' }}>{topRec.risk.downsideEV.toFixed(0)}</span>
+                {' to '}
+                <span style={{ color: '#22c55e' }}>+{topRec.risk.upsideEV.toFixed(0)}</span>
+              </span>
+            )}
             {!useGameTree && liveEquity?.villainName && (
               <span style={{ fontSize: 11, color: '#6b7280' }}>
                 vs {liveEquity.villainName}
@@ -318,6 +333,15 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
               {raiseNote && (
                 <span style={{ color: '#6b7280', marginLeft: 8 }}>{'\u2502'} If raised \u2192 {topRec.handPlan.ifRaise.plan}</span>
               )}
+            </div>
+          )}
+          {useGameTree && topRec.risk?.saferAlternative && (
+            <div style={{
+              fontSize: 10, color: '#fbbf24', marginTop: 2,
+              paddingLeft: 2,
+            }}>
+              {topRec.risk.saferAlternative.action.toUpperCase()} reduces risk {topRec.risk.saferAlternative.varianceReduction}%
+              {' for '}{topRec.risk.saferAlternative.evSacrifice.toFixed(1)} EV
             </div>
           )}
         </>
