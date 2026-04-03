@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "Poker Session Notes",
+  "version": "0.9.0",
+  "description": "Personal poker session note-taking assistant",
+  "permissions": [
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://*.ignitioncasino.eu/*",
+    "https://*.ignitioncasino.net/*",
+    "https://poker-tracker-68b97.web.app/*",
+    "http://localhost:5173/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.ignitioncasino.eu/*",
+        "https://*.ignitioncasino.net/*"
+      ],
+      "js": [
+        "content/capture-websocket-probe.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://*.ignitioncasino.eu/*",
+        "https://*.ignitioncasino.net/*"
+      ],
+      "js": [
+        "shared/constants.js",
+        "shared/port-connect.js",
+        "content/ignition-capture.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://poker-tracker-68b97.web.app/*",
+        "http://localhost:5173/*"
+      ],
+      "js": [
+        "shared/constants.js",
+        "shared/port-connect.js",
+        "content/app-bridge.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "side_panel": {
+    "default_path": "side-panel/side-panel.html"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}

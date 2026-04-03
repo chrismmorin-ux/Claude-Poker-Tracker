@@ -1,0 +1,19 @@
+{
+  "name": "ignition-poker-tracker",
+  "version": "0.9.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "harness:build": "node side-panel/harness/build-harness.mjs",
+    "harness": "node side-panel/harness/build-harness.mjs && npx serve side-panel/harness/dist -l 3333"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^29.0.1",
+    "vitest": "^3.1.0"
+  }
+}

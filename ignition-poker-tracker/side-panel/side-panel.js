@@ -1,0 +1,2271 @@
+/**
+ * side-panel/side-panel.js — HUD rendering + exploit display (push-only)
+ *
+ * Connects to the service worker via chrome.runtime.Port for push-based
+ * updates. No polling — all data arrives through port messages or is
+ * read from chrome.storage on push triggers.
+ */
+
+import { injectTokens } from '../shared/design-tokens.js';
+import * as stats from '../shared/stats-engine.js';
+import * as cardUtils from '../shared/card-utils.js';
+import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
+import { MSG, SESSION_KEYS } from '../shared/constants.js';
+import * as errors from '../shared/error-reporter.js';
+import { $, showEl, hideEl, isHidden, escapeHtml, renderCard, renderStatRow, buildSeatArcPositions, renderMiniCard } from './render-utils.js';
+import {
+  renderRangeBreakdownSection,
+  renderAllRecsSection, renderStreetTendenciesSection,
+  renderFoldCurveSection, renderFoldBreakdownSection,
+  renderComboStatsSection, renderModelAuditSection,
+  renderVulnerabilitiesSection,
+} from './render-tiers.js';
+import { renderStreetCard } from './render-street-card.js';
+import {
+  computeFocusedVillain as _computeFocusedVillain,
+  buildUnifiedHeaderHTML,
+  buildSeatArcHTML,
+  buildDeepExpanderHTML,
+  buildStreetProgressHTML,
+  buildStatusBar,
+} from './render-orchestrator.js';
+
+injectTokens();
+
+(() => {
+  'use strict';
+
+  // App URL — use prod if extension is from web store, else localhost dev server
+  // Appends #online to deep-link directly to the Online Play view
+  const APP_URL_PROD = 'https://poker-tracker-68b97.web.app';
+  const APP_URL_DEV = 'http://localhost:5173';
+  const getAppUrl = () => {
+    const base = chrome.runtime.getManifest?.()?.update_url ? APP_URL_PROD : APP_URL_DEV;
+    return `${base}#online`;
+  };
+
+  let lastHandCount = 0;
+  let cachedSeatStats = null;
+  let currentTableState = null;
+  let currentActiveTableId = null;
+  let currentLiveContext = null;
+  let lastGoodExploits = null;
+  let lastGoodAdvice = null;
+  let lastGoodWeaknesses = null;
+  let lastGoodBriefings = null;
+  let lastGoodObservations = null;
+  let lastGoodTournament = null;
+  let tournamentCollapsed = false;
+  let tourneyTimerInterval = null;
+  let appSeatData = {};
+  let lastPipeline = null;
+  let exploitPushCount = 0;
+  let advicePushCount = 0;
+  let cachedDiag = null; // Pipeline diagnostics from capture script
+  let swFallbackState = null; // SW-derived state when capture diagnostics are absent
+
+  // Auto-follow / pin state for villain focus
+  let focusedVillainSeat = null;
+  let pinnedVillainSeat = null;
+  let deepExpanderOpen = false;
+  let lastRenderedStreet = null; // Track street changes for fade transition
+  let advicePendingForStreet = null; // Set when new hand/street clears advice; cleared when advice arrives
+  let userCollapsedSections = new Set(); // Sections hero manually closed — don't auto-reopen
+
+  // =========================================================================
+  // PORT-BASED CONNECTION TO SERVICE WORKER (via shared module)
+  // =========================================================================
+
+  const conn = createPortConnection({
+    name: 'side-panel',
+    initialDelay: 1000,
+    maxDelay: 30000,
+
+    onMessage: (message) => {
+      switch (message.type) {
+        case 'push_pipeline_status':
+          handlePipelineStatus(message);
+          break;
+        case 'push_hands_updated':
+          handleHandsUpdated(message.totalHands);
+          break;
+        case 'push_exploits':
+          handleExploitsPush(message);
+          break;
+        case 'push_action_advice':
+          handleAdvicePush(message);
+          break;
+        case 'push_live_context':
+          handleLiveContextPush(message);
+          break;
+        case 'push_tournament':
+          handleTournamentPush(message);
+          break;
+        case 'push_pipeline_diagnostics':
+          if (message.data) {
+            cachedDiag = message.data;
+            renderPipelineHealth();
+            renderPidSummary(cachedDiag.pidCounts);
+            // Auto-dismiss recovery banner when traffic is flowing
+            if (cachedDiag.gameWsMessageCount > 0) {
+              hideRecoveryBanner();
+            }
+          }
+          break;
+        case 'push_recovery_needed':
+          showRecoveryBanner(message.message || 'Connection issue detected. Reload the Ignition page to start capturing.');
+          break;
+        case 'push_recovery_cleared':
+          hideRecoveryBanner();
+          break;
+        case 'push_silence_alert':
+          // Update pipeline health status text with silence info
+          if (message.level === 'stale' || message.level === 'dead') {
+            showRecoveryBanner(message.message || 'No game traffic detected. Reload the Ignition page.');
+          }
+          break;
+      }
+    },
+
+    onConnect: () => {
+      console.log('[Side Panel] Port connected');
+    },
+
+    onDisconnect: () => {
+      $('status-dot').className = 'status-dot yellow';
+      $('status-text').textContent = 'Reconnecting...';
+    },
+
+    onContextDead: () => {
+      $('status-dot').className = 'status-dot red';
+      $('status-text').textContent = 'Extension disconnected — reload page';
+    },
+
+    onVersionMismatch: (swVersion) => {
+      console.warn(`[Side Panel] Version mismatch — panel: ${EXTENSION_VERSION}, SW: ${swVersion}`);
+      $('status-text').textContent = 'Version mismatch — close & reopen panel';
+    },
+  });
+
+  // Refresh button — request full state push from SW
+  const refreshBtn = $('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      conn.send({ type: 'request_full_state' });
+    });
+  }
+
+  // =========================================================================
+  // RECOVERY BANNER — shown when WS capture needs page reload
+  // =========================================================================
+
+  const recoveryBanner = $('recovery-banner');
+  const recoveryText = $('recovery-text');
+  const recoveryBtn = $('recovery-reload-btn');
+
+  const showRecoveryBanner = (message) => {
+    if (!recoveryBanner) return;
+    if (recoveryText && message) recoveryText.textContent = message;
+    showEl(recoveryBanner);
+  };
+
+  const hideRecoveryBanner = () => {
+    if (recoveryBanner) hideEl(recoveryBanner);
+  };
+
+  if (recoveryBtn) {
+    recoveryBtn.addEventListener('click', () => {
+      recoveryBtn.disabled = true;
+      recoveryBtn.textContent = 'Reloading...';
+      conn.send({ type: 'reload_ignition_tabs' });
+      // Re-enable after 5s in case reload doesn't trigger banner clear
+      setTimeout(() => {
+        recoveryBtn.disabled = false;
+        recoveryBtn.textContent = 'Reload Ignition Page';
+      }, 5000);
+    });
+  }
+
+  // =========================================================================
+  // STORAGE LISTENER — auto-refresh when new hands arrive in side panel mirror
+  // =========================================================================
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'session') return;
+    if (changes[SESSION_KEYS.SIDE_PANEL_HANDS]) {
+      refreshHandStats(currentActiveTableId, lastPipeline);
+    }
+    if (changes[SESSION_KEYS.PIPELINE_DIAG]) {
+      cachedDiag = changes[SESSION_KEYS.PIPELINE_DIAG].newValue || null;
+      renderPipelineHealth();
+    }
+  });
+
+  // =========================================================================
+  // PUSH HANDLERS
+  // =========================================================================
+
+  /** Update the app-connection badge in the status bar. */
+  const updateAppStatus = (connected) => {
+    const badge = $('app-status');
+    if (!badge) return;
+    if (connected) {
+      badge.className = 'app-status connected';
+      badge.textContent = 'App synced';
+    } else {
+      badge.className = 'app-status disconnected';
+      badge.textContent = 'App not open';
+    }
+  };
+
+  /** Handle full pipeline status push (replaces the old poll cycle). */
+  const handlePipelineStatus = async (pipeline) => {
+    lastPipeline = pipeline;
+    updateStatusBar(pipeline, 0);
+    if (pipeline?.appConnected !== undefined) updateAppStatus(pipeline.appConnected);
+
+    // Find active table
+    const tables = pipeline?.tables || {};
+    const tableEntries = Object.entries(tables);
+    const prevTableId = currentActiveTableId;
+
+    if (tableEntries.length > 0) {
+      const [connId] = tableEntries[0];
+      currentActiveTableId = `table_${connId}`;
+      currentTableState = tableEntries[0][1];
+    } else {
+      currentActiveTableId = null;
+      currentTableState = null;
+    }
+
+    // Clear stale state on table switch
+    if (currentActiveTableId !== prevTableId) {
+      pinnedVillainSeat = null;
+      lastGoodAdvice = null;
+      lastGoodTournament = null;
+      currentLiveContext = null;
+    }
+
+    // Use live context from push (only if provided — don't keep stale context)
+    if (pipeline?.liveContext) {
+      currentLiveContext = pipeline.liveContext;
+    }
+
+    // Process diagnostic data for tournament log
+    handleDiagnosticData(pipeline?.diagnosticData);
+
+    // Read hands from storage and compute stats
+    await refreshHandStats(currentActiveTableId, pipeline);
+  };
+
+  /** When hands are updated, re-read storage and recompute stats. */
+  const handleHandsUpdated = async (_totalHands) => {
+    await refreshHandStats(currentActiveTableId, lastPipeline);
+  };
+
+  /** Shared: read hands from storage, compute stats, render. */
+  const refreshHandStats = async (activeTableId, pipeline) => {
+    try {
+      const result = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
+      const hands = result[SESSION_KEYS.SIDE_PANEL_HANDS] || [];
+
+      // Use active table's hands only — cross-table fallback mixes seat data
+      // from different tables causing wrong player stats
+      let tableHands = [];
+      if (activeTableId) {
+        tableHands = hands.filter(h => h.tableId === activeTableId);
+      }
+      // Only fall back to recent hands if no active table at all (between sessions)
+      if (tableHands.length === 0 && !activeTableId && hands.length > 0) {
+        const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+        const recentHands = hands.filter(h => (h.capturedAt || h.timestamp || 0) > cutoff);
+        tableHands = recentHands.length > 0 ? recentHands : hands.slice(-50);
+      }
+
+      if (tableHands.length === 0) {
+        showEl($('no-table'));
+        showEl($('pipeline-health'));
+        hideEl($('hud-content'));
+        renderPipelineHealth();
+        return;
+      }
+
+      hideEl($('no-table'));
+      hideEl($('pipeline-health'));
+      showEl($('hud-content'));
+
+      // Recompute stats only when hand count changes
+      if (tableHands.length !== lastHandCount) {
+        cachedSeatStats = stats.computeAllSeatStats(tableHands);
+        lastHandCount = tableHands.length;
+      }
+
+      // Build unified seat map (tournament: physical → regSeatNo, cash: null)
+      cachedSeatMap = buildUnifiedSeatMap(
+        currentTableState?.seatDisplayMap || null, tableHands
+      );
+
+      // Update status bar with table-filtered count
+      if (pipeline) updateStatusBar(pipeline, tableHands.length);
+
+      // Single coordinated UI render (includes seat arc, header, street card, deep expander)
+      renderUI();
+    } catch (e) {
+      console.warn('[Side Panel] refreshHandStats error:', e.message);
+    }
+  };
+
+  const handleExploitsPush = (message) => {
+    exploitPushCount++;
+    if (message.seats) {
+      const appConnected = message.appConnected !== false;
+      updateAppStatus(appConnected);
+      lastGoodExploits = { seats: message.seats, appConnected };
+
+      // Build per-seat lookup for enhanced seat cards
+      appSeatData = {};
+      for (const s of message.seats) {
+        appSeatData[s.seat] = {
+          exploitCount: (s.exploits || []).length,
+          weaknessCount: (s.weaknesses || []).length,
+          style: s.style,
+          sampleSize: s.sampleSize || 0,
+          stats: s.stats || null,
+          villainHeadline: s.villainHeadline || null,
+          villainProfile: s.villainProfile || null,
+        };
+      }
+
+      // Extract weaknesses across all seats
+      lastGoodWeaknesses = message.seats.flatMap(s =>
+        (s.weaknesses || []).map(w => ({ ...w, seat: Number(s.seat), seatStyle: s.style }))
+      );
+
+      // Extract briefings across all seats
+      lastGoodBriefings = message.seats.flatMap(s =>
+        (s.briefings || []).map(b => ({ ...b, seat: Number(s.seat), seatStyle: s.style }))
+      );
+
+      // Extract observations across all seats
+      lastGoodObservations = message.seats.flatMap(s =>
+        (s.observations || []).map(o => ({ ...o, seat: Number(s.seat), seatStyle: s.style }))
+      );
+
+      // Re-render with updated app data
+      renderUI();
+    }
+  };
+
+  const handleAdvicePush = (message) => {
+    advicePushCount++;
+    if (message.advice) {
+      // Reject stale advice: if live context is on a later street than the advice,
+      // the advice is from a previous hand/street and should be discarded
+      const adviceStreet = message.advice.currentStreet;
+      const liveStreet = currentLiveContext?.currentStreet;
+      const STREET_RANK = { preflop: 0, flop: 1, turn: 2, river: 3 };
+      const adviceRank = STREET_RANK[adviceStreet] ?? -1;
+      const liveRank = STREET_RANK[liveStreet] ?? -1;
+
+      // Only accept advice for current or later street (advice can arrive before
+      // live context updates, so accept same or ahead)
+      if (liveRank <= adviceRank || adviceRank === -1) {
+        lastGoodAdvice = message.advice;
+        // Fresh advice arrived — clear pending flag and flush render immediately
+        // (bypasses 80ms debounce so advice appears the instant it's ready)
+        if (advicePendingForStreet) {
+          advicePendingForStreet = null;
+          if (renderUITimer) clearTimeout(renderUITimer);
+          renderUIImmediate();
+          return;
+        }
+      }
+    }
+    renderUI();
+  };
+
+  const handleLiveContextPush = (message) => {
+    if (message.context) {
+      const prevState = currentLiveContext?.state;
+      currentLiveContext = { ...message.context, _receivedAt: Date.now() };
+
+      // New hand boundary: clear stale per-hand data so previous hand's advice
+      // doesn't render in the new hand.  The loading guard in renderStreetCard
+      // keeps the old *visual content* visible (with shimmer) until fresh advice
+      // arrives, so the user never sees a blank flash.
+      const newState = currentLiveContext.state;
+      if (prevState !== newState && (newState === 'PREFLOP' || newState === 'DEALING')) {
+        advicePendingForStreet = newState;
+        lastGoodAdvice = null;
+        lastRenderedStreet = null;
+        userCollapsedSections.clear(); // Reset per-hand collapse tracking
+        deepExpanderOpen = false; // Reset auto-expand for new hand
+      }
+
+      // Surface raw tournament level info if present (before app provides structured data)
+      if (message.context.tournamentLevelInfo && !lastGoodTournament) {
+        renderRawTournamentInfo(message.context.tournamentLevelInfo);
+      }
+
+      renderUI();
+    }
+  };
+
+  // Clear stale live context every 10s — shows "Between hands" when no updates for 30s
+  setInterval(() => {
+    if (currentLiveContext && currentLiveContext._receivedAt) {
+      if (Date.now() - currentLiveContext._receivedAt > 30_000) {
+        currentLiveContext = null;
+        renderUI();
+      }
+    }
+  }, 10_000);
+
+  // =========================================================================
+  // TOURNAMENT PANEL
+  // =========================================================================
+
+  /**
+   * Display basic tournament info from raw Ignition level data.
+   * Used as a lightweight fallback before the main app provides structured data.
+   */
+  const renderRawTournamentInfo = (levelInfo) => {
+    const bar = $('tournament-bar');
+    if (!bar) return;
+
+    const level = levelInfo.level || levelInfo.levelNo || null;
+    const sb = levelInfo.sb || levelInfo.smallBlind || null;
+    const bb = levelInfo.bb || levelInfo.bigBlind || null;
+    const ante = levelInfo.ante || 0;
+
+    if (level == null && sb == null) return;
+
+    let blindStr = '';
+    if (sb != null && bb != null) {
+      blindStr = `${sb}/${bb}`;
+      if (ante > 0) blindStr += ` A${ante}`;
+    }
+
+    showEl(bar);
+    bar.innerHTML = `<span class="tourney-bar-info">Level ${level || '?'}</span>`
+      + `<span class="tourney-bar-sep"></span>`
+      + `<span class="tourney-bar-info">${blindStr}</span>`
+      + `<span style="margin-left:auto;font-size:9px;color:var(--text-faint)">Open app for full analysis</span>`;
+  };
+
+  const handleTournamentPush = (message) => {
+    lastGoodTournament = message.tournament;
+    renderTournamentPanel(message.tournament);
+  };
+
+  const renderTournamentPanel = (t) => {
+    const bar = $('tournament-bar');
+    const detail = $('tournament-detail');
+    const detailContent = $('tournament-detail-content');
+    if (!bar) return;
+
+    if (!t) {
+      hideEl(bar);
+      if (detail) detail.classList.remove('open');
+      if (tourneyTimerInterval) { clearInterval(tourneyTimerInterval); tourneyTimerInterval = null; }
+      return;
+    }
+
+    const ZONE_COLORS = {
+      comfortable: '#22c55e', caution: '#eab308',
+      pushFold: '#f97316', shoveOnly: '#ef4444',
+    };
+
+    // ── Slim bar ──
+    const zone = t.mRatioGuidance?.zone || 'comfortable';
+    const mColor = ZONE_COLORS[zone] || '#22c55e';
+    const playersText = t.totalEntrants
+      ? `${t.playersRemaining || '?'}/${t.totalEntrants}`
+      : t.playersRemaining ? `${t.playersRemaining} left` : '';
+
+    let barHtml = '';
+    if (t.heroMRatio != null) {
+      barHtml += `<span class="tourney-m-label">M</span>`;
+      barHtml += `<span class="tourney-m-value" style="color:${mColor}">${t.heroMRatio.toFixed(1)}</span>`;
+    }
+    // ICM badge
+    if (t.icmPressure && t.icmPressure.zone !== 'standard') {
+      const icmLabels = { bubble: 'BUBBLE', approaching: 'NEAR BUBBLE', itm: 'ITM' };
+      const icmClass = { bubble: 'icm-bubble', approaching: 'icm-approaching', itm: 'icm-itm' };
+      const label = icmLabels[t.icmPressure.zone];
+      const cls = icmClass[t.icmPressure.zone];
+      if (label && cls) barHtml += `<span class="tourney-icm-badge ${cls}">${label}</span>`;
+    }
+    barHtml += `<span class="tourney-bar-sep"></span>`;
+    barHtml += `<span class="tourney-bar-info">Lvl ${(t.currentLevelIndex || 0) + 1}</span>`;
+    if (playersText) barHtml += `<span class="tourney-bar-info">${playersText}</span>`;
+
+    // Timer
+    barHtml += `<span class="tourney-bar-timer" id="tourney-bar-timer"></span>`;
+    barHtml += `<span class="tourney-bar-chevron${tournamentCollapsed ? '' : ' open'}" id="tourney-bar-chevron">\u25BE</span>`;
+
+    showEl(bar);
+    bar.innerHTML = barHtml;
+
+    // Timer countdown
+    if (tourneyTimerInterval) { clearInterval(tourneyTimerInterval); tourneyTimerInterval = null; }
+    const timerEl = $('tourney-bar-timer');
+    if (t.levelEndTime && timerEl) {
+      const updateTimer = () => {
+        const remaining = Math.max(0, t.levelEndTime - Date.now());
+        const totalSec = Math.floor(remaining / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        if (remaining <= 0) {
+          timerEl.textContent = '0:00';
+          clearInterval(tourneyTimerInterval);
+          tourneyTimerInterval = null;
+        }
+      };
+      updateTimer();
+      tourneyTimerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Click to expand/collapse detail
+    bar.onclick = () => {
+      tournamentCollapsed = !tournamentCollapsed;
+      const chevron = $('tourney-bar-chevron');
+      if (tournamentCollapsed) {
+        detail.classList.remove('open');
+        if (chevron) chevron.classList.remove('open');
+      } else {
+        detail.classList.add('open');
+        if (chevron) chevron.classList.add('open');
+      }
+    };
+    // Sync initial state
+    if (!tournamentCollapsed) detail.classList.add('open');
+    else detail.classList.remove('open');
+
+    // ── Detail content ──
+    if (!detailContent) return;
+    let dHtml = '';
+
+    // M-Ratio bar
+    if (t.heroMRatio != null) {
+      const barPct = Math.min(100, (t.heroMRatio / 30) * 100);
+      dHtml += `<div class="tourney-section">
+        <div class="flex-between" style="margin-bottom:3px">
+          <span class="tourney-section-label">M-Ratio</span>
+          <span class="tourney-mratio-value" style="color:${mColor}">${t.heroMRatio.toFixed(1)}</span>
+        </div>
+        <div class="tourney-bar-track"><div class="tourney-bar-fill" style="width:${barPct}%;background:${mColor}"></div></div>
+        <div class="tourney-guidance" style="color:${mColor}">${escapeHtml(t.mRatioGuidance?.label || '')}</div>
+      </div>`;
+    }
+
+    // Blinds
+    if (t.currentBlinds) {
+      const cb = t.currentBlinds;
+      let label = `${cb.sb}/${cb.bb}`;
+      if (cb.ante > 0) label += ` ante ${cb.ante}`;
+      dHtml += `<div class="tourney-section">
+        <div class="tourney-section-label">Blinds</div>
+        <div class="tourney-section-value">${label}</div>`;
+      if (t.nextBlinds) {
+        const nb = t.nextBlinds;
+        let next = `${nb.sb}/${nb.bb}`;
+        if (nb.ante > 0) next += ` ante ${nb.ante}`;
+        dHtml += `<div class="tourney-blinds-next">Next: ${next}</div>`;
+      }
+      dHtml += `</div>`;
+    }
+
+    // Stack
+    if (t.heroStack > 0) {
+      const bb = t.currentBlinds?.bb || 1;
+      const bbRem = Math.round(t.heroStack / bb);
+      let stackInfo = `${t.heroStack.toLocaleString()} (${bbRem} BB)`;
+      if (t.avgStack > 0) {
+        stackInfo += ` \u00B7 Avg: ${t.avgStack.toLocaleString()} (${(t.heroStack / t.avgStack * 100).toFixed(0)}%)`;
+      }
+      dHtml += `<div class="tourney-section">
+        <div class="tourney-section-label">Stack</div>
+        <div class="tourney-section-value">${stackInfo}</div>
+      </div>`;
+    }
+
+    // Blind-out
+    if (t.blindOutInfo) {
+      const mins = t.blindOutInfo.wallClockMinutes || 0;
+      const levels = t.blindOutInfo.levelsRemaining || 0;
+      dHtml += `<div class="tourney-section">
+        <div class="tourney-section-label">Blind-Out</div>
+        <div class="tourney-section-value">${levels} level${levels !== 1 ? 's' : ''} / ~${mins} min</div>
+      </div>`;
+    }
+
+    // ICM
+    if (t.icmPressure && t.icmPressure.zone !== 'standard') {
+      const icmLabels = { bubble: 'On the bubble', approaching: 'Approaching bubble', itm: 'In the money' };
+      let icmDetail = icmLabels[t.icmPressure.zone] || '';
+      if (t.icmPressure.playersFromBubble > 0) {
+        icmDetail += ` (${t.icmPressure.playersFromBubble} away)`;
+      }
+      dHtml += `<div class="tourney-section">
+        <div class="tourney-section-label">ICM</div>
+        <div class="tourney-section-value">${escapeHtml(icmDetail)}</div>
+      </div>`;
+    }
+
+    // Milestones
+    const milestones = t.predictions?.milestones || [];
+    if (milestones.length > 0) {
+      dHtml += `<div class="tourney-section"><div class="tourney-section-label">Milestones</div>`;
+      for (const m of milestones) {
+        const mins = Math.round(m.estimatedMinutes || 0);
+        const label = m.milestone === 'bubble' ? 'Bubble' : m.milestone === 'finalTable' ? 'Final Table' : m.milestone;
+        const timeStr = mins < 60 ? `~${mins}m` : `~${(mins / 60).toFixed(1)}h`;
+        dHtml += `<div class="milestone-row"><span class="milestone-label">${escapeHtml(label)}</span><span class="milestone-time">${timeStr}</span></div>`;
+      }
+      dHtml += `</div>`;
+    }
+
+    // Progress
+    if (t.progress != null) {
+      dHtml += `<div class="tourney-section">
+        <div class="flex-between" style="margin-bottom:2px">
+          <span class="tourney-section-label">Progress</span>
+          <span class="tourney-progress-pct">${t.progress}% eliminated</span>
+        </div>
+        <div class="tourney-progress-track"><div class="tourney-progress-fill" style="width:${t.progress}%"></div></div>
+      </div>`;
+    }
+
+    detailContent.innerHTML = dHtml;
+  };
+
+  // =========================================================================
+  // STATUS BAR
+  // =========================================================================
+
+  /**
+   * Update status bar — delegates text/class computation to render-orchestrator.js.
+   */
+  const updateStatusBar = (pipeline, handCount) => {
+    const dot = $('status-dot');
+    const text = $('status-text');
+
+    if (!dot || !text) return; // DOM not ready
+    $('hand-count').textContent = handCount;
+
+    const result = buildStatusBar(pipeline, handCount);
+    dot.className = result.dotClass;
+    text.textContent = result.text || getDiagnosticStatus();
+  };
+
+  /** Generate a stage-aware status message from pipeline diagnostics. */
+  const getDiagnosticStatus = () => {
+    const d = cachedDiag;
+    if (!d) {
+      if (swFallbackState) {
+        if (swFallbackState.capturePorts === 0) {
+          return 'Capture script not running — open Ignition page';
+        }
+        return 'Capture connected but diagnostics unavailable';
+      }
+      return 'Connecting to capture...';
+    }
+    if (!d.probeReady) {
+      const elapsed = Date.now() - (d.captureStartedAt || Date.now());
+      return elapsed > 6000
+        ? 'Probe not detected — try refreshing page'
+        : 'Waiting for WebSocket probe...';
+    }
+    if (d.wsMessageCount === 0) return 'Probe active — waiting for WS traffic...';
+    if (d.gameWsMessageCount === 0) return 'WS traffic detected — no game messages (URL mismatch?)';
+    return 'Game messages received — building table state...';
+  };
+
+  // =========================================================================
+  // PIPELINE HEALTH STRIP — visual indicator for each capture stage
+  // =========================================================================
+
+  const renderPipelineHealth = () => {
+    const healthEl = $('pipeline-health');
+    if (!healthEl) return;
+
+    const d = cachedDiag;
+    const connState = conn.getState();
+    const now = Date.now();
+    const detail = $('pipeline-detail');
+
+    const setDot = (id, state) => {
+      const dot = $(`stage-dot-${id}`);
+      if (dot) dot.className = `stage-dot ${state}`;
+    };
+
+    // No diagnostics at all — check SW fallback for more info
+    if (!d) {
+      setDot('probe', 'unknown');
+      setDot('bridge', 'unknown');
+      setDot('filter', 'unknown');
+      if (swFallbackState) {
+        setDot('port', swFallbackState.capturePorts > 0 ? 'ok' : 'fail');
+        setDot('panel', connState.connected ? 'ok' : 'warn');
+        if (detail) {
+          if (swFallbackState.capturePorts === 0) {
+            detail.textContent = 'No capture script connected to the service worker. '
+              + 'Make sure the Ignition Casino page is open (.eu or .net) and refresh it.';
+          } else {
+            detail.textContent = 'Capture port connected but diagnostics not received. '
+              + 'Try refreshing the Ignition page.';
+          }
+        }
+      } else {
+        setDot('port', 'unknown');
+        setDot('panel', connState.connected ? 'ok' : 'warn');
+        if (detail) detail.textContent = 'Waiting for capture script — is the Ignition page open?';
+      }
+      return;
+    }
+
+    const elapsed = now - (d.captureStartedAt || now);
+
+    // Stage 1: Probe
+    if (d.probeReady) {
+      setDot('probe', 'ok');
+    } else if (elapsed > 6000) {
+      setDot('probe', 'fail');
+    } else {
+      setDot('probe', 'warn');
+    }
+
+    // Stage 2: Bridge (WS messages received from probe)
+    if (d.wsMessageCount > 0) {
+      setDot('bridge', 'ok');
+    } else if (d.probeReady && elapsed > 10000) {
+      setDot('bridge', 'warn');
+    } else {
+      setDot('bridge', d.probeReady ? 'warn' : 'unknown');
+    }
+
+    // Stage 3: Filter (game WS messages passed isGameWsUrl)
+    if (d.gameWsMessageCount > 0) {
+      setDot('filter', 'ok');
+    } else if (d.wsMessageCount > 0 && d.gameWsMessageCount === 0) {
+      setDot('filter', 'fail'); // URL mismatch!
+    } else {
+      setDot('filter', 'unknown');
+    }
+
+    // Stage 4: Port (capture → SW connection)
+    if (d.capturePortConnected) {
+      setDot('port', 'ok');
+    } else if (d.capturePortConnectCount > 0) {
+      setDot('port', 'warn'); // reconnecting
+    } else if (elapsed > 5000) {
+      setDot('port', 'fail');
+    } else {
+      setDot('port', 'unknown');
+    }
+
+    // Stage 5: Panel (side panel → SW connection)
+    setDot('panel', connState.connected ? 'ok' : 'warn');
+
+    // Detail text — explain the first broken stage
+    if (detail) {
+      detail.innerHTML = getPipelineDetailHTML(d, elapsed);
+    }
+  };
+
+  /** Build detail text explaining the first broken pipeline stage. */
+  const getPipelineDetailHTML = (d, elapsed) => {
+    if (!d.probeReady && elapsed > 6000) {
+      return 'WebSocket probe did not inject. Try refreshing the Ignition page.';
+    }
+
+    if (d.probeReady && d.wsMessageCount === 0 && elapsed > 10000) {
+      return 'Probe is active but no WebSocket messages received. The poker client may not have opened a connection yet — navigate to a table.';
+    }
+
+    if (d.wsMessageCount > 0 && d.gameWsMessageCount === 0) {
+      const urls = (d.seenWsUrls || []).map(u => escapeHtml(u)).join('<br>');
+      return `WebSocket traffic detected but no game messages. URL mismatch?<br>`
+        + `<span class="pipeline-urls">Seen: ${urls || 'none'}<br>Expected: pkscb.ignitioncasino.{eu,net}/poker-games/rgs</span>`;
+    }
+
+    if (!d.capturePortConnected && d.capturePortConnectCount === 0 && elapsed > 5000) {
+      return 'Capture script cannot reach the service worker. Try reloading the extension.';
+    }
+
+    if (d.gameWsMessageCount > 0 && (d.tableCount || 0) === 0) {
+      return 'Game messages received but no table state built yet — waiting for hand start...';
+    }
+
+    if (d.probeReady && d.wsMessageCount === 0) {
+      return 'Probe active — waiting for WebSocket traffic...';
+    }
+
+    if (!d.probeReady) {
+      return 'Waiting for WebSocket probe to initialize...';
+    }
+
+    // Everything looks OK but no hands yet
+    if (d.tableCount > 0) {
+      let html = `Connected to ${d.tableCount} table(s) — waiting for first hand to complete.`;
+      if (d.batchedFrameCount > 0) {
+        html += `<br><span style="color:var(--text-muted);font-size:10px">Batched frames: ${d.batchedFrameCount}, total messages: ${d.totalParsedMessages}</span>`;
+      }
+      return html;
+    }
+
+    return '';
+  };
+
+  /** Render PID distribution summary when diagnostics include pidCounts. */
+  const renderPidSummary = (pidCounts) => {
+    const pidEl = $('pid-summary');
+    if (!pidEl) return;
+    if (!pidCounts || Object.keys(pidCounts).length === 0) {
+      hideEl(pidEl);
+      return;
+    }
+    showEl(pidEl);
+
+    const CRITICAL_PIDS = ['CO_BLIND_INFO', 'CO_CHIPTABLE_INFO', 'CO_OPTION_INFO'];
+    const entries = Object.entries(pidCounts).sort((a, b) => b[1] - a[1]);
+    let html = '<div style="font-size:10px;color:var(--text-secondary);padding:4px 8px">';
+    html += `<div style="margin-bottom:2px;color:var(--text-muted)">PIDs (${entries.length} types, ${entries.reduce((s, e) => s + e[1], 0)} msgs)</div>`;
+    for (const [pid, count] of entries.slice(0, 20)) {
+      const isCritical = CRITICAL_PIDS.includes(pid);
+      const color = isCritical && count === 0 ? 'color:var(--m-red)' : isCritical ? 'color:var(--m-green)' : '';
+      html += `<span style="margin-right:6px;${color}">${pid.replace('CO_', '').replace('PLAY_', '')}:${count}</span>`;
+    }
+    html += '</div>';
+    pidEl.innerHTML = html;
+  };
+
+  // =========================================================================
+  // SEAT IDENTITY TRANSLATION (single boundary — physical → display keys)
+  // =========================================================================
+
+  /**
+   * Build unified seat display map from live HSM + archived hand snapshots.
+   * Returns the most complete physical → regSeatNo mapping available.
+   * Returns null for cash games (no mapping data anywhere).
+   */
+  const buildUnifiedSeatMap = (liveSeatDisplayMap, hands) => {
+    const unified = {};
+    for (const hand of hands) {
+      const map = hand.ignitionMeta?.seatDisplayMap;
+      if (map) Object.assign(unified, map);
+    }
+    if (liveSeatDisplayMap) Object.assign(unified, liveSeatDisplayMap);
+    return Object.keys(unified).length > 0 ? unified : null;
+  };
+
+  let cachedSeatMap = null; // Most recent unified seat map
+
+  // =========================================================================
+  // SEAT ARC — Semicircle poker table layout
+  // =========================================================================
+
+  /**
+   * Compute focused villain based on priority chain:
+   * pinned > advice.villainSeat > pfAggressor > HU opponent > null
+   * Delegates to pure function in render-orchestrator.js.
+   */
+  const computeFocusedVillain = () => _computeFocusedVillain({
+    pinnedVillainSeat, lastGoodAdvice, currentLiveContext, currentTableState,
+  });
+
+  /**
+   * Render seat arc — delegates HTML generation to render-orchestrator.js.
+   * @param {Object} physicalStats - { [physicalSeat]: statsObj } from stats engine
+   * @param {Object} tableState - From HSM getState()
+   * @param {Object|null} seatMap - Unified physical → regSeatNo map (null for cash)
+   */
+  const renderSeatArc = (physicalStats, tableState, seatMap) => {
+    const arc = $('seat-arc');
+    if (!arc) return;
+    const html = buildSeatArcHTML(physicalStats, tableState, seatMap, {
+      currentLiveContext,
+      appSeatData,
+      focusedVillainSeat,
+      pinnedVillainSeat,
+      containerWidth: arc.offsetWidth || 380,
+    });
+    if (arc.innerHTML === html) return; // skip redundant DOM write
+    arc.innerHTML = html;
+  };
+
+  // =========================================================================
+  // UNIFIED HEADER — Action + Villain + Cards (sticky)
+  // =========================================================================
+
+  /**
+   * Render unified header — delegates HTML generation to render-orchestrator.js.
+   */
+  const renderUnifiedHeader = (advice, liveContext) => {
+    const header = $('unified-header');
+    if (!header) return;
+
+    const result = buildUnifiedHeaderHTML(advice, liveContext, {
+      focusedVillainSeat,
+      pinnedVillainSeat,
+      appSeatData,
+      currentTableState,
+      currentLiveContext,
+    });
+
+    if (result.isWaiting) {
+      // Between hands — only show waiting if header is empty or was previously waiting
+      // (prevents flashing when transitioning between hands)
+      if (!header.innerHTML || header.querySelector('.uh-waiting')) {
+        showEl(header);
+        header.className = result.className;
+        header.innerHTML = result.html;
+      }
+      return;
+    }
+
+    if (header.className === result.className && header.innerHTML === result.html) return; // skip redundant DOM write
+    showEl(header);
+    header.className = result.className;
+    header.innerHTML = result.html;
+  };
+
+  // =========================================================================
+  // DEEP EXPANDER — "More Analysis" toggle
+  // =========================================================================
+
+  const deepExpanderBtn = $('deep-expander-btn');
+  const deepExpanderContent = $('deep-expander-content');
+  const deepExpanderChevron = $('deep-expander-chevron');
+
+  if (deepExpanderBtn) {
+    deepExpanderBtn.addEventListener('click', () => {
+      deepExpanderOpen = !deepExpanderOpen;
+      if (deepExpanderOpen) {
+        deepExpanderContent.classList.add('open');
+        deepExpanderChevron.classList.add('open');
+      } else {
+        deepExpanderContent.classList.remove('open');
+        deepExpanderChevron.classList.remove('open');
+      }
+    });
+  }
+
+  /**
+   * Render deep expander — delegates HTML generation to render-orchestrator.js.
+   */
+  const renderDeepExpander = (advice, street) => {
+    const btn = $('deep-expander-btn');
+    const content = $('deep-expander-content');
+    if (!btn || !content) return;
+
+    const result = buildDeepExpanderHTML(advice, street);
+
+    if (!result.showButton) {
+      // Keep last content visible (don't flash empty) — just hide the button
+      hideEl(btn);
+      return;
+    }
+
+    showEl(btn);
+
+    // Auto-open the expander container on postflop streets
+    if (street && street !== 'preflop' && !deepExpanderOpen) {
+      deepExpanderOpen = true;
+      content.classList.add('open');
+      if (deepExpanderChevron) deepExpanderChevron.classList.add('open');
+    }
+
+    if (content.innerHTML === result.html) return; // skip redundant DOM write
+    content.innerHTML = result.html;
+
+    // Init collapsible toggles for deep sections inside expander
+    for (const header of content.querySelectorAll('.deep-header')) {
+      header.addEventListener('click', () => {
+        const section = header.parentElement;
+        const sectionKey = section.dataset.section;
+        const wasOpen = section.classList.contains('open');
+        section.classList.toggle('open');
+        // Track user-closed sections to prevent auto-reopen
+        if (wasOpen && sectionKey) userCollapsedSections.add(sectionKey);
+        else if (sectionKey) userCollapsedSections.delete(sectionKey);
+      });
+    }
+  };
+
+  // =========================================================================
+  // APP LAUNCH PROMPT — shown when app isn't connected
+  // =========================================================================
+
+  const renderAppLaunchPrompt = (appConnected) => {
+    const el = $('app-launch-prompt');
+    if (!el) return;
+
+    // Build the prompt HTML
+    let promptHtml = '';
+    if (!appConnected) {
+      promptHtml = `<div class="street-card-section" style="text-align:center;padding:8px 0;border-top:1px solid var(--border-default);margin-top:6px">
+        <a href="#" id="launch-app-link" style="color:var(--gold);font-weight:bold;font-size:var(--font-sm);text-decoration:none;cursor:pointer">
+          Launch Poker Tracker \u2192
+        </a>
+        <div style="font-size:var(--font-xs);color:var(--text-faint);margin-top:4px">
+          Open app for exploit tips &amp; live advice
+        </div>
+      </div>`;
+    } else {
+      promptHtml = `<div class="street-card-section" style="text-align:center;padding:4px 0;font-size:var(--font-xs);color:var(--text-faint)">
+        App connected \u2014 analyzing opponents\u2026
+      </div>`;
+    }
+
+    showEl(el);
+    if (el.innerHTML === promptHtml) return; // change detection
+    el.innerHTML = promptHtml;
+
+    // Attach click handler for launch link
+    const link = $('launch-app-link');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: getAppUrl() });
+      });
+    }
+  };
+
+  // =========================================================================
+  // SEAT POPOVER — click a seat card to see villain profile details
+  // =========================================================================
+
+  const seatPopover = $('seat-popover');
+  let activePopoverSeat = null;
+
+  const showSeatPopover = (seatNum, cardEl) => {
+    const app = appSeatData[seatNum];
+    const vp = app?.villainProfile;
+    const seatStats = cachedSeatStats?.[seatNum];
+
+    // Need either villain profile or basic stats to show anything
+    if (!vp && !seatStats) { hideSeatPopover(); return; }
+
+    let html = '';
+
+    // Header: seat + style
+    const style = seatStats?.style || app?.style;
+    if (style) {
+      const colors = stats.STYLE_COLORS[style] || stats.STYLE_COLORS.Unknown;
+      html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">`;
+      html += `<span style="font-weight:bold;color:var(--gold)">Seat ${seatNum}</span>`;
+      html += `<span class="uh-style-badge" style="background:${colors.bg};color:${colors.text}">${style}</span>`;
+      if (seatStats?.sampleSize) html += `<span style="font-size:var(--font-xs);color:var(--text-faint)">${seatStats.sampleSize}h</span>`;
+      html += `</div>`;
+    } else {
+      html += `<div style="font-weight:bold;color:var(--gold);margin-bottom:6px">Seat ${seatNum}</div>`;
+    }
+
+    // Villain profile (from app)
+    if (vp?.headline) {
+      html += `<div class="seat-popover-headline">${escapeHtml(vp.headline)}</div>`;
+    } else if (app?.villainHeadline) {
+      html += `<div class="seat-popover-headline">${escapeHtml(app.villainHeadline)}</div>`;
+    }
+    if (vp?.maturityLabel) {
+      html += `<div style="font-size:var(--font-xs);color:var(--text-muted);margin-bottom:4px">${escapeHtml(vp.maturityLabel)} (${vp.totalObservations || 0} obs)</div>`;
+    }
+    if (vp?.decisionModelDescription) {
+      html += `<div class="seat-popover-trait">${escapeHtml(vp.decisionModelDescription)}</div>`;
+    }
+
+    // Basic stats (always available from local capture, even without app)
+    if (seatStats && seatStats.sampleSize > 0) {
+      html += `<div class="seat-popover-label">Stats</div>`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--font-sm)">`;
+      if (seatStats.vpip != null) html += `<span style="color:var(--text-muted)">VPIP</span><span style="font-weight:600">${seatStats.vpip}%</span>`;
+      if (seatStats.pfr != null) html += `<span style="color:var(--text-muted)">PFR</span><span style="font-weight:600">${seatStats.pfr}%</span>`;
+      if (seatStats.af != null) html += `<span style="color:var(--text-muted)">AF</span><span style="font-weight:600">${seatStats.af === Infinity ? '\u221E' : seatStats.af.toFixed(1)}</span>`;
+      html += `</div>`;
+      // App-provided stats
+      if (app?.stats) {
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--font-sm);margin-top:2px">`;
+        if (app.stats.cbet != null) html += `<span style="color:var(--text-muted)">C-Bet</span><span style="font-weight:600">${app.stats.cbet}%</span>`;
+        if (app.stats.foldToCbet != null) html += `<span style="color:var(--text-muted)">Fold CB</span><span style="font-weight:600">${app.stats.foldToCbet}%</span>`;
+        html += `</div>`;
+      }
+    }
+
+    // Aggression response (from app villain profile)
+    if (vp?.aggressionResponse) {
+      const ar = vp.aggressionResponse;
+      const parts = [];
+      if (ar.facingBet) parts.push(`Facing bet: ${escapeHtml(ar.facingBet)}`);
+      if (ar.facingRaise) parts.push(`Facing raise: ${escapeHtml(ar.facingRaise)}`);
+      if (parts.length > 0) {
+        html += `<div class="seat-popover-label">Aggression</div>`;
+        html += `<div class="seat-popover-trait">${parts.join(' \u00B7 ')}</div>`;
+      }
+    }
+
+    // Vulnerabilities
+    if (vp?.vulnerabilities?.length > 0) {
+      html += `<div class="seat-popover-label">Vulnerabilities</div>`;
+      for (const v of vp.vulnerabilities.slice(0, 4)) {
+        html += `<div class="seat-popover-vuln">\u2022 ${escapeHtml(v.label || v.id || '')}</div>`;
+      }
+    }
+
+    seatPopover.innerHTML = html;
+    seatPopover.classList.remove('hidden');
+    activePopoverSeat = seatNum;
+
+    // Position near the card
+    const rect = cardEl.getBoundingClientRect();
+    seatPopover.style.top = `${rect.bottom + 4}px`;
+    seatPopover.style.left = `${Math.max(4, Math.min(rect.left, window.innerWidth - 310))}px`;
+  };
+
+  const hideSeatPopover = () => {
+    if (seatPopover) seatPopover.classList.add('hidden');
+    activePopoverSeat = null;
+  };
+
+  // Event delegation for seat circle clicks (pin/unpin + popover)
+  document.addEventListener('click', (e) => {
+    const circle = e.target.closest('.seat-circle[data-seat]');
+    if (circle) {
+      const seat = Number(circle.dataset.seat);
+      const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+      if (seat === heroSeat) return; // Don't pin hero
+
+      // Toggle pin
+      if (pinnedVillainSeat === seat) {
+        pinnedVillainSeat = null; // Unpin
+      } else {
+        pinnedVillainSeat = seat; // Pin
+      }
+
+      // Show/hide popover
+      if (pinnedVillainSeat === seat) {
+        showSeatPopover(seat, circle);
+      } else {
+        hideSeatPopover();
+      }
+
+      // Re-render everything with new pin state
+      renderUI();
+      return;
+    }
+    // Click outside popover — dismiss
+    if (!e.target.closest('.seat-popover')) {
+      hideSeatPopover();
+    }
+  });
+
+  const formatAF = (af) => {
+    if (af === null || af === undefined) return null;
+    if (af === Infinity) return '∞';
+    return af.toFixed(1);
+  };
+
+  // Color classes based on exploitability
+  const vpipClass = (v) => {
+    if (v === null) return 'neutral';
+    if (v > 40) return 'high';    // Fish
+    if (v < 15) return 'low';     // Nit
+    return 'neutral';
+  };
+
+  const pfrClass = (p) => {
+    if (p === null) return 'neutral';
+    if (p > 25) return 'high';
+    if (p < 8) return 'low';
+    return 'neutral';
+  };
+
+  const afClass = (a) => {
+    if (a === null) return 'neutral';
+    if (a > 3) return 'high';
+    if (a < 1) return 'low';
+    return 'neutral';
+  };
+
+  // =========================================================================
+  // CURRENT HAND
+  // =========================================================================
+
+  // (renderCurrentHand removed — replaced by renderUnifiedHeader)
+
+  // =========================================================================
+  // EXPLOIT TIPS — CONTEXT FILTER
+  // =========================================================================
+
+  /**
+   * Filter and annotate exploits based on the current hand state.
+   *
+   * @param {Object[]} seatExploits - Array of { seat, exploits, style, sampleSize } from app
+   * @param {Object|null} liveContext - From HSM getLiveHandContext()
+   * @param {Object|null} tableState - From HSM getState()
+   * @returns {Object[]} Filtered, annotated, sorted exploit items ready to render
+   */
+  const filterExploitsByContext = (seatExploits, liveContext, tableState) => {
+    if (!seatExploits || seatExploits.length === 0) return [];
+
+    const heroSeat = liveContext?.heroSeat || tableState?.heroSeat;
+    const foldedSeats = new Set(liveContext?.foldedSeats || []);
+    const isLive = tableState && tableState.state !== 'IDLE' && tableState.state !== 'COMPLETE';
+    const currentStreet = liveContext?.currentStreet || null;
+
+    // Analyze board texture if we have community cards
+    const communityCards = liveContext?.communityCards || tableState?.communityCards || [];
+    const visibleCards = communityCards.filter(c => c && c !== '');
+    const boardTexture = visibleCards.length >= 3 && cardUtils
+      ? cardUtils.analyzeBoardFromStrings(visibleCards)
+      : null;
+
+    // Board texture context string
+    let boardContext = null;
+    if (boardTexture && isLive && currentStreet !== 'preflop') {
+      if (boardTexture.texture === 'dry') {
+        boardContext = boardTexture.isPaired
+          ? 'Paired dry board — trips possible, caution with one pair'
+          : 'Dry board — c-bets more credible, respect raises';
+      } else if (boardTexture.texture === 'wet') {
+        boardContext = boardTexture.monotone
+          ? 'Monotone board — flush draws heavy, size up for protection'
+          : 'Wet board — draws likely, size up for value and protection';
+      } else {
+        boardContext = boardTexture.flushDraw
+          ? 'Medium texture — flush draw possible, watch for aggression'
+          : 'Medium texture — mixed range advantages';
+      }
+    }
+
+    const allExploits = [];
+
+    for (const seatData of seatExploits) {
+      const seatNum = Number(seatData.seat);
+
+      // Skip hero's seat
+      if (seatNum === heroSeat) continue;
+
+      // During live hand: skip folded seats
+      if (isLive && foldedSeats.has(seatNum)) continue;
+
+      // Skip seats with no exploits
+      if (!seatData.exploits || seatData.exploits.length === 0) continue;
+
+      for (const exploit of seatData.exploits) {
+        // Street filter: during live play, only show relevant exploits
+        if (isLive && currentStreet) {
+          const exploitStreet = exploit.street || 'all';
+          if (currentStreet === 'preflop') {
+            // On preflop: show preflop and all-street exploits
+            if (exploitStreet !== 'preflop' && exploitStreet !== 'all') continue;
+          } else {
+            // Postflop: show flop/all exploits (flop rules generalize postflop)
+            if (exploitStreet === 'preflop') continue;
+          }
+        }
+
+        allExploits.push({
+          ...exploit,
+          seat: seatNum,
+          seatStyle: seatData.style,
+          boardContext: boardContext,
+        });
+      }
+    }
+
+    // Sort: high priority first, then by confidence desc
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    allExploits.sort((a, b) => {
+      const pa = priorityOrder[a.scoring?.priority] ?? 2;
+      const pb = priorityOrder[b.scoring?.priority] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return (b.scoring?.confidence || 0) - (a.scoring?.confidence || 0);
+    });
+
+    // Limit to top 8
+    return allExploits.slice(0, 8);
+  };
+
+  // =========================================================================
+  // EXPLOIT TIPS — RENDERING
+  // =========================================================================
+
+  const renderExploitPanel = (exploits, appConnected) => {
+    const panel = $('exploit-panel');
+    const list = $('exploit-list');
+    const source = $('exploit-source');
+    const count = $('exploit-count');
+
+    if (!appConnected && (!exploits || exploits.length === 0)) {
+      // Show hint to connect app with clickable launch link
+      showEl(panel);
+      count.textContent = '';
+      source.className = 'exploit-source';
+      list.innerHTML = '<div class="exploit-hint"><a href="#" class="exploit-hint-link" id="launch-app-link">Launch Poker Tracker</a> for real-time exploit tips</div>';
+      const launchLink = $('launch-app-link');
+      if (launchLink) {
+        launchLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          chrome.tabs.create({ url: getAppUrl() });
+        });
+      }
+      return;
+    }
+
+    if (!exploits || exploits.length === 0) {
+      showEl(panel);
+      count.textContent = '';
+      source.className = appConnected ? 'exploit-source visible' : 'exploit-source';
+      list.innerHTML = appConnected
+        ? '<div class="exploit-hint">Analyzing opponents — exploits appear after ~20 hands per seat</div>'
+        : '<div class="exploit-hint">No exploits detected yet — need more hands</div>';
+      return;
+    }
+
+    showEl(panel);
+    count.textContent = exploits.length;
+    source.className = appConnected ? 'exploit-source visible' : 'exploit-source';
+
+    let html = '';
+    for (const exploit of exploits) {
+      const priority = exploit.scoring?.priority || 'low';
+
+      html += `<div class="exploit-item priority-${priority}">`;
+
+      // Header: priority/tier badge + seat + source + style
+      html += `<div class="exploit-item-header">`;
+      if (exploit.displayTier) {
+        html += `<span class="exploit-tier-badge ${exploit.displayTier}">${exploit.displayTier}</span>`;
+      } else {
+        html += `<span class="exploit-priority ${priority}">${priority}</span>`;
+      }
+      html += `<span class="exploit-seat-badge">Seat ${exploit.seat}</span>`;
+      if (exploit.source) {
+        html += `<span class="exploit-source-badge">${escapeHtml(exploit.source)}</span>`;
+      }
+      if (exploit.seatStyle) {
+        const colors = stats.STYLE_COLORS[exploit.seatStyle] || stats.STYLE_COLORS.Unknown;
+        html += `<span class="style-badge" style="background:${colors.bg};color:${colors.text};font-size:8px">${exploit.seatStyle}</span>`;
+      }
+      html += `</div>`;
+
+      // Label + position context
+      let labelStr = exploit.label || 'Exploit detected';
+      if (exploit.position) labelStr += ` (${exploit.position})`;
+      html += `<div class="exploit-label">${escapeHtml(labelStr)}</div>`;
+
+      // Evidence line (replaces stat basis + stars)
+      if (exploit.evidence) {
+        const ev = exploit.evidence;
+        const delta = ev.delta != null ? ev.delta : (ev.observed != null && ev.profitable != null ? ev.observed - ev.profitable : null);
+        html += '<div class="exploit-evidence">';
+        if (ev.metric) html += `${escapeHtml(ev.metric)}: `;
+        if (ev.observed != null) html += `${ev.observed}%`;
+        if (ev.profitable != null) html += ` vs ${ev.profitable}% GTO`;
+        if (delta != null) {
+          const dCls = delta > 0 ? 'positive' : delta < 0 ? 'negative' : '';
+          const sign = delta > 0 ? '+' : '';
+          html += ` <span class="exploit-evidence-delta ${dCls}">(${sign}${delta}%)</span>`;
+        }
+        html += '</div>';
+      } else if (exploit.statBasis) {
+        const stars = exploit.scoring?.confidence != null ? starsFromConfidence(exploit.scoring.confidence) : '';
+        html += `<div class="exploit-basis">${escapeHtml(exploit.statBasis)}`;
+        if (stars) html += ` <span class="exploit-stars">${stars}</span>`;
+        html += '</div>';
+      }
+
+      // Board context annotation (postflop only)
+      if (exploit.boardContext) {
+        html += `<div class="exploit-context">${escapeHtml(exploit.boardContext)}</div>`;
+      }
+
+      html += `</div>`;
+    }
+
+    list.innerHTML = html;
+  };
+
+  const starsFromConfidence = (confidence) => {
+    if (confidence >= 0.9) return '★★★';
+    if (confidence >= 0.7) return '★★';
+    if (confidence >= 0.5) return '★';
+    return '';
+  };
+
+  // =========================================================================
+  // WEAKNESS PANEL — RENDERING
+  // =========================================================================
+
+  /**
+   * Filter weaknesses by current live context (skip hero + folded seats).
+   */
+  const filterWeaknesses = (weaknesses) => {
+    if (!weaknesses || weaknesses.length === 0) return [];
+
+    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+    const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
+    const isLive = currentTableState && currentTableState.state !== 'IDLE' && currentTableState.state !== 'COMPLETE';
+
+    let filtered = weaknesses.filter(w => {
+      if (w.seat === heroSeat) return false;
+      if (isLive && foldedSeats.has(w.seat)) return false;
+      return true;
+    });
+
+    // Sort: high severity first, then confidence desc
+    const severityOrder = { high: 0, medium: 1, low: 2 };
+    filtered.sort((a, b) => {
+      const sa = a.severity >= 0.7 ? 'high' : a.severity >= 0.4 ? 'medium' : 'low';
+      const sb = b.severity >= 0.7 ? 'high' : b.severity >= 0.4 ? 'medium' : 'low';
+      const pa = severityOrder[sa] ?? 2;
+      const pb = severityOrder[sb] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return (b.confidence || 0) - (a.confidence || 0);
+    });
+
+    return filtered.slice(0, 8);
+  };
+
+  const renderWeaknessPanel = (weaknesses, appConnected) => {
+    const panel = $('weakness-panel');
+    const list = $('weakness-list');
+    const count = $('weakness-count');
+
+    const filtered = filterWeaknesses(weaknesses);
+
+    if (!filtered || filtered.length === 0) {
+      hideEl(panel);
+      return;
+    }
+
+    showEl(panel);
+    count.textContent = filtered.length;
+
+    let html = '';
+    for (const w of filtered) {
+      const sev = w.severity >= 0.7 ? 'high' : w.severity >= 0.4 ? 'medium' : 'low';
+      const stars = starsFromConfidence(w.confidence || 0);
+
+      html += `<div class="weakness-item severity-${sev}">`;
+      html += `<div class="weakness-item-header">`;
+      html += `<span class="weakness-severity ${sev}">${sev}</span>`;
+      html += `<span class="exploit-seat-badge">Seat ${w.seat}</span>`;
+      if (w.seatStyle) {
+        const colors = stats.STYLE_COLORS[w.seatStyle] || stats.STYLE_COLORS.Unknown;
+        html += `<span class="style-badge" style="background:${colors.bg};color:${colors.text};font-size:8px">${w.seatStyle}</span>`;
+      }
+      if (stars) html += `<span class="exploit-stars" style="margin-left:auto">${stars}</span>`;
+      html += `</div>`;
+      html += `<div class="weakness-label">${escapeHtml(w.label || 'Weakness detected')}</div>`;
+
+      // Street/context tags + sample size
+      const tags = [w.category, w.street, w.context, w.position].filter(Boolean);
+      if (tags.length > 0 || w.sampleSize) {
+        html += '<div class="weakness-tags">';
+        for (const tag of tags) {
+          html += `<span class="weakness-tag">${escapeHtml(tag)}</span>`;
+        }
+        if (w.sampleSize) {
+          html += `<span class="weakness-sample">${w.sampleSize}h</span>`;
+        }
+        html += '</div>';
+      }
+
+      // Evidence line
+      if (w.evidence) {
+        const ev = w.evidence;
+        const delta = ev.delta != null ? ev.delta : (ev.observed != null && ev.profitable != null ? ev.observed - ev.profitable : null);
+        html += '<div class="exploit-evidence">';
+        if (ev.metric) html += `${escapeHtml(ev.metric)}: `;
+        if (ev.observed != null) html += `${ev.observed}%`;
+        if (ev.profitable != null) html += ` vs ${ev.profitable}% GTO`;
+        if (delta != null) {
+          const dCls = delta > 0 ? 'positive' : delta < 0 ? 'negative' : '';
+          const sign = delta > 0 ? '+' : '';
+          html += ` <span class="exploit-evidence-delta ${dCls}">(${sign}${delta}%)</span>`;
+        }
+        html += '</div>';
+      }
+
+      html += `</div>`;
+    }
+
+    list.innerHTML = html;
+  };
+
+  // =========================================================================
+  // BRIEFING PANEL — RENDERING
+  // =========================================================================
+
+  const renderBriefingPanel = (briefings, appConnected) => {
+    const panel = $('briefing-panel');
+    const list = $('briefing-list');
+    const count = $('briefing-count');
+
+    if (!briefings || briefings.length === 0) {
+      hideEl(panel);
+      return;
+    }
+
+    // Filter out hero seat
+    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+    const filtered = briefings.filter(b => b.seat !== heroSeat);
+
+    if (filtered.length === 0) {
+      hideEl(panel);
+      return;
+    }
+
+    // Sort by scoring priority, then worthiness
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    filtered.sort((a, b) => {
+      const pa = priorityOrder[a.scoring?.priority] ?? 2;
+      const pb = priorityOrder[b.scoring?.priority] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return (b.scoring?.worthiness || 0) - (a.scoring?.worthiness || 0);
+    });
+
+    const top = filtered.slice(0, 6);
+    showEl(panel);
+    count.textContent = top.length;
+
+    let html = '';
+    for (let i = 0; i < top.length; i++) {
+      const b = top[i];
+      const priority = b.scoring?.priority || 'low';
+
+      html += `<div class="briefing-item" data-briefing-idx="${i}">`;
+      html += `<div class="briefing-item-header">`;
+      html += `<span class="exploit-priority ${priority}">${priority}</span>`;
+      html += `<span class="exploit-seat-badge">Seat ${b.seat}</span>`;
+      if (b.confidence != null) {
+        const confPct = Math.round(b.confidence * 100);
+        html += `<span class="exploit-source-badge">${confPct}%</span>`;
+      }
+      html += `<span class="briefing-label">${escapeHtml(b.label || 'Briefing')}`;
+      if (b.sampleSize) html += ` <span class="weakness-sample">(${b.sampleSize}h)</span>`;
+      html += `</span>`;
+      html += `<span class="briefing-expand-icon">▸</span>`;
+      html += `</div>`;
+
+      // Expandable details
+      html += `<div class="briefing-details" id="briefing-detail-${i}">`;
+
+      // Evidence breakdown
+      if (b.evidenceBreakdown?.stats?.length > 0) {
+        for (const stat of b.evidenceBreakdown.stats) {
+          html += `<div class="briefing-evidence-row">`;
+          html += `<span>${escapeHtml(stat.name)}</span>`;
+          html += `<span><span class="briefing-evidence-observed">${stat.observed}%</span>`;
+          html += ` <span class="briefing-evidence-baseline">vs ${stat.gtoBaseline}% GTO</span>`;
+          if (stat.sampleSize) html += ` <span class="briefing-evidence-baseline">(${stat.sampleSize}h)</span>`;
+          html += `</span></div>`;
+        }
+      }
+
+      // Hand examples
+      if (b.handExamples) {
+        if (b.handExamples.exploitWith?.length > 0) {
+          html += `<div class="briefing-hands-section">`;
+          html += `<div class="briefing-hands-label exploit">Exploit with</div>`;
+          html += `<div class="briefing-hands-text">${escapeHtml(b.handExamples.exploitWith.join(', '))}</div>`;
+          html += `</div>`;
+        }
+        if (b.handExamples.avoid?.length > 0) {
+          html += `<div class="briefing-hands-section">`;
+          html += `<div class="briefing-hands-label avoid">Avoid</div>`;
+          html += `<div class="briefing-hands-text">${escapeHtml(b.handExamples.avoid.join(', '))}</div>`;
+          html += `</div>`;
+        }
+      }
+
+      // Risk analysis
+      if (b.riskAnalysis) {
+        html += `<div class="briefing-risk">`;
+        if (b.riskAnalysis.mitigationStrategy) {
+          html += escapeHtml(b.riskAnalysis.mitigationStrategy);
+        }
+        if (b.riskAnalysis.wrongFrequency != null) {
+          html += ` (${Math.round(b.riskAnalysis.wrongFrequency * 100)}% chance wrong)`;
+        }
+        html += `</div>`;
+      }
+
+      html += `</div>`; // briefing-details
+      html += `</div>`; // briefing-item
+    }
+
+    list.innerHTML = html;
+  };
+
+  // Event delegation for briefing expand/collapse
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('.briefing-item');
+    if (!item) return;
+    const idx = item.dataset.briefingIdx;
+    if (idx == null) return;
+    const details = $(`briefing-detail-${idx}`);
+    if (!details) return;
+    details.classList.toggle('open');
+    const icon = item.querySelector('.briefing-expand-icon');
+    if (icon) icon.textContent = details.classList.contains('open') ? '\u25BE' : '\u25B8';
+  });
+
+  // Event delegation for collapsible analysis panel headers
+  document.addEventListener('click', (e) => {
+    const header = e.target.closest('.collapsible-header');
+    if (!header) return;
+    // Don't collapse if clicking inside a briefing item (nested click)
+    if (e.target.closest('.briefing-item')) return;
+    const targetId = header.dataset.collapseTarget;
+    if (!targetId) return;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.classList.toggle('expanded');
+    const icon = header.querySelector('.collapse-icon');
+    if (icon) icon.classList.toggle('expanded');
+  });
+
+  // =========================================================================
+  // OBSERVATION PANEL — RENDERING
+  // =========================================================================
+
+  const renderObservationPanel = (observations, appConnected) => {
+    const panel = $('observation-panel');
+    const list = $('observation-list');
+    const count = $('observation-count');
+
+    if (!observations || observations.length === 0) {
+      hideEl(panel);
+      return;
+    }
+
+    // Filter: skip hero, skip folded seats, street-filter during live play
+    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+    const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
+    const isLive = currentTableState && currentTableState.state !== 'IDLE' && currentTableState.state !== 'COMPLETE';
+    const currentStreet = currentLiveContext?.currentStreet || null;
+
+    let filtered = observations.filter(o => {
+      if (o.seat === heroSeat) return false;
+      if (isLive && foldedSeats.has(o.seat)) return false;
+      // Street filter: show current street + META, hide others during live play
+      if (isLive && currentStreet && o.street !== 'cross' && o.heroContext !== 'META') {
+        if (currentStreet === 'preflop' && o.street !== 'preflop') return false;
+        if (currentStreet !== 'preflop' && o.street === 'preflop') return false;
+      }
+      // Only show solid/developing observations (skip early/none for sidebar brevity)
+      if (o.tier === 'none') return false;
+      return true;
+    });
+
+    // Sort by severity desc, then confidence desc
+    filtered.sort((a, b) => (b.severity || 0) - (a.severity || 0) || (b.confidence || 0) - (a.confidence || 0));
+    filtered = filtered.slice(0, 16);
+
+    if (filtered.length === 0) {
+      hideEl(panel);
+      return;
+    }
+
+    showEl(panel);
+    count.textContent = filtered.length;
+
+    // Group by heroContext
+    const groups = new Map();
+    for (const o of filtered) {
+      const key = o.heroContextLabel || o.heroContext || 'General';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(o);
+    }
+
+    let html = '';
+    for (const [label, items] of groups) {
+      html += `<div class="obs-group-header">${escapeHtml(label)}</div>`;
+      for (const o of items) {
+        const tier = o.tier || 'early';
+        html += `<div class="obs-item">`;
+        html += `<span class="obs-tier-dot ${tier}" title="${tier}"></span>`;
+        html += `<div>`;
+        html += `<div class="obs-signal">`;
+        if (o.seat) html += `<span class="exploit-seat-badge obs-seat-badge">S${o.seat}</span>`;
+        html += `${escapeHtml(o.signal || 'Observation')}</div>`;
+        if (o.evidence) {
+          const ev = o.evidence;
+          if (ev.observed != null && ev.baseline != null) {
+            html += `<div class="obs-evidence">${escapeHtml(ev.metric || '')}: ${ev.observed}% vs ${ev.baseline}% baseline (${ev.sampleSize || '?'}h)</div>`;
+          }
+        }
+        html += `</div>`;
+        html += `</div>`;
+      }
+    }
+
+    list.innerHTML = html;
+  };
+
+  // =========================================================================
+  // ACTION ADVISOR — RENDERING (tier renderers imported from render-tiers.js)
+  // =========================================================================
+
+  // =========================================================================
+  // RENDER UI — Single coordinated render for all dynamic content
+  // =========================================================================
+  // All push handlers update state variables then call renderUI().
+  // This eliminates race conditions from multiple render entry points.
+
+  let renderUITimer = null;
+
+  const renderUI = () => {
+    // Debounce: if called rapidly (e.g. pipeline push + live context in quick succession),
+    // only render once after all state updates settle.
+    if (renderUITimer) clearTimeout(renderUITimer);
+    renderUITimer = setTimeout(renderUIImmediate, 80); // coalesce rapid pushes
+  };
+
+  const renderUIImmediate = () => {
+    renderUITimer = null;
+    const advice = lastGoodAdvice;
+    const liveCtx = currentLiveContext;
+
+    // Update focused villain
+    focusedVillainSeat = computeFocusedVillain();
+
+    // 1. Seat arc
+    if (cachedSeatStats) {
+      renderSeatArc(cachedSeatStats, currentTableState, cachedSeatMap);
+    }
+
+    // 2. Unified header
+    renderUnifiedHeader(advice, liveCtx);
+
+    // 3. Street progress indicator
+    const street = liveCtx?.currentStreet || advice?.currentStreet || null;
+    const progressEl = $('street-progress');
+    if (progressEl) {
+      if (street && (advice || liveCtx)) {
+        const progressHtml = buildStreetProgressHTML(street);
+        if (progressEl.innerHTML !== progressHtml) progressEl.innerHTML = progressHtml;
+        showEl(progressEl);
+      } else {
+        hideEl(progressEl);
+      }
+    }
+
+    // 4. Street card — the main content area
+    const appConnected = !!(lastPipeline?.appConnected) || !!(lastGoodExploits?.appConnected);
+    renderStreetCard(street, advice, liveCtx, appSeatData, focusedVillainSeat, lastGoodTournament, { loading: !!advicePendingForStreet });
+
+    // App launch prompt — rendered in its own DOM element (not the street card)
+    const appPromptEl = $('app-launch-prompt');
+    if (!lastGoodExploits && !advice?.recommendations?.length) {
+      renderAppLaunchPrompt(appConnected);
+    } else if (appPromptEl) {
+      hideEl(appPromptEl);
+    }
+
+    lastRenderedStreet = street;
+
+    // 5. Deep expander
+    renderDeepExpander(advice, street);
+  };
+
+
+  // Deep section toggles handled by renderDeepExpander click listeners
+
+  // =========================================================================
+  // TOURNAMENT PROTOCOL LOG (spike: captures unknown PIDs + lobby messages)
+  // =========================================================================
+
+  const tourneyLogPanel = $('tourney-log-panel');
+  const tourneyLogOutput = $('tourney-log-output');
+  const tourneyLogCount = $('tourney-log-count');
+  const tourneyLogShow = $('tourney-log-show');
+  const tourneyLogToggle = $('tourney-log-toggle');
+  const tourneyLogCopy = $('tourney-log-copy');
+  const tourneyTableConfig = $('tourney-table-config');
+  const tourneyTableConfigContent = $('tourney-table-config-content');
+
+  let tourneyLogVisible = false;
+  let cachedDiagnosticData = null;
+
+  // Show/hide tournament log
+  if (tourneyLogShow) {
+    tourneyLogShow.addEventListener('click', () => {
+      tourneyLogVisible = true;
+      showEl(tourneyLogPanel);
+      hideEl(tourneyLogShow);
+      renderTourneyLog();
+    });
+  }
+  if (tourneyLogToggle) {
+    tourneyLogToggle.addEventListener('click', () => {
+      tourneyLogVisible = false;
+      hideEl(tourneyLogPanel);
+      showEl(tourneyLogShow);
+    });
+  }
+
+  // Copy tournament log as JSON — always fetch fresh data on click
+  if (tourneyLogCopy) {
+    tourneyLogCopy.addEventListener('click', async () => {
+      try {
+        cachedDiagnosticData = await chrome.runtime.sendMessage({ type: MSG.GET_DIAGNOSTIC_LOG });
+        if (tourneyLogVisible) renderTourneyLog(); // Refresh display with fresh data
+      } catch (e) {
+        errors.report('messaging', e, { op: 'fetchDiagnosticLog' });
+      }
+      const jsonStr = JSON.stringify(cachedDiagnosticData, null, 2);
+      try {
+        await navigator.clipboard.writeText(jsonStr);
+        tourneyLogCopy.textContent = 'COPIED';
+        setTimeout(() => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = jsonStr;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        tourneyLogCopy.textContent = 'COPIED';
+        setTimeout(() => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
+      }
+    });
+  }
+
+  let activePidFilter = null;
+
+  // Filter clear button
+  const filterClearBtn = $('tourney-filter-clear');
+  if (filterClearBtn) {
+    filterClearBtn.addEventListener('click', () => {
+      activePidFilter = null;
+      hideEl(filterClearBtn);
+      renderTourneyLog();
+    });
+  }
+
+  /** Render the tournament diagnostic log from cached data. */
+  const renderTourneyLog = () => {
+    if (!tourneyLogOutput || !cachedDiagnosticData) return;
+
+    const { hsmLogs, lobbyMessages, tableConfigs, validationLogs, protocolLogs } = cachedDiagnosticData;
+    const lines = [];
+    const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString() : '??:??';
+
+    // ── Build combined diagnostic entries (HSM logs + lobby) ──
+    const allDiagEntries = [];
+    for (const [connId, log] of Object.entries(hsmLogs || {})) {
+      for (const entry of log) allDiagEntries.push({ source: `HSM`, pid: entry.pid, ...entry });
+    }
+    for (const entry of (lobbyMessages || [])) {
+      allDiagEntries.push({ source: 'LOBBY', pid: '__LOBBY__', keys: entry.keys, sampleValues: entry.sampleValues || null, timestamp: entry.timestamp });
+    }
+    allDiagEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    // ── PID SUMMARY with clickable pills ──
+    const pidSummary = $('tourney-pid-summary');
+    const pidPills = $('tourney-pid-pills');
+    if (pidSummary && pidPills) {
+      // Count unique PIDs across all diagnostic entries
+      const pidCounts = {};
+      for (const e of allDiagEntries) {
+        const p = e.pid || '?';
+        pidCounts[p] = (pidCounts[p] || 0) + 1;
+      }
+      // Sort by count descending
+      const sorted = Object.entries(pidCounts).sort((a, b) => b[1] - a[1]);
+
+      if (sorted.length > 0) {
+        showEl(pidSummary);
+        pidPills.innerHTML = sorted.map(([pid, count]) => {
+          const cls = activePidFilter === pid ? 'pid-pill active' : 'pid-pill';
+          return `<span class="${cls}" data-pid="${pid}">${pid}(${count})</span>`;
+        }).join('');
+
+        // Attach click handlers
+        for (const pill of pidPills.querySelectorAll('.pid-pill')) {
+          pill.addEventListener('click', () => {
+            activePidFilter = pill.dataset.pid === activePidFilter ? null : pill.dataset.pid;
+            if (activePidFilter) showEl(filterClearBtn); else hideEl(filterClearBtn);
+            renderTourneyLog();
+          });
+        }
+      } else {
+        hideEl(pidSummary);
+      }
+    }
+
+    // ── VALIDATION LOG ──
+    if (!activePidFilter) {
+      const allValEntries = [];
+      for (const [connId, log] of Object.entries(validationLogs || {})) {
+        for (const entry of log) allValEntries.push({ connId, ...entry });
+      }
+      allValEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      lines.push('━━ VALIDATION LOG ━━');
+      if (allValEntries.length === 0) {
+        lines.push('  No hand build attempts yet.');
+      } else {
+        for (const v of allValEntries) {
+          const status = v.valid ? '✓ PASS' : '✗ FAIL';
+          lines.push(`[${fmtTime(v.timestamp)}] ${status} hand#${v.handNumber || '?'}`);
+          lines.push(`  hero=S${v.heroSeat} dealer=S${v.dealerSeat} street=${v.street} actions=${v.actionCount}`);
+          lines.push(`  activeSeats=[${(v.activeSeats || []).join(',')}]`);
+          if (!v.valid && v.errors?.length > 0) {
+            for (const err of v.errors) lines.push(`  ERROR: ${err}`);
+          }
+          lines.push('');
+        }
+      }
+    }
+
+    // ── PROTOCOL FEED ──
+    if (!activePidFilter) {
+      const allProtoEntries = [];
+      for (const [connId, log] of Object.entries(protocolLogs || {})) {
+        for (const entry of log) allProtoEntries.push({ connId, ...entry });
+      }
+      allProtoEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      lines.push('━━ PROTOCOL FEED (last 100) ━━');
+      if (allProtoEntries.length === 0) {
+        lines.push('  No protocol messages yet.');
+      } else {
+        const recent = allProtoEntries.slice(-50);
+        for (const p of recent) {
+          let detail = `[${p.state}]`;
+          if (p.seat !== undefined) detail += ` seat=${p.seat}`;
+          if (p.dealerSeat !== undefined) detail += ` dealer=${p.dealerSeat}`;
+          if (p.tableState !== undefined) detail += ` tblState=${p.tableState}`;
+          if (p.stageNo !== undefined) detail += ` stageNo=${p.stageNo}`;
+          if (p.stageNumber !== undefined) detail += ` stageNum=${p.stageNumber}`;
+          if (p.btn !== undefined) detail += ` btn=0x${p.btn.toString(16)}`;
+          if (p.bet !== undefined) detail += ` bet=${p.bet}`;
+          if (p.accountLen !== undefined) detail += ` account[${p.accountLen}]`;
+          if (p.seatKeys) detail += ` seats=[${p.seatKeys.join(',')}]`;
+          if (p.pcardKeys) detail += ` pcards=[${p.pcardKeys.join(',')}]`;
+          if (p.bcardLen !== undefined) detail += ` bcard[${p.bcardLen}]`;
+          lines.push(`[${fmtTime(p.timestamp)}] ${p.pid} ${detail}`);
+        }
+      }
+      lines.push('');
+    }
+
+    // ── TABLE CONFIGS ──
+    const configEntries = Object.entries(tableConfigs || {});
+    if (!activePidFilter && configEntries.length > 0) {
+      lines.push('━━ TABLE CONFIG ━━');
+      for (const [connId, cfg] of configEntries) {
+        lines.push(`conn ${connId}: gameType=${cfg.gameType} ante=${cfg.ante}`);
+        lines.push(`  raw: ${JSON.stringify(cfg.raw)}`);
+      }
+      lines.push('');
+    }
+    if (configEntries.length > 0 && tourneyTableConfig) {
+      if (activePidFilter) hideEl(tourneyTableConfig); else showEl(tourneyTableConfig);
+      const configLines = configEntries.map(([connId, cfg]) =>
+        `conn ${connId}: gameType=${cfg.gameType} ante=${cfg.ante}\n  raw: ${JSON.stringify(cfg.raw)}`
+      );
+      tourneyTableConfigContent.textContent = configLines.join('\n');
+    } else if (tourneyTableConfig) {
+      hideEl(tourneyTableConfig);
+    }
+
+    // ── FILTERED VIEW or FULL DIAGNOSTIC ENTRIES ──
+    const filtered = activePidFilter
+      ? allDiagEntries.filter(e => e.pid === activePidFilter)
+      : allDiagEntries;
+
+    if (activePidFilter) {
+      lines.push(`━━ ${activePidFilter} (${filtered.length} entries) ━━`);
+    } else if (filtered.length > 0) {
+      lines.push('━━ DIAGNOSTIC ENTRIES ━━');
+    }
+
+    for (const entry of filtered) {
+      lines.push(`[${fmtTime(entry.timestamp)}] ${entry.source} ${entry.pid || '?'}`);
+      if (entry.keys?.length > 0) lines.push(`  keys: ${entry.keys.join(', ')}`);
+      if (entry.sampleValues && typeof entry.sampleValues === 'object') {
+        if (activePidFilter) {
+          // Expanded view: one field per line for easy reading
+          for (const [k, v] of Object.entries(entry.sampleValues)) {
+            lines.push(`    ${k}: ${JSON.stringify(v)}`);
+          }
+        } else {
+          const valStr = Object.entries(entry.sampleValues).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ');
+          lines.push(`  vals: ${valStr}`);
+        }
+      }
+      lines.push('');
+    }
+
+    const totalEntries = filtered.length;
+    if (tourneyLogCount) {
+      tourneyLogCount.textContent = activePidFilter
+        ? `${totalEntries} ${activePidFilter}`
+        : `${allDiagEntries.length} entries`;
+    }
+
+    tourneyLogOutput.textContent = lines.join('\n');
+  };
+
+  /** Handle diagnostic data pushed with pipeline status. */
+  const handleDiagnosticData = (diagData) => {
+    if (!diagData) return;
+    cachedDiagnosticData = diagData;
+    if (tourneyLogVisible) renderTourneyLog();
+  };
+
+  // =========================================================================
+  // DIAGNOSTICS — Collects full pipeline state for debugging
+  // =========================================================================
+
+  const diagOutput = $('diag-output');
+  const diagPanel = $('diag-panel');
+  const diagToggle = $('diag-toggle');
+  const diagShow = $('diag-show');
+
+  let diagVisible = false;
+  if (diagShow) diagShow.addEventListener('click', () => {
+    diagVisible = true;
+    showEl(diagPanel);
+    hideEl(diagShow);
+    runDiagnostics();
+  });
+  const diagCopy = $('diag-copy');
+  if (diagCopy) diagCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(diagOutput.textContent);
+      diagCopy.textContent = 'COPIED';
+      setTimeout(() => { diagCopy.textContent = 'COPY'; }, 1500);
+    } catch (_) {
+      // Fallback for clipboard API failure
+      const ta = document.createElement('textarea');
+      ta.value = diagOutput.textContent;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      diagCopy.textContent = 'COPIED';
+      setTimeout(() => { diagCopy.textContent = 'COPY'; }, 1500);
+    }
+  });
+  if (diagToggle) diagToggle.addEventListener('click', () => {
+    diagVisible = false;
+    hideEl(diagPanel);
+    showEl(diagShow);
+  });
+
+  const runDiagnostics = async () => {
+    if (!diagOutput) return;
+    const lines = [];
+    const ts = () => new Date().toLocaleTimeString();
+
+    lines.push(`=== DIAGNOSTICS ${ts()} ===`);
+    const connState = conn.getState();
+    lines.push(`  port connected: ${connState.connected}`);
+    lines.push(`  connectCount: ${connState.connectCount}`);
+    lines.push(`  pendingMessages: ${connState.pendingMessages}`);
+    lines.push(`  contextDead: ${connState.contextDead}`);
+    lines.push(`  extensionVersion: ${connState.extensionVersion}`);
+    if (connState.swVersion) lines.push(`  swVersion: ${connState.swVersion}${connState.swVersion !== connState.extensionVersion ? ' ⚠ MISMATCH' : ''}`);
+
+    // 0. SW Health
+    try {
+      const health = await chrome.storage.session?.get(['sw_heartbeat', 'module_load_failures', 'error_log']);
+      lines.push(`\n[SW Health]`);
+      if (health?.sw_heartbeat) {
+        const age = Math.round((Date.now() - health.sw_heartbeat) / 1000);
+        lines.push(`  heartbeat: ${age}s ago ${age > 90 ? '⚠ STALE' : '✓'}`);
+      } else {
+        lines.push(`  heartbeat: never`);
+      }
+      if (health?.module_load_failures?.length > 0) {
+        lines.push(`  module failures: ${health.module_load_failures.join(', ')}`);
+      }
+      if (health?.error_log?.length > 0) {
+        lines.push(`  recent errors (${health.error_log.length}):`);
+        for (const err of health.error_log.slice(-5)) {
+          const age = Math.round((Date.now() - err.timestamp) / 1000);
+          lines.push(`    [${err.category}] ${err.message} (${age}s ago${err.count > 1 ? `, x${err.count}` : ''})`);
+        }
+      }
+    } catch (e) {
+      lines.push(`  health read failed: ${e.message}`);
+    }
+
+    // 1. Pipeline status
+    try {
+      const p = await chrome.runtime.sendMessage({ type: MSG.GET_PIPELINE_STATUS });
+      lines.push(`\n[Pipeline Status]`);
+      lines.push(`  tableCount: ${p?.tableCount}`);
+      lines.push(`  storedHands: ${p?.storedHands}`);
+      lines.push(`  completedHands: ${p?.completedHands}`);
+      lines.push(`  appConnected: ${p?.appConnected}`);
+      const tables = p?.tables || {};
+      const entries = Object.entries(tables);
+      lines.push(`  tables: ${entries.length}`);
+      for (const [connId, state] of entries) {
+        lines.push(`    conn ${connId}: state=${state.state} street=${state.currentStreet} hero=${state.heroSeat} actions=${state.actionCount} hands=${state.completedHands}`);
+      }
+      if (p?.liveContext) {
+        const lc = p.liveContext;
+        lines.push(`  liveContext: street=${lc.currentStreet} hero=${lc.heroSeat} pot=${lc.pot} holeCards=${JSON.stringify(lc.holeCards)} board=${JSON.stringify(lc.communityCards)} foldedSeats=${JSON.stringify(lc.foldedSeats)} activeSeatNumbers=${JSON.stringify(lc.activeSeatNumbers)}`);
+      } else {
+        lines.push(`  liveContext: null`);
+      }
+    } catch (e) {
+      lines.push(`  ERROR: ${e.message}`);
+    }
+
+    // 2. Storage
+    try {
+      const result = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
+      const hands = result[SESSION_KEYS.SIDE_PANEL_HANDS] || [];
+      lines.push(`\n[Storage (Side Panel Mirror)]`);
+      lines.push(`  total hands: ${hands.length}`);
+      if (hands.length > 0) {
+        const tableIds = [...new Set(hands.map(h => h.tableId))];
+        lines.push(`  tableIds: ${JSON.stringify(tableIds)}`);
+        const last = hands[hands.length - 1];
+        lines.push(`  latest: tableId=${last.tableId} street=${last.gameState?.currentStreet} hero=${last.gameState?.mySeat} actions=${last.gameState?.actionSequence?.length} cards=${JSON.stringify(last.cardState?.holeCards)}`);
+      }
+    } catch (e) {
+      lines.push(`  ERROR: ${e.message}`);
+    }
+
+    // 3. Side panel filter state
+    lines.push(`\n[Side Panel State]`);
+    lines.push(`  lastHandCount: ${lastHandCount}`);
+    lines.push(`  currentTableState: ${currentTableState ? `state=${currentTableState.state} hero=${currentTableState.heroSeat}` : 'null'}`);
+    lines.push(`  currentLiveContext: ${currentLiveContext ? `street=${currentLiveContext.currentStreet}` : 'null'}`);
+
+    // 4. Exploits cache
+    try {
+      const ex = await chrome.runtime.sendMessage({ type: MSG.GET_EXPLOITS });
+      lines.push(`\n[Exploits Cache]`);
+      lines.push(`  appConnected: ${ex?.appConnected}`);
+      lines.push(`  seats: ${ex?.seats?.length || 0}`);
+      lines.push(`  pushes received: ${exploitPushCount}`);
+      if (ex?.timestamp) lines.push(`  age: ${Math.round((Date.now() - ex.timestamp) / 1000)}s`);
+    } catch (e) {
+      lines.push(`  ERROR: ${e.message}`);
+    }
+
+    // 5. Action advice cache
+    try {
+      const adv = await chrome.runtime.sendMessage({ type: MSG.GET_ACTION_ADVICE });
+      lines.push(`\n[Action Advice Cache]`);
+      lines.push(`  has advice: ${!!adv?.advice}`);
+      lines.push(`  pushes received: ${advicePushCount}`);
+      if (adv?.advice) {
+        lines.push(`  situation: ${adv.advice.situation} villain: ${adv.advice.villainSeat} recs: ${adv.advice.recommendations?.length}`);
+      }
+      if (adv?.timestamp) lines.push(`  age: ${Math.round((Date.now() - adv.timestamp) / 1000)}s`);
+    } catch (e) {
+      lines.push(`  ERROR: ${e.message}`);
+    }
+
+    // 6. Tournament diagnostic log summary
+    try {
+      const diag = await chrome.runtime.sendMessage({ type: MSG.GET_DIAGNOSTIC_LOG });
+      cachedDiagnosticData = diag; // Cache for tournament log panel
+      lines.push(`\n[Tournament Log]`);
+      const hsmEntryCount = Object.values(diag?.hsmLogs || {}).reduce((sum, log) => sum + log.length, 0);
+      const lobbyCount = diag?.lobbyMessages?.length || 0;
+      lines.push(`  HSM unknown PIDs: ${hsmEntryCount}`);
+      lines.push(`  lobby messages: ${lobbyCount}`);
+      const configs = diag?.tableConfigs || {};
+      for (const [connId, cfg] of Object.entries(configs)) {
+        lines.push(`  table ${connId}: gameType=${cfg.gameType} ante=${cfg.ante}`);
+      }
+      // Show unique PIDs seen
+      const uniquePids = new Set();
+      for (const log of Object.values(diag?.hsmLogs || {})) {
+        for (const entry of log) uniquePids.add(entry.pid);
+      }
+      if (uniquePids.size > 0) {
+        lines.push(`  unique PIDs: ${[...uniquePids].join(', ')}`);
+      }
+    } catch (e) {
+      lines.push(`\n[Tournament Log] ERROR: ${e.message}`);
+    }
+
+    // 7. Self-test: verify each message handler responds correctly
+    lines.push('\n[Self-Test]');
+    const tests = [
+      { type: MSG.PING, label: 'ping', check: r => r?.alive ? `OK (uptime ${Math.round(r.uptime/1000)}s)` : 'FAIL' },
+      { type: MSG.GET_PIPELINE_STATUS, label: 'get_pipeline_status', check: r => r?.tables !== undefined ? `OK (tables=${r.tableCount})` : 'FAIL' },
+      { type: MSG.GET_EXPLOITS, label: 'get_exploits', check: r => r?.seats !== undefined ? `OK (seats=${r.seats.length}, app=${r.appConnected})` : 'FAIL' },
+      { type: MSG.GET_LIVE_CONTEXT, label: 'get_live_context', check: r => r === null ? 'OK (null — no active hand)' : r?.currentStreet ? `OK (${r.currentStreet})` : 'FAIL — returned non-context data' },
+      { type: MSG.GET_ACTION_ADVICE, label: 'get_action_advice', check: r => r !== undefined ? `OK (has_advice=${!!r?.advice})` : 'FAIL' },
+    ];
+    for (const t of tests) {
+      try {
+        const r = await chrome.runtime.sendMessage({ type: t.type });
+        lines.push(`  ${t.label}: ${t.check(r)}`);
+      } catch (e) {
+        lines.push(`  ${t.label}: ERROR — ${e.message}`);
+      }
+    }
+
+    diagOutput.textContent = lines.join('\n');
+  };
+
+  // =========================================================================
+  // INIT — port connected automatically by createPortConnection above
+  // =========================================================================
+
+  // Diagnostics auto-refresh: only when diagnostics panel is visible
+  setInterval(() => {
+    if (diagVisible) runDiagnostics();
+  }, 5000);
+
+  // =========================================================================
+  // INIT — read pipeline diagnostics from session storage on panel open
+  // =========================================================================
+
+  const updateStatusFromDiag = () => {
+    if (!lastPipeline || (lastPipeline.tableCount || 0) === 0) {
+      const dot = $('status-dot');
+      const text = $('status-text');
+      if (dot && text) {
+        dot.className = 'status-dot yellow';
+        text.textContent = getDiagnosticStatus();
+      }
+    }
+  };
+
+  // Read diagnostics from session storage on panel open
+  (async () => {
+    try {
+      const result = await chrome.storage.session.get(SESSION_KEYS.PIPELINE_DIAG);
+      cachedDiag = result[SESSION_KEYS.PIPELINE_DIAG] || null;
+      renderPipelineHealth();
+      updateStatusFromDiag();
+    } catch (e) { console.warn('[Side Panel] Initial diag read failed:', e.message); }
+  })();
+
+  // Fallback: if no diagnostics after 4s, query SW for capture port status
+  setTimeout(async () => {
+    if (cachedDiag) return; // Diagnostics arrived, no fallback needed
+    try {
+      const ping = await chrome.runtime.sendMessage({ type: MSG.PING });
+      if (!ping?.alive) return;
+      swFallbackState = {
+        capturePorts: ping.capturePorts || 0,
+        swVersion: ping.version,
+        errorCount: ping.errorCount || 0,
+      };
+      console.log('[Side Panel] SW fallback:', swFallbackState);
+      renderPipelineHealth();
+      updateStatusFromDiag();
+    } catch (e) { console.warn('[Side Panel] SW fallback ping failed:', e.message); }
+  }, 4000);
+})();

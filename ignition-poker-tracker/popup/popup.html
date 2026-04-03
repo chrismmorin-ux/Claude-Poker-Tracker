@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 420px;
+      min-height: 320px;
+      background: var(--surface-body);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: var(--font-md);
+      padding: var(--sp-4);
+    }
+    h1 {
+      color: var(--gold);
+      font-size: var(--font-lg);
+      margin-bottom: var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: var(--sp-2);
+    }
+    h2 {
+      color: var(--text-secondary);
+      font-size: var(--font-base);
+      text-transform: uppercase;
+      margin: var(--sp-3) 0 6px;
+      letter-spacing: 0.5px;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2);
+      background: var(--surface-card);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--sp-2);
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.green { background: var(--m-green); }
+    .dot.red { background: var(--m-red); }
+    .dot.yellow { background: var(--m-yellow); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: var(--sp-2);
+    }
+    .stat-box {
+      background: var(--surface-card);
+      padding: var(--sp-2) var(--sp-1);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--gold);
+    }
+    .stat-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .table-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-2) 10px;
+      margin-bottom: 6px;
+    }
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sp-1);
+    }
+    .table-name {
+      font-weight: bold;
+      color: var(--gold);
+      font-size: 12px;
+    }
+    .state-badge {
+      font-size: var(--font-sm);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-weight: bold;
+    }
+    .state-IDLE { background: var(--border-subtle); color: var(--text-muted); }
+    .state-DEALING { background: var(--action-bet-bg); color: var(--action-bet-text); }
+    .state-PREFLOP { background: rgba(88, 28, 135, 0.4); color: var(--style-reg-text, #d8b4fe); }
+    .state-FLOP { background: var(--action-check-bg); color: var(--action-check-text); }
+    .state-TURN { background: var(--priority-med-bg); color: var(--priority-med-text); }
+    .state-RIVER { background: var(--priority-high-bg); color: var(--priority-high-text); }
+    .state-SHOWDOWN { background: var(--priority-med-bg); color: var(--priority-med-text); }
+    .state-COMPLETE { background: var(--action-bet-bg); color: var(--action-bet-text); }
+    .table-detail {
+      font-size: var(--font-base);
+      color: var(--text-secondary);
+      display: flex;
+      gap: var(--sp-3);
+    }
+    .log-area {
+      background: var(--surface-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-2);
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Consolas', monospace;
+      font-size: var(--font-base);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid var(--surface-body); }
+    .log-entry.hand { color: var(--m-green); font-weight: bold; }
+    .log-entry.ws { color: var(--action-check-base); }
+    .log-entry.error { color: var(--priority-high-border); }
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: var(--sp-2);
+    }
+    .tab {
+      padding: var(--sp-1) 10px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      font-size: var(--font-base);
+      color: var(--text-muted);
+      transition: background var(--ease-fast), color var(--ease-fast);
+    }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active {
+      background: var(--surface-inset);
+      color: var(--gold);
+      border-bottom-color: var(--surface-inset);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    button {
+      background: var(--gold);
+      color: var(--surface-body);
+      border: none;
+      padding: 5px 10px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: bold;
+      font-size: var(--font-base);
+      transition: background var(--ease-fast);
+    }
+    button:hover { background: #e0b85a; }
+    button.secondary {
+      background: var(--border-subtle);
+      color: var(--text-primary);
+    }
+    button.secondary:hover { background: var(--text-muted); }
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: var(--sp-2);
+    }
+    #error { color: var(--priority-high-border); padding: var(--sp-2); display: none; font-size: var(--font-base); }
+  </style>
+</head>
+<body>
+  <h1>Poker Session Notes</h1>
+
+  <div id="connection-status" class="status">
+    <div class="dot yellow" id="status-dot"></div>
+    <span id="status-text">Checking...</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-value" id="hands-count">0</div>
+      <div class="stat-label">Hands Captured</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="tables-count">0</div>
+      <div class="stat-label">Active Tables</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="ws-count">0</div>
+      <div class="stat-label">Pipeline Hands</div>
+    </div>
+  </div>
+
+  <div id="tables-section">
+    <h2>Active Tables</h2>
+    <div id="tables-container">
+      <div class="table-card" style="color:var(--text-muted)">No active tables</div>
+    </div>
+  </div>
+
+  <div id="error"></div>
+
+  <h2>Captured Hands</h2>
+  <div class="log-area" id="hands-log">No hands captured yet.</div>
+
+  <div class="btn-row">
+    <button id="btn-refresh">Refresh</button>
+    <button id="btn-export" class="secondary">Export Hands</button>
+    <button id="btn-clear" class="secondary">Clear All</button>
+  </div>
+
+  <script src="../shared/design-tokens.js"></script>
+  <script src="../shared/constants.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

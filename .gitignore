@@ -55,8 +55,9 @@ verify-*.png
 .playwright-mcp/
 .firebase
 
-# Ignition poker tracker (research spike, separate repo)
-ignition-poker-tracker/
+# Ignition poker tracker — build artifacts and deps only
+ignition-poker-tracker/node_modules/
+ignition-poker-tracker/dist/
 
 # Personal notes
 docs/chris-notes
