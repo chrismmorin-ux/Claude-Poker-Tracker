@@ -58,7 +58,7 @@ const harnessHtml = `<!DOCTYPE html>
       font-family: 'Segoe UI', system-ui, sans-serif;
     }
     .scenario-sidebar {
-      width: 220px;
+      width: 240px;
       background: #111827;
       border-right: 1px solid #2a2a4a;
       padding: 12px;
@@ -93,6 +93,15 @@ const harnessHtml = `<!DOCTYPE html>
       color: #d4a847;
       font-weight: 600;
     }
+    .temporal-btn {
+      border-left: 3px solid #6366f1;
+    }
+    .temporal-btn.active {
+      border-left-color: #818cf8;
+      background: rgba(99, 102, 241, 0.15);
+      border-color: #818cf8;
+      color: #a5b4fc;
+    }
     .panel-wrapper {
       flex: 1;
       display: flex;
@@ -120,6 +129,83 @@ const harnessHtml = `<!DOCTYPE html>
       color: #d4a847;
       font-weight: 600;
     }
+
+    /* ── Temporal section ── */
+    .section-divider {
+      border-top: 1px solid #2a2a4a;
+      margin: 12px 0 8px;
+    }
+    .temporal-controls {
+      display: flex;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .ctrl-btn {
+      flex: 1;
+      background: #1e2642;
+      color: #a5b4fc;
+      border: 1px solid #3730a3;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover { background: #312e81; border-color: #6366f1; }
+    .temporal-info {
+      color: #9ca3af;
+      font-size: 10px;
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+    #temporal-step {
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    /* ── Telemetry log ── */
+    .telemetry-log {
+      max-height: 120px;
+      overflow-y: auto;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 4px;
+      padding: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 9px;
+    }
+    .telemetry-row {
+      color: #94a3b8;
+      padding: 1px 4px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+    .telemetry-row.skipped {
+      color: #475569;
+    }
+
+    /* ── Anomaly alerts ── */
+    .anomaly-alerts {
+      margin-top: 4px;
+    }
+    .anomaly-badge {
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      margin-bottom: 3px;
+      font-family: 'Consolas', monospace;
+      line-height: 1.3;
+    }
+    .anomaly-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+    }
+    .anomaly-warning {
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid #ca8a04;
+      color: #fde047;
+    }
   </style>
   <style>
     /* ── Side panel CSS (extracted from side-panel.html) ── */
@@ -131,12 +217,34 @@ ${cssContent}
 <body>
   <div class="harness-layout">
     <div class="scenario-sidebar">
-      <h2>Scenarios</h2>
+      <h2>Static Fixtures</h2>
       <div id="scenario-picker"></div>
+
+      <div class="section-divider"></div>
+
+      <h2>Temporal Replay</h2>
+      <div id="temporal-picker"></div>
+      <div class="temporal-controls">
+        <button id="btn-step" class="ctrl-btn">Step</button>
+        <button id="btn-pause" class="ctrl-btn">Pause</button>
+        <button id="btn-resume" class="ctrl-btn">Resume</button>
+        <button id="btn-stop" class="ctrl-btn">Stop</button>
+      </div>
+      <div id="temporal-status" class="temporal-info" data-state="idle">Select a temporal scenario</div>
+      <div id="temporal-step" class="temporal-info"></div>
+
+      <div class="section-divider"></div>
+
+      <h2>Telemetry</h2>
+      <div id="telemetry-log" class="telemetry-log"></div>
+
+      <h2>Anomalies</h2>
+      <div id="anomaly-alerts" class="anomaly-alerts"></div>
+
       <div class="harness-info">
-        Active: <span id="active-scenario">—</span>
-        <br>Click a scenario to render it in the panel.
-        <br><br>Use Playwright to screenshot each state for visual verification.
+        Active: <span id="active-scenario">\u2014</span>
+        <br>Static: click a fixture. Temporal: click a scenario to replay.
+        <br>Use Playwright to screenshot each state.
       </div>
     </div>
     <div class="panel-wrapper">

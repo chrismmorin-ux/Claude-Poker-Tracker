@@ -24,6 +24,12 @@ import { getPositionName } from './range-grid-data.js';
 let _prevStreet = null;
 let _transitionTimer = null;
 
+/** Reset module state for test harness temporal replay. */
+export const resetStreetCardState = () => {
+  if (_transitionTimer) { clearTimeout(_transitionTimer); _transitionTimer = null; }
+  _prevStreet = null;
+};
+
 /**
  * Render the street-adaptive content card.
  * @param {string|null} street - 'preflop'|'flop'|'turn'|'river'|null

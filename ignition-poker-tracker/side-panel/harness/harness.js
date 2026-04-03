@@ -1,8 +1,11 @@
 /**
  * harness.js — Visual test harness for side panel rendering.
  *
- * Imports the extracted render functions and scenario fixtures,
- * then renders each scenario into the sidebar DOM on button click.
+ * Two modes:
+ *   1. Static: click a fixture button to render one state snapshot
+ *   2. Temporal: click a scenario to replay a timed state sequence
+ *      with telemetry recording and anomaly detection
+ *
  * No chrome.* APIs needed — all render functions are pure.
  */
 
@@ -14,8 +17,10 @@ import {
   buildDeepExpanderHTML,
   buildStatusBar,
 } from '../render-orchestrator.js';
-import { renderStreetCard } from '../render-street-card.js';
+import { renderStreetCard, resetStreetCardState } from '../render-street-card.js';
 import { ALL_FIXTURES } from '../__tests__/fixtures.js';
+import { TEMPORAL_SCENARIOS } from './temporal-scenarios.js';
+import { TemporalPlayer } from './temporal-player.js';
 
 // Inject CSS design tokens
 injectTokens();
@@ -30,28 +35,21 @@ const showEl = (el) => { if (el) el.classList.remove('hidden'); };
 const hideEl = (el) => { if (el) el.classList.add('hidden'); };
 
 // =========================================================================
-// SCENARIO RENDERING
+// CORE RENDER — applies a raw state object to all DOM sections
 // =========================================================================
 
-function applyScenario(name) {
-  const fixture = ALL_FIXTURES[name];
-  if (!fixture) return;
-
-  // Mark active scenario in picker
-  document.querySelectorAll('.scenario-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.scenario === name);
-  });
-  $('active-scenario').textContent = name;
+function applyState(state) {
+  if (!state) return;
 
   // Compute focused villain
   const focusedVillainSeat = computeFocusedVillain({
-    pinnedVillainSeat: fixture.pinnedVillainSeat ?? null,
-    lastGoodAdvice: fixture.lastGoodAdvice,
-    currentLiveContext: fixture.currentLiveContext,
-    currentTableState: fixture.currentTableState,
+    pinnedVillainSeat: state.pinnedVillainSeat ?? null,
+    lastGoodAdvice: state.lastGoodAdvice,
+    currentLiveContext: state.currentLiveContext,
+    currentTableState: state.currentTableState,
   });
 
-  const hasHands = fixture.cachedSeatStats && Object.keys(fixture.cachedSeatStats).length > 0;
+  const hasHands = state.cachedSeatStats && Object.keys(state.cachedSeatStats).length > 0;
 
   // Visibility
   if (hasHands) {
@@ -65,12 +63,12 @@ function applyScenario(name) {
   }
 
   // Status bar
-  const appConnected = !!fixture.lastGoodExploits?.appConnected;
-  const pipeline = fixture.lastGoodExploits
+  const appConnected = !!state.lastGoodExploits?.appConnected;
+  const pipeline = state.lastGoodExploits
     ? { tableCount: 1, tables: { '1': {} }, appConnected }
     : null;
-  const handCount = fixture.cachedSeatStats
-    ? Object.values(fixture.cachedSeatStats).reduce((s, v) => s + (v?.sampleSize || 0), 0)
+  const handCount = state.cachedSeatStats
+    ? Object.values(state.cachedSeatStats).reduce((s, v) => s + (v?.sampleSize || 0), 0)
     : 0;
   const status = buildStatusBar(pipeline, hasHands ? handCount : 0);
   const dot = $('status-dot');
@@ -93,16 +91,16 @@ function applyScenario(name) {
 
   // Seat arc
   const arc = $('seat-arc');
-  if (arc && fixture.cachedSeatStats) {
+  if (arc && state.cachedSeatStats) {
     arc.innerHTML = buildSeatArcHTML(
-      fixture.cachedSeatStats,
-      fixture.currentTableState,
-      fixture.cachedSeatMap || null,
+      state.cachedSeatStats,
+      state.currentTableState,
+      state.cachedSeatMap || null,
       {
-        currentLiveContext: fixture.currentLiveContext,
-        appSeatData: fixture.appSeatData || {},
+        currentLiveContext: state.currentLiveContext,
+        appSeatData: state.appSeatData || {},
         focusedVillainSeat,
-        pinnedVillainSeat: fixture.pinnedVillainSeat ?? null,
+        pinnedVillainSeat: state.pinnedVillainSeat ?? null,
         containerWidth: arc.offsetWidth || 380,
       }
     );
@@ -114,14 +112,14 @@ function applyScenario(name) {
   const header = $('unified-header');
   if (header) {
     const result = buildUnifiedHeaderHTML(
-      fixture.lastGoodAdvice,
-      fixture.currentLiveContext,
+      state.lastGoodAdvice,
+      state.currentLiveContext,
       {
         focusedVillainSeat,
-        pinnedVillainSeat: fixture.pinnedVillainSeat ?? null,
-        appSeatData: fixture.appSeatData || {},
-        currentTableState: fixture.currentTableState,
-        currentLiveContext: fixture.currentLiveContext,
+        pinnedVillainSeat: state.pinnedVillainSeat ?? null,
+        appSeatData: state.appSeatData || {},
+        currentTableState: state.currentTableState,
+        currentLiveContext: state.currentLiveContext,
       }
     );
     showEl(header);
@@ -132,15 +130,15 @@ function applyScenario(name) {
   // Street card
   const streetCard = $('street-card');
   if (streetCard) {
-    const street = fixture.currentLiveContext?.currentStreet
-      || fixture.lastGoodAdvice?.currentStreet || null;
+    const street = state.currentLiveContext?.currentStreet
+      || state.lastGoodAdvice?.currentStreet || null;
     renderStreetCard(
       street,
-      fixture.lastGoodAdvice,
-      fixture.currentLiveContext,
-      fixture.appSeatData || {},
+      state.lastGoodAdvice,
+      state.currentLiveContext,
+      state.appSeatData || {},
       focusedVillainSeat,
-      fixture.lastGoodTournament
+      state.lastGoodTournament
     );
   }
 
@@ -148,7 +146,7 @@ function applyScenario(name) {
   const deepBtn = $('deep-expander-btn');
   const deepContent = $('deep-expander-content');
   if (deepBtn && deepContent) {
-    const result = buildDeepExpanderHTML(fixture.lastGoodAdvice);
+    const result = buildDeepExpanderHTML(state.lastGoodAdvice);
     if (result.showButton) {
       showEl(deepBtn);
       deepContent.innerHTML = result.html;
@@ -170,14 +168,14 @@ function applyScenario(name) {
 
   // Tournament bar
   const tournamentBar = $('tournament-bar');
-  if (tournamentBar && fixture.lastGoodTournament) {
+  if (tournamentBar && state.lastGoodTournament) {
     showEl(tournamentBar);
-    const t = fixture.lastGoodTournament;
+    const t = state.lastGoodTournament;
     let barHtml = '';
     if (t.heroMRatio != null) {
       barHtml += `<span style="font-weight:bold;color:#eab308">M ${t.heroMRatio.toFixed(1)}</span>`;
     }
-    barHtml += `<span style="margin:0 4px;color:var(--text-muted)">·</span>`;
+    barHtml += `<span style="margin:0 4px;color:var(--text-muted)">\u00B7</span>`;
     barHtml += `<span>Lvl ${(t.currentLevelIndex || 0) + 1}</span>`;
     if (t.playersRemaining) {
       barHtml += `<span style="margin-left:4px">${t.playersRemaining}/${t.totalEntrants || '?'}</span>`;
@@ -191,8 +189,23 @@ function applyScenario(name) {
   document.querySelector('.panel-content')?.scrollTo(0, 0);
 }
 
+/** Apply a named fixture (wrapper for static mode). */
+function applyScenario(name) {
+  const fixture = ALL_FIXTURES[name];
+  if (!fixture) return;
+
+  // Mark active scenario in picker
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scenario === name);
+  });
+  $('active-scenario').textContent = name;
+
+  resetStreetCardState();
+  applyState(fixture);
+}
+
 // =========================================================================
-// BUILD SCENARIO PICKER
+// BUILD STATIC SCENARIO PICKER
 // =========================================================================
 
 const picker = $('scenario-picker');
@@ -216,6 +229,97 @@ if (deepBtn) {
   });
 }
 
-// Auto-load first scenario
+// =========================================================================
+// TEMPORAL REPLAY MODE
+// =========================================================================
+
+let player = null;
+
+function renderAnomalyBadge(anomaly) {
+  const el = document.createElement('div');
+  el.className = `anomaly-badge anomaly-${anomaly.severity}`;
+  el.dataset.stepIndex = anomaly.stepIndex;
+  el.textContent = `[Step ${anomaly.stepIndex}] [${anomaly.rule}] ${anomaly.message}`;
+  return el;
+}
+
+function startTemporal(key) {
+  const scenario = TEMPORAL_SCENARIOS[key];
+  if (!scenario) return;
+
+  // Reset state
+  resetStreetCardState();
+  const alertsEl = $('anomaly-alerts');
+  const logEl = $('telemetry-log');
+  const statusEl = $('temporal-status');
+  const stepEl = $('temporal-step');
+  if (alertsEl) alertsEl.innerHTML = '';
+  if (logEl) logEl.innerHTML = '';
+  if (statusEl) statusEl.textContent = `Playing: ${scenario.name}`;
+  if (stepEl) stepEl.textContent = '';
+
+  // Mark active temporal button
+  document.querySelectorAll('.temporal-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.scenario === key);
+  });
+
+  player = new TemporalPlayer(applyState, {
+    onStep(step, index, renderEvent, anomalies) {
+      // Update step counter
+      if (stepEl) {
+        stepEl.textContent = `Step ${index + 1}/${scenario.steps.length}: ${step.label}`;
+      }
+      // Append to telemetry log
+      if (logEl) {
+        const row = document.createElement('div');
+        row.className = 'telemetry-row' + (renderEvent.skipped ? ' skipped' : '');
+        const skipTag = renderEvent.skipped ? ' (skip)' : '';
+        row.textContent = `#${index} ${renderEvent.contentType}${skipTag} nodes=${renderEvent.domNodeCount}`;
+        if (step.label) row.title = step.label;
+        logEl.appendChild(row);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      // Render anomaly badges
+      if (alertsEl) {
+        for (const a of anomalies) {
+          alertsEl.appendChild(renderAnomalyBadge(a));
+        }
+      }
+    },
+    onComplete(anomalies) {
+      if (statusEl) {
+        statusEl.textContent = anomalies.length
+          ? `Done \u2014 ${anomalies.length} anomal${anomalies.length === 1 ? 'y' : 'ies'} detected`
+          : 'Done \u2014 no anomalies';
+      }
+    },
+  });
+  player.play(scenario);
+}
+
+// Build temporal scenario picker
+const temporalPicker = $('temporal-picker');
+if (temporalPicker) {
+  for (const [key, scenario] of Object.entries(TEMPORAL_SCENARIOS)) {
+    const btn = document.createElement('button');
+    btn.className = 'scenario-btn temporal-btn';
+    btn.dataset.scenario = key;
+    btn.textContent = scenario.name;
+    btn.title = scenario.description;
+    btn.addEventListener('click', () => startTemporal(key));
+    temporalPicker.appendChild(btn);
+  }
+}
+
+// Temporal controls
+$('btn-step')?.addEventListener('click', () => player?.step());
+$('btn-pause')?.addEventListener('click', () => player?.pause());
+$('btn-resume')?.addEventListener('click', () => player?.resume());
+$('btn-stop')?.addEventListener('click', () => player?.stop());
+
+// =========================================================================
+// AUTO-LOAD FIRST STATIC SCENARIO
+// =========================================================================
+
 const firstScenario = Object.keys(ALL_FIXTURES)[0];
 if (firstScenario) applyScenario(firstScenario);
