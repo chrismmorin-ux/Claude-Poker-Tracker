@@ -190,11 +190,11 @@ injectTokens();
   // STORAGE LISTENER — auto-refresh when new hands arrive in side panel mirror
   // =========================================================================
 
+  // Storage listener: only update diagnostics (data-only, no render).
+  // Hand stats are refreshed via push_hands_updated port message — the storage
+  // listener was causing a redundant second render on every hand save.
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'session') return;
-    if (changes[SESSION_KEYS.SIDE_PANEL_HANDS]) {
-      refreshHandStats(currentActiveTableId, lastPipeline);
-    }
     if (changes[SESSION_KEYS.PIPELINE_DIAG]) {
       cachedDiag = changes[SESSION_KEYS.PIPELINE_DIAG].newValue || null;
       renderPipelineHealth();
@@ -1719,18 +1719,33 @@ injectTokens();
   // This eliminates race conditions from multiple render entry points.
 
   let renderUITimer = null;
+  let _lastRenderKey = null; // fingerprint of last rendered state
 
   const renderUI = () => {
     // Debounce: if called rapidly (e.g. pipeline push + live context in quick succession),
     // only render once after all state updates settle.
     if (renderUITimer) clearTimeout(renderUITimer);
-    renderUITimer = setTimeout(renderUIImmediate, 80); // coalesce rapid pushes
+    renderUITimer = setTimeout(renderUIImmediate, 150); // coalesce rapid pushes
   };
 
   const renderUIImmediate = () => {
     renderUITimer = null;
     const advice = lastGoodAdvice;
     const liveCtx = currentLiveContext;
+
+    // State snapshot: skip render if nothing meaningful changed since last render
+    const renderKey = [
+      liveCtx?.state, liveCtx?.currentStreet,
+      (liveCtx?.foldedSeats || []).length,
+      (liveCtx?.actionSequence || []).length,
+      liveCtx?.pot,
+      advice?.currentStreet, advice?.recommendations?.[0]?.action,
+      focusedVillainSeat, pinnedVillainSeat,
+      lastHandCount, !!lastGoodExploits, !!lastGoodTournament,
+      advicePendingForStreet,
+    ].join('|');
+    if (renderKey === _lastRenderKey) return;
+    _lastRenderKey = renderKey;
 
     // Update focused villain
     focusedVillainSeat = computeFocusedVillain();

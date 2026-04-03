@@ -127,14 +127,38 @@ import { isGameWsUrl } from '../shared/protocol.js';
   const tableManager = new TableManager(onHandComplete, onPipelineError);
 
   // =========================================================================
-  // LIVE CONTEXT — throttled push to SW for side-panel + app-bridge relay
+  // LIVE CONTEXT — state-change-gated, throttled push to SW
   // =========================================================================
+
+  let _prevLiveStateKey = null;
+  let _liveContextThrottle = null;
+  let _pendingLiveContext = null;
 
   const pushLiveContext = (hsm) => {
     if (!hsm?.getLiveHandContext) return;
     const ctx = hsm.getLiveHandContext();
-    // Send via port — SW writes to session storage + forwards to side panel
-    conn.send({ type: 'live_context', context: ctx });
+
+    // Only push when state actually changed (key fields fingerprint)
+    const stateKey = `${ctx.state}|${ctx.currentStreet}|${(ctx.activeSeatNumbers || []).length}|${(ctx.foldedSeats || []).length}|${(ctx.actionSequence || []).length}|${ctx.pot || 0}`;
+    if (stateKey === _prevLiveStateKey) return; // No change — skip
+    _prevLiveStateKey = stateKey;
+
+    // Trailing-edge throttle: send immediately on first change, then
+    // coalesce rapid subsequent changes into one push every 200ms
+    _pendingLiveContext = ctx;
+    if (!_liveContextThrottle) {
+      // Immediate first push
+      conn.send({ type: 'live_context', context: ctx });
+      _pendingLiveContext = null;
+      _liveContextThrottle = setTimeout(() => {
+        _liveContextThrottle = null;
+        // Flush any pending context that arrived during throttle window
+        if (_pendingLiveContext) {
+          conn.send({ type: 'live_context', context: _pendingLiveContext });
+          _pendingLiveContext = null;
+        }
+      }, 200);
+    }
   };
 
   // =========================================================================

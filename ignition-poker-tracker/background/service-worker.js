@@ -34,6 +34,9 @@ const swStartTime = Date.now();
 
 // Cached pipeline status from content script (for popup/side-panel queries)
 let lastPipelineStatus = { tables: {}, tableCount: 0, completedHands: 0 };
+// Live context throttle for side-panel forwarding (max ~5/sec)
+let _liveCtxTimer = null;
+let _pendingLiveCtx = null;
 // Cached diagnostics from content script
 let cachedDiagnostics = null;
 // Running hand count for badge (incremented on hand_saved notifications)
@@ -153,9 +156,21 @@ chrome.runtime.onConnect.addListener((port) => {
 
         case 'live_context':
           if (msg.context) {
-            // Write to session storage (SW has access) + forward to side panel
+            // Write to session storage (SW has access)
             writeLiveContext(msg.context);
-            pushToSidePanel({ type: 'push_live_context', context: msg.context });
+            // Throttled forward to side panel (max ~5/sec)
+            _pendingLiveCtx = msg.context;
+            if (!_liveCtxTimer) {
+              pushToSidePanel({ type: 'push_live_context', context: msg.context });
+              _pendingLiveCtx = null;
+              _liveCtxTimer = setTimeout(() => {
+                _liveCtxTimer = null;
+                if (_pendingLiveCtx) {
+                  pushToSidePanel({ type: 'push_live_context', context: _pendingLiveCtx });
+                  _pendingLiveCtx = null;
+                }
+              }, 200);
+            }
           }
           break;
 
