@@ -9,11 +9,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "harness:build": "node side-panel/harness/build-harness.mjs",
-    "harness": "node side-panel/harness/build-harness.mjs && npx serve side-panel/harness/dist -l 3333"
+    "harness": "node side-panel/harness/build-harness.mjs && npx serve side-panel/harness/dist -l 3333",
+    "harness:verify": "node side-panel/harness/build-harness.mjs && node side-panel/harness/verify-harness.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
     "jsdom": "^29.0.1",
+    "playwright": "^1.59.1",
     "vitest": "^3.1.0"
   }
 }
