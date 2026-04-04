@@ -31,6 +31,7 @@ export const useTournamentPersistence = (
   isTournamentSession
 ) => {
   const saveTimerRef = useRef(null);
+  const pendingSaveRef = useRef(null);
   const tournamentIdRef = useRef(null);
   const isHydratedRef = useRef(false);
 
@@ -77,28 +78,41 @@ export const useTournamentPersistence = (
       clearTimeout(saveTimerRef.current);
     }
 
-    saveTimerRef.current = setTimeout(async () => {
+    const tid = tournamentIdRef.current;
+    const stateSnapshot = { ...tournamentState };
+    pendingSaveRef.current = async () => {
       try {
-        await updateTournament(tournamentIdRef.current, {
-          config: tournamentState.config,
-          currentLevelIndex: tournamentState.currentLevelIndex,
-          levelStartTime: tournamentState.levelStartTime,
-          isPaused: tournamentState.isPaused,
-          pauseStartTime: tournamentState.pauseStartTime,
-          totalPausedMs: tournamentState.totalPausedMs,
-          chipStacks: tournamentState.chipStacks,
-          playersRemaining: tournamentState.playersRemaining,
-          eliminations: tournamentState.eliminations,
-          isActive: tournamentState.isActive,
+        await updateTournament(tid, {
+          config: stateSnapshot.config,
+          currentLevelIndex: stateSnapshot.currentLevelIndex,
+          levelStartTime: stateSnapshot.levelStartTime,
+          isPaused: stateSnapshot.isPaused,
+          pauseStartTime: stateSnapshot.pauseStartTime,
+          totalPausedMs: stateSnapshot.totalPausedMs,
+          chipStacks: stateSnapshot.chipStacks,
+          playersRemaining: stateSnapshot.playersRemaining,
+          eliminations: stateSnapshot.eliminations,
+          isActive: stateSnapshot.isActive,
         });
         log('Tournament state auto-saved');
       } catch (error) {
         logError(error);
       }
+      pendingSaveRef.current = null;
+    };
+
+    saveTimerRef.current = setTimeout(() => {
+      pendingSaveRef.current?.();
     }, DEBOUNCE_DELAY);
 
     return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current();
+      }
     };
   }, [tournamentState]);
 

@@ -52,6 +52,7 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
 
   // Refs
   const saveTimerRef = useRef(null);
+  const pendingSaveRef = useRef(null);
   const isInitializedRef = useRef(false);
 
   // ==========================================================================
@@ -133,33 +134,43 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
       clearTimeout(saveTimerRef.current);
     }
 
-    // Set new timer for debounced save
-    saveTimerRef.current = setTimeout(async () => {
+    // Capture current state for the save closure
+    const currentSession = sessionState.currentSession;
+    pendingSaveRef.current = async () => {
       try {
-        log(`Auto-saving session ${sessionState.currentSession.sessionId}...`);
-
-        await updateSession(sessionState.currentSession.sessionId, {
-          venue: sessionState.currentSession.venue,
-          gameType: sessionState.currentSession.gameType,
-          buyIn: sessionState.currentSession.buyIn,
-          rebuyTransactions: sessionState.currentSession.rebuyTransactions,
-          cashOut: sessionState.currentSession.cashOut,
-          reUp: sessionState.currentSession.reUp,
-          goal: sessionState.currentSession.goal,
-          notes: sessionState.currentSession.notes,
-          handCount: sessionState.currentSession.handCount
+        log(`Auto-saving session ${currentSession.sessionId}...`);
+        await updateSession(currentSession.sessionId, {
+          venue: currentSession.venue,
+          gameType: currentSession.gameType,
+          buyIn: currentSession.buyIn,
+          rebuyTransactions: currentSession.rebuyTransactions,
+          cashOut: currentSession.cashOut,
+          reUp: currentSession.reUp,
+          goal: currentSession.goal,
+          notes: currentSession.notes,
+          handCount: currentSession.handCount,
         });
-
         log('Session auto-saved successfully');
       } catch (error) {
         logError('Auto-save failed:', error);
       }
+      pendingSaveRef.current = null;
+    };
+
+    // Set new timer for debounced save
+    saveTimerRef.current = setTimeout(() => {
+      pendingSaveRef.current?.();
     }, DEBOUNCE_DELAY);
 
-    // Cleanup on unmount
+    // Cleanup: flush pending save on unmount or dependency change
     return () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      // Flush any pending save so data isn't lost
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current();
       }
     };
   }, [sessionState.currentSession, isReady]);

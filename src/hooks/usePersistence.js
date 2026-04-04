@@ -47,6 +47,7 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
 
   // Refs
   const saveTimerRef = useRef(null);
+  const pendingSaveRef = useRef(null);
   const isInitializedRef = useRef(false);
   const lastSnapshotRef = useRef(null);
 
@@ -156,8 +157,8 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       clearTimeout(saveTimerRef.current);
     }
 
-    // Set new debounced save
-    saveTimerRef.current = setTimeout(async () => {
+    // Capture data for save closure
+    pendingSaveRef.current = async () => {
       try {
         lastSnapshotRef.current = snapshot;
         const handId = await saveHand(handData, userId);
@@ -166,12 +167,22 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       } catch (error) {
         logError('Auto-save failed:', error);
       }
+      pendingSaveRef.current = null;
+    };
+
+    // Set new debounced save
+    saveTimerRef.current = setTimeout(() => {
+      pendingSaveRef.current?.();
     }, DEBOUNCE_DELAY);
 
-    // Cleanup on unmount or when dependencies change
+    // Cleanup: flush pending save on unmount or dependency change
     return () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current();
       }
     };
   }, [gameState, cardState, playerState, isReady, userId]);
