@@ -1,8 +1,13 @@
 /**
  * useActionAdvisor.js - React hook for on-demand exploit engine analysis
  *
- * Wraps evaluateGameTree() with React state management, abort handling,
- * and card format conversion.
+ * Used in PlayerAnalysisPanel for manual "what-if" analysis: user selects
+ * a villain, enters board + hero cards, and triggers analysis on demand.
+ *
+ * This is DISTINCT from useLiveActionAdvisor, which runs automatically
+ * during live Ignition play via the extension's hand state feed.
+ *
+ * @see useLiveActionAdvisor — automatic, live-play analysis in OnlineAnalysisContext
  */
 
 import { useState, useCallback } from 'react';
@@ -28,7 +33,6 @@ export const useActionAdvisor = () => {
     villainBet = 0,
     playerStats,
     villainModel,
-    personalizedMultipliers,
     trials = 2000,
   }) => {
     const callId = register();
@@ -56,7 +60,6 @@ export const useActionAdvisor = () => {
         villainBet,
         playerStats,
         villainModel,
-        personalizedMultipliers,
         trials,
       });
 

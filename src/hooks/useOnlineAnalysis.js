@@ -9,6 +9,9 @@
  * - Range profiles are NOT cached to IndexedDB
  * - Briefings are NOT persisted (no player records to save to)
  * - Scoped to a single session, not all hands
+ *
+ * Performance: per-seat hand count tracking skips re-analysis for seats
+ * with no new hands since last refresh (5s interval).
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -26,6 +29,8 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
   const [handCount, setHandCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const lastHandCountRef = useRef(-1);
+  const seatHandCountRef = useRef(new Map());
+  const analysisCacheRef = useRef(new Map());
 
   const calculate = useCallback(async () => {
     if (!sessionId) {
@@ -40,10 +45,12 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
         setTendencyMap({});
         setHandCount(0);
         lastHandCountRef.current = 0;
+        seatHandCountRef.current = new Map();
+        analysisCacheRef.current = new Map();
         return;
       }
 
-      // Skip if hand count hasn't changed
+      // Global skip: if total hand count hasn't changed, nothing to recompute
       if (hands.length === lastHandCountRef.current) {
         return;
       }
@@ -52,12 +59,14 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
       lastHandCountRef.current = hands.length;
       setHandCount(hands.length);
 
-      // Build pseudo-player list from all seatPlayers across hands
+      // Compute per-seat hand counts for delta detection
+      const seatHandCounts = new Map();
       const seatsSeen = new Set();
       for (const hand of hands) {
         if (hand.seatPlayers) {
           for (const seat of Object.keys(hand.seatPlayers)) {
             seatsSeen.add(seat);
+            seatHandCounts.set(seat, (seatHandCounts.get(seat) || 0) + 1);
           }
         }
       }
@@ -65,6 +74,15 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
       const map = {};
 
       for (const seatStr of seatsSeen) {
+        const prevCount = seatHandCountRef.current.get(seatStr) || 0;
+        const currCount = seatHandCounts.get(seatStr) || 0;
+
+        // Skip re-analysis if this seat's hand count hasn't changed
+        if (currCount === prevCount && analysisCacheRef.current.has(seatStr)) {
+          map[seatStr] = analysisCacheRef.current.get(seatStr);
+          continue;
+        }
+
         const playerId = `seat_${seatStr}`;
 
         try {
@@ -90,6 +108,9 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
             observations: result.observations,
             thoughtAnalysis: result.thoughtAnalysis,
           };
+
+          // Cache result for this seat
+          analysisCacheRef.current.set(seatStr, map[seatStr]);
         } catch (e) {
           // Skip this seat on error, don't break the whole analysis
           map[seatStr] = {
@@ -100,6 +121,16 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
           };
         }
       }
+
+      // Clean up cache for seats that disappeared
+      for (const cachedSeat of analysisCacheRef.current.keys()) {
+        if (!seatsSeen.has(cachedSeat)) {
+          analysisCacheRef.current.delete(cachedSeat);
+        }
+      }
+
+      // Update per-seat hand counts for next cycle
+      seatHandCountRef.current = seatHandCounts;
 
       setTendencyMap(map);
     } catch (e) {
@@ -127,4 +158,3 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
     refresh: calculate,
   };
 };
-

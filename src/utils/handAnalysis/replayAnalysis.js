@@ -13,7 +13,7 @@ import { narrowByBoard } from '../exploitEngine/postflopNarrower';
 import { segmentRange } from '../exploitEngine/rangeSegmenter';
 import { buildSituationKey } from '../exploitEngine/decisionAccumulator';
 import { queryActionDistribution } from '../exploitEngine/villainDecisionModel';
-import { handVsRange } from '../exploitEngine/equityCalculator';
+import { handVsRange } from '../exploitEngine/monteCarloEquity';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
 import { getPopulationPrior } from '../rangeEngine/populationPriors';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';

@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "system-model-v1",
+  "title": "System Model Module",
+  "description": "Persistent system understanding for AI-assisted engineering workflows. Covers architecture, invariants, risks, and cross-cutting concerns.",
+  "type": "object",
+  "required": ["meta", "architecture", "dataFlows", "stateModel", "invariants", "failureSurfaces", "hiddenCoupling"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["version", "updated", "owner", "project"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "updated": { "type": "string", "format": "date" },
+        "owner": { "type": "string", "description": "Role or persona responsible for this model" },
+        "project": { "type": "string" },
+        "hash": { "type": "string", "description": "SHA-256 of content sections, for drift detection" }
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "required": ["components", "dependencyRules"],
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "responsibility", "boundary"],
+            "properties": {
+              "id": { "type": "string", "description": "Stable identifier (e.g., 'exploit-engine')" },
+              "name": { "type": "string" },
+              "responsibility": { "type": "string", "description": "What this component does (one sentence)" },
+              "boundary": { "type": "string", "description": "What this component does NOT do or access" },
+              "paths": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "File paths or glob patterns"
+              },
+              "dependsOn": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "IDs of components this depends on"
+              }
+            }
+          }
+        },
+        "dependencyRules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rule", "enforced"],
+            "properties": {
+              "rule": { "type": "string", "description": "e.g., 'pokerCore never imports from rangeEngine'" },
+              "enforced": { "type": "string", "enum": ["automated", "convention", "review"] }
+            }
+          }
+        },
+        "externalBoundaries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "direction", "mechanism"],
+            "properties": {
+              "name": { "type": "string" },
+              "direction": { "type": "string", "enum": ["inbound", "outbound", "bidirectional"] },
+              "mechanism": { "type": "string" },
+              "dataShape": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "dataFlows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "steps", "criticality"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "criticality": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["component", "action"],
+              "properties": {
+                "component": { "type": "string", "description": "Component ID" },
+                "action": { "type": "string" },
+                "output": { "type": "string" },
+                "failureMode": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stateModel": {
+      "type": "object",
+      "required": ["stateTypes", "ownership", "consistencyGuarantees"],
+      "properties": {
+        "stateTypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "classification", "lifecycle", "location"],
+            "properties": {
+              "name": { "type": "string" },
+              "classification": { "type": "string", "enum": ["ephemeral", "session", "persistent", "derived", "configuration"] },
+              "lifecycle": { "type": "string" },
+              "location": { "type": "string" },
+              "examples": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "ownership": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["state", "owner", "mutators"],
+            "properties": {
+              "state": { "type": "string" },
+              "owner": { "type": "string" },
+              "readers": { "type": "array", "items": { "type": "string" } },
+              "mutators": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "consistencyGuarantees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["guarantee", "mechanism"],
+            "properties": {
+              "guarantee": { "type": "string" },
+              "mechanism": { "type": "string" },
+              "exception": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "required": ["mustBeTrue", "mustNeverHappen"],
+      "properties": {
+        "mustBeTrue": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "statement", "enforcedBy"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^INV-\\d+$" },
+              "statement": { "type": "string" },
+              "enforcedBy": { "type": "string", "description": "File or mechanism that enforces this" },
+              "lastVerified": { "type": "string", "format": "date" },
+              "testCoverage": { "type": "string", "enum": ["full", "partial", "none"] }
+            }
+          }
+        },
+        "mustNeverHappen": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "statement", "riskIfViolated"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^NEV-\\d+$" },
+              "statement": { "type": "string" },
+              "riskIfViolated": { "type": "string" },
+              "detectionMethod": { "type": "string", "enum": ["test", "lint", "review", "runtime", "none"] }
+            }
+          }
+        }
+      }
+    },
+    "failureSurfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "risk", "likelihood", "impact"],
+        "properties": {
+          "area": { "type": "string" },
+          "risk": { "type": "string" },
+          "likelihood": { "type": "string", "enum": ["high", "medium", "low"] },
+          "impact": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "mitigation": { "type": "string" },
+          "lastReviewed": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "hiddenCoupling": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "nature"],
+        "properties": {
+          "from": { "type": "string", "description": "Source component or file" },
+          "to": { "type": "string", "description": "Coupled component or file" },
+          "nature": { "type": "string", "description": "Why this coupling is hidden" },
+          "risk": { "type": "string" },
+          "breakingScenario": { "type": "string", "description": "What change would expose this coupling" }
+        }
+      }
+    },
+    "scaling": {
+      "type": "object",
+      "properties": {
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["dimension", "current", "bottleneck"],
+            "properties": {
+              "dimension": { "type": "string" },
+              "current": { "type": "string" },
+              "at10x": { "type": "string" },
+              "at100x": { "type": "string" },
+              "bottleneck": { "type": "string" }
+            }
+          }
+        },
+        "knownBottlenecks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description", "trigger"],
+            "properties": {
+              "description": { "type": "string" },
+              "trigger": { "type": "string" },
+              "mitigation": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "trustZones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["zone", "trustLevel", "boundary"],
+            "properties": {
+              "zone": { "type": "string" },
+              "trustLevel": { "type": "string", "enum": ["full", "verified", "semi-trusted", "untrusted"] },
+              "boundary": { "type": "string" }
+            }
+          }
+        },
+        "dataExposureRisks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["risk", "severity", "status"],
+            "properties": {
+              "risk": { "type": "string" },
+              "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+              "status": { "type": "string", "enum": ["mitigated", "accepted", "open"] }
+            }
+          }
+        }
+      }
+    },
+    "observabilityGaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gap", "impact"],
+        "properties": {
+          "gap": { "type": "string" },
+          "impact": { "type": "string" },
+          "recommendedFix": { "type": "string" },
+          "priority": { "type": "string", "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "technicalDebt": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "severity"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^TD-\\d+$" },
+          "description": { "type": "string" },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "origin": { "type": "string" },
+          "resolutionPath": { "type": "string" }
+        }
+      }
+    },
+    "decisionLog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "decision", "rationale"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "decision": { "type": "string" },
+          "rationale": { "type": "string" },
+          "alternativesConsidered": { "type": "array", "items": { "type": "string" } },
+          "reversible": { "type": "boolean" }
+        }
+      }
+    },
+    "roundtablePersonas": {
+      "type": "array",
+      "description": "The 7 personas that participate in structured roundtable analysis",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "focus", "primarySections", "canAdd", "canModify", "cannotTouch", "runsIn"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1, "maximum": 7 },
+          "name": {
+            "type": "string",
+            "enum": [
+              "SYSTEMS ARCHITECT",
+              "SENIOR ENGINEER",
+              "FAILURE ENGINEER",
+              "PERFORMANCE ENGINEER",
+              "SECURITY ENGINEER",
+              "PRODUCT / UX THINKER",
+              "FACILITATOR"
+            ]
+          },
+          "focus": { "type": "string", "description": "One-line description of this persona's analytical focus" },
+          "primarySections": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "System Model sections loaded for this persona (e.g., '§1', '§5.2')"
+          },
+          "canAdd": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What this persona is allowed to add to the model"
+          },
+          "canModify": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What this persona is allowed to modify in the model"
+          },
+          "cannotTouch": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What this persona must not change (propose only)"
+          },
+          "runsIn": {
+            "type": "string",
+            "enum": ["round-1-parallel", "round-2-last"],
+            "description": "When this persona runs. All run in parallel round 1 except Facilitator (round 2, last)"
+          }
+        }
+      }
+    }
+  }
+}

@@ -14,8 +14,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { logger } from '../utils/errorHandler';
 import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
-import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
-import { getRangePositionCategory, isInPosition, getPreflopOrder } from '../utils/positionUtils';
+import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
 import {
   buildBaselineRange,
@@ -25,8 +24,11 @@ import {
 } from '../utils/exploitEngine/preflopAdvisor';
 import { useAbortControl } from './useAbortControl';
 import { getQualityTier } from '../constants/designTokens';
-import { calculateStartingPot } from '../utils/potCalculator';
-import { getSPRZone, SPR_ZONES } from '../utils/exploitEngine/gameTreeHelpers';
+import { getSPRZone, SPR_ZONES } from '../utils/exploitEngine/gameTreeConstants';
+import {
+  estimatePot, buildPlayerStats, computeEffectiveStack,
+  buildOpponentModels, buildPostflopContextHints, countPlayersToAct,
+} from '../utils/exploitEngine/liveGameContext';
 
 // =========================================================================
 // HELPERS
@@ -44,6 +46,93 @@ export const computeTrialCount = ({ spr, street, activeOpponents, sampleSize } =
   if (sampleSize != null && sampleSize < 10) return 500;
   if (activeOpponents != null && activeOpponents >= 3) return 1500;
   return 1000;
+};
+
+/**
+ * Build preflop advice from live hand state context.
+ * Handles positional dynamics, squeeze/limp detection, and playersToAct counting.
+ */
+const buildPreflopAdvice = async ({
+  liveHandState, heroSeat, targetSeat, dealerSeat,
+  villainRange, encodedHero, adjustedPot,
+  detectedSituation, playerStats, villainData, villainModel, rakeConfig,
+}) => {
+  const { situation, villainAction, villainBet } = detectedSituation;
+  const heroPosition = getRangePositionCategory(heroSeat, dealerSeat || 1);
+  const villainPosition = getRangePositionCategory(targetSeat, dealerSeat || 1);
+  const playersToAct = countPlayersToAct(liveHandState, heroSeat, dealerSeat);
+
+  const posCtx = {
+    heroPosition, villainPosition,
+    situation,
+    limperCount: detectedSituation.limperCount || 0,
+    callerCount: detectedSituation.callerCount || 0,
+    deadMoney: detectedSituation.deadMoney || 0,
+    trapWarning: villainData.traits?.trapsPreflop || false,
+    playersToAct,
+    heroSeat,
+    villainSeat: targetSeat,
+    dealerSeat: dealerSeat || 1,
+  };
+
+  return computePreflopAdvice(
+    villainRange, encodedHero, adjustedPot,
+    villainAction, villainBet || 0, playerStats,
+    posCtx, villainModel, rakeConfig
+  );
+};
+
+/**
+ * Build postflop advice from live hand state context.
+ * Handles board encoding, multi-way opponents, stack depth, and game tree evaluation.
+ */
+const buildPostflopAdvice = async ({
+  liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
+  villainRange, encodedHero, adjustedPot,
+  detectedSituation, playerStats, villainData, villainModel,
+  tendencyMap, dataQuality, sampleSize, rakeConfig,
+}) => {
+  const { villainAction, villainBet } = detectedSituation;
+  const communityCards = liveHandState.communityCards || [];
+  const visibleBoard = communityCards.filter(c => c && c !== '');
+  const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
+  if (encodedBoard.length < 3) return null;
+
+  // Surface villain model quality in dataQuality
+  dataQuality.villainModelNote = villainModel?._buckets
+    ? 'Calibrated to villain behavior'
+    : villainModel
+      ? 'Partial villain model — some generic assumptions'
+      : 'Generic advice — no villain model';
+
+  const effStack = computeEffectiveStack(liveHandState, heroSeat, targetSeat);
+  const { models: opponentModels, activeOpponents } = buildOpponentModels(liveHandState, heroSeat, targetSeat, tendencyMap);
+  const { contextHints } = buildPostflopContextHints({
+    liveHandState, heroSeat, targetSeat, dealerSeat,
+    villainData, encodedBoard,
+  });
+
+  return evaluateGameTree({
+    villainRange,
+    board: encodedBoard,
+    heroCards: encodedHero,
+    potSize: adjustedPot,
+    villainAction: (villainAction === 'check' || !villainAction) ? undefined : villainAction,
+    villainBet: villainBet || 0,
+    trials: computeTrialCount({
+      spr: effStack != null && adjustedPot > 0 ? effStack / adjustedPot : null,
+      street: currentStreet,
+      activeOpponents,
+      sampleSize,
+    }),
+    playerStats,
+    villainModel,
+    effectiveStack: effStack,
+    numOpponents: Math.max(1, activeOpponents),
+    opponentModels,
+    contextHints,
+    rakeConfig,
+  });
 };
 
 // =========================================================================
@@ -144,52 +233,14 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
     const encodedHero = holeCards.map(c => parseAndEncode(c)).filter(c => c >= 0);
     if (encodedHero.length !== 2) return;
 
-    // HSM pot is already in dollars and includes current bets — subtract villain's bet.
-    // CO_CHIPTABLE_INFO may not arrive until after betting, so estimate from blinds on preflop.
-    // Lobby WS may delay blind/pot messages — fall back to gameType defaults.
-    let rawPotSize = pot || 0;
-    if (rawPotSize <= 0 && liveHandState.blinds) {
-      const { sb, bb } = liveHandState.blinds;
-      rawPotSize = calculateStartingPot(
-        { sb: sb || 0, bb: bb || 0 },
-        { amount: liveHandState.ante || 0, format: liveHandState.anteFormat || 'per-player', seatCount: liveHandState.activeSeatNumbers?.length || 2 }
-      );
-    }
-    // Last resort: estimate from game type or use standard 1/2 blinds
-    if (rawPotSize <= 0) {
-      const gt = liveHandState.gameType;
-      if (gt?.sb && gt?.bb) {
-        rawPotSize = calculateStartingPot(
-          { sb: gt.sb, bb: gt.bb },
-          { amount: gt.ante || 0, format: gt.anteFormat || 'per-player', seatCount: liveHandState.activeSeatNumbers?.length || 2 }
-        );
-      } else {
-        // Standard 1/2 NL assumption — better than bailing entirely
-        rawPotSize = 3;
-      }
-      logger.debug('LiveActionAdvisor', 'Pot fallback:', rawPotSize, 'from', gt?.sb ? 'gameType' : 'default');
-    }
+    // Pot estimation with 4-level fallback (explicit → blinds → gameType → default)
+    const rawPotSize = estimatePot(liveHandState);
     const adjustedPot = Math.max(0, rawPotSize - (villainBet || 0));
 
     // Resolve rake config from live hand state or session game type
     const rakeConfig = liveHandState.rakeConfig || null;
 
-    const playerStats = {
-      vpip: villainData.vpip ?? null,
-      pfr: villainData.pfr ?? null,
-      af: villainData.af ?? null,
-      cbet: villainData.rawStats?.pfAggressorFlops > 0
-        ? Math.round((villainData.rawStats.cbetCount / villainData.rawStats.pfAggressorFlops) * 100)
-        : undefined,
-      foldToCbet: villainData.rawStats?.facedCbet > 0
-        ? Math.round((villainData.rawStats.foldedToCbet / villainData.rawStats.facedCbet) * 100)
-        : undefined,
-      foldToCbetSampleSize: villainData.rawStats?.facedCbet || 0,
-      foldTo3Bet: villainData.foldTo3Bet ?? null,
-      facedRaisePreflop: villainData.rawStats?.facedRaisePreflop || 0,
-      style: villainData.style,
-      position: villainPosition,
-    };
+    const playerStats = buildPlayerStats(villainData, villainPosition);
 
     const callId = register();
     setIsComputing(true);
@@ -199,117 +250,19 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       let result;
 
       if (currentStreet === 'preflop') {
-        // Dedicated preflop branch with positional dynamics
-        const heroPosition = getRangePositionCategory(heroSeat, dealerSeat || 1);
-
-        // Compute players yet to act behind hero (for cumulative fold models)
-        let playersToAct = 0;
-        if (dealerSeat) {
-          const preflopOrder = getPreflopOrder(dealerSeat);
-          const activeSeatNumbers = liveHandState.activeSeatNumbers || [];
-          const foldedSet = new Set(liveHandState.foldedSeats || []);
-          const activeSet = new Set(activeSeatNumbers.filter(s => !foldedSet.has(s)));
-          const streetActions = (actionSequence || []).filter(a => a.street === 'preflop');
-          const actedSet = new Set(streetActions.map(a => a.seat));
-          const heroIdx = preflopOrder.indexOf(heroSeat);
-          if (heroIdx >= 0) {
-            playersToAct = preflopOrder.slice(heroIdx + 1)
-              .filter(s => activeSet.has(s) && !actedSet.has(s) && s !== heroSeat).length;
-          }
-        }
-
-        // Pass enriched posContext including situation, limp/squeeze metadata
-        const posCtx = {
-          heroPosition, villainPosition,
-          situation,
-          limperCount: detectedSituation.limperCount || 0,
-          callerCount: detectedSituation.callerCount || 0,
-          deadMoney: detectedSituation.deadMoney || 0,
-          trapWarning: villainData.traits?.trapsPreflop || false,
-          playersToAct,
-          heroSeat,
-          villainSeat: targetSeat,
-          dealerSeat: dealerSeat || 1,
-        };
-        result = await computePreflopAdvice(
+        result = await buildPreflopAdvice({
+          liveHandState, heroSeat, targetSeat, dealerSeat,
           villainRange, encodedHero, adjustedPot,
-          villainAction, villainBet || 0, playerStats,
-          posCtx, villainModel, rakeConfig
-        );
-      } else {
-        // Postflop: use full action advisor pipeline
-        const visibleBoard = (communityCards || []).filter(c => c && c !== '');
-        const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
-        if (encodedBoard.length < 3) return;
-
-        // Surface villain model quality in dataQuality
-        dataQuality.villainModelNote = villainModel?._buckets
-          ? 'Calibrated to villain behavior'
-          : villainModel
-            ? 'Partial villain model — some generic assumptions'
-            : 'Generic advice — no villain model';
-        // Pass observations + sizing tells for contextual reasoning
-        const relevantObs = (villainData.observations || []).filter(o =>
-          o.street === currentStreet || o.street === 'cross' || o.heroContext === 'META'
-        );
-        const bt = analyzeBoardTexture(encodedBoard);
-        const heroIsIP = isInPosition(heroSeat, targetSeat, dealerSeat || 1);
-
-        // Stack depth: compute effective stack from liveHandState stacks
-        const stacks = liveHandState.stacks || {};
-        const heroStack = stacks[heroSeat] ?? null;
-        const villainStack = stacks[targetSeat] ?? null;
-        const effStack = (heroStack != null && villainStack != null)
-          ? Math.min(heroStack, villainStack)
-          : heroStack ?? villainStack ?? null;
-
-        // Multi-way: count active opponents and load per-seat models
-        const activeSeatNumbers = liveHandState.activeSeatNumbers || [];
-        const foldedSet = new Set(liveHandState.foldedSeats || []);
-        const activeOpponents = activeSeatNumbers.filter(s => s !== heroSeat && !foldedSet.has(s)).length;
-
-        // Build opponent models for all non-primary active opponents
-        const opponentModels = activeSeatNumbers
-          .filter(s => s !== heroSeat && !foldedSet.has(s) && s !== targetSeat)
-          .map(s => {
-            const d = tendencyMap[String(s)] || {};
-            return {
-              seat: s,
-              villainModel: d.villainModel || null,
-              playerStats: d.style ? { style: d.style, af: d.af, vpip: d.vpip } : null,
-            };
-          });
-
-        const postflopResult = await evaluateGameTree({
-          villainRange,
-          board: encodedBoard,
-          heroCards: encodedHero,
-          potSize: adjustedPot,
-          villainAction: (villainAction === 'check' || !villainAction) ? undefined : villainAction,
-          villainBet: villainBet || 0,
-          trials: computeTrialCount({
-            spr: effStack != null && adjustedPot > 0 ? effStack / adjustedPot : null,
-            street: currentStreet,
-            activeOpponents,
-            sampleSize,
-          }),
-          playerStats,
-          personalizedMultipliers: villainModel?.personalizedMultipliers,
-          villainModel,
-          effectiveStack: effStack,
-          numOpponents: Math.max(1, activeOpponents),
-          opponentModels,
-          contextHints: {
-            observations: relevantObs,
-            sizingTells: villainData.decisionSummary?.sizingTells,
-            texture: bt?.texture || '*',
-            posCategory: villainPosition,
-            isIP: heroIsIP,
-            isPreflopAggressor: heroSeat === pfAggressor,
-          },
-          rakeConfig,
+          detectedSituation, playerStats, villainData, villainModel, rakeConfig,
         });
-        result = postflopResult;
+      } else {
+        result = await buildPostflopAdvice({
+          liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
+          villainRange, encodedHero, adjustedPot,
+          detectedSituation, playerStats, villainData, villainModel,
+          tendencyMap, dataQuality, sampleSize, rakeConfig,
+        });
+        if (!result) return;
       }
 
       if (!isCurrent(callId)) return;

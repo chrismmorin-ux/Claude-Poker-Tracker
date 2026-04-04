@@ -12,14 +12,22 @@ bash scripts/smart-test-runner.sh    # Tests (token-optimized, use before commit
 npm test                             # Tests (verbose, for debugging)
 ```
 
-## Context Files (Read Before Source)
-Prefer `.claude/context/*.md` over raw source — they're compact summaries:
-- `CONTEXT_SUMMARY.md` — project overview
-- `STATE_SCHEMA.md` — all reducer shapes
-- `HOTSPOTS.md` — critical/fragile files
-- `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
+## Session Start Protocol (MANDATORY)
+When starting any work session:
+1. Read `.claude/STATUS.md` — understand current project state and active sessions
+2. Read ALL files in `.claude/handoffs/` — know what other sessions own and avoid file conflicts
+3. If resuming a project: read the project file referenced in STATUS.md
+4. Before editing any file: verify no other ACTIVE session owns it (check handoff "Files I Own" sections)
+5. Create or update your handoff file in `.claude/handoffs/` when you claim work
+6. Do NOT start coding until you've completed steps 1-4
 
-Also: `PERSISTENCE_OVERVIEW.md` for IndexedDB API summary.
+## System Model (Read Before Any Multi-File Change)
+`.claude/context/SYSTEM_MODEL.md` is the single source of truth for architecture, invariants, failure surfaces, coupling, and system understanding. Read it before any structural change. Update it after any architectural shift.
+
+Supporting references (unique detail not in System Model):
+- `STATE_SCHEMA.md` — reducer shapes
+- `PERSISTENCE_OVERVIEW.md` — IndexedDB API summary
+- `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 
 ## Poker Analysis Guardrail
 **Before editing ANY file in `src/utils/exploitEngine/` or `src/utils/rangeEngine/`:**
@@ -33,18 +41,8 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 **First-principles decision modeling (CRITICAL):** Villain decisions derive from equity, pot odds, SPR, and players remaining — NEVER from position labels, bucket labels, or style categories directly. Labels are outputs of the decision process, not inputs. Do not add `if (position === 'EP') foldRate *= 1.05` — compute from game state. Do not use `POP_CALLING_RATES[bucket]` when per-combo equity is available — use the logistic. Do not stack style adjustments on top of the stats that define the style — that's double-counting. See POKER_THEORY.md §7 and exploitEngine/CLAUDE.md anti-patterns.
 
 ## Architecture (v122)
-- `src/PokerTracker.jsx` (~128 lines) — AppRoot (state + providers) + ViewRouter (pure routing)
-- `src/contexts/` — 12 providers (incl. ToastContext, TendencyProvider, TournamentContext, SyncBridgeContext, OnlineSessionContext)
-- `src/reducers/` — 8 reducers (game, ui, card, session, player, settings, auth, tournament)
-- `src/hooks/` — 33 custom hooks (useGameHandlers, useScale, useOnlineAnalysis, useLiveActionAdvisor, useAbortControl, etc.)
-- `src/components/views/` — 13 view screens + Showdown overlay (all receive only `scale` prop)
-- `src/components/ui/` — 40 UI components (incl. RangeGrid, RangeDetailPanel, ExploitBadges, IcmBadge)
-- `src/utils/pokerCore/` — shared poker infrastructure (4 modules: cardParser, rangeMatrix, handEvaluator, boardTexture)
-- `src/utils/rangeEngine/` — Bayesian range estimation (9 modules)
-- `src/utils/exploitEngine/` — exploit suggestions, weakness detection, Bayesian confidence (32 modules)
-- `src/utils/handAnalysis/` — hand review & replay analysis (7 modules + barrel export)
-- `src/utils/tournamentEngine/` — blind levels, blind-out calculator, dropout predictor (4 modules)
-- `src/utils/persistence/` — IndexedDB v13 (11 modules: database, migrations, 7 domain stores, validation, index)
+See `SYSTEM_MODEL.md` §1 for full component map, dependency graph, and extension boundary.
+Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views, 4 engines, IndexedDB v13.
 
 ## Working Principles
 - **Plan first, code second** — outline your approach before writing code. For non-trivial changes, present the plan and wait for approval
@@ -55,6 +53,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - **State verification criteria** — after any change, explain exactly how to confirm it works (which view, what interaction, what to look for)
 - **Read before writing** — understand existing code fully before modifying. Never edit a file you haven't read this session
 - **Don't be surprise-proactive** — take follow-up actions only when asked. Ask before adding anything beyond the immediate request
+- **Update the System Model** — after any architectural change, update `SYSTEM_MODEL.md` in the same session. Stale models cause wrong reasoning.
 
 ## Rules
 - ALL action recordings use `ACTIONS.*` constants (from `src/constants/gameConstants.js`)
@@ -75,9 +74,11 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 `DEBUG = false` at line 8 of `PokerTracker.jsx`
 
 ## Starting New Work
-1. Check `.claude/BACKLOG.md` first
-2. `/project start <name>` for multi-file tasks
-3. Read affected files before editing (use context files first)
+1. Follow Session Start Protocol above (STATUS.md + handoffs)
+2. Check `.claude/BACKLOG.md` — claim item with `/backlog claim <id>`
+3. `/project start <name>` for multi-file tasks
+4. Read `.claude/context/SYSTEM_MODEL.md` for architectural context, then read affected files
+5. Write `/handoff` before ending your session
 4. 4+ files changed → `EnterPlanMode`
 
 ## Responsive Design
@@ -89,17 +90,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 - Verify across views: Table, Showdown, Stats, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online
 
 ## Analytics Pipeline
-The app builds player models through three layers:
-1. **Session Stats** (`useSessionStats`) — VPIP, PFR, AF, C-Bet from action counts
-2. **Player Tendencies** (`usePlayerTendencies`) — cross-session style classification (TAG, LAG, Fish, etc.)
-3. **Bayesian Range Engine** (`src/utils/rangeEngine/`) — per-position hand distribution estimates
-
-Range Engine key concepts:
-- Two independent decision trees: **no raise faced** (fold/limp/open) and **facing a raise** (fold/coldCall/threeBet)
-- Population priors (typical 1/2 player) as Bayesian starting point, updated with observed frequencies
-- 169-cell hand grids (Float64Array) per action per position
-- Showdown anchors: confirmed hands set to weight 1.0 with semantic boosting
-- Profiles cached in IndexedDB `rangeProfiles` store
+See `SYSTEM_MODEL.md` §2.2 for the 3-layer analysis pipeline (Session Stats → Player Tendencies → Exploit Generation) and §2.3-2.4 for game tree and range profile flows.
 
 ## Ignition Extension (`ignition-poker-tracker/`)
 Chrome MV3 extension — WebSocket capture, side panel HUD, app sync. Has its own `CLAUDE.md` with architecture, anti-patterns, and troubleshooting.

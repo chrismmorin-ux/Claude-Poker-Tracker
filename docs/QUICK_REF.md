@@ -7,10 +7,10 @@
 - **DB**: IndexedDB v13, 7 object stores
 
 ## Must-Read Docs
-1. `CLAUDE.md` — architecture, rules, working principles
-2. `.claude/context/POKER_THEORY.md` — **MANDATORY** before editing engines
-3. `.claude/context/STATE_SCHEMA.md` — all 8 reducer shapes
-4. `.claude/context/HOTSPOTS.md` — fragile files
+1. `.claude/context/SYSTEM_MODEL.md` — single source of truth for architecture, invariants, risks
+2. `CLAUDE.md` — rules, working principles, commands
+3. `.claude/context/POKER_THEORY.md` — **MANDATORY** before editing engines
+4. `.claude/context/STATE_SCHEMA.md` — all 8 reducer shapes
 
 ## Commands
 ```bash

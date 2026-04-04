@@ -2,25 +2,29 @@
 id: project-id-here
 name: Project Name
 status: active
-priority: medium
+priority: P2
 created: YYYY-MM-DD
+backlog-id: XX
 ---
 
 # Project: [Name]
 
-## Quick Start for New Chats
+## Quick Start for New Sessions
 
-1. Read this file first
-2. Find the current phase (marked with `← CURRENT`)
+1. Read ALL files in `.claude/handoffs/` — check for file conflicts
+2. Read this file — find the current phase (marked with `<- CURRENT`)
 3. Read the "Context Files" for that phase
-4. Execute the checklist items
-5. Update status when complete
+4. Create/update your handoff file in `.claude/handoffs/`
+5. Execute the checklist items
+6. Update this file and handoff when done
 
 ---
 
 ## Overview
 
-[Brief description of what this project accomplishes]
+[Brief description of what this project accomplishes and why it matters — written for a non-technical owner]
+
+**Acceptance Criteria (overall):** [How does the owner verify this project is done? Plain English.]
 
 ---
 
@@ -28,116 +32,50 @@ created: YYYY-MM-DD
 
 Files to read before starting work:
 - `path/to/relevant/file.js`
-- `path/to/another/file.js`
+- `.claude/context/RELEVANT_CONTEXT.md`
 
 ---
 
 ## Phases
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1 | [ ] | Phase 1 description |
-| 2 | [ ] | Phase 2 description |
-| 3 | [ ] | Phase 3 description |
-
----
-
-## Before Starting Each Phase (MANDATORY)
-
-Run this checklist before beginning ANY phase:
-
-- [ ] **Project file active** - Verify this file is in `docs/projects/` and registered in `.claude/projects.json`
-- [ ] **Previous phase docs updated** - If not Phase 1, ensure previous phase documentation was committed
-- [ ] **Tests passing** - Run `npm test` before making changes
-- [ ] **Read context files** - Read all files listed in "Context Files" section above
-- [ ] **Plan if needed** - Use `EnterPlanMode` if touching 4+ files
-- [ ] **Decomposition Policy** - Review `.claude/DECOMPOSITION_POLICY.md` for atomic criteria
-
-### Atomic Criteria (ALL tasks must meet these limits)
-
-| Criterion | Limit | Rationale |
-|-----------|-------|-----------|
-| `files_touched` | ≤ 3 | Limits scope complexity |
-| `est_lines_changed` | ≤ 300 | Keeps tasks focused |
-| `test_command` | Required | Ensures verifiability |
-| `est_local_effort_mins` | ≤ 60 | Prevents runaway tasks |
-
-**See full policy**: `.claude/DECOMPOSITION_POLICY.md`
+| Phase | Status | Description | Accept Criteria |
+|-------|--------|-------------|-----------------|
+| 1 | [ ] | Phase 1 description | How to verify phase 1 is done |
+| 2 | [ ] | Phase 2 description | How to verify phase 2 is done |
+| 3 | [ ] | Phase 3 description | How to verify phase 3 is done |
 
 ---
 
 ## Phase 1: [Name] <- CURRENT
 
 ### Goal
-[What this phase accomplishes]
+[What this phase accomplishes — plain English]
 
-### Atomic Task Decomposition (MANDATORY)
+### Acceptance Criteria
+- [ ] [Specific, owner-verifiable criterion 1]
+- [ ] [Specific, owner-verifiable criterion 2]
+- [ ] Tests pass
 
-**ALL work MUST be decomposed into atomic tasks for local models.**
-Tasks must meet atomic criteria (see table above). Format: `///LOCAL_TASKS`
+### Files This Phase Touches
+_List files so other sessions know to avoid them. Copy to your handoff "Files I Own"._
+- `src/path/to/file.js`
+- `src/path/to/test.js`
 
-**IMPORTANT**: Tasks with model assignments (deepseek/qwen/claude) will **auto-execute automatically** when this project is selected from the menu. NO asking, NO confirmation. Claude will show progress only: "Task T-001 completed".
+### Context Files for This Phase
+- `path/to/relevant/context.js`
 
-| Task ID | Description | File | Model | Status |
-|---------|-------------|------|-------|--------|
-| T-P1-001 | [Create/Modify] [function/component name] | `path/file.js` | local:deepseek | [ ] |
-| T-P1-002 | [Description] | `path/file.js` | local:qwen | [ ] |
-| T-P1-003 | Write tests for T-P1-001 | `path/file.test.js` | local:qwen | [ ] |
-
-**Task Storage**: `.claude/backlog.json` (managed via `dispatcher.cjs`)
-
-### Task Specs (///LOCAL_TASKS format)
-
-<details>
-<summary>T-P1-001: [Task name]</summary>
-
-```json
-///LOCAL_TASKS
-[
-  {
-    "id": "T-P1-001",
-    "parent_id": "project-id-here",
-    "title": "Create utility function",
-    "description": "Detailed description of what to create",
-    "files_touched": ["src/path/to/file.js"],
-    "est_lines_changed": 25,
-    "est_local_effort_mins": 15,
-    "test_command": "npm test src/path/__tests__/file.test.js",
-    "assigned_to": "local:deepseek",
-    "priority": "P1",
-    "status": "open",
-    "inputs": ["param1: type", "param2: type"],
-    "outputs": ["Return type and description"],
-    "constraints": [
-      "Import from gameConstants",
-      "Include JSDoc with @param and @returns"
-    ],
-    "needs_context": [
-      {"path": "src/relevant/context.js", "lines_start": 1, "lines_end": 50}
-    ],
-    "invariant_test": null
-  }
-]
-```
-</details>
-
-### Execution Order
-1. [ ] Add tasks: `cat tasks.json | node scripts/dispatcher.cjs add-tasks`
-2. [ ] Execute: `node scripts/dispatcher.cjs assign-next` (repeat for each task)
-3. [ ] Review outputs
-4. [ ] Integration: Claude assembles pieces if needed
-5. [ ] Verify: All tests pass
-
-### Claude-Only Tasks (MUST JUSTIFY)
-If any task cannot be delegated, document WHY:
-- [ ] Task X: [Reason - e.g., "Failed twice with refined specs", "Requires debugging"]
+### Tasks
+| Task | Status | Description |
+|------|--------|-------------|
+| 1.1 | [ ] | [Task description] |
+| 1.2 | [ ] | [Task description] |
+| 1.3 | [ ] | Write tests for 1.1-1.2 |
 
 ### Verification
-- [ ] All atomic tasks completed
-- [ ] Tests pass
-- [ ] Build succeeds
-- [ ] Feature works as expected
-- [ ] Docs updated (see source→docs mapping in CLAUDE.md)
+- [ ] All tasks completed
+- [ ] Tests pass (`bash scripts/smart-test-runner.sh`)
+- [ ] Acceptance criteria met
+- [ ] Changes committed
 
 ---
 
@@ -150,36 +88,39 @@ If any task cannot be delegated, document WHY:
 
 ---
 
-## Decisions Log
-
-Document key decisions made during implementation:
-
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| YYYY-MM-DD | Chose X over Y | Reason |
-
----
-
 ## Session Log
 
-Track progress across Claude Code sessions:
+Track which sessions worked on this project and what they did:
 
 | Date | Session | Phase | Work Done |
 |------|---------|-------|-----------|
-| YYYY-MM-DD | Initial | Planning | Created project file |
+| YYYY-MM-DD | [session-id] | 1 | Created project file, started Phase 1 |
 
 ---
 
-## Completion Checklist
+## Decisions Log
 
-Before marking project complete:
-- [ ] All phases marked [x] COMPLETE
+Key decisions made during implementation:
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| YYYY-MM-DD | Chose X over Y | [Why — plain English] |
+
+---
+
+## Closeout Checklist
+
+Before marking project complete (run `/project closeout <id>`):
+
+- [ ] All phases marked complete
+- [ ] All acceptance criteria verified
 - [ ] Tests passing
-- [ ] Documentation updated:
-  - [ ] CLAUDE.md (architecture, if structural changes)
-  - [ ] docs/QUICK_REF.md (if new constants/hooks/utils)
+- [ ] All changes committed
+- [ ] Documentation updated (if structural changes):
+  - [ ] CLAUDE.md (architecture section)
+  - [ ] docs/QUICK_REF.md (new constants/hooks/utils)
   - [ ] docs/CHANGELOG.md (version entry)
-  - [ ] docs/STATE_SCHEMAS.md (if reducer changes)
-- [ ] Code reviewed or self-reviewed
-- [ ] Committed with descriptive message
-- [ ] **Archive project**: Run `/project complete <id>` to archive and remove from active queue
+  - [ ] .claude/context/*.md (if schema/hotspot changes)
+- [ ] STATUS.md updated
+- [ ] Handoff file marked COMPLETE
+- [ ] Backlog item(s) marked complete via `/backlog complete <id>`

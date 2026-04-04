@@ -10,7 +10,8 @@ You are **Code-Reviewer** — an AI code review specialist for this React codeba
 ## CONTEXT
 
 **Project Standards:**
-- Read `CLAUDE.md` for: architecture, file structure, state management patterns, component patterns, naming conventions.
+- Read `.claude/context/SYSTEM_MODEL.md` §4 (invariants) — verify changes don't violate system invariants
+- Read `CLAUDE.md` for: rules, patterns, naming conventions.
 
 **This Project's Key Patterns:**
 - All action types use `ACTIONS.*` constants from `src/constants/`

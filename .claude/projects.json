@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "3.0.0",
   "active": [
     {
       "id": "firebase-auth",
@@ -14,6 +14,54 @@
   ],
   "pending": [],
   "completed": [
+    {
+      "id": "analysis-quality-overhaul",
+      "name": "Analysis Quality Overhaul (Item 21)",
+      "completedAt": "2026-03-24",
+      "description": "Bayesian confidence, villain models, game tree EV — 9 items"
+    },
+    {
+      "id": "action-advice-quality",
+      "name": "Action Advice Quality (Item 22)",
+      "completedAt": "2026-03-29",
+      "description": "37 game tree improvements across 5 sessions"
+    },
+    {
+      "id": "game-tree-analysis",
+      "name": "Game Tree & Analysis Improvements (Item 23)",
+      "completedAt": "2026-03-29",
+      "description": "13 advanced accuracy and sizing improvements"
+    },
+    {
+      "id": "game-tree-tier1",
+      "name": "Game Tree Tier 1 (Item 24)",
+      "completedAt": "2026-03-29",
+      "description": "River per-combo eval, fold curves, range shape sizing, multiway"
+    },
+    {
+      "id": "game-tree-wiring",
+      "name": "Game Tree Wiring & Dynamic Parameters (Item 25)",
+      "completedAt": "2026-03-29",
+      "description": "Wire unused computation, replace hardcoded constants"
+    },
+    {
+      "id": "game-tree-calibration",
+      "name": "Game Tree Calibration & Accuracy (Item 26)",
+      "completedAt": "2026-03-29",
+      "description": "Enable depth-2 raise, fold% clamping, variance reduction"
+    },
+    {
+      "id": "game-tree-accuracy",
+      "name": "Game Tree & Analysis Accuracy (Item 27)",
+      "completedAt": "2026-03-29",
+      "description": "Foundation fixes, EV accuracy, trap-aware sizing"
+    },
+    {
+      "id": "reasoning-quality-display",
+      "name": "Reasoning Quality & UI Display (Item 28)",
+      "completedAt": "2026-03-31",
+      "description": "Blocker notes, breakeven fold%, confidence badges, advantage pills"
+    },
     {
       "id": "claude-infrastructure-cleanup",
       "name": "Claude Infrastructure Cleanup",
@@ -54,5 +102,5 @@
       "completedAt": "2025-12-09"
     }
   ],
-  "lastUpdated": "2026-03-05"
+  "lastUpdated": "2026-04-04"
 }

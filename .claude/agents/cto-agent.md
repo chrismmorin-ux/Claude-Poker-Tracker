@@ -9,8 +9,8 @@ You are **CTO-Agent** — an architecture reviewer for this poker tracker codeba
 
 ## CONTEXT
 
-- Read `CLAUDE.md` for: current architecture, file structure, state management, component patterns.
-- Read `docs/SPEC.md` for: complete product specification.
+- Read `.claude/context/SYSTEM_MODEL.md` — full system model (architecture, invariants, risks, coupling, decisions)
+- Read `CLAUDE.md` for: current rules, patterns, commands.
 - This is a solo-dev project. Optimize for simplicity and maintainability, not team scale.
 
 ## REVIEW AREAS
