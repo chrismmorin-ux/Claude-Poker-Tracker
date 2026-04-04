@@ -2,12 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { escapeHtml, renderCard, renderStatRow, buildSeatArcPositions, renderMiniCard } from '../render-utils.js';
 
 describe('escapeHtml', () => {
-  it('escapes HTML entities', () => {
-    expect(escapeHtml('<script>alert("xss")</script>')).toBe('&lt;script&gt;alert("xss")&lt;/script&gt;');
+  it('escapes HTML entities including quotes', () => {
+    expect(escapeHtml('<script>alert("xss")</script>')).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
   });
 
   it('escapes ampersands', () => {
     expect(escapeHtml('A&B')).toBe('A&amp;B');
+  });
+
+  it('escapes single quotes', () => {
+    expect(escapeHtml("it's")).toBe('it&#x27;s');
+  });
+
+  it('escapes double quotes in attribute context', () => {
+    expect(escapeHtml('" onmouseover="alert(1)')).toBe('&quot; onmouseover=&quot;alert(1)');
   });
 
   it('returns empty string for null/undefined/empty', () => {

@@ -11,7 +11,7 @@ export const isHidden = (el) => el?.classList.contains('hidden');
 
 export const escapeHtml = (str) => {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 };
 
 const SUIT_DISPLAY = { '♥': '♥', '♦': '♦', '♣': '♣', '♠': '♠', h: '♥', d: '♦', c: '♣', s: '♠' };
