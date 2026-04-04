@@ -5,6 +5,19 @@
 export const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
 
 /**
+ * Safe division — returns fallback when denominator is zero or non-finite.
+ * @param {number} numerator
+ * @param {number} denominator
+ * @param {number} [fallback=0] - Value returned when division is unsafe
+ * @returns {number}
+ */
+export const safeDiv = (numerator, denominator, fallback = 0) => {
+  if (denominator === 0 || !Number.isFinite(denominator)) return fallback;
+  const result = numerator / denominator;
+  return Number.isFinite(result) ? result : fallback;
+};
+
+/**
  * Standard logistic sigmoid: 1 / (1 + exp(-x)).
  * Maps any real number to (0, 1).
  */
