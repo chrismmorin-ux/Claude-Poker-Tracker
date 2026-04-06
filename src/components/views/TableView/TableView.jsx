@@ -348,6 +348,9 @@ export const TableView = ({ scale }) => {
   // PFR badge: show on postflop streets
   const pfrSeat = currentStreet !== 'preflop' ? getPreflopAggressor(actionSequence) : null;
 
+  // Next-to-act seat for gold glow indicator (HE-2a)
+  const nextToActSeat = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
+
   return (
     <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
       <div style={{
@@ -495,6 +498,7 @@ export const TableView = ({ scale }) => {
                   onHoleCardClick={handleHoleCardClick}
                   onToggleVisibility={handleToggleHoleCardsVisibility}
                   onOpenRangeDetail={setRangeDetailSeat}
+                  isNextToAct={seat === nextToActSeat && currentStreet !== 'showdown'}
                 />
               ))}
 

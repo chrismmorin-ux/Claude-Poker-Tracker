@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { safeDiv, clamp, sigmoid, scaledLogistic } from '../mathUtils';
+import { safeDiv, clamp, sigmoid, scaledLogistic, stableSoftmax } from '../mathUtils';
 
 describe('safeDiv', () => {
   it('divides normally when denominator is non-zero', () => {
@@ -68,5 +68,66 @@ describe('scaledLogistic', () => {
     const result = scaledLogistic(1.0, 5);
     expect(result).toBeGreaterThanOrEqual(0.10);
     expect(result).toBeLessThanOrEqual(0.80);
+  });
+});
+
+describe('stableSoftmax', () => {
+  it('produces weights that sum to ~1.0', () => {
+    const weights = stableSoftmax([10, 8, 6], 2);
+    expect(weights).not.toBeNull();
+    const sum = weights.reduce((s, w) => s + w, 0);
+    expect(sum).toBeCloseTo(1.0, 1);
+    weights.forEach(w => expect(w).toBeGreaterThan(0));
+  });
+
+  it('produces uniform weights for equal values', () => {
+    const weights = stableSoftmax([5, 5, 5], 1);
+    expect(weights).not.toBeNull();
+    weights.forEach(w => expect(w).toBeCloseTo(0.33, 1));
+  });
+
+  it('handles large values without overflow (log-sum-exp trick)', () => {
+    const weights = stableSoftmax([1000, 999], 0.1);
+    expect(weights).not.toBeNull();
+    weights.forEach(w => {
+      expect(Number.isFinite(w)).toBe(true);
+      expect(w).toBeGreaterThanOrEqual(0);
+      expect(w).toBeLessThanOrEqual(1);
+    });
+    expect(weights.reduce((s, w) => s + w, 0)).toBeCloseTo(1.0, 1);
+  });
+
+  it('handles large negative spread without underflow', () => {
+    const weights = stableSoftmax([-1000, 0], 0.1);
+    expect(weights).not.toBeNull();
+    weights.forEach(w => expect(Number.isFinite(w)).toBe(true));
+  });
+
+  it('returns [1.0] for single element', () => {
+    const weights = stableSoftmax([5], 1);
+    expect(weights).toEqual([1]);
+  });
+
+  it('returns null for empty array', () => {
+    expect(stableSoftmax([], 1)).toBeNull();
+  });
+
+  it('returns null for null input', () => {
+    expect(stableSoftmax(null, 1)).toBeNull();
+  });
+
+  it('returns null for zero temperature', () => {
+    expect(stableSoftmax([1, 2], 0)).toBeNull();
+  });
+
+  it('returns null when values contain non-finite numbers', () => {
+    expect(stableSoftmax([Infinity, 1], 1)).toBeNull();
+    expect(stableSoftmax([NaN, 1], 1)).toBeNull();
+  });
+
+  it('highest value gets highest weight', () => {
+    const weights = stableSoftmax([10, 5, 1], 2);
+    expect(weights[0]).toBeGreaterThan(weights[1]);
+    expect(weights[1]).toBeGreaterThan(weights[2]);
   });
 });

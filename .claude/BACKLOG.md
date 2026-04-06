@@ -45,9 +45,9 @@ _Prioritized items. Claim with `/backlog claim <id>` before starting._
 | ID | Pri | Status | Description | Accept Criteria | Claimed By |
 |----|-----|--------|-------------|-----------------|------------|
 | 12.4 | P2 | NEXT | Table-level exploit aggregation | Aggregate tendencies across all seats shown in TableView ("table is too tight preflop") | — |
-| HE-2a | P2 | NEXT | Prominent next-to-act display | Current seat + action buttons more prominent and centrally positioned | — |
-| HE-2b | P2 | NEXT | Preflop Quick Entry mode | Positional flow: highlight seat, Fold/Call/Raise, auto-advance, "skip to raiser" | — |
-| HE-2c | P2 | NEXT | Showdown simplification | Auto-detect remaining players; heads-up auto-mark winner when other mucks | — |
+| HE-2a | P2 | DONE | Prominent next-to-act display | Position-first gold badge, action context header, improved next-to-act hint | 2026-04-06 |
+| HE-2b | P2 | DONE | Preflop Quick Entry mode | Orbit tap-ahead auto-folds intermediate seats, larger buttons | 2026-04-06 |
+| HE-2c | P2 | DONE | Showdown simplification | Auto-advance after win (1.5s countdown), winner overlay, larger quick-mode buttons | 2026-04-06 |
 | CH-4 | P2 | NEXT | Remove raw dispatchUi from UIContext | Named action dispatchers instead of raw dispatch | — |
 | CH-6 | P3 | NEXT | Add structured error logging to usePlayerTendencies | Catch blocks log structured errors instead of swallowing silently | — |
 

@@ -37,3 +37,21 @@ export const sigmoid = (x) => 1 / (1 + Math.exp(-x));
  */
 export const scaledLogistic = (x, steepness, center = 1.0, floor = 0.10, scale = 0.70) =>
   floor + sigmoid(steepness * (x - center)) * scale;
+
+/**
+ * Numerically stable softmax — subtracts max before exponentiation to prevent overflow.
+ * Returns null if input is empty or computation produces non-finite values.
+ *
+ * @param {number[]} values - Raw values to convert to probabilities
+ * @param {number} temperature - Scaling factor (higher = more uniform)
+ * @returns {number[]|null} Normalized weights rounded to 2 decimal places, or null on failure
+ */
+export const stableSoftmax = (values, temperature) => {
+  if (!values || values.length === 0 || !temperature) return null;
+  const maxVal = Math.max(...values);
+  if (!Number.isFinite(maxVal)) return null;
+  const exps = values.map(v => Math.exp((v - maxVal) / temperature));
+  const sum = exps.reduce((s, e) => s + e, 0);
+  if (!Number.isFinite(sum) || sum === 0) return null;
+  return exps.map(e => Math.round((e / sum) * 100) / 100);
+};

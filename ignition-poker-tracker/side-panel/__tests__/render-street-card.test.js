@@ -322,3 +322,177 @@ describe('renderRiverContent', () => {
     expect(html).toContain('Waiting for river');
   });
 });
+
+// ==========================================================================
+// renderVillainRangeSection (tested indirectly via unified street content)
+// The legacy wrappers all call renderUnifiedStreetContent, which calls
+// renderVillainRangeSection as Section 1 on every street.
+// ==========================================================================
+
+describe('renderVillainRangeSection — dynamic Bayesian ranges', () => {
+  const makeRange169 = (fill = 0.5) => new Array(169).fill(fill);
+
+  const adviceWithRanges = (overrides = {}) => ({
+    ...sampleAdvice,
+    villainRanges: [
+      {
+        seat: 3,
+        position: 'CO',
+        actionKey: 'open',
+        range: makeRange169(0.4),
+        equity: 0.58,
+        rangeWidth: 22,
+        active: true,
+      },
+    ],
+    ...overrides,
+  });
+
+  it('renders heat-map grid when villainRanges with 169-element range provided', () => {
+    const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
+    expect(html).toContain('range-grid-wrap');
+    expect(html).toContain('rg-heat');
+  });
+
+  it('renders label from seat/position/actionKey in grid header', () => {
+    const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
+    expect(html).toContain('S3');
+    expect(html).toContain('CO');
+    expect(html).toContain('Open');
+  });
+
+  it('renders equity badge from focused villain equity', () => {
+    const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
+    expect(html).toContain('58% eq');
+  });
+
+  it('uses rangeWidth from villainRange entry in header', () => {
+    const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
+    expect(html).toContain('22%');
+  });
+
+  it('focuses the villain matching focusedVillain seat', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.6), equity: 0.65, rangeWidth: 30, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainRanges: ranges };
+    // focusedVillain = seat 2
+    const html = renderFlopContent(advice, sampleLiveContext, 2);
+    expect(html).toContain('40% eq'); // seat 2 equity
+    expect(html).not.toContain('65% eq');
+  });
+
+  it('falls back to advice.villainSeat when focusedVillain is null', () => {
+    const ranges = [
+      { seat: 3, position: 'CO', actionKey: 'open', range: makeRange169(0.5), equity: 0.55, rangeWidth: 22, active: true },
+      { seat: 5, position: 'BTN', actionKey: 'open', range: makeRange169(0.7), equity: 0.72, rangeWidth: 45, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainSeat: 3, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, null);
+    expect(html).toContain('55% eq'); // villainSeat=3
+  });
+
+  it('renders villain tab pills for multiway (>1 range)', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    expect(html).toContain('villain-range-tabs');
+    expect(html).toContain('villain-tab');
+    expect(html).toContain('data-range-seat="2"');
+    expect(html).toContain('data-range-seat="3"');
+  });
+
+  it('active tab pill has "active" class for focused villain', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    expect(html).toContain('villain-tab active');
+  });
+
+  it('does not render tab pills for single villain (heads-up)', () => {
+    const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
+    expect(html).not.toContain('villain-range-tabs');
+  });
+
+  it('shows multiway equity badge when multiwayEquity present', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    const advice = {
+      ...sampleAdvice,
+      villainRanges: ranges,
+      multiwayEquity: { equity: 0.44 },
+    };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    expect(html).toContain('vs All');
+    expect(html).toContain('44%');
+  });
+
+  it('omits inactive villain seats from tab pills', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: false },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    // Seat 2 was folded/inactive — no pill for it
+    expect(html).not.toContain('data-range-seat="2"');
+    expect(html).toContain('data-range-seat="3"');
+  });
+
+  it('shows equity in tab pill label', () => {
+    const ranges = [
+      { seat: 3, position: 'CO', actionKey: 'open', range: makeRange169(0.5), equity: 0.58, rangeWidth: 22, active: true },
+      { seat: 4, position: 'BTN', actionKey: 'call', range: makeRange169(0.4), equity: 0.42, rangeWidth: 18, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    expect(html).toContain('S3 58%');
+    expect(html).toContain('S4 42%');
+  });
+});
+
+describe('renderVillainRangeSection — static GTO fallback', () => {
+  it('falls back to static GTO grid on preflop when no villainRanges', () => {
+    const adviceNoRanges = { ...sampleAdvice, currentStreet: 'preflop', villainRanges: undefined };
+    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    const html = renderPreflopContent(adviceNoRanges, liveCtx, sampleAppSeatData, 3);
+    // Static grid shows GTO label
+    expect(html).toContain('GTO');
+  });
+
+  it('returns no range section on postflop when no villainRanges', () => {
+    const adviceNoRanges = { ...sampleAdvice, currentStreet: 'flop', villainRanges: undefined };
+    const html = renderFlopContent(adviceNoRanges, sampleLiveContext, 3);
+    // No dynamic ranges, not preflop — no grid rendered at all
+    expect(html).not.toContain('range-grid-wrap');
+  });
+
+  it('falls back to static GTO grid when villainRanges is empty array', () => {
+    const adviceEmptyRanges = { ...sampleAdvice, currentStreet: 'preflop', villainRanges: [] };
+    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    const html = renderPreflopContent(adviceEmptyRanges, liveCtx, sampleAppSeatData, 3);
+    expect(html).toContain('GTO');
+  });
+
+  it('passes situation to static grid for facing_raise adjustment', () => {
+    const adviceNoRanges = {
+      ...sampleAdvice,
+      currentStreet: 'preflop',
+      villainRanges: undefined,
+      situation: 'facing_raise',
+    };
+    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    const html = renderPreflopContent(adviceNoRanges, liveCtx, sampleAppSeatData, 3);
+    // facing_raise activates defend range — "was" text appears
+    expect(html).toContain('was');
+  });
+});

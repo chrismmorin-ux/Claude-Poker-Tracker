@@ -14,8 +14,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { logger } from '../utils/errorHandler';
 import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
+import { rangeWidth } from '../utils/pokerCore/rangeMatrix';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
+import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
+import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
+import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
 import {
   buildBaselineRange,
   computePreflopAdvice,
@@ -46,6 +50,96 @@ export const computeTrialCount = ({ spr, street, activeOpponents, sampleSize } =
   if (sampleSize != null && sampleSize < 10) return 500;
   if (activeOpponents != null && activeOpponents >= 3) return 1500;
   return 1000;
+};
+
+/**
+ * Compute Bayesian range data for ALL active (non-folded) villains.
+ * Returns array of { seat, position, actionKey, range, villainData }.
+ */
+export const computeAllVillainRanges = (liveHandState, tendencyMap, dealerSeat) => {
+  const heroSeat = liveHandState.heroSeat;
+  const foldedSet = new Set(liveHandState.foldedSeats || []);
+  const activeSeats = (liveHandState.activeSeatNumbers || [])
+    .filter(s => s !== heroSeat && !foldedSet.has(s));
+
+  return activeSeats.map(seat => {
+    const villainData = tendencyMap[String(seat)] || {};
+    const position = getRangePositionCategory(seat, dealerSeat || 1);
+    const actionKey = getVillainActionKey(liveHandState.actionSequence, seat);
+    let range = getVillainRange(villainData.rangeProfile, position, actionKey);
+    if (!range) {
+      range = buildBaselineRange(villainData.vpip, villainData.pfr, position);
+    }
+    return { seat, position, actionKey, range, villainData };
+  });
+};
+
+/**
+ * Compute hero equity vs each villain's range in parallel.
+ * Divides trial budget across villains (min 200 per villain).
+ */
+const computeVillainEquities = async (heroCards, villainRangeEntries, board, baseTrials) => {
+  if (!villainRangeEntries.length) return { perVillain: [], multiway: null };
+
+  const trialsPerVillain = Math.max(200, Math.floor(baseTrials / villainRangeEntries.length));
+
+  const equityResults = await Promise.all(
+    villainRangeEntries.map(({ range }) =>
+      handVsRange(heroCards, range, board, { trials: trialsPerVillain, minTrials: 100 })
+        .catch(() => null)
+    )
+  );
+
+  const perVillain = equityResults.map((result, i) => ({
+    seat: villainRangeEntries[i].seat,
+    equity: result?.equity ?? null,
+    equityCI: result ? [result.ciLow, result.ciHigh] : null,
+  }));
+
+  // Multiway equity: pairwise product approximation
+  const validEquities = perVillain.filter(pv => pv.equity != null);
+  let multiway = null;
+  if (validEquities.length >= 2) {
+    const product = validEquities.reduce((acc, pv) => acc * pv.equity, 1.0);
+    // Slight upward adjustment — pairwise product underestimates
+    const adjusted = Math.min(1.0, product * (1 + 0.05 * (validEquities.length - 1)));
+    multiway = {
+      equity: adjusted,
+      ci: null, // CI for multiway is complex — omit for now
+      method: 'pairwise',
+    };
+  }
+
+  return { perVillain, multiway };
+};
+
+/**
+ * Narrow a villain's range for a postflop street and record the narrowing.
+ * Returns { narrowed, logEntry }.
+ */
+const narrowWithLog = (range, action, board, deadCards, options, seat, street) => {
+  const beforeWidth = rangeWidth(range);
+  const narrowed = narrowByBoard(range, action, board, deadCards, options);
+  const afterWidth = rangeWidth(narrowed);
+
+  const delta = beforeWidth - afterWidth;
+  let description;
+  if (action === 'bet' || action === 'raise') {
+    description = `${action === 'raise' ? 'Raise' : 'Bet'} → top ${afterWidth}% by equity`;
+  } else if (action === 'call') {
+    description = delta > 5
+      ? `Call removed ${delta}% air, kept medium+ hands`
+      : `Calling range mostly preserved (${afterWidth}%)`;
+  } else if (action === 'check') {
+    description = `Check → weak/trapping range (${afterWidth}%)`;
+  } else {
+    description = `Range adjusted ${beforeWidth}% → ${afterWidth}%`;
+  }
+
+  return {
+    narrowed,
+    logEntry: { street, seat, action, fromWidth: beforeWidth, toWidth: afterWidth, description },
+  };
 };
 
 /**
@@ -149,6 +243,8 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
   const [isComputing, setIsComputing] = useState(false);
   const lastComputeKey = useRef(null);
   const { register, isCurrent, abort } = useAbortControl();
+  // Per-hand range persistence: { handNumber, ranges: { [seat]: Float64Array }, log: [] }
+  const streetRangesRef = useRef({ handNumber: null, ranges: {}, log: [] });
 
   const compute = useCallback(async () => {
     if (!liveHandState || !tendencyMap) {
@@ -246,6 +342,16 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
     setIsComputing(true);
     const villainModel = villainData.villainModel || null;
 
+    // --- Multi-villain range tracking ---
+    // Reset range cache on new hand
+    const handNum = liveHandState.handNumber || null;
+    if (streetRangesRef.current.handNumber !== handNum) {
+      streetRangesRef.current = { handNumber: handNum, ranges: {}, log: [] };
+    }
+
+    // Compute all active villain ranges (preflop base)
+    const allVillainRanges = computeAllVillainRanges(liveHandState, tendencyMap, dealerSeat);
+
     try {
       let result;
 
@@ -255,6 +361,11 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           villainRange, encodedHero, adjustedPot,
           detectedSituation, playerStats, villainData, villainModel, rakeConfig,
         });
+
+        // Store preflop ranges for persistence
+        for (const vr of allVillainRanges) {
+          streetRangesRef.current.ranges[vr.seat] = vr.range;
+        }
       } else {
         result = await buildPostflopAdvice({
           liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
@@ -263,9 +374,79 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           tendencyMap, dataQuality, sampleSize, rakeConfig,
         });
         if (!result) return;
+
+        // Narrow each villain's range and log adjustments
+        const visibleBoard = (communityCards || []).filter(c => c && c !== '');
+        const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
+        const bt = encodedBoard.length >= 3 ? analyzeBoardTexture(encodedBoard) : null;
+
+        for (const vr of allVillainRanges) {
+          // Use cached narrowed range from previous street if available
+          const baseRange = streetRangesRef.current.ranges[vr.seat] || vr.range;
+          // Determine this villain's last action on the current street
+          const villainActions = (actionSequence || []).filter(
+            a => a.seat === vr.seat && a.street === currentStreet
+          );
+          const lastAction = villainActions.length > 0
+            ? villainActions[villainActions.length - 1].action
+            : null;
+
+          if (lastAction && lastAction !== 'fold') {
+            const { narrowed, logEntry } = narrowWithLog(
+              baseRange, lastAction, encodedBoard, encodedHero,
+              { boardTexture: bt, playerStats: buildPlayerStats(vr.villainData, vr.position) },
+              vr.seat, currentStreet,
+            );
+            streetRangesRef.current.ranges[vr.seat] = narrowed;
+            // Only add log entry if this is a new narrowing (avoid dupes)
+            const existingEntry = streetRangesRef.current.log.find(
+              e => e.seat === vr.seat && e.street === currentStreet && e.action === lastAction
+            );
+            if (!existingEntry) {
+              streetRangesRef.current.log.push(logEntry);
+            }
+            vr.range = narrowed;
+          } else {
+            // Preserve cached range
+            vr.range = baseRange;
+            streetRangesRef.current.ranges[vr.seat] = baseRange;
+          }
+        }
       }
 
       if (!isCurrent(callId)) return;
+
+      // Compute per-villain equity in parallel
+      const baseTrials = computeTrialCount({
+        street: currentStreet,
+        activeOpponents: allVillainRanges.length,
+        sampleSize,
+      });
+      const visibleBoard = (communityCards || []).filter(c => c && c !== '');
+      const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
+      const { perVillain, multiway } = await computeVillainEquities(
+        encodedHero, allVillainRanges, encodedBoard, baseTrials
+      );
+
+      if (!isCurrent(callId)) return;
+
+      // Assemble villainRanges wire data
+      // Compute original preflop range widths for narrowedFrom
+      const preflopRanges = computeAllVillainRanges(liveHandState, tendencyMap, dealerSeat);
+      const preflopWidthMap = {};
+      for (const pr of preflopRanges) preflopWidthMap[pr.seat] = rangeWidth(pr.range);
+
+      const villainRangesData = allVillainRanges.map((vr, i) => ({
+        seat: vr.seat,
+        position: vr.position,
+        actionKey: vr.actionKey,
+        range: vr.range,
+        rangeWidth: rangeWidth(vr.range),
+        equity: perVillain[i]?.equity ?? null,
+        equityCI: perVillain[i]?.equityCI ?? null,
+        narrowedFrom: preflopWidthMap[vr.seat] ?? rangeWidth(vr.range),
+        active: true,
+      }));
 
       // Gate recommendations based on data quality
       let gatedRecs = result.recommendations || [];
@@ -317,12 +498,17 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
         bucketEquities: result.bucketEquities || null,
         modelQuality: result.modelQuality || null,
         treeMetadata: result.treeMetadata || null,
+        // Multi-villain range data
+        villainRanges: villainRangesData,
+        multiwayEquity: multiway,
+        narrowingLog: [...streetRangesRef.current.log],
         timestamp: Date.now(),
       });
       logger.debug('LiveActionAdvisor', 'Advice computed:', {
         street: currentStreet, situation, villain: targetSeat,
         heroEq: Math.round(result.heroEquity * 100) + '%',
         recs: result.recommendations.map(r => `${r.action}:${r.ev.toFixed(2)}`),
+        villainRangeCount: villainRangesData.length,
       });
     } catch (e) {
       logger.warn('LiveActionAdvisor', 'Error:', e.message);

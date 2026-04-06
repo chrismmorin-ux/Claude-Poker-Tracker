@@ -33,6 +33,7 @@ export const UI_ACTIONS = {
   SET_PENDING_SEAT_FOR_PLAYER: 'SET_PENDING_SEAT_FOR_PLAYER',
   SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
   SET_REPLAY_HAND: 'SET_REPLAY_HAND',
+  SET_SHOWDOWN_MODE: 'SET_SHOWDOWN_MODE',
 };
 
 import { SCREEN } from '../constants/uiConstants';
@@ -52,6 +53,8 @@ export const initialUiState = {
   isShowdownViewOpen: false,
   highlightedSeat: 1,
   highlightedHoleSlot: 0,
+  // Showdown mode ('quick' skips card assignment, 'full' is traditional)
+  showdownMode: 'quick',
   // Cross-view navigation state
   pendingSeatForPlayerAssignment: null,
   autoOpenNewSession: false,
@@ -81,6 +84,7 @@ export const UI_STATE_SCHEMA = {
   isShowdownViewOpen: { type: 'boolean' },
   highlightedSeat: { type: 'number', required: false }, // Can be null
   highlightedHoleSlot: { type: 'number', required: false }, // Can be null
+  showdownMode: { type: 'string', enum: ['quick', 'full'] },
   // Cross-view navigation state
   pendingSeatForPlayerAssignment: { type: 'number', required: false }, // Can be null
   autoOpenNewSession: { type: 'boolean' },
@@ -192,6 +196,7 @@ const rawUiReducer = (state, action) => {
         isShowdownViewOpen: true,
         highlightedSeat: 1,
         highlightedHoleSlot: 0,
+        showdownMode: 'quick',
       };
 
     case UI_ACTIONS.CLOSE_SHOWDOWN_VIEW:
@@ -268,6 +273,12 @@ const rawUiReducer = (state, action) => {
       return {
         ...state,
         autoOpenNewSession: action.payload,
+      };
+
+    case UI_ACTIONS.SET_SHOWDOWN_MODE:
+      return {
+        ...state,
+        showdownMode: action.payload,
       };
 
     case UI_ACTIONS.SET_REPLAY_HAND:

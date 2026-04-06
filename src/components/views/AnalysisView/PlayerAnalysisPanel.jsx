@@ -9,6 +9,7 @@ import { VillainProfileModal } from '../../ui/VillainProfileModal';
 import { ObservationPanel } from '../../ui/ObservationPanel';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
 import { usePlayer, useSession, useTendency } from '../../../contexts';
+import { useSeatTendency } from '../../../contexts/TendencyContext';
 import { useActionAdvisor } from '../../../hooks/useActionAdvisor';
 import { RANGE_POSITIONS } from '../../../utils/rangeEngine';
 import { parseBlinds } from '../../../utils/potCalculator';
@@ -34,16 +35,17 @@ export const PlayerAnalysisPanel = () => {
   const [villainAction, setVillainAction] = useState('check');
 
   const { advice, isComputing, error, compute, clear } = useActionAdvisor();
-  const { tendencyMap, isLoading } = useTendency();
-  const rangeProfile = tendencyMap[selectedPlayerId]?.rangeProfile ?? null;
-  const rangeSummary = tendencyMap[selectedPlayerId]?.rangeSummary ?? null;
+  const { isLoading } = useTendency();
+  const playerTendency = useSeatTendency(selectedPlayerId);
+  const rangeProfile = playerTendency?.rangeProfile ?? null;
+  const rangeSummary = playerTendency?.rangeSummary ?? null;
 
   const selectedPlayer = useMemo(
     () => allPlayers.find(p => p.playerId === selectedPlayerId) || null,
     [allPlayers, selectedPlayerId]
   );
 
-  const villainProfile = tendencyMap[selectedPlayerId]?.villainProfile ?? null;
+  const villainProfile = playerTendency?.villainProfile ?? null;
 
   const handleNotesChange = useCallback((newNotes) => {
     if (selectedPlayerId && updatePlayerById) {
@@ -86,17 +88,16 @@ export const PlayerAnalysisPanel = () => {
   }, [boardCards, heroCards, hasEnoughData, villainRange, isComputing]);
 
   const selectedPlayerStats = useMemo(() => {
-    if (!selectedPlayerId || !tendencyMap[selectedPlayerId]) return undefined;
-    const t = tendencyMap[selectedPlayerId];
+    if (!selectedPlayerId || !playerTendency) return undefined;
     return {
-      af: t.af,
-      cbet: t.cbet,
-      foldToCbet: t.foldToCbet,
-      vpip: t.vpip,
-      style: t.style,
-      threeBet: t.threeBet,
+      af: playerTendency.af,
+      cbet: playerTendency.cbet,
+      foldToCbet: playerTendency.foldToCbet,
+      vpip: playerTendency.vpip,
+      style: playerTendency.style,
+      threeBet: playerTendency.threeBet,
     };
-  }, [selectedPlayerId, tendencyMap]);
+  }, [selectedPlayerId, playerTendency]);
 
   const handleAnalyze = useCallback(() => {
     if (!canAnalyze || !villainRange) return;
@@ -155,7 +156,7 @@ export const PlayerAnalysisPanel = () => {
         onClose={() => setProfileModalOpen(false)}
         playerName={selectedPlayer?.name}
         villainProfile={villainProfile}
-        thoughtAnalysis={tendencyMap[selectedPlayerId]?.thoughtAnalysis ?? null}
+        thoughtAnalysis={playerTendency?.thoughtAnalysis ?? null}
         playerId={selectedPlayerId}
         notes={selectedPlayer?.notes || ''}
         onNotesChange={handleNotesChange}
@@ -166,8 +167,8 @@ export const PlayerAnalysisPanel = () => {
         <div style={{ marginBottom: 12 }}>
           <VillainModelCard
             villainProfile={villainProfile}
-            thoughtAnalysis={tendencyMap[selectedPlayerId]?.thoughtAnalysis ?? null}
-            villainStyle={tendencyMap[selectedPlayerId]?.style}
+            thoughtAnalysis={playerTendency?.thoughtAnalysis ?? null}
+            villainStyle={playerTendency?.style}
             onViewFullProfile={() => setProfileModalOpen(true)}
           />
         </div>
@@ -416,14 +417,14 @@ export const PlayerAnalysisPanel = () => {
             )}
 
             {/* Decision-organized observations */}
-            {tendencyMap?.[selectedPlayerId]?.observations?.length > 0 && (
+            {playerTendency?.observations?.length > 0 && (
               <div className="mt-4 p-3 bg-gray-900 rounded">
-                <ObservationPanel observations={tendencyMap[selectedPlayerId].observations} />
+                <ObservationPanel observations={playerTendency.observations} />
               </div>
             )}
 
             {/* Weaknesses Section (legacy, shown below observations) */}
-            <WeaknessesSection playerId={selectedPlayerId} tendencyMap={tendencyMap} />
+            <WeaknessesSection tendency={playerTendency} />
           </div>
         </div>
       )}
@@ -455,8 +456,7 @@ const ContextBadge = ({ text }) => (
   </span>
 );
 
-const WeaknessesSection = ({ playerId, tendencyMap }) => {
-  const tendency = playerId ? tendencyMap?.[playerId] : null;
+const WeaknessesSection = ({ tendency }) => {
   const weaknesses = tendency?.weaknesses || [];
 
   if (!playerId || weaknesses.length === 0) return null;

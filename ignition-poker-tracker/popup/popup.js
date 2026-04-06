@@ -4,6 +4,7 @@
 
 import { injectTokens } from '../shared/design-tokens.js';
 import { MSG } from '../shared/constants.js';
+import { escapeHtml } from '../side-panel/render-utils.js';
 
 injectTokens();
 
@@ -92,20 +93,27 @@ const renderTables = (tables) => {
     return;
   }
 
-  container.innerHTML = entries.map(([connId, state]) => `
+  container.innerHTML = entries.map(([connId, state]) => {
+    const safeConnId = escapeHtml(String(connId));
+    const safeState = escapeHtml(String(state.state || ''));
+    const safeHero = escapeHtml(String(state.heroSeat || '?'));
+    const safeDealer = escapeHtml(String(state.dealerSeat || '?'));
+    const safePot = escapeHtml(String((state.pot || 0).toFixed ? (state.pot || 0).toFixed(2) : state.pot || 0));
+    const safeHands = escapeHtml(String(state.completedHands || 0));
+    return `
     <div class="table-card">
       <div class="table-header">
-        <span class="table-name">Table #${connId}</span>
-        <span class="state-badge state-${state.state}">${state.state}</span>
+        <span class="table-name">Table #${safeConnId}</span>
+        <span class="state-badge state-${safeState}">${safeState}</span>
       </div>
       <div class="table-detail">
-        <span>Hero: Seat ${state.heroSeat || '?'}</span>
-        <span>Button: ${state.dealerSeat || '?'}</span>
-        <span>Pot: $${(state.pot || 0).toFixed ? (state.pot || 0).toFixed(2) : state.pot || 0}</span>
-        <span>Hands: ${state.completedHands || 0}</span>
+        <span>Hero: Seat ${safeHero}</span>
+        <span>Button: ${safeDealer}</span>
+        <span>Pot: $${safePot}</span>
+        <span>Hands: ${safeHands}</span>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 };
 
 // ===========================================================================

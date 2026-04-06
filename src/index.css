@@ -44,3 +44,20 @@ html, body, #root {
   transform: scale(0.96);
   transition: transform 0.08s ease-out;
 }
+
+/* Next-to-act seat glow pulse */
+@keyframes next-to-act-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(212,168,71,0.4), 0 0 2px rgba(212,168,71,0.6); }
+  50% { box-shadow: 0 0 16px rgba(212,168,71,0.7), 0 0 4px rgba(212,168,71,0.9); }
+}
+
+.seat-next-to-act {
+  animation: next-to-act-glow 1.5s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+/* Showdown auto-advance countdown bar */
+@keyframes countdown-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}

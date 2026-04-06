@@ -33,6 +33,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     autoOpenNewSession,
     replayHandId,
     replayHand,
+    showdownMode,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -129,6 +130,11 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.STOP_DRAGGING_DEALER });
   }, [dispatchUi]);
 
+  // Handler: Set showdown mode (quick/full)
+  const setShowdownMode = useCallback((mode) => {
+    dispatchUi({ type: UI_ACTIONS.SET_SHOWDOWN_MODE, payload: mode });
+  }, [dispatchUi]);
+
   // Handler: Set hand for replay
   const setReplayHand = useCallback((handId, hand) => {
     dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
@@ -152,6 +158,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     autoOpenNewSession,
     replayHandId,
     replayHand,
+    showdownMode,
     // Screen constants
     SCREEN,
     // Handlers
@@ -174,6 +181,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     startDraggingDealer,
     stopDraggingDealer,
     setReplayHand,
+    setShowdownMode,
   }), [
     currentView,
     selectedPlayers,
@@ -190,6 +198,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     autoOpenNewSession,
     replayHandId,
     replayHand,
+    showdownMode,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -209,6 +218,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     startDraggingDealer,
     stopDraggingDealer,
     setReplayHand,
+    setShowdownMode,
   ]);
 
   return (

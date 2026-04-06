@@ -6,7 +6,7 @@ import { getActionGradient, BATCH_COLORS } from '../../../constants/designTokens
 import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
-import { getPositionName } from '../../../utils/positionUtils';
+import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
 import { useGame, useSettings, useUI, useCard, usePlayer, useOnlineAnalysisContext, useToast, useSession } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
@@ -18,6 +18,28 @@ import { CardSelectorPanel } from './CardSelectorPanel';
 import { LiveAdviceBar } from './LiveAdviceBar';
 import { SizingPresetsPanel } from './SizingPresetsPanel';
 import { ControlZone } from './ControlZone';
+
+/**
+ * ProgressArc — small SVG ring showing acted/total seats
+ */
+const ProgressArc = ({ acted, total }) => {
+  if (total <= 0) return null;
+  const r = 14, cx = 18, cy = 18, stroke = 3;
+  const circumference = 2 * Math.PI * r;
+  const progress = acted / total;
+  const dashOffset = circumference * (1 - progress);
+  return (
+    <svg width="36" height="36" style={{ flexShrink: 0 }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2a2f3a" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#d4a847" strokeWidth={stroke}
+        strokeDasharray={circumference} strokeDashoffset={dashOffset}
+        strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`}
+        style={{ transition: 'stroke-dashoffset 0.3s ease' }} />
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
+        fill="#d4a847" fontSize="11" fontWeight="700">{acted}/{total}</text>
+    </svg>
+  );
+};
 
 /**
  * Street completion state for progress indicator
@@ -102,6 +124,38 @@ export const CommandStrip = ({
     }
   }, [getNextActionSeat, setSelectedPlayers]);
 
+  // HE-2b: Orbit tap-ahead — tapping a position ahead auto-folds intermediate un-acted seats
+  const handleOrbitTap = useCallback((targetSeat) => {
+    if (currentStreet !== 'preflop') {
+      setSelectedPlayers([targetSeat]);
+      return;
+    }
+    const order = getPreflopOrder(dealerButtonSeat).filter(s => !absentSeats.includes(s));
+    const firstToAct = getFirstActionSeat();
+    const currentIdx = order.indexOf(firstToAct);
+    const targetIdx = order.indexOf(targetSeat);
+
+    // If target is behind or equal to current, or current not found, just select
+    if (currentIdx === -1 || targetIdx === -1 || targetIdx <= currentIdx) {
+      setSelectedPlayers([targetSeat]);
+      return;
+    }
+
+    // Auto-fold un-acted, non-folded seats between current and target
+    const preflopEntries = actionSequence.filter(e => e.street === 'preflop');
+    for (let i = currentIdx; i < targetIdx; i++) {
+      const seat = order[i];
+      const hasActed = preflopEntries.some(e => e.seat === seat);
+      if (!hasActed) {
+        dispatchGame({
+          type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
+          payload: { seat, action: 'fold' },
+        });
+      }
+    }
+    setSelectedPlayers([targetSeat]);
+  }, [currentStreet, dealerButtonSeat, absentSeats, getFirstActionSeat, actionSequence, dispatchGame, setSelectedPlayers]);
+
   // Card management handlers (previously passed as props)
   const handleToggleHoleVisibility = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
@@ -129,6 +183,7 @@ export const CommandStrip = ({
   }, [currentSession, nextHand, actionSequence, showSuccess, showInfo, scheduleAutoSelect]);
 
   const handleResetHand = useCallback(() => {
+    if (!window.confirm('Reset all actions for this hand?')) return;
     resetHand();
     showWarning('Hand reset');
     scheduleAutoSelect();
@@ -361,31 +416,30 @@ export const CommandStrip = ({
         />
       )}
 
-      <LiveAdviceBar actionAdvice={actionAdvice} liveEquity={liveEquity} boardTexture={boardTexture} gameTreeAdvice={gameTreeAdvice} />
+      <LiveAdviceBar actionAdvice={actionAdvice} liveEquity={liveEquity} boardTexture={boardTexture} gameTreeAdvice={gameTreeAdvice} currentStreet={currentStreet} />
 
       {/* ═══ ACTION ZONE (top) — recording what happened ═══ */}
 
-      {/* Seat Indicator — prominent next-to-act display */}
+      {/* Seat Indicator — prominent next-to-act display (HE-2a: position-first) */}
       <div className="px-3 py-2" style={{ borderBottom: '1px solid var(--panel-border)' }}>
         {singleSeat ? (
           <div className="flex items-center gap-3">
             <div
-              className="flex items-center justify-center font-black text-white"
+              className="flex items-center justify-center font-black"
               style={{
-                width: '48px', height: '48px', borderRadius: '10px', fontSize: '22px',
+                width: '48px', height: '48px', borderRadius: '10px',
+                fontSize: positionLabel && positionLabel.length > 2 ? '15px' : '20px',
                 background: 'linear-gradient(180deg, #d4a847 0%, #b8922e 100%)',
-                color: '#1a1200', flexShrink: 0,
+                color: '#1a1200', flexShrink: 0, letterSpacing: '0.5px',
               }}
             >
-              {singleSeat}
+              {positionLabel || singleSeat}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                {positionLabel && (
-                  <span className="font-extrabold" style={{ color: '#d4a847', fontSize: '16px' }}>{positionLabel}</span>
-                )}
+                <span className="text-gray-400 font-semibold" style={{ fontSize: '12px' }}>S{singleSeat}</span>
                 {getSeatPlayerName(singleSeat) && (
-                  <span className="text-gray-300 truncate" style={{ fontSize: '13px' }}>{getSeatPlayerName(singleSeat)}</span>
+                  <span className="text-gray-300 truncate font-semibold" style={{ fontSize: '14px' }}>{getSeatPlayerName(singleSeat)}</span>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
@@ -393,19 +447,16 @@ export const CommandStrip = ({
                   <ActionSequence actions={actionArray} size="small" maxVisible={4} />
                 )}
                 {nextActionSeat && (
-                  <span className="text-gray-500" style={{ fontSize: '12px' }}>
-                    → S{nextActionSeat} {getPositionName(nextActionSeat, dealerButtonSeat)}
+                  <span style={{ fontSize: '13px' }}>
+                    <span className="text-gray-500">→ </span>
+                    <span className="font-bold" style={{ color: '#d4a847' }}>{getPositionName(nextActionSeat, dealerButtonSeat)}</span>
+                    <span className="text-gray-500"> (S{nextActionSeat})</span>
                   </span>
                 )}
               </div>
             </div>
             {remainingCount > 0 && (
-              <div className="text-right" style={{ flexShrink: 0 }}>
-                <div className="font-bold text-gray-400" style={{ fontSize: '12px' }}>
-                  {activeSeatCount - remainingCount}/{activeSeatCount}
-                </div>
-                <div className="text-gray-600" style={{ fontSize: '10px' }}>acted</div>
-              </div>
+              <ProgressArc acted={activeSeatCount - remainingCount} total={activeSeatCount} />
             )}
           </div>
         ) : isMultiSeat ? (
@@ -430,9 +481,47 @@ export const CommandStrip = ({
         )}
       </div>
 
+      {/* HE-2b: Preflop orbit strip — tap-ahead auto-folds intermediate seats */}
+      {currentStreet === 'preflop' && singleSeat && (
+        <div className="px-3 pb-1.5 pt-0.5 flex gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--panel-border)' }}>
+          {getPreflopOrder(dealerButtonSeat)
+            .filter(s => !absentSeats.includes(s))
+            .map(s => {
+              const isCurrent = s === singleSeat;
+              const seatActions = actionSequence.filter(e => e.street === 'preflop' && e.seat === s);
+              const hasFolded = seatActions.some(e => e.action === 'fold');
+              const hasActed = seatActions.length > 0;
+              const bg = isCurrent ? '#d4a847' : hasFolded ? '#7f1d1d' : hasActed ? '#14532d' : '#1f2937';
+              const color = isCurrent ? '#1a1200' : hasFolded ? '#fca5a5' : hasActed ? '#86efac' : '#6b7280';
+              return (
+                <button
+                  key={s}
+                  onClick={() => handleOrbitTap(s)}
+                  className="btn-press rounded"
+                  style={{
+                    height: '36px', padding: '4px 8px', fontSize: '12px', fontWeight: isCurrent ? 800 : 600,
+                    background: bg, color, whiteSpace: 'nowrap', flexShrink: 0,
+                    textDecoration: hasFolded ? 'line-through' : 'none',
+                    border: isCurrent ? '2px solid #fbbf24' : '1px solid transparent',
+                  }}
+                >
+                  {getPositionName(s, dealerButtonSeat)}
+                  {hasActed && !hasFolded && !isCurrent && ' \u2713'}
+                </button>
+              );
+            })}
+        </div>
+      )}
+
       {/* Action Buttons + Sizing + Batch recording */}
       {hasSeatSelected && currentStreet !== 'showdown' && (
         <div className="px-2 py-2 flex flex-col gap-2">
+          {/* HE-2a: Action context header */}
+          {singleSeat && positionLabel && (
+            <div className="font-bold" style={{ fontSize: '13px', color: '#d4a847', paddingLeft: '2px' }}>
+              {positionLabel}&apos;s action
+            </div>
+          )}
           {/* Primary actions — 100px for can't-miss thumb hits */}
           <div className={`grid gap-2 ${
             (isMultiSeat ? validActions : nonSizingActions).length >= 3 ? 'grid-cols-3' : 'grid-cols-2'
@@ -491,7 +580,7 @@ export const CommandStrip = ({
                 className="btn-press flex-1 rounded-lg font-bold text-white"
                 style={{ height: '68px', fontSize: '16px', background: `linear-gradient(180deg, ${BATCH_COLORS.restFold.base} 0%, ${BATCH_COLORS.restFold.dark} 100%)` }}
               >
-                {lastRaiserSeat ? `Fold to S${lastRaiserSeat} (${remainingCount})` : `Rest Fold (${remainingCount})`}
+                {lastRaiserSeat ? `Fold to ${getPositionName(lastRaiserSeat, dealerButtonSeat)} (${remainingCount})` : `Rest Fold (${remainingCount})`}
               </button>
               {hasAggression && (
                 <button
@@ -499,7 +588,7 @@ export const CommandStrip = ({
                   className="btn-press flex-1 rounded-lg font-bold text-white"
                   style={{ height: '68px', fontSize: '14px', background: `linear-gradient(180deg, ${BATCH_COLORS.foldCold.base} 0%, ${BATCH_COLORS.foldCold.dark} 100%)` }}
                 >
-                  Fold Cold
+                  {currentStreet === 'preflop' && lastRaiserSeat ? `Skip to ${getPositionName(lastRaiserSeat, dealerButtonSeat)}` : 'Fold Cold'}
                 </button>
               )}
               {canCheckAround && (

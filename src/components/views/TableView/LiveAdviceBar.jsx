@@ -6,7 +6,7 @@
  * advantage badges, reasoning text, and fold curve tooltip.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ADVICE_COLORS } from '../../../constants/designTokens';
 
@@ -149,14 +149,27 @@ const deriveSimpleGuidance = (eq, fp, label) => {
   return null;
 };
 
-export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTreeAdvice }) => {
+export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTreeAdvice, currentStreet }) => {
   const [showFoldCurve, setShowFoldCurve] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  // Update clock every 5s for staleness indicator
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!actionAdvice && !liveEquity?.isComputing && !gameTreeAdvice) return null;
 
   // When full game tree advice is available, use the top recommendation
   const topRec = gameTreeAdvice?.recommendations?.[0];
   const useGameTree = topRec && gameTreeAdvice.heroEquity != null;
+
+  // Staleness detection: street mismatch or age > 20s
+  const adviceAge = gameTreeAdvice?.timestamp ? now - gameTreeAdvice.timestamp : 0;
+  const streetMismatch = useGameTree && currentStreet && gameTreeAdvice.currentStreet && gameTreeAdvice.currentStreet !== currentStreet;
+  const isStale = streetMismatch || adviceAge > 60000;
+  const isFading = !isStale && adviceAge > 20000;
 
   // Derive display values
   const displayLabel = useGameTree ? topRec.action.toUpperCase() : actionAdvice?.label;
@@ -179,9 +192,11 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
     <div
       style={{
         borderBottom: '1px solid var(--panel-border)',
-        borderLeft: `3px solid ${displayColor}`,
-        background: `linear-gradient(90deg, ${displayColor}1A 0%, transparent 60%)`,
+        borderLeft: `3px solid ${isStale ? '#6b7280' : displayColor}`,
+        background: `linear-gradient(90deg, ${isStale ? '#6b7280' : displayColor}1A 0%, transparent 60%)`,
         padding: '6px 10px',
+        opacity: isStale ? 0.5 : isFading ? 0.75 : 1,
+        transition: 'opacity 0.5s ease',
       }}
     >
       {liveEquity?.isComputing && !useGameTree ? (
@@ -230,6 +245,19 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
                   background: '#78350f', color: '#fbbf24', letterSpacing: 0.5,
                 }}>
                   HIGH VARIANCE
+                </span>
+              )}
+              {useGameTree && isStale && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                  background: '#7f1d1d', color: '#f87171', letterSpacing: 0.5,
+                }}>
+                  STALE
+                </span>
+              )}
+              {useGameTree && isFading && !isStale && (
+                <span style={{ fontSize: 9, color: '#6b7280' }}>
+                  {Math.round(adviceAge / 1000)}s ago
                 </span>
               )}
             </div>

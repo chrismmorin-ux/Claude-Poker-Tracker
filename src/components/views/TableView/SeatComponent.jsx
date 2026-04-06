@@ -35,6 +35,7 @@ export const SeatComponent = ({
   onOpenRangeDetail,
   seatBet,
   isPFR,
+  isNextToAct = false,
 }) => {
   // Seat color (returns { className, style })
   const seatColor = getSeatColor(seat);
@@ -94,7 +95,7 @@ export const SeatComponent = ({
         <button
           onClick={() => onSeatClick(seat)}
           onContextMenu={(e) => onSeatRightClick(e, seat)}
-          className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${seatColor.className}`}
+          className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${seatColor.className}${isNextToAct ? ' seat-next-to-act' : ''}`}
           style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px`, ...seatColor.style }}
         >
           {seat}

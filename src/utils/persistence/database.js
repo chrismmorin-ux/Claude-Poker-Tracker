@@ -35,6 +35,7 @@
  *   v9 → v10: Added exploitBriefings[] and dismissedBriefingIds[] to player records
  *   v10 → v11: Added tournaments object store for tournament state persistence
  *   v11 → v12: Added source/tableId indexes to hands/sessions for online play integration
+ *   v12 → v13: Normalized seatActions field in existing hand records
  */
 
 import { logger } from '../errorHandler';
@@ -88,6 +89,11 @@ export const initDB = async () => {
     request.onerror = (event) => {
       logError('Failed to open database:', event.target.error);
       reject(event.target.error);
+    };
+
+    request.onblocked = () => {
+      logError('Database upgrade blocked — another tab may have an open connection. Please close other tabs and reload.');
+      reject(new Error('Database upgrade blocked by another tab. Close other tabs and reload.'));
     };
 
     request.onsuccess = (event) => {

@@ -44,6 +44,11 @@ const TREE_META_FIELDS = [
   'numOpponents', 'comboCounted', 'dynamicAnchors',
 ];
 
+const VILLAIN_RANGE_FIELDS = [
+  'seat', 'position', 'actionKey', 'rangeWidth',
+  'equity', 'equityCI', 'narrowedFrom', 'active',
+];
+
 const MODEL_QUALITY_FIELDS = [
   'facingBetConfidence', 'facingNoneConfidence', 'overallSource',
 ];
@@ -116,6 +121,7 @@ const ADVICE_FIELDS = [
   'segmentation', 'foldPct', 'foldMeta', 'recommendations',
   'currentStreet', 'potSize', 'villainBet', 'playerStats',
   'bucketEquities',
+  'villainRanges', 'multiwayEquity', 'narrowingLog',
 ];
 
 /**
@@ -136,6 +142,13 @@ export const buildActionAdvice = (advice) => {
   if (advice.treeMetadata) {
     wire.treeMetadata = pick(advice.treeMetadata, TREE_META_FIELDS);
   }
+  // Serialize villain ranges: Float64Array → plain Array for JSON compatibility
+  if (advice.villainRanges) {
+    wire.villainRanges = advice.villainRanges.map(vr => ({
+      ...pick(vr, VILLAIN_RANGE_FIELDS),
+      range: vr.range ? Array.from(vr.range) : null,
+    }));
+  }
   return wire;
 };
 
@@ -145,6 +158,9 @@ export const validateActionAdvice = (advice) => {
   if (!isObj(advice)) return { valid: false, errors: ['advice must be an object or null'] };
   if (advice.situation === undefined) errors.push('missing situation');
   if (advice.recommendations === undefined) errors.push('missing recommendations');
+  if (advice.villainRanges !== undefined && !isArr(advice.villainRanges)) errors.push('villainRanges must be array');
+  if (advice.multiwayEquity !== undefined && !isObj(advice.multiwayEquity)) errors.push('multiwayEquity must be object');
+  if (advice.narrowingLog !== undefined && !isArr(advice.narrowingLog)) errors.push('narrowingLog must be array');
   return { valid: errors.length === 0, errors };
 };
 

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-04-06 by Claude (governance overhaul Phase 1)
+Last updated: 2026-04-06 by Claude (HE-2a/2b/2c batch)
 
 ---
 
@@ -13,6 +13,8 @@ Last updated: 2026-04-06 by Claude (governance overhaul Phase 1)
 ---
 
 ## Recently Completed
+
+- HE-2c, HE-2a, HE-2b — completed 2026-04-06 (showdown auto-advance, position-first display, orbit tap-ahead)
 
 - RT-1 through RT-5 — completed 2026-04-04 (refactor commit, NaN firewall, persistence flush, XSS fix, test coverage)
 - 28 (Reasoning Quality & UI Display) — completed 2026-03-31
@@ -39,7 +41,7 @@ _No active alerts. P0 items RT-11 and RT-12 resolved 2026-04-04._
 
 ## Project Health
 
-- **Tests:** ~5,400 passing across ~184 test files (+ 879 extension tests)
+- **Tests:** 5,401 passing across 184 test files (+ 879 extension tests)
 - **Architecture:** v122 — React + Vite + Tailwind, mobile-optimized 1600x720
 - **Active backlog:** 8 NEXT items, 2 BLOCKED, 2 PAUSED, 1 IN_PROGRESS (GOV-1)
 - **Last eng-engine audit:** 2026-04-04 R2 (19 findings: 17 archived, RT-7 + RT-10 remaining)

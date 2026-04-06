@@ -8,6 +8,7 @@ import {
   renderComboStatsSection,
   renderModelAuditSection,
   renderVulnerabilitiesSection,
+  renderNarrowingLogSection,
 } from '../render-tiers.js';
 
 // ==========================================================================
@@ -353,5 +354,132 @@ describe('renderVulnerabilitiesSection', () => {
     const html = renderVulnerabilitiesSection([{ label: 'Test', severity: 0.8 }]);
     expect(html).toContain('Test');
     expect(html).not.toContain('undefined');
+  });
+});
+
+// ==========================================================================
+// renderNarrowingLogSection
+// ==========================================================================
+
+describe('renderNarrowingLogSection', () => {
+  it('returns empty string for null input', () => {
+    expect(renderNarrowingLogSection(null)).toBe('');
+  });
+
+  it('returns empty string for empty array', () => {
+    expect(renderNarrowingLogSection([])).toBe('');
+  });
+
+  it('renders section wrapper and header for valid input', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Called flop bet — tightens to value hands' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('deep-section');
+    expect(html).toContain('Range Narrowing');
+  });
+
+  it('renders street badge with street name', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Flop call' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('flop');
+  });
+
+  it('renders seat label', () => {
+    const log = [
+      { street: 'turn', seat: 5, action: 'call', fromWidth: 18, toWidth: 12, description: 'Turn call' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('S5');
+  });
+
+  it('renders description text', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Called flop bet — tightens to value hands' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('Called flop bet — tightens to value hands');
+  });
+
+  it('shows negative delta (range narrowed) as minus sign', () => {
+    // fromWidth=25 > toWidth=18 means range got narrower — delta positive (−7%)
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Narrowed' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('\u22127%'); // − sign + 7%
+  });
+
+  it('shows positive delta (range widened) as plus sign', () => {
+    // fromWidth=10 < toWidth=15 means range widened — delta negative (+5%)
+    const log = [
+      { street: 'preflop', seat: 2, action: 'raise', fromWidth: 10, toWidth: 15, description: 'Widened' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('+5%');
+  });
+
+  it('shows 0% when from and to width are equal', () => {
+    const log = [
+      { street: 'river', seat: 4, action: 'check', fromWidth: 12, toWidth: 12, description: 'No change' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('0%');
+  });
+
+  it('renders multiple entries', () => {
+    const log = [
+      { street: 'flop',  seat: 3, action: 'call',  fromWidth: 30, toWidth: 20, description: 'Flop call' },
+      { street: 'turn',  seat: 3, action: 'call',  fromWidth: 20, toWidth: 12, description: 'Turn call' },
+      { street: 'river', seat: 3, action: 'check', fromWidth: 12, toWidth: 10, description: 'River check' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('Flop call');
+    expect(html).toContain('Turn call');
+    expect(html).toContain('River check');
+  });
+
+  it('applies distinct colors for each street', () => {
+    const log = [
+      { street: 'preflop', seat: 1, action: 'raise', fromWidth: 20, toWidth: 15, description: 'A' },
+      { street: 'flop',    seat: 1, action: 'call',  fromWidth: 15, toWidth: 10, description: 'B' },
+      { street: 'turn',    seat: 1, action: 'call',  fromWidth: 10, toWidth: 7,  description: 'C' },
+      { street: 'river',   seat: 1, action: 'bet',   fromWidth: 7,  toWidth: 5,  description: 'D' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    // Each street has a unique color in the source
+    expect(html).toContain('#a78bfa'); // preflop
+    expect(html).toContain('#3b82f6'); // flop
+    expect(html).toContain('#22c55e'); // turn
+    expect(html).toContain('#ef4444'); // river
+  });
+
+  it('escapes HTML in description', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 20, toWidth: 15, description: '<script>xss</script>' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('handles unknown street gracefully (uses fallback color)', () => {
+    const log = [
+      { street: 'unknown', seat: 2, action: 'call', fromWidth: 20, toWidth: 15, description: 'Unknown street' },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).toContain('Unknown street');
+    expect(html).not.toContain('undefined');
+  });
+
+  it('handles missing description gracefully', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 20, toWidth: 15 },
+    ];
+    const html = renderNarrowingLogSection(log);
+    expect(html).not.toContain('undefined');
+    expect(html).toContain('S3');
   });
 });

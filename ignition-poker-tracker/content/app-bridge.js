@@ -4,11 +4,10 @@
  * Content script injected into the poker tracker app's page (isolated world).
  */
 
-import { MSG, BRIDGE_MSG, PROTOCOL_VERSION, SESSION_KEYS, BUILD_GUARD } from '../shared/constants.js';
+import { MSG, BRIDGE_MSG, PROTOCOL_VERSION, BUILD_GUARD } from '../shared/constants.js';
 import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
 import { validateMessage } from '../shared/message-schemas.js';
 import { buildHandForRelay, buildLiveContext, buildStatus } from '../shared/wire-schemas.js';
-import { getQueuedHands, dequeueHands, readLiveContext, writeConnectionState } from '../shared/storage-writer.js';
 import * as errors from '../shared/error-reporter.js';
 
 (() => {
@@ -39,15 +38,14 @@ import * as errors from '../shared/error-reporter.js';
     onMessage: (msg) => {
       const vErr = validateMessage(msg.type, msg);
       if (vErr) {
-        console.warn(`[Poker Bridge] Blocked ${msg.type} from SW:`, vErr);
-        return; // Do not process invalid messages
+        // Allow push_ messages from SW that may not have schemas yet
+        if (!msg.type?.startsWith('push_')) {
+          console.warn(`[Poker Bridge] Blocked ${msg.type} from SW:`, vErr);
+          return;
+        }
       }
 
       switch (msg.type) {
-        // Hand delivery uses chrome.storage.session (see storage listener below)
-        // Live context uses chrome.storage.session (see storage listener below)
-        // Port only carries status from SW
-
         case 'status': {
           const status = buildStatus({
             connected: true,
@@ -61,6 +59,46 @@ import * as errors from '../shared/error-reporter.js';
           }, '*');
           break;
         }
+
+        // Hand delivery — pushed from SW when a hand is enqueued
+        case 'push_hand': {
+          if (msg.hand) {
+            deliverHands([msg.hand]);
+          }
+          break;
+        }
+
+        // Live context — pushed from SW when capture sends hand state
+        case 'push_live_context': {
+          if (msg.context) {
+            const ctx = buildLiveContext(msg.context);
+            if (ctx) {
+              window.postMessage({
+                type: BRIDGE_MSG.HAND_STATE,
+                ...ctx,
+                _v: PROTOCOL_VERSION,
+                timestamp: Date.now(),
+              }, '*');
+            }
+          }
+          break;
+        }
+
+        // Connection state — pushed from SW on capture port connect/disconnect
+        case 'push_connection_state': {
+          if (msg.state) {
+            window.postMessage({
+              type: BRIDGE_MSG.STATUS,
+              ...buildStatus({
+                connected: !!msg.state.captureAlive,
+                protocolVersion: PROTOCOL_VERSION,
+              }),
+              _v: PROTOCOL_VERSION,
+              timestamp: Date.now(),
+            }, '*');
+          }
+          break;
+        }
       }
     },
 
@@ -69,11 +107,11 @@ import * as errors from '../shared/error-reporter.js';
         '%c[Poker Bridge] Port connected (protocol v' + PROTOCOL_VERSION + ')',
         'color: #22c55e; font-weight: bold;'
       );
-      writeConnectionState({ appBridgeAlive: true });
+      chrome.runtime.sendMessage({ type: MSG.WRITE_CONNECTION_STATE, update: { appBridgeAlive: true } }).catch(() => {});
     },
 
     onDisconnect: () => {
-      writeConnectionState({ appBridgeAlive: false });
+      chrome.runtime.sendMessage({ type: MSG.WRITE_CONNECTION_STATE, update: { appBridgeAlive: false } }).catch(() => {});
       window.postMessage({
         type: BRIDGE_MSG.STATUS,
         ...buildStatus({ connected: false }),
@@ -84,7 +122,7 @@ import * as errors from '../shared/error-reporter.js';
 
     onContextDead: () => {
       console.warn('[Poker Bridge] Extension context invalidated — bridge stopped');
-      writeConnectionState({ appBridgeAlive: false });
+      chrome.runtime.sendMessage({ type: MSG.WRITE_CONNECTION_STATE, update: { appBridgeAlive: false } }).catch(() => {});
       window.postMessage({
         type: BRIDGE_MSG.STATUS,
         ...buildStatus({ connected: false, contextDead: true }),
@@ -155,11 +193,11 @@ import * as errors from '../shared/error-reporter.js';
       return;
     }
 
-    // ACK from React app — dequeue delivered hands from session storage
+    // ACK from React app — dequeue delivered hands via SW
     if (event.data?.type === BRIDGE_MSG.ACK) {
       const ids = event.data.captureIds;
       if (Array.isArray(ids) && ids.length > 0) {
-        dequeueHands(ids).catch(() => {});
+        chrome.runtime.sendMessage({ type: MSG.DEQUEUE_HANDS, captureIds: ids }).catch(() => {});
       }
       return;
     }
@@ -167,14 +205,13 @@ import * as errors from '../shared/error-reporter.js';
   window.addEventListener('message', outboundListener);
 
   // =========================================================================
-  // HAND DELIVERY: chrome.storage.session queue → app (via postMessage)
+  // HAND DELIVERY: SW pushes hands via port → app (via postMessage)
   //
-  // ignition-capture.js writes hands to SESSION_KEYS.HAND_QUEUE.
-  // We listen for changes, forward new entries to the React app, then dequeue.
-  // This path is completely independent of the SW — survives SW suspension.
+  // SW receives hands from capture, enqueues in session storage, then pushes
+  // to app-bridge via port. App-bridge forwards to React app.
   // =========================================================================
 
-  /** Forward hands from the session storage queue to the React app. */
+  /** Forward hands from the SW to the React app. */
   const deliverHands = (hands) => {
     if (!hands || hands.length === 0) return;
     const wireHands = hands.map(h => buildHandForRelay(h)).filter(Boolean);
@@ -187,61 +224,15 @@ import * as errors from '../shared/error-reporter.js';
       meta: { extensionVersion, timestamp: Date.now() },
     }, '*');
 
-    // Dequeue happens on ACK from React app (see outboundListener below)
+    // Dequeue happens on ACK from React app (see outboundListener above)
   };
 
-  // Listen for session storage changes — hand queue + live context
-  const storageListener = (changes, area) => {
-    if (area !== 'session') return;
-
-    // Hand queue changes — fires when ignition-capture enqueues a hand
-    const queueChange = changes[SESSION_KEYS.HAND_QUEUE];
-    if (queueChange) {
-      const newQueue = queueChange.newValue || [];
-      const oldQueue = queueChange.oldValue || [];
-      const oldIds = new Set(oldQueue.map(h => h.captureId));
-      const newHands = newQueue.filter(h => !oldIds.has(h.captureId));
-      deliverHands(newHands);
-    }
-
-    // Live context changes — fires when ignition-capture writes hand state
-    const ctxChange = changes[SESSION_KEYS.LIVE_CONTEXT];
-    if (ctxChange?.newValue) {
-      const ctx = buildLiveContext(ctxChange.newValue);
-      if (ctx) {
-        window.postMessage({
-          type: BRIDGE_MSG.HAND_STATE,
-          ...ctx,
-          _v: PROTOCOL_VERSION,
-          timestamp: Date.now(),
-        }, '*');
-      }
-    }
-
-    // Connection state changes — forward capture-alive status to app
-    const connChange = changes[SESSION_KEYS.CONNECTION_STATE];
-    if (connChange?.newValue) {
-      const state = connChange.newValue;
-      window.postMessage({
-        type: BRIDGE_MSG.STATUS,
-        ...buildStatus({
-          connected: !!(state.captureAlive && state.appBridgeAlive),
-          protocolVersion: PROTOCOL_VERSION,
-        }),
-        _v: PROTOCOL_VERSION,
-        timestamp: Date.now(),
-      }, '*');
-    }
-  };
-  chrome.storage.onChanged.addListener(storageListener);
-
-  // Cold-start drain: deliver any hands queued before this script loaded.
+  // Cold-start drain: request any hands queued before this script loaded from SW.
   // Single attempt with a short delay to let React mount its listener.
-  // If React isn't ready, hands stay in queue — the next enqueueHand()
-  // fires storage.onChanged which re-delivers them.
   setTimeout(async () => {
     try {
-      const queued = await getQueuedHands();
+      const response = await chrome.runtime.sendMessage({ type: MSG.GET_QUEUED_HANDS });
+      const queued = response?.hands || [];
       if (queued.length > 0) {
         console.log(
           `%c[Poker Bridge] Cold-start drain: ${queued.length} hand(s)`,
@@ -254,8 +245,8 @@ import * as errors from '../shared/error-reporter.js';
     }
   }, 500);
 
-  // Cold-start: forward any fresh live context from session storage
-  readLiveContext().then(ctx => {
+  // Cold-start: request any fresh live context from SW
+  chrome.runtime.sendMessage({ type: MSG.GET_LIVE_CONTEXT }).then(ctx => {
     if (ctx) {
       const wireCtx = buildLiveContext(ctx);
       if (wireCtx) {
@@ -272,7 +263,6 @@ import * as errors from '../shared/error-reporter.js';
   // Register cleanup for version-upgrade re-initialization
   window.__POKER_APP_BRIDGE_CLEANUP = () => {
     window.removeEventListener('message', outboundListener);
-    chrome.storage.onChanged.removeListener(storageListener);
     conn.destroy();
   };
 })();

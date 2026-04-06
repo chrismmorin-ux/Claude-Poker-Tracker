@@ -11,14 +11,14 @@
 
 import { MSG, STORAGE_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION } from '../shared/constants.js';
 import * as errors from '../shared/error-reporter.js';
-import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState } from '../shared/storage-writer.js';
+import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
 
 const SW_VERSION = EXTENSION_VERSION;
 
-// Grant content scripts access to chrome.storage.session (required for app-bridge
-// to receive LIVE_CONTEXT changes via storage.onChanged listener)
-chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
+// chrome.storage.session defaults to TRUSTED_CONTEXTS only.
+// Content scripts (including app-bridge) receive data via port pushes, not direct storage access.
+// This prevents casino page scripts from reading hand/exploit/context data.
 
 // ===========================================================================
 // STATE
@@ -66,6 +66,11 @@ let totalHandsSaved = 0;
 const pushToSidePanel = (msg) => {
   if (!sidePanelPort) return;
   try { sidePanelPort.postMessage(msg); } catch (e) { console.warn('[SW] Side panel push failed:', e.message); sidePanelPort = null; }
+};
+
+const pushToAppBridge = (msg) => {
+  if (!appBridgePort) return;
+  try { appBridgePort.postMessage(msg); } catch (e) { console.warn('[SW] App bridge push failed:', e.message); appBridgePort = null; }
 };
 
 const pushFullStateToSidePanel = async () => {
@@ -136,6 +141,7 @@ chrome.runtime.onConnect.addListener((port) => {
                 updateBadge(totalHandsSaved);
                 chrome.storage.session.set({ total_hands_saved: totalHandsSaved }).catch(() => {});
                 pushToSidePanel({ type: 'push_hands_updated', totalHands: totalHandsSaved });
+                pushToAppBridge({ type: 'push_hand', hand });
               } else {
                 console.warn('[SW] Failed to enqueue hand');
               }
@@ -158,6 +164,8 @@ chrome.runtime.onConnect.addListener((port) => {
           if (msg.context) {
             // Write to session storage (SW has access)
             writeLiveContext(msg.context);
+            // Push to app-bridge (replaces storage.onChanged for content scripts)
+            pushToAppBridge({ type: 'push_live_context', context: msg.context });
             // Throttled forward to side panel (max ~5/sec)
             _pendingLiveCtx = msg.context;
             if (!_liveCtxTimer) {
@@ -231,7 +239,12 @@ chrome.runtime.onConnect.addListener((port) => {
       }
     });
 
-    port.onDisconnect.addListener(() => { capturePorts.delete(port); });
+    port.onDisconnect.addListener(() => {
+      capturePorts.delete(port);
+      pushToAppBridge({ type: 'push_connection_state', state: { captureAlive: capturePorts.size > 0 } });
+    });
+    // Notify app-bridge that a capture port connected
+    pushToAppBridge({ type: 'push_connection_state', state: { captureAlive: true } });
     return;
   }
 
@@ -441,6 +454,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         hasCachedAdvice: !!cachedActionAdvice,
         errorCount: errors.getCount(),
       });
+      return false;
+    }
+
+    // App-bridge storage relay handlers (replaces direct chrome.storage.session access)
+    case MSG.GET_QUEUED_HANDS: {
+      getQueuedHands()
+        .then(hands => sendResponse({ hands }))
+        .catch(() => sendResponse({ hands: [] }));
+      return true;
+    }
+
+    case MSG.DEQUEUE_HANDS: {
+      const ids = message.captureIds;
+      if (Array.isArray(ids) && ids.length > 0) {
+        dequeueHands(ids)
+          .then(count => sendResponse({ count }))
+          .catch(() => sendResponse({ count: 0 }));
+      } else {
+        sendResponse({ count: 0 });
+      }
+      return true;
+    }
+
+    case MSG.WRITE_CONNECTION_STATE: {
+      if (message.update) {
+        writeConnectionState(message.update).catch(() => {});
+      }
+      sendResponse({ ok: true });
       return false;
     }
   }

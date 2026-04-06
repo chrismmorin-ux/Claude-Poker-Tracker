@@ -610,6 +610,83 @@ const renderPreflopContent = (advice, liveContext, appSeatData, focusedVillain) 
 };
 
 // =========================================================================
+// VILLAIN RANGE SECTION — Shows focused villain's Bayesian range grid
+// =========================================================================
+
+/**
+ * Render multiway equity badge when facing multiple opponents.
+ */
+const renderMultiwayEquity = (multiwayEquity) => {
+  if (!multiwayEquity?.equity) return '';
+  const eq = Math.round(multiwayEquity.equity * 100);
+  const color = eq >= 50 ? 'var(--green)' : eq >= 30 ? 'var(--gold)' : 'var(--red)';
+  return `<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:var(--radius-md);background:var(--surface-inset);font-size:var(--font-xs)">
+    <span style="color:var(--text-faint)">vs All</span>
+    <span style="color:${color};font-weight:600">${eq}%</span>
+  </div>`;
+};
+
+/**
+ * Render villain range section with tab pills for multiway and focused grid.
+ * Falls back to static GTO grid when no Bayesian range data available.
+ */
+const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
+  const villainRanges = advice?.villainRanges;
+
+  // No dynamic range data — fall back to static GTO grid on preflop
+  if (!villainRanges || villainRanges.length === 0) {
+    if (advice?.currentStreet === 'preflop' || !advice?.currentStreet) {
+      const heroPos = getPositionName(liveContext?.heroSeat, liveContext?.dealerSeat);
+      return renderRangeGrid({
+        position: heroPos,
+        holeCards: liveContext?.holeCards,
+        situation: advice?.situation || null,
+      });
+    }
+    return '';
+  }
+
+  let html = '';
+
+  // Villain selector tabs (multiway: show pills for each active villain)
+  if (villainRanges.length > 1) {
+    html += `<div class="villain-range-tabs">`;
+    for (const vr of villainRanges) {
+      if (!vr.active) continue;
+      const isFocused = vr.seat === focusedVillain || vr.seat === advice?.villainSeat;
+      const eqStr = vr.equity != null ? ` ${Math.round(vr.equity * 100)}%` : '';
+      html += `<button class="villain-tab${isFocused ? ' active' : ''}" data-range-seat="${vr.seat}">`;
+      html += `S${vr.seat}${eqStr}`;
+      html += `</button>`;
+    }
+    // Multiway equity badge
+    html += renderMultiwayEquity(advice.multiwayEquity);
+    html += `</div>`;
+  }
+
+  // Render focused villain's range grid
+  const focused = villainRanges.find(vr => vr.seat === focusedVillain)
+    || villainRanges.find(vr => vr.seat === advice?.villainSeat)
+    || villainRanges[0];
+
+  if (focused?.range?.length === 169) {
+    const actionLabel = focused.actionKey
+      ? focused.actionKey.charAt(0).toUpperCase() + focused.actionKey.slice(1)
+      : '';
+    const label = `S${focused.seat} · ${focused.position || '?'}${actionLabel ? ' · ' + actionLabel : ''}`;
+    html += renderRangeGrid({
+      range: focused.range,
+      label,
+      holeCards: liveContext?.holeCards,
+      equity: focused.equity,
+      rangeWidth: focused.rangeWidth,
+    });
+  }
+
+  return html;
+};
+
+// =========================================================================
 // UNIFIED STREET CONTENT — Fixed section order across all streets
 // =========================================================================
 
@@ -627,15 +704,8 @@ const renderPreflopContent = (advice, liveContext, appSeatData, focusedVillain) 
 const renderUnifiedStreetContent = (street, advice, liveContext, appSeatData, focusedVillain) => {
   let html = '';
 
-  // === Section 1: Preflop-only range grid (always first when on preflop) ===
-  if (street === 'preflop') {
-    const heroPos = getPositionName(liveContext?.heroSeat, liveContext?.dealerSeat);
-    html += renderRangeGrid({
-      position: heroPos,
-      holeCards: liveContext?.holeCards,
-      situation: advice?.situation || null,
-    });
-  }
+  // === Section 1: Villain range grid (all streets) ===
+  html += renderVillainRangeSection(advice, liveContext, focusedVillain);
 
   // === Section 2: Reasoning note (all streets — "what to do and why") ===
   html += renderReasoningNote(advice);

@@ -11,7 +11,7 @@ export { PlayerProvider, usePlayer } from './PlayerContext';
 export { CardProvider, useCard } from './CardContext';
 export { SettingsProvider, useSettings } from './SettingsContext';
 export { ToastProvider, useToast } from './ToastContext';
-export { TendencyProvider, useTendency } from './TendencyContext';
+export { TendencyProvider, useTendency, useSeatTendency } from './TendencyContext';
 export { TournamentProvider, useTournament } from './TournamentContext';
 export { SyncBridgeProvider, useSyncBridge } from './SyncBridgeContext';
 export { OnlineSessionProvider, useOnlineSession } from './OnlineSessionContext';

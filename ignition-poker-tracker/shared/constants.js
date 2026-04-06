@@ -16,6 +16,10 @@ export const MSG = {
   CLEAR_CAPTURED_HANDS: 'clear_captured_hands',
   PING: 'ping',
   GET_DIAGNOSTIC_LOG: 'get_diagnostic_log',
+  // App-bridge → SW (storage relay, replaces direct chrome.storage.session access)
+  GET_QUEUED_HANDS: 'get_queued_hands_bridge',
+  DEQUEUE_HANDS: 'dequeue_hands_bridge',
+  WRITE_CONNECTION_STATE: 'write_connection_state_bridge',
 };
 
 // ---------------------------------------------------------------------------

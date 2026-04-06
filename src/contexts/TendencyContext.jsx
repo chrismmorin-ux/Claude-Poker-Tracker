@@ -6,7 +6,7 @@
  * Exposes patchTendency() for optimistic briefing updates.
  */
 
-import { createContext, useContext, useCallback, useMemo } from 'react';
+import { createContext, useContext, useCallback, useMemo, useRef } from 'react';
 import { usePlayer } from './PlayerContext';
 import { usePlayerTendencies } from '../hooks/usePlayerTendencies';
 
@@ -43,4 +43,23 @@ export const useTendency = () => {
   const ctx = useContext(TendencyContext);
   if (!ctx) throw new Error('useTendency must be used within TendencyProvider');
   return ctx;
+};
+
+/**
+ * Per-player selector: returns a stable reference for a single player's tendency data.
+ * Only triggers re-render when the specific player's entry changes (shallow equality).
+ * Use this in components that only care about one player (e.g., PlayerAnalysisPanel).
+ *
+ * @param {string|number} playerId - The player to select
+ * @returns {object|undefined} The player's tendency entry, or undefined if not found
+ */
+export const useSeatTendency = (playerId) => {
+  const { tendencyMap } = useTendency();
+  const prevRef = useRef(undefined);
+  const entry = playerId != null ? tendencyMap[playerId] : undefined;
+
+  // Return previous reference if the entry hasn't changed (stable identity)
+  if (entry === prevRef.current) return prevRef.current;
+  prevRef.current = entry;
+  return entry;
 };

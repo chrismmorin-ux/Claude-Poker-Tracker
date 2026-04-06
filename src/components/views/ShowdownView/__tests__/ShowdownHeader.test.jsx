@@ -20,8 +20,13 @@ describe('ShowdownHeader', () => {
   });
 
   describe('rendering', () => {
-    it('renders title text', () => {
+    it('renders quick mode title by default', () => {
       render(<ShowdownHeader {...defaultProps} />);
+      expect(screen.getByText('Who won?')).toBeInTheDocument();
+    });
+
+    it('renders full mode title when showdownMode is full', () => {
+      render(<ShowdownHeader {...defaultProps} showdownMode="full" />);
       expect(screen.getByText(/Showdown - Click a card slot/)).toBeInTheDocument();
     });
 

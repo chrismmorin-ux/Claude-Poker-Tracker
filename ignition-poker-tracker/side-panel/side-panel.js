@@ -1155,6 +1155,14 @@ injectTokens();
       renderUI();
       return;
     }
+    // Villain range tab clicks — switch focused villain in range grid
+    const rangeTab = e.target.closest('.villain-tab[data-range-seat]');
+    if (rangeTab) {
+      pinnedVillainSeat = Number(rangeTab.dataset.rangeSeat);
+      renderUI();
+      return;
+    }
+
     // Click outside popover — dismiss
     if (!e.target.closest('.seat-popover')) {
       hideSeatPopover();

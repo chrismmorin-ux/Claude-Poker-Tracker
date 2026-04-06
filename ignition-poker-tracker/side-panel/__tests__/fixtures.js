@@ -29,6 +29,15 @@ const makeAppSeat = (style, sampleSize, headline, profile = null, stats = null) 
   villainProfile: profile,
 });
 
+/**
+ * Build a test range (169 values) where the top N cells are filled with given weight.
+ */
+const makeTestRange = (filledCount = 40, weight = 0.8) => {
+  const r = new Array(169).fill(0);
+  for (let i = 0; i < filledCount && i < 169; i++) r[i] = weight;
+  return r;
+};
+
 // =========================================================================
 // 1. FLOP WITH ADVICE — Full happy path
 // =========================================================================
@@ -140,6 +149,14 @@ export const flopWithAdvice = {
       totalCombos: 66,
       totalWeight: 66,
     },
+    villainRanges: [
+      { seat: 3, position: 'CO', actionKey: 'open', range: makeTestRange(35, 0.75), rangeWidth: 22, equity: 0.58, equityCI: [0.54, 0.62], narrowedFrom: 28, active: true },
+      { seat: 1, position: 'UTG', actionKey: 'coldCall', range: makeTestRange(25, 0.6), rangeWidth: 15, equity: 0.65, equityCI: [0.60, 0.70], narrowedFrom: 22, active: true },
+    ],
+    multiwayEquity: { equity: 0.38, ci: null, method: 'pairwise' },
+    narrowingLog: [
+      { street: 'flop', seat: 3, action: 'bet', fromWidth: 28, toWidth: 22, description: 'Bet \u2192 top 22% by equity' },
+    ],
   },
   appSeatData: {
     1: makeAppSeat('Fish', 30, 'Loose passive — calls too wide'),
@@ -252,6 +269,11 @@ export const preflopWithAdvice = {
       ],
     },
     segmentation: null,
+    villainRanges: [
+      { seat: 3, position: 'MP2', actionKey: 'open', range: makeTestRange(50, 0.7), rangeWidth: 35, equity: 0.42, equityCI: [0.38, 0.46], narrowedFrom: 35, active: true },
+    ],
+    multiwayEquity: null,
+    narrowingLog: [],
   },
   appSeatData: {
     3: makeAppSeat('Fish', 25, 'Loose passive — calls too wide', {

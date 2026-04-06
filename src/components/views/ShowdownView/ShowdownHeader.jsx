@@ -10,11 +10,13 @@ export const ShowdownHeader = ({
   onNextHand,
   onClearCards,
   onDone,
+  showdownMode = 'quick',
+  onToggleMode,
 }) => {
   return (
     <div className="bg-white p-6 flex justify-between items-center">
       <h2 className="text-3xl font-bold">
-        Showdown - Click a card slot, then click a card
+        {showdownMode === 'quick' ? 'Who won?' : 'Showdown - Click a card slot, then click a card'}
       </h2>
       <div className="flex items-center gap-4">
         {/* Community Cards Display */}
@@ -45,6 +47,15 @@ export const ShowdownHeader = ({
         >
           Clear Cards
         </button>
+        {onToggleMode && (
+          <button
+            onClick={onToggleMode}
+            className="btn-press text-white px-6 py-3 rounded-lg text-xl font-bold"
+            style={{ background: showdownMode === 'quick' ? '#7c3aed' : '#6d28d9' }}
+          >
+            {showdownMode === 'quick' ? 'Assign Cards' : 'Quick Mode'}
+          </button>
+        )}
         <button
           onClick={onDone}
           className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg text-xl font-bold"

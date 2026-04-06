@@ -335,6 +335,135 @@ describe('buildActionAdvice', () => {
     const advice = buildActionAdvice(fullAdvice);
     expect(validateActionAdvice(advice).valid).toBe(true);
   });
+
+  it('serializes villainRanges with Float64Array range to plain Array', () => {
+    const float64Range = new Float64Array(169).fill(0.5);
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        {
+          seat: 3,
+          position: 'CO',
+          actionKey: 'open',
+          rangeWidth: 22,
+          equity: 0.58,
+          equityCI: [0.52, 0.64],
+          narrowedFrom: 30,
+          active: true,
+          range: float64Range,
+          _internalField: 'should be stripped',
+        },
+      ],
+    });
+    expect(Array.isArray(advice.villainRanges)).toBe(true);
+    expect(advice.villainRanges).toHaveLength(1);
+    const vr = advice.villainRanges[0];
+    expect(Array.isArray(vr.range)).toBe(true);
+    expect(vr.range).toHaveLength(169);
+    expect(vr.range[0]).toBeCloseTo(0.5);
+    // Float64Array converted — not a typed array
+    expect(vr.range instanceof Float64Array).toBe(false);
+  });
+
+  it('strips internal fields from villainRange entries, keeps whitelisted only', () => {
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        {
+          seat: 3,
+          position: 'CO',
+          actionKey: 'open',
+          rangeWidth: 22,
+          equity: 0.55,
+          equityCI: [0.48, 0.62],
+          narrowedFrom: 28,
+          active: true,
+          range: new Array(169).fill(0.4),
+          _internalField: 'stripped',
+          debugData: { anything: true },
+        },
+      ],
+    });
+    const vr = advice.villainRanges[0];
+    expect(vr.seat).toBe(3);
+    expect(vr.position).toBe('CO');
+    expect(vr.actionKey).toBe('open');
+    expect(vr.rangeWidth).toBe(22);
+    expect(vr.equity).toBe(0.55);
+    expect(vr.equityCI).toEqual([0.48, 0.62]);
+    expect(vr.narrowedFrom).toBe(28);
+    expect(vr.active).toBe(true);
+    expect(vr._internalField).toBeUndefined();
+    expect(vr.debugData).toBeUndefined();
+  });
+
+  it('serializes plain Array range as-is (no copy overhead)', () => {
+    const plainRange = new Array(169).fill(0.3);
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        { seat: 3, position: 'CO', actionKey: 'open', rangeWidth: 20, equity: 0.5, active: true, range: plainRange },
+      ],
+    });
+    expect(advice.villainRanges[0].range).toHaveLength(169);
+    expect(advice.villainRanges[0].range[0]).toBeCloseTo(0.3);
+  });
+
+  it('sets range to null when villainRange has no range', () => {
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        { seat: 3, position: 'CO', actionKey: 'open', rangeWidth: 20, equity: 0.5, active: true, range: null },
+      ],
+    });
+    expect(advice.villainRanges[0].range).toBeNull();
+  });
+
+  it('serializes multiple villain ranges correctly', () => {
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        { seat: 2, position: 'UTG', actionKey: 'open', rangeWidth: 15, equity: 0.42, active: true, range: new Float64Array(169).fill(0.3) },
+        { seat: 4, position: 'BTN', actionKey: 'call', rangeWidth: 40, equity: 0.58, active: true, range: new Float64Array(169).fill(0.7) },
+      ],
+    });
+    expect(advice.villainRanges).toHaveLength(2);
+    expect(advice.villainRanges[0].seat).toBe(2);
+    expect(advice.villainRanges[1].seat).toBe(4);
+    expect(Array.isArray(advice.villainRanges[0].range)).toBe(true);
+    expect(Array.isArray(advice.villainRanges[1].range)).toBe(true);
+  });
+
+  it('preserves narrowingLog array on wire output', () => {
+    const log = [
+      { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Flop call' },
+      { street: 'turn', seat: 3, action: 'call', fromWidth: 18, toWidth: 12, description: 'Turn call' },
+    ];
+    const advice = buildActionAdvice({ ...fullAdvice, narrowingLog: log });
+    expect(Array.isArray(advice.narrowingLog)).toBe(true);
+    expect(advice.narrowingLog).toHaveLength(2);
+    expect(advice.narrowingLog[0].street).toBe('flop');
+    expect(advice.narrowingLog[1].description).toBe('Turn call');
+  });
+
+  it('omits villainRanges and narrowingLog when absent', () => {
+    const advice = buildActionAdvice(fullAdvice);
+    expect(advice.villainRanges).toBeUndefined();
+    expect(advice.narrowingLog).toBeUndefined();
+  });
+
+  it('round-trips villainRanges through validateActionAdvice', () => {
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      villainRanges: [
+        { seat: 3, position: 'CO', actionKey: 'open', rangeWidth: 22, equity: 0.55, active: true, range: new Array(169).fill(0.4) },
+      ],
+      narrowingLog: [
+        { street: 'flop', seat: 3, action: 'call', fromWidth: 25, toWidth: 18, description: 'Flop call' },
+      ],
+    });
+    expect(validateActionAdvice(advice).valid).toBe(true);
+  });
 });
 
 describe('validateActionAdvice', () => {

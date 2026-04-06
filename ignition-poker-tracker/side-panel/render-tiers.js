@@ -304,6 +304,9 @@ export const renderDeepAnalysis = (advice) => {
   if (vp?.vulnerabilities?.length > 0) {
     html += renderVulnerabilitiesSection(vp.vulnerabilities);
   }
+  if (advice.narrowingLog?.length > 0) {
+    html += renderNarrowingLogSection(advice.narrowingLog);
+  }
 
   container.innerHTML = html;
 };
@@ -618,6 +621,35 @@ export const renderVulnerabilitiesSection = (vulns) => {
   return `<div class="deep-section" data-section="vulns">
     <div class="deep-header"><span class="deep-header-icon">\u26A1</span>
       <span class="deep-header-title">Active Vulnerabilities</span>
+      <span class="deep-chevron">\u25BE</span></div>
+    <div class="deep-body"><div class="deep-content">${items}</div></div>
+  </div>`;
+};
+
+/**
+ * Render narrowing log section showing how villain ranges adapted per street.
+ */
+export const renderNarrowingLogSection = (narrowingLog) => {
+  if (!narrowingLog || narrowingLog.length === 0) return '';
+
+  const STREET_COLORS = { preflop: '#a78bfa', flop: '#3b82f6', turn: '#22c55e', river: '#ef4444' };
+  let items = '';
+  for (const entry of narrowingLog) {
+    const color = STREET_COLORS[entry.street] || '#6b7280';
+    const delta = entry.fromWidth - entry.toWidth;
+    const deltaStr = delta > 0 ? `\u2212${delta}%` : delta < 0 ? `+${Math.abs(delta)}%` : '0%';
+    const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text-faint)';
+    items += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:var(--font-xs)">
+      <span style="background:${color};color:#fff;padding:1px 4px;border-radius:3px;font-size:8px;min-width:32px;text-align:center">${escapeHtml(entry.street || '')}</span>
+      <span style="color:var(--text-secondary);min-width:22px">S${entry.seat}</span>
+      <span style="color:var(--text-primary);flex:1">${escapeHtml(entry.description || '')}</span>
+      <span style="color:${deltaColor};font-weight:600;font-size:9px">${deltaStr}</span>
+    </div>`;
+  }
+
+  return `<div class="deep-section" data-section="narrowing">
+    <div class="deep-header"><span class="deep-header-icon">\u2198</span>
+      <span class="deep-header-title">Range Narrowing</span>
       <span class="deep-chevron">\u25BE</span></div>
     <div class="deep-body"><div class="deep-content">${items}</div></div>
   </div>`;
