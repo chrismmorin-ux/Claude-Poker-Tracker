@@ -1,5 +1,11 @@
+---
+last-verified-against-code: 2026-04-06
+verified-by: governance-overhaul
+staleness-threshold-days: 30
+---
+
 # System Model — Poker Tracker
-**Version**: 1.0.0 | **Updated**: 2026-04-04 | **Owner**: Architecture Review
+**Version**: 1.2.0 | **Updated**: 2026-04-06 | **Owner**: Architecture Review
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -47,6 +53,8 @@ Hooks → exploitEngine → rangeEngine → pokerCore
 | Extension → App | `chrome.runtime.sendMessage` | Captured hand history, table state |
 | App → Extension | IndexedDB shared reads (same origin) | Player profiles, range profiles |
 | Extension internal | `SyncBridgeContext` + `OnlineSessionContext` | Real-time table sync |
+
+**Resolved (RT-11, 2026-04-04):** `chrome.storage.session` downgraded from `TRUSTED_AND_UNTRUSTED_CONTEXTS` to trusted-only. App-bridge refactored to receive data via port pushes from service worker. Casino page scripts can no longer read session storage.
 
 ---
 
@@ -138,37 +146,9 @@ New player observed → populationPriors.js creates default profile
 
 ## 4. System Invariants
 
-### 4.1 MUST Always Be True
+**Full catalog with verification dates and test coverage: see `.claude/context/INVARIANTS.md`**
 
-| ID | Invariant | Enforced By |
-|----|-----------|-------------|
-| INV-01 | `actionSequence` entries have monotonically increasing `order` values | `getNextOrder()` in `sequenceUtils.js` |
-| INV-02 | Every seat in `actionSequence` is in range [1, `CONSTANTS.NUM_SEATS`] | Reducer validation |
-| INV-03 | A folded seat never appears in subsequent street actions | `hasSeatFolded()` guard in `useGameHandlers` |
-| INV-04 | `communityCards` has exactly 5 slots; cards added only at street transitions | `cardReducer` street guards |
-| INV-05 | Range profile weights are in [0.0, 1.0] per combo | `bayesianUpdater` normalization |
-| INV-06 | Fold equity formula always includes equity-when-called term | `calcBluffEV()` in `foldEquityCalculator.js` |
-| INV-07 | Style labels are OUTPUTS of stat classification, never INPUTS to decision models | Villain model hierarchy: model > stats > style priors > population |
-| INV-08 | No circular imports between engine layers | `pokerCore` ← `rangeEngine` ← `exploitEngine` (strict) |
-| INV-09 | All IndexedDB access is user-scoped via `userId` parameter | Every persistence function signature |
-| INV-10 | Exploit recommendations come from game tree EV, never from weakness labels directly | `gameTreeEvaluator.js` is sole recommendation source |
-| INV-11 | Bayesian priors, never frequentist tests, for poker frequency analysis | `bayesianConfidence.js` Beta-Binomial intervals |
-| INV-12 | `ACTIONS.*` constants used for all action recording | `gameConstants.js` is single source |
-
-### 4.2 MUST Never Happen
-
-| ID | Anti-Invariant | Risk If Violated |
-|----|---------------|-----------------|
-| NEV-01 | Direct state mutation outside reducers | Silent corruption, render desyncs |
-| NEV-02 | IndexedDB migration that drops data without backup | Permanent user data loss |
-| NEV-03 | Position labels used as decision model inputs (e.g., `if (pos === 'EP') fold *= 1.05`) | Double-counting, theoretically wrong exploits |
-| NEV-04 | Bucket labels used when per-combo equity is available | Precision loss in EV calculations |
-| NEV-05 | Style adjustments stacked on stats that define the style | Triple-counting behavioral signal |
-| NEV-06 | Weakness IDs carrying hero action labels | Conflation of analysis and recommendation layers |
-| NEV-07 | z-tests or frequentist hypothesis testing on poker frequencies | Wrong confidence intervals with small samples |
-| NEV-08 | Hardcoded seat numbers (use `SEAT_ARRAY`, `CONSTANTS.NUM_SEATS`) | Breaks if seat count ever changes |
-| NEV-09 | `foldPct * potSize` without equity-when-called term | Overestimates bluffs, underestimates value bets |
-| NEV-10 | Synchronous IndexedDB access on main thread | UI freezes on large datasets |
+13 MUST-be-true invariants (INV-01 through INV-13) and 11 MUST-never-happen anti-invariants (NEV-01 through NEV-11). Key examples: actionSequence ordering (INV-01), style-labels-as-outputs (INV-07), no circular imports (INV-08), stableSoftmax for all Math.exp (INV-13), no position-label inputs (NEV-03), no innerHTML without escapeHtml (NEV-11).
 
 ---
 
@@ -181,6 +161,8 @@ New player observed → populationPriors.js creates default profile
 | IndexedDB migrations (`database.js`, `migrations.js`) | Schema change drops/corrupts data | Medium | **Critical** — permanent data loss | Versioned migrations, backup before destructive ops |
 | `bayesianUpdater.js` | Numerical instability (underflow/overflow in log-likelihood) | Low | High — corrupted range profiles | Clamping, normalization after each update |
 | `gameTreeEvaluator.js` | Combinatorial explosion in depth-2/3 branches | Medium | Medium — UI freeze or timeout | Time budget (`timeBudgetMs`), depth bailout, combo limit |
+| `gameTreeEvaluator.js` | Softmax overflow in mixed strategy (Math.exp on small temperature) | Low | Medium — NaN mixFrequency, corrupted recommendations | Resolved RT-12: `stableSoftmax()` in `mathUtils.js` |
+| `popup.js` | innerHTML without escaping (connId, state fields) | Low | Medium — XSS in extension context | Resolved RT-15: all values wrapped in `escapeHtml()` |
 | `useShowdownCardSelection.js` | Auto-advance logic with multiple players + partial card entry | High | Medium — wrong card assignments | Extensive edge case tests |
 | `useSessionPersistence.js` | Hydration race condition (load before DB init) | Low | High — lost session data | `isInitialized` guard, retry logic |
 | `foldEquityCalculator.js` | 8 multiplicative adjustments compounding to extreme values | Medium | Medium — absurd fold% predictions | Intermediate sanity clamp [0.10, 0.85] (INV 26.2) |
@@ -292,7 +274,7 @@ New player observed → populationPriors.js creates default profile
 
 ### 9.2 What We Can See
 
-- Test suite: ~2,800 tests catch functional regressions
+- Test suite: ~5,400+ tests catch functional regressions
 - Manual visual verification via dev server
 - Git history for change tracking
 - `smart-test-runner.sh` for pre-commit validation
@@ -314,14 +296,21 @@ New player observed → populationPriors.js creates default profile
 
 ## 11. Decision Log
 
+Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. This log captures decisions from 2026 onward. New decisions go here, not as new ADR files.
+
 | Date | Decision | Rationale | Alternatives Considered |
 |------|----------|-----------|------------------------|
+| 2024 | useReducer for state management | Complex interdependent state; avoids Redux boilerplate | Redux (rejected: overkill), useState (rejected: too simple). See `docs/adr/ADR-001` |
+| 2024 | IndexedDB for persistence | Large datasets, structured data, no server needed | localStorage (rejected: 5MB limit), SQLite (rejected: no browser support). See `docs/adr/ADR-002` |
+| 2024 | Context API for cross-component state | Avoids prop drilling; fits reducer pattern | Redux (rejected: redundant with useReducer), Zustand (rejected: extra dep). See `docs/adr/ADR-003` |
+| 2024 | Vitest for testing | Fast, Vite-native, ESM support | Jest (rejected: slow transforms), Playwright (rejected: different scope). See `docs/adr/ADR-004` |
 | 2026-03-08 | Bayesian over frequentist for all poker analysis | Small samples, non-normal distributions, informative priors available | z-tests (rejected: wrong assumptions) |
 | 2026-03-24 | 3-layer analysis pipeline (stats → tendencies → exploits) | Separation of concerns; each layer testable independently | Monolithic analyzer (rejected: untestable) |
 | 2026-03-24 | Game tree evaluator as sole source of hero recommendations | Ensures EV-backed advice; prevents weakness→action shortcuts | WEAKNESS_EXPLOIT_MAP (removed: theoretically unsound) |
 | 2026-03-27 | Villain model 5-layer priority hierarchy | Higher-fidelity data supersedes lower; prevents double-counting | Flat weighted average (rejected: double-counts) |
 | 2026-03-29 | Rake threaded through entire EV pipeline | Rake changes EV materially at low stakes; can't be bolted on | Post-hoc rake adjustment (rejected: wrong EV) |
 | 2026-03-31 | Stratified flop sampling replaces flat realization constants | 0.70/0.85 was too coarse; archetype-weighted is calibratable | Per-hand exact rollout (rejected: too slow) |
+| 2026-04-04 | Confirmed circular import: foldEquityCalculator ↔ villainDecisionModel | fitFoldCurveParams creates bidirectional dependency; RT-16 to extract into standalone module | Leave as-is (rejected: fragile init order) |
 
 ---
 

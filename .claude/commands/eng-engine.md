@@ -21,10 +21,13 @@ Before dispatching agents, read these to understand current state:
 
 1. `.claude/context/SYSTEM_MODEL.md` — full system model (architecture, invariants, risks)
 2. `.claude/context/SYSTEM_MODEL_PROTOCOL.md` — update rules and persona integration
-3. `CLAUDE.md` (root) — rules, patterns, commands
-4. `.claude/BACKLOG.md` — current work items and priorities
-5. Run `git log --oneline -20` — recent trajectory
-6. Run `git diff --stat HEAD~5` — recent change surface area
+3. `.claude/context/INVARIANTS.md` — invariant catalog with verification dates
+4. `CLAUDE.md` (root) — rules, patterns, commands
+5. `.claude/BACKLOG.md` — current work items and priorities
+6. All files in `.claude/programs/` — current program health state
+7. All files in `.claude/failures/` — known failure modes to check against
+8. Run `git log --oneline -20` — recent trajectory
+9. Run `git diff --stat HEAD~5` — recent change surface area
 
 If focus area targets `exploitEngine/` or `rangeEngine/`, also read `.claude/context/POKER_THEORY.md` and the sub-directory `CLAUDE.md`.
 
@@ -101,14 +104,31 @@ All items start as **REVIEW** status. Items move to NEXT only after the owner ex
 
 Apply any System Model updates proposed by the facilitator (new invariants, failure surfaces, coupling entries, decision log entries) to `.claude/context/SYSTEM_MODEL.md`. Bump version and timestamp.
 
-### 5c. Update STATUS.md
+### 5c. Update Program Health
+
+Read each file in `.claude/programs/`. For each program:
+1. Evaluate health criteria against current code state (grep for violations, check test counts, etc.)
+2. Update `Status` (GREEN/YELLOW/RED) and `Last assessed` date
+3. If any auto-backlog trigger condition is met, add a REVIEW item to BACKLOG.md
+4. Append a row to the program's History table
+
+### 5e. Update STATUS.md
 
 Update `.claude/STATUS.md`:
 - Add count of new findings to "Pending Review" section
 - Note the date and severity breakdown
 - Flag any P0 items in Alerts section
 
-### 5d. Update Recommended Execution Order
+### 5f. Append Health Snapshot
+
+Append a new entry to `.claude/health-snapshots.json` capturing current metrics:
+- Run tests to get count and pass rate
+- Count backlog items by status
+- Read program health from `.claude/programs/*.md`
+- Count stale docs (past their threshold)
+- Count open failure modes in `.claude/failures/`
+
+### 5g. Update Recommended Execution Order
 
 Update the execution order block in BACKLOG.md to include the new findings.
 

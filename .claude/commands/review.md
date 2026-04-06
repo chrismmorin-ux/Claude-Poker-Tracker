@@ -20,7 +20,7 @@ If no scope specified, review all uncommitted changes.
 
 2. Read `CLAUDE.md` for project patterns
 
-3. Check changes against SYSTEM_MODEL.md §4 invariants (INV-* and NEV-*)
+3. Check changes against `.claude/context/INVARIANTS.md` (INV-* and NEV-*)
 
 4. Apply the code review checklist
 

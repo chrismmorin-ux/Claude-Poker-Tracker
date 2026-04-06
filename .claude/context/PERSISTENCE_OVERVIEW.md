@@ -1,3 +1,9 @@
+---
+last-verified-against-code: 2026-03-23
+verified-by: manual
+staleness-threshold-days: 60
+---
+
 # Persistence Overview
 **Version**: 1.2.0 | **Updated**: 2026-03-23
 

@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-04-04 by Claude
+Last updated: 2026-04-06 by Claude (governance overhaul Phase 1)
 
 ---
 
@@ -8,12 +8,13 @@ Last updated: 2026-04-04 by Claude
 
 | Session | Working On | Backlog Item | Files Touched | Started |
 |---------|-----------|--------------|---------------|---------|
-| pm-overhaul | Project management architecture | PM-1 | BACKLOG.md, STATUS.md, commands/, CLAUDE.md | 2026-04-04 |
+| governance-overhaul | Workflow governance overhaul (5-phase) | GOV-1 | STATUS.md, BACKLOG.md, SYSTEM_MODEL.md, programs/, failures/, commands/ | 2026-04-06 |
 
 ---
 
 ## Recently Completed
 
+- RT-1 through RT-5 — completed 2026-04-04 (refactor commit, NaN firewall, persistence flush, XSS fix, test coverage)
 - 28 (Reasoning Quality & UI Display) — completed 2026-03-31
 - 27 (Game Tree Accuracy) — completed 2026-03-29
 - 26 (Game Tree Calibration) — completed 2026-03-29
@@ -24,22 +25,21 @@ Last updated: 2026-04-04 by Claude
 
 ## Pending Review
 
-10 Engineering Roundtable findings (RT-1 through RT-10) — approved 2026-04-04, all NEXT status.
-
-**Top priority:** RT-1 (commit unstaged refactor), RT-2 (NaN firewall), RT-3 (flush pending save) — all P0.
+All R2 roundtable findings (RT-1 through RT-19) completed 2026-04-04.
+RT-6 through RT-10 also completed. CH-2 verified already resolved.
+Only RT-7 (mobile profiling — needs physical device) and RT-10 (Web Worker — deferred) remain NEXT.
 
 ---
 
 ## Alerts
 
-- 40+ uncommitted file changes in exploitEngine/ and hooks (risk of data loss — see RT-1)
-- Extension has unescaped quote characters in escapeHtml (XSS risk — see RT-4)
+_No active alerts. P0 items RT-11 and RT-12 resolved 2026-04-04._
 
 ---
 
 ## Project Health
 
-- **Tests:** ~4,500 passing across ~148 test files
+- **Tests:** ~5,400 passing across ~184 test files (+ 879 extension tests)
 - **Architecture:** v122 — React + Vite + Tailwind, mobile-optimized 1600x720
-- **Active backlog:** 17 NEXT items, 2 BLOCKED, 2 PAUSED
-- **Last eng-engine audit:** 2026-04-04 (10 findings)
+- **Active backlog:** 8 NEXT items, 2 BLOCKED, 2 PAUSED, 1 IN_PROGRESS (GOV-1)
+- **Last eng-engine audit:** 2026-04-04 R2 (19 findings: 17 archived, RT-7 + RT-10 remaining)

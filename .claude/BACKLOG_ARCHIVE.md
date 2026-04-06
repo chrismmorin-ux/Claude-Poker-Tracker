@@ -2,7 +2,7 @@
 
 Completed items moved from BACKLOG.md. Reference only — not loaded automatically.
 
-**Last archived:** 2026-04-04
+**Last archived:** 2026-04-06
 
 ---
 
@@ -145,3 +145,37 @@ All 8 items complete: default param fix (27.1), fold curve thresholds (27.2), ca
 ## 28. Reasoning Quality & UI Display (P1) — DONE
 
 All 10 items across 2 sessions complete. Session 1: blocker effects, breakeven fold%, model confidence, range/nut advantage, trap-aware probe, dynamic CR threshold. Session 2: confidence badge, fold curve tooltip, advantage badges, reasoning text. 24 new tests.
+
+---
+
+## Roundtable R2 Findings (2026-04-04) — DONE
+
+All 19 findings from eng-engine R2 audit. 17 completed 2026-04-04, RT-7 and RT-10 deferred to active backlog.
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-1 | P0 | Commit unstaged exploit engine refactor | 89 files committed (741a47c); 4,660 tests passing |
+| RT-2 | P0 | NaN firewall at EV pipeline boundaries | safeDiv() added, operator precedence fix, division guards; 13 new tests (6783133) |
+| RT-3 | P0 | Flush pending save on session persistence unmount | 3 hooks flush pending save on unmount via pendingSaveRef (b52cdbb) |
+| RT-4 | P1 | Extension escapeHtml quote escaping | `"` and `'` escaped; 879 extension tests pass (76bd54a) |
+| RT-5 | P1 | Test coverage for extracted game tree modules | 4 test files, 215 new tests (d61c908) |
+| RT-6 | P1 | Convert comboActionProbabilities to options object | 15→1 options + 16→1 options; 8 production + 22 test call sites updated |
+| RT-8 | P2 | TendencyContext per-seat memoization | useSeatTendency(playerId) selector with stable reference |
+| RT-9 | P2 | Add initDB onblocked handler | onblocked handler rejects with user-facing message |
+| RT-11 | P0 | Extension: downgrade chrome.storage.session | Removed UNTRUSTED access; refactored app-bridge to port pushes |
+| RT-12 | P0 | Stabilize softmax in game tree | stableSoftmax (log-sum-exp trick) in mathUtils.js; 10 new tests |
+| RT-13 | P1 | Verify calcFoldEquity formula | Verified correct — no fix needed |
+| RT-14 | P1 | Add confirmation guard to Reset Hand | window.confirm guard in CommandStrip.jsx |
+| RT-15 | P1 | Escape innerHTML in extension popup | All values wrapped in escapeHtml() |
+| RT-16 | P1 | Break foldEquityCalculator circular import | Already resolved — villainModelData.js is neutral hub |
+| RT-17 | P2 | Object.freeze villainModelData tables | deepFreeze on 11 exported objects |
+| RT-18 | P2 | Surface advice staleness in LiveAdviceBar | 5s clock + street mismatch; fading at 20s, STALE badge at 60s |
+| RT-19 | P2 | Test coverage for 6 untested modules | 6 test files, 502 new tests |
+
+---
+
+## CH Items (Code Health, 2026-04-04) — DONE
+
+| ID | Description | Resolution |
+|----|-------------|------------|
+| CH-2 | Reduce CommandStrip prop explosion | Verified already resolved — 2 props + 8 contexts |

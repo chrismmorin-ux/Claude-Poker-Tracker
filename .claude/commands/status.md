@@ -13,9 +13,11 @@ You are showing the project owner a clear, plain-English view of what's happenin
 
 1. Read `.claude/STATUS.md`
 2. Read ALL files in `.claude/handoffs/` to get live session data
-3. Run `git status` for uncommitted changes
-4. Run `git log --oneline -5` for recent commits
-5. Read `.claude/BACKLOG.md` for active item counts
+3. Read ALL files in `.claude/programs/` for program health
+4. Run `git status` for uncommitted changes
+5. Run `git log --oneline -5` for recent commits
+6. Read `.claude/BACKLOG.md` for active item counts
+7. If `.claude/health-snapshots.json` exists, read it for trend data
 
 6. Present the dashboard in this format:
 
@@ -48,18 +50,26 @@ BACKLOG SNAPSHOT
   Blocked: [count] items
   Paused: [count] items
 
+PROGRAM HEALTH
+  Security:        [GREEN/YELLOW/RED] — [one-line summary from program file]
+  Engine Accuracy: [GREEN/YELLOW/RED] — [one-line summary]
+  UI Quality:      [GREEN/YELLOW/RED] — [one-line summary]
+  Test Health:     [GREEN/YELLOW/RED] — [one-line summary]
+
 HEALTH
-  Tests: [last known count] passing
+  Tests: [last known count] passing [trend vs previous snapshot if available]
   Uncommitted files: [count from git status]
   Last eng-engine audit: [date]
+  Stale docs: [list any with last-verified-against-code > staleness-threshold-days]
 ```
 
 ### If "refresh":
 
 Same as above, but also:
 1. Check each ACTIVE handoff — if >6 hours old, flag as potentially stale
-2. Update `.claude/STATUS.md` with refreshed data
-3. Show any discrepancies between STATUS.md and actual handoff/backlog state
+2. Check `last-verified-against-code` frontmatter in all `.claude/context/*.md` files — flag any where today minus the date exceeds `staleness-threshold-days`
+3. Update `.claude/STATUS.md` with refreshed data
+4. Show any discrepancies between STATUS.md and actual handoff/backlog state
 
 ## Important
 

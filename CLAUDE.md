@@ -27,6 +27,8 @@ When starting any work session:
 Supporting references (unique detail not in System Model):
 - `STATE_SCHEMA.md` — reducer shapes
 - `PERSISTENCE_OVERVIEW.md` — IndexedDB API summary
+- `INVARIANTS.md` — standalone invariant catalog with verification dates
+- `CONSTRAINTS.md` — hard/soft constraints and assumptions
 - `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 
 ## Poker Analysis Guardrail
@@ -54,6 +56,7 @@ Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views,
 - **Read before writing** — understand existing code fully before modifying. Never edit a file you haven't read this session
 - **Don't be surprise-proactive** — take follow-up actions only when asked. Ask before adding anything beyond the immediate request
 - **Update the System Model** — after any architectural change, update `SYSTEM_MODEL.md` in the same session. Stale models cause wrong reasoning.
+- **Check failure library** — after fixing a non-trivial bug, check `.claude/failures/` for known failure modes. If it's new, create a failure file.
 
 ## Rules
 - ALL action recordings use `ACTIONS.*` constants (from `src/constants/gameConstants.js`)
@@ -86,7 +89,7 @@ Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views,
 - Scale: `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
 
 ## Testing
-- ~2,800 tests across ~148 test files (Vitest + fake-indexeddb)
+- ~5,400+ tests across ~184 test files (Vitest + fake-indexeddb)
 - Verify across views: Table, Showdown, Stats, Sessions, Players, Settings, Analysis, HandReplay, Tournament, Online
 
 ## Analytics Pipeline

@@ -11,11 +11,12 @@ $ARGUMENTS
 
 ## Review Process
 
-1. Read `.claude/context/SYSTEM_MODEL.md` for invariants, failure surfaces, and architectural decisions
-2. Read `CLAUDE.md` for rules and patterns
-3. Analyze the specified area (or full codebase if "full")
-4. Read relevant source files before making findings
-5. Verify proposed changes against §4 invariants and §4.2 anti-invariants
+1. Read `.claude/context/SYSTEM_MODEL.md` for architecture, failure surfaces, and decisions
+2. Read `.claude/context/INVARIANTS.md` for full invariant catalog (INV-* and NEV-*)
+3. Read `CLAUDE.md` for rules and patterns
+4. Analyze the specified area (or full codebase if "full")
+5. Read relevant source files before making findings
+6. Verify proposed changes against INVARIANTS.md
 
 ## Review Checklist
 

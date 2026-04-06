@@ -1,6 +1,6 @@
 ---
 description: View and manage the project backlog with multi-session claim tracking
-argument-hint: ["status" | "add <desc>" | "claim <id>" | "complete <id>" | "unclaim <id>" | "approve <id>" | "reject <id>" | "archive"]
+argument-hint: ["status" | "add <desc>" | "claim <id>" | "complete <id>" | "unclaim <id>" | "approve <id>" | "reject <id>" | "archive" | "sweep" | "prioritize"]
 ---
 
 # Backlog Command
@@ -103,6 +103,55 @@ Recommended next: [top unclaimed NEXT item by priority]
 1. Scan BACKLOG.md for any items that slipped through with DONE status
 2. Move them to BACKLOG_ARCHIVE.md
 3. Report count of items archived
+
+### If "sweep":
+
+Full backlog hygiene pass:
+
+1. **Archive DONE items**: Same as "archive" — move any DONE items to archive
+2. **Flag zombies**: Scan NEXT items. A "zombie" is an item that is:
+   - Status NEXT (not claimed, not blocked)
+   - Has been in the backlog for 90+ days (check creation date or last roundtable date)
+   - Not referenced by any active program in `.claude/programs/`
+3. **Report stale claims**: Check IN_PROGRESS items against `.claude/handoffs/`. If the claiming session's handoff is COMPLETE or missing, the claim is stale.
+4. **Output**:
+   ```
+   SWEEP RESULTS
+   =============
+   Archived: [N] DONE items moved to archive
+   Zombies flagged: [N] items (list with IDs and ages)
+   Stale claims: [N] items with dead session claims
+   
+   Recommended actions:
+   - [list of suggested unclaims or archival]
+   ```
+5. Do NOT auto-archive zombies — flag them for the founder to decide
+
+### If "prioritize":
+
+WSJF (Weighted Shortest Job First) scoring for all NEXT items:
+
+1. Read all NEXT items from BACKLOG.md
+2. For each item, assess and score (1-5):
+   - **Value**: How much does this improve the product for the user?
+   - **Urgency**: Does this get worse over time if ignored?
+   - **Risk reduction**: Does this prevent a failure or data loss?
+   - **Effort** (inverted: 5=trivial, 1=massive): How much work is this?
+3. Calculate WSJF = (Value + Urgency + Risk Reduction) / Effort
+4. Output sorted by WSJF score:
+   ```
+   PRIORITY RANKING (WSJF)
+   =======================
+   
+   #1 [ID] — Score: [N.N]
+      [Description]
+      Why: [plain-English explanation of why it ranks here]
+      Value: [N] | Urgency: [N] | Risk: [N] | Effort: [N]
+   
+   #2 [ID] — Score: [N.N]
+      ...
+   ```
+5. Write for a non-technical owner — explain scores in plain language
 
 ## Important
 
