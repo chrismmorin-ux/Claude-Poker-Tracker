@@ -21,6 +21,7 @@ export const GAME_ACTIONS = {
   CLEAR_STREET_ACTIONS: 'CLEAR_STREET_ACTIONS',
   CLEAR_SEAT_ACTIONS: 'CLEAR_SEAT_ACTIONS',
   UNDO_LAST_ACTION: 'UNDO_LAST_ACTION',
+  UNDO_BATCH: 'UNDO_BATCH',
   TOGGLE_ABSENT: 'TOGGLE_ABSENT',
   RESET_HAND: 'RESET_HAND',
   NEXT_HAND: 'NEXT_HAND',
@@ -156,6 +157,17 @@ const rawGameReducer = (state, action) => {
       return {
         ...state,
         actionSequence: newSequence,
+      };
+    }
+
+    case GAME_ACTIONS.UNDO_BATCH: {
+      const { afterIndex } = action.payload;
+      if (typeof afterIndex !== 'number' || afterIndex < 0 || afterIndex >= state.actionSequence.length) {
+        return state;
+      }
+      return {
+        ...state,
+        actionSequence: state.actionSequence.slice(0, afterIndex),
       };
     }
 

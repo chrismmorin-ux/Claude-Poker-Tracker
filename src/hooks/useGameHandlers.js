@@ -84,6 +84,13 @@ export const useGameHandlers = () => {
     });
   }, [dispatchGame]);
 
+  const undoBatch = useCallback((afterIndex) => {
+    dispatchGame({
+      type: GAME_ACTIONS.UNDO_BATCH,
+      payload: { afterIndex }
+    });
+  }, [dispatchGame]);
+
   const toggleAbsent = useCallback(() => {
     if (selectedPlayers.length === 0) return;
 
@@ -280,6 +287,7 @@ export const useGameHandlers = () => {
     recordSeatAction,
     clearSeatActions,
     undoLastAction,
+    undoBatch,
     toggleAbsent,
     clearStreetActions,
     openShowdownScreen,

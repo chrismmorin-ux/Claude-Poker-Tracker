@@ -56,8 +56,4 @@ html, body, #root {
   transform: scale(1.05);
 }
 
-/* Showdown auto-advance countdown bar */
-@keyframes countdown-shrink {
-  from { width: 100%; }
-  to { width: 0%; }
-}
+

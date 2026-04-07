@@ -85,6 +85,7 @@ export const CommandStrip = ({
     toggleAbsent,
     clearSeatActions,
     undoLastAction,
+    undoBatch,
     getRemainingSeats,
     restFold,
     checkAround,
@@ -125,8 +126,12 @@ export const CommandStrip = ({
   }, [getNextActionSeat, setSelectedPlayers]);
 
   // HE-2b: Orbit tap-ahead — tapping a position ahead auto-folds intermediate un-acted seats
+  // RT-26: Track undo point for batch undo
+  const orbitUndoPointRef = useRef(null);
+
   const handleOrbitTap = useCallback((targetSeat) => {
     if (currentStreet !== 'preflop') {
+      orbitUndoPointRef.current = null;
       setSelectedPlayers([targetSeat]);
       return;
     }
@@ -137,12 +142,17 @@ export const CommandStrip = ({
 
     // If target is behind or equal to current, or current not found, just select
     if (currentIdx === -1 || targetIdx === -1 || targetIdx <= currentIdx) {
+      orbitUndoPointRef.current = null;
       setSelectedPlayers([targetSeat]);
       return;
     }
 
+    // Save undo point before auto-folding
+    orbitUndoPointRef.current = actionSequence.length;
+
     // Auto-fold un-acted, non-folded seats between current and target
     const preflopEntries = actionSequence.filter(e => e.street === 'preflop');
+    let foldCount = 0;
     for (let i = currentIdx; i < targetIdx; i++) {
       const seat = order[i];
       const hasActed = preflopEntries.some(e => e.seat === seat);
@@ -151,10 +161,25 @@ export const CommandStrip = ({
           type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
           payload: { seat, action: 'fold' },
         });
+        foldCount++;
       }
     }
+    if (foldCount > 0) {
+      showInfo(`Folded ${foldCount} seat${foldCount > 1 ? 's' : ''}`);
+    }
     setSelectedPlayers([targetSeat]);
-  }, [currentStreet, dealerButtonSeat, absentSeats, getFirstActionSeat, actionSequence, dispatchGame, setSelectedPlayers]);
+  }, [currentStreet, dealerButtonSeat, absentSeats, getFirstActionSeat, actionSequence, dispatchGame, setSelectedPlayers, showInfo]);
+
+  // RT-26: Batch undo all orbit auto-folds at once
+  const handleUndo = useCallback((seat) => {
+    if (orbitUndoPointRef.current !== null) {
+      undoBatch(orbitUndoPointRef.current);
+      orbitUndoPointRef.current = null;
+      showInfo('Orbit folds undone');
+    } else {
+      undoLastAction(seat);
+    }
+  }, [undoBatch, undoLastAction, showInfo]);
 
   // Card management handlers (previously passed as props)
   const handleToggleHoleVisibility = useCallback(() => {
@@ -165,6 +190,7 @@ export const CommandStrip = ({
 
   // Orchestration handlers (previously passed as props from TableView)
   const handleStreetChange = useCallback((street) => {
+    orbitUndoPointRef.current = null;
     dispatchGame({ type: GAME_ACTIONS.SET_STREET, payload: street });
     if (street === 'showdown') {
       openShowdownScreen();
@@ -172,6 +198,7 @@ export const CommandStrip = ({
   }, [dispatchGame, openShowdownScreen]);
 
   const handleNextHand = useCallback(() => {
+    orbitUndoPointRef.current = null;
     const handNumber = (currentSession?.handCount || 0) + 1;
     nextHand();
     if (actionSequence.length > 0) {
@@ -183,6 +210,7 @@ export const CommandStrip = ({
   }, [currentSession, nextHand, actionSequence, showSuccess, showInfo, scheduleAutoSelect]);
 
   const handleResetHand = useCallback(() => {
+    orbitUndoPointRef.current = null;
     if (!window.confirm('Reset all actions for this hand?')) return;
     resetHand();
     showWarning('Hand reset');
@@ -615,7 +643,7 @@ export const CommandStrip = ({
         remainingCount={remainingCount}
         currentStreet={currentStreet}
         onClearSeat={clearSeatActions}
-        onUndo={undoLastAction}
+        onUndo={handleUndo}
         onDeselect={() => setSelectedPlayers([])}
         onToggleAbsent={toggleAbsent}
         onClearStreet={handleClearStreet}

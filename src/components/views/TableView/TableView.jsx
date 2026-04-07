@@ -22,6 +22,7 @@ import { CommandStrip } from './CommandStrip';
 import { RangeDetailPanel } from '../../ui/RangeDetailPanel';
 import { PotDisplay } from '../../ui/PotDisplay';
 import { useLiveEquity } from '../../../hooks/useLiveEquity';
+import { useEquityWorker } from '../../../contexts';
 import { EquityBadge } from '../../ui/EquityBadge';
 
 
@@ -190,7 +191,8 @@ export const TableView = ({ scale }) => {
     mRatioGuidance,
   } = useTournament();
 
-  // Live equity computation
+  // Live equity computation (offloaded to Web Worker when available)
+  const { computeEquity } = useEquityWorker();
   const liveEquity = useLiveEquity({
     holeCards,
     communityCards,
@@ -199,6 +201,7 @@ export const TableView = ({ scale }) => {
     actionSequence,
     tendencyMap,
     getSeatPlayer,
+    computeEquity,
   });
 
   // Range detail modal state

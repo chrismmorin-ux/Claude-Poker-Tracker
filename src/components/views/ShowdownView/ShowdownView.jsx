@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import {
   LAYOUT,
   ACTIONS,
@@ -158,32 +158,6 @@ export const ShowdownView = ({ scale }) => {
     return entry ? entry.seat : null;
   }, [actionSequence]);
 
-  // HE-2c: Auto-advance timer in quick mode after a winner is marked
-  const autoAdvanceTimer = useRef(null);
-  const [autoAdvanceCancelled, setAutoAdvanceCancelled] = useState(false);
-
-  useEffect(() => {
-    if (anyoneHasWon && showdownMode === 'quick' && !autoAdvanceCancelled) {
-      autoAdvanceTimer.current = setTimeout(() => {
-        handleNextHandFromShowdown();
-      }, 1500);
-      return () => clearTimeout(autoAdvanceTimer.current);
-    }
-  }, [anyoneHasWon, showdownMode, autoAdvanceCancelled, handleNextHandFromShowdown]);
-
-  // Reset cancelled flag when a new hand starts (anyoneHasWon goes false)
-  useEffect(() => {
-    if (!anyoneHasWon) setAutoAdvanceCancelled(false);
-  }, [anyoneHasWon]);
-
-  const handleCancelAutoAdvance = useCallback(() => {
-    if (autoAdvanceTimer.current) {
-      clearTimeout(autoAdvanceTimer.current);
-      autoAdvanceTimer.current = null;
-    }
-    setAutoAdvanceCancelled(true);
-  }, []);
-
   // Handler to highlight a slot
   const handleHighlightSlot = (seat, cardSlot) => {
     setHighlightedSeat(seat);
@@ -213,11 +187,10 @@ export const ShowdownView = ({ scale }) => {
           />
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-4 relative">
-            {/* HE-2c: Winner confirmation overlay with auto-advance countdown */}
-            {anyoneHasWon && showdownMode === 'quick' && !autoAdvanceCancelled && (
+            {/* Winner confirmation overlay — requires explicit tap to advance */}
+            {anyoneHasWon && showdownMode === 'quick' && (
               <div
-                onClick={handleCancelAutoAdvance}
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center cursor-pointer"
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center"
                 style={{ background: 'rgba(0, 0, 0, 0.5)' }}
               >
                 <div className="rounded-2xl px-12 py-8 text-center" style={{ background: 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)' }}>
@@ -227,10 +200,13 @@ export const ShowdownView = ({ scale }) => {
                   <div className="text-green-200 font-semibold mt-1" style={{ fontSize: '16px' }}>
                     {winnerSeat && getSeatPlayerName(winnerSeat) ? getSeatPlayerName(winnerSeat) : ''}
                   </div>
-                  <div className="mt-4 rounded-full overflow-hidden" style={{ height: '6px', background: 'rgba(255,255,255,0.3)', width: '200px' }}>
-                    <div style={{ height: '100%', background: '#fff', animation: 'countdown-shrink 1.5s linear forwards' }} />
-                  </div>
-                  <div className="text-green-200 mt-3" style={{ fontSize: '13px' }}>Tap to stay on showdown</div>
+                  <button
+                    onClick={handleNextHandFromShowdown}
+                    className="mt-6 px-8 py-3 rounded-full bg-white text-green-800 font-bold shadow-lg active:scale-95 transition-transform"
+                    style={{ fontSize: '18px', minWidth: '160px', minHeight: '48px' }}
+                  >
+                    Next Hand
+                  </button>
                 </div>
               </div>
             )}
