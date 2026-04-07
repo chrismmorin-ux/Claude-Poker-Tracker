@@ -2,8 +2,8 @@
 
 Status: GREEN
 Owner: eng-engine (failure-engineer + systems-architect personas)
-Last assessed: 2026-04-06
-Last verified against code: 2026-04-06
+Last assessed: 2026-04-07
+Last verified against code: 2026-04-07
 
 ---
 
@@ -21,8 +21,9 @@ Last verified against code: 2026-04-06
 
 ## Active Backlog Items
 
-- RT-7: Profile game tree on Galaxy A22 (mobile timing)
-- RT-10: Game tree Web Worker migration
+- RT-27: EquityWorker singleton context (blocks RT-31, RT-32)
+- RT-31: Thread equityFn through preflop path (completes RT-10)
+- RT-33: Extract foldEquityCalculator circular import (INV-08)
 
 ## Milestone Gates
 
@@ -48,3 +49,4 @@ Last verified against code: 2026-04-06
 | Date | Status | Notes |
 |------|--------|-------|
 | 2026-04-06 | GREEN | Initial assessment. NaN firewall, softmax stability, combo equity all resolved. Mobile profiling and Web Worker pending. |
+| 2026-04-07 | GREEN | R4 roundtable. Worker migration (RT-10) complete but dual-instantiation found (RT-27). Preflop path bypasses Worker (RT-31). Circular import tracked (RT-33). All runtime metrics remain GREEN. |

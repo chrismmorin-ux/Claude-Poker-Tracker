@@ -6,7 +6,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   TOURNAMENTS_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -26,7 +26,7 @@ import {
  */
 export const createTournament = async (config, sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const record = {
       sessionId,
       userId,
@@ -72,7 +72,7 @@ export const createTournament = async (config, sessionId, userId = GUEST_USER_ID
  */
 export const getTournamentBySessionId = async (sessionId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readonly');
       const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
@@ -99,7 +99,7 @@ export const getTournamentBySessionId = async (sessionId) => {
  */
 export const updateTournament = async (tournamentId, updates) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readwrite');
       const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
@@ -133,7 +133,7 @@ export const updateTournament = async (tournamentId, updates) => {
  */
 export const deleteTournament = async (tournamentId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readwrite');
       const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
@@ -160,7 +160,7 @@ export const deleteTournament = async (tournamentId) => {
  */
 export const getAllTournaments = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readonly');
       const store = tx.objectStore(TOURNAMENTS_STORE_NAME);

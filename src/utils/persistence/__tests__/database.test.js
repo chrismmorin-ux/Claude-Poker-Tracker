@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
+import { resetDBPool } from '../database';
 
 // Mock the errorHandler to suppress logs
 vi.mock('../../errorHandler', () => ({
@@ -34,6 +35,7 @@ import {
 describe('database initialization', () => {
   beforeEach(() => {
     // Reset IndexedDB between tests
+    resetDBPool();
     globalThis.indexedDB = new IDBFactory();
     // initDB uses window.indexedDB
     globalThis.window = { indexedDB: globalThis.indexedDB };

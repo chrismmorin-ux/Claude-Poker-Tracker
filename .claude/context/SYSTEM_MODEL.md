@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.2.0 | **Updated**: 2026-04-06 | **Owner**: Architecture Review
+**Version**: 1.4.0 | **Updated**: 2026-04-07 | **Owner**: Architecture Review (R4 roundtable)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -20,13 +20,13 @@ Read this before any multi-file change. Update after any architectural shift.
 |-----------|---------------|----------|
 | `PokerTracker.jsx` | State orchestration, context providers, view routing | Owns all reducer dispatches; views receive only `scale` prop |
 | 8 Reducers (`game`, `ui`, `card`, `session`, `player`, `settings`, `auth`, `tournament`) | State transitions | Pure functions, no side effects, no async |
-| 12 Context Providers | Cross-component state distribution | Each wraps one reducer + optional persistence hook |
-| 33 Hooks | Business logic, side effects, computed values | May read multiple contexts; never dispatch to foreign reducers |
+| 13 Context Providers | Cross-component state distribution | Each wraps one reducer + optional persistence hook |
+| 34 Hooks | Business logic, side effects, computed values | May read multiple contexts; never dispatch to foreign reducers |
 | 13 Views + Showdown | UI rendering | Receive `scale` only; pull state from contexts |
 | 40 UI Components | Reusable visual elements | Stateless or locally stateful; no context access |
 | `pokerCore/` (4 modules) | Shared poker primitives (cards, ranges, hand eval, board texture) | Imported by both engines; imports from neither |
 | `rangeEngine/` (9 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB |
-| `exploitEngine/` (32 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
+| `exploitEngine/` (41 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
 | `tournamentEngine/` (4 modules) | Blind levels, blind-out calc, dropout prediction | Reads tournament config; produces scheduling/projection data |
 | `persistence/` (11 modules) | IndexedDB v13, 7 stores, migrations | Sole interface to IndexedDB; all access through exported functions |
@@ -44,7 +44,7 @@ Hooks → exploitEngine → rangeEngine → pokerCore
         tournamentEngine (standalone)
 ```
 
-**Hard rule**: No upward dependency. `pokerCore` never imports from `rangeEngine`. `rangeEngine` never imports from `exploitEngine`. Views never import from utils directly (hooks mediate).
+**Hard rule**: No upward dependency. `pokerCore` never imports from `rangeEngine`. `rangeEngine` never imports from `exploitEngine`. Views never call stateful engine APIs or write to persistence directly. Read-only imports of pure functions and constants from utils are acceptable; hooks mediate all stateful access.
 
 ### 1.3 Extension ↔ App Boundary
 
@@ -167,6 +167,12 @@ New player observed → populationPriors.js creates default profile
 | `useSessionPersistence.js` | Hydration race condition (load before DB init) | Low | High — lost session data | `isInitialized` guard, retry logic |
 | `foldEquityCalculator.js` | 8 multiplicative adjustments compounding to extreme values | Medium | Medium — absurd fold% predictions | Intermediate sanity clamp [0.10, 0.85] (INV 26.2) |
 | Extension WebSocket capture | Ignition protocol changes without notice | High | High — extension stops working | Message validation, graceful degradation |
+| `usePlayerTendencies` | Full all-player recompute on any playerReducer dispatch; identity instability causes cascading re-renders | High | High — UI freeze at 50+ players, stale exploits during recompute | Per-player memoization (RT-28) |
+| `service-worker.js` onMessage/onConnect | sender.id validation resolved (RT-21, 2026-04-07) | — | — | Resolved |
+| `useEquityWorker.js` | Dual Worker instantiation (TableView + OnlineAnalysisContext each spawn one) | High | Medium — wasted mobile resources, no shared crash recovery | RT-27: singleton EquityWorkerContext |
+| `useEquityWorker.js` | `isWorkerReady` always returns false (ref read at render time, not reactive) | High | Low — functional impact nil since computeEquity works via ref | RT-29: reactive state |
+| `useLiveActionAdvisor.js` | `computeAllVillainRanges` called twice per cycle (lines 354, 436) — doubled range lookups | High | Low — ~5-10ms waste per compute cycle | RT-30: cache first call |
+| `preflopAdvisor.js` | Preflop MC path bypasses Worker — `handVsRange` called directly, not through `equityFn` | High | Medium — most frequent computation stays on main thread | RT-31: thread equityFn |
 
 ### 5.2 Complexity Hotspots (Cyclomatic)
 
@@ -194,6 +200,8 @@ New player observed → populationPriors.js creates default profile
 | Villain model confidence threshold (0.3) | `villainDecisionModel.js` | `comboActionProbabilities`, `gameTreeEvaluator.js` | Magic number gates which data source is used |
 | Toast context availability | `ToastContext` | Any hook calling `useToast()` | Silent failure if provider missing from tree |
 | Scale factor | `useScale` hook | All views via `scale` prop | CSS calculations break if scale is NaN/0 |
+| `validateTournament` shape contract | `wire-schemas.js` | `render-tiers.js`, `side-panel.js` | Accepts any object; rendering code assumes specific fields exist; malformed object causes silent display corruption |
+| Worker instance count | `useEquityWorker` (hook, not context) | Every call site | Each `useEquityWorker()` call creates a new Worker; no singleton enforcement. Adding a consumer silently adds another thread. |
 
 ### 6.2 Cross-Module Interactions
 
@@ -236,7 +244,7 @@ New player observed → populationPriors.js creates default profile
 |------|------------|----------|
 | Local app (same-origin) | Fully trusted | All state, all IndexedDB |
 | Firebase Auth | Trusted for identity | `uid` scopes all data; no server-side validation of hand data |
-| Ignition Extension | Semi-trusted | Message validation required; extension could send malformed data |
+| Ignition Extension | Semi-trusted | Message validation required; sender.id validation active (RT-21, resolved 2026-04-07) |
 | User input (card selection, notes, player names) | Untrusted | Rendered in React (XSS-safe by default); stored as-is in IndexedDB |
 
 ### 8.2 Data Exposure Risks
@@ -291,6 +299,9 @@ New player observed → populationPriors.js creates default profile
 | TD-03 | Magic number `0.3` for villain model confidence threshold | Low | Rapid iteration | Extract to named constant in config |
 | TD-04 | Monte Carlo fallback when combo distribution unavailable | Low | Legacy path | Expand combo distribution coverage |
 | TD-05 | No incremental range profile updates (full rewrite per hand) | Medium | Bayesian updater design | Delta updates to changed buckets only |
+| TD-06 | Layer boundary: 9 views import directly from engine utils | Low | Organic growth | Rule amended to allow pure/constant imports; prohibit stateful access |
+| TD-07 | `useEquityWorker` is a hook, not a context — every call site spawns a new Worker | Medium | RT-10 initial implementation | RT-27: extract to EquityWorkerContext |
+| TD-08 | Preflop MC path bypasses Worker (`handVsRange` called directly in `preflopAdvisor`) | Medium | RT-10 incomplete threading | RT-31: inject equityFn into preflop path |
 
 ---
 
@@ -311,6 +322,8 @@ Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. Thi
 | 2026-03-29 | Rake threaded through entire EV pipeline | Rake changes EV materially at low stakes; can't be bolted on | Post-hoc rake adjustment (rejected: wrong EV) |
 | 2026-03-31 | Stratified flop sampling replaces flat realization constants | 0.70/0.85 was too coarse; archetype-weighted is calibratable | Per-hand exact rollout (rejected: too slow) |
 | 2026-04-04 | Confirmed circular import: foldEquityCalculator ↔ villainDecisionModel | fitFoldCurveParams creates bidirectional dependency; RT-16 to extract into standalone module | Leave as-is (rejected: fragile init order) |
+| 2026-04-06 | Amend "views never import utils" rule to allow read-only pure function/constant imports | 9 existing violations are all read-only; strict mediation adds indirection for no safety benefit. Real invariant is no stateful engine access from views. | Strict ESLint enforcement (rejected: solo dev overhead exceeds benefit for read-only imports) |
+| 2026-04-07 | EquityWorker must be a singleton context, not a per-component hook | Multiple instantiations waste mobile threads; crash recovery and backpressure require centralized state | Keep as hook with dedup logic (rejected: fragile, no enforcement) |
 
 ---
 

@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
+import { resetDBPool } from '../database';
 
 // Mock the errorHandler to suppress logs during tests
 vi.mock('../../errorHandler', () => ({
@@ -60,6 +61,7 @@ const createValidHandData = (overrides = {}) => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
+  resetDBPool();
   globalThis.indexedDB = new IDBFactory();
   globalThis.window = { indexedDB: globalThis.indexedDB };
 });

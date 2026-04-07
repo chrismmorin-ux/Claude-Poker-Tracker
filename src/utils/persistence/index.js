@@ -14,7 +14,7 @@
 import { logger } from '../errorHandler';
 
 // Database initialization and constants
-export { initDB, GUEST_USER_ID } from './database';
+export { initDB, getDB, closeDB, resetDBPool, GUEST_USER_ID } from './database';
 
 /**
  * Creates a persistence logger for a module

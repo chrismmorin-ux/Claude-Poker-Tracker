@@ -113,3 +113,58 @@ export const initDB = async () => {
     };
   });
 };
+
+// =============================================================================
+// CONNECTION POOL (singleton cached connection)
+// =============================================================================
+
+let cachedDb = null;
+let dbPromise = null;
+
+/**
+ * Get a shared database connection. Returns cached connection if alive,
+ * otherwise opens a new one via initDB(). Never call db.close() on the
+ * returned connection — use closeDB() for explicit shutdown.
+ * @returns {Promise<IDBDatabase>}
+ */
+export const getDB = async () => {
+  if (cachedDb) return cachedDb;
+  if (dbPromise) return dbPromise;
+
+  dbPromise = initDB().then(db => {
+    cachedDb = db;
+    dbPromise = null;
+
+    db.onclose = () => { cachedDb = null; };
+    db.onversionchange = () => {
+      db.close();
+      cachedDb = null;
+    };
+
+    return db;
+  }).catch(err => {
+    dbPromise = null;
+    throw err;
+  });
+
+  return dbPromise;
+};
+
+/**
+ * Explicitly close the cached connection (for app unmount / test teardown).
+ */
+export const closeDB = () => {
+  if (cachedDb) {
+    cachedDb.close();
+    cachedDb = null;
+  }
+  dbPromise = null;
+};
+
+/**
+ * Reset pool state without closing (for test isolation with fake-indexeddb).
+ */
+export const resetDBPool = () => {
+  cachedDb = null;
+  dbPromise = null;
+};

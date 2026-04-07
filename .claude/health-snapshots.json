@@ -44,5 +44,65 @@
       "open_failure_modes": 3,
       "architecture_version": "v122"
     }
+  },
+  {
+    "date": "2026-04-06",
+    "source": "eng-engine-R3",
+    "metrics": {
+      "test_count": 5401,
+      "test_pass_rate": 1.0,
+      "test_files": 184,
+      "extension_tests": 879,
+      "backlog_next": 9,
+      "backlog_review": 7,
+      "backlog_blocked": 2,
+      "backlog_paused": 2,
+      "backlog_in_progress": 0,
+      "programs": {
+        "security": "YELLOW",
+        "engine-accuracy": "GREEN",
+        "ui-quality": "GREEN",
+        "test-health": "GREEN"
+      },
+      "stale_docs": 0,
+      "open_failure_modes": 5,
+      "architecture_version": "v122",
+      "roundtable_findings": {
+        "total": 7,
+        "P1": 2,
+        "P2": 4,
+        "P3": 1
+      }
+    }
+  },
+  {
+    "date": "2026-04-07",
+    "source": "eng-engine-R4",
+    "metrics": {
+      "test_count": 5401,
+      "test_pass_rate": 1.0,
+      "test_files": 184,
+      "extension_tests": 879,
+      "backlog_next": 0,
+      "backlog_review": 8,
+      "backlog_paused": 1,
+      "backlog_in_progress": 0,
+      "programs": {
+        "security": "GREEN",
+        "engine-accuracy": "GREEN",
+        "ui-quality": "GREEN",
+        "test-health": "GREEN"
+      },
+      "stale_docs": 0,
+      "open_failure_modes": 5,
+      "architecture_version": "v122",
+      "system_model_version": "1.4.0",
+      "roundtable_findings": {
+        "total": 8,
+        "P1": 2,
+        "P2": 4,
+        "P3": 2
+      }
+    }
   }
 ]

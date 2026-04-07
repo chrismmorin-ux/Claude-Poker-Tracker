@@ -6,7 +6,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   RANGE_PROFILES_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -23,7 +23,7 @@ import { serializeProfile, deserializeProfile } from '../rangeEngine/rangeProfil
  */
 export const saveRangeProfile = async (profile, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const serialized = serializeProfile(profile);
 
     return new Promise((resolve, reject) => {
@@ -41,9 +41,6 @@ export const saveRangeProfile = async (profile, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in saveRangeProfile:', error);
@@ -59,7 +56,7 @@ export const saveRangeProfile = async (profile, userId = GUEST_USER_ID) => {
  */
 export const getRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const profileKey = `${userId}_${playerId}`;
 
     return new Promise((resolve, reject) => {
@@ -81,9 +78,6 @@ export const getRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getRangeProfile:', error);
@@ -99,7 +93,7 @@ export const getRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
  */
 export const deleteRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const profileKey = `${userId}_${playerId}`;
 
     return new Promise((resolve, reject) => {
@@ -117,9 +111,6 @@ export const deleteRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in deleteRangeProfile:', error);
@@ -134,7 +125,7 @@ export const deleteRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
  */
 export const getAllRangeProfiles = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([RANGE_PROFILES_STORE_NAME], 'readonly');
@@ -152,9 +143,6 @@ export const getAllRangeProfiles = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getAllRangeProfiles:', error);

@@ -375,7 +375,43 @@ export const buildTournament = (tournament) => tournament || null;
 export const validateTournament = (tournament) => {
   if (tournament === null) return { valid: true, errors: [] };
   if (!isObj(tournament)) return { valid: false, errors: ['tournament must be an object or null'] };
-  return { valid: true, errors: [] };
+  const errors = [];
+  // Numeric fields rendered into innerHTML — type enforcement prevents string injection
+  if (tournament.heroMRatio !== undefined && tournament.heroMRatio !== null && !isNum(tournament.heroMRatio)) {
+    errors.push('heroMRatio must be a number or null');
+  }
+  if (tournament.playersRemaining !== undefined && !isNum(tournament.playersRemaining)) {
+    errors.push('playersRemaining must be a number');
+  }
+  if (tournament.totalEntrants !== undefined && !isNum(tournament.totalEntrants)) {
+    errors.push('totalEntrants must be a number');
+  }
+  if (tournament.currentLevelIndex !== undefined && !isNum(tournament.currentLevelIndex)) {
+    errors.push('currentLevelIndex must be a number');
+  }
+  if (tournament.progress !== undefined && tournament.progress !== null && !isNum(tournament.progress)) {
+    errors.push('progress must be a number or null');
+  }
+  if (tournament.heroStack !== undefined && !isNum(tournament.heroStack)) {
+    errors.push('heroStack must be a number');
+  }
+  if (tournament.avgStack !== undefined && !isNum(tournament.avgStack)) {
+    errors.push('avgStack must be a number');
+  }
+  // Object fields — shape check only (inner fields are accessed with optional chaining in renderer)
+  if (tournament.icmPressure !== undefined && tournament.icmPressure !== null) {
+    if (!isObj(tournament.icmPressure)) errors.push('icmPressure must be an object or null');
+    else if (tournament.icmPressure.zone !== undefined && !isStr(tournament.icmPressure.zone)) {
+      errors.push('icmPressure.zone must be a string');
+    }
+  }
+  if (tournament.currentBlinds !== undefined && tournament.currentBlinds !== null) {
+    if (!isObj(tournament.currentBlinds)) errors.push('currentBlinds must be an object or null');
+    else if ((!isNum(tournament.currentBlinds.sb) || !isNum(tournament.currentBlinds.bb))) {
+      errors.push('currentBlinds must have numeric sb and bb');
+    }
+  }
+  return { valid: errors.length === 0, errors };
 };
 
 // ============================================================================

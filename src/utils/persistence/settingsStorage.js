@@ -7,7 +7,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   SETTINGS_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -33,7 +33,7 @@ const getSettingsKey = (userId) => `settings_${userId || GUEST_USER_ID}`;
  */
 export const getSettings = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -59,9 +59,6 @@ export const getSettings = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getSettings:', error);
@@ -77,7 +74,7 @@ export const getSettings = async (userId = GUEST_USER_ID) => {
  */
 export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const settingsKey = getSettingsKey(userId);
 
     // Create record with userId-based key
@@ -103,9 +100,6 @@ export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in saveSettings:', error);
@@ -121,7 +115,7 @@ export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
  */
 export const updateSettings = async (updates, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -159,9 +153,6 @@ export const updateSettings = async (updates, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in updateSettings:', error);
@@ -191,7 +182,7 @@ export const resetSettings = async (userId = GUEST_USER_ID) => {
  */
 export const clearSettings = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const settingsKey = getSettingsKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -209,9 +200,6 @@ export const clearSettings = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in clearSettings:', error);

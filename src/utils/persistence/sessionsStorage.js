@@ -7,7 +7,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   STORE_NAME,
   SESSIONS_STORE_NAME,
   ACTIVE_SESSION_STORE_NAME,
@@ -40,7 +40,7 @@ const getActiveSessionKey = (userId) => `active_${userId || GUEST_USER_ID}`;
  */
 export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     const sessionRecord = {
       startTime: Date.now(),
@@ -82,9 +82,6 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in createSession:', error);
@@ -100,7 +97,7 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
  */
 export const endSession = async (sessionId, cashOut = null) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
@@ -139,9 +136,6 @@ export const endSession = async (sessionId, cashOut = null) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in endSession:', error);
@@ -156,7 +150,7 @@ export const endSession = async (sessionId, cashOut = null) => {
  */
 export const getActiveSession = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -181,9 +175,6 @@ export const getActiveSession = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getActiveSession:', error);
@@ -199,7 +190,7 @@ export const getActiveSession = async (userId = GUEST_USER_ID) => {
  */
 export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -225,9 +216,6 @@ export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in setActiveSession:', error);
@@ -242,7 +230,7 @@ export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
  */
 export const clearActiveSession = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
 
     return new Promise((resolve, reject) => {
@@ -260,9 +248,6 @@ export const clearActiveSession = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in clearActiveSession:', error);
@@ -277,7 +262,7 @@ export const clearActiveSession = async (userId = GUEST_USER_ID) => {
  */
 export const getAllSessions = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readonly');
@@ -298,9 +283,6 @@ export const getAllSessions = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getAllSessions:', error);
@@ -315,7 +297,7 @@ export const getAllSessions = async (userId = GUEST_USER_ID) => {
  */
 export const getSessionById = async (sessionId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readonly');
@@ -339,9 +321,6 @@ export const getSessionById = async (sessionId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getSessionById:', error);
@@ -356,7 +335,7 @@ export const getSessionById = async (sessionId) => {
  */
 export const deleteSession = async (sessionId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
@@ -373,9 +352,6 @@ export const deleteSession = async (sessionId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in deleteSession:', error);
@@ -391,7 +367,7 @@ export const deleteSession = async (sessionId) => {
  */
 export const updateSession = async (sessionId, updates) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
@@ -430,9 +406,6 @@ export const updateSession = async (sessionId, updates) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in updateSession:', error);
@@ -453,7 +426,7 @@ export const updateSession = async (sessionId, updates) => {
  */
 export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     const sessionRecord = {
       startTime: Date.now(),
@@ -504,7 +477,6 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
         // Resolve with sessionId after full transaction commits
         transaction.oncomplete = () => {
           log(`Session ${sessionId} created and set active atomically`);
-          db.close();
           resolve(sessionId);
         };
       };
@@ -515,13 +487,11 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
 
       transaction.onerror = (event) => {
         logError('Atomic createSession failed:', event.target.error);
-        db.close();
         reject(event.target.error);
       };
 
       transaction.onabort = (event) => {
         logError('Atomic createSession aborted:', event.target.error);
-        db.close();
         reject(event.target.error || new Error('Transaction aborted'));
       };
     });
@@ -541,7 +511,7 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
  */
 export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
     const activeKey = `active_${userId || GUEST_USER_ID}`;
 
     return new Promise((resolve, reject) => {
@@ -572,7 +542,6 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
 
         transaction.oncomplete = () => {
           log(`Session ${sessionId} ended and active marker cleared atomically`);
-          db.close();
           resolve();
         };
       };
@@ -583,13 +552,11 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
 
       transaction.onerror = (event) => {
         logError('Atomic endSession failed:', event.target.error);
-        db.close();
         reject(event.target.error);
       };
 
       transaction.onabort = (event) => {
         logError('Atomic endSession aborted:', event.target.error);
-        db.close();
         reject(event.target.error || new Error('Transaction aborted'));
       };
     });
@@ -606,7 +573,7 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
  */
 export const getSessionHandCount = async (sessionId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -625,9 +592,6 @@ export const getSessionHandCount = async (sessionId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getSessionHandCount:', error);
@@ -650,7 +614,7 @@ export const getSessionHandCount = async (sessionId) => {
  */
 export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     // Look for existing session with this tableId
     return new Promise((resolve, reject) => {
@@ -685,7 +649,6 @@ export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) 
         createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
       }
 
-      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     logError('Error in getOrCreateOnlineSession:', error);

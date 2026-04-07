@@ -6,7 +6,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   PLAYERS_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -31,13 +31,12 @@ import {
  */
 export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     // Check for duplicate name at DB level for this user
     if (playerData.name) {
       const existingPlayer = await getPlayerByNameInternal(db, playerData.name, userId);
       if (existingPlayer) {
-        db.close();
         throw new Error(`Player with name "${playerData.name}" already exists`);
       }
     }
@@ -75,9 +74,7 @@ export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in createPlayer:', error);
@@ -118,7 +115,7 @@ const getPlayerByNameInternal = (db, name, userId) => {
  */
 export const getAllPlayers = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
@@ -139,9 +136,7 @@ export const getAllPlayers = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in getAllPlayers:', error);
@@ -156,7 +151,7 @@ export const getAllPlayers = async (userId = GUEST_USER_ID) => {
  */
 export const getPlayerById = async (playerId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
@@ -180,9 +175,7 @@ export const getPlayerById = async (playerId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in getPlayerById:', error);
@@ -200,13 +193,12 @@ export const getPlayerById = async (playerId) => {
  */
 export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     // Check for duplicate name at DB level if name is being updated
     if (updates.name) {
       const existingPlayer = await getPlayerByNameInternal(db, updates.name, userId);
       if (existingPlayer && existingPlayer.playerId !== playerId) {
-        db.close();
         throw new Error(`Player with name "${updates.name}" already exists`);
       }
     }
@@ -248,9 +240,7 @@ export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) =>
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in updatePlayer:', error);
@@ -265,7 +255,7 @@ export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) =>
  */
 export const deletePlayer = async (playerId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');
@@ -282,9 +272,7 @@ export const deletePlayer = async (playerId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in deletePlayer:', error);
@@ -300,7 +288,7 @@ export const deletePlayer = async (playerId) => {
  */
 export const getPlayerByName = async (name, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
@@ -327,9 +315,7 @@ export const getPlayerByName = async (name, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+
     });
   } catch (error) {
     logError('Error in getPlayerByName:', error);

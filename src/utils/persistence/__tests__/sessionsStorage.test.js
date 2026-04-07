@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
+import { resetDBPool } from '../database';
 
 // Mock the errorHandler to suppress logs
 vi.mock('../../errorHandler', () => ({
@@ -73,6 +74,7 @@ const insertHandForSession = async (db, sessionId, userId = 'guest') => {
 
 describe('sessionsStorage', () => {
   beforeEach(() => {
+    resetDBPool();
     globalThis.indexedDB = new IDBFactory();
     globalThis.window = { indexedDB: globalThis.indexedDB };
   });

@@ -121,6 +121,12 @@ const updateBadge = (count) => {
 // ===========================================================================
 
 chrome.runtime.onConnect.addListener((port) => {
+  // RT-21: Reject connections from other extensions
+  if (port.sender?.id !== chrome.runtime.id) {
+    port.disconnect();
+    return;
+  }
+
   // --- CAPTURE PORT (content script → SW) ---
   if (port.name === 'ignition-capture') {
     capturePorts.add(port);
@@ -351,6 +357,9 @@ chrome.runtime.onConnect.addListener((port) => {
 // ===========================================================================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // RT-21: Reject messages from other extensions
+  if (sender.id !== chrome.runtime.id) return false;
+
   switch (message.type) {
     case MSG.GET_PIPELINE_STATUS: {
       (async () => {

@@ -727,3 +727,89 @@ describe('buildTournament', () => {
     expect(validateTournament(buildTournament(null)).valid).toBe(true);
   });
 });
+
+describe('validateTournament — field-level schema (RT-25)', () => {
+  it('accepts null', () => {
+    expect(validateTournament(null)).toEqual({ valid: true, errors: [] });
+  });
+
+  it('rejects non-object', () => {
+    expect(validateTournament('string').valid).toBe(false);
+    expect(validateTournament(42).valid).toBe(false);
+  });
+
+  it('accepts a well-formed tournament object', () => {
+    const t = {
+      heroMRatio: 8.5,
+      playersRemaining: 22,
+      totalEntrants: 120,
+      currentLevelIndex: 8,
+      currentBlinds: { sb: 200, bb: 400 },
+      heroStack: 6800,
+      avgStack: 10909,
+      icmPressure: { zone: 'approaching', playersFromBubble: 4 },
+      progress: 82,
+    };
+    expect(validateTournament(t)).toEqual({ valid: true, errors: [] });
+  });
+
+  it('accepts empty object (all fields optional)', () => {
+    expect(validateTournament({}).valid).toBe(true);
+  });
+
+  it('rejects string heroMRatio', () => {
+    const r = validateTournament({ heroMRatio: 'high' });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('heroMRatio must be a number or null');
+  });
+
+  it('accepts null heroMRatio', () => {
+    expect(validateTournament({ heroMRatio: null }).valid).toBe(true);
+  });
+
+  it('rejects string playersRemaining', () => {
+    const r = validateTournament({ playersRemaining: '22' });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('playersRemaining must be a number');
+  });
+
+  it('rejects string totalEntrants', () => {
+    const r = validateTournament({ totalEntrants: '120' });
+    expect(r.valid).toBe(false);
+  });
+
+  it('rejects string currentLevelIndex', () => {
+    const r = validateTournament({ currentLevelIndex: 'eight' });
+    expect(r.valid).toBe(false);
+  });
+
+  it('rejects string progress', () => {
+    const r = validateTournament({ progress: '82%' });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('progress must be a number or null');
+  });
+
+  it('rejects non-object icmPressure', () => {
+    const r = validateTournament({ icmPressure: 'high' });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('icmPressure must be an object or null');
+  });
+
+  it('rejects non-string icmPressure.zone', () => {
+    const r = validateTournament({ icmPressure: { zone: 123 } });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('icmPressure.zone must be a string');
+  });
+
+  it('rejects currentBlinds with non-numeric sb', () => {
+    const r = validateTournament({ currentBlinds: { sb: '200', bb: 400 } });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('currentBlinds must have numeric sb and bb');
+  });
+
+  it('collects multiple errors', () => {
+    const r = validateTournament({ heroMRatio: 'bad', playersRemaining: 'bad', progress: 'bad' });
+    expect(r.valid).toBe(false);
+    expect(r.errors.length).toBe(3);
+  });
+});

@@ -6,7 +6,7 @@
  */
 
 import {
-  initDB,
+  getDB,
   STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -37,7 +37,7 @@ import {
  */
 export const saveHand = async (handData, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     // Get active session to auto-link hand (for this user)
     const activeSession = await getActiveSession(userId);
@@ -97,9 +97,6 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in saveHand:', error);
@@ -114,7 +111,7 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
  */
 export const loadLatestHand = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -145,9 +142,6 @@ export const loadLatestHand = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in loadLatestHand:', error);
@@ -162,7 +156,7 @@ export const loadLatestHand = async (userId = GUEST_USER_ID) => {
  */
 export const loadHandById = async (handId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -186,9 +180,6 @@ export const loadHandById = async (handId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in loadHandById:', error);
@@ -203,7 +194,7 @@ export const loadHandById = async (handId) => {
  */
 export const getAllHands = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -224,9 +215,6 @@ export const getAllHands = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getAllHands:', error);
@@ -241,7 +229,7 @@ export const getAllHands = async (userId = GUEST_USER_ID) => {
  */
 export const getHandsBySessionId = async (sessionId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -260,9 +248,6 @@ export const getHandsBySessionId = async (sessionId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getHandsBySessionId:', error);
@@ -277,7 +262,7 @@ export const getHandsBySessionId = async (sessionId) => {
  */
 export const deleteHand = async (handId) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -294,9 +279,6 @@ export const deleteHand = async (handId) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in deleteHand:', error);
@@ -311,7 +293,7 @@ export const deleteHand = async (handId) => {
  */
 export const clearAllHands = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -351,9 +333,6 @@ export const clearAllHands = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in clearAllHands:', error);
@@ -372,7 +351,7 @@ export const clearAllHands = async (userId = GUEST_USER_ID) => {
  */
 export const getHandCount = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -391,9 +370,6 @@ export const getHandCount = async (userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
     });
   } catch (error) {
     logError('Error in getHandCount:', error);
@@ -432,7 +408,7 @@ export const handExists = async (handId) => {
  */
 export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     // Calculate sessionHandNumber
     let sessionHandNumber = null;
@@ -497,7 +473,6 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     logError('Error in saveOnlineHand:', error);
@@ -515,7 +490,7 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
  */
 export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
   try {
-    const db = await initDB();
+    const db = await getDB();
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
@@ -537,7 +512,6 @@ export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
         reject(event.target.error);
       };
 
-      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     logError('Error in getHandsBySource:', error);
