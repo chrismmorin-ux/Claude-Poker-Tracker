@@ -179,3 +179,14 @@ All 19 findings from eng-engine R2 audit. 17 completed 2026-04-04, RT-7 and RT-1
 | ID | Description | Resolution |
 |----|-------------|------------|
 | CH-2 | Reduce CommandStrip prop explosion | Verified already resolved — 2 props + 8 contexts |
+
+---
+
+## R4 Roundtable Items (2026-04-07) — DONE
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-27+ | P1 | Complete Worker migration (singleton + reactive state + preflop threading) | EquityWorkerContext at root, isWorkerReady useState, equityFn threaded through preflop |
+| RT-28 | P1 | FM-004 tendency cascade per-player memoization | Per-player cache keyed on {playerId}:{handCount}, selective invalidation |
+| RT-10 | P2 | Game tree Web Worker migration (Phase 1) | MC equity offloaded to equityWorker.js |
+| RT-26 | P3 | Orbit tap-ahead batch undo | UNDO_BATCH reducer action, orbitUndoPointRef in CommandStrip |
