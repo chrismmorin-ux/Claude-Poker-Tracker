@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * EquityWorkerContext.test.jsx - Tests for singleton equity Worker provider (RT-27)
+ * EquityWorkerContext.test.jsx - Tests for singleton equity Worker provider (RT-27, RT-32)
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -26,6 +26,12 @@ describe('EquityWorkerContext', () => {
     expect(result.current.isWorkerReady).toBe(false);
   });
 
+  it('provides isWorkerHealthy boolean', () => {
+    const { result } = renderHook(() => useEquityWorker(), { wrapper });
+    // No Worker support in jsdom → unhealthy
+    expect(result.current.isWorkerHealthy).toBe(false);
+  });
+
   it('throws when used outside provider', () => {
     expect(() => {
       renderHook(() => useEquityWorker());
@@ -37,5 +43,12 @@ describe('EquityWorkerContext', () => {
     const eq = await result.current.computeEquity([0, 1], new Float64Array(169), [], { trials: 500 });
     expect(eq).toHaveProperty('equity');
     expect(eq.equity).toBe(0.5);
+  });
+
+  it('exposes all three context values', () => {
+    const { result } = renderHook(() => useEquityWorker(), { wrapper });
+    expect(result.current).toHaveProperty('computeEquity');
+    expect(result.current).toHaveProperty('isWorkerReady');
+    expect(result.current).toHaveProperty('isWorkerHealthy');
   });
 });

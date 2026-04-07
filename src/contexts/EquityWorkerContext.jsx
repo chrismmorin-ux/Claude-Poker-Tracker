@@ -6,6 +6,7 @@
  * handVsRange when Workers are unavailable (SSR, test, CSP restriction).
  *
  * isWorkerReady is reactive (useState) so consumers can conditionally render.
+ * RT-32: Auto-restarts crashed Workers (max 3 attempts), exposes isWorkerHealthy.
  */
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -13,59 +14,108 @@ import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
 
 const EquityWorkerContext = createContext(null);
 
+const MAX_RESTARTS = 3;
+const RESTART_DELAY_MS = 100;
+const RAPID_CRASH_WINDOW_MS = 500;
+
 export const EquityWorkerProvider = ({ children }) => {
   const [isWorkerReady, setIsWorkerReady] = useState(false);
+  const [isWorkerHealthy, setIsWorkerHealthy] = useState(true);
   const workerRef = useRef(null);
   const pendingRef = useRef(new Map());
   const nextIdRef = useRef(0);
+  const restartCountRef = useRef(0);
+  const lastCrashTimeRef = useRef(0);
+  const restartTimerRef = useRef(null);
 
   useEffect(() => {
-    if (typeof Worker === 'undefined') return;
-
-    try {
-      const worker = new Worker(
-        new URL('../workers/equityWorker.js', import.meta.url),
-        { type: 'module' }
-      );
-
-      worker.onmessage = ({ data }) => {
-        const pending = pendingRef.current.get(data.id);
-        if (!pending) return;
-        pendingRef.current.delete(data.id);
-
-        if (data.error) {
-          pending.reject(new Error(data.error));
-        } else {
-          pending.resolve(data.result);
-        }
-      };
-
-      worker.onerror = (err) => {
-        for (const [, p] of pendingRef.current) {
-          p.reject(new Error(`Worker error: ${err.message}`));
-        }
-        pendingRef.current.clear();
-      };
-
-      workerRef.current = worker;
-      setIsWorkerReady(true);
-
-      return () => {
-        worker.terminate();
-        workerRef.current = null;
-        setIsWorkerReady(false);
-        for (const [, p] of pendingRef.current) {
-          p.reject(new Error('Worker terminated'));
-        }
-        pendingRef.current.clear();
-      };
-    } catch {
-      setIsWorkerReady(false);
+    if (typeof Worker === 'undefined') {
+      setIsWorkerHealthy(false);
+      return;
     }
+
+    const rejectAllPending = (message) => {
+      for (const [, p] of pendingRef.current) {
+        p.reject(new Error(message));
+      }
+      pendingRef.current.clear();
+    };
+
+    const createWorker = () => {
+      try {
+        const worker = new Worker(
+          new URL('../workers/equityWorker.js', import.meta.url),
+          { type: 'module' }
+        );
+
+        worker.onmessage = ({ data }) => {
+          const pending = pendingRef.current.get(data.id);
+          if (!pending) return;
+          pendingRef.current.delete(data.id);
+
+          if (data.error) {
+            pending.reject(new Error(data.error));
+          } else {
+            pending.resolve(data.result);
+          }
+        };
+
+        worker.onerror = (err) => {
+          rejectAllPending(`Worker error: ${err?.message || 'unknown'}`);
+
+          // Rapid crash detection: if two crashes within RAPID_CRASH_WINDOW_MS, count extra
+          const now = Date.now();
+          if (now - lastCrashTimeRef.current < RAPID_CRASH_WINDOW_MS) {
+            restartCountRef.current++;
+          }
+          lastCrashTimeRef.current = now;
+          restartCountRef.current++;
+
+          workerRef.current = null;
+          setIsWorkerReady(false);
+
+          if (restartCountRef.current <= MAX_RESTARTS) {
+            restartTimerRef.current = setTimeout(() => {
+              restartTimerRef.current = null;
+              createWorker();
+            }, RESTART_DELAY_MS);
+          } else {
+            setIsWorkerHealthy(false);
+          }
+        };
+
+        workerRef.current = worker;
+        setIsWorkerReady(true);
+        setIsWorkerHealthy(true);
+      } catch {
+        setIsWorkerReady(false);
+        setIsWorkerHealthy(false);
+      }
+    };
+
+    createWorker();
+
+    return () => {
+      if (restartTimerRef.current) {
+        clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = null;
+      }
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      setIsWorkerReady(false);
+      rejectAllPending('Worker terminated');
+    };
   }, []);
 
   const computeEquity = useCallback((heroCards, villainRange, board, options) => {
     if (!workerRef.current) {
+      if (!isWorkerHealthy) {
+        // Fallback to main-thread when worker permanently failed
+        return handVsRange(heroCards, villainRange, board, options);
+      }
+      // Worker temporarily down during restart — also fallback
       return handVsRange(heroCards, villainRange, board, options);
     }
 
@@ -79,12 +129,13 @@ export const EquityWorkerProvider = ({ children }) => {
         [rangeCopy.buffer]
       );
     });
-  }, []);
+  }, [isWorkerHealthy]);
 
   const value = useMemo(() => ({
     computeEquity,
     isWorkerReady,
-  }), [computeEquity, isWorkerReady]);
+    isWorkerHealthy,
+  }), [computeEquity, isWorkerReady, isWorkerHealthy]);
 
   return (
     <EquityWorkerContext.Provider value={value}>
