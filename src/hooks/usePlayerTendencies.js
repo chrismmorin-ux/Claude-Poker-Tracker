@@ -27,9 +27,16 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
   const [tendencyMap, setTendencyMap] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const lastHandCountRef = useRef(-1);
+  const allPlayersRef = useRef(allPlayers);
+  const lastPlayerHandCountsRef = useRef({});
+  const lastResultsRef = useRef({});
+
+  // Keep ref current without triggering recalculation
+  allPlayersRef.current = allPlayers;
 
   const calculate = useCallback(async () => {
-    if (!allPlayers || allPlayers.length === 0) {
+    const players = allPlayersRef.current;
+    if (!players || players.length === 0) {
       setTendencyMap({});
       return;
     }
@@ -38,7 +45,10 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
     try {
       // O(1) count check — skip expensive getAllHands if nothing changed
       const count = await getHandCount(userId);
-      if (count === lastHandCountRef.current) {
+      const prevResults = lastResultsRef.current;
+      const hasNewPlayers = players.some(p => !prevResults[p.playerId]);
+
+      if (count === lastHandCountRef.current && !hasNewPlayers) {
         setIsLoading(false);
         return;
       }
@@ -46,11 +56,37 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       const hands = await getAllHands(userId);
       lastHandCountRef.current = hands.length;
 
+      // Build per-player hand count map (single O(hands) pass)
+      const playerHandCounts = {};
+      for (const hand of hands) {
+        if (hand.seatPlayers) {
+          for (const pid of Object.values(hand.seatPlayers)) {
+            if (pid) playerHandCounts[pid] = (playerHandCounts[pid] || 0) + 1;
+          }
+        }
+      }
+
+      // Determine which players actually need recomputation
+      const prevCounts = lastPlayerHandCountsRef.current;
+      const changedPlayers = players.filter(p => {
+        const newCount = playerHandCounts[p.playerId] || 0;
+        const oldCount = prevCounts[p.playerId] || 0;
+        return newCount !== oldCount || !prevResults[p.playerId];
+      });
+
+      // If no players actually need recomputation, skip expensive DB reads
+      if (changedPlayers.length === 0) {
+        lastPlayerHandCountsRef.current = playerHandCounts;
+        setIsLoading(false);
+        return;
+      }
+
       // Batch-load all player records from DB (single transaction for briefing data)
       const dbPlayers = await getAllPlayersFromDB(userId);
       const dbPlayerMap = new Map(dbPlayers.map(p => [p.playerId, p]));
 
-      const entries = await Promise.all(allPlayers.map(async (player) => {
+      // Run pipeline ONLY for changed players
+      const freshEntries = await Promise.all(changedPlayers.map(async (player) => {
         try {
           // Try to use cached range profile
           let cachedRangeProfile = null;
@@ -120,22 +156,36 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
         }
       }));
 
-      setTendencyMap(Object.fromEntries(entries.filter(Boolean)));
+      // Merge: keep cached results for unchanged players, overlay fresh results
+      const activePlayerIds = new Set(players.map(p => p.playerId));
+      const merged = {};
+      for (const pid of activePlayerIds) {
+        if (prevResults[pid]) merged[pid] = prevResults[pid];
+      }
+      for (const entry of freshEntries.filter(Boolean)) {
+        merged[entry[0]] = entry[1];
+      }
+
+      // Update caches
+      lastPlayerHandCountsRef.current = playerHandCounts;
+      lastResultsRef.current = merged;
+      setTendencyMap(merged);
     } catch (error) {
       logger.error('PlayerTendencies', new AppError(
         ERROR_CODES.HOOK_FAILED,
         'Tendency batch calculation failed',
-        { playerCount: allPlayers.length, error: error.message }
+        { playerCount: allPlayersRef.current?.length || 0, error: error.message }
       ));
     } finally {
       setIsLoading(false);
     }
-  }, [allPlayers, userId]);
+  }, [userId]);
 
-  // Calculate on mount and when players change
+  // Recalculate on mount, userId change, or player list size change
+  const playerCount = allPlayers?.length || 0;
   useEffect(() => {
     calculate();
-  }, [calculate]);
+  }, [calculate, playerCount]);
 
   return { tendencyMap, setTendencyMap, isLoading, refresh: calculate };
 };
