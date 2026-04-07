@@ -353,6 +353,9 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = 
 
     // Compute all active villain ranges (preflop base)
     const allVillainRanges = computeAllVillainRanges(liveHandState, tendencyMap, dealerSeat);
+    // Cache preflop widths before any postflop narrowing mutates ranges
+    const preflopWidthMap = {};
+    for (const vr of allVillainRanges) preflopWidthMap[vr.seat] = rangeWidth(vr.range);
 
     try {
       let result;
@@ -433,12 +436,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = 
 
       if (!isCurrent(callId)) return;
 
-      // Assemble villainRanges wire data
-      // Compute original preflop range widths for narrowedFrom
-      const preflopRanges = computeAllVillainRanges(liveHandState, tendencyMap, dealerSeat);
-      const preflopWidthMap = {};
-      for (const pr of preflopRanges) preflopWidthMap[pr.seat] = rangeWidth(pr.range);
-
+      // Assemble villainRanges wire data (preflopWidthMap cached before narrowing)
       const villainRangesData = allVillainRanges.map((vr, i) => ({
         seat: vr.seat,
         position: vr.position,
