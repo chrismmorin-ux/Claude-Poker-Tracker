@@ -45,6 +45,13 @@ vi.mock('../../utils/persistence/database', () => ({
   GUEST_USER_ID: 'guest',
 }));
 
+vi.mock('../EquityWorkerContext', () => ({
+  useEquityWorker: () => ({
+    computeEquity: vi.fn(),
+    isWorkerReady: false,
+  }),
+}));
+
 const wrapper = ({ children }) => <OnlineAnalysisProvider>{children}</OnlineAnalysisProvider>;
 
 describe('OnlineAnalysisContext', () => {

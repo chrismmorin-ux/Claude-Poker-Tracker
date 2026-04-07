@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange as handVsRangeDirect } from '../utils/exploitEngine/monteCarloEquity';
 import { parseAndEncode, parseBoard } from '../utils/pokerCore/cardParser';
 import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { estimateFoldPct } from '../utils/exploitEngine/foldEquityCalculator';
@@ -35,6 +35,7 @@ export const useLiveEquity = ({
   actionSequence,
   tendencyMap,
   getSeatPlayer,
+  computeEquity,
 }) => {
   const [equity, setEquity] = useState(null);
   const [foldPct, setFoldPct] = useState(null);
@@ -134,7 +135,7 @@ export const useLiveEquity = ({
       setVillainName(villain.player.name || `Seat ${villain.seat}`);
       setVillainSeat(villain.seat);
 
-      handVsRange(heroEncoded, range, boardEncoded, { trials: 2000 })
+      (computeEquity || handVsRangeDirect)(heroEncoded, range, boardEncoded, { trials: 2000 })
         .then(result => {
           if (isCurrent(callId)) {
             setEquity(result.equity);

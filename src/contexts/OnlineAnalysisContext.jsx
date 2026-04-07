@@ -11,6 +11,7 @@ import { useSyncBridge } from './SyncBridgeContext';
 import { useOnlineSession } from './OnlineSessionContext';
 import { useOnlineAnalysis } from '../hooks/useOnlineAnalysis';
 import { useLiveActionAdvisor } from '../hooks/useLiveActionAdvisor';
+import { useEquityWorker } from './EquityWorkerContext';
 import { GUEST_USER_ID } from '../utils/persistence/database';
 
 const OnlineAnalysisContext = createContext(null);
@@ -22,7 +23,8 @@ export const OnlineAnalysisProvider = ({ children }) => {
   const { liveHandState, pushExploits, pushAdvice, isExtensionConnected } = useSyncBridge();
 
   const { tendencyMap, handCount, isLoading } = useOnlineAnalysis(selectedSessionId, userId);
-  const { advice, isComputing } = useLiveActionAdvisor(liveHandState, tendencyMap);
+  const { computeEquity } = useEquityWorker();
+  const { advice, isComputing } = useLiveActionAdvisor(liveHandState, tendencyMap, { equityFn: computeEquity });
 
   // Push exploit data to extension when analysis updates
   useEffect(() => {

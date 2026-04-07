@@ -17,7 +17,7 @@ import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { rangeWidth } from '../utils/pokerCore/rangeMatrix';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
-import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange as handVsRangeDirect } from '../utils/exploitEngine/monteCarloEquity';
 import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
 import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
 import {
@@ -78,14 +78,14 @@ export const computeAllVillainRanges = (liveHandState, tendencyMap, dealerSeat) 
  * Compute hero equity vs each villain's range in parallel.
  * Divides trial budget across villains (min 200 per villain).
  */
-const computeVillainEquities = async (heroCards, villainRangeEntries, board, baseTrials) => {
+const computeVillainEquities = async (heroCards, villainRangeEntries, board, baseTrials, equityFn = handVsRangeDirect) => {
   if (!villainRangeEntries.length) return { perVillain: [], multiway: null };
 
   const trialsPerVillain = Math.max(200, Math.floor(baseTrials / villainRangeEntries.length));
 
   const equityResults = await Promise.all(
     villainRangeEntries.map(({ range }) =>
-      handVsRange(heroCards, range, board, { trials: trialsPerVillain, minTrials: 100 })
+      equityFn(heroCards, range, board, { trials: trialsPerVillain, minTrials: 100 })
         .catch(() => null)
     )
   );
@@ -150,6 +150,7 @@ const buildPreflopAdvice = async ({
   liveHandState, heroSeat, targetSeat, dealerSeat,
   villainRange, encodedHero, adjustedPot,
   detectedSituation, playerStats, villainData, villainModel, rakeConfig,
+  equityFn,
 }) => {
   const { situation, villainAction, villainBet } = detectedSituation;
   const heroPosition = getRangePositionCategory(heroSeat, dealerSeat || 1);
@@ -172,7 +173,7 @@ const buildPreflopAdvice = async ({
   return computePreflopAdvice(
     villainRange, encodedHero, adjustedPot,
     villainAction, villainBet || 0, playerStats,
-    posCtx, villainModel, rakeConfig
+    posCtx, villainModel, rakeConfig, equityFn
   );
 };
 
@@ -184,7 +185,7 @@ const buildPostflopAdvice = async ({
   liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
   villainRange, encodedHero, adjustedPot,
   detectedSituation, playerStats, villainData, villainModel,
-  tendencyMap, dataQuality, sampleSize, rakeConfig,
+  tendencyMap, dataQuality, sampleSize, rakeConfig, equityFn,
 }) => {
   const { villainAction, villainBet } = detectedSituation;
   const communityCards = liveHandState.communityCards || [];
@@ -226,6 +227,7 @@ const buildPostflopAdvice = async ({
     opponentModels,
     contextHints,
     rakeConfig,
+    equityFn,
   });
 };
 
@@ -238,7 +240,7 @@ const buildPostflopAdvice = async ({
  * @param {Object} tendencyMap - From useOnlineAnalysis
  * @returns {{ advice: Object|null, isComputing: boolean }}
  */
-export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
+export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = {}) => {
   const [advice, setAdvice] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
   const lastComputeKey = useRef(null);
@@ -360,6 +362,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           liveHandState, heroSeat, targetSeat, dealerSeat,
           villainRange, encodedHero, adjustedPot,
           detectedSituation, playerStats, villainData, villainModel, rakeConfig,
+          equityFn,
         });
 
         // Store preflop ranges for persistence
@@ -371,7 +374,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
           liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
           villainRange, encodedHero, adjustedPot,
           detectedSituation, playerStats, villainData, villainModel,
-          tendencyMap, dataQuality, sampleSize, rakeConfig,
+          tendencyMap, dataQuality, sampleSize, rakeConfig, equityFn,
         });
         if (!result) return;
 
@@ -425,7 +428,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap) => {
       const visibleBoard = (communityCards || []).filter(c => c && c !== '');
       const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
       const { perVillain, multiway } = await computeVillainEquities(
-        encodedHero, allVillainRanges, encodedBoard, baseTrials
+        encodedHero, allVillainRanges, encodedBoard, baseTrials, equityFn
       );
 
       if (!isCurrent(callId)) return;

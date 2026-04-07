@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, lazy, Suspense } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
 import { useAppState } from './hooks/useAppState';
@@ -7,24 +7,24 @@ import { parseBlinds } from './utils/potCalculator';
 import { useUI, useAuth, useTournament } from './contexts';
 import { SCREEN } from './constants/uiConstants';
 import { useBackButton } from './hooks/useBackButton';
-// View components
-import { StatsView } from './components/views/StatsView';
+// Hot-path views — always in main bundle
 import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
-
-import { SessionsView } from './components/views/SessionsView';
-import { PlayersView } from './components/views/PlayersView';
-import { SettingsView } from './components/views/SettingsView';
-import { AnalysisView } from './components/views/AnalysisView';
-import { HandReplayView } from './components/views/HandReplayView';
-import { LoginView } from './components/views/LoginView';
-import { SignupView } from './components/views/SignupView';
-import { PasswordResetView } from './components/views/PasswordResetView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
-import { TournamentView } from './components/views/TournamentView';
-import { OnlineView } from './components/views/OnlineView';
-import { ExtensionPanel } from './components/views/OnlineView/ExtensionPanel';
+// Lazy-loaded views (RT-23: route-level code splitting)
+const StatsView = lazy(() => import('./components/views/StatsView').then(m => ({ default: m.StatsView })));
+const SessionsView = lazy(() => import('./components/views/SessionsView').then(m => ({ default: m.SessionsView })));
+const PlayersView = lazy(() => import('./components/views/PlayersView').then(m => ({ default: m.PlayersView })));
+const SettingsView = lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
+const AnalysisView = lazy(() => import('./components/views/AnalysisView').then(m => ({ default: m.AnalysisView })));
+const HandReplayView = lazy(() => import('./components/views/HandReplayView').then(m => ({ default: m.HandReplayView })));
+const LoginView = lazy(() => import('./components/views/LoginView').then(m => ({ default: m.LoginView })));
+const SignupView = lazy(() => import('./components/views/SignupView').then(m => ({ default: m.SignupView })));
+const PasswordResetView = lazy(() => import('./components/views/PasswordResetView').then(m => ({ default: m.PasswordResetView })));
+const TournamentView = lazy(() => import('./components/views/TournamentView').then(m => ({ default: m.TournamentView })));
+const OnlineView = lazy(() => import('./components/views/OnlineView').then(m => ({ default: m.OnlineView })));
+const ExtensionPanel = lazy(() => import('./components/views/OnlineView/ExtensionPanel').then(m => ({ default: m.ExtensionPanel })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -68,29 +68,42 @@ const ViewRouter = () => {
 
   const onReturnToTable = () => setCurrentScreen(SCREEN.TABLE);
 
-  // Auth screens
-  if (currentView === SCREEN.LOGIN) return <VEB viewName="Login" onReturnToTable={onReturnToTable}><LoginView scale={scale} /></VEB>;
-  if (currentView === SCREEN.SIGNUP) return <VEB viewName="Signup" onReturnToTable={onReturnToTable}><SignupView scale={scale} /></VEB>;
-  if (currentView === SCREEN.PASSWORD_RESET) return <VEB viewName="Password Reset" onReturnToTable={onReturnToTable}><PasswordResetView scale={scale} /></VEB>;
-
-  // Overlay screens (card selector is now inline on TableView)
+  // Showdown overlay — eagerly loaded, no Suspense needed
   if (isShowdownViewOpen) return <VEB viewName="Showdown" onReturnToTable={onReturnToTable}><ShowdownView scale={scale} /></VEB>;
 
-  // Main views — all with scale only
-  switch (currentView) {
-    case SCREEN.TABLE: return <VEB viewName="Table" onReturnToTable={onReturnToTable}><TableView scale={scale} /></VEB>;
-    case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} initialTab="review" /></VEB>;
-    case SCREEN.SESSIONS: return <VEB viewName="Sessions" onReturnToTable={onReturnToTable}><SessionsView scale={scale} /></VEB>;
-    case SCREEN.PLAYERS: return <VEB viewName="Players" onReturnToTable={onReturnToTable}><PlayersView scale={scale} /></VEB>;
-    case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
-    case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
-    case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
-    case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
-    case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
-    case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
-    case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-    default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-  }
+  // Table view — eagerly loaded hot path
+  if (currentView === SCREEN.TABLE) return <VEB viewName="Table" onReturnToTable={onReturnToTable}><TableView scale={scale} /></VEB>;
+
+  // All other views are lazy-loaded (RT-23)
+  return (
+    <Suspense fallback={
+      <div className="h-dvh bg-gray-900 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    }>
+      {(() => {
+        // Auth screens
+        if (currentView === SCREEN.LOGIN) return <VEB viewName="Login" onReturnToTable={onReturnToTable}><LoginView scale={scale} /></VEB>;
+        if (currentView === SCREEN.SIGNUP) return <VEB viewName="Signup" onReturnToTable={onReturnToTable}><SignupView scale={scale} /></VEB>;
+        if (currentView === SCREEN.PASSWORD_RESET) return <VEB viewName="Password Reset" onReturnToTable={onReturnToTable}><PasswordResetView scale={scale} /></VEB>;
+
+        // Main views
+        switch (currentView) {
+          case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} initialTab="review" /></VEB>;
+          case SCREEN.SESSIONS: return <VEB viewName="Sessions" onReturnToTable={onReturnToTable}><SessionsView scale={scale} /></VEB>;
+          case SCREEN.PLAYERS: return <VEB viewName="Players" onReturnToTable={onReturnToTable}><PlayersView scale={scale} /></VEB>;
+          case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
+          case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
+          case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
+          case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
+          case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
+          case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
+          case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
+          default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
+        }
+      })()}
+    </Suspense>
+  );
 };
 
 // =============================================================================

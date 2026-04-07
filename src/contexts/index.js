@@ -16,4 +16,5 @@ export { TournamentProvider, useTournament } from './TournamentContext';
 export { SyncBridgeProvider, useSyncBridge } from './SyncBridgeContext';
 export { OnlineSessionProvider, useOnlineSession } from './OnlineSessionContext';
 export { OnlineAnalysisProvider, useOnlineAnalysisContext } from './OnlineAnalysisContext';
+export { EquityWorkerProvider, useEquityWorker } from './EquityWorkerContext';
 export { TournamentBridge } from './TournamentBridge';
