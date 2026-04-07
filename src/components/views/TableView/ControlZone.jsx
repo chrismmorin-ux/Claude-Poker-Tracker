@@ -10,7 +10,7 @@ import { Undo2, SkipForward, RotateCcw } from 'lucide-react';
 
 export const ControlZone = ({
   singleSeat, actionArray, hasSeatSelected, remainingCount, currentStreet,
-  onClearSeat, onUndo, onDeselect, onToggleAbsent,
+  batchUndoCount = 0, onClearSeat, onUndo, onDeselect, onToggleAbsent,
   onClearStreet, onResetHand, onNextHand,
 }) => (
   <div style={{ background: 'var(--panel-surface)', borderTop: '1px solid var(--panel-border)' }}>
@@ -27,9 +27,9 @@ export const ControlZone = ({
         <button
           onClick={() => onUndo(singleSeat)}
           className="btn-press flex-1 rounded-lg font-semibold text-white flex items-center justify-center gap-1"
-          style={{ height: '48px', fontSize: '13px', background: '#854d0e' }}
+          style={{ height: '48px', fontSize: '13px', background: batchUndoCount > 0 ? '#92400e' : '#854d0e' }}
         >
-          <Undo2 size={14} /> Undo
+          <Undo2 size={14} /> {batchUndoCount > 0 ? `Undo ${batchUndoCount}` : 'Undo'}
         </button>
       </div>
     )}

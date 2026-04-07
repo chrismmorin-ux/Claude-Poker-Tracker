@@ -202,6 +202,100 @@ describe('gameReducer', () => {
     });
   });
 
+  describe('UNDO_BATCH', () => {
+    it('truncates actionSequence to afterIndex', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 2, action: 'fold', street: 'preflop', order: 2 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 3 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 1 },
+      });
+      expect(newState.actionSequence).toHaveLength(1);
+      expect(newState.actionSequence[0].seat).toBe(1);
+    });
+
+    it('afterIndex=0 removes all actions', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 2, action: 'call', street: 'preflop', order: 2 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 0 },
+      });
+      expect(newState.actionSequence).toHaveLength(0);
+    });
+
+    it('afterIndex = length - 1 removes only last action', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 2, action: 'call', street: 'preflop', order: 2 },
+        { seat: 3, action: 'raise', street: 'preflop', order: 3 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 2 },
+      });
+      expect(newState.actionSequence).toHaveLength(2);
+      expect(newState.actionSequence[1].seat).toBe(2);
+    });
+
+    it('returns same state for negative afterIndex', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: -1 },
+      });
+      expect(newState).toBe(state);
+    });
+
+    it('returns same state for afterIndex >= sequence length', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 1 },
+      });
+      expect(newState).toBe(state);
+    });
+
+    it('returns same state for non-numeric afterIndex', () => {
+      state.actionSequence = [
+        { seat: 1, action: 'fold', street: 'preflop', order: 1 },
+      ];
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 'bad' },
+      });
+      expect(newState).toBe(state);
+    });
+
+    it('handles orbit tap-ahead undo (multiple auto-folds)', () => {
+      // Simulate: 2 real actions, then 3 auto-fold orbit actions
+      state.actionSequence = [
+        { seat: 1, action: 'call', street: 'preflop', order: 1 },
+        { seat: 2, action: 'raise', street: 'preflop', order: 2 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 3 },
+        { seat: 4, action: 'fold', street: 'preflop', order: 4 },
+        { seat: 5, action: 'fold', street: 'preflop', order: 5 },
+      ];
+      // Undo point was set at index 2 (before auto-folds)
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.UNDO_BATCH,
+        payload: { afterIndex: 2 },
+      });
+      expect(newState.actionSequence).toHaveLength(2);
+      expect(newState.actionSequence[0].action).toBe('call');
+      expect(newState.actionSequence[1].action).toBe('raise');
+    });
+  });
+
   describe('TOGGLE_ABSENT', () => {
     it('adds seat to absent list', () => {
       const newState = gameReducer(state, {

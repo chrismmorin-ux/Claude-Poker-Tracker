@@ -642,6 +642,7 @@ export const CommandStrip = ({
         hasSeatSelected={hasSeatSelected}
         remainingCount={remainingCount}
         currentStreet={currentStreet}
+        batchUndoCount={orbitUndoPointRef.current !== null ? actionSequence.length - orbitUndoPointRef.current : 0}
         onClearSeat={clearSeatActions}
         onUndo={handleUndo}
         onDeselect={() => setSelectedPlayers([])}
