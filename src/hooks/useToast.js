@@ -27,7 +27,8 @@ export const useToast = () => {
       id,
       message,
       variant: options.variant || 'info',
-      duration: options.duration !== undefined ? options.duration : 4000
+      duration: options.duration !== undefined ? options.duration : 4000,
+      action: options.action || null, // { label: string, onClick: () => void }
     };
 
     setToasts(prev => [...prev, toast]);

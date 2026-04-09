@@ -46,3 +46,4 @@ _(none currently)_
 |------|--------|-------|
 | 2026-04-06 | GREEN | Initial assessment. ~5,400 tests, 100% pass rate, all engine modules covered. |
 | 2026-04-07 | GREEN | R4 roundtable. 5,401 tests, 184 files, 100% pass rate. New gap: no tests for useEquityWorker or equityWorker.js (tracked via RT-27 singleton context migration). |
+| 2026-04-07 | GREEN | R5 roundtable. 5,417 tests, 185 files, 100% pass rate. Integration test gap noted (view-level tests mock all contexts). No test for usePersistence unmount flush or migration cursor errors. |

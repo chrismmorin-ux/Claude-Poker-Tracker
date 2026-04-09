@@ -10,6 +10,7 @@ Pure poker utilities with zero dependencies on `rangeEngine/` or `exploitEngine/
 | `rangeMatrix.js` | 13×13 grid utilities, GTO preflop charts, combo math |
 | `handEvaluator.js` | 5-card hand ranking (high card through straight flush) |
 | `boardTexture.js` | Board wetness/connectedness/pairing classification |
+| `monteCarloEquity.js` | Monte Carlo hand-vs-range equity calculation (moved from exploitEngine/ in RT-35) |
 
 ## Rules
 

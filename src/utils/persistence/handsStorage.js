@@ -43,60 +43,64 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
     const activeSession = await getActiveSession(userId);
     const sessionId = activeSession?.sessionId || null;
 
-    // Calculate sessionHandNumber (1-based position within session)
-    let sessionHandNumber = null;
-    if (sessionId) {
-      const existingCount = await getSessionHandCount(sessionId);
-      sessionHandNumber = existingCount + 1;
-    }
-
-    // Generate handDisplayId for searching
-    // Format: "S{sessionId}-H{sessionHandNumber}" or "H{timestamp}" if no session
     const timestamp = Date.now();
-    const handDisplayId = sessionId
-      ? `S${sessionId}-H${sessionHandNumber}`
-      : `H${timestamp}`;
 
-    // Add metadata
-    const handRecord = {
-      ...handData,
-      timestamp,
-      version: '1.3.0', // Added userId for multi-user support
-      userId,
-      sessionId,
-      sessionHandNumber,  // 1-based index within session (null if no session)
-      handDisplayId,      // Searchable identifier
-    };
-
-    // Validate the complete hand record (after metadata is added)
-    const validation = validateHandRecord(handRecord);
-    if (!validation.valid) {
-      logValidationErrors('saveHand', validation.errors);
-      throw new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
-    }
-
+    // RT-39: Atomic count + add in single readwrite transaction to prevent TOCTOU race
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.add(handRecord);
 
-      request.onsuccess = (event) => {
-        const handId = event.target.result;
-        log(`Hand saved successfully (ID: ${handId}, displayId: ${handDisplayId})`);
-        resolve(handId);
-      };
+      // Step 1: Count existing hands in this session (within same transaction)
+      const resolveCount = (count) => {
+        const sessionHandNumber = sessionId ? count + 1 : null;
+        const handDisplayId = sessionId
+          ? `S${sessionId}-H${sessionHandNumber}`
+          : `H${timestamp}`;
 
-      request.onerror = (event) => {
-        logError('Failed to save hand:', event.target.error);
+        const handRecord = {
+          ...handData,
+          timestamp,
+          version: '1.3.0',
+          userId,
+          sessionId,
+          sessionHandNumber,
+          handDisplayId,
+        };
 
-        // Check for quota exceeded
-        if (event.target.error.name === 'QuotaExceededError') {
-          logError('Storage quota exceeded. Please clear old hands.');
+        const validation = validateHandRecord(handRecord);
+        if (!validation.valid) {
+          logValidationErrors('saveHand', validation.errors);
+          reject(new Error(`Invalid hand data: ${validation.errors.join(', ')}`));
+          return;
         }
 
-        reject(event.target.error);
+        // Step 2: Add hand in same transaction
+        const addRequest = objectStore.add(handRecord);
+        addRequest.onsuccess = (event) => {
+          const handId = event.target.result;
+          log(`Hand saved successfully (ID: ${handId}, displayId: ${handDisplayId})`);
+          resolve(handId);
+        };
+        addRequest.onerror = (event) => {
+          logError('Failed to save hand:', event.target.error);
+          if (event.target.error?.name === 'QuotaExceededError') {
+            logError('Storage quota exceeded. Please clear old hands.');
+          }
+          reject(event.target.error);
+        };
       };
 
+      if (sessionId) {
+        const index = objectStore.index('sessionId');
+        const countRequest = index.count(sessionId);
+        countRequest.onsuccess = (event) => resolveCount(event.target.result);
+        countRequest.onerror = (event) => {
+          logError('Failed to count session hands:', event.target.error);
+          reject(event.target.error);
+        };
+      } else {
+        resolveCount(0);
+      }
     });
   } catch (error) {
     logError('Error in saveHand:', error);

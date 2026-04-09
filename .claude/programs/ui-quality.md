@@ -1,9 +1,9 @@
 # Program: UI Quality
 
-Status: GREEN
+Status: RED
 Owner: eng-engine (product-ux-engineer + performance-engineer personas)
-Last assessed: 2026-04-07
-Last verified against code: 2026-04-07
+Last assessed: 2026-04-09 (R6)
+Last verified against code: 2026-04-09
 
 ---
 
@@ -21,11 +21,13 @@ Last verified against code: 2026-04-07
 
 ## Active Backlog Items
 
-- HE-2a: Prominent next-to-act display
-- HE-2b: Preflop Quick Entry mode
-- HE-2c: Showdown simplification
-- 12.4: Table-level exploit aggregation
+- RT-37: Next Hand confirmation guard (data loss prevention)
+- RT-36: React.memo for high-frequency components
 - ARCH-003: TableView at 594 lines (trigger: >700)
+- RT-43 (P1): Unified render scheduler for sidebar (4+ bypass paths cause display thrashing)
+- RT-44 (P1): Fix renderKey fingerprint (silent render skips)
+- RT-48 (P2): Stale advice visual indicator
+- RT-49 (P2): Preserve section collapse state across renders
 
 ## Milestone Gates
 
@@ -50,3 +52,5 @@ Last verified against code: 2026-04-07
 |------|--------|-------|
 | 2026-04-06 | GREEN | Initial assessment. Staleness indicator active, confirmation guards in place, design tokens centralized. Hand entry UX improvements pending. |
 | 2026-04-07 | GREEN | R4 roundtable. Orbit strip touch targets reported at 36px (below 44px threshold) — tracked via RT-34. window.confirm() modal for Reset Hand noted as UX concern under live-game stress. UNDO_BATCH edge cases tracked (RT-34). |
+| 2026-04-07 | GREEN | R5 roundtable. Zero React.memo across component tree (RT-36). Next Hand has no confirmation guard (RT-37). Exploit badge popovers lack viewport-aware positioning. All existing UI quality metrics remain GREEN. |
+| 2026-04-09 | RED | R6 roundtable. Extension sidebar display-thrashing: 4+ render paths bypass coordination, renderKey drops exploit updates, stale advice displayed as current after SW restart, section collapse state destroyed on every push. User reports sidebar unusable. 4 P1 + 2 P2 findings. |

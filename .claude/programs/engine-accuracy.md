@@ -2,7 +2,7 @@
 
 Status: GREEN
 Owner: eng-engine (failure-engineer + systems-architect personas)
-Last assessed: 2026-04-07
+Last assessed: 2026-04-07 (R5)
 Last verified against code: 2026-04-07
 
 ---
@@ -21,9 +21,10 @@ Last verified against code: 2026-04-07
 
 ## Active Backlog Items
 
-- RT-27: EquityWorker singleton context (blocks RT-31, RT-32)
-- RT-31: Thread equityFn through preflop path (completes RT-10)
-- RT-33: Extract foldEquityCalculator circular import (INV-08)
+- RT-35: Break handAnalysis → exploitEngine coupling (INV-08 fix)
+- RT-38: Fix adjustedRealization double-discount + add floor
+- RT-40: Worker restart counter reset after stability period
+- RT-41: Guard NaN from zero-weight drawCombos
 
 ## Milestone Gates
 
@@ -50,3 +51,4 @@ Last verified against code: 2026-04-07
 |------|--------|-------|
 | 2026-04-06 | GREEN | Initial assessment. NaN firewall, softmax stability, combo equity all resolved. Mobile profiling and Web Worker pending. |
 | 2026-04-07 | GREEN | R4 roundtable. Worker migration (RT-10) complete but dual-instantiation found (RT-27). Preflop path bypasses Worker (RT-31). Circular import tracked (RT-33). All runtime metrics remain GREEN. |
+| 2026-04-07 | GREEN | R5 roundtable. adjustedRealization double-discount in multiway (RT-38), NaN from zero-weight drawCombos (RT-41). Worker restart counter never resets (RT-40). handAnalysis→exploitEngine coupling violates INV-08 (RT-35). All runtime metrics GREEN. |

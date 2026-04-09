@@ -5,7 +5,7 @@
  * runout equity on full board, and lucky/unlucky assessment.
  */
 
-import { handVsRange } from '../exploitEngine/monteCarloEquity';
+import { handVsRange } from '../pokerCore/monteCarloEquity';
 import { parseBoard, parseAndEncode } from '../pokerCore/cardParser';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 

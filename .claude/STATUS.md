@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-04-07 by Claude (R4 sprint completion)
+Last updated: 2026-04-09 by Claude (R6 roundtable)
 
 ---
 
@@ -12,37 +12,32 @@ _No active sessions._
 
 ## Recently Completed
 
+- R5 sprint — 2026-04-07: all 8 roundtable findings resolved (RT-35 through RT-42)
 - R4 sprint — 2026-04-07: all 8 findings resolved (RT-27+ through RT-34)
-  - RT-27+ (P1): Worker singleton context + equity offloading
-  - RT-28 (P1): Tendency per-player memoization (FM-004)
-  - RT-30 (P2): Deduplicate computeAllVillainRanges
-  - RT-33 (P2): Extract circular import (INV-08 clean)
-  - RT-34 (P3): UNDO_BATCH edge case tests + UX indicator
-  - RT-32 (P3): Worker crash recovery + health check
-- R4 eng-engine roundtable — 2026-04-07 (8 findings: 2 P1, 4 P2, 2 P3)
-- RT-25 + CH-4 — completed 2026-04-07 (tournament validation schema, UIContext confirmed clean)
-- HE-2c, HE-2a, HE-2b — completed 2026-04-06 (showdown auto-advance, position-first display, orbit tap-ahead)
-- GOV-1 — completed 2026-04-06 (governance overhaul)
 
 ---
 
 ## Pending Review
 
-_No items pending review. R4 sprint fully resolved._
+**R6 Roundtable (2026-04-09)** — 8 findings focused on extension sidebar display-thrashing:
+- 4 P1: RT-43 (unified render scheduler), RT-44 (renderKey fix), RT-45 (STREET_RANK guard), RT-46 (XSS escapeHtml)
+- 2 P2: RT-47 (async handler fix), RT-48 (stale advice indicator), RT-49 (collapse state preservation)
+- 1 P3: RT-50 (transition timer fix)
 
 ---
 
 ## Alerts
 
-_No active alerts. All programs GREEN._
+- **UI Quality: RED** — Extension sidebar display-thrashing reported by user. 4+ render paths bypass coordination. Recurring issue (fixed in commits 7b95764, 8941b01, now back).
+- **Security: YELLOW** — Unescaped PID values in sidebar innerHTML (RT-46). Trivial fix pending.
 
 ---
 
 ## Project Health
 
-- **Tests:** 5,417 passing across 185 test files (+ 879 extension tests)
-- **Architecture:** v122 → SYSTEM_MODEL v1.4.0 — React + Vite + Tailwind, mobile-optimized 1600x720
-- **Programs:** Security GREEN, Engine Accuracy GREEN, UI Quality GREEN, Test Health GREEN
-- **Active backlog:** 0 NEXT, 0 REVIEW, 1 PAUSED
-- **Open failure modes:** 5 (FM-001 through FM-005)
-- **Last eng-engine audit:** 2026-04-07 R4 (8 findings — all resolved)
+- **Tests:** 5,422 passing across 185 test files (+ 955 extension tests)
+- **Architecture:** v122 → SYSTEM_MODEL v1.6.0 — React + Vite + Tailwind, mobile-optimized 1600x720
+- **Programs:** Security YELLOW, Engine Accuracy GREEN, UI Quality RED, Test Health GREEN
+- **Active backlog:** 0 NEXT, 8 REVIEW, 1 PAUSED
+- **Open failure modes:** 0 active (5 archived)
+- **Last eng-engine audit:** 2026-04-09 R6 (8 findings — pending review)

@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { handVsRange as handVsRangeDirect } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange as handVsRangeDirect } from '../utils/pokerCore/monteCarloEquity';
 import { parseAndEncode, parseBoard } from '../utils/pokerCore/cardParser';
 import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { estimateFoldPct } from '../utils/exploitEngine/foldEquityCalculator';

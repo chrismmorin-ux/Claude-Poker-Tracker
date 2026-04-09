@@ -317,6 +317,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
 
   const probeMessageListener = (event) => {
     if (event.source !== window) return;
+    if (event.origin !== window.location.origin) return; // RT-42: defense-in-depth origin check
     if (!event.data || event.data.channel !== CHANNEL) return;
 
     const { channel, ...data } = event.data;

@@ -17,7 +17,7 @@ import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { rangeWidth } from '../utils/pokerCore/rangeMatrix';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
-import { handVsRange as handVsRangeDirect } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange as handVsRangeDirect } from '../utils/pokerCore/monteCarloEquity';
 import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
 import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
 import {

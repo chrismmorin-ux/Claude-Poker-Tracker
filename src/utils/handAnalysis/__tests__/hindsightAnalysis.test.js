@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 
 // Mock the equity calculator before importing
-vi.mock('../../exploitEngine/monteCarloEquity', () => ({
+vi.mock('../../pokerCore/monteCarloEquity', () => ({
   handVsRange: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ vi.mock('../../pokerCore/cardParser', () => ({
 }));
 
 import { analyzeWithHindsight } from '../hindsightAnalysis';
-import { handVsRange } from '../../exploitEngine/monteCarloEquity';
+import { handVsRange } from '../../pokerCore/monteCarloEquity';
 
 const heroRange = new Float64Array(169).fill(1 / 169);
 

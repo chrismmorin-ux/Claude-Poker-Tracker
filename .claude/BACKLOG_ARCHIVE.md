@@ -2,7 +2,22 @@
 
 Completed items moved from BACKLOG.md. Reference only — not loaded automatically.
 
-**Last archived:** 2026-04-06
+**Last archived:** 2026-04-07
+
+---
+
+## R5 Sprint (2026-04-07) — ALL DONE
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-35 | P1 | Break handAnalysis → exploitEngine coupling (INV-08 fix) | Moved monteCarloEquity.js to pokerCore/. Injected 4 exploitEngine deps into replayAnalysis via deps param. |
+| RT-37 | P1 | Next Hand undo toast | Extended toast system with action buttons. 5s undo window restores game/card state + hand count. |
+| RT-36 | P2 | React.memo for SeatComponent | Added React.memo with custom comparator. Wrapped 2 callbacks in useCallback in TableView. |
+| RT-38 | P2 | Fix adjustedRealization double-discount + floor | Removed blanket r*=0.85 when opponentModels present. Added Math.max(r, 0.30) floor. 3 new tests. |
+| RT-39 | P2 | Atomic saveHand transaction (TOCTOU fix) | Combined count + add into single readwrite IDB transaction. |
+| RT-40 | P3 | Worker restart counter reset | Added 5-minute healthy timer that resets restartCountRef to 0. Cleared on crash/unmount. |
+| RT-41 | P3 | NaN guard for zero-weight drawCombos | Added isFinite guard on protectionBonus before adding to EV. |
+| RT-42 | P3 | Extension postMessage origin validation | Replaced '*' with window.location.origin in probe. Added event.origin check in capture listener. |
 
 ---
 
@@ -190,3 +205,7 @@ All 19 findings from eng-engine R2 audit. 17 completed 2026-04-04, RT-7 and RT-1
 | RT-28 | P1 | FM-004 tendency cascade per-player memoization | Per-player cache keyed on {playerId}:{handCount}, selective invalidation |
 | RT-10 | P2 | Game tree Web Worker migration (Phase 1) | MC equity offloaded to equityWorker.js |
 | RT-26 | P3 | Orbit tap-ahead batch undo | UNDO_BATCH reducer action, orbitUndoPointRef in CommandStrip |
+| RT-30 | P2 | Deduplicate computeAllVillainRanges call | computeAllVillainRanges called once per cycle; preflop widths cached |
+| RT-32 | P3 | Worker crash recovery and health check | Auto-restart (max 3, 100ms delay), rapid crash detection, isWorkerHealthy flag |
+| RT-33 | P2 | Extract foldEquityCalculator circular import | fitFoldCurveParams + logisticFoldResponse moved to villainModelData.js; INV-08 clean |
+| RT-34 | P3 | UNDO_BATCH edge case tests and UX indicator | 7 edge case tests; undo button shows batch count when orbit undo point active |

@@ -2,29 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 
 // Mock heavy dependencies
-vi.mock('../../exploitEngine/equityCalculator', () => ({
+vi.mock('../../pokerCore/monteCarloEquity', () => ({
   handVsRange: vi.fn().mockResolvedValue({ equity: 0.5 }),
 }));
 
-vi.mock('../../exploitEngine/postflopNarrower', () => ({
-  narrowByBoard: vi.fn((range) => new Float64Array(range)),
-}));
-
-vi.mock('../../exploitEngine/rangeSegmenter', () => ({
-  segmentRange: vi.fn(() => ({
-    buckets: {
-      nuts: { pct: 10 },
-      strong: { pct: 20 },
-      marginal: { pct: 30 },
-      draw: { pct: 15 },
-      air: { pct: 25 },
-    },
-  })),
-}));
-
-vi.mock('../../exploitEngine/decisionAccumulator', () => ({
-  buildSituationKey: vi.fn((...args) => args.join(':')),
-}));
+// RT-35: narrowByBoard, segmentRange, buildSituationKey, queryActionDistribution
+// are now injected via deps parameter — mock deps object provided in tests below
 
 vi.mock('../../pokerCore/boardTexture', () => ({
   analyzeBoardFromStrings: vi.fn(() => ({ texture: 'dry' })),
@@ -190,6 +173,21 @@ describe('initializeSeatRanges', () => {
 // ─── analyzeTimelineAction ──────────────────────────────────────────────────
 
 describe('analyzeTimelineAction', () => {
+  const mockDeps = {
+    narrowByBoard: vi.fn((range) => new Float64Array(range)),
+    segmentRange: vi.fn(() => ({
+      buckets: {
+        nuts: { pct: 10 },
+        strong: { pct: 20 },
+        marginal: { pct: 30 },
+        draw: { pct: 15 },
+        air: { pct: 25 },
+      },
+    })),
+    buildSituationKey: vi.fn((...args) => args.join(':')),
+    queryActionDistribution: vi.fn(() => ({ actions: {}, confidence: 0 })),
+  };
+
   const baseParams = {
     timeline: [
       { seat: '3', street: 'flop', action: 'bet', order: 1, amount: 10 },
@@ -207,6 +205,7 @@ describe('analyzeTimelineAction', () => {
     showdownCards: {},
     blindsPosted: { sb: 1, bb: 2 },
     results: [],
+    deps: mockDeps,
   };
 
   it('returns an analysis object with expected fields', async () => {

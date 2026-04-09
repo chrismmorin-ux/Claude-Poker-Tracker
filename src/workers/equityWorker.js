@@ -9,7 +9,7 @@
  *   OUT: { id, result } or { id, error }
  */
 
-import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange } from '../utils/pokerCore/monteCarloEquity';
 
 self.onmessage = ({ data }) => {
   const { id, heroCards, villainRange, board, options } = data;

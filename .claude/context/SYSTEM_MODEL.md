@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.4.0 | **Updated**: 2026-04-07 | **Owner**: Architecture Review (R4 roundtable)
+**Version**: 1.6.0 | **Updated**: 2026-04-09 | **Owner**: Architecture Review (R6 roundtable)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -45,6 +45,8 @@ Hooks → exploitEngine → rangeEngine → pokerCore
 ```
 
 **Hard rule**: No upward dependency. `pokerCore` never imports from `rangeEngine`. `rangeEngine` never imports from `exploitEngine`. Views never call stateful engine APIs or write to persistence directly. Read-only imports of pure functions and constants from utils are acceptable; hooks mediate all stateful access.
+
+**Resolved (RT-35, R5)**: `monteCarloEquity.js` moved to `pokerCore/` (pure MC equity math). 4 remaining exploitEngine symbols injected via `deps` parameter in `replayAnalysis.analyzeTimelineAction()`. `handAnalysis/` now imports zero symbols from `exploitEngine/`.
 
 ### 1.3 Extension ↔ App Boundary
 
@@ -173,6 +175,12 @@ New player observed → populationPriors.js creates default profile
 | `useEquityWorker.js` | `isWorkerReady` always returns false (ref read at render time, not reactive) | High | Low — functional impact nil since computeEquity works via ref | RT-29: reactive state |
 | `useLiveActionAdvisor.js` | `computeAllVillainRanges` called twice per cycle (lines 354, 436) — doubled range lookups | High | Low — ~5-10ms waste per compute cycle | RT-30: cache first call |
 | `preflopAdvisor.js` | Preflop MC path bypasses Worker — `handVsRange` called directly, not through `equityFn` | High | Medium — most frequent computation stays on main thread | RT-31: thread equityFn |
+| `gameTreeEquity.js` adjustedRealization | Double-discount when opponentModels present + uncapped multiway (`0.85^7 = 0.32`) | Medium | Medium — systematic "check" bias in multiway pots | RT-38: remove blanket 0.85 when models present, add floor 0.30 |
+| `handsStorage.js` saveHand | TOCTOU race: separate read/write transactions allow duplicate `sessionHandNumber` | Low | Low — duplicate display IDs in search/replay | RT-39: atomic single transaction |
+| `side-panel.js` render coordination | 4+ independent render entry points bypass debounce, produce partial-state display (recurring) | High | High — user sees inconsistent advice/exploits/tournament data | RT-43: unified render scheduler |
+| `side-panel.js` STREET_RANK guard | `STREET_RANK[undefined] ?? -1` accepts stale advice when liveContext is null | Medium | High — stale advice displayed as current after SW restart | RT-45: reject advice when liveContext null |
+| `side-panel.js` renderPidSummary | Unescaped PID strings in innerHTML (XSS in extension context) | Low | Medium — arbitrary HTML/JS in side panel | RT-46: escapeHtml wrapper |
+| `side-panel.js` handlePipelineStatus | Async handler yields to event loop; sync handlers mutate shared state during yield | Medium | Medium — inconsistent state at render time | RT-47: snapshot or re-read pattern |
 
 ### 5.2 Complexity Hotspots (Cyclomatic)
 
@@ -202,6 +210,9 @@ New player observed → populationPriors.js creates default profile
 | Scale factor | `useScale` hook | All views via `scale` prop | CSS calculations break if scale is NaN/0 |
 | `validateTournament` shape contract | `wire-schemas.js` | `render-tiers.js`, `side-panel.js` | Accepts any object; rendering code assumes specific fields exist; malformed object causes silent display corruption |
 | Worker instance count | `useEquityWorker` (hook, not context) | Every call site | Each `useEquityWorker()` call creates a new Worker; no singleton enforcement. Adding a consumer silently adds another thread. |
+| Analysis utility layer | `handAnalysis/replayAnalysis.js` | `exploitEngine/` (5 modules) | Violates documented dependency direction (INV-08); `handAnalysis` should not import from `exploitEngine` (RT-35) |
+| Render entry point count | `side-panel.js` push handlers | `renderUI` debounce intent | Adding a new push handler that calls a render function directly silently creates a new bypass of the coordinated render path |
+| STREET_RANK completeness | `handleAdvicePush` guard | Chrome MV3 SW lifecycle | SW restart nulls liveContext, making `STREET_RANK[undefined]=-1`, defeating the staleness guard; any new FSM state not in STREET_RANK bypasses the filter |
 
 ### 6.2 Cross-Module Interactions
 
@@ -233,6 +244,7 @@ New player observed → populationPriors.js creates default profile
 - **`usePlayerTendencies` recomputes all players**: No incremental update. At 500+ players, this blocks UI. Mitigation: memoize per-player, invalidate only on new hand for that player.
 - **Monte Carlo equity calculations**: `enrichWithEquity` runs 300 MC simulations per call. Skipped when `comboDistribution` available (Item 26.4). But falls back to MC for unknown distributions.
 - **Extension message passing**: Chrome's `runtime.sendMessage` is async but single-threaded. Burst hand imports from Ignition may queue.
+- **Zero React.memo across component tree**: Every gameReducer dispatch re-renders all mounted components including all 9 SeatComponents. On target device (Helio G80), adds measurable jank during rapid action recording. Mitigation: RT-36.
 
 ---
 
@@ -265,7 +277,46 @@ New player observed → populationPriors.js creates default profile
 
 ---
 
-## 9. Observability Gaps
+## 9. Constraints & Assumptions
+
+### 9.1 Hard Constraints (Cannot Change)
+
+| ID | Constraint | Source | Impact |
+|----|-----------|--------|--------|
+| HC-01 | Single active session assumption | Architecture design | No multi-user, no concurrent editing sessions |
+| HC-02 | IndexedDB only (no server) | Local-first design | No cloud sync without Firebase; all data on-device |
+| HC-03 | Chrome MV3 for extension | Browser requirement | No MV2 APIs, service worker lifecycle constraints |
+| HC-04 | Mobile-first 1600x720 | Target device (Samsung Galaxy A22 landscape) | All UI must fit this viewport; scale factor applied |
+| HC-05 | React + Vite + Tailwind stack | Established architecture | No server-side rendering, no SSR, client-only |
+| HC-06 | 9-handed game format | Poker game rules | CONSTANTS.NUM_SEATS = 9, SEAT_ARRAY = [1..9] |
+
+### 9.2 Soft Constraints (Could Change with Effort)
+
+| ID | Constraint | Effort to Change | Trigger to Revisit |
+|----|-----------|-----------------|-------------------|
+| SC-01 | 9-seat max | Medium (CONSTANTS.NUM_SEATS propagates widely) | If 6-max or heads-up tables needed |
+| SC-02 | Ignition-only extension | Large (protocol-specific WebSocket parsing) | If supporting PokerStars, GGPoker, etc. |
+| SC-03 | English-only UI | Medium (no i18n framework) | If non-English markets are a priority |
+| SC-04 | No server/API backend | Large (requires auth, hosting, data migration) | If multi-device sync or social features needed |
+| SC-05 | Bayesian-only analysis | Medium (analysis pipeline assumes Beta-Binomial) | If ML-based player modeling is explored |
+
+### 9.3 Assumptions (Believed True, Not Proven)
+
+| ID | Assumption | Risk if Wrong | How to Validate |
+|----|-----------|---------------|----------------|
+| A-01 | Users have < 500 tracked opponents | Performance degrades — getAllHands/usePlayerTendencies do full scans | Check largest IndexedDB player count in production |
+| A-02 | Game tree depth-2 is sufficient for most decisions | Sub-optimal advice in complex multi-street spots | Compare depth-2 vs depth-3 EV on benchmark hands |
+| A-03 | Population priors from Bayesian engine are reasonable starting points | Wrong initial range estimates for first ~10 hands vs a new player | Track showdown prediction accuracy over time |
+| A-04 | Users record actions during live play (not retrospectively) | UI optimized for real-time entry may frustrate post-session review | User behavior observation |
+| A-05 | Mobile Chrome on Android is the primary runtime | Desktop browser differences (viewport, touch, memory) may cause issues | Track user agent distribution if analytics added |
+| A-06 | IndexedDB quota (~50MB minimum guaranteed) is sufficient | Data loss if quota exceeded with no warning | Monitor via `navigator.storage.estimate()` |
+| A-07 | Game tree eval < 100ms on target device | UI jank during live play if evaluation is slow | RT-7 (physical device profiling) will validate |
+
+*Update when: new constraint discovered, assumption validated/invalidated, or soft constraint becomes hard/irrelevant.*
+
+---
+
+## 10. Observability Gaps
 
 ### 9.1 What We Cannot Currently See
 
@@ -279,6 +330,9 @@ New player observed → populationPriors.js creates default profile
 | Extension ↔ app sync status invisible | User doesn't know if extension is connected | Connection status indicator in UI |
 | IndexedDB storage usage unknown | No warning before hitting quota | `navigator.storage.estimate()` check |
 | Villain model confidence distribution | Don't know how many players have usable models | Aggregate confidence histogram in stats view |
+| No SW restart counter in diagnostics | Cannot measure frequency of sidebar 5-step flicker sequence | Add `sw_restart_count` to pipeline diagnostics |
+| No stale advice detection/logging | Cannot tell if user acted on stale data | Log advice age at render time; flag renders where age > 10s |
+| No render-cause tracing in side panel | Cannot debug which push handler triggered a specific render | Add render-reason tag to `scheduleRender()` calls |
 
 ### 9.2 What We Can See
 
@@ -290,7 +344,7 @@ New player observed → populationPriors.js creates default profile
 
 ---
 
-## 10. Technical Debt Register
+## 11. Technical Debt Register
 
 | ID | Debt | Severity | Origin | Resolution Path |
 |----|------|----------|--------|----------------|
@@ -302,10 +356,12 @@ New player observed → populationPriors.js creates default profile
 | TD-06 | Layer boundary: 9 views import directly from engine utils | Low | Organic growth | Rule amended to allow pure/constant imports; prohibit stateful access |
 | TD-07 | `useEquityWorker` is a hook, not a context — every call site spawns a new Worker | Medium | RT-10 initial implementation | RT-27: extract to EquityWorkerContext |
 | TD-08 | Preflop MC path bypasses Worker (`handVsRange` called directly in `preflopAdvisor`) | Medium | RT-10 incomplete threading | RT-31: inject equityFn into preflop path |
+| TD-09 | ~~`handAnalysis` reverse-imports from `exploitEngine`~~ | ~~High~~ | Resolved RT-35 | monteCarloEquity moved to pokerCore, 4 symbols injected via deps |
+| TD-10 | ~~No React.memo anywhere in component tree~~ | ~~Medium~~ | Resolved RT-36 | SeatComponent wrapped in React.memo with custom comparator |
 
 ---
 
-## 11. Decision Log
+## 12. Decision Log
 
 Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. This log captures decisions from 2026 onward. New decisions go here, not as new ADR files.
 
@@ -324,26 +380,16 @@ Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. Thi
 | 2026-04-04 | Confirmed circular import: foldEquityCalculator ↔ villainDecisionModel | fitFoldCurveParams creates bidirectional dependency; RT-16 to extract into standalone module | Leave as-is (rejected: fragile init order) |
 | 2026-04-06 | Amend "views never import utils" rule to allow read-only pure function/constant imports | 9 existing violations are all read-only; strict mediation adds indirection for no safety benefit. Real invariant is no stateful engine access from views. | Strict ESLint enforcement (rejected: solo dev overhead exceeds benefit for read-only imports) |
 | 2026-04-07 | EquityWorker must be a singleton context, not a per-component hook | Multiple instantiations waste mobile threads; crash recovery and backpressure require centralized state | Keep as hook with dedup logic (rejected: fragile, no enforcement) |
+| 2026-04-07 | handAnalysis must not import from exploitEngine (R5 roundtable) | Bidirectional coupling violates dependency layers; shared utilities should live in pokerCore or a shared layer | Leave as-is (rejected: silent breakage path) |
 
 ---
 
 ---
 
-## 12. Roundtable Persona Reference
+## 13. Roundtable Persona Reference
 
-Seven personas analyze this system model during structured roundtables:
-
-| # | Persona | Focus | Primary Sections |
-|---|---------|-------|-----------------|
-| 1 | **SYSTEMS ARCHITECT** | Architecture, invariants, coupling, long-term structure | §1, §2, §3, §4, §6, §11 |
-| 2 | **SENIOR ENGINEER** | Implementation reality, maintainability, developer experience | §1.1, §3, §5, §6, §10 |
-| 3 | **FAILURE ENGINEER** | How the system breaks, edge cases, cascading failures | §5, §6, §7.2, §9 |
-| 4 | **PERFORMANCE ENGINEER** | Latency, scaling, resource efficiency | §7, §2, §5, §9 |
-| 5 | **SECURITY ENGINEER** | Attack surface, data integrity, trust boundaries | §8, §5, §6, §3.3 |
-| 6 | **PRODUCT / UX THINKER** | Unintended user behavior, UX-driven system stress | §2, §5, §7.1, §9 |
-| 7 | **FACILITATOR** | Synthesis, conflict resolution, depth enforcement | ALL (runs last, no new proposals) |
-
-See `SYSTEM_MODEL_PROTOCOL.md` §4 for full persona reasoning rules and write permissions.
+Seven personas analyze this system model during structured roundtables.
+Full persona definitions, reasoning rules, write permissions, and section assignments: see `SYSTEM_MODEL_PROTOCOL.md` §4.
 
 ---
 

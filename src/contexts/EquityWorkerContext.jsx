@@ -10,7 +10,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { handVsRange } from '../utils/exploitEngine/monteCarloEquity';
+import { handVsRange } from '../utils/pokerCore/monteCarloEquity';
 
 const EquityWorkerContext = createContext(null);
 
@@ -27,6 +27,7 @@ export const EquityWorkerProvider = ({ children }) => {
   const restartCountRef = useRef(0);
   const lastCrashTimeRef = useRef(0);
   const restartTimerRef = useRef(null);
+  const healthyTimerRef = useRef(null); // RT-40: resets restart counter after stability period
 
   useEffect(() => {
     if (typeof Worker === 'undefined') {
@@ -63,6 +64,12 @@ export const EquityWorkerProvider = ({ children }) => {
         worker.onerror = (err) => {
           rejectAllPending(`Worker error: ${err?.message || 'unknown'}`);
 
+          // RT-40: Cancel healthy timer on crash
+          if (healthyTimerRef.current) {
+            clearTimeout(healthyTimerRef.current);
+            healthyTimerRef.current = null;
+          }
+
           // Rapid crash detection: if two crashes within RAPID_CRASH_WINDOW_MS, count extra
           const now = Date.now();
           if (now - lastCrashTimeRef.current < RAPID_CRASH_WINDOW_MS) {
@@ -87,6 +94,13 @@ export const EquityWorkerProvider = ({ children }) => {
         workerRef.current = worker;
         setIsWorkerReady(true);
         setIsWorkerHealthy(true);
+
+        // RT-40: Reset restart counter after 5 minutes of stable operation
+        if (healthyTimerRef.current) clearTimeout(healthyTimerRef.current);
+        healthyTimerRef.current = setTimeout(() => {
+          restartCountRef.current = 0;
+          healthyTimerRef.current = null;
+        }, 5 * 60 * 1000);
       } catch {
         setIsWorkerReady(false);
         setIsWorkerHealthy(false);
@@ -99,6 +113,10 @@ export const EquityWorkerProvider = ({ children }) => {
       if (restartTimerRef.current) {
         clearTimeout(restartTimerRef.current);
         restartTimerRef.current = null;
+      }
+      if (healthyTimerRef.current) {
+        clearTimeout(healthyTimerRef.current);
+        healthyTimerRef.current = null;
       }
       if (workerRef.current) {
         workerRef.current.terminate();

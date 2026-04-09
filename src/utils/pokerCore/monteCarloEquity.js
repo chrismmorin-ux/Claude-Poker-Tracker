@@ -5,9 +5,9 @@
  * hand evaluations. Uses chunked async to avoid blocking the UI.
  */
 
-import { TOTAL_CARDS } from '../pokerCore/cardParser';
-import { bestFiveFromSeven } from '../pokerCore/handEvaluator';
-import { enumerateCombos } from '../pokerCore/rangeMatrix';
+import { TOTAL_CARDS } from './cardParser';
+import { bestFiveFromSeven } from './handEvaluator';
+import { enumerateCombos } from './rangeMatrix';
 
 /**
  * Build a deck in-place, filtering by a Uint8Array dead-card lookup.

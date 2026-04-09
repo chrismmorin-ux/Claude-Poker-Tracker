@@ -34,16 +34,18 @@
   // =========================================================================
   // POST TO CONTENT SCRIPT
   // =========================================================================
+  // RT-42: Use window.location.origin instead of '*' to limit message scope
   const post = (data) => {
+    const targetOrigin = window.location.origin;
     try {
-      window.postMessage({ channel: CHANNEL, ...data }, '*');
+      window.postMessage({ channel: CHANNEL, ...data }, targetOrigin);
     } catch (e) {
       try {
         window.postMessage({
           channel: CHANNEL,
           type: data.type,
           fallback: JSON.stringify(data),
-        }, '*');
+        }, targetOrigin);
       } catch (e2) {
         console.warn('[WS Probe] postMessage fallback failed:', e2.message);
       }

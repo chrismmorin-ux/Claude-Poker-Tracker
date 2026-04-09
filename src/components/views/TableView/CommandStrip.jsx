@@ -77,8 +77,8 @@ export const CommandStrip = ({
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
   const { getSeatPlayerName } = usePlayer();
   const { advice: gameTreeAdvice } = useOnlineAnalysisContext();
-  const { showSuccess, showInfo, showWarning } = useToast();
-  const { currentSession } = useSession();
+  const { addToast, showInfo, showWarning } = useToast();
+  const { currentSession, setHandCount } = useSession();
 
   // Hooks — consumed directly instead of receiving computed values as props
   const {
@@ -128,6 +128,7 @@ export const CommandStrip = ({
   // HE-2b: Orbit tap-ahead — tapping a position ahead auto-folds intermediate un-acted seats
   // RT-26: Track undo point for batch undo
   const orbitUndoPointRef = useRef(null);
+  const nextHandUndoRef = useRef(null); // RT-37: snapshot for undo toast
 
   const handleOrbitTap = useCallback((targetSeat) => {
     if (currentStreet !== 'preflop') {
@@ -200,14 +201,53 @@ export const CommandStrip = ({
   const handleNextHand = useCallback(() => {
     orbitUndoPointRef.current = null;
     const handNumber = (currentSession?.handCount || 0) + 1;
+    const hadActions = actionSequence.length > 0;
+
+    // RT-37: Snapshot state for undo toast
+    if (hadActions) {
+      nextHandUndoRef.current = {
+        actionSequence: [...actionSequence],
+        dealerButtonSeat,
+        communityCards: [...communityCards],
+        holeCards: [...holeCards],
+        currentStreet,
+        handCount: currentSession?.handCount || 0,
+        absentSeats: [...absentSeats],
+      };
+    }
+
     nextHand();
-    if (actionSequence.length > 0) {
-      showSuccess(`Hand #${handNumber} completed`);
+
+    if (hadActions) {
+      addToast(`Hand #${handNumber} completed`, {
+        variant: 'success',
+        duration: 5000,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            const snapshot = nextHandUndoRef.current;
+            if (!snapshot) return;
+            dispatchGame({ type: GAME_ACTIONS.HYDRATE_STATE, payload: {
+              actionSequence: snapshot.actionSequence,
+              dealerButtonSeat: snapshot.dealerButtonSeat,
+              currentStreet: snapshot.currentStreet,
+              absentSeats: snapshot.absentSeats,
+            }});
+            dispatchCard({ type: CARD_ACTIONS.HYDRATE_STATE, payload: {
+              communityCards: snapshot.communityCards,
+              holeCards: snapshot.holeCards,
+            }});
+            setHandCount(snapshot.handCount);
+            nextHandUndoRef.current = null;
+            showInfo('Hand restored');
+          },
+        },
+      });
     } else {
       showInfo(`Hand #${handNumber + 1} started`);
     }
     scheduleAutoSelect();
-  }, [currentSession, nextHand, actionSequence, showSuccess, showInfo, scheduleAutoSelect]);
+  }, [currentSession, nextHand, actionSequence, dealerButtonSeat, communityCards, holeCards, currentStreet, absentSeats, addToast, showInfo, dispatchGame, dispatchCard, setHandCount, scheduleAutoSelect]);
 
   const handleResetHand = useCallback(() => {
     orbitUndoPointRef.current = null;

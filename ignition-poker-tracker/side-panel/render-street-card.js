@@ -44,6 +44,10 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
   const card = $('street-card');
   if (!card) return;
 
+  // RT-50: Always cancel in-flight transition timer. Any new render call
+  // supersedes a pending transition — the timer's captured HTML is stale.
+  if (_transitionTimer) { clearTimeout(_transitionTimer); _transitionTimer = null; }
+
   const isLive = liveContext && liveContext.state &&
     liveContext.state !== 'IDLE' && liveContext.state !== 'COMPLETE';
 

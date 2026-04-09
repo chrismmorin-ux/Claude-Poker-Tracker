@@ -10,12 +10,12 @@
 |---------|-------------|-------------|
 | **New component added** | Architecture §1 (components, dependency graph) | Developer or architect agent |
 | **New invariant discovered** (bug revealed a rule that wasn't documented) | Invariants §4 | CTO-review agent or post-mortem |
-| **Architectural decision made** | Decision Log §11 | Developer at decision time |
+| **Architectural decision made** | Decision Log §12 | Developer at decision time |
 | **Data flow changed** (new pipeline stage, changed persistence) | Data Flow §2, State Model §3 | Developer making the change |
 | **Bug traced to hidden coupling** | Hidden Coupling §6 | Developer fixing the bug |
 | **Performance issue discovered** | Scaling §7, Failure Surfaces §5 | Developer or reviewer |
 | **Security boundary changed** (new external integration, auth change) | Security §8 | Developer + security review |
-| **Technical debt incurred knowingly** | Tech Debt §10 | Developer (document at creation) |
+| **Technical debt incurred knowingly** | Tech Debt §11 | Developer (document at creation) |
 | **Post-roundtable** | Any section flagged by personas | Roundtable orchestrator |
 
 ### 3.2 Update Rules
@@ -85,12 +85,12 @@ Required reading (injected into ALL 7 personas):
 └── SYSTEM_MODEL.md §1.2 (Dependency Graph) — structural context
 
 Persona-specific loading:
-├── SYSTEMS ARCHITECT:     §1 (full), §2, §3, §7, §11 (decision log)
-├── SENIOR ENGINEER:       §1.1 (components), §3, §5, §6, §10 (tech debt)
-├── FAILURE ENGINEER:      §5 (full), §6 (full), §7.2 (bottlenecks), §9 (observability gaps)
-├── PERFORMANCE ENGINEER:  §7 (full), §2 (data flows), §5, §9
+├── SYSTEMS ARCHITECT:     §1 (full), §2, §3, §7, §12 (decision log)
+├── SENIOR ENGINEER:       §1.1 (components), §3, §5, §6, §11 (tech debt)
+├── FAILURE ENGINEER:      §5 (full), §6 (full), §7.2 (bottlenecks), §10 (observability gaps)
+├── PERFORMANCE ENGINEER:  §7 (full), §2 (data flows), §5, §10
 ├── SECURITY ENGINEER:     §8 (full), §5, §6, §3.3 (consistency guarantees)
-├── PRODUCT / UX THINKER:  §2 (data flows), §5, §7.1 (scaling assumptions), §9
+├── PRODUCT / UX THINKER:  §2 (data flows), §5, §7.1 (scaling assumptions), §10
 └── FACILITATOR:           ALL sections (full model) + all prior persona outputs
 ```
 
@@ -101,17 +101,17 @@ Each persona MUST check their reasoning against the System Model before speaking
 **SYSTEMS ARCHITECT — before proposing structural changes:**
 1. Check invariants (§4) — does this proposal violate any INV-* or NEV-*?
 2. Check dependency rules (§1.2) — does this introduce a forbidden import direction?
-3. Check decision log (§11) — was this already decided and rejected?
+3. Check decision log (§12) — was this already decided and rejected?
 
 **SENIOR ENGINEER — before proposing implementation:**
 1. Check hidden coupling (§6) — does this touch a coupled component?
-2. Check tech debt (§10) — does this add or resolve a debt item?
+2. Check tech debt (§11) — does this add or resolve a debt item?
 3. Check state ownership (§3.2) — does this mutate state through the correct owner?
 
 **FAILURE ENGINEER — before flagging risks:**
 1. Check existing failure surfaces (§5) — is this already documented?
 2. Check hidden coupling (§6) — does this create a new cascading failure path?
-3. Check observability gaps (§9) — would this failure be detectable?
+3. Check observability gaps (§10) — would this failure be detectable?
 
 **PERFORMANCE ENGINEER — before flagging bottlenecks:**
 1. Check scaling assumptions (§7) — are current numbers still accurate?
@@ -157,11 +157,11 @@ After a roundtable completes, the Facilitator:
 | Persona | Can Add | Can Modify | Cannot Touch |
 |---------|---------|-----------|-------------|
 | **SYSTEMS ARCHITECT** | Components, dependency rules, decision log | Architecture §1, data flows §2, state model §3 | Security §8 (propose only) |
-| **SENIOR ENGINEER** | Tech debt items, hidden coupling entries | Tech debt §10, hidden coupling §6, observability §9 | Architecture §1 (propose only) |
+| **SENIOR ENGINEER** | Tech debt items, hidden coupling entries | Tech debt §11, hidden coupling §6, observability §10 | Architecture §1 (propose only) |
 | **FAILURE ENGINEER** | Failure surfaces, anti-invariants (NEV-*) | Failure surfaces §5, hidden coupling §6 | Architecture §1, scaling §7 |
 | **PERFORMANCE ENGINEER** | Bottlenecks, scaling assumptions | Scaling §7, failure surfaces §5 | Invariants §4 (propose only) |
-| **SECURITY ENGINEER** | Trust zones, exposure risks, input validation | Security §8 | Architecture §1, decision log §11 |
-| **PRODUCT / UX THINKER** | Failure surfaces (UX-driven), observability gaps | Failure surfaces §5, observability §9 | Architecture §1, invariants §4 |
+| **SECURITY ENGINEER** | Trust zones, exposure risks, input validation | Security §8 | Architecture §1, decision log §12 |
+| **PRODUCT / UX THINKER** | Failure surfaces (UX-driven), observability gaps | Failure surfaces §5, observability §10 | Architecture §1, invariants §4 |
 | **FACILITATOR** | Decision log entries (conflict resolutions) | Any section (synthesis/corrections only) | Must not add new findings — only refine existing proposals |
 
 ### 4.5 Roundtable Prompt Template

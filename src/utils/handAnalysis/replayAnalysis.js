@@ -9,11 +9,10 @@
 import { getPositionName, getRangePositionCategory, isInPosition } from '../positionUtils';
 import { parseBoard, parseAndEncode, getCardsForStreet } from '../pokerCore/cardParser';
 import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
-import { narrowByBoard } from '../exploitEngine/postflopNarrower';
-import { segmentRange } from '../exploitEngine/rangeSegmenter';
-import { buildSituationKey } from '../exploitEngine/decisionAccumulator';
-import { queryActionDistribution } from '../exploitEngine/villainDecisionModel';
-import { handVsRange } from '../exploitEngine/monteCarloEquity';
+// RT-35: These 4 symbols are injected via deps parameter to analyzeTimelineAction
+// to avoid handAnalysis → exploitEngine import (INV-08 violation).
+// Defaults provide graceful degradation when deps are not supplied.
+import { handVsRange } from '../pokerCore/monteCarloEquity';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
 import { getPopulationPrior } from '../rangeEngine/populationPriors';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
@@ -221,7 +220,15 @@ export const analyzeTimelineAction = async ({
   entry, index, timeline, seatRanges, seatRangeLabels,
   seatRangeProfiles, seatPlayers, tendencyMap, buttonSeat,
   communityCards, heroSeat, heroCards, showdownCards, blindsPosted, results,
+  deps = {},
 }) => {
+  // Injected dependencies (from exploitEngine, passed by hook caller)
+  const {
+    narrowByBoard = (range) => range,
+    segmentRange: segmentRangeFn = () => null,
+    buildSituationKey: buildSituationKeyFn = () => '',
+    queryActionDistribution: queryActionDistributionFn = () => ({ actions: {}, confidence: 0 }),
+  } = deps;
   const seat = entry.seat;
   const street = entry.street;
   const action = entry.action;
@@ -313,7 +320,7 @@ export const analyzeTimelineAction = async ({
 
     // Segment the narrowed range
     try {
-      segmentation = segmentRange(rangeAtPoint, board);
+      segmentation = segmentRangeFn(rangeAtPoint, board);
       rangeEquity = estimateRangeEquityPct(segmentation.buckets);
     } catch (e) {
       // Segmentation is non-critical
@@ -358,7 +365,7 @@ export const analyzeTimelineAction = async ({
     }
   }
 
-  const situationKey = buildSituationKey(street, boardTexture?.texture || 'unknown', posCategory, action);
+  const situationKey = buildSituationKeyFn(street, boardTexture?.texture || 'unknown', posCategory, action);
 
   // Hero coaching analysis
   let heroAnalysis = null;
@@ -389,7 +396,7 @@ export const analyzeTimelineAction = async ({
       const villainIP = heroIP === true ? 'oop' : heroIP === false ? 'ip' : '*';
 
       try {
-        const dist = queryActionDistribution(
+        const dist = queryActionDistributionFn(
           villainModel, street, boardTexture?.texture || '*', posCategory, '*', villainIP, facingAction
         );
         if (dist.confidence > 0) {

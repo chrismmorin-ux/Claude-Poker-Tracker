@@ -3,7 +3,7 @@
  * useToast.test.js - Tests for toast notification hook
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useToast } from '../useToast';
 
@@ -288,6 +288,32 @@ describe('useToast', () => {
       });
 
       expect(result.current.toasts[0].duration).toBe(1000);
+    });
+  });
+
+  describe('action buttons (RT-37)', () => {
+    it('stores action in toast when provided', () => {
+      const { result } = renderHook(() => useToast());
+      const onClick = vi.fn();
+
+      act(() => {
+        result.current.addToast('Hand completed', {
+          variant: 'success',
+          action: { label: 'Undo', onClick },
+        });
+      });
+
+      expect(result.current.toasts[0].action).toEqual({ label: 'Undo', onClick });
+    });
+
+    it('defaults action to null when not provided', () => {
+      const { result } = renderHook(() => useToast());
+
+      act(() => {
+        result.current.addToast('No action');
+      });
+
+      expect(result.current.toasts[0].action).toBeNull();
     });
   });
 

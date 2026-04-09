@@ -13,13 +13,37 @@ npm test                             # Tests (verbose, for debugging)
 ```
 
 ## Session Start Protocol (MANDATORY)
-When starting any work session:
-1. Read `.claude/STATUS.md` — understand current project state and active sessions
-2. Read ALL files in `.claude/handoffs/` — know what other sessions own and avoid file conflicts
-3. If resuming a project: read the project file referenced in STATUS.md
-4. Before editing any file: verify no other ACTIVE session owns it (check handoff "Files I Own" sections)
+
+### Always (every session)
+1. Read `.claude/STATUS.md` — understand project state, active sessions, alerts
+2. Read ALL files in `.claude/handoffs/` — know what other sessions own, avoid file conflicts
+3. Before editing any file: verify no other ACTIVE session owns it (check handoff "Files I Own" sections)
+
+### If multi-file or structural work
+4. Read `.claude/context/SYSTEM_MODEL.md` — architecture, invariants, failure surfaces
 5. Create or update your handoff file in `.claude/handoffs/` when you claim work
-6. Do NOT start coding until you've completed steps 1-4
+
+### If touching engine code (exploitEngine/, rangeEngine/, pokerCore/)
+6. Read `.claude/context/POKER_THEORY.md`
+7. Read the sub-directory `CLAUDE.md` in the engine you're editing
+
+### If resuming a project
+8. Read the project file referenced in STATUS.md
+
+Do NOT start coding until applicable steps are complete.
+
+## Context Loading Guide
+
+| Task Type | Read | Skip |
+|-----------|------|------|
+| One-file UI fix | STATUS, handoffs/ | SYSTEM_MODEL, POKER_THEORY |
+| Multi-file feature | STATUS, handoffs/, SYSTEM_MODEL §1-§3 | POKER_THEORY (unless engine) |
+| Engine work | STATUS, handoffs/, SYSTEM_MODEL, POKER_THEORY, engine CLAUDE.md | STATE_SCHEMA |
+| Reducer/state change | STATUS, handoffs/, SYSTEM_MODEL §3, STATE_SCHEMA | POKER_THEORY |
+| Persistence/IndexedDB | STATUS, handoffs/, SYSTEM_MODEL §2, PERSISTENCE_OVERVIEW | POKER_THEORY |
+| Extension work | STATUS, handoffs/, ignition CLAUDE.md | Main SYSTEM_MODEL |
+| Architecture review | Everything | — |
+| Bug fix (unknown scope) | STATUS, handoffs/, SYSTEM_MODEL §5-§6, failures/ | Expand as needed |
 
 ## System Model (Read Before Any Multi-File Change)
 `.claude/context/SYSTEM_MODEL.md` is the single source of truth for architecture, invariants, failure surfaces, coupling, and system understanding. Read it before any structural change. Update it after any architectural shift.
@@ -28,7 +52,6 @@ Supporting references (unique detail not in System Model):
 - `STATE_SCHEMA.md` — reducer shapes
 - `PERSISTENCE_OVERVIEW.md` — IndexedDB API summary
 - `INVARIANTS.md` — standalone invariant catalog with verification dates
-- `CONSTRAINTS.md` — hard/soft constraints and assumptions
 - `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 
 ## Poker Analysis Guardrail
@@ -82,7 +105,19 @@ Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views,
 3. `/project start <name>` for multi-file tasks
 4. Read `.claude/context/SYSTEM_MODEL.md` for architectural context, then read affected files
 5. Write `/handoff` before ending your session
-4. 4+ files changed → `EnterPlanMode`
+6. 4+ files changed → `EnterPlanMode`
+
+### Handoff Proportionality
+- **Single-file fix, no multi-session risk:** No handoff needed. Update STATUS.md if state changed.
+- **Multi-file change, single session:** Create handoff, list owned files, close before session ends.
+- **Multi-session project:** Full ceremony — `/project start`, claim in BACKLOG, `/handoff` at end.
+
+## Work Discovery (When Backlog Is Empty)
+1. Run `/health-check` — scan for staleness, regressions, drift
+2. Run `/eng-engine` — roundtable audit producing prioritized findings
+3. Check SYSTEM_MODEL.md tech debt register (§11) for items with resolution paths
+4. Ask the user — they may have requests not captured in governance
+Do not invent work. If all checks pass and user has no requests, the project is healthy.
 
 ## Responsive Design
 - Target: 1600x720 (Samsung Galaxy A22 landscape)

@@ -25,10 +25,24 @@ _Prioritized items. Claim with `/backlog claim <id>` before starting._
 
 | ID | Pri | Status | Description | Accept Criteria | Claimed By |
 |----|-----|--------|-------------|-----------------|------------|
-| RT-30 | P2 | DONE | Deduplicate computeAllVillainRanges call | `computeAllVillainRanges` called once per compute cycle; preflop widths cached from first call; no second invocation | 2026-04-07 |
-| RT-32 | P3 | DONE | Worker crash recovery and health check | Auto-restart (max 3, 100ms delay), rapid crash detection, isWorkerHealthy flag, main-thread fallback | 2026-04-07 |
-| RT-33 | P2 | DONE | Extract foldEquityCalculator circular import | `fitFoldCurveParams` + `logisticFoldResponse` moved to villainModelData.js; INV-08 clean | 2026-04-07 |
-| RT-34 | P3 | DONE | UNDO_BATCH edge case tests and UX indicator | 7 edge case tests; undo button shows batch count when orbit undo point active | 2026-04-07 |
+| — | — | — | _No items ready. Approve REVIEW items below with `/backlog approve <id>`._ | — | — |
+
+---
+
+## REVIEW — R6 Roundtable Findings (2026-04-09)
+
+_From eng-engine R6 audit focused on extension sidebar display-thrashing. All REVIEW — pending owner approval._
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| RT-43 | P1 | REVIEW | Sidebar: unified render scheduler replacing 4+ independent render paths | All DOM writes flow through single scheduleRender(); no direct renderPipelineHealth/renderTournamentPanel/renderRawTournamentInfo calls; visual harness shows no partial-state flicker during rapid push simulation | — |
+| RT-44 | P1 | REVIEW | Sidebar: fix renderKey fingerprint (appSeatData hash, exploit content hash, focusedVillainSeat ordering) | renderKey includes appSeatData hash + exploits content hash (not boolean) + focusedVillainSeat computed before inclusion; test proves exploit data change triggers re-render | — |
+| RT-45 | P1 | REVIEW | Sidebar: fix STREET_RANK guard to reject advice when liveContext is null | When currentLiveContext is null, advice is held (not rendered) until live context arrives; STREET_RANK includes DEALING/IDLE/COMPLETE mappings; test covers SW restart sequence | — |
+| RT-46 | P1 | REVIEW | Sidebar: escapeHtml for PID values in innerHTML (XSS) | All PID string insertions in renderPidSummary (line 839) and tournament protocol log (lines 1908-1910) use escapeHtml(); test with HTML metacharacters in PID | — |
+| RT-47 | P2 | REVIEW | Sidebar: eliminate async/sync handler interleave in handlePipelineStatus | handlePipelineStatus either snapshots all state before await or re-reads after; test simulates concurrent push during await | — |
+| RT-48 | P2 | REVIEW | Sidebar: stale advice visual indicator | When advice age > 10s or liveContext is null, advice card shows "From previous hand" or age badge; shimmer/loading distinguishable from stale state | — |
+| RT-49 | P2 | REVIEW | Sidebar: preserve section collapse state across innerHTML rebuilds | User-expanded/collapsed sections survive exploit/tournament pushes; collapse state stored in variable and restored after DOM write | — |
+| RT-50 | P3 | REVIEW | Sidebar: cancel _transitionTimer on rapid street-card updates | render-street-card.js clears pending transition timer before new transition; cross-fade cannot leave card at opacity:0 | — |
 
 ---
 
@@ -42,9 +56,18 @@ _Prioritized items. Claim with `/backlog claim <id>` before starting._
 
 ## Recommended Execution Order
 
-```
-1. RT-30 (P2) — Deduplicate computeAllVillainRanges
-2. RT-33 (P2) — Extract circular import
-3. RT-34 (P3) — UNDO_BATCH edge cases + UX
-4. RT-32 (P3) — Worker crash recovery (depends on RT-27+)
-```
+**Phase A — Quick wins, parallel (1 session):**
+1. RT-46 (escapeHtml PIDs) — trivial XSS fix
+2. RT-44 (renderKey fix) — focused, high impact
+3. RT-45 (STREET_RANK guard) — focused, high impact
+
+**Phase B — Medium structural, parallel (1-2 sessions):**
+4. RT-47 (async handler fix) — prerequisite understanding for RT-43
+5. RT-49 (collapse state preservation) — independent
+6. RT-50 (transition timer fix) — independent, small
+
+**Phase C — Large structural (1 dedicated session):**
+7. RT-43 (unified render scheduler) — highest-leverage single change, subsumes RT-44/RT-47
+
+**Phase D — UX polish (after RT-43):**
+8. RT-48 (stale advice indicator) — depends on stable render path

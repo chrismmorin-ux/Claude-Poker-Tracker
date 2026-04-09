@@ -29,6 +29,7 @@ import {
   buildStreetProgressHTML,
   buildStatusBar,
 } from './render-orchestrator.js';
+import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
 
 injectTokens();
 
@@ -63,6 +64,7 @@ injectTokens();
   let advicePushCount = 0;
   let cachedDiag = null; // Pipeline diagnostics from capture script
   let swFallbackState = null; // SW-derived state when capture diagnostics are absent
+  let _recoveryMessage = null; // Declarative recovery banner state (rendered by renderAll)
 
   // Auto-follow / pin state for villain focus
   let focusedVillainSeat = null;
@@ -104,24 +106,25 @@ injectTokens();
         case 'push_pipeline_diagnostics':
           if (message.data) {
             cachedDiag = message.data;
-            renderPipelineHealth();
-            renderPidSummary(cachedDiag.pidCounts);
             // Auto-dismiss recovery banner when traffic is flowing
             if (cachedDiag.gameWsMessageCount > 0) {
-              hideRecoveryBanner();
+              _recoveryMessage = null;
             }
+            scheduleRender('pipeline_diag');
           }
           break;
         case 'push_recovery_needed':
-          showRecoveryBanner(message.message || 'Connection issue detected. Reload the Ignition page to start capturing.');
+          _recoveryMessage = message.message || 'Connection issue detected. Reload the Ignition page to start capturing.';
+          scheduleRender('recovery_needed');
           break;
         case 'push_recovery_cleared':
-          hideRecoveryBanner();
+          _recoveryMessage = null;
+          scheduleRender('recovery_cleared');
           break;
         case 'push_silence_alert':
-          // Update pipeline health status text with silence info
           if (message.level === 'stale' || message.level === 'dead') {
-            showRecoveryBanner(message.message || 'No game traffic detected. Reload the Ignition page.');
+            _recoveryMessage = message.message || 'No game traffic detected. Reload the Ignition page.';
+            scheduleRender('silence_alert');
           }
           break;
       }
@@ -197,7 +200,7 @@ injectTokens();
     if (areaName !== 'session') return;
     if (changes[SESSION_KEYS.PIPELINE_DIAG]) {
       cachedDiag = changes[SESSION_KEYS.PIPELINE_DIAG].newValue || null;
-      renderPipelineHealth();
+      scheduleRender('storage_diag');
     }
   });
 
@@ -221,8 +224,8 @@ injectTokens();
   /** Handle full pipeline status push (replaces the old poll cycle). */
   const handlePipelineStatus = async (pipeline) => {
     lastPipeline = pipeline;
-    updateStatusBar(pipeline, 0);
-    if (pipeline?.appConnected !== undefined) updateAppStatus(pipeline.appConnected);
+    // Status bar and app status are rendered by renderAll — no direct DOM writes here
+    // (RT-43: all DOM writes go through the unified scheduler)
 
     // Find active table
     const tables = pipeline?.tables || {};
@@ -238,12 +241,14 @@ injectTokens();
       currentTableState = null;
     }
 
-    // Clear stale state on table switch
+    // Clear stale state on table switch (RT-49: also clears userCollapsedSections)
     if (currentActiveTableId !== prevTableId) {
       pinnedVillainSeat = null;
       lastGoodAdvice = null;
       lastGoodTournament = null;
       currentLiveContext = null;
+      userCollapsedSections.clear();
+      coordinator.clearForTableSwitch();
     }
 
     // Use live context from push (only if provided — don't keep stale context)
@@ -283,10 +288,13 @@ injectTokens();
       }
 
       if (tableHands.length === 0) {
+        // No hands — show no-table state. Let renderAll handle visibility.
+        lastHandCount = 0;
+        cachedSeatStats = null;
         showEl($('no-table'));
         showEl($('pipeline-health'));
         hideEl($('hud-content'));
-        renderPipelineHealth();
+        scheduleRender('no_hands');
         return;
       }
 
@@ -305,11 +313,8 @@ injectTokens();
         currentTableState?.seatDisplayMap || null, tableHands
       );
 
-      // Update status bar with table-filtered count
-      if (pipeline) updateStatusBar(pipeline, tableHands.length);
-
-      // Single coordinated UI render (includes seat arc, header, street card, deep expander)
-      renderUI();
+      // Schedule coordinated render
+      scheduleRender('hands_updated');
     } catch (e) {
       console.warn('[Side Panel] refreshHandStats error:', e.message);
     }
@@ -319,7 +324,7 @@ injectTokens();
     exploitPushCount++;
     if (message.seats) {
       const appConnected = message.appConnected !== false;
-      updateAppStatus(appConnected);
+      // App status is rendered by renderAll — no direct DOM write here
       lastGoodExploits = { seats: message.seats, appConnected };
 
       // Build per-seat lookup for enhanced seat cards
@@ -351,63 +356,54 @@ injectTokens();
         (s.observations || []).map(o => ({ ...o, seat: Number(s.seat), seatStyle: s.style }))
       );
 
+      // RT-44: increment version so renderKey detects the change
+      coordinator.set('appSeatDataVersion', (coordinator.get('appSeatDataVersion') || 0) + 1);
+
       // Re-render with updated app data
-      renderUI();
+      scheduleRender('exploits');
     }
   };
 
   const handleAdvicePush = (message) => {
-    advicePushCount++;
+    // advicePushCount is incremented by coordinator.handleAdvice() — not here
     if (message.advice) {
-      // Reject stale advice: if live context is on a later street than the advice,
-      // the advice is from a previous hand/street and should be discarded
-      const adviceStreet = message.advice.currentStreet;
-      const liveStreet = currentLiveContext?.currentStreet;
-      const STREET_RANK = { preflop: 0, flop: 1, turn: 2, river: 3 };
-      const adviceRank = STREET_RANK[adviceStreet] ?? -1;
-      const liveRank = STREET_RANK[liveStreet] ?? -1;
+      // RT-45: Delegate to coordinator's advice guard. It holds advice
+      // when liveContext is null (prevents stale advice after SW restart)
+      // and validates street ordering.
+      syncStateToCoordinator();
+      const accepted = coordinator.handleAdvice(message.advice);
 
-      // Only accept advice for current or later street (advice can arrive before
-      // live context updates, so accept same or ahead)
-      if (liveRank <= adviceRank || adviceRank === -1) {
-        lastGoodAdvice = message.advice;
-        // Fresh advice arrived — clear pending flag and flush render immediately
-        // (bypasses 80ms debounce so advice appears the instant it's ready)
-        if (advicePendingForStreet) {
-          advicePendingForStreet = null;
-          if (renderUITimer) clearTimeout(renderUITimer);
-          renderUIImmediate();
-          return;
-        }
+      // Sync back: coordinator may have updated lastGoodAdvice and advicePendingForStreet
+      lastGoodAdvice = coordinator.get('lastGoodAdvice');
+      advicePendingForStreet = coordinator.get('advicePendingForStreet');
+      advicePushCount = coordinator.get('advicePushCount');
+
+      if (accepted && !advicePendingForStreet) {
+        // Fresh advice arrived — render immediately (bypasses coalesce)
+        scheduleRender('advice', PRIORITY.IMMEDIATE);
+        return;
       }
     }
-    renderUI();
+    scheduleRender('advice');
   };
 
   const handleLiveContextPush = (message) => {
     if (message.context) {
-      const prevState = currentLiveContext?.state;
-      currentLiveContext = { ...message.context, _receivedAt: Date.now() };
+      // RT-45: Delegate to coordinator for hand boundary + pending advice promotion
+      syncStateToCoordinator();
+      coordinator.handleLiveContext(message.context);
 
-      // New hand boundary: clear stale per-hand data so previous hand's advice
-      // doesn't render in the new hand.  The loading guard in renderStreetCard
-      // keeps the old *visual content* visible (with shimmer) until fresh advice
-      // arrives, so the user never sees a blank flash.
-      const newState = currentLiveContext.state;
-      if (prevState !== newState && (newState === 'PREFLOP' || newState === 'DEALING')) {
-        advicePendingForStreet = newState;
-        lastGoodAdvice = null;
-        lastRenderedStreet = null;
-        userCollapsedSections.clear(); // Reset per-hand collapse tracking
-        deepExpanderOpen = false; // Reset auto-expand for new hand
-      }
+      // Sync back: coordinator may have updated these
+      currentLiveContext = coordinator.get('currentLiveContext');
+      lastGoodAdvice = coordinator.get('lastGoodAdvice');
+      advicePendingForStreet = coordinator.get('advicePendingForStreet');
+      lastRenderedStreet = coordinator.get('lastRenderedStreet');
+      deepExpanderOpen = coordinator.get('deepExpanderOpen');
 
-      // Surface raw tournament level info if present (before app provides structured data)
-      if (message.context.tournamentLevelInfo && !lastGoodTournament) {
-        renderRawTournamentInfo(message.context.tournamentLevelInfo);
-      }
+      // RT-49: userCollapsedSections is NOT cleared at hand boundary
+      // (moved to table-switch only, preserving user preferences within a session)
 
-      renderUI();
+      scheduleRender('live_context');
     }
   };
 
@@ -416,7 +412,7 @@ injectTokens();
     if (currentLiveContext && currentLiveContext._receivedAt) {
       if (Date.now() - currentLiveContext._receivedAt > 30_000) {
         currentLiveContext = null;
-        renderUI();
+        scheduleRender('stale_timeout');
       }
     }
   }, 10_000);
@@ -455,7 +451,7 @@ injectTokens();
 
   const handleTournamentPush = (message) => {
     lastGoodTournament = message.tournament;
-    renderTournamentPanel(message.tournament);
+    scheduleRender('tournament');
   };
 
   const renderTournamentPanel = (t) => {
@@ -836,7 +832,7 @@ injectTokens();
     for (const [pid, count] of entries.slice(0, 20)) {
       const isCritical = CRITICAL_PIDS.includes(pid);
       const color = isCritical && count === 0 ? 'color:var(--m-red)' : isCritical ? 'color:var(--m-green)' : '';
-      html += `<span style="margin-right:6px;${color}">${pid.replace('CO_', '').replace('PLAY_', '')}:${count}</span>`;
+      html += `<span style="margin-right:6px;${color}">${escapeHtml(pid.replace('CO_', '').replace('PLAY_', ''))}:${count}</span>`;
     }
     html += '</div>';
     pidEl.innerHTML = html;
@@ -980,6 +976,14 @@ injectTokens();
 
     if (content.innerHTML === result.html) return; // skip redundant DOM write
     content.innerHTML = result.html;
+
+    // RT-49: Restore collapse state from userCollapsedSections after DOM rebuild
+    for (const section of content.querySelectorAll('.deep-section[data-section]')) {
+      const key = section.dataset.section;
+      if (key && userCollapsedSections.has(key)) {
+        section.classList.remove('open');
+      }
+    }
 
     // Init collapsible toggles for deep sections inside expander
     for (const header of content.querySelectorAll('.deep-header')) {
@@ -1152,14 +1156,14 @@ injectTokens();
       }
 
       // Re-render everything with new pin state
-      renderUI();
+      scheduleRender('pin', PRIORITY.IMMEDIATE);
       return;
     }
     // Villain range tab clicks — switch focused villain in range grid
     const rangeTab = e.target.closest('.villain-tab[data-range-seat]');
     if (rangeTab) {
       pinnedVillainSeat = Number(rangeTab.dataset.rangeSeat);
-      renderUI();
+      scheduleRender('range_tab', PRIORITY.IMMEDIATE);
       return;
     }
 
@@ -1607,7 +1611,25 @@ injectTokens();
       html += `</div>`; // briefing-item
     }
 
+    // RT-49: Snapshot open briefings before DOM rebuild
+    const openBriefings = new Set();
+    for (const d of list.querySelectorAll('.briefing-details.open')) {
+      const item = d.closest('.briefing-item');
+      if (item?.dataset?.briefingIdx) openBriefings.add(item.dataset.briefingIdx);
+    }
+
     list.innerHTML = html;
+
+    // RT-49: Restore open briefings after DOM rebuild
+    for (const idx of openBriefings) {
+      const d = $(`briefing-detail-${idx}`);
+      if (d) {
+        d.classList.add('open');
+        const item = d.closest('.briefing-item');
+        const icon = item?.querySelector('.briefing-expand-icon');
+        if (icon) icon.textContent = '\u25BE';
+      }
+    }
   };
 
   // Event delegation for briefing expand/collapse
@@ -1721,53 +1743,91 @@ injectTokens();
   // =========================================================================
 
   // =========================================================================
-  // RENDER UI — Single coordinated render for all dynamic content
+  // RENDER COORDINATOR — Unified render scheduler (RT-43)
   // =========================================================================
-  // All push handlers update state variables then call renderUI().
-  // This eliminates race conditions from multiple render entry points.
+  // All push handlers update state variables then call scheduleRender().
+  // All DOM writes happen in one renderAll() call per animation frame.
+  // No handler touches the DOM directly. This prevents partial-state renders
+  // that caused the recurring display-thrashing bug.
 
-  let renderUITimer = null;
-  let _lastRenderKey = null; // fingerprint of last rendered state
-
-  const renderUI = () => {
-    // Debounce: if called rapidly (e.g. pipeline push + live context in quick succession),
-    // only render once after all state updates settle.
-    if (renderUITimer) clearTimeout(renderUITimer);
-    renderUITimer = setTimeout(renderUIImmediate, 150); // coalesce rapid pushes
+  /** Sync module-level state into the coordinator before each render. */
+  const syncStateToCoordinator = () => {
+    coordinator.merge({
+      lastHandCount,
+      cachedSeatStats,
+      currentTableState,
+      currentActiveTableId,
+      currentLiveContext,
+      lastGoodExploits,
+      lastGoodAdvice,
+      lastGoodWeaknesses,
+      lastGoodBriefings,
+      lastGoodObservations,
+      lastGoodTournament,
+      tournamentCollapsed,
+      appSeatData,
+      lastPipeline,
+      exploitPushCount,
+      advicePushCount,
+      cachedDiag,
+      swFallbackState,
+      pinnedVillainSeat,
+      deepExpanderOpen,
+      lastRenderedStreet,
+      advicePendingForStreet,
+      userCollapsedSections,
+      recoveryMessage: _recoveryMessage,
+      connState: conn.getState(),
+      cachedSeatMap,
+    });
   };
 
-  const renderUIImmediate = () => {
-    renderUITimer = null;
-    const advice = lastGoodAdvice;
-    const liveCtx = currentLiveContext;
+  /** The single render function. All DOM writes happen here. */
+  const renderAll = (snap, reason) => {
+    // Sync computed values back to module-level vars for functions that
+    // still read them directly (e.g., filterExploitsByContext, filterWeaknesses)
+    focusedVillainSeat = snap.focusedVillainSeat;
+    lastRenderedStreet = snap.street;
 
-    // State snapshot: skip render if nothing meaningful changed since last render
-    const renderKey = [
-      liveCtx?.state, liveCtx?.currentStreet,
-      (liveCtx?.foldedSeats || []).length,
-      (liveCtx?.actionSequence || []).length,
-      liveCtx?.pot,
-      advice?.currentStreet, advice?.recommendations?.[0]?.action,
-      focusedVillainSeat, pinnedVillainSeat,
-      lastHandCount, !!lastGoodExploits, !!lastGoodTournament,
-      advicePendingForStreet,
-    ].join('|');
-    if (renderKey === _lastRenderKey) return;
-    _lastRenderKey = renderKey;
+    const advice = snap.lastGoodAdvice;
+    const liveCtx = snap.currentLiveContext;
+    const street = snap.street;
 
-    // Update focused villain
-    focusedVillainSeat = computeFocusedVillain();
-
-    // 1. Seat arc
-    if (cachedSeatStats) {
-      renderSeatArc(cachedSeatStats, currentTableState, cachedSeatMap);
+    // --- Recovery banner ---
+    if (snap.recoveryMessage) {
+      showRecoveryBanner(snap.recoveryMessage);
+    } else {
+      hideRecoveryBanner();
     }
 
-    // 2. Unified header
+    // --- App connection status ---
+    updateAppStatus(snap.appConnected);
+
+    // --- Pipeline health + PID summary (previously bypassed renderUI) ---
+    renderPipelineHealth();
+    renderPidSummary(snap.cachedDiag?.pidCounts);
+
+    // --- Status bar ---
+    if (snap.lastPipeline) {
+      updateStatusBar(snap.lastPipeline, snap.lastHandCount);
+    }
+
+    // --- Tournament panel (previously bypassed renderUI) ---
+    if (snap.lastGoodTournament) {
+      renderTournamentPanel(snap.lastGoodTournament);
+    } else if (liveCtx?.tournamentLevelInfo && !snap.lastGoodTournament) {
+      renderRawTournamentInfo(liveCtx.tournamentLevelInfo);
+    }
+
+    // --- Seat arc ---
+    if (snap.cachedSeatStats) {
+      renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap);
+    }
+
+    // --- Unified header ---
     renderUnifiedHeader(advice, liveCtx);
 
-    // 3. Street progress indicator
-    const street = liveCtx?.currentStreet || advice?.currentStreet || null;
+    // --- Street progress ---
     const progressEl = $('street-progress');
     if (progressEl) {
       if (street && (advice || liveCtx)) {
@@ -1779,22 +1839,48 @@ injectTokens();
       }
     }
 
-    // 4. Street card — the main content area
-    const appConnected = !!(lastPipeline?.appConnected) || !!(lastGoodExploits?.appConnected);
-    renderStreetCard(street, advice, liveCtx, appSeatData, focusedVillainSeat, lastGoodTournament, { loading: !!advicePendingForStreet });
+    // --- Street card (RT-48: visual continuity) ---
+    const card = $('street-card');
+    if (snap.advicePendingForStreet && !advice && snap.lastStreetCardHtml && card) {
+      // Hold previous content with shimmer — prevents advice disappear/reappear flash
+      if (card.innerHTML !== snap.lastStreetCardHtml) {
+        card.innerHTML = snap.lastStreetCardHtml;
+      }
+      card.classList.add('loading-advice');
+    } else {
+      renderStreetCard(street, advice, liveCtx, snap.appSeatData, snap.focusedVillainSeat, snap.lastGoodTournament, { loading: !!snap.advicePendingForStreet });
+      // Cache rendered HTML for visual continuity on next hand boundary
+      if (card && advice) {
+        coordinator.setLastStreetCardHtml(card.innerHTML);
+      }
+    }
 
-    // App launch prompt — rendered in its own DOM element (not the street card)
+    // --- App launch prompt ---
     const appPromptEl = $('app-launch-prompt');
-    if (!lastGoodExploits && !advice?.recommendations?.length) {
-      renderAppLaunchPrompt(appConnected);
+    if (!snap.lastGoodExploits && !advice?.recommendations?.length) {
+      renderAppLaunchPrompt(snap.appConnected);
     } else if (appPromptEl) {
       hideEl(appPromptEl);
     }
 
-    lastRenderedStreet = street;
-
-    // 5. Deep expander
+    // --- Deep expander (RT-49: collapse state preservation) ---
     renderDeepExpander(advice, street);
+  };
+
+  const coordinator = new RenderCoordinator({
+    renderFn: renderAll,
+    getTimestamp: () => Date.now(),
+    requestFrame: typeof requestAnimationFrame === 'function'
+      ? (cb) => requestAnimationFrame(cb)
+      : (cb) => setTimeout(cb, 0),
+    setTimeout: (cb, ms) => setTimeout(cb, ms),
+    clearTimeout: (id) => clearTimeout(id),
+  });
+
+  /** Schedule a render. Syncs state then delegates to coordinator. */
+  const scheduleRender = (reason, priority = PRIORITY.NORMAL) => {
+    syncStateToCoordinator();
+    coordinator.scheduleRender(reason, priority);
   };
 
 
@@ -1907,7 +1993,7 @@ injectTokens();
         showEl(pidSummary);
         pidPills.innerHTML = sorted.map(([pid, count]) => {
           const cls = activePidFilter === pid ? 'pid-pill active' : 'pid-pill';
-          return `<span class="${cls}" data-pid="${pid}">${pid}(${count})</span>`;
+          return `<span class="${cls}" data-pid="${escapeHtml(pid)}">${escapeHtml(pid)}(${count})</span>`;
         }).join('');
 
         // Attach click handlers

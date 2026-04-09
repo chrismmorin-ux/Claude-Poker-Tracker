@@ -9,7 +9,7 @@ import { LAYOUT } from '../../../constants/gameConstants';
 /**
  * SeatComponent - Individual seat with action badges, position badges, and hole cards
  */
-export const SeatComponent = ({
+const SeatComponentInner = ({
   seat,
   x,
   y,
@@ -202,4 +202,27 @@ export const SeatComponent = ({
   );
 };
 
+// RT-36: Memoize to prevent re-render on every GameContext update.
+// Custom comparator handles actionArray (new reference each render).
+const arePropsEqual = (prev, next) => {
+  const keys = Object.keys(next);
+  for (const key of keys) {
+    if (key === 'actionArray') {
+      const pa = prev.actionArray;
+      const na = next.actionArray;
+      if (pa === na) continue;
+      if (!pa || !na || pa.length !== na.length) return false;
+      // Shallow compare last entry (most common change)
+      if (pa.length > 0) {
+        const pl = pa[pa.length - 1];
+        const nl = na[na.length - 1];
+        if (pl.seat !== nl.seat || pl.action !== nl.action || pl.order !== nl.order) return false;
+      }
+      continue;
+    }
+    if (prev[key] !== next[key]) return false;
+  }
+  return true;
+};
 
+export const SeatComponent = React.memo(SeatComponentInner, arePropsEqual);

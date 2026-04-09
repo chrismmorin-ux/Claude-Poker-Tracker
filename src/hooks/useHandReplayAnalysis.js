@@ -6,9 +6,13 @@
  * sequential analysis loop when selectedHand/timeline/tendencyMap change.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/errorHandler';
 import { initializeSeatRanges, analyzeTimelineAction } from '../utils/handAnalysis';
+import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
+import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
+import { buildSituationKey } from '../utils/exploitEngine/decisionAccumulator';
+import { queryActionDistribution } from '../utils/exploitEngine/villainDecisionModel';
 
 /**
  * @param {Object|null} selectedHand - The hand record
@@ -65,6 +69,7 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
           showdownCards,
           blindsPosted,
           results,
+          deps: { narrowByBoard, segmentRange, buildSituationKey, queryActionDistribution },
         });
         results.push(result);
       }

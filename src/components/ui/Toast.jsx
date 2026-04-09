@@ -48,6 +48,7 @@ export const Toast = ({
   message,
   variant = 'info',
   duration = 4000,
+  action = null,
   onDismiss
 }) => {
   const config = VARIANTS[variant] || VARIANTS.info;
@@ -74,6 +75,14 @@ export const Toast = ({
     >
       <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${config.iconColor}`} />
       <p className="text-white text-sm flex-1 whitespace-pre-wrap">{message}</p>
+      {action && (
+        <button
+          onClick={() => { action.onClick(); onDismiss(id); }}
+          className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold flex-shrink-0 underline"
+        >
+          {action.label}
+        </button>
+      )}
       <button
         onClick={() => onDismiss(id)}
         className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
@@ -105,6 +114,7 @@ export const ToastContainer = ({ toasts, onDismiss }) => {
           message={toast.message}
           variant={toast.variant}
           duration={toast.duration}
+          action={toast.action}
           onDismiss={onDismiss}
         />
       ))}

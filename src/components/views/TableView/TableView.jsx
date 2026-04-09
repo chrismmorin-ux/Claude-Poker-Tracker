@@ -335,13 +335,13 @@ export const TableView = ({ scale }) => {
     setContextMenu(null);
   };
 
-  const handleHoleCardClick = (index) => {
+  const handleHoleCardClick = useCallback((index) => {
     openCardSelector('hole', index);
-  };
+  }, [openCardSelector]);
 
-  const handleToggleHoleCardsVisibility = () => {
+  const handleToggleHoleCardsVisibility = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.TOGGLE_HOLE_VISIBILITY });
-  };
+  }, [dispatchCard]);
 
   // Pot correction handler
   const handlePotCorrection = useCallback((amount) => {

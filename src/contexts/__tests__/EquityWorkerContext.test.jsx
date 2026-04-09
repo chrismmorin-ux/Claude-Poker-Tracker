@@ -8,7 +8,7 @@ import { renderHook } from '@testing-library/react';
 import { EquityWorkerProvider, useEquityWorker } from '../EquityWorkerContext';
 
 // Workers are unavailable in jsdom — computeEquity falls back to main-thread handVsRange
-vi.mock('../../utils/exploitEngine/monteCarloEquity', () => ({
+vi.mock('../../utils/pokerCore/monteCarloEquity', () => ({
   handVsRange: vi.fn(() => Promise.resolve({ equity: 0.5, trials: 1000 })),
 }));
 
