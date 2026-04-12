@@ -667,19 +667,30 @@ export function findFacedBet(actionSequence, heroSeat, currentStreet) {
 }
 
 /**
- * Extract scary cards count from handPlan branches.
+ * Extract scary-runout info from handPlan branches.
+ *
+ * Returns both the count (for legacy displays) and the specific rank chars
+ * the engine flagged as equity-killing on the next street. Ranks come from
+ * gameTreeDepth2.js's stratified runout sampler and are capped at 4 distinct.
+ *
  * @param {Object|null} handPlan
- * @returns {number} Count of scary runouts, or 0
+ * @returns {{ count: number, ranks: string[], nextStreetName: string|null }}
  */
 function _extractScaryCards(handPlan) {
-  if (!handPlan) return 0;
+  if (!handPlan) return { count: 0, ranks: [], nextStreetName: null };
+  // Branch → next-street name. ifCall happens on the street after the current one;
+  // nextStreet on the same logic; ifVillainChecks/Bets land on the turn/river.
   for (const branch of ['ifCall', 'nextStreet', 'ifVillainChecks', 'ifVillainBets']) {
-    const sc = handPlan[branch]?.scaryCards;
-    if (sc != null) {
-      return typeof sc === 'number' ? sc : (Array.isArray(sc) ? sc.length : 0);
+    const b = handPlan[branch];
+    if (!b) continue;
+    const sc = b.scaryCards;
+    const ranks = Array.isArray(b.scaryCardRanks) ? b.scaryCardRanks.filter(r => typeof r === 'string') : [];
+    if (sc != null || ranks.length > 0) {
+      const count = typeof sc === 'number' ? sc : (Array.isArray(sc) ? sc.length : ranks.length);
+      return { count, ranks, nextStreetName: null };
     }
   }
-  return 0;
+  return { count: 0, ranks: [], nextStreetName: null };
 }
 
 /**
@@ -727,10 +738,21 @@ export const buildPlanPanelHTML = (advice, liveContext, opts = {}) => {
     html += `<div class="pp-line pp-plan">Plan: ${escapeHtml(planNote)}</div>`;
   }
 
-  // Line 3: Watch/scary cards
-  const scaryCount = _extractScaryCards(rec.handPlan);
-  if (scaryCount > 0) {
-    html += `<div class="pp-line pp-watch">Watch: ${scaryCount} dangerous runout${scaryCount === 1 ? '' : 's'} on next street</div>`;
+  // Line 3: Watch/scary cards — render specific rank chars when available
+  const scary = _extractScaryCards(rec.handPlan);
+  if (scary.count > 0 || scary.ranks.length > 0) {
+    const currStreet = (liveContext?.state || liveContext?.street || '').toString().toLowerCase();
+    const nextStreet = currStreet === 'preflop' ? 'flop'
+      : currStreet === 'flop' ? 'turn'
+      : currStreet === 'turn' ? 'river'
+      : 'next street';
+    if (scary.ranks.length > 0) {
+      const rankList = scary.ranks.map(escapeHtml).join(', ');
+      html += `<div class="pp-line pp-watch">Watch: ${rankList} on ${escapeHtml(nextStreet)}</div>`;
+    } else {
+      const noun = scary.count === 1 ? 'runout' : 'runouts';
+      html += `<div class="pp-line pp-watch">Watch: ${scary.count} dangerous ${noun} on ${escapeHtml(nextStreet)}</div>`;
+    }
   }
 
   // Line 4: Showdown anchor (optional)

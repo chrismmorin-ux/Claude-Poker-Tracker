@@ -7,6 +7,7 @@ import {
   findFacedBet,
   buildContextStripHTML,
   classifyBetweenHandsMode,
+  buildPlanPanelHTML,
 } from '../render-orchestrator.js';
 
 describe('findFacedBet (RT-64)', () => {
@@ -141,5 +142,41 @@ describe('Mode A reflection coaching semantics (RT-63 verification)', () => {
     const activeCtx = { state: 'FLOP', foldedSeats: [] };
     const lastGoodAdvice = { recommendations: [{ action: 'call', ev: 0.1 }] };
     expect(classifyBetweenHandsMode(activeCtx, heroSeat, lastGoodAdvice, false)).toBeNull();
+  });
+});
+
+describe('Zone 3 plan panel: scary runout ranks (RT-62)', () => {
+  const makeAdvice = (handPlan) => ({
+    recommendations: [{ action: 'bet', ev: 2.0, handPlan }],
+    villainProfile: null,
+  });
+
+  it('renders specific rank chars with the next-street name when scaryCardRanks present', () => {
+    const advice = makeAdvice({
+      ifCall: { plan: 'barrel', scaryCards: 3, scaryCardRanks: ['A', 'K', 'Q'] },
+    });
+    const liveContext = { state: 'flop', heroSeat: 1 };
+    const { html } = buildPlanPanelHTML(advice, liveContext, { decisionState: 'aggressor' });
+    expect(html).toContain('Watch:');
+    expect(html).toContain('A, K, Q');
+    expect(html).toContain('on turn');
+    expect(html).not.toContain('dangerous runouts');
+  });
+
+  it('falls back to the count-only display when scaryCardRanks is absent (legacy payload)', () => {
+    const advice = makeAdvice({
+      ifCall: { plan: 'barrel', scaryCards: 2 }, // no scaryCardRanks
+    });
+    const liveContext = { state: 'flop', heroSeat: 1 };
+    const { html } = buildPlanPanelHTML(advice, liveContext, { decisionState: 'aggressor' });
+    expect(html).toContain('2 dangerous runouts');
+    expect(html).toContain('on turn');
+  });
+
+  it('advances next-street name correctly: preflop→flop, flop→turn, turn→river', () => {
+    const advice = makeAdvice({ ifCall: { scaryCardRanks: ['A'] } });
+    expect(buildPlanPanelHTML(advice, { state: 'preflop', heroSeat: 1 }, { decisionState: 'aggressor' }).html).toContain('on flop');
+    expect(buildPlanPanelHTML(advice, { state: 'flop', heroSeat: 1 }, { decisionState: 'aggressor' }).html).toContain('on turn');
+    expect(buildPlanPanelHTML(advice, { state: 'turn', heroSeat: 1 }, { decisionState: 'aggressor' }).html).toContain('on river');
   });
 });

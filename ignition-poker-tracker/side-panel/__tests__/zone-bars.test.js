@@ -444,14 +444,17 @@ describe('buildPlanPanelHTML', () => {
     expect(html).toContain('Plan:');
   });
 
-  it('renders watch line when scaryCards > 0', () => {
+  it('renders watch line with specific card ranks when scaryCardRanks present (RT-62)', () => {
     const { html } = buildPlanPanelHTML(
       flopWithAdvice.lastGoodAdvice,
       flopWithAdvice.currentLiveContext,
       { decisionState: DECISION_STATES.CALLER_FACING_BET }
     );
     expect(html).toContain('pp-watch');
-    expect(html).toContain('3 dangerous runouts');
+    // flopWithAdvice fixture sets scaryCardRanks: ['A', 'K', 'Q']
+    expect(html).toContain('A, K, Q');
+    expect(html).toContain('on turn');
+    expect(html).not.toContain('dangerous runouts');
   });
 
   it('omits watch line when scaryCards absent', () => {

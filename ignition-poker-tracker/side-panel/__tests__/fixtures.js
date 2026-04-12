@@ -102,7 +102,7 @@ export const flopWithAdvice = {
         sizing: null,
         reasoning: 'Strong draw — call to realize equity',
         handPlan: {
-          ifCall: { note: 'Barrel favorable turns', favorableRunouts: 18, totalRunouts: 47, scaryCards: 3 },
+          ifCall: { note: 'Barrel favorable turns', favorableRunouts: 18, totalRunouts: 47, scaryCards: 3, scaryCardRanks: ['A', 'K', 'Q'] },
           ifRaise: { note: 'Fold — behind vs TAG' },
         },
         villainResponse: { fold: { pct: 0.35 }, call: { pct: 0.55 }, raise: { pct: 0.10 } },
@@ -334,7 +334,7 @@ export const turnBarrel = {
         villainResponse: { fold: { pct: 0.52 }, call: { pct: 0.38 }, raise: { pct: 0.10 } },
         risk: 'L',
         handPlan: {
-          ifCall: { plan: 'barrel', note: 'Continue betting ~67% pot on safe runouts', scaryCards: 2, favorableRunouts: 30, totalRunouts: 44 },
+          ifCall: { plan: 'barrel', note: 'Continue betting ~67% pot on safe runouts', scaryCards: 2, scaryCardRanks: ['A', '9'], favorableRunouts: 30, totalRunouts: 44 },
           ifRaise: { plan: 'fold', note: 'Fold — their raise range is too strong here' },
         },
       },
@@ -903,7 +903,7 @@ export const aggFacingCheck = {
         risk: 'L',
         villainResponse: { fold: { pct: 0.40 }, call: { pct: 0.52 }, raise: { pct: 0.08 } },
         handPlan: {
-          ifCall: { plan: 'barrel', note: 'Barrel turn on safe cards', scaryCards: 2, favorableRunouts: 28, totalRunouts: 44 },
+          ifCall: { plan: 'barrel', note: 'Barrel turn on safe cards', scaryCards: 2, scaryCardRanks: ['A', 'K'], favorableRunouts: 28, totalRunouts: 44 },
           ifRaise: { plan: 'fold', note: 'Fold — fish check-raise means strength' },
           ifVillainChecks: { plan: 'bet', sizing: 0.50, note: 'Bet ~50% pot on the next street' },
         },
