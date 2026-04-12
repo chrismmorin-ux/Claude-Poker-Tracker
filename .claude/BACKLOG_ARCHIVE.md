@@ -6,6 +6,21 @@ Completed items moved from BACKLOG.md. Reference only — not loaded automatical
 
 ---
 
+## Phase C+D verified-done sweep — 2026-04-12
+
+Verified against current code during Phase C+D planning. All six items met their accept criteria without additional work.
+
+| ID | Pri | Description | Evidence |
+|----|-----|-------------|----------|
+| RT-49 | P2 | Preserve section collapse state across innerHTML rebuilds | `userCollapsedSections` in coordinator state (render-coordinator.js:91); populated on user toggle (side-panel.js:1159-1161); restored after innerHTML rebuild (side-panel.js:1143-1148); cleared on table switch (render-coordinator.js:537). |
+| RT-50 | P3 | Cancel _transitionTimer on rapid street-card updates | render-street-card.js:49 and :105 clear the transition timer before each new transition. `resetStreetCardState()` provides harness reset. Cross-fade cannot leave card at opacity:0. |
+| RT-51 | P1 | Message-level integration test harness | __tests__/message-integration.test.js has 13 describe blocks covering all 5 required scenarios (SW restart, rapid table switch, advice-before-context, concurrent async handlers, diagnostics burst). message-harness.js captures both coordinator state and render snapshots. 29 tests passing. |
+| RT-52 | P2 | Tournament timer writes to detached DOM | Mooted by RT-60. Tournament timer registered via `coordinator.registerTimer('tourneyTimer', ...)` and the tick function re-queries `$('tourney-bar-timer')` each cycle, handling the detached-node case. `clearForTableSwitch()` cancels it. |
+| RT-53 | P2 | Render _contextStale visual indicator | side-panel.js:1758-1762 renders yellow status dot + "Data may be stale — waiting for update…" text when `snap.staleContext && liveCtx`. Temporal scenario coverage in temporal-scenarios.js:113. |
+| RT-55 | P3 | Audit and remove dead panel render functions | renderBriefingPanel and renderObservationPanel deleted under RT-58 (commit f12c6f4). renderExploitPanel and renderWeaknessPanel (orphaned, not in RT-55 scope) deleted under a follow-up bonus cleanup. |
+
+---
+
 ## Phase B (R6 structural) — 2026-04-12 COMPLETE
 
 | ID | Pri | Description | Resolution |

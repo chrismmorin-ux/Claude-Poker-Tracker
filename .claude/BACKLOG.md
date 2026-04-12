@@ -23,22 +23,11 @@ Active work items only. Completed items archived in `BACKLOG_ARCHIVE.md`.
 
 _17 items active. Claim with `/backlog claim <id>` before starting._
 
-### R6 findings (sidebar display-thrashing) — remaining
+### Remaining items (Phase C + D)
 
 | ID | Pri | Status | Description | Accept Criteria | Claimed By |
 |----|-----|--------|-------------|-----------------|------------|
-| RT-48 | P2 | NEXT | Sidebar: stale advice visual indicator | When advice age > 10s or liveContext is null, advice card shows "From previous hand" or age badge; shimmer/loading distinguishable from stale state | — |
-| RT-49 | P2 | NEXT | Sidebar: preserve section collapse state across innerHTML rebuilds | User-expanded/collapsed sections survive exploit/tournament pushes; collapse state stored in variable and restored after DOM write | — |
-| RT-50 | P3 | NEXT | Sidebar: cancel _transitionTimer on rapid street-card updates | render-street-card.js clears pending transition timer before new transition; cross-fade cannot leave card at opacity:0. **Note:** absorbed into RT-60 timer-registration contract — wire via coordinator.onTableSwitch hook. | — |
-
-### R7 findings (self-verification + root causes)
-
-| ID | Pri | Status | Description | Accept Criteria | Claimed By |
-|----|-----|--------|-------------|-----------------|------------|
-| RT-51 | P1 | NEXT | Sidebar: message-level integration test harness | Feed raw push_* message sequences into handler dispatch; assert coordinator state AND DOM output for ≥5 scenarios (SW restart, rapid table switch, advice-before-context, concurrent async handlers, diagnostics burst); tests exercise handlePipelineStatus, handleAdvicePush, syncStateToCoordinator | — |
-| RT-52 | P2 | NEXT | Sidebar: tournament timer writes to detached DOM node | Tournament countdown timer references stable DOM element (not innerHTML-replaced); timer cleared on table switch and before innerHTML rewrite; no frozen countdown after renderAll | — |
-| RT-53 | P2 | NEXT | Sidebar: render _contextStale visual indicator | When _contextStale is true, sidebar displays visible stale-context indicator (dimmed header, timestamp, or banner); verified in visual harness with temporal scenario | — |
-| RT-55 | P3 | NEXT | Sidebar: audit and remove dead panel render functions | Confirm whether renderExploitPanel/renderWeaknessPanel/renderBriefingPanel/renderObservationPanel are called; if dead code, remove; if called outside renderAll, fold into unified render path. **Note:** RT-58 supersedes for four specific functions. | — |
+| RT-48 | P2 | NEXT | Sidebar: stale advice visual indicator | When advice age > 10s or liveContext is null, advice card shows age badge + border tint; shimmer/loading distinguishable from stale state | — |
 
 ### R8 findings (post-RT-43 residue) — remaining
 
