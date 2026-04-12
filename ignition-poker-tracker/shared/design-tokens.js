@@ -83,12 +83,31 @@ export const TOKENS = {
   // Briefing
   'briefing-accent': '#22c55e',
 
+  // Semantic signal roles (reserve red/amber for urgency)
+  'color-danger':     '#ef4444',
+  'color-danger-dim': '#7f1d1d',
+  'color-warning':    '#f59e0b',
+  'color-positive':   '#22c55e',
+  'color-info':       '#22d3ee',
+  'color-neutral':    '#6b7280',
+
+  // Common structural colors
+  'divider-subtle':  'rgba(42, 42, 74, 0.3)',
+  'divider-medium':  'rgba(42, 42, 74, 0.4)',
+  'shadow-inset':    'rgba(0, 0, 0, 0.3)',
+
   // Typography scale
+  'font-micro': '8px',
   'font-xs':  '9px',
   'font-sm':  '10px',
   'font-base': '11px',
   'font-md':  '13px',
   'font-lg':  '16px',
+
+  // Font weights
+  'weight-normal':  '400',
+  'weight-medium':  '600',
+  'weight-bold':    '700',
 
   // Spacing
   'sp-1': '4px',
@@ -111,9 +130,9 @@ export const TOKENS = {
 
 // Style badge colors (dark context — matches main app STYLE_COLORS)
 export const STYLE_TOKENS = {
-  fish:    { bg: 'rgba(127, 29, 29, 0.5)', text: '#fca5a5' },
+  fish:    { bg: 'rgba(194, 65, 12, 0.5)',  text: '#fb923c' },
   lag:     { bg: 'rgba(124, 45, 18, 0.5)', text: '#fdba74' },
-  tag:     { bg: 'rgba(20, 83, 45, 0.5)',  text: '#86efac' },
+  tag:     { bg: 'rgba(13, 148, 136, 0.4)', text: '#5eead4' },
   nit:     { bg: 'rgba(30, 58, 138, 0.5)', text: '#93c5fd' },
   lp:      { bg: 'rgba(113, 63, 18, 0.5)', text: '#fde68a' },
   reg:     { bg: 'rgba(88, 28, 135, 0.5)', text: '#d8b4fe' },

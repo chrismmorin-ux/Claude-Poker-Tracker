@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.6.0 | **Updated**: 2026-04-09 | **Owner**: Architecture Review (R6 roundtable)
+**Version**: 1.7.0 | **Updated**: 2026-04-11 | **Owner**: Architecture Review (R7 roundtable)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -181,6 +181,11 @@ New player observed → populationPriors.js creates default profile
 | `side-panel.js` STREET_RANK guard | `STREET_RANK[undefined] ?? -1` accepts stale advice when liveContext is null | Medium | High — stale advice displayed as current after SW restart | RT-45: reject advice when liveContext null |
 | `side-panel.js` renderPidSummary | Unescaped PID strings in innerHTML (XSS in extension context) | Low | Medium — arbitrary HTML/JS in side panel | RT-46: escapeHtml wrapper |
 | `side-panel.js` handlePipelineStatus | Async handler yields to event loop; sync handlers mutate shared state during yield | Medium | Medium — inconsistent state at render time | RT-47: snapshot or re-read pattern |
+| `side-panel.js` dual state ownership | Module vars (lines 48-78) and `RenderCoordinator._state` diverge between sync calls; any async yield or forgotten sync creates stale render | High | **High** — wrong advice/exploits displayed; root cause of recurring display-thrashing | RT-43 expanded: single-owner state store |
+| `render-coordinator.js` advice guard | No hand-number binding; SW restart sends cached advice from previous hand that passes street-rank check (`0 <= 3` = true) | Medium | **High** — confidently wrong advice from prior hand | RT-45 expanded: hand-number binding |
+| `side-panel.js` tournament timer | `setInterval` captures DOM reference; `renderAll` replaces element via `innerHTML`; timer writes to detached node; countdown freezes | High | Medium — frozen tournament countdown | RT-52: stable DOM reference |
+| `side-panel.js` `_contextStale` | Two-phase stale detection computed in state but no render function reads it; visual no-op | Certain | Medium — users never see stale warning | RT-53: render the indicator |
+| `side-panel.js` `_receivedAt` | `push_pipeline_status` sets `currentLiveContext` without `_receivedAt`; stale timeout math produces `NaN`; context never times out | Medium | Medium — infinite stale context | RT-56: set `_receivedAt` on all liveContext write paths |
 
 ### 5.2 Complexity Hotspots (Cyclomatic)
 
@@ -213,6 +218,10 @@ New player observed → populationPriors.js creates default profile
 | Analysis utility layer | `handAnalysis/replayAnalysis.js` | `exploitEngine/` (5 modules) | Violates documented dependency direction (INV-08); `handAnalysis` should not import from `exploitEngine` (RT-35) |
 | Render entry point count | `side-panel.js` push handlers | `renderUI` debounce intent | Adding a new push handler that calls a render function directly silently creates a new bypass of the coordinated render path |
 | STREET_RANK completeness | `handleAdvicePush` guard | Chrome MV3 SW lifecycle | SW restart nulls liveContext, making `STREET_RANK[undefined]=-1`, defeating the staleness guard; any new FSM state not in STREET_RANK bypasses the filter |
+| Tournament timer DOM reference | `renderTournamentPanel` setInterval | `renderAll` innerHTML rewrite | Timer holds closure reference to DOM node that renderAll replaces; timer silently writes to detached node; countdown freezes |
+| `_receivedAt` timestamp | Stale context timeout math | `push_pipeline_status` handler | Handler sets `currentLiveContext` directly without `_receivedAt`; timeout computes `Date.now() - undefined = NaN`; context never expires via this path |
+| Advice hand identity | `handleAdvicePush` street-rank guard | SW cached advice lifecycle | Guard checks street rank only; SW caches and replays advice across hand boundaries with no hand identifier |
+| `render-street-card.js` module state | `_prevStreet`, `_transitionTimer` | Table switch handlers | Module-level mutable state persists across table switches; same-table reconnect inherits stale transition state |
 
 ### 6.2 Cross-Module Interactions
 
@@ -333,6 +342,10 @@ New player observed → populationPriors.js creates default profile
 | No SW restart counter in diagnostics | Cannot measure frequency of sidebar 5-step flicker sequence | Add `sw_restart_count` to pipeline diagnostics |
 | No stale advice detection/logging | Cannot tell if user acted on stale data | Log advice age at render time; flag renders where age > 10s |
 | No render-cause tracing in side panel | Cannot debug which push handler triggered a specific render | Add render-reason tag to `scheduleRender()` calls |
+| No coordinator-vs-module state divergence detection | Cannot detect root cause of "wrong state" bugs at runtime | Debug-mode assertion comparing coordinator._state to module vars (or eliminate dual state via RT-43) |
+| No message-sequence test coverage | State race conditions invisible to test suite; temporal harness tests render layer only | RT-51: message-level integration harness |
+| `_contextStale` computed but never rendered | Two-phase stale detection invisible to users; visual no-op | RT-53: render the indicator |
+| Community cards absent from renderKey | Turn/river card arrival may not trigger re-render if no other tracked field changes | RT-54: include card content hash |
 
 ### 9.2 What We Can See
 
@@ -381,6 +394,8 @@ Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. Thi
 | 2026-04-06 | Amend "views never import utils" rule to allow read-only pure function/constant imports | 9 existing violations are all read-only; strict mediation adds indirection for no safety benefit. Real invariant is no stateful engine access from views. | Strict ESLint enforcement (rejected: solo dev overhead exceeds benefit for read-only imports) |
 | 2026-04-07 | EquityWorker must be a singleton context, not a per-component hook | Multiple instantiations waste mobile threads; crash recovery and backpressure require centralized state | Keep as hook with dedup logic (rejected: fragile, no enforcement) |
 | 2026-04-07 | handAnalysis must not import from exploitEngine (R5 roundtable) | Bidirectional coupling violates dependency layers; shared utilities should live in pokerCore or a shared layer | Leave as-is (rejected: silent breakage path) |
+| 2026-04-11 | Dual state in side-panel.js must converge to single-owner (coordinator) | Sync-based dual-state is the root cause of every recurring sidebar display bug; adding more sync points does not fix the architectural problem | Keep dual state with more sync calls (rejected: same class of bugs recurs); make module vars authoritative and remove coordinator (rejected: coordinator provides scheduling/snapshot benefits) |
+| 2026-04-11 | Advice guard must include hand-number binding, not just street-rank | SW restart sends cached advice from prior hand; street-rank check passes across hand boundaries; hand-number comparison is the only reliable cross-hand guard | Street-rank only (rejected: cross-hand contamination); clear all caches on SW restart (rejected: loses valid state on transient restart) |
 
 ---
 

@@ -170,7 +170,7 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     html += `<div class="uh-row1"><div class="uh-action-side"><span style="color:var(--text-muted);font-size:var(--font-sm)">Analyzing\u2026</span></div></div>`;
   }
 
-  // Row 2: Cards + meta
+  // Row 2: Cards
   const live = liveContext || currentLiveContext;
   const heroSeat = live?.heroSeat || currentTableState?.heroSeat;
   const heroFolded = heroSeat && (live?.foldedSeats || []).includes(heroSeat);
@@ -202,7 +202,10 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     }
   }
 
-  // Meta pills
+  html += `</div>`; // uh-row2 (cards only)
+
+  // Row 3: Meta pills (own row — prevents card overflow from pushing pills off-screen)
+  html += `<div class="uh-row2 uh-meta-row">`;
   html += `<div class="uh-meta-pills">`;
   if (hasAdvice && advice.potSize > 0) {
     html += `<span class="pot-inline">$${advice.potSize.toFixed(0)}</span>`;
@@ -221,8 +224,7 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     html += `<span class="pill depth">D${tm.depthReached}</span>`;
   }
   html += `</div>`;
-
-  html += `</div>`; // uh-row2
+  html += `</div>`; // uh-meta-row
 
   return { html, className, isWaiting: false };
 };

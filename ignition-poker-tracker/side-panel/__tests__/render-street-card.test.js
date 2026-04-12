@@ -197,8 +197,18 @@ describe('renderPreflopContent', () => {
     expect(html).toContain('Limps frequently');
   });
 
-  it('shows waiting when null advice AND no villain data', () => {
-    const html = renderPreflopContent(null, sampleLiveContext, {}, null);
+  it('shows hero GTO grid from liveContext when null advice AND no villain data', () => {
+    // Fix 4: liveContext.currentStreet='preflop' triggers GTO grid even without advice
+    // Needs dealerSeat for position resolution (GTO grid requires valid position)
+    const preflopCtx = { ...sampleLiveContext, currentStreet: 'preflop', state: 'PREFLOP', dealerSeat: 3 };
+    const html = renderPreflopContent(null, preflopCtx, {}, null);
+    expect(html).toContain('range-grid');
+  });
+
+  it('shows waiting when null advice AND no position data for GTO grid', () => {
+    // Without dealerSeat, GTO grid can't resolve position — falls through to waiting
+    const preflopCtx = { ...sampleLiveContext, currentStreet: 'preflop', state: 'PREFLOP' };
+    const html = renderPreflopContent(null, preflopCtx, {}, null);
     expect(html).toContain('Waiting for action data');
   });
 
@@ -262,6 +272,31 @@ describe('renderFlopContent', () => {
     const noSeg = { ...sampleAdvice, segmentation: null };
     const html = renderFlopContent(noSeg, sampleLiveContext, 3);
     expect(html).not.toContain('S3 Range');
+  });
+
+  it('shows equity badge when villain has equity but range is not 169 cells (Fix 5)', () => {
+    const partialRange = {
+      ...sampleAdvice,
+      villainRanges: [{
+        seat: 3, active: true, equity: 0.42, rangeWidth: 35,
+        range: new Array(100).fill(0.5), // not 169
+      }],
+    };
+    const html = renderFlopContent(partialRange, sampleLiveContext, 3);
+    expect(html).toContain('42%');
+    expect(html).toContain('S3 equity');
+  });
+
+  it('shows full range grid when range has exactly 169 cells', () => {
+    const fullRange = {
+      ...sampleAdvice,
+      villainRanges: [{
+        seat: 3, active: true, equity: 0.58, rangeWidth: 40, position: 'CO',
+        range: new Array(169).fill(0.5),
+      }],
+    };
+    const html = renderFlopContent(fullRange, sampleLiveContext, 3);
+    expect(html).toContain('range-grid');
   });
 });
 

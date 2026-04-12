@@ -500,7 +500,7 @@ export const renderFoldCurveSection = (foldMeta, currentBetFraction, { autoOpen 
   let yLabels = '';
   for (const pct of [0.2, 0.4, 0.6, 0.8]) {
     yLabels += `<line x1="${PAD_L}" y1="${toY(pct)}" x2="${W - PAD_R}" y2="${toY(pct)}" stroke="rgba(42,42,74,0.3)" stroke-width="0.5"/>`;
-    yLabels += `<text x="${PAD_L - 3}" y="${toY(pct) + 3}" fill="#4b5563" font-size="7" text-anchor="end" font-family="Consolas">${Math.round(pct * 100)}%</text>`;
+    yLabels += `<text x="${PAD_L - 3}" y="${toY(pct) + 3}" fill="#4b5563" font-size="8" text-anchor="end" font-family="Consolas">${Math.round(pct * 100)}%</text>`;
   }
 
   let marker = '', markerHtml = '';
@@ -552,14 +552,14 @@ export const renderFoldBreakdownSection = (foldMeta, foldPct) => {
       <span class="deep-chevron">\u25BE</span></div>
     <div class="deep-body"><div class="deep-content">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-        <span style="font-size:10px;color:var(--text-muted)">Base estimate</span>
-        <span style="font-family:Consolas;font-size:13px;font-weight:700;color:var(--text-primary)">${Math.round(meta.baseEstimate * 100)}%</span>
-        <span style="font-family:Consolas;font-size:9px;color:var(--text-faint);margin-left:auto">${escapeHtml(meta.source || '')}</span>
+        <span style="font-size:var(--font-sm);color:var(--text-muted)">Base estimate</span>
+        <span style="font-family:Consolas;font-size:var(--font-md);font-weight:var(--weight-bold);color:var(--text-primary)">${Math.round(meta.baseEstimate * 100)}%</span>
+        <span style="font-family:Consolas;font-size:var(--font-xs);color:var(--text-faint);margin-left:auto">${escapeHtml(meta.source || '')}</span>
       </div>
       ${rows}
       <div style="border-top:1px solid var(--border-default);margin-top:3px;padding-top:3px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:10px;color:var(--text-muted)">Final fold%</span>
-        <span style="font-family:Consolas;font-size:13px;font-weight:700;color:var(--text-primary)">${finalPct}%</span>
+        <span style="font-size:var(--font-sm);color:var(--text-muted)">Final fold%</span>
+        <span style="font-family:Consolas;font-size:var(--font-md);font-weight:var(--weight-bold);color:var(--text-primary)">${finalPct}%</span>
       </div>
     </div></div>
   </div>`;
@@ -615,7 +615,7 @@ export const renderVulnerabilitiesSection = (vulns) => {
     const sev = v.severity >= 0.7 ? 'high' : v.severity >= 0.4 ? 'medium' : 'low';
     items += `<div class="vuln-callout" style="margin-bottom:5px">
       <div class="vuln-dot ${sev}"></div>
-      <div class="vuln-text">${escapeHtml(v.label || '')}${v.exploitHint ? '<div style="font-size:9px;color:var(--text-faint);margin-top:1px">\u2192 ' + escapeHtml(v.exploitHint) + '</div>' : ''}</div>
+      <div class="vuln-text">${escapeHtml(v.label || '')}${v.exploitHint ? '<div style="font-size:var(--font-xs);color:var(--text-faint);margin-top:1px">\u2192 ' + escapeHtml(v.exploitHint) + '</div>' : ''}</div>
     </div>`;
   }
   return `<div class="deep-section" data-section="vulns">
@@ -640,10 +640,10 @@ export const renderNarrowingLogSection = (narrowingLog) => {
     const deltaStr = delta > 0 ? `\u2212${delta}%` : delta < 0 ? `+${Math.abs(delta)}%` : '0%';
     const deltaColor = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text-faint)';
     items += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:var(--font-xs)">
-      <span style="background:${color};color:#fff;padding:1px 4px;border-radius:3px;font-size:8px;min-width:32px;text-align:center">${escapeHtml(entry.street || '')}</span>
+      <span style="background:${color};color:#fff;padding:1px 4px;border-radius:3px;font-size:var(--font-micro);min-width:32px;text-align:center">${escapeHtml(entry.street || '')}</span>
       <span style="color:var(--text-secondary);min-width:22px">S${entry.seat}</span>
       <span style="color:var(--text-primary);flex:1">${escapeHtml(entry.description || '')}</span>
-      <span style="color:${deltaColor};font-weight:600;font-size:9px">${deltaStr}</span>
+      <span style="color:${deltaColor};font-weight:600;font-size:var(--font-xs)">${deltaStr}</span>
     </div>`;
   }
 

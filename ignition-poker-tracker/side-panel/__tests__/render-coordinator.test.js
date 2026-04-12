@@ -528,4 +528,47 @@ describe('RenderCoordinator', () => {
       expect(renders).toHaveLength(0);
     });
   });
+
+  // =========================================================================
+  // Fix 6c: Pipeline event log
+  // =========================================================================
+
+  describe('logPipelineEvent', () => {
+    it('records events up to cap of 50', () => {
+      const { coord } = createCoordinator();
+      for (let i = 0; i < 55; i++) coord.logPipelineEvent('test', String(i));
+      const events = coord.get('pipelineEvents');
+      expect(events.length).toBe(50);
+      expect(events[events.length - 1].detail).toBe('54');
+    });
+
+    it('pipelineEvents is NOT included in renderKey', () => {
+      const { coord } = createCoordinator();
+      coord.set('currentLiveContext', liveCtx());
+      const key1 = coord.buildRenderKey(coord.buildSnapshot());
+
+      coord.logPipelineEvent('new_hand', 'PREFLOP');
+      const key2 = coord.buildRenderKey(coord.buildSnapshot());
+      expect(key1).toBe(key2);
+    });
+
+    it('logs hand boundary transitions from handleLiveContext', () => {
+      const { coord } = createCoordinator();
+      coord.set('currentLiveContext', liveCtx({ state: 'FLOP', currentStreet: 'flop' }));
+      coord.handleLiveContext({ state: 'PREFLOP', currentStreet: 'preflop' });
+      const events = coord.get('pipelineEvents');
+      expect(events.length).toBe(1);
+      expect(events[0].event).toBe('new_hand');
+    });
+
+    it('logs advice acceptance from handleAdvice', () => {
+      const { coord } = createCoordinator();
+      coord.set('currentLiveContext', liveCtx());
+      coord.handleAdvice(advice());
+      const events = coord.get('pipelineEvents');
+      expect(events.length).toBe(1);
+      expect(events[0].event).toBe('advice_accepted');
+      expect(events[0].detail).toBe('flop');
+    });
+  });
 });

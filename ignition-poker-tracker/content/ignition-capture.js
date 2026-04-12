@@ -56,6 +56,11 @@ import { isGameWsUrl } from '../shared/protocol.js';
   const seenWsUrls = new Set();
   const captureStartedAt = Date.now();
   let diagTimer = null;
+  // Fix 6a: Enhanced audit counters
+  let lastHandCompletedAt = null;
+  let lastLiveContextAt = null;
+  let liveContextPushCount = 0;
+  let handCompletedCount = 0;
 
   const DIAG_KEY = SESSION_KEYS.PIPELINE_DIAG;
 
@@ -77,6 +82,10 @@ import { isGameWsUrl } from '../shared/protocol.js';
     batchedFrameCount: tableManager?.batchedFrameCount || 0,
     totalParsedMessages: tableManager?.totalParsedMessages || 0,
     pidCounts: tableManager?.pidCounts ? { ...tableManager.pidCounts } : {},
+    lastHandCompletedAt,
+    lastLiveContextAt,
+    liveContextPushCount,
+    handCompletedCount,
     _updatedAt: Date.now(),
   });
 
@@ -99,6 +108,8 @@ import { isGameWsUrl } from '../shared/protocol.js';
   // =========================================================================
 
   const onHandComplete = async (handRecord) => {
+    lastHandCompletedAt = Date.now();
+    handCompletedCount++;
     // Validate before sending to SW for storage
     const validation = validateHandForRelay(handRecord);
     if (!validation.valid) {
@@ -142,6 +153,8 @@ import { isGameWsUrl } from '../shared/protocol.js';
     const stateKey = `${ctx.state}|${ctx.currentStreet}|${(ctx.activeSeatNumbers || []).length}|${(ctx.foldedSeats || []).length}|${(ctx.actionSequence || []).length}|${ctx.pot || 0}`;
     if (stateKey === _prevLiveStateKey) return; // No change — skip
     _prevLiveStateKey = stateKey;
+    lastLiveContextAt = Date.now();
+    liveContextPushCount++;
 
     // Trailing-edge throttle: send immediately on first change, then
     // coalesce rapid subsequent changes into one push every 200ms

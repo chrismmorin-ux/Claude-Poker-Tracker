@@ -142,7 +142,7 @@ chrome.runtime.onConnect.addListener((port) => {
             try {
               const result = await enqueueHand(hand);
               if (result.success) {
-                appendSidePanelHand(hand);
+                await appendSidePanelHand(hand);
                 totalHandsSaved++;
                 updateBadge(totalHandsSaved);
                 chrome.storage.session.set({ total_hands_saved: totalHandsSaved }).catch(() => {});

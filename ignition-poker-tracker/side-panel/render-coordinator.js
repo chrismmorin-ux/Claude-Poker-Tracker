@@ -86,6 +86,12 @@ export class RenderCoordinator {
       cachedSeatMap: null,
       // Versioning for renderKey
       appSeatDataVersion: 0,
+      // Two-phase stale context (Fix 3)
+      staleContext: false,
+      // Has-hands flag for no-table visibility (Fix 2)
+      hasTableHands: true,
+      // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
+      pipelineEvents: [],
     };
 
     // --- Internal scheduling state ---
@@ -182,6 +188,8 @@ export class RenderCoordinator {
       connState: s.connState,
       cachedSeatMap: s.cachedSeatMap,
       appSeatDataVersion: s.appSeatDataVersion,
+      staleContext: s.staleContext,
+      hasTableHands: s.hasTableHands,
       // Computed
       focusedVillainSeat,
       // Derived
@@ -215,6 +223,8 @@ export class RenderCoordinator {
       (snap.currentLiveContext?.foldedSeats || []).length,
       (snap.currentLiveContext?.actionSequence || []).length,
       snap.currentLiveContext?.pot,
+      (snap.currentLiveContext?.communityCards || []).filter(c => c).join(','),
+      snap.currentLiveContext?.actionSequence?.slice(-1)?.[0]?.action,
       snap.lastGoodAdvice?.currentStreet,
       snap.lastGoodAdvice?.recommendations?.[0]?.action,
       snap.focusedVillainSeat,
@@ -228,6 +238,8 @@ export class RenderCoordinator {
       snap.cachedDiag ? 1 : 0,
       snap.recoveryMessage ? 1 : 0,
       snap.connState?.connected ? 1 : 0,
+      snap.staleContext ? 1 : 0,
+      snap.hasTableHands ? 1 : 0,
     ].join('|');
   }
 
@@ -288,6 +300,20 @@ export class RenderCoordinator {
   }
 
   // =======================================================================
+  // PIPELINE EVENT LOG (Fix 6c)
+  // =======================================================================
+
+  /**
+   * Log a pipeline event for audit visibility. Capped at 50 entries.
+   * NOT included in buildRenderKey — display-only data.
+   */
+  logPipelineEvent(event, detail = '') {
+    const events = this._state.pipelineEvents;
+    events.push({ ts: this._getTimestamp(), event, detail });
+    if (events.length > 50) events.splice(0, events.length - 50);
+  }
+
+  // =======================================================================
   // ADVICE GUARD (RT-45)
   // =======================================================================
 
@@ -310,22 +336,32 @@ export class RenderCoordinator {
       return false;
     }
 
-    // Street validation: reject advice from earlier streets than live context
+    // Street validation: reject stale advice, hold suspicious advice
     const adviceStreet = adviceMsg.currentStreet;
     const liveStreet = this._state.currentLiveContext.currentStreet;
     const adviceRank = STREET_RANK[adviceStreet] ?? -1;
     const liveRank = STREET_RANK[liveStreet] ?? -1;
 
-    if (liveRank <= adviceRank || adviceRank === -1) {
+    // Accept if: known street, same or at most 1 street ahead of context
+    // (advice may arrive slightly before context catches up — max 1 street gap)
+    // Reject gap > 1: e.g., river advice on preflop = cross-hand contamination
+    if (adviceRank >= 0 && liveRank >= 0 && adviceRank >= liveRank && (adviceRank - liveRank) <= 1) {
       this._state.lastGoodAdvice = adviceMsg;
-      // Clear pending flag — fresh advice arrived
       if (this._state.advicePendingForStreet) {
         this._state.advicePendingForStreet = null;
       }
       this._pendingAdvice = null;
+      this.logPipelineEvent('advice_accepted', adviceStreet);
       return true;
     }
 
+    // Earlier street — stale within same hand, reject outright
+    if (adviceRank >= 0 && liveRank >= 0 && adviceRank < liveRank) {
+      return false;
+    }
+
+    // Unknown street, unknown context, or >1 street gap — hold in pending
+    this._pendingAdvice = adviceMsg;
     return false;
   }
 
@@ -368,8 +404,9 @@ export class RenderCoordinator {
           promotedPending = true;
         }
       } else {
-        // Mid-hand reconnect: standard street validation
-        if (liveRank <= adviceRank || adviceRank === -1) {
+        // Mid-hand reconnect: accept same street or at most 1 ahead
+        // Reject unknown street or >1 street gap (cross-hand contamination)
+        if (adviceRank >= 0 && liveRank >= 0 && adviceRank >= liveRank && (adviceRank - liveRank) <= 1) {
           this._state.lastGoodAdvice = this._pendingAdvice;
           this._state.advicePendingForStreet = null;
           promotedPending = true;
@@ -386,6 +423,7 @@ export class RenderCoordinator {
       this._state.lastGoodAdvice = null;
       this._state.lastRenderedStreet = null;
       this._state.deepExpanderOpen = false;
+      this.logPipelineEvent('new_hand', `${prevState || 'null'} \u2192 ${newState}`);
     }
   }
 

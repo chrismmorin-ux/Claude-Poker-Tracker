@@ -24,10 +24,15 @@ Last verified against code: 2026-04-09
 - RT-37: Next Hand confirmation guard (data loss prevention)
 - RT-36: React.memo for high-frequency components
 - ARCH-003: TableView at 594 lines (trigger: >700)
-- RT-43 (P1): Unified render scheduler for sidebar (4+ bypass paths cause display thrashing)
-- RT-44 (P1): Fix renderKey fingerprint (silent render skips)
+- RT-43 (P1): Unified render scheduler + single-owner state store (root cause fix)
+- RT-44 (P1): Fix renderKey fingerprint (subsumed by RT-43)
+- RT-45 (P1): STREET_RANK guard + hand-number binding
+- RT-51 (P1): Message-level integration test harness
 - RT-48 (P2): Stale advice visual indicator
 - RT-49 (P2): Preserve section collapse state across renders
+- RT-52 (P2): Tournament timer detached DOM fix
+- RT-53 (P2): Render _contextStale visual indicator
+- RT-54 (P2): Community cards + villain profile in renderKey
 
 ## Milestone Gates
 
@@ -54,3 +59,4 @@ Last verified against code: 2026-04-09
 | 2026-04-07 | GREEN | R4 roundtable. Orbit strip touch targets reported at 36px (below 44px threshold) — tracked via RT-34. window.confirm() modal for Reset Hand noted as UX concern under live-game stress. UNDO_BATCH edge cases tracked (RT-34). |
 | 2026-04-07 | GREEN | R5 roundtable. Zero React.memo across component tree (RT-36). Next Hand has no confirmation guard (RT-37). Exploit badge popovers lack viewport-aware positioning. All existing UI quality metrics remain GREEN. |
 | 2026-04-09 | RED | R6 roundtable. Extension sidebar display-thrashing: 4+ render paths bypass coordination, renderKey drops exploit updates, stale advice displayed as current after SW restart, section collapse state destroyed on every push. User reports sidebar unusable. 4 P1 + 2 P2 findings. |
+| 2026-04-11 | RED | R7 roundtable. Root cause identified: dual state ownership (module vars vs coordinator) — not fixable by adding more sync. RT-43 scope expanded to include single-owner state store. 6 new findings (RT-51 through RT-56): message-level test harness, tournament timer detached DOM, stale indicator visual no-op, renderKey missing community cards, dead panel functions, _receivedAt NaN. |

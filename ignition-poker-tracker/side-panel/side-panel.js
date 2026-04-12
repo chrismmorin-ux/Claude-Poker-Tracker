@@ -45,34 +45,12 @@ injectTokens();
     return `${base}#online`;
   };
 
-  let lastHandCount = 0;
-  let cachedSeatStats = null;
-  let currentTableState = null;
-  let currentActiveTableId = null;
-  let currentLiveContext = null;
-  let lastGoodExploits = null;
-  let lastGoodAdvice = null;
-  let lastGoodWeaknesses = null;
-  let lastGoodBriefings = null;
-  let lastGoodObservations = null;
-  let lastGoodTournament = null;
-  let tournamentCollapsed = false;
+  // Infrastructure vars (timers, async locks — not renderable state).
+  // All renderable state lives exclusively in coordinator._state.
   let tourneyTimerInterval = null;
-  let appSeatData = {};
-  let lastPipeline = null;
-  let exploitPushCount = 0;
-  let advicePushCount = 0;
-  let cachedDiag = null; // Pipeline diagnostics from capture script
-  let swFallbackState = null; // SW-derived state when capture diagnostics are absent
-  let _recoveryMessage = null; // Declarative recovery banner state (rendered by renderAll)
-
-  // Auto-follow / pin state for villain focus
-  let focusedVillainSeat = null;
-  let pinnedVillainSeat = null;
-  let deepExpanderOpen = false;
-  let lastRenderedStreet = null; // Track street changes for fade transition
-  let advicePendingForStreet = null; // Set when new hand/street clears advice; cleared when advice arrives
-  let userCollapsedSections = new Set(); // Sections hero manually closed — don't auto-reopen
+  let _tableGraceTimer = null;
+  let _refreshInFlight = false;
+  let _refreshPendingAfter = false;
 
   // =========================================================================
   // PORT-BASED CONNECTION TO SERVICE WORKER (via shared module)
@@ -105,25 +83,24 @@ injectTokens();
           break;
         case 'push_pipeline_diagnostics':
           if (message.data) {
-            cachedDiag = message.data;
-            // Auto-dismiss recovery banner when traffic is flowing
-            if (cachedDiag.gameWsMessageCount > 0) {
-              _recoveryMessage = null;
+            coordinator.set('cachedDiag', message.data);
+            if (message.data.gameWsMessageCount > 0) {
+              coordinator.set('recoveryMessage', null);
             }
             scheduleRender('pipeline_diag');
           }
           break;
         case 'push_recovery_needed':
-          _recoveryMessage = message.message || 'Connection issue detected. Reload the Ignition page to start capturing.';
+          coordinator.set('recoveryMessage', message.message || 'Connection issue detected. Reload the Ignition page to start capturing.');
           scheduleRender('recovery_needed');
           break;
         case 'push_recovery_cleared':
-          _recoveryMessage = null;
+          coordinator.set('recoveryMessage', null);
           scheduleRender('recovery_cleared');
           break;
         case 'push_silence_alert':
           if (message.level === 'stale' || message.level === 'dead') {
-            _recoveryMessage = message.message || 'No game traffic detected. Reload the Ignition page.';
+            coordinator.set('recoveryMessage', message.message || 'No game traffic detected. Reload the Ignition page.');
             scheduleRender('silence_alert');
           }
           break;
@@ -132,9 +109,11 @@ injectTokens();
 
     onConnect: () => {
       console.log('[Side Panel] Port connected');
+      coordinator.set('connState', { connected: true });
     },
 
     onDisconnect: () => {
+      coordinator.set('connState', { connected: false });
       $('status-dot').className = 'status-dot yellow';
       $('status-text').textContent = 'Reconnecting...';
     },
@@ -199,7 +178,7 @@ injectTokens();
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'session') return;
     if (changes[SESSION_KEYS.PIPELINE_DIAG]) {
-      cachedDiag = changes[SESSION_KEYS.PIPELINE_DIAG].newValue || null;
+      coordinator.set('cachedDiag', changes[SESSION_KEYS.PIPELINE_DIAG].newValue || null);
       scheduleRender('storage_diag');
     }
   });
@@ -223,53 +202,66 @@ injectTokens();
 
   /** Handle full pipeline status push (replaces the old poll cycle). */
   const handlePipelineStatus = async (pipeline) => {
-    lastPipeline = pipeline;
-    // Status bar and app status are rendered by renderAll — no direct DOM writes here
-    // (RT-43: all DOM writes go through the unified scheduler)
+    coordinator.set('lastPipeline', pipeline);
 
     // Find active table
     const tables = pipeline?.tables || {};
     const tableEntries = Object.entries(tables);
-    const prevTableId = currentActiveTableId;
+    const prevTableId = coordinator.get('currentActiveTableId');
 
     if (tableEntries.length > 0) {
+      // Table present — cancel any pending grace timer
+      if (_tableGraceTimer) { clearTimeout(_tableGraceTimer); _tableGraceTimer = null; }
       const [connId] = tableEntries[0];
-      currentActiveTableId = `table_${connId}`;
-      currentTableState = tableEntries[0][1];
-    } else {
-      currentActiveTableId = null;
-      currentTableState = null;
+      coordinator.set('currentActiveTableId', `table_${connId}`);
+      coordinator.set('currentTableState', tableEntries[0][1]);
+    } else if (prevTableId && !_tableGraceTimer) {
+      // Tables went empty — start 5s grace period before clearing.
+      _tableGraceTimer = setTimeout(() => {
+        _tableGraceTimer = null;
+        coordinator.set('currentActiveTableId', null);
+        coordinator.set('currentTableState', null);
+        coordinator.clearForTableSwitch();
+        scheduleRender('table_grace_expired');
+      }, 5000);
     }
 
-    // Clear stale state on table switch (RT-49: also clears userCollapsedSections)
-    if (currentActiveTableId !== prevTableId) {
-      pinnedVillainSeat = null;
-      lastGoodAdvice = null;
-      lastGoodTournament = null;
-      currentLiveContext = null;
-      userCollapsedSections.clear();
+    // Clear stale state on actual table switch (different table, not null)
+    const newTableId = coordinator.get('currentActiveTableId');
+    if (newTableId !== prevTableId && newTableId !== null && prevTableId !== null) {
       coordinator.clearForTableSwitch();
     }
 
     // Use live context from push (only if provided — don't keep stale context)
+    // RT-56: Set _receivedAt so stale timeout math doesn't produce NaN
     if (pipeline?.liveContext) {
-      currentLiveContext = pipeline.liveContext;
+      coordinator.set('currentLiveContext', { ...pipeline.liveContext, _receivedAt: Date.now() });
     }
 
     // Process diagnostic data for tournament log
     handleDiagnosticData(pipeline?.diagnosticData);
 
-    // Read hands from storage and compute stats
-    await refreshHandStats(currentActiveTableId, pipeline);
+    // Capture values before async gap (other handlers may mutate coordinator during await)
+    const tid = coordinator.get('currentActiveTableId');
+    const pip = coordinator.get('lastPipeline');
+    await refreshHandStats(tid, pip);
   };
 
   /** When hands are updated, re-read storage and recompute stats. */
   const handleHandsUpdated = async (_totalHands) => {
-    await refreshHandStats(currentActiveTableId, lastPipeline);
+    await refreshHandStats(coordinator.get('currentActiveTableId'), coordinator.get('lastPipeline'));
   };
 
   /** Shared: read hands from storage, compute stats, render. */
   const refreshHandStats = async (activeTableId, pipeline) => {
+    // Debounce: if a previous read is in-flight, defer this call
+    if (_refreshInFlight) {
+      _refreshPendingAfter = true;
+      return;
+    }
+    _refreshInFlight = true;
+    _refreshPendingAfter = false;
+
     try {
       const result = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
       const hands = result[SESSION_KEYS.SIDE_PANEL_HANDS] || [];
@@ -288,49 +280,66 @@ injectTokens();
       }
 
       if (tableHands.length === 0) {
-        // No hands — show no-table state. Let renderAll handle visibility.
-        lastHandCount = 0;
-        cachedSeatStats = null;
-        showEl($('no-table'));
-        showEl($('pipeline-health'));
-        hideEl($('hud-content'));
+        const hadHands = coordinator.get('hasTableHands');
+        const tableId = coordinator.get('currentActiveTableId');
+
+        // If we previously had hands and still have an active table, this may be
+        // a transient storage race. Retry once after 500ms before hiding the HUD.
+        if (hadHands && tableId) {
+          setTimeout(async () => {
+            const currentTableId = coordinator.get('currentActiveTableId');
+            if (currentTableId !== tableId) return; // table switched — don't act
+            const retry = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
+            const retryHands = (retry[SESSION_KEYS.SIDE_PANEL_HANDS] || [])
+              .filter(h => h.tableId === currentTableId);
+            if (retryHands.length === 0) {
+              coordinator.merge({ lastHandCount: 0, cachedSeatStats: null, hasTableHands: false });
+              scheduleRender('no_hands_confirmed');
+            }
+          }, 500);
+          return; // Don't render "no table" yet
+        }
+
+        coordinator.merge({ lastHandCount: 0, cachedSeatStats: null, hasTableHands: false });
         scheduleRender('no_hands');
         return;
       }
 
-      hideEl($('no-table'));
-      hideEl($('pipeline-health'));
-      showEl($('hud-content'));
-
       // Recompute stats only when hand count changes
-      if (tableHands.length !== lastHandCount) {
-        cachedSeatStats = stats.computeAllSeatStats(tableHands);
-        lastHandCount = tableHands.length;
+      if (tableHands.length !== coordinator.get('lastHandCount')) {
+        coordinator.merge({
+          cachedSeatStats: stats.computeAllSeatStats(tableHands),
+          lastHandCount: tableHands.length,
+          hasTableHands: true,
+        });
       }
 
       // Build unified seat map (tournament: physical → regSeatNo, cash: null)
-      cachedSeatMap = buildUnifiedSeatMap(
-        currentTableState?.seatDisplayMap || null, tableHands
-      );
+      const seatDisplayMap = coordinator.get('currentTableState')?.seatDisplayMap || null;
+      coordinator.set('cachedSeatMap', buildUnifiedSeatMap(seatDisplayMap, tableHands));
 
-      // Schedule coordinated render
       scheduleRender('hands_updated');
     } catch (e) {
       console.warn('[Side Panel] refreshHandStats error:', e.message);
+    } finally {
+      _refreshInFlight = false;
+      if (_refreshPendingAfter) {
+        _refreshPendingAfter = false;
+        refreshHandStats(coordinator.get('currentActiveTableId'), coordinator.get('lastPipeline'));
+      }
     }
   };
 
   const handleExploitsPush = (message) => {
-    exploitPushCount++;
+    coordinator.set('exploitPushCount', coordinator.get('exploitPushCount') + 1);
     if (message.seats) {
       const appConnected = message.appConnected !== false;
-      // App status is rendered by renderAll — no direct DOM write here
-      lastGoodExploits = { seats: message.seats, appConnected };
+      coordinator.set('lastGoodExploits', { seats: message.seats, appConnected });
 
       // Build per-seat lookup for enhanced seat cards
-      appSeatData = {};
+      const seatData = {};
       for (const s of message.seats) {
-        appSeatData[s.seat] = {
+        seatData[s.seat] = {
           exploitCount: (s.exploits || []).length,
           weaknessCount: (s.weaknesses || []).length,
           style: s.style,
@@ -340,46 +349,27 @@ injectTokens();
           villainProfile: s.villainProfile || null,
         };
       }
+      coordinator.set('appSeatData', seatData);
 
-      // Extract weaknesses across all seats
-      lastGoodWeaknesses = message.seats.flatMap(s =>
+      coordinator.set('lastGoodWeaknesses', message.seats.flatMap(s =>
         (s.weaknesses || []).map(w => ({ ...w, seat: Number(s.seat), seatStyle: s.style }))
-      );
-
-      // Extract briefings across all seats
-      lastGoodBriefings = message.seats.flatMap(s =>
+      ));
+      coordinator.set('lastGoodBriefings', message.seats.flatMap(s =>
         (s.briefings || []).map(b => ({ ...b, seat: Number(s.seat), seatStyle: s.style }))
-      );
-
-      // Extract observations across all seats
-      lastGoodObservations = message.seats.flatMap(s =>
+      ));
+      coordinator.set('lastGoodObservations', message.seats.flatMap(s =>
         (s.observations || []).map(o => ({ ...o, seat: Number(s.seat), seatStyle: s.style }))
-      );
+      ));
 
-      // RT-44: increment version so renderKey detects the change
       coordinator.set('appSeatDataVersion', (coordinator.get('appSeatDataVersion') || 0) + 1);
-
-      // Re-render with updated app data
       scheduleRender('exploits');
     }
   };
 
   const handleAdvicePush = (message) => {
-    // advicePushCount is incremented by coordinator.handleAdvice() — not here
     if (message.advice) {
-      // RT-45: Delegate to coordinator's advice guard. It holds advice
-      // when liveContext is null (prevents stale advice after SW restart)
-      // and validates street ordering.
-      syncStateToCoordinator();
       const accepted = coordinator.handleAdvice(message.advice);
-
-      // Sync back: coordinator may have updated lastGoodAdvice and advicePendingForStreet
-      lastGoodAdvice = coordinator.get('lastGoodAdvice');
-      advicePendingForStreet = coordinator.get('advicePendingForStreet');
-      advicePushCount = coordinator.get('advicePushCount');
-
-      if (accepted && !advicePendingForStreet) {
-        // Fresh advice arrived — render immediately (bypasses coalesce)
+      if (accepted && !coordinator.get('advicePendingForStreet')) {
         scheduleRender('advice', PRIORITY.IMMEDIATE);
         return;
       }
@@ -389,30 +379,27 @@ injectTokens();
 
   const handleLiveContextPush = (message) => {
     if (message.context) {
-      // RT-45: Delegate to coordinator for hand boundary + pending advice promotion
-      syncStateToCoordinator();
+      coordinator.set('staleContext', false);
       coordinator.handleLiveContext(message.context);
-
-      // Sync back: coordinator may have updated these
-      currentLiveContext = coordinator.get('currentLiveContext');
-      lastGoodAdvice = coordinator.get('lastGoodAdvice');
-      advicePendingForStreet = coordinator.get('advicePendingForStreet');
-      lastRenderedStreet = coordinator.get('lastRenderedStreet');
-      deepExpanderOpen = coordinator.get('deepExpanderOpen');
-
-      // RT-49: userCollapsedSections is NOT cleared at hand boundary
-      // (moved to table-switch only, preserving user preferences within a session)
-
       scheduleRender('live_context');
     }
   };
 
-  // Clear stale live context every 10s — shows "Between hands" when no updates for 30s
+  // Two-phase stale context: 60s = stale indicator, 120s = full clear to between-hands.
+  // Phase 1 keeps last content visible with a subtle badge so the user can still read it.
+  // Phase 2 fully clears to between-hands (true session end / table close).
   setInterval(() => {
-    if (currentLiveContext && currentLiveContext._receivedAt) {
-      if (Date.now() - currentLiveContext._receivedAt > 30_000) {
-        currentLiveContext = null;
-        scheduleRender('stale_timeout');
+    const ctx = coordinator.get('currentLiveContext');
+    if (ctx?._receivedAt) {
+      const age = Date.now() - ctx._receivedAt;
+      if (age > 120_000) {
+        coordinator.set('currentLiveContext', null);
+        coordinator.set('staleContext', false);
+        coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
+        scheduleRender('stale_full_clear');
+      } else if (age > 60_000 && !coordinator.get('staleContext')) {
+        coordinator.set('staleContext', true);
+        scheduleRender('stale_indicator');
       }
     }
   }, 10_000);
@@ -450,7 +437,7 @@ injectTokens();
   };
 
   const handleTournamentPush = (message) => {
-    lastGoodTournament = message.tournament;
+    coordinator.set('lastGoodTournament', message.tournament);
     scheduleRender('tournament');
   };
 
@@ -498,23 +485,25 @@ injectTokens();
 
     // Timer
     barHtml += `<span class="tourney-bar-timer" id="tourney-bar-timer"></span>`;
-    barHtml += `<span class="tourney-bar-chevron${tournamentCollapsed ? '' : ' open'}" id="tourney-bar-chevron">\u25BE</span>`;
+    barHtml += `<span class="tourney-bar-chevron${coordinator.get('tournamentCollapsed') ? '' : ' open'}" id="tourney-bar-chevron">\u25BE</span>`;
 
     showEl(bar);
     bar.innerHTML = barHtml;
 
-    // Timer countdown
+    // Timer countdown — RT-52: re-query DOM element on each tick (innerHTML replaces it)
     if (tourneyTimerInterval) { clearInterval(tourneyTimerInterval); tourneyTimerInterval = null; }
-    const timerEl = $('tourney-bar-timer');
-    if (t.levelEndTime && timerEl) {
+    if (t.levelEndTime) {
+      const endTime = t.levelEndTime;
       const updateTimer = () => {
-        const remaining = Math.max(0, t.levelEndTime - Date.now());
+        const el = $('tourney-bar-timer'); // re-query after potential innerHTML rewrite
+        if (!el) return;
+        const remaining = Math.max(0, endTime - Date.now());
         const totalSec = Math.floor(remaining / 1000);
         const m = Math.floor(totalSec / 60);
         const s = totalSec % 60;
-        timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
         if (remaining <= 0) {
-          timerEl.textContent = '0:00';
+          el.textContent = '0:00';
           clearInterval(tourneyTimerInterval);
           tourneyTimerInterval = null;
         }
@@ -525,9 +514,10 @@ injectTokens();
 
     // Click to expand/collapse detail
     bar.onclick = () => {
-      tournamentCollapsed = !tournamentCollapsed;
+      const isCollapsed = !coordinator.get('tournamentCollapsed');
+      coordinator.set('tournamentCollapsed', isCollapsed);
       const chevron = $('tourney-bar-chevron');
-      if (tournamentCollapsed) {
+      if (isCollapsed) {
         detail.classList.remove('open');
         if (chevron) chevron.classList.remove('open');
       } else {
@@ -536,7 +526,8 @@ injectTokens();
       }
     };
     // Sync initial state
-    if (!tournamentCollapsed) detail.classList.add('open');
+    const collapsed = coordinator.get('tournamentCollapsed');
+    if (!collapsed) detail.classList.add('open');
     else detail.classList.remove('open');
 
     // ── Detail content ──
@@ -644,7 +635,7 @@ injectTokens();
   /**
    * Update status bar — delegates text/class computation to render-orchestrator.js.
    */
-  const updateStatusBar = (pipeline, handCount) => {
+  const updateStatusBar = (pipeline, handCount, diagData, fallbackState) => {
     const dot = $('status-dot');
     const text = $('status-text');
 
@@ -653,15 +644,14 @@ injectTokens();
 
     const result = buildStatusBar(pipeline, handCount);
     dot.className = result.dotClass;
-    text.textContent = result.text || getDiagnosticStatus();
+    text.textContent = result.text || getDiagnosticStatus(diagData, fallbackState);
   };
 
   /** Generate a stage-aware status message from pipeline diagnostics. */
-  const getDiagnosticStatus = () => {
-    const d = cachedDiag;
+  const getDiagnosticStatus = (d, fallback) => {
     if (!d) {
-      if (swFallbackState) {
-        if (swFallbackState.capturePorts === 0) {
+      if (fallback) {
+        if (fallback.capturePorts === 0) {
           return 'Capture script not running — open Ignition page';
         }
         return 'Capture connected but diagnostics unavailable';
@@ -683,12 +673,12 @@ injectTokens();
   // PIPELINE HEALTH STRIP — visual indicator for each capture stage
   // =========================================================================
 
-  const renderPipelineHealth = () => {
+  const renderPipelineHealth = (snap) => {
     const healthEl = $('pipeline-health');
     if (!healthEl) return;
 
-    const d = cachedDiag;
-    const connState = conn.getState();
+    const d = snap?.cachedDiag ?? coordinator.get('cachedDiag');
+    const connState = snap?.connState ?? conn.getState();
     const now = Date.now();
     const detail = $('pipeline-detail');
 
@@ -698,15 +688,16 @@ injectTokens();
     };
 
     // No diagnostics at all — check SW fallback for more info
+    const fallback = snap?.swFallbackState ?? coordinator.get('swFallbackState');
     if (!d) {
       setDot('probe', 'unknown');
       setDot('bridge', 'unknown');
       setDot('filter', 'unknown');
-      if (swFallbackState) {
-        setDot('port', swFallbackState.capturePorts > 0 ? 'ok' : 'fail');
+      if (fallback) {
+        setDot('port', fallback.capturePorts > 0 ? 'ok' : 'fail');
         setDot('panel', connState.connected ? 'ok' : 'warn');
         if (detail) {
-          if (swFallbackState.capturePorts === 0) {
+          if (fallback.capturePorts === 0) {
             detail.textContent = 'No capture script connected to the service worker. '
               + 'Make sure the Ignition Casino page is open (.eu or .net) and refresh it.';
           } else {
@@ -769,6 +760,14 @@ injectTokens();
     if (detail) {
       detail.innerHTML = getPipelineDetailHTML(d, elapsed);
     }
+
+    // Fix 6e: Message counter summary
+    const counterEl = $('pipeline-msg-counters');
+    if (counterEl) {
+      const ctxAge = d.lastLiveContextAt ? `${Math.round((now - d.lastLiveContextAt) / 1000)}s` : '\u2014';
+      counterEl.textContent = `ctx: ${d.liveContextPushCount || 0} (${ctxAge} ago) \u00B7 hands: ${d.handCompletedCount || 0}`;
+      counterEl.style.display = '';
+    }
   };
 
   /** Build detail text explaining the first broken pipeline stage. */
@@ -806,6 +805,15 @@ injectTokens();
     // Everything looks OK but no hands yet
     if (d.tableCount > 0) {
       let html = `Connected to ${d.tableCount} table(s) — waiting for first hand to complete.`;
+      // Fix 6b: Enhanced audit timing info
+      if (d.lastHandCompletedAt) {
+        const handAge = Math.round((Date.now() - d.lastHandCompletedAt) / 1000);
+        html += `<br><span style="color:var(--text-muted);font-size:10px">Last hand: ${handAge}s ago \u00B7 ${d.handCompletedCount || 0} total</span>`;
+      }
+      if (d.lastLiveContextAt) {
+        const ctxAge = Math.round((Date.now() - d.lastLiveContextAt) / 1000);
+        html += `<br><span style="color:var(--text-muted);font-size:10px">Live context: ${ctxAge}s ago \u00B7 ${d.liveContextPushCount || 0} pushes</span>`;
+      }
       if (d.batchedFrameCount > 0) {
         html += `<br><span style="color:var(--text-muted);font-size:10px">Batched frames: ${d.batchedFrameCount}, total messages: ${d.totalParsedMessages}</span>`;
       }
@@ -832,7 +840,7 @@ injectTokens();
     for (const [pid, count] of entries.slice(0, 20)) {
       const isCritical = CRITICAL_PIDS.includes(pid);
       const color = isCritical && count === 0 ? 'color:var(--m-red)' : isCritical ? 'color:var(--m-green)' : '';
-      html += `<span style="margin-right:6px;${color}">${escapeHtml(pid.replace('CO_', '').replace('PLAY_', ''))}:${count}</span>`;
+      html += `<span style="margin-right:6px;${color}">${escapeHtml(pid.replace('CO_', '').replace('PLAY_', ''))}:${escapeHtml(String(count))}</span>`;
     }
     html += '</div>';
     pidEl.innerHTML = html;
@@ -857,8 +865,6 @@ injectTokens();
     return Object.keys(unified).length > 0 ? unified : null;
   };
 
-  let cachedSeatMap = null; // Most recent unified seat map
-
   // =========================================================================
   // SEAT ARC — Semicircle poker table layout
   // =========================================================================
@@ -878,14 +884,14 @@ injectTokens();
    * @param {Object} tableState - From HSM getState()
    * @param {Object|null} seatMap - Unified physical → regSeatNo map (null for cash)
    */
-  const renderSeatArc = (physicalStats, tableState, seatMap) => {
+  const renderSeatArc = (physicalStats, tableState, seatMap, snap) => {
     const arc = $('seat-arc');
     if (!arc) return;
     const html = buildSeatArcHTML(physicalStats, tableState, seatMap, {
-      currentLiveContext,
-      appSeatData,
-      focusedVillainSeat,
-      pinnedVillainSeat,
+      currentLiveContext: snap.currentLiveContext,
+      appSeatData: snap.appSeatData,
+      focusedVillainSeat: snap.focusedVillainSeat,
+      pinnedVillainSeat: snap.pinnedVillainSeat,
       containerWidth: arc.offsetWidth || 380,
     });
     if (arc.innerHTML === html) return; // skip redundant DOM write
@@ -899,16 +905,16 @@ injectTokens();
   /**
    * Render unified header — delegates HTML generation to render-orchestrator.js.
    */
-  const renderUnifiedHeader = (advice, liveContext) => {
+  const renderUnifiedHeader = (advice, liveContext, snap) => {
     const header = $('unified-header');
     if (!header) return;
 
     const result = buildUnifiedHeaderHTML(advice, liveContext, {
-      focusedVillainSeat,
-      pinnedVillainSeat,
-      appSeatData,
-      currentTableState,
-      currentLiveContext,
+      focusedVillainSeat: snap.focusedVillainSeat,
+      pinnedVillainSeat: snap.pinnedVillainSeat,
+      appSeatData: snap.appSeatData,
+      currentTableState: snap.currentTableState,
+      currentLiveContext: snap.currentLiveContext,
     });
 
     if (result.isWaiting) {
@@ -938,8 +944,9 @@ injectTokens();
 
   if (deepExpanderBtn) {
     deepExpanderBtn.addEventListener('click', () => {
-      deepExpanderOpen = !deepExpanderOpen;
-      if (deepExpanderOpen) {
+      const isOpen = !coordinator.get('deepExpanderOpen');
+      coordinator.set('deepExpanderOpen', isOpen);
+      if (isOpen) {
         deepExpanderContent.classList.add('open');
         deepExpanderChevron.classList.add('open');
       } else {
@@ -952,7 +959,7 @@ injectTokens();
   /**
    * Render deep expander — delegates HTML generation to render-orchestrator.js.
    */
-  const renderDeepExpander = (advice, street) => {
+  const renderDeepExpander = (advice, street, snap) => {
     const btn = $('deep-expander-btn');
     const content = $('deep-expander-content');
     if (!btn || !content) return;
@@ -960,7 +967,6 @@ injectTokens();
     const result = buildDeepExpanderHTML(advice, street);
 
     if (!result.showButton) {
-      // Keep last content visible (don't flash empty) — just hide the button
       hideEl(btn);
       return;
     }
@@ -968,19 +974,20 @@ injectTokens();
     showEl(btn);
 
     // Auto-open the expander container on postflop streets
-    if (street && street !== 'preflop' && !deepExpanderOpen) {
-      deepExpanderOpen = true;
+    if (street && street !== 'preflop' && !snap.deepExpanderOpen) {
+      coordinator.set('deepExpanderOpen', true);
       content.classList.add('open');
       if (deepExpanderChevron) deepExpanderChevron.classList.add('open');
     }
 
-    if (content.innerHTML === result.html) return; // skip redundant DOM write
+    if (content.innerHTML === result.html) return;
     content.innerHTML = result.html;
 
     // RT-49: Restore collapse state from userCollapsedSections after DOM rebuild
+    const collapsed = snap.userCollapsedSections;
     for (const section of content.querySelectorAll('.deep-section[data-section]')) {
       const key = section.dataset.section;
-      if (key && userCollapsedSections.has(key)) {
+      if (key && collapsed.has(key)) {
         section.classList.remove('open');
       }
     }
@@ -992,9 +999,9 @@ injectTokens();
         const sectionKey = section.dataset.section;
         const wasOpen = section.classList.contains('open');
         section.classList.toggle('open');
-        // Track user-closed sections to prevent auto-reopen
-        if (wasOpen && sectionKey) userCollapsedSections.add(sectionKey);
-        else if (sectionKey) userCollapsedSections.delete(sectionKey);
+        const sections = coordinator.get('userCollapsedSections');
+        if (wasOpen && sectionKey) sections.add(sectionKey);
+        else if (sectionKey) sections.delete(sectionKey);
       });
     }
   };
@@ -1046,9 +1053,9 @@ injectTokens();
   let activePopoverSeat = null;
 
   const showSeatPopover = (seatNum, cardEl) => {
-    const app = appSeatData[seatNum];
+    const app = (coordinator.get('appSeatData') || {})[seatNum];
     const vp = app?.villainProfile;
-    const seatStats = cachedSeatStats?.[seatNum];
+    const seatStats = coordinator.get('cachedSeatStats')?.[seatNum];
 
     // Need either villain profile or basic stats to show anything
     if (!vp && !seatStats) { hideSeatPopover(); return; }
@@ -1138,31 +1145,30 @@ injectTokens();
     const circle = e.target.closest('.seat-circle[data-seat]');
     if (circle) {
       const seat = Number(circle.dataset.seat);
-      const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+      const heroSeat = coordinator.get('currentLiveContext')?.heroSeat || coordinator.get('currentTableState')?.heroSeat;
       if (seat === heroSeat) return; // Don't pin hero
 
       // Toggle pin
-      if (pinnedVillainSeat === seat) {
-        pinnedVillainSeat = null; // Unpin
+      if (coordinator.get('pinnedVillainSeat') === seat) {
+        coordinator.set('pinnedVillainSeat', null);
       } else {
-        pinnedVillainSeat = seat; // Pin
+        coordinator.set('pinnedVillainSeat', seat);
       }
 
       // Show/hide popover
-      if (pinnedVillainSeat === seat) {
+      if (coordinator.get('pinnedVillainSeat') === seat) {
         showSeatPopover(seat, circle);
       } else {
         hideSeatPopover();
       }
 
-      // Re-render everything with new pin state
       scheduleRender('pin', PRIORITY.IMMEDIATE);
       return;
     }
     // Villain range tab clicks — switch focused villain in range grid
     const rangeTab = e.target.closest('.villain-tab[data-range-seat]');
     if (rangeTab) {
-      pinnedVillainSeat = Number(rangeTab.dataset.rangeSeat);
+      coordinator.set('pinnedVillainSeat', Number(rangeTab.dataset.rangeSeat));
       scheduleRender('range_tab', PRIORITY.IMMEDIATE);
       return;
     }
@@ -1305,6 +1311,7 @@ injectTokens();
   // EXPLOIT TIPS — RENDERING
   // =========================================================================
 
+  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
   const renderExploitPanel = (exploits, appConnected) => {
     const panel = $('exploit-panel');
     const list = $('exploit-list');
@@ -1415,12 +1422,12 @@ injectTokens();
   /**
    * Filter weaknesses by current live context (skip hero + folded seats).
    */
-  const filterWeaknesses = (weaknesses) => {
+  const filterWeaknesses = (weaknesses, liveCtx, tableState) => {
     if (!weaknesses || weaknesses.length === 0) return [];
 
-    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
-    const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
-    const isLive = currentTableState && currentTableState.state !== 'IDLE' && currentTableState.state !== 'COMPLETE';
+    const heroSeat = liveCtx?.heroSeat || tableState?.heroSeat;
+    const foldedSeats = new Set(liveCtx?.foldedSeats || []);
+    const isLive = tableState && tableState.state !== 'IDLE' && tableState.state !== 'COMPLETE';
 
     let filtered = weaknesses.filter(w => {
       if (w.seat === heroSeat) return false;
@@ -1442,12 +1449,13 @@ injectTokens();
     return filtered.slice(0, 8);
   };
 
+  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
   const renderWeaknessPanel = (weaknesses, appConnected) => {
     const panel = $('weakness-panel');
     const list = $('weakness-list');
     const count = $('weakness-count');
 
-    const filtered = filterWeaknesses(weaknesses);
+    const filtered = filterWeaknesses(weaknesses, coordinator.get('currentLiveContext'), coordinator.get('currentTableState'));
 
     if (!filtered || filtered.length === 0) {
       hideEl(panel);
@@ -1513,6 +1521,7 @@ injectTokens();
   // BRIEFING PANEL — RENDERING
   // =========================================================================
 
+  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
   const renderBriefingPanel = (briefings, appConnected) => {
     const panel = $('briefing-panel');
     const list = $('briefing-list');
@@ -1664,6 +1673,7 @@ injectTokens();
   // OBSERVATION PANEL — RENDERING
   // =========================================================================
 
+  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
   const renderObservationPanel = (observations, appConnected) => {
     const panel = $('observation-panel');
     const list = $('observation-list');
@@ -1745,53 +1755,28 @@ injectTokens();
   // =========================================================================
   // RENDER COORDINATOR — Unified render scheduler (RT-43)
   // =========================================================================
-  // All push handlers update state variables then call scheduleRender().
+  // RenderCoordinator._state is the SOLE authoritative state store.
+  // All push handlers write to coordinator via coordinator.set()/merge().
   // All DOM writes happen in one renderAll() call per animation frame.
-  // No handler touches the DOM directly. This prevents partial-state renders
-  // that caused the recurring display-thrashing bug.
-
-  /** Sync module-level state into the coordinator before each render. */
-  const syncStateToCoordinator = () => {
-    coordinator.merge({
-      lastHandCount,
-      cachedSeatStats,
-      currentTableState,
-      currentActiveTableId,
-      currentLiveContext,
-      lastGoodExploits,
-      lastGoodAdvice,
-      lastGoodWeaknesses,
-      lastGoodBriefings,
-      lastGoodObservations,
-      lastGoodTournament,
-      tournamentCollapsed,
-      appSeatData,
-      lastPipeline,
-      exploitPushCount,
-      advicePushCount,
-      cachedDiag,
-      swFallbackState,
-      pinnedVillainSeat,
-      deepExpanderOpen,
-      lastRenderedStreet,
-      advicePendingForStreet,
-      userCollapsedSections,
-      recoveryMessage: _recoveryMessage,
-      connState: conn.getState(),
-      cachedSeatMap,
-    });
-  };
+  // No handler touches the DOM directly. syncStateToCoordinator() has been
+  // deleted — there is no dual state to synchronize.
 
   /** The single render function. All DOM writes happen here. */
   const renderAll = (snap, reason) => {
-    // Sync computed values back to module-level vars for functions that
-    // still read them directly (e.g., filterExploitsByContext, filterWeaknesses)
-    focusedVillainSeat = snap.focusedVillainSeat;
-    lastRenderedStreet = snap.street;
-
     const advice = snap.lastGoodAdvice;
     const liveCtx = snap.currentLiveContext;
     const street = snap.street;
+
+    // --- No-table / HUD visibility (Fix 2: moved from refreshHandStats) ---
+    if (!snap.hasTableHands) {
+      showEl($('no-table'));
+      showEl($('pipeline-health'));
+      hideEl($('hud-content'));
+    } else {
+      hideEl($('no-table'));
+      hideEl($('pipeline-health'));
+      showEl($('hud-content'));
+    }
 
     // --- Recovery banner ---
     if (snap.recoveryMessage) {
@@ -1803,13 +1788,21 @@ injectTokens();
     // --- App connection status ---
     updateAppStatus(snap.appConnected);
 
-    // --- Pipeline health + PID summary (previously bypassed renderUI) ---
-    renderPipelineHealth();
+    // --- Pipeline health + PID summary ---
+    renderPipelineHealth(snap);
     renderPidSummary(snap.cachedDiag?.pidCounts);
 
     // --- Status bar ---
     if (snap.lastPipeline) {
-      updateStatusBar(snap.lastPipeline, snap.lastHandCount);
+      updateStatusBar(snap.lastPipeline, snap.lastHandCount, snap.cachedDiag, snap.swFallbackState);
+    }
+
+    // --- Stale context indicator ---
+    if (snap.staleContext && liveCtx) {
+      const dot = $('status-dot');
+      if (dot) dot.className = 'status-dot yellow';
+      const text = $('status-text');
+      if (text) text.textContent = 'Data may be stale \u2014 waiting for update\u2026';
     }
 
     // --- Tournament panel (previously bypassed renderUI) ---
@@ -1821,11 +1814,11 @@ injectTokens();
 
     // --- Seat arc ---
     if (snap.cachedSeatStats) {
-      renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap);
+      renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
     }
 
     // --- Unified header ---
-    renderUnifiedHeader(advice, liveCtx);
+    renderUnifiedHeader(advice, liveCtx, snap);
 
     // --- Street progress ---
     const progressEl = $('street-progress');
@@ -1864,7 +1857,7 @@ injectTokens();
     }
 
     // --- Deep expander (RT-49: collapse state preservation) ---
-    renderDeepExpander(advice, street);
+    renderDeepExpander(advice, street, snap);
   };
 
   const coordinator = new RenderCoordinator({
@@ -1877,9 +1870,8 @@ injectTokens();
     clearTimeout: (id) => clearTimeout(id),
   });
 
-  /** Schedule a render. Syncs state then delegates to coordinator. */
+  /** Schedule a render. Coordinator._state is the sole authority — no sync needed. */
   const scheduleRender = (reason, priority = PRIORITY.NORMAL) => {
-    syncStateToCoordinator();
     coordinator.scheduleRender(reason, priority);
   };
 
@@ -1993,7 +1985,7 @@ injectTokens();
         showEl(pidSummary);
         pidPills.innerHTML = sorted.map(([pid, count]) => {
           const cls = activePidFilter === pid ? 'pid-pill active' : 'pid-pill';
-          return `<span class="${cls}" data-pid="${escapeHtml(pid)}">${escapeHtml(pid)}(${count})</span>`;
+          return `<span class="${cls}" data-pid="${escapeHtml(pid)}">${escapeHtml(pid)}(${escapeHtml(String(count))})</span>`;
         }).join('');
 
         // Attach click handlers
@@ -2341,12 +2333,13 @@ injectTokens();
   // =========================================================================
 
   const updateStatusFromDiag = () => {
-    if (!lastPipeline || (lastPipeline.tableCount || 0) === 0) {
+    const pip = coordinator.get('lastPipeline');
+    if (!pip || (pip.tableCount || 0) === 0) {
       const dot = $('status-dot');
       const text = $('status-text');
       if (dot && text) {
         dot.className = 'status-dot yellow';
-        text.textContent = getDiagnosticStatus();
+        text.textContent = getDiagnosticStatus(coordinator.get('cachedDiag'), coordinator.get('swFallbackState'));
       }
     }
   };
@@ -2355,25 +2348,25 @@ injectTokens();
   (async () => {
     try {
       const result = await chrome.storage.session.get(SESSION_KEYS.PIPELINE_DIAG);
-      cachedDiag = result[SESSION_KEYS.PIPELINE_DIAG] || null;
-      renderPipelineHealth();
+      coordinator.set('cachedDiag', result[SESSION_KEYS.PIPELINE_DIAG] || null);
+      scheduleRender('init_diag');
       updateStatusFromDiag();
     } catch (e) { console.warn('[Side Panel] Initial diag read failed:', e.message); }
   })();
 
   // Fallback: if no diagnostics after 4s, query SW for capture port status
   setTimeout(async () => {
-    if (cachedDiag) return; // Diagnostics arrived, no fallback needed
+    if (coordinator.get('cachedDiag')) return;
     try {
       const ping = await chrome.runtime.sendMessage({ type: MSG.PING });
       if (!ping?.alive) return;
-      swFallbackState = {
+      coordinator.set('swFallbackState', {
         capturePorts: ping.capturePorts || 0,
         swVersion: ping.version,
         errorCount: ping.errorCount || 0,
-      };
-      console.log('[Side Panel] SW fallback:', swFallbackState);
-      renderPipelineHealth();
+      });
+      console.log('[Side Panel] SW fallback:', coordinator.get('swFallbackState'));
+      scheduleRender('init_sw_fallback');
       updateStatusFromDiag();
     } catch (e) { console.warn('[Side Panel] SW fallback ping failed:', e.message); }
   }, 4000);

@@ -187,28 +187,32 @@ const renderVillainContextHeader = (advice, liveContext, appSeatData, focusedVil
     .filter(s => s !== heroSeat && !foldedSeats.has(s));
   const isMultiway = activeOpponents.length > 1;
 
-  let html = `<div style="display:flex;align-items:center;gap:6px;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border-default)">`;
-  html += `<span style="font-size:8px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.5px">${isMultiway ? 'Villain' : 'vs'}</span>`;
-  html += `<span style="font-weight:700;color:var(--gold);font-size:var(--font-md)">S${villainSeat}</span>`;
+  let html = `<div style="display:flex;align-items:center;gap:6px;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--divider-subtle)">`;
+  html += `<span style="font-size:var(--font-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:0.5px">${isMultiway ? 'Villain' : 'vs'}</span>`;
+  html += `<span style="font-weight:var(--weight-bold);color:var(--gold);font-size:var(--font-md)">S${villainSeat}</span>`;
   if (style) {
-    html += `<span style="font-size:8px;font-weight:bold;padding:1px 4px;border-radius:3px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
+    html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);padding:1px 4px;border-radius:3px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
   }
   if (sample > 0) {
-    html += `<span style="font-family:Consolas,monospace;font-size:8px;color:var(--text-faint)">${sample}h</span>`;
+    html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);color:var(--text-faint)">${sample}h</span>`;
   }
   if (isMultiway) {
-    html += `<span style="font-size:8px;color:var(--text-faint);margin-left:auto">${activeOpponents.length} opponents</span>`;
+    html += `<span style="font-size:var(--font-micro);color:var(--text-faint);margin-left:auto">${activeOpponents.length} opponents</span>`;
   }
   html += `</div>`;
 
-  // Headline below context bar
+  // Headline below context bar — always reserve height for layout stability
   if (headline) {
-    html += `<div style="font-size:var(--font-sm);color:var(--text-secondary);font-style:italic;margin-bottom:6px;line-height:1.3">${escapeHtml(headline)}</div>`;
+    html += `<div style="font-size:var(--font-sm);color:var(--text-secondary);font-style:italic;margin-bottom:6px;line-height:1.3;min-height:18px">${escapeHtml(headline)}</div>`;
+  } else {
+    html += `<div style="min-height:18px;margin-bottom:6px"></div>`;
   }
 
-  // Disambiguation note when advice data is computed for a different seat
+  // Disambiguation note — fixed slot to prevent layout shift
   if (adviceTargetsDifferent) {
-    html += `<div style="font-size:9px;color:var(--text-muted);padding:2px 6px;margin-bottom:6px;border-radius:3px;background:var(--surface-inset)">Advice computed vs S${adviceSeat}</div>`;
+    html += `<div style="font-size:var(--font-xs);color:var(--text-muted);padding:2px 6px;margin-bottom:6px;border-radius:3px;background:var(--surface-inset)">Advice computed vs S${adviceSeat}</div>`;
+  } else {
+    html += `<div style="height:0;overflow:hidden;margin:0;padding:0"></div>`;
   }
 
   return html;
@@ -225,7 +229,7 @@ const renderActivePlayers = (liveContext, appSeatData) => {
     .filter(s => s !== heroSeat && !foldedSeats.has(s))
     .sort((a, b) => a - b);
 
-  if (activeSeats.length <= 1) return ''; // Hide in HU — only show when multiway
+  if (activeSeats.length <= 1) return '<div style="height:0;margin:0"></div>'; // Collapsed placeholder — preserves DOM structure for layout stability
 
   const MAX_SHOWN = 4;
   const shown = activeSeats.slice(0, MAX_SHOWN);
@@ -242,9 +246,9 @@ const renderActivePlayers = (liveContext, appSeatData) => {
     const stats = app?.stats || null;
 
     html += `<div style="display:flex;align-items:center;gap:3px;padding:2px 6px;background:var(--surface-inset);border-radius:4px;border:1px solid var(--border-default);font-size:9px">`;
-    html += `<span style="font-weight:700;color:var(--text-primary)">S${seat}</span>`;
+    html += `<span style="font-weight:var(--weight-bold);color:var(--text-primary)">S${seat}</span>`;
     if (style) {
-      html += `<span style="font-size:7px;font-weight:bold;padding:0 3px;border-radius:2px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
+      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);padding:0 3px;border-radius:2px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
     }
     if (sample > 0) {
       html += `<span style="color:var(--text-faint)">${sample}h</span>`;
@@ -259,7 +263,7 @@ const renderActivePlayers = (liveContext, appSeatData) => {
   }
 
   if (overflow > 0) {
-    html += `<span style="font-size:9px;color:var(--text-faint);align-self:center">+${overflow} more</span>`;
+    html += `<span style="display:flex;align-items:center;padding:2px 6px;background:var(--surface-inset);border-radius:4px;border:1px dashed var(--border-default);font-size:var(--font-xs);color:var(--text-faint)">+${overflow} more</span>`;
   }
 
   html += `</div>`;
@@ -296,7 +300,7 @@ const renderActionTimeline = (liveContext) => {
   }
 
   const heroSeat = liveContext?.heroSeat;
-  let html = `<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border-default)">`;
+  let html = `<div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--divider-subtle)">`;
 
   for (const st of STREET_ORDER) {
     const streetActions = byStreet[st];
@@ -305,7 +309,7 @@ const renderActionTimeline = (liveContext) => {
     // Street label
     const stLabel = st === 'preflop' ? 'Pre' : st.charAt(0).toUpperCase() + st.slice(1);
     html += `<div style="display:flex;align-items:center;gap:3px;margin-bottom:2px;flex-wrap:wrap">`;
-    html += `<span style="font-size:7px;font-weight:700;color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px;min-width:24px">${stLabel}</span>`;
+    html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px;min-width:24px">${stLabel}</span>`;
 
     // Action chips
     for (const a of streetActions) {
@@ -315,9 +319,9 @@ const renderActionTimeline = (liveContext) => {
       const amt = a.amount > 0 ? `$${a.amount < 1 ? a.amount.toFixed(2) : a.amount.toFixed(0)}` : '';
       const border = isHeroAction ? ';border:1px solid var(--gold-dim)' : '';
       const fullAction = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-      html += `<span style="font-family:Consolas,monospace;font-size:8px;font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
+      html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
       html += `S${a.seat}${label}`;
-      if (amt) html += `<span style="font-size:7px;opacity:0.7">${amt}</span>`;
+      if (amt) html += `<span style="font-size:var(--font-micro);opacity:0.7">${amt}</span>`;
       html += `</span>`;
     }
 
@@ -344,7 +348,8 @@ const renderCompactTimeline = (liveContext, currentStreet) => {
   }
 
   const heroSeat = liveContext?.heroSeat;
-  let html = `<div style="display:flex;align-items:center;gap:3px;margin-bottom:6px;flex-wrap:wrap;padding-bottom:4px;border-bottom:1px solid var(--border-default)">`;
+  let html = `<div class="street-card-section">${renderSectionLabel('Action History')}`;
+  html += `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">`;
 
   for (const st of STREET_ORDER) {
     const streetActions = byStreet[st];
@@ -355,10 +360,10 @@ const renderCompactTimeline = (liveContext, currentStreet) => {
 
     if (!isCurrent) {
       // Past street: collapsed count chip
-      html += `<span style="font-size:7px;font-weight:700;color:var(--text-faint);padding:1px 3px;background:var(--surface-inset);border-radius:2px" title="${streetActions.length} actions">${stLabel} ${streetActions.length}</span>`;
+      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--text-faint);padding:1px 3px;background:var(--surface-inset);border-radius:2px" title="${streetActions.length} actions">${stLabel} ${streetActions.length}</span>`;
     } else {
       // Current street: show action chips
-      html += `<span style="font-size:7px;font-weight:700;color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px">${stLabel}</span>`;
+      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px">${stLabel}</span>`;
       for (const a of streetActions) {
         const label = ACTION_LABELS[a.action] || '?';
         const color = ACTION_COLORS[a.action] || 'var(--text-faint)';
@@ -366,15 +371,15 @@ const renderCompactTimeline = (liveContext, currentStreet) => {
         const amt = a.amount > 0 ? `$${a.amount < 1 ? a.amount.toFixed(2) : a.amount.toFixed(0)}` : '';
         const border = isHeroAction ? ';border:1px solid var(--gold-dim)' : '';
         const fullAction = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-        html += `<span style="font-family:Consolas,monospace;font-size:8px;font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
+        html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
         html += `S${a.seat}${label}`;
-        if (amt) html += `<span style="font-size:7px;opacity:0.7">${amt}</span>`;
+        if (amt) html += `<span style="font-size:var(--font-micro);opacity:0.7">${amt}</span>`;
         html += `</span>`;
       }
     }
   }
 
-  html += `</div>`;
+  html += `</div></div>`;
   return html;
 };
 
@@ -410,7 +415,7 @@ const renderHandPlanTree = (plan) => {
       </div>`;
     }
     if (b.scaryCards?.length > 0) {
-      html += `<div style="font-size:9px;color:var(--m-yellow);margin-top:2px">Scary: ${escapeHtml(b.scaryCards.join(', '))}</div>`;
+      html += `<div style="font-size:var(--font-xs);color:var(--m-yellow);margin-top:2px">Scary: ${escapeHtml(b.scaryCards.join(', '))}</div>`;
     }
     html += `</div>`;
   }
@@ -522,7 +527,7 @@ const renderReasoningNote = (advice) => {
   if (!advice?.recommendations?.[0]?.reasoning) return '';
   const reason = advice.recommendations[0].reasoning;
   const short = reason.length > 80 ? reason.substring(0, 80) + '\u2026' : reason;
-  return `<div style="font-size:var(--font-sm);color:var(--text-secondary);line-height:1.3;padding:4px 6px;background:var(--surface-inset);border-radius:var(--radius-md);border-left:2px solid var(--gold);margin-bottom:6px">${escapeHtml(short)}</div>`;
+  return `<div class="reasoning-note">${escapeHtml(short)}</div>`;
 };
 
 // =========================================================================
@@ -639,7 +644,11 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
 
   // No dynamic range data — fall back to static GTO grid on preflop
   if (!villainRanges || villainRanges.length === 0) {
-    if (advice?.currentStreet === 'preflop' || !advice?.currentStreet) {
+    // Fix 4: Also check liveContext street so hero GTO grid shows before advice arrives
+    const isPreflop = advice?.currentStreet === 'preflop'
+      || !advice?.currentStreet
+      || liveContext?.currentStreet === 'preflop';
+    if (isPreflop) {
       const heroPos = getPositionName(liveContext?.heroSeat, liveContext?.dealerSeat);
       return renderRangeGrid({
         position: heroPos,
@@ -685,6 +694,21 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
       equity: focused.equity,
       rangeWidth: focused.rangeWidth,
     });
+  } else if (focused?.equity != null) {
+    // Fix 5: Show equity badge even without a full 169-cell range grid
+    const eqPct = Math.round(focused.equity * 100);
+    const eqColor = eqPct >= 55 ? 'var(--green)' : eqPct >= 45 ? 'var(--gold)' : 'var(--red)';
+    const widthStr = focused.rangeWidth != null
+      ? `${focused.rangeWidth}% of hands`
+      : '';
+    html += `<div class="street-card-section">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">`;
+    html += `<span style="color:var(--text-muted);font-size:var(--font-sm)">S${focused.seat} equity</span>`;
+    html += `<span style="color:${eqColor};font-weight:700;font-size:var(--font-base)">${eqPct}%</span>`;
+    if (widthStr) {
+      html += `<span style="color:var(--text-faint);font-size:var(--font-xs)">${widthStr}</span>`;
+    }
+    html += `</div></div>`;
   }
 
   return html;
@@ -761,6 +785,30 @@ const renderMultiSizingTable = (advice) => {
   if (curve && curve.length >= 2) {
     const foldLabel = advice?.villainSeat ? `S${advice.villainSeat} Fold % by Sizing` : 'Fold % by Sizing';
     let html = `<div class="street-card-section">${renderSectionLabel(foldLabel)}`;
+
+    // Primary fold% header — matches turn/flop visual pattern so user's eyes find fold% at same spot
+    const recSizing = advice?.recommendations?.[0]?.sizing?.betFraction;
+    if (recSizing != null) {
+      let closest = curve[0];
+      let minDist = Math.abs(curve[0].sizing - recSizing);
+      for (const pt of curve) {
+        const d = Math.abs(pt.sizing - recSizing);
+        if (d < minDist) { minDist = d; closest = pt; }
+      }
+      const pctDisplay = Math.round(closest.foldPct * 100);
+      const sizingDisplay = Math.round(recSizing * 100);
+      html += `<div class="fold-pct-display" style="margin-bottom:8px">`;
+      html += `<span class="fold-pct-value">${pctDisplay}%</span>`;
+      html += `<span class="fold-pct-label">fold to ${sizingDisplay}% pot</span>`;
+      html += `</div>`;
+    } else if (advice?.foldPct?.bet != null) {
+      const pctDisplay = Math.round(advice.foldPct.bet * 100);
+      html += `<div class="fold-pct-display" style="margin-bottom:8px">`;
+      html += `<span class="fold-pct-value">${pctDisplay}%</span>`;
+      html += `<span class="fold-pct-label">fold to bet</span>`;
+      html += `</div>`;
+    }
+
     html += `<div class="fold-sizing-table">`;
     for (const pt of curve) {
       const sizingLabel = `${Math.round(pt.sizing * 100)}%`;
