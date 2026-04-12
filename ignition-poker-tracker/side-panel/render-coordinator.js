@@ -61,7 +61,11 @@ export class RenderCoordinator {
     this._tableSwitchHooks = [];
     this._coalesceMs = coalesceMs;
     this._throwOnViolation = throwOnViolation;
-    this._invariantChecker = new StateInvariantChecker();
+    // RT-66: give the checker a live accessor to pipelineEvents so Rule 10
+    // can read the ring buffer without pipelineEvents bloating the snapshot.
+    this._invariantChecker = new StateInvariantChecker({
+      getPipelineEvents: () => this._state.pipelineEvents,
+    });
 
     // --- State variables (mirroring side-panel.js module-level vars) ---
     this._state = {
@@ -104,6 +108,10 @@ export class RenderCoordinator {
       hasTableHands: true,
       // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
       pipelineEvents: [],
+      // RT-66: invariant-violation surfacing. Bumped on every failing check;
+      // snap exposes the timestamp so status bar can show a "!" badge.
+      lastViolationAt: 0,
+      lastViolationCount: 0,
       // Layer 2: Position lock — heroSeat/dealerSeat frozen per hand
       _lockedHeroSeat: null,
       _lockedDealerSeat: null,
@@ -211,6 +219,9 @@ export class RenderCoordinator {
       hasTableHands: s.hasTableHands,
       planPanelOpen: s.planPanelOpen,
       modeAExpired: s.modeAExpired,
+      // RT-66: violation surfacing
+      lastViolationAt: s.lastViolationAt || 0,
+      lastViolationCount: s.lastViolationCount || 0,
       // Computed
       focusedVillainSeat,
       // Derived
@@ -346,6 +357,11 @@ export class RenderCoordinator {
       for (const v of result.violations) {
         this.logPipelineEvent('INVARIANT_VIOLATION', v);
       }
+      // RT-66: stamp lastViolationAt so the status bar can surface a small
+      // "!" badge. The badge auto-decays — status-bar code checks
+      // `Date.now() - snap.lastViolationAt < 30_000`.
+      this._state.lastViolationAt = this._getTimestamp();
+      this._state.lastViolationCount = (this._state.lastViolationCount || 0) + result.violations.length;
       if (this._throwOnViolation) {
         throw new InvariantViolationError(result.violations);
       }

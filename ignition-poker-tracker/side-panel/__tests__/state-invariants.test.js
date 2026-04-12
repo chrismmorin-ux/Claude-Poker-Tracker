@@ -227,3 +227,33 @@ describe('StateInvariantChecker', () => {
     expect(result.warnings.some(v => v.startsWith('R7:'))).toBe(false);
   });
 });
+
+// =========================================================================
+// RULE 10: pipelineEvents capped (RT-66)
+// =========================================================================
+
+describe('RT-66: Rule 10 reads coordinator accessor when provided', () => {
+  it('fires when the accessor reports > 50 events', () => {
+    const events = Array.from({ length: 60 }, (_, i) => ({ ts: i, event: 'E', detail: '' }));
+    const c = new StateInvariantChecker({ getPipelineEvents: () => events });
+    const result = c.check(validSnapshot());
+    const r10 = result.violations.find(v => v.startsWith('R10:'));
+    expect(r10).toBeDefined();
+    expect(r10).toMatch(/length=60/);
+  });
+
+  it('does not fire when the accessor reports <= 50 events', () => {
+    const events = Array.from({ length: 40 }, (_, i) => ({ ts: i, event: 'E', detail: '' }));
+    const c = new StateInvariantChecker({ getPipelineEvents: () => events });
+    const result = c.check(validSnapshot());
+    expect(result.violations.find(v => v.startsWith('R10:'))).toBeUndefined();
+  });
+
+  it('falls back to snap.pipelineEvents when no accessor is provided', () => {
+    const c = new StateInvariantChecker();
+    const events = Array.from({ length: 55 }, () => ({ ts: 0, event: 'E', detail: '' }));
+    const snap = { ...validSnapshot(), pipelineEvents: events };
+    const result = c.check(snap);
+    expect(result.violations.find(v => v.startsWith('R10:'))).toBeDefined();
+  });
+});

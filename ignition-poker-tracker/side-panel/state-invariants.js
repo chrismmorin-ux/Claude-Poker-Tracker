@@ -18,6 +18,18 @@ const LIVE_STATES = new Set(['PREFLOP', 'FLOP', 'TURN', 'RIVER', 'DEALING']);
 
 export class StateInvariantChecker {
   /**
+   * @param {Object} [deps]
+   * @param {() => any[]} [deps.getPipelineEvents] - Accessor for the
+   *   coordinator's pipelineEvents ring buffer. Rule 10 uses this instead
+   *   of reading from the snapshot, because pipelineEvents is
+   *   intentionally excluded from buildSnapshot() (it changes on every
+   *   push and would force re-renders on every diagnostic event).
+   */
+  constructor(deps = {}) {
+    this._getPipelineEvents = deps.getPipelineEvents || null;
+  }
+
+  /**
    * Check all invariants against a snapshot.
    * @param {Object} snap - Coordinator snapshot from buildSnapshot()
    * @returns {{ violations: string[], warnings: string[] }}
@@ -180,7 +192,13 @@ export class StateInvariantChecker {
   // RULE 10: Pipeline events must be capped
   // =========================================================================
   _rule10_pipelineEventsCapped(snap, violations) {
-    const events = snap.pipelineEvents;
+    // RT-66: read live ring buffer via coordinator accessor (preferred) so
+    // Rule 10 actually fires. snap.pipelineEvents remains supported as a
+    // backward-compat fallback for any test that injects pipelineEvents
+    // directly.
+    const events = this._getPipelineEvents
+      ? this._getPipelineEvents()
+      : snap.pipelineEvents;
     if (events && events.length > 50) {
       violations.push(
         `R10: pipelineEvents length=${events.length} exceeds cap of 50`

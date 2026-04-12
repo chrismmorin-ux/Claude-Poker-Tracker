@@ -1762,6 +1762,27 @@ injectTokens();
       if (text) text.textContent = 'Data may be stale \u2014 waiting for update\u2026';
     }
 
+    // --- RT-66: invariant-violation badge. Decays after 30s of no new
+    // violations. "!" next to status text with a tooltip showing recent
+    // count. Click the diagnostics copy button to get the full dump.
+    const violationAge = snap.lastViolationAt
+      ? Date.now() - snap.lastViolationAt
+      : Infinity;
+    const text = $('status-text');
+    if (text) {
+      const hasActive = violationAge < 30_000 && snap.lastViolationCount > 0;
+      if (hasActive && !text.querySelector('.invariant-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'invariant-badge';
+        badge.textContent = '!';
+        badge.title = `${snap.lastViolationCount} state invariant violation(s) in the last 30s \u2014 copy diagnostics for details`;
+        text.appendChild(badge);
+      } else if (!hasActive) {
+        const existing = text.querySelector('.invariant-badge');
+        if (existing) existing.remove();
+      }
+    }
+
     // --- Tournament panel (previously bypassed renderUI) ---
     if (snap.lastGoodTournament) {
       renderTournamentPanel(snap.lastGoodTournament);
