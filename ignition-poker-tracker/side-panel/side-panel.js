@@ -898,15 +898,6 @@ injectTokens();
   // =========================================================================
 
   /**
-   * Compute focused villain based on priority chain:
-   * pinned > advice.villainSeat > pfAggressor > HU opponent > null
-   * Delegates to pure function in render-orchestrator.js.
-   */
-  const computeFocusedVillain = () => _computeFocusedVillain({
-    pinnedVillainSeat, lastGoodAdvice, currentLiveContext, currentTableState,
-  });
-
-  /**
    * Render seat arc — delegates HTML generation to render-orchestrator.js.
    * @param {Object} physicalStats - { [physicalSeat]: statsObj } from stats engine
    * @param {Object} tableState - From HSM getState()
@@ -1670,141 +1661,16 @@ injectTokens();
   };
 
   // =========================================================================
-  // BRIEFING PANEL — RENDERING
+  // BRIEFING PANEL — deleted (RT-58). Superseded by renderDeepExpander +
+  // renderStreetCard. The old implementation closed over module-level vars
+  // that were eliminated in RT-43, creating a ReferenceError trap.
   // =========================================================================
 
-  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
-  const renderBriefingPanel = (briefings, appConnected) => {
-    const panel = $('briefing-panel');
-    const list = $('briefing-list');
-    const count = $('briefing-count');
-
-    if (!briefings || briefings.length === 0) {
-      hideEl(panel);
-      return;
-    }
-
-    // Filter out hero seat
-    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
-    const filtered = briefings.filter(b => b.seat !== heroSeat);
-
-    if (filtered.length === 0) {
-      hideEl(panel);
-      return;
-    }
-
-    // Sort by scoring priority, then worthiness
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
-    filtered.sort((a, b) => {
-      const pa = priorityOrder[a.scoring?.priority] ?? 2;
-      const pb = priorityOrder[b.scoring?.priority] ?? 2;
-      if (pa !== pb) return pa - pb;
-      return (b.scoring?.worthiness || 0) - (a.scoring?.worthiness || 0);
-    });
-
-    const top = filtered.slice(0, 6);
-    showEl(panel);
-    count.textContent = top.length;
-
-    let html = '';
-    for (let i = 0; i < top.length; i++) {
-      const b = top[i];
-      const priority = b.scoring?.priority || 'low';
-
-      html += `<div class="briefing-item" data-briefing-idx="${i}">`;
-      html += `<div class="briefing-item-header">`;
-      html += `<span class="exploit-priority ${priority}">${priority}</span>`;
-      html += `<span class="exploit-seat-badge">Seat ${b.seat}</span>`;
-      if (b.confidence != null) {
-        const confPct = Math.round(b.confidence * 100);
-        html += `<span class="exploit-source-badge">${confPct}%</span>`;
-      }
-      html += `<span class="briefing-label">${escapeHtml(b.label || 'Briefing')}`;
-      if (b.sampleSize) html += ` <span class="weakness-sample">(${b.sampleSize}h)</span>`;
-      html += `</span>`;
-      html += `<span class="briefing-expand-icon">▸</span>`;
-      html += `</div>`;
-
-      // Expandable details
-      html += `<div class="briefing-details" id="briefing-detail-${i}">`;
-
-      // Evidence breakdown
-      if (b.evidenceBreakdown?.stats?.length > 0) {
-        for (const stat of b.evidenceBreakdown.stats) {
-          html += `<div class="briefing-evidence-row">`;
-          html += `<span>${escapeHtml(stat.name)}</span>`;
-          html += `<span><span class="briefing-evidence-observed">${stat.observed}%</span>`;
-          html += ` <span class="briefing-evidence-baseline">vs ${stat.gtoBaseline}% GTO</span>`;
-          if (stat.sampleSize) html += ` <span class="briefing-evidence-baseline">(${stat.sampleSize}h)</span>`;
-          html += `</span></div>`;
-        }
-      }
-
-      // Hand examples
-      if (b.handExamples) {
-        if (b.handExamples.exploitWith?.length > 0) {
-          html += `<div class="briefing-hands-section">`;
-          html += `<div class="briefing-hands-label exploit">Exploit with</div>`;
-          html += `<div class="briefing-hands-text">${escapeHtml(b.handExamples.exploitWith.join(', '))}</div>`;
-          html += `</div>`;
-        }
-        if (b.handExamples.avoid?.length > 0) {
-          html += `<div class="briefing-hands-section">`;
-          html += `<div class="briefing-hands-label avoid">Avoid</div>`;
-          html += `<div class="briefing-hands-text">${escapeHtml(b.handExamples.avoid.join(', '))}</div>`;
-          html += `</div>`;
-        }
-      }
-
-      // Risk analysis
-      if (b.riskAnalysis) {
-        html += `<div class="briefing-risk">`;
-        if (b.riskAnalysis.mitigationStrategy) {
-          html += escapeHtml(b.riskAnalysis.mitigationStrategy);
-        }
-        if (b.riskAnalysis.wrongFrequency != null) {
-          html += ` (${Math.round(b.riskAnalysis.wrongFrequency * 100)}% chance wrong)`;
-        }
-        html += `</div>`;
-      }
-
-      html += `</div>`; // briefing-details
-      html += `</div>`; // briefing-item
-    }
-
-    // RT-49: Snapshot open briefings before DOM rebuild
-    const openBriefings = new Set();
-    for (const d of list.querySelectorAll('.briefing-details.open')) {
-      const item = d.closest('.briefing-item');
-      if (item?.dataset?.briefingIdx) openBriefings.add(item.dataset.briefingIdx);
-    }
-
-    list.innerHTML = html;
-
-    // RT-49: Restore open briefings after DOM rebuild
-    for (const idx of openBriefings) {
-      const d = $(`briefing-detail-${idx}`);
-      if (d) {
-        d.classList.add('open');
-        const item = d.closest('.briefing-item');
-        const icon = item?.querySelector('.briefing-expand-icon');
-        if (icon) icon.textContent = '\u25BE';
-      }
-    }
-  };
-
-  // Event delegation for briefing expand/collapse
-  document.addEventListener('click', (e) => {
-    const item = e.target.closest('.briefing-item');
-    if (!item) return;
-    const idx = item.dataset.briefingIdx;
-    if (idx == null) return;
-    const details = $(`briefing-detail-${idx}`);
-    if (!details) return;
-    details.classList.toggle('open');
-    const icon = item.querySelector('.briefing-expand-icon');
-    if (icon) icon.textContent = details.classList.contains('open') ? '\u25BE' : '\u25B8';
-  });
+  // renderBriefingPanel and its click handler: deleted RT-58. The function
+  // closed over bare `currentLiveContext`/`currentTableState` which were
+  // removed in RT-43's state-store migration; any invocation path would
+  // throw ReferenceError in strict mode. Superseded by renderDeepExpander
+  // + renderStreetCard. No live callers remained.
 
   // Event delegation for collapsible analysis panel headers
   document.addEventListener('click', (e) => {
@@ -1821,84 +1687,9 @@ injectTokens();
     if (icon) icon.classList.toggle('expanded');
   });
 
-  // =========================================================================
-  // OBSERVATION PANEL — RENDERING
-  // =========================================================================
-
-  // DEAD CODE — replaced by renderDeepExpander + renderStreetCard. Remove in Phase 2 cleanup.
-  const renderObservationPanel = (observations, appConnected) => {
-    const panel = $('observation-panel');
-    const list = $('observation-list');
-    const count = $('observation-count');
-
-    if (!observations || observations.length === 0) {
-      hideEl(panel);
-      return;
-    }
-
-    // Filter: skip hero, skip folded seats, street-filter during live play
-    const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
-    const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
-    const isLive = currentTableState && currentTableState.state !== 'IDLE' && currentTableState.state !== 'COMPLETE';
-    const currentStreet = currentLiveContext?.currentStreet || null;
-
-    let filtered = observations.filter(o => {
-      if (o.seat === heroSeat) return false;
-      if (isLive && foldedSeats.has(o.seat)) return false;
-      // Street filter: show current street + META, hide others during live play
-      if (isLive && currentStreet && o.street !== 'cross' && o.heroContext !== 'META') {
-        if (currentStreet === 'preflop' && o.street !== 'preflop') return false;
-        if (currentStreet !== 'preflop' && o.street === 'preflop') return false;
-      }
-      // Only show solid/developing observations (skip early/none for sidebar brevity)
-      if (o.tier === 'none') return false;
-      return true;
-    });
-
-    // Sort by severity desc, then confidence desc
-    filtered.sort((a, b) => (b.severity || 0) - (a.severity || 0) || (b.confidence || 0) - (a.confidence || 0));
-    filtered = filtered.slice(0, 16);
-
-    if (filtered.length === 0) {
-      hideEl(panel);
-      return;
-    }
-
-    showEl(panel);
-    count.textContent = filtered.length;
-
-    // Group by heroContext
-    const groups = new Map();
-    for (const o of filtered) {
-      const key = o.heroContextLabel || o.heroContext || 'General';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(o);
-    }
-
-    let html = '';
-    for (const [label, items] of groups) {
-      html += `<div class="obs-group-header">${escapeHtml(label)}</div>`;
-      for (const o of items) {
-        const tier = o.tier || 'early';
-        html += `<div class="obs-item">`;
-        html += `<span class="obs-tier-dot ${tier}" title="${tier}"></span>`;
-        html += `<div>`;
-        html += `<div class="obs-signal">`;
-        if (o.seat) html += `<span class="exploit-seat-badge obs-seat-badge">S${o.seat}</span>`;
-        html += `${escapeHtml(o.signal || 'Observation')}</div>`;
-        if (o.evidence) {
-          const ev = o.evidence;
-          if (ev.observed != null && ev.baseline != null) {
-            html += `<div class="obs-evidence">${escapeHtml(ev.metric || '')}: ${ev.observed}% vs ${ev.baseline}% baseline (${ev.sampleSize || '?'}h)</div>`;
-          }
-        }
-        html += `</div>`;
-        html += `</div>`;
-      }
-    }
-
-    list.innerHTML = html;
-  };
+  // renderObservationPanel: deleted RT-58 (same ReferenceError trap as
+  // renderBriefingPanel above). Superseded by renderDeepExpander +
+  // renderStreetCard.
 
   // =========================================================================
   // ACTION ADVISOR — RENDERING (tier renderers imported from render-tiers.js)
@@ -2403,9 +2194,13 @@ injectTokens();
 
     // 3. Side panel filter state
     lines.push(`\n[Side Panel State]`);
-    lines.push(`  lastHandCount: ${lastHandCount}`);
-    lines.push(`  currentTableState: ${currentTableState ? `state=${currentTableState.state} hero=${currentTableState.heroSeat}` : 'null'}`);
-    lines.push(`  currentLiveContext: ${currentLiveContext ? `street=${currentLiveContext.currentStreet}` : 'null'}`);
+    // RT-58: read coordinator state instead of deleted module vars.
+    const _dumpHandCount = coordinator.get('lastHandCount');
+    const _dumpTableState = coordinator.get('currentTableState');
+    const _dumpLiveCtx = coordinator.get('currentLiveContext');
+    lines.push(`  lastHandCount: ${_dumpHandCount}`);
+    lines.push(`  currentTableState: ${_dumpTableState ? `state=${_dumpTableState.state} hero=${_dumpTableState.heroSeat}` : 'null'}`);
+    lines.push(`  currentLiveContext: ${_dumpLiveCtx ? `street=${_dumpLiveCtx.currentStreet}` : 'null'}`);
 
     // 4. Exploits cache
     try {
@@ -2413,7 +2208,7 @@ injectTokens();
       lines.push(`\n[Exploits Cache]`);
       lines.push(`  appConnected: ${ex?.appConnected}`);
       lines.push(`  seats: ${ex?.seats?.length || 0}`);
-      lines.push(`  pushes received: ${exploitPushCount}`);
+      lines.push(`  pushes received: ${coordinator.get('exploitPushCount')}`);
       if (ex?.timestamp) lines.push(`  age: ${Math.round((Date.now() - ex.timestamp) / 1000)}s`);
     } catch (e) {
       lines.push(`  ERROR: ${e.message}`);
@@ -2424,7 +2219,7 @@ injectTokens();
       const adv = await chrome.runtime.sendMessage({ type: MSG.GET_ACTION_ADVICE });
       lines.push(`\n[Action Advice Cache]`);
       lines.push(`  has advice: ${!!adv?.advice}`);
-      lines.push(`  pushes received: ${advicePushCount}`);
+      lines.push(`  pushes received: ${coordinator.get('advicePushCount')}`);
       if (adv?.advice) {
         lines.push(`  situation: ${adv.advice.situation} villain: ${adv.advice.villainSeat} recs: ${adv.advice.recommendations?.length}`);
       }
