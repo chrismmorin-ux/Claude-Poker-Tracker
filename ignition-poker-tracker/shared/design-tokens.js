@@ -10,11 +10,11 @@
 // ===========================================================================
 
 export const TOKENS = {
-  // Surfaces
-  'surface-body':     '#1a1a2e',
-  'surface-card':     '#16213e',
+  // Surfaces (spec: #111 body, #1a1a2e cards)
+  'surface-body':     '#111111',
+  'surface-card':     '#1a1a2e',
   'surface-inset':    '#0d1117',
-  'surface-elevated': '#1e2642',
+  'surface-elevated': '#222244',
 
   // Borders
   'border-default': '#2a2a4a',
@@ -26,69 +26,74 @@ export const TOKENS = {
   'text-muted':     '#6b7280',
   'text-faint':     '#4b5563',
 
-  // Gold accent
-  'gold':      '#d4a847',
-  'gold-glow': 'rgba(212, 168, 71, 0.15)',
-  'gold-dim':  '#b8922e',
+  // Trust colors (3 semantic colors — the only non-gray colors)
+  'trust-value':    '#4ade80',   // green — confident value / clear +EV
+  'trust-marginal': '#fbbf24',   // yellow — marginal / mixed / judgment call
+  'trust-negative': '#f87171',   // red — fold / high-risk / -EV
 
-  // Action badge colors (bg / text / base) — aligned to main app
-  'action-fold-bg':    '#7f1d1d',
-  'action-fold-text':  '#fca5a5',
-  'action-fold-base':  '#dc2626',
-  'action-check-bg':   '#1e3a5f',
-  'action-check-text': '#93c5fd',
-  'action-check-base': '#0891b2',
-  'action-call-bg':    '#1e3a8a',
-  'action-call-text':  '#93c5fd',
-  'action-call-base':  '#2563eb',
-  'action-bet-bg':     '#14532d',
-  'action-bet-text':   '#86efac',
-  'action-bet-base':   '#16a34a',
-  'action-raise-bg':   '#7c2d12',
-  'action-raise-text': '#fdba74',
-  'action-raise-base': '#ea580c',
+  // Gold accent (demoted to gray — spec removes decorative accents)
+  'gold':      '#9ca3af',
+  'gold-glow': 'rgba(156, 163, 175, 0.15)',
+  'gold-dim':  '#6b7280',
+
+  // Action badge colors — trust-based (bet/raise=value, call=marginal, check=neutral, fold=negative)
+  'action-fold-bg':    'rgba(248, 113, 113, 0.15)',
+  'action-fold-text':  '#f87171',
+  'action-fold-base':  '#f87171',
+  'action-check-bg':   'rgba(107, 114, 128, 0.15)',
+  'action-check-text': '#9ca3af',
+  'action-check-base': '#9ca3af',
+  'action-call-bg':    'rgba(251, 191, 36, 0.15)',
+  'action-call-text':  '#fbbf24',
+  'action-call-base':  '#fbbf24',
+  'action-bet-bg':     'rgba(74, 222, 128, 0.15)',
+  'action-bet-text':   '#4ade80',
+  'action-bet-base':   '#4ade80',
+  'action-raise-bg':   'rgba(74, 222, 128, 0.15)',
+  'action-raise-text': '#4ade80',
+  'action-raise-base': '#4ade80',
 
   // Priority / severity
-  'priority-high-bg':     '#7f1d1d',
-  'priority-high-text':   '#fca5a5',
-  'priority-high-border': '#ef4444',
-  'priority-med-bg':      '#713f12',
-  'priority-med-text':    '#fde68a',
-  'priority-med-border':  '#eab308',
+  'priority-high-bg':     'rgba(248, 113, 113, 0.15)',
+  'priority-high-text':   '#f87171',
+  'priority-high-border': '#f87171',
+  'priority-med-bg':      'rgba(251, 191, 36, 0.15)',
+  'priority-med-text':    '#fbbf24',
+  'priority-med-border':  '#fbbf24',
   'priority-low-bg':      '#374151',
   'priority-low-text':    '#9ca3af',
   'priority-low-border':  '#6b7280',
 
   // EV verdict
-  'ev-pos-bg':   '#166534',
+  'ev-pos-bg':   'rgba(74, 222, 128, 0.15)',
   'ev-pos-text': '#4ade80',
-  'ev-neg-bg':   '#7f1d1d',
+  'ev-neg-bg':   'rgba(248, 113, 113, 0.15)',
   'ev-neg-text': '#f87171',
   'ev-neu-bg':   '#374151',
   'ev-neu-text': '#9ca3af',
 
-  // M-ratio zones
-  'm-green':  '#22c55e',
-  'm-yellow': '#eab308',
+  // M-ratio zones (keep — functional, not decorative)
+  'm-green':  '#4ade80',
+  'm-yellow': '#fbbf24',
   'm-orange': '#f97316',
-  'm-red':    '#ef4444',
+  'm-red':    '#f87171',
 
-  // Tournament
-  'tournament-accent': '#7c3aed',
+  // Tournament (demoted to neutral)
+  'tournament-accent': '#6b7280',
 
-  // Observation
-  'obs-accent': '#3b82f6',
-  'obs-light':  '#60a5fa',
+  // Observation (demoted to neutral)
+  'obs-accent': '#9ca3af',
+  'obs-light':  '#9ca3af',
 
-  // Briefing
-  'briefing-accent': '#22c55e',
+  // Briefing (aligned to trust-value)
+  'briefing-accent': '#4ade80',
 
-  // Semantic signal roles (reserve red/amber for urgency)
-  'color-danger':     '#ef4444',
-  'color-danger-dim': '#7f1d1d',
-  'color-warning':    '#f59e0b',
-  'color-positive':   '#22c55e',
-  'color-info':       '#22d3ee',
+  // Semantic signal roles
+  'color-danger':     '#f87171',
+  'color-danger-dim': 'rgba(248, 113, 113, 0.15)',
+  'color-warning':    '#fbbf24',
+  'color-positive':   '#4ade80',
+  'color-info':       '#9ca3af',
   'color-neutral':    '#6b7280',
 
   // Common structural colors
@@ -96,17 +101,17 @@ export const TOKENS = {
   'divider-medium':  'rgba(42, 42, 74, 0.4)',
   'shadow-inset':    'rgba(0, 0, 0, 0.3)',
 
-  // Typography scale
-  'font-micro': '8px',
-  'font-xs':  '9px',
-  'font-sm':  '10px',
+  // Typography scale (3 sizes: 24px hardcoded for action word, 14px numbers/prose, 11px labels)
+  'font-micro': '11px',
+  'font-xs':  '11px',
+  'font-sm':  '11px',
   'font-base': '11px',
-  'font-md':  '13px',
-  'font-lg':  '16px',
+  'font-md':  '14px',
+  'font-lg':  '14px',
 
   // Font weights
   'weight-normal':  '400',
-  'weight-medium':  '600',
+  'weight-medium':  '500',
   'weight-bold':    '700',
 
   // Spacing

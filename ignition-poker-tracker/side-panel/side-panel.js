@@ -23,7 +23,13 @@ import {
 import { renderStreetCard } from './render-street-card.js';
 import {
   computeFocusedVillain as _computeFocusedVillain,
-  buildUnifiedHeaderHTML,
+  buildActionBarHTML,
+  buildContextStripHTML,
+  buildCardsStripHTML,
+  buildPlanPanelHTML,
+  classifyDecisionState,
+  classifyBetweenHandsMode,
+  buildBetweenHandsHTML,
   buildSeatArcHTML,
   buildDeepExpanderHTML,
   buildStreetProgressHTML,
@@ -380,6 +386,22 @@ injectTokens();
   const handleLiveContextPush = (message) => {
     if (message.context) {
       coordinator.set('staleContext', false);
+
+      // Detect hero fold → start Mode A timer
+      const prevCtx = coordinator.get('currentLiveContext');
+      const newCtx = message.context;
+      const heroSeat = newCtx.heroSeat || coordinator.get('currentTableState')?.heroSeat;
+      const wasHeroFolded = prevCtx && heroSeat != null && (prevCtx.foldedSeats || []).includes(heroSeat);
+      const isHeroFolded = heroSeat != null && (newCtx.foldedSeats || []).includes(heroSeat);
+      if (!wasHeroFolded && isHeroFolded) {
+        coordinator.startModeATimer();
+      }
+      // New hand → clear Mode A timer
+      const isNewHand = newCtx.state === 'DEALING' || (newCtx.state === 'PREFLOP' && !isHeroFolded);
+      if (isNewHand) {
+        coordinator.clearModeATimer();
+      }
+
       coordinator.handleLiveContext(message.context);
       scheduleRender('live_context');
     }
@@ -899,39 +921,163 @@ injectTokens();
   };
 
   // =========================================================================
-  // UNIFIED HEADER — Action + Villain + Cards (sticky)
+  // ZONE 1: ACTION BAR
   // =========================================================================
 
-  /**
-   * Render unified header — delegates HTML generation to render-orchestrator.js.
-   */
-  const renderUnifiedHeader = (advice, liveContext, snap) => {
-    const header = $('unified-header');
-    if (!header) return;
-
-    const result = buildUnifiedHeaderHTML(advice, liveContext, {
+  const renderActionBar = (advice, liveCtx, snap) => {
+    const el = $('action-bar');
+    if (!el) return;
+    const result = buildActionBarHTML(advice, liveCtx, {
       focusedVillainSeat: snap.focusedVillainSeat,
       pinnedVillainSeat: snap.pinnedVillainSeat,
       appSeatData: snap.appSeatData,
       currentTableState: snap.currentTableState,
       currentLiveContext: snap.currentLiveContext,
     });
+    if (el.className === result.className && el.innerHTML === result.html) return;
+    showEl(el);
+    el.className = result.className;
+    el.innerHTML = result.html;
+  };
 
-    if (result.isWaiting) {
-      // Between hands — only show waiting if header is empty or was previously waiting
-      // (prevents flashing when transitioning between hands)
-      if (!header.innerHTML || header.querySelector('.uh-waiting')) {
-        showEl(header);
-        header.className = result.className;
-        header.innerHTML = result.html;
+  // =========================================================================
+  // ZONE 2: CONTEXT STRIP
+  // =========================================================================
+
+  const renderContextStrip = (advice, liveCtx, snap) => {
+    const el = $('context-strip');
+    if (!el) return;
+    const result = buildContextStripHTML(advice, liveCtx, {
+      focusedVillainSeat: snap.focusedVillainSeat,
+      currentLiveContext: snap.currentLiveContext,
+    });
+    if (!result.html) { hideEl(el); return; }
+    if (el.className === result.className && el.innerHTML === result.html) return;
+    showEl(el);
+    el.className = result.className;
+    el.innerHTML = result.html;
+  };
+
+  // =========================================================================
+  // CARDS STRIP — Board + hero cards (compact)
+  // =========================================================================
+
+  const renderCardsStrip = (advice, liveContext, snap) => {
+    const el = $('cards-strip');
+    if (!el) return;
+    const result = buildCardsStripHTML(advice, liveContext, {
+      currentTableState: snap.currentTableState,
+      currentLiveContext: snap.currentLiveContext,
+    });
+    if (!result.html) { hideEl(el); return; }
+    if (el.className === result.className && el.innerHTML === result.html) return;
+    showEl(el);
+    el.className = result.className;
+    el.innerHTML = result.html;
+  };
+
+  // =========================================================================
+  // ZONE 3: PLAN PANEL
+  // =========================================================================
+
+  let _planPanelAutoExpandTimer = null;
+
+  const renderPlanPanel = (advice, liveCtx, snap) => {
+    const el = $('plan-panel');
+    const body = $('pp-body');
+    if (!el || !body) return;
+
+    const decisionState = classifyDecisionState(advice, liveCtx);
+    const result = buildPlanPanelHTML(advice, liveCtx, {
+      focusedVillainSeat: snap.focusedVillainSeat,
+      pinnedVillainSeat: snap.pinnedVillainSeat,
+      appSeatData: snap.appSeatData,
+      decisionState,
+    });
+
+    if (!result.html) { hideEl(el); return; }
+
+    showEl(el);
+    if (body.innerHTML !== result.html) {
+      body.innerHTML = result.html;
+    }
+
+    // Auto-expand after 8 seconds if user hasn't toggled
+    if (_planPanelAutoExpandTimer) {
+      clearTimeout(_planPanelAutoExpandTimer);
+      _planPanelAutoExpandTimer = null;
+    }
+    const isOpen = coordinator.get('planPanelOpen');
+    if (isOpen) {
+      body.classList.add('open');
+    } else {
+      _planPanelAutoExpandTimer = setTimeout(() => {
+        coordinator.set('planPanelOpen', true);
+        body.classList.add('open');
+        const chevron = $('pp-chevron');
+        if (chevron) chevron.classList.add('open');
+        const toggle = $('pp-toggle');
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+      }, 8000);
+    }
+  };
+
+  const ppToggle = $('pp-toggle');
+  if (ppToggle) {
+    ppToggle.addEventListener('click', () => {
+      if (_planPanelAutoExpandTimer) {
+        clearTimeout(_planPanelAutoExpandTimer);
+        _planPanelAutoExpandTimer = null;
       }
+      const isOpen = !coordinator.get('planPanelOpen');
+      coordinator.set('planPanelOpen', isOpen);
+      const body = $('pp-body');
+      const chevron = $('pp-chevron');
+      if (body) body.classList.toggle('open', isOpen);
+      if (chevron) chevron.classList.toggle('open', isOpen);
+      ppToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  }
+
+  // =========================================================================
+  // BETWEEN-HANDS PANEL — Modes A/B/C
+  // =========================================================================
+
+  const renderBetweenHands = (snap) => {
+    const betweenEl = $('between-hands');
+    const streetCard = $('street-card');
+    if (!betweenEl) return;
+
+    const heroSeat = snap.currentLiveContext?.heroSeat
+      || snap.currentTableState?.heroSeat;
+    const mode = classifyBetweenHandsMode(
+      snap.currentLiveContext,
+      heroSeat,
+      snap.lastGoodAdvice,
+      snap.modeAExpired
+    );
+
+    if (mode === null) {
+      // Hero is active — hide between-hands, show street-card
+      hideEl(betweenEl);
+      if (streetCard) showEl(streetCard);
       return;
     }
 
-    if (header.className === result.className && header.innerHTML === result.html) return; // skip redundant DOM write
-    showEl(header);
-    header.className = result.className;
-    header.innerHTML = result.html;
+    // Between-hands — hide street-card, show between-hands
+    if (streetCard) hideEl(streetCard);
+    showEl(betweenEl);
+
+    const result = buildBetweenHandsHTML(mode, {
+      liveContext: snap.currentLiveContext,
+      lastGoodAdvice: snap.lastGoodAdvice,
+      appSeatData: snap.appSeatData || {},
+      focusedVillainSeat: snap.focusedVillainSeat,
+    });
+
+    if (betweenEl.className === result.className && betweenEl.innerHTML === result.html) return;
+    betweenEl.className = result.className;
+    betweenEl.innerHTML = result.html;
   };
 
   // =========================================================================
@@ -1817,8 +1963,13 @@ injectTokens();
       renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
     }
 
-    // --- Unified header ---
-    renderUnifiedHeader(advice, liveCtx, snap);
+    // --- Zone 1: Action Bar + Zone 2: Context Strip + Cards Strip ---
+    renderActionBar(advice, liveCtx, snap);
+    renderContextStrip(advice, liveCtx, snap);
+    renderCardsStrip(advice, liveCtx, snap);
+
+    // --- Zone 3: Plan Panel ---
+    renderPlanPanel(advice, liveCtx, snap);
 
     // --- Street progress ---
     const progressEl = $('street-progress');
@@ -1831,6 +1982,9 @@ injectTokens();
         hideEl(progressEl);
       }
     }
+
+    // --- Between-hands panel (Modes A/B/C) ---
+    renderBetweenHands(snap);
 
     // --- Street card (RT-48: visual continuity) ---
     const card = $('street-card');

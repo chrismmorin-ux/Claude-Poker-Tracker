@@ -208,14 +208,14 @@ describe('buildActionAdvice', () => {
         decisionModelShape: 'hand-strength-only',
         decisionModelDescription: 'Decides based on hand strength',
         vulnerabilities: [{ id: 'v1', label: 'Over-calls' }],
-        showdownAnchors: [{ hand: 'AA', street: 'river' }], // Should be stripped
+        showdownAnchors: [{ hand: 'AA', street: 'river' }], // Now included on wire
         rawStats: { vpip: 45 }, // Should be stripped
       },
     });
     expect(advice.villainProfile.headline).toBe('Passive calling station');
     expect(advice.villainProfile.maturityLabel).toBe('Developing');
     expect(advice.villainProfile.vulnerabilities).toHaveLength(1);
-    expect(advice.villainProfile.showdownAnchors).toBeUndefined();
+    expect(advice.villainProfile.showdownAnchors).toHaveLength(1);
     expect(advice.villainProfile.rawStats).toBeUndefined();
   });
 

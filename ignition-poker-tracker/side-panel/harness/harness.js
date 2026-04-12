@@ -12,7 +12,13 @@
 import { injectTokens } from '../../shared/design-tokens.js';
 import {
   computeFocusedVillain,
-  buildUnifiedHeaderHTML,
+  buildActionBarHTML,
+  buildContextStripHTML,
+  buildCardsStripHTML,
+  buildPlanPanelHTML,
+  classifyDecisionState,
+  classifyBetweenHandsMode,
+  buildBetweenHandsHTML,
   buildSeatArcHTML,
   buildDeepExpanderHTML,
   buildStatusBar,
@@ -108,10 +114,10 @@ function applyState(state) {
     arc.innerHTML = '';
   }
 
-  // Unified header
-  const header = $('unified-header');
-  if (header) {
-    const result = buildUnifiedHeaderHTML(
+  // Zone 1: Action Bar
+  const actionBar = $('action-bar');
+  if (actionBar) {
+    const result = buildActionBarHTML(
       state.lastGoodAdvice,
       state.currentLiveContext,
       {
@@ -122,14 +128,110 @@ function applyState(state) {
         currentLiveContext: state.currentLiveContext,
       }
     );
-    showEl(header);
-    header.className = result.className;
-    header.innerHTML = result.html;
+    showEl(actionBar);
+    actionBar.className = result.className;
+    actionBar.innerHTML = result.html;
   }
 
-  // Street card
-  const streetCard = $('street-card');
-  if (streetCard) {
+  // Zone 2: Context Strip
+  const contextStrip = $('context-strip');
+  if (contextStrip) {
+    const result = buildContextStripHTML(
+      state.lastGoodAdvice,
+      state.currentLiveContext,
+      {
+        focusedVillainSeat,
+        currentLiveContext: state.currentLiveContext,
+      }
+    );
+    if (result.html) {
+      showEl(contextStrip);
+      contextStrip.className = result.className;
+      contextStrip.innerHTML = result.html;
+    } else {
+      hideEl(contextStrip);
+    }
+  }
+
+  // Cards Strip
+  const cardsStrip = $('cards-strip');
+  if (cardsStrip) {
+    const result = buildCardsStripHTML(
+      state.lastGoodAdvice,
+      state.currentLiveContext,
+      {
+        currentTableState: state.currentTableState,
+        currentLiveContext: state.currentLiveContext,
+      }
+    );
+    if (result.html) {
+      showEl(cardsStrip);
+      cardsStrip.className = result.className;
+      cardsStrip.innerHTML = result.html;
+    } else {
+      hideEl(cardsStrip);
+    }
+  }
+
+  // Zone 3: Plan Panel
+  const planPanel = $('plan-panel');
+  const planBody = $('pp-body');
+  if (planPanel && planBody) {
+    const decisionState = classifyDecisionState(
+      state.lastGoodAdvice,
+      state.currentLiveContext
+    );
+    const result = buildPlanPanelHTML(
+      state.lastGoodAdvice,
+      state.currentLiveContext,
+      {
+        focusedVillainSeat,
+        pinnedVillainSeat: state.pinnedVillainSeat ?? null,
+        appSeatData: state.appSeatData || {},
+        decisionState,
+      }
+    );
+    if (result.html) {
+      showEl(planPanel);
+      planBody.innerHTML = result.html;
+      // Auto-open in harness for visibility
+      planBody.classList.add('open');
+      const chevron = $('pp-chevron');
+      if (chevron) chevron.classList.add('open');
+    } else {
+      hideEl(planPanel);
+    }
+  }
+
+  // Between-hands panel
+  const betweenEl = $('between-hands');
+  const streetCardEl = $('street-card');
+  const heroSeat = state.currentLiveContext?.heroSeat || state.currentTableState?.heroSeat;
+  const bhMode = classifyBetweenHandsMode(
+    state.currentLiveContext,
+    heroSeat,
+    state.lastGoodAdvice,
+    false
+  );
+
+  if (bhMode !== null && betweenEl) {
+    if (streetCardEl) hideEl(streetCardEl);
+    showEl(betweenEl);
+    const bhResult = buildBetweenHandsHTML(bhMode, {
+      liveContext: state.currentLiveContext,
+      lastGoodAdvice: state.lastGoodAdvice,
+      appSeatData: state.appSeatData || {},
+      focusedVillainSeat,
+    });
+    betweenEl.className = bhResult.className;
+    betweenEl.innerHTML = bhResult.html;
+  } else {
+    if (betweenEl) hideEl(betweenEl);
+    if (streetCardEl) showEl(streetCardEl);
+  }
+
+  // Street card (only when hero is active)
+  if (streetCardEl && bhMode === null) {
     const street = state.currentLiveContext?.currentStreet
       || state.lastGoodAdvice?.currentStreet || null;
     renderStreetCard(

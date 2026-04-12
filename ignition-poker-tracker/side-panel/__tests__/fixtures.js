@@ -102,9 +102,11 @@ export const flopWithAdvice = {
         sizing: null,
         reasoning: 'Strong draw — call to realize equity',
         handPlan: {
-          ifCall: { note: 'Barrel favorable turns', favorableRunouts: 18, totalRunouts: 47 },
+          ifCall: { note: 'Barrel favorable turns', favorableRunouts: 18, totalRunouts: 47, scaryCards: 3 },
           ifRaise: { note: 'Fold — behind vs TAG' },
         },
+        villainResponse: { fold: { pct: 0.35 }, call: { pct: 0.55 }, raise: { pct: 0.10 } },
+        risk: 'M',
       },
       {
         action: 'raise',
@@ -329,6 +331,12 @@ export const turnBarrel = {
         ev: 4.2,
         sizing: { betFraction: 0.67, betSize: 16, foldPct: 0.38 },
         reasoning: 'Value bet — top pair top kicker against wide calling range',
+        villainResponse: { fold: { pct: 0.52 }, call: { pct: 0.38 }, raise: { pct: 0.10 } },
+        risk: 'L',
+        handPlan: {
+          ifCall: { plan: 'barrel', note: 'Continue betting ~67% pot on safe runouts', scaryCards: 2, favorableRunouts: 30, totalRunouts: 44 },
+          ifRaise: { plan: 'fold', note: 'Fold — their raise range is too strong here' },
+        },
       },
     ],
     treeMetadata: { depthReached: 2, spr: 2.8, branches: 3, computeMs: 95 },
@@ -785,6 +793,335 @@ export const allFoldedToHero = {
 };
 
 // =========================================================================
+// 17. MIXED SPOT — Two near-optimal actions with mix frequencies
+// =========================================================================
+
+export const mixedSpot = {
+  cachedSeatStats: {
+    3: makeStats(3, 30, 22, 1.9, 'TAG', 60),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'TURN',
+    currentStreet: 'turn',
+    heroSeat: 5,
+    communityCards: ['T\u2660', '7\u2665', '4\u2663', '2\u2666', ''],
+    holeCards: ['A\u2660', '9\u2660'],
+    pot: 22,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [],
+    dealerSeat: 5,
+    pfAggressor: 5,
+    actionSequence: [
+      { seat: 5, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 3, action: 'call', amount: 6, street: 'preflop', order: 2 },
+      { seat: 5, action: 'bet', amount: 8, street: 'flop', order: 3 },
+      { seat: 3, action: 'call', amount: 8, street: 'flop', order: 4 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'turn',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 60,
+    potSize: 22,
+    heroEquity: 0.44,
+    foldPct: { bet: 0.45 },
+    recommendations: [
+      {
+        action: 'bet',
+        ev: 0.3,
+        sizing: { betFraction: 0.67, betSize: 15, foldPct: 0.45 },
+        reasoning: 'Semi-bluff barrel — flush draw with overcard',
+        mixFrequency: 0.6,
+        risk: 'M',
+        villainResponse: { fold: { pct: 0.45 }, call: { pct: 0.45 }, raise: { pct: 0.10 } },
+      },
+      {
+        action: 'check',
+        ev: 0.1,
+        reasoning: 'Pot control — realize equity without risking raise',
+        mixFrequency: 0.4,
+      },
+    ],
+    treeMetadata: { depthReached: 2, spr: 3.1, branches: 3, computeMs: 110 },
+    modelQuality: { overallSource: 'player_model' },
+    villainProfile: { headline: 'TAG — balanced but check-raises dry turns' },
+    segmentation: null,
+  },
+  appSeatData: {
+    3: makeAppSeat('TAG', 60, 'TAG — balanced but check-raises dry turns'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
+// 18. AGGRESSOR FACING CHECK — Hero is PFA, villain checked (IP with initiative)
+// =========================================================================
+
+export const aggFacingCheck = {
+  cachedSeatStats: {
+    3: makeStats(3, 38, 12, 0.8, 'Fish', 40),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'FLOP',
+    currentStreet: 'flop',
+    heroSeat: 5,
+    communityCards: ['J\u2660', '8\u2665', '3\u2663', '', ''],
+    holeCards: ['A\u2660', 'K\u2660'],
+    pot: 14,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [],
+    dealerSeat: 5,
+    pfAggressor: 5,
+    actionSequence: [
+      { seat: 5, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 3, action: 'call', amount: 6, street: 'preflop', order: 2 },
+      { seat: 3, action: 'check', amount: 0, street: 'flop', order: 3 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'flop',
+    villainSeat: 3,
+    villainStyle: 'Fish',
+    villainSampleSize: 40,
+    potSize: 14,
+    heroEquity: 0.55,
+    foldPct: { bet: 0.40 },
+    recommendations: [
+      {
+        action: 'bet',
+        ev: 2.1,
+        sizing: { betFraction: 0.50, betSize: 7, foldPct: 0.40 },
+        reasoning: 'C-bet for value — overcards with backdoor flush draw',
+        risk: 'L',
+        villainResponse: { fold: { pct: 0.40 }, call: { pct: 0.52 }, raise: { pct: 0.08 } },
+        handPlan: {
+          ifCall: { plan: 'barrel', note: 'Barrel turn on safe cards', scaryCards: 2, favorableRunouts: 28, totalRunouts: 44 },
+          ifRaise: { plan: 'fold', note: 'Fold — fish check-raise means strength' },
+          ifVillainChecks: { plan: 'bet', sizing: 0.50, note: 'Bet ~50% pot on the next street' },
+        },
+      },
+    ],
+    treeMetadata: { depthReached: 2, spr: 5.0, branches: 3, computeMs: 90 },
+    modelQuality: { overallSource: 'player_model' },
+    villainProfile: {
+      headline: 'Loose passive fish — calls too wide, folds to aggression',
+      showdownAnchors: [{ handDescription: 'S3 showed 72o bluff vs S7 (hand #47)', outcome: 'shown', position: 'BB', hand: '72o' }],
+    },
+    segmentation: null,
+  },
+  appSeatData: {
+    3: makeAppSeat('Fish', 40, 'Loose passive fish — calls too wide'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
+// 19. CALLER FIRST TO ACT — Hero OOP without initiative
+// =========================================================================
+
+export const callerFirstToAct = {
+  cachedSeatStats: {
+    3: makeStats(3, 28, 22, 2.0, 'TAG', 55),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'FLOP',
+    currentStreet: 'flop',
+    heroSeat: 5,
+    communityCards: ['9\u2665', '6\u2663', '2\u2660', '', ''],
+    holeCards: ['T\u2665', '9\u2663'],
+    pot: 14,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [],
+    dealerSeat: 3,
+    pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 6, street: 'preflop', order: 2 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'flop',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 55,
+    potSize: 14,
+    heroEquity: 0.48,
+    foldPct: { bet: 0.25 },
+    recommendations: [
+      {
+        action: 'check',
+        ev: 0.5,
+        reasoning: 'Check to PFA — plan to check-call or check-raise',
+        risk: 'L',
+        handPlan: {
+          ifVillainBets: { plan: 'call', note: 'Call — villain c-bets 72% of flops, your top pair is ahead' },
+          ifVillainChecks: { plan: 'bet', sizing: 0.50, note: 'Bet ~50% pot for value on the turn' },
+        },
+      },
+    ],
+    treeMetadata: { depthReached: 2, spr: 5.0, branches: 3, computeMs: 85 },
+    modelQuality: { overallSource: 'player_model' },
+    villainProfile: { headline: 'Aggressive PFA — bets most flops, slows on paired boards' },
+    segmentation: null,
+  },
+  appSeatData: {
+    3: makeAppSeat('TAG', 55, 'Aggressive PFA — bets most flops'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
+// 20. PREFLOP CONTESTED — Hero facing 3-bet
+// =========================================================================
+
+export const preflopContested = {
+  cachedSeatStats: {
+    3: makeStats(3, 22, 18, 2.5, 'TAG', 70),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'PREFLOP',
+    currentStreet: 'preflop',
+    heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['A\u2665', 'Q\u2660'],
+    pot: 24,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [1, 2, 4, 6, 7, 8, 9],
+    dealerSeat: 5,
+    pfAggressor: 3,
+    actionSequence: [
+      { seat: 5, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 3, action: 'raise', amount: 18, street: 'preflop', order: 2 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'preflop',
+    situation: 'facing_3bet',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 70,
+    potSize: 24,
+    heroEquity: 0.42,
+    foldPct: { bet: 0.55 },
+    recommendations: [
+      {
+        action: 'call',
+        ev: 0.6,
+        reasoning: 'Call in position — re-evaluate on flop texture',
+        risk: 'M',
+        handPlan: {
+          ifCall: { note: 'Check-raise wet flops for value', favorableRunouts: 20, totalRunouts: 47 },
+        },
+      },
+    ],
+    flopBreakdown: [
+      { archetype: 'top_pair', probability: 0.18 },
+      { archetype: 'flush_draw', probability: 0.08 },
+      { archetype: 'miss', probability: 0.60 },
+    ],
+    treeMetadata: { depthReached: 2, spr: 3.5, branches: 3, computeMs: 100 },
+    modelQuality: { overallSource: 'player_model' },
+    villainProfile: { headline: 'TAG — 3-bets 7% from BTN, polarized range' },
+    segmentation: null,
+  },
+  appSeatData: {
+    3: makeAppSeat('TAG', 70, 'TAG — 3-bets 7% from BTN'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
+// 21. HERO FOLDED (PROFITABLE) — Engine recommended call, hero folded
+// =========================================================================
+
+export const heroFoldedProfitable = {
+  cachedSeatStats: {
+    3: makeStats(3, 42, 10, 0.7, 'Fish', 28),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 50),
+    7: makeStats(7, 20, 16, 2.0, 'TAG', 40),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5, 7] },
+  currentLiveContext: {
+    state: 'FLOP',
+    currentStreet: 'flop',
+    heroSeat: 5,
+    communityCards: ['T\u2660', '6\u2665', '2\u2663', '', ''],
+    holeCards: ['9\u2665', '8\u2665'],
+    pot: 15,
+    activeSeatNumbers: [3, 7],
+    foldedSeats: [5],
+    dealerSeat: 7,
+    pfAggressor: 7,
+    actionSequence: [
+      { seat: 7, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 5, action: 'fold', amount: 0, street: 'preflop', order: 2 },
+      { seat: 3, action: 'call', amount: 6, street: 'preflop', order: 3 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'preflop',
+    villainSeat: 7,
+    villainStyle: 'TAG',
+    villainSampleSize: 40,
+    potSize: 9,
+    heroEquity: 0.38,
+    foldPct: null,
+    recommendations: [
+      { action: 'call', ev: 1.2, reasoning: 'Suited connector — call to set mine' },
+      { action: 'fold', ev: 0, reasoning: 'Fold is break-even' },
+    ],
+    treeMetadata: { depthReached: 1 },
+    modelQuality: { overallSource: 'mixed' },
+    villainProfile: { headline: 'Tight aggressive regular' },
+    segmentation: null,
+  },
+  appSeatData: {
+    3: makeAppSeat('Fish', 28, 'Loose passive fish — calls everything', {
+      headline: 'Loose passive fish — calls everything',
+      streets: { preflop: { tendency: 'Limps frequently', confidence: 0.8 }, flop: { tendency: 'Calls any bet', confidence: 0.7 } },
+      vulnerabilities: [
+        { label: 'Calls too wide on flop', severity: 0.85, exploitHint: 'Value bet thinner' },
+        { label: 'Folds to river bets 72%', severity: 0.70, exploitHint: 'Bluff rivers' },
+        { label: 'Low check-raise frequency', severity: 0.55, exploitHint: 'Bet freely' },
+      ],
+    }),
+    7: makeAppSeat('TAG', 40, 'Tight aggressive regular', {
+      headline: 'Tight aggressive regular',
+      streets: { preflop: { tendency: 'Selective opener', confidence: 0.85 } },
+      vulnerabilities: [
+        { label: 'Over-folds to turn bets', severity: 0.65, exploitHint: 'Barrel turns' },
+      ],
+      showdownAnchors: [{ handDescription: 'S7 opened KQs from CO (hand #31)', outcome: 'shown', position: 'CO', hand: 'KQs' }],
+    }),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
 // ALL FIXTURES (for harness iteration)
 // =========================================================================
 
@@ -805,4 +1142,9 @@ export const ALL_FIXTURES = {
   headsUp,
   appDisconnected,
   allFoldedToHero,
+  mixedSpot,
+  aggFacingCheck,
+  callerFirstToAct,
+  preflopContested,
+  heroFoldedProfitable,
 };

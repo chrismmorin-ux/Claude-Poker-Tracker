@@ -192,6 +192,21 @@ export const ctxFlop = (overrides = {}) => ({
   ...overrides,
 });
 
+/** Turn live context */
+export const ctxTurn = (overrides = {}) => ({
+  state: 'TURN',
+  currentStreet: 'turn',
+  heroSeat: 5,
+  handNumber: 'HAND_001',
+  pot: 24,
+  activeSeatNumbers: [3, 5],
+  foldedSeats: [1, 7, 9],
+  communityCards: ['Ah', 'Kc', '7d', '3s'],
+  holeCards: ['As', 'Kd'],
+  pfAggressor: 3,
+  ...overrides,
+});
+
 /** River live context */
 export const ctxRiver = (overrides = {}) => ({
   state: 'RIVER',
@@ -237,6 +252,16 @@ export const advFlop = (overrides = {}) => ({
   recommendations: [{ action: 'call', ev: 2.1, sizing: null }],
   foldPct: 42,
   heroEquity: 0.55,
+  ...overrides,
+});
+
+/** Turn advice */
+export const advTurn = (overrides = {}) => ({
+  currentStreet: 'turn',
+  villainSeat: 3,
+  recommendations: [{ action: 'bet', ev: 5.5, sizing: '66%' }],
+  foldPct: 48,
+  heroEquity: 0.60,
   ...overrides,
 });
 

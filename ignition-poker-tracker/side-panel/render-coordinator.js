@@ -10,6 +10,7 @@
  */
 
 import { computeFocusedVillain } from './render-orchestrator.js';
+import { StateInvariantChecker, InvariantViolationError } from './state-invariants.js';
 
 // =========================================================================
 // PRIORITY LEVELS
@@ -47,13 +48,15 @@ export class RenderCoordinator {
    * @param {Object} [opts]
    * @param {number} [opts.coalesceMs=80] - Debounce window for NORMAL priority
    */
-  constructor(deps, { coalesceMs = 80 } = {}) {
+  constructor(deps, { coalesceMs = 80, throwOnViolation = false } = {}) {
     this._renderFn = deps.renderFn;
     this._getTimestamp = deps.getTimestamp || (() => Date.now());
     this._requestFrame = deps.requestFrame || ((cb) => requestAnimationFrame(cb));
     this._setTimeout = deps.setTimeout || ((cb, ms) => setTimeout(cb, ms));
     this._clearTimeout = deps.clearTimeout || ((id) => clearTimeout(id));
     this._coalesceMs = coalesceMs;
+    this._throwOnViolation = throwOnViolation;
+    this._invariantChecker = new StateInvariantChecker();
 
     // --- State variables (mirroring side-panel.js module-level vars) ---
     this._state = {
@@ -84,14 +87,22 @@ export class RenderCoordinator {
       recoveryMessage: null,
       connState: { connected: false },
       cachedSeatMap: null,
+      planPanelOpen: false,
       // Versioning for renderKey
       appSeatDataVersion: 0,
+      // Between-hands Mode A timer state
+      modeAExpired: false,
+      modeATimerActive: false,
       // Two-phase stale context (Fix 3)
       staleContext: false,
       // Has-hands flag for no-table visibility (Fix 2)
       hasTableHands: true,
       // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
       pipelineEvents: [],
+      // Layer 2: Position lock — heroSeat/dealerSeat frozen per hand
+      _lockedHeroSeat: null,
+      _lockedDealerSeat: null,
+      _lockedHandNumber: null,
     };
 
     // --- Internal scheduling state ---
@@ -105,6 +116,9 @@ export class RenderCoordinator {
 
     // --- Visual continuity (RT-48) ---
     this._lastStreetCardHtml = null;
+
+    // --- Between-hands Mode A timer ---
+    this._modeATimer = null;
   }
 
   // =======================================================================
@@ -190,6 +204,8 @@ export class RenderCoordinator {
       appSeatDataVersion: s.appSeatDataVersion,
       staleContext: s.staleContext,
       hasTableHands: s.hasTableHands,
+      planPanelOpen: s.planPanelOpen,
+      modeAExpired: s.modeAExpired,
       // Computed
       focusedVillainSeat,
       // Derived
@@ -297,6 +313,17 @@ export class RenderCoordinator {
     this._state.focusedVillainSeat = snap.focusedVillainSeat;
 
     this._renderFn(snap, reason);
+
+    // Layer 1: Runtime invariant check after every render
+    const result = this._invariantChecker.check(snap);
+    if (result.violations.length > 0) {
+      for (const v of result.violations) {
+        this.logPipelineEvent('INVARIANT_VIOLATION', v);
+      }
+      if (this._throwOnViolation) {
+        throw new InvariantViolationError(result.violations);
+      }
+    }
   }
 
   // =======================================================================
@@ -375,6 +402,27 @@ export class RenderCoordinator {
     if (!ctx) return;
 
     const prevState = this._state.currentLiveContext?.state;
+
+    // Layer 2: Position lock — freeze heroSeat/dealerSeat for duration of a hand.
+    // Protocol noise can change these mid-hand; locking prevents chart position flicker.
+    const incomingHand = ctx.handNumber || null;
+    const isNewHandBoundary = prevState !== ctx.state && (ctx.state === 'PREFLOP' || ctx.state === 'DEALING');
+
+    if (isNewHandBoundary || this._state._lockedHandNumber !== incomingHand) {
+      // New hand: lock positions from incoming context
+      this._state._lockedHeroSeat = ctx.heroSeat;
+      this._state._lockedDealerSeat = ctx.dealerSeat;
+      this._state._lockedHandNumber = incomingHand;
+    } else if (this._state._lockedHeroSeat != null) {
+      // Mid-hand: enforce locked positions, override protocol noise
+      if (ctx.heroSeat !== this._state._lockedHeroSeat || ctx.dealerSeat !== this._state._lockedDealerSeat) {
+        this.logPipelineEvent('position_override',
+          `hero:${ctx.heroSeat}\u2192${this._state._lockedHeroSeat} dealer:${ctx.dealerSeat}\u2192${this._state._lockedDealerSeat}`);
+        ctx.heroSeat = this._state._lockedHeroSeat;
+        ctx.dealerSeat = this._state._lockedDealerSeat;
+      }
+    }
+
     this._state.currentLiveContext = { ...ctx, _receivedAt: this._getTimestamp() };
 
     const newState = this._state.currentLiveContext.state;
@@ -439,9 +487,46 @@ export class RenderCoordinator {
     this._state.lastGoodAdvice = null;
     this._state.lastGoodTournament = null;
     this._state.currentLiveContext = null;
+    this._state._lockedHeroSeat = null;
+    this._state._lockedDealerSeat = null;
+    this._state._lockedHandNumber = null;
     this._state.userCollapsedSections = new Set();
+    this._state.planPanelOpen = false;
+    this.clearModeATimer();
     this._pendingAdvice = null;
     this._lastStreetCardHtml = null;
+  }
+
+  // =======================================================================
+  // MODE A TIMER (between-hands reflection)
+  // =======================================================================
+
+  /**
+   * Start the 10-second Mode A timer. After expiry, modeAExpired becomes
+   * true and a re-render is scheduled (transitioning from reflection to
+   * observing mode).
+   */
+  startModeATimer() {
+    if (this._state.modeATimerActive) return;
+    this._state.modeATimerActive = true;
+    this._modeATimer = this._setTimeout(() => {
+      this._state.modeAExpired = true;
+      this._state.modeATimerActive = false;
+      this._modeATimer = null;
+      this.scheduleRender('modeA_expired', PRIORITY.IMMEDIATE);
+    }, 10_000);
+  }
+
+  /**
+   * Clear the Mode A timer and reset state.
+   */
+  clearModeATimer() {
+    if (this._modeATimer != null) {
+      this._clearTimeout(this._modeATimer);
+      this._modeATimer = null;
+    }
+    this._state.modeAExpired = false;
+    this._state.modeATimerActive = false;
   }
 
   // =======================================================================
@@ -479,6 +564,7 @@ export class RenderCoordinator {
       this._clearTimeout(this._coalesceTimer);
       this._coalesceTimer = null;
     }
+    this.clearModeATimer();
     this._rafPending = false;
   }
 }

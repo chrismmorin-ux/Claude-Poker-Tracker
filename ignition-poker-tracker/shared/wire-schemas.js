@@ -35,6 +35,7 @@ const VILLAIN_PROFILE_FIELDS = [
   'streets', 'aggressionResponse', 'rangeShape',
   'awareness', 'decisionModelShape', 'decisionModelDescription',
   'vulnerabilities',
+  'showdownAnchors',
 ];
 
 const TREE_META_FIELDS = [
