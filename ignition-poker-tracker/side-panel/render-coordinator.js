@@ -49,6 +49,16 @@ export class RenderCoordinator {
     this._requestFrame = deps.requestFrame || ((cb) => requestAnimationFrame(cb));
     this._setTimeout = deps.setTimeout || ((cb, ms) => setTimeout(cb, ms));
     this._clearTimeout = deps.clearTimeout || ((id) => clearTimeout(id));
+    this._clearInterval = deps.clearInterval || ((id) => clearInterval(id));
+    // RT-60: generic timer registry for module-level setTimeout/setInterval
+    // handles that belong to the IIFE but need coordinator-driven lifecycle
+    // (clearForTableSwitch / destroy must cancel them to prevent orphan-fire
+    // on a different table's context).
+    this._timers = new Map();
+    // Optional hooks registered by non-coordinator modules (e.g.
+    // render-street-card.js) to cancel their own module-local timers on
+    // table switch. Called with no arguments.
+    this._tableSwitchHooks = [];
     this._coalesceMs = coalesceMs;
     this._throwOnViolation = throwOnViolation;
     this._invariantChecker = new StateInvariantChecker();
@@ -490,6 +500,12 @@ export class RenderCoordinator {
    * Clear per-table state on table switch.
    */
   clearForTableSwitch() {
+    // RT-60: cancel all registered timers before wiping state so no
+    // orphan callback can fire on the next table's context.
+    this.clearAllTimers();
+    for (const hook of this._tableSwitchHooks) {
+      try { hook(); } catch (_) { /* best-effort: one bad hook must not break lifecycle */ }
+    }
     this._state.pinnedVillainSeat = null;
     this._state.lastGoodAdvice = null;
     this._state.lastGoodTournament = null;
@@ -502,6 +518,61 @@ export class RenderCoordinator {
     this.clearModeATimer();
     this._pendingAdvice = null;
     this._lastStreetCardHtml = null;
+  }
+
+  // =======================================================================
+  // TIMER REGISTRATION CONTRACT (RT-60)
+  //
+  // The IIFE side-panel.js owns several setTimeout/setInterval handles
+  // (tourneyTimer, tableGrace, staleContext, planPanelAutoExpand). Before
+  // RT-60 these were module-level `let` vars that clearForTableSwitch
+  // couldn't reach, so timers would fire on the next table's data after
+  // a switch. Now every such handle is registered under a string key so
+  // the coordinator can cancel them on lifecycle events.
+  //
+  // Re-registering the same key clears the previous handle first — this
+  // makes "replace an existing timer" a one-call operation.
+  //
+  // clearAllTimers() is invoked by both clearForTableSwitch() and
+  // destroy().
+  // =======================================================================
+
+  /**
+   * Register a timer handle under a key. Clears any existing handle for
+   * the same key before storing the new one. `kind` is 'timeout' (default)
+   * or 'interval' and determines which clear function is used.
+   */
+  registerTimer(key, handle, kind = 'timeout') {
+    const existing = this._timers.get(key);
+    if (existing) {
+      (existing.kind === 'interval' ? this._clearInterval : this._clearTimeout)(existing.handle);
+    }
+    this._timers.set(key, { handle, kind });
+  }
+
+  /** Clear a single timer by key, if registered. No-op if absent. */
+  clearTimer(key) {
+    const entry = this._timers.get(key);
+    if (!entry) return;
+    (entry.kind === 'interval' ? this._clearInterval : this._clearTimeout)(entry.handle);
+    this._timers.delete(key);
+  }
+
+  /** Cancel every registered timer. Called from clearForTableSwitch + destroy. */
+  clearAllTimers() {
+    for (const [, entry] of this._timers) {
+      (entry.kind === 'interval' ? this._clearInterval : this._clearTimeout)(entry.handle);
+    }
+    this._timers.clear();
+  }
+
+  /**
+   * Register a callback to run on table switch. Lets modules that own
+   * their own local timers (e.g. render-street-card's transition timer)
+   * opt into the coordinator's lifecycle without exposing the handle.
+   */
+  onTableSwitch(fn) {
+    if (typeof fn === 'function') this._tableSwitchHooks.push(fn);
   }
 
   // =======================================================================
@@ -572,6 +643,7 @@ export class RenderCoordinator {
       this._coalesceTimer = null;
     }
     this.clearModeATimer();
+    this.clearAllTimers(); // RT-60
     this._rafPending = false;
   }
 }

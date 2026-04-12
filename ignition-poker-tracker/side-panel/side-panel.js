@@ -53,8 +53,10 @@ injectTokens();
 
   // Infrastructure vars (timers, async locks — not renderable state).
   // All renderable state lives exclusively in coordinator._state.
-  let tourneyTimerInterval = null;
-  let _tableGraceTimer = null;
+  // RT-60: tourneyTimer, tableGrace, planPanelAutoExpand, staleContext are
+  // registered with the coordinator instead of held as module-level `let`
+  // vars. clearForTableSwitch() cancels them all, preventing orphan-fire
+  // on the next table's context.
   let _refreshInFlight = false;
   let _refreshPendingAfter = false;
 
@@ -216,20 +218,21 @@ injectTokens();
     const prevTableId = coordinator.get('currentActiveTableId');
 
     if (tableEntries.length > 0) {
-      // Table present — cancel any pending grace timer
-      if (_tableGraceTimer) { clearTimeout(_tableGraceTimer); _tableGraceTimer = null; }
+      // Table present — cancel any pending grace timer (RT-60)
+      coordinator.clearTimer('tableGrace');
       const [connId] = tableEntries[0];
       coordinator.set('currentActiveTableId', `table_${connId}`);
       coordinator.set('currentTableState', tableEntries[0][1]);
-    } else if (prevTableId && !_tableGraceTimer) {
-      // Tables went empty — start 5s grace period before clearing.
-      _tableGraceTimer = setTimeout(() => {
-        _tableGraceTimer = null;
+    } else if (prevTableId && !coordinator._timers.has('tableGrace')) {
+      // Tables went empty — start 5s grace period before clearing (RT-60).
+      const handle = setTimeout(() => {
+        coordinator.clearTimer('tableGrace');
         coordinator.set('currentActiveTableId', null);
         coordinator.set('currentTableState', null);
         coordinator.clearForTableSwitch();
         scheduleRender('table_grace_expired');
       }, 5000);
+      coordinator.registerTimer('tableGrace', handle, 'timeout');
     }
 
     // Clear stale state on actual table switch (different table, not null)
@@ -422,21 +425,25 @@ injectTokens();
   // Two-phase stale context: 60s = stale indicator, 120s = full clear to between-hands.
   // Phase 1 keeps last content visible with a subtle badge so the user can still read it.
   // Phase 2 fully clears to between-hands (true session end / table close).
-  setInterval(() => {
-    const ctx = coordinator.get('currentLiveContext');
-    if (ctx?._receivedAt) {
-      const age = Date.now() - ctx._receivedAt;
-      if (age > 120_000) {
-        coordinator.set('currentLiveContext', null);
-        coordinator.set('staleContext', false);
-        coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
-        scheduleRender('stale_full_clear');
-      } else if (age > 60_000 && !coordinator.get('staleContext')) {
-        coordinator.set('staleContext', true);
-        scheduleRender('stale_indicator');
+  // RT-60: registered so clearForTableSwitch cancels it on lifecycle events.
+  {
+    const handle = setInterval(() => {
+      const ctx = coordinator.get('currentLiveContext');
+      if (ctx?._receivedAt) {
+        const age = Date.now() - ctx._receivedAt;
+        if (age > 120_000) {
+          coordinator.set('currentLiveContext', null);
+          coordinator.set('staleContext', false);
+          coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
+          scheduleRender('stale_full_clear');
+        } else if (age > 60_000 && !coordinator.get('staleContext')) {
+          coordinator.set('staleContext', true);
+          scheduleRender('stale_indicator');
+        }
       }
-    }
-  }, 10_000);
+    }, 10_000);
+    coordinator.registerTimer('staleContext', handle, 'interval');
+  }
 
   // =========================================================================
   // TOURNAMENT PANEL
@@ -490,7 +497,7 @@ injectTokens();
     if (!t) {
       hideEl(bar);
       if (detail) detail.classList.remove('open');
-      if (tourneyTimerInterval) { clearInterval(tourneyTimerInterval); tourneyTimerInterval = null; }
+      coordinator.clearTimer('tourneyTimer'); // RT-60
       return;
     }
 
@@ -531,7 +538,8 @@ injectTokens();
     bar.innerHTML = barHtml;
 
     // Timer countdown — RT-52: re-query DOM element on each tick (innerHTML replaces it)
-    if (tourneyTimerInterval) { clearInterval(tourneyTimerInterval); tourneyTimerInterval = null; }
+    // RT-60: registered via coordinator so table switch / unload cancels it.
+    coordinator.clearTimer('tourneyTimer');
     if (t.levelEndTime) {
       const endTime = t.levelEndTime;
       const updateTimer = () => {
@@ -544,12 +552,11 @@ injectTokens();
         el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
         if (remaining <= 0) {
           el.textContent = '0:00';
-          clearInterval(tourneyTimerInterval);
-          tourneyTimerInterval = null;
+          coordinator.clearTimer('tourneyTimer');
         }
       };
       updateTimer();
-      tourneyTimerInterval = setInterval(updateTimer, 1000);
+      coordinator.registerTimer('tourneyTimer', setInterval(updateTimer, 1000), 'interval');
     }
 
     // Click to expand/collapse detail
@@ -989,7 +996,7 @@ injectTokens();
   // ZONE 3: PLAN PANEL
   // =========================================================================
 
-  let _planPanelAutoExpandTimer = null;
+  // RT-60: planPanelAutoExpand registered with coordinator (was module-let).
 
   const renderPlanPanel = (advice, liveCtx, snap) => {
     const el = $('plan-panel');
@@ -1011,16 +1018,13 @@ injectTokens();
       body.innerHTML = result.html;
     }
 
-    // Auto-expand after 8 seconds if user hasn't toggled
-    if (_planPanelAutoExpandTimer) {
-      clearTimeout(_planPanelAutoExpandTimer);
-      _planPanelAutoExpandTimer = null;
-    }
+    // Auto-expand after 8 seconds if user hasn't toggled (RT-60 registered)
+    coordinator.clearTimer('planPanelAutoExpand');
     const isOpen = coordinator.get('planPanelOpen');
     if (isOpen) {
       body.classList.add('open');
     } else {
-      _planPanelAutoExpandTimer = setTimeout(() => {
+      const handle = setTimeout(() => {
         coordinator.set('planPanelOpen', true);
         body.classList.add('open');
         const chevron = $('pp-chevron');
@@ -1028,16 +1032,14 @@ injectTokens();
         const toggle = $('pp-toggle');
         if (toggle) toggle.setAttribute('aria-expanded', 'true');
       }, 8000);
+      coordinator.registerTimer('planPanelAutoExpand', handle, 'timeout');
     }
   };
 
   const ppToggle = $('pp-toggle');
   if (ppToggle) {
     ppToggle.addEventListener('click', () => {
-      if (_planPanelAutoExpandTimer) {
-        clearTimeout(_planPanelAutoExpandTimer);
-        _planPanelAutoExpandTimer = null;
-      }
+      coordinator.clearTimer('planPanelAutoExpand');
       const isOpen = !coordinator.get('planPanelOpen');
       coordinator.set('planPanelOpen', isOpen);
       const body = $('pp-body');

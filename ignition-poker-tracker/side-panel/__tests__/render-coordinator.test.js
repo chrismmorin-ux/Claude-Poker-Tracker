@@ -572,3 +572,95 @@ describe('RenderCoordinator', () => {
     });
   });
 });
+
+// =========================================================================
+// TIMER REGISTRATION CONTRACT (RT-60)
+// =========================================================================
+
+describe('RT-60: timer registration contract', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  function makeTimedCoord() {
+    const renders = [];
+    const coord = new RenderCoordinator({
+      renderFn: (snap, reason) => renders.push({ reason }),
+      getTimestamp: () => Date.now(),
+      requestFrame: (cb) => setTimeout(cb, 0),
+      setTimeout: (cb, ms) => setTimeout(cb, ms),
+      clearTimeout: (id) => clearTimeout(id),
+      clearInterval: (id) => clearInterval(id),
+    });
+    return { coord, renders };
+  }
+
+  it('registerTimer replaces the prior handle under the same key', () => {
+    const { coord } = makeTimedCoord();
+    const callback1 = vi.fn();
+    const callback2 = vi.fn();
+    coord.registerTimer('k', setTimeout(callback1, 100), 'timeout');
+    coord.registerTimer('k', setTimeout(callback2, 100), 'timeout');
+    vi.advanceTimersByTime(200);
+    expect(callback1).not.toHaveBeenCalled();
+    expect(callback2).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearTimer cancels a specific key', () => {
+    const { coord } = makeTimedCoord();
+    const callback = vi.fn();
+    coord.registerTimer('x', setTimeout(callback, 100), 'timeout');
+    coord.clearTimer('x');
+    vi.advanceTimersByTime(200);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('clearAllTimers cancels every registered timer across kinds', () => {
+    const { coord } = makeTimedCoord();
+    const timeoutCb = vi.fn();
+    const intervalCb = vi.fn();
+    coord.registerTimer('t1', setTimeout(timeoutCb, 50), 'timeout');
+    coord.registerTimer('i1', setInterval(intervalCb, 50), 'interval');
+    coord.clearAllTimers();
+    vi.advanceTimersByTime(500);
+    expect(timeoutCb).not.toHaveBeenCalled();
+    expect(intervalCb).not.toHaveBeenCalled();
+  });
+
+  it('clearForTableSwitch cancels registered timers (prevents orphan-fire)', () => {
+    const { coord } = makeTimedCoord();
+    const callback = vi.fn();
+    coord.registerTimer('planPanelAutoExpand', setTimeout(callback, 8000), 'timeout');
+    coord.clearForTableSwitch();
+    vi.advanceTimersByTime(10_000);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('destroy cancels every registered timer', () => {
+    const { coord } = makeTimedCoord();
+    const a = vi.fn();
+    const b = vi.fn();
+    coord.registerTimer('a', setTimeout(a, 100), 'timeout');
+    coord.registerTimer('b', setInterval(b, 100), 'interval');
+    coord.destroy();
+    vi.advanceTimersByTime(500);
+    expect(a).not.toHaveBeenCalled();
+    expect(b).not.toHaveBeenCalled();
+  });
+
+  it('onTableSwitch hooks fire on clearForTableSwitch', () => {
+    const { coord } = makeTimedCoord();
+    const hook = vi.fn();
+    coord.onTableSwitch(hook);
+    coord.clearForTableSwitch();
+    expect(hook).toHaveBeenCalledTimes(1);
+  });
+
+  it('a bad onTableSwitch hook does not break lifecycle', () => {
+    const { coord } = makeTimedCoord();
+    const goodHook = vi.fn();
+    coord.onTableSwitch(() => { throw new Error('boom'); });
+    coord.onTableSwitch(goodHook);
+    expect(() => coord.clearForTableSwitch()).not.toThrow();
+    expect(goodHook).toHaveBeenCalledTimes(1);
+  });
+});
