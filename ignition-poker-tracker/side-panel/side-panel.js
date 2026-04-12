@@ -1018,19 +1018,21 @@ injectTokens();
       body.innerHTML = result.html;
     }
 
-    // Auto-expand after 8 seconds if user hasn't toggled (RT-60 registered)
-    coordinator.clearTimer('planPanelAutoExpand');
+    // RT-61: renderPlanPanel is the sole DOM-writer for plan-panel visual
+    // state. The 8s auto-expand timer only updates coordinator state and
+    // schedules a render — all class/aria writes happen here.
     const isOpen = coordinator.get('planPanelOpen');
-    if (isOpen) {
-      body.classList.add('open');
-    } else {
+    body.classList.toggle('open', isOpen);
+    const chevron = $('pp-chevron');
+    if (chevron) chevron.classList.toggle('open', isOpen);
+    const toggle = $('pp-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
+
+    coordinator.clearTimer('planPanelAutoExpand');
+    if (!isOpen) {
       const handle = setTimeout(() => {
         coordinator.set('planPanelOpen', true);
-        body.classList.add('open');
-        const chevron = $('pp-chevron');
-        if (chevron) chevron.classList.add('open');
-        const toggle = $('pp-toggle');
-        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        scheduleRender('planPanel_autoexpand', PRIORITY.IMMEDIATE);
       }, 8000);
       coordinator.registerTimer('planPanelAutoExpand', handle, 'timeout');
     }
@@ -1039,14 +1041,12 @@ injectTokens();
   const ppToggle = $('pp-toggle');
   if (ppToggle) {
     ppToggle.addEventListener('click', () => {
+      // RT-61: toggle only updates state + schedules a render; renderPlanPanel
+      // writes the classes/aria. This keeps user-interaction and auto-expand
+      // on the same code path.
       coordinator.clearTimer('planPanelAutoExpand');
-      const isOpen = !coordinator.get('planPanelOpen');
-      coordinator.set('planPanelOpen', isOpen);
-      const body = $('pp-body');
-      const chevron = $('pp-chevron');
-      if (body) body.classList.toggle('open', isOpen);
-      if (chevron) chevron.classList.toggle('open', isOpen);
-      ppToggle.setAttribute('aria-expanded', String(isOpen));
+      coordinator.set('planPanelOpen', !coordinator.get('planPanelOpen'));
+      scheduleRender('planPanel_toggle', PRIORITY.IMMEDIATE);
     });
   }
 
