@@ -12,7 +12,8 @@
  *   // result.warnings: string[] — soft inconsistencies
  */
 
-const STREET_RANK = { preflop: 0, flop: 1, turn: 2, river: 3 };
+import { STREET_RANK } from '../shared/constants.js';
+
 const LIVE_STATES = new Set(['PREFLOP', 'FLOP', 'TURN', 'RIVER', 'DEALING']);
 
 export class StateInvariantChecker {

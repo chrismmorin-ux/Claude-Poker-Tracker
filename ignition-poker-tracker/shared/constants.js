@@ -71,6 +71,10 @@ export const BUILD_GUARD = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH_
 // Bump when the message schema changes so mismatches are detected, not silent.
 export const PROTOCOL_VERSION = 2;
 
+// Street rank ordering — used by advice-staleness guard and state invariants.
+// Canonical single source of truth; do not duplicate elsewhere.
+export const STREET_RANK = Object.freeze({ preflop: 0, flop: 1, turn: 2, river: 3 });
+
 // Bridge message types — the ONLY message types used across the
 // window.postMessage boundary between extension and main app.
 // App-side mirror: src/utils/bridgeProtocol.js (must stay in sync).

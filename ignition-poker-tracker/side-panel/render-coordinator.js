@@ -11,6 +11,7 @@
 
 import { computeFocusedVillain } from './render-orchestrator.js';
 import { StateInvariantChecker, InvariantViolationError } from './state-invariants.js';
+import { STREET_RANK } from '../shared/constants.js';
 
 // =========================================================================
 // PRIORITY LEVELS
@@ -22,12 +23,6 @@ export const PRIORITY = Object.freeze({
   /** Immediate — bypasses debounce, renders next rAF. Used for advice arrival, user interaction. */
   IMMEDIATE: 'immediate',
 });
-
-// =========================================================================
-// STREET_RANK — used by advice guard
-// =========================================================================
-
-const STREET_RANK = { preflop: 0, flop: 1, turn: 2, river: 3 };
 
 // =========================================================================
 // RENDER COORDINATOR
