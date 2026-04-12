@@ -6,6 +6,14 @@ Completed items moved from BACKLOG.md. Reference only — not loaded automatical
 
 ---
 
+## Phase B (R6 structural) — in progress 2026-04-12
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-47 | P2 | Eliminate async/sync interleave in handlePipelineStatus | VERIFIED-DONE. side-panel.js:250-253 snapshots `tid` and `pip` from coordinator state before the `await refreshHandStats(tid, pip)` call, preventing mid-await mutations from corrupting the subsequent render. Concurrent-push coverage exists in lifecycle-invariants.test.js. No code change needed; audit was stale. |
+
+---
+
 ## Phase A (R6+R7+R8 quick wins) — 2026-04-12
 
 | ID | Pri | Description | Resolution |
