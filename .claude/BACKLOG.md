@@ -21,20 +21,11 @@ Active work items only. Completed items archived in `BACKLOG_ARCHIVE.md`.
 
 ## NEXT — Ready to Start
 
-_17 items active. Claim with `/backlog claim <id>` before starting._
-
-### Remaining items (Phase C + D)
+_All R6/R7/R8 roundtable findings closed across Phases A, B, C, and D (2026-04-12). No active work items._
 
 | ID | Pri | Status | Description | Accept Criteria | Claimed By |
 |----|-----|--------|-------------|-----------------|------------|
-| RT-48 | P2 | NEXT | Sidebar: stale advice visual indicator | When advice age > 10s or liveContext is null, advice card shows age badge + border tint; shimmer/loading distinguishable from stale state | — |
-
-### R8 findings (post-RT-43 residue) — remaining
-
-| ID | Pri | Status | Description | Accept Criteria | Claimed By |
-|----|-----|--------|-------------|-----------------|------------|
-| RT-61 | P2 | NEXT | Sidebar: planPanel auto-expand routes through scheduleRender | Remove direct `coordinator.set('planPanelOpen', true)` + DOM class write in setTimeout callback at side-panel.js:~983; callback dispatches via scheduler only; test asserts no DOM mutation outside renderAll during 8s window. | — |
-| RT-66 | P2 | NEXT | Sidebar: surface state-invariant violations + fix Rule 10 dead path | `pipelineEvents` included in `buildSnapshot` OR Rule 10 rewritten to read coordinator directly; violations above threshold render visible diagnostics badge; test asserts Rule 10 fires when pipelineEvents exceeds cap. | — |
+| — | — | — | _Sidebar backlog fully resolved. Claim a new item with `/backlog claim <id>` once added._ | — | — |
 
 ---
 
@@ -46,20 +37,10 @@ _17 items active. Claim with `/backlog claim <id>` before starting._
 
 ---
 
-## Recommended Execution Order
+## Recently Completed Phases
 
-**Phase A — COMPLETE (2026-04-12).** RT-46, RT-56, RT-57, RT-62, RT-63, RT-64, RT-65, RT-67 closed.
-**Phase B — COMPLETE (2026-04-12).** RT-43, RT-44, RT-45, RT-47, RT-54, RT-58, RT-59, RT-60 closed. See BACKLOG_ARCHIVE.md.
+**Phase A (2026-04-12)** — RT-46, RT-56, RT-57, RT-62, RT-63, RT-64, RT-65, RT-67.
+**Phase B (2026-04-12)** — RT-43, RT-44, RT-45, RT-47, RT-54, RT-58, RT-59, RT-60.
+**Phase C + D (2026-04-12)** — RT-48, RT-49, RT-50, RT-51, RT-52, RT-53, RT-55, RT-61, RT-66, plus orphan renderExploitPanel/renderWeaknessPanel cleanup.
 
-**Phase C — Test infrastructure (next):**
-1. RT-51 (message-level integration harness — partially built; formalize)
-2. RT-66 (surface invariant violations, Rule 10)
-
-**Phase D — UX polish + stale/collapse handling:**
-3. RT-61 (planPanel via scheduler) — depends on RT-60 ✓
-4. RT-53 (render _contextStale indicator)
-5. RT-48 (stale advice indicator) — depends on RT-53
-6. RT-52 (tournament timer detached DOM — largely mooted by RT-60; verify)
-7. RT-49 (collapse state preservation)
-8. RT-50 (transition timer) — wire via coordinator.onTableSwitch hook
-9. RT-55 (audit remaining dead panels) — mooted by RT-58; confirm
+Total: 25 roundtable findings resolved in one session. See `BACKLOG_ARCHIVE.md`.

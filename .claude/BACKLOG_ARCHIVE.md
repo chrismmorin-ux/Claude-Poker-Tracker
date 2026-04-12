@@ -6,6 +6,16 @@ Completed items moved from BACKLOG.md. Reference only — not loaded automatical
 
 ---
 
+## Phase C+D (R6/R7/R8 test infra + UX polish) — 2026-04-12 COMPLETE
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-48 | P2 | Stale advice visual indicator | Commit 0341328. handleAdvice stamps `_receivedAt` on accepted advice; renderAll toggles `.stale` class on action bar + plan panel when age > 10s or liveContext null; 1Hz interval (registered under coordinator per RT-60) does targeted writes of a "Stale Ns" badge inside the action bar. CSS: muted yellow-orange border. New Scenario 14 integration test. |
+| RT-61 | P2 | planPanel auto-expand routes through scheduleRender | Commit 4cd9b18. renderPlanPanel now writes all three elements (body, chevron, toggle aria) from `coordinator.get('planPanelOpen')` each render. Auto-expand callback and toggle click handler both just set state + scheduleRender. renderPlanPanel is sole DOM-writer for plan-panel visual state. |
+| RT-66 | P2 | Surface state-invariant violations + fix Rule 10 dead path | Commit ddb3f77. StateInvariantChecker accepts `{ getPipelineEvents }` accessor; RenderCoordinator wires a live reader. Rule 10 now fires when pipelineEvents exceeds 50. Coordinator stamps `lastViolationAt` + `lastViolationCount` on every violation; both ride the snapshot. Status bar renders a small red "!" badge next to status text with count tooltip — auto-decays after 30s of no new violations. |
+
+---
+
 ## Phase C+D verified-done sweep — 2026-04-12
 
 Verified against current code during Phase C+D planning. All six items met their accept criteria without additional work.
