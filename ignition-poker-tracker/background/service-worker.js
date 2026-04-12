@@ -133,6 +133,11 @@ chrome.runtime.onConnect.addListener((port) => {
     try { port.postMessage({ type: '__version_check', version: SW_VERSION }); } catch (e) { console.warn('[SW] Version check failed:', e.message); }
 
     port.onMessage.addListener((msg) => {
+      const vErr = validateMessage(msg.type, msg);
+      if (vErr) {
+        errors.report('validation', `Blocked ${msg.type}: ${vErr}`, { port: 'ignition-capture' });
+        return; // Drop invalid messages before handler dispatch
+      }
       switch (msg.type) {
         case 'hand_complete': {
           // Content scripts can't access chrome.storage.session — SW handles storage

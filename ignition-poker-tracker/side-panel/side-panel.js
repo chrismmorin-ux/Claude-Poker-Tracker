@@ -438,10 +438,14 @@ injectTokens();
     const bar = $('tournament-bar');
     if (!bar) return;
 
-    const level = levelInfo.level || levelInfo.levelNo || null;
-    const sb = levelInfo.sb || levelInfo.smallBlind || null;
-    const bb = levelInfo.bb || levelInfo.bigBlind || null;
-    const ante = levelInfo.ante || 0;
+    // Coerce numerically-typed protocol fields so a string-injected value
+    // displays as NaN rather than surviving as raw HTML. Source is WebSocket
+    // protocol parse with no type enforcement — treat as untrusted input.
+    const toNum = (v) => (v == null ? null : Number(v));
+    const level = toNum(levelInfo.level) ?? toNum(levelInfo.levelNo);
+    const sb = toNum(levelInfo.sb) ?? toNum(levelInfo.smallBlind);
+    const bb = toNum(levelInfo.bb) ?? toNum(levelInfo.bigBlind);
+    const ante = toNum(levelInfo.ante) ?? 0;
 
     if (level == null && sb == null) return;
 
@@ -451,10 +455,12 @@ injectTokens();
       if (ante > 0) blindStr += ` A${ante}`;
     }
 
+    const levelText = level == null ? '?' : String(level);
+
     showEl(bar);
-    bar.innerHTML = `<span class="tourney-bar-info">Level ${level || '?'}</span>`
+    bar.innerHTML = `<span class="tourney-bar-info">Level ${escapeHtml(levelText)}</span>`
       + `<span class="tourney-bar-sep"></span>`
-      + `<span class="tourney-bar-info">${blindStr}</span>`
+      + `<span class="tourney-bar-info">${escapeHtml(blindStr)}</span>`
       + `<span style="margin-left:auto;font-size:9px;color:var(--text-faint)">Open app for full analysis</span>`;
   };
 

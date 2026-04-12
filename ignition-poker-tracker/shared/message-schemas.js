@@ -45,6 +45,30 @@ const validators = {
     return null;
   },
 
+  hand_complete: (msg) => {
+    if (!isObj(msg.hand)) return 'missing hand object';
+    return null;
+  },
+
+  pipeline_diagnostics: (msg) => {
+    if (!isObj(msg.data)) return 'missing data object';
+    return null;
+  },
+
+  recovery_needed: (msg) => {
+    if (typeof msg.reason !== 'string' && typeof msg.message !== 'string') {
+      return 'missing reason or message';
+    }
+    return null;
+  },
+
+  recovery_cleared: (_msg) => null,
+
+  silence_alert: (msg) => {
+    if (typeof msg.silenceMs !== 'number') return 'silenceMs must be a number';
+    return null;
+  },
+
   // SW → app bridge (hand delivery now uses chrome.storage.session)
   status: (msg) => {
     const v = validateStatus(msg);
