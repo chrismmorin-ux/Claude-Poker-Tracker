@@ -12,6 +12,7 @@ _No active sessions._
 
 ## Recently Completed
 
+- Phase B — 2026-04-12: 8 items closed (RT-43/44/45/47/54/58/59/60). RT-47 verified-done (audit stale). RT-43 completion root-caused the "wrong info for hand state" symptom to an incomplete renderKey fingerprint — tournament data, last-action amount, and advice sizing+villainSeat now drive re-renders. Dead-code ReferenceError traps deleted (RT-58). Dual liveContext write paths unified (RT-59). Advice guard gained hand-number binding (RT-45). Coordinator timer registration contract shipped with 4 sites migrated (RT-60).
 - Phase A — 2026-04-12: 8 items closed across R6+R7+R8. RT-46/RT-56 verified-done (audit stale). RT-63 not-a-bug (verified with test). RT-57 (tournament XSS), RT-62 (Zone 3 scary card ranks, upstream + sidebar), RT-64 (multiway pot odds), RT-65 (capture-port validateMessage), RT-67 (canonical STREET_RANK) shipped.
 - R5 sprint — 2026-04-07: all 8 roundtable findings resolved (RT-35 through RT-42)
 - R4 sprint — 2026-04-07: all 8 findings resolved (RT-27+ through RT-34)
@@ -40,7 +41,7 @@ _No active sessions._
 - **Test Health: YELLOW** — Sidebar temporal harness tests render layer only, bypasses message handler pipeline where real bugs live. Message-level integration harness needed (RT-51).
 - **Security: GREEN** — All Phase A security items closed. RT-46 verified-done, RT-57 shipped (tournament innerHTML escaped), RT-65 shipped (capture-port validateMessage gate).
 - **Product Correctness: GREEN** — RT-62 shipped card-rank display in Zone 3. RT-63 closed as not-a-bug with test evidence. RT-64 shipped multiway pot-odds fix.
-- **Post-RT-43 Regression: YELLOW** — `_planPanelAutoExpandTimer` + dead-fn bare-var closures still present. RT-58/RT-60 (Phase B) close the gaps.
+- **Post-RT-43 Regression: GREEN** — All Phase B items closed. Dead-fn bare-var closures deleted (RT-58). Timer registration contract ships with 4 sites migrated (RT-60) — orphan-fire after table switch now impossible. renderKey captures tournament/advice/action content (RT-43/44/54).
 
 ---
 
@@ -51,4 +52,4 @@ _No active sessions._
 - **Programs:** Security YELLOW, Engine Accuracy GREEN, UI Quality RED, Test Health YELLOW
 - **Active backlog:** 17 NEXT (R6: 7, R7: 5, R8: 5), 0 REVIEW, 1 PAUSED, 8 closed in Phase A
 - **Open failure modes:** 0 active (5 archived)
-- **Last eng-engine audit:** 2026-04-12 R8 (Phase A shipped same-day; 17 structural + test-infra items remain)
+- **Last eng-engine audit:** 2026-04-12 R8 (Phase A + Phase B both shipped same-day; 10 UX-polish + test-infra items remain across Phases C+D)

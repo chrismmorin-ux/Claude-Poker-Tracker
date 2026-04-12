@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.8.1 | **Updated**: 2026-04-12 | **Owner**: Architecture Review (R8 Phase A close)
+**Version**: 1.9.0 | **Updated**: 2026-04-12 | **Owner**: Architecture Review (R8 Phase B close)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
