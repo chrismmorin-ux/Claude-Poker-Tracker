@@ -421,8 +421,9 @@ export const buildContextStripHTML = (advice, liveContext, opts = {}) => {
   // Pot odds (when facing a bet) or SPR
   if (advice.situation === 'facing_raise' || advice.situation === 'facing_bet') {
     const ctx = liveContext || opts.currentLiveContext;
-    const lastAction = ctx?.actionSequence?.slice(-1)?.[0];
-    const betAmount = lastAction?.amount ?? 0;
+    const currentStreet = (ctx?.state || ctx?.street || '').toLowerCase() || null;
+    const faced = findFacedBet(ctx?.actionSequence, ctx?.heroSeat, currentStreet);
+    const betAmount = faced?.amount ?? 0;
     const pot = advice.potSize ?? ctx?.pot ?? 0;
     if (betAmount > 0 && pot > 0) {
       const potOdds = Math.round((betAmount / (pot + betAmount)) * 100);
@@ -635,6 +636,34 @@ function _extractPlanNote(handPlan, decisionState, action) {
   }
 
   return note ? prefix + note : '';
+}
+
+/**
+ * Find the bet/raise hero is currently facing.
+ *
+ * Walks actionSequence backward and returns the most recent BET/RAISE/DONK
+ * on the current street from a seat other than hero. In multiway pots,
+ * actionSequence.slice(-1) may land on an intermediate caller's action —
+ * the amount of a call is not what hero is being asked to match.
+ *
+ * @param {Array|null} actionSequence - Sequence entries: {seat, action, amount, street, order}
+ * @param {number|null} heroSeat
+ * @param {string|null} currentStreet - 'preflop' | 'flop' | 'turn' | 'river'
+ * @returns {{amount: number, seat: number, action: string}|null}
+ */
+export function findFacedBet(actionSequence, heroSeat, currentStreet) {
+  if (!Array.isArray(actionSequence) || actionSequence.length === 0) return null;
+  const aggressive = new Set(['bet', 'raise', 'donk', 'donk_bet']);
+  for (let i = actionSequence.length - 1; i >= 0; i--) {
+    const a = actionSequence[i];
+    if (!a) continue;
+    if (currentStreet && a.street && a.street !== currentStreet) continue;
+    if (heroSeat != null && a.seat === heroSeat) continue;
+    if (!aggressive.has(a.action)) continue;
+    if (typeof a.amount !== 'number' || a.amount <= 0) continue;
+    return { amount: a.amount, seat: a.seat, action: a.action };
+  }
+  return null;
 }
 
 /**
