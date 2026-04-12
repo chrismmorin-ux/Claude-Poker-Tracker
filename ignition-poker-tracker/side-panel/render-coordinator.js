@@ -232,12 +232,33 @@ export class RenderCoordinator {
    * Build a fingerprint string from a snapshot. Used to skip redundant
    * renders when nothing visible has changed.
    *
-   * RT-44 fixes:
-   * - Uses exploitPushCount instead of !!lastGoodExploits (detects updates)
-   * - Uses appSeatDataVersion (detects villain profile changes)
-   * - focusedVillainSeat is already computed in the snapshot (correct value)
+   * RT-43/RT-44/RT-54 fixes:
+   * - Tournament content hash (not just a boolean) — blinds up / M change /
+   *   player busts must invalidate the key. Pre-fix these state changes
+   *   were silent and the tournament panel displayed stale data.
+   * - Last-action includes amount + seat, not just action type — a raise
+   *   to a different size was otherwise indistinguishable from the same
+   *   action at a different size.
+   * - Advice villainSeat + sizing included so pinned/advice disambiguation
+   *   updates trigger re-render.
+   * - Uses exploitPushCount / appSeatDataVersion / advicePushCount to
+   *   catch updates without deep-equals.
    */
   buildRenderKey(snap) {
+    const t = snap.lastGoodTournament;
+    // Fields the sidebar *actually displays* from tournament data.
+    const tournamentFingerprint = t
+      ? [t.heroMRatio, t.currentLevelIndex, t.playersRemaining, t.icmPressure?.zone,
+         t.levelEndTime, t.mRatioGuidance?.zone].join(':')
+      : '';
+    const lastAct = snap.currentLiveContext?.actionSequence?.slice(-1)?.[0];
+    const lastActionFingerprint = lastAct
+      ? `${lastAct.action}@${lastAct.seat}=${lastAct.amount}`
+      : '';
+    const topRec = snap.lastGoodAdvice?.recommendations?.[0];
+    const adviceFingerprint = topRec
+      ? `${topRec.action}:${topRec.sizing?.betFraction ?? ''}:${snap.lastGoodAdvice.villainSeat ?? ''}`
+      : '';
     return [
       snap.currentLiveContext?.state,
       snap.currentLiveContext?.currentStreet,
@@ -245,15 +266,15 @@ export class RenderCoordinator {
       (snap.currentLiveContext?.actionSequence || []).length,
       snap.currentLiveContext?.pot,
       (snap.currentLiveContext?.communityCards || []).filter(c => c).join(','),
-      snap.currentLiveContext?.actionSequence?.slice(-1)?.[0]?.action,
+      lastActionFingerprint,
       snap.lastGoodAdvice?.currentStreet,
-      snap.lastGoodAdvice?.recommendations?.[0]?.action,
+      adviceFingerprint,
       snap.focusedVillainSeat,
       snap.pinnedVillainSeat,
       snap.lastHandCount,
       snap.exploitPushCount,
       snap.advicePushCount,
-      !!snap.lastGoodTournament,
+      tournamentFingerprint,
       snap.advicePendingForStreet,
       snap.appSeatDataVersion,
       snap.cachedDiag ? 1 : 0,

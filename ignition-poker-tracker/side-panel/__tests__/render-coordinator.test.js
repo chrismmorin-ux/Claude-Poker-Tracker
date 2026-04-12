@@ -664,3 +664,106 @@ describe('RT-60: timer registration contract', () => {
     expect(goodHook).toHaveBeenCalledTimes(1);
   });
 });
+
+// =========================================================================
+// RENDERKEY CONTENT COMPLETENESS (RT-43 / RT-44 / RT-54)
+//
+// Regression coverage for "sidebar shows wrong info for hand state": when
+// fields the UI displays are absent from the fingerprint, renderAll skips
+// the render and the DOM holds stale data. Each test changes one specific
+// state field and asserts the key flips.
+// =========================================================================
+
+describe('buildRenderKey: state-drift invalidation coverage', () => {
+  function emptySnap(overrides = {}) {
+    return {
+      currentLiveContext: null,
+      lastGoodAdvice: null,
+      lastGoodTournament: null,
+      focusedVillainSeat: null,
+      pinnedVillainSeat: null,
+      lastHandCount: 0,
+      exploitPushCount: 0,
+      advicePushCount: 0,
+      advicePendingForStreet: null,
+      appSeatDataVersion: 0,
+      cachedDiag: null,
+      recoveryMessage: null,
+      connState: { connected: true },
+      staleContext: false,
+      hasTableHands: false,
+      ...overrides,
+    };
+  }
+
+  const { coord } = createCoordinator();
+
+  it('tournament blinds/M changes invalidate the key', () => {
+    const base = emptySnap({
+      lastGoodTournament: { heroMRatio: 12.0, currentLevelIndex: 3, levelEndTime: 100 },
+    });
+    const changed = emptySnap({
+      lastGoodTournament: { heroMRatio: 6.5, currentLevelIndex: 4, levelEndTime: 100 },
+    });
+    expect(coord.buildRenderKey(base)).not.toBe(coord.buildRenderKey(changed));
+  });
+
+  it('tournament player count changes (bust) invalidate the key', () => {
+    const a = emptySnap({ lastGoodTournament: { playersRemaining: 127 } });
+    const b = emptySnap({ lastGoodTournament: { playersRemaining: 126 } });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('tournament ICM zone change (approaching bubble) invalidates the key', () => {
+    const a = emptySnap({ lastGoodTournament: { icmPressure: { zone: 'standard' } } });
+    const b = emptySnap({ lastGoodTournament: { icmPressure: { zone: 'bubble' } } });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('last-action amount change invalidates the key (raise-to-different-size)', () => {
+    const base = emptySnap({
+      currentLiveContext: {
+        actionSequence: [{ seat: 3, action: 'raise', amount: 6 }],
+      },
+    });
+    const resized = emptySnap({
+      currentLiveContext: {
+        actionSequence: [{ seat: 3, action: 'raise', amount: 20 }],
+      },
+    });
+    expect(coord.buildRenderKey(base)).not.toBe(coord.buildRenderKey(resized));
+  });
+
+  it('advice sizing change invalidates the key (same action, different bet fraction)', () => {
+    const a = emptySnap({
+      lastGoodAdvice: { recommendations: [{ action: 'bet', sizing: { betFraction: 0.5 } }] },
+    });
+    const b = emptySnap({
+      lastGoodAdvice: { recommendations: [{ action: 'bet', sizing: { betFraction: 0.75 } }] },
+    });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('advice villainSeat change invalidates the key (pinned-villain override)', () => {
+    const a = emptySnap({
+      lastGoodAdvice: { recommendations: [{ action: 'call' }], villainSeat: 3 },
+    });
+    const b = emptySnap({
+      lastGoodAdvice: { recommendations: [{ action: 'call' }], villainSeat: 5 },
+    });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('identical snapshots produce identical keys (skip redundant renders)', () => {
+    const a = emptySnap({
+      lastGoodTournament: { heroMRatio: 12.0, currentLevelIndex: 3 },
+      currentLiveContext: { actionSequence: [{ seat: 3, action: 'bet', amount: 10 }] },
+    });
+    // Manually mirror instead of re-using object so shallow copies can't mask bugs.
+    const b = emptySnap({
+      lastGoodTournament: { heroMRatio: 12.0, currentLevelIndex: 3 },
+      currentLiveContext: { actionSequence: [{ seat: 3, action: 'bet', amount: 10 }] },
+    });
+    expect(coord.buildRenderKey(a)).toBe(coord.buildRenderKey(b));
+  });
+});
