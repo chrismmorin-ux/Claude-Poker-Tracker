@@ -599,3 +599,53 @@ describe('Scenario 11: Cross-hand advice contamination', () => {
     expect(harness.snapshot().lastGoodAdvice.currentStreet).toBe('flop');
   });
 });
+
+// =========================================================================
+// SCENARIO 12: Pipeline-status-only liveContext routes through handleLiveContext
+// =========================================================================
+
+describe('Scenario 12: pipeline-status liveContext unification (RT-59)', () => {
+  it('pipeline-status-embedded liveContext sets _receivedAt and applies position lock', () => {
+    // SW reconnect scenario — pipeline_status carries embedded liveContext,
+    // but no separate push_live_context follows. Prior to RT-59 the direct
+    // coordinator.set() bypass skipped position lock and _receivedAt.
+    harness.push(msgPipeline(
+      { 'TBL_001': { tableId: 'TBL_001' } },
+      { liveContext: ctxFlop({ heroSeat: 5, dealerSeat: 1, handNumber: 'HAND_42' }) },
+    ));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+
+    const snap = harness.snapshot();
+    expect(snap.currentLiveContext).not.toBeNull();
+    expect(typeof snap.currentLiveContext._receivedAt).toBe('number');
+    expect(Number.isNaN(snap.currentLiveContext._receivedAt)).toBe(false);
+    // Position lock armed from the pipeline-status path.
+    expect(harness.coord.get('_lockedHeroSeat')).toBe(5);
+    expect(harness.coord.get('_lockedDealerSeat')).toBe(1);
+    expect(harness.coord.get('_lockedHandNumber')).toBe('HAND_42');
+  });
+
+  it('pipeline-status reconnect promotes pending advice when streets match', () => {
+    // Cached advice arrives before any context (SW-restart cache replay).
+    harness.push(msgAdvice(advFlop({ currentStreet: 'flop' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    expect(harness.snapshot().lastGoodAdvice).toBeNull();
+    expect(harness.coord.getPendingAdvice()).not.toBeNull();
+
+    // Now pipeline_status carrying the flop liveContext arrives (no
+    // separate push_live_context). Under RT-59 this routes through
+    // handleLiveContext and promotes the pending advice. Pre-RT-59 it
+    // bypassed that logic and the advice stayed held forever.
+    harness.push(msgPipeline(
+      { 'TBL_001': { tableId: 'TBL_001' } },
+      { liveContext: ctxFlop({ handNumber: 'HAND_99' }) },
+    ));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+
+    expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
+    expect(harness.snapshot().lastGoodAdvice.currentStreet).toBe('flop');
+  });
+});

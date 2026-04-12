@@ -238,10 +238,12 @@ injectTokens();
       coordinator.clearForTableSwitch();
     }
 
-    // Use live context from push (only if provided — don't keep stale context)
-    // RT-56: Set _receivedAt so stale timeout math doesn't produce NaN
+    // RT-59: route through handleLiveContext so position-lock,
+    // _receivedAt injection, and pending-advice promotion apply on both
+    // push paths (push_live_context + pipeline-status embedded context).
+    // Direct coordinator.set() here bypassed all three invariants.
     if (pipeline?.liveContext) {
-      coordinator.set('currentLiveContext', { ...pipeline.liveContext, _receivedAt: Date.now() });
+      coordinator.handleLiveContext(pipeline.liveContext);
     }
 
     // Process diagnostic data for tournament log

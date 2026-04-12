@@ -142,9 +142,11 @@ export class HarnessRunner {
       }, 5000);
     }
 
-    // Pipeline live context (with _receivedAt for stale timeout)
+    // RT-59: route through handleLiveContext so position-lock,
+    // _receivedAt injection, and pending-advice promotion apply on both
+    // push paths (mirrors production handlePipelineStatus).
     if (pipeline.liveContext) {
-      this.coord.set('currentLiveContext', { ...pipeline.liveContext, _receivedAt: Date.now() });
+      this.coord.handleLiveContext(pipeline.liveContext);
     }
 
     this._scheduleRender('pipeline_status');
