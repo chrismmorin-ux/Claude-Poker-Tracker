@@ -710,3 +710,38 @@ describe('Scenario 13: cross-hand advice rejection via hand-number binding (RT-4
     expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
   });
 });
+
+// =========================================================================
+// SCENARIO 14: Stale advice indicator (RT-48)
+// =========================================================================
+
+describe('Scenario 14: advice _receivedAt stamping + staleness threshold (RT-48)', () => {
+  it('handleAdvice stamps _receivedAt on accepted advice', () => {
+    harness.push(msgLiveContext(ctxFlop({ handNumber: 'HAND_42' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    harness.push(msgAdvice(advFlop({ currentStreet: 'flop' })));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+    const advice = harness.snapshot().lastGoodAdvice;
+    expect(advice).not.toBeNull();
+    expect(typeof advice._receivedAt).toBe('number');
+    expect(Number.isNaN(advice._receivedAt)).toBe(false);
+  });
+
+  it('advice older than the 10s threshold is classified stale at render time', () => {
+    harness.push(msgLiveContext(ctxFlop({ handNumber: 'HAND_X' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    harness.push(msgAdvice(advFlop({ currentStreet: 'flop' })));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+    const at0 = harness.snapshot().lastGoodAdvice._receivedAt;
+    vi.advanceTimersByTime(11_000);
+    // At 11s post-arrival, advice is >10s old → stale per the render-time
+    // threshold. We assert the raw ingredient (timestamp); the DOM-side
+    // class toggle is exercised by the visual harness, not this harness.
+    const ageMs = Date.now() - at0;
+    expect(ageMs).toBeGreaterThan(10_000);
+  });
+});

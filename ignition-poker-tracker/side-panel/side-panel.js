@@ -940,6 +940,48 @@ injectTokens();
   // ZONE 1: ACTION BAR
   // =========================================================================
 
+  /**
+   * RT-48: Maintain a small "Stale 15s" badge inside the action bar when
+   * advice is stale. Targeted write (not part of the main innerHTML
+   * rebuild) so the 1Hz age refresh doesn't churn the coordinator's
+   * full render path.
+   */
+  const updateStaleAdviceBadge = (isStale, ageMs) => {
+    const actionBarEl = $('action-bar');
+    if (!actionBarEl) return;
+    let badge = actionBarEl.querySelector('.stale-badge');
+    if (!isStale) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'stale-badge';
+      actionBarEl.appendChild(badge);
+    }
+    const seconds = ageMs != null ? Math.round(ageMs / 1000) : null;
+    badge.textContent = seconds != null && seconds >= 0 ? `Stale ${seconds}s` : 'Stale';
+  };
+
+  // Refresh the badge text each second without churning the full render.
+  // Registered under the coordinator so the table-switch lifecycle
+  // cancels it (RT-60 contract).
+  coordinator.registerTimer(
+    'adviceAgeBadge',
+    setInterval(() => {
+      const advice = coordinator.get('lastGoodAdvice');
+      const ctx = coordinator.get('currentLiveContext');
+      if (!advice?._receivedAt) {
+        updateStaleAdviceBadge(false, null);
+        return;
+      }
+      const ageMs = Date.now() - advice._receivedAt;
+      const isStale = ageMs > 10_000 || !ctx;
+      updateStaleAdviceBadge(isStale, ageMs);
+    }, 1000),
+    'interval',
+  );
+
   const renderActionBar = (advice, liveCtx, snap) => {
     const el = $('action-bar');
     if (!el) return;
@@ -1802,6 +1844,21 @@ injectTokens();
 
     // --- Zone 3: Plan Panel ---
     renderPlanPanel(advice, liveCtx, snap);
+
+    // --- RT-48: stale advice indicator. Advice carries _receivedAt from
+    // handleAdvice; we toggle a .stale modifier on action bar + plan panel
+    // when age > 10s OR no liveContext. Age-badge text is refreshed by the
+    // 1Hz adviceAgeBadge timer below (targeted write, not a full re-render).
+    const adviceReceivedAt = advice?._receivedAt;
+    const adviceAgeMs = adviceReceivedAt ? Date.now() - adviceReceivedAt : null;
+    const isAdviceStale = advice != null && (
+      (adviceAgeMs != null && adviceAgeMs > 10_000) || !liveCtx
+    );
+    const actionBarEl = $('action-bar');
+    const planPanelEl = $('plan-panel');
+    if (actionBarEl) actionBarEl.classList.toggle('stale', isAdviceStale);
+    if (planPanelEl) planPanelEl.classList.toggle('stale', isAdviceStale);
+    updateStaleAdviceBadge(isAdviceStale, adviceAgeMs);
 
     // --- Street progress ---
     const progressEl = $('street-progress');

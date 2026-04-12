@@ -56,6 +56,23 @@
     .status-dot.yellow { background: var(--m-yellow); }
     .status-dot.red { background: var(--m-red); }
     .status-text { flex: 1; color: var(--text-secondary); }
+    /* RT-48: stale advice indicator — yellow-orange border + "Stale Ns"
+       badge on action bar and plan panel when advice age > 10s or
+       liveContext is null. Muted enough not to distract during live play. */
+    .action-bar.stale, .plan-panel.stale {
+      border-color: rgba(234, 179, 8, 0.55);
+      box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.18) inset;
+    }
+    .stale-badge {
+      position: absolute; top: 4px; right: 6px;
+      padding: 1px 5px;
+      font-size: 9px; font-weight: 600; line-height: 12px;
+      color: #eab308; background: rgba(234, 179, 8, 0.12);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      border-radius: 3px; pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .action-bar, .plan-panel { position: relative; }
     /* RT-66: state-invariant violation badge, decays after 30s. */
     .invariant-badge {
       display: inline-block; margin-left: 6px; padding: 0 4px;

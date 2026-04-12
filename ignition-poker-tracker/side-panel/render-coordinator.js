@@ -427,7 +427,9 @@ export class RenderCoordinator {
     // (advice may arrive slightly before context catches up — max 1 street gap)
     // Reject gap > 1: e.g., river advice on preflop = cross-hand contamination
     if (adviceRank >= 0 && liveRank >= 0 && adviceRank >= liveRank && (adviceRank - liveRank) <= 1) {
-      this._state.lastGoodAdvice = adviceMsg;
+      // RT-48: stamp _receivedAt so the render path can age-badge the
+      // card when new advice stops arriving.
+      this._state.lastGoodAdvice = { ...adviceMsg, _receivedAt: this._getTimestamp() };
       if (this._state.advicePendingForStreet) {
         this._state.advicePendingForStreet = null;
       }
