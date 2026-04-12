@@ -358,6 +358,18 @@ export class RenderCoordinator {
       return false;
     }
 
+    // RT-45: hand-number binding. Advice from a different hand than the
+    // locked one is cross-hand contamination — reject outright regardless
+    // of street rank. The SW can replay cached advice after a hand
+    // boundary; street-rank gap alone misses the case where advice street
+    // is within tolerance of the new hand's street.
+    const lockedHand = this._state._lockedHandNumber;
+    const adviceHand = adviceMsg.handNumber ?? null;
+    if (lockedHand != null && adviceHand != null && lockedHand !== adviceHand) {
+      this.logPipelineEvent('advice_rejected', `cross-hand: ${adviceHand} vs locked ${lockedHand}`);
+      return false;
+    }
+
     // Street validation: reject stale advice, hold suspicious advice
     const adviceStreet = adviceMsg.currentStreet;
     const liveStreet = this._state.currentLiveContext.currentStreet;

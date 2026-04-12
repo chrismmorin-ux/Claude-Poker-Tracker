@@ -649,3 +649,64 @@ describe('Scenario 12: pipeline-status liveContext unification (RT-59)', () => {
     expect(harness.snapshot().lastGoodAdvice.currentStreet).toBe('flop');
   });
 });
+
+// =========================================================================
+// SCENARIO 13: Hand-number binding on advice guard (RT-45)
+// =========================================================================
+
+describe('Scenario 13: cross-hand advice rejection via hand-number binding (RT-45)', () => {
+  it('advice from a previous hand is rejected even when street rank is within tolerance', () => {
+    // Hand 1: flop context + matching flop advice — accepted.
+    harness.push(msgLiveContext(ctxFlop({ handNumber: 'HAND_A' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    harness.push(msgAdvice(advFlop({ currentStreet: 'flop' })));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+    expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
+    expect(harness.coord.get('_lockedHandNumber')).toBe('HAND_A');
+
+    // Hand boundary: new hand preflop, hero seat unchanged.
+    harness.push(msgLiveContext(ctxPreflop({ handNumber: 'HAND_B', heroSeat: 5, dealerSeat: 1 })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    expect(harness.coord.get('_lockedHandNumber')).toBe('HAND_B');
+
+    // SW cache replay: flop advice from HAND_A arrives AFTER HAND_B started.
+    // Its street rank (1) vs preflop (0) = gap 1, which passes the street
+    // check. Only the hand-number binding catches this as cross-hand.
+    const cachedAdvice = advFlop({ currentStreet: 'flop', handNumber: 'HAND_A' });
+    harness.push(msgAdvice(cachedAdvice));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+
+    // Expected: hand-number mismatch wins → advice held, not promoted.
+    // Pre-RT-45 the street check would accept it (gap=1) and contaminate HAND_B.
+    expect(harness.snapshot().lastGoodAdvice?.handNumber).not.toBe('HAND_A');
+  });
+
+  it('advice matching the locked hand is accepted normally', () => {
+    harness.push(msgLiveContext(ctxFlop({ handNumber: 'HAND_C' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    harness.push(msgAdvice(advFlop({ currentStreet: 'flop', handNumber: 'HAND_C' })));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+    expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
+    expect(harness.snapshot().lastGoodAdvice.handNumber).toBe('HAND_C');
+  });
+
+  it('advice without a handNumber falls back to the pre-RT-45 street-rank-only guard', () => {
+    // Older advice payloads may not carry handNumber. The guard must NOT
+    // reject them categorically; it should fall through to the existing
+    // street-rank comparison.
+    harness.push(msgLiveContext(ctxFlop({ handNumber: 'HAND_D' })));
+    vi.advanceTimersByTime(100);
+    harness.flush();
+    const adviceNoHand = { ...advFlop({ currentStreet: 'flop' }), handNumber: null };
+    harness.push(msgAdvice(adviceNoHand));
+    vi.advanceTimersByTime(1);
+    harness.flush();
+    expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
+  });
+});

@@ -99,7 +99,15 @@ export class HarnessRunner {
 
   _handleAdvice(message) {
     if (!message.advice) return;
-    const accepted = this.coord.handleAdvice(message.advice);
+    // RT-45: mirror production handleAdvicePush — stamp current hand number
+    // so the guard can detect cross-hand cache replay.
+    const stampedAdvice = {
+      ...message.advice,
+      handNumber: message.advice.handNumber
+        ?? this.coord.get('currentLiveContext')?.handNumber
+        ?? null,
+    };
+    const accepted = this.coord.handleAdvice(stampedAdvice);
     if (accepted) {
       this._scheduleRender('advice', PRIORITY.IMMEDIATE);
     } else {

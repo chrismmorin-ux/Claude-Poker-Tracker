@@ -376,7 +376,17 @@ injectTokens();
 
   const handleAdvicePush = (message) => {
     if (message.advice) {
-      const accepted = coordinator.handleAdvice(message.advice);
+      // RT-45: stamp the hand number currently locked into the coordinator
+      // onto the advice BEFORE handing off. Advice that the SW cached and
+      // replays after a hand boundary carries the stale hand number; the
+      // guard in handleAdvice compares against _lockedHandNumber and rejects.
+      const stampedAdvice = {
+        ...message.advice,
+        handNumber: message.advice.handNumber
+          ?? coordinator.get('currentLiveContext')?.handNumber
+          ?? null,
+      };
+      const accepted = coordinator.handleAdvice(stampedAdvice);
       if (accepted && !coordinator.get('advicePendingForStreet')) {
         scheduleRender('advice', PRIORITY.IMMEDIATE);
         return;
