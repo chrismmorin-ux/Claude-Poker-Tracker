@@ -2,7 +2,22 @@
 
 Completed items moved from BACKLOG.md. Reference only — not loaded automatically.
 
-**Last archived:** 2026-04-07
+**Last archived:** 2026-04-12
+
+---
+
+## Phase A (R6+R7+R8 quick wins) — 2026-04-12
+
+| ID | Pri | Description | Resolution |
+|----|-----|-------------|------------|
+| RT-46 | P1 | escapeHtml for PID values in innerHTML | VERIFIED-DONE. Grep evidence: side-panel.js:865 and :2142 already wrap PID strings in escapeHtml(). No code change needed; audit was stale. |
+| RT-56 | P3 | _receivedAt missing on push_pipeline_status path | VERIFIED-DONE. Grep evidence: side-panel.js:244 already does `{ ...pipeline.liveContext, _receivedAt: Date.now() }`. Test exists at __tests__/message-integration.test.js:420. No code change needed; audit was stale. |
+| RT-57 | P1 | escapeHtml tournament level/blind values | FIXED. side-panel.js renderRawTournamentInfo now Number()-coerces numeric protocol fields and wraps every innerHTML interpolation in escapeHtml. |
+| RT-62 | P1 | Zone 3 scary-runout card names | FIXED (upstream + sidebar). gameTreeDepth2.js now collects distinct scary rank chars (capped at 4) in a Set alongside the count and emits scaryCardRanks in every nextStreetPlan return path; gameTreeEvaluator.buildResponseGuidance threads them into handPlan. Sidebar _extractScaryCards returns { count, ranks }; buildPlanPanelHTML renders "Watch: A, K, Q on turn" when ranks present, with count-only fallback for legacy payloads. |
+| RT-63 | P1 | Mode A fold-correctness coaching | NOT-A-BUG after verification. recommendations array has no fold entry — fold EV is implicit at 0 by convention. The existing `ev > 0` check is therefore equivalent to `ev > fold.ev`. Test suite `__tests__/pot-odds-and-reflection.test.js` locks in the behavior across four scenarios. |
+| RT-64 | P1 | Multiway pot odds reference the bet hero faces | FIXED. Added findFacedBet() helper in render-orchestrator.js that walks actionSequence backward for the most recent BET/RAISE/DONK from a non-hero seat on the current street. buildContextStripHTML now uses it in place of actionSequence.slice(-1). |
+| RT-65 | P2 | validateMessage gate on ignition-capture port | FIXED. service-worker.js capture-port handler applies the same validateMessage gate as the app-bridge port; added minimal shape validators for hand_complete, pipeline_diagnostics, recovery_needed, recovery_cleared, silence_alert. |
+| RT-67 | P3 | Canonical STREET_RANK | FIXED. Moved to shared/constants.js; render-coordinator.js and state-invariants.js import from the shared export; duplicate literals removed. |
 
 ---
 

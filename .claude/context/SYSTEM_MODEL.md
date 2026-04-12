@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.7.0 | **Updated**: 2026-04-11 | **Owner**: Architecture Review (R7 roundtable)
+**Version**: 1.8.1 | **Updated**: 2026-04-12 | **Owner**: Architecture Review (R8 Phase A close)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -186,6 +186,16 @@ New player observed → populationPriors.js creates default profile
 | `side-panel.js` tournament timer | `setInterval` captures DOM reference; `renderAll` replaces element via `innerHTML`; timer writes to detached node; countdown freezes | High | Medium — frozen tournament countdown | RT-52: stable DOM reference |
 | `side-panel.js` `_contextStale` | Two-phase stale detection computed in state but no render function reads it; visual no-op | Certain | Medium — users never see stale warning | RT-53: render the indicator |
 | `side-panel.js` `_receivedAt` | `push_pipeline_status` sets `currentLiveContext` without `_receivedAt`; stale timeout math produces `NaN`; context never times out | Medium | Medium — infinite stale context | RT-56: set `_receivedAt` on all liveContext write paths |
+| ~~`side-panel.js` renderRawTournamentInfo~~ | ~~Unescaped innerHTML for level/blinds~~ | — | — | **Resolved RT-57 (2026-04-12)**: Number() coerce + escapeHtml on every interpolation |
+| `side-panel.js` dead render functions | `renderBriefingPanel` (:1671), `renderObservationPanel` (:1822), `computeFocusedVillain` wrapper (:899), diagnostic-dump block (:2400-2421) reference bare `currentLiveContext`/`currentTableState`/`lastHandCount`/`exploitPushCount`/`advicePushCount` — all deleted by RT-43. Strict-mode ReferenceError if triggered (briefing-item click handler may reach them; diag copy button certainly does). | Medium | High — sidebar crash during user action | RT-58: delete dead fns, fix diag dump to read coordinator |
+| `side-panel.js` handlePipelineStatus | Direct `coordinator.set('currentLiveContext', ...)` at :244 bypasses `handleLiveContext()` — skips position lock, `_receivedAt` injection, pending-advice promotion; two write paths have divergent semantics | Medium | High — invariant drift (position lock loss, stale guards) | RT-59: route all liveContext writes through handleLiveContext |
+| `side-panel.js` `_planPanelAutoExpandTimer` | Module-level setTimeout at :983 mutates `coordinator.planPanelOpen` and writes DOM class outside scheduler; not cleared by `clearForTableSwitch`; re-introduces the RT-43 anti-pattern | High | Medium — stale-table mutation, render inconsistency | RT-60 (timer registration contract) + RT-61 (route through scheduler) |
+| `state-invariants.js` Rule 10 | Checks `snap.pipelineEvents` but `pipelineEvents` explicitly excluded from `buildSnapshot` — invariant silently never fires regardless of ring-buffer state | Certain | Low — dead safety net | RT-66: include in snapshot or read coordinator directly |
+| `render-coordinator.js` violation reporting | Violations logged to `pipelineEvents` only; pipelineEvents not in renderKey and not rendered in any UI; `throwOnViolation=false` in production; violations invisible to user | Certain | Medium — governance theatre | RT-66: surface via diagnostics badge |
+| ~~`render-orchestrator.js` Zone 3 scary runouts~~ | ~~Rendered count not card names~~ | — | — | **Resolved RT-62 (2026-04-12)**: gameTreeDepth2.js now emits scaryCardRanks array; Zone 3 renders "Watch: A, K on turn" |
+| ~~`render-orchestrator.js` Mode A coaching~~ | ~~Audit-claimed fold-correctness bug~~ | — | — | **Resolved RT-63 (2026-04-12)**: verified not-a-bug; fold EV implicit at 0, ev>0 equivalent to ev>fold.ev; test coverage added |
+| ~~`render-orchestrator.js` multiway pot odds~~ | ~~slice(-1) on actionSequence~~ | — | — | **Resolved RT-64 (2026-04-12)**: added findFacedBet() backward walk for the bet hero actually faces |
+| ~~`background/service-worker.js` capture port~~ | ~~validateMessage gate missing~~ | — | — | **Resolved RT-65 (2026-04-12)**: gate applied; 5 new validators added to message-schemas.js |
 
 ### 5.2 Complexity Hotspots (Cyclomatic)
 
@@ -222,6 +232,10 @@ New player observed → populationPriors.js creates default profile
 | `_receivedAt` timestamp | Stale context timeout math | `push_pipeline_status` handler | Handler sets `currentLiveContext` directly without `_receivedAt`; timeout computes `Date.now() - undefined = NaN`; context never expires via this path |
 | Advice hand identity | `handleAdvicePush` street-rank guard | SW cached advice lifecycle | Guard checks street rank only; SW caches and replays advice across hand boundaries with no hand identifier |
 | `render-street-card.js` module state | `_prevStreet`, `_transitionTimer` | Table switch handlers | Module-level mutable state persists across table switches; same-table reconnect inherits stale transition state |
+| ~~`STREET_RANK` duplicate definition~~ | — | — | **Resolved RT-67 (2026-04-12)**: single export from shared/constants.js |
+| `currentLiveContext` write paths | `handleLiveContext()` (canonical) | `handlePipelineStatus` direct `.set()` | Divergent semantics — position lock, `_receivedAt`, pending-advice promotion only run on canonical path (RT-59) |
+| Module-level timer ownership | `_planPanelAutoExpandTimer`, `tourneyTimerInterval`, staleContext interval, `_transitionTimer` | `clearForTableSwitch` / `destroy` | Timers owned by IIFE, not coordinator — unreachable from lifecycle hooks; orphan-fire after table switch (RT-60) |
+| Dead-function closures over deleted vars | `renderBriefingPanel`, `renderObservationPanel`, `computeFocusedVillain` wrapper | Deleted module vars (`currentLiveContext`, `currentTableState`, `lastHandCount` etc.) | Strict-mode ReferenceError if any click path reaches them (RT-58) |
 
 ### 6.2 Cross-Module Interactions
 
