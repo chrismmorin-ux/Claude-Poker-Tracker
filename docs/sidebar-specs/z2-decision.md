@@ -14,6 +14,12 @@
 
 ## 2.1 Action headline
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:_buildStandardActionBar
+slot: "#action-bar .ab-row1"
+```
+
 ### 1. Inventory row
 `2.1 Action headline ("BET" / "CALL" / "FOLD" large colored text)` — the recommended hero action for the current decision point, rendered as large colored type inside the action bar (Z2 top strip).
 
@@ -52,6 +58,12 @@ R-1.1 (fixed zone position — top of Z2), R-1.2 (primary metric — one of the 
 
 ## 2.2 Edge callout
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:_buildStandardActionBar
+slot: "#action-bar .ab-edge"
+```
+
 ### 1. Inventory row
 `2.2 Edge callout ("+3.1 edge")` — EV delta of the recommended action vs the next-best action, in BB.
 
@@ -88,6 +100,12 @@ R-1.1, R-1.2 (primary metric — one of the ≤5 targeted-glance anchors), R-1.3
 ---
 
 ## 2.3 Equity % inline (headline)
+
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:_buildStandardActionBar
+slot: "#action-bar .ab-equity"
+```
 
 ### 1. Inventory row
 `2.3 Equity % ("72% equity") inline` — hero equity vs the relevant villain range, rendered inline on the action-bar headline strip. **Sole owner of the equity channel** after the 2026-04-12 verdict (2.4 relinquishes equity in favor of SPR-only).
@@ -130,6 +148,12 @@ Keeping equity in the 2.4 row ("Equity: 72% SPR: 3.8" combined line) was rejecte
 
 ## 2.4 SPR row
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:_buildStandardActionBar
+slot: "#action-bar .ab-row2"
+```
+
 ### 1. Inventory row
 `2.4 Equity/SPR row ("Equity: 72% SPR: 3.8")` — **kept as SPR-only row** per 2026-04-12 verdict. Equity field deleted from this row (moved to 2.3).
 
@@ -170,6 +194,12 @@ Keeping the combined "Equity: X% SPR: Y" row was rejected at 2026-04-12 verdict 
 
 ## 2.5 Board card chips
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:renderAll
+slot: "#cards-strip .board-card"
+```
+
 ### 1. Inventory row
 `2.5 Board card chips (A♦ K♥ 7♣)` — community cards rendered as suited, ranked chips in a row.
 
@@ -208,6 +238,12 @@ R-1.1, R-1.2, R-1.3 (three chip slots reserved — flop stays on-screen after tu
 
 ## 2.6 Hero hole-card chips
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:renderAll
+slot: "#cards-strip .hero-card"
+```
+
 ### 1. Inventory row
 `2.6 Hero hole-card chips (right group, "Q♣ J♦")` — hero's two hole cards, shown as a distinct chip pair.
 
@@ -244,6 +280,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-3.1 (decision-critical), R-5.1 (sole owner of the 
 ---
 
 ## 2.7 Pot size chip
+
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:buildUnifiedHeaderHTML
+slot: "#context-strip .pot-chip"
+```
 
 ### 1. Inventory row
 `2.7 Pot size chip (green "$19")` — total pot amount as a standalone green chip.
@@ -285,6 +327,12 @@ Rendering `$0` or `—` between hands was rejected — the slot **blanking** is 
 
 ## 2.8 Street progress strip
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#street-progress"
+```
+
 ### 1. Inventory row
 `2.8 Street progress strip (PRE → FLOP → TURN → RIVER dots)` — five-dot timeline showing which street the hand is on.
 
@@ -322,6 +370,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-3.1 (informational tier, matches inventory), R-5.1
 
 ## 2.9 "Analyzing…" placeholder
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#action-bar .ab-analyzing"
+```
+
 ### 1. Inventory row
 `2.9 "Analyzing..." placeholder (inside action bar)` — occupies the 2.1 headline slot when advice has not yet arrived for the current context.
 
@@ -358,6 +412,12 @@ R-1.1, R-1.3 (slot reserved — placeholder is the reservation mechanism), R-1.5
 ---
 
 ## 2.10 Stale-advice border tint + "Stale Ns" badge (absorbed from row 1.8)
+
+```spec-meta
+tier: informational
+owner: side-panel.js:updateStaleAdviceBadge
+slot: "#action-bar.stale, #plan-panel.stale, #more-analysis-content.stale, #model-audit-content.stale"
+```
 
 ### 1. Inventory row
 Absorbed from inventory row 1.8 (formerly `Stale-advice border tint + "Stale Ns" badge`, E-1 escalated from Z1 to Z2 at the 2026-04-13 Z1 batch review; this batch executes the inventory move). The row now lives in the §Z2 table as 2.10.

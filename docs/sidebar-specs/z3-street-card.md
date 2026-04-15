@@ -13,6 +13,12 @@
 
 ## 3.1 ACTION HISTORY header
 
+```spec-meta
+tier: ambient
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .action-history-header"
+```
+
 ### 1. Inventory row
 `3.1 ACTION HISTORY header` — static section label for the action history area at the top of the Z3 street card.
 
@@ -45,6 +51,12 @@ R-1.1 (fixed zone position — top of Z3), R-1.3 (static element; always present
 ---
 
 ## 3.2 Action history chips
+
+```spec-meta
+tier: informational
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .action-chip"
+```
 
 ### 1. Inventory row
 `3.2 Action history chips ("Pre 2", "FLOP S3B$9")` — per-street compact chips summarizing betting action up to the current moment. Past streets are collapsed to count chips; the current street shows individual action chips.
@@ -84,6 +96,12 @@ R-1.2 (glance-targetable — compact chips encode past action in <1 second), R-1
 
 ## 3.3 Action-rationale line
 
+```spec-meta
+tier: decision-critical
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .rationale-line"
+```
+
 ### 1. Inventory row
 `3.3 Action-rationale line ("Value bet with top pair top kicker")` — a single plain-English sentence explaining why the recommended action was chosen. Occupies a dedicated row below the action history.
 
@@ -121,6 +139,12 @@ R-1.3 (rationale slot is fixed-height; when absent, the R-4.2 unknown placeholde
 ---
 
 ## 3.4 Fold-% callout
+
+```spec-meta
+tier: decision-critical
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .fold-pct-callout"
+```
 
 ### 1. Inventory row
 `3.4 Fold-% callout ("S3 FOLD % 45% fold to bet")` — a prominent callout displaying the selected villain's estimated fold-to-bet percentage. Retained as a primary villain read, distinct from the edge callout in Z2.
@@ -168,6 +192,12 @@ R-1.3 (fixed slot height — absent/low-sample cases render R-4.2 placeholder, n
 
 ## 3.5 Hand plan block
 
+```spec-meta
+tier: decision-critical
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .hand-plan-block"
+```
+
 ### 1. Inventory row
 `3.5 Hand plan block ("If CALL → Bet turn again on non-scare cards")` — a forward-looking branch plan showing what hero should do on the next street given different villain responses. Temporally distinct from 3.2 action history (past) — these two elements coexist in the same street card frame without ambiguity.
 
@@ -207,6 +237,12 @@ R-1.3 (slot height fixed even when plan is absent — R-4.2 placeholder holds th
 ---
 
 ## 3.6 Range slot — grid
+
+```spec-meta
+tier: decision-critical
+owner: render-street-card.js:renderVillainRangeSection
+slot: "#street-card .range-slot .range-grid"
+```
 
 ### 1. Inventory row
 `3.6 Range slot — grid (hero preflop OR villain postflop)` — the 13×13 hand-matrix grid that fills the single fixed-height range slot. Content switches by street and seat-selection state (Rule V). This is the **frame owner** of the range slot container; rows 3.7, 3.8, 3.11, and 3.12 all render within this container's bounds (see batch invariant §a).
@@ -292,6 +328,12 @@ ELSE (postflop streets: flop, turn, river)
 
 ## 3.7 Range slot — headline row
 
+```spec-meta
+tier: decision-critical
+owner: render-street-card.js:renderVillainRangeSection
+slot: "#street-card .range-slot .range-headline"
+```
+
 ### 1. Inventory row
 `3.7 Range slot — headline row` — a one-line text row above the 3.6 grid, naming whose range is shown and providing a summary metric (range width, equity, or position). Always visible within the range slot container; always paired with 3.6.
 
@@ -332,6 +374,12 @@ R-1.3 (headline row occupies a fixed strip inside the range slot; no reflow when
 
 ## 3.8 Range grid legend
 
+```spec-meta
+tier: ambient
+owner: render-street-card.js:renderVillainRangeSection
+slot: "#street-card .range-slot .rg-legend"
+```
+
 ### 1. Inventory row
 `3.8 Range grid legend ("In range / Your hand")` — a static key below the 3.6 grid that decodes the cell colors used in the range matrix.
 
@@ -365,6 +413,12 @@ R-1.3 (legend occupies a fixed strip in the range slot container; height is inva
 ---
 
 ## 3.11 Range slot — multiway seat selector
+
+```spec-meta
+tier: informational
+owner: render-street-card.js:renderVillainRangeSection
+slot: "#street-card .range-slot .villain-tab[data-range-seat]"
+```
 
 ### 1. Inventory row
 `3.11 Range slot — multiway seat selector (NEW)` — a row of clickable pill chips for each still-in villain, rendered inside the range slot headline strip (sharing it with 3.7). Visible only in multiway postflop situations with ≥2 active villains. Implements the user-override half of Rule V (item 6).
@@ -404,6 +458,12 @@ R-1.3 (selector pills render in a fixed-height strip within the range slot conta
 
 ## 3.12 Range slot — empty/no-aggressor placeholder
 
+```spec-meta
+tier: informational
+owner: render-street-card.js:renderNoAggressorPlaceholder
+slot: "#street-card .range-slot .range-slot-placeholder"
+```
+
 ### 1. Inventory row
 `3.12 Range slot — empty/no-aggressor placeholder (NEW)` — reserves the range slot's fixed height with a centered message when no valid range is available to show. Two sub-states: (a) Q1-c no-aggressor (limped/checked-around pot) and (b) general data-absent state. Ensures R-1.3 compliance when the grid cannot render.
 
@@ -441,6 +501,12 @@ R-1.3 (this element's sole purpose is to hold the fixed-height slot when its sib
 ---
 
 ## 3.9 "Waiting for next hand…" placeholder
+
+```spec-meta
+tier: informational
+owner: render-street-card.js:renderStreetCard
+slot: "#street-card .waiting-placeholder"
+```
 
 ### 1. Inventory row
 `3.9 "Waiting for next hand..." placeholder` — a centered text placeholder that occupies the Z3 frame when `handState === 'COMPLETE'` and the session is waiting for the next hand to begin. This is the **Z3-local between-hands holding state**, not a Zx full-zone override (see batch invariant §c for the boundary declaration).

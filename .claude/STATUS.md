@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-04-15 by Claude (Sidebar Rebuild Program CLOSED. SR-7 cutover shipped — `sidebarRebuild` flag deleted, post-mortem written, doc hygiene complete.)
+Last updated: 2026-04-15 by Claude (SR-8.4 + SR-8.5 lint gates shipped. `spec-meta` doctrine extension + 50-spec back-annotation + new `spec-meta-discipline.test.js`. Suite 1837 → 1842.)
 
 ---
 
@@ -20,7 +20,7 @@ _None._
 
 ## Pending Review
 
-**None.** Sidebar Rebuild Program closed. Two SR-8 lint-gate follow-ups (R-3.3, R-5.2) parked as BLOCKED in `.claude/BACKLOG.md` pending doctrine-metadata extension.
+**None.** Sidebar Rebuild Program fully closed — SR-8.4 (R-3.3 tier lint) and SR-8.5 (R-5.2 module-boundary lint) shipped 2026-04-15 via `spec-meta` doctrine extension.
 
 ---
 
@@ -35,8 +35,8 @@ _None._
 
 ## Project Health
 
-- **Tests:** 5,422 passing across 185 test files (main app) + **1,837** extension tests across 50 test files
+- **Tests:** 5,422 passing across 185 test files (main app) + **1,842** extension tests across 51 test files
 - **Architecture:** v122 → SYSTEM_MODEL v1.7.0 — React + Vite + Tailwind, mobile-optimized 1600x720
 - **Programs:** Security GREEN, Engine Accuracy GREEN, UI Quality GREEN, Test Health GREEN
-- **Active backlog:** 0 NEXT, 0 REVIEW, 1 PAUSED (Firebase Cloud Sync), 2 BLOCKED (SR-8.4/8.5 — doctrine extension)
+- **Active backlog:** 0 NEXT, 0 REVIEW, 1 PAUSED (Firebase Cloud Sync), 0 BLOCKED (SR-8.4/8.5 closed 2026-04-15)
 - **Open failure modes:** 0 active (1 newly-archived this cycle: SIDEBAR_REBUILD_PROGRAM marked RESOLVED)

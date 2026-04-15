@@ -19,7 +19,22 @@ A batch file contains one spec section per inventory row in that zone (only rows
 
 ## Spec template
 
-Every element spec MUST contain the following fields, in this order:
+Every element spec MUST begin with a machine-parseable `spec-meta` fenced block immediately after the spec heading (before §1). This block feeds the SR-8.4 tier-preemption lint and SR-8.5 module-boundary lint — values here are the authoritative source of truth; prose in §5 and §4 must not disagree.
+
+~~~spec-meta
+tier: ambient | informational | decision-critical | emergency
+owner: <module-file>:<fsm-or-renderer-name>
+slot: "#dom-id" | ".css-selector" | multiple,comma,separated
+~~~
+
+Rules:
+- **`tier`** — exactly one of the four values from R-3.1. Must match the inventory tier unless this spec explicitly re-tiers the element (call out in prose).
+- **`owner`** — the single module-and-function pair that owns DOM writes to this slot, per R-5.1. Format `<file>:<name>` (e.g. `side-panel.js:renderPlanPanel`). If multiple renderers collaborate (rare; requires explicit priority in prose), list primary first.
+- **`slot`** — CSS selector(s) identifying the DOM node(s) this spec owns. IDs preferred (`#foo`). Used by SR-8.5 to grep non-owner modules for illicit writes.
+- For **conditional-render** elements (e.g. debug-flag-gated), the `slot:` field still declares the selector; the lint treats absence-from-DOM as a legal state.
+- For **zone-level ambient chrome** (no single FSM yet, e.g. Z0 rows pre-SR-6), use `owner: side-panel.js:renderAll` as the coarse owner — SR-8.5 lint will accept this until a finer FSM is authored.
+
+Every element spec MUST also contain the following fields, in this order, after the `spec-meta` block:
 
 ### 1. Inventory row
 Cite `#` and title verbatim from `SIDEBAR_PANEL_INVENTORY.md`. If this spec is the merge target of another row, list the absorbed rows here.

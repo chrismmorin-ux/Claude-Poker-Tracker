@@ -19,6 +19,13 @@ Zx is the sidebar's **override / edge-state surface** — rows that mount only w
 
 ## Row X.1 — "Launch Poker Tracker →" CTA (absorbs X.2)
 
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderAll
+slot: "#app-launch-prompt"
+```
+
+
 ### 1. Inventory row
 `#X.1 "Launch Poker Tracker →" link` — CTA to open the desktop app. **Absorbs X.2** ("Open app for exploit tips & live advice" subtitle) per owner 2026-04-12 Group 1H merge verdict. Final form is the single-line text "Launch Poker Tracker for exploit tips & live advice →" (owner 2026-04-12).
 
@@ -71,6 +78,13 @@ R-1.1 (fixed Zx slot, not a wandering banner), R-1.5 (glance pathway: between-ha
 
 ## Row X.3 — "No active table detected" message
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#no-table"
+```
+
+
 ### 1. Inventory row
 `#X.3 "No active table detected" + "Open a poker table on Ignition to start tracking" subtitle` — pipeline no-table state.
 
@@ -118,6 +132,13 @@ R-1.1, R-1.5, R-2.1 (5 s grace FSM), R-2.4 (cross-hand by definition — there i
 ---
 
 ## Row X.4 — Recovery banner (composite: X.4a triangle + X.4b message + X.4c button)
+
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderRecoveryBanner
+slot: "#recovery-banner, #recovery-text, #recovery-reload-btn"
+```
+
 
 ### 1. Inventory row
 `#X.4a` (warning triangle + red-tinted container) + `#X.4b` (message text) + `#X.4c` ("Reload Ignition Page" button). Authored as **one composite spec** per batch invariant 5 — the three sub-rows never render independently; they compose a single visual unit (triangle + message + CTA in a tinted container).
@@ -177,6 +198,13 @@ R-1.1 (fixed banner slot), R-1.5 (glance pathway: high-contrast tinted container
 
 ## Row X.5 — Tournament top bar
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#tournament-bar"
+```
+
+
 ### 1. Inventory row
 `#X.5 Tournament bar (compact top row: M value + zone pill + Lvl N/M + countdown)` — always-visible tournament context.
 
@@ -227,6 +255,13 @@ R-1.1, R-1.3 (no reflow when expanded — detail panel grows downward in place),
 
 ## Row X.5b — M-Ratio gauge + zone label
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .m-ratio-row"
+```
+
+
 ### 1. Inventory row
 `#X.5b Tournament detail panel — M-Ratio gauge + zone label ("Caution zone")`.
 
@@ -263,6 +298,13 @@ R-1.3 (fixed slot inside detail panel), R-1.5, R-3.1, R-5.1 (single owner: tourn
 ---
 
 ## Row X.5c — Blinds row (current + next)
+
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .blinds-row"
+```
+
 
 ### 1. Inventory row
 `#X.5c Tournament detail panel — Blinds row (50/100 ante 10 + Next: 100/200 ante 20)`.
@@ -301,6 +343,13 @@ R-1.3, R-1.5, R-3.1, R-5.1.
 
 ## Row X.5d — Stack row (BB count + avg comparison)
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .stack-row"
+```
+
+
 ### 1. Inventory row
 `#X.5d Tournament detail panel — Stack row (2,400 (24 BB) · Avg: 3,500 (69%))` — **`decision-critical` tier per inventory**.
 
@@ -337,6 +386,13 @@ R-1.3, R-1.5, R-3.1, R-3.2 (`decision-critical` tier — see batch invariant 8 f
 ---
 
 ## Row X.5e — Blind-Out row (levels + minutes)
+
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .blind-out-row"
+```
+
 
 ### 1. Inventory row
 `#X.5e Tournament detail panel — Blind-Out row (8 levels / ~120 min)` — **`decision-critical` tier per inventory**.
@@ -375,6 +431,13 @@ R-1.3, R-1.5, R-3.1, R-3.2 (in-zone `decision-critical` per batch invariant 8), 
 
 ## Row X.5f — ICM row
 
+```spec-meta
+tier: decision-critical
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .icm-row"
+```
+
+
 ### 1. Inventory row
 `#X.5f Tournament detail panel — ICM row ("Approaching bubble (2 away)")` — **`decision-critical` tier per inventory**.
 
@@ -411,6 +474,13 @@ R-1.3, R-1.5, R-3.1, R-3.2 (in-zone `decision-critical` per batch invariant 8), 
 ---
 
 ## Row X.5g — Milestones
+
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#tournament-detail-content .milestones-row"
+```
+
 
 ### 1. Inventory row
 `#X.5g Tournament detail panel — Milestones ("Bubble ~45m")`.
@@ -450,6 +520,13 @@ R-1.3, R-1.5, R-3.1, R-5.1.
 # §C — Observer mode
 
 ## Row X.6 — Observer scouting panel
+
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#between-hands"
+```
+
 
 ### 1. Inventory row
 `#X.6 Observer scouting panel` — "SCOUTING — Seat N (style, hands)" panel shown when hero folded mid-hand and the live hand continues.
@@ -498,6 +575,13 @@ R-1.1 (fixed slot — uses the between-hands content slot), R-1.5, R-2.1 (FSM: m
 ---
 
 ## Row X.7 — Observing badge on board
+
+```spec-meta
+tier: informational
+owner: side-panel.js:buildUnifiedHeaderHTML
+slot: "#context-strip .observing-badge"
+```
+
 
 ### 1. Inventory row
 `#X.7 Observing badge on board` — "OBSERVING" pill next to grayed hero cards when hero has folded.

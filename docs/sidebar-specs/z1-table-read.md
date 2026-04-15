@@ -15,6 +15,12 @@
 
 ## 1.1 Seat circle (hands-count ring)
 
+```spec-meta
+tier: informational
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-circle, #seat-arc .seat-ring"
+```
+
 ### 1. Inventory row
 `1.1 Seat circle (hands count ring)` — per-seat presence marker with a circular ring whose fill/thickness encodes accumulated hand sample size for that seat's villain.
 
@@ -56,6 +62,12 @@ Encoding sample size via seat-fill opacity was rejected — it collides with the
 
 ## 1.3 Seat hero star
 
+```spec-meta
+tier: ambient
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-hero-star"
+```
+
 ### 1. Inventory row
 `1.3 Seat hero star (center circle)` — marks the hero seat so the user always knows their own position on the arc.
 
@@ -89,6 +101,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-3.1 (ambient), R-5.1.
 ---
 
 ## 1.4 PFA annotation
+
+```spec-meta
+tier: decision-critical
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-pfa-pill"
+```
 
 ### 1. Inventory row
 `1.4 PFA annotation (green "PFA" label)` — marks the preflop aggressor on the seat arc so the user can orient postflop ranges to the known aggressor.
@@ -127,6 +145,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-2.4 (explicit `hand:new` reset), R-3.1 (decision-c
 
 ## 1.5 Seat bet chip ("B $9" / "C $6" / "R $9")
 
+```spec-meta
+tier: decision-critical
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-bet-chip"
+```
+
 ### 1. Inventory row
 `1.5 Seat bet chip ("B $9" / "C $6" / "R $9")` — per-seat live wager indicator for the current street. Owns the per-seat per-street action-annotation slot.
 
@@ -164,6 +188,12 @@ R-1.1, R-1.2, R-1.3 (slot reserved even when no wager), R-1.5, R-3.1 (decision-c
 
 ## 1.7 Dealer button
 
+```spec-meta
+tier: informational
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-dealer-button"
+```
+
 ### 1. Inventory row
 `1.7 Dealer button (D chip)` — marks the button seat so the user can derive position for every other seat without reading labels.
 
@@ -197,6 +227,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-3.1 (informational), R-5.1.
 ---
 
 ## 1.9 Villain style pill row
+
+```spec-meta
+tier: informational
+owner: render-street-card.js:renderStreetCard
+slot: ".villain-tab"
+```
 
 ### 1. Inventory row
 `1.9 Villain style pill row ("S1 Fish 30h" etc.)` — row of one pill per still-in villain, summarizing seat, style, and sample size. Shown below the action bar in the Z1 region.
@@ -241,6 +277,12 @@ Sorting pills by action-recency (who acted last leftmost) was rejected — it vi
 ---
 
 ## 1.10 Seat check-mark indicator
+
+```spec-meta
+tier: informational
+owner: render-orchestrator.js:buildSeatArcHTML
+slot: "#seat-arc .seat-check-indicator"
+```
 
 ### 1. Inventory row
 `1.10 Seat check-mark indicator` — per-seat indicator that a seat has checked on the current street. Revealed as a distinct row in the S13 checked-around-flop fixture.

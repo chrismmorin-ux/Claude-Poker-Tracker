@@ -11,6 +11,12 @@ Z4 is the sidebar's **below-the-fold secondary analysis zone** — three user-to
 
 ## Row 4.1 — "PLAN" collapsible chevron
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderPlanPanel
+slot: "#plan-panel, #pp-toggle, #pp-chevron, #pp-body"
+```
+
 ### 1. Inventory row
 `#4.1 "PLAN" collapsible chevron (top of street card)` — exposes the hand-plan tree. Absorbs no other rows. Related to (not duplicated with) row 3.5 (hand plan content *inside* the street card) — see batch invariant 2 for the ownership boundary.
 
@@ -66,6 +72,12 @@ R-1.1 (fixed zone), R-1.3 (order declared, no reflow; chevron slot stays when cl
 
 ## Row 4.2 — "More Analysis" collapsible
 
+```spec-meta
+tier: informational
+owner: side-panel.js:renderMoreAnalysis
+slot: "#more-analysis-btn, #more-analysis-chevron, #more-analysis-content"
+```
+
 ### 1. Inventory row
 `#4.2 "More Analysis" collapsible` — exposes secondary analysis panels (alternative sizings / alternative lines).
 
@@ -118,6 +130,12 @@ R-1.1, R-1.3, R-1.5, R-2.1, R-2.4, R-3.1, R-3.2, R-5.1, R-5.4.
 ---
 
 ## Row 4.3 — "Model Audit" collapsible (debug-flag gated)
+
+```spec-meta
+tier: informational
+owner: side-panel.js:renderModelAudit
+slot: "#model-audit-btn, #model-audit-chevron, #model-audit-content"
+```
 
 ### 1. Inventory row
 `#4.3 "Model Audit" collapsible` — exposes model/data provenance. **Conditional render** — gated by `settings.debugDiagnostics` (the debug flag shared with row 0.7, owner-approved 2026-04-12 under Group 2 Option A).

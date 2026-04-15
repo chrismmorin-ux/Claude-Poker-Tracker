@@ -14,6 +14,12 @@
 
 ## 0.1 Pipeline dot (+ absorbed 0.5 refresh)
 
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderAll
+slot: "#status-dot, #refresh-btn"
+```
+
 ### 1. Inventory row
 `0.1 Pipeline dot (top-left green/amber)`. Absorbs `0.5 Refresh button` — refresh affordance is conditionally exposed by this element when the pipeline is non-green.
 
@@ -51,6 +57,12 @@ Keeping 0.5 as a distinct button was rejected for two reasons: (a) a visible ref
 
 ## 0.2 "N hands captured" label
 
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderAll
+slot: "#hand-count"
+```
+
 ### 1. Inventory row
 `0.2 "N hands captured" label`.
 
@@ -87,6 +99,12 @@ Per handoff guidance (doctrine R-1.3 implication): when pipeline is idle and zer
 
 ## 0.4 App-state badge ("App synced" / "App not open")
 
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderAll
+slot: "#app-status"
+```
+
 ### 1. Inventory row
 `0.4 App-state badge`.
 
@@ -120,6 +138,12 @@ R-1.1, R-1.2, R-1.3, R-1.5, R-3.1 (ambient), R-4.1 (value + source present; no s
 
 ## 0.6 "show tournament log" link
 
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderAll
+slot: "#tourney-log-show"
+```
+
 ### 1. Inventory row
 `0.6 "show tournament log" link (footer)` — **conditional-render** per inventory (hide when `lastGoodTournament == null`).
 
@@ -152,6 +176,12 @@ R-1.1, R-1.3 (must not cause reflow when hidden — see §Batch invariants below
 ---
 
 ## 0.7 "show diagnostics" link
+
+```spec-meta
+tier: ambient
+owner: side-panel.js:renderDiagnosticsGate
+slot: "#diag-footer, #diag-show"
+```
 
 ### 1. Inventory row
 `0.7 "show diagnostics" link (footer)` — keep behind debug flag (paired with 4.3 on same setting).
@@ -189,6 +219,12 @@ A per-element debug flag (one for 0.7, another for 4.3) was rejected in favor of
 
 ## 0.8 Invariant violation "!" badge
 
+```spec-meta
+tier: emergency
+owner: side-panel.js:renderAll
+slot: "#status-text"
+```
+
 ### 1. Inventory row
 `0.8 Invariant violation "!" badge (red, status bar)` — emergency tier, 30s auto-decay (RT-66 pattern).
 
@@ -224,6 +260,12 @@ Placing this badge in Z4 diagnostics was rejected — an emergency-tier signal t
 ---
 
 ## 0.9 Pipeline health strip
+
+```spec-meta
+tier: informational
+owner: side-panel.js:renderAll
+slot: "#pipeline-health"
+```
 
 ### 1. Inventory row
 `0.9 Pipeline health strip` — PROBE → BRIDGE → FILTER → PORT → PANEL with connectivity dots + explanatory subtitle.
