@@ -20,13 +20,51 @@ import { getPositionName } from './range-grid-data.js';
 // MAIN DISPATCHER
 // =========================================================================
 
-// Module-level state for street transitions
+// Module-level state for street transitions.
 let _prevStreet = null;
-let _transitionTimer = null;
+
+/**
+ * Timer host — the coordinator (or a compatible shim from the harness) is
+ * injected once at boot via `setStreetCardTimerHost`. All transition timers
+ * flow through it so the RT-60 lifecycle (clearForTableSwitch / destroy)
+ * cancels them. When no host is set (e.g. the current visual harness which
+ * only renders one-shot fixtures), we skip the cross-fade entirely and do an
+ * instant content swap — a safe visual degradation that keeps this module
+ * free of bare setTimeout/setInterval calls.
+ *
+ * SR-6.3: this indirection replaces two module-local `setTimeout(...)` calls
+ * that escaped coordinator ownership.
+ */
+let _timerHost = null;
+const TRANSITION_TIMER_KEY = 'streetCard_fade';
+const HEIGHT_RELEASE_TIMER_KEY = 'streetCard_heightRelease';
+
+/**
+ * Inject a coordinator-shaped timer host. Must expose `scheduleTimer(key, cb,
+ * ms)` and `clearTimer(key)`. Call once at boot; subsequent calls replace
+ * the host (useful for tests).
+ *
+ * SR-6.5: also supports an optional `dispatch(id, event, payload)` method so
+ * street-card FSM transitions (`streetChange`, `fadeTimerFire`,
+ * `heightReleaseFire`) surface in the coordinator snapshot. The actual fade
+ * behavior is still timer-host-driven; the FSM events are observable spec.
+ */
+export const setStreetCardTimerHost = (host) => {
+  _timerHost = host || null;
+};
+
+const dispatchFsm = (event) => {
+  if (_timerHost && typeof _timerHost.dispatch === 'function') {
+    _timerHost.dispatch('streetCard', event);
+  }
+};
 
 /** Reset module state for test harness temporal replay. */
 export const resetStreetCardState = () => {
-  if (_transitionTimer) { clearTimeout(_transitionTimer); _transitionTimer = null; }
+  if (_timerHost) {
+    _timerHost.clearTimer(TRANSITION_TIMER_KEY);
+    _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
+  }
   _prevStreet = null;
 };
 
@@ -46,7 +84,10 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
 
   // RT-50: Always cancel in-flight transition timer. Any new render call
   // supersedes a pending transition — the timer's captured HTML is stale.
-  if (_transitionTimer) { clearTimeout(_transitionTimer); _transitionTimer = null; }
+  if (_timerHost) {
+    _timerHost.clearTimer(TRANSITION_TIMER_KEY);
+    _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
+  }
 
   const isLive = liveContext && liveContext.state &&
     liveContext.state !== 'IDLE' && liveContext.state !== 'COMPLETE';
@@ -101,8 +142,21 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
   _prevStreet = effectiveStreet;
 
   if (streetChanged) {
-    // Cancel any in-flight transition
-    if (_transitionTimer) { clearTimeout(_transitionTimer); _transitionTimer = null; }
+    // SR-6.5: surface the transition in the streetCard FSM. Observable spec
+    // — timer-host still drives the actual fade below.
+    dispatchFsm('streetChange');
+    // Without a coordinator-backed timer host we can't schedule a fade safely
+    // (bare setTimeout would escape RT-60 cleanup). Degrade to an instant
+    // content swap — visually noisier but state-correct. Production boot sets
+    // a host; the visual harness opts in when it wants the fade.
+    if (!_timerHost) {
+      card.innerHTML = html;
+      return;
+    }
+
+    // Cancel any in-flight transition (host-level, idempotent).
+    _timerHost.clearTimer(TRANSITION_TIMER_KEY);
+    _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
 
     // Lock height to prevent layout jump during fade
     const currentHeight = card.offsetHeight;
@@ -112,8 +166,8 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
     card.classList.add('transitioning');
     card.classList.remove('fade-in');
 
-    _transitionTimer = setTimeout(() => {
-      _transitionTimer = null;
+    _timerHost.scheduleTimer(TRANSITION_TIMER_KEY, () => {
+      dispatchFsm('fadeTimerFire');
       // Swap content while invisible
       card.innerHTML = html;
       // Fade in
@@ -123,13 +177,16 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
       requestAnimationFrame(() => {
         card.style.transition = 'min-height 0.2s ease';
         card.style.minHeight = '';
-        setTimeout(() => { card.style.transition = ''; }, 250);
+        _timerHost.scheduleTimer(HEIGHT_RELEASE_TIMER_KEY, () => {
+          card.style.transition = '';
+          dispatchFsm('heightReleaseFire');
+        }, 250);
       });
       // Clean up fade-in class
       card.addEventListener('animationend', () => {
         card.classList.remove('fade-in');
       }, { once: true });
-    }, 150); // matches .transitioning opacity transition
+    }, 200); // matches .transitioning opacity transition (R-6.1 floor)
     return;
   }
 
@@ -636,27 +693,55 @@ const renderMultiwayEquity = (multiwayEquity) => {
 };
 
 /**
+ * SR-6.13 3.12 — No-aggressor placeholder. Renders inside `.range-slot`
+ * when postflop and no villain has bet/raised (Rule V Q1-c). Includes the
+ * always-visible R-5.1 legend so swapping 3.6 grid ↔ 3.12 placeholder
+ * does not reflow the legend strip.
+ */
+const renderNoAggressorPlaceholder = () => {
+  let html = '<div class="range-slot-placeholder">';
+  html += '<div class="range-slot-placeholder__text">No aggression yet \u2014 click a seat to inspect</div>';
+  // Legend strip (3.8) must stay mounted even when the grid is absent.
+  html += '<div class="rg-legend rg-legend--muted">';
+  html += '<span><span class="rg-legend-swatch" style="background:rgba(20,83,45,0.5)"></span>In range</span>';
+  html += '<span><span class="rg-legend-swatch" style="background:var(--gold)"></span>Your hand</span>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+};
+
+/**
  * Render villain range section with tab pills for multiway and focused grid.
  * Falls back to static GTO grid when no Bayesian range data available.
+ *
+ * SR-6.13: wraps all output in `<div class="range-slot">` so the grid
+ * canvas (3.6 XOR 3.12) and legend (3.8) share one fixed-height container
+ * per R-1.3 (no reflow between hero preflop / villain postflop /
+ * no-aggressor placeholder states). 3.6 is the frame owner.
  */
 const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
   const villainRanges = advice?.villainRanges;
+  // liveContext is authoritative for current street; advice is a lagging
+  // derived view. Prior-to-SR-6.13 logic could pick "preflop" when advice
+  // was null, masking postflop 3.12 state — fixed here.
+  const effectiveStreet = liveContext?.currentStreet || advice?.currentStreet;
+  const isPreflop = !effectiveStreet || effectiveStreet === 'preflop';
 
-  // No dynamic range data — fall back to static GTO grid on preflop
+  // No dynamic range data — fall back to static GTO grid on preflop,
+  // or 3.12 no-aggressor placeholder on postflop (Rule V Q1-c).
   if (!villainRanges || villainRanges.length === 0) {
-    // Fix 4: Also check liveContext street so hero GTO grid shows before advice arrives
-    const isPreflop = advice?.currentStreet === 'preflop'
-      || !advice?.currentStreet
-      || liveContext?.currentStreet === 'preflop';
     if (isPreflop) {
       const heroPos = getPositionName(liveContext?.heroSeat, liveContext?.dealerSeat);
-      return renderRangeGrid({
+      const grid = renderRangeGrid({
         position: heroPos,
         holeCards: liveContext?.holeCards,
         situation: advice?.situation || null,
       });
+      // Empty grid (no position data) falls through to the "Waiting for…"
+      // fallback in renderUnifiedStreetContent — no wrapper so `!html` holds.
+      return grid ? `<div class="range-slot">${grid}</div>` : '';
     }
-    return '';
+    return `<div class="range-slot">${renderNoAggressorPlaceholder()}</div>`;
   }
 
   let html = '';
@@ -666,9 +751,16 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
     html += `<div class="villain-range-tabs">`;
     for (const vr of villainRanges) {
       if (!vr.active) continue;
-      const isFocused = vr.seat === focusedVillain || vr.seat === advice?.villainSeat;
+      // SR-6.16: strict Rule V — `.active` tracks the displayed range seat
+      // (focusedVillain only); advice villain that isn't the displayed seat
+      // gets `.advice-match` as a subtle second-tier signal. Previously the
+      // `.active` class applied to both, which lied about which seat's range
+      // was on screen when the user pinned a different seat.
+      const isFocused = vr.seat === focusedVillain;
+      const isAdviceMatch = !isFocused && vr.seat === advice?.villainSeat;
+      const cls = `villain-tab${isFocused ? ' active' : ''}${isAdviceMatch ? ' advice-match' : ''}`;
       const eqStr = vr.equity != null ? ` ${Math.round(vr.equity * 100)}%` : '';
-      html += `<button class="villain-tab${isFocused ? ' active' : ''}" data-range-seat="${vr.seat}">`;
+      html += `<button class="${cls}" data-range-seat="${vr.seat}">`;
       html += `S${vr.seat}${eqStr}`;
       html += `</button>`;
     }
@@ -711,7 +803,7 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
     html += `</div></div>`;
   }
 
-  return html;
+  return `<div class="range-slot">${html}</div>`;
 };
 
 // =========================================================================
@@ -943,6 +1035,7 @@ const renderBetweenHandsContent = (appSeatData, focusedVillain, tournament, live
       html += `<div class="scout-row" data-scout-seat="${seat}"${isFocused ? ' style="background:rgba(212,168,71,0.08)"' : ''}>`;
       html += `<span class="scout-seat"${isFocused ? ' style="color:var(--gold)"' : ''}>S${seat}</span>`;
       if (data.style) {
+        // .scout-style-badge — Zx scouting-panel (X.6 Observer mode), NOT inventory row 1.2 (that row was deleted in SR-3).
         html += `<span class="scout-style-badge" style="background:${colors.bg};color:${colors.text}">${data.style}</span>`;
       }
       html += `<span class="scout-headline">${escapeHtml(data.villainHeadline || '\u2014')}</span>`;

@@ -1,0 +1,7 @@
+id: "S3-plan-panel-race"
+symptomsTargeted: ["S3"]
+source: "synthetic"
+sanitized: true
+handCount: 2
+duration_ms: 190
+mechanism: "new PREFLOP hand at t=150 clears lastGoodAdvice → plan-panel hides within 70ms of first snapshot"

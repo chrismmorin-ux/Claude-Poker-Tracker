@@ -10,7 +10,12 @@
     "test:watch": "vitest",
     "harness:build": "node side-panel/harness/build-harness.mjs",
     "harness": "node side-panel/harness/build-harness.mjs && npx serve side-panel/harness/dist -l 3333",
-    "harness:verify": "node side-panel/harness/build-harness.mjs && node side-panel/harness/verify-harness.mjs"
+    "harness:verify": "node side-panel/harness/build-harness.mjs && node side-panel/harness/verify-harness.mjs",
+    "replay": "npx vitest run test/replay/",
+    "replay:determinism": "node test/replay/replay-determinism.mjs",
+    "replay:harness:build": "node side-panel/replay-harness/build.mjs",
+    "replay:harness": "node side-panel/replay-harness/build.mjs && npx serve side-panel/replay-harness/dist -l 3333",
+    "replay:screenshots": "node scripts/screenshot-corpus.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

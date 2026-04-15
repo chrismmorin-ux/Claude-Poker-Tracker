@@ -1,0 +1,8 @@
+id: "S13-checked-flop"
+symptomsTargeted:
+  - "S13"
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 400
+mechanism: "flop actionSequence = [check,check,check]; pfAggressor=3 set; SR-4 range-slot must fall back to PFA"

@@ -1,0 +1,8 @@
+id: "S12-river-decision"
+symptomsTargeted:
+  - "S12"
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 400
+mechanism: "full preflop→river progression; hero facing river bet; street-progress marks river active with 5 board cards"

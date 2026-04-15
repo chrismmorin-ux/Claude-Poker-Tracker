@@ -585,7 +585,7 @@ describe('Scenario 11: Cross-hand advice contamination', () => {
     expect(harness.coord.getPendingAdvice()).not.toBeNull();
   });
 
-  it('flop advice on preflop is accepted (gap = 1, within tolerance)', () => {
+  it('flop advice on preflop is HELD (SR-6.7: R-7.3 tolerance revoked, exact street only)', () => {
     harness.push(msgLiveContext(ctxPreflop()));
     vi.advanceTimersByTime(100);
     harness.flush();
@@ -594,9 +594,12 @@ describe('Scenario 11: Cross-hand advice contamination', () => {
     vi.advanceTimersByTime(1);
     harness.flush();
 
-    // Flop (rank 1) vs preflop (rank 0) = gap of 1 → accepted
-    expect(harness.snapshot().lastGoodAdvice).not.toBeNull();
-    expect(harness.snapshot().lastGoodAdvice.currentStreet).toBe('flop');
+    // SR-6.7: gap of 1 no longer within tolerance. Flop advice is held in
+    // the pending buffer until live context reaches flop. Renderer surfaces
+    // "Stale — recomputing" on street mismatch instead of blanking.
+    expect(harness.snapshot().lastGoodAdvice).toBeNull();
+    expect(harness.coord.getPendingAdvice()).not.toBeNull();
+    expect(harness.coord.getPendingAdvice().currentStreet).toBe('flop');
   });
 });
 

@@ -1,0 +1,7 @@
+id: "S5-excessive-mutations"
+symptomsTargeted: ["S5"]
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 260
+mechanism: "rapid repeated pushes trigger full innerHTML replacements and classList.toggle churn"

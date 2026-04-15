@@ -14,7 +14,8 @@ import {
   computeVisibility,
   buildUnifiedHeaderHTML,
   buildSeatArcHTML,
-  buildDeepExpanderHTML,
+  buildMoreAnalysisHTML,
+  buildModelAuditHTML,
   buildStatusBar,
 } from '../render-orchestrator.js';
 import {
@@ -444,81 +445,99 @@ describe('buildSeatArcHTML', () => {
 // BUILD DEEP EXPANDER HTML
 // =========================================================================
 
-describe('buildDeepExpanderHTML', () => {
+describe('buildMoreAnalysisHTML (SR-6.14, was buildDeepExpanderHTML)', () => {
   it('returns showButton=false when no advice', () => {
-    const result = buildDeepExpanderHTML(null);
+    const result = buildMoreAnalysisHTML(null);
     expect(result.showButton).toBe(false);
     expect(result.html).toBe('');
   });
 
   it('returns showButton=false when empty recommendations', () => {
-    const result = buildDeepExpanderHTML({ recommendations: [] });
+    const result = buildMoreAnalysisHTML({ recommendations: [] });
     expect(result.showButton).toBe(false);
   });
 
   it('returns showButton=true with advice', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.showButton).toBe(true);
     expect(result.html.length).toBeGreaterThan(0);
   });
 
   it('includes range breakdown when segmentation present', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('rb-stacked-bar');
     expect(result.html).toContain('66 combos');
   });
 
   it('includes all-recs section when multiple recommendations', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     // flopWithAdvice has 2 recommendations
     expect(result.html).toContain('CALL');
     expect(result.html).toContain('RAISE');
   });
 
   it('includes street tendencies when villain profile has streets', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('Selective opener');
   });
 
   it('includes fold curve when foldMeta.curve present', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('<svg');
     expect(result.html).toContain('Personalized');
   });
 
   it('includes fold breakdown when adjustments present', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('35%'); // base estimate
     expect(result.html).toContain('af');
   });
 
   it('includes combo stats when present', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('combo-seg ahead');
     expect(result.html).toContain('56');
   });
 
-  it('includes model audit section', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
-    expect(result.html).toContain('Player model');
-    expect(result.html).toContain('180ms');
+  it('does NOT include model audit section (split to buildModelAuditHTML)', () => {
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
+    expect(result.html).not.toContain('Player model');
+    expect(result.html).not.toContain('Model Audit');
   });
 
   it('includes vulnerabilities when present', () => {
-    const result = buildDeepExpanderHTML(flopWithAdvice.lastGoodAdvice);
+    const result = buildMoreAnalysisHTML(flopWithAdvice.lastGoodAdvice);
     expect(result.html).toContain('Overfolds to flop raises');
     expect(result.html).toContain('vuln-dot');
   });
 
-  it('omits sections when data is missing', () => {
+  it('returns showButton=false when sparse advice has no displayable sections', () => {
     const sparse = {
       recommendations: [{ action: 'check', ev: 0, reasoning: 'Check' }],
     };
-    const result = buildDeepExpanderHTML(sparse);
-    expect(result.showButton).toBe(true);
+    const result = buildMoreAnalysisHTML(sparse);
+    // SR-6.14: showButton now reflects content presence (was hardcoded true).
+    expect(result.showButton).toBe(false);
     expect(result.html).not.toContain('rb-stacked-bar');
     expect(result.html).not.toContain('<svg');
     expect(result.html).not.toContain('vuln-dot');
+  });
+});
+
+describe('buildModelAuditHTML (SR-6.14, new)', () => {
+  it('returns showButton=false when no advice', () => {
+    expect(buildModelAuditHTML(null).showButton).toBe(false);
+  });
+
+  it('returns showButton=false when no tm/mq on advice', () => {
+    const advice = { recommendations: [{ action: 'check' }] };
+    expect(buildModelAuditHTML(advice).showButton).toBe(false);
+  });
+
+  it('returns model audit section when advice has treeMetadata', () => {
+    const result = buildModelAuditHTML(flopWithAdvice.lastGoodAdvice);
+    expect(result.showButton).toBe(true);
+    expect(result.html).toContain('Player model');
   });
 });
 
@@ -589,9 +608,15 @@ describe('null safety', () => {
       }).not.toThrow();
     });
 
-    it(`buildDeepExpanderHTML does not throw for ${name}`, () => {
+    it(`buildMoreAnalysisHTML does not throw for ${name}`, () => {
       expect(() => {
-        buildDeepExpanderHTML(fixture.lastGoodAdvice);
+        buildMoreAnalysisHTML(fixture.lastGoodAdvice);
+      }).not.toThrow();
+    });
+
+    it(`buildModelAuditHTML does not throw for ${name}`, () => {
+      expect(() => {
+        buildModelAuditHTML(fixture.lastGoodAdvice);
       }).not.toThrow();
     });
 
@@ -634,9 +659,13 @@ describe('no undefined/null text in rendered HTML', () => {
       expect(arc).not.toContain('>undefined<');
       expect(arc).not.toContain('>null<');
 
-      const deep = buildDeepExpanderHTML(fixture.lastGoodAdvice);
-      expect(deep.html).not.toContain('>undefined<');
-      expect(deep.html).not.toContain('>null<');
+      const more = buildMoreAnalysisHTML(fixture.lastGoodAdvice);
+      expect(more.html).not.toContain('>undefined<');
+      expect(more.html).not.toContain('>null<');
+
+      const audit = buildModelAuditHTML(fixture.lastGoodAdvice);
+      expect(audit.html).not.toContain('>undefined<');
+      expect(audit.html).not.toContain('>null<');
     });
   }
 });

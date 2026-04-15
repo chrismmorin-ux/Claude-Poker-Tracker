@@ -433,6 +433,8 @@ export const riverValueBet = {
 // 6. BETWEEN HANDS — Villain scouting
 // =========================================================================
 
+// Also exercises Z2/2.7 pot-chip suppression between hands (currentLiveContext=null
+// → unified header omits pot chip per SR-6.12 handLive guard — no dedicated fixture needed).
 export const betweenHands = {
   cachedSeatStats: {
     1: makeStats(1, 45, 8, 0.7, 'Fish', 30),
@@ -459,6 +461,7 @@ export const betweenHands = {
 
 // =========================================================================
 // 7. BETWEEN HANDS + TOURNAMENT — ICM bubble
+// Also covers Z0/0.6 tournament log link surface (no dedicated fixture needed — SR-8.1 annotation).
 // =========================================================================
 
 export const betweenHandsTournament = {
@@ -1122,6 +1125,453 @@ export const heroFoldedProfitable = {
 };
 
 // =========================================================================
+// SR-6.2 corpus extension — gaps named in docs/sidebar-rebuild/05-architecture-delta.md §4.3
+// Fixtures are state-only; assertions/render checks live in test files and the harness.
+// Flag stays false — these exercise the legacy path so we have baseline hashes before
+// SR-6.8 flips DOM structure.
+// =========================================================================
+
+// -------- Z0 --------
+
+// 22. z0_bootRace — pipeline up, hands count not yet known. Spec Z0 §0.2 placeholder.
+export const z0_bootRace = {
+  cachedSeatStats: null,
+  currentTableState: null,
+  currentLiveContext: null,
+  lastGoodAdvice: null,
+  appSeatData: {},
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true, handsCaptured: null },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// -------- Z1 --------
+
+// 23. z1_occupiedZeroSeat — player present at seat but sampleSize=0. Spec Z1 §1.1 zero-hand ring.
+export const z1_occupiedZeroSeat = {
+  cachedSeatStats: {
+    1: makeStats(1, 0, 0, 0, 'Unknown', 0),
+    3: makeStats(3, 22, 18, 2.1, 'TAG', 45),
+    5: makeStats(5, 28, 22, 1.8, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [1, 3, 5] },
+  currentLiveContext: {
+    state: 'PREFLOP',
+    currentStreet: 'preflop',
+    heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['A\u2660', 'K\u2660'],
+    pot: 1.5,
+    activeSeatNumbers: [1, 3, 5],
+    foldedSeats: [],
+    dealerSeat: 3,
+    pfAggressor: null,
+    actionSequence: [],
+  },
+  lastGoodAdvice: null,
+  appSeatData: {
+    3: makeAppSeat('TAG', 45, 'Tight aggressive regular'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// -------- Z3 --------
+
+// 24. z3_villainPostflopGrid — Rule V pin on villain w/ postflop range to render grid. Spec Z3 §3.6.
+export const z3_villainPostflopGrid = {
+  cachedSeatStats: {
+    3: makeStats(3, 22, 18, 2.1, 'TAG', 45),
+    5: makeStats(5, 28, 22, 1.8, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'TURN',
+    currentStreet: 'turn',
+    heroSeat: 5,
+    communityCards: ['A\u2660', 'K\u2665', '7\u2663', '2\u2666', ''],
+    holeCards: ['Q\u2660', 'J\u2660'],
+    pot: 42,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [],
+    dealerSeat: 3,
+    pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 6, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 12, street: 'flop', order: 3 },
+      { seat: 5, action: 'call', amount: 12, street: 'flop', order: 4 },
+      { seat: 3, action: 'bet', amount: 24, street: 'turn', order: 5 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'turn',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 45,
+    potSize: 42,
+    heroEquity: 0.28,
+    foldPct: { bet: 0.30 },
+    recommendations: [
+      { action: 'fold', ev: 0, reasoning: 'Draw behind double-barrel — insufficient equity' },
+    ],
+    treeMetadata: { depthReached: 2, spr: 3.1 },
+    modelQuality: { overallSource: 'player_model' },
+    villainProfile: { headline: 'TAG double-barrels polarized' },
+    villainRange: { turn: { range: makeTestRange(55, 0.75), source: 'bayesian' } },
+    segmentation: null,
+  },
+  appSeatData: { 3: makeAppSeat('TAG', 45, 'TAG double-barrels polarized') },
+  pinnedVillainSeat: 3,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// 25. z3_multiwaySelector — >1 eligible villain, pin selector needed. Spec Z3 §3.11.
+export const z3_multiwaySelector = {
+  cachedSeatStats: {
+    1: makeStats(1, 45, 8, 0.7, 'Fish', 30),
+    3: makeStats(3, 22, 18, 2.1, 'TAG', 45),
+    5: makeStats(5, 28, 22, 1.8, 'Hero', 100),
+    7: makeStats(7, 38, 25, 3.2, 'LAG', 22),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [1, 3, 5, 7] },
+  currentLiveContext: {
+    state: 'FLOP',
+    currentStreet: 'flop',
+    heroSeat: 5,
+    communityCards: ['T\u2660', '9\u2665', '2\u2663', '', ''],
+    holeCards: ['A\u2660', 'K\u2665'],
+    pot: 24,
+    activeSeatNumbers: [1, 3, 5, 7],
+    foldedSeats: [],
+    dealerSeat: 7,
+    pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 6, street: 'preflop', order: 2 },
+      { seat: 7, action: 'call', amount: 6, street: 'preflop', order: 3 },
+      { seat: 1, action: 'call', amount: 6, street: 'preflop', order: 4 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'flop',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 45,
+    potSize: 24,
+    heroEquity: 0.42,
+    foldPct: null,
+    recommendations: [
+      { action: 'check', ev: 0.5, reasoning: 'Multiway — pot control vs TAG PFA' },
+    ],
+    treeMetadata: { depthReached: 1, spr: 8.0, playersRemaining: 4 },
+    modelQuality: { overallSource: 'mixed' },
+    villainProfile: { headline: 'TAG PFA multiway' },
+    segmentation: null,
+  },
+  appSeatData: {
+    1: makeAppSeat('Fish', 30, 'Loose passive fish'),
+    3: makeAppSeat('TAG', 45, 'Tight aggressive regular'),
+    7: makeAppSeat('LAG', 22, 'Loose aggressive'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// 26. z3_noAggressorPlaceholder — checked flop, no aggressor. Spec Z3 §3.12.
+export const z3_noAggressorPlaceholder = {
+  cachedSeatStats: {
+    3: makeStats(3, 22, 18, 2.1, 'TAG', 45),
+    5: makeStats(5, 28, 22, 1.8, 'Hero', 100),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [3, 5] },
+  currentLiveContext: {
+    state: 'FLOP',
+    currentStreet: 'flop',
+    heroSeat: 5,
+    communityCards: ['8\u2660', '5\u2665', '2\u2663', '', ''],
+    holeCards: ['A\u2665', 'T\u2665'],
+    pot: 4,
+    activeSeatNumbers: [3, 5],
+    foldedSeats: [],
+    dealerSeat: 5,
+    pfAggressor: null,
+    actionSequence: [
+      { seat: 5, action: 'call', amount: 2, street: 'preflop', order: 1 },
+      { seat: 3, action: 'check', amount: 0, street: 'preflop', order: 2 },
+    ],
+  },
+  lastGoodAdvice: {
+    currentStreet: 'flop',
+    villainSeat: 3,
+    villainStyle: 'TAG',
+    villainSampleSize: 45,
+    potSize: 4,
+    heroEquity: 0.55,
+    foldPct: { bet: 0.62 },
+    recommendations: [
+      { action: 'bet', ev: 1.1, sizing: { betFraction: 0.5, betSize: 2, foldPct: 0.62 }, reasoning: 'Stab limped pot — no preflop aggressor' },
+    ],
+    treeMetadata: { depthReached: 1, spr: 24.0 },
+    modelQuality: { overallSource: 'mixed' },
+    villainProfile: { headline: 'Limped pot — no aggressor' },
+    segmentation: null,
+  },
+  appSeatData: { 3: makeAppSeat('TAG', 45, 'Tight aggressive regular') },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// -------- Z4 --------
+
+// 27. z4_rt61AutoExpandTrigger — fresh advice with handPlan, auto-expand (RT-61) would fire.
+// Post-expand / user-collapsed state is coordinator-layer (collapsible state), not expressible
+// in a state-only fixture — merged per SR-6.2 handoff §acceptance-gate-2 justification.
+// Spec Z4 §4.1.
+export const z4_rt61AutoExpandTrigger = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    // Ensure handPlan richness so the auto-expand trigger has something to reveal.
+    recommendations: flopWithAdvice.lastGoodAdvice.recommendations,
+  },
+};
+
+// 28. z4_noPlanPath — advice present, no handPlan. PLAN chevron absent. Spec Z4 §4.1.
+export const z4_noPlanPath = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    recommendations: [
+      { action: 'fold', ev: 0, reasoning: 'Insufficient equity — no plan branching' },
+    ],
+  },
+};
+
+// 29. z4_moreAnalysisOnly — 4.2 populated, 4.3 (model audit) absent. Spec Z4 §4.2.
+export const z4_moreAnalysisOnly = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    segmentation: {
+      value: { count: 18, equity: 0.72 },
+      marginal: { count: 12, equity: 0.48 },
+      air: { count: 17, equity: 0.18 },
+    },
+    modelQuality: { overallSource: 'player_model', auditRows: null },
+  },
+};
+
+// 30. z4_debugFlagOffNoAudit — debugDiagnostics flag off (SR-6.1 default) → 4.3 absent from DOM.
+// State-only fixture; actual gate lives in settings slot on coordinator.
+// Spec Z4 §4.3 + Z0 §0.7.
+// Paired with z4_debugFlagOnWithAudit below (SR-8.1/C-3 coverage for flag-on variant).
+export const z4_debugFlagOffNoAudit = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    modelQuality: {
+      overallSource: 'player_model',
+      auditRows: [
+        { label: 'VPIP blend', value: '0.72 observed / 0.28 prior' },
+      ],
+    },
+  },
+};
+
+// 30a. z4_debugFlagOnWithAudit — debugDiagnostics flag ON → 4.3 Model Audit + 0.7 diagnostics footer
+// both render. Same shape as off variant; consumer test flips settings.debugDiagnostics=true.
+// Covers the flag-on pair for Z0/0.7 + Z4/4.3 (SR-8.1 / audit caveat C-3).
+export const z4_debugFlagOnWithAudit = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    modelQuality: {
+      overallSource: 'player_model',
+      auditRows: [
+        { label: 'VPIP blend', value: '0.72 observed / 0.28 prior' },
+        { label: 'Fold curve', value: 'fitted k=1.8 x0=0.55' },
+      ],
+    },
+  },
+};
+
+// 30b. z0_pipelineAllGreen — all pipeline layers healthy, hands captured, app connected.
+// Spec Z0 §0.9 green-steady state (SR-8.1 / audit caveat C-3).
+export const z0_pipelineAllGreen = {
+  cachedSeatStats: null,
+  currentTableState: null,
+  currentLiveContext: null,
+  lastGoodAdvice: null,
+  appSeatData: {},
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true, handsCaptured: 142 },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+  cachedDiag: {
+    probe: { status: 'green' },
+    bridge: { status: 'green' },
+    filter: { status: 'green' },
+    port: { status: 'green' },
+    panel: { status: 'green' },
+  },
+};
+
+// 30c. z2_longStaleAdvice — advice fresh on arrival but >15s old at render time.
+// Exercises R-7.3 stale-recomputing label + Z2/2.10 stale-advice tint.
+// `_receivedAt` set to a past timestamp; consumer test computes age vs Date.now().
+// (SR-8.1 / audit caveat C-3).
+export const z2_longStaleAdvice = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    _receivedAt: Date.now() - 15000,
+  },
+};
+
+// -------- Zx (overrides / between-hands / observer / tournament) --------
+
+// 31. zx_x1_connectedIdle — app connected, table idle → between-hands activates. Spec Zx §X.1.
+export const zx_x1_connectedIdle = {
+  ...betweenHands,
+  lastGoodExploits: { seats: [], appConnected: true },
+};
+
+// 32. zx_x1_disconnectedMidHand — app disconnected but hand live → X.1 strict predicate
+// SUPPRESSES between-hands (mid-hand even if disconnected). Spec Zx §X.1 invariant.
+export const zx_x1_disconnectedMidHand = {
+  ...flopWithAdvice,
+  lastGoodExploits: null,
+};
+
+// 33. zx_x3_graceExpired — grace window negative path (pipeline dot red past grace). Spec Zx §X.3.
+export const zx_x3_graceExpired = {
+  ...flopWithAdvice,
+  lastGoodExploits: { seats: [], appConnected: false, graceExpired: true },
+};
+
+// 34. zx_x4_implicitClearMultiMessage — recovery banner implicit-clear + multi-message path.
+// Spec Zx §X.4 (composite a/b/c).
+export const zx_x4_implicitClearMultiMessage = {
+  ...flopWithAdvice,
+  lastGoodExploits: {
+    seats: [],
+    appConnected: true,
+    recovery: {
+      messages: ['Reconnected — backfilling hands', 'Backfill complete'],
+      implicitClearAt: Date.now(),
+    },
+  },
+};
+
+// 35. zx_x4c_reEnableTimer — X.4c re-enable timer path (button re-enables after cooldown).
+// Current code uses raw setTimeout (flagged at side-panel.js:172 for SR-6.3 migration).
+export const zx_x4c_reEnableTimer = {
+  ...flopWithAdvice,
+  lastGoodExploits: {
+    seats: [],
+    appConnected: true,
+    recovery: { messages: ['Manual resync pending'], reEnableAtMs: 2000 },
+  },
+};
+
+// 36. zx_x5_tournamentLevelTransition — mid-hand level up (tournament bar must not mutate Z2).
+// Spec Zx §X.5.
+export const zx_x5_tournamentLevelTransition = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    currentLevelIndex: 9,
+    currentBlinds: { sb: 300, bb: 600, ante: 75 },
+    nextBlinds: { sb: 400, bb: 800, ante: 100 },
+    levelTransitionAtMs: Date.now() - 500,
+  },
+};
+
+// 37. zx_x5b_zoneTransition — ICM zone transition (caution → push). Spec Zx §X.5b.
+export const zx_x5b_zoneTransition = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    heroMRatio: 4.2,
+    mRatioGuidance: { zone: 'push', label: 'Push/fold zone — shove wide from LP' },
+  },
+};
+
+// 38. zx_x5c_finalLevel — blinds capped / final level. Spec Zx §X.5c.
+export const zx_x5c_finalLevel = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    currentLevelIndex: 20,
+    nextBlinds: null,
+    blindOutInfo: { levelsRemaining: 0, wallClockMinutes: null },
+  },
+};
+
+// 39. zx_x5d_belowAverage — hero stack below average. Spec Zx §X.5d.
+export const zx_x5d_belowAverage = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    heroStack: 4200,
+    avgStack: 10909,
+  },
+};
+
+// 40. zx_x5e_criticalUrgency — critical urgency (M < 5). Spec Zx §X.5e.
+export const zx_x5e_criticalUrgency = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    heroMRatio: 3.1,
+    mRatioGuidance: { zone: 'redline', label: 'Critical — shove any reasonable hand' },
+    urgency: 'critical',
+  },
+};
+
+// 41. zx_x5fg_farFromBubbleNoPredictions — far-from-bubble + no predictions (merged absent states).
+// Spec Zx §X.5f + §X.5g.
+export const zx_x5fg_farFromBubbleNoPredictions = {
+  ...betweenHandsTournament,
+  lastGoodTournament: {
+    ...betweenHandsTournament.lastGoodTournament,
+    icmPressure: { zone: 'far', playersFromBubble: 45 },
+    predictions: null,
+  },
+};
+
+// 42. zx_x6_observerNoVillain — hero folded, observer takeover of Z2 slot, no villain to focus.
+// Spec Zx §X.6.
+export const zx_x6_observerNoVillain = {
+  ...heroFolded,
+  lastGoodAdvice: null,
+  currentLiveContext: {
+    ...heroFolded.currentLiveContext,
+    pfAggressor: null,
+    actionSequence: heroFolded.currentLiveContext.actionSequence.filter(
+      (a) => a.action !== 'raise'
+    ),
+  },
+};
+
+// 43. zx_x7_observerWithTournament — observer mode + tournament (X.7 dual-takeover).
+// Tournament bar persists through X.6 observer takeover per SR-4 Zx invariant 5.
+export const zx_x7_observerWithTournament = {
+  ...heroFolded,
+  lastGoodTournament: betweenHandsTournament.lastGoodTournament,
+};
+
+// =========================================================================
 // ALL FIXTURES (for harness iteration)
 // =========================================================================
 
@@ -1147,4 +1597,29 @@ export const ALL_FIXTURES = {
   callerFirstToAct,
   preflopContested,
   heroFoldedProfitable,
+  z0_bootRace,
+  z1_occupiedZeroSeat,
+  z3_villainPostflopGrid,
+  z3_multiwaySelector,
+  z3_noAggressorPlaceholder,
+  z4_rt61AutoExpandTrigger,
+  z4_noPlanPath,
+  z4_moreAnalysisOnly,
+  z4_debugFlagOffNoAudit,
+  z4_debugFlagOnWithAudit,
+  z0_pipelineAllGreen,
+  z2_longStaleAdvice,
+  zx_x1_connectedIdle,
+  zx_x1_disconnectedMidHand,
+  zx_x3_graceExpired,
+  zx_x4_implicitClearMultiMessage,
+  zx_x4c_reEnableTimer,
+  zx_x5_tournamentLevelTransition,
+  zx_x5b_zoneTransition,
+  zx_x5c_finalLevel,
+  zx_x5d_belowAverage,
+  zx_x5e_criticalUrgency,
+  zx_x5fg_farFromBubbleNoPredictions,
+  zx_x6_observerNoVillain,
+  zx_x7_observerWithTournament,
 };

@@ -258,8 +258,11 @@ describe('renderFlopContent', () => {
   });
 
   it('handles null advice', () => {
+    // SR-6.13: 3.12 no-aggressor placeholder replaces the "Waiting for flop"
+    // fallback when postflop + no villainRanges. Empty range slot would
+    // otherwise violate R-1.3 (fixed slot height).
     const html = renderFlopContent(null, sampleLiveContext, 3);
-    expect(html).toContain('Waiting for flop');
+    expect(html).toContain('No aggression yet');
   });
 
   it('handles missing fold data', () => {
@@ -318,8 +321,9 @@ describe('renderTurnContent', () => {
   });
 
   it('handles null advice', () => {
+    // SR-6.13: 3.12 placeholder (see renderFlopContent null-advice test).
     const html = renderTurnContent(null, sampleLiveContext, 3);
-    expect(html).toContain('Waiting for turn');
+    expect(html).toContain('No aggression yet');
   });
 });
 
@@ -353,8 +357,9 @@ describe('renderRiverContent', () => {
   });
 
   it('handles null advice', () => {
+    // SR-6.13: 3.12 placeholder (see renderFlopContent null-advice test).
     const html = renderRiverContent(null, sampleLiveContext, 3);
-    expect(html).toContain('Waiting for river');
+    expect(html).toContain('No aggression yet');
   });
 });
 
@@ -451,6 +456,38 @@ describe('renderVillainRangeSection — dynamic Bayesian ranges', () => {
     expect(html).toContain('villain-tab active');
   });
 
+  // SR-6.16: strict Rule V — `.active` follows the displayed range seat
+  // (focusedVillain). Advice villain that isn't focused gets `.advice-match`
+  // instead of `.active` — the highlight no longer lies about which seat's
+  // range is on screen when the user pinned a different seat.
+  it('only the focused seat gets "active"; advice villain gets "advice-match" when different', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    // advice.villainSeat=3 but user-focused seat=2 (e.g. pill click)
+    const advice = { ...sampleAdvice, villainSeat: 3, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 2);
+    // seat 2 is the sole `.active`
+    expect(html).toMatch(/villain-tab active[^>]*data-range-seat="2"/);
+    // seat 3 is NOT `.active` — that would lie about which range is displayed
+    expect(html).not.toMatch(/villain-tab active[^>]*data-range-seat="3"/);
+    // seat 3 gets `.advice-match` as a subtle second-tier signal
+    expect(html).toMatch(/villain-tab advice-match[^>]*data-range-seat="3"/);
+  });
+
+  it('does not emit "advice-match" when focused seat equals advice villain seat', () => {
+    const ranges = [
+      { seat: 2, position: 'UTG', actionKey: 'open', range: makeRange169(0.3), equity: 0.40, rangeWidth: 15, active: true },
+      { seat: 3, position: 'CO',  actionKey: 'open', range: makeRange169(0.5), equity: 0.60, rangeWidth: 22, active: true },
+    ];
+    const advice = { ...sampleAdvice, villainSeat: 3, villainRanges: ranges };
+    const html = renderFlopContent(advice, sampleLiveContext, 3);
+    // seat 3 is active, not both
+    expect(html).toMatch(/villain-tab active[^>]*data-range-seat="3"/);
+    expect(html).not.toContain('advice-match');
+  });
+
   it('does not render tab pills for single villain (heads-up)', () => {
     const html = renderFlopContent(adviceWithRanges(), sampleLiveContext, 3);
     expect(html).not.toContain('villain-range-tabs');
@@ -498,22 +535,26 @@ describe('renderVillainRangeSection — dynamic Bayesian ranges', () => {
 describe('renderVillainRangeSection — static GTO fallback', () => {
   it('falls back to static GTO grid on preflop when no villainRanges', () => {
     const adviceNoRanges = { ...sampleAdvice, currentStreet: 'preflop', villainRanges: undefined };
-    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    // SR-6.13: liveContext is authoritative for effective street (was using
+    // flop-default sampleLiveContext which now correctly renders 3.12).
+    const liveCtx = { ...sampleLiveContext, currentStreet: 'preflop', state: 'PREFLOP', heroSeat: 5, dealerSeat: 3 };
     const html = renderPreflopContent(adviceNoRanges, liveCtx, sampleAppSeatData, 3);
-    // Static grid shows GTO label
     expect(html).toContain('GTO');
   });
 
   it('returns no range section on postflop when no villainRanges', () => {
+    // SR-6.13: postflop + empty villainRanges now renders the 3.12
+    // no-aggressor placeholder (R-1.3 fixed-height slot) — not the empty
+    // string it used to return. The 13×13 range-grid canvas is still absent.
     const adviceNoRanges = { ...sampleAdvice, currentStreet: 'flop', villainRanges: undefined };
     const html = renderFlopContent(adviceNoRanges, sampleLiveContext, 3);
-    // No dynamic ranges, not preflop — no grid rendered at all
-    expect(html).not.toContain('range-grid-wrap');
+    expect(html).toContain('range-slot-placeholder');
+    expect(html).not.toContain('class="range-grid"');
   });
 
   it('falls back to static GTO grid when villainRanges is empty array', () => {
     const adviceEmptyRanges = { ...sampleAdvice, currentStreet: 'preflop', villainRanges: [] };
-    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    const liveCtx = { ...sampleLiveContext, currentStreet: 'preflop', state: 'PREFLOP', heroSeat: 5, dealerSeat: 3 };
     const html = renderPreflopContent(adviceEmptyRanges, liveCtx, sampleAppSeatData, 3);
     expect(html).toContain('GTO');
   });
@@ -525,9 +566,8 @@ describe('renderVillainRangeSection — static GTO fallback', () => {
       villainRanges: undefined,
       situation: 'facing_raise',
     };
-    const liveCtx = { ...sampleLiveContext, heroSeat: 5, dealerSeat: 3 };
+    const liveCtx = { ...sampleLiveContext, currentStreet: 'preflop', state: 'PREFLOP', heroSeat: 5, dealerSeat: 3 };
     const html = renderPreflopContent(adviceNoRanges, liveCtx, sampleAppSeatData, 3);
-    // facing_raise activates defend range — "was" text appears
     expect(html).toContain('was');
   });
 });

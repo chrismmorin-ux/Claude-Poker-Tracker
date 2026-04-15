@@ -34,8 +34,13 @@ import {
  * @param {Object|null} state.currentTableState
  * @returns {number|null}
  */
-export const computeFocusedVillain = ({ pinnedVillainSeat, lastGoodAdvice, currentLiveContext, currentTableState }) => {
+export const computeFocusedVillain = ({ pinnedVillainSeat, rangeSelectedSeat, lastGoodAdvice, currentLiveContext, currentTableState }) => {
   const heroSeat = currentLiveContext?.heroSeat || currentTableState?.heroSeat;
+  // SR-6.11 §1.11 Rule V: explicit range-grid override wins over all other
+  // signals. This is the decoupled replacement for the old "pill-click pins
+  // villain" shortcut — scouting pin and range-grid selection now live in
+  // separate slots (R-5.1).
+  if (rangeSelectedSeat != null && rangeSelectedSeat !== heroSeat) return rangeSelectedSeat;
   if (pinnedVillainSeat != null && pinnedVillainSeat !== heroSeat) return pinnedVillainSeat;
   if (lastGoodAdvice?.villainSeat) return lastGoodAdvice.villainSeat;
   if (currentLiveContext?.pfAggressor && currentLiveContext.pfAggressor !== heroSeat) return currentLiveContext.pfAggressor;
@@ -207,14 +212,22 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
   // Row 3: Meta pills (own row — prevents card overflow from pushing pills off-screen)
   html += `<div class="uh-row2 uh-meta-row">`;
   html += `<div class="uh-meta-pills">`;
-  if (hasAdvice && advice.potSize > 0) {
-    html += `<span class="pot-inline">$${advice.potSize.toFixed(0)}</span>`;
-  } else if (live?.pot > 0) {
-    html += `<span class="pot-inline">$${live.pot.toFixed(0)}</span>`;
-  }
-  const street = live?.currentStreet || advice?.currentStreet;
-  if (street) {
-    html += `<span class="pill street">${escapeHtml(street)}</span>`;
+  // SR-6.12 Z2 §2.7 / §2.8 (B1 fix): between hands, the pot chip + street pill
+  // must blank. `lastGoodAdvice` persists across hand boundaries for visual
+  // continuity, so `advice.potSize` / `advice.currentStreet` are stale signals
+  // once liveCtx reports COMPLETE/IDLE. Guard live-state explicitly rather
+  // than letting the fallback chain render the old hand's pot + street.
+  const handLive = !!(live && live.state && live.state !== 'COMPLETE' && live.state !== 'IDLE');
+  if (handLive) {
+    if (hasAdvice && advice.potSize > 0) {
+      html += `<span class="pot-inline">$${advice.potSize.toFixed(0)}</span>`;
+    } else if (live?.pot > 0) {
+      html += `<span class="pot-inline">$${live.pot.toFixed(0)}</span>`;
+    }
+    const street = live?.currentStreet || advice?.currentStreet;
+    if (street) {
+      html += `<span class="pill street">${escapeHtml(street)}</span>`;
+    }
   }
   const tm = advice?.treeMetadata;
   if (tm?.spr != null) {
@@ -305,6 +318,9 @@ export const buildActionBarHTML = (advice, liveContext, opts = {}) => {
 
 /** Build standard (single action) action bar. */
 function _buildStandardActionBar(advice, rec, action) {
+  // SR-6.12 (Z2 §2.3, B2 fix): equity + EV edge now live in the headline row.
+  // Row 2 becomes SPR-only (Z2 §2.4). The old layout hid equity behind the
+  // edge in a secondary row, violating R-1.2 primary-metric adjacency.
   let html = '<div class="ab-row1">';
 
   // Action word
@@ -324,23 +340,39 @@ function _buildStandardActionBar(advice, rec, action) {
     html += `<span class="ab-risk-badge ${escapeHtml(r)}">${escapeHtml(String(rec.risk))}</span>`;
   }
 
-  html += '</div>';
-
-  // Row 2: EV edge + primary stat
-  html += '<div class="ab-row2">';
+  // EV edge — now headline (was row 2).
   const ev = rec.ev ?? 0;
   const evSign = ev > 0 ? '+' : '';
   const evClass = ev > 0 ? 'ab-ev-pos' : ev < 0 ? 'ab-ev-neg' : 'ab-ev-neutral';
   html += `<span class="ab-ev-edge ${evClass}">${evSign}${ev.toFixed(1)} edge</span>`;
 
-  // Primary stat: fold% or equity
+  // Z2 §2.3 sole equity owner — headline inline, R-4.2 placeholder when unknown.
+  if (advice.heroEquity != null) {
+    // Defend against fraction-vs-percent mixed-unit bug (spec §2.3 §4 edge).
+    const eq = advice.heroEquity <= 1 ? advice.heroEquity * 100 : advice.heroEquity;
+    html += `<span class="ab-equity">${Math.round(eq)}% equity</span>`;
+  } else {
+    html += `<span class="ab-equity ab-equity-unknown">\u2014% equity</span>`;
+  }
+
+  html += '</div>';
+
+  // Row 2 — Z2 §2.4 SPR-only. Shows SPR zone badge if advice carries SPR; else
+  // R-4.2 placeholder to preserve R-1.3 fixed row height.
+  html += '<div class="ab-row2">';
+  const spr = advice.spr ?? advice.treeMetadata?.spr ?? null;
+  if (spr != null) {
+    html += `<span class="ab-spr">SPR: ${typeof spr === 'number' ? spr.toFixed(1) : escapeHtml(String(spr))}</span>`;
+  } else {
+    html += `<span class="ab-spr ab-spr-unknown">SPR: \u2014</span>`;
+  }
+
+  // Retain fold% as secondary stat (villain folds) — distinct from equity so
+  // no collision with the headline's equity owner per R-5.1.
   const foldPct = rec.villainResponse?.fold?.pct;
   if (foldPct != null) {
     html += `<span class="ab-sep">\u00B7</span>`;
     html += `<span class="ab-stat">${Math.round(foldPct * 100)}% villain folds</span>`;
-  } else if (advice.heroEquity != null) {
-    html += `<span class="ab-sep">\u00B7</span>`;
-    html += `<span class="ab-stat">${Math.round(advice.heroEquity * 100)}% equity</span>`;
   }
 
   html += '</div>';
@@ -992,6 +1024,26 @@ export const buildBetweenHandsHTML = (mode, opts = {}) => {
 // =========================================================================
 
 /**
+ * SR-6.11: Quantize villain hands-count onto a 5-band logarithmic scale per
+ * Z1 §1.1. Bands: {0, <20, 20–99, 100–499, 500+}. Pure function over count.
+ * Return value is a band name that maps 1:1 onto CSS classes on the seat
+ * circle (`.ring-band-{name}`), with `band-empty` reserved for occupied-zero
+ * seats so that R-4.2 renders an explicit `—` placeholder rather than a
+ * misread "tiny ring".
+ *
+ * @param {number|null|undefined} handsCount
+ * @returns {'empty'|'tiny'|'small'|'medium'|'large'}
+ */
+export const quantizeSampleBand = (handsCount) => {
+  const n = Number(handsCount) || 0;
+  if (n <= 0) return 'empty';
+  if (n < 20) return 'tiny';
+  if (n < 100) return 'small';
+  if (n < 500) return 'medium';
+  return 'large';
+};
+
+/**
  * Build the seat arc HTML (semicircle poker table layout).
  *
  * @param {Object} physicalStats - { [physicalSeat]: statsObj } from stats engine
@@ -1011,6 +1063,7 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
     appSeatData = {},
     focusedVillainSeat = null,
     pinnedVillainSeat = null,
+    rangeSelectedSeat = null,
     containerWidth = 380,
   } = opts;
 
@@ -1080,12 +1133,21 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
     const hasLiveHand = activeSeatSet.size > 0;
     const isVacant = !isHero && hasLiveHand && !activeSeatSet.has(seat);
 
+    // SR-6.11 §1.1: logarithmic hands-count ring band + R-4.2 `—` placeholder.
+    // SR-6.11 §1.11: Rule V range-selection ring — distinct visual channel
+    // from pinned/focused (R-5.1 single-owner-per-slot: each channel is its
+    // own modifier class + its own CSS ring stroke).
+    const isRangeSelected = !isHero && !isVacant && seat === rangeSelectedSeat;
+    const sampleBand = isHero || isVacant || isFolded ? null : quantizeSampleBand(sampleSize);
+
     let classes = 'seat-circle';
     if (isHero) classes += ' hero';
     if (isVacant) classes += ' vacant';
     else if (isFolded) classes += ' folded';
     if (isFocused && !isVacant) classes += ' focused';
     if (isPinned && !isVacant) classes += ' pinned';
+    if (isRangeSelected) classes += ' rule-v-selected';
+    if (sampleBand) classes += ` ring-band-${sampleBand}`;
     if (!isHero && !isVacant && style !== 'unknown') classes += ` style-${style}`;
 
     const seatLabel = regSeatNo !== undefined ? regSeatNo : seat;
@@ -1102,6 +1164,12 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
     // Sample badge
     if (!isHero && !isVacant && sampleSize > 0) {
       html += `<span class="seat-sample-badge">${sampleSize}</span>`;
+    }
+
+    // SR-6.11 §1.1: occupied-zero placeholder. R-4.2 — distinct from "tiny
+    // ring" so low-sample vs no-sample are not conflated by the glance.
+    if (!isHero && !isVacant && !isFolded && sampleSize === 0) {
+      html += `<span class="seat-sample-unknown">\u2014</span>`;
     }
 
     // Dealer button
@@ -1126,6 +1194,7 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
           : lastAct.action === 'fold' ? 'var(--action-fold-text)'
           : 'var(--text-faint)';
         const amtStr = lastAct.amount > 0 ? `$${lastAct.amount.toFixed(0)}` : '';
+        // .seat-action-tag — Z1/1.10 per-seat last-action label (F/B/C/R/✓), NOT the deleted 1.6 duplicate of 1.5 bet chip.
         html += `<span class="seat-action-tag" style="color:${actColor}">${actLabel}${amtStr ? ' ' + amtStr : ''}</span>`;
       }
     }
@@ -1170,19 +1239,22 @@ export const buildStreetProgressHTML = (currentStreet) => {
 // =========================================================================
 
 /**
- * Build the deep expander content HTML.
+ * Build the "More Analysis" (Z4 row 4.2) collapsible content HTML.
+ * SR-6.14: split from the former monolithic buildDeepExpanderHTML. Model
+ * Audit (row 4.3) now lives in its own builder + its own collapsible DOM
+ * because it's debug-flag-gated and must be absent-from-DOM when flag=off
+ * (Z4 batch invariant 6).
  *
  * @param {Object|null} advice - From useLiveActionAdvisor
  * @param {string|null} street - Current street (for auto-expand logic)
  * @returns {{ html: string, showButton: boolean }}
  */
-export const buildDeepExpanderHTML = (advice, street = null) => {
+export const buildMoreAnalysisHTML = (advice, street = null) => {
   if (!advice || !advice.recommendations || advice.recommendations.length === 0) {
     return { html: '', showButton: false };
   }
 
   const tm = advice.treeMetadata;
-  const mq = advice.modelQuality;
   const vp = advice.villainProfile;
   const seg = advice.segmentation;
 
@@ -1209,14 +1281,32 @@ export const buildDeepExpanderHTML = (advice, street = null) => {
   if (tm?.comboStats) {
     html += renderComboStatsSection(tm.comboStats);
   }
-  if (tm || mq) {
-    html += renderModelAuditSection(mq, tm, advice.villainSampleSize);
-  }
   if (vp?.vulnerabilities?.length > 0) {
     html += renderVulnerabilitiesSection(vp.vulnerabilities);
   }
 
-  return { html, showButton: true };
+  return { html, showButton: html.length > 0 };
+};
+
+/**
+ * Build the "Model Audit" (Z4 row 4.3) collapsible content HTML. Debug-flag
+ * gated — the caller is responsible for checking `settings.debugDiagnostics`
+ * and omitting the DOM entirely when flag=off (Z4 batch invariant 6).
+ *
+ * @param {Object|null} advice - From useLiveActionAdvisor
+ * @returns {{ html: string, showButton: boolean }}
+ */
+export const buildModelAuditHTML = (advice) => {
+  if (!advice || !advice.recommendations || advice.recommendations.length === 0) {
+    return { html: '', showButton: false };
+  }
+  const tm = advice.treeMetadata;
+  const mq = advice.modelQuality;
+  if (!tm && !mq) return { html: '', showButton: false };
+  return {
+    html: renderModelAuditSection(mq, tm, advice.villainSampleSize),
+    showButton: true,
+  };
 };
 
 // =========================================================================

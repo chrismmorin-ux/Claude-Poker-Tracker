@@ -1,0 +1,8 @@
+id: "S7-advice-stale"
+symptomsTargeted:
+  - "S7"
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 11500
+mechanism: "advice _receivedAt frozen; clock.advance crosses 10s threshold; updateStaleAdviceBadge adds .stale + badge"

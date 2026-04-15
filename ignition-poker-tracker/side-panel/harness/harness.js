@@ -20,7 +20,8 @@ import {
   classifyBetweenHandsMode,
   buildBetweenHandsHTML,
   buildSeatArcHTML,
-  buildDeepExpanderHTML,
+  buildMoreAnalysisHTML,
+  buildModelAuditHTML,
   buildStatusBar,
 } from '../render-orchestrator.js';
 import { renderStreetCard, resetStreetCardState } from '../render-street-card.js';
@@ -244,27 +245,48 @@ function applyState(state) {
     );
   }
 
-  // Deep expander
-  const deepBtn = $('deep-expander-btn');
-  const deepContent = $('deep-expander-content');
-  if (deepBtn && deepContent) {
-    const result = buildDeepExpanderHTML(state.lastGoodAdvice);
+  // Z4 row 4.2 — More Analysis (SR-6.14)
+  const moreBtn = $('more-analysis-btn');
+  const moreContent = $('more-analysis-content');
+  if (moreBtn && moreContent) {
+    const result = buildMoreAnalysisHTML(state.lastGoodAdvice);
     if (result.showButton) {
-      showEl(deepBtn);
-      deepContent.innerHTML = result.html;
-      // Auto-open for harness visibility
-      deepContent.classList.add('open');
-      const chevron = $('deep-expander-chevron');
+      showEl(moreBtn);
+      moreContent.innerHTML = result.html;
+      moreContent.classList.add('open');
+      const chevron = $('more-analysis-chevron');
       if (chevron) chevron.classList.add('open');
-      // Init collapsible toggles
-      for (const hdr of deepContent.querySelectorAll('.deep-header')) {
+      for (const hdr of moreContent.querySelectorAll('.deep-header')) {
         hdr.addEventListener('click', () => {
           hdr.parentElement.classList.toggle('open');
         });
       }
     } else {
-      hideEl(deepBtn);
-      deepContent.innerHTML = '';
+      hideEl(moreBtn);
+      moreContent.innerHTML = '';
+    }
+  }
+
+  // Z4 row 4.3 — Model Audit (SR-6.14). Harness renders unconditionally
+  // (debugDiagnostics gate is a side-panel.js concern).
+  const auditBtn = $('model-audit-btn');
+  const auditContent = $('model-audit-content');
+  if (auditBtn && auditContent) {
+    const result = buildModelAuditHTML(state.lastGoodAdvice);
+    if (result.showButton) {
+      showEl(auditBtn);
+      auditContent.innerHTML = result.html;
+      auditContent.classList.add('open');
+      const chevron = $('model-audit-chevron');
+      if (chevron) chevron.classList.add('open');
+      for (const hdr of auditContent.querySelectorAll('.deep-header')) {
+        hdr.addEventListener('click', () => {
+          hdr.parentElement.classList.toggle('open');
+        });
+      }
+    } else {
+      hideEl(auditBtn);
+      auditContent.innerHTML = '';
     }
   }
 
@@ -320,15 +342,20 @@ for (const name of Object.keys(ALL_FIXTURES)) {
   picker.appendChild(btn);
 }
 
-// Deep expander toggle
-const deepBtn = $('deep-expander-btn');
-if (deepBtn) {
-  deepBtn.addEventListener('click', () => {
-    const content = $('deep-expander-content');
-    const chevron = $('deep-expander-chevron');
-    content.classList.toggle('open');
-    if (chevron) chevron.classList.toggle('open');
-  });
+// Z4 collapsible toggles (More Analysis + Model Audit)
+for (const { btnId, contentId, chevronId } of [
+  { btnId: 'more-analysis-btn', contentId: 'more-analysis-content', chevronId: 'more-analysis-chevron' },
+  { btnId: 'model-audit-btn',   contentId: 'model-audit-content',   chevronId: 'model-audit-chevron' },
+]) {
+  const btn = $(btnId);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const content = $(contentId);
+      const chevron = $(chevronId);
+      if (content) content.classList.toggle('open');
+      if (chevron) chevron.classList.toggle('open');
+    });
+  }
 }
 
 // =========================================================================

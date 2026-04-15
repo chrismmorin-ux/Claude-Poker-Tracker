@@ -59,7 +59,12 @@
     /* RT-48: stale advice indicator — yellow-orange border + "Stale Ns"
        badge on action bar and plan panel when advice age > 10s or
        liveContext is null. Muted enough not to distract during live play. */
-    .action-bar.stale, .plan-panel.stale {
+    .action-bar.stale, .plan-panel.stale,
+    .collapsible-content.stale {
+      /* SR-6.14 Z4 batch invariant 5: stale-tint cross-zone inheritance.
+         .collapsible-content covers both More Analysis (#more-analysis-content)
+         and Model Audit (#model-audit-content) collapsibles.
+         (Class renamed from .deep-expander-content in SR-6.16.) */
       border-color: rgba(234, 179, 8, 0.55);
       box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.18) inset;
     }
@@ -169,6 +174,35 @@
     }
     .seat-circle.vacant:hover { transform: none; }
 
+    /* SR-6.11 §1.1: logarithmic hands-count ring via outer box-shadow.
+       Stroke thickness widens as the sample band grows. Using box-shadow so
+       the ring is a distinct visual channel from `.focused` (gold glow) and
+       `.pinned` (top-right pin glyph) — R-5.1 single-owner-per-slot. */
+    .seat-circle.ring-band-tiny   { box-shadow: 0 0 0 1px rgba(148,163,184,0.35); }
+    .seat-circle.ring-band-small  { box-shadow: 0 0 0 2px rgba(148,163,184,0.55); }
+    .seat-circle.ring-band-medium { box-shadow: 0 0 0 3px rgba(148,163,184,0.75); }
+    .seat-circle.ring-band-large  { box-shadow: 0 0 0 4px rgba(148,163,184,0.95); }
+
+    /* SR-6.11 §1.1: R-4.2 `—` placeholder for occupied-zero seats. */
+    .seat-sample-unknown {
+      position: absolute;
+      bottom: -14px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    /* SR-6.11 §1.11: Rule V range-selection ring — distinct visual channel
+       from `.focused` (gold glow, advice target) and `.pinned` (pin glyph,
+       scouting). Uses a dashed outline so it can stack on top of a sample
+       ring box-shadow without collision. */
+    .seat-circle.rule-v-selected {
+      outline: 2px dashed #a78bfa;
+      outline-offset: 3px;
+    }
+
     /* Style dot inside seat circle */
     .seat-style-dot {
       position: absolute;
@@ -185,7 +219,7 @@
     .seat-style-dot.reg     { background: #d8b4fe; }
     .seat-style-dot.unknown { background: var(--text-faint); }
 
-    /* Action annotation tag (last action for this seat) */
+    /* Action annotation tag (last action for this seat) — Z1/1.10 per-seat last-action label; NOT deleted row 1.6. */
     .seat-action-tag {
       position: absolute;
       bottom: -10px; left: 50%;
@@ -736,7 +770,7 @@
       from { opacity: 0; transform: translateY(3px); }
       to { opacity: 1; transform: none; }
     }
-    .street-card.fade-in { animation: streetFadeIn 0.15s ease-out; }
+    .street-card.fade-in { animation: streetFadeIn 0.2s ease-out; }
     /* Loading shimmer bar — shown while waiting for advice computation */
     .street-card.loading-advice::after {
       content: '';
@@ -913,13 +947,48 @@
       border-color: var(--gold);
       font-weight: 600;
     }
+    /* SR-6.16: advice-match — signals "advice was computed vs this seat"
+       without claiming the range-display slot. Subtle gold-dim border only;
+       never the full gold fill (that belongs to .active / Rule V focused seat). */
+    .villain-tab.advice-match:not(.active) {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
     .rg-legend {
       display: flex; gap: 8px; margin-top: 4px;
       font-size: var(--font-micro); color: var(--text-faint);
     }
+    .rg-legend--muted { opacity: 0.5; }
     .rg-legend-swatch {
       width: 8px; height: 8px; border-radius: 1px;
       display: inline-block; vertical-align: middle; margin-right: 2px;
+    }
+    /* SR-6.13 Z3 range slot — fixed-height frame owner for 3.6 grid, 3.7
+       headline, 3.8 legend, 3.11 pills, and 3.12 placeholder. R-1.3: the
+       slot height is stable across hero preflop, villain postflop, multiway
+       switches, and the no-aggressor placeholder so transitions are in-place
+       swaps with no neighbour reflow. 152px is the spec floor; dynamic and
+       static grids render at their natural height above the floor. */
+    .range-slot {
+      min-height: 152px;
+      display: flex;
+      flex-direction: column;
+    }
+    .range-slot-placeholder {
+      flex: 1 1 auto;
+      min-height: 152px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+    }
+    .range-slot-placeholder__text {
+      color: var(--text-faint);
+      font-size: var(--font-sm);
+      font-style: italic;
+      text-align: center;
     }
 
     /* Hand Plan Tree */
@@ -1074,6 +1143,7 @@
       font-family: 'Consolas', monospace; font-size: var(--font-sm);
       font-weight: var(--weight-bold); width: 20px; flex-shrink: 0;
     }
+    /* .scout-style-badge — Zx scouting panel (X.6 Observer mode); NOT deleted inventory row 1.2. */
     .scout-style-badge {
       font-size: var(--font-micro); font-weight: var(--weight-bold);
       padding: 1px 4px; border-radius: var(--radius-sm);
@@ -1138,9 +1208,10 @@
     }
 
     /* ══════════════════════════════════════════════════════════
-       DEEP EXPANDER — "More Analysis" collapsible
+       COLLAPSIBLE — Z4 "More Analysis" + "Model Audit" panels
+       (renamed from .deep-expander-* in SR-6.16)
        ══════════════════════════════════════════════════════════ */
-    .deep-expander-btn {
+    .collapsible-btn {
       display: flex; align-items: center; justify-content: center;
       gap: 6px;
       width: 100%;
@@ -1154,17 +1225,17 @@
       transition: border-color var(--ease-fast), color var(--ease-fast);
       margin-bottom: 8px;
     }
-    .deep-expander-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
-    .deep-expander-chevron {
+    .collapsible-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+    .collapsible-chevron {
       font-size: var(--font-sm);
       transition: transform var(--ease-base);
     }
-    .deep-expander-chevron.open { transform: rotate(180deg); }
-    .deep-expander-content {
+    .collapsible-chevron.open { transform: rotate(180deg); }
+    .collapsible-content {
       max-height: 0; overflow: hidden; opacity: 0;
       transition: max-height var(--ease-slow) ease, opacity var(--ease-base) ease;
     }
-    .deep-expander-content.open {
+    .collapsible-content.open {
       max-height: 2000px; opacity: 1;
     }
 
@@ -1186,7 +1257,7 @@
     .deep-header-title { font-size: var(--font-base); font-weight: var(--weight-medium); color: var(--text-secondary); flex: 1; }
     .deep-chevron { font-size: var(--font-sm); color: var(--text-faint); transition: transform 0.25s ease; flex-shrink: 0; }
     .deep-section.open .deep-chevron { transform: rotate(180deg); }
-    .deep-body { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .deep-body { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1); }
     .deep-section.open .deep-body { max-height: 800px; }
     .deep-content { padding: 0 10px 8px; }
 
@@ -1500,10 +1571,43 @@
       border-radius: 3px; color: var(--m-red);
       cursor: pointer;
     }
+
+    /* -------------------------------------------------------------
+       SR-6.8 — Zone shell (rebuild path, gated by settings.sidebarRebuild)
+       Per-zone fixed heights. R-1.3 slot reservation via min-height;
+       empty zones MUST NOT use display:none (enforced by CSS lint test).
+       Later SR-6.10–6.15 PRs fill these containers.
+       ------------------------------------------------------------- */
+    /* SR-6.17: zones live directly inside #hud-content (and #zone-z0 at body
+       top-level). Legacy #hud-content-v2 shell deleted. */
+    .zone {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .zone-z0  { min-height: 72px;  }  /* status strip + health strip + footer */
+    .zone-z1  { min-height: 204px; }  /* seat arc + villain pill row */
+    .zone-z2  { min-height: 150px; }  /* 3 fixed bands: headline + spr + board */
+    .zone-z3  { min-height: 300px; }  /* street card incl. ~152px range slot */
+    .zone-z4  { min-height: 24px;  }  /* collapsed chevron row — grows on expand */
+    .zone-zx  { min-height: 0;     }  /* overlay; occupies Zx slot only when active */
+
+    /* SR-6.9 — prefers-reduced-motion: zero non-essential animation/transition. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
 
+  <!-- SR-6.17: Z0 chrome wrapped in zone-z0 (status + health; footer stays
+       at body bottom where it was, but tagged into z0 via DOM structure below). -->
+  <div class="zone zone-z0" id="zone-z0">
   <div class="status-bar">
     <div class="status-dot yellow" id="status-dot"></div>
     <span class="status-text" id="status-text">Connecting...</span>
@@ -1544,6 +1648,7 @@
     <div id="pipeline-msg-counters" style="display:none;font-size:10px;color:var(--text-faint);padding:2px 8px"></div>
     <div id="pid-summary" class="hidden"></div>
   </div>
+  </div><!-- /zone-z0 -->
 
   <!-- Recovery Banner -->
   <div id="recovery-banner" class="recovery-banner hidden">
@@ -1560,52 +1665,64 @@
       <div class="no-table-hint">Open a poker table on Ignition to start tracking</div>
     </div>
 
+    <!-- SR-6.17: #hud-content now hosts zone containers directly. Each zone
+         holds its migrated content elements (see zone-shell.test.js for the
+         authoritative placement contract). Z0 lives above #main-content; the
+         old #hud-content-v2 shell is deleted. -->
     <div id="hud-content" class="hidden">
-      <!-- Seat Arc (semicircle table layout) -->
-      <div class="seat-arc-container" id="seat-arc"></div>
 
-      <!-- Zone 1: Action Bar (sticky, primary recommendation) -->
-      <div class="action-bar hidden" id="action-bar"></div>
-
-      <!-- Zone 2: Context Strip (sticky, supporting numbers) -->
-      <div class="context-strip hidden" id="context-strip"></div>
-
-      <!-- Cards Strip (board + hero cards, compact) -->
-      <div class="cards-strip hidden" id="cards-strip"></div>
-
-      <!-- Zone 3: Plan Panel (collapsible) -->
-      <div class="plan-panel hidden" id="plan-panel">
-        <button class="pp-toggle" id="pp-toggle" aria-expanded="false">
-          <span class="pp-toggle-label">Plan</span>
-          <span class="pp-chevron" id="pp-chevron">&#x25BE;</span>
-        </button>
-        <div class="pp-body" id="pp-body"></div>
+      <!-- Z1: seat arc / villain pill row -->
+      <div class="zone zone-z1" id="zone-z1">
+        <div class="seat-arc-container" id="seat-arc"></div>
       </div>
 
-      <!-- Tournament Bar (slim, inline) -->
-      <div class="tournament-bar hidden" id="tournament-bar"></div>
-      <div class="tournament-detail" id="tournament-detail">
-        <div class="tournament-detail-content" id="tournament-detail-content"></div>
+      <!-- Z2: action bar + context strip + cards strip + plan panel -->
+      <div class="zone zone-z2" id="zone-z2">
+        <div class="action-bar hidden" id="action-bar"></div>
+        <div class="context-strip hidden" id="context-strip"></div>
+        <div class="cards-strip hidden" id="cards-strip"></div>
+        <div class="plan-panel hidden" id="plan-panel">
+          <button class="pp-toggle" id="pp-toggle" aria-expanded="false">
+            <span class="pp-toggle-label">Plan</span>
+            <span class="pp-chevron" id="pp-chevron">&#x25BE;</span>
+          </button>
+          <div class="pp-body" id="pp-body"></div>
+        </div>
       </div>
 
-      <!-- Street Progress Indicator -->
-      <div class="street-progress hidden" id="street-progress"></div>
-
-      <!-- Street Card (main content, adapts by street) -->
-      <div class="street-card" id="street-card"></div>
-
-      <!-- Between-Hands Panel (Modes A/B/C — shown when hero is not active) -->
-      <div class="between-hands hidden" id="between-hands"></div>
-
-      <!-- App Launch Prompt (separate from street card to avoid innerHTML corruption) -->
-      <div id="app-launch-prompt" class="hidden"></div>
-
-      <!-- Deep Expander ("More Analysis") -->
-      <div class="deep-expander-btn hidden" id="deep-expander-btn">
-        <span>More Analysis</span>
-        <span class="deep-expander-chevron" id="deep-expander-chevron">&#x25BE;</span>
+      <!-- Z3: tournament bar + detail + street progress + street card -->
+      <div class="zone zone-z3" id="zone-z3">
+        <div class="tournament-bar hidden" id="tournament-bar"></div>
+        <div class="tournament-detail" id="tournament-detail">
+          <div class="tournament-detail-content" id="tournament-detail-content"></div>
+        </div>
+        <div class="street-progress hidden" id="street-progress"></div>
+        <div class="street-card" id="street-card"></div>
       </div>
-      <div class="deep-expander-content" id="deep-expander-content"></div>
+
+      <!-- Zx: between-hands + app launch prompt (overlay content) -->
+      <div class="zone zone-zx" id="zone-zx">
+        <div class="between-hands hidden" id="between-hands"></div>
+        <div id="app-launch-prompt" class="hidden"></div>
+      </div>
+
+      <!-- Z4: more-analysis + model-audit collapsibles -->
+      <div class="zone zone-z4" id="zone-z4">
+        <!-- Z4 row 4.2 "More Analysis" — SR-6.14; classes renamed to .collapsible-* in SR-6.16 -->
+        <div class="collapsible-btn hidden" id="more-analysis-btn">
+          <span>More Analysis</span>
+          <span class="collapsible-chevron" id="more-analysis-chevron">&#x25BE;</span>
+        </div>
+        <div class="collapsible-content" id="more-analysis-content"></div>
+        <!-- Z4 row 4.3 "Model Audit" — SR-6.14. Debug-flag gated. Scaffold is
+             REMOVED from DOM when settings.debugDiagnostics !== true; reinserted
+             by renderModelAudit when flag flips on (Z4 batch invariant 6). -->
+        <div class="collapsible-btn hidden" id="model-audit-btn">
+          <span>Model Audit</span>
+          <span class="collapsible-chevron" id="model-audit-chevron">&#x25BE;</span>
+        </div>
+        <div class="collapsible-content" id="model-audit-content"></div>
+      </div>
     </div>
   </div>
 
@@ -1643,7 +1760,8 @@
   <div style="text-align:center;margin-top:6px">
     <button id="tourney-log-show" class="show-toggle-btn">show tournament log</button>
   </div>
-  <div style="text-align:center;margin-top:6px">
+  <!-- SR-6.10: gated by settings.debugDiagnostics. Renderer toggles display. -->
+  <div id="diag-footer" style="text-align:center;margin-top:6px;display:none">
     <button id="diag-show" class="show-toggle-btn subtle">show diagnostics</button>
   </div>
 

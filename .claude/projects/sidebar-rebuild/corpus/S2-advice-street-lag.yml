@@ -1,0 +1,7 @@
+id: "S2-advice-street-lag"
+symptomsTargeted: ["S2"]
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 500
+mechanism: "advice.street=flop while liveContext.street=turn; 1-street gap permitted"

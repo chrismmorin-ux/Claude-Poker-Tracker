@@ -1,0 +1,8 @@
+id: "S9-pipeline-recovery"
+symptomsTargeted:
+  - "S9"
+source: "synthetic"
+sanitized: true
+handCount: 0
+duration_ms: 800
+mechanism: "push_recovery_needed shows banner; push_recovery_cleared hides it"

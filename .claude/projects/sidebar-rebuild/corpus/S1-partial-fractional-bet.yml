@@ -1,0 +1,7 @@
+id: "S1-partial-fractional-bet"
+symptomsTargeted: ["S1"]
+source: "synthetic"
+sanitized: true
+handCount: 1
+duration_ms: 400
+mechanism: "actionSequence contains amount=0.4; toFixed(0) → \"0\" → \"$0\" badge"

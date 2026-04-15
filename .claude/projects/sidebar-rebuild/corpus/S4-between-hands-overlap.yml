@@ -1,0 +1,7 @@
+id: "S4-between-hands-overlap"
+symptomsTargeted: ["S4"]
+source: "synthetic"
+sanitized: true
+handCount: 2
+duration_ms: 320
+mechanism: "fast_snapshot captures 80ms render-gap: between-hands DOM is stale while context.handNumber=4001"

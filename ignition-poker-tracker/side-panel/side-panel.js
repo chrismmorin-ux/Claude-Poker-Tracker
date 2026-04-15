@@ -11,6 +11,7 @@ import * as stats from '../shared/stats-engine.js';
 import * as cardUtils from '../shared/card-utils.js';
 import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
 import { MSG, SESSION_KEYS } from '../shared/constants.js';
+import { loadSettings, observeSettings } from '../shared/settings.js';
 import * as errors from '../shared/error-reporter.js';
 import { $, showEl, hideEl, isHidden, escapeHtml, renderCard, renderStatRow, buildSeatArcPositions, renderMiniCard } from './render-utils.js';
 import {
@@ -20,7 +21,7 @@ import {
   renderComboStatsSection, renderModelAuditSection,
   renderVulnerabilitiesSection,
 } from './render-tiers.js';
-import { renderStreetCard } from './render-street-card.js';
+import { renderStreetCard, setStreetCardTimerHost } from './render-street-card.js';
 import {
   computeFocusedVillain as _computeFocusedVillain,
   buildActionBarHTML,
@@ -31,11 +32,18 @@ import {
   classifyBetweenHandsMode,
   buildBetweenHandsHTML,
   buildSeatArcHTML,
-  buildDeepExpanderHTML,
+  buildMoreAnalysisHTML,
+  buildModelAuditHTML,
   buildStreetProgressHTML,
   buildStatusBar,
 } from './render-orchestrator.js';
 import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
+import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
+import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
+import { moreAnalysisFsm } from './fsms/more-analysis.fsm.js';
+import { modelAuditFsm } from './fsms/model-audit.fsm.js';
+import { betweenHandsFsm } from './fsms/between-hands.fsm.js';
+import { streetCardFsm } from './fsms/street-card.fsm.js';
 
 injectTokens();
 
@@ -94,21 +102,25 @@ injectTokens();
             coordinator.set('cachedDiag', message.data);
             if (message.data.gameWsMessageCount > 0) {
               coordinator.set('recoveryMessage', null);
+              coordinator.dispatch('recoveryBanner', 'connectionRestored');
             }
             scheduleRender('pipeline_diag');
           }
           break;
         case 'push_recovery_needed':
           coordinator.set('recoveryMessage', message.message || 'Connection issue detected. Reload the Ignition page to start capturing.');
+          coordinator.dispatch('recoveryBanner', 'connectionLost');
           scheduleRender('recovery_needed');
           break;
         case 'push_recovery_cleared':
           coordinator.set('recoveryMessage', null);
+          coordinator.dispatch('recoveryBanner', 'connectionRestored');
           scheduleRender('recovery_cleared');
           break;
         case 'push_silence_alert':
           if (message.level === 'stale' || message.level === 'dead') {
             coordinator.set('recoveryMessage', message.message || 'No game traffic detected. Reload the Ignition page.');
+            coordinator.dispatch('recoveryBanner', 'connectionLost');
             scheduleRender('silence_alert');
           }
           break;
@@ -120,20 +132,24 @@ injectTokens();
       coordinator.set('connState', { connected: true });
     },
 
+    // SR-6.5: port lifecycle callbacks set state + scheduleRender; the
+    // render path (renderConnectionStatus) owns all status-dot / status-text
+    // DOM writes. R-2.3 violation remediation for audit sites #1–3.
     onDisconnect: () => {
-      coordinator.set('connState', { connected: false });
-      $('status-dot').className = 'status-dot yellow';
-      $('status-text').textContent = 'Reconnecting...';
+      coordinator.set('connState', { connected: false, cause: 'disconnect', text: 'Reconnecting...' });
+      scheduleRender('conn_disconnect', PRIORITY.IMMEDIATE);
     },
 
     onContextDead: () => {
-      $('status-dot').className = 'status-dot red';
-      $('status-text').textContent = 'Extension disconnected — reload page';
+      coordinator.set('connState', { connected: false, cause: 'contextDead', text: 'Extension disconnected — reload page' });
+      scheduleRender('conn_contextDead', PRIORITY.IMMEDIATE);
     },
 
     onVersionMismatch: (swVersion) => {
       console.warn(`[Side Panel] Version mismatch — panel: ${EXTENSION_VERSION}, SW: ${swVersion}`);
-      $('status-text').textContent = 'Version mismatch — close & reopen panel';
+      const prev = coordinator.get('connState') || {};
+      coordinator.set('connState', { ...prev, cause: 'versionMismatch', text: 'Version mismatch — close & reopen panel' });
+      scheduleRender('conn_versionMismatch', PRIORITY.IMMEDIATE);
     },
   });
 
@@ -153,25 +169,63 @@ injectTokens();
   const recoveryText = $('recovery-text');
   const recoveryBtn = $('recovery-reload-btn');
 
-  const showRecoveryBanner = (message) => {
+  // SR-6.5: recoveryBanner FSM owns visibility + button disabled/text.
+  // Event handlers dispatch; renderRecoveryBanner(snap) writes DOM.
+  // R-2.3 remediation for audit sites #4 + #5.
+  const renderRecoveryBanner = (snap) => {
     if (!recoveryBanner) return;
-    if (recoveryText && message) recoveryText.textContent = message;
+    const state = snap.panels?.recoveryBanner || 'hidden';
+    if (state === 'hidden') {
+      hideEl(recoveryBanner);
+      if (recoveryBtn) {
+        recoveryBtn.disabled = false;
+        recoveryBtn.textContent = 'Reload Ignition Page';
+      }
+      return;
+    }
     showEl(recoveryBanner);
+    if (recoveryText && snap.recoveryMessage) recoveryText.textContent = snap.recoveryMessage;
+    if (recoveryBtn) {
+      const pending = state === 'reloadPending';
+      recoveryBtn.disabled = pending;
+      recoveryBtn.textContent = pending ? 'Reloading...' : 'Reload Ignition Page';
+    }
   };
 
-  const hideRecoveryBanner = () => {
-    if (recoveryBanner) hideEl(recoveryBanner);
+  // SR-6.5: connection status dot/text driven entirely from coordinator
+  // `connState` slot. Port callbacks set the slot; this writes DOM.
+  // R-2.3 remediation for audit sites #1–3.
+  const renderConnectionStatus = (snap) => {
+    const dot = $('status-dot');
+    const text = $('status-text');
+    if (!dot || !text) return;
+    const c = snap.connState || {};
+    if (c.connected) {
+      // Connected — leave text to updateStatusBar (hand count / live info).
+      // Only reset the dot class; text ownership belongs to the status-bar renderer.
+      dot.className = 'status-dot green';
+      return;
+    }
+    if (c.cause === 'contextDead') {
+      dot.className = 'status-dot red';
+      if (c.text) text.textContent = c.text;
+    } else if (c.cause === 'disconnect') {
+      dot.className = 'status-dot yellow';
+      if (c.text) text.textContent = c.text;
+    } else if (c.cause === 'versionMismatch') {
+      if (c.text) text.textContent = c.text;
+    }
   };
 
   if (recoveryBtn) {
     recoveryBtn.addEventListener('click', () => {
-      recoveryBtn.disabled = true;
-      recoveryBtn.textContent = 'Reloading...';
+      coordinator.dispatch('recoveryBanner', 'userReload');
       conn.send({ type: 'reload_ignition_tabs' });
-      // Re-enable after 5s in case reload doesn't trigger banner clear
-      setTimeout(() => {
-        recoveryBtn.disabled = false;
-        recoveryBtn.textContent = 'Reload Ignition Page';
+      // Re-enable after 5s in case reload doesn't trigger banner clear.
+      // RT-60 / SR-6.3: registered timer — table-switch lifecycle cancels it.
+      // SR-6.5: timer fires a dispatch instead of direct DOM write.
+      coordinator.scheduleTimer('recoveryBtn_reEnable', () => {
+        coordinator.dispatch('recoveryBanner', 'reenableTimerFire');
       }, 5000);
     });
   }
@@ -223,16 +277,15 @@ injectTokens();
       const [connId] = tableEntries[0];
       coordinator.set('currentActiveTableId', `table_${connId}`);
       coordinator.set('currentTableState', tableEntries[0][1]);
-    } else if (prevTableId && !coordinator._timers.has('tableGrace')) {
+    } else if (prevTableId && !coordinator.hasTimer('tableGrace')) {
       // Tables went empty — start 5s grace period before clearing (RT-60).
-      const handle = setTimeout(() => {
+      coordinator.scheduleTimer('tableGrace', () => {
         coordinator.clearTimer('tableGrace');
         coordinator.set('currentActiveTableId', null);
         coordinator.set('currentTableState', null);
         coordinator.clearForTableSwitch();
         scheduleRender('table_grace_expired');
       }, 5000);
-      coordinator.registerTimer('tableGrace', handle, 'timeout');
     }
 
     // Clear stale state on actual table switch (different table, not null)
@@ -297,7 +350,12 @@ injectTokens();
         // If we previously had hands and still have an active table, this may be
         // a transient storage race. Retry once after 500ms before hiding the HUD.
         if (hadHands && tableId) {
-          setTimeout(async () => {
+          // RT-60 / SR-6.3: the retry is scoped to the current table; scheduling
+          // it through the coordinator means a table switch during the 500ms
+          // window cancels the callback before it can stomp the new table's
+          // state. The inner tableId-equality check stays as a belt-and-braces
+          // guard for the in-flight-at-dispatch-time case.
+          coordinator.scheduleTimer('handStats_retry', async () => {
             const currentTableId = coordinator.get('currentActiveTableId');
             if (currentTableId !== tableId) return; // table switched — don't act
             const retry = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
@@ -360,7 +418,9 @@ injectTokens();
           villainProfile: s.villainProfile || null,
         };
       }
-      coordinator.set('appSeatData', seatData);
+      // SR-6.6 R-4.3: per-seat merge retains prior data for seats absent
+      // from this push. mergeAppSeatData also bumps appSeatDataVersion.
+      coordinator.mergeAppSeatData(seatData, 'push_exploits');
 
       coordinator.set('lastGoodWeaknesses', message.seats.flatMap(s =>
         (s.weaknesses || []).map(w => ({ ...w, seat: Number(s.seat), seatStyle: s.style }))
@@ -372,7 +432,6 @@ injectTokens();
         (s.observations || []).map(o => ({ ...o, seat: Number(s.seat), seatStyle: s.style }))
       ));
 
-      coordinator.set('appSeatDataVersion', (coordinator.get('appSeatDataVersion') || 0) + 1);
       scheduleRender('exploits');
     }
   };
@@ -390,9 +449,15 @@ injectTokens();
           ?? null,
       };
       const accepted = coordinator.handleAdvice(stampedAdvice);
-      if (accepted && !coordinator.get('advicePendingForStreet')) {
-        scheduleRender('advice', PRIORITY.IMMEDIATE);
-        return;
+      if (accepted) {
+        // SR-6.15: fresh advice ends the between-hands banner regardless of
+        // whether the advice was promoted immediately or buffered in
+        // _pendingAdvice (both mean "hand is live again from the hero's POV").
+        coordinator.dispatch('betweenHands', 'adviceArrived');
+        if (!coordinator.get('advicePendingForStreet')) {
+          scheduleRender('advice', PRIORITY.IMMEDIATE);
+          return;
+        }
       }
     }
     scheduleRender('advice');
@@ -417,7 +482,36 @@ injectTokens();
         coordinator.clearModeATimer();
       }
 
+      // SR-6.13 Z3 — Rule V override persistence. A Z1 pill-click or Z3 3.11
+      // pill-click writes `rangeSelectedSeat`. Per the spec, the override
+      // persists until the next BET or RAISE (which re-asserts Rule V's
+      // "last aggressor" auto-selection) or until a new hand boundary.
+      // Hand-boundary clear is handled in coordinator.handNew(); here we
+      // handle the BET/RAISE clear by inspecting the incoming action tail.
+      const selectedSeat = coordinator.get('rangeSelectedSeat');
+      if (selectedSeat != null) {
+        const prevActions = prevCtx?.actionSequence || [];
+        const newActions = newCtx.actionSequence || [];
+        for (let i = prevActions.length; i < newActions.length; i++) {
+          const a = newActions[i];
+          if (a && (a.action === 'bet' || a.action === 'raise')) {
+            coordinator.set('rangeSelectedSeat', null);
+            break;
+          }
+        }
+      }
+
       coordinator.handleLiveContext(message.context);
+
+      // SR-6.15: dispatch betweenHands FSM. IDLE/COMPLETE are the only hand-SM
+      // states that aren't an active hand. DEALING onward = mid-hand; FSM spec
+      // forbids mid-hand mounts even when app-bridge is disconnected (X.4 owns
+      // disconnected-during-hand, not X.1). The FSM's own predicate ignores
+      // flips that don't change state, so this can fire on every push.
+      const state = newCtx.state;
+      const betweenHandsOrIdle = state === 'IDLE' || state === 'COMPLETE';
+      coordinator.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle });
+
       scheduleRender('live_context');
     }
   };
@@ -426,24 +520,25 @@ injectTokens();
   // Phase 1 keeps last content visible with a subtle badge so the user can still read it.
   // Phase 2 fully clears to between-hands (true session end / table close).
   // RT-60: registered so clearForTableSwitch cancels it on lifecycle events.
-  {
-    const handle = setInterval(() => {
-      const ctx = coordinator.get('currentLiveContext');
-      if (ctx?._receivedAt) {
-        const age = Date.now() - ctx._receivedAt;
-        if (age > 120_000) {
-          coordinator.set('currentLiveContext', null);
-          coordinator.set('staleContext', false);
-          coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
-          scheduleRender('stale_full_clear');
-        } else if (age > 60_000 && !coordinator.get('staleContext')) {
-          coordinator.set('staleContext', true);
-          scheduleRender('stale_indicator');
-        }
+  // SR-1 / SR-6.3: `coordinator` is declared later in this IIFE (~line 1701),
+  // so scheduling synchronously here would throw TDZ. Defer via microtask and
+  // use scheduleTimer so the handle is coordinator-owned from the moment it
+  // exists (no raw setInterval escape hatch in this module).
+  queueMicrotask(() => coordinator.scheduleTimer('staleContext', () => {
+    const ctx = coordinator.get('currentLiveContext');
+    if (ctx?._receivedAt) {
+      const age = Date.now() - ctx._receivedAt;
+      if (age > 120_000) {
+        coordinator.set('currentLiveContext', null);
+        coordinator.set('staleContext', false);
+        coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
+        scheduleRender('stale_full_clear');
+      } else if (age > 60_000 && !coordinator.get('staleContext')) {
+        coordinator.set('staleContext', true);
+        scheduleRender('stale_indicator');
       }
-    }, 10_000);
-    coordinator.registerTimer('staleContext', handle, 'interval');
-  }
+    }
+  }, 10_000, 'interval'));
 
   // =========================================================================
   // TOURNAMENT PANEL
@@ -556,26 +651,21 @@ injectTokens();
         }
       };
       updateTimer();
-      coordinator.registerTimer('tourneyTimer', setInterval(updateTimer, 1000), 'interval');
+      coordinator.scheduleTimer('tourneyTimer', updateTimer, 1000, 'interval');
     }
 
-    // Click to expand/collapse detail
+    // Click to expand/collapse detail. SR-6.5: handler only flips state +
+    // schedules render. The classList sync below runs on every render, so the
+    // classes follow the boolean without direct DOM writes in the handler.
     bar.onclick = () => {
-      const isCollapsed = !coordinator.get('tournamentCollapsed');
-      coordinator.set('tournamentCollapsed', isCollapsed);
-      const chevron = $('tourney-bar-chevron');
-      if (isCollapsed) {
-        detail.classList.remove('open');
-        if (chevron) chevron.classList.remove('open');
-      } else {
-        detail.classList.add('open');
-        if (chevron) chevron.classList.add('open');
-      }
+      coordinator.set('tournamentCollapsed', !coordinator.get('tournamentCollapsed'));
+      scheduleRender('tourney_toggle', PRIORITY.IMMEDIATE);
     };
-    // Sync initial state
+    // Sync classes from coordinator state — idempotent, runs every render.
     const collapsed = coordinator.get('tournamentCollapsed');
-    if (!collapsed) detail.classList.add('open');
-    else detail.classList.remove('open');
+    const chevron = $('tourney-bar-chevron');
+    detail.classList.toggle('open', !collapsed);
+    if (chevron) chevron.classList.toggle('open', !collapsed);
 
     // ── Detail content ──
     if (!detailContent) return;
@@ -687,7 +777,8 @@ injectTokens();
     const text = $('status-text');
 
     if (!dot || !text) return; // DOM not ready
-    $('hand-count').textContent = handCount;
+    // SR-6.10 (Z0 0.2): R-4.2 unknown placeholder. null = boot-race, no data yet.
+    $('hand-count').textContent = handCount == null ? '\u2014' : handCount;
 
     const result = buildStatusBar(pipeline, handCount);
     dot.className = result.dotClass;
@@ -930,6 +1021,7 @@ injectTokens();
       appSeatData: snap.appSeatData,
       focusedVillainSeat: snap.focusedVillainSeat,
       pinnedVillainSeat: snap.pinnedVillainSeat,
+      rangeSelectedSeat: snap.rangeSelectedSeat,
       containerWidth: arc.offsetWidth || 380,
     });
     if (arc.innerHTML === html) return; // skip redundant DOM write
@@ -946,7 +1038,25 @@ injectTokens();
    * rebuild) so the 1Hz age refresh doesn't churn the coordinator's
    * full render path.
    */
-  const updateStaleAdviceBadge = (isStale, ageMs) => {
+  /**
+   * SR-6.12 Z2 §2.10 (consolidated): single source of truth for stale-advice
+   * state. Both the main render path (runs on every snapshot) and the 1 Hz
+   * age-badge refresh timer now call through here. Returns
+   * `{isStale, ageMs, reason}` — `reason === 'street-mismatch'` when advice
+   * lags the live street (SR-6.7 signal); otherwise `'aged'` when age > 10s
+   * or live context is missing.
+   */
+  const computeAdviceStaleness = (advice, ctx, now = Date.now()) => {
+    if (!advice?._receivedAt) return { isStale: false, ageMs: null, reason: null };
+    const ageMs = now - advice._receivedAt;
+    const isStreetMismatch = !!(ctx && advice.currentStreet && ctx.currentStreet
+      && advice.currentStreet !== ctx.currentStreet);
+    if (isStreetMismatch) return { isStale: true, ageMs, reason: 'street-mismatch' };
+    const aged = ageMs > 10_000 || !ctx;
+    return { isStale: aged, ageMs, reason: aged ? 'aged' : null };
+  };
+
+  const updateStaleAdviceBadge = (isStale, ageMs, reason) => {
     const actionBarEl = $('action-bar');
     if (!actionBarEl) return;
     let badge = actionBarEl.querySelector('.stale-badge');
@@ -959,28 +1069,25 @@ injectTokens();
       badge.className = 'stale-badge';
       actionBarEl.appendChild(badge);
     }
+    if (reason === 'street-mismatch') {
+      badge.textContent = 'Stale \u2014 recomputing';
+      return;
+    }
     const seconds = ageMs != null ? Math.round(ageMs / 1000) : null;
     badge.textContent = seconds != null && seconds >= 0 ? `Stale ${seconds}s` : 'Stale';
   };
 
   // Refresh the badge text each second without churning the full render.
-  // Registered under the coordinator so the table-switch lifecycle
-  // cancels it (RT-60 contract).
-  coordinator.registerTimer(
-    'adviceAgeBadge',
-    setInterval(() => {
-      const advice = coordinator.get('lastGoodAdvice');
-      const ctx = coordinator.get('currentLiveContext');
-      if (!advice?._receivedAt) {
-        updateStaleAdviceBadge(false, null);
-        return;
-      }
-      const ageMs = Date.now() - advice._receivedAt;
-      const isStale = ageMs > 10_000 || !ctx;
-      updateStaleAdviceBadge(isStale, ageMs);
-    }, 1000),
-    'interval',
-  );
+  // Registered under the coordinator so the table-switch lifecycle cancels it
+  // (RT-60 contract). SR-1 / SR-6.3: deferred via microtask because
+  // `coordinator` is declared later in this IIFE (~line 1701).
+  queueMicrotask(() => coordinator.scheduleTimer('adviceAgeBadge', () => {
+    // SR-6.12: single stale-state evaluator shared with renderAll.
+    const advice = coordinator.get('lastGoodAdvice');
+    const ctx = coordinator.get('currentLiveContext');
+    const { isStale, ageMs, reason } = computeAdviceStaleness(advice, ctx);
+    updateStaleAdviceBadge(isStale, ageMs, reason);
+  }, 1000, 'interval'));
 
   const renderActionBar = (advice, liveCtx, snap) => {
     const el = $('action-bar');
@@ -1070,13 +1177,26 @@ injectTokens();
     const toggle = $('pp-toggle');
     if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
 
-    coordinator.clearTimer('planPanelAutoExpand');
-    if (!isOpen) {
-      const handle = setTimeout(() => {
+    // SR-6.14: RT-61 predicate tightening. Pre-SR-6.14 this block cleared +
+    // re-armed the 8 s timer on every render where the panel was closed,
+    // which meant the timer was perpetually reset and never fired (renders
+    // happen far more often than every 8 s). Per Z4 batch invariant 2 the
+    // correct predicate is "fresh advice arrival with non-empty handPlan" —
+    // so we re-arm only when the advice `_receivedAt` discriminator changes.
+    // User explicit toggle still clears via the click handler; hand:new
+    // clears via the coordinator boundary.
+    const adviceAt = advice?._receivedAt ?? null;
+    const hasHandPlan = !!(advice?.handPlan);
+    const lastArmedAt = coordinator.get('lastAutoExpandAdviceAt');
+    const userToggled = !!coordinator.get('userToggledPlanPanelInHand');
+    const freshAdvice = adviceAt !== null && adviceAt !== lastArmedAt;
+    if (freshAdvice && !isOpen && hasHandPlan && !userToggled) {
+      coordinator.clearTimer('planPanelAutoExpand');
+      coordinator.set('lastAutoExpandAdviceAt', adviceAt);
+      coordinator.scheduleTimer('planPanelAutoExpand', () => {
         coordinator.set('planPanelOpen', true);
         scheduleRender('planPanel_autoexpand', PRIORITY.IMMEDIATE);
       }, 8000);
-      coordinator.registerTimer('planPanelAutoExpand', handle, 'timeout');
     }
   };
 
@@ -1088,6 +1208,9 @@ injectTokens();
       // on the same code path.
       coordinator.clearTimer('planPanelAutoExpand');
       coordinator.set('planPanelOpen', !coordinator.get('planPanelOpen'));
+      // SR-6.14: user intent wins for the rest of the hand — auto-expand
+      // predicate checks this flag and will not re-arm until hand:new.
+      coordinator.set('userToggledPlanPanelInHand', true);
       scheduleRender('planPanel_toggle', PRIORITY.IMMEDIATE);
     });
   }
@@ -1134,64 +1257,30 @@ injectTokens();
   };
 
   // =========================================================================
-  // DEEP EXPANDER — "More Analysis" toggle
+  // Z4 ROW 4.2 — "More Analysis" collapsible (SR-6.14, renamed from
+  // deep-expander). Per Z4 batch invariant 2 this row has NO auto-expand.
   // =========================================================================
 
-  const deepExpanderBtn = $('deep-expander-btn');
-  const deepExpanderContent = $('deep-expander-content');
-  const deepExpanderChevron = $('deep-expander-chevron');
+  const moreAnalysisBtn = $('more-analysis-btn');
+  const moreAnalysisChevron = $('more-analysis-chevron');
 
-  if (deepExpanderBtn) {
-    deepExpanderBtn.addEventListener('click', () => {
-      const isOpen = !coordinator.get('deepExpanderOpen');
-      coordinator.set('deepExpanderOpen', isOpen);
-      if (isOpen) {
-        deepExpanderContent.classList.add('open');
-        deepExpanderChevron.classList.add('open');
-      } else {
-        deepExpanderContent.classList.remove('open');
-        deepExpanderChevron.classList.remove('open');
-      }
+  if (moreAnalysisBtn) {
+    moreAnalysisBtn.addEventListener('click', () => {
+      coordinator.dispatch('moreAnalysis', 'userToggle');
+      coordinator.set('moreAnalysisOpen', coordinator.getPanelState('moreAnalysis') === 'open');
+      scheduleRender('moreAnalysis_toggle', PRIORITY.IMMEDIATE);
     });
   }
 
-  /**
-   * Render deep expander — delegates HTML generation to render-orchestrator.js.
-   */
-  const renderDeepExpander = (advice, street, snap) => {
-    const btn = $('deep-expander-btn');
-    const content = $('deep-expander-content');
-    if (!btn || !content) return;
-
-    const result = buildDeepExpanderHTML(advice, street);
-
-    if (!result.showButton) {
-      hideEl(btn);
-      return;
-    }
-
-    showEl(btn);
-
-    // Auto-open the expander container on postflop streets
-    if (street && street !== 'preflop' && !snap.deepExpanderOpen) {
-      coordinator.set('deepExpanderOpen', true);
-      content.classList.add('open');
-      if (deepExpanderChevron) deepExpanderChevron.classList.add('open');
-    }
-
-    if (content.innerHTML === result.html) return;
-    content.innerHTML = result.html;
-
-    // RT-49: Restore collapse state from userCollapsedSections after DOM rebuild
-    const collapsed = snap.userCollapsedSections;
+  // Shared helper: wire the inner .deep-section collapsible click handlers
+  // and restore userCollapsedSections state. Used by both 4.2 and 4.3.
+  const wireDeepSectionToggles = (content, collapsed) => {
     for (const section of content.querySelectorAll('.deep-section[data-section]')) {
       const key = section.dataset.section;
       if (key && collapsed.has(key)) {
         section.classList.remove('open');
       }
     }
-
-    // Init collapsible toggles for deep sections inside expander
     for (const header of content.querySelectorAll('.deep-header')) {
       header.addEventListener('click', () => {
         const section = header.parentElement;
@@ -1203,6 +1292,115 @@ injectTokens();
         else if (sectionKey) sections.delete(sectionKey);
       });
     }
+  };
+
+  const renderMoreAnalysis = (advice, street, snap) => {
+    const btn = $('more-analysis-btn');
+    const content = $('more-analysis-content');
+    if (!btn || !content) return;
+
+    const result = buildMoreAnalysisHTML(advice, street);
+
+    if (!result.showButton) {
+      hideEl(btn);
+      return;
+    }
+
+    showEl(btn);
+
+    // SR-6.14 batch invariant 2: 4.2 has no auto-expand. The legacy
+    // "auto-open on postflop" behavior was removed — rely on user toggle.
+    const isExpanded = !!coordinator.get('moreAnalysisOpen');
+    content.classList.toggle('open', isExpanded);
+    if (moreAnalysisChevron) moreAnalysisChevron.classList.toggle('open', isExpanded);
+
+    if (content.innerHTML === result.html) return;
+    content.innerHTML = result.html;
+
+    wireDeepSectionToggles(content, snap.userCollapsedSections);
+  };
+
+  // =========================================================================
+  // Z4 ROW 4.3 — "Model Audit" collapsible (SR-6.14). Debug-flag gated.
+  // When settings.debugDiagnostics !== true, BOTH the button and content
+  // elements are REMOVED from the DOM (Z4 batch invariant 6 — "not hidden,
+  // not display:none — not constructed"). When the flag flips on mid-session
+  // the coordinator dispatches a 'debug_flag_on' render and the scaffold is
+  // reinserted here.
+  // =========================================================================
+
+  const MODEL_AUDIT_BTN_HTML =
+    '<div class="collapsible-btn hidden" id="model-audit-btn">' +
+    '<span>Model Audit</span>' +
+    '<span class="collapsible-chevron" id="model-audit-chevron">&#x25BE;</span>' +
+    '</div>';
+  const MODEL_AUDIT_CONTENT_HTML =
+    '<div class="collapsible-content" id="model-audit-content"></div>';
+
+  const wireModelAuditClick = () => {
+    const btn = $('model-audit-btn');
+    if (!btn || btn.dataset.maWired === '1') return;
+    btn.dataset.maWired = '1';
+    btn.addEventListener('click', () => {
+      coordinator.dispatch('modelAudit', 'userToggle');
+      coordinator.set('modelAuditOpen', coordinator.getPanelState('modelAudit') === 'open');
+      scheduleRender('modelAudit_toggle', PRIORITY.IMMEDIATE);
+    });
+  };
+
+  const removeModelAuditDom = () => {
+    const btn = $('model-audit-btn');
+    const content = $('model-audit-content');
+    if (btn) btn.remove();
+    if (content) content.remove();
+  };
+
+  const ensureModelAuditDom = () => {
+    if ($('model-audit-btn') && $('model-audit-content')) return;
+    // Anchor: insert after #more-analysis-content so Z4 row order stays
+    // 4.2 → 4.3 on flag flip-on reconstruction.
+    const anchor = $('more-analysis-content');
+    if (!anchor || !anchor.parentNode) return;
+    anchor.insertAdjacentHTML('afterend', MODEL_AUDIT_BTN_HTML + MODEL_AUDIT_CONTENT_HTML);
+    wireModelAuditClick();
+  };
+
+  const renderModelAudit = (advice, snap) => {
+    const flagOn = snap.settings?.debugDiagnostics === true;
+    if (!flagOn) {
+      removeModelAuditDom();
+      return;
+    }
+    ensureModelAuditDom();
+
+    const btn = $('model-audit-btn');
+    const content = $('model-audit-content');
+    const chevron = $('model-audit-chevron');
+    if (!btn || !content) return;
+
+    const result = buildModelAuditHTML(advice);
+    if (!result.showButton) {
+      hideEl(btn);
+      // Per spec §4: when flag on but audit data absent, keep the header
+      // mounted so Z4 stack order is stable for the debug user. Override
+      // the hide above? No — spec says header stays with "no audit data"
+      // note inside expanded body. Simpler: keep header visible with empty
+      // body. Show the header; empty innerHTML is the "no-audit" state.
+      showEl(btn);
+      if (content.innerHTML !== '') content.innerHTML = '';
+      const isExpanded = !!coordinator.get('modelAuditOpen');
+      content.classList.toggle('open', isExpanded);
+      if (chevron) chevron.classList.toggle('open', isExpanded);
+      return;
+    }
+    showEl(btn);
+    const isExpanded = !!coordinator.get('modelAuditOpen');
+    content.classList.toggle('open', isExpanded);
+    if (chevron) chevron.classList.toggle('open', isExpanded);
+
+    if (content.innerHTML === result.html) return;
+    content.innerHTML = result.html;
+    wireDeepSectionToggles(content, snap.userCollapsedSections);
   };
 
   // =========================================================================
@@ -1249,15 +1447,15 @@ injectTokens();
   // =========================================================================
 
   const seatPopover = $('seat-popover');
-  let activePopoverSeat = null;
 
-  const showSeatPopover = (seatNum, cardEl) => {
-    const app = (coordinator.get('appSeatData') || {})[seatNum];
+  // SR-6.5: pure builder — returns HTML string for a seat popover, or null
+  // if there's nothing to show. DOM writes happen in renderSeatPopover.
+  const buildSeatPopoverHtml = (seatNum, appSeatData, cachedSeatStats) => {
+    const app = (appSeatData || {})[seatNum];
     const vp = app?.villainProfile;
-    const seatStats = coordinator.get('cachedSeatStats')?.[seatNum];
+    const seatStats = cachedSeatStats?.[seatNum];
 
-    // Need either villain profile or basic stats to show anything
-    if (!vp && !seatStats) { hideSeatPopover(); return; }
+    if (!vp && !seatStats) return null;
 
     let html = '';
 
@@ -1324,22 +1522,35 @@ injectTokens();
       }
     }
 
-    seatPopover.innerHTML = html;
+    return html;
+  };
+
+  // SR-6.5: renderSeatPopover owns every DOM write for the popover.
+  // Reads FSM state + seatPopoverDetail (seat + coords) from the snapshot.
+  // R-2.3 remediation for audit site #9.
+  const renderSeatPopover = (snap) => {
+    if (!seatPopover) return;
+    const state = snap.panels?.seatPopover || 'hidden';
+    if (state === 'hidden' || !snap.seatPopoverDetail) {
+      seatPopover.classList.add('hidden');
+      return;
+    }
+    const { seat, coords } = snap.seatPopoverDetail;
+    const html = buildSeatPopoverHtml(seat, snap.appSeatData, snap.cachedSeatStats);
+    if (!html) {
+      seatPopover.classList.add('hidden');
+      return;
+    }
+    if (seatPopover.innerHTML !== html) seatPopover.innerHTML = html;
     seatPopover.classList.remove('hidden');
-    activePopoverSeat = seatNum;
-
-    // Position near the card
-    const rect = cardEl.getBoundingClientRect();
-    seatPopover.style.top = `${rect.bottom + 4}px`;
-    seatPopover.style.left = `${Math.max(4, Math.min(rect.left, window.innerWidth - 310))}px`;
+    if (coords) {
+      seatPopover.style.top = `${coords.bottom + 4}px`;
+      seatPopover.style.left = `${Math.max(4, Math.min(coords.left, window.innerWidth - 310))}px`;
+    }
   };
 
-  const hideSeatPopover = () => {
-    if (seatPopover) seatPopover.classList.add('hidden');
-    activePopoverSeat = null;
-  };
-
-  // Event delegation for seat circle clicks (pin/unpin + popover)
+  // Event delegation for seat circle clicks (pin/unpin + popover).
+  // SR-6.5: handler only dispatches; renderSeatPopover owns DOM.
   document.addEventListener('click', (e) => {
     const circle = e.target.closest('.seat-circle[data-seat]');
     if (circle) {
@@ -1350,31 +1561,38 @@ injectTokens();
       // Toggle pin
       if (coordinator.get('pinnedVillainSeat') === seat) {
         coordinator.set('pinnedVillainSeat', null);
+        coordinator.dispatch('seatPopover', 'outsideClick');
       } else {
         coordinator.set('pinnedVillainSeat', seat);
-      }
-
-      // Show/hide popover
-      if (coordinator.get('pinnedVillainSeat') === seat) {
-        showSeatPopover(seat, circle);
-      } else {
-        hideSeatPopover();
+        const rect = circle.getBoundingClientRect();
+        coordinator.dispatch('seatPopover', 'seatClick', {
+          seat,
+          coords: { bottom: rect.bottom, left: rect.left },
+        });
       }
 
       scheduleRender('pin', PRIORITY.IMMEDIATE);
       return;
     }
-    // Villain range tab clicks — switch focused villain in range grid
+    // Villain range tab clicks — Rule V (SR-6.11 §1.11). This is the explicit
+    // event contract: the click writes `rangeSelectedSeat`, which is the Z3
+    // range-grid's seat slot. It does NOT pin the villain (that's a separate
+    // slot owned by seat-circle clicks). `computeFocusedVillain` treats
+    // rangeSelectedSeat as the highest-priority override so the range grid +
+    // the seat-arc 1.11 selection ring both update in lockstep without
+    // either Z3 or Z1 writing to the other's DOM.
     const rangeTab = e.target.closest('.villain-tab[data-range-seat]');
     if (rangeTab) {
-      coordinator.set('pinnedVillainSeat', Number(rangeTab.dataset.rangeSeat));
-      scheduleRender('range_tab', PRIORITY.IMMEDIATE);
+      const seat = Number(rangeTab.dataset.rangeSeat);
+      const current = coordinator.get('rangeSelectedSeat');
+      coordinator.set('rangeSelectedSeat', current === seat ? null : seat);
+      scheduleRender('rule_v_select', PRIORITY.IMMEDIATE);
       return;
     }
 
-    // Click outside popover — dismiss
+    // Click outside popover — dismiss.
     if (!e.target.closest('.seat-popover')) {
-      hideSeatPopover();
+      coordinator.dispatch('seatPopover', 'outsideClick');
     }
   });
 
@@ -1561,7 +1779,17 @@ injectTokens();
     const liveCtx = snap.currentLiveContext;
     const street = snap.street;
 
-    // --- No-table / HUD visibility (Fix 2: moved from refreshHandStats) ---
+    // -------------------------------------------------------------------
+    // SR-6.1 GATE HOOK — attachment point for subsequent SR-6 PRs.
+    // When `snap.settings.sidebarRebuild` is false (the default until
+    // SR-7 cutover), the legacy render path below runs unchanged.
+    // SR-6.10–6.15 will branch per-zone inside this block.
+    // Do NOT delete this sentinel — the rebuild program depends on it.
+    // -------------------------------------------------------------------
+    // SR-6.17: single shell. Zones z1-z4 + zx live inside #hud-content; z0
+    // lives at body top-level (always visible). hasTableHands gates the
+    // content shell only; Z0 chrome (status + pipeline-health) stays
+    // reachable when no table is seated.
     if (!snap.hasTableHands) {
       showEl($('no-table'));
       showEl($('pipeline-health'));
@@ -1572,12 +1800,10 @@ injectTokens();
       showEl($('hud-content'));
     }
 
-    // --- Recovery banner ---
-    if (snap.recoveryMessage) {
-      showRecoveryBanner(snap.recoveryMessage);
-    } else {
-      hideRecoveryBanner();
-    }
+    // --- Recovery banner (SR-6.5: FSM-driven) ---
+    renderRecoveryBanner(snap);
+    // --- Connection status (SR-6.5: state-driven) ---
+    renderConnectionStatus(snap);
 
     // --- App connection status ---
     updateAppStatus(snap.appConnected);
@@ -1585,6 +1811,9 @@ injectTokens();
     // --- Pipeline health + PID summary ---
     renderPipelineHealth(snap);
     renderPidSummary(snap.cachedDiag?.pidCounts);
+
+    // --- SR-6.10 Z0 §0.7: diagnostics footer gated by debugDiagnostics ---
+    renderDiagnosticsGate(snap);
 
     // --- Status bar ---
     if (snap.lastPipeline) {
@@ -1644,21 +1873,34 @@ injectTokens();
     // handleAdvice; we toggle a .stale modifier on action bar + plan panel
     // when age > 10s OR no liveContext. Age-badge text is refreshed by the
     // 1Hz adviceAgeBadge timer below (targeted write, not a full re-render).
-    const adviceReceivedAt = advice?._receivedAt;
-    const adviceAgeMs = adviceReceivedAt ? Date.now() - adviceReceivedAt : null;
-    const isAdviceStale = advice != null && (
-      (adviceAgeMs != null && adviceAgeMs > 10_000) || !liveCtx
-    );
+    // SR-6.12 Z2 §2.10 (consolidated): computeAdviceStaleness is the single
+    // source of truth for staleness — same function feeds the 1 Hz age-badge
+    // timer so both paths compute an identical `isStale` boolean and label.
+    const { isStale: isAdviceStale, ageMs: adviceAgeMs, reason: staleReason } =
+      computeAdviceStaleness(advice, liveCtx);
     const actionBarEl = $('action-bar');
     const planPanelEl = $('plan-panel');
     if (actionBarEl) actionBarEl.classList.toggle('stale', isAdviceStale);
     if (planPanelEl) planPanelEl.classList.toggle('stale', isAdviceStale);
-    updateStaleAdviceBadge(isAdviceStale, adviceAgeMs);
+    // SR-6.14 Z4 batch invariant 5: cross-zone stale inheritance. 4.2 More
+    // Analysis and 4.3 Model Audit body both inherit the stale tint since
+    // their content is advice-derived. Single source of truth for staleness
+    // remains computeAdviceStaleness; these are pure display toggles.
+    const moreAnalysisContentEl = $('more-analysis-content');
+    const modelAuditContentEl = $('model-audit-content');
+    if (moreAnalysisContentEl) moreAnalysisContentEl.classList.toggle('stale', isAdviceStale);
+    if (modelAuditContentEl) modelAuditContentEl.classList.toggle('stale', isAdviceStale);
+    updateStaleAdviceBadge(isAdviceStale, adviceAgeMs, staleReason);
 
     // --- Street progress ---
+    // SR-6.12 Z2 §2.8 (B1 fix): between hands the strip must blank. Previously
+    // `snap.street` fell back to `lastGoodAdvice.currentStreet`, which is
+    // retained for visual continuity but stale once the hand completes —
+    // leaving all-filled dots from the prior hand. Explicit live-state gate.
     const progressEl = $('street-progress');
     if (progressEl) {
-      if (street && (advice || liveCtx)) {
+      const handLive = !!(liveCtx && liveCtx.state && liveCtx.state !== 'COMPLETE' && liveCtx.state !== 'IDLE');
+      if (handLive && street) {
         const progressHtml = buildStreetProgressHTML(street);
         if (progressEl.innerHTML !== progressHtml) progressEl.innerHTML = progressHtml;
         showEl(progressEl);
@@ -1694,18 +1936,45 @@ injectTokens();
       hideEl(appPromptEl);
     }
 
-    // --- Deep expander (RT-49: collapse state preservation) ---
-    renderDeepExpander(advice, street, snap);
+    // --- Z4 collapsibles (SR-6.14) ---
+    // RT-49: inner deep-section collapse state preserved via
+    // userCollapsedSections (shared by 4.2 and 4.3).
+    renderMoreAnalysis(advice, street, snap);
+    renderModelAudit(advice, snap);
+
+    // --- Seat popover (SR-6.5: FSM-driven) ---
+    renderSeatPopover(snap);
   };
 
+  // SR-6.3: only `renderFn` is truly host-specific. Timer/frame primitives are
+  // taken from RenderCoordinator's defaults (real `setTimeout`/`setInterval`/
+  // `requestAnimationFrame`). Keeping the primitive wiring out of this module
+  // means the discipline test can forbid bare `setTimeout`/`setInterval` calls
+  // here without a "DI escape hatch" carve-out.
   const coordinator = new RenderCoordinator({
     renderFn: renderAll,
     getTimestamp: () => Date.now(),
-    requestFrame: typeof requestAnimationFrame === 'function'
-      ? (cb) => requestAnimationFrame(cb)
-      : (cb) => setTimeout(cb, 0),
-    setTimeout: (cb, ms) => setTimeout(cb, ms),
-    clearTimeout: (id) => clearTimeout(id),
+  });
+
+  // SR-6.5: register all 5 panel FSMs. Each owns one visibility/phase concern.
+  // coordinator.dispatch(id, event, payload) is now the single entry point
+  // for changing panel state; render functions read snap.panels[id].
+  coordinator.registerFsm(recoveryBannerFsm);
+  coordinator.registerFsm(seatPopoverFsm);
+  coordinator.registerFsm(moreAnalysisFsm);
+  coordinator.registerFsm(modelAuditFsm);
+  coordinator.registerFsm(betweenHandsFsm);
+  coordinator.registerFsm(streetCardFsm);
+
+  // SR-6.3: give render-street-card a coordinator-backed timer host so its
+  // fade transitions are owned by the RT-60 lifecycle instead of module-local
+  // setTimeout handles.
+  setStreetCardTimerHost({
+    scheduleTimer: (key, cb, ms) => coordinator.scheduleTimer(key, cb, ms),
+    clearTimer: (key) => coordinator.clearTimer(key),
+    // SR-6.5: streetCard FSM transitions flow through the timer host so
+    // the module stays free of direct coordinator imports.
+    dispatch: (id, event, payload) => coordinator.dispatch(id, event, payload),
   });
 
   /** Schedule a render. Coordinator._state is the sole authority — no sync needed. */
@@ -1713,8 +1982,29 @@ injectTokens();
     coordinator.scheduleRender(reason, priority);
   };
 
+  // =========================================================================
+  // SR-6.1 — Settings flags (sidebarRebuild, debugDiagnostics)
+  //
+  // Boot: read both from chrome.storage.local into coordinator state.
+  // Observer: on flip, refresh coordinator.settings + scheduleRender so the
+  // renderAll gate below picks up the new flag value within 1 frame.
+  //
+  // Consumers arrive in SR-6.10 (0.7) + SR-6.14 (4.3). This PR just plumbs.
+  // =========================================================================
+  loadSettings()
+    .then(settings => {
+      coordinator.set('settings', settings);
+      scheduleRender('settings_boot', PRIORITY.IMMEDIATE);
+    })
+    .catch(e => console.warn('[Side Panel] loadSettings failed:', e?.message));
 
-  // Deep section toggles handled by renderDeepExpander click listeners
+  observeSettings(settings => {
+    coordinator.set('settings', settings);
+    scheduleRender('settings_change', PRIORITY.IMMEDIATE);
+  });
+
+
+  // Deep section toggles handled by renderMoreAnalysis / renderModelAudit click listeners
 
   // =========================================================================
   // TOURNAMENT PROTOCOL LOG (spike: captures unknown PIDs + lobby messages)
@@ -1729,6 +2019,13 @@ injectTokens();
   const tourneyTableConfig = $('tourney-table-config');
   const tourneyTableConfigContent = $('tourney-table-config-content');
 
+  // SR-6.16 orphan-state audit: `tourneyLogVisible` and `cachedDiagnosticData`
+  // are intentionally IIFE-scope — they are UI preferences scoped to a user
+  // action (open/close the tournament log) and a cached response body. Neither
+  // participates in renderAll's snapshot/renderKey, and both should persist
+  // across table switches (user opened the panel; don't silently close it when
+  // the table changes). Coordinator ownership would add ceremony without fixing
+  // a bug.
   let tourneyLogVisible = false;
   let cachedDiagnosticData = null;
 
@@ -1762,7 +2059,7 @@ injectTokens();
       try {
         await navigator.clipboard.writeText(jsonStr);
         tourneyLogCopy.textContent = 'COPIED';
-        setTimeout(() => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
+        coordinator.scheduleTimer('tourneyLogCopy_reset', () => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
       } catch (_) {
         const ta = document.createElement('textarea');
         ta.value = jsonStr;
@@ -1771,11 +2068,16 @@ injectTokens();
         document.execCommand('copy');
         document.body.removeChild(ta);
         tourneyLogCopy.textContent = 'COPIED';
-        setTimeout(() => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
+        coordinator.scheduleTimer('tourneyLogCopy_reset', () => { tourneyLogCopy.textContent = 'COPY JSON'; }, 1500);
       }
     });
   }
 
+  // SR-6.16: IIFE-scope by design — `activePidFilter` is a UI preference local
+  // to the tournament log renderer, not render-coordinator state. It's
+  // cleared by the explicit clear-button handler below; no table-switch reset
+  // is needed because the pid list itself is regenerated from fresh diagnostic
+  // data on each renderTourneyLog() call.
   let activePidFilter = null;
 
   // Filter clear button
@@ -1970,19 +2272,32 @@ injectTokens();
   const diagToggle = $('diag-toggle');
   const diagShow = $('diag-show');
 
+  // SR-6.16 orphan-state audit: `diagVisible` is IIFE-scope by design — a UI
+  // preference scoped to the debug diagnostics panel open/close. Its timer
+  // (`diag_autorefresh`) is already coordinator-owned (SR-6.3); the boolean
+  // itself is never read by renderAll.
   let diagVisible = false;
+  // SR-6.3: the diagnostics panel auto-refresh interval only runs while the
+  // panel is visible. Previously registered unconditionally at boot with an
+  // internal `if (diagVisible)` gate — now start/stop alongside the panel so
+  // the coordinator's timer map reflects reality (and so table-switch /
+  // destroy cleanup actually has something to cancel only when it matters).
   if (diagShow) diagShow.addEventListener('click', () => {
+    // SR-6.10: belt-and-braces — footer is display:none when flag off, but
+    // guard the handler too so a stale DOM reference can't open the panel.
+    if (coordinator.get('settings')?.debugDiagnostics !== true) return;
     diagVisible = true;
     showEl(diagPanel);
     hideEl(diagShow);
     runDiagnostics();
+    coordinator.scheduleTimer('diag_autorefresh', runDiagnostics, 5000, 'interval');
   });
   const diagCopy = $('diag-copy');
   if (diagCopy) diagCopy.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(diagOutput.textContent);
       diagCopy.textContent = 'COPIED';
-      setTimeout(() => { diagCopy.textContent = 'COPY'; }, 1500);
+      coordinator.scheduleTimer('diagCopy_reset', () => { diagCopy.textContent = 'COPY'; }, 1500);
     } catch (_) {
       // Fallback for clipboard API failure
       const ta = document.createElement('textarea');
@@ -1992,14 +2307,36 @@ injectTokens();
       document.execCommand('copy');
       document.body.removeChild(ta);
       diagCopy.textContent = 'COPIED';
-      setTimeout(() => { diagCopy.textContent = 'COPY'; }, 1500);
+      coordinator.scheduleTimer('diagCopy_reset', () => { diagCopy.textContent = 'COPY'; }, 1500);
     }
   });
   if (diagToggle) diagToggle.addEventListener('click', () => {
     diagVisible = false;
     hideEl(diagPanel);
     showEl(diagShow);
+    coordinator.clearTimer('diag_autorefresh');
   });
+
+  // =========================================================================
+  // SR-6.10 — Z0 §0.7 diagnostics gate (`settings.debugDiagnostics`).
+  // Spec: link + panel are fully absent from the rendered footer when flag
+  // is false (Z0 batch invariant 5: slot collapsed entirely, zero width).
+  // When the flag flips off mid-session and the panel is open, close it and
+  // stop the auto-refresh interval.
+  // =========================================================================
+  const diagFooter = $('diag-footer');
+  const renderDiagnosticsGate = (snap) => {
+    const flagOn = snap?.settings?.debugDiagnostics === true;
+    if (diagFooter) diagFooter.style.display = flagOn ? '' : 'none';
+    if (!flagOn && diagVisible) {
+      diagVisible = false;
+      hideEl(diagPanel);
+      coordinator.clearTimer('diag_autorefresh');
+    }
+    if (!flagOn && diagPanel && !diagPanel.classList.contains('hidden')) {
+      hideEl(diagPanel);
+    }
+  };
 
   const runDiagnostics = async () => {
     if (!diagOutput) return;
@@ -2165,10 +2502,8 @@ injectTokens();
   // INIT — port connected automatically by createPortConnection above
   // =========================================================================
 
-  // Diagnostics auto-refresh: only when diagnostics panel is visible
-  setInterval(() => {
-    if (diagVisible) runDiagnostics();
-  }, 5000);
+  // Diagnostics auto-refresh is started when the panel is opened
+  // (see diagShow click handler above) and stopped when it's closed.
 
   // =========================================================================
   // INIT — read pipeline diagnostics from session storage on panel open
@@ -2196,8 +2531,9 @@ injectTokens();
     } catch (e) { console.warn('[Side Panel] Initial diag read failed:', e.message); }
   })();
 
-  // Fallback: if no diagnostics after 4s, query SW for capture port status
-  setTimeout(async () => {
+  // Fallback: if no diagnostics after 4s, query SW for capture port status.
+  // RT-60 / SR-6.3: coordinator-owned so a table switch during boot cancels it.
+  coordinator.scheduleTimer('swFallbackPing', async () => {
     if (coordinator.get('cachedDiag')) return;
     try {
       const ping = await chrome.runtime.sendMessage({ type: MSG.PING });

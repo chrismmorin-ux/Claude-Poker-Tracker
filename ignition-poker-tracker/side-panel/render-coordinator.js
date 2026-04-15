@@ -48,6 +48,7 @@ export class RenderCoordinator {
     this._getTimestamp = deps.getTimestamp || (() => Date.now());
     this._requestFrame = deps.requestFrame || ((cb) => requestAnimationFrame(cb));
     this._setTimeout = deps.setTimeout || ((cb, ms) => setTimeout(cb, ms));
+    this._setInterval = deps.setInterval || ((cb, ms) => setInterval(cb, ms));
     this._clearTimeout = deps.clearTimeout || ((id) => clearTimeout(id));
     this._clearInterval = deps.clearInterval || ((id) => clearInterval(id));
     // RT-60: generic timer registry for module-level setTimeout/setInterval
@@ -69,7 +70,10 @@ export class RenderCoordinator {
 
     // --- State variables (mirroring side-panel.js module-level vars) ---
     this._state = {
-      lastHandCount: 0,
+      // SR-6.10 (Z0 0.2): null = unknown (boot-race). Renders as `—`.
+      // 0 = known-zero ("0 captured"). Callers that compute `> 0` or equality
+      // still work (null > 0 is false; null !== N for any numeric N).
+      lastHandCount: null,
       cachedSeatStats: null,
       currentTableState: null,
       currentActiveTableId: null,
@@ -89,7 +93,26 @@ export class RenderCoordinator {
       swFallbackState: null,
       focusedVillainSeat: null,
       pinnedVillainSeat: null,
-      deepExpanderOpen: false,
+      // SR-6.11 §1.11 + batch-invariant 6 (Rule V cross-zone contract):
+      // Z1 pill-click / Z3 villain-tab-click emit a range-selection event that
+      // writes this slot. Distinct from pinnedVillainSeat — Rule V selection
+      // is the Z3 range-grid's seat, NOT the scouting pin.
+      rangeSelectedSeat: null,
+      // SR-6.14: split from monolithic deepExpanderOpen into per-collapsible
+      // keys. R-5.1 single-owner: each Z4 row (4.2 More Analysis, 4.3 Model
+      // Audit) has its own toggle state.
+      moreAnalysisOpen: false,
+      modelAuditOpen: false,
+      // SR-6.14 RT-61: stable discriminator so renderPlanPanel only arms the
+      // 8 s auto-expand timer once per fresh advice. Tracks the advice
+      // `_receivedAt` that last caused the timer to arm. `hand:new` + table
+      // switch + user toggle clear this. NOT in snapshot/renderKey — it's
+      // write-only coordinator-local state.
+      lastAutoExpandAdviceAt: null,
+      // SR-6.14 RT-61: sticky user-intent flag. When the user explicitly
+      // toggles the plan panel (open or close), auto-expand is suppressed
+      // for the rest of the hand. Reset on hand:new / table switch only.
+      userToggledPlanPanelInHand: false,
       lastRenderedStreet: null,
       advicePendingForStreet: null,
       userCollapsedSections: new Set(),
@@ -116,7 +139,34 @@ export class RenderCoordinator {
       _lockedHeroSeat: null,
       _lockedDealerSeat: null,
       _lockedHandNumber: null,
+      // SR-6.1: settings flags. Default false so the coordinator boots into
+      // legacy-only render behavior even if side-panel.js hasn't called
+      // loadSettings() yet. Real values arrive via coordinator.set('settings', ...).
+      settings: { sidebarRebuild: false, debugDiagnostics: false },
+      // SR-6.5: FSM panel state map { [fsmId]: currentState }. Populated by
+      // registerFsm(); mutated only via dispatch(). Snapshotted + hashed into
+      // renderKey so every transition forces a re-render.
+      panels: {},
+      // SR-6.5: seat popover auxiliary data (seat + coords) surfaced by the
+      // seat-popover FSM's seatClick handler. Lives outside `panels` because
+      // it's derived data, not FSM state.
+      seatPopoverDetail: null,
     };
+
+    // SR-6.6: freshness sidecar. Metadata only — underlying state objects
+    // in `_state` are unchanged, so existing readers keep reading flat
+    // fields. Consumers (age badges, stale labels) read via `snap.freshness`.
+    // R-4.1 envelope is { timestamp, source }; `confidence` deferred until
+    // a renderer consumes it (R-4.4 age badges land in SR-6.10/6.12/6.14).
+    this._freshness = {
+      currentLiveContext: null,       // { timestamp, source } — object-level
+      currentLiveContextFields: {},   // { [fieldName]: { timestamp, source } } — per-field
+      appSeatData: {},                // { [seatNum]: { timestamp, source } }
+    };
+
+    // SR-6.5: registered FSMs + hand-new hook list.
+    this._fsms = new Map();
+    this._handNewHooks = [];
 
     // --- Internal scheduling state ---
     this._lastRenderKey = null;
@@ -181,6 +231,7 @@ export class RenderCoordinator {
     const s = this._state;
     const focusedVillainSeat = computeFocusedVillain({
       pinnedVillainSeat: s.pinnedVillainSeat,
+      rangeSelectedSeat: s.rangeSelectedSeat,
       lastGoodAdvice: s.lastGoodAdvice,
       currentLiveContext: s.currentLiveContext,
       currentTableState: s.currentTableState,
@@ -207,7 +258,9 @@ export class RenderCoordinator {
       cachedDiag: s.cachedDiag,
       swFallbackState: s.swFallbackState,
       pinnedVillainSeat: s.pinnedVillainSeat,
-      deepExpanderOpen: s.deepExpanderOpen,
+      rangeSelectedSeat: s.rangeSelectedSeat,
+      moreAnalysisOpen: s.moreAnalysisOpen,
+      modelAuditOpen: s.modelAuditOpen,
       lastRenderedStreet: s.lastRenderedStreet,
       advicePendingForStreet: s.advicePendingForStreet,
       userCollapsedSections: new Set(s.userCollapsedSections),
@@ -232,6 +285,20 @@ export class RenderCoordinator {
       appConnected: !!(s.lastPipeline?.appConnected) || !!(s.lastGoodExploits?.appConnected),
       // Visual continuity
       lastStreetCardHtml: this._lastStreetCardHtml,
+      // SR-6.1: foundation flags. Shallow-copied so downstream readers
+      // can't mutate coordinator state.
+      settings: { ...s.settings },
+      // SR-6.5: FSM state map + seat popover detail.
+      panels: { ...s.panels },
+      seatPopoverDetail: s.seatPopoverDetail,
+      // SR-6.6: freshness sidecar. Shallow-copied so renderers can't mutate
+      // coordinator state. Per-field currentLiveContext map + per-seat
+      // appSeatData map. Age badges / stale labels consume from here.
+      freshness: {
+        currentLiveContext: this._freshness.currentLiveContext,
+        currentLiveContextFields: { ...this._freshness.currentLiveContextFields },
+        appSeatData: { ...this._freshness.appSeatData },
+      },
     };
   }
 
@@ -282,6 +349,7 @@ export class RenderCoordinator {
       adviceFingerprint,
       snap.focusedVillainSeat,
       snap.pinnedVillainSeat,
+      snap.rangeSelectedSeat,
       snap.lastHandCount,
       snap.exploitPushCount,
       snap.advicePushCount,
@@ -293,6 +361,28 @@ export class RenderCoordinator {
       snap.connState?.connected ? 1 : 0,
       snap.staleContext ? 1 : 0,
       snap.hasTableHands ? 1 : 0,
+      // SR-6.1: flag flips must force a re-render so subsequent SR-6 gates
+      // can swap code paths deterministically.
+      snap.settings?.sidebarRebuild ? 1 : 0,
+      snap.settings?.debugDiagnostics ? 1 : 0,
+      // SR-6.4: coordinator-owned collapsible/UI state. Without these in
+      // the key, a user-driven toggle would not re-render (coalesced
+      // pushes would hit the skip-same-key fast path).
+      snap.moreAnalysisOpen ? 1 : 0,
+      snap.modelAuditOpen ? 1 : 0,
+      snap.planPanelOpen ? 1 : 0,
+      snap.tournamentCollapsed ? 1 : 0,
+      // SR-6.4: lastGoodExploits presence + appConnected bit. exploitPushCount
+      // covers push-increment re-renders; this covers clears (table switch)
+      // and appConnected transitions carried on the exploits object.
+      snap.lastGoodExploits ? 1 : 0,
+      snap.lastGoodExploits?.appConnected ? 1 : 0,
+      // SR-6.5: FSM state — concat sorted `id:state` pairs so any transition
+      // forces a re-render. seatPopoverDetail's seat included so re-clicking
+      // a different seat (seatClick → seatClick staying in `shown`) still
+      // re-renders.
+      Object.keys(snap.panels || {}).sort().map(k => `${k}:${snap.panels[k]}`).join(','),
+      snap.seatPopoverDetail?.seat ?? '',
     ].join('|');
   }
 
@@ -423,10 +513,11 @@ export class RenderCoordinator {
     const adviceRank = STREET_RANK[adviceStreet] ?? -1;
     const liveRank = STREET_RANK[liveStreet] ?? -1;
 
-    // Accept if: known street, same or at most 1 street ahead of context
-    // (advice may arrive slightly before context catches up — max 1 street gap)
-    // Reject gap > 1: e.g., river advice on preflop = cross-hand contamination
-    if (adviceRank >= 0 && liveRank >= 0 && adviceRank >= liveRank && (adviceRank - liveRank) <= 1) {
+    // SR-6.7: R-7.3 1-street gap tolerance revoked. Only exact street match
+    // is accepted; advice ahead of context is held in _pendingAdvice until
+    // live context catches up. Renderer surfaces "stale, recomputing" on
+    // mismatch rather than blanking — see side-panel renderAll.
+    if (adviceRank >= 0 && liveRank >= 0 && adviceRank === liveRank) {
       // RT-48: stamp _receivedAt so the render path can age-badge the
       // card when new advice stops arriving.
       this._state.lastGoodAdvice = { ...adviceMsg, _receivedAt: this._getTimestamp() };
@@ -479,7 +570,25 @@ export class RenderCoordinator {
       }
     }
 
-    this._state.currentLiveContext = { ...ctx, _receivedAt: this._getTimestamp() };
+    // SR-6.6 R-4.3: field-level merge mid-hand; full replace at hand boundary.
+    // Hand-boundary reset is load-bearing — retaining flop `communityCards`
+    // into a new PREFLOP would surface stale board data. Mid-hand, retain
+    // fields absent from the new payload (S1: `pot` missing must not null).
+    const ts = this._getTimestamp();
+    const prior = this._state.currentLiveContext;
+    if (isNewHandBoundary || !prior) {
+      this._state.currentLiveContext = { ...ctx, _receivedAt: ts };
+      this._freshness.currentLiveContextFields = {};
+      for (const key of Object.keys(ctx)) {
+        this._freshness.currentLiveContextFields[key] = { timestamp: ts, source: 'push_live_context' };
+      }
+    } else {
+      this._state.currentLiveContext = { ...prior, ...ctx, _receivedAt: ts };
+      for (const key of Object.keys(ctx)) {
+        this._freshness.currentLiveContextFields[key] = { timestamp: ts, source: 'push_live_context' };
+      }
+    }
+    this._freshness.currentLiveContext = { timestamp: ts, source: 'push_live_context' };
 
     const newState = this._state.currentLiveContext.state;
 
@@ -508,9 +617,10 @@ export class RenderCoordinator {
           promotedPending = true;
         }
       } else {
-        // Mid-hand reconnect: accept same street or at most 1 ahead
-        // Reject unknown street or >1 street gap (cross-hand contamination)
-        if (adviceRank >= 0 && liveRank >= 0 && adviceRank >= liveRank && (adviceRank - liveRank) <= 1) {
+        // SR-6.7: mid-hand reconnect promotes pending advice only on exact
+        // street match. Earlier tolerance (≤1 ahead) is revoked — see
+        // handleAdvice for the rationale.
+        if (adviceRank >= 0 && liveRank >= 0 && adviceRank === liveRank) {
           this._state.lastGoodAdvice = this._pendingAdvice;
           this._state.advicePendingForStreet = null;
           promotedPending = true;
@@ -526,8 +636,15 @@ export class RenderCoordinator {
       this._state.advicePendingForStreet = newState;
       this._state.lastGoodAdvice = null;
       this._state.lastRenderedStreet = null;
-      this._state.deepExpanderOpen = false;
+      this._state.moreAnalysisOpen = false;
+      this._state.modelAuditOpen = false;
+      this._state.lastAutoExpandAdviceAt = null;
+      this._state.userToggledPlanPanelInHand = false;
+      // SR-6.11 §1.11: Rule V override is hand-scoped (spec batch-invariant 4).
+      this._state.rangeSelectedSeat = null;
       this.logPipelineEvent('new_hand', `${prevState || 'null'} \u2192 ${newState}`);
+      // SR-6.5: fan `handNew` to every registered FSM + extra hooks.
+      this.dispatchHandNew();
     }
   }
 
@@ -538,14 +655,38 @@ export class RenderCoordinator {
   /**
    * Clear per-table state on table switch.
    */
+  /**
+   * SR-6.6 R-4.3: per-seat field-level merge for appSeatData. Seats absent
+   * from `newSeatMap` retain their prior entries (S5: partial exploit push
+   * must not null other seats). Bumps `appSeatDataVersion` so renderKey
+   * invalidates. Stamps per-seat freshness.
+   *
+   * Replaces the full-replace-on-push + manual version bump pattern.
+   */
+  mergeAppSeatData(newSeatMap, source = 'push_exploits') {
+    if (!newSeatMap || typeof newSeatMap !== 'object') return;
+    const ts = this._getTimestamp();
+    const merged = { ...(this._state.appSeatData || {}) };
+    for (const [seat, data] of Object.entries(newSeatMap)) {
+      merged[seat] = data;
+      this._freshness.appSeatData[seat] = { timestamp: ts, source };
+    }
+    this._state.appSeatData = merged;
+    this._state.appSeatDataVersion = (this._state.appSeatDataVersion || 0) + 1;
+  }
+
   clearForTableSwitch() {
     // RT-60: cancel all registered timers before wiping state so no
     // orphan callback can fire on the next table's context.
     this.clearAllTimers();
+    // SR-6.5: fan tableSwitch out to every registered FSM so panels collapse
+    // to their initial states before the snapshot rebuilds.
+    this.dispatchTableSwitch();
     for (const hook of this._tableSwitchHooks) {
       try { hook(); } catch (_) { /* best-effort: one bad hook must not break lifecycle */ }
     }
     this._state.pinnedVillainSeat = null;
+    this._state.rangeSelectedSeat = null;
     this._state.lastGoodAdvice = null;
     this._state.lastGoodTournament = null;
     this._state.currentLiveContext = null;
@@ -554,9 +695,19 @@ export class RenderCoordinator {
     this._state._lockedHandNumber = null;
     this._state.userCollapsedSections = new Set();
     this._state.planPanelOpen = false;
+    // SR-6.14: reset Z4 collapsibles + auto-expand tracker on table switch.
+    this._state.moreAnalysisOpen = false;
+    this._state.modelAuditOpen = false;
+    this._state.lastAutoExpandAdviceAt = null;
+    this._state.userToggledPlanPanelInHand = false;
     this.clearModeATimer();
     this._pendingAdvice = null;
     this._lastStreetCardHtml = null;
+    // SR-6.6: freshness follows currentLiveContext lifecycle. appSeatData
+    // freshness retained since appSeatData itself is not cleared on table
+    // switch (matches existing doctrine).
+    this._freshness.currentLiveContext = null;
+    this._freshness.currentLiveContextFields = {};
   }
 
   // =======================================================================
@@ -589,6 +740,34 @@ export class RenderCoordinator {
     this._timers.set(key, { handle, kind });
   }
 
+  /**
+   * Schedule a new timer under `key`. Replaces any existing timer at that key
+   * (same contract as registerTimer). Returns the handle for rare callers that
+   * need it. This is the preferred API — it keeps bare setTimeout/setInterval
+   * calls out of client code so the RT-60 contract is the only way a timer
+   * enters the module's lifecycle.
+   *
+   * SR-6.3: added to eliminate `registerTimer(key, setTimeout(...), kind)`
+   * pattern so the enforcement test can forbid bare timer calls outright.
+   */
+  scheduleTimer(key, cb, ms, kind = 'timeout') {
+    const handle = kind === 'interval'
+      ? this._setInterval(cb, ms)
+      : this._setTimeout(cb, ms);
+    this.registerTimer(key, handle, kind);
+    return handle;
+  }
+
+  /** Returns true if a timer is currently registered under `key`. */
+  hasTimer(key) {
+    return this._timers.has(key);
+  }
+
+  /** Count of active registered timers — introspection for tests. */
+  activeTimerCount() {
+    return this._timers.size;
+  }
+
   /** Clear a single timer by key, if registered. No-op if absent. */
   clearTimer(key) {
     const entry = this._timers.get(key);
@@ -612,6 +791,111 @@ export class RenderCoordinator {
    */
   onTableSwitch(fn) {
     if (typeof fn === 'function') this._tableSwitchHooks.push(fn);
+  }
+
+  // =======================================================================
+  // FSM REGISTRY + DISPATCH (SR-6.5)
+  //
+  // Declarative panel state machines. Each FSM owns one visibility/phase
+  // concern (recovery banner, seat popover, deep expander, between-hands,
+  // street-card transition). Event handlers dispatch named events; render
+  // functions read `snap.panels[id]` and write DOM. This replaces the prior
+  // pattern where event handlers mutated DOM directly outside scheduleRender.
+  //
+  // Lifecycle: `tableSwitch` fans out to every registered FSM on
+  // clearForTableSwitch(); `handNew` fans out from handleLiveContext() when
+  // the PREFLOP/DEALING boundary fires. Each FSM declares whether those
+  // events change state.
+  // =======================================================================
+
+  /**
+   * Register a declarative FSM. Initializes `_state.panels[id]` to the FSM's
+   * initial state. Re-registering the same id is a no-op (idempotent boot).
+   */
+  registerFsm(fsm) {
+    if (!fsm || !fsm.id) throw new Error('registerFsm: fsm.id required');
+    if (this._fsms.has(fsm.id)) return;
+    this._fsms.set(fsm.id, fsm);
+    if (this._state.panels[fsm.id] == null) {
+      this._state.panels[fsm.id] = fsm.initial;
+    }
+  }
+
+  /**
+   * Apply an event to a registered FSM. On state change, scheduleRender
+   * (IMMEDIATE) so the user-driven or lifecycle-driven transition paints
+   * without coalesce delay. Returns the transition descriptor
+   * { state, changed, extra? } so callers can read side info (e.g. the
+   * seat-popover FSM surfaces `{ seat, coords }` on seatClick).
+   *
+   * Unknown FSM id / unknown event / same-state result → no render, no throw.
+   */
+  dispatch(fsmId, event, payload, ctx) {
+    const fsm = this._fsms.get(fsmId);
+    if (!fsm) return { state: null, changed: false };
+    const prev = this._state.panels[fsmId] ?? fsm.initial;
+    const result = fsm.transition(prev, event, payload, ctx);
+    if (result.changed) {
+      this._state.panels[fsmId] = result.state;
+    }
+    // Seat-popover FSM surfaces { seat, coords } in extra — stash in its
+    // own slot so render fns can read without peeking into FSM internals.
+    if (fsmId === 'seatPopover') {
+      if (result.state === 'shown' && result.extra) {
+        this._state.seatPopoverDetail = { seat: result.extra.seat, coords: result.extra.coords };
+      } else if (result.state === 'hidden') {
+        this._state.seatPopoverDetail = null;
+      }
+    }
+    if (result.changed || (fsmId === 'seatPopover' && result.extra)) {
+      this.scheduleRender(`fsm:${fsmId}:${event}`, PRIORITY.IMMEDIATE);
+    }
+    return result;
+  }
+
+  /** Read the current FSM state for a panel. Falls back to FSM.initial. */
+  getPanelState(fsmId) {
+    if (this._state.panels[fsmId] != null) return this._state.panels[fsmId];
+    const fsm = this._fsms.get(fsmId);
+    return fsm ? fsm.initial : null;
+  }
+
+  /**
+   * Fan a `tableSwitch` event out to every registered FSM. Called from
+   * clearForTableSwitch; also available for direct invocation from tests.
+   */
+  dispatchTableSwitch() {
+    for (const fsm of this._fsms.values()) {
+      const prev = this._state.panels[fsm.id] ?? fsm.initial;
+      const result = fsm.transition(prev, 'tableSwitch');
+      if (result.changed) this._state.panels[fsm.id] = result.state;
+      if (fsm.id === 'seatPopover' && result.state === 'hidden') {
+        this._state.seatPopoverDetail = null;
+      }
+    }
+  }
+
+  /**
+   * Fan a `handNew` event out to every registered FSM. Invoked by
+   * handleLiveContext when a PREFLOP/DEALING boundary is detected.
+   */
+  dispatchHandNew() {
+    for (const fsm of this._fsms.values()) {
+      const prev = this._state.panels[fsm.id] ?? fsm.initial;
+      const result = fsm.transition(prev, 'handNew');
+      if (result.changed) this._state.panels[fsm.id] = result.state;
+      if (fsm.id === 'seatPopover' && result.state === 'hidden') {
+        this._state.seatPopoverDetail = null;
+      }
+    }
+    for (const hook of this._handNewHooks) {
+      try { hook(); } catch (_) { /* best-effort */ }
+    }
+  }
+
+  /** Register an extra `hand:new` callback for non-FSM consumers. */
+  onHandNew(fn) {
+    if (typeof fn === 'function') this._handNewHooks.push(fn);
   }
 
   // =======================================================================

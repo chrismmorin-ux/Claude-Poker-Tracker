@@ -754,6 +754,42 @@ describe('buildRenderKey: state-drift invalidation coverage', () => {
     expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
   });
 
+  it('moreAnalysisOpen toggle invalidates the key (SR-6.14, split from deepExpanderOpen)', () => {
+    const a = emptySnap({ moreAnalysisOpen: false });
+    const b = emptySnap({ moreAnalysisOpen: true });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('modelAuditOpen toggle invalidates the key (SR-6.14)', () => {
+    const a = emptySnap({ modelAuditOpen: false });
+    const b = emptySnap({ modelAuditOpen: true });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('planPanelOpen toggle invalidates the key (SR-6.4)', () => {
+    const a = emptySnap({ planPanelOpen: false });
+    const b = emptySnap({ planPanelOpen: true });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('tournamentCollapsed toggle invalidates the key (SR-6.4)', () => {
+    const a = emptySnap({ tournamentCollapsed: false });
+    const b = emptySnap({ tournamentCollapsed: true });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('lastGoodExploits clear invalidates the key (SR-6.4 — table switch)', () => {
+    const a = emptySnap({ lastGoodExploits: { seats: [], appConnected: true } });
+    const b = emptySnap({ lastGoodExploits: null });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('lastGoodExploits appConnected flip invalidates the key (SR-6.4)', () => {
+    const a = emptySnap({ lastGoodExploits: { seats: [], appConnected: true } });
+    const b = emptySnap({ lastGoodExploits: { seats: [], appConnected: false } });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
   it('identical snapshots produce identical keys (skip redundant renders)', () => {
     const a = emptySnap({
       lastGoodTournament: { heroMRatio: 12.0, currentLevelIndex: 3 },
@@ -765,5 +801,188 @@ describe('buildRenderKey: state-drift invalidation coverage', () => {
       currentLiveContext: { actionSequence: [{ seat: 3, action: 'bet', amount: 10 }] },
     });
     expect(coord.buildRenderKey(a)).toBe(coord.buildRenderKey(b));
+  });
+});
+
+// =========================================================================
+// SR-6.6: FRESHNESS RECORDS + R-4.3 PARTIAL-PAYLOAD RETENTION
+// =========================================================================
+
+describe('SR-6.6 — freshness + partial-payload retention', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  describe('handleLiveContext field-level merge (R-4.3, S1 regression)', () => {
+    it('mid-hand partial push retains prior fields absent from new payload', () => {
+      const { coord } = createCoordinator();
+      coord.handleLiveContext(liveCtx({ pot: 20, communityCards: ['As', 'Kd', '2h'] }));
+
+      // Mid-hand partial push — only currentStreet changes
+      coord.handleLiveContext({ state: 'FLOP', currentStreet: 'flop' });
+
+      const snap = coord.buildSnapshot();
+      expect(snap.currentLiveContext.pot).toBe(20);
+      expect(snap.currentLiveContext.communityCards).toEqual(['As', 'Kd', '2h']);
+    });
+
+    it('new-hand boundary fully replaces (stale board cleared)', () => {
+      const { coord } = createCoordinator();
+      coord.handleLiveContext(liveCtx({
+        state: 'RIVER', currentStreet: 'river',
+        communityCards: ['As', 'Kd', '2h', '7c', 'Qs'],
+      }));
+
+      // New hand: PREFLOP boundary. Push omits communityCards.
+      coord.handleLiveContext({ state: 'PREFLOP', currentStreet: 'preflop', heroSeat: 1, pot: 3 });
+
+      const snap = coord.buildSnapshot();
+      expect(snap.currentLiveContext.communityCards).toBeUndefined();
+      expect(snap.currentLiveContext.pot).toBe(3);
+    });
+
+    it('explicit null in new payload overrides prior (explicit replacement)', () => {
+      const { coord } = createCoordinator();
+      coord.handleLiveContext(liveCtx({ pot: 20 }));
+      coord.handleLiveContext({ state: 'FLOP', currentStreet: 'flop', pot: null });
+
+      const snap = coord.buildSnapshot();
+      expect(snap.currentLiveContext.pot).toBeNull();
+    });
+
+    it('stamps per-field freshness timestamps for fields in the new payload', () => {
+      const { coord } = createCoordinator();
+      vi.setSystemTime(1000);
+      coord.handleLiveContext(liveCtx({ pot: 20 }));
+      vi.setSystemTime(2000);
+      coord.handleLiveContext({ state: 'FLOP', currentStreet: 'flop' });
+
+      const snap = coord.buildSnapshot();
+      expect(snap.freshness.currentLiveContextFields.currentStreet.timestamp).toBe(2000);
+      expect(snap.freshness.currentLiveContextFields.pot.timestamp).toBe(1000);
+      expect(snap.freshness.currentLiveContext.source).toBe('push_live_context');
+    });
+  });
+
+  describe('mergeAppSeatData (R-4.3, S5 regression)', () => {
+    it('retains prior seats when new push covers only a subset', () => {
+      const { coord } = createCoordinator();
+      coord.mergeAppSeatData({
+        3: { style: 'TAG', sampleSize: 50 },
+        5: { style: 'LAG', sampleSize: 30 },
+      });
+      coord.mergeAppSeatData({ 3: { style: 'TAG', sampleSize: 60 } });
+
+      const snap = coord.buildSnapshot();
+      expect(snap.appSeatData[3].sampleSize).toBe(60);
+      expect(snap.appSeatData[5]).toEqual({ style: 'LAG', sampleSize: 30 });
+    });
+
+    it('bumps appSeatDataVersion on every merge (renderKey invalidation)', () => {
+      const { coord } = createCoordinator();
+      const v0 = coord.get('appSeatDataVersion');
+      coord.mergeAppSeatData({ 3: { style: 'TAG' } });
+      coord.mergeAppSeatData({ 5: { style: 'LAG' } });
+      expect(coord.get('appSeatDataVersion')).toBe(v0 + 2);
+    });
+
+    it('stamps per-seat freshness with timestamp + source', () => {
+      const { coord } = createCoordinator();
+      vi.setSystemTime(5000);
+      coord.mergeAppSeatData({ 3: { style: 'TAG' } }, 'push_exploits');
+      const snap = coord.buildSnapshot();
+      expect(snap.freshness.appSeatData[3]).toEqual({ timestamp: 5000, source: 'push_exploits' });
+    });
+
+    it('ignores null / non-object payloads without throwing', () => {
+      const { coord } = createCoordinator();
+      expect(() => coord.mergeAppSeatData(null)).not.toThrow();
+      expect(() => coord.mergeAppSeatData(undefined)).not.toThrow();
+      expect(coord.get('appSeatDataVersion')).toBe(0);
+    });
+  });
+
+  describe('clearForTableSwitch resets liveContext freshness', () => {
+    it('clears currentLiveContext freshness but retains appSeatData freshness', () => {
+      const { coord } = createCoordinator();
+      coord.handleLiveContext(liveCtx({ pot: 20 }));
+      coord.mergeAppSeatData({ 3: { style: 'TAG' } });
+
+      coord.clearForTableSwitch();
+
+      const snap = coord.buildSnapshot();
+      expect(snap.freshness.currentLiveContext).toBeNull();
+      expect(snap.freshness.currentLiveContextFields).toEqual({});
+      // appSeatData freshness retained (matches appSeatData not being cleared)
+      expect(snap.freshness.appSeatData[3]).toBeDefined();
+    });
+  });
+});
+
+// =========================================================================
+// SR-6.7: R-7.3 STREET TOLERANCE REVOKED (S2 REGRESSION)
+// =========================================================================
+
+describe('SR-6.7 — exact-street match for advice acceptance', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('S2: flop advice is HELD (not accepted) while live context is preflop', () => {
+    const { coord } = createCoordinator();
+    coord.handleLiveContext(liveCtx({ state: 'PREFLOP', currentStreet: 'preflop' }));
+
+    // Advice arrives one street ahead — previously accepted under tolerance.
+    const accepted = coord.handleAdvice(advice({ currentStreet: 'flop' }));
+
+    expect(accepted).toBe(false);
+    const snap = coord.buildSnapshot();
+    expect(snap.lastGoodAdvice).toBeNull();
+    // Held in pending buffer — promoted when live context catches up.
+    expect(coord._pendingAdvice?.currentStreet).toBe('flop');
+  });
+
+  it('S2: preflop advice never surfaces once live context is on flop', () => {
+    const { coord } = createCoordinator();
+    // Hand 1 preflop: accept preflop advice.
+    coord.handleLiveContext(liveCtx({ state: 'PREFLOP', currentStreet: 'preflop', handNumber: 1 }));
+    coord.handleAdvice(advice({ currentStreet: 'preflop', handNumber: 1 }));
+    expect(coord.buildSnapshot().lastGoodAdvice?.currentStreet).toBe('preflop');
+
+    // Flop arrives. A straggling preflop advice push (earlier street) must
+    // be rejected outright — the existing lastGoodAdvice remains visible,
+    // but the renderer surfaces "Stale — recomputing" via street-mismatch.
+    coord.handleLiveContext(liveCtx({ state: 'FLOP', currentStreet: 'flop', handNumber: 1 }));
+    const accepted = coord.handleAdvice(advice({ currentStreet: 'preflop', handNumber: 1 }));
+    expect(accepted).toBe(false);
+
+    const snap = coord.buildSnapshot();
+    // Stale preflop advice retained for stale-recomputing surfacing, but
+    // snapshot street mismatch signals renderer to label it stale.
+    expect(snap.lastGoodAdvice?.currentStreet).toBe('preflop');
+    expect(snap.currentLiveContext.currentStreet).toBe('flop');
+  });
+
+  it('accepts advice with exact street match', () => {
+    const { coord } = createCoordinator();
+    coord.handleLiveContext(liveCtx({ state: 'FLOP', currentStreet: 'flop' }));
+    const accepted = coord.handleAdvice(advice({ currentStreet: 'flop' }));
+    expect(accepted).toBe(true);
+    expect(coord.buildSnapshot().lastGoodAdvice?.currentStreet).toBe('flop');
+  });
+
+  it('mid-hand reconnect: pending flop advice rejected on preflop context (tolerance revoked)', () => {
+    const { coord } = createCoordinator();
+    // Establish mid-hand preflop state first (so a subsequent preflop push
+    // is NOT a new-hand boundary — we're testing the mid-hand promotion branch).
+    coord.handleLiveContext(liveCtx({ state: 'PREFLOP', currentStreet: 'preflop' }));
+
+    // SW reconnect: no context yet from coordinator's perspective of the next
+    // push cycle. A flop advice buffers.
+    coord.handleAdvice(advice({ currentStreet: 'flop' }));
+    expect(coord._pendingAdvice?.currentStreet).toBe('flop');
+
+    // A preflop re-push arrives (mid-hand, not a boundary). Under the old
+    // 1-street tolerance, pending flop would promote. Revoked: exact match only.
+    coord.handleLiveContext({ state: 'PREFLOP', currentStreet: 'preflop' });
+    expect(coord.buildSnapshot().lastGoodAdvice).toBeNull();
   });
 });

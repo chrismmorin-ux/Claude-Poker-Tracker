@@ -57,13 +57,17 @@ const entryPoints = [
     entryPoints: [resolve(__dirname, 'popup/popup.js')],
     outfile: resolve(DIST, 'popup/popup.js'),
   },
+  {
+    entryPoints: [resolve(__dirname, 'options/options.js')],
+    outfile: resolve(DIST, 'options/options.js'),
+  },
 ];
 
 console.log('[build] Bundling entry points...');
 
 await Promise.all(entryPoints.map(entry => esbuild.build({ ...commonOptions, ...entry })));
 
-console.log('[build] Bundled 5 entry points');
+console.log(`[build] Bundled ${entryPoints.length} entry points`);
 
 // ---------------------------------------------------------------------------
 // 2. COPY STANDALONE FILES
@@ -117,6 +121,11 @@ const popupTransformed = popupHtml
   );
 mkdirSync(resolve(DIST, 'popup'), { recursive: true });
 writeFileSync(resolve(DIST, 'popup/popup.html'), popupTransformed);
+
+// Options HTML — no shared scripts to strip; copy as-is.
+const optionsHtml = readFileSync(resolve(__dirname, 'options/options.html'), 'utf8');
+mkdirSync(resolve(DIST, 'options'), { recursive: true });
+writeFileSync(resolve(DIST, 'options/options.html'), optionsHtml);
 
 console.log('[build] Transformed HTML files');
 

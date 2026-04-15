@@ -1,0 +1,6 @@
+# {"_meta":{"id":"S9-pipeline-recovery","symptomsTargeted":["S9"],"source":"synthetic","sanitized":true,"handCount":0,"duration_ms":800,"mechanism":"push_recovery_needed shows banner; push_recovery_cleared hides it"}}
+{"t":0,"type":"inject","message":{"type":"push_pipeline_status","status":{"tables":{"1":{"state":"active"}},"tableCount":1,"completedHands":1}}}
+{"t":100,"type":"inject","message":{"type":"push_recovery_needed","message":"Connection issue detected. Reload the Ignition page to start capturing."}}
+{"t":400,"type":"snapshot"}
+{"t":500,"type":"inject","message":{"type":"push_recovery_cleared"}}
+{"t":800,"type":"snapshot"}
