@@ -1,10 +1,11 @@
 /**
- * settings.test.js — SR-6.1 foundation flag plumbing.
+ * settings.test.js — settings flag plumbing.
  *
- * Covers:
- *   1. Defaults when storage is empty (both false).
- *   2. Reads honor stored values.
- *   3. observeSettings fires on flip of either key in `local` area only.
+ * Covers (post-SR-7 cutover; sidebarRebuild flag deleted, debugDiagnostics
+ * remains as the lone setting):
+ *   1. Default when storage is empty (false).
+ *   2. Read honors stored value.
+ *   3. observeSettings fires on flip in `local` area only.
  *   4. Unrelated `local` keys do not fire the callback.
  *   5. writeSetting persists into the stub storage.
  */
@@ -47,7 +48,7 @@ function makeChromeStub() {
   };
 }
 
-describe('shared/settings — SR-6.1 foundation flags', () => {
+describe('shared/settings — debugDiagnostics flag', () => {
   let chromeStub;
   let settings;
 
@@ -58,27 +59,26 @@ describe('shared/settings — SR-6.1 foundation flags', () => {
     settings = await import('../settings.js');
   });
 
-  it('returns defaults when storage is empty', async () => {
+  it('returns default when storage is empty', async () => {
     const s = await settings.loadSettings();
-    expect(s).toEqual({ sidebarRebuild: false, debugDiagnostics: false });
+    expect(s).toEqual({ debugDiagnostics: false });
   });
 
-  it('reads stored values when present', async () => {
+  it('reads stored value when present', async () => {
     await chromeStub.storage.local.set({
-      'settings.sidebarRebuild': true,
       'settings.debugDiagnostics': true,
     });
     const s = await settings.loadSettings();
-    expect(s).toEqual({ sidebarRebuild: true, debugDiagnostics: true });
+    expect(s).toEqual({ debugDiagnostics: true });
   });
 
-  it('observeSettings fires on flip of either key', async () => {
+  it('observeSettings fires on debugDiagnostics flip', async () => {
     const cb = vi.fn();
     settings.observeSettings(cb);
-    await chromeStub.storage.local.set({ 'settings.sidebarRebuild': true });
+    await chromeStub.storage.local.set({ 'settings.debugDiagnostics': true });
     // observer is async — yield to the microtask queue
     await Promise.resolve(); await Promise.resolve();
-    expect(cb).toHaveBeenCalledWith({ sidebarRebuild: true, debugDiagnostics: false });
+    expect(cb).toHaveBeenCalledWith({ debugDiagnostics: true });
   });
 
   it('ignores unrelated local-storage changes', async () => {
@@ -93,7 +93,7 @@ describe('shared/settings — SR-6.1 foundation flags', () => {
     const cb = vi.fn();
     settings.observeSettings(cb);
     chromeStub.storage.onChanged._fire(
-      { 'settings.sidebarRebuild': { newValue: true } },
+      { 'settings.debugDiagnostics': { newValue: true } },
       'session',
     );
     await Promise.resolve();
@@ -101,10 +101,10 @@ describe('shared/settings — SR-6.1 foundation flags', () => {
   });
 
   it('writeSetting persists the value', async () => {
-    await settings.writeSetting('settings.sidebarRebuild', true);
-    expect(chromeStub._store['settings.sidebarRebuild']).toBe(true);
+    await settings.writeSetting('settings.debugDiagnostics', true);
+    expect(chromeStub._store['settings.debugDiagnostics']).toBe(true);
     const s = await settings.loadSettings();
-    expect(s.sidebarRebuild).toBe(true);
+    expect(s.debugDiagnostics).toBe(true);
   });
 
   it('writeSetting rejects unknown keys', async () => {
@@ -123,13 +123,13 @@ describe('RenderCoordinator — settings slot', () => {
       clearTimeout: () => {},
     });
     const snap1 = coord.buildSnapshot();
-    expect(snap1.settings).toEqual({ sidebarRebuild: false, debugDiagnostics: false });
+    expect(snap1.settings).toEqual({ debugDiagnostics: false });
     const key1 = coord.buildRenderKey(snap1);
 
-    coord.set('settings', { sidebarRebuild: true, debugDiagnostics: false });
+    coord.set('settings', { debugDiagnostics: true });
     const snap2 = coord.buildSnapshot();
     const key2 = coord.buildRenderKey(snap2);
-    expect(snap2.settings.sidebarRebuild).toBe(true);
+    expect(snap2.settings.debugDiagnostics).toBe(true);
     expect(key1).not.toBe(key2);
   });
 });

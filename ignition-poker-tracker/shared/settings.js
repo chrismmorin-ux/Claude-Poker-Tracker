@@ -1,11 +1,10 @@
 /**
- * shared/settings.js — SR-6.1 foundation flag reader/observer.
+ * shared/settings.js — foundation flag reader/observer.
  *
- * Two boolean flags live in chrome.storage.local:
- *   - settings.sidebarRebuild   (gates every SR-6 per-zone rebuild path)
+ * One boolean flag lives in chrome.storage.local:
  *   - settings.debugDiagnostics (gates 0.7 diagnostics link + 4.3 model audit)
  *
- * Both default false. This module is the single owner of the read path so
+ * Defaults false. This module is the single owner of the read path so
  * R-5.1 (single ownership of settings state) holds.
  *
  * Consumers:
@@ -20,17 +19,16 @@
 import { STORAGE_KEYS, SETTINGS_DEFAULTS } from './constants.js';
 
 export const SETTINGS_KEYS = Object.freeze([
-  STORAGE_KEYS.SETTINGS_SIDEBAR_REBUILD,
   STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS,
 ]);
 
 /**
- * Read both settings keys from chrome.storage.local. Missing values fall
- * back to SETTINGS_DEFAULTS. Returns a plain object keyed by camelCase
- * short names (matching the part after `settings.`) so consumers read
- * `settings.sidebarRebuild`, not the full storage key.
+ * Read settings keys from chrome.storage.local. Missing values fall back
+ * to SETTINGS_DEFAULTS. Returns a plain object keyed by camelCase short
+ * names (matching the part after `settings.`) so consumers read
+ * `settings.debugDiagnostics`, not the full storage key.
  *
- * @returns {Promise<{sidebarRebuild: boolean, debugDiagnostics: boolean}>}
+ * @returns {Promise<{debugDiagnostics: boolean}>}
  */
 export async function loadSettings() {
   const raw = await chrome.storage.local.get(SETTINGS_KEYS);
@@ -72,7 +70,6 @@ function normalize(raw) {
     return Boolean(SETTINGS_DEFAULTS[k]);
   };
   return {
-    sidebarRebuild: get(STORAGE_KEYS.SETTINGS_SIDEBAR_REBUILD),
     debugDiagnostics: get(STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS),
   };
 }

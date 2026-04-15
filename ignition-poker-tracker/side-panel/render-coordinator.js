@@ -139,10 +139,9 @@ export class RenderCoordinator {
       _lockedHeroSeat: null,
       _lockedDealerSeat: null,
       _lockedHandNumber: null,
-      // SR-6.1: settings flags. Default false so the coordinator boots into
-      // legacy-only render behavior even if side-panel.js hasn't called
-      // loadSettings() yet. Real values arrive via coordinator.set('settings', ...).
-      settings: { sidebarRebuild: false, debugDiagnostics: false },
+      // Settings flags. Default false until side-panel.js calls
+      // loadSettings(); real values arrive via coordinator.set('settings', ...).
+      settings: { debugDiagnostics: false },
       // SR-6.5: FSM panel state map { [fsmId]: currentState }. Populated by
       // registerFsm(); mutated only via dispatch(). Snapshotted + hashed into
       // renderKey so every transition forces a re-render.
@@ -361,9 +360,8 @@ export class RenderCoordinator {
       snap.connState?.connected ? 1 : 0,
       snap.staleContext ? 1 : 0,
       snap.hasTableHands ? 1 : 0,
-      // SR-6.1: flag flips must force a re-render so subsequent SR-6 gates
-      // can swap code paths deterministically.
-      snap.settings?.sidebarRebuild ? 1 : 0,
+      // Flag flips must force a re-render (debug-diagnostics toggles
+      // 0.7 footer + 4.3 audit panel visibility).
       snap.settings?.debugDiagnostics ? 1 : 0,
       // SR-6.4: coordinator-owned collapsible/UI state. Without these in
       // the key, a user-driven toggle would not re-render (coalesced

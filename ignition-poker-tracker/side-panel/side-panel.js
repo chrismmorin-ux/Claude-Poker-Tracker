@@ -1779,13 +1779,6 @@ injectTokens();
     const liveCtx = snap.currentLiveContext;
     const street = snap.street;
 
-    // -------------------------------------------------------------------
-    // SR-6.1 GATE HOOK — attachment point for subsequent SR-6 PRs.
-    // When `snap.settings.sidebarRebuild` is false (the default until
-    // SR-7 cutover), the legacy render path below runs unchanged.
-    // SR-6.10–6.15 will branch per-zone inside this block.
-    // Do NOT delete this sentinel — the rebuild program depends on it.
-    // -------------------------------------------------------------------
     // SR-6.17: single shell. Zones z1-z4 + zx live inside #hud-content; z0
     // lives at body top-level (always visible). hasTableHands gates the
     // content shell only; Z0 chrome (status + pipeline-health) stays
@@ -1983,7 +1976,7 @@ injectTokens();
   };
 
   // =========================================================================
-  // SR-6.1 — Settings flags (sidebarRebuild, debugDiagnostics)
+  // Settings flags (debugDiagnostics)
   //
   // Boot: read both from chrome.storage.local into coordinator state.
   // Observer: on flip, refresh coordinator.settings + scheduleRender so the

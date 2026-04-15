@@ -45,19 +45,15 @@ export const MSG = {
 // Storage keys used in chrome.storage.local (legacy — being migrated away)
 export const STORAGE_KEYS = {
   CAPTURED_HANDS: 'ignition_captured_hands',
-  // SR-6.1: foundation flags for the sidebar-rebuild program. Both default
-  // false. `SIDEBAR_REBUILD` gates every SR-6 per-zone render change.
-  // `DEBUG_DIAGNOSTICS` gates 0.7 diagnostics link (SR-6.10) and 4.3 model
-  // audit panel (SR-6.14). No consumers wired in 6.1 — the flag plumbing
-  // ships first so subsequent PRs have an attachment point.
-  SETTINGS_SIDEBAR_REBUILD: 'settings.sidebarRebuild',
+  // SR-7 cutover: the `SETTINGS_SIDEBAR_REBUILD` flag was deleted — the
+  // rebuild is now the one and only sidebar. `DEBUG_DIAGNOSTICS` gates 0.7
+  // diagnostics link (SR-6.10) and 4.3 model audit panel (SR-6.14).
   SETTINGS_DEBUG_DIAGNOSTICS: 'settings.debugDiagnostics',
 };
 
 // Default values for settings keys. Single source of truth — options page
 // and side-panel boot both read through this map.
 export const SETTINGS_DEFAULTS = Object.freeze({
-  [/* keep in sync with STORAGE_KEYS.SETTINGS_SIDEBAR_REBUILD */ 'settings.sidebarRebuild']: false,
   [/* keep in sync with STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS */ 'settings.debugDiagnostics']: false,
 });
 
