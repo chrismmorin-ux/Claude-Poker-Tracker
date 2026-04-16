@@ -1193,7 +1193,8 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
           : lastAct.action === 'check' ? 'var(--action-check-text)'
           : lastAct.action === 'fold' ? 'var(--action-fold-text)'
           : 'var(--text-faint)';
-        const amtStr = lastAct.amount > 0 ? `$${lastAct.amount.toFixed(0)}` : '';
+        const amt = Number(lastAct.amount);
+        const amtStr = Number.isFinite(amt) && amt > 0 ? `$${amt.toFixed(0)}` : '';
         // .seat-action-tag — Z1/1.10 per-seat last-action label (F/B/C/R/✓), NOT the deleted 1.6 duplicate of 1.5 bet chip.
         html += `<span class="seat-action-tag" style="color:${actColor}">${actLabel}${amtStr ? ' ' + amtStr : ''}</span>`;
       }

@@ -308,7 +308,10 @@ import { isGameWsUrl } from '../shared/protocol.js';
     },
 
     onContextDead: () => {
-      console.warn('[Poker Capture] Extension context invalidated — stopping all activity');
+      // Expected after extension reload/update: the page still has the old
+      // content script attached, so its port dies. User must reload the tab.
+      // Logged at debug level so it doesn't surface as an error.
+      console.debug('[Poker Capture] Extension context invalidated — stopping all activity');
       clearInterval(statusInterval);
       clearInterval(pruneInterval);
       if (typeof silenceCheckInterval !== 'undefined') clearInterval(silenceCheckInterval);

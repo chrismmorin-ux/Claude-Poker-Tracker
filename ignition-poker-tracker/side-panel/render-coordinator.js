@@ -274,6 +274,9 @@ export class RenderCoordinator {
       // RT-66: violation surfacing
       lastViolationAt: s.lastViolationAt || 0,
       lastViolationCount: s.lastViolationCount || 0,
+      // RT-71: expose pending-advice presence so renderKey + renderers can
+      // react to buffered advice transitions (e.g. SW reanimation hold).
+      pendingAdvicePresent: this._pendingAdvice ? 1 : 0,
       // Computed
       focusedVillainSeat,
       // Derived
@@ -381,7 +384,45 @@ export class RenderCoordinator {
       // re-renders.
       Object.keys(snap.panels || {}).sort().map(k => `${k}:${snap.panels[k]}`).join(','),
       snap.seatPopoverDetail?.seat ?? '',
+      // RT-71: freshness digest — field-only timestamp updates (capture
+      // re-sent same value at new time) must invalidate the key so the
+      // stale-tint / age badge re-evaluates without waiting for an
+      // unrelated state change to coincide.
+      this._freshnessDigest(snap.freshness),
+      // RT-71: invariant violation stamp — "!" badge must appear within the
+      // next frame, not on the next unrelated state change.
+      snap.lastViolationAt || 0,
+      // RT-71: pending-advice presence bit — transitions into/out of
+      // _pendingAdvice (SW reanimation hold, promotion, hand-boundary drop)
+      // must re-render so the "Stale — recomputing" label can reflect state.
+      snap.pendingAdvicePresent || 0,
     ].join('|');
+  }
+
+  /**
+   * RT-71: Cheap digest of the freshness sidecar. Combines max timestamp
+   * across all per-field / per-seat freshness entries with a field count,
+   * so either a new timestamp or a new field appearing invalidates the key.
+   */
+  _freshnessDigest(freshness) {
+    if (!freshness) return '';
+    let maxTs = 0;
+    let count = 0;
+    const ctx = freshness.currentLiveContext;
+    if (ctx && ctx.timestamp > maxTs) maxTs = ctx.timestamp;
+    const fields = freshness.currentLiveContextFields || {};
+    for (const k in fields) {
+      count++;
+      const ts = fields[k]?.timestamp || 0;
+      if (ts > maxTs) maxTs = ts;
+    }
+    const seats = freshness.appSeatData || {};
+    for (const k in seats) {
+      count++;
+      const ts = seats[k]?.timestamp || 0;
+      if (ts > maxTs) maxTs = ts;
+    }
+    return `${maxTs}:${count}`;
   }
 
   // =======================================================================
@@ -643,6 +684,11 @@ export class RenderCoordinator {
       this.logPipelineEvent('new_hand', `${prevState || 'null'} \u2192 ${newState}`);
       // SR-6.5: fan `handNew` to every registered FSM + extra hooks.
       this.dispatchHandNew();
+      // RT-69: force-clear any pending advice at the hand-new boundary. If
+      // promotion succeeded earlier this call, pending is already null (no-op).
+      // Otherwise a cross-hand pending would otherwise promote on the next
+      // coincidental street match — the exact SW-reanimation failure mode.
+      this._pendingAdvice = null;
     }
   }
 

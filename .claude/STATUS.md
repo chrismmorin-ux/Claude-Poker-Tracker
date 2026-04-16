@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-04-15 by Claude (SR-8.4 + SR-8.5 lint gates shipped. `spec-meta` doctrine extension + 50-spec back-annotation + new `spec-meta-discipline.test.js`. Suite 1837 → 1842.)
+Last updated: 2026-04-15 by Claude (sidebar-recurrence roundtable: 24 findings REVIEW — 6 P0, 8 P1, 6 P2, 4 P3. UI Quality → YELLOW.)
 
 ---
 
@@ -20,13 +20,13 @@ _None._
 
 ## Pending Review
 
-**None.** Sidebar Rebuild Program fully closed — SR-8.4 (R-3.3 tier lint) and SR-8.5 (R-5.2 module-boundary lint) shipped 2026-04-15 via `spec-meta` doctrine extension.
+**None.** 24 items from 2026-04-15 roundtable reviewed by owner — 20 approved to NEXT, 4 deferred to LATER. Approved work organised as **Sidebar Trust Program (SRT-1..SRT-4)**: P0 root-cause cluster → doctrine amendments + pre-dispatch gate → sequence-mode replay harness → hardening/UX. See BACKLOG.md.
 
 ---
 
 ## Alerts
 
-- **UI Quality: GREEN** — Root cause from R7 (dual state ownership) resolved by SR-6.5 FSM authoring; full mechanism inventory M1–M8 closed in the sidebar rebuild.
+- **UI Quality: YELLOW** — Owner reports S1–S5 symptoms recurring post-cutover; 6 P0 findings identify structural gaps (SW-cache replay without companion live-context, invariant check post-render not pre-dispatch, renderKey missing freshness/violation fields, `renderBetweenHands` dual-owner persists, `refreshHandStats` async gap). Program premise sound but under-specified in three places (FSM output exclusivity, pre-dispatch invariant gate, sequence-level replay corpus).
 - **Test Health: GREEN** — Sidebar replay corpus + per-zone coverage + 3 automated doctrine lint gates established. Message-level integration coverage shipped under SR-6.
 - **Security: GREEN** — All Phase A security items closed.
 - **Product Correctness: GREEN** — All cited Phase A/B/C/D items shipped.

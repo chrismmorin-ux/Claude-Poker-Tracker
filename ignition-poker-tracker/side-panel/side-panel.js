@@ -328,6 +328,15 @@ injectTokens();
 
     try {
       const result = await chrome.storage.session.get(SESSION_KEYS.SIDE_PANEL_HANDS);
+
+      // RT-73: table-switch guard on the main path. If the table changed
+      // during the await, abandon this read — any writes would contaminate
+      // the new table's state with the old table's stats. Only the retry
+      // path previously had this guard (line 360); the main write path
+      // (coordinator.merge below) was unguarded.
+      const currentTid = coordinator.get('currentActiveTableId');
+      if (activeTableId && currentTid !== activeTableId) return;
+
       const hands = result[SESSION_KEYS.SIDE_PANEL_HANDS] || [];
 
       // Use active table's hands only — cross-table fallback mixes seat data
@@ -1221,28 +1230,48 @@ injectTokens();
 
   const renderBetweenHands = (snap) => {
     const betweenEl = $('between-hands');
-    const streetCard = $('street-card');
+    const hudContent = $('hud-content');
     if (!betweenEl) return;
 
+    // RT-72 — FSM drives the modeAExpired bit (was raw snap.modeAExpired),
+    // and the IDLE/COMPLETE banner path (FSM 'active'). Observing-mode
+    // mid-hand (hero folded into an active street) is a second entry path
+    // that the FSM does not model — the content classifier still decides
+    // that case. Slot ownership is claimed when EITHER the FSM is non-
+    // inactive OR the classifier returns a non-null mode.
+    const panelState = snap.panels?.betweenHands ?? 'inactive';
     const heroSeat = snap.currentLiveContext?.heroSeat
       || snap.currentTableState?.heroSeat;
     const mode = classifyBetweenHandsMode(
       snap.currentLiveContext,
       heroSeat,
       snap.lastGoodAdvice,
-      snap.modeAExpired
+      panelState === 'modeAExpired'
     );
 
-    if (mode === null) {
-      // Hero is active — hide between-hands, show street-card
+    const claimSlot = panelState !== 'inactive' || mode !== null;
+
+    if (!claimSlot) {
       hideEl(betweenEl);
-      if (streetCard) showEl(streetCard);
+      // NOTE: renderBetweenHands does NOT write .hidden on #street-card —
+      // that slot is owned by streetCardFsm. Visibility mutual exclusion
+      // flows through the CSS rule on #hud-content[data-between-hands="active"]
+      // (see side-panel.html). This function only toggles the wrapper
+      // attribute — R-5.2 module-boundary honored.
+      if (hudContent) hudContent.removeAttribute('data-between-hands');
       return;
     }
 
-    // Between-hands — hide street-card, show between-hands
-    if (streetCard) hideEl(streetCard);
+    if (hudContent) hudContent.setAttribute('data-between-hands', 'active');
     showEl(betweenEl);
+
+    if (mode === null) {
+      // FSM says active but the classifier has nothing to render (e.g.
+      // banner fired from IDLE but hero seat missing). Empty shell keeps
+      // the slot claimed without a crash.
+      betweenEl.innerHTML = '';
+      return;
+    }
 
     const result = buildBetweenHandsHTML(mode, {
       liveContext: snap.currentLiveContext,
@@ -1958,6 +1987,29 @@ injectTokens();
   coordinator.registerFsm(modelAuditFsm);
   coordinator.registerFsm(betweenHandsFsm);
   coordinator.registerFsm(streetCardFsm);
+
+  // RT-73: reset refreshHandStats in-flight flags on table switch so a
+  // storage read that was awaiting at the moment of the switch doesn't
+  // later stomp the new table's state via the `finally` retry branch.
+  coordinator.onTableSwitch(() => {
+    _refreshInFlight = false;
+    _refreshPendingAfter = false;
+  });
+
+  // One-shot "extension updated" banner. SW flags EXTENSION_JUST_UPDATED on
+  // install/update; we surface a recovery banner pointing the user at the
+  // Ignition tab (old content scripts are orphaned until reload) and clear
+  // the flag so the banner doesn't re-fire on next side-panel open.
+  (async () => {
+    try {
+      const res = await chrome.storage.session?.get(SESSION_KEYS.EXTENSION_JUST_UPDATED);
+      if (res && res[SESSION_KEYS.EXTENSION_JUST_UPDATED]) {
+        coordinator.set('recoveryMessage', 'Extension updated — reload any open Ignition tabs to resume capture.');
+        coordinator.dispatch('recoveryBanner', 'contextDead');
+        await chrome.storage.session.remove(SESSION_KEYS.EXTENSION_JUST_UPDATED);
+      }
+    } catch (_) { /* storage.session may be unavailable in tests/offline */ }
+  })();
 
   // SR-6.3: give render-street-card a coordinator-backed timer host so its
   // fade transitions are owned by the RT-60 lifecycle instead of module-local

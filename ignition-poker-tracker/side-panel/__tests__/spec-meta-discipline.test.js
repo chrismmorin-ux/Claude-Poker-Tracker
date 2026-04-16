@@ -28,6 +28,16 @@ const SPECS_DIR = resolve(__dirname, '..', '..', '..', 'docs', 'sidebar-specs');
 const PANEL_DIR = resolve(__dirname, '..');
 
 const VALID_TIERS = new Set(['ambient', 'informational', 'decision-critical', 'emergency']);
+// Allowed owner modules (the part before the `:` in `owner: module:renderer`).
+// Must match a real panel-layer source file. Keep in sync with PANEL_MODULES
+// below + any coordinator-owned slots.
+const VALID_OWNER_MODULES = new Set([
+  'side-panel.js',
+  'render-orchestrator.js',
+  'render-street-card.js',
+  'render-tiers.js',
+  'render-coordinator.js',
+]);
 const ZONE_FILES = [
   'z0-chrome.md',
   'z1-table-read.md',
@@ -89,6 +99,28 @@ describe('SR-8.4 / R-3.3 — tier-preemption lint (spec-meta tier field)', () =>
       .filter((s) => !s.meta.owner || !s.meta.slot)
       .map((s) => `${s.file} :: ${s.heading}`);
     expect(incomplete).toEqual([]);
+  });
+
+  it('every spec owner declares a valid module prefix', () => {
+    const bad = ALL_SPECS
+      .filter((s) => s.meta?.owner)
+      .filter((s) => {
+        const mod = s.meta.owner.split(':')[0];
+        return !VALID_OWNER_MODULES.has(mod);
+      })
+      .map((s) => `${s.file} :: ${s.heading} → owner="${s.meta.owner}"`);
+    expect(bad).toEqual([]);
+  });
+
+  it('every spec owner declares a non-empty renderer name after the colon', () => {
+    const bad = ALL_SPECS
+      .filter((s) => s.meta?.owner)
+      .filter((s) => {
+        const parts = s.meta.owner.split(':');
+        return parts.length !== 2 || !parts[1].trim();
+      })
+      .map((s) => `${s.file} :: ${s.heading} → owner="${s.meta.owner}"`);
+    expect(bad).toEqual([]);
   });
 });
 

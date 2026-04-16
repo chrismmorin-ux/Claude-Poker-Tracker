@@ -1571,6 +1571,49 @@ export const zx_x7_observerWithTournament = {
   lastGoodTournament: betweenHandsTournament.lastGoodTournament,
 };
 
+// -------- Audit follow-ups (SR-post-mortem gaps) --------
+
+// 44. z4_userToggledPlanInHand — user opened then closed the plan panel inside a hand.
+// Z4 invariant 2: user-toggle stickiness must persist across street transitions within
+// the same hand (RT-61 auto-expand must NOT re-open a user-closed panel mid-hand).
+// Coordinator-layer state (`_state.userToggledPlanPanelInHand=true`, `_lastAutoExpandAdviceAt=null`)
+// is not expressible in a state-only fixture — harness consumer seeds those flags before render.
+// Paired with z4_rt61AutoExpandTrigger to form the sticky-toggle pair.
+export const z4_userToggledPlanInHand = {
+  ...flopWithAdvice,
+  lastGoodAdvice: {
+    ...flopWithAdvice.lastGoodAdvice,
+    // Same advice payload as the auto-expand trigger — differs only in coordinator toggle state.
+    recommendations: flopWithAdvice.lastGoodAdvice.recommendations,
+  },
+};
+
+// 45. zx_recoveryBannerToTableSwitch — recovery banner live while table switch fires.
+// Asserts FSM resets cleanly via dispatchTableSwitch (render-coordinator clearForTableSwitch)
+// without orphaning banner DOM. `tableJustSwitched` hint signals the mid-transition snapshot.
+export const zx_recoveryBannerToTableSwitch = {
+  ...flopWithAdvice,
+  lastGoodExploits: {
+    seats: [],
+    appConnected: true,
+    recovery: {
+      messages: ['Reconnected — backfilling hands'],
+      tableJustSwitched: true,
+    },
+  },
+};
+
+// 46. z3_streetCardFadeTimeout — street transitioned from flop → turn; prior advice >1s old.
+// Exercises street-card fade timer race (RT-48 age badge + fade overlap).
+// `_state.lastRenderedStreet='flop'` is coordinator-layer; harness seeds it for the fade assertion.
+export const z3_streetCardFadeTimeout = {
+  ...z3_villainPostflopGrid,
+  lastGoodAdvice: {
+    ...z3_villainPostflopGrid.lastGoodAdvice,
+    _receivedAt: Date.now() - 1500,
+  },
+};
+
 // =========================================================================
 // ALL FIXTURES (for harness iteration)
 // =========================================================================
@@ -1622,4 +1665,7 @@ export const ALL_FIXTURES = {
   zx_x5fg_farFromBubbleNoPredictions,
   zx_x6_observerNoVillain,
   zx_x7_observerWithTournament,
+  z4_userToggledPlanInHand,
+  zx_recoveryBannerToTableSwitch,
+  z3_streetCardFadeTimeout,
 };

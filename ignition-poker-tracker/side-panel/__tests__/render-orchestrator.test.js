@@ -439,6 +439,52 @@ describe('buildSeatArcHTML', () => {
     expect(html).toContain('data-seat="3"');
     expect(html).toContain('data-seat="5"');
   });
+
+  // RT-81 — guard lastAct.amount against non-numeric input (M1 generalisation)
+  describe('RT-81 lastAct.amount guard', () => {
+    const buildWithAmount = (amount) => {
+      const f = flopWithAdvice;
+      const ctx = {
+        ...f.currentLiveContext,
+        actionSequence: [
+          { seat: 3, action: 'bet', amount, street: 'flop', order: 1 },
+        ],
+      };
+      return buildSeatArcHTML(f.cachedSeatStats, f.currentTableState, null, {
+        currentLiveContext: ctx,
+        appSeatData: f.appSeatData,
+      });
+    };
+
+    it('renders $N for positive numeric amount', () => {
+      expect(buildWithAmount(12)).toContain('$12');
+    });
+
+    it('renders no amount for zero', () => {
+      const html = buildWithAmount(0);
+      expect(html).toContain('seat-action-tag');
+      expect(html).not.toContain('$');
+    });
+
+    it('does not throw on null / undefined / NaN / Infinity', () => {
+      for (const bad of [null, undefined, NaN, Infinity, -Infinity]) {
+        expect(() => buildWithAmount(bad)).not.toThrow();
+        const html = buildWithAmount(bad);
+        expect(html).toContain('seat-action-tag');
+        expect(html).not.toContain('$');
+      }
+    });
+
+    it('coerces numeric strings', () => {
+      expect(buildWithAmount('10')).toContain('$10');
+    });
+
+    it('does not render $ for non-numeric strings', () => {
+      const html = buildWithAmount('garbage');
+      expect(html).toContain('seat-action-tag');
+      expect(html).not.toContain('$');
+    });
+  });
 });
 
 // =========================================================================

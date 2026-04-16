@@ -149,4 +149,20 @@ describe('RenderCoordinator FSM registry (SR-6.5)', () => {
     expect(coord.getPanelState('seatPopover')).toBe('hidden');
     expect(hookFired).toBe(1);
   });
+
+  // RT-73: non-FSM consumers (e.g. side-panel.js _refreshInFlight reset)
+  // subscribe via onTableSwitch — clearForTableSwitch fans hooks so a table
+  // switch during an in-flight storage read can reset the module-scope
+  // flag before the awaited read resolves and stomps the new table's state.
+  it('RT-73 — clearForTableSwitch fires onTableSwitch hooks', () => {
+    const { coord } = createCoordinator();
+    let hookFired = 0;
+    coord.onTableSwitch(() => { hookFired++; });
+
+    coord.clearForTableSwitch();
+    expect(hookFired).toBe(1);
+
+    coord.clearForTableSwitch();
+    expect(hookFired).toBe(2);
+  });
 });

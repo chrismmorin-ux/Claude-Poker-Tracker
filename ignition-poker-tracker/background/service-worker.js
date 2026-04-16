@@ -9,7 +9,7 @@
  *   - Serving popup/side-panel queries
  */
 
-import { MSG, STORAGE_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION } from '../shared/constants.js';
+import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION } from '../shared/constants.js';
 import * as errors from '../shared/error-reporter.js';
 import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
@@ -92,9 +92,28 @@ const pushFullStateToSidePanel = async () => {
     if (cachedExploits) {
       pushToSidePanel({ type: 'push_exploits', seats: cachedExploits.seats, appConnected: !!appBridgePort });
     }
-    if (cachedActionAdvice) {
-      pushToSidePanel({ type: 'push_action_advice', ...cachedActionAdvice });
+    // RT-68: Before replaying cached advice, check for fresh live context in
+    // session storage. On SW reanimation the previous hand's advice may
+    // otherwise be promoted via _pendingAdvice into a new hand whose street
+    // happens to match. Reuse the 30s staleness guard from GET_LIVE_CONTEXT.
+    let freshContext = null;
+    try {
+      const stored = await chrome.storage.session?.get('live_hand_context');
+      const ctx = stored?.live_hand_context;
+      if (ctx && ctx._persistedAt && (Date.now() - ctx._persistedAt) <= 30000) {
+        freshContext = ctx;
+      }
+    } catch (_) { /* missing storage is non-fatal */ }
+    if (freshContext) {
+      pushToSidePanel({ type: 'push_live_context', context: freshContext });
+      if (cachedActionAdvice) {
+        pushToSidePanel({ type: 'push_action_advice', ...cachedActionAdvice });
+      }
     }
+    // If no fresh live context, drop the cached advice replay — the capture
+    // pipeline will push fresh advice once a real context push resumes.
+    // Holding stale advice at the SW layer duplicates the side-panel's
+    // _pendingAdvice buffer and is the root of the S2/S3 cross-hand display.
     if (cachedTournament) {
       pushToSidePanel({ type: 'push_tournament', ...cachedTournament });
     }
@@ -507,6 +526,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[SW] Poker Session Notes installed:', details.reason);
+
+  if (details.reason === 'update' || details.reason === 'install') {
+    // Signal the side panel to surface a one-shot "reload the Ignition tab"
+    // banner. After extension reload, content scripts already attached to
+    // open tabs are orphaned — their ports die, capture stops until the tab
+    // reloads. Flag is cleared by side-panel on read.
+    try {
+      await chrome.storage.session?.set({ [SESSION_KEYS.EXTENSION_JUST_UPDATED]: Date.now() });
+    } catch (e) {
+      errors.report('storage', e, { op: 'set_extension_just_updated' });
+    }
+  }
 
   if (details.reason === 'update') {
     // Migrate any hands from legacy chrome.storage.local to session queue

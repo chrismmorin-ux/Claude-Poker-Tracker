@@ -790,6 +790,42 @@ describe('buildRenderKey: state-drift invalidation coverage', () => {
     expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
   });
 
+  // RT-71: freshness, invariant violation, and pending-advice transitions
+  // must force a re-render so stale-tint / "!" badge / "Stale — recomputing"
+  // surface within the next frame without depending on an unrelated state
+  // change to coincide.
+  it('RT-71 — freshness timestamp change invalidates the key', () => {
+    const a = emptySnap({
+      freshness: { currentLiveContext: { timestamp: 1000, source: 'capture' }, currentLiveContextFields: {}, appSeatData: {} },
+    });
+    const b = emptySnap({
+      freshness: { currentLiveContext: { timestamp: 2000, source: 'capture' }, currentLiveContextFields: {}, appSeatData: {} },
+    });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('RT-71 — freshness new per-field entry invalidates the key', () => {
+    const a = emptySnap({
+      freshness: { currentLiveContext: null, currentLiveContextFields: {}, appSeatData: {} },
+    });
+    const b = emptySnap({
+      freshness: { currentLiveContext: null, currentLiveContextFields: { pot: { timestamp: 1000, source: 'capture' } }, appSeatData: {} },
+    });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('RT-71 — lastViolationAt stamp invalidates the key', () => {
+    const a = emptySnap({ lastViolationAt: 0 });
+    const b = emptySnap({ lastViolationAt: 1700000000000 });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
+  it('RT-71 — pendingAdvicePresent transition invalidates the key', () => {
+    const a = emptySnap({ pendingAdvicePresent: 0 });
+    const b = emptySnap({ pendingAdvicePresent: 1 });
+    expect(coord.buildRenderKey(a)).not.toBe(coord.buildRenderKey(b));
+  });
+
   it('identical snapshots produce identical keys (skip redundant renders)', () => {
     const a = emptySnap({
       lastGoodTournament: { heroMRatio: 12.0, currentLevelIndex: 3 },

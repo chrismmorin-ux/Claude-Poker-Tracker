@@ -765,6 +765,13 @@
       overflow: hidden;
       transition: opacity var(--ease-fast), transform var(--ease-fast);
     }
+    /* RT-72 — When the between-hands banner is active, hide the street
+       card via a cross-zone CSS rule. This replaces the prior pattern of
+       renderBetweenHands writing .hidden directly on #street-card, which
+       violated R-5.2 (streetCardFsm is the owner of that slot). The
+       data-between-hands attribute is toggled by renderBetweenHands based
+       on snap.panels.betweenHands. */
+    #hud-content[data-between-hands="active"] #street-card { display: none; }
     .street-card.transitioning { opacity: 0; transform: translateY(3px); }
     @keyframes streetFadeIn {
       from { opacity: 0; transform: translateY(3px); }

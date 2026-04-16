@@ -95,3 +95,39 @@ describe('SR-6.15 Zx §X.1 — betweenHands FSM end-to-end (coordinator)', () =>
     expect(coord.getPanelState('betweenHands')).toBe('inactive');
   });
 });
+
+// RT-72 — source-level pins that renderBetweenHands reads the FSM as the
+// slot authority and does NOT reach across the zone boundary into the
+// street-card slot. The old implementation read `snap.modeAExpired` +
+// `snap.currentLiveContext.state` (FSM was decorative) and wrote
+// `showEl(streetCard)` / `hideEl(streetCard)` (R-5.2 dual-owner with
+// streetCardFsm). Both sins must stay gone.
+describe('RT-72 — renderBetweenHands FSM authority (source-level)', () => {
+  const renderBetweenHandsSrc = (() => {
+    const match = js.match(/const renderBetweenHands = \(snap\) => \{[\s\S]*?\n\s{2}\};/);
+    if (!match) throw new Error('renderBetweenHands not found in side-panel.js');
+    // Strip comments (block + line) so text references inside doc comments
+    // don't register as executable reads.
+    return match[0]
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  })();
+
+  it('reads snap.panels.betweenHands as the slot-ownership signal', () => {
+    expect(renderBetweenHandsSrc).toMatch(/snap\.panels\??\.betweenHands/);
+  });
+
+  it('does not call showEl or hideEl on street-card slot', () => {
+    expect(renderBetweenHandsSrc).not.toMatch(/showEl\s*\(\s*streetCard/);
+    expect(renderBetweenHandsSrc).not.toMatch(/hideEl\s*\(\s*streetCard/);
+  });
+
+  it('does not read raw snap.modeAExpired (FSM is the authority)', () => {
+    expect(renderBetweenHandsSrc).not.toMatch(/snap\.modeAExpired/);
+  });
+
+  it('toggles data-between-hands on #hud-content wrapper instead of mutating sibling zone', () => {
+    expect(renderBetweenHandsSrc).toMatch(/data-between-hands/);
+  });
+});
+

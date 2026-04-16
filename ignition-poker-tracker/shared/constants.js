@@ -65,6 +65,10 @@ export const SESSION_KEYS = {
   CONNECTION_STATE: 'bridge_connection_state',
   SIDE_PANEL_HANDS: 'side_panel_hands',
   PIPELINE_DIAG: 'pipeline_diagnostics',
+  // Set by SW onInstalled('update'); consumed + cleared by side-panel boot so
+  // it can surface a one-shot "reload the Ignition tab" banner. Expected after
+  // every extension reload because old content scripts can't rejoin the new SW.
+  EXTENSION_JUST_UPDATED: 'extension_just_updated',
 };
 
 // Extension version — extracted here so all contexts can import without
