@@ -841,6 +841,54 @@ describe('buildRenderKey: state-drift invalidation coverage', () => {
 });
 
 // =========================================================================
+// RT-70: PRE-DISPATCH INVARIANT GATE (R-7.2 enforcement)
+// =========================================================================
+
+describe('RT-70 — pre-dispatch invariant gate', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('stamps violations pre-dispatch and renders with violation in the same frame', () => {
+    const { coord, renders } = createCoordinator();
+
+    // Set up a state that violates Rule 3 (advice street behind context by >1)
+    coord.set('currentLiveContext', liveCtx({ state: 'RIVER', currentStreet: 'river' }));
+    coord.set('lastGoodAdvice', { currentStreet: 'preflop', recommendations: [] });
+    coord.set('hasTableHands', true);
+
+    coord.scheduleRender('test_violation');
+    vi.advanceTimersByTime(100);
+
+    // Render DID fire (with violation stamp in snapshot)
+    expect(renders.length).toBe(1);
+    // Violation SHOULD be stamped
+    expect(coord.get('lastViolationAt')).toBeGreaterThan(0);
+    expect(coord.get('lastViolationCount')).toBeGreaterThan(0);
+    // The snapshot passed to renderFn includes the violation stamp
+    expect(renders[0].snap.lastViolationAt).toBeGreaterThan(0);
+  });
+
+  it('throwOnViolation mode still throws from pre-dispatch position', () => {
+    const renders = [];
+    const coord = new RenderCoordinator({
+      renderFn: (snap, reason) => renders.push(reason),
+      getTimestamp: () => Date.now(),
+      requestFrame: (cb) => setTimeout(cb, 0),
+      setTimeout: (cb, ms) => setTimeout(cb, ms),
+      clearTimeout: (id) => clearTimeout(id),
+    }, { throwOnViolation: true });
+
+    coord.set('currentLiveContext', liveCtx({ state: 'RIVER', currentStreet: 'river' }));
+    coord.set('lastGoodAdvice', { currentStreet: 'preflop', recommendations: [] });
+    coord.set('hasTableHands', true);
+    coord.scheduleRender('throw_test');
+
+    expect(() => vi.advanceTimersByTime(100)).toThrow('Invariant violations');
+    expect(renders.length).toBe(0);
+  });
+});
+
+// =========================================================================
 // SR-6.6: FRESHNESS RECORDS + R-4.3 PARTIAL-PAYLOAD RETENTION
 // =========================================================================
 

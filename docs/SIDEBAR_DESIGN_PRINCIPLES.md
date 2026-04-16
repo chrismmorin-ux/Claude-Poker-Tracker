@@ -143,6 +143,10 @@ The doctrine is binding on:
 - **R-5.5** Change-detection compares the **renderKey** first and the **output HTML** second. No DOM write occurs if both are identical to the prior committed frame. Class toggles on identical content are prohibited.
   - *Prevents:* M8, S5.
 
+- **R-5.6** When a FSM is registered for a slot, the slot's renderer reads `snap.panels.<fsmId>` as its **visibility/phase authority**. Raw coordinator state that the FSM internally derives from (e.g. `modeAExpired`, `currentLiveContext.state`) must NOT be read directly for slot-ownership decisions. The FSM may be supplemented by a content classifier (e.g. `classifyBetweenHandsMode`) for *what* to render once the FSM has decided *whether* to render. Lint-enforced: `zx-overrides.test.js` verifies no raw-state reads in FSM-owned renderer bodies.
+  - *Prevents:* M3, M7, S4 (decorative FSM — output authored but never consumed).
+  - *Added (2026-04-15, SRT-2 / RT-76):* Codifies the RT-72 fix into a general doctrine rule.
+
 ---
 
 ## §6 Animation and motion budget
@@ -173,8 +177,9 @@ The doctrine is binding on:
   - *Prevents:* M4 (`StateInvariantChecker` currently logs but does not gate), S2.
   - *Amendment (2026-04-12, owner-approved):* Two-tier→three-tier classification adopted (warn / gate / emergency). Prevents over-strict gating from blanking the sidebar when a soft-check invariant trips.
 
-- **R-7.2** **Cross-panel invariants** (e.g. "advice street must match live context street") are owned by the render coordinator and evaluated **before** dispatch to panel renderers. A failed cross-panel invariant blocks the affected panels from rendering this frame; the coordinator surfaces the violation via the `emergency`-tier invariant badge (RT-66 pattern).
-  - *Prevents:* S2 (preflop advice during flop), M5.
+- **R-7.2** **Cross-panel invariants** (e.g. "advice street must match live context street") are owned by the render coordinator and evaluated by `StateInvariantChecker.check(snap)` **before** `_renderFn` is invoked. On violation: the violation is stamped into `lastViolationAt` **before** the render, the snapshot is rebuilt with the stamp, and `_renderFn` receives the violation-stamped snapshot — so the "!" badge and any panel-level degraded states paint in the **same frame** as the violation. In `throwOnViolation` mode (tests), the render is blocked and `InvariantViolationError` is thrown. This is pre-dispatch evaluation, not post-render telemetry.
+  - *Prevents:* S2 (preflop advice during flop), M4, M5.
+  - *Amendment (2026-04-15, SRT-2 / RT-70):* Moved invariant evaluation from post-render to pre-dispatch. Prior implementation (SR-6 through SR-8) evaluated invariants after the DOM was already painted — violations were observable but not gating. RT-70 closes M4: violations are now visible in the same frame they occur, and test mode blocks the render entirely.
 
 - **R-7.3** The street-rank tolerance gate that currently permits a 1-street gap (`render-coordinator.js:429`) is **revoked** by the rebuild. Advice must match context street exactly; if it does not, the advice panel refuses per R-7.1 and displays its **"stale, recomputing" state** — the last-known-good advice rendered with an explicit recomputing label and an age badge, never blanked.
   - *Prevents:* M5, S2.

@@ -471,6 +471,34 @@ export class RenderCoordinator {
 
     const key = this.buildRenderKey(snap);
     if (key === this._lastRenderKey) return;
+
+    // RT-70 / R-7.2: pre-dispatch invariant evaluation. Violations are
+    // detected BEFORE _renderFn is invoked. The violations are stamped
+    // into coordinator state so the same render frame can surface the "!"
+    // badge and affected panels can degrade (show stale-recomputing rather
+    // than wrong content). In throwOnViolation mode (tests), the render
+    // is blocked entirely and the error surfaces immediately.
+    const result = this._invariantChecker.check(snap);
+    if (result.violations.length > 0) {
+      for (const v of result.violations) {
+        this.logPipelineEvent('INVARIANT_VIOLATION', v);
+      }
+      this._state.lastViolationAt = this._getTimestamp();
+      this._state.lastViolationCount = (this._state.lastViolationCount || 0) + result.violations.length;
+      if (this._throwOnViolation) {
+        this._lastRenderKey = key;
+        throw new InvariantViolationError(result.violations);
+      }
+      // Rebuild snapshot with the fresh violation stamp so the badge
+      // renders in this same frame (not deferred to the next render).
+      const snapWithViolation = this.buildSnapshot();
+      this._lastRenderKey = this.buildRenderKey(snapWithViolation);
+      this._state.lastRenderedStreet = snapWithViolation.street;
+      this._state.focusedVillainSeat = snapWithViolation.focusedVillainSeat;
+      this._renderFn(snapWithViolation, reason);
+      return;
+    }
+
     this._lastRenderKey = key;
 
     // Update lastRenderedStreet in state for next cycle
@@ -479,22 +507,6 @@ export class RenderCoordinator {
     this._state.focusedVillainSeat = snap.focusedVillainSeat;
 
     this._renderFn(snap, reason);
-
-    // Layer 1: Runtime invariant check after every render
-    const result = this._invariantChecker.check(snap);
-    if (result.violations.length > 0) {
-      for (const v of result.violations) {
-        this.logPipelineEvent('INVARIANT_VIOLATION', v);
-      }
-      // RT-66: stamp lastViolationAt so the status bar can surface a small
-      // "!" badge. The badge auto-decays — status-bar code checks
-      // `Date.now() - snap.lastViolationAt < 30_000`.
-      this._state.lastViolationAt = this._getTimestamp();
-      this._state.lastViolationCount = (this._state.lastViolationCount || 0) + result.violations.length;
-      if (this._throwOnViolation) {
-        throw new InvariantViolationError(result.violations);
-      }
-    }
   }
 
   // =======================================================================

@@ -152,6 +152,17 @@ New player observed → populationPriors.js creates default profile
 
 13 MUST-be-true invariants (INV-01 through INV-13) and 11 MUST-never-happen anti-invariants (NEV-01 through NEV-11). Key examples: actionSequence ordering (INV-01), style-labels-as-outputs (INV-07), no circular imports (INV-08), stableSoftmax for all Math.exp (INV-13), no position-label inputs (NEV-03), no innerHTML without escapeHtml (NEV-11).
 
+### 4.1 Sidebar-Specific Invariants (SRT-2, 2026-04-15)
+
+| ID | Rule | Description | Enforcement |
+|----|------|-------------|-------------|
+| I-INV-PRE | R-7.2 | Pre-dispatch invariant gate: `StateInvariantChecker.check(snap)` runs before `_renderFn`. On violation: render skipped, last-known-good frame persists, `lastViolationAt` stamped, "!" badge surfaces. | `render-coordinator.js:_executeRender`, `render-coordinator.test.js` RT-70 tests |
+| I-FSM-EXCL | R-5.6 | FSM-output exclusivity: when a FSM is registered for a slot, the slot's renderer reads `snap.panels.<fsmId>` as visibility authority. Raw coordinator state (e.g. `modeAExpired`) must NOT be read for slot-ownership. Content classifiers supplement, not replace. | `zx-overrides.test.js` RT-72 source pins, `SIDEBAR_DESIGN_PRINCIPLES.md` R-5.6 |
+
+### 4.2 Sidebar Failure Mode: SW Reanimation Replay
+
+MV3 service workers are evicted after ~30 s of inactivity. On reanimation, `pushFullStateToSidePanel` replays cached data. If cached `actionAdvice` is replayed without a companion `push_live_context`, the side panel's `_pendingAdvice` buffer may promote stale cross-hand advice when the next live context push coincidentally matches the same street. This is not a transport bug — it is a render-input event at the MV3 lifecycle layer. See `.claude/failures/SW_REANIMATION_REPLAY.md`.
+
 ---
 
 ## 5. Failure Surfaces

@@ -156,7 +156,13 @@ describe('SR-8.5 / R-5.2 — module-boundary lint (spec-meta owner field)', () =
   // reflects coarse `side-panel.js:renderAll` ownership — many slots are
   // currently owned by the renderAll orchestrator, which necessarily touches
   // multiple IDs. Decrement as FSM-scoped ownership tightens.
-  const BASELINE_CROSS_MODULE_REFS = 0;
+  // Baseline: 1 cross-module ref — renderBetweenHands (Zx owner) references
+  // #hud-content (wrapper, owned by side-panel.js:renderAll) to toggle
+  // data-between-hands attribute for CSS-based street-card mutual exclusion
+  // (RT-72, R-5.6). This is a legitimate cross-zone wrapper attribute write,
+  // not an R-5.2 violation (renderBetweenHands does not write innerHTML/hidden
+  // on the foreign slot — it only toggles a data attribute on the shared parent).
+  const BASELINE_CROSS_MODULE_REFS = 1;
 
   it('non-owner modules do not reference other modules\' declared slot IDs (baseline lock)', () => {
     let crossRefs = 0;
@@ -180,6 +186,9 @@ describe('SR-8.5 / R-5.2 — module-boundary lint (spec-meta owner field)', () =
       crossRefs: expect.any(Number),
       hits: expect.any(Array),
     });
-    expect(crossRefs).toBeLessThanOrEqual(BASELINE_CROSS_MODULE_REFS + 200);
+    // RT-85: tightened from +200 placeholder to exact baseline match.
+    // The +200 slack was never decremented; actual cross-refs have been 0
+    // since SR-8.5. Any new illicit cross-module reference now fails CI.
+    expect(crossRefs).toBeLessThanOrEqual(BASELINE_CROSS_MODULE_REFS);
   });
 });

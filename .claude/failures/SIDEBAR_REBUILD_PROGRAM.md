@@ -151,3 +151,33 @@ When resuming sidebar work:
 - Per-stage handoffs: `.claude/handoffs/sr-*.md`
 - Commits: `7b8889f` (Phase D close) → `830fd4f` (SR-6 squash) → `551e354`
   (SR-8 polish) → `8d026fe` (SR-7a flag delete) → this commit (SR-7b post-mortem)
+
+## Post-closure amendment (SRT-1 + SRT-2, 2026-04-15)
+
+Owner reported S1–S5 symptoms recurring in live play after SR-7 closure.
+6-expert roundtable diagnosed 24 findings; 20 approved, 4 deferred.
+
+The program closed the mechanisms it modelled (M1–M8), but three structural
+under-specifications allowed the same symptoms to resurface through surfaces
+the program never instrumented:
+
+1. **MV3 SW reanimation** replayed cached `actionAdvice` without a companion
+   `push_live_context`. The side panel's `_pendingAdvice` buffer promoted
+   cross-hand advice on coincidental street match. Fixed: SRT-1 RT-68/RT-69.
+   New failure mode filed: `.claude/failures/SW_REANIMATION_REPLAY.md`.
+
+2. **Invariant checker ran post-render, not pre-dispatch.** R-7.2 claimed
+   pre-dispatch gating; the code evaluated violations after the bad frame
+   had already painted. Fixed: SRT-2 RT-70. Doctrine R-7.2 amended.
+
+3. **FSM output was decorative.** `renderBetweenHands` read raw
+   `snap.modeAExpired` instead of `snap.panels.betweenHands`; the FSM was
+   authored but never consumed. Fixed: SRT-1 RT-72. Doctrine R-5.6 added.
+
+Additional fixes: renderKey extended (RT-71), `refreshHandStats` guarded
+(RT-73), `lastAct.amount.toFixed` hardened (RT-81), baseline slack tightened
+(RT-85). Doctrine now at v3 (R-5.6 + R-7.2 amendment). System model updated
+with invariants I-INV-PRE and I-FSM-EXCL.
+
+SRT-3 (sequence-mode replay harness) and SRT-4 (hardening + UX) remain
+as follow-up sessions.
