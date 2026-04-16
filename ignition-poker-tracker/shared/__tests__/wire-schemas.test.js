@@ -680,6 +680,102 @@ describe('buildLiveContext', () => {
 });
 
 // ============================================================================
+// validateLiveContext — STP-1 R-10.1 topology invariants
+// ============================================================================
+
+describe('validateLiveContext — STP-1 R-10.1 seat-set topology', () => {
+  const base = () => ({
+    currentStreet: 'flop',
+    heroSeat: 5,
+    activeSeatNumbers: [3, 4, 5],
+    foldedSeats: [1, 2],
+  });
+
+  it('rejects activeSeatNumbers ∩ foldedSeats overlap', () => {
+    const r = validateLiveContext({
+      ...base(),
+      activeSeatNumbers: [3, 4, 5],
+      foldedSeats: [1, 5, 7], // 5 in both
+    });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /overlap.*5/.test(e))).toBe(true);
+  });
+
+  it('rejects heroSeat not in active ∪ folded', () => {
+    const r = validateLiveContext({
+      ...base(),
+      heroSeat: 9,
+      activeSeatNumbers: [3, 4, 5],
+      foldedSeats: [1, 2],
+    });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /heroSeat=9.*not in/.test(e))).toBe(true);
+  });
+
+  it('rejects heroSeat out of range', () => {
+    const r = validateLiveContext({ ...base(), heroSeat: 0, activeSeatNumbers: [1], foldedSeats: [] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /heroSeat=0/.test(e))).toBe(true);
+  });
+
+  it('rejects non-integer heroSeat', () => {
+    const r = validateLiveContext({ ...base(), heroSeat: 2.5, activeSeatNumbers: [2], foldedSeats: [] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /heroSeat=2\.5/.test(e))).toBe(true);
+  });
+
+  it('rejects duplicate seats in activeSeatNumbers', () => {
+    const r = validateLiveContext({
+      ...base(),
+      activeSeatNumbers: [3, 3, 5],
+      foldedSeats: [1, 2],
+    });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /duplicates/.test(e))).toBe(true);
+  });
+
+  it('rejects seat numbers outside [1..9]', () => {
+    const r = validateLiveContext({
+      ...base(),
+      activeSeatNumbers: [0, 10, 5],
+      foldedSeats: [1],
+      heroSeat: 5,
+    });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => /out-of-range/.test(e))).toBe(true);
+  });
+
+  it('accepts disjoint sets with hero in active', () => {
+    expect(validateLiveContext(base()).valid).toBe(true);
+  });
+
+  it('accepts hero in foldedSeats (hero folded)', () => {
+    const r = validateLiveContext({
+      ...base(),
+      heroSeat: 2,
+      activeSeatNumbers: [3, 4],
+      foldedSeats: [1, 2],
+    });
+    expect(r.valid).toBe(true);
+  });
+
+  it('tolerates missing seat sets (old-pipeline payloads)', () => {
+    const r = validateLiveContext({ currentStreet: 'preflop' });
+    expect(r.valid).toBe(true);
+  });
+
+  it('tolerates null heroSeat (pre-deal)', () => {
+    const r = validateLiveContext({
+      currentStreet: 'preflop',
+      heroSeat: null,
+      activeSeatNumbers: [3, 4],
+      foldedSeats: [],
+    });
+    expect(r.valid).toBe(true);
+  });
+});
+
+// ============================================================================
 // buildStatus / validateStatus
 // ============================================================================
 

@@ -48,6 +48,8 @@ export class StateInvariantChecker {
     this._rule8_heroSeatValid(snap, violations);
     this._rule9_adviceNotSelf(snap, violations);
     this._rule10_pipelineEventsCapped(snap, violations);
+    this._rule11_seatSetsDisjoint(snap, violations);
+    this._rule12_heroInSeatSet(snap, violations);
 
     return { violations, warnings };
   }
@@ -202,6 +204,49 @@ export class StateInvariantChecker {
     if (events && events.length > 50) {
       violations.push(
         `R10: pipelineEvents length=${events.length} exceeds cap of 50`
+      );
+    }
+  }
+
+  // =========================================================================
+  // RULE 11 (STP-1 R-10.1): activeSeatNumbers and foldedSeats must be disjoint
+  // A seat that's folded cannot also be listed as active. Overlap indicates
+  // upstream payload corruption; validateLiveContext should have rejected it
+  // but we check here as defense in depth for any internal code path that
+  // constructs a liveContext without going through the wire validator.
+  // =========================================================================
+  _rule11_seatSetsDisjoint(snap, violations) {
+    const ctx = snap.currentLiveContext;
+    if (!ctx) return;
+    const active = Array.isArray(ctx.activeSeatNumbers) ? ctx.activeSeatNumbers : null;
+    const folded = Array.isArray(ctx.foldedSeats) ? ctx.foldedSeats : null;
+    if (!active || !folded) return;
+    const activeSet = new Set(active);
+    const overlap = folded.filter(s => activeSet.has(s));
+    if (overlap.length > 0) {
+      violations.push(
+        `R11: activeSeatNumbers and foldedSeats overlap at seats=[${overlap.join(',')}]`
+      );
+    }
+  }
+
+  // =========================================================================
+  // RULE 12 (STP-1 R-10.1): heroSeat must be in activeSeatNumbers ∪ foldedSeats
+  // Hero is at the table by definition. If the seat sets don't account for
+  // the hero, something is wrong with the payload or the seat assignment
+  // pipeline.
+  // =========================================================================
+  _rule12_heroInSeatSet(snap, violations) {
+    const ctx = snap.currentLiveContext;
+    if (!ctx) return;
+    const hero = ctx.heroSeat;
+    if (hero == null) return;
+    const active = Array.isArray(ctx.activeSeatNumbers) ? ctx.activeSeatNumbers : null;
+    const folded = Array.isArray(ctx.foldedSeats) ? ctx.foldedSeats : null;
+    if (!active || !folded) return; // cannot evaluate without both sets
+    if (!active.includes(hero) && !folded.includes(hero)) {
+      violations.push(
+        `R12: heroSeat=${hero} not in activeSeatNumbers=[${active}] or foldedSeats=[${folded}]`
       );
     }
   }

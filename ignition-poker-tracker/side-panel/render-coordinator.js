@@ -131,10 +131,17 @@ export class RenderCoordinator {
       hasTableHands: true,
       // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
       pipelineEvents: [],
-      // RT-66: invariant-violation surfacing. Bumped on every failing check;
-      // snap exposes the timestamp so status bar can show a "!" badge.
+      // RT-66 + STP-1: invariant-violation surfacing.
+      // `lastViolationAt` drives the 30s badge visibility gate (unchanged).
+      // `violationCountLifetime` is the monotonic total since construction —
+      // useful for long-run signal in the diagnostics dump.
+      // `_violationTimestamps` is the rolling-30s window: each failing check
+      // pushes one timestamp per rule hit; snapshot derives `violationCount30s`
+      // from it by filtering to now-30_000. Old entries are pruned eagerly on
+      // push to keep the array bounded during steady-violation sessions.
       lastViolationAt: 0,
-      lastViolationCount: 0,
+      violationCountLifetime: 0,
+      _violationTimestamps: [],
       // Layer 2: Position lock — heroSeat/dealerSeat frozen per hand
       _lockedHeroSeat: null,
       _lockedDealerSeat: null,
@@ -271,9 +278,20 @@ export class RenderCoordinator {
       hasTableHands: s.hasTableHands,
       planPanelOpen: s.planPanelOpen,
       modeAExpired: s.modeAExpired,
-      // RT-66: violation surfacing
+      // RT-66 + STP-1: violation surfacing. Both counters exposed — the
+      // badge uses `violationCount30s`; diag dumps and governance reports
+      // show `violationCountLifetime`. Window is computed at snapshot time
+      // so a long idle period naturally drops the 30s count to zero even
+      // if no new render has occurred since the last violation.
       lastViolationAt: s.lastViolationAt || 0,
-      lastViolationCount: s.lastViolationCount || 0,
+      violationCountLifetime: s.violationCountLifetime || 0,
+      violationCount30s: (() => {
+        const cutoff = this._getTimestamp() - 30_000;
+        const ts = s._violationTimestamps || [];
+        let n = 0;
+        for (let i = ts.length - 1; i >= 0 && ts[i] > cutoff; i--) n++;
+        return n;
+      })(),
       // RT-71: expose pending-advice presence so renderKey + renderers can
       // react to buffered advice transitions (e.g. SW reanimation hold).
       pendingAdvicePresent: this._pendingAdvice ? 1 : 0,
@@ -480,11 +498,19 @@ export class RenderCoordinator {
     // is blocked entirely and the error surfaces immediately.
     const result = this._invariantChecker.check(snap);
     if (result.violations.length > 0) {
+      const now = this._getTimestamp();
+      const ts = this._state._violationTimestamps;
       for (const v of result.violations) {
         this.logPipelineEvent('INVARIANT_VIOLATION', v);
+        ts.push(now);
       }
-      this._state.lastViolationAt = this._getTimestamp();
-      this._state.lastViolationCount = (this._state.lastViolationCount || 0) + result.violations.length;
+      // Prune entries older than the 30s window. Array is append-only with
+      // monotonic timestamps, so shift-while-old is O(k) per call where k
+      // is the number of expired entries — bounded by render rate * 30s.
+      const cutoff = now - 30_000;
+      while (ts.length > 0 && ts[0] < cutoff) ts.shift();
+      this._state.lastViolationAt = now;
+      this._state.violationCountLifetime = (this._state.violationCountLifetime || 0) + result.violations.length;
       if (this._throwOnViolation) {
         this._lastRenderKey = key;
         throw new InvariantViolationError(result.violations);
@@ -691,6 +717,9 @@ export class RenderCoordinator {
       this._state.modelAuditOpen = false;
       this._state.lastAutoExpandAdviceAt = null;
       this._state.userToggledPlanPanelInHand = false;
+      // STP-1 R-8.1 — plan panel state is per-hand (matches moreAnalysisOpen
+      // / modelAuditOpen). Was only cleared on table-switch pre-STP-1.
+      this._state.planPanelOpen = false;
       // SR-6.11 §1.11: Rule V override is hand-scoped (spec batch-invariant 4).
       this._state.rangeSelectedSeat = null;
       this.logPipelineEvent('new_hand', `${prevState || 'null'} \u2192 ${newState}`);
@@ -746,6 +775,34 @@ export class RenderCoordinator {
     this._state.lastGoodAdvice = null;
     this._state.lastGoodTournament = null;
     this._state.currentLiveContext = null;
+    // SRT-trust: advicePendingForStreet is per-table per-hand. If the table
+    // is gone, we're not waiting for advice on it. Leaving this set while
+    // currentLiveContext + lastGoodAdvice are null arms R5 permanently and
+    // spams the invariant counter every render until a new context arrives
+    // (observed: ~30s cadence during probe-flake / grace-expiry cycles).
+    this._state.advicePendingForStreet = null;
+    // STP-1 R-8.1 — per-table exploit data must not bleed across table
+    // switches. Seat references encode the previous table's layout; carrying
+    // them over to a new table displays wrong-villain stats and can arm R4
+    // (focused-villain warning) or worse, mislead the user on seat-specific
+    // reads. Cleared together so no renderer sees an inconsistent subset.
+    this._state.lastGoodExploits = null;
+    this._state.lastGoodWeaknesses = null;
+    this._state.lastGoodBriefings = null;
+    this._state.lastGoodObservations = null;
+    // STP-1 R-8.1 — hand-snapshot state is per-table. Must clear together:
+    // clearing lastHandCount without hasTableHands could arm R1. These are
+    // re-populated by the next handlePipelineStatus push.
+    this._state.lastHandCount = null;
+    this._state.hasTableHands = false;
+    this._state.cachedSeatStats = null;
+    this._state.cachedSeatMap = null;
+    // STP-1 R-8.1 — staleContext is a derived flag from the 60s/120s timer.
+    // On table switch we null currentLiveContext, so the "Data may be stale"
+    // indicator (gated by `staleContext && liveCtx`) is suppressed anyway —
+    // but the flag itself should reset to match. Prevents leftover staleness
+    // state from bleeding into the next table's first render frame.
+    this._state.staleContext = false;
     this._state._lockedHeroSeat = null;
     this._state._lockedDealerSeat = null;
     this._state._lockedHandNumber = null;

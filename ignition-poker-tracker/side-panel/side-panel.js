@@ -1858,12 +1858,15 @@ injectTokens();
       : Infinity;
     const text = $('status-text');
     if (text) {
-      const hasActive = violationAge < 30_000 && snap.lastViolationCount > 0;
+      const hasActive = violationAge < 30_000 && snap.violationCount30s > 0;
       if (hasActive && !text.querySelector('.invariant-badge')) {
         const badge = document.createElement('span');
         badge.className = 'invariant-badge';
         badge.textContent = '!';
-        badge.title = `${snap.lastViolationCount} state invariant violation(s) in the last 30s \u2014 copy diagnostics for details`;
+        // STP-1 R-7.3: tooltip matches the counter. `violationCount30s` is a
+        // true rolling-30s count (pruned at snapshot build time), not a
+        // lifetime accumulator like the pre-STP-1 label claimed.
+        badge.title = `${snap.violationCount30s} state invariant violation(s) in the last 30s \u2014 copy diagnostics for details`;
         text.appendChild(badge);
       } else if (!hasActive) {
         const existing = text.querySelector('.invariant-badge');
@@ -2468,8 +2471,35 @@ injectTokens();
     const _dumpTableState = coordinator.get('currentTableState');
     const _dumpLiveCtx = coordinator.get('currentLiveContext');
     lines.push(`  lastHandCount: ${_dumpHandCount}`);
+    lines.push(`  hasTableHands: ${coordinator.get('hasTableHands')}`);
+    lines.push(`  currentActiveTableId: ${coordinator.get('currentActiveTableId') || 'null'}`);
     lines.push(`  currentTableState: ${_dumpTableState ? `state=${_dumpTableState.state} hero=${_dumpTableState.heroSeat}` : 'null'}`);
     lines.push(`  currentLiveContext: ${_dumpLiveCtx ? `street=${_dumpLiveCtx.currentStreet}` : 'null'}`);
+
+    // RT-66 + STP-1: surface invariant-checker state + recent violation log
+    // so the badge tooltip ("copy diagnostics for details") actually carries
+    // the details. Both counters: 30s rolling (matches badge) + lifetime
+    // (long-run signal for governance).
+    const _dumpViolAt = coordinator.get('lastViolationAt') || 0;
+    const _dumpViolLifetime = coordinator.get('violationCountLifetime') || 0;
+    const _dumpViolTs = coordinator.get('_violationTimestamps') || [];
+    const _dumpCutoff30s = Date.now() - 30_000;
+    const _dumpViol30s = _dumpViolTs.filter(t => t > _dumpCutoff30s).length;
+    const _dumpViolAge = _dumpViolAt ? Math.round((Date.now() - _dumpViolAt) / 1000) : null;
+    lines.push(`  invariantCount: 30s=${_dumpViol30s} | lifetime=${_dumpViolLifetime}`);
+    lines.push(`  invariantLastAt: ${_dumpViolAge == null ? 'never' : `${_dumpViolAge}s ago`}`);
+
+    const _dumpEvents = coordinator.get('pipelineEvents') || [];
+    const _dumpInvEvents = _dumpEvents.filter(e => e.event === 'INVARIANT_VIOLATION');
+    lines.push(`\n[Invariant Violations (${_dumpInvEvents.length} of last ${_dumpEvents.length} pipeline events)]`);
+    if (_dumpInvEvents.length === 0) {
+      lines.push(`  (ring buffer has no INVARIANT_VIOLATION entries — may have been evicted; buffer is capped at 50)`);
+    } else {
+      for (const e of _dumpInvEvents.slice(-20)) {
+        const age = Math.round((Date.now() - e.ts) / 1000);
+        lines.push(`  ${age}s ago: ${e.detail}`);
+      }
+    }
 
     // 4. Exploits cache
     try {

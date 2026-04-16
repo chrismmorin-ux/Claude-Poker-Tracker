@@ -329,6 +329,44 @@ export const validateLiveContext = (context) => {
   if (!isStr(context.currentStreet) && context.currentStreet !== null) {
     errors.push('currentStreet must be string or null');
   }
+
+  // STP-1 R-10.1 payload topology. These mirror invariants R11/R12 in
+  // side-panel/state-invariants.js — first line of defense is ingress
+  // rejection; coordinator-level rules are defense in depth if an internal
+  // code path constructs a liveContext locally and bypasses the wire.
+  const active = Array.isArray(context.activeSeatNumbers) ? context.activeSeatNumbers : null;
+  const folded = Array.isArray(context.foldedSeats) ? context.foldedSeats : null;
+  const isValidSeat = (n) => Number.isInteger(n) && n >= 1 && n <= 9;
+
+  if (active) {
+    const bad = active.filter(s => !isValidSeat(s));
+    if (bad.length) errors.push(`activeSeatNumbers has non-integer or out-of-range entries: [${bad.join(',')}]`);
+    if (new Set(active).size !== active.length) {
+      errors.push(`activeSeatNumbers contains duplicates: [${active.join(',')}]`);
+    }
+  }
+  if (folded) {
+    const bad = folded.filter(s => !isValidSeat(s));
+    if (bad.length) errors.push(`foldedSeats has non-integer or out-of-range entries: [${bad.join(',')}]`);
+  }
+  if (active && folded) {
+    const activeSet = new Set(active);
+    const overlap = folded.filter(s => activeSet.has(s));
+    if (overlap.length) {
+      errors.push(`activeSeatNumbers and foldedSeats overlap at seats: [${overlap.join(',')}]`);
+    }
+  }
+  if (context.heroSeat != null) {
+    if (!isValidSeat(context.heroSeat)) {
+      errors.push(`heroSeat=${context.heroSeat} is outside valid range [1,9] or not integer`);
+    } else if (active && folded) {
+      const all = new Set([...active, ...folded]);
+      if (!all.has(context.heroSeat)) {
+        errors.push(`heroSeat=${context.heroSeat} not in activeSeatNumbers or foldedSeats`);
+      }
+    }
+  }
+
   return { valid: errors.length === 0, errors };
 };
 

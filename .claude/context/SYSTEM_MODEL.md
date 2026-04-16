@@ -152,16 +152,22 @@ New player observed → populationPriors.js creates default profile
 
 13 MUST-be-true invariants (INV-01 through INV-13) and 11 MUST-never-happen anti-invariants (NEV-01 through NEV-11). Key examples: actionSequence ordering (INV-01), style-labels-as-outputs (INV-07), no circular imports (INV-08), stableSoftmax for all Math.exp (INV-13), no position-label inputs (NEV-03), no innerHTML without escapeHtml (NEV-11).
 
-### 4.1 Sidebar-Specific Invariants (SRT-2, 2026-04-15)
+### 4.1 Sidebar-Specific Invariants (SRT-2 2026-04-15, STP-1 2026-04-16)
 
 | ID | Rule | Description | Enforcement |
 |----|------|-------------|-------------|
 | I-INV-PRE | R-7.2 | Pre-dispatch invariant gate: `StateInvariantChecker.check(snap)` runs before `_renderFn`. On violation: render skipped, last-known-good frame persists, `lastViolationAt` stamped, "!" badge surfaces. | `render-coordinator.js:_executeRender`, `render-coordinator.test.js` RT-70 tests |
 | I-FSM-EXCL | R-5.6 | FSM-output exclusivity: when a FSM is registered for a slot, the slot's renderer reads `snap.panels.<fsmId>` as visibility authority. Raw coordinator state (e.g. `modeAExpired`) must NOT be read for slot-ownership. Content classifiers supplement, not replace. | `zx-overrides.test.js` RT-72 source pins, `SIDEBAR_DESIGN_PRINCIPLES.md` R-5.6 |
+| I-OBS-HONEST | R-7.3 | Observability honesty: every user-surfaced string that references coordinator state must equal the state value it claims to report. Labels and numbers may not drift apart from their source (pre-STP-1 the RT-66 badge read `lastViolationCount` but the tooltip promised "in the last 30s" — the counter was lifetime). | `side-panel/__tests__/rendered-text-contract.test.js` |
+| I-OBS-COMPLETE | R-7.4 | Observability completeness: every "see X for details" affordance must have a completeness test asserting X actually contains the referenced details. Applies to `runDiagnostics` (RT-66 badge points at "copy diagnostics for details"), future copy/export paths, and any "open the log" surface. | `side-panel/__tests__/diagnostics-dump.test.js` |
+| I-STATE-SYM | R-8.1 | State-clear symmetry: every `this._state.X = Y` write outside the `RenderCoordinator` constructor must have a matching clear in the lifecycle path that owns its declared scope (table-switch / hand-new / stale-timeout). Scope declared in `side-panel/STATE_FIELD_SCOPES.md`. | `side-panel/__tests__/state-clear-symmetry.test.js` |
+| I-INV-PAYLOAD | R-10.1 | Payload-level invariants: every incoming wire message has a schema validator that checks topology, not just field types. For `push_live_context`: `activeSeatNumbers ∩ foldedSeats = ∅`, `heroSeat ∈ active ∪ folded`, all seats integer in `[1..9]`. R11 (seat-disjoint) and R12 (hero-in-set) are the coordinator-level equivalents for defense in depth. | `shared/__tests__/wire-schemas.test.js`, `state-invariants.test.js` R11/R12, `side-panel/__tests__/payload-fuzz.test.js` |
 
-### 4.2 Sidebar Failure Mode: SW Reanimation Replay
+### 4.2 Sidebar Failure Modes
 
-MV3 service workers are evicted after ~30 s of inactivity. On reanimation, `pushFullStateToSidePanel` replays cached data. If cached `actionAdvice` is replayed without a companion `push_live_context`, the side panel's `_pendingAdvice` buffer may promote stale cross-hand advice when the next live context push coincidentally matches the same street. This is not a transport bug — it is a render-input event at the MV3 lifecycle layer. See `.claude/failures/SW_REANIMATION_REPLAY.md`.
+**SW Reanimation Replay.** MV3 service workers are evicted after ~30 s of inactivity. On reanimation, `pushFullStateToSidePanel` replays cached data. If cached `actionAdvice` is replayed without a companion `push_live_context`, the side panel's `_pendingAdvice` buffer may promote stale cross-hand advice when the next live context push coincidentally matches the same street. This is not a transport bug — it is a render-input event at the MV3 lifecycle layer. See `.claude/failures/SW_REANIMATION_REPLAY.md`.
+
+**State-Clear Asymmetry.** `RenderCoordinator._state` fields have scopes (session / perTable / perHand / derived / monotonic); each scope has an owning lifecycle reset path (`clearForTableSwitch`, hand-new block in `handleLiveContext`, stale-timeout). New fields added to `_state` without a matching clear silently survive the lifecycle boundary and may arm invariant violations on subsequent renders — observed in production as 213 R5 violations in ~500 s, traced to `advicePendingForStreet` not being nulled in `clearForTableSwitch`. Audit surfaced 10 additional asymmetries of the same class. Structural fix via `STATE_FIELD_SCOPES.md` registry, `state-clear-symmetry.test.js`, and doctrine R-8.1 gates the class of bug. See `.claude/failures/STATE_CLEAR_ASYMMETRY.md`.
 
 ---
 

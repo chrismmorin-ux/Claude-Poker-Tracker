@@ -1,12 +1,26 @@
 # Project Status
 
-Last updated: 2026-04-15 by Claude (SRT-1 + SRT-2 shipped. 10/20 items COMPLETE. Doctrine v3 in place. Suite 1897. UI Quality YELLOW → on path to GREEN.)
+Last updated: 2026-04-16 by Claude (STP-1 closed — Sidebar Trust Program phase 2 shipped 5 stages. PEO program CLOSED earlier same day. Extension 1,974 tests, main app 5,623 tests.)
 
 ---
 
 ## Active Sessions
 
 _None._
+
+## Recently Completed
+
+- **Sidebar Trust Program phase 2 (STP-1) — CLOSED 2026-04-16.** Five stages shipped as one bundle after production surfaced a "213 state invariant violations in 30s" badge that the prior audit (SRT-1/SRT-2) had missed. Rolling-30s violation counter replaces the lifetime accumulator (badge tooltip finally matches the number), 4 new doctrine rules added (R-7.3 observability honesty, R-7.4 observability completeness, R-8.1 state-clear symmetry, R-10.1 payload-level invariants), 11 state-clear asymmetries fixed in `clearForTableSwitch` behind a new `STATE_FIELD_SCOPES.md` registry, 4 audit primitives landed (`lifecycle-soak`, `rendered-text-contract`, `diagnostics-dump`, `payload-fuzz`), 2 new coordinator invariants (R11 seat-disjoint, R12 hero-in-set) with matching `validateLiveContext` topology checks. System-model §4.1 extended with I-OBS-HONEST / I-OBS-COMPLETE / I-STATE-SYM / I-INV-PAYLOAD; §4.2 renamed to "Sidebar Failure Modes" with new entry linking `.claude/failures/STATE_CLEAR_ASYMMETRY.md`. Extension test suite 1,897 → 1,974 (+77). Build clean (6 entry points). Plan: `C:\Users\chris\.claude\plans\cryptic-booping-yao.md`.
+
+- **Player Entry Overhaul (PEO) — Program CLOSED 2026-04-16.** Four sessions shipped in one day. Full post-mortem at `.claude/projects/player-entry-overhaul.md`. Feature: right-click seat → fullscreen Player Picker (live name+characteristic filter, recognition-first cards, batch mode) → pick existing (auto retro-link with undo) or Create new → fullscreen Player Editor (non-blocking form, custom SVG feature-avatar builder, draft autosave, auto-name fallback). IDB v14 with `playerDrafts` store, `avatarFeatures` on Player, invariants I-PEO-1..4. 2 new SCREEN routes, 25 new components, 8 new hooks, ~200 net new tests. Baseline 5,422 → final 5,623 (end-state includes deletion of legacy PlayerForm tests).
+
+- **PEO-4 — Cutover + Cleanup (2026-04-16)** — Migrated `PlayersView` to route to `PlayerEditorView` via `openPlayerEditor`; seat-grid selection threads into `editorContext.seatContext`. Deleted `src/components/ui/PlayerForm/` directory (7 files). Removed `pendingSeatForPlayerAssignment` field + `SET_PENDING_SEAT_FOR_PLAYER` action from `uiReducer`, UIContext exposure, and TableView destructure. Updated PlayersView tests (asserts `openPlayerEditor` shape instead of modal). Schema-drift version tests kept passing.
+
+- **PEO-3 — Fullscreen Player Picker + Feature Live (2026-04-16)** — `SCREEN.PLAYER_PICKER` route with autofocused name search, inline expandable feature-chip panels (Skin/Hair/Beard/Glasses/Hat), recognition-first `ResultCard` (avatar-left, bolded name prefix, faded non-matching features, gold left-border accent on full match), sticky `CreateFromQueryCTA` that seeds the editor. Batch-mode state machine (D9) with seat-progress ribbon. `SeatContextMenu` gains "🔍 Find Player…" + reroutes "Create New Player" to `PlayerEditorView`. On pick: auto assign + retro-link + undo toast. `usePlayerPicker` hook + `scorePlayerMatch` primitive from `usePlayerFiltering`. **Feature goes live.** ~60 new tests; 5,699 → 5,760 passing. Handoff: `.claude/handoffs/peo-3-picker-view.md`.
+
+- **PEO-2 — Fullscreen Player Editor (2026-04-16)** — New `SCREEN.PLAYER_EDITOR` route with non-blocking form: `AvatarFeatureBuilder` (tap-swatch per category, live preview, hair/beard-color rows hide when style is "none"), `NameSection` with non-blocking duplicate warning, collapsible `PhysicalSection` + `ImageUploadSection`, `DraftResumeBanner` on mount, `BackToTableBar` with autosave flush. `usePlayerEditor` hook orchestrates draft binding + autoName fallback (user → seat+feature → timestamp) + atomic save. On save with seatContext: auto-assigns seat + fires `linkPlayerToPriorHandsInSession` with undo toast. Dark merge — no entry points wired (PEO-3 will wire SeatContextMenu + picker CreateFromQueryCTA). ~55 new tests; 5,644 → 5,699 passing. Handoff: `.claude/handoffs/peo-2-editor-view.md`.
+
+- **PEO-1 — Data Layer + Avatar System (2026-04-16)** — Dark-merge infrastructure for Player Entry Overhaul. IDB v13 → v14 migration (additive-only, new `playerDrafts` store keyed by userId). `avatarFeatures` sub-object + `nameSource` added to Player schema (both optional/nullable on legacy records). Custom SVG feature-avatar system with 6 categories (`src/assets/avatarFeatures/`) + `AvatarRenderer` + `AvatarMonogram` + `PlayerAvatar` wrapper. Pure `linkPlayerToPriorSeatHands()` with session-scoped walk + boundary stops + idempotence + undo tokens. Atomic `batchUpdateSeatPlayers` and `commitDraft` (single IDB transaction each). Three new hooks: `usePlayerDraft` (debounced autosave), `useRetroactiveLinking` (link + undo flow), `useScreenFocusManagement` (fullscreen-route focus lifecycle). Invariants I-PEO-1..4 added. ~220 new tests; suite 5,422 → 5,644 passing. Handoff: `.claude/handoffs/peo-1-data-layer.md`. Charter: `.claude/projects/player-entry-overhaul.md`.
 
 ## Recently Completed
 

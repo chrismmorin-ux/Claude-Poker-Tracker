@@ -257,3 +257,94 @@ describe('RT-66: Rule 10 reads coordinator accessor when provided', () => {
     expect(result.violations.find(v => v.startsWith('R10:'))).toBeDefined();
   });
 });
+
+// =========================================================================
+// R11 + R12 — STP-1 R-10.1 payload topology
+// =========================================================================
+
+describe('STP-1 R-10.1 — payload topology (R11, R12)', () => {
+  let checker;
+  beforeEach(() => { checker = new StateInvariantChecker(); });
+
+  it('R11: detects activeSeatNumbers and foldedSeats overlap', () => {
+    const snap = validSnapshot({
+      currentLiveContext: {
+        state: 'FLOP', currentStreet: 'flop', heroSeat: 5,
+        activeSeatNumbers: [3, 5, 7],
+        foldedSeats: [1, 5, 9], // seat 5 is in both
+      },
+    });
+    const result = checker.check(snap);
+    const r11 = result.violations.find(v => v.startsWith('R11:'));
+    expect(r11).toBeDefined();
+    expect(r11).toMatch(/seats=\[5\]/);
+  });
+
+  it('R11: multi-seat overlap reported in full', () => {
+    const snap = validSnapshot({
+      currentLiveContext: {
+        state: 'FLOP', currentStreet: 'flop', heroSeat: 5,
+        activeSeatNumbers: [3, 5, 7],
+        foldedSeats: [3, 5, 7], // all overlap
+      },
+    });
+    const result = checker.check(snap);
+    const r11 = result.violations.find(v => v.startsWith('R11:'));
+    expect(r11).toMatch(/3,5,7/);
+  });
+
+  it('R11: does not fire when sets are disjoint', () => {
+    const result = checker.check(validSnapshot());
+    expect(result.violations.find(v => v.startsWith('R11:'))).toBeUndefined();
+  });
+
+  it('R11: does not fire when currentLiveContext is null', () => {
+    const result = checker.check(validSnapshot({ currentLiveContext: null }));
+    expect(result.violations.find(v => v.startsWith('R11:'))).toBeUndefined();
+  });
+
+  // =========================================================================
+  // R12 — hero in active ∪ folded (STP-1 R-10.1)
+  // =========================================================================
+  it('R12: detects heroSeat not in active or folded', () => {
+    const snap = validSnapshot({
+      currentLiveContext: {
+        state: 'FLOP', currentStreet: 'flop', heroSeat: 4,
+        activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
+      },
+    });
+    const result = checker.check(snap);
+    const r12 = result.violations.find(v => v.startsWith('R12:'));
+    expect(r12).toBeDefined();
+    expect(r12).toMatch(/heroSeat=4/);
+  });
+
+  it('R12: does not fire when hero is in activeSeatNumbers', () => {
+    const result = checker.check(validSnapshot());
+    expect(result.violations.find(v => v.startsWith('R12:'))).toBeUndefined();
+  });
+
+  it('R12: does not fire when hero is in foldedSeats (hero folded)', () => {
+    const snap = validSnapshot({
+      currentLiveContext: {
+        state: 'FLOP', currentStreet: 'flop', heroSeat: 9,
+        activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
+      },
+      focusedVillainSeat: null,
+    });
+    const result = checker.check(snap);
+    expect(result.violations.find(v => v.startsWith('R12:'))).toBeUndefined();
+  });
+
+  it('R12: does not fire when heroSeat is null', () => {
+    const snap = validSnapshot({
+      currentLiveContext: {
+        state: 'FLOP', currentStreet: 'flop', heroSeat: null,
+        activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
+      },
+      focusedVillainSeat: null,
+    });
+    const result = checker.check(snap);
+    expect(result.violations.find(v => v.startsWith('R12:'))).toBeUndefined();
+  });
+});

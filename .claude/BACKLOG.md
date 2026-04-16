@@ -25,6 +25,21 @@ _All R6/R7/R8 roundtable findings closed across Phases A, B, C, and D (2026-04-1
 
 ---
 
+## IN_PROGRESS — Player Entry Overhaul (PEO)
+
+Owner-approved 2026-04-16. 4-session program to rebuild live-table player selection UX for mobile-landscape casino use. Plan: `C:\Users\chris\.claude\plans\fluttering-booping-puddle.md`. Charter: `.claude/projects/player-entry-overhaul.md`. Sequenced as S1 data-layer → S2 editor → S3 picker + wire entries → S4 cutover + cleanup. No feature flags per CLAUDE.md — staging handles rollout.
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| PEO-1 | P1 | COMPLETE | **Data Layer + Avatar System** — shipped 2026-04-16 (dark merge). IDB v13→v14 (additive `playerDrafts` store keyed by userId), `avatarFeatures` sub-object + `nameSource` on Player (nullable), `linkPlayerToPriorSeatHands` pure fn with session-scoped walk and idempotence, `batchUpdateSeatPlayers` atomic, reducer `RETROACTIVELY_LINK_PLAYER` + undo, `statsRecompute`, custom SVG feature avatars (6 categories) + `AvatarRenderer` + `AvatarMonogram` + `PlayerAvatar`, 3 hooks (`usePlayerDraft`, `useRetroactiveLinking`, `useScreenFocusManagement`), invariants I-PEO-1..4. 5,422 → 5,644 tests. | ✓ Tests green; ✓ v14 additive-only verified; ✓ retro-link → stats recompute → undo round trip tested; ✓ STATE_SCHEMA/INVARIANTS/CHANGELOG updated | Shipped |
+| PEO-2 | P1 | COMPLETE | **Fullscreen PlayerEditorView** — shipped 2026-04-16 (dark merge). `SCREEN.PLAYER_EDITOR` route, non-blocking form with swatch-based `AvatarFeatureBuilder` (6 categories + live preview + auto-hide color rows when style=none), `NameSection` with non-blocking duplicate warning, collapsible `PhysicalSection` + `ImageUploadSection`, `DraftResumeBanner`, `BackToTableBar` with draft flush. `usePlayerEditor` hook wires draft + autoName (user → seat+feature → timestamp) + atomic save. Post-save: auto-seat-assign + retro-link with undo toast. `playerAutoName.js` pure utility. 5,644 → 5,699 tests. | ✓ Tests green; ✓ editor reachable via SET_SCREEN dispatch; ✓ draft resume verified; ✓ autoName fallback chain covered; ✓ schema-drift version tests pass | Shipped |
+| PEO-3 | P1 | COMPLETE | **Fullscreen PlayerPickerView + wire entries** — shipped 2026-04-16. `SCREEN.PLAYER_PICKER` route with autofocused name search (prefix match on name + nickname, case-insensitive), inline expandable feature chips (Skin/Hair/Beard/Glasses/Hat, AND semantics), recognition-first `ResultCard` (avatar-left, bolded prefix, faded non-match chips, gold left-border accent), sticky `CreateFromQueryCTA` seeds editor. Batch mode + seat-progress ribbon (D9). `SeatContextMenu` gains "🔍 Find Player…" + reroutes "Create New" to editor. On pick: assign + retro-link + undo toast. `usePlayerPicker` hook + `scorePlayerMatch` primitive. **Feature live.** 5,699 → 5,760 tests. | ✓ Right-click seat → picker works; ✓ name+feature filters narrow results; ✓ pick existing fires retro-link + undo-toast; ✓ batch mode advances; ✓ create-CTA seeds editor | Shipped |
+| PEO-4 | P1 | COMPLETE | **Cutover, cleanup, docs** — shipped 2026-04-16. Migrated PlayersView create+edit buttons to `openPlayerEditor`. Deleted `src/components/ui/PlayerForm/` directory (7 files incl. tests). Removed `pendingSeatForPlayerAssignment` from reducer + schema + UIContext + TableView. PlayersView tests rewritten against new architecture. Full post-mortem written. 5,760 → 5,623 tests (net drop from deleted legacy PlayerForm tests; 0 failing). | ✓ `grep PlayerForm src/` only comments remain; ✓ `grep pendingSeatForPlayerAssignment src/` only historical comment remains; ✓ suite green; ✓ docs updated | Shipped |
+
+**Player Entry Overhaul CLOSED 2026-04-16.** All 4 sessions shipped in one day. Post-mortem at `.claude/projects/player-entry-overhaul.md`. Plan retained at `C:\Users\chris\.claude\plans\fluttering-booping-puddle.md`. Per-session handoffs at `.claude/handoffs/peo-{1,2,3,4}-*.md`.
+
+---
+
 ## NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)
 
 Owner-reported: S1–S5 symptoms persist despite SR-0→SR-8 closure. 6-expert roundtable diagnosed 24 findings. Owner approved 20 items 2026-04-15 prioritising long-term infrastructural trust; 4 items (RT-84, RT-86, RT-87, RT-91) held as LATER. Status on each row below reflects approval.
@@ -111,6 +126,8 @@ Post-mortem at `.claude/failures/SIDEBAR_REBUILD_PROGRAM.md` gets an amendment n
 ---
 
 ## Recently Completed Phases
+
+**STP-1 — Sidebar Trust Program phase 2 (CLOSED 2026-04-16).** Five-stage bundle shipped after production surfaced a 213-violation badge that the SRT-1/SRT-2 audit had missed. Stage 1: rolling-30s violation counter replaces lifetime accumulator (`render-coordinator.js`, `side-panel.js` badge tooltip, `render-coordinator.test.js`). Stage 2: `validateLiveContext` topology checks (disjoint-set + hero-in-set + seat-range) in `shared/wire-schemas.js`; R11/R12 invariants in `state-invariants.js`. Stage 3: `STATE_FIELD_SCOPES.md` registry + `state-clear-symmetry.test.js` + 11 field clears added to `clearForTableSwitch`. Stage 4: 4 audit primitives — `lifecycle-soak.test.js`, `rendered-text-contract.test.js`, `diagnostics-dump.test.js`, `payload-fuzz.test.js`. Stage 5: doctrine R-7.3 / R-7.4 / R-8.1 / R-10.1 in `SIDEBAR_DESIGN_PRINCIPLES.md`; `.claude/failures/STATE_CLEAR_ASYMMETRY.md`; `SYSTEM_MODEL.md` §4.1 + §4.2 extended; BACKLOG + STATUS updated. Suite 1,897 → 1,974 (+77). Build clean. Plan: `C:\Users\chris\.claude\plans\cryptic-booping-yao.md`.
 
 **Phase A (2026-04-12)** — RT-46, RT-56, RT-57, RT-62, RT-63, RT-64, RT-65, RT-67.
 **Phase B (2026-04-12)** — RT-43, RT-44, RT-45, RT-47, RT-54, RT-58, RT-59, RT-60.

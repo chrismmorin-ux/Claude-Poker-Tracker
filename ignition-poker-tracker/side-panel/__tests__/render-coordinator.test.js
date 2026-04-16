@@ -647,6 +647,20 @@ describe('RT-60: timer registration contract', () => {
     expect(b).not.toHaveBeenCalled();
   });
 
+  it('clearForTableSwitch clears advicePendingForStreet (prevents R5 spam)', () => {
+    // Regression: probe-flake → tableGrace → clearForTableSwitch used to
+    // leave advicePendingForStreet set. Combined with the same-call clears
+    // of currentLiveContext + lastGoodAdvice, this armed R5 on every render
+    // until a new context arrived. Observed spamming the invariant counter
+    // at ~30s cadence in the field.
+    const { coord } = makeTimedCoord();
+    coord.set('advicePendingForStreet', 'PREFLOP');
+    coord.clearForTableSwitch();
+    expect(coord.get('advicePendingForStreet')).toBeNull();
+    expect(coord.get('currentLiveContext')).toBeNull();
+    expect(coord.get('lastGoodAdvice')).toBeNull();
+  });
+
   it('onTableSwitch hooks fire on clearForTableSwitch', () => {
     const { coord } = makeTimedCoord();
     const hook = vi.fn();
@@ -863,9 +877,57 @@ describe('RT-70 — pre-dispatch invariant gate', () => {
     expect(renders.length).toBe(1);
     // Violation SHOULD be stamped
     expect(coord.get('lastViolationAt')).toBeGreaterThan(0);
-    expect(coord.get('lastViolationCount')).toBeGreaterThan(0);
+    expect(coord.get('violationCountLifetime')).toBeGreaterThan(0);
     // The snapshot passed to renderFn includes the violation stamp
     expect(renders[0].snap.lastViolationAt).toBeGreaterThan(0);
+    // STP-1: rolling counter also exposes the violation for the badge
+    expect(renders[0].snap.violationCount30s).toBeGreaterThan(0);
+  });
+
+  it('STP-1 — violationCount30s is a rolling window; lifetime is monotonic', () => {
+    // Regression for the pre-STP-1 tooltip lie. Before the fix,
+    // `lastViolationCount` was a lifetime accumulator that the badge tooltip
+    // labelled "in the last 30s". This test pins that the rolling counter
+    // actually drops old entries while lifetime continues to accumulate.
+    const { coord, renders } = createCoordinator();
+
+    // Arrange a persistent R3 violation (advice 2 streets behind context).
+    coord.set('currentLiveContext', liveCtx({ state: 'RIVER', currentStreet: 'river' }));
+    coord.set('lastGoodAdvice', { currentStreet: 'preflop', recommendations: [] });
+    coord.set('hasTableHands', true);
+
+    // Fire one violation.
+    coord.scheduleRender('v1');
+    vi.advanceTimersByTime(100);
+    expect(coord.get('violationCountLifetime')).toBe(1);
+    expect(renders.at(-1).snap.violationCount30s).toBe(1);
+
+    // Wait 20s, fire another. Both should count in 30s window.
+    vi.advanceTimersByTime(20_000);
+    coord.set('advicePushCount', (coord.get('advicePushCount') || 0) + 1);
+    coord.scheduleRender('v2');
+    vi.advanceTimersByTime(100);
+    expect(coord.get('violationCountLifetime')).toBe(2);
+    expect(renders.at(-1).snap.violationCount30s).toBe(2);
+
+    // Advance past the 30s window relative to the FIRST violation. Old entry
+    // should be pruned; only the 20s-ago one remains in the window.
+    vi.advanceTimersByTime(11_000); // 31s total since v1, 11s since v2
+    coord.set('advicePushCount', (coord.get('advicePushCount') || 0) + 1);
+    coord.scheduleRender('window_rollover');
+    vi.advanceTimersByTime(100);
+    // Lifetime unchanged this frame (no new violation arg, but the render
+    // will still evaluate invariants against the violating state — so it
+    // fires one more. Tally: lifetime=3, 30s window contains v2 + v3).
+    expect(coord.get('violationCountLifetime')).toBe(3);
+    expect(renders.at(-1).snap.violationCount30s).toBe(2);
+
+    // Idle 40s past last violation. Snapshot-time pruning drops the window
+    // to zero without requiring a new render to "clean up".
+    vi.advanceTimersByTime(40_000);
+    const snap = coord.buildSnapshot();
+    expect(snap.violationCount30s).toBe(0);
+    expect(snap.violationCountLifetime).toBe(3);
   });
 
   it('throwOnViolation mode still throws from pre-dispatch position', () => {
