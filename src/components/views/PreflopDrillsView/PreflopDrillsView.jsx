@@ -17,12 +17,14 @@ import { ExplorerMode } from './ExplorerMode';
 import { EstimateMode } from './EstimateMode';
 import { FrameworkMode } from './FrameworkMode';
 import { LibraryMode } from './LibraryMode';
+import { LessonsMode } from './LessonsMode';
 
 const TABS = [
   { id: 'explorer',  label: 'Explorer' },
   { id: 'estimate',  label: 'Estimate Drill' },
   { id: 'framework', label: 'Framework Drill' },
   { id: 'library',   label: 'Library' },
+  { id: 'lessons',   label: 'Lessons' },
 ];
 
 export const PreflopDrillsView = ({ scale }) => {
@@ -73,6 +75,7 @@ export const PreflopDrillsView = ({ scale }) => {
           {activeTab === 'estimate' && <EstimateMode />}
           {activeTab === 'framework' && <FrameworkMode />}
           {activeTab === 'library' && <LibraryMode />}
+          {activeTab === 'lessons' && <LessonsMode />}
         </div>
       </div>
     </ScaledContainer>

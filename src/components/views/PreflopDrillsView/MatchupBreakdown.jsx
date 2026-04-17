@@ -94,7 +94,11 @@ export const MatchupBreakdown = ({
             {showDetails ? 'Hide' : 'Show'} straight combo details
           </button>
           {showDetails && (
-            <CoverageDetails match={frameworkMatches.find((m) => m.framework.id === 'straight_coverage')} />
+            <CoverageDetails
+              match={frameworkMatches.find((m) => m.framework.id === 'straight_coverage')}
+              handALabel={handALabel}
+              handBLabel={handBLabel}
+            />
           )}
         </div>
       )}
@@ -111,14 +115,22 @@ const Stat = ({ label, value, color }) => (
 
 const FrameworkChip = ({ match }) => {
   const hue = FRAMEWORK_COLOR[match.framework.id] || 'bg-gray-700 text-gray-200';
+  const delta = match.equityDelta;
+  const deltaLabel = delta && (delta.favored !== delta.other)
+    ? ` ${formatSigned(delta.favored)}`
+    : delta && delta.favored === delta.other && delta.favored !== 0
+      ? ` ${formatSigned(delta.favored)} each`
+      : '';
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-medium ${hue}`} title={match.framework.shortDescription}>
-      {match.framework.name}
+      {match.framework.name}{deltaLabel}
     </span>
   );
 };
 
-const FRAMEWORK_COLOR = {
+const formatSigned = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+
+export const FRAMEWORK_COLOR = {
   decomposition: 'bg-slate-700 text-slate-200',
   domination: 'bg-rose-900 text-rose-200',
   pair_over_pair: 'bg-purple-900 text-purple-200',
@@ -128,17 +140,35 @@ const FRAMEWORK_COLOR = {
   flush_contention: 'bg-cyan-900 text-cyan-200',
 };
 
-const CoverageDetails = ({ match }) => {
+const CoverageDetails = ({ match, handALabel, handBLabel }) => {
   if (!match?.details) return null;
   const { details } = match;
   const fmt = (patterns) =>
     patterns.length === 0 ? 'none' : patterns.map(patternLabel).join(', ');
   return (
-    <div className="mt-2 bg-gray-900/60 rounded p-3 text-xs text-gray-300 space-y-1">
-      <div><span className="text-gray-500">Hand A all straights:</span> {fmt(details.aPatterns)}</div>
-      <div><span className="text-gray-500">Hand A live:</span> {fmt(details.aLivePatterns)}</div>
-      <div><span className="text-gray-500">Hand B all straights:</span> {fmt(details.bPatterns)}</div>
-      <div><span className="text-gray-500">Hand B live:</span> {fmt(details.bLivePatterns)}</div>
+    <div className="mt-2 bg-gray-900/60 rounded p-3 text-xs text-gray-300 space-y-3">
+      <div className="flex items-center justify-between bg-gray-800/80 rounded px-2 py-1.5">
+        <span className="text-gray-400">Coverage score</span>
+        <span className="font-mono text-gray-100">
+          {handALabel} {details.aCoverageScore.toFixed(1)}  ·  {handBLabel} {details.bCoverageScore.toFixed(1)}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-[11px] uppercase tracking-wide text-gray-500">{handALabel}</div>
+        <div><span className="text-gray-500">Direct runs:</span> {fmt(details.aPatterns)}</div>
+        <div><span className="text-gray-500">Direct live:</span> {fmt(details.aLivePatterns)}</div>
+        <div><span className="text-gray-500">Single-card runs:</span> {fmt(details.aSingleCardPatterns)}</div>
+        <div><span className="text-gray-500">Single-card live:</span> {fmt(details.aSingleCardLivePatterns)}</div>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-[11px] uppercase tracking-wide text-gray-500">{handBLabel}</div>
+        <div><span className="text-gray-500">Direct runs:</span> {fmt(details.bPatterns)}</div>
+        <div><span className="text-gray-500">Direct live:</span> {fmt(details.bLivePatterns)}</div>
+        <div><span className="text-gray-500">Single-card runs:</span> {fmt(details.bSingleCardPatterns)}</div>
+        <div><span className="text-gray-500">Single-card live:</span> {fmt(details.bSingleCardLivePatterns)}</div>
+      </div>
     </div>
   );
 };

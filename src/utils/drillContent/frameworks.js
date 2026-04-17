@@ -203,50 +203,89 @@ export const BROADWAY_VS_CONNECTOR = {
 export const STRAIGHT_COVERAGE = {
   id: 'straight_coverage',
   name: 'Straight Coverage (modifier)',
-  shortDescription: 'Count each hand\'s direct straight combos and subtract ranks shared with the opponent.',
-  subcases: [{ id: 'coverage', claim: 'Each live straight combo contributes ~1.5–3% equity', band: null }],
+  shortDescription: 'Count direct AND single-card straight runs each hand contributes to, minus blockers.',
+  subcases: [{ id: 'coverage', claim: 'Each live direct combo ≈ +2%, each live single-card combo ≈ +0.7% by the river', band: null }],
   applies: (a, b) => {
     const cov = analyzeStraightCoverage(a, b);
+    // Trigger when at least one side has direct straight potential. Pair-vs-pair
+    // and fully disconnected matchups still have single-card coverage, but
+    // showing it there is noise — the framework is most useful when a "made
+    // straight by the river with both hole cards" is even on the table.
     if (cov.aTotal === 0 && cov.bTotal === 0) return null;
     return { subcase: 'coverage', favored: null, details: cov };
   },
   narrate: (a, b, match) => {
     const d = match.details;
-    const aStr = `${handLabel(a)}: ${d.aTotal} total straight combos${d.aBlocked ? `, ${d.aLive} live (${d.aBlocked} blocked)` : ''}`;
-    const bStr = `${handLabel(b)}: ${d.bTotal} total${d.bBlocked ? `, ${d.bLive} live (${d.bBlocked} blocked)` : ''}`;
-    return `${aStr}. ${bStr}. Each live combo ≈ 1.5–3% equity uplift by the river.`;
+    const describe = (hand, direct, directLive, single, singleLive, score) => {
+      const directStr = direct === 0
+        ? 'no direct straights'
+        : `${directLive}/${direct} direct straight${direct === 1 ? '' : 's'} live`;
+      const singleStr = single === 0
+        ? 'no single-card runs'
+        : `${singleLive}/${single} single-card run${single === 1 ? '' : 's'} live`;
+      return `${handLabel(hand)}: ${directStr}, ${singleStr} (coverage score ${score.toFixed(1)})`;
+    };
+    const aStr = describe(a, d.aTotal, d.aLive, d.aSingleCardTotal, d.aSingleCardLive, d.aCoverageScore);
+    const bStr = describe(b, d.bTotal, d.bLive, d.bSingleCardTotal, d.bSingleCardLive, d.bCoverageScore);
+    const scoreDiff = d.aCoverageScore - d.bCoverageScore;
+    const winner = scoreDiff > 0.05 ? handLabel(a) : scoreDiff < -0.05 ? handLabel(b) : null;
+    const leader = winner
+      ? ` ${winner} carries the higher coverage score — slightly more equity from unmade straights.`
+      : ' Coverage scores are roughly equal.';
+    return `${aStr}. ${bStr}.${leader} Direct combo ≈ +2%, single-card combo ≈ +0.7% river equity.`;
   },
+};
+
+// Approximate equity deltas (in %-points) for each flush-contention shape.
+// These surface as numeric chips in the UI so users can calibrate
+// "how much does suitedness actually buy?"
+const FLUSH_DELTAS = {
+  one_suited:         { favored: +3.0, other:  0.0 },
+  both_suited_shared: { favored: +2.3, other: +2.3 }, // contention shaves ~0.7 each
+  neither_suited:     { favored: +0.5, other: +0.5 }, // pure backdoor
 };
 
 export const FLUSH_CONTENTION = {
   id: 'flush_contention',
   name: 'Suitedness & Flush Contention (modifier)',
-  shortDescription: 'Suited = +2–4% base; same-suit vs same-suit opponents contend for the same flush cards.',
+  shortDescription: 'Suited = +3% base; same-suit matchups pay a ~0.7% contention tax.',
   subcases: [
-    { id: 'one_suited', claim: 'One suited hand — full flush upside (~+3%)', band: null },
-    { id: 'both_suited_shared', claim: 'Both suited, same suit possible — contested flush', band: null },
-    { id: 'both_suited_diff', claim: 'Both suited, different suits guaranteed — both retain flush upside', band: null },
-    { id: 'neither_suited', claim: 'Both offsuit/pair — flushes require 4 suited board cards (~4%)', band: null },
+    { id: 'one_suited', claim: 'One suited hand — full flush upside (~+3.0%)', band: null },
+    { id: 'both_suited_shared', claim: 'Both suited — each side gets ~+2.3% (3.0% base minus ~0.7% contention)', band: null },
+    { id: 'neither_suited', claim: 'Both offsuit/pair — only ~+0.5% each from backdoor flushes', band: null },
   ],
   applies: (a, b) => {
     const aS = !isPair(a) && a.suited;
     const bS = !isPair(b) && b.suited;
     if (aS && bS) {
-      // Both suited: could share a suit (1/4 of combos) or not (3/4).
-      return { subcase: 'both_suited_shared', favored: null };
+      return {
+        subcase: 'both_suited_shared',
+        favored: null,
+        equityDelta: FLUSH_DELTAS.both_suited_shared,
+      };
     }
-    if (aS || bS) return { subcase: 'one_suited', favored: aS ? 'A' : 'B' };
-    return { subcase: 'neither_suited', favored: null };
+    if (aS || bS) {
+      return {
+        subcase: 'one_suited',
+        favored: aS ? 'A' : 'B',
+        equityDelta: FLUSH_DELTAS.one_suited,
+      };
+    }
+    return {
+      subcase: 'neither_suited',
+      favored: null,
+      equityDelta: FLUSH_DELTAS.neither_suited,
+    };
   },
   narrate: (a, b, match) => {
     if (match.subcase === 'one_suited') {
       const suited = match.favored === 'A' ? a : b;
-      return `${handLabel(suited)} is suited — gains ~2–4% from flush potential. The opponent is offsuit/pair so can't contend for the same flush suit.`;
+      return `${handLabel(suited)} is suited — ~+3.0% from flush potential. Opponent is offsuit/pair so can't contest the same suit.`;
     }
     if (match.subcase === 'both_suited_shared') {
-      return 'Both hands suited — 1 in 4 combo pairings shares the suit (flush contention); the other 3 in 4 run independently. All-suits average already bakes this in.';
+      return 'Both suited — each side gains ~+3.0% base, but 1 in 4 combo pairings shares a suit. Contention shaves ~0.7% → net ~+2.3% each.';
     }
-    return 'Neither hand is suited — flushes require 4+ matching suits on the board (~4% base each). Small effect.';
+    return 'Neither suited — only ~+0.5% each from 4-to-a-suit backdoor boards. Negligible.';
   },
 };
 
@@ -287,6 +326,7 @@ export const classifyMatchup = (handA, handB) => {
       subcase: match.subcase,
       favored: match.favored,
       details: match.details || null,
+      equityDelta: match.equityDelta || null,
       narration: fw.narrate(handA, handB, match),
     });
   }

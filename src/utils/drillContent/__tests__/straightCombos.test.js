@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
   ALL_STRAIGHTS,
   straightPatternsForHand,
+  singleCardPatternsForHand,
   livePatternsAgainst,
   analyzeStraightCoverage,
   classifyConnectedness,
@@ -181,6 +182,122 @@ describe('straightCombos — analyzeStraightCoverage', () => {
     expect(bwd.aLive).toBe(fwd.bLive);
     expect(bwd.bTotal).toBe(fwd.aTotal);
     expect(bwd.bLive).toBe(fwd.aLive);
+  });
+});
+
+describe('straightCombos — singleCardPatternsForHand', () => {
+  test('AK — 2 single-card runs (A2345 via A only; 9TJQK via K only)', () => {
+    const runs = singleCardPatternsForHand(R.A, R.K);
+    expect(runs).toHaveLength(2);
+    const labels = runs.map((p) => p.slice().sort((a, b) => a - b).join(','));
+    expect(labels).toContain([R['2'], R['3'], R['4'], R['5'], R.A].sort((a, b) => a - b).join(','));
+    expect(labels).toContain([R['9'], R.T, R.J, R.Q, R.K].sort((a, b) => a - b).join(','));
+    // Should NOT contain TJQKA (that's a direct run containing both A and K)
+    expect(labels).not.toContain([R.T, R.J, R.Q, R.K, R.A].sort((a, b) => a - b).join(','));
+  });
+
+  test('AQ — 3 single-card runs (wheel + 89TJQ + 9TJQK), confirming AQ > AK coverage', () => {
+    const runs = singleCardPatternsForHand(R.A, R.Q);
+    expect(runs).toHaveLength(3);
+    // AQ strictly more single-card runs than AK — this is the user-facing distinction.
+    expect(runs.length).toBeGreaterThan(singleCardPatternsForHand(R.A, R.K).length);
+  });
+
+  test('AA (pair) — single-card runs = 2 (A2345, TJQKA)', () => {
+    expect(singleCardPatternsForHand(R.A, R.A)).toHaveLength(2);
+  });
+
+  test('77 (pair) — single-card runs = 5 (every run containing a 7)', () => {
+    // 7 is in 34567, 45678, 56789, 6789T, 789TJ
+    expect(singleCardPatternsForHand(R['7'], R['7'])).toHaveLength(5);
+  });
+
+  test('JT — 1 single-card run (6789T via T only)', () => {
+    // Every run containing J also contains T for middle connectors except 6789T (T only) and TJQKA (actually has T AND J too).
+    // JT direct runs: 789TJ, 89TJQ, 9TJQK, TJQKA (all contain both)
+    // Runs with J only: none (every run containing J in 789TJ..TJQKA also contains T).
+    // Runs with T only: 6789T.
+    expect(singleCardPatternsForHand(R.J, R.T)).toHaveLength(1);
+  });
+
+  test('symmetric — argument order does not matter', () => {
+    expect(singleCardPatternsForHand(R.A, R.Q).length).toBe(
+      singleCardPatternsForHand(R.Q, R.A).length,
+    );
+  });
+});
+
+describe('straightCombos — livePatternsAgainst with heroRanks', () => {
+  test('hero-held ranks discount villain blockers (AK vs AK — Broadway stays live)', () => {
+    const ak = straightPatternsForHand(R.A, R.K); // [TJQKA]
+    // Without heroRanks: legacy behavior blocks TJQKA because villain also has A+K.
+    const legacy = livePatternsAgainst(ak, [R.A, R.K]);
+    expect(legacy).toHaveLength(0);
+    // With heroRanks: A and K are hero's own, only board-needed ranks (T, J, Q) matter.
+    const fixed = livePatternsAgainst(ak, [R.A, R.K], [R.A, R.K]);
+    expect(fixed).toHaveLength(1);
+  });
+
+  test('heroRanks default empty preserves legacy two-arg behavior', () => {
+    const jt = straightPatternsForHand(R.J, R.T);
+    const live = livePatternsAgainst(jt, [R.A, R.K]);
+    expect(live).toHaveLength(2); // legacy expectation unchanged
+  });
+});
+
+describe('straightCombos — analyzeStraightCoverage new fields', () => {
+  test('AK vs AQ — AQ carries higher coverage score (THE user-surfaced bug)', () => {
+    const cov = analyzeStraightCoverage(
+      { rankHigh: R.A, rankLow: R.K, pair: false },
+      { rankHigh: R.A, rankLow: R.Q, pair: false },
+    );
+    // Both have 1 direct run (TJQKA) — blockers consider hero's own ranks.
+    expect(cov.aTotal).toBe(1);
+    expect(cov.bTotal).toBe(1);
+    // AQ should have more single-card coverage than AK.
+    expect(cov.bSingleCardTotal).toBeGreaterThan(cov.aSingleCardTotal);
+    // And therefore a higher coverage score (pre-blocker raw is fine for this assertion).
+    expect(cov.bCoverageScoreRaw).toBeGreaterThan(cov.aCoverageScoreRaw);
+  });
+
+  test('AK vs QQ — QQ crushes AK straight coverage', () => {
+    const cov = analyzeStraightCoverage(
+      { rankHigh: R.A, rankLow: R.K, pair: false },
+      { rankHigh: R.Q, rankLow: R.Q, pair: true },
+    );
+    // AK's TJQKA has Q (from board) — blocked by QQ.
+    expect(cov.aLive).toBe(0);
+    // AK's single-card runs: A2345 (live — no Q), 9TJQK (blocked — has Q).
+    expect(cov.aSingleCardTotal).toBe(2);
+    expect(cov.aSingleCardLive).toBe(1);
+    // Coverage score should be much lower after blocking.
+    expect(cov.aCoverageScore).toBeLessThan(cov.aCoverageScoreRaw);
+  });
+
+  test('AQ vs QQ — AQ keeps full coverage because Q is hero\'s rank', () => {
+    const cov = analyzeStraightCoverage(
+      { rankHigh: R.A, rankLow: R.Q, pair: false },
+      { rankHigh: R.Q, rankLow: R.Q, pair: true },
+    );
+    // TJQKA board-needed is [T, J, K] (hero has A, Q). Q blocker is hero's own rank.
+    expect(cov.aLive).toBe(1);
+    // All of AQ's single-card runs stay live.
+    expect(cov.aSingleCardLive).toBe(cov.aSingleCardTotal);
+    expect(cov.aCoverageScore).toBeCloseTo(cov.aCoverageScoreRaw, 3);
+  });
+
+  test('coverage score = 2.0 × direct + 0.7 × single-card', () => {
+    // Villain 76o: 6/7 don't touch AK's straight ranks (A,2,3,4,5 and 9,T,J,Q,K),
+    // so AK keeps all direct + single-card patterns live.
+    const cov = analyzeStraightCoverage(
+      { rankHigh: R.A, rankLow: R.K, pair: false },
+      { rankHigh: R['7'], rankLow: R['6'], pair: false },
+    );
+    expect(cov.aTotal).toBe(1);
+    expect(cov.aLive).toBe(1);
+    expect(cov.aSingleCardTotal).toBe(2);
+    expect(cov.aSingleCardLive).toBe(2);
+    expect(cov.aCoverageScore).toBeCloseTo(2.0 * 1 + 0.7 * 2, 3);
   });
 });
 

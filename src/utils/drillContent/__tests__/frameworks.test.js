@@ -155,27 +155,23 @@ describe('frameworks — DECOMPOSITION always applies', () => {
 
 describe('frameworks — FLUSH_CONTENTION predicate', () => {
   test('both suited → both_suited_shared', () => {
-    expect(FLUSH_CONTENTION.applies(h('AKs'), h('JTs'))).toEqual({
-      subcase: 'both_suited_shared', favored: null,
-    });
+    const m = FLUSH_CONTENTION.applies(h('AKs'), h('JTs'));
+    expect(m.subcase).toBe('both_suited_shared');
+    expect(m.favored).toBeNull();
   });
 
   test('one suited → one_suited with that hand favored', () => {
-    expect(FLUSH_CONTENTION.applies(h('AKs'), h('JTo'))).toEqual({
-      subcase: 'one_suited', favored: 'A',
-    });
-    expect(FLUSH_CONTENTION.applies(h('JTo'), h('AKs'))).toEqual({
-      subcase: 'one_suited', favored: 'B',
-    });
+    expect(FLUSH_CONTENTION.applies(h('AKs'), h('JTo')).favored).toBe('A');
+    expect(FLUSH_CONTENTION.applies(h('JTo'), h('AKs')).favored).toBe('B');
+    expect(FLUSH_CONTENTION.applies(h('AKs'), h('JTo')).subcase).toBe('one_suited');
   });
 
   test('neither suited → neither_suited', () => {
-    expect(FLUSH_CONTENTION.applies(h('AKo'), h('JTo'))).toEqual({
-      subcase: 'neither_suited', favored: null,
-    });
-    expect(FLUSH_CONTENTION.applies(h('AA'), h('KK'))).toEqual({
-      subcase: 'neither_suited', favored: null,
-    });
+    const m1 = FLUSH_CONTENTION.applies(h('AKo'), h('JTo'));
+    expect(m1.subcase).toBe('neither_suited');
+    expect(m1.favored).toBeNull();
+    const m2 = FLUSH_CONTENTION.applies(h('AA'), h('KK'));
+    expect(m2.subcase).toBe('neither_suited');
   });
 });
 
@@ -240,6 +236,61 @@ describe('frameworks — classifyMatchup composition', () => {
       expect(typeof m.narration).toBe('string');
       expect(m.narration.length).toBeGreaterThan(10);
     }
+  });
+});
+
+describe('frameworks — STRAIGHT_COVERAGE differentiates AK vs AQ', () => {
+  test('AKo vs 76o and AQo vs 76o produce different coverage narrations (AQ > AK)', () => {
+    const akMatch = STRAIGHT_COVERAGE.applies(h('AKo'), h('76o'));
+    const aqMatch = STRAIGHT_COVERAGE.applies(h('AQo'), h('76o'));
+    expect(akMatch.details.aCoverageScoreRaw).toBeLessThan(
+      aqMatch.details.aCoverageScoreRaw,
+    );
+    // Narrations are textually different (different numbers surface).
+    const akNarr = STRAIGHT_COVERAGE.narrate(h('AKo'), h('76o'), akMatch);
+    const aqNarr = STRAIGHT_COVERAGE.narrate(h('AQo'), h('76o'), aqMatch);
+    expect(akNarr).not.toBe(aqNarr);
+    // Both narrations expose a coverage score.
+    expect(akNarr).toMatch(/coverage score/i);
+    expect(aqNarr).toMatch(/coverage score/i);
+  });
+
+  test('AK vs QQ — narration reflects crushed coverage (score << raw)', () => {
+    const match = STRAIGHT_COVERAGE.applies(h('AKo'), h('QQ'));
+    expect(match).not.toBeNull();
+    expect(match.details.aCoverageScore).toBeLessThan(match.details.aCoverageScoreRaw);
+    // Direct live should be 0 (QQ blocks AK's Broadway).
+    expect(match.details.aLive).toBe(0);
+  });
+});
+
+describe('frameworks — FLUSH_CONTENTION equityDelta', () => {
+  test('one_suited case exposes equityDelta with +3.0% for the suited side', () => {
+    const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJo'));
+    expect(m.subcase).toBe('one_suited');
+    expect(m.equityDelta).toBeDefined();
+    expect(m.equityDelta.favored).toBeCloseTo(3.0, 1);
+    expect(m.equityDelta.other).toBeCloseTo(0.0, 1);
+  });
+
+  test('both_suited_shared case exposes ~+2.3% each (contention tax baked in)', () => {
+    const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJs'));
+    expect(m.subcase).toBe('both_suited_shared');
+    expect(m.equityDelta.favored).toBeCloseTo(2.3, 1);
+    expect(m.equityDelta.other).toBeCloseTo(2.3, 1);
+  });
+
+  test('neither_suited case is small (~+0.5% each)', () => {
+    const m = FLUSH_CONTENTION.applies(h('AKo'), h('QJo'));
+    expect(m.subcase).toBe('neither_suited');
+    expect(m.equityDelta.favored).toBeCloseTo(0.5, 1);
+  });
+
+  test('equityDelta propagates through classifyMatchup', () => {
+    const matches = classifyMatchup(h('AKs'), h('QJs'));
+    const flush = matches.find((m) => m.framework.id === 'flush_contention');
+    expect(flush.equityDelta).toBeDefined();
+    expect(flush.equityDelta.favored).toBeGreaterThan(0);
   });
 });
 

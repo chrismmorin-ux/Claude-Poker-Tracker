@@ -57,7 +57,7 @@ export const ExplorerMode = ({ initialHandA = 'AKs', initialHandB = 'JTs' }) => 
           <p>Use the framework chips on the right to decompose the result: domination / race structure + blockers + flush contention.</p>
         </div>
       </div>
-      <div>
+      <div className="overflow-y-auto pr-2">
         {error ? (
           <div className="bg-red-900/30 border border-red-800 text-red-300 rounded-lg p-4 text-sm">
             {error}

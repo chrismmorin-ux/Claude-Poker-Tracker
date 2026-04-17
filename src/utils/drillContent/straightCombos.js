@@ -37,42 +37,121 @@ export const straightPatternsForHand = (rank1, rank2) => {
 };
 
 /**
- * Filter patterns to those containing NONE of the blocker ranks.
+ * All 5-card straight patterns that include EXACTLY ONE of the given ranks
+ * (XOR). These are the "partial" coverage runs — hero contributes one card
+ * to the straight and the board must supply the other four.
+ *
+ * For a pair (rank1 === rank2), returns all patterns containing that rank
+ * (the pair can only contribute one copy to a straight; the other is burned).
  */
-export const livePatternsAgainst = (patterns, blockerRanks) => {
-  const blocked = new Set(blockerRanks);
-  return patterns.filter((p) => !p.some((r) => blocked.has(r)));
+export const singleCardPatternsForHand = (rank1, rank2) => {
+  if (rank1 === rank2) {
+    return ALL_STRAIGHTS.filter((p) => p.includes(rank1));
+  }
+  return ALL_STRAIGHTS.filter((p) => {
+    const has1 = p.includes(rank1);
+    const has2 = p.includes(rank2);
+    return (has1 && !has2) || (!has1 && has2);
+  });
 };
 
 /**
- * Symmetric analysis of straight coverage for two hands. Reports total
- * straight combos each hand can make (using both cards), plus how many
- * survive the other side's blocker cards.
+ * Filter patterns to those that remain live against a set of blocker ranks.
+ *
+ * Blocker logic: a blocker kills a pattern iff the blocker's rank needs to
+ * come from the BOARD to complete the straight. Ranks hero already holds
+ * are excluded — villain's copy of a hero rank doesn't remove any
+ * board card hero still needs.
+ *
+ * Example: hero AK, pattern TJQKA. Hero already has A and K, so board must
+ * supply T, J, Q. A villain holding another A does NOT block this pattern
+ * (A isn't on the board-needed list). A villain with QQ, however, contests
+ * the Q that the board must supply, so the pattern is treated as blocked.
+ *
+ * @param {number[][]} patterns
+ * @param {number[]} blockerRanks villain's card ranks
+ * @param {number[]} heroRanks hero's card ranks (omit for the raw
+ *   "does-any-blocker-touch-the-pattern" semantics used in legacy callsites)
+ */
+export const livePatternsAgainst = (patterns, blockerRanks, heroRanks = []) => {
+  const hero = new Set(heroRanks);
+  const blocked = new Set(blockerRanks);
+  return patterns.filter((p) => {
+    for (const r of p) {
+      if (!hero.has(r) && blocked.has(r)) return false;
+    }
+    return true;
+  });
+};
+
+// Heuristic equity weight per live straight pattern. Direct (both-card) runs
+// are open-ended/oesd-prone on many flops; single-card runs require a
+// 4-to-a-straight board which is much rarer. Weights chosen so a connector's
+// 4 direct combos (weight 8.0) clearly outscore a broadway's 1 direct + many
+// single-card combos, while still rewarding partial coverage.
+const DIRECT_WEIGHT = 2.0;
+const SINGLE_CARD_WEIGHT = 0.7;
+
+/**
+ * Symmetric analysis of straight coverage for two hands. Reports:
+ *   - direct combos (both hole cards in the straight)
+ *   - single-card combos (one hole card in the straight, four from board)
+ *   - which of each are "live" after subtracting blockers
+ *   - a weighted coverage score summarising total straight potential
+ *
+ * This is what separates AK (2345A + 9TJQK + TJQKA = 3 patterns) from
+ * AQ (2345A + 89TJQ + 9TJQK + TJQKA = 4 patterns): the Q sits in more
+ * 5-card runs than the K does.
  *
  * @param {{ rankHigh: number, rankLow: number, pair: boolean }} handA
  * @param {{ rankHigh: number, rankLow: number, pair: boolean }} handB
  */
 export const analyzeStraightCoverage = (handA, handB) => {
-  const aAll = straightPatternsForHand(handA.rankHigh, handA.rankLow);
-  const bAll = straightPatternsForHand(handB.rankHigh, handB.rankLow);
+  const aDirect = straightPatternsForHand(handA.rankHigh, handA.rankLow);
+  const bDirect = straightPatternsForHand(handB.rankHigh, handB.rankLow);
+  const aSingle = singleCardPatternsForHand(handA.rankHigh, handA.rankLow);
+  const bSingle = singleCardPatternsForHand(handB.rankHigh, handB.rankLow);
 
   const aRanks = handA.pair ? [handA.rankHigh] : [handA.rankHigh, handA.rankLow];
   const bRanks = handB.pair ? [handB.rankHigh] : [handB.rankHigh, handB.rankLow];
 
-  const aLive = livePatternsAgainst(aAll, bRanks);
-  const bLive = livePatternsAgainst(bAll, aRanks);
+  const aDirectLive = livePatternsAgainst(aDirect, bRanks, aRanks);
+  const bDirectLive = livePatternsAgainst(bDirect, aRanks, bRanks);
+  const aSingleLive = livePatternsAgainst(aSingle, bRanks, aRanks);
+  const bSingleLive = livePatternsAgainst(bSingle, aRanks, bRanks);
+
+  const score = (direct, single) =>
+    DIRECT_WEIGHT * direct + SINGLE_CARD_WEIGHT * single;
 
   return {
-    aTotal: aAll.length,
-    aLive: aLive.length,
-    aBlocked: aAll.length - aLive.length,
-    aPatterns: aAll,
-    aLivePatterns: aLive,
-    bTotal: bAll.length,
-    bLive: bLive.length,
-    bBlocked: bAll.length - bLive.length,
-    bPatterns: bAll,
-    bLivePatterns: bLive,
+    // Legacy direct-only fields (preserved for back-compat).
+    aTotal: aDirect.length,
+    aLive: aDirectLive.length,
+    aBlocked: aDirect.length - aDirectLive.length,
+    aPatterns: aDirect,
+    aLivePatterns: aDirectLive,
+    bTotal: bDirect.length,
+    bLive: bDirectLive.length,
+    bBlocked: bDirect.length - bDirectLive.length,
+    bPatterns: bDirect,
+    bLivePatterns: bDirectLive,
+
+    // Single-card (partial) coverage.
+    aSingleCardTotal: aSingle.length,
+    aSingleCardLive: aSingleLive.length,
+    aSingleCardPatterns: aSingle,
+    aSingleCardLivePatterns: aSingleLive,
+    bSingleCardTotal: bSingle.length,
+    bSingleCardLive: bSingleLive.length,
+    bSingleCardPatterns: bSingle,
+    bSingleCardLivePatterns: bSingleLive,
+
+    // Weighted coverage scores — higher means more straight potential,
+    // after blockers.
+    aCoverageScore: score(aDirectLive.length, aSingleLive.length),
+    bCoverageScore: score(bDirectLive.length, bSingleLive.length),
+    aCoverageScoreRaw: score(aDirect.length, aSingle.length),
+    bCoverageScoreRaw: score(bDirect.length, bSingle.length),
   };
 };
 
