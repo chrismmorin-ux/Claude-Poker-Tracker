@@ -15,6 +15,7 @@ import {
   RANGE_PROFILES_STORE_NAME,
   TOURNAMENTS_STORE_NAME,
   PLAYER_DRAFTS_STORE_NAME,
+  PREFLOP_DRILLS_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -435,6 +436,21 @@ const migrateV14 = (db) => {
   }
 };
 
+/** v15: Create preflopDrills store for tracking preflop-equity drill attempts. */
+const migrateV15 = (db) => {
+  if (!db.objectStoreNames.contains(PREFLOP_DRILLS_STORE_NAME)) {
+    const store = db.createObjectStore(PREFLOP_DRILLS_STORE_NAME, {
+      keyPath: 'drillId',
+      autoIncrement: true,
+    });
+    store.createIndex('userId', 'userId', { unique: false });
+    store.createIndex('drillType', 'drillType', { unique: false });
+    store.createIndex('matchupKey', 'matchupKey', { unique: false });
+    store.createIndex('userId_timestamp', ['userId', 'timestamp'], { unique: false });
+    log('PreflopDrills object store created');
+  }
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -530,4 +546,7 @@ export const runMigrations = (db, transaction, oldVersion) => {
 
   // v14: playerDrafts store (additive, PEO-1)
   if (oldVersion < 14) migrateV14(db);
+
+  // v15: preflopDrills store (additive, Preflop Drills feature)
+  if (oldVersion < 15) migrateV15(db);
 };

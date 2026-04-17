@@ -22,14 +22,15 @@ Read this before any multi-file change. Update after any architectural shift.
 | 8 Reducers (`game`, `ui`, `card`, `session`, `player`, `settings`, `auth`, `tournament`) | State transitions | Pure functions, no side effects, no async |
 | 13 Context Providers | Cross-component state distribution | Each wraps one reducer + optional persistence hook |
 | 34 Hooks | Business logic, side effects, computed values | May read multiple contexts; never dispatch to foreign reducers |
-| 13 Views + Showdown | UI rendering | Receive `scale` only; pull state from contexts |
+| 14 Views + Showdown | UI rendering | Receive `scale` only; pull state from contexts |
 | 40 UI Components | Reusable visual elements | Stateless or locally stateful; no context access |
-| `pokerCore/` (4 modules) | Shared poker primitives (cards, ranges, hand eval, board texture) | Imported by both engines; imports from neither |
+| `pokerCore/` (5 modules) | Shared poker primitives (cards, ranges, hand eval, board texture, exact preflop equity) | Imported by both engines; imports from neither |
 | `rangeEngine/` (9 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB |
 | `exploitEngine/` (41 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
 | `tournamentEngine/` (4 modules) | Blind levels, blind-out calc, dropout prediction | Reads tournament config; produces scheduling/projection data |
-| `persistence/` (11 modules) | IndexedDB v13, 7 stores, migrations | Sole interface to IndexedDB; all access through exported functions |
+| `drillContent/` (4 modules) | Preflop-drill frameworks, matchup library, scheduler, combo counting | Pure data + predicates powering the Preflop Drills view |
+| `persistence/` (12 modules) | IndexedDB v15, 9 stores, migrations | Sole interface to IndexedDB; all access through exported functions |
 | Ignition Extension | Chrome MV3, WebSocket capture, side panel HUD | Separate codebase (`ignition-poker-tracker/`), communicates via message passing |
 
 ### 1.2 Dependency Graph (Layers)

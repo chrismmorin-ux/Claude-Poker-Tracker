@@ -31,6 +31,7 @@ import {
   SETTINGS_STORE_NAME,
   RANGE_PROFILES_STORE_NAME,
   PLAYER_DRAFTS_STORE_NAME,
+  PREFLOP_DRILLS_STORE_NAME,
 } from '../database';
 
 describe('database initialization', () => {
@@ -55,7 +56,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 8 object stores', async () => {
+    it('creates all 9 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -67,7 +68,8 @@ describe('database initialization', () => {
       expect(storeNames).toContain(RANGE_PROFILES_STORE_NAME);
       expect(storeNames).toContain('tournaments');
       expect(storeNames).toContain(PLAYER_DRAFTS_STORE_NAME);
-      expect(storeNames.length).toBe(8);
+      expect(storeNames).toContain(PREFLOP_DRILLS_STORE_NAME);
+      expect(storeNames.length).toBe(9);
       db.close();
     });
 

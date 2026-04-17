@@ -15,6 +15,7 @@ export const SCREEN = {
   TOURNAMENT: 'tournament',
   ONLINE: 'online',
   EXTENSION: 'extension',
+  PREFLOP_DRILLS: 'preflopDrills',
   // Player Entry Overhaul (PEO) screens — S1 ships constants; S2/S3 wire views
   PLAYER_EDITOR: 'playerEditor',
   PLAYER_PICKER: 'playerPicker',

@@ -108,3 +108,11 @@ export {
   getTournamentBySessionId,
   updateTournament,
 } from './tournamentsStorage';
+
+// Preflop Drills CRUD operations
+export {
+  savePreflopDrill,
+  loadPreflopDrills,
+  clearPreflopDrills,
+  aggregateFrameworkAccuracy,
+} from './preflopDrillsStorage';

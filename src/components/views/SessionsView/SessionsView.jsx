@@ -380,12 +380,12 @@ export const SessionsView = ({ scale }) => {
           completedSessionCount={completedSessionCount}
         />
 
-        {/* Pre-session Drills Button (disabled) */}
+        {/* Preflop Drills entry — hand-vs-hand equity trainer */}
         <button
-          disabled
-          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 text-white rounded-lg shadow-lg font-medium z-10 opacity-50 cursor-not-allowed"
+          onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
+          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
         >
-          Pre-session Drills (Coming Soon)
+          Preflop Drills
         </button>
 
         {/* Import Confirmation Modal */}

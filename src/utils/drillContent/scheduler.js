@@ -1,0 +1,81 @@
+/**
+ * scheduler.js — picks the next drill matchup, weighted toward weak frameworks.
+ *
+ * Strategy: per-framework accuracy lowers → matchups in that framework get
+ * sampled more. Recent matchups are penalized to avoid immediate repetition.
+ * Under ~5 total attempts (cold start), falls back to uniform random.
+ */
+
+const MIN_ATTEMPTS_FOR_WEIGHTING = 5;
+const RECENCY_WINDOW = 5;
+const RECENCY_PENALTY = 0.3;
+
+/**
+ * Pick the next matchup from `library` given accumulated `frameworkAccuracy`
+ * and an array of `recentIds` (most-recent first).
+ */
+export const pickNextMatchup = (library, frameworkAccuracy = {}, recentIds = []) => {
+  if (!library || library.length === 0) return null;
+  const recentSet = new Set((recentIds || []).slice(0, RECENCY_WINDOW));
+
+  // Cold start: if user has fewer than threshold attempts across any framework,
+  // sample uniformly (skipping very recent entries).
+  const totalAttempts = Object.values(frameworkAccuracy)
+    .reduce((sum, f) => sum + (f?.attempts || 0), 0);
+  if (totalAttempts < MIN_ATTEMPTS_FOR_WEIGHTING) {
+    const candidates = library.filter((m) => !recentSet.has(m.id));
+    const pool = candidates.length > 0 ? candidates : library;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  const weights = library.map((m) => {
+    const stats = frameworkAccuracy[m.primary];
+    const acc = stats?.attempts ? stats.accuracy : 0.5;
+    // Lower accuracy → higher weight. Clamp to [0.5, 2.0].
+    const frameworkWeight = Math.max(0.5, Math.min(2.0, 1.5 - acc));
+    const recencyMul = recentSet.has(m.id) ? RECENCY_PENALTY : 1;
+    return frameworkWeight * recencyMul;
+  });
+
+  const total = weights.reduce((s, w) => s + w, 0);
+  if (total <= 0) return library[Math.floor(Math.random() * library.length)];
+  let r = Math.random() * total;
+  for (let i = 0; i < library.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return library[i];
+  }
+  return library[library.length - 1];
+};
+
+/**
+ * Score a user's equity estimate against ground truth.
+ *   delta        = |user − truth|
+ *   correct      = delta ≤ tolerance (default 0.05 = ±5%)
+ *   starRating   = 3 for <2%, 2 for <5%, 1 for <10%, 0 otherwise
+ */
+export const scoreEstimate = (userEstimate, truthEquity, tolerance = 0.05) => {
+  const delta = Math.abs(userEstimate - truthEquity);
+  const correct = delta <= tolerance;
+  let stars = 0;
+  if (delta < 0.02) stars = 3;
+  else if (delta < 0.05) stars = 2;
+  else if (delta < 0.10) stars = 1;
+  return { delta, correct, stars };
+};
+
+/**
+ * Score a user's framework selection (set of ids) against the true applicable
+ * frameworks. Returns precision/recall/F1 + per-id verdicts.
+ */
+export const scoreFrameworkSelection = (pickedIds, trueIds) => {
+  const picked = new Set(pickedIds);
+  const truth = new Set(trueIds);
+  const tp = [...truth].filter((id) => picked.has(id));
+  const fp = [...picked].filter((id) => !truth.has(id));
+  const fn = [...truth].filter((id) => !picked.has(id));
+  const precision = picked.size > 0 ? tp.length / picked.size : 0;
+  const recall = truth.size > 0 ? tp.length / truth.size : 0;
+  const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+  const correct = fp.length === 0 && fn.length === 0;
+  return { correct, tp, fp, fn, precision, recall, f1 };
+};
