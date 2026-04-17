@@ -30,6 +30,7 @@ import {
   PLAYERS_STORE_NAME,
   SETTINGS_STORE_NAME,
   RANGE_PROFILES_STORE_NAME,
+  PLAYER_DRAFTS_STORE_NAME,
 } from '../database';
 
 describe('database initialization', () => {
@@ -54,7 +55,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 7 object stores', async () => {
+    it('creates all 8 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -65,7 +66,17 @@ describe('database initialization', () => {
       expect(storeNames).toContain(SETTINGS_STORE_NAME);
       expect(storeNames).toContain(RANGE_PROFILES_STORE_NAME);
       expect(storeNames).toContain('tournaments');
-      expect(storeNames.length).toBe(7);
+      expect(storeNames).toContain(PLAYER_DRAFTS_STORE_NAME);
+      expect(storeNames.length).toBe(8);
+      db.close();
+    });
+
+    it('creates playerDrafts store keyed by userId (PEO-1 / v14)', async () => {
+      const db = await initDB();
+      const tx = db.transaction(PLAYER_DRAFTS_STORE_NAME, 'readonly');
+      const store = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
+      expect(store.keyPath).toBe('userId');
+      expect(store.autoIncrement).toBe(false);
       db.close();
     });
 
@@ -124,6 +135,82 @@ describe('database initialization', () => {
       expect(store.indexNames.contains('userId')).toBe(true);
 
       db.close();
+    });
+  });
+
+  describe('v13 → v14 upgrade (PEO-1, additive only)', () => {
+    const openAtVersion = (version) => new Promise((resolve, reject) => {
+      const req = globalThis.indexedDB.open(DB_NAME, version);
+      req.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        // Mirror the minimum from earlier migrations to seed a realistic v13 DB
+        if (!db.objectStoreNames.contains('players')) {
+          const store = db.createObjectStore('players', { keyPath: 'playerId', autoIncrement: true });
+          store.createIndex('name', 'name');
+          store.createIndex('userId', 'userId');
+        }
+        if (!db.objectStoreNames.contains('hands')) {
+          db.createObjectStore('hands', { keyPath: 'handId', autoIncrement: true });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+
+    it('creates playerDrafts store without touching existing player records', async () => {
+      // Step 1: open at v13 and seed a player record
+      const v13 = await openAtVersion(13);
+      const seedPlayer = {
+        name: 'Legacy Mike',
+        nickname: 'Mike',
+        userId: 'guest',
+        notes: 'seeded pre-v14',
+        handCount: 12,
+        createdAt: Date.now(),
+        lastSeenAt: Date.now(),
+      };
+      await new Promise((resolve, reject) => {
+        const tx = v13.transaction('players', 'readwrite');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.objectStore('players').add(seedPlayer);
+      });
+      v13.close();
+
+      // Step 2: re-open via initDB which should run migrateV14
+      resetDBPool();
+      const db = await initDB();
+      expect(db.version).toBe(DB_VERSION);
+
+      // playerDrafts store now present
+      expect(Array.from(db.objectStoreNames)).toContain(PLAYER_DRAFTS_STORE_NAME);
+
+      // Existing player record unchanged
+      const tx = db.transaction('players', 'readonly');
+      const store = tx.objectStore('players');
+      const all = await new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      expect(all).toHaveLength(1);
+      // None of the fields we seeded should have been mutated or added
+      const [row] = all;
+      expect(row.name).toBe('Legacy Mike');
+      expect(row.handCount).toBe(12);
+      expect(row.avatarFeatures).toBeUndefined();
+      expect(row.nameSource).toBeUndefined();
+      db.close();
+    });
+
+    it('v14 migration is a no-op when re-run at current version', async () => {
+      const first = await initDB();
+      first.close();
+      resetDBPool();
+      const again = await initDB();
+      expect(again.version).toBe(DB_VERSION);
+      expect(Array.from(again.objectStoreNames)).toContain(PLAYER_DRAFTS_STORE_NAME);
+      again.close();
     });
   });
 

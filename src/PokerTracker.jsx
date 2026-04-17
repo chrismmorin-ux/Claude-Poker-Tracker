@@ -25,6 +25,8 @@ const PasswordResetView = lazy(() => import('./components/views/PasswordResetVie
 const TournamentView = lazy(() => import('./components/views/TournamentView').then(m => ({ default: m.TournamentView })));
 const OnlineView = lazy(() => import('./components/views/OnlineView').then(m => ({ default: m.OnlineView })));
 const ExtensionPanel = lazy(() => import('./components/views/OnlineView/ExtensionPanel').then(m => ({ default: m.ExtensionPanel })));
+const PlayerEditorView = lazy(() => import('./components/views/PlayerEditorView/PlayerEditorView').then(m => ({ default: m.PlayerEditorView })));
+const PlayerPickerView = lazy(() => import('./components/views/PlayerPickerView/PlayerPickerView').then(m => ({ default: m.PlayerPickerView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -99,6 +101,8 @@ const ViewRouter = () => {
           case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
           case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
           case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
+          case SCREEN.PLAYER_EDITOR: return <VEB viewName="Player Editor" onReturnToTable={onReturnToTable}><PlayerEditorView scale={scale} /></VEB>;
+          case SCREEN.PLAYER_PICKER: return <VEB viewName="Player Picker" onReturnToTable={onReturnToTable}><PlayerPickerView scale={scale} /></VEB>;
           default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
         }
       })()}

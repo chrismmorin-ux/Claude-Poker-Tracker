@@ -116,6 +116,39 @@ describe('createPlayer', () => {
     await initDB();
     await expect(createPlayer({ name: '' }, 'testUser')).rejects.toThrow('Invalid player data');
   });
+
+  it('persists avatarFeatures sub-object (PEO-1)', async () => {
+    await initDB();
+    const avatarFeatures = {
+      skin: 'skin.dark',
+      hair: 'hair.short-wavy',
+      hairColor: 'color.black',
+      beard: 'beard.goatee',
+      beardColor: 'color.black',
+      eyes: 'eyes.round',
+      eyeColor: 'eye-color.brown',
+      glasses: 'glasses.none',
+      hat: 'hat.cap',
+    };
+    const id = await createPlayer({ name: 'Mike', avatarFeatures }, 'testUser');
+    const player = await getPlayerById(id);
+    expect(player.avatarFeatures).toEqual(avatarFeatures);
+  });
+
+  it('persists nameSource (PEO-1)', async () => {
+    await initDB();
+    const id = await createPlayer({ name: 'Mike', nameSource: 'user' }, 'testUser');
+    const player = await getPlayerById(id);
+    expect(player.nameSource).toBe('user');
+  });
+
+  it('persists auto-generated name with nameSource=auto', async () => {
+    await initDB();
+    const id = await createPlayer({ name: 'Seat 3 — goatee', nameSource: 'auto' }, 'testUser');
+    const player = await getPlayerById(id);
+    expect(player.name).toBe('Seat 3 — goatee');
+    expect(player.nameSource).toBe('auto');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -249,6 +282,27 @@ describe('updatePlayer', () => {
 // ---------------------------------------------------------------------------
 // deletePlayer
 // ---------------------------------------------------------------------------
+
+describe('updatePlayer — PEO-1 additions', () => {
+  it('updates avatarFeatures on an existing player', async () => {
+    await initDB();
+    const id = await createPlayer({ name: 'Mike' }, 'testUser');
+    await updatePlayer(id, {
+      avatarFeatures: { hair: 'hair.long', beard: 'beard.full' },
+    }, 'testUser');
+    const player = await getPlayerById(id);
+    expect(player.avatarFeatures).toEqual({ hair: 'hair.long', beard: 'beard.full' });
+  });
+
+  it('updates nameSource independently of name', async () => {
+    await initDB();
+    const id = await createPlayer({ name: 'Mike', nameSource: 'auto' }, 'testUser');
+    await updatePlayer(id, { name: 'Mike Jones', nameSource: 'user' }, 'testUser');
+    const player = await getPlayerById(id);
+    expect(player.name).toBe('Mike Jones');
+    expect(player.nameSource).toBe('user');
+  });
+});
 
 describe('deletePlayer', () => {
   it('removes the player so it can no longer be retrieved', async () => {

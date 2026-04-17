@@ -35,6 +35,8 @@ import {
   handExists,
   saveOnlineHand,
   getHandsBySource,
+  updateSeatPlayerForHand,
+  batchUpdateSeatPlayers,
 } from '../handsStorage';
 
 // ---------------------------------------------------------------------------
@@ -630,5 +632,127 @@ describe('getHandsBySource', () => {
 
     const result = await getHandsBySource('ignition', 'guest');
     expect(result).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateSeatPlayerForHand + batchUpdateSeatPlayers (PEO-1)
+// ---------------------------------------------------------------------------
+
+describe('updateSeatPlayerForHand', () => {
+  it('sets seat→playerId on a hand with no prior seatPlayers', async () => {
+    await initDB();
+    const handId = await saveHand(createValidHandData(), 'guest');
+    await updateSeatPlayerForHand(handId, 3, 7);
+    const hand = await loadHandById(handId);
+    expect(hand.seatPlayers).toEqual({ 3: 7 });
+  });
+
+  it('merges into existing seatPlayers without touching other seats', async () => {
+    await initDB();
+    const handId = await saveHand(
+      createValidHandData({ seatPlayers: { 1: 10, 5: 20 } }),
+      'guest',
+    );
+    await updateSeatPlayerForHand(handId, 3, 7);
+    const hand = await loadHandById(handId);
+    expect(hand.seatPlayers).toEqual({ 1: 10, 5: 20, 3: 7 });
+  });
+
+  it('overwrites a seat that already has a player', async () => {
+    await initDB();
+    const handId = await saveHand(
+      createValidHandData({ seatPlayers: { 3: 99 } }),
+      'guest',
+    );
+    await updateSeatPlayerForHand(handId, 3, 7);
+    const hand = await loadHandById(handId);
+    expect(hand.seatPlayers).toEqual({ 3: 7 });
+  });
+
+  it('clears a seat when playerId is null', async () => {
+    await initDB();
+    const handId = await saveHand(
+      createValidHandData({ seatPlayers: { 1: 10, 3: 7 } }),
+      'guest',
+    );
+    await updateSeatPlayerForHand(handId, 3, null);
+    const hand = await loadHandById(handId);
+    expect(hand.seatPlayers).toEqual({ 1: 10 });
+  });
+
+  it('rejects when hand does not exist', async () => {
+    await initDB();
+    await expect(updateSeatPlayerForHand(9999, 3, 7)).rejects.toThrow(/not found/);
+  });
+
+  it('is idempotent: re-applying the same mapping is a no-op', async () => {
+    await initDB();
+    const handId = await saveHand(createValidHandData(), 'guest');
+    await updateSeatPlayerForHand(handId, 3, 7);
+    await updateSeatPlayerForHand(handId, 3, 7);
+    const hand = await loadHandById(handId);
+    expect(hand.seatPlayers).toEqual({ 3: 7 });
+  });
+});
+
+describe('batchUpdateSeatPlayers', () => {
+  it('updates multiple hands in a single transaction', async () => {
+    await initDB();
+    const h1 = await saveHand(createValidHandData(), 'guest');
+    const h2 = await saveHand(createValidHandData(), 'guest');
+    const h3 = await saveHand(createValidHandData(), 'guest');
+
+    await batchUpdateSeatPlayers([
+      { handId: h1, seat: 3, playerId: 7 },
+      { handId: h2, seat: 3, playerId: 7 },
+      { handId: h3, seat: 3, playerId: 7 },
+    ]);
+
+    expect((await loadHandById(h1)).seatPlayers).toEqual({ 3: 7 });
+    expect((await loadHandById(h2)).seatPlayers).toEqual({ 3: 7 });
+    expect((await loadHandById(h3)).seatPlayers).toEqual({ 3: 7 });
+  });
+
+  it('is a no-op when updates array is empty', async () => {
+    await initDB();
+    await expect(batchUpdateSeatPlayers([])).resolves.toBeUndefined();
+  });
+
+  it('rejects non-array input', async () => {
+    await initDB();
+    await expect(batchUpdateSeatPlayers(null)).rejects.toThrow(/array/);
+    await expect(batchUpdateSeatPlayers('nope')).rejects.toThrow(/array/);
+  });
+
+  it('handles mixed operations (set + clear) in one batch', async () => {
+    await initDB();
+    const h1 = await saveHand(
+      createValidHandData({ seatPlayers: { 3: 99 } }),
+      'guest',
+    );
+    const h2 = await saveHand(createValidHandData(), 'guest');
+
+    await batchUpdateSeatPlayers([
+      { handId: h1, seat: 3, playerId: null },       // clear
+      { handId: h2, seat: 3, playerId: 7 },           // set
+    ]);
+
+    expect((await loadHandById(h1)).seatPlayers).toEqual({});
+    expect((await loadHandById(h2)).seatPlayers).toEqual({ 3: 7 });
+  });
+
+  it('aborts entire transaction if any hand is missing (all-or-nothing)', async () => {
+    await initDB();
+    const h1 = await saveHand(createValidHandData(), 'guest');
+    await expect(
+      batchUpdateSeatPlayers([
+        { handId: h1, seat: 3, playerId: 7 },
+        { handId: 9999, seat: 3, playerId: 7 },
+      ]),
+    ).rejects.toThrow();
+    // The successful first update should have been rolled back
+    const hand = await loadHandById(h1);
+    expect(hand.seatPlayers || {}).toEqual({});
   });
 });

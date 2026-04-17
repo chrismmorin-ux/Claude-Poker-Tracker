@@ -95,6 +95,34 @@ const rawPlayerReducer = (state, action) => {
         isLoading: action.payload.isLoading
       };
 
+    // PEO-1: surgically update one player's handCount after retroactive linking.
+    // Persistence layer (batchUpdateSeatPlayers + updatePlayer) has already
+    // run — this action syncs the denormalized in-memory player record so UI
+    // reflects the new count without a full reload.
+    case PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER: {
+      const { playerId, newHandCount } = action.payload;
+      return {
+        ...state,
+        allPlayers: state.allPlayers.map(p =>
+          p.playerId === playerId
+            ? { ...p, handCount: newHandCount, lastSeenAt: Date.now() }
+            : p
+        ),
+      };
+    }
+
+    // PEO-1: undo counterpart. Same shape, different semantics from caller
+    // (newHandCount is the pre-link value). Symmetry preserved.
+    case PLAYER_ACTIONS.UNDO_RETROACTIVE_LINK: {
+      const { playerId, newHandCount } = action.payload;
+      return {
+        ...state,
+        allPlayers: state.allPlayers.map(p =>
+          p.playerId === playerId ? { ...p, handCount: newHandCount } : p
+        ),
+      };
+    }
+
     default:
       return state;
   }

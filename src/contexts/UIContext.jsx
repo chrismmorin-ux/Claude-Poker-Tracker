@@ -29,11 +29,12 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
-    pendingSeatForPlayerAssignment,
     autoOpenNewSession,
     replayHandId,
     replayHand,
     showdownMode,
+    editorContext,
+    pickerContext,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -110,11 +111,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_HIGHLIGHTED_CARD_INDEX, payload: index });
   }, [dispatchUi]);
 
-  // Handler: Set pending seat for player assignment (cross-view navigation)
-  const setPendingSeatForPlayerAssignment = useCallback((seat) => {
-    dispatchUi({ type: UI_ACTIONS.SET_PENDING_SEAT_FOR_PLAYER, payload: seat });
-  }, [dispatchUi]);
-
   // Handler: Set auto-open new session flag (cross-view navigation)
   const setAutoOpenNewSession = useCallback((value) => {
     dispatchUi({ type: UI_ACTIONS.SET_AUTO_OPEN_NEW_SESSION, payload: value });
@@ -140,6 +136,47 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
   }, [dispatchUi]);
 
+  // PEO-1: Handlers for fullscreen player-entry route contexts.
+  // Callers set context + route screen separately so back-navigation can
+  // restore the right previous view (stored in context.prevScreen).
+  const setEditorContext = useCallback((ctx) => {
+    dispatchUi({ type: UI_ACTIONS.SET_EDITOR_CONTEXT, payload: ctx });
+  }, [dispatchUi]);
+
+  const setPickerContext = useCallback((ctx) => {
+    dispatchUi({ type: UI_ACTIONS.SET_PICKER_CONTEXT, payload: ctx });
+  }, [dispatchUi]);
+
+  // Open/close convenience wrappers — thread screen transition + context set
+  // together. prevScreen is captured here so views don't each rediscover it.
+  const openPlayerEditor = useCallback((ctx = {}) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_EDITOR_CONTEXT,
+      payload: { prevScreen: currentView, ...ctx },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_EDITOR });
+  }, [dispatchUi, currentView]);
+
+  const closePlayerEditor = useCallback(() => {
+    const prev = editorContext?.prevScreen || SCREEN.TABLE;
+    dispatchUi({ type: UI_ACTIONS.SET_EDITOR_CONTEXT, payload: null });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, editorContext]);
+
+  const openPlayerPicker = useCallback((ctx = {}) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_PICKER_CONTEXT,
+      payload: { prevScreen: currentView, ...ctx },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_PICKER });
+  }, [dispatchUi, currentView]);
+
+  const closePlayerPicker = useCallback(() => {
+    const prev = pickerContext?.prevScreen || SCREEN.TABLE;
+    dispatchUi({ type: UI_ACTIONS.SET_PICKER_CONTEXT, payload: null });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, pickerContext]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -154,11 +191,12 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
-    pendingSeatForPlayerAssignment,
     autoOpenNewSession,
     replayHandId,
     replayHand,
     showdownMode,
+    editorContext,
+    pickerContext,
     // Screen constants
     SCREEN,
     // Handlers
@@ -176,12 +214,18 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
-    setPendingSeatForPlayerAssignment,
     setAutoOpenNewSession,
     startDraggingDealer,
     stopDraggingDealer,
     setReplayHand,
     setShowdownMode,
+    // PEO-1 handlers
+    setEditorContext,
+    setPickerContext,
+    openPlayerEditor,
+    closePlayerEditor,
+    openPlayerPicker,
+    closePlayerPicker,
   }), [
     currentView,
     selectedPlayers,
@@ -194,11 +238,12 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     isShowdownViewOpen,
     highlightedSeat,
     highlightedHoleSlot,
-    pendingSeatForPlayerAssignment,
     autoOpenNewSession,
     replayHandId,
     replayHand,
     showdownMode,
+    editorContext,
+    pickerContext,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -213,12 +258,17 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     setHighlightedHoleSlot,
     setCardSelectorType,
     setHighlightedCardIndex,
-    setPendingSeatForPlayerAssignment,
     setAutoOpenNewSession,
     startDraggingDealer,
     stopDraggingDealer,
     setReplayHand,
     setShowdownMode,
+    setEditorContext,
+    setPickerContext,
+    openPlayerEditor,
+    closePlayerEditor,
+    openPlayerPicker,
+    closePlayerPicker,
   ]);
 
   return (

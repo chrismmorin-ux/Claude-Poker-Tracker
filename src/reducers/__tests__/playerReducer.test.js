@@ -249,4 +249,99 @@ describe('playerReducer', () => {
       expect(newState.seatPlayers[5]).toBe(100);
     });
   });
+
+  // =======================================================================
+  // PEO-1: retroactive-link + undo
+  // =======================================================================
+
+  describe('RETROACTIVELY_LINK_PLAYER', () => {
+    beforeEach(() => {
+      state.allPlayers = [
+        { playerId: 1, name: 'Mike', handCount: 3, lastSeenAt: 1000 },
+        { playerId: 2, name: 'Alice', handCount: 8, lastSeenAt: 2000 },
+      ];
+    });
+
+    it('updates handCount on the target player only', () => {
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 1, newHandCount: 10 },
+      });
+      expect(newState.allPlayers.find(p => p.playerId === 1).handCount).toBe(10);
+      expect(newState.allPlayers.find(p => p.playerId === 2).handCount).toBe(8);
+    });
+
+    it('refreshes lastSeenAt on link', () => {
+      const before = state.allPlayers.find(p => p.playerId === 1).lastSeenAt;
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 1, newHandCount: 10 },
+      });
+      const after = newState.allPlayers.find(p => p.playerId === 1).lastSeenAt;
+      expect(after).toBeGreaterThanOrEqual(before);
+    });
+
+    it('is a no-op when playerId does not exist', () => {
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 999, newHandCount: 50 },
+      });
+      expect(newState.allPlayers).toEqual(state.allPlayers);
+    });
+
+    it('preserves other player fields (immutable update)', () => {
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 1, newHandCount: 10 },
+      });
+      const updated = newState.allPlayers.find(p => p.playerId === 1);
+      expect(updated.name).toBe('Mike');
+    });
+
+    it('does not mutate original state', () => {
+      const snapshot = JSON.parse(JSON.stringify(state));
+      playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 1, newHandCount: 10 },
+      });
+      expect(state).toEqual(snapshot);
+    });
+  });
+
+  describe('UNDO_RETROACTIVE_LINK', () => {
+    beforeEach(() => {
+      state.allPlayers = [
+        { playerId: 1, name: 'Mike', handCount: 10, lastSeenAt: 1000 },
+      ];
+    });
+
+    it('reverts handCount to the supplied value', () => {
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.UNDO_RETROACTIVE_LINK,
+        payload: { playerId: 1, newHandCount: 3 },
+      });
+      expect(newState.allPlayers[0].handCount).toBe(3);
+    });
+
+    it('is a no-op when playerId does not exist', () => {
+      const newState = playerReducer(state, {
+        type: PLAYER_ACTIONS.UNDO_RETROACTIVE_LINK,
+        payload: { playerId: 999, newHandCount: 0 },
+      });
+      expect(newState.allPlayers).toEqual(state.allPlayers);
+    });
+
+    it('link → undo round trip returns to original count', () => {
+      const linked = playerReducer(state, {
+        type: PLAYER_ACTIONS.RETROACTIVELY_LINK_PLAYER,
+        payload: { playerId: 1, newHandCount: 15 },
+      });
+      expect(linked.allPlayers[0].handCount).toBe(15);
+      const undone = playerReducer(linked, {
+        type: PLAYER_ACTIONS.UNDO_RETROACTIVE_LINK,
+        payload: { playerId: 1, newHandCount: 10 },
+      });
+      expect(undone.allPlayers[0].handCount).toBe(10);
+    });
+  });
 });

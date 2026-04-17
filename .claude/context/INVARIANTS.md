@@ -1,12 +1,12 @@
 ---
-last-verified-against-code: 2026-04-06
-verified-by: governance-overhaul
+last-verified-against-code: 2026-04-16
+verified-by: PEO-1
 staleness-threshold-days: 30
 ---
 
 # Invariants Catalog
 
-**Version**: 1.0.0 | **Last verified**: 2026-04-06
+**Version**: 1.1.0 | **Last verified**: 2026-04-16
 
 Standalone catalog of all system invariants. Checked by `/review`, `/cto-review`, and `/eng-engine`.
 SYSTEM_MODEL.md §4 references this file.
@@ -30,6 +30,10 @@ SYSTEM_MODEL.md §4 references this file.
 | INV-11 | Bayesian priors, never frequentist tests, for poker frequency analysis | `bayesianConfidence.js` Beta-Binomial intervals | Full | 2026-04-06 |
 | INV-12 | `ACTIONS.*` constants used for all action recording | `gameConstants.js` is single source | Full | 2026-04-06 |
 | INV-13 | All `Math.exp` calls use numerically stable patterns (subtract max before exponentiation) | `stableSoftmax()` in `mathUtils.js` | Full | 2026-04-06 |
+| I-PEO-1 | At most one player-draft record per `userId`; commit is atomic (player `put` + draft `delete` in one IDB transaction) | `commitDraft()` in `draftsStorage.js` | Full | 2026-04-16 |
+| I-PEO-2 | Retroactive seat-player linking is session-scoped: only hands with matching `sessionId` are modified | `linkPlayerToPriorSeatHands()` in `handLinking.js` | Full | 2026-04-16 |
+| I-PEO-3 | Retroactive linking is idempotent: re-applying `(handId, seat, playerId)` is a no-op; skipped hands counted separately | `linkPlayerToPriorSeatHands()` + `updateSeatPlayerForHand()` | Full | 2026-04-16 |
+| I-PEO-4 | Undo tokens carry the exact `handIds` captured at link time; revert touches only those hands (and only if still mapped to the linked player) | `buildUnlinkPlan()` in `handLinking.js` | Full | 2026-04-16 |
 
 ---
 

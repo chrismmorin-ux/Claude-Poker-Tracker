@@ -518,4 +518,74 @@ describe('uiReducer', () => {
       expect(UI_STATE_SCHEMA.isDraggingDealer.type).toBe('boolean');
     });
   });
+
+  // =======================================================================
+  // PEO-1: editorContext + pickerContext
+  // =======================================================================
+
+  describe('SET_EDITOR_CONTEXT (PEO-1)', () => {
+    it('defaults to null in initial state', () => {
+      expect(initialUiState.editorContext).toBeNull();
+    });
+
+    it('sets the editorContext to a full object', () => {
+      const ctx = { mode: 'create', seatContext: { seat: 3, sessionId: 42 }, prevScreen: 'table' };
+      const newState = uiReducer(initialUiState, {
+        type: UI_ACTIONS.SET_EDITOR_CONTEXT,
+        payload: ctx,
+      });
+      expect(newState.editorContext).toEqual(ctx);
+    });
+
+    it('clears to null', () => {
+      const opened = uiReducer(initialUiState, {
+        type: UI_ACTIONS.SET_EDITOR_CONTEXT,
+        payload: { mode: 'edit', playerId: 7 },
+      });
+      const closed = uiReducer(opened, {
+        type: UI_ACTIONS.SET_EDITOR_CONTEXT,
+        payload: null,
+      });
+      expect(closed.editorContext).toBeNull();
+    });
+
+    it('does not affect pickerContext', () => {
+      const withPicker = uiReducer(initialUiState, {
+        type: UI_ACTIONS.SET_PICKER_CONTEXT,
+        payload: { seat: 3 },
+      });
+      const withEditor = uiReducer(withPicker, {
+        type: UI_ACTIONS.SET_EDITOR_CONTEXT,
+        payload: { mode: 'create' },
+      });
+      expect(withEditor.pickerContext).toEqual({ seat: 3 });
+    });
+  });
+
+  describe('SET_PICKER_CONTEXT (PEO-1)', () => {
+    it('defaults to null in initial state', () => {
+      expect(initialUiState.pickerContext).toBeNull();
+    });
+
+    it('sets the pickerContext', () => {
+      const ctx = { seat: 3, batchMode: { active: true, assignedSeats: [] }, prevScreen: 'table' };
+      const newState = uiReducer(initialUiState, {
+        type: UI_ACTIONS.SET_PICKER_CONTEXT,
+        payload: ctx,
+      });
+      expect(newState.pickerContext).toEqual(ctx);
+    });
+
+    it('clears to null', () => {
+      const opened = uiReducer(initialUiState, {
+        type: UI_ACTIONS.SET_PICKER_CONTEXT,
+        payload: { seat: 3 },
+      });
+      const closed = uiReducer(opened, {
+        type: UI_ACTIONS.SET_PICKER_CONTEXT,
+        payload: null,
+      });
+      expect(closed.pickerContext).toBeNull();
+    });
+  });
 });

@@ -30,10 +30,12 @@ export const UI_ACTIONS = {
   SET_HIGHLIGHTED_HOLE_SLOT: 'SET_HIGHLIGHTED_HOLE_SLOT',
   ADVANCE_SHOWDOWN_HIGHLIGHT: 'ADVANCE_SHOWDOWN_HIGHLIGHT',
   // Cross-view navigation state
-  SET_PENDING_SEAT_FOR_PLAYER: 'SET_PENDING_SEAT_FOR_PLAYER',
   SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
   SET_REPLAY_HAND: 'SET_REPLAY_HAND',
   SET_SHOWDOWN_MODE: 'SET_SHOWDOWN_MODE',
+  // PEO-1: fullscreen player-entry routes
+  SET_EDITOR_CONTEXT: 'SET_EDITOR_CONTEXT',
+  SET_PICKER_CONTEXT: 'SET_PICKER_CONTEXT',
 };
 
 import { SCREEN } from '../constants/uiConstants';
@@ -56,10 +58,15 @@ export const initialUiState = {
   // Showdown mode ('quick' skips card assignment, 'full' is traditional)
   showdownMode: 'quick',
   // Cross-view navigation state
-  pendingSeatForPlayerAssignment: null,
+  // (PEO-4: pendingSeatForPlayerAssignment removed — generalized to editorContext/pickerContext.)
   autoOpenNewSession: false,
   replayHandId: null,
   replayHand: null,
+  // PEO-1: fullscreen player-entry route contexts
+  // editorContext: null | { mode: 'create' | 'edit', playerId?, seatContext?, prevScreen, nameSeed? }
+  // pickerContext: null | { seat, batchMode, assignedSeats, prevScreen }
+  editorContext: null,
+  pickerContext: null,
 };
 
 // =============================================================================
@@ -86,10 +93,12 @@ export const UI_STATE_SCHEMA = {
   highlightedHoleSlot: { type: 'number', required: false }, // Can be null
   showdownMode: { type: 'string', enum: ['quick', 'full'] },
   // Cross-view navigation state
-  pendingSeatForPlayerAssignment: { type: 'number', required: false }, // Can be null
   autoOpenNewSession: { type: 'boolean' },
   replayHandId: { type: 'number', required: false }, // Can be null
   replayHand: { type: 'object', required: false }, // Can be null
+  // PEO-1 contexts (nullable objects)
+  editorContext: { type: 'object', required: false },
+  pickerContext: { type: 'object', required: false },
 };
 
 // =============================================================================
@@ -263,12 +272,6 @@ const rawUiReducer = (state, action) => {
     }
 
     // Cross-view navigation
-    case UI_ACTIONS.SET_PENDING_SEAT_FOR_PLAYER:
-      return {
-        ...state,
-        pendingSeatForPlayerAssignment: action.payload,
-      };
-
     case UI_ACTIONS.SET_AUTO_OPEN_NEW_SESSION:
       return {
         ...state,
@@ -286,6 +289,21 @@ const rawUiReducer = (state, action) => {
         ...state,
         replayHandId: action.payload.handId ?? action.payload,
         replayHand: action.payload.hand ?? null,
+      };
+
+    // PEO-1: open/close fullscreen player-entry routes. Payload is either
+    // the context object (open) or null (close). Caller is expected to
+    // dispatch SET_SCREEN separately to route to the matching view.
+    case UI_ACTIONS.SET_EDITOR_CONTEXT:
+      return {
+        ...state,
+        editorContext: action.payload,
+      };
+
+    case UI_ACTIONS.SET_PICKER_CONTEXT:
+      return {
+        ...state,
+        pickerContext: action.payload,
       };
 
     default:

@@ -120,6 +120,7 @@ export default defineConfig({
           setupFiles: './src/test/setup.js',
           include: [
             'src/hooks/__tests__/**/*.test.js',
+            'src/hooks/__tests__/**/*.test.jsx',
             'src/contexts/__tests__/**/*.test.jsx',
             'src/__tests__/**/*.test.js',
           ],

@@ -14,6 +14,7 @@ import {
   SETTINGS_STORE_NAME,
   RANGE_PROFILES_STORE_NAME,
   TOURNAMENTS_STORE_NAME,
+  PLAYER_DRAFTS_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -426,6 +427,14 @@ const migrateV12 = (db, transaction) => {
   log('v12 migration complete: source + tableId indexes added');
 };
 
+/** v14: Create playerDrafts store for in-progress player creation (PEO-1). Additive only. */
+const migrateV14 = (db) => {
+  if (!db.objectStoreNames.contains(PLAYER_DRAFTS_STORE_NAME)) {
+    db.createObjectStore(PLAYER_DRAFTS_STORE_NAME, { keyPath: 'userId' });
+    log('PlayerDrafts object store created');
+  }
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -518,4 +527,7 @@ export const runMigrations = (db, transaction, oldVersion) => {
 
   // v13: normalize seatActions strings → arrays (data migration, skip fresh install)
   if (oldVersion < 13 && oldVersion > 0) migrateV13(db, transaction);
+
+  // v14: playerDrafts store (additive, PEO-1)
+  if (oldVersion < 14) migrateV14(db);
 };

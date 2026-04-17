@@ -65,7 +65,7 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 
 **First-principles decision modeling (CRITICAL):** Villain decisions derive from equity, pot odds, SPR, and players remaining — NEVER from position labels, bucket labels, or style categories directly. Labels are outputs of the decision process, not inputs. Do not add `if (position === 'EP') foldRate *= 1.05` — compute from game state. Do not use `POP_CALLING_RATES[bucket]` when per-combo equity is available — use the logistic. Do not stack style adjustments on top of the stats that define the style — that's double-counting. See POKER_THEORY.md §7 and exploitEngine/CLAUDE.md anti-patterns.
 
-## Architecture (v122)
+## Architecture (v123)
 See `SYSTEM_MODEL.md` §1 for full component map, dependency graph, and extension boundary.
 Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views, 4 engines, IndexedDB v13.
 

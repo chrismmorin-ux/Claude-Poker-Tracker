@@ -19,15 +19,8 @@ vi.mock('lucide-react', () => ({
   X: () => <span>×</span>,
 }));
 
-// Mock child components
-vi.mock('../../ui/PlayerForm/index', () => ({
-  PlayerForm: ({ onSubmit, onCancel, defaultName }) => (
-    <div data-testid="player-form">
-      <button onClick={() => onSubmit({ name: defaultName || 'Test Player' })}>Submit</button>
-      <button onClick={onCancel}>Cancel</button>
-    </div>
-  ),
-}));
+// Mock child components.
+// (PEO-4: PlayerForm directory deleted — editor moved to SCREEN.PLAYER_EDITOR.)
 
 vi.mock('../../ui/PlayerFilters', () => ({
   PlayerFilters: ({ searchTerm, setSearchTerm }) => (
@@ -92,14 +85,18 @@ const mockPlayerContext = {
 
 const mockUIContext = {
   setCurrentScreen: vi.fn(),
-  SCREEN: { TABLE: 'table', PLAYERS: 'players' },
-  pendingSeatForPlayerAssignment: null,
-  setPendingSeatForPlayerAssignment: vi.fn(),
+  SCREEN: { TABLE: 'table', PLAYERS: 'players', PLAYER_EDITOR: 'playerEditor' },
+  openPlayerEditor: vi.fn(),
+};
+
+const mockSessionContext = {
+  currentSession: { sessionId: 42 },
 };
 
 vi.mock('../../../contexts', () => ({
   usePlayer: () => mockPlayerContext,
   useUI: () => mockUIContext,
+  useSession: () => mockSessionContext,
   useTendency: () => ({ tendencyMap: {}, isLoading: false, refresh: vi.fn(), patchTendency: vi.fn() }),
 }));
 
@@ -166,8 +163,6 @@ describe('PlayersView', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mock UI context
-    mockUIContext.pendingSeatForPlayerAssignment = null;
     // Reset mock context with test data
     mockPlayerContext.allPlayers = mockPlayers;
     mockPlayerContext.seatPlayers = {};
@@ -242,39 +237,32 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('player creation', () => {
-    it('opens new player modal when button clicked', () => {
+  describe('player creation (PEO-4: routes to fullscreen editor)', () => {
+    it('opens PlayerEditor in create mode when button clicked', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(screen.getByTestId('player-form')).toBeInTheDocument();
+      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
+        mode: 'create',
+      }));
     });
 
-    it('closes modal when cancel clicked', () => {
+    it('threads selected seat into editorContext.seatContext', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
+      fireEvent.click(screen.getByTestId('seat-5'));
       fireEvent.click(screen.getByText('+ New Player'));
-      fireEvent.click(screen.getByText('Cancel'));
-      expect(screen.queryByTestId('player-form')).not.toBeInTheDocument();
+      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
+        mode: 'create',
+        seatContext: expect.objectContaining({ seat: 5, sessionId: 42 }),
+      }));
     });
 
-    it('calls createNewPlayer on submit', async () => {
+    it('uses null seatContext when no seat is selected', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      fireEvent.click(screen.getByText('Submit'));
-
-      await waitFor(() => {
-        expect(mockPlayerContext.createNewPlayer).toHaveBeenCalled();
-      });
-    });
-
-    it('shows error toast on creation failure', async () => {
-      mockPlayerContext.createNewPlayer.mockImplementation(() => Promise.reject(new Error('Create failed')));
-      renderWithToast(<PlayersView {...defaultProps} />);
-      fireEvent.click(screen.getByText('+ New Player'));
-      fireEvent.click(screen.getByText('Submit'));
-
-      await waitFor(() => {
-        expect(screen.getByText(/Failed to create player/)).toBeInTheDocument();
-      });
+      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
+        mode: 'create',
+        seatContext: null,
+      }));
     });
   });
 
@@ -370,34 +358,14 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('edit functionality', () => {
-    it('opens edit modal when edit clicked', () => {
+  describe('edit functionality (PEO-4: routes to fullscreen editor)', () => {
+    it('opens PlayerEditor in edit mode when edit clicked', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       const editButtons = screen.getAllByText('Edit');
       fireEvent.click(editButtons[0]);
-      expect(screen.getByTestId('player-form')).toBeInTheDocument();
-    });
-
-    it('calls updatePlayerById on edit submit', async () => {
-      renderWithToast(<PlayersView {...defaultProps} />);
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
-      fireEvent.click(screen.getByText('Submit'));
-
-      await waitFor(() => {
-        expect(mockPlayerContext.updatePlayerById).toHaveBeenCalled();
-      });
-    });
-
-    it('shows error on update failure', async () => {
-      mockPlayerContext.updatePlayerById.mockImplementation(() => Promise.reject(new Error('Update failed')));
-      renderWithToast(<PlayersView {...defaultProps} />);
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
-      fireEvent.click(screen.getByText('Submit'));
-
-      await waitFor(() => {
-        expect(screen.getByText(/Failed to update player/)).toBeInTheDocument();
+      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith({
+        mode: 'edit',
+        playerId: 1,
       });
     });
   });
@@ -420,21 +388,10 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('pending seat assignment', () => {
-    it('auto-selects pending seat on mount', () => {
-      mockUIContext.pendingSeatForPlayerAssignment = 7;
-      renderWithToast(<PlayersView {...defaultProps} />);
-      expect(screen.getByTestId('seat-7')).toHaveClass('selected');
-      mockUIContext.pendingSeatForPlayerAssignment = null;
-    });
-
-    it('clears pending seat after selection', () => {
-      mockUIContext.pendingSeatForPlayerAssignment = 7;
-      renderWithToast(<PlayersView {...defaultProps} />);
-      expect(mockUIContext.setPendingSeatForPlayerAssignment).toHaveBeenCalledWith(null);
-      mockUIContext.pendingSeatForPlayerAssignment = null;
-    });
-  });
+  // PEO-4: the "pending seat" cross-view nav feature was deleted when
+  // SeatContextMenu was rewired to route directly to PlayerEditorView with
+  // seatContext. No replacement tests live here; seat→editor wiring is tested
+  // in SeatContextMenu + TableView handler specs.
 
   describe('replace player prompt', () => {
     it('shows replace prompt when assigning to occupied seat', async () => {

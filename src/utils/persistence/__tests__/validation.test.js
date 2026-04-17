@@ -20,6 +20,7 @@ import {
   validateHandRecord,
   validateSessionRecord,
   validatePlayerRecord,
+  validateDraftRecord,
   logValidationErrors,
   validateWithLogging,
 } from '../validation';
@@ -757,6 +758,177 @@ describe('logValidationErrors', () => {
     const calls = logger.warn.mock.calls;
     expect(calls[0][1]).toBe('ctx: err A');
     expect(calls[1][1]).toBe('ctx: err B');
+  });
+});
+
+// =============================================================================
+// validatePlayerRecord — PEO-1 additions (avatarFeatures + nameSource)
+// =============================================================================
+
+describe('validatePlayerRecord — PEO-1 additions', () => {
+  const base = {
+    name: 'Mike',
+    nickname: 'Big Mike',
+    userId: 'guest',
+  };
+
+  describe('nameSource', () => {
+    it('accepts "user"', () => {
+      const r = validatePlayerRecord({ ...base, nameSource: 'user' });
+      expect(r.valid).toBe(true);
+    });
+
+    it('accepts "auto"', () => {
+      const r = validatePlayerRecord({ ...base, nameSource: 'auto' });
+      expect(r.valid).toBe(true);
+    });
+
+    it('accepts null/undefined (optional field)', () => {
+      expect(validatePlayerRecord({ ...base, nameSource: null }).valid).toBe(true);
+      expect(validatePlayerRecord({ ...base }).valid).toBe(true);
+    });
+
+    it('rejects unknown values', () => {
+      const r = validatePlayerRecord({ ...base, nameSource: 'generated' });
+      expect(r.valid).toBe(false);
+      expect(r.errors.some(e => e.includes('nameSource'))).toBe(true);
+    });
+  });
+
+  describe('avatarFeatures', () => {
+    it('accepts full avatarFeatures sub-object', () => {
+      const r = validatePlayerRecord({
+        ...base,
+        avatarFeatures: {
+          skin: 'skin.medium',
+          hair: 'hair.short-wavy',
+          hairColor: 'color.black',
+          beard: 'beard.goatee',
+          beardColor: 'color.black',
+          eyes: 'eyes.round',
+          eyeColor: 'eye-color.brown',
+          glasses: 'glasses.none',
+          hat: 'hat.none',
+        },
+      });
+      expect(r.valid).toBe(true);
+    });
+
+    it('accepts partial avatarFeatures (optional values)', () => {
+      const r = validatePlayerRecord({
+        ...base,
+        avatarFeatures: { hair: 'hair.buzz' },
+      });
+      expect(r.valid).toBe(true);
+    });
+
+    it('accepts null avatarFeatures (legacy players)', () => {
+      const r = validatePlayerRecord({ ...base, avatarFeatures: null });
+      expect(r.valid).toBe(true);
+    });
+
+    it('accepts missing avatarFeatures (defaults to absent)', () => {
+      const r = validatePlayerRecord({ ...base });
+      expect(r.valid).toBe(true);
+    });
+
+    it('rejects non-object avatarFeatures', () => {
+      expect(validatePlayerRecord({ ...base, avatarFeatures: 'invalid' }).valid).toBe(false);
+      expect(validatePlayerRecord({ ...base, avatarFeatures: 42 }).valid).toBe(false);
+    });
+
+    it('rejects array avatarFeatures', () => {
+      expect(validatePlayerRecord({ ...base, avatarFeatures: [] }).valid).toBe(false);
+    });
+
+    it('rejects non-string feature values', () => {
+      const r = validatePlayerRecord({
+        ...base,
+        avatarFeatures: { hair: 42 },
+      });
+      expect(r.valid).toBe(false);
+      expect(r.errors.some(e => e.includes('hair'))).toBe(true);
+    });
+
+    it('accepts null/undefined feature values (means "unset")', () => {
+      const r = validatePlayerRecord({
+        ...base,
+        avatarFeatures: { hair: null, beard: undefined, eyes: 'eyes.round' },
+      });
+      expect(r.valid).toBe(true);
+    });
+  });
+});
+
+// =============================================================================
+// validateDraftRecord (PEO-1)
+// =============================================================================
+
+describe('validateDraftRecord', () => {
+  const baseDraft = () => ({
+    userId: 'guest',
+    draft: { name: 'Mike', avatarFeatures: { hair: 'hair.buzz' } },
+    seatContext: { seat: 3, sessionId: 42 },
+    updatedAt: Date.now(),
+  });
+
+  it('accepts a full valid draft record', () => {
+    expect(validateDraftRecord(baseDraft()).valid).toBe(true);
+  });
+
+  it('accepts minimal draft (userId only)', () => {
+    expect(validateDraftRecord({ userId: 'guest' }).valid).toBe(true);
+  });
+
+  it('rejects missing userId', () => {
+    const r = validateDraftRecord({ draft: {}, updatedAt: Date.now() });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.includes('userId'))).toBe(true);
+  });
+
+  it('rejects empty userId', () => {
+    expect(validateDraftRecord({ userId: '' }).valid).toBe(false);
+  });
+
+  it('rejects non-string userId', () => {
+    expect(validateDraftRecord({ userId: 42 }).valid).toBe(false);
+  });
+
+  it('rejects non-object draft payload', () => {
+    expect(validateDraftRecord({ userId: 'guest', draft: 'not-obj' }).valid).toBe(false);
+  });
+
+  it('rejects array draft payload', () => {
+    expect(validateDraftRecord({ userId: 'guest', draft: [] }).valid).toBe(false);
+  });
+
+  it('accepts null draft payload (just opened, nothing typed)', () => {
+    expect(validateDraftRecord({ userId: 'guest', draft: null }).valid).toBe(true);
+  });
+
+  it('rejects non-object seatContext', () => {
+    expect(validateDraftRecord({ userId: 'guest', seatContext: 'invalid' }).valid).toBe(false);
+  });
+
+  it('accepts null seatContext (entry from PlayersView with no seat)', () => {
+    expect(validateDraftRecord({ userId: 'guest', seatContext: null }).valid).toBe(true);
+  });
+
+  it('rejects non-number seat or sessionId', () => {
+    const r1 = validateDraftRecord({ userId: 'guest', seatContext: { seat: '3' } });
+    expect(r1.valid).toBe(false);
+    const r2 = validateDraftRecord({ userId: 'guest', seatContext: { sessionId: 'abc' } });
+    expect(r2.valid).toBe(false);
+  });
+
+  it('rejects non-number updatedAt', () => {
+    expect(validateDraftRecord({ userId: 'guest', updatedAt: 'now' }).valid).toBe(false);
+  });
+
+  it('rejects non-object input', () => {
+    expect(validateDraftRecord(null).valid).toBe(false);
+    expect(validateDraftRecord(undefined).valid).toBe(false);
+    expect(validateDraftRecord('string').valid).toBe(false);
   });
 });
 

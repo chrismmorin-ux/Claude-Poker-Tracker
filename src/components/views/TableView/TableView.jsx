@@ -71,10 +71,11 @@ export const TableView = ({ scale }) => {
     setSelectedPlayers,
     SCREEN,
     showCardSelector,
-    setPendingSeatForPlayerAssignment,
     setAutoOpenNewSession,
     startDraggingDealer,
     stopDraggingDealer,
+    openPlayerEditor,
+    openPlayerPicker,
   } = useUI();
 
   const {
@@ -319,9 +320,19 @@ export const TableView = ({ scale }) => {
   };
 
   const handleCreateNewPlayer = (seat) => {
-    setPendingSeatForPlayerAssignment(seat);
+    // PEO-3: route to fullscreen editor instead of PlayersView modal.
     setContextMenu(null);
-    setCurrentScreen(SCREEN.PLAYERS);
+    const sessionId = currentSession?.sessionId ?? null;
+    openPlayerEditor({
+      mode: 'create',
+      seatContext: { seat, sessionId },
+    });
+  };
+
+  const handleFindPlayer = (seat) => {
+    // PEO-3: fullscreen picker scoped to this seat.
+    setContextMenu(null);
+    openPlayerPicker({ seat });
   };
 
   const handleAssignPlayer = (seat, playerId) => {
@@ -529,6 +540,7 @@ export const TableView = ({ scale }) => {
               onMakeMySeat={handleSetMySeat}
               onMakeDealer={handleMakeDealer}
               onCreateNewPlayer={handleCreateNewPlayer}
+              onFindPlayer={handleFindPlayer}
               onAssignPlayer={handleAssignPlayer}
               onClearPlayer={handleClearPlayer}
               recentPlayers={getRecentPlayers(20, true)}

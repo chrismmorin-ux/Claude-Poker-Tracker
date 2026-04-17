@@ -180,6 +180,26 @@ export const validatePlayerRecord = (playerRecord) => {
     }
   });
 
+  // nameSource (PEO-1): enum 'user' | 'auto' | null
+  if (playerRecord.nameSource !== undefined && playerRecord.nameSource !== null) {
+    if (playerRecord.nameSource !== 'user' && playerRecord.nameSource !== 'auto') {
+      errors.push('nameSource must be "user" or "auto"');
+    }
+  }
+
+  // avatarFeatures (PEO-1): optional nullable sub-object with string values
+  if (playerRecord.avatarFeatures !== undefined && playerRecord.avatarFeatures !== null) {
+    if (typeof playerRecord.avatarFeatures !== 'object' || Array.isArray(playerRecord.avatarFeatures)) {
+      errors.push('avatarFeatures must be an object');
+    } else {
+      for (const [key, value] of Object.entries(playerRecord.avatarFeatures)) {
+        if (value !== null && value !== undefined && typeof value !== 'string') {
+          errors.push(`avatarFeatures.${key} must be a string (namespaced feature id)`);
+        }
+      }
+    }
+  }
+
   // Boolean fields
   const booleanFields = ['hat', 'sunglasses'];
   booleanFields.forEach(field => {
@@ -211,6 +231,61 @@ export const validatePlayerRecord = (playerRecord) => {
   if (playerRecord.handCount !== undefined) {
     if (typeof playerRecord.handCount !== 'number' || playerRecord.handCount < 0) {
       errors.push('handCount must be a non-negative number');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+};
+
+// =============================================================================
+// PLAYER DRAFT RECORD VALIDATION (PEO-1)
+// =============================================================================
+
+/**
+ * Validate a playerDrafts record before persisting.
+ *
+ * Invariant I-PEO-1: At most one draft per userId. Key is userId.
+ * The `draft` payload is intentionally loose — it mirrors in-progress form
+ * state and should not fail save for missing fields. We validate envelope
+ * shape + timestamp correctness only.
+ *
+ * @param {Object} draftRecord { userId, draft, seatContext, updatedAt }
+ * @returns {{valid: boolean, errors: string[]}}
+ */
+export const validateDraftRecord = (draftRecord) => {
+  const errors = [];
+
+  if (!draftRecord || typeof draftRecord !== 'object') {
+    return { valid: false, errors: ['Draft record must be an object'] };
+  }
+
+  if (typeof draftRecord.userId !== 'string' || draftRecord.userId.length === 0) {
+    errors.push('draft.userId is required and must be a non-empty string');
+  }
+
+  if (draftRecord.draft !== undefined && draftRecord.draft !== null) {
+    if (typeof draftRecord.draft !== 'object' || Array.isArray(draftRecord.draft)) {
+      errors.push('draft.draft must be an object');
+    }
+  }
+
+  if (draftRecord.seatContext !== undefined && draftRecord.seatContext !== null) {
+    if (typeof draftRecord.seatContext !== 'object' || Array.isArray(draftRecord.seatContext)) {
+      errors.push('draft.seatContext must be an object or null');
+    } else {
+      const { seat, sessionId } = draftRecord.seatContext;
+      if (seat !== undefined && seat !== null && typeof seat !== 'number') {
+        errors.push('draft.seatContext.seat must be a number if present');
+      }
+      if (sessionId !== undefined && sessionId !== null && typeof sessionId !== 'number') {
+        errors.push('draft.seatContext.sessionId must be a number if present');
+      }
+    }
+  }
+
+  if (draftRecord.updatedAt !== undefined && draftRecord.updatedAt !== null) {
+    if (typeof draftRecord.updatedAt !== 'number') {
+      errors.push('draft.updatedAt must be a number');
     }
   }
 

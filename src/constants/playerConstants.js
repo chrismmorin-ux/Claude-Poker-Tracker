@@ -21,8 +21,21 @@ export const PLAYER_ACTIONS = {
   CLEAR_ALL_SEAT_PLAYERS: 'CLEAR_ALL_SEAT_PLAYERS',
   HYDRATE_SEAT_PLAYERS: 'HYDRATE_SEAT_PLAYERS',
 
+  // Retroactive seat-player linking (PEO-1)
+  RETROACTIVELY_LINK_PLAYER: 'RETROACTIVELY_LINK_PLAYER',
+  UNDO_RETROACTIVE_LINK: 'UNDO_RETROACTIVE_LINK',
+
   // Loading state
   SET_LOADING: 'SET_LOADING',
+};
+
+// =============================================================================
+// NAME SOURCE (PEO-1)
+// =============================================================================
+
+export const NAME_SOURCE = {
+  USER: 'user',
+  AUTO: 'auto',
 };
 
 // =============================================================================

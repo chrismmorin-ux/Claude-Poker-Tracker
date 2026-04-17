@@ -1,6 +1,57 @@
 # Poker Tracker Change Log
 
-## v122 - CTO Architecture Refactor (Current)
+## v123 - Player Entry Overhaul (Current)
+
+### PEO-4 — Cutover + Cleanup (2026-04-16)
+- **PlayersView migrated**: create + edit buttons now route to `PlayerEditorView` (via `openPlayerEditor`) instead of opening a modal. The grid's currently-selected seat is threaded as `seatContext` so save auto-assigns + retro-links.
+- **`src/components/ui/PlayerForm/` directory deleted** — 6 files + one `__tests__/index.test.jsx` removed. Semantics preserved inside `PlayerEditorView` subcomponents.
+- **`pendingSeatForPlayerAssignment` removed** from `uiReducer` (field + `SET_PENDING_SEAT_FOR_PLAYER` action + schema entry), `UIContext` exposure, and `TableView` destructure. Generalised to `editorContext` / `pickerContext` (shipped in PEO-1).
+- **Tests cleaned**: removed `PlayerForm` tests; PlayersView tests updated to assert `openPlayerEditor` dispatch shapes; removed legacy "pending seat assignment" cases (feature deleted). Suite 5,760 → 5,623 passing (net drop reflects deleted dead-code tests; zero failing).
+- **Governance**: SYSTEM_MODEL + STATE_SCHEMA + CHANGELOG + STATUS + BACKLOG updated. Post-mortem written in `.claude/projects/player-entry-overhaul.md`.
+
+**Player Entry Overhaul program CLOSED 2026-04-16.** Four sessions shipped in one day. 4 new SCREEN routes? No — 2 (PLAYER_EDITOR, PLAYER_PICKER). Feature works end-to-end: right-click seat → "🔍 Find Player…" → fullscreen picker → name+feature filters → pick existing (with retro-link + undo) or create new → fullscreen editor with feature-avatar builder + draft autosave.
+
+### PEO-3 — Fullscreen Player Picker + Feature Goes Live (2026-04-16)
+- **New screen route** `SCREEN.PLAYER_PICKER` rendered via `PlayerPickerView`. Launched from the seat context menu.
+- **Live recognition-first filtering**: name prefix match on `name` AND `nickname` (case-insensitive, every keystroke), inline expandable feature chips (Skin / Hair / Beard / Glasses / Hat) with AND semantics, results sorted last-seen desc within match set.
+- **ResultCard** (plan §D7): avatar-left layout, matched name prefix bolded, non-matching feature chips faded (figure/ground contrast), left-border gold accent when every active filter matches, meta line shows relative last-seen + hand count.
+- **Inline filter panels** — no nested popovers; tap chip to expand/collapse swatch rows below (mobile-landscape safe).
+- **CreateFromQueryCTA** sticky bottom button pre-fills the editor with typed text as `nameSeed`.
+- **Batch mode state machine** (plan §D9): `pickerContext.batchMode = { active, assignedSeats }`. Ends on explicit exit, all 9 seats assigned, or navigation away. Does NOT persist across app reload. `BatchSeatRibbon` shows seat progress (assigned ✓ / current / pending) with an explicit "Exit batch" button.
+- **SeatContextMenu rewired**: new "🔍 Find Player…" item opens the picker scoped to the seat. "Create New Player" now routes to `PlayerEditorView` (PEO-2) instead of the old `PlayersView` modal. This is the moment the PEO feature goes live for the first time.
+- **On pick (existing player)**: auto `assignPlayerToSeat` + `linkPlayerToPriorHandsInSession` + undo-toast. In batch mode: auto-advance to next unassigned seat, clear the query.
+- **New hook** `usePlayerPicker` — owns query state + results (scored + sorted) + batch-mode state machine. Pure over `[allPlayers, query]`.
+- **New primitive** `scorePlayerMatch` exported from `usePlayerFiltering` — returns `{ nameMatchStart, nameMatchEnd, matchedFeatures, unmatchedFeatureFilters, allFiltersMatch, passesFilters }` for ResultCard highlighting.
+- **Tests**: ~60 new tests; full suite 5,699 → 5,760 passing.
+- **Unblocks PEO-4** (cutover: migrate `PlayersView` create path to editor route; delete `src/components/ui/PlayerForm/`; remove `pendingSeatForPlayerAssignment`).
+
+### PEO-2 — Fullscreen Player Editor (2026-04-16)
+- **New screen route** `SCREEN.PLAYER_EDITOR` rendered via `PlayerEditorView`. Mobile-landscape-friendly single-column scrollable form.
+- **Non-blocking form** (plan §D5): save button is ALWAYS enabled; no required fields; `autoName` derivation chain guarantees a useful record name (user-typed → `"Seat N — <distinctive feature>"` → `"Player HHMMSS"`). `nameSource: 'user' | 'auto'` recorded on the Player.
+- **Draft resume banner**: on mount, if a draft exists for the current user the banner offers Resume or Discard. Resume populates fields; Discard deletes the draft and starts fresh. No auto-resume.
+- **AvatarFeatureBuilder**: tap-once swatch pickers for skin / hair / beard / eyes / glasses / hat. Live preview. Hair-color and beard-color rows hide when the corresponding style is `"none"` to reduce visual noise. Every swatch shows `aria-pressed` state; selected swatches get a gold ring.
+- **NameSection** shows non-blocking duplicate warning inline when the typed name matches another player (case-insensitive); user may still save.
+- **PhysicalSection** (legacy text dropdowns) collapsed by default — avatar builder is the primary path.
+- **ImageUploadSection** collapsed by default; per D6, feature avatar is canonical and image is rare/optional.
+- **BackToTableBar** flushes any pending debounced draft save before dispatching `closePlayerEditor` — no keystrokes lost on mid-session interruption.
+- **Retroactive linking integrated**: on save with `seatContext`, the view auto-assigns the player to the seat AND fires `linkPlayerToPriorHandsInSession` with an **undo toast** action. Undo reverts both the seat-players updates and the player's `handCount`.
+- **New hook** `usePlayerEditor` orchestrates form state + draft binding + autoName + atomic save (`commitDraft` for create, `updatePlayer` for edit).
+- **New utility** `src/utils/playerAutoName.js` with pure `deriveAutoName()` and `pickDistinctiveFeature()`.
+- **Dark merge**: no existing UI entry points rewired — editor reachable only via a direct `SET_SCREEN` dispatch. PEO-3 will wire `SeatContextMenu` "Create New Player" and the picker's `CreateFromQueryCTA` to this screen.
+- **Tests**: ~55 new tests; full suite 5,644 → 5,699 passing.
+
+### PEO-1 — Data Layer + Avatar System (2026-04-16)
+- **IDB v13 → v14 migration** (additive only): new `playerDrafts` object store keyed by `userId`. Existing player records untouched.
+- **New Player fields** (optional, nullable on legacy records): `avatarFeatures` sub-object, `nameSource: 'user' | 'auto'`.
+- **Custom SVG feature-avatar system** — no external library. 6 categories (skin, hair, beard, eyes, glasses, hat) with namespaced IDs (`"hair.short-wavy"`), CSS-custom-property color application, declarative `LAYER_ORDER`. Components: `AvatarRenderer`, `AvatarMonogram` (initials fallback), `PlayerAvatar` (wrapper). Data at `src/assets/avatarFeatures/`.
+- **Retroactive seat↔player linking**: pure `linkPlayerToPriorSeatHands()` walks in-session hands backward and stops at boundaries (different player or cleared seat). Atomic `batchUpdateSeatPlayers` in one IDB transaction. Reducer actions `RETROACTIVELY_LINK_PLAYER` + `UNDO_RETROACTIVE_LINK` for surgical `handCount` updates.
+- **Draft persistence**: single draft per `userId` with atomic `commitDraft` (player write + draft delete in one transaction). Hook `usePlayerDraft` adds 500ms debounced autosave + blur-flush + resume/discard.
+- **Invariants I-PEO-1..4** added to INVARIANTS.md.
+- **New hooks**: `usePlayerDraft`, `useRetroactiveLinking`, `useScreenFocusManagement`.
+- **Dark merge**: no UI entry points rewired; S2/S3 will consume these primitives. PlayerContext exposes retro-link operations; UIContext exposes new fullscreen route openers (`openPlayerEditor`, `openPlayerPicker`).
+- **Tests**: ~220 new tests; full suite 5,422 → 5,644 passing.
+
+## v122 - CTO Architecture Refactor (Previous)
 
 ### Summary
 - **Dead code removal**: Deleted `actionMigration.js` (superseded by `normalizeSeatActions.js`) and stale `docs/SPEC.md`

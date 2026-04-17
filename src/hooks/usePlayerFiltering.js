@@ -3,9 +3,95 @@
  *
  * Encapsulates all player filtering logic for PlayersView.
  * Extracted from PlayersView.jsx to improve maintainability.
+ *
+ * Also exports `scorePlayerMatch` (PEO-3) — a pure primitive used by the
+ * PlayerPickerView's ResultCard to render highlight metadata (name-prefix
+ * bolding + matched-feature accents).
  */
 
 import { useState, useMemo, useCallback } from 'react';
+
+// =============================================================================
+// scorePlayerMatch — pure highlight primitive (PEO-3)
+// =============================================================================
+
+/**
+ * Determine the highlight metadata for a player against a live query.
+ *
+ * @param {object} player  — a player record (from allPlayers)
+ * @param {object} query
+ *   @param {string} query.nameQuery         — live text input (lowercased internally)
+ *   @param {object} query.featureFilters    — { skin?, hair?, hairColor?, beard?,
+ *                                               beardColor?, eyes?, eyeColor?,
+ *                                               glasses?, hat? } (each value is a
+ *                                               namespaced id OR undefined)
+ *   @param {string} [query.nameField='name']  — which player field to match prefix on
+ *                                               (defaults to name; picker also
+ *                                               checks nickname via the nameMatch*
+ *                                               fields below).
+ * @returns {{
+ *   nameMatchStart: number | null,     // inclusive, 0-based (case-insensitive prefix)
+ *   nameMatchEnd: number | null,       // exclusive
+ *   matchedFeatures: Set<string>,      // categories that matched a filter
+ *   unmatchedFeatureFilters: Set<string>, // filters where player has a different value
+ *   allFiltersMatch: boolean,
+ *   passesFilters: boolean,            // true ⇔ allFiltersMatch AND name-prefix matches
+ * }}
+ */
+export const scorePlayerMatch = (player, query = {}) => {
+  const nameQuery = (query.nameQuery ?? '').toString().trim();
+  const featureFilters = query.featureFilters || {};
+
+  // --- Name prefix match (checked against both name and nickname) ---------
+  let nameMatchStart = null;
+  let nameMatchEnd = null;
+  let namePasses = true;
+
+  if (nameQuery.length > 0) {
+    const q = nameQuery.toLowerCase();
+    const candidates = [player?.name, player?.nickname].filter(Boolean);
+    let best = null;
+    for (const candidate of candidates) {
+      const idx = candidate.toLowerCase().indexOf(q);
+      if (idx === 0) {
+        // Prefer a prefix match on `name` specifically — but accept nickname too.
+        best = { start: 0, end: q.length, onName: candidate === player?.name };
+        if (best.onName) break;
+      }
+    }
+    if (best) {
+      nameMatchStart = best.start;
+      nameMatchEnd = best.end;
+    } else {
+      namePasses = false;
+    }
+  }
+
+  // --- Feature filter match -----------------------------------------------
+  const matchedFeatures = new Set();
+  const unmatchedFeatureFilters = new Set();
+  const playerFeatures = player?.avatarFeatures || {};
+  const activeFilterCategories = Object.entries(featureFilters)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+  for (const [category, filterValue] of activeFilterCategories) {
+    if (playerFeatures[category] === filterValue) {
+      matchedFeatures.add(category);
+    } else {
+      unmatchedFeatureFilters.add(category);
+    }
+  }
+  const allFiltersMatch = unmatchedFeatureFilters.size === 0;
+
+  return {
+    nameMatchStart,
+    nameMatchEnd,
+    matchedFeatures,
+    unmatchedFeatureFilters,
+    allFiltersMatch,
+    passesFilters: namePasses && allFiltersMatch,
+  };
+};
 
 /**
  * Custom hook for player filtering, searching, and sorting

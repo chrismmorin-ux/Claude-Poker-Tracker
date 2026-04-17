@@ -7,6 +7,7 @@
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
 import { usePlayerPersistence } from '../hooks/usePlayerPersistence';
+import { useRetroactiveLinking } from '../hooks/useRetroactiveLinking';
 
 // Create context
 const PlayerContext = createContext(null);
@@ -30,6 +31,15 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     isPlayerAssigned,
     getPlayerSeat,
   } = usePlayerPersistence(playerState, dispatchPlayer);
+
+  // PEO-1: retroactive seat↔player linking. Exposed at this layer so the
+  // linking flow can read allPlayers (for handCount delta) and dispatch into
+  // the player reducer. Consumers call linkPlayerToPriorHandsInSession after
+  // assignPlayerToSeat to backfill the prior-session-seat hands.
+  const {
+    linkPlayerToPriorHandsInSession,
+    undoRetroactiveLink,
+  } = useRetroactiveLinking(dispatchPlayer, allPlayers);
 
   // Derived: Get player by ID
   const getPlayerById = useCallback((playerId) => {
@@ -105,6 +115,9 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
+    // PEO-1: retroactive seat↔player linking
+    linkPlayerToPriorHandsInSession,
+    undoRetroactiveLink,
   }), [
     allPlayers,
     seatPlayers,
@@ -126,6 +139,8 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
+    linkPlayerToPriorHandsInSession,
+    undoRetroactiveLink,
   ]);
 
   return (

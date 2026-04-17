@@ -290,6 +290,120 @@ export const deleteHand = async (handId) => {
   }
 };
 
+// =============================================================================
+// SEAT-PLAYER UPDATE OPERATIONS (PEO-1 retroactive linking)
+// =============================================================================
+
+/**
+ * Update seat→player mapping on a single hand.
+ * Used by retroactive linking when a player is assigned to a seat whose prior
+ * hands this session were recorded anonymously.
+ *
+ * Setting playerId to null clears the seat assignment.
+ *
+ * @param {number} handId
+ * @param {number} seat
+ * @param {number | null} playerId
+ * @returns {Promise<void>}
+ */
+export const updateSeatPlayerForHand = async (handId, seat, playerId) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME], 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const getReq = store.get(handId);
+
+    getReq.onsuccess = (event) => {
+      const hand = event.target.result;
+      if (!hand) {
+        reject(new Error(`Hand ${handId} not found`));
+        return;
+      }
+      const nextSeatPlayers = { ...(hand.seatPlayers || {}) };
+      if (playerId === null || playerId === undefined) {
+        delete nextSeatPlayers[seat];
+      } else {
+        nextSeatPlayers[seat] = playerId;
+      }
+      hand.seatPlayers = nextSeatPlayers;
+      const putReq = store.put(hand);
+      putReq.onsuccess = () => resolve();
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+    tx.onabort = () => reject(tx.error || new Error('updateSeatPlayerForHand aborted'));
+  });
+};
+
+/**
+ * Batch update seat→player mappings across multiple hands in ONE transaction.
+ * Required for retroactive linking to preserve atomicity — either all updates
+ * apply or none do. See invariant I-PEO-1.
+ *
+ * @param {Array<{handId: number, seat: number, playerId: number | null}>} updates
+ * @returns {Promise<void>}
+ */
+export const batchUpdateSeatPlayers = async (updates) => {
+  if (!Array.isArray(updates)) {
+    throw new Error('batchUpdateSeatPlayers: updates must be an array');
+  }
+  if (updates.length === 0) return;
+
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME], 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    let remaining = updates.length;
+    let aborted = false;
+
+    const failTx = (err) => {
+      if (aborted) return;
+      aborted = true;
+      tx.abort();
+      reject(err);
+    };
+
+    for (const { handId, seat, playerId } of updates) {
+      const getReq = store.get(handId);
+      getReq.onsuccess = (event) => {
+        if (aborted) return;
+        const hand = event.target.result;
+        if (!hand) {
+          failTx(new Error(`Hand ${handId} not found`));
+          return;
+        }
+        const nextSeatPlayers = { ...(hand.seatPlayers || {}) };
+        if (playerId === null || playerId === undefined) {
+          delete nextSeatPlayers[seat];
+        } else {
+          nextSeatPlayers[seat] = playerId;
+        }
+        hand.seatPlayers = nextSeatPlayers;
+        const putReq = store.put(hand);
+        putReq.onsuccess = () => {
+          remaining -= 1;
+          // All puts scheduled; tx.oncomplete will fire next.
+        };
+        putReq.onerror = () => failTx(putReq.error);
+      };
+      getReq.onerror = () => failTx(getReq.error);
+    }
+
+    tx.oncomplete = () => {
+      if (!aborted) {
+        log(`batchUpdateSeatPlayers: ${updates.length} hands updated`);
+        resolve();
+      }
+    };
+    tx.onabort = () => {
+      if (!aborted) reject(tx.error || new Error('batchUpdateSeatPlayers aborted'));
+    };
+    tx.onerror = () => failTx(tx.error || new Error('batchUpdateSeatPlayers errored'));
+  });
+};
+
+// =============================================================================
+
 /**
  * Clear all hands for a specific user from the database
  * @param {string} userId - User ID (defaults to 'guest')

@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Users } from 'lucide-react';
-import { PlayerForm } from '../ui/PlayerForm/index';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
 import { SeatAssignmentGrid } from '../ui/SeatAssignmentGrid';
@@ -15,7 +14,7 @@ import { ScaledContainer } from '../ui/ScaledContainer';
 import { LIMITS, LAYOUT } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
 import { useToast } from '../../contexts/ToastContext';
-import { usePlayer, useUI, useTendency } from '../../contexts';
+import { usePlayer, useUI, useTendency, useSession } from '../../contexts';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
 /** PlayersView - Player management view. All state via context hooks. */
@@ -24,13 +23,11 @@ export const PlayersView = ({ scale = 1 }) => {
   const {
     setCurrentScreen,
     SCREEN,
-    pendingSeatForPlayerAssignment,
-    setPendingSeatForPlayerAssignment,
+    openPlayerEditor,
   } = useUI();
   const {
     allPlayers,
     seatPlayers,
-    createNewPlayer,
     updatePlayerById,
     deletePlayerById,
     loadAllPlayers,
@@ -41,6 +38,7 @@ export const PlayersView = ({ scale = 1 }) => {
     getPlayerSeat,
     clearAllSeatAssignments,
   } = usePlayer();
+  const { currentSession } = useSession();
 
   // Build a playerState-like object for compatibility with hooks that expect it
   const playerState = { allPlayers, seatPlayers };
@@ -82,81 +80,30 @@ export const PlayersView = ({ scale = 1 }) => {
     clearFilters,
   } = usePlayerFiltering(playerState.allPlayers, tendencyMap);
 
-  // Modal and UI state
-  const [showNewPlayerModal, setShowNewPlayerModal] = useState(false);
-  const [editingPlayer, setEditingPlayer] = useState(null);
+  // UI state (PEO-4: removed showNewPlayerModal, editingPlayer, lastCreatedPlayerId,
+  // showPendingAssignmentPrompt — all migrated to PlayerEditorView route.)
   const [deletingPlayer, setDeletingPlayer] = useState(null);
-  const [lastCreatedPlayerId, setLastCreatedPlayerId] = useState(null);
-  const [showPendingAssignmentPrompt, setShowPendingAssignmentPrompt] = useState(false);
-  const [selectedSeat, setSelectedSeat] = useState(null); // Seat selected for assignment
+  const [selectedSeat, setSelectedSeat] = useState(null);
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
   const [showReplacePrompt, setShowReplacePrompt] = useState(false);
-  const [replacePromptData, setReplacePromptData] = useState(null); // { playerId, targetSeat }
+  const [replacePromptData, setReplacePromptData] = useState(null);
 
   // Load players on mount
   useEffect(() => {
     loadAllPlayers();
   }, [loadAllPlayers]);
 
-  // Auto-select seat when navigating from context menu
-  useEffect(() => {
-    if (pendingSeatForPlayerAssignment && !selectedSeat) {
-      setSelectedSeat(pendingSeatForPlayerAssignment);
-      setPendingSeatForPlayerAssignment(null);
-    }
-  }, [pendingSeatForPlayerAssignment, selectedSeat, setPendingSeatForPlayerAssignment]);
-
-  // Handle pending seat assignment when a new player is created
-  useEffect(() => {
-    if (lastCreatedPlayerId && pendingSeatForPlayerAssignment) {
-      setShowPendingAssignmentPrompt(true);
-    }
-  }, [lastCreatedPlayerId, pendingSeatForPlayerAssignment]);
-
-  // Handlers
-  const handleCreatePlayer = async (playerData) => {
-    try {
-      const playerId = await createNewPlayer(playerData);
-      setShowNewPlayerModal(false);
-      setLastCreatedPlayerId(playerId);
-      showSuccess('Player created');
-
-      // If a seat is selected, assign the new player to it
-      if (selectedSeat) {
-        const currentPlayerInSeat = getSeatPlayerName(selectedSeat);
-        if (currentPlayerInSeat) {
-          // Seat is occupied, show replace prompt
-          setReplacePromptData({ playerId, targetSeat: selectedSeat });
-          setShowReplacePrompt(true);
-        } else {
-          // Seat is empty, assign directly
-          assignPlayerToSeat(selectedSeat, playerId);
-          // Auto-advance to next empty seat
-          const nextSeat = findNextEmptySeat(selectedSeat + 1);
-          setSelectedSeat(nextSeat);
-        }
-      }
-
-      // Clear search and filters
-      clearFilters();
-    } catch (error) {
-      showError(`Failed to create player: ${error.message}`);
-    }
+  // PEO-4: open the fullscreen editor. When a seat is pre-selected in the grid,
+  // thread it as seatContext so the editor auto-assigns on save.
+  const handleOpenCreate = () => {
+    const seatContext = selectedSeat
+      ? { seat: selectedSeat, sessionId: currentSession?.sessionId ?? null }
+      : null;
+    openPlayerEditor({ mode: 'create', seatContext });
   };
 
-  const handleAssignPendingPlayer = () => {
-    if (lastCreatedPlayerId && pendingSeatForPlayerAssignment) {
-      assignPlayerToSeat(pendingSeatForPlayerAssignment, lastCreatedPlayerId);
-      setShowPendingAssignmentPrompt(false);
-      setLastCreatedPlayerId(null);
-      setPendingSeatForPlayerAssignment(null);
-    }
-  };
-
-  const handleDismissPendingAssignment = () => {
-    setShowPendingAssignmentPrompt(false);
-    setLastCreatedPlayerId(null);
-    setPendingSeatForPlayerAssignment(null);
+  const handleOpenEdit = (player) => {
+    openPlayerEditor({ mode: 'edit', playerId: player.playerId });
   };
 
   // Find next empty seat (using LIMITS.NUM_SEATS instead of hardcoded 9)
@@ -351,16 +298,6 @@ export const PlayersView = ({ scale = 1 }) => {
     }
   };
 
-  const handleEditPlayer = async (playerData) => {
-    try {
-      await updatePlayerById(editingPlayer.playerId, playerData);
-      setEditingPlayer(null);
-      showSuccess('Player updated');
-    } catch (error) {
-      showError(`Failed to update player: ${error.message}`);
-    }
-  };
-
   const handleDeletePlayer = async () => {
     try {
       await deletePlayerById(deletingPlayer.playerId);
@@ -389,7 +326,7 @@ export const PlayersView = ({ scale = 1 }) => {
           </div>
 
           <button
-            onClick={() => setShowNewPlayerModal(true)}
+            onClick={handleOpenCreate}
             className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors font-medium"
           >
             + New Player
@@ -474,7 +411,7 @@ export const PlayersView = ({ scale = 1 }) => {
                     onDragStart={() => handleDragStart(player.playerId)}
                     onDragEnd={handleDragEnd}
                     onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
-                    onEdit={() => setEditingPlayer(player)}
+                    onEdit={() => handleOpenEdit(player)}
                     onDelete={() => setDeletingPlayer(player)}
                     tendencyStats={tendencyMap[player.playerId] || null}
                     onUpdateExploits={(exploits) => handleUpdateExploits(player.playerId, exploits)}
@@ -490,26 +427,6 @@ export const PlayersView = ({ scale = 1 }) => {
           </div>
         )}
       </div>
-
-      {/* New Player Modal */}
-      {showNewPlayerModal && (
-        <PlayerForm
-          onSubmit={handleCreatePlayer}
-          onCancel={() => setShowNewPlayerModal(false)}
-          scale={scale}
-          defaultName={searchTerm}
-        />
-      )}
-
-      {/* Edit Player Modal */}
-      {editingPlayer && (
-        <PlayerForm
-          onSubmit={handleEditPlayer}
-          onCancel={() => setEditingPlayer(null)}
-          scale={scale}
-          initialData={editingPlayer}
-        />
-      )}
 
       {/* Delete Confirmation Dialog */}
       {deletingPlayer && (
@@ -538,38 +455,6 @@ export const PlayersView = ({ scale = 1 }) => {
                 className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium"
               >
                 Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pending Assignment Prompt */}
-      {showPendingAssignmentPrompt && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={handleDismissPendingAssignment}
-        >
-          <div
-            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-white mb-4">Assign to Seat?</h2>
-            <p className="text-gray-300 mb-6">
-              Would you like to assign the newly created player to Seat {pendingSeatForPlayerAssignment}?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={handleDismissPendingAssignment}
-                className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
-              >
-                No, Skip
-              </button>
-              <button
-                onClick={handleAssignPendingPlayer}
-                className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors font-medium"
-              >
-                Yes, Assign
               </button>
             </div>
           </div>

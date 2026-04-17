@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { usePlayerFiltering } from '../usePlayerFiltering';
+import { usePlayerFiltering, scorePlayerMatch } from '../usePlayerFiltering';
 import { createMockPlayer } from '../../test/utils';
 
 describe('usePlayerFiltering', () => {
@@ -477,6 +477,119 @@ describe('usePlayerFiltering', () => {
       expect(typeof result.current.setFilterHat).toBe('function');
       expect(typeof result.current.setFilterSunglasses).toBe('function');
       expect(typeof result.current.clearFilters).toBe('function');
+    });
+  });
+});
+
+// =============================================================================
+// scorePlayerMatch — PEO-3 primitive
+// =============================================================================
+
+describe('scorePlayerMatch', () => {
+  const mike = {
+    playerId: 1,
+    name: 'Mike',
+    nickname: 'Big Mike',
+    avatarFeatures: {
+      skin: 'skin.medium',
+      hair: 'hair.buzz',
+      beard: 'beard.goatee',
+      glasses: 'glasses.none',
+    },
+  };
+
+  describe('name prefix match', () => {
+    it('returns indices when query matches name prefix', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'Mi' });
+      expect(r.nameMatchStart).toBe(0);
+      expect(r.nameMatchEnd).toBe(2);
+      expect(r.passesFilters).toBe(true);
+    });
+
+    it('is case-insensitive', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'MI' });
+      expect(r.nameMatchEnd).toBe(2);
+    });
+
+    it('falls back to nickname prefix match when name does not match', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'Bi' });
+      expect(r.nameMatchStart).toBe(0);
+      expect(r.nameMatchEnd).toBe(2);
+    });
+
+    it('returns null name indices + fails filter when no prefix match', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'xyz' });
+      expect(r.nameMatchStart).toBeNull();
+      expect(r.passesFilters).toBe(false);
+    });
+
+    it('empty name query does not reject', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: '' });
+      expect(r.nameMatchStart).toBeNull();
+      expect(r.passesFilters).toBe(true);
+    });
+  });
+
+  describe('feature filter match', () => {
+    it('reports matched features', () => {
+      const r = scorePlayerMatch(mike, {
+        featureFilters: { beard: 'beard.goatee', hair: 'hair.buzz' },
+      });
+      expect(r.matchedFeatures.has('beard')).toBe(true);
+      expect(r.matchedFeatures.has('hair')).toBe(true);
+      expect(r.allFiltersMatch).toBe(true);
+      expect(r.passesFilters).toBe(true);
+    });
+
+    it('reports unmatched filter categories', () => {
+      const r = scorePlayerMatch(mike, {
+        featureFilters: { beard: 'beard.full', hair: 'hair.buzz' },
+      });
+      expect(r.unmatchedFeatureFilters.has('beard')).toBe(true);
+      expect(r.matchedFeatures.has('hair')).toBe(true);
+      expect(r.allFiltersMatch).toBe(false);
+      expect(r.passesFilters).toBe(false);
+    });
+
+    it('ignores empty filter values', () => {
+      const r = scorePlayerMatch(mike, {
+        featureFilters: { beard: '', hair: 'hair.buzz' },
+      });
+      expect(r.matchedFeatures.has('hair')).toBe(true);
+      expect(r.unmatchedFeatureFilters.size).toBe(0);
+    });
+
+    it('handles player with null avatarFeatures (legacy)', () => {
+      const legacy = { playerId: 2, name: 'Old', avatarFeatures: null };
+      const r = scorePlayerMatch(legacy, { featureFilters: { beard: 'beard.goatee' } });
+      expect(r.allFiltersMatch).toBe(false);
+      expect(r.unmatchedFeatureFilters.has('beard')).toBe(true);
+    });
+  });
+
+  describe('AND semantics across name + features', () => {
+    it('passesFilters requires both name prefix AND all filter match', () => {
+      const r = scorePlayerMatch(mike, {
+        nameQuery: 'Mi',
+        featureFilters: { beard: 'beard.goatee' },
+      });
+      expect(r.passesFilters).toBe(true);
+    });
+
+    it('fails when name matches but a filter does not', () => {
+      const r = scorePlayerMatch(mike, {
+        nameQuery: 'Mi',
+        featureFilters: { beard: 'beard.full' },
+      });
+      expect(r.passesFilters).toBe(false);
+    });
+
+    it('fails when all filters match but name does not', () => {
+      const r = scorePlayerMatch(mike, {
+        nameQuery: 'xyz',
+        featureFilters: { beard: 'beard.goatee' },
+      });
+      expect(r.passesFilters).toBe(false);
     });
   });
 });

@@ -37,7 +37,29 @@ export {
   clearAllHands,
   getHandCount,
   saveOnlineHand,
+  updateSeatPlayerForHand,
+  batchUpdateSeatPlayers,
 } from './handsStorage';
+
+// Player draft persistence (PEO-1)
+export {
+  getDraft,
+  putDraft,
+  deleteDraft,
+  commitDraft,
+} from './draftsStorage';
+
+// Retroactive linking primitives (PEO-1)
+export {
+  linkPlayerToPriorSeatHands,
+  buildLinkPayload,
+  buildUnlinkPlan,
+} from './handLinking';
+
+export {
+  computePlayerStatsFromHands,
+  computeAllPlayerStatsFromHands,
+} from './statsRecompute';
 
 // Session CRUD operations
 export {

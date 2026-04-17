@@ -72,7 +72,7 @@ poker-tracker/
 
 ## Version
 
-Current: **v122** (CTO Architecture Refactor)
+Current: **v123** (Player Entry Overhaul)
 
 See `docs/CHANGELOG.md` for full version history.
 

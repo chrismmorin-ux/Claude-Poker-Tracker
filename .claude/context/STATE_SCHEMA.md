@@ -1,11 +1,11 @@
 ---
-last-verified-against-code: 2026-03-23
-verified-by: manual
+last-verified-against-code: 2026-04-16
+verified-by: PEO-1
 staleness-threshold-days: 60
 ---
 
 # State Schema Reference
-**Version**: 1.2.0 | **Updated**: 2026-03-23
+**Version**: 1.3.0 | **Updated**: 2026-04-16
 
 Eight reducers manage application state. All use validated reducers.
 Use contexts for cross-component access: useGame(), useUI(), useSession(), usePlayer(), useSettings(), useAuth(), useTournament().
@@ -32,16 +32,19 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
   allPlayerCards: { [seat]: ['',''] } }  // opponent cards
 ```
 
-## uiReducer (v114: includes view state)
+## uiReducer (v114: includes view state; v1.3.0 adds PEO-1 routes)
 ```js
-{ currentView: 'table',         // 'table'|'stats'|'history'|'sessions'|'players'|'settings'|'login'|'signup'|'password_reset'
-  selectedPlayers: [],          // seat numbers
-  contextMenu: null,            // {x,y,seat} or null
+{ currentView: 'table',         // includes 'playerEditor' | 'playerPicker' (PEO-1)
+  selectedPlayers: [],
+  contextMenu: null,
   isSidebarCollapsed: false,
-  showCardSelector: false,      // card picker open
+  showCardSelector: false,
   isShowdownViewOpen: false,
-  highlightedSeat: 1,           // 1-9 for showdown
-  highlightedHoleSlot: 0 }      // 0|1
+  highlightedSeat: 1,
+  highlightedHoleSlot: 0,
+  // PEO-1 fullscreen player-entry route contexts (null when route closed)
+  editorContext: null,          // { mode: 'create'|'edit', playerId?, seatContext?, prevScreen, nameSeed? }
+  pickerContext: null }         // { seat, batchMode, assignedSeats, prevScreen }
 ```
 
 ## sessionReducer
@@ -54,9 +57,21 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
 
 ## playerReducer
 ```js
-{ allPlayers: [{ playerId, name, ethnicity, build, styleTags, notes, avatar }],
-  seatPlayers: { [seat]: playerId },  // ephemeral assignments
+{ allPlayers: [{
+    playerId, name, nickname, userId,
+    // physical (text dropdowns, legacy):
+    ethnicity, build, gender, facialHair, hat, sunglasses,
+    // feature-avatar (PEO-1, optional nullable sub-object):
+    avatarFeatures: { skin, hair, hairColor, beard, beardColor, eyes, eyeColor, glasses, hat } | null,
+    nameSource: 'user' | 'auto' | null,   // PEO-1: tracks origin of name for re-derivation
+    avatar,                                // legacy base64 image (secondary per D6)
+    styleTags, notes,
+    handCount, stats, createdAt, lastSeenAt,
+  }],
+  seatPlayers: { [seat]: playerId },   // ephemeral per-hand assignments
   isLoading: false }
+// PEO-1 actions: RETROACTIVELY_LINK_PLAYER, UNDO_RETROACTIVE_LINK
+// (surgical handCount update on a single player after linking completes)
 ```
 
 ## settingsReducer
