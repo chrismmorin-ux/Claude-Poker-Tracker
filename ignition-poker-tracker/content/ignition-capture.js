@@ -22,23 +22,26 @@ import { isGameWsUrl } from '../shared/protocol.js';
 (() => {
   'use strict';
 
-  // Build-stamped guard: allows re-initialization after extension updates
-  // or dev rebuilds without requiring a page reload.
-  const GUARD_KEY = '__POKER_CAPTURE_' + BUILD_GUARD;
-  console.log('[Poker Capture] Script loaded on', window.location.href, '| guard:', GUARD_KEY);
-  if (window[GUARD_KEY]) {
-    console.log('[Poker Capture] Guard key already set — skipping re-init');
-    return;
-  }
+  // Build-stamped guard via private Symbol (not enumerable by page JS).
+  // ISOLATED world globals are already invisible to page JS, but we keep
+  // the Symbol pattern for consistency with the hardened probe.
+  const GUARD = Symbol.for('__cap_' + BUILD_GUARD);
+  if (window[GUARD]) return;
 
   // Teardown previous version's listeners if present
   if (typeof window.__POKER_CAPTURE_CLEANUP === 'function') {
-    try { window.__POKER_CAPTURE_CLEANUP(); } catch (e) { console.warn('[Poker Capture] Cleanup error:', e.message); }
+    try { window.__POKER_CAPTURE_CLEANUP(); } catch (_) {}
   }
 
-  window[GUARD_KEY] = true;
+  window[GUARD] = true;
 
-  const CHANNEL = '__poker_ext_ws';
+  // Build-time injected: channel ID and message type codes (matches probe)
+  const CHANNEL = __CHANNEL_ID__;
+  const T_LC  = __T_LC__;
+  const T_MSG = __T_MSG__;
+  const T_RDY = __T_RDY__;
+  const T_PRE = __T_PRE__;
+  const T_BFC = __T_BFC__;
   let wsMessageCount = 0;
   let probeReady = false;
 
@@ -218,7 +221,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
     }
 
     // Pre-existing WebSocket detected by probe's PerformanceAPI scan
-    if (data.type === 'ws_preexisting_detected') {
+    if (data.type === T_PRE) {
       console.warn('[Poker Capture] Pre-existing game WebSocket detected:', data.urls);
       conn.send({
         type: 'recovery_needed',
@@ -231,7 +234,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
     }
 
     // bfcache restore — page was restored with live WS connections
-    if (data.type === 'ws_bfcache_restore') {
+    if (data.type === T_BFC) {
       console.warn('[Poker Capture] Page restored from bfcache');
       conn.send({
         type: 'recovery_needed',
@@ -242,7 +245,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
       return;
     }
 
-    if (data.type === 'ws_lifecycle') {
+    if (data.type === T_LC) {
       if (data.event === 'creating' || data.event === 'opened') {
         // Track all WS URLs for diagnostics (URL mismatch detection)
         if (data.url) seenWsUrls.add(data.url);
@@ -251,7 +254,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
       if (data.event === 'closed') {
         tableManager.handleConnectionClosed(data.connId);
       }
-    } else if (data.type === 'ws_message' && data.direction === 'incoming' && data.preview) {
+    } else if (data.type === T_MSG && data.direction === 'incoming' && data.preview) {
       // Track game vs non-game message counts for filter-stage diagnostics
       const msgUrl = data.url || '';
       if (isGameWsUrl(msgUrl)) {
@@ -270,7 +273,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
     }
 
     // Throttled diagnostics write (every 50 messages or on lifecycle events)
-    if (data.type === 'ws_lifecycle' || wsMessageCount % 50 === 0) {
+    if (data.type === T_LC || wsMessageCount % 50 === 0) {
       writeDiagnostics();
     }
   };
@@ -338,7 +341,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
 
     const { channel, ...data } = event.data;
 
-    if (data.type === 'ws_probe_ready') {
+    if (data.type === T_RDY) {
       if (!probeReady) {
         probeReady = true;
         probeReadyAt = Date.now();
@@ -458,7 +461,6 @@ import { isGameWsUrl } from '../shared/protocol.js';
     }
   }, 5000) : null;
 
-  // Register cleanup for version-upgrade re-initialization
   window.__POKER_CAPTURE_CLEANUP = () => {
     window.removeEventListener('message', probeMessageListener);
     clearInterval(statusInterval);

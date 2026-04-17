@@ -2,7 +2,7 @@
  * content/capture-websocket-probe.js — WebSocket interception
  *
  * RUNS IN MAIN WORLD (page context) via manifest "world": "MAIN"
- * Injected at document_start to patch WebSocket BEFORE Ignition's code runs.
+ * Injected at document_start to intercept WebSocket BEFORE site code runs.
  *
  * Posts captured messages via window.postMessage → content script bridge
  * → service worker pipeline.
@@ -11,32 +11,42 @@
 (() => {
   'use strict';
 
-  // Build-stamped guard: allows re-patching after extension reload/update.
-  // %%BUILD_HASH%% is replaced by build.mjs with a unique per-build hash.
   const PROBE_BUILD = '%%BUILD_HASH%%';
-  const PROBE_GUARD = '__POKER_WS_PROBE_' + PROBE_BUILD;
+  const CHANNEL = '%%CHANNEL_ID%%';
 
-  if (window[PROBE_GUARD]) return;
+  // Message type codes (build-time injected, opaque to page JS)
+  const T_LC  = %%T_LC%%;
+  const T_MSG = %%T_MSG%%;
+  const T_RDY = %%T_RDY%%;
+  const T_PRE = %%T_PRE%%;
+  const T_BFC = %%T_BFC%%;
 
-  // Cleanup previous probe version's heartbeat timer if present
-  if (typeof window.__POKER_WS_PROBE_CLEANUP === 'function') {
-    try { window.__POKER_WS_PROBE_CLEANUP(); } catch (_) {}
+  // Private symbols — closure-scoped, undiscoverable by page JS
+  const PATCHED = Symbol();
+  const CLEANUP = Symbol();
+
+  // Already patched by this or previous version? Skip.
+  if (window.WebSocket[PATCHED]) return;
+
+  // Cleanup previous version's timer if present
+  if (typeof window.WebSocket[CLEANUP] === 'function') {
+    try { window.WebSocket[CLEANUP](); } catch (_) {}
   }
 
-  window[PROBE_GUARD] = true;
-
-  const CHANNEL = '__poker_ext_ws';
-  // Monotonic IDs: high-res base + increment prevents collision when
-  // multiple WebSockets are created in the same millisecond.
   let connectionCounter = 0;
   const baseId = Date.now() * 1000;
+
+  // Save originals before any site code can wrap them
+  const OriginalWebSocket = window.WebSocket;
+  const origAddEventListener = EventTarget.prototype.addEventListener;
+  const nativeToString = Function.prototype.toString;
+  const nativeString = nativeToString.call(OriginalWebSocket);
 
   // =========================================================================
   // POST TO CONTENT SCRIPT
   // =========================================================================
-  // RT-42: Use window.location.origin instead of '*' to limit message scope
+  const targetOrigin = window.location.origin;
   const post = (data) => {
-    const targetOrigin = window.location.origin;
     try {
       window.postMessage({ channel: CHANNEL, ...data }, targetOrigin);
     } catch (e) {
@@ -46,126 +56,100 @@
           type: data.type,
           fallback: JSON.stringify(data),
         }, targetOrigin);
-      } catch (e2) {
-        console.warn('[WS Probe] postMessage fallback failed:', e2.message);
-      }
+      } catch (_) {}
     }
   };
 
   // =========================================================================
-  // EXTRACT MESSAGE DATA (minimal — just what the pipeline needs)
+  // EXTRACT MESSAGE DATA
   // =========================================================================
   const extractMessageData = (data) => {
     if (typeof data === 'string') {
-      return {
-        dataType: 'string',
-        size: data.length,
-        preview: data.substring(0, 16000),
-      };
+      return { dataType: 'string', size: data.length, preview: data.substring(0, 16000) };
     }
-
     if (data instanceof ArrayBuffer) {
       return { dataType: 'binary', size: data.byteLength };
     }
-
     if (data instanceof Blob) {
       return { dataType: 'blob', size: data.size };
     }
-
     return { dataType: 'unknown' };
   };
 
   // =========================================================================
-  // MONKEY-PATCH WEBSOCKET
+  // STEALTH WEBSOCKET PROXY
   // =========================================================================
-  const OriginalWebSocket = window.WebSocket;
+  window.WebSocket = new Proxy(OriginalWebSocket, {
+    construct(target, args) {
+      const [url, protocols] = args;
+      const connId = baseId + (++connectionCounter);
+      const ws = protocols ? new target(url, protocols) : new target(url);
 
-  const PatchedWebSocket = function (url, protocols) {
-    const connId = baseId + (++connectionCounter);
-    const ws = protocols
-      ? new OriginalWebSocket(url, protocols)
-      : new OriginalWebSocket(url);
-
-    post({
-      type: 'ws_lifecycle',
-      event: 'creating',
-      connId,
-      url: typeof url === 'string' ? url : String(url),
-      timestamp: Date.now(),
-    });
-
-    // Only intercept incoming — outgoing messages are not used by the pipeline
-    // and forwarding them doubled traffic through the entire capture chain.
-    ws.addEventListener('message', (event) => {
       post({
-        type: 'ws_message',
-        direction: 'incoming',
+        type: T_LC,
+        event: 'creating',
         connId,
-        url: ws.url,
-        timestamp: Date.now(),
-        ...extractMessageData(event.data),
-      });
-    });
-
-    // Lifecycle
-    ws.addEventListener('open', () => {
-      post({ type: 'ws_lifecycle', event: 'opened', connId, url: ws.url, timestamp: Date.now() });
-    });
-
-    ws.addEventListener('close', (event) => {
-      post({
-        type: 'ws_lifecycle', event: 'closed', connId, url: ws.url,
-        code: event.code, reason: event.reason, wasClean: event.wasClean,
+        url: typeof url === 'string' ? url : String(url),
         timestamp: Date.now(),
       });
-    });
 
-    ws.addEventListener('error', () => {
-      post({ type: 'ws_lifecycle', event: 'error', connId, url: ws.url, timestamp: Date.now() });
-    });
+      origAddEventListener.call(ws, 'message', (event) => {
+        post({
+          type: T_MSG,
+          direction: 'incoming',
+          connId,
+          url: ws.url,
+          timestamp: Date.now(),
+          ...extractMessageData(event.data),
+        });
+      });
 
-    return ws;
-  };
+      origAddEventListener.call(ws, 'open', () => {
+        post({ type: T_LC, event: 'opened', connId, url: ws.url, timestamp: Date.now() });
+      });
 
-  // Preserve WebSocket API surface
-  PatchedWebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
-  PatchedWebSocket.OPEN = OriginalWebSocket.OPEN;
-  PatchedWebSocket.CLOSING = OriginalWebSocket.CLOSING;
-  PatchedWebSocket.CLOSED = OriginalWebSocket.CLOSED;
-  PatchedWebSocket.prototype = OriginalWebSocket.prototype;
+      origAddEventListener.call(ws, 'close', (event) => {
+        post({
+          type: T_LC, event: 'closed', connId, url: ws.url,
+          code: event.code, reason: event.reason, wasClean: event.wasClean,
+          timestamp: Date.now(),
+        });
+      });
 
-  window.WebSocket = PatchedWebSocket;
+      origAddEventListener.call(ws, 'error', () => {
+        post({ type: T_LC, event: 'error', connId, url: ws.url, timestamp: Date.now() });
+      });
 
-  // Health signal — lets capture bridge (and diagnostics) verify the probe is active
-  window.__POKER_WS_PROBE_HEALTH = {
-    active: true,
-    patchedAt: Date.now(),
-    connectionCount: () => connectionCounter,
-  };
-  // Backward-compat flag for capture scripts that check the boolean
-  window.__POKER_WS_PROBE_ACTIVE = true;
+      return ws;
+    },
 
-  // Post probe-ready event so capture bridge knows patching succeeded
-  post({ type: 'ws_probe_ready', timestamp: Date.now() });
+    get(target, prop, receiver) {
+      if (prop === 'toString') {
+        return function toString() { return nativeString; };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
 
-  // Heartbeat: re-send probe_ready for 60s to handle late-starting capture scripts
-  let heartbeatCount = 0;
-  const heartbeatTimer = setInterval(() => {
-    if (++heartbeatCount >= 6) { clearInterval(heartbeatTimer); return; }
-    post({ type: 'ws_probe_ready', timestamp: Date.now(), heartbeat: true });
-  }, 10000);
+  // Mark as patched via private symbols (invisible to page JS enumeration)
+  Object.defineProperty(window.WebSocket, PATCHED, { value: true });
 
-  // Register cleanup so future probe versions can teardown this one's timer
-  window.__POKER_WS_PROBE_CLEANUP = () => {
-    clearInterval(heartbeatTimer);
-  };
+  // Ready signal + single randomized retry
+  post({ type: T_RDY, timestamp: Date.now() });
+  const retryDelay = 100 + Math.random() * 200;
+  const retryTimer = setTimeout(() => {
+    post({ type: T_RDY, timestamp: Date.now() });
+  }, retryDelay);
+
+  // Store cleanup via private symbol
+  Object.defineProperty(window.WebSocket, CLEANUP, {
+    value: () => clearTimeout(retryTimer),
+    configurable: true,
+  });
 
   // =========================================================================
-  // PRE-EXISTING WEBSOCKET DISCOVERY
+  // PRE-EXISTING WEBSOCKET DISCOVERY (bfcache only)
   // =========================================================================
-  // Detect game WebSocket URLs opened BEFORE the probe patched the constructor.
-  // Uses Performance API to find WebSocket resource entries.
-
   const discoverPreExisting = () => {
     try {
       const entries = performance.getEntriesByType('resource')
@@ -178,28 +162,20 @@
 
       if (gameEntries.length > 0 && connectionCounter === 0) {
         post({
-          type: 'ws_preexisting_detected',
+          type: T_PRE,
           urls: gameEntries.map(e => e.name),
           count: gameEntries.length,
           timestamp: Date.now(),
         });
       }
-    } catch (_) {
-      // PerformanceObserver/getEntriesByType not available — degrade gracefully
-    }
+    } catch (_) {}
   };
 
-  // Check immediately + after 2s (for bfcache restore timing)
-  discoverPreExisting();
-  setTimeout(discoverPreExisting, 2000);
-
-  // bfcache restoration: page restored with live WS connections
+  // Only check on bfcache restore — document_start guarantees we patch before any page JS
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
-      post({ type: 'ws_bfcache_restore', timestamp: Date.now() });
+      post({ type: T_BFC, timestamp: Date.now() });
       setTimeout(discoverPreExisting, 500);
     }
   });
-
-  console.log('%c[Poker WS Probe] Active (build: ' + PROBE_BUILD + ')', 'color: #00ff00; font-weight: bold;');
 })();

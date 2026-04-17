@@ -21,6 +21,18 @@ mkdirSync(DIST, { recursive: true });
 // Build-time hash — changes every build so content script guard keys detect new code
 const BUILD_HASH = Date.now().toString(36);
 
+// Stealth: random channel ID and message type codes per build.
+// These are shared between the MAIN world probe and the ISOLATED world capture script.
+// Randomized so no static string can fingerprint the extension.
+const CHANNEL_ID = 'mc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const MSG_TYPES = {
+  T_LC:  Math.floor(Math.random() * 9000) + 1000,
+  T_MSG: Math.floor(Math.random() * 9000) + 1000,
+  T_RDY: Math.floor(Math.random() * 9000) + 1000,
+  T_PRE: Math.floor(Math.random() * 9000) + 1000,
+  T_BFC: Math.floor(Math.random() * 9000) + 1000,
+};
+
 // ---------------------------------------------------------------------------
 // 1. ESBUILD — 5 entry points → IIFE bundles
 // ---------------------------------------------------------------------------
@@ -33,6 +45,12 @@ const commonOptions = {
   sourcemap: false,
   define: {
     '__BUILD_HASH__': JSON.stringify(BUILD_HASH),
+    '__CHANNEL_ID__': JSON.stringify(CHANNEL_ID),
+    '__T_LC__': String(MSG_TYPES.T_LC),
+    '__T_MSG__': String(MSG_TYPES.T_MSG),
+    '__T_RDY__': String(MSG_TYPES.T_RDY),
+    '__T_PRE__': String(MSG_TYPES.T_PRE),
+    '__T_BFC__': String(MSG_TYPES.T_BFC),
   },
 };
 
@@ -82,7 +100,14 @@ cpSync(
 );
 const probePath = resolve(DIST, 'content/capture-websocket-probe.js');
 let probeSource = readFileSync(probePath, 'utf8');
-probeSource = probeSource.replace(/%%BUILD_HASH%%/g, BUILD_HASH);
+probeSource = probeSource
+  .replace(/%%BUILD_HASH%%/g, BUILD_HASH)
+  .replace(/%%CHANNEL_ID%%/g, CHANNEL_ID)
+  .replace(/%%T_LC%%/g, String(MSG_TYPES.T_LC))
+  .replace(/%%T_MSG%%/g, String(MSG_TYPES.T_MSG))
+  .replace(/%%T_RDY%%/g, String(MSG_TYPES.T_RDY))
+  .replace(/%%T_PRE%%/g, String(MSG_TYPES.T_PRE))
+  .replace(/%%T_BFC%%/g, String(MSG_TYPES.T_BFC));
 writeFileSync(probePath, probeSource);
 
 // Assets (icons)
