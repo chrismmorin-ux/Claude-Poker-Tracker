@@ -42,6 +42,9 @@ coverage/
 
 # Claude Code local/session files
 .claude/settings.local.json
+.claude/.last-edit.json
+.claude/.test-state.json
+.claude/scheduled_tasks.lock
 nul
 
 # Screenshots (debug artifacts)
