@@ -383,9 +383,17 @@ export const SessionsView = ({ scale }) => {
         {/* Preflop Drills entry — hand-vs-hand equity trainer */}
         <button
           onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
-          className="absolute bottom-8 right-8 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
+          className="absolute bottom-8 right-48 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
         >
           Preflop Drills
+        </button>
+
+        {/* Postflop Drills entry — range-vs-board trainer */}
+        <button
+          onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
+          className="absolute bottom-8 right-8 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
+        >
+          Postflop Drills
         </button>
 
         {/* Import Confirmation Modal */}

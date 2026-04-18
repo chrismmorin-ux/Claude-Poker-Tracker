@@ -116,3 +116,11 @@ export {
   clearPreflopDrills,
   aggregateFrameworkAccuracy,
 } from './preflopDrillsStorage';
+
+// Postflop Drills CRUD operations
+export {
+  savePostflopDrill,
+  loadPostflopDrills,
+  clearPostflopDrills,
+  aggregatePostflopFrameworkAccuracy,
+} from './postflopDrillsStorage';

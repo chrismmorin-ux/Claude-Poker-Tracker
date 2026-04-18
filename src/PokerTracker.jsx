@@ -29,6 +29,7 @@ const ExtensionPanel = lazy(() => import('./components/views/OnlineView/Extensio
 const PlayerEditorView = lazy(() => import('./components/views/PlayerEditorView/PlayerEditorView').then(m => ({ default: m.PlayerEditorView })));
 const PlayerPickerView = lazy(() => import('./components/views/PlayerPickerView/PlayerPickerView').then(m => ({ default: m.PlayerPickerView })));
 const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsView/PreflopDrillsView').then(m => ({ default: m.PreflopDrillsView })));
+const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -106,6 +107,7 @@ const ViewRouter = () => {
           case SCREEN.PLAYER_EDITOR: return <VEB viewName="Player Editor" onReturnToTable={onReturnToTable}><PlayerEditorView scale={scale} /></VEB>;
           case SCREEN.PLAYER_PICKER: return <VEB viewName="Player Picker" onReturnToTable={onReturnToTable}><PlayerPickerView scale={scale} /></VEB>;
           case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
+          case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
           default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
         }
       })()}
