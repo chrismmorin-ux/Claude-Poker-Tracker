@@ -265,19 +265,25 @@ describe('frameworks — STRAIGHT_COVERAGE differentiates AK vs AQ', () => {
 });
 
 describe('frameworks — FLUSH_CONTENTION equityDelta', () => {
-  test('one_suited case exposes equityDelta with +3.0% for the suited side', () => {
+  test('one_suited case exposes asymmetric equityDelta (~+2% for suited side, 0 for other)', () => {
+    // Phase A: FLUSH_DELTAS calibrated against measured exact equity.
+    // Hero-suited vs offsuit unpaired gives ~+1.7%; vs pair gives ~+2.5%.
+    // We split the difference at +2.0 as a single-number legacy display.
     const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJo'));
     expect(m.subcase).toBe('one_suited');
     expect(m.equityDelta).toBeDefined();
-    expect(m.equityDelta.favored).toBeCloseTo(3.0, 1);
+    expect(m.equityDelta.favored).toBeCloseTo(2.0, 1);
     expect(m.equityDelta.other).toBeCloseTo(0.0, 1);
   });
 
-  test('both_suited_shared case exposes ~+2.3% each (contention tax baked in)', () => {
+  test('both_suited_shared case is asymmetric (higher-flush ~0, lower-flush ~−2.5)', () => {
+    // Phase A: when both suited, flush equities mostly cancel. Higher-flush
+    // hand retains ~0 vs both-offsuit baseline; lower-flush hand loses
+    // ~2.5pp. This matches measured data (AKo vs JTo 63.1% → AKs vs JTs 62.0%).
     const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJs'));
     expect(m.subcase).toBe('both_suited_shared');
-    expect(m.equityDelta.favored).toBeCloseTo(2.3, 1);
-    expect(m.equityDelta.other).toBeCloseTo(2.3, 1);
+    expect(m.equityDelta.favored).toBeCloseTo(0.5, 1);
+    expect(m.equityDelta.other).toBeCloseTo(-2.5, 1);
   });
 
   test('neither_suited case is small (~+0.5% each)', () => {

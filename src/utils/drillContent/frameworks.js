@@ -102,7 +102,7 @@ export const DOMINATION = {
     }
     const winner = match.favored === 'A' ? a : b;
     const loser = match.favored === 'A' ? b : a;
-    return `${handLabel(winner)} dominates ${handLabel(loser)} — same high card, but ${handLabel(winner)} has the higher kicker. Most flops either miss both or pair the top card for the dominator. Expect ~70% for the dominator.`;
+    return `${handLabel(winner)} dominates ${handLabel(loser)} — same high card, but ${handLabel(winner)} has the higher kicker. Most flops either miss both or pair the top card for the dominator. Expect ~73% (tight 72–75% band regardless of kicker gap).`;
   },
 };
 
@@ -163,7 +163,8 @@ export const RACE = {
     const pair = isPair(a) ? a : b;
     const other = isPair(a) ? b : a;
     if (match.subcase === 'pair_vs_two_overs') {
-      return `${handLabel(pair)} vs ${handLabel(other)} — a classic race. The pair is already made; the two overs win by pairing either rank (~35% flop hit) or catching a straight/flush. Expect ~54% for the pair.`;
+      const pairTier = pair.rankHigh <= 5 ? 'small pair (22–77): ~52–55%' : 'mid pair (88–TT): ~54–57%';
+      return `${handLabel(pair)} vs ${handLabel(other)} — a classic race. The pair is already made; the two overs win by pairing either rank (~35% flop hit) or catching a straight/flush. Tier by pair rank — ${pairTier} for the pair.`;
     }
     if (match.subcase === 'pair_vs_two_unders') {
       return `${handLabel(pair)} vs ${handLabel(other)} — the pair is dominating. The unders must flop a set or runner-runner. Expect ~86% for the pair.`;
@@ -239,19 +240,25 @@ export const STRAIGHT_COVERAGE = {
 // Approximate equity deltas (in %-points) for each flush-contention shape.
 // These surface as numeric chips in the UI so users can calibrate
 // "how much does suitedness actually buy?"
+//
+// NOTE (Phase A): these values are a simplified legacy display. Real suitedness
+// effects are asymmetric and depend on opponent structure (pair vs offsuit
+// unpaired) and on which hand holds the higher flush card. shapes.js exposes
+// per-lane modifier deltas that supersede these for teaching accuracy. Phase B
+// will migrate the UI chips to consume shape-catalog deltas.
 const FLUSH_DELTAS = {
-  one_suited:         { favored: +3.0, other:  0.0 },
-  both_suited_shared: { favored: +2.3, other: +2.3 }, // contention shaves ~0.7 each
+  one_suited:         { favored: +2.0, other:  0.0 }, // vs pair ~+2.5, vs offsuit unpaired ~+1.7 → pick a middle value
+  both_suited_shared: { favored: +0.5, other: -2.5 }, // higher-flush ~unchanged vs offsuit baseline; lower-flush pays ~2.5pp
   neither_suited:     { favored: +0.5, other: +0.5 }, // pure backdoor
 };
 
 export const FLUSH_CONTENTION = {
   id: 'flush_contention',
   name: 'Suitedness & Flush Contention (modifier)',
-  shortDescription: 'Suited = +3% base; same-suit matchups pay a ~0.7% contention tax.',
+  shortDescription: 'Suitedness is asymmetric: hero-suited +1.7–2.5%, opp-suited –3.5%, both-suited cancels for the higher-flush side.',
   subcases: [
-    { id: 'one_suited', claim: 'One suited hand — full flush upside (~+3.0%)', band: null },
-    { id: 'both_suited_shared', claim: 'Both suited — each side gets ~+2.3% (3.0% base minus ~0.7% contention)', band: null },
+    { id: 'one_suited', claim: 'One suited hand — ~+1.7% vs offsuit unpaired, ~+2.5% vs pair', band: null },
+    { id: 'both_suited_shared', claim: 'Both suited — higher-flush hand roughly even vs both-offsuit; lower-flush hand loses ~2.5pp', band: null },
     { id: 'neither_suited', claim: 'Both offsuit/pair — only ~+0.5% each from backdoor flushes', band: null },
   ],
   applies: (a, b) => {
@@ -280,10 +287,13 @@ export const FLUSH_CONTENTION = {
   narrate: (a, b, match) => {
     if (match.subcase === 'one_suited') {
       const suited = match.favored === 'A' ? a : b;
-      return `${handLabel(suited)} is suited — ~+3.0% from flush potential. Opponent is offsuit/pair so can't contest the same suit.`;
+      const other = match.favored === 'A' ? b : a;
+      const vsShape = other.pair ? 'pair (can\'t contest flushes)' : 'offsuit unpaired (1 backdoor route)';
+      const delta = other.pair ? '~+2.5%' : '~+1.7%';
+      return `${handLabel(suited)} is suited — ${delta} vs ${vsShape}. Opponent-offsuit's flushes are either impossible (pair) or rare (offsuit), so hero's flush payoff is nearly unchallenged.`;
     }
     if (match.subcase === 'both_suited_shared') {
-      return 'Both suited — each side gains ~+3.0% base, but 1 in 4 combo pairings shares a suit. Contention shaves ~0.7% → net ~+2.3% each.';
+      return 'Both suited — flush equities nearly cancel. The hand with the higher flush card retains ~+0 vs both-offsuit baseline; the hand with the lower flush card loses ~2.5pp because its flushes often run into a higher one.';
     }
     return 'Neither suited — only ~+0.5% each from 4-to-a-suit backdoor boards. Negligible.';
   },

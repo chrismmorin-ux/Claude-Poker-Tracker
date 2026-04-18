@@ -79,19 +79,19 @@ export const LESSONS = [
         kind: 'prose',
         heading: 'Kicker Gap Barely Moves the Needle',
         body:
-          'AKo vs AQo is 73.4%. AKo vs A2o is 72.5%. Same shape despite a 9-rank kicker difference. Why? The kicker only plays on boards where neither pair card appears — a small slice of the flop distribution — and even then the dominated hand can counterfeit with a pair on the board.',
+          'AKo vs AQo is 74.4%. AKo vs A2o is 74.1%. Same shape despite an 9-rank kicker difference. Why? The kicker only plays on boards where neither pair card appears — a small slice of the flop distribution — and even then the dominated hand can counterfeit with a pair on the board. The tight 72–75% band is the rule-of-thumb for all unpaired shared-rank kicker-dominated matchups.',
       },
       {
         kind: 'example',
         a: 'AKo',
         b: 'AQo',
-        takeaway: 'Shared Ace, kicker gap 1 — 73% for AK.',
+        takeaway: 'Shared Ace, kicker gap 1 — 74% for AK.',
       },
       {
         kind: 'example',
         a: 'AKo',
         b: 'A2o',
-        takeaway: 'Shared Ace, kicker gap 11 — still only 72% for AK. Gap size barely mattered.',
+        takeaway: 'Shared Ace, kicker gap 11 — still 74% for AK. Gap size barely mattered.',
       },
       {
         kind: 'example',
@@ -164,33 +164,33 @@ export const LESSONS = [
         kind: 'prose',
         heading: 'Three Shapes',
         body:
-          'Pair-vs-unpaired with no shared rank breaks into three shapes: (1) pair vs two overcards ("the race," ~54% for the pair), (2) pair vs split (one over, one under, ~68% for the pair), and (3) pair vs two undercards (~76–88% for the pair, widest band).',
+          'Pair-vs-unpaired with no shared rank breaks into three shapes: (1) pair vs two overcards ("the race" — ~53% for small pairs 22–77, ~56% for mid pairs 88–TT), (2) pair vs split (one over, one under, ~69–71% for the pair), and (3) pair vs two undercards (~77–88% for the pair, widest band and heavily connectedness-dependent).',
       },
       {
         kind: 'prose',
         heading: 'Why the Split Case Skews',
         body:
-          'In the split case, only ONE of the unpaired hand\'s cards can pair above the pair to beat it. Half the "pair up something" equity is already dead on arrival. That\'s why 88 vs AT is ~68%, not ~54%.',
+          'In the split case, only ONE of the unpaired hand\'s cards can pair above the pair to beat it. Half the "pair up something" equity is already dead on arrival. That\'s why 88 vs A5o is ~70%, not ~54%.',
       },
       {
         kind: 'example',
         a: '77',
         b: 'AKo',
-        takeaway: 'The textbook race — 77 is 54%. Two live overcards to pair, no shared rank.',
+        takeaway: 'The textbook race — 77 is 55%. Two live overcards to pair, no shared rank.',
       },
       {
         kind: 'example',
         a: '88',
         b: 'A5o',
         takeaway:
-          'Pair vs split — the 5 is already dominated by the 8s. Only the A is live to over-pair. ~70% for 88.',
+          'Pair vs split — the 5 is already dominated by the 8s. Only the A is live to over-pair. ~69% for 88.',
       },
       {
         kind: 'example',
         a: 'TT',
         b: '87s',
         takeaway:
-          'Pair vs connected suited unders — bottom of the "two unders" band. Straight + flush + set-mining equity pushes 87s up to ~24%.',
+          'Pair vs connected suited unders — bottom of the "two unders" band. Straight + flush + set-mining equity holds 87s at ~20%. TT is ~80%.',
       },
       {
         kind: 'example',
@@ -271,43 +271,49 @@ export const LESSONS = [
     id: 'flush-contention',
     title: 'Flush Contention',
     frameworkId: 'flush_contention',
-    summary: 'Suited is worth ~+3%. When both sides are suited in the same suit, they pay a contention tax.',
+    summary: 'Suitedness is asymmetric. Hero-suited vs pair +2.5%; vs offsuit unpaired +1.7%; opponent-suited costs you ~3.5%.',
     sections: [
       {
         kind: 'prose',
         heading: 'The Core Idea',
         body:
-          'Suitedness is worth about +3% all-in equity vs an offsuit version of the same two ranks — roughly the probability you make a flush by the river times the frequency it wins. When BOTH hands are suited, 1 in 4 suit-combinations puts them on the same flush draw; the rest are independent. That contention costs each side roughly 0.7% on average.',
+          'The blanket "+3% for suited" rule is wrong. Suitedness is NOT zero-sum and NOT symmetric — the number depends on who is suited, what the opponent\'s structure is, and who holds the higher flush card. Measured deltas: hero-suited vs pocket pair gives hero ~+2.5% (opponent can\'t flush); hero-suited vs offsuit unpaired gives hero only ~+1.7% (opponent still has 1 backdoor route). An offsuit hero facing a suited opponent loses ~3.5% (opponent\'s flush is a real threat).',
       },
       {
         kind: 'formula',
-        body: 'One suited: +3.0%.  Both suited: +2.3% each.  Neither suited: +0.5% (backdoor only).',
+        body: 'Hero-suited vs pair: +2.5%   Hero-suited vs offsuit unpaired: +1.7%   Opp-suited (hero offsuit): −3.5%',
+      },
+      {
+        kind: 'prose',
+        heading: 'When Both Hands Are Suited',
+        body:
+          'When BOTH hands are suited, the flush advantages mostly cancel — with a twist. The hand with the HIGHER flush card retains about 1pp of edge; the hand with the LOWER flush card loses about 3pp vs both-offsuit baseline. E.g., AKo vs JTo = 63.1%; AKs vs JTs = 62.0% (AKs loses a point because JTs now has real flush threat that doesn\'t always lose to AKs).',
       },
       {
         kind: 'example',
         a: 'AKs',
         b: 'QJo',
         takeaway:
-          'Only AKs is suited. Full +3% flush upside — QJo cannot contest the same flush suit.',
+          'AKs wins 66%. Only AKs is suited; the flush edge over offsuit unpaired is ~1.7pp (modest). QJo cannot contest the same suit, but the modifier is small.',
       },
       {
         kind: 'example',
         a: 'AKs',
         b: 'JTs',
         takeaway:
-          'Both suited. Across all suit assignments, ~1/4 share a suit and run into each other on flush boards. Each side net ~+2.3% instead of +3%.',
+          'AKs wins 62%, down 1pp from AKs vs JTo. AKs keeps its flush advantage; JTs\'s suitedness mostly collides and dies because the higher flush wins most clashes.',
       },
       {
         kind: 'prose',
         heading: 'When Contention Really Bites',
         body:
-          'Contention matters most when both hands are drawing to the same flush and the higher flush wins most of the time — e.g., AhKh vs JhTh. Every heart board that gives both players a flush is a cooler for JTs. That asymmetry is baked into the all-suits average.',
+          'Contention is worst for the lower-flush hand. AhKh vs JhTh: the ~3% of boards where both flush, AKs nearly always wins. That asymmetry is baked into the "higher flush keeps ~+0, lower flush loses ~3pp" rule.',
       },
       {
         kind: 'prose',
         heading: 'Common Mistakes',
         body:
-          'Assuming suited connectors are "flush hands." On their own, suitedness contributes only ~3% — draws come primarily from straight potential, not flushes. The flush is a tiebreaker, not the engine.',
+          'Assuming "suited = +3% always" and adding it twice when both are suited. In reality, the total suitedness effect is almost a wash when both hands share the suited-space, and strongly asymmetric based on which hand holds the higher flush card.',
       },
     ],
   },
@@ -349,7 +355,7 @@ export const LESSONS = [
         kind: 'prose',
         heading: 'Takeaway for Preflop Strategy',
         body:
-          'Broadway hands win more against middle connectors (JTs, T9s) than against low connectors (54s, 65s) because of this blocker effect, even though the raw hand strengths look similar. This is why AKo vs 54s is only ~60% but AKo vs JTs is ~62% — despite 54s looking "worse" on paper, it actually keeps more straight coverage alive.',
+          'Broadway hands win only slightly more against middle connectors than against low connectors. The measured spread is tiny: AKo vs JTs = 59.5%, AKo vs T9s = 59.5%, AKo vs 54s = 58.8% — a ~1pp range. The blocker narrative is real but structurally quiet; the dominant driver is just "broadway dominates via the ace/king pairing." Use coverage-score as a tiebreaker, not a primary driver.',
       },
     ],
   },
