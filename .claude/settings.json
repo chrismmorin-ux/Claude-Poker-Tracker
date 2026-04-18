@@ -10,9 +10,11 @@
       "Bash(git:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git push:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
+      "Bash(gh:*)",
       "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(find:*)",
@@ -29,7 +31,6 @@
       "Read(**)"
     ],
     "ask": [
-      "Bash(git push:*)",
       "ExitPlanMode"
     ],
     "deny": []
