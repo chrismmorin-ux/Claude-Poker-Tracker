@@ -12,6 +12,7 @@ import { TableView } from './components/views/TableView';
 import { ShowdownView } from './components/views/ShowdownView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
+import { UpdateBanner } from './components/ui/UpdateBanner';
 // Lazy-loaded views (RT-23: route-level code splitting)
 const StatsView = lazy(() => import('./components/views/StatsView').then(m => ({ default: m.StatsView })));
 const SessionsView = lazy(() => import('./components/views/SessionsView').then(m => ({ default: m.SessionsView })));
@@ -139,6 +140,7 @@ const AppRoot = () => {
       tournamentState={tournamentState} dispatchTournament={dispatchTournament}
       settingsState={settingsState} dispatchSettings={dispatchSettings}
     >
+      <UpdateBanner />
       <ViewRouter />
     </AppProviders>
   );

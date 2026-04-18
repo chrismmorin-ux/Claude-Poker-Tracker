@@ -1,7 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
 import { BACKUP_FREQUENCIES, SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
+import { useBuildVersion } from '../../../hooks/useBuildVersion';
+
+const formatBuildTime = (iso) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+};
 
 const SIM_STORAGE_KEY = '__simState';
 const getSimState = () => {
@@ -16,6 +28,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
   const [simCount, setSimCount] = useState(10);
   const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
+  const { currentVersion, currentBuiltAt, updateAvailable, error: versionError } = useBuildVersion();
 
   // Refresh sim total when localStorage changes (e.g. console usage)
   useEffect(() => {
@@ -116,10 +129,33 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
       </div>
 
       {/* Version Info */}
-      <div className="mb-4 pt-3 border-t border-gray-700">
+      <div className="mb-4 pt-3 border-t border-gray-700 space-y-1">
         <p className="text-gray-400 text-sm">
-          Version: <span className="text-white font-medium">v117</span>
+          Build:{' '}
+          {currentVersion ? (
+            <>
+              <span className="text-white font-mono">{currentVersion.slice(0, 7)}</span>
+              {currentBuiltAt && (
+                <span className="text-gray-500"> · {formatBuildTime(currentBuiltAt)}</span>
+              )}
+            </>
+          ) : (
+            <span className="text-gray-500">{versionError ? 'unavailable (offline?)' : 'checking…'}</span>
+          )}
         </p>
+        {currentVersion && (
+          updateAvailable ? (
+            <p className="text-blue-300 text-xs flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" />
+              Update available — tap the banner at the top of the app to apply
+            </p>
+          ) : (
+            <p className="text-green-400 text-xs flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Up to date
+            </p>
+          )
+        )}
       </div>
 
       {/* Reset to Defaults */}
