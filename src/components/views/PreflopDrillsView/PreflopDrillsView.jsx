@@ -18,8 +18,10 @@ import { EstimateMode } from './EstimateMode';
 import { FrameworkMode } from './FrameworkMode';
 import { LibraryMode } from './LibraryMode';
 import { LessonsMode } from './LessonsMode';
+import { ShapeMode } from './ShapeMode';
 
 const TABS = [
+  { id: 'shape',     label: 'Shape' },
   { id: 'explorer',  label: 'Explorer' },
   { id: 'estimate',  label: 'Estimate Drill' },
   { id: 'framework', label: 'Framework Drill' },
@@ -29,7 +31,7 @@ const TABS = [
 
 export const PreflopDrillsView = ({ scale }) => {
   const { setCurrentScreen, SCREEN } = useUI();
-  const [activeTab, setActiveTab] = useState('explorer');
+  const [activeTab, setActiveTab] = useState('shape');
 
   return (
     <ScaledContainer scale={scale}>
@@ -71,6 +73,7 @@ export const PreflopDrillsView = ({ scale }) => {
 
         {/* Mode content */}
         <div className="flex-1 px-8 pt-6 pb-6 overflow-hidden">
+          {activeTab === 'shape' && <ShapeMode />}
           {activeTab === 'explorer' && <ExplorerMode />}
           {activeTab === 'estimate' && <EstimateMode />}
           {activeTab === 'framework' && <FrameworkMode />}

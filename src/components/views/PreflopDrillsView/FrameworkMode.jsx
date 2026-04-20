@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MatchupBreakdown } from './MatchupBreakdown';
 import { computeHandVsHand, parseHandClass } from '../../../utils/pokerCore/preflopEquity';
 import { classifyMatchup, FRAMEWORK_ORDER } from '../../../utils/drillContent/frameworks';
+
+// Frameworks excluded from the gradable set:
+//   - DECOMPOSITION: always-true conceptual lens; checking it teaches nothing.
+//   - STRAIGHT_COVERAGE / FLUSH_CONTENTION: always-applicable modifiers; they
+//     don't test structural recognition. Auto-applied; not in the picker.
+const NON_GRADABLE_FRAMEWORKS = new Set([
+  'decomposition',
+  'straight_coverage',
+  'flush_contention',
+]);
+const SELECTABLE_FRAMEWORKS = FRAMEWORK_ORDER.filter(
+  (fw) => !NON_GRADABLE_FRAMEWORKS.has(fw.id),
+);
 import { MATCHUP_LIBRARY } from '../../../utils/drillContent/matchupLibrary';
 import { pickNextMatchup, scoreFrameworkSelection } from '../../../utils/drillContent/scheduler';
 import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPersistence';
@@ -59,7 +72,12 @@ export const FrameworkMode = () => {
         const hA = parseHandClass(matchup.a);
         const hB = parseHandClass(matchup.b);
         const matches = classifyMatchup(hA, hB);
-        const trueIds = matches.map((m) => m.framework.id);
+        // Score only against the subset of frameworks the user can actually pick.
+        // Always-applicable modifiers (decomposition, straight_coverage,
+        // flush_contention) are auto-applied behind the scenes.
+        const trueIds = matches
+          .map((m) => m.framework.id)
+          .filter((id) => !NON_GRADABLE_FRAMEWORKS.has(id));
         const s = scoreFrameworkSelection([...picked], trueIds);
         const r = computeHandVsHand(matchup.a, matchup.b);
 
@@ -98,7 +116,7 @@ export const FrameworkMode = () => {
 
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
           <div className="space-y-2">
-            {FRAMEWORK_ORDER.map((fw) => {
+            {SELECTABLE_FRAMEWORKS.map((fw) => {
               const isPicked = picked.has(fw.id);
               const verdict = submitted ? getVerdict(fw.id, score) : null;
               return (

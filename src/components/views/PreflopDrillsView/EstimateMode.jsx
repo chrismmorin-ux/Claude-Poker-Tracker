@@ -128,8 +128,12 @@ export const EstimateMode = () => {
 
         <div className="bg-gray-800/50 border border-gray-800 rounded-lg p-4">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Streak (correct in last 10)</span>
-            <span className="text-emerald-400 font-semibold">{streak.correct}/{streak.total}</span>
+            <span className="text-gray-500">Avg delta (last 10)</span>
+            <span className="text-emerald-400 font-semibold">±{(streak.avgDelta * 100).toFixed(1)}%</span>
+          </div>
+          <div className="flex justify-between text-sm mt-1">
+            <span className="text-gray-500">Within ±5% (last 10)</span>
+            <span className="text-gray-300">{streak.correct}/{streak.total}</span>
           </div>
           <div className="flex justify-between text-sm mt-1">
             <span className="text-gray-500">Total attempts</span>
@@ -173,7 +177,11 @@ export const EstimateMode = () => {
 const computeStreak = (drills) => {
   const total = drills.length;
   const correct = drills.filter((d) => d.correct).length;
-  return { correct, total };
+  // Continuous quality signal: lower is better. Defaults to 0 when no drills
+  // recorded so the UI doesn't render NaN.
+  const sumDelta = drills.reduce((s, d) => s + (typeof d.delta === 'number' ? d.delta : 0), 0);
+  const avgDelta = total > 0 ? sumDelta / total : 0;
+  return { correct, total, avgDelta };
 };
 
 const renderStars = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
