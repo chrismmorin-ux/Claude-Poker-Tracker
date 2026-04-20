@@ -76,17 +76,29 @@ describe('preflopDrillsStorage', () => {
   });
 
   describe('aggregateFrameworkAccuracy', () => {
-    it('computes accuracy per framework', () => {
+    it('computes accuracy per framework (including delta aggregates)', () => {
       const drills = [
-        { correct: true, truth: { frameworks: ['race', 'straight_coverage'] } },
-        { correct: false, truth: { frameworks: ['race'] } },
-        { correct: true, truth: { frameworks: ['domination'] } },
-        { correct: true, truth: { frameworks: ['domination'] } },
+        { correct: true, delta: 0.02, truth: { frameworks: ['race', 'straight_coverage'] } },
+        { correct: false, delta: 0.08, truth: { frameworks: ['race'] } },
+        { correct: true, delta: 0.01, truth: { frameworks: ['domination'] } },
+        { correct: true, delta: 0.03, truth: { frameworks: ['domination'] } },
       ];
       const agg = aggregateFrameworkAccuracy(drills);
-      expect(agg.race).toEqual({ attempts: 2, correct: 1, accuracy: 0.5 });
-      expect(agg.straight_coverage).toEqual({ attempts: 1, correct: 1, accuracy: 1 });
-      expect(agg.domination).toEqual({ attempts: 2, correct: 2, accuracy: 1 });
+      expect(agg.race).toEqual({ attempts: 2, correct: 1, accuracy: 0.5, avgDelta: 0.05, deltaSamples: 2 });
+      expect(agg.straight_coverage).toEqual({ attempts: 1, correct: 1, accuracy: 1, avgDelta: 0.02, deltaSamples: 1 });
+      expect(agg.domination).toEqual({ attempts: 2, correct: 2, accuracy: 1, avgDelta: 0.02, deltaSamples: 2 });
+    });
+
+    it('treats missing/null deltas as unsampled (avgDelta=0, deltaSamples=0)', () => {
+      const drills = [
+        { correct: true, truth: { frameworks: ['race'] } },          // no delta
+        { correct: false, delta: null, truth: { frameworks: ['race'] } }, // null
+        { correct: true, delta: 0.04, truth: { frameworks: ['race'] } },  // real
+      ];
+      const agg = aggregateFrameworkAccuracy(drills);
+      expect(agg.race.attempts).toBe(3);
+      expect(agg.race.deltaSamples).toBe(1);
+      expect(agg.race.avgDelta).toBe(0.04);
     });
 
     it('handles empty input', () => {

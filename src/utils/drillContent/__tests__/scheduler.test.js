@@ -18,8 +18,8 @@ describe('scheduler — pickNextMatchup', () => {
   test('weights weak frameworks higher after enough attempts', () => {
     // 10 attempts total, all domination nailed, all race missed.
     const acc = {
-      race: { attempts: 5, correct: 0, accuracy: 0 },
-      domination: { attempts: 5, correct: 5, accuracy: 1 },
+      race: { attempts: 5, correct: 0, accuracy: 0, avgDelta: 0, deltaSamples: 0 },
+      domination: { attempts: 5, correct: 5, accuracy: 1, avgDelta: 0, deltaSamples: 0 },
     };
     // Run many trials and verify race is picked far more than domination.
     const counts = { a: 0, b: 0, c: 0 };
@@ -49,6 +49,43 @@ describe('scheduler — pickNextMatchup', () => {
   test('returns null for empty library', () => {
     expect(pickNextMatchup([], {}, [])).toBeNull();
     expect(pickNextMatchup(null, {}, [])).toBeNull();
+  });
+
+  test('delta-aware weighting biases toward imprecise-but-correct frameworks', () => {
+    // Two frameworks with identical binary accuracy (both 100%), but one
+    // has large avg delta (user consistently lands at ±4%) while the other
+    // is tight (±0.5%). Scheduler should over-sample the wide-delta one.
+    const acc = {
+      race:         { attempts: 10, correct: 10, accuracy: 1, avgDelta: 0.04, deltaSamples: 10 },
+      domination:   { attempts: 10, correct: 10, accuracy: 1, avgDelta: 0.005, deltaSamples: 10 },
+      pair_over_pair: { attempts: 10, correct: 10, accuracy: 1, avgDelta: 0.005, deltaSamples: 10 },
+    };
+    const counts = { a: 0, b: 0, c: 0 };
+    for (let i = 0; i < 500; i++) {
+      const m = pickNextMatchup(lib, acc, []);
+      counts[m.id]++;
+    }
+    // Race (a) should be picked notably more than either of the tight-delta ones.
+    expect(counts.a).toBeGreaterThan(counts.b);
+    expect(counts.a).toBeGreaterThan(counts.c);
+  });
+
+  test('low delta-sample count is ignored (noise floor)', () => {
+    // Only 1 delta sample — should be ignored even if it's huge.
+    const acc = {
+      race: { attempts: 1, correct: 1, accuracy: 1, avgDelta: 0.20, deltaSamples: 1 },
+      domination: { attempts: 10, correct: 10, accuracy: 1, avgDelta: 0.005, deltaSamples: 10 },
+      pair_over_pair: { attempts: 10, correct: 10, accuracy: 1, avgDelta: 0.005, deltaSamples: 10 },
+    };
+    const counts = { a: 0, b: 0, c: 0 };
+    for (let i = 0; i < 500; i++) {
+      const m = pickNextMatchup(lib, acc, []);
+      counts[m.id]++;
+    }
+    // Race should NOT be over-sampled dramatically despite its huge delta —
+    // only 1 sample means it's ignored. Expect counts within ~30% of each other.
+    const ratio = counts.a / counts.b;
+    expect(ratio).toBeLessThan(1.5);
   });
 });
 

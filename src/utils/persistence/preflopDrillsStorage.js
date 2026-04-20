@@ -96,21 +96,34 @@ export const clearPreflopDrills = async (userId = GUEST_USER_ID) => {
 
 /**
  * Aggregate accuracy per framework id from a list of drill attempts.
- * Returns { [frameworkId]: { attempts, correct, accuracy } }.
+ * Returns { [frameworkId]: { attempts, correct, accuracy, avgDelta, deltaSamples } }.
  * Expects each drill to carry `truth.frameworks` (array of framework ids that applied).
+ *
+ * `avgDelta` is the mean absolute equity delta (|guess − truth|) across the
+ * subset of attempts that recorded a numeric `delta`. Estimate and Recipe
+ * drills record deltas; Framework Drill does not (it's a set-matching task
+ * with no equity guess). `deltaSamples` counts contributing attempts so the
+ * scheduler can ignore low-sample noise.
  */
 export const aggregateFrameworkAccuracy = (drills) => {
   const out = {};
   for (const d of drills) {
     const fwIds = d?.truth?.frameworks || [];
     for (const id of fwIds) {
-      if (!out[id]) out[id] = { attempts: 0, correct: 0, accuracy: 0 };
+      if (!out[id]) out[id] = { attempts: 0, correct: 0, accuracy: 0, sumDelta: 0, deltaSamples: 0, avgDelta: 0 };
       out[id].attempts++;
       if (d.correct) out[id].correct++;
+      if (typeof d.delta === 'number' && Number.isFinite(d.delta)) {
+        out[id].sumDelta += d.delta;
+        out[id].deltaSamples++;
+      }
     }
   }
   for (const id of Object.keys(out)) {
     out[id].accuracy = out[id].attempts ? out[id].correct / out[id].attempts : 0;
+    out[id].avgDelta = out[id].deltaSamples ? out[id].sumDelta / out[id].deltaSamples : 0;
+    // Internal bookkeeping field — don't expose sumDelta to callers.
+    delete out[id].sumDelta;
   }
   return out;
 };

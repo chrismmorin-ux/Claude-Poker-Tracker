@@ -10,6 +10,15 @@ const MIN_ATTEMPTS_FOR_WEIGHTING = 5;
 const RECENCY_WINDOW = 5;
 const RECENCY_PENALTY = 0.3;
 
+// Delta-aware weighting knobs. Below DELTA_MIN_SAMPLES attempts with a
+// recorded numeric delta, we ignore avgDelta (too noisy). DELTA_WEIGHT_SCALE
+// converts average delta to a weight contribution: at delta=0.10 (way off),
+// contribution hits the cap of DELTA_WEIGHT_CAP so it doesn't dominate the
+// accuracy signal.
+const DELTA_MIN_SAMPLES = 3;
+const DELTA_WEIGHT_SCALE = 0.10;   // delta of 10% adds 1.0 to weight
+const DELTA_WEIGHT_CAP = 1.0;
+
 /**
  * Pick the next matchup from `library` given accumulated `frameworkAccuracy`
  * and an array of `recentIds` (most-recent first).
@@ -31,8 +40,15 @@ export const pickNextMatchup = (library, frameworkAccuracy = {}, recentIds = [])
   const weights = library.map((m) => {
     const stats = frameworkAccuracy[m.primary];
     const acc = stats?.attempts ? stats.accuracy : 0.5;
-    // Lower accuracy → higher weight. Clamp to [0.5, 2.0].
-    const frameworkWeight = Math.max(0.5, Math.min(2.0, 1.5 - acc));
+    const avgDelta = stats?.deltaSamples >= DELTA_MIN_SAMPLES ? stats.avgDelta : 0;
+    // Lower accuracy → higher weight. Also: higher avg delta → higher weight,
+    // so hero gets more matchups in frameworks where they're imprecise even
+    // if their binary "correct within ±5%" rate is high. Delta weight is
+    // the larger equivalent of (1 - accuracy), so a ±3% average delta adds
+    // ~0.3 to the weight — meaningful without dominating.
+    const accuracyPull = 1.5 - acc;
+    const deltaPull = Math.min(DELTA_WEIGHT_CAP, avgDelta / DELTA_WEIGHT_SCALE);
+    const frameworkWeight = Math.max(0.5, Math.min(2.5, accuracyPull + deltaPull));
     const recencyMul = recentSet.has(m.id) ? RECENCY_PENALTY : 1;
     return frameworkWeight * recencyMul;
   });
