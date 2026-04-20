@@ -265,25 +265,27 @@ describe('frameworks — STRAIGHT_COVERAGE differentiates AK vs AQ', () => {
 });
 
 describe('frameworks — FLUSH_CONTENTION equityDelta', () => {
-  test('one_suited case exposes asymmetric equityDelta (~+2% for suited side, 0 for other)', () => {
-    // Phase A: FLUSH_DELTAS calibrated against measured exact equity.
-    // Hero-suited vs offsuit unpaired gives ~+1.7%; vs pair gives ~+2.5%.
-    // We split the difference at +2.0 as a single-number legacy display.
+  test('one_suited case exposes asymmetric equityDelta (~+2.3% for suited side, 0 for other)', () => {
+    // FLUSH_DELTAS calibrated against measured exact equity (precisionAudit):
+    // hero-suited vs offsuit unpaired gives ~+1.6%; vs pair gives ~+3.0%.
+    // Single-number display compromises at +2.3.
     const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJo'));
     expect(m.subcase).toBe('one_suited');
     expect(m.equityDelta).toBeDefined();
-    expect(m.equityDelta.favored).toBeCloseTo(2.0, 1);
+    expect(m.equityDelta.favored).toBeCloseTo(2.3, 1);
     expect(m.equityDelta.other).toBeCloseTo(0.0, 1);
   });
 
-  test('both_suited_shared case is asymmetric (higher-flush ~0, lower-flush ~−2.5)', () => {
-    // Phase A: when both suited, flush equities mostly cancel. Higher-flush
-    // hand retains ~0 vs both-offsuit baseline; lower-flush hand loses
-    // ~2.5pp. This matches measured data (AKo vs JTo 63.1% → AKs vs JTs 62.0%).
+  test('both_suited_shared case is asymmetric (higher-flush ~−1pp, lower-flush ~+1pp)', () => {
+    // Corrected against measured data. When both suited (in different
+    // suits — they can't be in the same suit without a card conflict),
+    // flush routes are independent. Empirically the HIGHER-flush side
+    // LOSES ~1pp vs both-offsuit and the LOWER-flush side GAINS ~1pp.
+    // Example: AKo vs JTo 63.1% → AKs vs JTs 62.0% (AK loses 1.1pp, JT gains 1.1pp).
     const m = FLUSH_CONTENTION.applies(h('AKs'), h('QJs'));
     expect(m.subcase).toBe('both_suited_shared');
-    expect(m.equityDelta.favored).toBeCloseTo(0.5, 1);
-    expect(m.equityDelta.other).toBeCloseTo(-2.5, 1);
+    expect(m.equityDelta.favored).toBeCloseTo(-1.0, 1);
+    expect(m.equityDelta.other).toBeCloseTo(+1.0, 1);
   });
 
   test('neither_suited case is small (~+0.5% each)', () => {
@@ -296,7 +298,9 @@ describe('frameworks — FLUSH_CONTENTION equityDelta', () => {
     const matches = classifyMatchup(h('AKs'), h('QJs'));
     const flush = matches.find((m) => m.framework.id === 'flush_contention');
     expect(flush.equityDelta).toBeDefined();
-    expect(flush.equityDelta.favored).toBeGreaterThan(0);
+    // Magnitude is non-trivial; sign can be negative (higher-flush side
+    // loses ~1pp when both suit up).
+    expect(Math.abs(flush.equityDelta.favored)).toBeGreaterThan(0);
   });
 });
 

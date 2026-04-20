@@ -20,6 +20,7 @@ import { LibraryMode } from './LibraryMode';
 import { LessonsMode } from './LessonsMode';
 import { ShapeMode } from './ShapeMode';
 import { RecipeMode } from './RecipeMode';
+import { MathMode } from './MathMode';
 
 const TABS = [
   { id: 'shape',     label: 'Shape' },
@@ -29,6 +30,7 @@ const TABS = [
   { id: 'framework', label: 'Framework Drill' },
   { id: 'library',   label: 'Library' },
   { id: 'lessons',   label: 'Lessons' },
+  { id: 'math',      label: 'Math' },
 ];
 
 export const PreflopDrillsView = ({ scale }) => {
@@ -82,6 +84,7 @@ export const PreflopDrillsView = ({ scale }) => {
           {activeTab === 'framework' && <FrameworkMode />}
           {activeTab === 'library' && <LibraryMode />}
           {activeTab === 'lessons' && <LessonsMode />}
+          {activeTab === 'math' && <MathMode />}
         </div>
       </div>
     </ScaledContainer>

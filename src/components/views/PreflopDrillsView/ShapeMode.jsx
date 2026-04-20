@@ -106,8 +106,9 @@ const ShapePanel = ({ shape, heroHand, onVillainClick, selectedVillain }) => (
     <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Your shape</div>
     <div className="text-2xl font-bold text-white">{shape.name}</div>
     <p className="text-xs text-gray-400 mt-2">
-      {shape.lanes.length} structural lanes you can fall into. Each shows the equity band hero
-      should expect, plus modifier deltas to apply mentally.
+      A lane is a structural class of villain holdings you can face. Each row below shows hero's
+      expected equity band for that lane, plus the modifiers (suitedness, connectedness) that
+      shift the number. Click any sample villain to see the exact matchup.
     </p>
 
     <div className="mt-5 space-y-2">
@@ -194,17 +195,17 @@ const LaneRow = ({ lane, heroHand, onVillainClick, selectedVillain }) => {
 
 const MODIFIER_LABELS = {
   heroSuited: 'hero suited',
-  villainSuited: 'opp suited',
-  flushDominator: 'flush dom',
-  flushDominated: 'flush dom\'d',
+  villainSuited: 'villain suited',
+  flushDominator: 'flush high',
+  flushDominated: 'flush low',
   connectedness: 'connected',
 };
 const MODIFIER_TOOLTIPS = {
-  heroSuited: 'Mental adjustment if hero is suited (vs the offsuit baseline this band assumes).',
-  villainSuited: 'Mental adjustment if villain is suited.',
-  flushDominator: 'When both suited and hero holds the higher flush card.',
-  flushDominated: 'When both suited and hero holds the lower flush card.',
-  connectedness: 'Per step closer the two ranks become (gap shrinks).',
+  heroSuited: 'Applies when hero is suited. Band assumes offsuit; this is the shift to add.',
+  villainSuited: 'Applies when villain is suited.',
+  flushDominator: 'Both suited (different suits): hero holds the higher flush card.',
+  flushDominated: 'Both suited (different suits): hero holds the lower flush card.',
+  connectedness: 'Applies when villain is a connector or 1-gapper — shrinks the gap between their ranks.',
 };
 const modifierLabel = (key) => MODIFIER_LABELS[key] || key;
 const modifierTooltip = (key) => MODIFIER_TOOLTIPS[key] || '';

@@ -2,8 +2,10 @@ import { describe, test, expect } from 'vitest';
 import { LESSONS, findLesson } from '../lessons';
 import { FRAMEWORKS } from '../frameworks';
 import { parseHandClass } from '../../pokerCore/preflopEquity';
+import { CALCULATORS } from '../../../components/views/PreflopDrillsView/LessonCalculators';
 
 const frameworkIds = new Set(Object.values(FRAMEWORKS).map((fw) => fw.id));
+const VALID_KINDS = ['prose', 'formula', 'example', 'compute'];
 
 describe('lessons — structural integrity', () => {
   test('LESSONS is a non-empty array', () => {
@@ -36,10 +38,21 @@ describe('lessons — structural integrity', () => {
 });
 
 describe('lessons — section validity', () => {
-  test('every section kind is one of prose | formula | example', () => {
+  test('every section kind is a valid kind', () => {
     for (const l of LESSONS) {
       for (const s of l.sections) {
-        expect(['prose', 'formula', 'example']).toContain(s.kind);
+        expect(VALID_KINDS).toContain(s.kind);
+      }
+    }
+  });
+
+  test('compute sections reference a calculator that resolves in the registry', () => {
+    for (const l of LESSONS) {
+      for (const s of l.sections) {
+        if (s.kind === 'compute') {
+          expect(typeof s.calculator).toBe('string');
+          expect(CALCULATORS[s.calculator]).toBeDefined();
+        }
       }
     }
   });

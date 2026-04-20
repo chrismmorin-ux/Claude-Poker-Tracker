@@ -3,6 +3,8 @@ import { computeHandVsHand, parseHandClass } from '../../../utils/pokerCore/pref
 import { SHAPES, classifyHero, classifyLane, detectApplicableModifiers } from '../../../utils/drillContent/shapes';
 import { pickRecipeMatchup, scoreRecipe } from '../../../utils/drillContent/scheduler';
 import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPersistence';
+import { MatchupBreakdown } from './MatchupBreakdown';
+import { classifyMatchup } from '../../../utils/drillContent/frameworks';
 
 const MODIFIER_LABELS = {
   heroSuited: 'Hero is suited',
@@ -43,6 +45,8 @@ export const RecipeMode = () => {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(null);
   const [truth, setTruth] = useState(null); // { shape, lane, modifiers, equity }
+  const [result, setResult] = useState(null); // full computeHandVsHand output for MatchupBreakdown
+  const [matches, setMatches] = useState(null); // classifyMatchup output
   const [loading, setLoading] = useState(false);
 
   const next = () => {
@@ -60,6 +64,8 @@ export const RecipeMode = () => {
     setSubmitted(false);
     setScore(null);
     setTruth(null);
+    setResult(null);
+    setMatches(null);
   };
 
   useEffect(() => { next(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
@@ -97,6 +103,8 @@ export const RecipeMode = () => {
           modifiers: trueModifiers,
           equity: r.equity,
         });
+        setResult(r);
+        setMatches(classifyMatchup(heroParsed, villainParsed));
         setSubmitted(true);
         setLoading(false);
 
@@ -214,10 +222,20 @@ export const RecipeMode = () => {
 
       <div className="overflow-y-auto pr-2">
         {submitted && score && truth ? (
-          <ScoreReveal score={score} truth={truth} matchup={matchup} pickedEquity={pickedEquity / 100} />
+          <div className="space-y-4">
+            <ScoreReveal score={score} truth={truth} matchup={matchup} pickedEquity={pickedEquity / 100} />
+            {result && (
+              <MatchupBreakdown
+                handALabel={matchup.a}
+                handBLabel={matchup.b}
+                result={result}
+                frameworkMatches={matches}
+              />
+            )}
+          </div>
         ) : (
           <div className="bg-gray-800/50 border border-gray-800 rounded-lg p-6 min-h-[400px] flex items-center justify-center text-sm text-gray-500 text-center px-8">
-            Pick shape → lane → equity, then reveal to see how each step scored.
+            Pick shape → lane → modifiers → equity, then reveal to see how each step scored.
           </div>
         )}
         <RecentStats drills={recipeDrills.slice(0, 10)} />
@@ -366,7 +384,7 @@ const StepModifiers = ({ lane, picked, truth, submitted, enabled, onToggle, onAd
 const StepEquity = ({ lane, value, onChange, submitted, truthEquity, equityCorrect }) => (
   <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
     <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">
-      Step 3 — estimate hero's equity (band hint: {(lane.band[0] * 100).toFixed(0)}–{(lane.band[1] * 100).toFixed(0)}%, anchor {(lane.baseEquity * 100).toFixed(0)}%)
+      Step 4 — estimate hero's equity (band hint: {(lane.band[0] * 100).toFixed(0)}–{(lane.band[1] * 100).toFixed(0)}%, anchor {(lane.baseEquity * 100).toFixed(0)}%)
     </div>
     <div className="flex justify-between items-end mb-3">
       <div className="text-sm text-gray-300">Final equity</div>

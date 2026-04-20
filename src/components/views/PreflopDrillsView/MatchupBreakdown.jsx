@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EquityDecompositionPanel } from './EquityDecompositionPanel';
 
 /**
  * MatchupBreakdown — shared panel showing exact equity and framework
@@ -68,7 +69,7 @@ export const MatchupBreakdown = ({
 
       {frameworkMatches?.length > 0 && (
         <div className="border-t border-gray-700 pt-4">
-          <div className="text-sm font-semibold text-gray-300 mb-3">Frameworks applying</div>
+          <div className="text-sm font-semibold text-gray-300 mb-3">Applicable frameworks</div>
           <div className="flex flex-wrap gap-2 mb-4">
             {frameworkMatches.map((m) => (
               <FrameworkChip key={m.framework.id} match={m} />
@@ -101,6 +102,10 @@ export const MatchupBreakdown = ({
             />
           )}
         </div>
+      )}
+
+      {!hideEquity && (
+        <EquityDecompositionPanel handALabel={handALabel} handBLabel={handBLabel} />
       )}
     </div>
   );
@@ -154,20 +159,25 @@ const CoverageDetails = ({ match, handALabel, handBLabel }) => {
         </span>
       </div>
 
+      <div className="text-[11px] text-gray-500 leading-tight">
+        "All" = every 5-card straight this hand can make. "Live" = those still reachable after
+        removing blockers (cards the other hand already holds).
+      </div>
+
       <div className="space-y-1">
         <div className="text-[11px] uppercase tracking-wide text-gray-500">{handALabel}</div>
-        <div><span className="text-gray-500">Direct runs:</span> {fmt(details.aPatterns)}</div>
-        <div><span className="text-gray-500">Direct live:</span> {fmt(details.aLivePatterns)}</div>
-        <div><span className="text-gray-500">Single-card runs:</span> {fmt(details.aSingleCardPatterns)}</div>
-        <div><span className="text-gray-500">Single-card live:</span> {fmt(details.aSingleCardLivePatterns)}</div>
+        <div><span className="text-gray-500">Direct (both hole cards) — all:</span> {fmt(details.aPatterns)}</div>
+        <div><span className="text-gray-500">Direct — live:</span> {fmt(details.aLivePatterns)}</div>
+        <div><span className="text-gray-500">Single-card (one hole card + 4 board) — all:</span> {fmt(details.aSingleCardPatterns)}</div>
+        <div><span className="text-gray-500">Single-card — live:</span> {fmt(details.aSingleCardLivePatterns)}</div>
       </div>
 
       <div className="space-y-1">
         <div className="text-[11px] uppercase tracking-wide text-gray-500">{handBLabel}</div>
-        <div><span className="text-gray-500">Direct runs:</span> {fmt(details.bPatterns)}</div>
-        <div><span className="text-gray-500">Direct live:</span> {fmt(details.bLivePatterns)}</div>
-        <div><span className="text-gray-500">Single-card runs:</span> {fmt(details.bSingleCardPatterns)}</div>
-        <div><span className="text-gray-500">Single-card live:</span> {fmt(details.bSingleCardLivePatterns)}</div>
+        <div><span className="text-gray-500">Direct (both hole cards) — all:</span> {fmt(details.bPatterns)}</div>
+        <div><span className="text-gray-500">Direct — live:</span> {fmt(details.bLivePatterns)}</div>
+        <div><span className="text-gray-500">Single-card (one hole card + 4 board) — all:</span> {fmt(details.bSingleCardPatterns)}</div>
+        <div><span className="text-gray-500">Single-card — live:</span> {fmt(details.bSingleCardLivePatterns)}</div>
       </div>
     </div>
   );

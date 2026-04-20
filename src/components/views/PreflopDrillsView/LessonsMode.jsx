@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { LESSONS } from '../../../utils/drillContent/lessons';
+import { LESSONS, LESSON_CATEGORIES } from '../../../utils/drillContent/lessons';
 import { FRAMEWORKS } from '../../../utils/drillContent/frameworks';
 import { computeHandVsHand, parseHandClass } from '../../../utils/pokerCore/preflopEquity';
 import { classifyMatchup } from '../../../utils/drillContent/frameworks';
 import { MatchupBreakdown, FRAMEWORK_COLOR } from './MatchupBreakdown';
+import { CALCULATORS } from './LessonCalculators';
 
 /**
  * LessonsMode — browse curated concept pages. Each lesson mixes prose,
@@ -31,6 +32,26 @@ export const LessonsMode = () => {
   );
 };
 
+const CATEGORY_CHIP_COLOR = {
+  practical_math: 'bg-teal-900 text-teal-200',
+};
+
+const chipMetaForLesson = (l) => {
+  // Category overrides the framework chip when present — used for lessons that
+  // teach foundational math rather than a structural framework.
+  if (l.category && LESSON_CATEGORIES[l.category]) {
+    return {
+      name: LESSON_CATEGORIES[l.category].name,
+      hue: CATEGORY_CHIP_COLOR[l.category] || 'bg-gray-700 text-gray-200',
+    };
+  }
+  const fw = Object.values(FRAMEWORKS).find((f) => f.id === l.frameworkId);
+  return {
+    name: fw?.name || l.frameworkId,
+    hue: FRAMEWORK_COLOR[l.frameworkId] || 'bg-gray-700 text-gray-200',
+  };
+};
+
 const LessonList = ({ lessons, activeId, onSelect }) => (
   <div className="bg-gray-800/50 border border-gray-800 rounded-lg overflow-y-auto">
     <div className="px-4 py-3 border-b border-gray-800 text-xs uppercase tracking-wide text-gray-500">
@@ -39,7 +60,7 @@ const LessonList = ({ lessons, activeId, onSelect }) => (
     <div>
       {lessons.map((l) => {
         const active = l.id === activeId;
-        const chipHue = FRAMEWORK_COLOR[l.frameworkId] || 'bg-gray-700 text-gray-200';
+        const chip = chipMetaForLesson(l);
         return (
           <button
             key={l.id}
@@ -49,8 +70,8 @@ const LessonList = ({ lessons, activeId, onSelect }) => (
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${chipHue}`}>
-                {FRAMEWORKS[Object.keys(FRAMEWORKS).find((k) => FRAMEWORKS[k].id === l.frameworkId)]?.name || l.frameworkId}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${chip.hue}`}>
+                {chip.name}
               </span>
             </div>
             <div className={`text-sm font-semibold ${active ? 'text-white' : 'text-gray-200'}`}>{l.title}</div>
@@ -81,7 +102,33 @@ const LessonSection = ({ section }) => {
   if (section.kind === 'prose') return <ProseSection section={section} />;
   if (section.kind === 'formula') return <FormulaSection section={section} />;
   if (section.kind === 'example') return <ExampleSection section={section} />;
+  if (section.kind === 'compute') return <ComputeSection section={section} />;
   return null;
+};
+
+const ComputeSection = ({ section }) => {
+  const Calculator = CALCULATORS[section.calculator];
+  if (!Calculator) {
+    return (
+      <div className="bg-rose-900/30 border border-rose-800 text-rose-200 rounded px-3 py-2 text-xs">
+        Unknown calculator: {String(section.calculator)}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {section.heading && (
+        <h3 className="text-sm font-semibold text-gray-200">{section.heading}</h3>
+      )}
+      {section.intro && (
+        <p className="text-sm text-gray-300 leading-relaxed">{section.intro}</p>
+      )}
+      <Calculator />
+      {section.takeaway && (
+        <p className="text-xs text-gray-400 italic leading-relaxed">{section.takeaway}</p>
+      )}
+    </div>
+  );
 };
 
 const ProseSection = ({ section }) => (

@@ -93,7 +93,7 @@ export const DOMINATION = {
     if (match.subcase === 'pair_dominates_kicker') {
       const pair = isPair(a) ? a : b;
       const other = isPair(a) ? b : a;
-      return `${handLabel(pair)} is crushing ${handLabel(other)} via the shared rank — the pair already has a set, and ${handLabel(other)}'s kicker is lower than the pair. ${handLabel(other)} can only beat the pair by catching a straight or flush. Expect ~90% for the pair.`;
+      return `${handLabel(pair)} is crushing ${handLabel(other)} via the shared rank — the pair already has a set, and ${handLabel(other)}'s kicker is lower than the pair. ${handLabel(other)} can only beat the pair by catching a straight or flush. Expect ~92% for the pair (tight 88–93% band).`;
     }
     if (match.subcase === 'pair_vs_shared_over') {
       const pair = isPair(a) ? a : b;
@@ -167,9 +167,9 @@ export const RACE = {
       return `${handLabel(pair)} vs ${handLabel(other)} — a classic race. The pair is already made; the two overs win by pairing either rank (~35% flop hit) or catching a straight/flush. Tier by pair rank — ${pairTier} for the pair.`;
     }
     if (match.subcase === 'pair_vs_two_unders') {
-      return `${handLabel(pair)} vs ${handLabel(other)} — the pair is dominating. The unders must flop a set or runner-runner. Expect ~86% for the pair.`;
+      return `${handLabel(pair)} vs ${handLabel(other)} — the pair is dominating. The unders must flop a set or runner-runner. Expect ~83% for the pair (~77% vs suited-connected unders, ~88% vs disconnected offsuit unders).`;
     }
-    return `${handLabel(pair)} vs ${handLabel(other)} — one over, one under. The pair is strongly favored because only one of the opponent's cards is "live to pair over." Expect ~68% for the pair.`;
+    return `${handLabel(pair)} vs ${handLabel(other)} — one over, one under. The pair is strongly favored because only one of the opponent's cards is "live to pair over." Expect ~70% for the pair.`;
   },
 };
 
@@ -237,28 +237,32 @@ export const STRAIGHT_COVERAGE = {
   },
 };
 
-// Approximate equity deltas (in %-points) for each flush-contention shape.
-// These surface as numeric chips in the UI so users can calibrate
+// Approximate equity deltas (in %-points) for each flush-contention shape,
+// measured empirically via precisionAudit.test.js against exact preflop
+// enumeration. Surfaced as numeric chips in the UI so users can calibrate
 // "how much does suitedness actually buy?"
 //
-// NOTE (Phase A): these values are a simplified legacy display. Real suitedness
-// effects are asymmetric and depend on opponent structure (pair vs offsuit
-// unpaired) and on which hand holds the higher flush card. shapes.js exposes
-// per-lane modifier deltas that supersede these for teaching accuracy. Phase B
-// will migrate the UI chips to consume shape-catalog deltas.
+// one_suited: hero gains from flush route; single number is a compromise
+//   across villain shapes (+3.0pp vs pair, +1.6pp vs offsuit unpaired → ~+2.3).
+// both_suited_shared: flush routes are in DIFFERENT suits (JhTh vs AhKh is
+//   a card conflict); they don't collide on the same board. Empirically the
+//   HIGHER-flush side loses ~1pp vs both-offsuit baseline (its own flush gain
+//   is smaller than the damage from villain's flush) and the LOWER-flush
+//   side gains ~1pp (its flush is its primary winning route).
+// neither_suited: only ~+0.5pp each from 4-to-a-suit backdoor flushes.
 const FLUSH_DELTAS = {
-  one_suited:         { favored: +2.0, other:  0.0 }, // vs pair ~+2.5, vs offsuit unpaired ~+1.7 → pick a middle value
-  both_suited_shared: { favored: +0.5, other: -2.5 }, // higher-flush ~unchanged vs offsuit baseline; lower-flush pays ~2.5pp
-  neither_suited:     { favored: +0.5, other: +0.5 }, // pure backdoor
+  one_suited:         { favored: +2.3, other:  0.0 },
+  both_suited_shared: { favored: -1.0, other: +1.0 },
+  neither_suited:     { favored: +0.5, other: +0.5 },
 };
 
 export const FLUSH_CONTENTION = {
   id: 'flush_contention',
   name: 'Suitedness & Flush Contention (modifier)',
-  shortDescription: 'Suitedness is asymmetric: hero-suited +1.7–2.5%, opp-suited –3.5%, both-suited cancels for the higher-flush side.',
+  shortDescription: 'Suitedness modifier: the "+3% suited" rule is a simplification. Asymmetric — hero-suited gains more vs a pair, and when both suit up the higher-flush side can net LOSE.',
   subcases: [
-    { id: 'one_suited', claim: 'One suited hand — ~+1.7% vs offsuit unpaired, ~+2.5% vs pair', band: null },
-    { id: 'both_suited_shared', claim: 'Both suited — higher-flush hand roughly even vs both-offsuit; lower-flush hand loses ~2.5pp', band: null },
+    { id: 'one_suited', claim: 'One suited hand — ~+1.6% vs offsuit unpaired, ~+3.0% vs pair', band: null },
+    { id: 'both_suited_shared', claim: 'Both suited (different suits) — higher-flush hand LOSES ~1pp vs both-offsuit; lower-flush hand GAINS ~1pp (flushes don\'t collide, but lower-flush relies on flushes more)', band: null },
     { id: 'neither_suited', claim: 'Both offsuit/pair — only ~+0.5% each from backdoor flushes', band: null },
   ],
   applies: (a, b) => {
@@ -289,11 +293,11 @@ export const FLUSH_CONTENTION = {
       const suited = match.favored === 'A' ? a : b;
       const other = match.favored === 'A' ? b : a;
       const vsShape = other.pair ? 'pair (can\'t contest flushes)' : 'offsuit unpaired (1 backdoor route)';
-      const delta = other.pair ? '~+2.5%' : '~+1.7%';
+      const delta = other.pair ? '~+3.0%' : '~+1.6%';
       return `${handLabel(suited)} is suited — ${delta} vs ${vsShape}. Opponent-offsuit's flushes are either impossible (pair) or rare (offsuit), so hero's flush payoff is nearly unchallenged.`;
     }
     if (match.subcase === 'both_suited_shared') {
-      return 'Both suited — flush equities nearly cancel. The hand with the higher flush card retains ~+0 vs both-offsuit baseline; the hand with the lower flush card loses ~2.5pp because its flushes often run into a higher one.';
+      return 'Both suited (different suits) — flushes never collide on the same board, so each side gains its own flush equity. Empirically the HIGHER-flush side LOSES ~1pp vs both-offsuit (its own gain is smaller than the damage from villain\'s flush), and the LOWER-flush side GAINS ~1pp (flushes are its primary winning route). Example: AKo vs JTo = 63.1%, AKs vs JTs = 62.0% — AKs drops 1.1pp when JTs also gets its flush route.';
     }
     return 'Neither suited — only ~+0.5% each from 4-to-a-suit backdoor boards. Negligible.';
   },
