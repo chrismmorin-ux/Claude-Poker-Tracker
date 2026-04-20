@@ -54,18 +54,18 @@ export const DOMINATION = {
   subcases: [
     {
       id: 'kicker_dominated',
-      claim: 'Same high card, lower kicker (AK vs AQ, KQ vs KJ)',
-      band: [0.65, 0.78],
+      claim: 'Same high card, lower kicker (AK vs AQ, KQ vs KJ) — tight 71–75% band regardless of kicker gap',
+      band: [0.70, 0.76],
     },
     {
       id: 'pair_dominates_kicker',
-      claim: 'Pair + dominated kicker (AA vs AKo, JJ vs J5 — pair rank above other\'s kicker)',
-      band: [0.86, 0.96],
+      claim: 'Pair + dominated kicker (AA vs AKo, JJ vs J5 — pair rank above other\'s kicker) — ~88–93%',
+      band: [0.86, 0.94],
     },
     {
       id: 'pair_vs_shared_over',
-      claim: 'Pair with shared rank, but opponent has a HIGHER card (KK vs AKs, 77 vs A7o)',
-      band: [0.60, 0.76],
+      claim: 'Pair with shared rank, opponent has a HIGHER card (KK vs AKs, 77 vs A7o) — 65–70%',
+      band: [0.64, 0.72],
     },
   ],
   applies: (a, b) => {
@@ -110,7 +110,7 @@ export const PAIR_OVER_PAIR = {
   id: 'pair_over_pair',
   name: 'Pair over Pair',
   shortDescription: 'Two different pairs — the higher pair is a huge favorite.',
-  subcases: [{ id: 'pair_over_pair', claim: 'Higher pair wins ~82% of the time', band: [0.78, 0.85] }],
+  subcases: [{ id: 'pair_over_pair', claim: 'Higher pair wins ~82% of the time (tight 81–83% band)', band: [0.80, 0.84] }],
   applies: (a, b) => {
     if (!isPair(a) || !isPair(b)) return null;
     if (a.rankHigh === b.rankHigh) return null;
@@ -130,17 +130,17 @@ export const RACE = {
   subcases: [
     {
       id: 'pair_vs_two_overs',
-      claim: 'Pair vs two overcards (77 vs AKo — the classic race)',
-      band: [0.50, 0.57],
+      claim: 'Pair vs two overcards (classic race) — ~52% for small pairs (22–77), ~56% for mid pairs (88–TT)',
+      band: [0.51, 0.58],
     },
     {
       id: 'pair_vs_split',
-      claim: 'Pair vs one over one under (88 vs AT)',
-      band: [0.62, 0.74],
+      claim: 'Pair vs one over one under (88 vs A5o) — tight 69–71% band',
+      band: [0.68, 0.73],
     },
     {
       id: 'pair_vs_two_unders',
-      claim: 'Pair vs two undercards (TT vs 87) — range widens with connectedness/suited',
+      claim: 'Pair vs two undercards (TT vs 87s, AA vs 72o) — band widens with villain connectedness: suited-connected ~77%, disconnected ~88%',
       band: [0.76, 0.90],
     },
   ],
