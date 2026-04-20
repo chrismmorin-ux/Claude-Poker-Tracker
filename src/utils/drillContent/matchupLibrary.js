@@ -94,6 +94,51 @@ export const MATCHUPS_BY_FRAMEWORK = MATCHUP_LIBRARY.reduce((acc, m) => {
   return acc;
 }, {});
 
+// ---------- Shape-tagging ---------- //
+//
+// Derive hero-shape and lane-id per matchup via the shapes catalog. Done at
+// module load time so the tag travels with the entry wherever it's used.
+// If the shapes catalog ever rejects an entry (no classifying shape, or no
+// matching lane), the entry still appears in MATCHUP_LIBRARY but carries
+// `heroShape: null` / `laneId: null`. The matchupShapeRouting invariant
+// test guarantees this should never happen in committed state.
+
+import { classifyHero, classifyLane } from './shapes';
+import { parseHandClass } from '../pokerCore/preflopEquity';
+
+const tagMatchup = (m) => {
+  try {
+    const hA = parseHandClass(m.a);
+    const hB = parseHandClass(m.b);
+    const shape = classifyHero(hA);
+    const { lane } = classifyLane(hA, hB);
+    return {
+      ...m,
+      heroShape: shape.id,
+      heroShapeName: shape.name,
+      laneId: lane?.id || null,
+      laneDesc: lane?.villainDesc || null,
+    };
+  } catch {
+    return { ...m, heroShape: null, heroShapeName: null, laneId: null, laneDesc: null };
+  }
+};
+
+/**
+ * Library entries with derived heroShape / laneId / laneDesc fields.
+ */
+export const TAGGED_MATCHUP_LIBRARY = MATCHUP_LIBRARY.map(tagMatchup);
+
+/**
+ * Group matchups by hero-shape for the Library's "Group by Shape" view.
+ * Entries with no classifying shape (shouldn't happen) land in key 'unknown'.
+ */
+export const MATCHUPS_BY_SHAPE = TAGGED_MATCHUP_LIBRARY.reduce((acc, m) => {
+  const key = m.heroShape || 'unknown';
+  (acc[key] = acc[key] || []).push(m);
+  return acc;
+}, {});
+
 /**
  * Find a matchup by id.
  */
