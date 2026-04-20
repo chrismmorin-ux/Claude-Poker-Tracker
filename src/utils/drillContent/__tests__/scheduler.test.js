@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { pickNextMatchup, scoreEstimate, scoreFrameworkSelection, scoreRecipe } from '../scheduler';
+import { pickNextMatchup, pickRecipeMatchup, scoreEstimate, scoreFrameworkSelection, scoreRecipe } from '../scheduler';
 
 const lib = [
   { id: 'a', primary: 'race' },
@@ -86,6 +86,53 @@ describe('scheduler — pickNextMatchup', () => {
     // only 1 sample means it's ignored. Expect counts within ~30% of each other.
     const ratio = counts.a / counts.b;
     expect(ratio).toBeLessThan(1.5);
+  });
+});
+
+describe('scheduler — pickRecipeMatchup', () => {
+  test('returns a {id, a, b} with hero ≠ villain', () => {
+    for (let i = 0; i < 50; i++) {
+      const m = pickRecipeMatchup([]);
+      expect(m).toHaveProperty('id');
+      expect(m).toHaveProperty('a');
+      expect(m).toHaveProperty('b');
+      expect(m.a).not.toBe(m.b);
+      expect(m.id).toBe(`${m.a}_${m.b}`);
+    }
+  });
+
+  test('id format parses via standard hand notation', () => {
+    const m = pickRecipeMatchup([]);
+    // Pair: 2 chars; unpaired: 3 chars with s/o suffix
+    const ok = (h) => (h.length === 2 && h[0] === h[1]) || (h.length === 3 && (h[2] === 's' || h[2] === 'o'));
+    expect(ok(m.a)).toBe(true);
+    expect(ok(m.b)).toBe(true);
+  });
+
+  test('respects recent keys (skip bias)', () => {
+    // Force a small-recent set; over many samples we should see low
+    // repetition of recent ids.
+    const recent = ['AA_KK', '77_AKs', 'JTs_98o'];
+    const counts = {};
+    for (let i = 0; i < 500; i++) {
+      const m = pickRecipeMatchup(recent);
+      counts[m.id] = (counts[m.id] || 0) + 1;
+    }
+    for (const k of recent) {
+      // Recent ids can still appear via fallback, but should be rare —
+      // 500 samples / 169*168 = ~0.018 expected per matchup without bias;
+      // allow up to ~5 per (generous) to account for the fallback path.
+      expect(counts[k] || 0).toBeLessThanOrEqual(5);
+    }
+  });
+
+  test('samples cover a broad range (not stuck on one matchup)', () => {
+    // Over 100 samples we should see at least 50 distinct ids.
+    const seen = new Set();
+    for (let i = 0; i < 100; i++) {
+      seen.add(pickRecipeMatchup([]).id);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(50);
   });
 });
 

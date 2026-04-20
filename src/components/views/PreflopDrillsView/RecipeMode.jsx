@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { computeHandVsHand, parseHandClass } from '../../../utils/pokerCore/preflopEquity';
 import { SHAPES, classifyHero, classifyLane } from '../../../utils/drillContent/shapes';
-import { MATCHUP_LIBRARY } from '../../../utils/drillContent/matchupLibrary';
-import { pickNextMatchup, scoreRecipe } from '../../../utils/drillContent/scheduler';
+import { pickRecipeMatchup, scoreRecipe } from '../../../utils/drillContent/scheduler';
 import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPersistence';
 
 /**
@@ -19,7 +18,7 @@ import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPers
  * truth — same numbers Shape Mode displays.
  */
 export const RecipeMode = () => {
-  const { drills, recordAttempt, frameworkAccuracy } = usePreflopDrillsPersistence();
+  const { drills, recordAttempt } = usePreflopDrillsPersistence();
   const recipeDrills = useMemo(
     () => drills.filter((d) => d.drillType === 'recipe'),
     [drills],
@@ -37,8 +36,11 @@ export const RecipeMode = () => {
   const [loading, setLoading] = useState(false);
 
   const next = () => {
-    const m = pickNextMatchup(MATCHUP_LIBRARY, frameworkAccuracy, recentIds.current);
-    if (m) recentIds.current = [m.id, ...recentIds.current].slice(0, 5);
+    // Sample across the full 169×169 hand-class space for breadth — Recipe
+    // Drill's value is practicing every shape and lane, not just the curated
+    // library subset.
+    const m = pickRecipeMatchup(recentIds.current);
+    if (m) recentIds.current = [m.id, ...recentIds.current].slice(0, 10);
     setMatchup(m);
     setStep(1);
     setPickedShape(null);

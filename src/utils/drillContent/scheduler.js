@@ -63,6 +63,57 @@ export const pickNextMatchup = (library, frameworkAccuracy = {}, recentIds = [])
   return library[library.length - 1];
 };
 
+// ---------- Recipe Drill sampling ---------- //
+
+const RANK_CHARS = 'AKQJT98765432';
+const ALL_HAND_CLASSES = (() => {
+  const out = [];
+  // Pairs
+  for (const r of RANK_CHARS) out.push(`${r}${r}`);
+  // Unpaired, higher rank first, suited + offsuit
+  for (let i = 0; i < RANK_CHARS.length; i++) {
+    for (let j = i + 1; j < RANK_CHARS.length; j++) {
+      out.push(`${RANK_CHARS[i]}${RANK_CHARS[j]}s`);
+      out.push(`${RANK_CHARS[i]}${RANK_CHARS[j]}o`);
+    }
+  }
+  return out;
+})();
+
+/**
+ * Pick a Recipe Drill matchup from the FULL 169×169 hand-class space.
+ *
+ * Unlike pickNextMatchup (which samples from a curated library), Recipe Drill
+ * needs breadth across every shape and lane. Uniform sampling over all 169
+ * hand classes for both hero and villain, with self-match rejection and a
+ * small recent-penalty bias to avoid immediate repeats.
+ *
+ * Returns `{ id, a, b }` — same shape as library matchups so callers can
+ * reuse recent-id tracking. `id` is the canonical key "{hero}_{villain}".
+ *
+ * @param {string[]} recentKeys most-recent first, capped by the caller
+ */
+export const pickRecipeMatchup = (recentKeys = []) => {
+  const recentSet = new Set(recentKeys);
+  // Reject-sample: up to 20 tries to avoid self-match + recent. In the
+  // unlikely case every attempt is a recent hit, fall through to a random
+  // non-self pair (with recent collision allowed).
+  for (let i = 0; i < 20; i++) {
+    const a = ALL_HAND_CLASSES[Math.floor(Math.random() * ALL_HAND_CLASSES.length)];
+    const b = ALL_HAND_CLASSES[Math.floor(Math.random() * ALL_HAND_CLASSES.length)];
+    if (a === b) continue;
+    const id = `${a}_${b}`;
+    if (!recentSet.has(id)) return { id, a, b };
+  }
+  // Fallback.
+  const a = ALL_HAND_CLASSES[Math.floor(Math.random() * ALL_HAND_CLASSES.length)];
+  let b = ALL_HAND_CLASSES[Math.floor(Math.random() * ALL_HAND_CLASSES.length)];
+  while (b === a) {
+    b = ALL_HAND_CLASSES[Math.floor(Math.random() * ALL_HAND_CLASSES.length)];
+  }
+  return { id: `${a}_${b}`, a, b };
+};
+
 /**
  * Score a user's equity estimate against ground truth.
  *   delta        = |user − truth|
