@@ -79,3 +79,50 @@ export const scoreFrameworkSelection = (pickedIds, trueIds) => {
   const correct = fp.length === 0 && fn.length === 0;
   return { correct, tp, fp, fn, precision, recall, f1 };
 };
+
+/**
+ * Score a Recipe Drill attempt — hero must compose:
+ *   1. The hero's *shape* id  (e.g., "ax-suited")
+ *   2. The *lane* id within that shape (e.g., "vs-unpaired-no-shared")
+ *   3. A final equity estimate
+ *
+ * Each step is scored independently so hero sees which part of the recipe
+ * they got right. Final-equity tolerance defaults to ±5% (matching
+ * Estimate Drill).
+ *
+ * @param {Object} params
+ * @param {string} params.pickedShapeId
+ * @param {string} params.pickedLaneId
+ * @param {number} params.pickedEquity     in [0, 1]
+ * @param {string} params.trueShapeId
+ * @param {string} params.trueLaneId
+ * @param {number} params.trueEquity        in [0, 1]
+ * @param {number} [params.equityTolerance=0.05]
+ */
+export const scoreRecipe = ({
+  pickedShapeId,
+  pickedLaneId,
+  pickedEquity,
+  trueShapeId,
+  trueLaneId,
+  trueEquity,
+  equityTolerance = 0.05,
+}) => {
+  const shapeCorrect = pickedShapeId === trueShapeId;
+  // Lane only counts if shape was right (lanes are scoped to shapes).
+  const laneCorrect = shapeCorrect && pickedLaneId === trueLaneId;
+  const equityDelta = Math.abs((pickedEquity ?? 0) - trueEquity);
+  const equityCorrect = equityDelta <= equityTolerance;
+  let stars = 0;
+  if (shapeCorrect) stars++;
+  if (laneCorrect) stars++;
+  if (equityCorrect) stars++;
+  return {
+    shapeCorrect,
+    laneCorrect,
+    equityCorrect,
+    equityDelta,
+    stars,             // 0–3
+    correct: stars === 3,
+  };
+};
