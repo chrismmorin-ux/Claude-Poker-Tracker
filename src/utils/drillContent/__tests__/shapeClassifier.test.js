@@ -9,7 +9,8 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { SHAPES, classifyHero, classifyLane } from '../shapes';
+import { SHAPES, classifyHero, classifyLane, detectApplicableModifiers } from '../shapes';
+import { parseHandClass } from '../../pokerCore/preflopEquity';
 
 const RANK_CHARS = '23456789TJQKA';
 
@@ -185,6 +186,69 @@ describe('shapeClassifier', () => {
     out = classifyLane('KQo', '54s');
     expect(out.shape.id).toBe('broadway-broadway');
     expect(out.lane?.id).toBe('vs-suited-connector');
+  });
+});
+
+describe('detectApplicableModifiers', () => {
+  // AKs vs JTo — pocket-pair-like structure doesn't apply; test via the Ax-suited
+  // lane "vs-unpaired-no-shared" which declares heroSuited + villainSuited modifiers.
+  test('hero suited alone picks up heroSuited only', () => {
+    const hero = parseHandClass('AKs');
+    const villain = parseHandClass('JTo');
+    const { lane } = classifyLane(hero, villain); // ax-suited / vs-unpaired-no-shared
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    expect(mods.has('heroSuited')).toBe(true);
+    expect(mods.has('villainSuited')).toBe(false);
+  });
+
+  test('both suited picks up hero + villain suited', () => {
+    const hero = parseHandClass('AKs');
+    const villain = parseHandClass('JTs');
+    const { lane } = classifyLane(hero, villain);
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    expect(mods.has('heroSuited')).toBe(true);
+    expect(mods.has('villainSuited')).toBe(true);
+  });
+
+  test('offsuit hero vs suited villain picks up villainSuited only', () => {
+    const hero = parseHandClass('AKo');
+    const villain = parseHandClass('JTs');
+    const { lane } = classifyLane(hero, villain); // ax-offsuit / vs-unpaired-no-shared
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    expect(mods.has('heroSuited')).toBe(false);
+    expect(mods.has('villainSuited')).toBe(true);
+  });
+
+  test('connectedness modifier fires for low-gap villain (classic-race-overs)', () => {
+    const hero = parseHandClass('77');
+    const villain = parseHandClass('AKo');
+    const { lane } = classifyLane(hero, villain);
+    expect(lane.id).toBe('classic-race-overs');
+    // AK is gap 0 (adjacent).
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    expect(mods.has('villainSuited')).toBe(false);
+    // classic-race-overs lane does NOT declare connectedness, so it's never
+    // returned — even though AK is adjacent.
+    expect(mods.has('connectedness')).toBe(false);
+  });
+
+  test('connectedness fires only if lane declares it', () => {
+    const hero = parseHandClass('T9s');
+    const villain = parseHandClass('AA'); // vs-overpair lane declares connectedness
+    const { lane } = classifyLane(hero, villain);
+    expect(lane.id).toBe('vs-overpair');
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    // Villain is a pair, so connectedness wouldn't fire anyway (pair has no gap).
+    expect(mods.has('connectedness')).toBe(false);
+  });
+
+  test('no-modifier lane returns empty set', () => {
+    const hero = parseHandClass('AKs');
+    const villain = parseHandClass('AA');
+    const { lane } = classifyLane(hero, villain);
+    expect(lane.id).toBe('vs-aa');
+    const mods = detectApplicableModifiers(hero, villain, lane);
+    expect(mods.size).toBe(0);
   });
 });
 

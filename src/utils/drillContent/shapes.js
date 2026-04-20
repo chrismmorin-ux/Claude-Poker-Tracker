@@ -1016,3 +1016,39 @@ export const classifyLane = (hero, villain) => {
  * Look up a shape by id.
  */
 export const getShape = (id) => SHAPES.find((s) => s.id === id) || null;
+
+/**
+ * Determine which of a lane's declared modifiers genuinely apply to this
+ * specific (hero, villain) matchup. Used by Recipe Drill's modifier step
+ * and by any UI surface that wants to say "these are the modifiers that
+ * actually kick in for this exact hand."
+ *
+ * Returns a Set<string> of modifier keys drawn from the lane's `modifiers`
+ * declaration. If the lane doesn't declare a modifier, it's never returned
+ * (even if the condition would fire).
+ *
+ * Rules (per modifier key):
+ *   - `heroSuited`:     hero is suited
+ *   - `villainSuited`:  villain is suited
+ *   - `flushDominator`: both suited AND hero's high rank > villain's high rank
+ *   - `flushDominated`: both suited AND hero's high rank < villain's high rank
+ *   - `connectedness`:  villain is unpaired with gap ≤ 1 (connector / 1-gap)
+ *
+ * @param {object} hero    parsed hand class
+ * @param {object} villain parsed hand class
+ * @param {object} lane    a shape lane (has .modifiers declaration)
+ * @returns {Set<string>}
+ */
+export const detectApplicableModifiers = (hero, villain, lane) => {
+  const out = new Set();
+  const mods = lane?.modifiers || {};
+  if ('heroSuited' in mods && hero.suited) out.add('heroSuited');
+  if ('villainSuited' in mods && villain.suited) out.add('villainSuited');
+  const bothSuited = hero.suited && villain.suited;
+  if ('flushDominator' in mods && bothSuited && hero.rankHigh > villain.rankHigh) out.add('flushDominator');
+  if ('flushDominated' in mods && bothSuited && hero.rankHigh < villain.rankHigh) out.add('flushDominated');
+  if ('connectedness' in mods && !villain.pair && (villain.rankHigh - villain.rankLow - 1) <= 1) {
+    out.add('connectedness');
+  }
+  return out;
+};

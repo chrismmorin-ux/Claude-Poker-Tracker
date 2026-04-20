@@ -186,7 +186,7 @@ describe('scheduler — scoreRecipe', () => {
     trueEquity: 0.62,
   };
 
-  test('all three correct → 3 stars + correct', () => {
+  test('all three correct (no modifier step) → 3 stars + correct', () => {
     const r = scoreRecipe({
       pickedShapeId: 'ax-suited',
       pickedLaneId: 'vs-unpaired-no-shared',
@@ -195,8 +195,10 @@ describe('scheduler — scoreRecipe', () => {
     });
     expect(r.shapeCorrect).toBe(true);
     expect(r.laneCorrect).toBe(true);
+    expect(r.modifiersCorrect).toBeNull();
     expect(r.equityCorrect).toBe(true);
     expect(r.stars).toBe(3);
+    expect(r.maxStars).toBe(3);
     expect(r.correct).toBe(true);
   });
 
@@ -248,5 +250,69 @@ describe('scheduler — scoreRecipe', () => {
       equityTolerance: 0.10,
     });
     expect(r.equityCorrect).toBe(true);
+  });
+
+  describe('modifier step', () => {
+    const fullTruth = {
+      trueShapeId: 'ax-suited',
+      trueLaneId: 'vs-unpaired-no-shared',
+      trueModifiers: ['heroSuited', 'villainSuited'],
+      trueEquity: 0.62,
+    };
+
+    test('all four correct → 4 stars + correct', () => {
+      const r = scoreRecipe({
+        pickedShapeId: 'ax-suited',
+        pickedLaneId: 'vs-unpaired-no-shared',
+        pickedModifiers: ['heroSuited', 'villainSuited'],
+        pickedEquity: 0.60,
+        ...fullTruth,
+      });
+      expect(r.stars).toBe(4);
+      expect(r.maxStars).toBe(4);
+      expect(r.modifiersCorrect).toBe(true);
+      expect(r.correct).toBe(true);
+    });
+
+    test('missing a modifier → modifiersCorrect false, fn populated', () => {
+      const r = scoreRecipe({
+        pickedShapeId: 'ax-suited',
+        pickedLaneId: 'vs-unpaired-no-shared',
+        pickedModifiers: ['heroSuited'], // missed villainSuited
+        pickedEquity: 0.60,
+        ...fullTruth,
+      });
+      expect(r.modifiersCorrect).toBe(false);
+      expect(r.modifierFn).toEqual(['villainSuited']);
+      expect(r.modifierTp).toEqual(['heroSuited']);
+      expect(r.stars).toBe(3);
+    });
+
+    test('extra modifier → modifiersCorrect false, fp populated', () => {
+      const r = scoreRecipe({
+        pickedShapeId: 'ax-suited',
+        pickedLaneId: 'vs-unpaired-no-shared',
+        pickedModifiers: ['heroSuited', 'villainSuited', 'connectedness'],
+        pickedEquity: 0.60,
+        ...fullTruth,
+      });
+      expect(r.modifiersCorrect).toBe(false);
+      expect(r.modifierFp).toEqual(['connectedness']);
+    });
+
+    test('empty truth + empty picked → correct (no modifiers apply)', () => {
+      const r = scoreRecipe({
+        pickedShapeId: 'ax-suited',
+        pickedLaneId: 'vs-aa',
+        pickedModifiers: [],
+        pickedEquity: 0.10,
+        trueShapeId: 'ax-suited',
+        trueLaneId: 'vs-aa',
+        trueModifiers: [],
+        trueEquity: 0.10,
+      });
+      expect(r.modifiersCorrect).toBe(true);
+      expect(r.correct).toBe(true);
+    });
   });
 });

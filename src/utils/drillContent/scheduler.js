@@ -151,45 +151,80 @@ export const scoreFrameworkSelection = (pickedIds, trueIds) => {
  * Score a Recipe Drill attempt — hero must compose:
  *   1. The hero's *shape* id  (e.g., "ax-suited")
  *   2. The *lane* id within that shape (e.g., "vs-unpaired-no-shared")
- *   3. A final equity estimate
+ *   3. The *set of applicable modifiers* (hero-suited, villain-suited, etc.)
+ *   4. A final equity estimate
  *
  * Each step is scored independently so hero sees which part of the recipe
- * they got right. Final-equity tolerance defaults to ±5% (matching
- * Estimate Drill).
+ * they got right. The modifier step is optional — if `trueModifiers` is
+ * undefined, only 3 steps are scored (legacy Recipe behaviour preserved).
+ * Final-equity tolerance defaults to ±5%.
+ *
+ * Modifier scoring: exact-set match (no F1, no partial credit). If the lane
+ * had NO applicable modifiers AND the user selected none, that counts as
+ * correct (the user correctly observed "no modifiers apply here").
  *
  * @param {Object} params
  * @param {string} params.pickedShapeId
  * @param {string} params.pickedLaneId
+ * @param {string[]} [params.pickedModifiers]   modifier keys user selected
  * @param {number} params.pickedEquity     in [0, 1]
  * @param {string} params.trueShapeId
  * @param {string} params.trueLaneId
+ * @param {string[]} [params.trueModifiers]     modifier keys that apply
  * @param {number} params.trueEquity        in [0, 1]
  * @param {number} [params.equityTolerance=0.05]
  */
 export const scoreRecipe = ({
   pickedShapeId,
   pickedLaneId,
+  pickedModifiers,
   pickedEquity,
   trueShapeId,
   trueLaneId,
+  trueModifiers,
   trueEquity,
   equityTolerance = 0.05,
 }) => {
   const shapeCorrect = pickedShapeId === trueShapeId;
   // Lane only counts if shape was right (lanes are scoped to shapes).
   const laneCorrect = shapeCorrect && pickedLaneId === trueLaneId;
+
+  // Modifier step is opt-in. If trueModifiers is undefined, skip it.
+  const hasModifierStep = Array.isArray(trueModifiers);
+  let modifiersCorrect = null;
+  let modifierTp = [];
+  let modifierFp = [];
+  let modifierFn = [];
+  if (hasModifierStep) {
+    const picked = new Set(pickedModifiers || []);
+    const truth = new Set(trueModifiers);
+    modifierTp = [...truth].filter((k) => picked.has(k));
+    modifierFp = [...picked].filter((k) => !truth.has(k));
+    modifierFn = [...truth].filter((k) => !picked.has(k));
+    modifiersCorrect = modifierFp.length === 0 && modifierFn.length === 0;
+  }
+
   const equityDelta = Math.abs((pickedEquity ?? 0) - trueEquity);
   const equityCorrect = equityDelta <= equityTolerance;
+
+  const stepCount = hasModifierStep ? 4 : 3;
   let stars = 0;
   if (shapeCorrect) stars++;
   if (laneCorrect) stars++;
+  if (hasModifierStep && modifiersCorrect) stars++;
   if (equityCorrect) stars++;
+
   return {
     shapeCorrect,
     laneCorrect,
+    modifiersCorrect,       // null when step is skipped
+    modifierTp,
+    modifierFp,
+    modifierFn,
     equityCorrect,
     equityDelta,
-    stars,             // 0–3
-    correct: stars === 3,
+    stars,                  // 0–3 or 0–4 depending on step count
+    maxStars: stepCount,
+    correct: stars === stepCount,
   };
 };
