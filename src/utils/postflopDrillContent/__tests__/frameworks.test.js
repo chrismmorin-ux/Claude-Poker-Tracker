@@ -17,9 +17,9 @@ import { archetypeRangeFor } from '../archetypeRanges';
 const flop = (...cards) => parseBoard(cards);
 
 describe('frameworks — registry', () => {
-  test('7 frameworks registered, order matches map', () => {
-    expect(Object.keys(FRAMEWORKS)).toHaveLength(7);
-    expect(FRAMEWORK_ORDER).toHaveLength(7);
+  test('14 frameworks registered (7 base + 7 multiway), order matches map', () => {
+    expect(Object.keys(FRAMEWORKS)).toHaveLength(14);
+    expect(FRAMEWORK_ORDER).toHaveLength(14);
     for (const fw of FRAMEWORK_ORDER) {
       expect(Object.values(FRAMEWORKS)).toContain(fw);
     }

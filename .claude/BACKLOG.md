@@ -25,6 +25,53 @@ _All R6/R7/R8 roundtable findings closed across Phases A, B, C, and D (2026-04-1
 
 ---
 
+## REVIEW — Drills Consolidation Roundtable (2026-04-20)
+
+6-expert audit on `docs/projects/drills-consolidation.project.md`. Proposal held pending (a) Line Study closure, (b) design-doc defect fixes, (c) `_shared` barrel creation. All items REVIEW until owner approves via `/backlog approve <id>`. Full facilitator synthesis retained for executive briefing.
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| RT-92 | P1 | REVIEW | Block drills-consolidation until Line Study closes | LS-4..6 DONE + `.claude/handoffs/line-study.md` closed before any Phase 1 work begins. Owner verifies: BACKLOG shows LS-4..6 COMPLETE; handoff file archived or absent | — |
+| RT-93 | P1 | REVIEW | Fix design-doc defects before execution | Proposal doc updated: (a) `ViewRouter.jsx` replaced with `PokerTracker.jsx:109-110`, (b) file-move tally re-enumerated, (c) effort revised to 5–7 sessions, (d) Learn scope split, (e) LS gating enforced, (f) street-filter default specified, (g) dev-preview gating defined. Owner verifies: new revision of the proposal doc reflects all 7 fixes | — |
+| RT-94 | P1 | REVIEW | Create `src/components/_shared/drillInternals/` barrel | Move `RangeFlopBreakdown`, `MatchupBreakdown`, `HandPicker`, `LessonCalculators`, `FRAMEWORK_COLOR` into shared location; update all importers. Owner verifies: grep shows no `views/P*DrillsView/<helper>` sibling imports; tests green | — |
+| RT-95 | P1 | REVIEW | INV-08 violation: lessons.test.js imports from views/ | `src/utils/drillContent/__tests__/lessons.test.js` currently imports `LessonCalculators.jsx` from views/; extract pure calculators to utils/. Owner verifies: `grep "from.*views.*Calculators" src/utils/` returns 0 hits; test still passes | — |
+| RT-96 | P2 | REVIEW | Prototype pollution in aggregateFrameworkAccuracy | `src/utils/persistence/preflopDrillsStorage.js:108` uses `const out = {}`; replace with `Object.create(null)` + basic shape guard. Owner verifies: function returns object without prototype chain; tampered IDB record does not mutate Object.prototype (tested) | — |
+| RT-97 | P2 | REVIEW | Chrome budget audit at 1600×720 for composite tab views | Measure current drills chrome (~120px) and worst-case StudyView chrome (tab bar + filter + picker). Owner verifies: arithmetic shows content area ≥ 580px with two-pane Modes; else proposal blocked | — |
+| RT-98 | P2 | REVIEW | Street-filter persistence + default spec | Persisted per-tab last-used street OR deep-link intent from SessionsView. Owner verifies: open Explore twice in a row — second open lands on last-used street, not a default | — |
+| RT-99 | P2 | REVIEW | Dev-preview route gating for StudyView scaffold | `import.meta.env.DEV && localhost`-only access; `PokerTracker.jsx` switch rejects preview SCREEN in production bundle. Owner verifies: `npm run build && npx serve dist` + console `dispatch SET_SCREEN study` → no render | — |
+| RT-100 | P2 | REVIEW | Normalize aggregate return shapes (preflop vs postflop) | Confirm `avgDelta` parity between `aggregateFrameworkAccuracy` and `aggregatePostflopFrameworkAccuracy`; unify or document shape contract. Owner verifies: both functions documented with identical keyset or explicit differ-list | — |
+| RT-101 | P2 | REVIEW | drillType history key mismatch (recipe vs line) | `drillType='recipe'` uses `matchupKey`; `drillType='line'` uses `scenarioKey`. Spec a single identifier convention before any unified drill history UI. Owner verifies: documented convention in STATE_SCHEMA or a new drill-history ADR | — |
+| RT-102 | P3 | REVIEW | SCREEN enum freeze + deprecation log in uiReducer | Two-step delete protocol: (1) mark deprecated, (2) sweep all `prevScreen` refs, (3) delete. Owner verifies: `uiConstants.js` has deprecation comment pattern; uiReducer has `default:` fallback in currentView switch | — |
+| RT-103 | P3 | REVIEW | ESLint rule: utils/ must not import from views/ | Mechanical enforcement of INV-08. Owner verifies: adding `import` from views/ into a utils test fails lint | — |
+| RT-104 | P3 | REVIEW | Hoisted-persistence-hook pattern doc | `.claude/context/` note: parent owns hook, child modes render handed-down state. Owner verifies: doc exists at `.claude/context/PERSISTENCE_HOOK_HOISTING.md` (or similar) | — |
+| RT-105 | P3 | REVIEW | Height-contract documentation | Which containers own `h-full` + `overflow-hidden` in composite views. Owner verifies: doc enumerates the contract for drills views before StudyView is prototyped | — |
+
+**Recommended sequence (if owner approves):**
+1. Close Line Study (LS-1..6).
+2. Execute RT-94 (`_shared` barrel), RT-95 (INV-08 fix), RT-96 (proto pollution) as preparation — these pay off regardless of consolidation.
+3. Owner revises proposal doc per RT-93.
+4. Owner decides Line Study peer-tab vs. nested-in-Drill based on content roadmap (≥5 authored lines planned in next 2 sessions → peer-tab defensible).
+5. Re-roundtable the revised proposal before scaffolding any Phase 1 work.
+
+---
+
+## IN_PROGRESS — Line Study (LS)
+
+Owner-approved 2026-04-20. New Postflop Drills tab: branching street-by-street hand walkthroughs with Study Priority Index and multiway coverage. Charter: `docs/projects/line-study.project.md`. Handoff: `.claude/handoffs/line-study.md`.
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LS-1 | P1 | COMPLETE | **Data layer + first line** — `lineSchema.js` with schema + validator + DAG walker (`walkLine`, `lineStats`), `lines.js` with first authored HU line (BTN vs BB SRP dry Q72r, 11 nodes: 6 decision + 5 terminal, full flop/turn/river branching). 48 tests all green. Shipped 2026-04-20. | ✓ Schema rejects 20+ malformed variants; ✓ first line has 0 unreachable nodes; ✓ 153/153 `postflopDrillContent` tests green | Shipped |
+| LS-2 | P1 | COMPLETE | **Line Mode UI scaffold** — Line tab on PostflopDrillsView + 7 new UI files (LineMode, LinePicker, LineWalkthrough, LineStateTracker, LineNodeRenderer, LineBranchBreadcrumb, section dispatcher w/ prose/why/adjust/mismatch accents). Persistence wired (drillType='line'). Full flop → turn → river → terminal walk verified at 1600×720. Shipped 2026-04-20. | ✓ Flop node renders with state tracker; ✓ decision reveals all branch rationales; ✓ advance threads correctly; ✓ terminal shows end-of-line panel; ✓ IDB query confirms 3 attempts captured | Shipped |
+| LS-3 | P1 | COMPLETE | **Full branching + second line** — Breadcrumb retry-from-node (clickable past pills truncate path + clear reveal). Second line authored: BTN vs BB 3BP Wet T♥9♥6♠ villain donks, 12 nodes (5 decision + 7 terminal), 15 branches. Explicit coverage: "missed bluff → facing river aggression" (`river_checkback`) + "overbet → check-raise" (`river_brick_v_checkraises`). Shipped 2026-04-20. | ✓ 157/157 tests green; ✓ both paths walk clean in browser; ✓ retry-from-breadcrumb truncates correctly | Shipped |
+| LS-4 | P1 | COMPLETE | **Study Priority Index** — `studyPriorityIndex.js` module (population constants + reach-probability DAG walker + SPI formula + `explainSPI` + `lineMatchesFilters`). SPIBadge + SPITooltip components. LinePicker: SPI/Title/Nodes sort toggle, HU/MW filter, pot-type chips, board-texture chips, empty state. Shipped 2026-04-20. | ✓ 176/176 tests green; ✓ SPI badges render in picker (80 / 139); ✓ tooltip shows 3-factor breakdown + dominant node; ✓ filter narrows correctly | Shipped |
+| LS-5 | P1 | COMPLETE | **Multiway data + frameworks** — `multiwayFrameworks.js` with 7 frameworks merged into main registry. First MW line: BTN vs SB + BB 3-way SRP J♠8♥5♦ (10 nodes, 4 decisions, 12 branches). SPI `multiwayBoost()` factor. LineStateTracker pluralizes "Villains". MW filter narrows picker; MW frameworks auto-classify on MW scenarios. Shipped 2026-04-20. | ✓ 180/180 tests green; ✓ MW line walks clean; ✓ 5 framework chips render on MW flop node (4 MW + 1 base); ✓ MW filter narrows picker to just the MW line | Shipped |
+| LS-6 | P1 | COMPLETE | **MW curriculum + line matrix fill** — 6 MW lessons (mw-bluff-death, mw-nut-necessity, mw-srp-3way, mw-squeeze, mw-cbet-shifts, mw-overcalling). 5 new lines: CO vs BB SRP OOP paired, SB vs BTN 3BP OOP wet, UTG vs BTN 4BP deep, CO vs BTN+BB 3-way SRP OOP, UTG facing squeeze. Final: 8 lines (5 HU + 3 MW), 85+ nodes. Shipped 2026-04-20. | ✓ 200/200 tests green; ✓ every MW framework on ≥1 line node; ✓ 6 MW lessons published; ✓ picker shows 8 lines sorted by SPI | Shipped |
+
+**Line Study PROJECT COMPLETE 2026-04-20.** All 6 phases shipped in one day: schema + UI + branching + SPI + multiway + curriculum. Final deliverables: 3 core modules (`lineSchema`, `lines`, `studyPriorityIndex`) + `multiwayFrameworks` + 7 UI components (`LineMode`, `LinePicker`, `LineWalkthrough`, `LineStateTracker`, `LineNodeRenderer`, `LineBranchBreadcrumb`, `SPIBadge`, `SPITooltip`), 8 authored lines (5 HU + 3 MW) totaling 85+ nodes, 6 MW lessons, 14 frameworks (7 base + 7 MW). 200/200 postflop drill tests green. Unblocks RT-92 (drills-consolidation gating item).
+
+---
+
 ## IN_PROGRESS — Player Entry Overhaul (PEO)
 
 Owner-approved 2026-04-16. 4-session program to rebuild live-table player selection UX for mobile-landscape casino use. Plan: `C:\Users\chris\.claude\plans\fluttering-booping-puddle.md`. Charter: `.claude/projects/player-entry-overhaul.md`. Sequenced as S1 data-layer → S2 editor → S3 picker + wire entries → S4 cutover + cleanup. No feature flags per CLAUDE.md — staging handles rollout.

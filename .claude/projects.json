@@ -10,6 +10,16 @@
       "phasesComplete": 4,
       "status": "paused",
       "description": "Optional Firebase Auth, guest mode preserved"
+    },
+    {
+      "id": "line-study",
+      "name": "Line Study — Branching Hand Walkthroughs with SPI and Multiway",
+      "file": "docs/projects/line-study.project.md",
+      "priority": "P1",
+      "phases": 6,
+      "phasesComplete": 6,
+      "status": "active",
+      "description": "New Postflop Drills tab: branching street-by-street walkthroughs with Study Priority Index and multiway coverage. 5 HU + 3 MW lines, 7 MW frameworks, 6 MW lessons."
     }
   ],
   "pending": [],
@@ -102,5 +112,5 @@
       "completedAt": "2025-12-09"
     }
   ],
-  "lastUpdated": "2026-04-04"
+  "lastUpdated": "2026-04-20"
 }

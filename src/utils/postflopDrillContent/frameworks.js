@@ -35,6 +35,7 @@ import {
 } from './handTypeBreakdown';
 import { analyzeBoardTexture } from '../pokerCore/boardTexture';
 import { cardRank, parseBoard } from '../pokerCore/cardParser';
+import { MULTIWAY_FRAMEWORKS, MULTIWAY_FRAMEWORK_ORDER } from './multiwayFrameworks';
 
 // ---------- Helpers ---------- //
 
@@ -412,6 +413,7 @@ export const FRAMEWORKS = {
   BOARD_TILT,
   CAPPED_RANGE_CHECK,
   WHIFF_RATE,
+  ...MULTIWAY_FRAMEWORKS,
 };
 
 export const FRAMEWORK_ORDER = [
@@ -422,6 +424,7 @@ export const FRAMEWORK_ORDER = [
   BOARD_TILT,
   CAPPED_RANGE_CHECK,
   WHIFF_RATE,
+  ...MULTIWAY_FRAMEWORK_ORDER,
 ];
 
 /**

@@ -19,8 +19,10 @@ import { EstimateMode } from './EstimateMode';
 import { FrameworkMode } from './FrameworkMode';
 import { LibraryMode } from './LibraryMode';
 import { LessonsMode } from './LessonsMode';
+import { LineMode } from './LineMode';
 
 const TABS = [
+  { id: 'line',      label: 'Line' },
   { id: 'explorer',  label: 'Explorer' },
   { id: 'estimate',  label: 'Estimate Drill' },
   { id: 'framework', label: 'Framework Drill' },
@@ -72,6 +74,7 @@ export const PostflopDrillsView = ({ scale }) => {
 
         {/* Mode content */}
         <div className="flex-1 px-8 pt-6 pb-6 overflow-hidden">
+          {activeTab === 'line'      && <LineMode />}
           {activeTab === 'explorer'  && <ExplorerMode />}
           {activeTab === 'estimate'  && <EstimateMode />}
           {activeTab === 'framework' && <FrameworkMode />}

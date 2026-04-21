@@ -1,12 +1,12 @@
 # Project Status
 
-Last updated: 2026-04-16 by Claude (STP-1 closed — Sidebar Trust Program phase 2 shipped 5 stages. PEO program CLOSED earlier same day. Extension 1,974 tests, main app 5,623 tests.)
+Last updated: 2026-04-20 by Claude (**Line Study PROJECT COMPLETE** — all 6 phases shipped in one day. 8 lines (5 HU + 3 MW, 85+ nodes), 6 MW lessons, 7 MW frameworks, SPI engine, branching DAG UI with retry-from-node, persistence, 200/200 postflop drill tests green. Unblocks RT-92 (drills-consolidation gating item).).
 
 ---
 
 ## Active Sessions
 
-_None._
+_None — Line Study closed 2026-04-20._
 
 ## Recently Completed
 
@@ -34,15 +34,16 @@ _None._
 
 ## Pending Review
 
-**None.** 24 items from 2026-04-15 roundtable reviewed by owner — 20 approved to NEXT, 4 deferred to LATER. Approved work organised as **Sidebar Trust Program (SRT-1..SRT-4)**: P0 root-cause cluster → doctrine amendments + pre-dispatch gate → sequence-mode replay harness → hardening/UX. See BACKLOG.md.
+**14 items from 2026-04-20 Drills Consolidation Roundtable (RT-92..RT-105).** Severity breakdown: 4× P1, 6× P2, 4× P3. Top-priority blockers (P1): RT-92 (gate Phase 1 on Line Study closure), RT-93 (fix 7 design-doc defects including phantom `ViewRouter.jsx` reference, incomplete file-move tally, and 2× effort underestimate), RT-94 (create `src/components/_shared/drillInternals/` barrel before consolidation), RT-95 (resolve pre-existing INV-08 violation at `lessons.test.js`). Proposal `docs/projects/drills-consolidation.project.md` HELD pending owner approval of these. See BACKLOG.md § "REVIEW — Drills Consolidation Roundtable (2026-04-20)".
 
 ---
 
 ## Alerts
 
+- **Drills Consolidation: REVIEW** — 14 findings from 2026-04-20 roundtable pending owner approval. No P0 items; top blockers are P1 design-doc defects (RT-92/93/94/95). Proposal HELD — do NOT scaffold `StudyView` until (a) Line Study closes, (b) design-doc defects fixed, (c) `_shared` barrel created.
 - **UI Quality: YELLOW** — Owner reports S1–S5 symptoms recurring post-cutover; 6 P0 findings identify structural gaps (SW-cache replay without companion live-context, invariant check post-render not pre-dispatch, renderKey missing freshness/violation fields, `renderBetweenHands` dual-owner persists, `refreshHandStats` async gap). Program premise sound but under-specified in three places (FSM output exclusivity, pre-dispatch invariant gate, sequence-level replay corpus).
 - **Test Health: GREEN** — Sidebar replay corpus + per-zone coverage + 3 automated doctrine lint gates established. Message-level integration coverage shipped under SR-6.
-- **Security: GREEN** — All Phase A security items closed.
+- **Security: GREEN** — All Phase A security items closed. Roundtable surfaced one pre-existing low-severity item (prototype pollution in `aggregateFrameworkAccuracy`, RT-96); trivial fix.
 - **Product Correctness: GREEN** — All cited Phase A/B/C/D items shipped.
 
 ---

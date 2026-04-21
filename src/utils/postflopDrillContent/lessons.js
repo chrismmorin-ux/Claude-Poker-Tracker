@@ -265,6 +265,192 @@ export const LESSONS = [
       },
     ],
   },
+
+  // ======================================================================
+  // MULTIWAY LESSONS
+  // ======================================================================
+  {
+    id: 'mw-bluff-death',
+    title: 'Why Bluffs Die in Multiway',
+    frameworkId: 'fold_equity_compression',
+    summary: 'Fold equity compounds multiplicatively. One extra villain is a catastrophe for pure bluffs.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'The Core Math',
+        body:
+          'Heads-up, a bluff needs the villain to fold some % of the time. Multiway, it needs ALL villains to fold — their fold rates multiply. If each villain independently folds 60% of the time to your cbet, all-folds happens 60% × 60% = 36% HU vs the combined two villains. With three villains it drops to 21.6%. The pure-bluff EV curve collapses rapidly as N grows.',
+      },
+      {
+        kind: 'formula',
+        body: 'P(all_fold) = ∏_i P(fold_i) — geometrically shrinks with N',
+      },
+      {
+        kind: 'prose',
+        heading: 'Practical implication',
+        body:
+          'At a 3-way flop on a board where each villain would call ~50% of the time HU, a pure bluff succeeds 25% of the time when you assume independence. Required fold equity for break-even at 33% pot is ~25% — you are at the razor edge of breakeven with a typical call rate. Add in the fact that combined ranges dominate more hands, and pure bluffs are structurally -EV almost everywhere multiway.',
+      },
+      {
+        kind: 'prose',
+        heading: 'What still works',
+        body:
+          'SEMI-BLUFFS — hands with fold equity PLUS equity when called — retain value multiway because the realized-equity branch compensates for the compressed fold equity. Flush draws, open-enders, combo draws can still bet because even when one villain continues, you have 35%+ to improve and win a large pot. Pure air (no equity when called) is where the leak lives.',
+      },
+      {
+        kind: 'example',
+        context: { position: 'BTN', action: 'open' },
+        board: 'Js 8h 5d',
+        takeaway:
+          'BTN opens wide, both blinds flat. On J85r, BTN\'s HU whiff rate might be 35%, but his "bluff combo" count 3-way is far smaller — only hands with backdoor equity (A2s-A5s backdoor-flush, suited connectors) retain positive bluff EV. Pure air hands (KQo, QJo offsuit) should check back.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-nut-necessity',
+    title: 'Nut Necessity & Value Shrinkage',
+    frameworkId: 'nut_necessity',
+    summary: 'Multiway: someone always has it. Thin value becomes -EV; nut hands get bigger payoffs.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'The Core Idea',
+        body:
+          'A hand that\'s 65% vs one villain\'s continuing range is NOT 65% vs two combined continuing ranges. The probability "someone has me beat" rises geometrically with N. Middle pair that prints a profit HU on a thin value bet is often break-even 3-way and -EV 4-way+. The value threshold must tighten.',
+      },
+      {
+        kind: 'formula',
+        body: 'P(best_hand | MW) ≈ P(best_vs_1)^N (approximate — depends on range correlation)',
+      },
+      {
+        kind: 'prose',
+        heading: 'The flip side — nut hands gain',
+        body:
+          'If you DO have the nuts or near-nuts, multiway is a gift. More callers = more total money to extract. Sets, straights, flushes on wet boards play MUCH bigger multiway because multiple villains are likely drawing or have one-pair hands that will pay off. Bet larger sizings; build the pot.',
+      },
+      {
+        kind: 'example',
+        context: { position: 'BTN', action: 'open' },
+        board: 'Ah 9s 4c',
+        takeaway:
+          'TPTK AJ vs one villain: thin value bet on the river prints. Vs two villains: TPTK on a river where both villains called flop + turn is often behind — someone has a set, two-pair, or better ace. Bet small or check.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-srp-3way',
+    title: 'The SRP 3-way Spot',
+    frameworkId: 'hand_class_shift',
+    summary: 'Most common multiway scenario — BTN opens, both blinds call. Study this most.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'Why this matters most',
+        body:
+          'Across live 1/2 and 2/5 cash, the most-frequent multiway situation is BTN open, SB + BB both cold-call, 3-way SRP. If you play 1000 hands, this spot occurs 30-50 times depending on table composition. HU-optimized intuition mis-solves it systematically.',
+      },
+      {
+        kind: 'prose',
+        heading: 'Recalibration checklist',
+        body:
+          '1. CBET FREQUENCY drops ~40% vs HU. Default "cbet 75% of range" becomes "cbet 35%".\n'
+          + '2. CBET SIZING polarizes. Merged 33% cbets lose money multiway; use 50-60% with polar range.\n'
+          + '3. BLUFFS need equity. Pure air is -EV; semi-bluffs still break even or profit.\n'
+          + '4. VALUE TIGHTENS. Middle pair → check-call; top pair weak → bet-fold; TPTK → bet-call.\n'
+          + '5. POSITION MAGNIFIES. IP in MW is worth even more than HU — you see both villains act before deciding.',
+      },
+      {
+        kind: 'example',
+        context: { position: 'BTN', action: 'open' },
+        board: 'Js 8h 5d',
+        takeaway:
+          'Full worked 3-way line in Line Mode: "BTN vs BB + SB · 3-way SRP · J♠8♥5♦". Walk it end-to-end — it\'s the reference multiway study spot.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-squeeze',
+    title: 'Squeezing vs Flatting With Callers Behind',
+    frameworkId: 'squeeze_geometry',
+    summary: 'Open + cold-call creates pot odds that make a squeeze uniquely +EV. Flats narrow.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'The Geometry',
+        body:
+          'When a player opens and at least one other cold-calls before you, the pot contains dead money (blinds) plus two stackless contributions. A squeeze (re-raise) needs less fold equity to break even because more chips are already in the pot. The "standard 3bet size" shape and sizing both shift.',
+      },
+      {
+        kind: 'formula',
+        body: 'Squeeze EV = P(all_fold) × pot + (1 - P(all_fold)) × [continue_EV - squeeze_risk]',
+      },
+      {
+        kind: 'prose',
+        heading: 'Facing a squeeze with caller behind',
+        body:
+          'When you are the original raiser + a cold-caller flatted + a squeezer makes it large — you are sandwiched. The caller\'s range is now narrow (they flatted twice instead of 3-betting or folding, so likely pocket pairs / suited broadways), and they can over-squeeze. Default: call pre only with hands that dominate both ranges (QQ+/AK), fold the rest. 4-bet is the most common positive-EV response with top of range.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-cbet-shifts',
+    title: 'C-bet Frequency on Textured Boards in Multiway',
+    frameworkId: 'bluff_frequency_collapse',
+    summary: 'Paired, low, and wet boards all have different MW cbet recalibrations.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'Paired boards (KK7, QQ3)',
+        body:
+          'HU: paired boards love wide cbets — villain\'s flatting range whiffs hard. Multiway: STILL love wide cbets for the same reason, but sizing drops to 25-33% because we\'re bluffing into multiple narrow continuing ranges. Paired-board whiff-rate is high enough that even 3-way, small cbets profit.',
+      },
+      {
+        kind: 'prose',
+        heading: 'Low-connected boards (654, 875)',
+        body:
+          'HU: BTN range whiffs these; defender has range advantage. Multiway: EVEN WORSE for BTN because two villains combined have more of the small-pair + suited-connector combos that connect. Cbet frequency drops to ~20-25% with only the strongest value and best combo draws.',
+      },
+      {
+        kind: 'prose',
+        heading: 'Wet boards (JT9, 987ss)',
+        body:
+          'HU: polar-value sizing (75%+) with strong hands and semi-bluffs. Multiway: ONLY bet with genuine nuts or near-nuts. The equity redistribution on wet boards in MW is brutal — someone has a straight, or a flush draw that you can\'t fold out. Check back TPTK type hands for pot control.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-overcalling',
+    title: 'Overcalling Theory',
+    frameworkId: 'fold_equity_compression',
+    summary: 'Third-in-pot decisions: cheaper price, but equity redistribution is brutal.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'The situation',
+        body:
+          'A player bets, another player calls, and now you\'re deciding whether to call as the third player. Pot odds are BETTER than for the first caller (more dead money), but the call range that worked HU is wrong here. You now need equity that clears both villains AND backs out of bad turn spots.',
+      },
+      {
+        kind: 'formula',
+        body:
+          'Overcall threshold: equity_vs_both_ranges > pot_odds × realization_penalty — where realization penalty is higher than HU (roughly 0.8× instead of 0.85× IP).',
+      },
+      {
+        kind: 'prose',
+        heading: 'When to overcall',
+        body:
+          '1. Clear nut draws (combo draw, open-ender with flush draw) — implied odds are large multiway.\n'
+          + '2. Small pairs set-mining, if stacks are deep enough (SPR > 6) to realize the set-mine.\n'
+          + '3. Clear dominance hands (TPTK on a dry board, overpair vs flop lead).\n'
+          + '\nDon\'t overcall with middling weak hands like KJo on JT7tt — two villains likely have you beat or drawing dead, and you can\'t stand a turn bet.',
+      },
+    ],
+  },
 ];
 
 /**
