@@ -94,6 +94,15 @@ const villainSplit     = (v, rank) => !v.pair && v.rankHigh > rank && v.rankLow 
 
 const POCKET_PAIR_LANES = [
   {
+    id: 'vs-same-pair-mirror',
+    villainDesc: 'Same pocket pair (card-removal coin flip)',
+    matches: (v, h) => v.pair && v.rankHigh === h.rankHigh,
+    baseEquity: 0.50,
+    band: [0.49, 0.51],
+    modifiers: {},
+    representatives: ['AA', 'JJ', '22'],
+  },
+  {
     id: 'higher-pair',
     villainDesc: 'Higher pocket pair (crushed)',
     matches: (v, h) => villainIsHigherPairThan(v, h.rankHigh),
@@ -175,6 +184,15 @@ const AX_SUITED_LANES = [
     representatives: ['AA'],
   },
   {
+    id: 'vs-mirror-suited',
+    villainDesc: 'Same ranks, both suited (different suits — card-removal coin flip)',
+    matches: (v, h) => !v.pair && v.suited && v.rankHigh === h.rankHigh && v.rankLow === h.rankLow,
+    baseEquity: 0.50,
+    band: [0.49, 0.51],
+    modifiers: {},
+    representatives: ['AKs', 'A5s'],
+  },
+  {
     id: 'vs-mirror-offsuit',
     villainDesc: 'Same ranks offsuit (AJs vs AJo — essentially a tie, you hold the flush edge)',
     matches: (v, h) => !v.pair && !v.suited && v.rankHigh === h.rankHigh && v.rankLow === h.rankLow,
@@ -249,15 +267,6 @@ const AX_SUITED_LANES = [
     modifiers: { villainSuited: -0.035, heroSuited: +0.02 },
     representatives: ['KQo', 'JTo', '98s', '54s', 'QJs'],
   },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all; equity varies)',
-    matches: () => true,
-    baseEquity: 0.50,
-    band: [0.20, 0.80],
-    modifiers: {},
-    representatives: [],
-  },
 ];
 
 const AX_OFFSUIT_LANES = [
@@ -269,6 +278,15 @@ const AX_OFFSUIT_LANES = [
     band: [0.06, 0.12],
     modifiers: {},
     representatives: ['AA'],
+  },
+  {
+    id: 'vs-mirror-offsuit',
+    villainDesc: 'Same ranks, both offsuit (different suit pairings — card-removal coin flip)',
+    matches: (v, h) => !v.pair && !v.suited && v.rankHigh === h.rankHigh && v.rankLow === h.rankLow,
+    baseEquity: 0.50,
+    band: [0.49, 0.51],
+    modifiers: {},
+    representatives: ['AKo', 'A5o'],
   },
   {
     id: 'vs-mirror-suited',
@@ -343,15 +361,6 @@ const AX_OFFSUIT_LANES = [
     band: [0.48, 0.70],
     modifiers: { villainSuited: -0.035 },
     representatives: ['KQo', 'JTs', '98s', '54o'],
-  },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.50,
-    band: [0.20, 0.80],
-    modifiers: {},
-    representatives: [],
   },
 ];
 
@@ -485,20 +494,47 @@ const BROADWAY_BROADWAY_LANES = [
     representatives: ['87o', '76o', '65o'],
   },
   {
+    id: 'vs-lower-broadway-no-shared',
+    villainDesc: 'Lower broadway villain (T or J high), no shared rank — you dominate with your high cards',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh < h.rankHigh && v.rankHigh >= T,
+    baseEquity: 0.66,
+    band: [0.55, 0.72],
+    modifiers: {},
+    representatives: ['JTs', 'JTo', 'T9s'],
+  },
+  {
+    id: 'vs-straddle-non-ax',
+    villainDesc: 'Non-Ax villain straddling your range (one over, one under), no shared rank',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow < h.rankLow,
+    baseEquity: 0.45,
+    band: [0.39, 0.50],
+    modifiers: {},
+    representatives: ['KTs', 'KTo'],
+  },
+  {
+    id: 'vs-one-over-one-within-non-ax',
+    villainDesc: 'Non-Ax villain with one card over you, one between your ranks (dominator), no shared',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow > h.rankLow && v.rankLow < h.rankHigh,
+    baseEquity: 0.38,
+    band: [0.34, 0.42],
+    modifiers: {},
+    representatives: ['KJs', 'KJo'],
+  },
+  {
+    id: 'vs-two-overs-non-ax',
+    villainDesc: 'Non-Ax villain with both cards over your high card, no shared rank',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankLow > h.rankHigh,
+    baseEquity: 0.36,
+    band: [0.33, 0.40],
+    modifiers: {},
+    representatives: ['KQs', 'KQo'],
+  },
+  {
     id: 'vs-middle-unpaired-shared',
     villainDesc: 'Middle unpaired hand sharing one of your ranks (mixed structure)',
     matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) >= 0,
     baseEquity: 0.50,
     band: [0.30, 0.75],
-    modifiers: {},
-    representatives: [],
-  },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.55,
-    band: [0.25, 0.75],
     modifiers: {},
     representatives: [],
   },
@@ -622,15 +658,6 @@ const KX_NON_BROADWAY_LANES = [
     modifiers: {},
     representatives: [],
   },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.55,
-    band: [0.25, 0.80],
-    modifiers: {},
-    representatives: [],
-  },
 ];
 
 const SUITED_CONNECTOR_LANES = [
@@ -698,6 +725,33 @@ const SUITED_CONNECTOR_LANES = [
     representatives: ['AKo', 'KQo', 'QJs', 'AJs'],
   },
   {
+    id: 'vs-straddle-mid-no-shared',
+    villainDesc: 'Mid-rank villain straddling your range (one over your high, one under your low), no shared rank',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow < h.rankLow && v.rankHigh < T,
+    baseEquity: 0.47,
+    band: [0.42, 0.51],
+    modifiers: {},
+    representatives: ['96o', '95o'],
+  },
+  {
+    id: 'vs-one-over-one-within-mid-no-shared',
+    villainDesc: 'Mid-rank villain with one card over you, one between your ranks (dominator), no shared',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow > h.rankLow && v.rankLow < h.rankHigh && v.rankHigh < T,
+    baseEquity: 0.40,
+    band: [0.34, 0.44],
+    modifiers: {},
+    representatives: ['97o'],
+  },
+  {
+    id: 'vs-two-overs-mid-no-shared',
+    villainDesc: 'Mid-rank villain with both cards over your high card, no shared rank',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankLow > h.rankHigh && v.rankHigh < T,
+    baseEquity: 0.37,
+    band: [0.32, 0.41],
+    modifiers: {},
+    representatives: ['98o', '97s'],
+  },
+  {
     id: 'vs-dominating-high-card',
     villainDesc: 'Unpaired hand with a higher card sharing one of yours (dominated)',
     matches: (v, h) => !v.pair && sharedRank(h, v) >= 0 && v.rankHigh > h.rankHigh,
@@ -733,15 +787,6 @@ const SUITED_CONNECTOR_LANES = [
     modifiers: {},
     representatives: [],
   },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.50,
-    band: [0.25, 0.75],
-    modifiers: {},
-    representatives: [],
-  },
 ];
 
 const MIDDLING_OFFSUIT_LANES = [
@@ -753,6 +798,15 @@ const MIDDLING_OFFSUIT_LANES = [
     band: [0.42, 0.50],
     modifiers: {},
     representatives: [],
+  },
+  {
+    id: 'vs-mirror-offsuit',
+    villainDesc: 'Same ranks, both offsuit (card-removal coin flip)',
+    matches: (v, h) => !v.pair && !v.suited && v.rankHigh === h.rankHigh && v.rankLow === h.rankLow,
+    baseEquity: 0.50,
+    band: [0.49, 0.51],
+    modifiers: {},
+    representatives: ['Q9o', 'T9o', 'J8o'],
   },
   {
     id: 'vs-pair-of-high-card',
@@ -800,6 +854,24 @@ const MIDDLING_OFFSUIT_LANES = [
     representatives: ['22', '33'],
   },
   {
+    id: 'vs-shared-high-kicker-under-low',
+    villainDesc: 'Villain shares your high card with a kicker below your low (you kicker-dominate)',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) === h.rankHigh && kickerOf(v, h.rankHigh) < h.rankLow,
+    baseEquity: 0.62,
+    band: [0.50, 0.72],
+    modifiers: {},
+    representatives: ['Q5o', 'Q4o'],
+  },
+  {
+    id: 'vs-shared-high-kicker-between',
+    villainDesc: 'Villain shares your high card with a kicker between your ranks (villain kicker-dominates)',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) === h.rankHigh && kickerOf(v, h.rankHigh) > h.rankLow && kickerOf(v, h.rankHigh) < h.rankHigh,
+    baseEquity: 0.36,
+    band: [0.25, 0.47],
+    modifiers: {},
+    representatives: ['QJs', 'QTo'],
+  },
+  {
     id: 'vs-dominator',
     villainDesc: 'Unpaired hand with a higher card sharing one of yours',
     matches: (v, h) => !v.pair && sharedRank(h, v) >= 0 && v.rankHigh > h.rankHigh,
@@ -809,6 +881,15 @@ const MIDDLING_OFFSUIT_LANES = [
     representatives: [],
   },
   {
+    id: 'vs-shared-low-kicker-under-high',
+    villainDesc: 'Villain shares your low card with their other card at or below your high (you high-card-dominate)',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) === h.rankLow && kickerOf(v, h.rankLow) <= h.rankHigh && v.rankHigh <= h.rankHigh,
+    baseEquity: 0.66,
+    band: [0.56, 0.74],
+    modifiers: {},
+    representatives: ['J9o', 'T9o'],
+  },
+  {
     id: 'vs-two-overs-no-shared',
     villainDesc: 'Two overcards, no shared rank',
     matches: (v, h) => !v.pair && v.rankLow > h.rankHigh && sharedRank(h, v) < 0,
@@ -816,6 +897,33 @@ const MIDDLING_OFFSUIT_LANES = [
     band: [0.30, 0.48],
     modifiers: { villainSuited: -0.035 },
     representatives: ['AKo', 'KQo', 'AQs'],
+  },
+  {
+    id: 'vs-ax-split-no-shared',
+    villainDesc: 'Ax dominator with kicker within or below your range',
+    matches: (v, h) => villainIsAx(v) && sharedRank(h, v) < 0 && v.rankLow <= h.rankHigh,
+    baseEquity: 0.40,
+    band: [0.33, 0.47],
+    modifiers: { villainSuited: -0.03 },
+    representatives: ['AJo', 'A8s', 'A5o'],
+  },
+  {
+    id: 'vs-straddle-no-shared',
+    villainDesc: 'Unpaired villain straddling your range (one higher, one lower), no shared rank',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow < h.rankLow,
+    baseEquity: 0.43,
+    band: [0.38, 0.52],
+    modifiers: {},
+    representatives: ['K7o', 'J5o'],
+  },
+  {
+    id: 'vs-one-over-one-within-no-shared',
+    villainDesc: 'Villain has one card over you, one between your ranks (dominator, no shared rank)',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh > h.rankHigh && v.rankLow > h.rankLow && v.rankLow < h.rankHigh,
+    baseEquity: 0.36,
+    band: [0.31, 0.40],
+    modifiers: {},
+    representatives: ['KJs', 'KTs'],
   },
   {
     id: 'vs-weak-unpaired',
@@ -832,15 +940,6 @@ const MIDDLING_OFFSUIT_LANES = [
     matches: (v, h) => !v.pair && v.rankHigh > h.rankHigh && sharedRank(h, v) === h.rankLow,
     baseEquity: 0.32,
     band: [0.20, 0.45],
-    modifiers: {},
-    representatives: [],
-  },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.45,
-    band: [0.20, 0.75],
     modifiers: {},
     representatives: [],
   },
@@ -911,6 +1010,15 @@ const OFFSUIT_GARBAGE_LANES = [
     representatives: ['AKo', 'KQo', 'QJs'],
   },
   {
+    id: 'vs-shared-low-hero-dominates',
+    villainDesc: 'Villain shares your low card with no higher card than you (you dominate via high card)',
+    matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) === h.rankLow && v.rankHigh < h.rankHigh,
+    baseEquity: 0.69,
+    band: [0.61, 0.75],
+    modifiers: {},
+    representatives: ['J7o', 'T7o', '97o'],
+  },
+  {
     id: 'vs-no-shared-no-dominate',
     villainDesc: 'Unpaired, no shared rank, not two overs',
     matches: (v, h) => !v.pair && sharedRank(h, v) < 0,
@@ -918,15 +1026,6 @@ const OFFSUIT_GARBAGE_LANES = [
     band: [0.20, 0.72],
     modifiers: {},
     representatives: ['T9s', '87o'],
-  },
-  {
-    id: 'vs-other',
-    villainDesc: 'Other structural variant (rare catch-all)',
-    matches: () => true,
-    baseEquity: 0.40,
-    band: [0.15, 0.78],
-    modifiers: {},
-    representatives: [],
   },
 ];
 
@@ -1016,7 +1115,11 @@ export const classifyLane = (hero, villain) => {
   for (const lane of shape.lanes) {
     if (lane.matches(v, h)) return { shape, lane };
   }
-  return { shape, lane: null };
+  throw new Error(
+    `classifyLane: no lane matched in shape "${shape.id}" for villain ` +
+    `${JSON.stringify(v)} vs hero ${JSON.stringify(h)}. ` +
+    `Every 169×169 matchup must route to a specific lane — add a predicate.`,
+  );
 };
 
 /**
