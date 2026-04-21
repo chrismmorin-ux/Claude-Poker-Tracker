@@ -34,6 +34,8 @@ SYSTEM_MODEL.md §4 references this file.
 | I-PEO-2 | Retroactive seat-player linking is session-scoped: only hands with matching `sessionId` are modified | `linkPlayerToPriorSeatHands()` in `handLinking.js` | Full | 2026-04-16 |
 | I-PEO-3 | Retroactive linking is idempotent: re-applying `(handId, seat, playerId)` is a no-op; skipped hands counted separately | `linkPlayerToPriorSeatHands()` + `updateSeatPlayerForHand()` | Full | 2026-04-16 |
 | I-PEO-4 | Undo tokens carry the exact `handIds` captured at link time; revert touches only those hands (and only if still mapped to the linked player) | `buildUnlinkPlan()` in `handLinking.js` | Full | 2026-04-16 |
+| INV-14 | Components under `src/components/views/<ViewName>/` must not be imported from outside their own view folder. Cross-view helpers live in `src/components/_shared/`. | Manual code review + future ESLint rule (RT-103) | None (structural) — currently violated by drill views | Proposed 2026-04-20 — VIOLATED |
+| INV-15 | SCREEN constants may only be removed after a two-step deprecation: (1) mark deprecated in `uiConstants.js`, (2) sweep all `prevScreen`/history refs, (3) delete. Bulk deletion without sweep is forbidden. `PokerTracker.jsx` routing switch must have a `default:` fallback to `SCREEN.TABLE`. | Code review; no mechanical enforcement yet | None | Proposed 2026-04-20 |
 
 ---
 
@@ -56,3 +58,9 @@ SYSTEM_MODEL.md §4 references this file.
 ---
 
 *Update this file when: new invariant discovered, existing invariant violated, or after any `/eng-engine` roundtable.*
+
+---
+
+## Recent Audit Findings
+
+**2026-04-20 — Drills Consolidation Roundtable.** INV-14 (sibling-import discipline) proposed and found to be *currently violated* by drill views — `RangeFlopBreakdown`, `MatchupBreakdown`, `HandPicker`, `LessonCalculators`, `FRAMEWORK_COLOR` are imported across tab boundaries via `./` relative paths in 10+ files. Separately, the pre-existing INV-08 violation at `src/utils/drillContent/__tests__/lessons.test.js` (utils-layer test importing from views/) is tracked as RT-95. INV-15 (SCREEN enum lifecycle) proposed preemptively before drills-consolidation Phase 7 would otherwise violate it.

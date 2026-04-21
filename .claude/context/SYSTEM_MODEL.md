@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.9.1 | **Updated**: 2026-04-12 | **Owner**: Architecture Review (R8 Phase C+D close)
+**Version**: 1.9.2 | **Updated**: 2026-04-20 | **Owner**: Drills Consolidation Roundtable (RT-92..105 findings)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -215,6 +215,12 @@ New player observed → populationPriors.js creates default profile
 | ~~`render-orchestrator.js` multiway pot odds~~ | ~~slice(-1) on actionSequence~~ | — | — | **Resolved RT-64 (2026-04-12)**: added findFacedBet() backward walk for the bet hero actually faces |
 | ~~`background/service-worker.js` capture port~~ | ~~validateMessage gate missing~~ | — | — | **Resolved RT-65 (2026-04-12)**: gate applied; 5 new validators added to message-schemas.js |
 
+### 5.1b Additional Failure Modes (Drills Consolidation Roundtable 2026-04-20)
+
+**FM-Implicit-Height-Contract.** Mode components under `src/components/views/(Preflop|Postflop)DrillsView/` use `h-full overflow-hidden` on their outermost `div`, relying on their parent container's `flex-1` + `1600×720` chrome to resolve. Deleting or restructuring the parent silently breaks layout; no import graph catches it. Repro: remove outer `h-full overflow-hidden` wrapper; `ShapeMode` `LaneRow` scroll vanishes. Relevant for any view restructuring proposal, including drills-consolidation Phase 7.
+
+**FM-Hoisted-Persistence-Hook-Race.** Mounting multiple persistence-hook-owning children under a single parent without hoisting the hook to the parent produces read-order-dependent state desync. Canonical example: a drill picker that mounts Recipe + Framework + Line modes simultaneously to display streak stats — each calls `usePostflopDrillsPersistence()` independently, each fires its own IDB load, each holds its own `drills` array copy, and `recordAttempt` in one instance doesn't propagate to siblings. Scheduler accuracy silently drifts.
+
 ### 5.2 Complexity Hotspots (Cyclomatic)
 
 | File | Reason | Refactor Priority |
@@ -403,6 +409,10 @@ New player observed → populationPriors.js creates default profile
 | TD-08 | Preflop MC path bypasses Worker (`handVsRange` called directly in `preflopAdvisor`) | Medium | RT-10 incomplete threading | RT-31: inject equityFn into preflop path |
 | TD-09 | ~~`handAnalysis` reverse-imports from `exploitEngine`~~ | ~~High~~ | Resolved RT-35 | monteCarloEquity moved to pokerCore, 4 symbols injected via deps |
 | TD-10 | ~~No React.memo anywhere in component tree~~ | ~~Medium~~ | Resolved RT-36 | SeatComponent wrapped in React.memo with custom comparator |
+| TD-11 | Cross-tab sibling imports across drill views (10+ files consume `RangeFlopBreakdown`, `MatchupBreakdown`, `HandPicker`, `LessonCalculators`, `FRAMEWORK_COLOR` via `./` relative paths). Blocks any future view restructuring. | Medium | Drills-consolidation roundtable 2026-04-20 | RT-94: migrate helpers into `src/components/_shared/drillInternals/` barrel |
+| TD-12 | INV-08 violation: `src/utils/drillContent/__tests__/lessons.test.js` imports from `src/components/views/PreflopDrillsView/LessonCalculators`. Utils-layer test pulls from UI layer. | Medium | Roundtable surfaced 2026-04-20 | RT-95: extract pure calculators to `src/utils/drillContent/` or similar |
+| TD-13 | `aggregateFrameworkAccuracy` at `preflopDrillsStorage.js:108` uses `const out = {}`; tampered IDB record with `frameworks: ['__proto__']` would attempt prototype write. Low severity in single-user context; trivial fix. | Low-Medium | Roundtable surfaced 2026-04-20 | RT-96: `Object.create(null)` + shape guard on IDB read |
+| TD-14 | SCREEN enum lifecycle is ad-hoc. `editorContext.prevScreen` carries SCREEN strings; bulk deletion (e.g., Phase 7 of drills-consolidation) risks stranded values. No default case in `PokerTracker.jsx` routing switch. | Medium | Roundtable surfaced 2026-04-20 | RT-102: two-step deprecation protocol + default fallback case |
 
 ---
 
@@ -429,6 +439,7 @@ Historical decisions (pre-2026) are in `docs/adr/ADR-001` through `ADR-004`. Thi
 | 2026-04-11 | Dual state in side-panel.js must converge to single-owner (coordinator) | Sync-based dual-state is the root cause of every recurring sidebar display bug; adding more sync points does not fix the architectural problem | Keep dual state with more sync calls (rejected: same class of bugs recurs); make module vars authoritative and remove coordinator (rejected: coordinator provides scheduling/snapshot benefits) |
 | 2026-04-11 | Advice guard must include hand-number binding, not just street-rank | SW restart sends cached advice from prior hand; street-rank check passes across hand boundaries; hand-number comparison is the only reliable cross-hand guard | Street-rank only (rejected: cross-hand contamination); clear all caches on SW restart (rejected: loses valid state on transient restart) |
 | 2026-04-15 | Sidebar Rebuild Program (SR-0 → SR-7) closed: 5 user symptoms (S1–S5) decomposed to 8 root mechanisms (M1–M8), all fixed; 4 blocking deltas closed; doctrine v2 (33 rules) + 6-zone shell + 5 declarative FSMs + freshness sidecar + computeAdviceStaleness as single source of truth for stale surface. Failure-mode register entries from RT-43 through RT-66 (lines ~180–199) are now resolved by the rebuild, not patched in place. | Recurring sidebar display bugs had structural cause; symptom-by-symptom fixes kept regressing. Spec-first program produced a stable architecture with explicit invariants under automated lint gates (R-2.3 dom-mutation, RT-60 timer, R-7.2 cross-panel coverage). | Continue patching individual symptoms (rejected: 3 weeks of recurrence proved the pattern); rebuild without doctrine first (rejected: would have produced different bugs, not fewer). Post-mortem: `.claude/failures/SIDEBAR_REBUILD_PROGRAM.md`. |
+| 2026-04-20 | Drills-consolidation proposal (`docs/projects/drills-consolidation.project.md`) held pending three preconditions: (a) Line Study closure (LS-4..6), (b) design-doc defect fixes (RT-93), (c) `src/components/_shared/drillInternals/` barrel creation (RT-94). Effort revised 2–3 → 5–7 sessions. Learn tab scope split into search vs. schema normalization. | 6-expert roundtable found: sibling `./` imports across 10+ files invalidate "zero internal changes" claim; `ViewRouter.jsx` reference was factual error (route wiring is inline in `PokerTracker.jsx:109-110`); file-move tally omits ~7 helpers; Learn unified-search collides with two lesson schemas; Phase 1 scaffolding collides with active Line Study handoff. | Execute as written (rejected: factual errors + scope undercounting); descope to rename-only (rejected: doesn't serve the JTBD framing); roundtable the revised proposal after defect fixes (accepted). Peer-tab-vs-nested for Line Study deferred to owner content-roadmap decision (not an engineering call). |
 
 ---
 

@@ -250,5 +250,40 @@
         "P3": 2
       }
     }
+  },
+  {
+    "date": "2026-04-20",
+    "source": "eng-engine-drills-consolidation",
+    "scope": "docs/projects/drills-consolidation.project.md",
+    "metrics": {
+      "test_count": 5422,
+      "test_pass_rate": 1.0,
+      "test_files": 185,
+      "extension_tests": 1974,
+      "backlog_next": 0,
+      "backlog_review": 14,
+      "backlog_paused": 1,
+      "backlog_in_progress": 7,
+      "programs": {
+        "security": "YELLOW",
+        "engine-accuracy": "GREEN",
+        "ui-quality": "YELLOW",
+        "test-health": "YELLOW"
+      },
+      "stale_docs": 0,
+      "open_failure_modes": 0,
+      "architecture_version": "v122",
+      "system_model_version": "1.9.2",
+      "roundtable_findings": {
+        "total_new": 14,
+        "P1": 4,
+        "P2": 6,
+        "P3": 4,
+        "proposal_status": "HELD pending Line Study closure + design-doc defect fixes + _shared barrel creation",
+        "new_invariants_proposed": 2,
+        "new_failure_modes": 2,
+        "new_tech_debt_items": 4
+      }
+    }
   }
 ]
