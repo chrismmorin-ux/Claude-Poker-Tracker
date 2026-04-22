@@ -69,7 +69,7 @@ export const LineNodeRenderer = ({
       {/* Sections */}
       <div className="space-y-4">
         {node.sections.map((section, i) => (
-          <Section key={i} section={section} />
+          <Section key={i} section={section} node={node} />
         ))}
       </div>
 
@@ -157,7 +157,7 @@ const FrameworkChip = ({ fwId }) => (
 
 // ---------- Section dispatch ---------- //
 
-const Section = ({ section }) => {
+const Section = ({ section, node }) => {
   switch (section.kind) {
     case 'prose':    return <ProseSection section={section} />;
     case 'why':      return <AccentSection section={section} label="Why" accent="amber" />;
@@ -165,7 +165,7 @@ const Section = ({ section }) => {
     case 'mismatch': return <AccentSection section={section} label="Mismatch" accent="rose" />;
     case 'formula':  return <FormulaSection section={section} />;
     case 'example':  return <ExampleSection section={section} />;
-    case 'compute':  return <ComputeSection section={section} />;
+    case 'compute':  return <ComputeSection section={section} node={node} />;
     default:         return null;
   }
 };
@@ -278,7 +278,30 @@ const ExampleSection = ({ section }) => {
 
 // RT-113 — real calculator dispatcher. Falls back to a visible error state
 // when `section.calculator` is unknown so authoring mistakes surface in dev.
-const ComputeSection = ({ section }) => {
+// LSW-H1 (2026-04-22): threads node-context props so calculators open with
+// the spot's actual numbers instead of generic defaults. Calculator reads
+// `section.seed` when the author pinned explicit numbers; otherwise falls
+// back to `node.pot` + implied bet-size from `node.villainAction.size`.
+const calculatorPropsForCompute = (section, node) => {
+  if (section.calculator !== 'potOdds') return {};
+  if (section.seed && typeof section.seed === 'object') {
+    return {
+      initialPot: Number.isFinite(section.seed.pot) ? section.seed.pot : undefined,
+      initialBet: Number.isFinite(section.seed.bet) ? section.seed.bet : undefined,
+    };
+  }
+  if (!node) return {};
+  const pot = Number.isFinite(node.pot) ? node.pot : undefined;
+  const vSize = node.villainAction && Number.isFinite(node.villainAction.size)
+    ? node.villainAction.size
+    : 0.5;
+  return {
+    initialPot: pot,
+    initialBet: Number.isFinite(pot) ? Number((pot * vSize).toFixed(2)) : undefined,
+  };
+};
+
+const ComputeSection = ({ section, node }) => {
   const Calculator = CALCULATORS[section.calculator];
   if (!Calculator) {
     return (
@@ -287,6 +310,7 @@ const ComputeSection = ({ section }) => {
       </div>
     );
   }
+  const calcProps = calculatorPropsForCompute(section, node);
   return (
     <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-4 space-y-2">
       <div className="text-[10px] uppercase tracking-wide text-gray-500">
@@ -298,7 +322,7 @@ const ComputeSection = ({ section }) => {
       {section.intro && (
         <p className="text-sm text-gray-300 leading-relaxed">{section.intro}</p>
       )}
-      <Calculator />
+      <Calculator {...calcProps} />
       {section.takeaway && (
         <p className="text-xs text-gray-400 italic leading-relaxed">{section.takeaway}</p>
       )}

@@ -450,6 +450,87 @@ describe('Node.heroHolding (RT-106)', () => {
     expect(ok).toBe(false);
     expect(errors.some((e) => e.includes('bucketCandidates[1]'))).toBe(true);
   });
+
+  // LSW-H1 (2026-04-22) — surface audit S7.
+  it('rejects `air` in bucketCandidates when combos is non-empty (range-level bucket vs pinned combo)', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = {
+      combos: ['A♠K♥'],
+      bucketCandidates: ['topSet', 'air'],
+    };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("may not include 'air'"))).toBe(true);
+  });
+
+  it('accepts `air` in bucketCandidates when no combos are pinned (pure range-level teaching)', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = {
+      bucketCandidates: ['topSet', 'air'],
+    };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});
+
+// ---------- v2: compute.seed (LSW-H1, 2026-04-22) ---------- //
+
+describe('Section.compute.seed (LSW-H1)', () => {
+  const withComputeSeed = (seed) => {
+    const line = minimalValidLine();
+    line.nodes.root.sections = [
+      { kind: 'compute', calculator: 'potOdds', seed },
+    ];
+    return line;
+  };
+
+  it('accepts compute section without seed (additive-optional)', () => {
+    const line = minimalValidLine();
+    line.nodes.root.sections = [{ kind: 'compute', calculator: 'potOdds' }];
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts compute section with valid seed { pot, bet }', () => {
+    const { ok, errors } = validateLine(withComputeSeed({ pot: 27.3, bet: 6.8 }));
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts seed with only pot (sparse pin)', () => {
+    const { ok, errors } = validateLine(withComputeSeed({ pot: 50 }));
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects seed that is not an object', () => {
+    const { ok, errors } = validateLine(withComputeSeed('27.3/6.8'));
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('compute.seed must be an object'))).toBe(true);
+  });
+
+  it('rejects seed with non-numeric values', () => {
+    const { ok, errors } = validateLine(withComputeSeed({ pot: 'big', bet: 6.8 }));
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("compute.seed['pot']"))).toBe(true);
+  });
+
+  it('rejects seed with negative values', () => {
+    const { ok, errors } = validateLine(withComputeSeed({ pot: 27, bet: -5 }));
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("compute.seed['bet']"))).toBe(true);
+  });
+
+  it('rejects seed with NaN / Infinity', () => {
+    const { ok: ok1, errors: e1 } = validateLine(withComputeSeed({ pot: NaN }));
+    expect(ok1).toBe(false);
+    expect(e1.some((e) => e.includes("compute.seed['pot']"))).toBe(true);
+    const { ok: ok2, errors: e2 } = validateLine(withComputeSeed({ bet: Infinity }));
+    expect(ok2).toBe(false);
+    expect(e2.some((e) => e.includes("compute.seed['bet']"))).toBe(true);
+  });
 });
 
 // ---------- v2: Decision.branches[].correctByArchetype (RT-107) ---------- //

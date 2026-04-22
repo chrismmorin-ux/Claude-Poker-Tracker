@@ -130,6 +130,22 @@ const validateSection = (section, ctx) => {
       if (!nonEmptyString(section.calculator)) {
         errs.push(`${ctx}: compute section requires calculator name`);
       }
+      // LSW-H1 (2026-04-22): optional `seed` lets the authored content pin
+      // the calculator's initial inputs to the node's numbers (e.g., the
+      // pot+bet the prose right above the widget just asserted). Without
+      // this, calculator defaults drift from the node's context and the
+      // student either retypes or internalizes the wrong break-even.
+      if (section.seed !== undefined) {
+        if (!isPlainObject(section.seed)) {
+          errs.push(`${ctx}: compute.seed must be an object`);
+        } else {
+          for (const [k, v] of Object.entries(section.seed)) {
+            if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) {
+              errs.push(`${ctx}: compute.seed['${k}'] must be a non-negative finite number`);
+            }
+          }
+        }
+      }
       break;
     default:
       break;
@@ -327,6 +343,17 @@ const validateHeroHolding = (heroHolding, ctx) => {
         }
       });
     }
+  }
+  // LSW-H1 (2026-04-22): `air` is a range-level bucket (the portion of a
+  // range that missed the board). When the node pins a specific combo via
+  // `combos`, asking for the EV of that combo's "air" classification is a
+  // category error — a pinned combo is either air or not; it's a predicate,
+  // not a candidate. Reject at validation time so authoring can't drift.
+  if (hasCombos && hasBuckets
+      && Array.isArray(heroHolding.combos) && heroHolding.combos.length >= 1
+      && Array.isArray(heroHolding.bucketCandidates)
+      && heroHolding.bucketCandidates.includes('air')) {
+    errs.push(`${ctx}: heroHolding.bucketCandidates may not include 'air' when combos is non-empty (air is a range-level bucket; a pinned combo is either air or not)`);
   }
   return errs;
 };

@@ -698,7 +698,16 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       // is pinned in RT-110; these strings are illustrative for v2.
       heroHolding: {
         combos: ['J♥T♠'],
-        bucketCandidates: ['topPair', 'flushDraw', 'openEnder', 'overpair', 'air'],
+        // LSW-H1 (2026-04-22): reduced from 5 buckets to `topPair` only as
+        // honest interim. The original list — `['topPair', 'flushDraw',
+        // 'openEnder', 'overpair', 'air']` — contained four buckets
+        // infeasible for J♥T♠ on T♥9♥6♠ (hero has one heart = backdoor FD
+        // not a direct FD; J-T-9 is 3-in-a-row not an OESD; JT is not an
+        // overpair; air is a range-level bucket that can't apply to a
+        // pinned combo). Surface audit S1 flagged. Re-expand once
+        // LSW-G3 ships `backdoorFlushDraw` + `backdoorStraightDraw`
+        // taxonomy — then: `['topPair', 'backdoorFlushDraw', 'backdoorStraightDraw']`.
+        bucketCandidates: ['topPair'],
       },
       frameworks: ['range_advantage', 'range_morphology', 'board_tilt'],
       sections: [
@@ -747,8 +756,14 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
           intro:
             'Verify: BB leads ~6.8bb (33% of 20.5bb). Hero calls 6.8bb into a '
             + '20.5 + 6.8 = 27.3bb pot. Break-even equity = 6.8 / (27.3 + 6.8). '
-            + 'TPTK with a backdoor flush plays strong even against BB\'s '
-            + 'donk range at this price.',
+            + 'Top-pair-strong-kicker with a backdoor flush plays strong even '
+            + 'against BB\'s donk range at this price.',
+          // LSW-H1 (2026-04-22): explicit seed so the calculator widget
+          // opens with the node's pot/bet, not the generic 100/50 defaults.
+          // Stable authoring intent — immune to pot-math drift from
+          // upstream changes. Break-even at these inputs = 6.8/(27.3+6.8)
+          // = ~19.9%, consistent with the intro copy.
+          seed: { pot: 27.3, bet: 6.8 },
         },
       ],
       decision: {

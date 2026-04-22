@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeBucketEVs } from '../BucketEVPanel';
+import { computeBucketEVs, isRowApplicable } from '../BucketEVPanel';
 import { findLine } from '../../../../utils/postflopDrillContent/lines';
 
 // The canonical JT6 exemplar has heroHolding on flop_root.
@@ -151,5 +151,84 @@ describe('computeBucketEVs — per-bucket results', () => {
     if (typeof fishBet === 'number' && typeof regBet === 'number') {
       expect(fishBet).not.toBe(regBet);
     }
+  });
+});
+
+// LSW-H1 (2026-04-22) — per-hero feasibility gate predicate.
+// Rendering switches on `isRowApplicable` when `heroHolding.combos` is
+// non-empty; inapplicable buckets collapse behind a disclosure rather than
+// rendering with "No combos in range" under the "Your hand class" header.
+describe('isRowApplicable (LSW-H1 feasibility gate)', () => {
+  it('returns false for undefined / null entry', () => {
+    expect(isRowApplicable(undefined)).toBe(false);
+    expect(isRowApplicable(null)).toBe(false);
+  });
+
+  it('returns false when entry carries an error (unknown-bucket, range-unavailable, etc.)', () => {
+    expect(isRowApplicable({ error: 'unknown-bucket' })).toBe(false);
+    expect(isRowApplicable({ error: 'range-unavailable' })).toBe(false);
+  });
+
+  it('returns false when result has the empty-bucket caveat', () => {
+    const entry = {
+      result: {
+        sampleSize: 0,
+        caveats: ['synthetic-range', 'v1-simplified-ev', 'empty-bucket'],
+      },
+    };
+    expect(isRowApplicable(entry)).toBe(false);
+  });
+
+  it('returns false when sampleSize is 0 even without the empty-bucket caveat', () => {
+    const entry = {
+      result: {
+        sampleSize: 0,
+        caveats: ['synthetic-range', 'v1-simplified-ev'],
+      },
+    };
+    expect(isRowApplicable(entry)).toBe(false);
+  });
+
+  it('returns true when result has live combos', () => {
+    const entry = {
+      result: {
+        sampleSize: 9,
+        caveats: ['synthetic-range', 'v1-simplified-ev'],
+      },
+    };
+    expect(isRowApplicable(entry)).toBe(true);
+  });
+
+  it('returns true even with the low-sample-bucket caveat when sampleSize > 0', () => {
+    const entry = {
+      result: {
+        sampleSize: 1,
+        caveats: ['synthetic-range', 'v1-simplified-ev', 'low-sample-bucket'],
+      },
+    };
+    expect(isRowApplicable(entry)).toBe(true);
+  });
+});
+
+// LSW-H1 (2026-04-22) — JT6 flop_root content trim regression pin.
+// The surface audit reduced bucketCandidates from 5 to 1 to stop rendering
+// buckets infeasible for J♥T♠. This test pins the current interim shape
+// so the trim can't silently be re-expanded without either landing the
+// G3 taxonomy (BDFD/BDSD) or explicitly updating this pin.
+describe('JT6 flop_root bucketCandidates (LSW-H1 interim trim)', () => {
+  it('flop_root has exactly topPair until LSW-G3 adds backdoor buckets', () => {
+    const node = getJT6FlopNode();
+    expect(node.heroHolding.combos).toEqual(['J♥T♠']);
+    expect(node.heroHolding.bucketCandidates).toEqual(['topPair']);
+  });
+
+  it('flop_root compute section seeds the pot-odds widget with the node context', () => {
+    const node = getJT6FlopNode();
+    const compute = node.sections.find((s) => s.kind === 'compute');
+    expect(compute).toBeDefined();
+    expect(compute.calculator).toBe('potOdds');
+    // Node pot is 20.5; after BB's 33% donk, compute should verify
+    // against the post-donk 27.3/6.8 figures the intro prose asserts.
+    expect(compute.seed).toEqual({ pot: 27.3, bet: 6.8 });
   });
 });

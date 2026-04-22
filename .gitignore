@@ -51,6 +51,8 @@ nul
 screenshots/
 *.png
 !public/*.png
+# Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
+!docs/design/audits/**/*.png
 audit-*.png
 verify-*.png
 .local-model-backups/

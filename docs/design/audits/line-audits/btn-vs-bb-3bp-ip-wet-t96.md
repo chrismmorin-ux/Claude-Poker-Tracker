@@ -347,6 +347,7 @@ Both deferred. Will re-audit these nodes with solver access once obtained.
 
 - 2026-04-22 — Draft (external-validation methodology first-applied).
 - 2026-04-22 — Closed. LSW-F1 shipped in a single commit: A1 (flop_root `why` rewrite), A2 (raise-vs-fish nuance), A3 (TPTK-ish → top-pair-strong-kicker), A5 (river_checkback pot-odds 25% → 30%), A6 (node rename → `turn_brick_v_checkraises`), A7 (pot-accounting reconciliation: 108→184, 108→184, 200→258; prompt "90bb" → "112bb"; math: "47bb to win 155bb" → "75bb to call into 184bb pot, ~29% equity"), A8 (new terminal `terminal_river_overfold_bluffcatch`), A9 + A10 (pot values corrected rather than removed — schema requires pot). D1 documented as POKER_THEORY.md §9.1. A4 deferred. `engineAuthoredDrift` baseline regenerated for the node-key rename. 311/311 postflop tests green; full suite 6257/6258 (1 pre-existing precisionAudit flake unrelated).
+- 2026-04-22 — Companion surface audit opened: [`btn-vs-bb-3bp-ip-wet-t96-surface.md`](btn-vs-bb-3bp-ip-wet-t96-surface.md) covers UI rendering (explicitly scoped out of this content audit). Adds 7 findings (3 P0, 3 P1, 1 P2) against `BucketEVPanel` / `PotOddsCalculator` / `BUCKET_TAXONOMY`. Routes: LSW-H1, LSW-H2, LSW-H3 (new Stream H — surface quality); LSW-G3, LSW-G4, LSW-G5. `LSW-B1` now BLOCKED by `LSW-H1 + LSW-H3` in addition to `LSW-A1..A8`.
 
 ---
 

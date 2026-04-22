@@ -294,9 +294,18 @@ const runLabel = (runHigh) => {
 
 // ---------- PotOdds calculator ---------- //
 
-const PotOddsCalculator = () => {
-  const [pot, setPot] = useState(100);
-  const [bet, setBet] = useState(50);
+// LSW-H1 (2026-04-22): accept optional `initialPot` / `initialBet` props so
+// calling sites can seed the calculator from a line node's context. When
+// absent or invalid, falls back to the prior generic defaults (100/50) so
+// the preflop-lesson callers that don't seed continue to work unchanged.
+const toFiniteNonNeg = (n, fallback) =>
+  (Number.isFinite(n) && n >= 0 ? n : fallback);
+const toFinitePositive = (n, fallback) =>
+  (Number.isFinite(n) && n > 0 ? n : fallback);
+
+const PotOddsCalculator = ({ initialPot, initialBet } = {}) => {
+  const [pot, setPot] = useState(() => toFiniteNonNeg(initialPot, 100));
+  const [bet, setBet] = useState(() => toFinitePositive(initialBet, 50));
 
   const result = useMemo(() => {
     if (bet <= 0) return null;

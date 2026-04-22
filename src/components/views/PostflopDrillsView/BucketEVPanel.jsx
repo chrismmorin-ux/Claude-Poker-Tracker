@@ -217,7 +217,11 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
       )}
 
       {revealed && !loading && data && (
-        <BucketEVTable data={data} candidates={candidates} />
+        <BucketEVTable
+          data={data}
+          candidates={candidates}
+          pinnedCombos={node?.heroHolding?.combos}
+        />
       )}
     </div>
   );
@@ -225,7 +229,30 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
 
 // ---------- Sub-component: the EV table ---------- //
 
-const BucketEVTable = ({ data, candidates }) => {
+// LSW-H1 (2026-04-22): when the node pins a specific hero combo, buckets
+// whose filter produces zero combos in the authored range are NOT "your
+// hand class" — they're either infeasible for the pinned combo or absent
+// from the range segment. Surfacing them inline with "No combos in range"
+// under a header that reads "Your hand class" is actively misleading. Gate
+// them behind a disclosure when a pinned combo is present. Nodes without
+// a pinned combo (pure range-level teaching) keep the inline-every-row
+// rendering — zero-sample rows are legitimate there.
+//
+// Heuristic for "applicable": `sampleSize > 0` for a successfully-computed
+// result. Not perfect (a bucket the pinned combo doesn't fall in could
+// still be non-empty in the range and show a misleading EV — S2, tracked
+// under LSW-H2), but a significant honesty improvement over rendering
+// every authored bucket regardless.
+export const isRowApplicable = (entry) => {
+  if (!entry) return false;
+  if (entry.error) return false;
+  if (!entry.result) return false;
+  const caveats = entry.result.caveats || [];
+  if (caveats.includes('empty-bucket')) return false;
+  return (entry.result.sampleSize || 0) > 0;
+};
+
+const BucketEVTable = ({ data, candidates, pinnedCombos }) => {
   if (data.rangeError) {
     return (
       <div className="bg-rose-900/30 border border-rose-800 text-rose-200 rounded px-3 py-2 text-xs">
@@ -242,26 +269,46 @@ const BucketEVTable = ({ data, candidates }) => {
     }
   }
 
+  const hasPinnedCombo = Array.isArray(pinnedCombos) && pinnedCombos.length >= 1;
+  const applicable = hasPinnedCombo
+    ? candidates.filter((b) => isRowApplicable(data.byBucket[b]))
+    : candidates;
+  const inapplicable = hasPinnedCombo
+    ? candidates.filter((b) => !isRowApplicable(data.byBucket[b]))
+    : [];
+
   return (
     <div className="space-y-2">
-      <div className="overflow-hidden rounded border border-gray-700">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-gray-900/60 text-gray-400">
-              <th className="text-left px-2.5 py-1.5 font-medium">Your hand class</th>
-              <th className="text-left px-2.5 py-1.5 font-medium">Best action</th>
-              <th className="text-right px-2.5 py-1.5 font-medium">EV</th>
-              <th className="text-right px-2.5 py-1.5 font-medium">Runner-up</th>
-              <th className="text-center px-2.5 py-1.5 font-medium w-16">Sample</th>
-            </tr>
-          </thead>
-          <tbody>
-            {candidates.map((bucketId) => (
-              <BucketRow key={bucketId} bucketId={bucketId} entry={data.byBucket[bucketId]} />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {applicable.length > 0 ? (
+        <div className="overflow-hidden rounded border border-gray-700">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-gray-900/60 text-gray-400">
+                <th className="text-left px-2.5 py-1.5 font-medium">Your hand class</th>
+                <th className="text-left px-2.5 py-1.5 font-medium">Best action</th>
+                <th className="text-right px-2.5 py-1.5 font-medium">EV</th>
+                <th className="text-right px-2.5 py-1.5 font-medium">Runner-up</th>
+                <th className="text-center px-2.5 py-1.5 font-medium w-16">Sample</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applicable.map((bucketId) => (
+                <BucketRow key={bucketId} bucketId={bucketId} entry={data.byBucket[bucketId]} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        hasPinnedCombo && (
+          <div className="bg-gray-900/40 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 italic">
+            No bucket with live combos for this authored candidate list.
+          </div>
+        )
+      )}
+
+      {hasPinnedCombo && inapplicable.length > 0 && (
+        <InapplicableDisclosure buckets={inapplicable} byBucket={data.byBucket} />
+      )}
 
       {globalCaveats.size > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center text-[10px] text-gray-500">
@@ -275,6 +322,45 @@ const BucketEVTable = ({ data, candidates }) => {
             </span>
           ))}
         </div>
+      )}
+    </div>
+  );
+};
+
+// LSW-H1 (2026-04-22): collapsed disclosure for buckets that returned
+// zero live combos when the node pins a specific hero combo. Keeps the
+// main table focused on buckets that actually carry an EV for hero; still
+// shows the inapplicable list on demand so the authored candidate list
+// remains auditable from the UI.
+const InapplicableDisclosure = ({ buckets, byBucket }) => {
+  const [open, setOpen] = useState(false);
+  const n = buckets.length;
+  return (
+    <div className="border border-gray-800 rounded bg-gray-900/30">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-gray-200"
+      >
+        <span>
+          {n} bucket{n === 1 ? '' : 's'} not applicable to your hand
+        </span>
+        <span className="text-gray-600">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <ul className="px-3 py-1.5 text-[11px] text-gray-500 space-y-0.5">
+          {buckets.map((bucketId) => {
+            const entry = byBucket[bucketId];
+            const reason = entry?.error
+              ? entry.error
+              : (entry?.result?.caveats?.includes('empty-bucket') ? 'no combos in range' : 'no combos');
+            return (
+              <li key={bucketId} className="font-mono">
+                {bucketId} <span className="text-gray-600 italic not-italic font-normal">— {reason}</span>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
