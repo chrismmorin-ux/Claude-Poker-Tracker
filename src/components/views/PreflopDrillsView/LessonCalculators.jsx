@@ -9,6 +9,7 @@ import {
   breakEvenEquity,
   independentRunouts,
 } from '../../../utils/pokerCore/combinatorics';
+import { CALCULATOR_NAMES } from '../../../utils/drillContent/calculatorRegistry';
 
 /**
  * LessonCalculators.jsx — small interactive calculators embedded in lessons.
@@ -422,3 +423,20 @@ export const CALCULATORS = {
   potOdds:      PotOddsCalculator,
   runouts:      RunoutsCalculator,
 };
+
+// Parity check: every name in the data-layer registry must have a matching
+// React component here, and vice versa. Fires at module load in dev so drift
+// surfaces immediately instead of producing a runtime "undefined component"
+// when a lesson references a missing calculator. RT-95.
+if (import.meta.env.DEV) {
+  const registryNames = new Set(CALCULATOR_NAMES);
+  const componentNames = new Set(Object.keys(CALCULATORS));
+  const missingComponents = [...registryNames].filter((n) => !componentNames.has(n));
+  const orphanComponents = [...componentNames].filter((n) => !registryNames.has(n));
+  if (missingComponents.length || orphanComponents.length) {
+    // eslint-disable-next-line no-console
+    console.warn('[LessonCalculators] registry drift:',
+      missingComponents.length ? `missing components for ${missingComponents.join(', ')}` : '',
+      orphanComponents.length ? `orphan components ${orphanComponents.join(', ')}` : '');
+  }
+}

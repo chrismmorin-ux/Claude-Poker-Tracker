@@ -106,10 +106,13 @@ export const clearPreflopDrills = async (userId = GUEST_USER_ID) => {
  * scheduler can ignore low-sample noise.
  */
 export const aggregateFrameworkAccuracy = (drills) => {
-  const out = {};
+  // Object.create(null) + string-id guard prevents prototype-chain writes from
+  // tampered IDB records (e.g., `frameworks: ['__proto__']`). RT-96.
+  const out = Object.create(null);
   for (const d of drills) {
     const fwIds = d?.truth?.frameworks || [];
     for (const id of fwIds) {
+      if (typeof id !== 'string' || id.length === 0) continue;
       if (!out[id]) out[id] = { attempts: 0, correct: 0, accuracy: 0, sumDelta: 0, deltaSamples: 0, avgDelta: 0 };
       out[id].attempts++;
       if (d.correct) out[id].correct++;
