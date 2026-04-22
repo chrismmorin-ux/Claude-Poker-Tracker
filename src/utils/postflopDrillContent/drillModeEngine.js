@@ -108,6 +108,33 @@ export const HERO_BUCKET_TYPICAL_EQUITY = Object.freeze({
   oesd:            0.32,
   gutshot:         0.20,
   overcards:       0.25,
+  // Backdoor-only draws (LSW-G3, 2026-04-22). Rough combinatorial-anchored
+  // priors vs a typical polar / made-hand range on a 3-flush / 3-connected
+  // flop. BDFD completes hearts runner-runner ~4.2% of the time (two hearts
+  // on turn+river); BDSD needs two running cards to complete a straight,
+  // ~3% realized on a 3-connected board. Equity when hit: ~85-95% given
+  // villain's range is mostly made hands. Equity when missed: ~5-8%
+  // (raw air vs polar range). Linear approximation per-axis:
+  //   airBackdoorFlush    ≈ 0.08 + 0.042 * (0.9 - 0.08) = ~0.11 raw, but
+  //     floor-lifted to ~0.20 to account for fold-equity / realization
+  //     (BDFD outs are "clean" — villain can't easily see the board texture
+  //     and semi-bluff credibility is higher). Treat as upper-end of plausible.
+  //   airBackdoorStraight ≈ similar math but BDSD is less reliable on
+  //     highly-connected boards (villain may already have better straight
+  //     draws). Pull to ~0.15.
+  //   airBackdoorCombo    ≈ additive but with correlation discount ~0.25.
+  //   backdoorFlushDraw (aggregate BDFD alone + BDFD-in-combo): weight-avg ~0.22.
+  //   backdoorStraightDraw (aggregate BDSD alone + BDFD-in-combo): ~0.18.
+  //   backdoorCombo: 0.25 (same as airBackdoorCombo — bucket aliases).
+  // These are v1 authoring priors, will be tightened by LSW-D1 depth-2
+  // integration once per-combo equity from the game tree replaces this
+  // coarse table.
+  airBackdoorFlush:     0.20,
+  airBackdoorStraight:  0.15,
+  airBackdoorCombo:     0.25,
+  backdoorFlushDraw:    0.22,
+  backdoorStraightDraw: 0.18,
+  backdoorCombo:        0.25,
   // Nothing
   air:             0.10,
 });

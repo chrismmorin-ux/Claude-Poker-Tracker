@@ -282,12 +282,37 @@ Archetype toggling continues to shift the EV via the archetype-weighted fold rat
 
 **Findings still OPEN** (not touched by H1):
 - S2 (hero-combo-specific EV row) — deferred to `LSW-H2`.
-- S4 (BDFD / BDSD taxonomy) — deferred to `LSW-G3`.
+- S4 (BDFD / BDSD taxonomy) — **RESOLVED by `LSW-G3` (see closure appendix below)**.
 - S5 (villain-bucket-first paradigm redesign) — deferred to `LSW-G4` roundtable gate.
 - S6 (domination map) — deferred to `LSW-G5`.
 
 **Unblocked by H1:**
 - `LSW-B1` — partial unblock. Still also BLOCKED by `LSW-H3` (visual verification sweep of remaining 11 nodes + 7 other-line flop roots).
+
+---
+
+## Appendix — LSW-G3 closure (2026-04-22)
+
+**Scope:** Surface audit S4 — backdoor flush draw and backdoor straight draw silently dropped by the taxonomy.
+
+**Resolved:**
+- Audit of `exploitEngine/postflopNarrower.js` confirmed `detectDraws` already computes `hasBackdoorFlush` / `hasBackdoorStraight` flags (has since 2026-03-08). The data was there; the classifier in `rangeSegmenter.js` was discarding it by falling through to `air`.
+- Extended `classifyHandType` to emit three new `HAND_TYPES` — `airBackdoorCombo`, `airBackdoorFlush`, `airBackdoorStraight` — when a hand would otherwise be air but has one or both backdoor flags. **Semantic note (deliberate):** made-hand shapes (pair or better) and direct draws (OESD/gutshot/FD/comboDraw) still win the strongest-first classification; J♥T♠ on T♥9♥6♠ stays `topPairGood`. The new types are **air-only** — they surface hands whose *strongest* shape is air + runner-runner potential. Per-combo surfacing of "TP + BDFD" for made hands is LSW-H2's territory (hero-combo EV row).
+- Added matching `BUCKET_TAXONOMY` entries in `bucketTaxonomy.js`: `backdoorFlushDraw → [airBackdoorFlush, airBackdoorCombo]`, `backdoorStraightDraw → [airBackdoorStraight, airBackdoorCombo]`, `backdoorCombo → [airBackdoorCombo]`.
+- Added equity priors in `HERO_BUCKET_TYPICAL_EQUITY`: `airBackdoorFlush: 0.20`, `airBackdoorStraight: 0.15`, `airBackdoorCombo: 0.25`, plus aggregate bucket entries. Combinatorial-anchored: BDFD completes ~4.2% runner-runner; BDSD ~3%; equity-when-hit ≈0.9 vs polar range; equity-when-miss ≈0.08; fold-equity / realization lift for clean-out semi-bluff credibility pulls priors up from the raw ~0.11-0.13 math.
+- Extended `pctAir(bd)` in `handTypeBreakdown.js` to include the three new air-backdoor types, preserving the framework-layer invariant `pctAir + pctWeakDraws + pctStrongDraws + pctAnyPairPlus ≈ 1`. Added `pctAirStrict` for callers that want pre-G3 strict semantics. Whiff framework continues to treat backdoor hands as whiffs (they still fold to a c-bet from a direct-equity standpoint), which is what the scenario fixtures expect.
+
+**NOT changed in G3 (deliberate):**
+- `flop_root.heroHolding.bucketCandidates` stays at `['topPair']`. J♥T♠ is classified as `topPairGood` (strongest-wins), not `airBackdoor*` — the new buckets wouldn't populate. The honest widening to surface J♥T♠'s BDFD+BDSD-on-top-of-TP is LSW-H2's hero-combo EV row, not a bucket.
+- No line content updates. G3 delivers infrastructure; no line currently authors pure-backdoor hero combos.
+
+**Tests:** +8 new cases across `rangeSegmenter.test.js` (classification of BDFD-only / BDSD-only / combo / topPair-with-backdoor / pure-air on dry board) and `bucketTaxonomy.test.js` (3 new bucket IDs + sample population). Initial run surfaced 2 combinatorial errors in my own test fixtures (5♥4♦ is BDFD+BDSD combo not BDFD-only; 5♣3♠ on A72r is a wheel gutshot not air) — fixed to A♥2♦ on T96 for BDFD-only and 4♣3♠ on KQJ-rainbow for pure air.
+
+**Invariant check:** `pctAir + pctWeakDraws + pctStrongDraws + pctAnyPairPlus ≈ 1` still holds — `handTypeBreakdown.test.js:179` green. Scenario-validator tests green (whiff framework classifications unchanged after `pctAir` broadening).
+
+**Follow-ons:**
+- `LSW-G3` could be augmented by a drillModeEngine-level override that uses `bucketCombos` where the enumerated set includes hands whose non-backdoor classification is air — this is what the new buckets already do.
+- `LSW-H2` (hero-combo-specific EV row) will use the fact that `detectDraws` exposes backdoor flags to compute the equity bump for J♥T♠'s TP+BDFD+BDSD vs a plain TP.
 
 ---
 

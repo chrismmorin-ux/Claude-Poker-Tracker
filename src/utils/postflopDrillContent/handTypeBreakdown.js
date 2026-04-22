@@ -214,5 +214,29 @@ export const pctWeakDraws = (bd) => (
   bd.handTypes.overcards.pct
 );
 
-/** Air (no made hand, no meaningful outs). */
-export const pctAir = (bd) => bd.handTypes.air.pct;
+/**
+ * Air (no made hand, no meaningful direct outs) — inclusive of the three
+ * backdoor-only hand types added 2026-04-22 under LSW-G3
+ * (`airBackdoorFlush`, `airBackdoorStraight`, `airBackdoorCombo`). A hand
+ * with only runner-runner potential can't continue to villain aggression
+ * with equity in the same sense pair+ or direct draws can, so for the
+ * whiff / range-decomposition frameworks it still belongs in the "air"
+ * bucket. This also preserves the canonical invariant that
+ * `pctAir + pctWeakDraws + pctStrongDraws + pctAnyPairPlus ≈ 1` across
+ * the full hand-type taxonomy — otherwise the new backdoor types fall
+ * into an accounting gap.
+ *
+ * Callers that want the strict "no backdoor either" definition can sum
+ * `bd.handTypes.air.pct` directly (or use `pctAirStrict` below).
+ */
+const htPct = (bd, id) => (bd.handTypes[id]?.pct ?? 0);
+
+export const pctAir = (bd) => (
+  htPct(bd, 'air')
+  + htPct(bd, 'airBackdoorFlush')
+  + htPct(bd, 'airBackdoorStraight')
+  + htPct(bd, 'airBackdoorCombo')
+);
+
+/** Strict air (no draws, no backdoor) — the narrow pre-LSW-G3 definition. */
+export const pctAirStrict = (bd) => htPct(bd, 'air');

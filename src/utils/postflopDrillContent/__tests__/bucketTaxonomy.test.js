@@ -187,6 +187,57 @@ describe('enumerateBucketCombos — JT6 canonical examples (roundtable scenario)
   });
 });
 
+// LSW-G3 (2026-04-22) — backdoor-only buckets.
+describe('BUCKET_TAXONOMY — backdoor-only buckets (LSW-G3)', () => {
+  const board = flop('T♥', '9♥', '6♠'); // two-tone + 3-connected
+
+  it('exposes 3 new bucket IDs', () => {
+    expect(isKnownBucket('backdoorFlushDraw')).toBe(true);
+    expect(isKnownBucket('backdoorStraightDraw')).toBe(true);
+    expect(isKnownBucket('backdoorCombo')).toBe(true);
+  });
+
+  it('backdoorFlushDraw maps to airBackdoorFlush + airBackdoorCombo', () => {
+    expect(handTypesForBucket('backdoorFlushDraw')).toEqual(
+      ['airBackdoorFlush', 'airBackdoorCombo'],
+    );
+  });
+
+  it('backdoorStraightDraw maps to airBackdoorStraight + airBackdoorCombo', () => {
+    expect(handTypesForBucket('backdoorStraightDraw')).toEqual(
+      ['airBackdoorStraight', 'airBackdoorCombo'],
+    );
+  });
+
+  it('backdoorCombo maps to airBackdoorCombo only (strictest of the three)', () => {
+    expect(handTypesForBucket('backdoorCombo')).toEqual(['airBackdoorCombo']);
+  });
+
+  it('enumerateBucketCombos finds backdoor combos in a known range/board', () => {
+    // 5h4d on T♥9♥6♠: 1 heart + 2 on board = BDFD; 3-4-5-6-7 window has
+    // 4,5,6 = 3 cards → BDSD. Pure air otherwise. → airBackdoorCombo.
+    // Use a range that's likely to include such a combo.
+    const range = parseRangeString('54s,54o');
+    const out = enumerateBucketCombos({ bucketId: 'backdoorCombo', board, range });
+    // At least one combo should classify as airBackdoorCombo given the
+    // range contains 54s and 54o on this board.
+    expect(out).not.toBeNull();
+    expect(out.sampleSize).toBeGreaterThan(0);
+    for (const c of out.combos) {
+      expect(c.handType).toBe('airBackdoorCombo');
+    }
+  });
+
+  it('backdoorFlushDraw aggregate is a superset of backdoorCombo', () => {
+    // Any hand in backdoorCombo is also in backdoorFlushDraw (via the
+    // airBackdoorCombo type shared between the two bucket definitions).
+    const range = parseRangeString('54s,54o,52s,54o');
+    const all = enumerateBucketCombos({ bucketId: 'backdoorFlushDraw', board, range });
+    const comboOnly = enumerateBucketCombos({ bucketId: 'backdoorCombo', board, range });
+    expect(all.sampleSize).toBeGreaterThanOrEqual(comboOnly.sampleSize);
+  });
+});
+
 describe('flopRanksDescending', () => {
   it('returns ranks sorted high-to-low', () => {
     const board = flop('T♥', '9♥', '6♠');

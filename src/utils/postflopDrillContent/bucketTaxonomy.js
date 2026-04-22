@@ -84,6 +84,16 @@ export const BUCKET_TAXONOMY = Object.freeze({
   gutshot:         Object.freeze(['gutshot']),
   overcards:       Object.freeze(['overcards']),
 
+  // Backdoor-only draws (LSW-G3, 2026-04-22). Air-otherwise hands with
+  // runner-runner potential. `backdoorFlushDraw` + `backdoorStraightDraw`
+  // are singletons; `backdoorCombo` stacks both. A hand that would have
+  // classified as topPair / overpair / direct draw stays under its
+  // primary shape — per-combo surfacing of "TP + BDFD" is the LSW-H2
+  // hero-combo-specific EV row, not a bucket.
+  backdoorFlushDraw:    Object.freeze(['airBackdoorFlush', 'airBackdoorCombo']),
+  backdoorStraightDraw: Object.freeze(['airBackdoorStraight', 'airBackdoorCombo']),
+  backdoorCombo:        Object.freeze(['airBackdoorCombo']),
+
   // Nothing
   air:           Object.freeze(['air']),
 });
