@@ -109,9 +109,9 @@ Secondary:
 
 ## Known issues
 
-- No prior audit findings.
-- Known atlas gaps: **TS-38 multi-day note persistence**, **TS-40 per-seat FT ICM payout delta**, **TS-41 satellite survival mode**, **TS-42 bounty-adjusted EV** all flagged as proposed / not served.
-- Wave 4 audit (specialized surfaces) will Gate-2 roundtable this view because the atlas flags three distinct discovery clusters (ICM / bounty / satellite).
+- **DCOMP-W4-A2 combined Gate-2 roundtable + Gate-4 audit shipped 2026-04-22 — verdict RED.** 5 P0 destructive-action anti-patterns (End Tournament irreversible [artifact explicitly admitted this at line 108], `recordElimination` silent commit [artifact described an Undo button that doesn't exist in code], `advanceLevel` silent, `updateStack` typo-unguarded, `setPlayersRemaining` unvalidated — plus cross-contracts + satellite honesty gap). 5 P1 + 4 P2 + 3 P3/deferred findings. Full audit: `../audits/2026-04-22-blindspot-tournament-view.md`. Fixes queued as DCOMP-W4-A2-F1..F13 in BACKLOG.
+- Known atlas gaps persist: TS-38 multi-day note persistence, TS-40 per-seat FT ICM payout delta, TS-42 bounty-adjusted EV. TS-41 satellite survival — elevated from "deferred" to P2 with F9 honesty banner (advice is currently actively wrong in satellite mode).
+- Wave 4 audit COMPLETE for tournament-view. Online-view + settings-view audits remain.
 
 ## Potentially missing
 
@@ -139,3 +139,4 @@ Secondary:
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
+- 2026-04-22 — DCOMP-W4-A2 combined Gate-2 + Gate-4 audit appended; Known-issues updated with 13 findings.
