@@ -31,20 +31,24 @@ export const OnlineView = ({ scale }) => {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [expandedRec, setExpandedRec] = useState(null);
   const [recsExpanded, setRecsExpanded] = useState(false);
+  const [isImporting, setIsImporting] = useState(false); // W4-A3-F6
   const fileInputRef = useRef(null);
 
-  // File import handler
+  // File import handler — W4-A3-F6 loading state + disabled button during work.
   const handleFileImport = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsImporting(true);
     try {
       const text = await file.text();
       await importFromJson(text);
       loadSessions();
     } catch (err) {
       showError(`Import failed: ${err.message}`);
+    } finally {
+      setIsImporting(false);
+      e.target.value = '';
     }
-    e.target.value = '';
   }, [importFromJson, loadSessions, showError]);
 
   const selectedSeatData = selectedSeat ? tendencyMap[selectedSeat] : null;
@@ -133,12 +137,15 @@ export const OnlineView = ({ scale }) => {
             </div>
             <button
               onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
               style={{
                 background: '#374151', color: '#d4a847', border: '1px solid #4b5563',
-                padding: '8px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 13,
+                padding: '8px 16px', borderRadius: 6, cursor: isImporting ? 'wait' : 'pointer', fontSize: 13,
+                opacity: isImporting ? 0.6 : 1,
+                minHeight: 44,
               }}
             >
-              Import from File
+              {isImporting ? 'Importing…' : 'Import from File'}
             </button>
             <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
           </div>
@@ -175,12 +182,15 @@ export const OnlineView = ({ scale }) => {
             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
               <button
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
                 style={{
                   background: '#374151', color: '#9ca3af', border: '1px solid #4b5563',
-                  padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 11,
+                  padding: '6px 12px', borderRadius: 4, cursor: isImporting ? 'wait' : 'pointer', fontSize: 11,
+                  opacity: isImporting ? 0.6 : 1,
+                  minHeight: 44,
                 }}
               >
-                Import from File
+                {isImporting ? 'Importing…' : 'Import from File'}
               </button>
               <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
             </div>

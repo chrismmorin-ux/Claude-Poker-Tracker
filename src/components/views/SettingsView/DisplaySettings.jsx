@@ -16,10 +16,10 @@ export const DisplaySettings = ({ settings, updateSetting }) => (
           <button
             key={theme}
             disabled
-            className={`px-4 py-2 rounded-lg font-medium text-sm ${
+            className={`px-4 min-h-[44px] rounded-lg font-medium text-sm opacity-50 ${
               settings.theme === theme
                 ? 'bg-blue-600 text-white cursor-not-allowed'
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
             }`}
           >
             {theme.charAt(0).toUpperCase() + theme.slice(1)}
@@ -38,7 +38,7 @@ export const DisplaySettings = ({ settings, updateSetting }) => (
           <button
             key={size}
             onClick={() => updateSetting(SETTINGS_FIELDS.CARD_SIZE, size)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-4 min-h-[44px] rounded-lg font-medium text-sm transition-colors ${
               settings.cardSize === size
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'

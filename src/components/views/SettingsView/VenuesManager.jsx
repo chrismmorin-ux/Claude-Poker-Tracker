@@ -37,11 +37,11 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
               setVenueError('');
             }}
             placeholder="Enter venue name"
-            className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="flex-1 px-3 min-h-[44px] bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
           />
           <button
             onClick={handleAddVenue}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
+            className="px-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
           >
             Add
           </button>

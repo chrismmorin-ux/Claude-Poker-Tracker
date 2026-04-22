@@ -48,24 +48,25 @@ export const GameTypesManager = ({ settings, addCustomGameType, removeCustomGame
               setGameTypeError('');
             }}
             placeholder="e.g., 5/10 PLO"
-            className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="flex-1 px-3 min-h-[44px] bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
           />
           <div className="relative w-24">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
             <input
               type="text"
+              inputMode="decimal"
               value={newGameTypeBuyIn}
               onChange={(e) => {
                 setNewGameTypeBuyIn(e.target.value);
                 setGameTypeError('');
               }}
               placeholder="Buy-in"
-              className="w-full pl-7 pr-2 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="w-full pl-7 pr-2 min-h-[44px] bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
             />
           </div>
           <button
             onClick={handleAddGameType}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium"
+            className="px-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
           >
             Add
           </button>

@@ -69,7 +69,7 @@ export const SettingsView = ({ scale }) => {
           <h2 className="text-2xl font-bold text-white">Settings</h2>
           <button
             onClick={() => setCurrentScreen(SCREEN.TABLE)}
-            className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
+            className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 min-h-[44px] rounded-lg font-medium transition-colors"
           >
             Back to Table
           </button>

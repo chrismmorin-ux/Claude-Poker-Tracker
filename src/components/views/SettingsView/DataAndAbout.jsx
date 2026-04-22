@@ -154,10 +154,10 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
             <button
               key={freq}
               disabled
-              className={`px-3 py-1.5 rounded-lg font-medium text-sm ${
+              className={`px-4 min-h-[44px] rounded-lg font-medium text-sm opacity-50 ${
                 settings.backupFrequency === freq
                   ? 'bg-orange-600 text-white cursor-not-allowed'
-                  : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               }`}
             >
               {freq.charAt(0).toUpperCase() + freq.slice(1)}
@@ -218,13 +218,13 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
             <span className="text-yellow-400 text-sm">Reset all settings?</span>
             <button
               onClick={handleResetSettings}
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              className="px-4 min-h-[44px] bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
             >
               Confirm
             </button>
             <button
               onClick={() => setShowResetConfirm(false)}
-              className="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 text-white rounded-lg text-sm font-medium"
+              className="px-4 min-h-[44px] bg-gray-600 hover:bg-gray-500 text-white rounded-lg text-sm font-medium"
             >
               Cancel
             </button>
@@ -232,7 +232,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
         ) : (
           <button
             onClick={handleResetSettings}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium"
+            className="px-4 min-h-[44px] bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm font-medium"
           >
             Reset to Defaults
           </button>
@@ -249,6 +249,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
           <label className="text-gray-300 text-xs">Hands:</label>
           <input
             type="number"
+            inputMode="numeric"
             min={1}
             max={500}
             value={simCount}

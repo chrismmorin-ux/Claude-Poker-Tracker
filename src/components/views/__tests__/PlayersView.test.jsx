@@ -62,7 +62,7 @@ vi.mock('../../ui/SeatAssignmentGrid', () => ({
           Seat {seat}
         </button>
       ))}
-      <button onClick={onClearAllSeats}>Clear All</button>
+      <button onClick={onClearAllSeats}>Clear All Seats</button>
     </div>
   ),
 }));
@@ -81,6 +81,7 @@ const mockPlayerContext = {
   isPlayerAssigned: vi.fn(() => false),
   getPlayerSeat: vi.fn(() => null),
   clearAllSeatAssignments: vi.fn(),
+  hydrateSeatPlayers: vi.fn(),
 };
 
 const mockUIContext = {
@@ -292,69 +293,52 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('delete functionality', () => {
-    it('opens delete confirmation when delete clicked', () => {
+  describe('delete functionality (W4-A1-F2: deferred-delete toast+undo, blocking modal removed)', () => {
+    it('optimistically filters player from the table on delete click', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
+      const rowsBefore = screen.getAllByRole('row').length;
       const deleteButtons = screen.getAllByText('Delete');
       fireEvent.click(deleteButtons[0]);
-      expect(screen.getByText(/Are you sure you want to delete/)).toBeInTheDocument();
+      const rowsAfter = screen.getAllByRole('row').length;
+      expect(rowsAfter).toBeLessThan(rowsBefore);
     });
 
-    it('shows player name in delete confirmation', () => {
+    it('does NOT open a blocking modal on delete click', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       const deleteButtons = screen.getAllByText('Delete');
       fireEvent.click(deleteButtons[0]);
-      // The name appears twice - once in the table and once in the modal (as <strong>)
-      const johnDoeElements = screen.getAllByText('John Doe');
-      expect(johnDoeElements.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('cancels delete when cancel clicked', () => {
-      renderWithToast(<PlayersView {...defaultProps} />);
-      const deleteButtons = screen.getAllByText('Delete');
-      fireEvent.click(deleteButtons[0]);
-
-      // Click Cancel in the modal
-      const cancelButtons = screen.getAllByText('Cancel');
-      fireEvent.click(cancelButtons[cancelButtons.length - 1]);
-
+      // The Wave-1 pattern removed the "This action cannot be undone" modal.
       expect(screen.queryByText(/Are you sure you want to delete/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/This action cannot be undone/)).not.toBeInTheDocument();
     });
 
-    it('calls deletePlayerById on confirm', async () => {
+    it('shows a toast with Undo action after delete click', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       const deleteButtons = screen.getAllByText('Delete');
       fireEvent.click(deleteButtons[0]);
-
-      // Find and click the Delete button in the modal (the one with red styling)
-      const allDeleteButtons = screen.getAllByText('Delete');
-      const modalDeleteButton = allDeleteButtons.find(
-        (btn) => btn.classList.contains('bg-red-600')
-      );
-      if (modalDeleteButton) {
-        fireEvent.click(modalDeleteButton);
-        await waitFor(() => {
-          expect(mockPlayerContext.deletePlayerById).toHaveBeenCalledWith(1);
-        });
-      }
+      // Toast message includes the player name + "deleted"; Undo button appears.
+      expect(screen.getByText(/deleted/i)).toBeInTheDocument();
+      expect(screen.getByText('Undo')).toBeInTheDocument();
     });
 
-    it('shows error on delete failure', async () => {
-      mockPlayerContext.deletePlayerById.mockImplementation(() => Promise.reject(new Error('Delete failed')));
+    it('does NOT call deletePlayerById immediately on delete click (deferred)', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       const deleteButtons = screen.getAllByText('Delete');
       fireEvent.click(deleteButtons[0]);
+      // IDB delete is deferred via setTimeout(12s); optimistic UI only.
+      expect(mockPlayerContext.deletePlayerById).not.toHaveBeenCalled();
+    });
 
-      const allDeleteButtons = screen.getAllByText('Delete');
-      const modalDeleteButton = allDeleteButtons.find(
-        (btn) => btn.classList.contains('bg-red-600')
-      );
-      if (modalDeleteButton) {
-        fireEvent.click(modalDeleteButton);
-        await waitFor(() => {
-          expect(screen.getByText(/Failed to delete player/)).toBeInTheDocument();
-        });
-      }
+    it('restores the row when Undo is clicked', () => {
+      renderWithToast(<PlayersView {...defaultProps} />);
+      const rowsBefore = screen.getAllByRole('row').length;
+      const deleteButtons = screen.getAllByText('Delete');
+      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(screen.getByText('Undo'));
+      const rowsAfter = screen.getAllByRole('row').length;
+      expect(rowsAfter).toBe(rowsBefore);
+      // Undo cancels the deferred delete; deletePlayerById is never called.
+      expect(mockPlayerContext.deletePlayerById).not.toHaveBeenCalled();
     });
   });
 
@@ -370,21 +354,46 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('clear all seats', () => {
-    it('clears all seats when confirmed', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
+  describe('clear all seats (W4-A1-F1: toast+undo, native confirm() removed)', () => {
+    // Clear-All-Seats is a no-op when seatPlayers is empty; these tests seed
+    // the mock context with at least one seat binding to exercise the undo path.
+    const seatedContext = () => {
+      mockPlayerContext.seatPlayers = { 3: 1 };
+      mockPlayerContext.allPlayers = [{ playerId: 1, name: 'John Doe' }];
+    };
+
+    it('clears all seats immediately on click — no native confirm dialog', () => {
+      seatedContext();
+      const confirmSpy = vi.spyOn(window, 'confirm');
       renderWithToast(<PlayersView {...defaultProps} />);
-      fireEvent.click(screen.getByText('Clear All'));
+      fireEvent.click(screen.getByText('Clear All Seats'));
+      expect(confirmSpy).not.toHaveBeenCalled();
       expect(mockPlayerContext.clearAllSeatAssignments).toHaveBeenCalled();
       vi.restoreAllMocks();
     });
 
-    it('does not clear when cancelled', () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('shows a toast with Undo action after clear', () => {
+      seatedContext();
       renderWithToast(<PlayersView {...defaultProps} />);
-      fireEvent.click(screen.getByText('Clear All'));
+      fireEvent.click(screen.getByText('Clear All Seats'));
+      expect(screen.getByText(/cleared/i)).toBeInTheDocument();
+      expect(screen.getByText('Undo')).toBeInTheDocument();
+    });
+
+    it('restores seat assignments via hydrateSeatPlayers when Undo clicked', () => {
+      seatedContext();
+      renderWithToast(<PlayersView {...defaultProps} />);
+      fireEvent.click(screen.getByText('Clear All Seats'));
+      fireEvent.click(screen.getByText('Undo'));
+      expect(mockPlayerContext.hydrateSeatPlayers).toHaveBeenCalled();
+    });
+
+    it('is a no-op when no seats are assigned (early return)', () => {
+      // Default mockPlayerContext.seatPlayers is {} — empty.
+      mockPlayerContext.seatPlayers = {};
+      renderWithToast(<PlayersView {...defaultProps} />);
+      fireEvent.click(screen.getByText('Clear All Seats'));
       expect(mockPlayerContext.clearAllSeatAssignments).not.toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
   });
 

@@ -201,8 +201,14 @@ export const TournamentView = ({ scale }) => {
 
   const { config, currentLevelIndex, chipStacks, playersRemaining, isPaused } = tournamentState;
 
-  // Find hero stack (use mySeat from game context, fallback to first available)
-  const heroStack = chipStacks[mySeat] || Object.values(chipStacks)[0] || 0;
+  // W4-A2-F8: heroStack resolution is strict — only read the hero's seat from
+  // chipStacks. If mySeat is null, render the view without a hero projection
+  // rather than silently picking an arbitrary seat (which was the pre-fix
+  // behavior via Object.values()[0] and could render a non-hero's ICM as if
+  // it were hero's). PredictionsPanel receives heroSeat=null and handles the
+  // no-hero-selected state gracefully (or, until that UX lands, the panel
+  // still computes but against stack=0).
+  const heroStack = mySeat != null ? (chipStacks[mySeat] || 0) : 0;
 
   return (
     <ScaledContainer scale={scale}>
@@ -274,6 +280,7 @@ export const TournamentView = ({ scale }) => {
                   <Trophy size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={finishPosition}
                     onChange={(e) => setFinishPosition(e.target.value)}
                     placeholder="e.g. 3"
@@ -287,6 +294,7 @@ export const TournamentView = ({ scale }) => {
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={payoutAmount}
                     onChange={(e) => setPayoutAmount(e.target.value)}
                     placeholder="0"

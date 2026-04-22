@@ -50,9 +50,23 @@ export const ChipStackPanel = ({
     setEditValue(currentStack?.toString() || '');
   };
 
+  // W4-A2-F4: typo guard — warn when new stack is ≥10× the previous value
+  // (common misclick: dropped zero, extra digit). User confirms via a second
+  // Enter press or Save click; accidental order-of-magnitude edits get a
+  // confirm prompt.
+  const [pendingTypoSeat, setPendingTypoSeat] = useState(null);
   const commitEdit = () => {
     if (editingSeat != null && editValue !== '') {
-      onUpdateStack(editingSeat, Number(editValue) || 0);
+      const newVal = Number(editValue) || 0;
+      const prevVal = chipStacks[editingSeat] || 0;
+      // Order-of-magnitude sanity check — prompt if 10×+ change (up or down).
+      if (prevVal > 0 && (newVal >= prevVal * 10 || (newVal > 0 && newVal <= prevVal / 10)) && pendingTypoSeat !== editingSeat) {
+        setPendingTypoSeat(editingSeat);
+        // Keep the edit mode open with the value; user re-confirms.
+        return;
+      }
+      onUpdateStack(editingSeat, newVal);
+      setPendingTypoSeat(null);
     }
     setEditingSeat(null);
     setEditValue('');
@@ -106,12 +120,22 @@ export const ChipStackPanel = ({
           {editingSeat === seat ? (
             <input
               type="number"
+              inputMode="numeric"
               value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
+              onChange={(e) => {
+                setEditValue(e.target.value);
+                // Clear pending-typo state when user edits the value.
+                if (pendingTypoSeat === editingSeat) setPendingTypoSeat(null);
+              }}
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               autoFocus
-              className="w-24 px-2 py-0.5 bg-gray-700 text-white border border-blue-500 rounded text-sm text-right"
+              className={`w-24 px-2 py-0.5 bg-gray-700 text-white border rounded text-sm text-right ${
+                pendingTypoSeat === editingSeat
+                  ? 'border-amber-500 ring-2 ring-amber-500/50'
+                  : 'border-blue-500'
+              }`}
+              title={pendingTypoSeat === editingSeat ? 'Large change — press Enter again to confirm' : undefined}
             />
           ) : (
             <button
@@ -172,7 +196,14 @@ export const ChipStackPanel = ({
             )}
           </div>
           <button
-            onClick={() => onSetPlayersRemaining((playersRemaining || 0) + 1)}
+            onClick={() => {
+              const proposed = (playersRemaining || 0) + 1;
+              // W4-A2-F5 guard: don't let the value exceed totalEntrants
+              // (impossible by definition — can't have more players remaining
+              // than ever entered). If no totalEntrants cap, allow the edit.
+              const capped = totalEntrants && proposed > totalEntrants ? totalEntrants : proposed;
+              onSetPlayersRemaining(capped);
+            }}
             className="w-10 h-10 hover:bg-gray-600 text-gray-300 rounded-lg flex items-center justify-center text-xl font-bold transition-colors"
             style={{ backgroundColor: '#374151', border: `1px solid rgba(212,168,71,0.3)` }}
           >
