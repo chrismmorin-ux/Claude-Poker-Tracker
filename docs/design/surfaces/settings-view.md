@@ -112,8 +112,8 @@ Wrapped in `ScaledContainer` with `LAYOUT.TABLE_WIDTH/HEIGHT`.
 
 ## Known issues
 
-- No prior audit findings.
-- Wave 4 audit (specialized surfaces) will examine: accessibility controls, reset-settings destructive flow, multi-currency / FX gap, and the AccountSection empty-state when auth is paused.
+- **DCOMP-W4-A4 audit shipped 2026-04-22 — verdict YELLOW.** Cleanest W4 surface — no P0 findings. 4 P1: F1 Reset to Defaults lacks toast+undo (two-click-confirm ≠ undo); F2 Hand Simulator Clear silent (non-dev-gated); F3 touch targets (Back/toggles/Add/Reset) measure 32-41px, under ≥44; F4 inputs lack inputMode=decimal/numeric. 5 P2 polish: F5 Backup Frequency disabled-row takes full real-estate; F6 Theme toggle visually-active-styled but disabled; F7 Add-button color inconsistent (purple vs teal); F8 errorReportingEnabled plumbing unclear; F9 AccountSection not dismissible for local-first users. 3 P3/deferred. Full audit: `../audits/2026-04-22-settings-view.md`. Fixes queued as DCOMP-W4-A4-F1..F12.
+- Wave 4 audit COMPLETE for settings-view. **ALL 4 W4 AUDITS NOW SHIPPED.**
 
 ## Potentially missing
 
@@ -141,3 +141,4 @@ Wrapped in `ScaledContainer` with `LAYOUT.TABLE_WIDTH/HEIGHT`.
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
+- 2026-04-22 — DCOMP-W4-A4 audit appended. Verdict YELLOW — no P0. 12 findings (4 P1, 5 P2, 3 P3).
