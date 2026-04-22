@@ -112,8 +112,8 @@ Secondary:
 
 ## Known issues
 
-- No prior audit findings.
-- Wave 2 audit will examine: the ambiguous "back" target (HISTORY vs ANALYSIS vs SESSIONS), density of VillainAnalysisSection, missing F-W4 hand-significance indicator, and missing flag / annotation flows (SR-26 / CO-49).
+- **DCOMP-W2-A1 audit shipped 2026-04-22 (verdict YELLOW).** 12 findings: 0 P0, 3 P1 (F1 Back context-aware routing + ≥44×44, F2 significance badge, F3 flag+annotate SR-26/CO-49), 5 P2 + 4 P3. Back-target routing resolved: always `SCREEN.HISTORY` → `<AnalysisView initialTab="review" />`, but hardcoded regardless of entry (Sessions-entry users disoriented). `DecisionTreeView.jsx` orphan status rediscovered (points to existing `2026-04-21-decision-tree-fate` discovery). VillainAnalysisSection 386 LOC density flagged for decomposition. Full audit: `../audits/2026-04-22-blindspot-hand-replay-view.md`.
+- Wave 2 audit COMPLETE for hand-replay-view. Analysis + stats audits queued.
 
 ## Potentially missing
 
@@ -143,3 +143,4 @@ Secondary:
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
+- 2026-04-22 — DCOMP-W2-A1 combined Gate-2 + Gate-4 audit appended. Verdict YELLOW. 12 findings.
