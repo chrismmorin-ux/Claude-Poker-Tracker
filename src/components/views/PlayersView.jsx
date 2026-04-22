@@ -85,11 +85,15 @@ export const PlayersView = ({ scale = 1 }) => {
 
   // UI state (PEO-4: removed showNewPlayerModal, editingPlayer, lastCreatedPlayerId,
   // showPendingAssignmentPrompt — all migrated to PlayerEditorView route.)
-  const [deletingPlayer, setDeletingPlayer] = useState(null);
+  // W4-A1-F2: replaced `deletingPlayer` modal state with pendingDeletesRef +
+  // pendingDeletedIds filter set for deferred-delete + undo (SV-F1 pattern).
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
   const [showReplacePrompt, setShowReplacePrompt] = useState(false);
   const [replacePromptData, setReplacePromptData] = useState(null);
+  // Set of playerIds pending deferred delete — excluded from the filtered list.
+  const [pendingDeletedIds, setPendingDeletedIds] = useState(() => new Set());
+  const pendingDeletesRef = useRef(new Map()); // playerId → { timeoutId }
 
   // Load players on mount
   useEffect(() => {
@@ -333,14 +337,63 @@ export const PlayersView = ({ scale = 1 }) => {
     }
   };
 
-  const handleDeletePlayer = async () => {
-    try {
-      await deletePlayerById(deletingPlayer.playerId);
-      setDeletingPlayer(null);
-      showSuccess('Player deleted');
-    } catch (error) {
-      showError(`Failed to delete player: ${error.message}`);
-    }
+  // W4-A1-F2: Deferred-delete with 12s toast+undo (replaces the blocking
+  // "cannot be undone" modal). Pattern adapted from SV-F1:
+  //   1. Capture player record for undo.
+  //   2. Optimistically filter player out of the visible list via
+  //      pendingDeletedIds.
+  //   3. Schedule the real IDB delete via setTimeout(12s).
+  //   4. Undo: cancel timeout + remove from pendingDeletedIds — player
+  //      reappears because `allPlayers` was never mutated.
+  //   5. On timeout expiry: deletePlayerById fires, reloads `allPlayers`,
+  //      player is gone for real.
+  const handleRequestDeletePlayer = (player) => {
+    if (!player?.playerId) return;
+    const playerId = player.playerId;
+
+    // Optimistic filter
+    setPendingDeletedIds(prev => {
+      const next = new Set(prev);
+      next.add(playerId);
+      return next;
+    });
+
+    // Schedule commit
+    const timeoutId = setTimeout(async () => {
+      pendingDeletesRef.current.delete(playerId);
+      try {
+        await deletePlayerById(playerId);
+      } catch (error) {
+        // On failure, un-filter so state isn't lost silently.
+        setPendingDeletedIds(prev => {
+          const next = new Set(prev);
+          next.delete(playerId);
+          return next;
+        });
+        showError(`Failed to delete player: ${error.message}`);
+      }
+    }, UNDO_TOAST_DURATION_MS);
+    pendingDeletesRef.current.set(playerId, { timeoutId });
+
+    addToast(`${player.name || 'Player'} deleted`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pending = pendingDeletesRef.current.get(playerId);
+          if (!pending) return;
+          clearTimeout(pending.timeoutId);
+          pendingDeletesRef.current.delete(playerId);
+          setPendingDeletedIds(prev => {
+            const next = new Set(prev);
+            next.delete(playerId);
+            return next;
+          });
+          showSuccess(`${player.name || 'Player'} restored`);
+        },
+      },
+    });
   };
 
   return (
@@ -437,7 +490,7 @@ export const PlayersView = ({ scale = 1 }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {filteredPlayers.map(player => (
+                {filteredPlayers.filter(p => !pendingDeletedIds.has(p.playerId)).map(player => (
                   <PlayerRow
                     key={player.playerId}
                     player={player}
@@ -447,7 +500,7 @@ export const PlayersView = ({ scale = 1 }) => {
                     onDragEnd={handleDragEnd}
                     onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
                     onEdit={() => handleOpenEdit(player)}
-                    onDelete={() => setDeletingPlayer(player)}
+                    onDelete={() => handleRequestDeletePlayer(player)}
                     tendencyStats={tendencyMap[player.playerId] || null}
                     onUpdateExploits={(exploits) => handleUpdateExploits(player.playerId, exploits)}
                     onDismissSuggestion={(suggestionId) => handleDismissSuggestion(player.playerId, suggestionId)}
@@ -462,39 +515,6 @@ export const PlayersView = ({ scale = 1 }) => {
           </div>
         )}
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      {deletingPlayer && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setDeletingPlayer(null)}
-        >
-          <div
-            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold text-white mb-4">Delete Player</h2>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete <strong>{deletingPlayer.name}</strong>?
-              This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeletingPlayer(null)}
-                className="px-4 py-2 text-gray-200 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeletePlayer}
-                className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Range Detail Modal */}
       <RangeDetailPanel

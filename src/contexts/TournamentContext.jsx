@@ -151,6 +151,17 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     });
   }, [dispatchTournament]);
 
+  // W4-A2-F2 Undo support — partial-state hydrate for elimination undo. Takes
+  // a subset of tournamentState (typically {chipStacks, playersRemaining,
+  // eliminations}) and merges it back. Reuses the existing HYDRATE_TOURNAMENT
+  // reducer action which shallow-merges payload into state.
+  const hydrateTournament = useCallback((partialState) => {
+    dispatchTournament({
+      type: TOURNAMENT_ACTIONS.HYDRATE_TOURNAMENT,
+      payload: partialState,
+    });
+  }, [dispatchTournament]);
+
   // Timer: single source of truth for level countdown
   const { levelTimeRemaining } = useTournamentTimer({
     levelStartTime: isTournament ? tournamentState.levelStartTime : null,
@@ -269,6 +280,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     initTournament,
     advanceLevel,
     setBlindLevel,
+    hydrateTournament,
     pauseTimer,
     resumeTimer,
     updateStack,
@@ -292,6 +304,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     initTournament,
     advanceLevel,
     setBlindLevel,
+    hydrateTournament,
     pauseTimer,
     resumeTimer,
     updateStack,

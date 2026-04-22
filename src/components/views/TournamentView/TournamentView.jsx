@@ -40,6 +40,7 @@ export const TournamentView = ({ scale }) => {
     mRatioGuidance,
     advanceLevel,
     setBlindLevel,
+    hydrateTournament,
     pauseTimer,
     resumeTimer,
     updateStack,
@@ -52,8 +53,23 @@ export const TournamentView = ({ scale }) => {
     setCurrentScreen(SCREEN.TABLE);
   }, [setCurrentScreen]);
 
+  // W4-A2-F1: End Tournament with deferred-reset toast+undo. Captures the
+  // full tournamentState before reset so undo can restore via hydrateTournament.
+  // Session field writes happen optimistically; undo reverts them by writing
+  // the pre-end values (undefined if the field had no prior value).
   const handleConfirmEnd = useCallback(() => {
-    // Write tournament result fields to session
+    if (!tournamentState) return;
+
+    // Snapshot for undo
+    const tournamentSnapshot = { ...tournamentState };
+    const sessionFieldSnapshot = {
+      tournamentFinishPosition: undefined, // we don't know the prior value; undo writes undefined
+      tournamentPayout: undefined,
+      tournamentTotalEntrants: undefined,
+      tournamentFormat: undefined,
+    };
+
+    // Optimistic session field writes.
     if (finishPosition) {
       updateSessionField('tournamentFinishPosition', Number(finishPosition));
     }
@@ -62,13 +78,57 @@ export const TournamentView = ({ scale }) => {
     }
     updateSessionField('tournamentTotalEntrants', tournamentState.config.totalEntrants);
     updateSessionField('tournamentFormat', tournamentState.config.format);
+
+    // Reset the tournament + navigate.
     resetTournament();
     setCurrentScreen(SCREEN.SESSIONS);
-  }, [finishPosition, payoutAmount, tournamentState.config, resetTournament, setCurrentScreen, updateSessionField]);
 
+    // Fire toast from SESSIONS landing.
+    addToast(`Tournament ended — finish ${finishPosition || '?'}${payoutAmount ? ` · $${payoutAmount}` : ''}`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          // Restore tournamentState (hydrateTournament shallow-merges the snapshot).
+          hydrateTournament(tournamentSnapshot);
+          // Revert session field writes.
+          updateSessionField('tournamentFinishPosition', sessionFieldSnapshot.tournamentFinishPosition);
+          updateSessionField('tournamentPayout', sessionFieldSnapshot.tournamentPayout);
+          updateSessionField('tournamentTotalEntrants', sessionFieldSnapshot.tournamentTotalEntrants);
+          updateSessionField('tournamentFormat', sessionFieldSnapshot.tournamentFormat);
+          // Return to TOURNAMENT view.
+          setCurrentScreen(SCREEN.TOURNAMENT);
+          showSuccess('Tournament restored');
+        },
+      },
+    });
+  }, [finishPosition, payoutAmount, tournamentState, resetTournament, setCurrentScreen, updateSessionField, addToast, hydrateTournament, showSuccess]);
+
+  // W4-A2-F2: Eliminate-a-seat with toast+undo. Snapshot is a partial
+  // tournamentState slice (chipStacks + playersRemaining + eliminations)
+  // that captures everything recordElimination mutates. Undo merges the
+  // snapshot back via hydrateTournament (HYDRATE_TOURNAMENT reducer action).
   const handleEliminate = useCallback((seat) => {
+    if (!tournamentState) return;
+    const snapshot = {
+      chipStacks: { ...tournamentState.chipStacks },
+      playersRemaining: tournamentState.playersRemaining,
+      eliminations: [...(tournamentState.eliminations || [])],
+    };
     recordElimination(seat);
-  }, [recordElimination]);
+    addToast(`Eliminated seat ${seat}`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          hydrateTournament(snapshot);
+          showSuccess(`Seat ${seat} restored`);
+        },
+      },
+    });
+  }, [tournamentState, recordElimination, addToast, hydrateTournament, showSuccess]);
 
   // W4-A2-F3: two-phase Advance Level guard. First tap arms a confirm window;
   // second tap within 10s commits + fires an undo toast with 12s restore.
