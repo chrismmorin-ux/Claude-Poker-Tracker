@@ -35,15 +35,16 @@ Index of every UX surface in the app that has (or should have) a surface artifac
 
 ## Sidebar (extension)
 
-The Ignition extension sidebar is its own surface system with dedicated doctrine at `docs/SIDEBAR_DESIGN_PRINCIPLES.md`. Surface artifacts here link to panel-level docs in `ignition-poker-tracker/` rather than duplicating.
+The Ignition extension sidebar is its own surface system with dedicated doctrine at `docs/SIDEBAR_DESIGN_PRINCIPLES.md`. DCOMP-W5 (2026-04-22) integrated the sidebar into the framework via 5 zone-level surface artifacts + 1 overview. Each artifact cross-maps framework heuristics (Nielsen-10, Poker-Live-Table) to sidebar doctrine rules rather than duplicating.
 
 | ID | Name | Code | State |
 |----|------|------|-------|
-| sidebar-z0-chrome | Zone 0 — Chrome | extension | doctrine only |
-| sidebar-z1-table-read | Zone 1 — Table Read | extension | doctrine only |
-| sidebar-z2-decision | Zone 2 — Decision | extension | doctrine only |
-| sidebar-z3-street-card | Zone 3 — Street Card | extension | doctrine only |
-| sidebar-z4-deep-analysis | Zone 4 — Deep Analysis | extension | doctrine only |
+| sidebar-zones-overview | DCOMP-W5 overview + heuristic cross-map | (docs) | ● (DCOMP-W5) |
+| sidebar-zone-0 | Zone 0 — Chrome + Diagnostics | extension | ● (DCOMP-W5) |
+| sidebar-zone-1 | Zone 1 — Table Read | extension | ● (DCOMP-W5) |
+| sidebar-zone-2 | Zone 2 — Decision | extension | ● (DCOMP-W5) |
+| sidebar-zone-3 | Zone 3 — Street Card | extension | ● (DCOMP-W5) |
+| sidebar-zone-4 | Zone 4 — Deep Analysis | extension | ● (DCOMP-W5) |
 
 ## Inline widgets (within views)
 
