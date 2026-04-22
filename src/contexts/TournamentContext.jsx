@@ -139,6 +139,18 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     dispatchTournament({ type: TOURNAMENT_ACTIONS.ADVANCE_BLIND_LEVEL });
   }, [dispatchTournament]);
 
+  // W4-A2-F3 Undo support — revert a manual Advance Level back to a specific
+  // level. Timer resets on the destination level (SET_BLIND_LEVEL action
+  // semantics). Acceptable trade-off for the undo window — users who undo a
+  // misclicked advance expect the level to revert; a fresh timer is a minor
+  // side-effect we document rather than re-plumb.
+  const setBlindLevel = useCallback((levelIndex) => {
+    dispatchTournament({
+      type: TOURNAMENT_ACTIONS.SET_BLIND_LEVEL,
+      payload: { levelIndex },
+    });
+  }, [dispatchTournament]);
+
   // Timer: single source of truth for level countdown
   const { levelTimeRemaining } = useTournamentTimer({
     levelStartTime: isTournament ? tournamentState.levelStartTime : null,
@@ -256,6 +268,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     // Handlers
     initTournament,
     advanceLevel,
+    setBlindLevel,
     pauseTimer,
     resumeTimer,
     updateStack,
@@ -278,6 +291,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     mRatioGuidance,
     initTournament,
     advanceLevel,
+    setBlindLevel,
     pauseTimer,
     resumeTimer,
     updateStack,

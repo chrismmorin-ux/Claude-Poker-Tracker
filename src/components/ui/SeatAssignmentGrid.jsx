@@ -35,7 +35,7 @@ export const SeatAssignmentGrid = ({
         <h2 className="text-lg font-bold text-gray-200">Current Seat Assignments</h2>
         <button
           onClick={onClearAllSeats}
-          className="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium"
+          className="px-4 text-sm text-white bg-red-600 rounded hover:bg-red-700 transition-colors font-medium min-h-[44px]"
         >
           Clear All Seats
         </button>
@@ -77,7 +77,8 @@ export const SeatAssignmentGrid = ({
                       e.stopPropagation();
                       onClearSeat(seat);
                     }}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium"
+                    className="text-xs text-red-600 hover:text-red-800 font-medium px-3 min-h-[44px] w-full flex items-center justify-center"
+                    aria-label={`Clear seat ${seat}`}
                   >
                     Clear
                   </button>

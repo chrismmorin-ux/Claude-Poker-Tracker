@@ -13,15 +13,20 @@ import { PredictionsPanel } from './PredictionsPanel';
 import { ChipStackPanel } from './ChipStackPanel';
 import { useTournament } from '../../../contexts/TournamentContext';
 import { useUI, useGame, useSession } from '../../../contexts';
+import { useToast } from '../../../contexts/ToastContext';
 import { SCREEN } from '../../../constants/uiConstants';
+
+const UNDO_TOAST_DURATION_MS = 12000;
 
 export const TournamentView = ({ scale }) => {
   const { setCurrentScreen } = useUI();
   const { mySeat } = useGame();
   const { updateSessionField } = useSession();
+  const { addToast, showSuccess } = useToast();
   const [showEndForm, setShowEndForm] = useState(false);
   const [finishPosition, setFinishPosition] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
+  const [pendingAdvance, setPendingAdvance] = useState(false);
   const {
     tournamentState,
     isTournament,
@@ -34,6 +39,7 @@ export const TournamentView = ({ scale }) => {
     icmPressure,
     mRatioGuidance,
     advanceLevel,
+    setBlindLevel,
     pauseTimer,
     resumeTimer,
     updateStack,
@@ -63,6 +69,57 @@ export const TournamentView = ({ scale }) => {
   const handleEliminate = useCallback((seat) => {
     recordElimination(seat);
   }, [recordElimination]);
+
+  // W4-A2-F3: two-phase Advance Level guard. First tap arms a confirm window;
+  // second tap within 10s commits + fires an undo toast with 12s restore.
+  const handleAdvanceLevel = useCallback(() => {
+    if (!tournamentState || !isTournament) return;
+    const prevLevelIndex = tournamentState.currentLevelIndex;
+
+    if (!pendingAdvance) {
+      setPendingAdvance(true);
+      const blinds = nextBlinds ? `${nextBlinds.sb}/${nextBlinds.bb}${nextBlinds.ante ? ` +${nextBlinds.ante}a` : ''}` : 'next level';
+      addToast(`Tap again within 10s to skip to Level ${prevLevelIndex + 2} (${blinds})`, {
+        variant: 'warning',
+        duration: 10000,
+        action: {
+          label: 'Confirm',
+          onClick: () => {
+            advanceLevel();
+            setPendingAdvance(false);
+            addToast(`Advanced to Level ${prevLevelIndex + 2}`, {
+              variant: 'warning',
+              duration: UNDO_TOAST_DURATION_MS,
+              action: {
+                label: 'Undo',
+                onClick: () => {
+                  setBlindLevel(prevLevelIndex);
+                  showSuccess(`Reverted to Level ${prevLevelIndex + 1}`);
+                },
+              },
+            });
+          },
+        },
+      });
+      // Auto-disarm the pending state after the 10s confirm window.
+      setTimeout(() => setPendingAdvance(false), 10000);
+    } else {
+      // Second tap: commit immediately + undo toast.
+      advanceLevel();
+      setPendingAdvance(false);
+      addToast(`Advanced to Level ${prevLevelIndex + 2}`, {
+        variant: 'warning',
+        duration: UNDO_TOAST_DURATION_MS,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            setBlindLevel(prevLevelIndex);
+            showSuccess(`Reverted to Level ${prevLevelIndex + 1}`);
+          },
+        },
+      });
+    }
+  }, [tournamentState, isTournament, pendingAdvance, nextBlinds, advanceLevel, setBlindLevel, addToast, showSuccess]);
 
   if (!isTournament) {
     return (
@@ -103,7 +160,7 @@ export const TournamentView = ({ scale }) => {
           lockoutInfo={lockoutInfo}
           onPause={pauseTimer}
           onResume={resumeTimer}
-          onSkipLevel={advanceLevel}
+          onSkipLevel={handleAdvanceLevel}
         />
 
         {/* Main content: Predictions + Chip Stacks side by side */}

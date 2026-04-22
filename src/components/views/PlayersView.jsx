@@ -5,7 +5,7 @@
  * Pattern follows SessionsView.jsx structure.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Users } from 'lucide-react';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
@@ -17,9 +17,11 @@ import { useToast } from '../../contexts/ToastContext';
 import { usePlayer, useUI, useTendency, useSession } from '../../contexts';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
+const UNDO_TOAST_DURATION_MS = 12000;
+
 /** PlayersView - Player management view. All state via context hooks. */
 export const PlayersView = ({ scale = 1 }) => {
-  const { showError, showSuccess } = useToast();
+  const { showError, showSuccess, addToast } = useToast();
   const {
     setCurrentScreen,
     SCREEN,
@@ -37,6 +39,7 @@ export const PlayersView = ({ scale = 1 }) => {
     isPlayerAssigned,
     getPlayerSeat,
     clearAllSeatAssignments,
+    hydrateSeatPlayers,
   } = usePlayer();
   const { currentSession } = useSession();
 
@@ -215,11 +218,43 @@ export const PlayersView = ({ scale = 1 }) => {
     setReplacePromptData(null);
   };
 
+  // F1: Clear All Seats with toast+undo (replaces native confirm per Wave-1 TV-F1 pattern).
   const handleClearAllSeats = () => {
-    if (confirm('Clear all seat assignments? This will not delete any players.')) {
-      clearAllSeatAssignments();
-      setSelectedSeat(null);
-    }
+    const snapshot = { ...playerState.seatPlayers };
+    if (Object.keys(snapshot).length === 0) return; // nothing to clear
+    clearAllSeatAssignments();
+    setSelectedSeat(null);
+    addToast(`All ${Object.keys(snapshot).length} seat assignment${Object.keys(snapshot).length === 1 ? '' : 's'} cleared`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          hydrateSeatPlayers(snapshot);
+          showSuccess('Seat assignments restored');
+        },
+      },
+    });
+  };
+
+  // F3: Per-seat Clear with toast+undo.
+  const handleClearSeat = (seat) => {
+    const playerId = playerState.seatPlayers[seat];
+    if (!playerId) return;
+    const playerName = getSeatPlayerName(seat) || 'Player';
+    clearSeatAssignment(seat);
+    if (selectedSeat === seat) setSelectedSeat(seat); // keep selection pointer stable
+    addToast(`${playerName} cleared from seat ${seat}`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          assignPlayerToSeat(seat, playerId);
+          showSuccess(`${playerName} restored to seat ${seat}`);
+        },
+      },
+    });
   };
 
   const handleUpdateExploits = async (playerId, exploits) => {
@@ -367,7 +402,7 @@ export const PlayersView = ({ scale = 1 }) => {
         selectedSeat={selectedSeat}
         getSeatPlayerName={getSeatPlayerName}
         onSeatClick={handleSeatClick}
-        onClearSeat={clearSeatAssignment}
+        onClearSeat={handleClearSeat}
         onClearAllSeats={handleClearAllSeats}
         onSeatDragStart={handleSeatDragStart}
         onSeatDragEnd={handleSeatDragEnd}

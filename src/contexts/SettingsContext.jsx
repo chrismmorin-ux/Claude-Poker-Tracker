@@ -54,6 +54,14 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     dispatchSettings({ type: SETTINGS_ACTIONS.RESET_SETTINGS });
   }, [dispatchSettings]);
 
+  // Handler: Restore settings from a snapshot (used by W4-A4-F1 Reset undo).
+  const restoreSettings = useCallback((snapshot) => {
+    dispatchSettings({
+      type: SETTINGS_ACTIONS.HYDRATE_SETTINGS,
+      payload: { settings: snapshot },
+    });
+  }, [dispatchSettings]);
+
   // Handler: Add a custom venue
   const addCustomVenue = useCallback((venue) => {
     if (!venue || !venue.trim()) return false;
@@ -134,6 +142,7 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     // Handlers
     updateSetting,
     resetSettings,
+    restoreSettings,
     addCustomVenue,
     removeCustomVenue,
     addCustomGameType,
@@ -149,6 +158,7 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     allGameTypeKeys,
     dispatchSettings,
     updateSetting,
+    restoreSettings,
     resetSettings,
     addCustomVenue,
     removeCustomVenue,

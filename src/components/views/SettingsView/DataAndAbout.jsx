@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
 import { BACKUP_FREQUENCIES, SETTINGS_FIELDS } from '../../../constants/settingsConstants';
@@ -23,11 +23,15 @@ const getSimState = () => {
   } catch { return null; }
 };
 
-export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarning, showSuccess, showError }) => {
+const UNDO_TOAST_DURATION_MS = 12000;
+
+export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSettings, showWarning, showSuccess, showError, addToast }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
   const [simCount, setSimCount] = useState(10);
   const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
+  // W4-A4-F2: Pending sim-clear timer ID for deferred-commit + undo.
+  const pendingSimClearRef = useRef(null);
   const { currentVersion, currentBuiltAt, updateAvailable, error: versionError } = useBuildVersion();
 
   // Refresh sim total when localStorage changes (e.g. console usage)
@@ -62,10 +66,42 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
         setSimTotal(result.handCount);
         showSuccess?.(`Simulated ${simCount} hands (total: ${result.handCount})`);
       } else if (type === 'clearSim') {
-        const { simClear } = await import('../../../__dev__/handSimulator');
-        await simClear();
+        // W4-A4-F2: Deferred-clear with 12s toast+undo. Optimistic UI clear;
+        // IDB + player deletion deferred via setTimeout so Undo can cancel.
+        const prevSimTotal = simTotal;
         setSimTotal(0);
-        showSuccess?.('Cleared simulator data');
+        if (pendingSimClearRef.current) {
+          clearTimeout(pendingSimClearRef.current);
+        }
+        pendingSimClearRef.current = setTimeout(async () => {
+          pendingSimClearRef.current = null;
+          try {
+            const { simClear } = await import('../../../__dev__/handSimulator');
+            await simClear();
+          } catch (err) {
+            logger.error('DataAndAbout', err);
+            // If commit fails, restore UI so state isn't lost silently.
+            setSimTotal(prevSimTotal);
+            showError?.(`Clear failed: ${err.message}`);
+          }
+        }, 12000);
+        if (addToast) {
+          addToast(`Simulator data clear — ${prevSimTotal} hands removed`, {
+            variant: 'warning',
+            duration: 12000,
+            action: {
+              label: 'Undo',
+              onClick: () => {
+                if (pendingSimClearRef.current) {
+                  clearTimeout(pendingSimClearRef.current);
+                  pendingSimClearRef.current = null;
+                }
+                setSimTotal(prevSimTotal);
+                showSuccess?.('Simulator data restored');
+              },
+            },
+          });
+        }
       }
     } catch (err) {
       logger.error('DataAndAbout', err);
@@ -73,13 +109,30 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, showWarni
     } finally {
       setSeedLoading(null);
     }
-  }, [showSuccess, showError, simCount]);
+  }, [showSuccess, showError, simCount, simTotal, addToast]);
 
+  // W4-A4-F1: Reset to Defaults with toast+undo. The two-click pre-confirm
+  // remains (warning is useful); on confirm we snapshot current settings,
+  // reset, and open a 12s toast with Undo that restores the snapshot.
   const handleResetSettings = () => {
     if (showResetConfirm) {
+      const snapshot = { ...settings };
       resetSettings();
       setShowResetConfirm(false);
-      if (showWarning) {
+      if (addToast && restoreSettings) {
+        addToast('Settings reset to defaults', {
+          variant: 'warning',
+          duration: UNDO_TOAST_DURATION_MS,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              restoreSettings(snapshot);
+              if (showSuccess) showSuccess('Settings restored');
+            },
+          },
+        });
+      } else if (showWarning) {
+        // Fallback when undo plumbing isn't available (defensive — should not hit in practice).
         showWarning('Settings reset to defaults');
       }
     } else {

@@ -12,7 +12,7 @@ import { DataAndAbout } from './DataAndAbout';
 import { ErrorLogPanel } from './ErrorLogPanel';
 
 export const SettingsView = ({ scale }) => {
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError, showWarning, addToast } = useToast();
   const { setCurrentScreen, SCREEN } = useUI();
   const { user, isAuthenticated, isInitialized: authInitialized, sendVerificationEmail } = useAuth();
   const {
@@ -20,6 +20,7 @@ export const SettingsView = ({ scale }) => {
     isLoading,
     updateSetting,
     resetSettings,
+    restoreSettings,
     allVenues,
     allGameTypes,
     allGameTypeKeys,
@@ -118,9 +119,11 @@ export const SettingsView = ({ scale }) => {
             settings={settings}
             updateSetting={updateSetting}
             resetSettings={resetSettings}
+            restoreSettings={restoreSettings}
             showWarning={showWarning}
             showSuccess={showSuccess}
             showError={showError}
+            addToast={addToast}
           />
 
           <ErrorLogPanel showSuccess={showSuccess} />

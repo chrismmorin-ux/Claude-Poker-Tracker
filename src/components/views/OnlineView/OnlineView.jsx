@@ -8,6 +8,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { useSyncBridge, useOnlineSession, useAnalysisContext } from '../../../contexts';
+import { useToast } from '../../../contexts/ToastContext';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import VillainProfileModal from '../../ui/VillainProfileModal';
 import { SeatGrid } from './SeatGrid';
@@ -24,6 +25,7 @@ export const OnlineView = ({ scale }) => {
   } = useOnlineSession();
 
   const { tendencyMap, handCount, isLoading, advice } = useAnalysisContext();
+  const { showError } = useToast();
 
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -40,10 +42,10 @@ export const OnlineView = ({ scale }) => {
       await importFromJson(text);
       loadSessions();
     } catch (err) {
-      alert('Import failed: ' + err.message);
+      showError(`Import failed: ${err.message}`);
     }
     e.target.value = '';
-  }, [importFromJson, loadSessions]);
+  }, [importFromJson, loadSessions, showError]);
 
   const selectedSeatData = selectedSeat ? tendencyMap[selectedSeat] : null;
 
