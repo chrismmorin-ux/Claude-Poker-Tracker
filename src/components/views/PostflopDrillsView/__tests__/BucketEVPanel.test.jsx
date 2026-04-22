@@ -331,3 +331,64 @@ describe('computeBucketEVs — pinnedCombo block (LSW-H2)', () => {
     expect(out.pinnedCombo).toBeNull();
   });
 });
+
+// LSW-G5 (2026-04-22) — domination map (surface audit S6).
+describe('computeBucketEVs — dominationMap (LSW-G5)', () => {
+  it('populates dominationMap on the pinnedCombo block for JT6 flop_root', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo) return;
+    expect(Array.isArray(out.pinnedCombo.dominationMap)).toBe(true);
+    expect(out.pinnedCombo.dominationMap.length).toBeGreaterThan(0);
+  }, 20000);
+
+  it('dominationMap entries have the expected shape', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo?.dominationMap) return;
+    for (const row of out.pinnedCombo.dominationMap) {
+      expect(typeof row.id).toBe('string');
+      expect(typeof row.label).toBe('string');
+      expect(typeof row.equity).toBe('number');
+      expect(row.equity).toBeGreaterThanOrEqual(0);
+      expect(row.equity).toBeLessThanOrEqual(1);
+      expect(typeof row.weightPct).toBe('number');
+      expect(row.weightPct).toBeGreaterThan(0);
+      expect(['crushed', 'dominated', 'neutral', 'favored', 'dominating']).toContain(row.relation);
+    }
+  }, 20000);
+
+  it('dominationMap is sorted heaviest-first by weightPct', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo?.dominationMap) return;
+    const weights = out.pinnedCombo.dominationMap.map((r) => r.weightPct);
+    for (let i = 1; i < weights.length; i++) {
+      expect(weights[i]).toBeLessThanOrEqual(weights[i - 1]);
+    }
+  }, 20000);
+
+  it('JT6 flop_root has an overpair row, and hero is dominated/crushed vs it', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo?.dominationMap) return;
+    const overpair = out.pinnedCombo.dominationMap.find((r) => r.id === 'overpair');
+    if (!overpair) return; // range may not contain overpairs at v1 archetype range library
+    // JT on T96 vs overpairs (JJ+) — hero has only pair outs to improve to
+    // two-pair or trips; realistic equity should be below 30%. Generous
+    // upper bound to tolerate MC variance at trials=250 per group.
+    expect(overpair.equity).toBeLessThan(0.45);
+    expect(['crushed', 'dominated']).toContain(overpair.relation);
+  }, 20000);
+
+  it('dominationMap is absent when heroHolding has no pinned combo', async () => {
+    const line = getJT6Line();
+    const node = { ...getJT6FlopNode(), heroHolding: { bucketCandidates: ['topPair'] } };
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    expect(out.pinnedCombo).toBeNull();
+  });
+});

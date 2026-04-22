@@ -16,6 +16,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   evaluateDrillNode,
   computePinnedComboEV,
+  computeDominationMap,
   villainFoldRateFromComposition,
 } from '../../../utils/postflopDrillContent/drillModeEngine';
 import { isKnownBucket } from '../../../utils/postflopDrillContent/bucketTaxonomy';
@@ -132,14 +133,29 @@ export const computeBucketEVs = async ({ node, line, archetype }) => {
             board,
           });
           const foldPct = villainFoldRateFromComposition(weightedVillain);
-          const block = await computePinnedComboEV({
-            pinnedCombo: pinnedComboIds,
-            villainRange,
-            board,
-            pot,
-            foldPct,
-          });
-          return block ? { ...block, comboString: pinnedComboStr } : null;
+          const [block, dominationMap] = await Promise.all([
+            computePinnedComboEV({
+              pinnedCombo: pinnedComboIds,
+              villainRange,
+              board,
+              pot,
+              foldPct,
+            }),
+            // LSW-G5 (2026-04-22): domination map runs alongside the EV
+            // computation. Uses the BASE villain range (archetype-invariant)
+            // since hero's showdown equity vs JJ doesn't change based on
+            // whether villain is fish or pro — only the weightPct distribution
+            // would shift slightly with archetype-weighting, and the base-
+            // range composition is the dominant structural signal. A future
+            // refinement could feed the archetype-weighted range in for
+            // weightPct precision; v1 keeps the simpler base-range path.
+            computeDominationMap({
+              pinnedCombo: pinnedComboIds,
+              villainRange,
+              board,
+            }).catch(() => null),
+          ]);
+          return block ? { ...block, comboString: pinnedComboStr, dominationMap } : null;
         } catch (err) {
           // Pinned path is additive — if it errors, log onto the result
           // but don't poison the bucket response.
@@ -274,6 +290,9 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
       {revealed && !loading && data && (
         <>
           {data.pinnedCombo && <PinnedComboRow pinnedCombo={data.pinnedCombo} archetype={safeArchetype} />}
+          {data.pinnedCombo?.dominationMap && data.pinnedCombo.dominationMap.length > 0 && (
+            <DominationMapDisclosure dominationMap={data.pinnedCombo.dominationMap} />
+          )}
           {candidates && candidates.length > 0 && (
             <BucketEVTable
               data={data}
@@ -283,6 +302,66 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
             />
           )}
         </>
+      )}
+    </div>
+  );
+};
+
+// ---------- Sub-component: domination-map disclosure (LSW-G5) ---------- //
+
+const RELATION_STYLE = {
+  crushed:    { color: 'text-rose-300',    bg: 'bg-rose-950/30',    border: 'border-rose-800',    label: 'crushed' },
+  dominated:  { color: 'text-orange-300',  bg: 'bg-orange-950/30',  border: 'border-orange-800',  label: 'dominated' },
+  neutral:    { color: 'text-amber-300',   bg: 'bg-amber-950/30',   border: 'border-amber-800',   label: 'coin-flip' },
+  favored:    { color: 'text-teal-300',    bg: 'bg-teal-950/30',    border: 'border-teal-800',    label: 'favored' },
+  dominating: { color: 'text-emerald-300', bg: 'bg-emerald-950/30', border: 'border-emerald-800', label: 'dominating' },
+};
+
+/**
+ * Collapsible disclosure below the pinned-combo row. Shows one line per
+ * villain hand-type group with weight %, hero equity vs that group, and
+ * a relation badge. Sorted heaviest-first so students see the dominant
+ * villain region at the top.
+ */
+const DominationMapDisclosure = ({ dominationMap }) => {
+  const [open, setOpen] = useState(false);
+  const n = dominationMap.length;
+  return (
+    <div className="border border-gray-800 rounded bg-gray-900/30">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-200"
+      >
+        <span>Domination vs villain's range · {n} hand-type group{n === 1 ? '' : 's'}</span>
+        <span className="text-gray-600">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-2 pt-1 space-y-1">
+          {dominationMap.map((row) => {
+            const style = RELATION_STYLE[row.relation] || RELATION_STYLE.neutral;
+            return (
+              <div
+                key={row.id}
+                className="flex items-center justify-between gap-3 text-[11px] py-1 border-b border-gray-800/50 last:border-b-0"
+              >
+                <div className="flex items-center gap-2 min-w-[150px]">
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wide font-semibold border ${style.color} ${style.bg} ${style.border}`}
+                    title={`Hero equity ${(row.equity * 100).toFixed(0)}% → ${row.relation}`}
+                  >
+                    {style.label}
+                  </span>
+                  <span className="text-gray-200">{row.label}</span>
+                </div>
+                <div className="flex items-center gap-4 text-gray-500 font-mono flex-1 justify-end">
+                  <span title={`${row.sampleSize} combos`}>{row.weightPct.toFixed(1)}% of range</span>
+                  <span className={style.color}>{(row.equity * 100).toFixed(0)}% eq</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

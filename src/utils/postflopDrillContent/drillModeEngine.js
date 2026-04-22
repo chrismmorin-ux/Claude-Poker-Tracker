@@ -62,6 +62,9 @@ import { MIN_COMBO_SAMPLE } from './handTypeBreakdown';
 import { calcValueBetEV } from '../exploitEngine/foldEquityCalculator';
 import { POP_CALLING_RATES } from '../exploitEngine/gameTreeConstants';
 import { handVsRange } from '../pokerCore/monteCarloEquity';
+import { segmentRange } from '../exploitEngine/rangeSegmenter';
+import { createRange, rangeIndex } from '../pokerCore/rangeMatrix';
+import { analyzeBoardTexture } from '../pokerCore/boardTexture';
 
 /**
  * Coarse "typical equity vs villain's range" table keyed by hero bucket.
@@ -454,4 +457,163 @@ export const computePinnedComboEV = async ({
     ranking,
     trials,
   };
+};
+
+// =============================================================================
+// LSW-G5 — domination map (surface audit S6)
+// =============================================================================
+//
+// Pinned-combo EV (H2) answers "what's my overall equity vs villain's range."
+// The domination map answers "what's my equity vs each component of villain's
+// range, and am I dominating / dominated / crushing?" This is the second of
+// the two halves of the first-principles teaching payload: knowing your
+// weighted average is useful; knowing which villain hands you're beating vs
+// losing to is actionable (it tells you what you'd lose to if you barrel the
+// turn and what you'd get paid by if you value bet the river).
+//
+// Design: segment villain's range on the board, group by hand-type into
+// poker-familiar categories, compute per-group equity via MC, classify as
+// crushed / dominated / neutral / favored / dominating based on equity
+// thresholds. Rows sorted by group weight descending so the heaviest villain
+// region appears first.
+//
+// Granularity note: `overpair` is split out from the standard HAND_TYPE_GROUPS
+// `topPair` grouping because for hero's top pair on most boards, the split
+// is pedagogically critical — vs overpair hero is dominated; vs same-TP the
+// answer depends on kicker. Merging them hides the distinction.
+
+const DOMINATION_GROUPS = Object.freeze([
+  { id: 'premium',   label: 'Premium (SF/quads/boat)', types: ['straightFlush', 'quads', 'fullHouse'] },
+  { id: 'flush',     label: 'Flush',                   types: ['nutFlush', 'secondFlush', 'weakFlush'] },
+  { id: 'straight',  label: 'Straight',                types: ['nutStraight', 'nonNutStraight'] },
+  { id: 'set',       label: 'Set / Trips',             types: ['set', 'trips'] },
+  { id: 'twoPair',   label: 'Two Pair',                types: ['twoPair'] },
+  { id: 'overpair',  label: 'Overpair',                types: ['overpair'] },
+  { id: 'topPair',   label: 'Top Pair (other)',        types: ['topPairGood', 'topPairWeak'] },
+  { id: 'midLow',    label: 'Mid/Low Pair',            types: ['middlePair', 'bottomPair', 'weakPair'] },
+  { id: 'draws',     label: 'Direct Draws',            types: ['comboDraw', 'nutFlushDraw', 'nonNutFlushDraw', 'oesd', 'gutshot'] },
+  { id: 'overcards', label: 'Overcards',               types: ['overcards'] },
+  { id: 'backdoor',  label: 'Backdoor Only',           types: ['airBackdoorCombo', 'airBackdoorFlush', 'airBackdoorStraight'] },
+  { id: 'air',       label: 'Air',                     types: ['air'] },
+]);
+
+/**
+ * Classify hero's equity vs a specific villain-hand-type group into a
+ * teaching-friendly label. Thresholds tuned for how poker players talk
+ * about domination / freerolling vs a range slice.
+ */
+export const classifyDomination = (equity) => {
+  if (!Number.isFinite(equity)) return 'unknown';
+  if (equity < 0.20) return 'crushed';
+  if (equity < 0.40) return 'dominated';
+  if (equity < 0.60) return 'neutral';
+  if (equity < 0.80) return 'favored';
+  return 'dominating';
+};
+
+/**
+ * Build a 169-cell partial range from a set of segmentation combos matching
+ * the target hand-types. Each cell's weight is the sum of `combo.weight` for
+ * live combos in that cell that classify into one of the target types. This
+ * preserves per-cell weight semantics so `handVsRange` sees villain's ranges
+ * as weighted.
+ */
+const partialRangeFromCombos = (combos, targetTypes) => {
+  const grid = createRange();
+  const targets = new Set(targetTypes);
+  for (const c of combos) {
+    if (!targets.has(c.handType)) continue;
+    const r1 = c.card1 >> 2;
+    const r2 = c.card2 >> 2;
+    const suited = (c.card1 & 3) === (c.card2 & 3);
+    const idx = rangeIndex(Math.max(r1, r2), Math.min(r1, r2), suited);
+    grid[idx] += c.weight;
+  }
+  return grid;
+};
+
+/**
+ * Compute hero's domination map vs villain's range grouped by hand-type.
+ *
+ * @param {{
+ *   pinnedCombo: { card1: number, card2: number } | null,
+ *   villainRange: Float64Array,    // 169-cell base villain range
+ *   board: number[],               // 3-5 encoded cards
+ *   boardTexture?: object | null,
+ *   trialsPerGroup?: number,       // MC trials per group (default 250)
+ * }} args
+ * @returns {Promise<Array<{
+ *   id: string,
+ *   label: string,
+ *   equity: number,
+ *   weightPct: number,
+ *   sampleSize: number,
+ *   relation: 'crushed' | 'dominated' | 'neutral' | 'favored' | 'dominating',
+ * }> | null>}
+ */
+export const computeDominationMap = async ({
+  pinnedCombo,
+  villainRange,
+  board,
+  boardTexture = null,
+  trialsPerGroup = 250,
+}) => {
+  if (!pinnedCombo
+      || !Number.isFinite(pinnedCombo.card1)
+      || !Number.isFinite(pinnedCombo.card2)
+      || pinnedCombo.card1 === pinnedCombo.card2) {
+    return null;
+  }
+  if (!villainRange || !Array.isArray(board) || board.length < 3 || board.length > 5) {
+    return null;
+  }
+  if (board.includes(pinnedCombo.card1) || board.includes(pinnedCombo.card2)) {
+    return null;
+  }
+
+  const tx = boardTexture || analyzeBoardTexture(board);
+  // Hero's cards are dead — segmenter dead-card arg excludes hero-blocked
+  // villain combos so equity math doesn't double-count.
+  const seg = segmentRange(villainRange, board, [pinnedCombo.card1, pinnedCombo.card2], tx);
+  const total = seg.totalWeight;
+  if (total <= 0) return [];
+
+  // Run MC per group in parallel.
+  const heroCards = [pinnedCombo.card1, pinnedCombo.card2];
+  const jobs = DOMINATION_GROUPS.map(async (group) => {
+    const grid = partialRangeFromCombos(seg.combos, group.types);
+    let groupWeight = 0;
+    let groupCount = 0;
+    for (const c of seg.combos) {
+      if (group.types.includes(c.handType)) {
+        groupWeight += c.weight;
+        groupCount++;
+      }
+    }
+    const weightPct = total > 0 ? (groupWeight / total) * 100 : 0;
+    if (groupWeight <= 0) {
+      return {
+        id: group.id,
+        label: group.label,
+        equity: 0,
+        weightPct: 0,
+        sampleSize: 0,
+        relation: 'empty',
+      };
+    }
+    const { equity } = await handVsRange(heroCards, grid, board, { trials: trialsPerGroup });
+    return {
+      id: group.id,
+      label: group.label,
+      equity,
+      weightPct,
+      sampleSize: groupCount,
+      relation: classifyDomination(equity),
+    };
+  });
+  const results = await Promise.all(jobs);
+  // Sort heaviest-first (most frequent villain regions top), drop empty groups.
+  return results
+    .filter((r) => r.relation !== 'empty')
+    .sort((a, b) => b.weightPct - a.weightPct);
 };

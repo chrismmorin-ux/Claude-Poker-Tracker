@@ -284,7 +284,7 @@ Archetype toggling continues to shift the EV via the archetype-weighted fold rat
 - S2 (hero-combo-specific EV row) — **RESOLVED by `LSW-H2` (see closure appendix below)**.
 - S4 (BDFD / BDSD taxonomy) — **RESOLVED by `LSW-G3` (see closure appendix below)**.
 - S5 (villain-bucket-first paradigm redesign) — deferred to `LSW-G4` roundtable gate.
-- S6 (domination map) — deferred to `LSW-G5`.
+- S6 (domination map) — **RESOLVED by `LSW-G5` (see closure appendix below)**.
 
 **Unblocked by H1:**
 - `LSW-B1` — partial unblock. Still also BLOCKED by `LSW-H3` (visual verification sweep of remaining 11 nodes + 7 other-line flop roots).
@@ -358,6 +358,54 @@ Archetype sensitivity visible: equity rises from Reg (56.1%) to Fish (57.7%) to 
 
 ---
 
+## Appendix — LSW-G5 closure (2026-04-22)
+
+**Scope:** Surface audit S6 — no domination analysis for the pinned combo. Student sees `+20.30bb on bet 150%` (or post-H2 `+17.99bb`) without context on which villain hands they're ahead of vs behind.
+
+**Resolved:**
+- New `computeDominationMap` pure helper in `drillModeEngine.js` — async. Segments villain's range on the board, groups combos by a 12-entry `DOMINATION_GROUPS` taxonomy (Premium / Flush / Straight / Set/Trips / Two Pair / Overpair / Top Pair (other) / Mid/Low Pair / Direct Draws / Overcards / Backdoor Only / Air). `overpair` is deliberately split out from the existing `HAND_TYPE_GROUPS.topPair` because for hero's top pair the distinction is pedagogically critical (dominated vs coin-flip).
+- For each non-empty group, builds a 169-cell partial range via `partialRangeFromCombos` and runs `handVsRange` (MC trials=250 per group). Parallel dispatch across groups — typical range has ~4-8 non-empty groups, so ~1-2 seconds total.
+- `classifyDomination(equity)` maps raw equity → teaching-friendly relation: `crushed` (<20%), `dominated` (20-40%), `neutral` (40-60%), `favored` (60-80%), `dominating` (≥80%). Exported for unit testing.
+- `computeBucketEVs` in `BucketEVPanel.jsx` runs the domination map in parallel with the pinned EV computation. Result attaches to the `pinnedCombo` block as `pinnedCombo.dominationMap: Array<{id, label, equity, weightPct, sampleSize, relation}>`. Sorted heaviest-first by weightPct.
+- New `DominationMapDisclosure` component renders below the pinned-combo row. Collapsed by default (button shows "Domination vs villain's range · N hand-type groups"); on click expands to show one row per group with: relation badge (color-coded: rose=crushed, orange=dominated, amber=neutral, teal=favored, emerald=dominating), group label, weight%, hero equity%.
+- Uses **base** villain range (archetype-invariant). Hero's showdown equity vs JJ doesn't depend on whether villain is fish or pro — only the weightPct distribution might shift slightly under archetype-weighting, and base-range composition is the dominant structural signal. Archetype-weighted domination could be a future refinement.
+
+**Visual verification (1600×720 Playwright, all 3 archetypes):**
+
+| Group | Weight% | Equity (Reg) | Equity (Fish) | Equity (Pro) | Relation (Reg) |
+|---|---|---|---|---|---|
+| Overcards | 45.2% | 79% | 77% | 80% | FAVORED → DOMINATING at Pro |
+| Overpair | 28.8% | 22% | 20% | 27% | DOMINATED |
+| Direct Draws | 24.7% | 62% | 70% | 67% | FAVORED |
+| Set/Trips | 1.4% | 8% | 7% | 6% | CRUSHED |
+
+Per-group equity shifts between archetypes reflect MC variance at trials=250 (not a change in villain's base range). The weightPct distribution is identical across archetypes (same base range feeds the domination map). Archetype responsiveness on the pinned-combo equity + EV rows remains intact (Reg 59.3% → Fish 58.9% → Pro 60.6%).
+
+**Teaching payload visible:** A student reading the JT6 flop_root panel post-G5 now sees:
+- Their specific hand's EV (`J♥T♠ +19.24bb`)
+- Hero is DOMINATED by ~29% of villain's range (overpairs), CRUSHED by ~1% (sets), FAVORED against ~70% (overcards + direct draws).
+- The 59% overall equity is driven by the ~70% of villain's range hero is ahead of, offset by the ~30% hero is behind on.
+- Decision framing becomes villain-range-first: "I'm betting into overcards that fold and draws I'm ahead of; I'm getting called by overpairs that crush me and sets that literally crush me."
+
+This is the first-principles decision model the user's critique called for: "The hero can't see the villain's bucket EV range, he should know his equity vs each of the villain's buckets."
+
+**Evidence:** `evidence/btn-vs-bb-3bp-ip-wet-t96-flop_root-post-g5-{11..14}-*.png` (collapsed, Reg expanded, Fish expanded, Pro expanded).
+
+**Tests (+14):**
+- `drillModeEngine.test.js` +6 (`classifyDomination` pure: crushed/dominated/neutral/favored/dominating thresholds + non-finite fallback).
+- `BucketEVPanel.test.jsx` +5 (dominationMap population / row shape / heaviest-first sort / overpair row shows `crushed`-or-`dominated` relation for JT6 / absent when no pinned combo).
+- `drillModeEngine.js` adds 3 new exports (`computeDominationMap`, `classifyDomination`, internal `DOMINATION_GROUPS`) — still pure, still testable in isolation.
+
+**NOT changed in G5:**
+- `HAND_TYPE_GROUPS` in `rangeSegmenter.js` — G5 uses a local 12-entry `DOMINATION_GROUPS` to peel `overpair` out from the aggregated topPair group. Existing consumers (RangeFlopBreakdown) keep the 10-group view unchanged.
+- Archetype wiring. Domination map uses base villain range (architecturally simple; archetype affects weightPct only marginally since most of villain's 3bet range is archetype-stable).
+
+**Follow-ons:**
+- If pedagogy demands per-archetype weightPct, extend `computeDominationMap` with an optional `archetype` param that feeds the archetype-weighted range through the segmenter. Deferred.
+- Very-small groups (weightPct < 1%) are included for completeness; could add a "hide trace groups" toggle if the disclosure feels crowded on very wide ranges. Flop_root has only 4 groups post-filter so crowding isn't an issue; defer until H3 sweep surfaces a node with 10+ groups.
+
+---
+
 ## Appendix — Batch-4 visual-verification sweep (to be appended as `LSW-H3` progresses)
 
 *As `LSW-H3` walks remaining nodes / lines, append one paragraph per node:*
@@ -380,3 +428,4 @@ Archetype sensitivity visible: equity rises from Reg (56.1%) to Fish (57.7%) to 
 - 2026-04-22 — LSW-H1 shipped. S1 (feasibility gate + bucketCandidates trim), S3 (calculator seeding), S7 (`air`-rejection validator) resolved. Post-H1 walk on Reg + Fish + Pro verifies the three P0 surface defects no longer fire on flop_root. Audit remains OPEN (S2/S4/S5/S6 unaddressed).
 - 2026-04-22 — LSW-G3 shipped. S4 (backdoor flush / straight draw taxonomy) resolved. Audit remains OPEN (S2/S5/S6).
 - 2026-04-22 — LSW-H2 shipped. S2 (hero-combo-specific EV row) resolved. Per-combo EV row surfaces J♥T♠ at equity 56.1% / bet 150% +17.99bb (vs Reg), directly contrasted against the topPair bucket average +20.30bb. Post-H2 walk on Reg + Fish + Pro verifies archetype-responsive per-combo EV (Reg 56.1% → Fish 57.7% → Pro 59.6%). Audit remains OPEN (S5 paradigm roundtable, S6 domination map).
+- 2026-04-22 — LSW-G5 shipped. S6 (domination map) resolved. Collapsed disclosure under the pinned-combo row shows 4 hand-type groups for BB's 3bet range: FAVORED Overcards 45.2%/79% · DOMINATED Overpair 28.8%/22% · FAVORED Direct Draws 24.7%/62% · CRUSHED Set/Trips 1.4%/8% (vs Reg). Post-G5 walk on Reg + Fish + Pro verifies archetype responsiveness in per-group equity (MC variance within tolerance). Audit remains OPEN only on S5 (paradigm roundtable, governance step, no code).

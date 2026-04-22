@@ -4,6 +4,7 @@ import {
   villainFoldRateFromComposition,
   HERO_BUCKET_TYPICAL_EQUITY,
   DEFAULT_ACTIONS,
+  classifyDomination,
 } from '../drillModeEngine';
 import { buildArchetypeWeightedRange } from '../archetypeRangeBuilder';
 import { parseRangeString } from '../../pokerCore/rangeMatrix';
@@ -245,5 +246,45 @@ describe('evaluateDrillNode — archetype responsiveness', () => {
     const fish = await evaluateDrillNode(basic('fish'));
     const reg  = await evaluateDrillNode(basic('reg'));
     expect(fish.evs.check.ev).toBe(reg.evs.check.ev);
+  });
+});
+
+// LSW-G5 (2026-04-22) — domination classification (surface audit S6).
+describe('classifyDomination', () => {
+  it('returns "crushed" below 20% equity', () => {
+    expect(classifyDomination(0.05)).toBe('crushed');
+    expect(classifyDomination(0.15)).toBe('crushed');
+    expect(classifyDomination(0.199)).toBe('crushed');
+  });
+
+  it('returns "dominated" in 20-40% band', () => {
+    expect(classifyDomination(0.20)).toBe('dominated');
+    expect(classifyDomination(0.30)).toBe('dominated');
+    expect(classifyDomination(0.399)).toBe('dominated');
+  });
+
+  it('returns "neutral" in 40-60% band (coin-flip zone)', () => {
+    expect(classifyDomination(0.40)).toBe('neutral');
+    expect(classifyDomination(0.50)).toBe('neutral');
+    expect(classifyDomination(0.599)).toBe('neutral');
+  });
+
+  it('returns "favored" in 60-80% band', () => {
+    expect(classifyDomination(0.60)).toBe('favored');
+    expect(classifyDomination(0.70)).toBe('favored');
+    expect(classifyDomination(0.799)).toBe('favored');
+  });
+
+  it('returns "dominating" at 80%+', () => {
+    expect(classifyDomination(0.80)).toBe('dominating');
+    expect(classifyDomination(0.95)).toBe('dominating');
+    expect(classifyDomination(1.0)).toBe('dominating');
+  });
+
+  it('returns "unknown" for non-finite / missing input', () => {
+    expect(classifyDomination(NaN)).toBe('unknown');
+    expect(classifyDomination(undefined)).toBe('unknown');
+    expect(classifyDomination(null)).toBe('unknown');
+    expect(classifyDomination('0.5')).toBe('unknown');
   });
 });
