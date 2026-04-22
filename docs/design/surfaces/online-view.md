@@ -119,9 +119,9 @@ Secondary:
 
 ## Known issues
 
-- No prior audit findings on this view.
+- **DCOMP-W4-A3 combined Gate-2 + Gate-4 audit shipped 2026-04-22 — verdict RED.** 4 P0 findings (F1: no manual nav entry — verified via Playwright that OnlineView is only reachable via auto-route; F2: ExtensionPanel routing-vs-artifact drift; F3: `alert()` on import failure; F4: `window.location.reload()` on version mismatch with no diagnostic). 4 P1 (F5 Continue Anyway silences warning without degradation; F6 no import loading state; F7 touch targets <44 throughout; F8 inline-styles instead of Tailwind). 3 P2 + 3 P3/deferred. Full audit: `../audits/2026-04-22-blindspot-online-view.md`. Fixes queued as DCOMP-W4-A3-F1..F13 in BACKLOG.
 - The sidebar has its own rigorous doctrine + program history (Sidebar Rebuild, Sidebar Trust Program). Wave 5 of the compliance roadmap will cross-map sidebar zones → framework heuristics; those surfaces are not this artifact.
-- Wave 4 audit (specialized surfaces) will examine: visual-style parity with Tailwind main app, the sessions-view split (where do online sessions live?), extension-disconnected empty state, and cross-product persona handoff between this view and the sidebar.
+- Wave 4 audit COMPLETE for online-view. Settings-view audit remains.
 
 ## Potentially missing
 
@@ -150,3 +150,4 @@ Secondary:
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
+- 2026-04-22 — DCOMP-W4-A3 combined Gate-2 + Gate-4 audit appended; Known-issues updated with 13 findings. Headline finding: OnlineView has no manual nav entry — discovered via Playwright walk.
