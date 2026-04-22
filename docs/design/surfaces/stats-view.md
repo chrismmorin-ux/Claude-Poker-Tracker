@@ -103,8 +103,8 @@ Wrapped in `ScaledContainer` with width/height pinned to `LAYOUT.TABLE_WIDTH/HEI
 
 ## Known issues
 
-- No prior audit findings.
-- Wave 2 audit (review surfaces) will examine: the dual-source (session vs cross-session) labelling, confidence / sample-size cues, and density on small viewports.
+- **DCOMP-W2-A3 audit shipped 2026-04-22 (verdict YELLOW).** 9 findings: 0 P0 (read-only surface), 3 P1 (touch targets <44 on seat-selector + toggles + Back; sample-size + confidence rendering missing; dual-source scope labeling asymmetry), 3 P2 (position-group filter missing, range-profile export missing, empty-state bundled), 3 P3 (test file missing, skill-map pointer to DISC-12, grid toggle text-size bundled). Full audit: `../audits/2026-04-22-stats-view.md`.
+- Wave 2 audit COMPLETE. All 3 Wave-2 surfaces (hand-replay, analysis, stats) audited.
 
 ## Potentially missing
 
@@ -133,3 +133,4 @@ Wrapped in `ScaledContainer` with width/height pinned to `LAYOUT.TABLE_WIDTH/HEI
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
+- 2026-04-22 — DCOMP-W2-A3 Gate-4 audit appended. Verdict YELLOW. 9 findings.

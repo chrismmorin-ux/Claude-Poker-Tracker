@@ -117,8 +117,8 @@ Secondary:
 
 ## Known issues
 
-- No prior audit findings.
-- Wave 2 audit (review & analysis surfaces) will examine: density of PlayerAnalysisPanel, filter discoverability in HandBrowser, observation-card typography at 1600×720, "similar-spot" gap, and the missing SR-26/SR-27 flows.
+- **DCOMP-W2-A2 audit shipped 2026-04-22 (verdict RED).** 12 findings: **1 P0** (HandReviewPanel.jsx:43 native `confirm('Delete this hand? This cannot be undone.')` destructive-action anti-pattern — same class as Wave 1 + W4), 4 P1 (touch targets <44 systematic, text-size floor, HandBrowser filter discoverability + segregation, all-sessions filter cost+progress), 4 P2 (PlayerAnalysisPanel decomposition + hand-significance badge + single-hand export + SR-88 discovery), 3 P3 (SR-26/SR-27 merged w/ W2-A1-F3, profile-first contract doc, tab persistence). Full audit: `../audits/2026-04-22-analysis-view.md`.
+- Wave 2 audit COMPLETE for analysis-view. Stats audit queued.
 
 ## Potentially missing
 
@@ -147,3 +147,4 @@ Secondary:
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
+- 2026-04-22 — DCOMP-W2-A2 Gate-4 audit appended. Verdict RED. 12 findings; 1 P0 destructive-action persists in HandReviewPanel.jsx:43.
