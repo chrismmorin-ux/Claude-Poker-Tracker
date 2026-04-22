@@ -252,7 +252,9 @@ describe('useSessionPersistence', () => {
         await result.current.endCurrentSession(500);
       });
 
-      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest');
+      // AUDIT-2026-04-21-SV F2: endSessionAtomic signature extended with tipAmount;
+      // legacy callers pass null, preserving backward compatibility.
+      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest', null);
     });
 
     it('dispatches END_SESSION action', async () => {

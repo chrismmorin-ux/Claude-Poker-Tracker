@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Square } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS, SESSION_GOALS } from '../../../constants/sessionConstants';
 import { formatTime12Hour, calculateTotalRebuy } from '../../../utils/displayUtils';
+import { useToast } from '../../../contexts/ToastContext';
+
+// AUDIT-2026-04-21-SV F4: align with the rest of the destructive-action undo windows
+const UNDO_TOAST_DURATION_MS = 12000;
 
 /**
  * ActiveSessionCard - Display and edit the current active session
@@ -11,6 +15,10 @@ export const ActiveSessionCard = ({
   onEndSession,
   onUpdateField,
 }) => {
+  // AUDIT-2026-04-21-SV F4: toast+undo on rebuy confirm
+  const toastCtx = useToast();
+  const addToast = toastCtx?.addToast;
+  const showInfo = toastCtx?.showInfo;
   // Local editing state
   const [editingBuyIn, setEditingBuyIn] = useState(false);
   const [editingVenue, setEditingVenue] = useState(false);
@@ -63,15 +71,45 @@ export const ActiveSessionCard = ({
     setAddingRebuy(true);
   };
 
+  const commitRebuy = (parsedAmount) => {
+    // AUDIT-2026-04-21-SV F4: snapshot rebuyTransactions BEFORE append so Undo can revert.
+    const priorRebuys = Array.isArray(currentSession.rebuyTransactions)
+      ? [...currentSession.rebuyTransactions]
+      : [];
+
+    onUpdateField('rebuyTransactions', [
+      ...priorRebuys,
+      { timestamp: Date.now(), amount: parsedAmount },
+    ]);
+    setAddingRebuy(false);
+
+    if (addToast) {
+      addToast(`Rebuy +$${parsedAmount} added`, {
+        variant: 'success',
+        duration: UNDO_TOAST_DURATION_MS,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            onUpdateField('rebuyTransactions', priorRebuys);
+            if (showInfo) showInfo('Rebuy undone');
+          },
+        },
+      });
+    }
+  };
+
   const handleConfirmRebuy = () => {
     const parsedAmount = parseFloat(rebuyAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) return;
+    commitRebuy(parsedAmount);
+  };
 
-    onUpdateField('rebuyTransactions', [
-      ...currentSession.rebuyTransactions,
-      { timestamp: Date.now(), amount: parsedAmount }
-    ]);
-    setAddingRebuy(false);
+  // AUDIT-2026-04-21-SV F4: one-tap preset for the common case.
+  // Bypasses the keyboard entirely for ringmaster-in-hand / between-hands-chris
+  // whose attention budget does not accommodate typing.
+  const handlePresetRebuy = () => {
+    const defaultAmount = getDefaultRebuyAmount(currentSession.gameType);
+    commitRebuy(defaultAmount);
   };
 
   const handleCancelRebuy = () => {
@@ -146,23 +184,39 @@ export const ActiveSessionCard = ({
           <div className="text-green-100 mb-1">Rebuys</div>
           {addingRebuy ? (
             <div className="space-y-2">
+              {/* AUDIT-2026-04-21-SV F4:
+                  - type=text + inputMode=decimal → compact numeric keypad (H-ML03).
+                  - Confirm/Cancel bumped to ≥44px (H-ML06).
+                  - One-tap preset above the input bypasses the keyboard. */}
+              <button
+                onClick={handlePresetRebuy}
+                className="w-full px-3 rounded bg-white/25 hover:bg-white/40 text-sm font-semibold"
+                style={{ minHeight: '44px' }}
+              >
+                Use ${getDefaultRebuyAmount(currentSession.gameType)}
+              </button>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*\.?[0-9]*"
                 value={rebuyAmount}
                 onChange={(e) => setRebuyAmount(e.target.value)}
-                className="w-full px-2 py-1 text-gray-900 rounded"
+                className="w-full px-2 text-gray-900 rounded"
+                style={{ minHeight: '44px' }}
                 autoFocus
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleConfirmRebuy}
-                  className="flex-1 px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-xs"
+                  className="flex-1 px-2 bg-white/20 hover:bg-white/30 rounded text-sm font-semibold"
+                  style={{ minHeight: '44px' }}
                 >
                   Confirm
                 </button>
                 <button
                   onClick={handleCancelRebuy}
-                  className="flex-1 px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-xs"
+                  className="flex-1 px-2 bg-white/10 hover:bg-white/20 rounded text-sm"
+                  style={{ minHeight: '44px' }}
                 >
                   Cancel
                 </button>
@@ -172,6 +226,7 @@ export const ActiveSessionCard = ({
             <button
               onClick={handleStartAddRebuy}
               className="w-full px-3 py-2 bg-white/20 hover:bg-white/30 rounded text-sm"
+              style={{ minHeight: '44px' }}
             >
               + Add Rebuy
             </button>

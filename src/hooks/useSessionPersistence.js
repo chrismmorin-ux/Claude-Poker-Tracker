@@ -229,9 +229,13 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
   /**
    * End the current session
    * @param {number|null} cashOut - Optional cash out amount
+   * @param {number|null} tipAmount - Optional tip amount (AUDIT-2026-04-21-SV F2).
+   *   When omitted, the session's tipAmount field is not written; legacy sessions
+   *   without the field remain legacy-shaped on round-trip. Readers treat any
+   *   missing/null value as 0 for P&L purposes.
    * @returns {Promise<void>}
    */
-  const endCurrentSession = useCallback(async (cashOut = null) => {
+  const endCurrentSession = useCallback(async (cashOut = null, tipAmount = null) => {
     try {
       const sessionId = sessionState.currentSession.sessionId;
 
@@ -240,10 +244,10 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
         return;
       }
 
-      log(`Ending session ${sessionId} with cashOut: ${cashOut}...`);
+      log(`Ending session ${sessionId} with cashOut: ${cashOut}, tipAmount: ${tipAmount}...`);
 
       // Atomic: end session + clear active marker in single transaction
-      await endSessionAtomic(sessionId, cashOut, userId);
+      await endSessionAtomic(sessionId, cashOut, userId, tipAmount);
       log(`Session ${sessionId} ended atomically`);
 
       // Update reducer state
@@ -251,7 +255,8 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
         type: SESSION_ACTIONS.END_SESSION,
         payload: {
           endTime: Date.now(),
-          cashOut: cashOut
+          cashOut: cashOut,
+          tipAmount: tipAmount,
         }
       });
 

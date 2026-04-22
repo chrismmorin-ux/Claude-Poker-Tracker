@@ -20,13 +20,18 @@ export const ActionHistoryGrid = ({
 }) => {
   return (
     <div className="bg-white rounded shadow p-4">
-      <div className="grid grid-cols-9 gap-2">
-        {/* Headers with Labels buttons */}
+      {/* AUDIT-2026-04-21-SDV F6: Labels buttons removed — they had no onClick, no
+          handler, no disabled attribute; full hover styling made them appear
+          interactive but they did nothing. No planned Labels implementation in
+          the audit or code. Replaced with plain seat-number column headers for
+          reading clarity. */}
+      <div className="grid grid-cols-9 gap-2 mb-2">
         {SEAT_ARRAY.map(seat => (
-          <div key={seat} className="flex flex-col items-center">
-            <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded font-semibold w-full mb-2">
-              Labels
-            </button>
+          <div
+            key={seat}
+            className="text-xs font-semibold text-gray-600 text-center uppercase tracking-wider"
+          >
+            Seat {seat}
           </div>
         ))}
       </div>

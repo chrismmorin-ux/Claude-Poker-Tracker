@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import { useSyncBridge, useOnlineSession, useOnlineAnalysisContext } from '../../../contexts';
+import { useSyncBridge, useOnlineSession, useAnalysisContext } from '../../../contexts';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import VillainProfileModal from '../../ui/VillainProfileModal';
 import { SeatGrid } from './SeatGrid';
@@ -23,7 +23,7 @@ export const OnlineView = ({ scale }) => {
     selectedSessionId, setSelectedSessionId, onlineSessions, loadSessions,
   } = useOnlineSession();
 
-  const { tendencyMap, handCount, isLoading, advice } = useOnlineAnalysisContext();
+  const { tendencyMap, handCount, isLoading, advice } = useAnalysisContext();
 
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);

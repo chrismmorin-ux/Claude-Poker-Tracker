@@ -40,9 +40,15 @@ describe('ShowdownHeader', () => {
       expect(screen.getByText('Next Hand')).toBeInTheDocument();
     });
 
-    it('renders Clear Cards button', () => {
-      render(<ShowdownHeader {...defaultProps} />);
+    it('renders Clear Cards button in full mode', () => {
+      // AUDIT-2026-04-21-SDV F3: Clear Cards only renders in full mode
+      render(<ShowdownHeader {...defaultProps} showdownMode="full" />);
       expect(screen.getByText('Clear Cards')).toBeInTheDocument();
+    });
+
+    it('hides Clear Cards button in quick mode (SDV-F3)', () => {
+      render(<ShowdownHeader {...defaultProps} showdownMode="quick" />);
+      expect(screen.queryByText('Clear Cards')).not.toBeInTheDocument();
     });
 
     it('renders Done button', () => {
@@ -88,8 +94,8 @@ describe('ShowdownHeader', () => {
       expect(defaultProps.onNextHand).toHaveBeenCalledTimes(1);
     });
 
-    it('calls onClearCards when Clear Cards clicked', () => {
-      render(<ShowdownHeader {...defaultProps} />);
+    it('calls onClearCards when Clear Cards clicked (full mode only)', () => {
+      render(<ShowdownHeader {...defaultProps} showdownMode="full" />);
       fireEvent.click(screen.getByText('Clear Cards'));
       expect(defaultProps.onClearCards).toHaveBeenCalledTimes(1);
     });
@@ -108,8 +114,8 @@ describe('ShowdownHeader', () => {
       expect(button).toHaveClass('bg-yellow-600');
     });
 
-    it('Clear Cards button has blue background', () => {
-      render(<ShowdownHeader {...defaultProps} />);
+    it('Clear Cards button has blue background (full mode)', () => {
+      render(<ShowdownHeader {...defaultProps} showdownMode="full" />);
       const button = screen.getByText('Clear Cards');
       expect(button).toHaveClass('bg-blue-600');
     });

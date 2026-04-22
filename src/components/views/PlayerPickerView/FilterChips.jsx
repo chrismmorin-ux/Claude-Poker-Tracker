@@ -37,7 +37,10 @@ const shortLabelFor = (category, id) => {
 };
 
 const ColorPanel = ({ onPick, selectedId }) => (
-  <div className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-b shadow-sm">
+  <div
+    className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-b shadow-sm max-h-32 overflow-y-auto"
+    data-testid="filter-panel-color"
+  >
     {SKIN_TONES.map((tone) => (
       <button
         key={tone.id}
@@ -63,7 +66,10 @@ const ColorPanel = ({ onPick, selectedId }) => (
 const ShapePanel = ({ category, onPick, selectedId }) => {
   const features = AVATAR_FEATURES[category] || [];
   return (
-    <div className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-b shadow-sm">
+    <div
+      className="flex flex-wrap gap-2 p-2 bg-white border border-gray-200 rounded-b shadow-sm max-h-32 overflow-y-auto"
+      data-testid={`filter-panel-shape-${category}`}
+    >
       {features.map((feature) => (
         <button
           key={feature.id}
@@ -122,7 +128,7 @@ export const FilterChips = ({ featureFilters, onFilterChange, onClearAll }) => {
               aria-expanded={open}
               aria-pressed={active}
               className={
-                'flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition ' +
+                'flex items-center gap-1 text-xs px-3 py-2 min-h-[36px] rounded-full border transition ' +
                 (active
                   ? 'bg-amber-50 border-amber-400 text-amber-900'
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50')

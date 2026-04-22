@@ -129,7 +129,7 @@ export const PlayerEditorView = ({ scale = 1 }) => {
   return (
     <div
       ref={rootRef}
-      className="min-h-screen bg-gray-100 flex flex-col"
+      className="h-screen bg-gray-100 flex flex-col overflow-hidden"
       style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
       data-testid="player-editor-view"
     >

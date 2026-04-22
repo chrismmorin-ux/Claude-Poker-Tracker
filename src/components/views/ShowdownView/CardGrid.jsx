@@ -19,8 +19,14 @@ export const CardGrid = ({
 }) => {
   const canSelect = highlightedSeat !== null && highlightedHoleSlot !== null;
 
+  // AUDIT-2026-04-21-SDV F5: overflow-hidden previously clipped the 13×4 fixed-pixel
+  // card table on sub-reference viewports (Samsung Galaxy A22 @ 1600×720 is the
+  // design reference — at smaller landscape viewports the rightmost low-rank columns
+  // became silently inaccessible). overflow-auto restores horizontal scroll as a
+  // fallback on narrow devices. Full responsive layout (larger cards at scale <0.75)
+  // is tracked as a discovery candidate; this fix unblocks the JTBD-HE-11 regression.
   return (
-    <div className="flex-1 bg-white py-1 px-2 overflow-hidden flex items-center justify-center">
+    <div className="flex-1 bg-white py-1 px-2 overflow-auto flex items-center justify-center">
       <table className="border-collapse">
         <thead>
           <tr>

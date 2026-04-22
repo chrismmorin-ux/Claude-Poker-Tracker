@@ -63,8 +63,12 @@ describe('OnlineAnalysisContext', () => {
   });
 
   it('throws when used outside provider', () => {
+    // AUDIT-2026-04-21-TV F11: error message reflects the canonical name
+    // `useAnalysisContext`. The `useOnlineAnalysisContext` symbol is retained as a
+    // deprecated alias that delegates to the same implementation, so its error
+    // message surfaces the canonical name — that's the intended behavior.
     expect(() => {
       renderHook(() => useOnlineAnalysisContext());
-    }).toThrow('useOnlineAnalysisContext must be used within OnlineAnalysisProvider');
+    }).toThrow('useAnalysisContext must be used within OnlineAnalysisProvider');
   });
 });

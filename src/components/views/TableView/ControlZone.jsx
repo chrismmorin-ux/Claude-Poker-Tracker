@@ -34,7 +34,10 @@ export const ControlZone = ({
       </div>
     )}
 
-    {/* Utility row — seat/street management */}
+    {/* Utility row — seat/street management
+        AUDIT-2026-04-21-TV F10: Reset Hand moved OUT of this row (was adjacent to Next Hand);
+        now lives in a gap-separated utility slot above Next Hand to reduce motor-proximity miss-tap risk
+        against the gold Next Hand CTA. */}
     <div className={`flex gap-1.5 px-2 pb-1 ${singleSeat && actionArray.length > 0 ? 'pt-1' : 'pt-2'}`}>
       {hasSeatSelected && (
         <button onClick={onDeselect} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
@@ -53,16 +56,17 @@ export const ControlZone = ({
       )}
       <button
         onClick={onResetHand}
-        className="btn-press flex-1 rounded-lg flex items-center justify-center gap-1 font-semibold text-white"
-        style={{ height: '48px', fontSize: '13px', background: '#1f2937', border: '1px solid var(--panel-border)' }}
+        className="btn-press flex-1 rounded-lg flex items-center justify-center gap-1 font-semibold text-gray-400"
+        style={{ height: '40px', fontSize: '12px', background: '#1f2937', border: '1px solid var(--panel-border)', opacity: 0.75 }}
       >
-        <RotateCcw size={14} />
+        <RotateCcw size={12} />
         Reset Hand
       </button>
     </div>
 
-    {/* Next Hand — primary CTA, always visible, always at very bottom */}
-    <div className="px-2 pt-1 pb-2">
+    {/* Next Hand — primary CTA, always visible, always at very bottom.
+        AUDIT-2026-04-21-TV F10: increased top spacing to add physical gap between Reset Hand and the gold CTA. */}
+    <div className="px-2 pt-3 pb-2">
       <button
         onClick={onNextHand}
         className="btn-press w-full rounded-lg flex items-center justify-center gap-2 font-extrabold shadow-lg"

@@ -43,13 +43,18 @@ describe('CashOutModal', () => {
     });
 
     it('renders input field', () => {
+      // AUDIT-2026-04-21-SV F2: two inputs now (Cash Out + Tip); cash-out is first.
       render(<CashOutModal {...defaultProps} />);
-      expect(screen.getByPlaceholderText('0')).toBeInTheDocument();
+      const inputs = screen.getAllByPlaceholderText('0');
+      expect(inputs.length).toBeGreaterThanOrEqual(1);
+      expect(inputs[0]).toBeInTheDocument();
     });
 
     it('renders dollar sign prefix', () => {
+      // AUDIT-2026-04-21-SV F2: two $ prefixes now (one per input field).
       render(<CashOutModal {...defaultProps} />);
-      expect(screen.getByText('$')).toBeInTheDocument();
+      const dollarSigns = screen.getAllByText('$');
+      expect(dollarSigns.length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders helper text', () => {
@@ -71,44 +76,62 @@ describe('CashOutModal', () => {
   });
 
   describe('input behavior', () => {
+    // AUDIT-2026-04-21-SV F2: cashOut input is the FIRST of the two $ inputs.
+    const getCashOutInput = () => screen.getAllByPlaceholderText('0')[0];
+    const getTipInput = () => screen.getAllByPlaceholderText('0')[1];
+
     it('displays current cashOutAmount value', () => {
       render(<CashOutModal {...defaultProps} cashOutAmount="250" />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveValue(250);
+      // AUDIT-2026-04-21-SV F2: input type is text → value is a string.
+      expect(getCashOutInput()).toHaveValue('250');
     });
 
     it('displays empty string as empty input', () => {
       render(<CashOutModal {...defaultProps} cashOutAmount="" />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveValue(null);
+      expect(getCashOutInput()).toHaveValue('');
     });
 
     it('calls onCashOutAmountChange when input changes', () => {
       render(<CashOutModal {...defaultProps} />);
-      const input = screen.getByPlaceholderText('0');
-
-      fireEvent.change(input, { target: { value: '500' } });
+      fireEvent.change(getCashOutInput(), { target: { value: '500' } });
       expect(defaultProps.onCashOutAmountChange).toHaveBeenCalledWith('500');
     });
 
     it('handles decimal input', () => {
       render(<CashOutModal {...defaultProps} />);
-      const input = screen.getByPlaceholderText('0');
-
-      fireEvent.change(input, { target: { value: '123.45' } });
+      fireEvent.change(getCashOutInput(), { target: { value: '123.45' } });
       expect(defaultProps.onCashOutAmountChange).toHaveBeenCalledWith('123.45');
     });
 
-    it('input is number type', () => {
+    it('input uses inputMode=decimal for compact numeric keypad (SV-F2)', () => {
+      // AUDIT-2026-04-21-SV F2: replaced type=number with type=text + inputMode=decimal.
       render(<CashOutModal {...defaultProps} />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveAttribute('type', 'number');
+      const input = getCashOutInput();
+      expect(input).toHaveAttribute('type', 'text');
+      expect(input).toHaveAttribute('inputMode', 'decimal');
     });
 
     it('input has autoFocus', () => {
       render(<CashOutModal {...defaultProps} />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveFocus();
+      expect(getCashOutInput()).toHaveFocus();
+    });
+
+    it('renders optional Tip field (SV-F2)', () => {
+      render(<CashOutModal {...defaultProps} />);
+      expect(screen.getByText(/Tip \(optional\)/)).toBeInTheDocument();
+      expect(getTipInput()).toBeInTheDocument();
+    });
+
+    it('calls onTipAmountChange when tip input changes (SV-F2)', () => {
+      const onTipAmountChange = vi.fn();
+      render(<CashOutModal {...defaultProps} tipAmount="" onTipAmountChange={onTipAmountChange} />);
+      fireEvent.change(getTipInput(), { target: { value: '20' } });
+      expect(onTipAmountChange).toHaveBeenCalledWith('20');
+    });
+
+    it('displays current tipAmount value (SV-F2)', () => {
+      render(<CashOutModal {...defaultProps} tipAmount="15" />);
+      expect(getTipInput()).toHaveValue('15');
     });
   });
 
@@ -157,16 +180,17 @@ describe('CashOutModal', () => {
   });
 
   describe('edge cases', () => {
+    // AUDIT-2026-04-21-SV F2: input type is text → toHaveValue expects string.
     it('handles zero value', () => {
       render(<CashOutModal {...defaultProps} cashOutAmount="0" />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveValue(0);
+      const input = screen.getAllByPlaceholderText('0')[0];
+      expect(input).toHaveValue('0');
     });
 
     it('handles large values', () => {
       render(<CashOutModal {...defaultProps} cashOutAmount="99999" />);
-      const input = screen.getByPlaceholderText('0');
-      expect(input).toHaveValue(99999);
+      const input = screen.getAllByPlaceholderText('0')[0];
+      expect(input).toHaveValue('99999');
     });
 
     it('opens and closes correctly', () => {

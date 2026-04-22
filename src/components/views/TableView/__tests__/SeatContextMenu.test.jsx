@@ -190,6 +190,72 @@ describe('SeatContextMenu', () => {
     });
   });
 
+  describe('state-aware ordering (F1 + F3 + F11)', () => {
+    it('promotes Clear Player to first item when seat is occupied', () => {
+      const props = {
+        ...defaultProps,
+        getSeatPlayerName: vi.fn(() => 'Assigned Player'),
+      };
+      const { container } = render(<SeatContextMenu {...props} />);
+      const buttons = container.querySelectorAll('button');
+      expect(buttons[0]).toHaveTextContent('Clear Player');
+    });
+
+    it('keeps Make My Seat first when seat is empty', () => {
+      const { container } = render(<SeatContextMenu {...defaultProps} />);
+      const buttons = container.querySelectorAll('button');
+      expect(buttons[0]).toHaveTextContent('Make My Seat');
+    });
+
+    it('separates Clear from Recent list via a divider when seat is occupied', () => {
+      const props = {
+        ...defaultProps,
+        getSeatPlayerName: vi.fn(() => 'Assigned Player'),
+      };
+      const { container } = render(<SeatContextMenu {...props} />);
+      // Recent section must come AFTER Clear + SeatConfig + AssignSection header,
+      // so they aren't tap-adjacent.
+      const clearBtn = screen.getByTestId('menu-clear-player');
+      const firstRecent = screen.getByText('John Doe');
+      const clearRect = Array.from(container.querySelectorAll('*')).indexOf(clearBtn);
+      const recentRect = Array.from(container.querySelectorAll('*')).indexOf(firstRecent);
+      expect(recentRect).toBeGreaterThan(clearRect + 4);
+    });
+
+    it('renders Swap Player button only when seat is occupied and handler provided', () => {
+      // Empty seat: no swap.
+      const { rerender, queryByTestId } = render(
+        <SeatContextMenu {...defaultProps} onSwapPlayer={vi.fn()} />,
+      );
+      expect(queryByTestId('menu-swap-player')).toBeNull();
+
+      // Occupied seat: swap visible.
+      const onSwap = vi.fn();
+      rerender(
+        <SeatContextMenu
+          {...defaultProps}
+          onSwapPlayer={onSwap}
+          getSeatPlayerName={vi.fn(() => 'Existing Player')}
+        />,
+      );
+      const swapBtn = screen.getByTestId('menu-swap-player');
+      fireEvent.click(swapBtn);
+      expect(onSwap).toHaveBeenCalledWith(5);
+    });
+
+    it('exposes data-seat-occupied attribute for reducer inspection', () => {
+      const occupiedProps = {
+        ...defaultProps,
+        getSeatPlayerName: vi.fn(() => 'Player'),
+      };
+      const { container: occ } = render(<SeatContextMenu {...occupiedProps} />);
+      expect(occ.firstChild).toHaveAttribute('data-seat-occupied', 'true');
+
+      const { container: emp } = render(<SeatContextMenu {...defaultProps} />);
+      expect(emp.firstChild).toHaveAttribute('data-seat-occupied', 'false');
+    });
+  });
+
   describe('different seat numbers', () => {
     it('uses seat 1 from contextMenu', () => {
       const props = {

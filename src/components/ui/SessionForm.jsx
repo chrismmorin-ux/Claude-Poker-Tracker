@@ -36,6 +36,25 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
   const [customGoal, setCustomGoal] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
+
+  // AUDIT-2026-04-21-SV F6: dirty-state tracking for backdrop-tap guard.
+  // The form is "dirty" when the user has diverged from the initial (default-seeded)
+  // state. Backdrop taps on a dirty form are ignored — the explicit × / Cancel
+  // buttons remain the only dismissal path. Preserves between-hands-chris's draft
+  // across accidental miss-taps (H-PLT08).
+  const initialBuyInStr = initialBuyIn.toString();
+  const isDirty =
+    venue !== (defaultVenue || '') ||
+    gameType !== initialGameType ||
+    buyIn !== initialBuyInStr ||
+    goal !== '' ||
+    customGoal !== '' ||
+    notes !== '';
+
+  const handleBackdropClick = () => {
+    if (isDirty) return; // Miss-tap protection; explicit × button still works.
+    onCancel();
+  };
   const [tournamentConfig, setTournamentConfig] = useState({
     format: 'freezeout',
     startingStack: 10000,
@@ -97,7 +116,7 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onCancel}
+      onClick={handleBackdropClick}
     >
       <div
         className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-96"

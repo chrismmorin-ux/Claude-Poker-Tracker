@@ -51,8 +51,20 @@ export const OnlineAnalysisProvider = ({ children }) => {
   );
 };
 
-export const useOnlineAnalysisContext = () => {
+// AUDIT-2026-04-21-TV F11: renamed from useOnlineAnalysisContext → useAnalysisContext.
+// The prior name implied online-only scope but the hook serves both live (TableView)
+// and online (OnlineView/ExtensionPanel) consumers — the name was actively misleading
+// per H-N01 (developer clarity subset).
+export const useAnalysisContext = () => {
   const ctx = useContext(OnlineAnalysisContext);
-  if (!ctx) throw new Error('useOnlineAnalysisContext must be used within OnlineAnalysisProvider');
+  if (!ctx) throw new Error('useAnalysisContext must be used within OnlineAnalysisProvider');
   return ctx;
 };
+
+/**
+ * @deprecated Renamed to `useAnalysisContext` (AUDIT-2026-04-21-TV F11).
+ * Kept as a thin alias for any external / out-of-repo callers. Internal call sites
+ * have all been migrated. Remove in a future cleanup pass once no non-historical
+ * references remain.
+ */
+export const useOnlineAnalysisContext = useAnalysisContext;

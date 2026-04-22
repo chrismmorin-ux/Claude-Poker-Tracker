@@ -26,7 +26,26 @@ import { useGameHandlers } from '../../../hooks/useGameHandlers';
  * SessionsView component
  */
 export const SessionsView = ({ scale }) => {
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, addToast } = useToast();
+
+  // AUDIT-2026-04-21-SV F1: unified destructive-action undo duration (matches TableView F5)
+  const UNDO_TOAST_DURATION_MS = 12000;
+
+  // AUDIT-2026-04-21-SV F7: Live/Online/All filter for past-sessions list.
+  // Persists to localStorage so the filter choice survives navigation.
+  const [pastSessionFilter, setPastSessionFilter] = useState(() => {
+    try {
+      return localStorage.getItem('sessionsView.pastFilter') || 'all';
+    } catch { return 'all'; }
+  });
+  const handleSetPastSessionFilter = (next) => {
+    setPastSessionFilter(next);
+    try { localStorage.setItem('sessionsView.pastFilter', next); } catch {}
+  };
+
+  // AUDIT-2026-04-21-SV F1: deferred-delete pattern for Delete Session toast+undo.
+  // Tracks { sessionId → timeout, snapshot } while the undo window is open.
+  const pendingDeletesRef = useRef(new Map());
   const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession } = useUI();
   const { resetHand: resetTableState } = useGameHandlers();
   const { initTournament, createNewTournament } = useTournament();
@@ -51,6 +70,8 @@ export const SessionsView = ({ scale }) => {
   const [sessions, setSessions] = useState([]);
   const [showCashOutModal, setShowCashOutModal] = useState(false);
   const [cashOutAmount, setCashOutAmount] = useState('');
+  // AUDIT-2026-04-21-SV F2: optional tip field captured at cash-out.
+  const [tipAmount, setTipAmount] = useState('');
 
   // Import/Export state
   const [showImportConfirm, setShowImportConfirm] = useState(false);
@@ -67,6 +88,20 @@ export const SessionsView = ({ scale }) => {
     };
     loadSessions();
   }, [loadAllSessions]);
+
+  // AUDIT-2026-04-21-SV F1: on unmount, commit any pending deletes immediately.
+  // Navigating away counts as "user did not undo" — the delete was intended.
+  useEffect(() => {
+    const pendingMap = pendingDeletesRef.current;
+    return () => {
+      pendingMap.forEach((pending, sessionId) => {
+        clearTimeout(pending.timeoutId);
+        // Fire and forget — component is unmounting; can't surface errors via toast.
+        deleteSessionById(sessionId).catch(err => logger.error('SessionsView unmount delete', err));
+      });
+      pendingMap.clear();
+    };
+  }, [deleteSessionById]);
 
   // Auto-open new session form when navigating from TableView
   useEffect(() => {
@@ -98,18 +133,23 @@ export const SessionsView = ({ scale }) => {
   const handleEndSession = () => {
     setShowCashOutModal(true);
     setCashOutAmount('');
+    setTipAmount('');
   };
 
-  // Handle confirm cash out and end session
+  // Handle confirm cash out and end session.
+  // AUDIT-2026-04-21-SV F2: thread tip amount into endCurrentSession so the
+  // session record stores it + BankrollDisplay subtracts it from lifetime P&L.
   const handleConfirmCashOut = async () => {
     try {
       const cashOut = cashOutAmount ? parseFloat(cashOutAmount) : null;
-      await endCurrentSession(cashOut);
+      const tip = tipAmount ? parseFloat(tipAmount) : null;
+      await endCurrentSession(cashOut, tip);
       const allSessions = await loadAllSessions();
       const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
       setSessions(sorted);
       setShowCashOutModal(false);
       setCashOutAmount('');
+      setTipAmount('');
       showSuccess('Session ended');
     } catch (error) {
       logger.error('SessionsView', error);
@@ -117,20 +157,61 @@ export const SessionsView = ({ scale }) => {
     }
   };
 
-  // Handle delete session
+  // Handle delete session.
+  // AUDIT-2026-04-21-SV F1: replaced window.confirm+immediate-delete with a deferred-delete
+  // toast+undo pattern. Mirrors the approach used in TableView Reset Hand / Next Hand:
+  //   1. Snapshot the session record.
+  //   2. Remove it from the visible list immediately (optimistic UI).
+  //   3. Show a warning toast with an Undo action (12s).
+  //   4. If Undo fires → restore the record into local state; IDB is never touched.
+  //   5. If the toast auto-dismisses without Undo → commit the IDB delete.
+  // Rationale: mid-hand-chris and ringmaster-in-hand surface contracts explicitly forbid
+  // native browser confirm dialogs on any primary surface; SessionsView is primary for
+  // post-session-chris and between-hands-chris. No IDB schema change needed.
   const handleDeleteSession = async (sessionId) => {
-    if (!window.confirm(`Delete session #${sessionId}? This cannot be undone.`)) return;
+    const snapshot = sessions.find(s => s.sessionId === sessionId);
+    if (!snapshot) return;
 
-    try {
-      await deleteSessionById(sessionId);
-      const allSessions = await loadAllSessions();
-      const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
-      setSessions(sorted);
-      showSuccess('Session deleted');
-    } catch (error) {
-      logger.error('SessionsView', error);
-      showError('Failed to delete session');
-    }
+    // Optimistic removal from visible list.
+    setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
+
+    // Schedule the real IDB delete after the undo window closes.
+    const timeoutId = setTimeout(async () => {
+      pendingDeletesRef.current.delete(sessionId);
+      try {
+        await deleteSessionById(sessionId);
+      } catch (error) {
+        logger.error('SessionsView', error);
+        // On failure, try to restore to the visible list so state isn't lost silently.
+        setSessions(prev => {
+          if (prev.some(s => s.sessionId === sessionId)) return prev;
+          return [...prev, snapshot].sort((a, b) => b.startTime - a.startTime);
+        });
+        showError('Failed to delete session');
+      }
+    }, UNDO_TOAST_DURATION_MS);
+
+    pendingDeletesRef.current.set(sessionId, { timeoutId, snapshot });
+
+    const handCount = snapshot.handCount ?? 0;
+    addToast(`Session deleted${handCount ? ` (${handCount} hand${handCount === 1 ? '' : 's'})` : ''}`, {
+      variant: 'warning',
+      duration: UNDO_TOAST_DURATION_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pending = pendingDeletesRef.current.get(sessionId);
+          if (!pending) return;
+          clearTimeout(pending.timeoutId);
+          pendingDeletesRef.current.delete(sessionId);
+          setSessions(prev => {
+            if (prev.some(s => s.sessionId === sessionId)) return prev;
+            return [...prev, pending.snapshot].sort((a, b) => b.startTime - a.startTime);
+          });
+          showSuccess('Session restored');
+        },
+      },
+    });
   };
 
   // Handle export
@@ -198,13 +279,18 @@ export const SessionsView = ({ scale }) => {
     setImportData(null);
   };
 
-  // Calculate running total bankroll
+  // Calculate running total bankroll.
+  // AUDIT-2026-04-21-SV F2: tipAmount subtracted from P&L. Prior to this, tipped
+  // sessions silently overcounted lifetime bankroll by the tip amount per session.
+  // Legacy sessions without `tipAmount` read as undefined → `|| 0` fallback →
+  // zero deduction (backward-compatible).
   const calculateTotalBankroll = () => {
     return sessions.reduce((total, session) => {
       if (session.endTime && session.cashOut !== null && session.cashOut !== undefined) {
         const buyIn = session.buyIn || 0;
         const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
-        const profitLoss = session.cashOut - buyIn - totalRebuys;
+        const tip = session.tipAmount || 0;
+        const profitLoss = session.cashOut - buyIn - totalRebuys - tip;
         return total + profitLoss;
       }
       return total;
@@ -333,13 +419,51 @@ export const SessionsView = ({ scale }) => {
 
           {/* Past Sessions */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg">
-            <div className="p-4 border-b border-gray-700">
+            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-200">Past Sessions</h2>
+              {/* AUDIT-2026-04-21-SV F7: Live/Online filter pills.
+                  In-memory filter over the past-sessions list. Previously, online
+                  (ignition) sessions mixed with live sessions without grouping —
+                  post-session-chris scanning live-only history had to visually
+                  skip online entries. Filter persists to localStorage. */}
+              {(() => {
+                const pastSessions = sessions.filter(s => !s.isActive);
+                const onlineCount = pastSessions.filter(s => s.source === 'ignition').length;
+                const liveCount = pastSessions.length - onlineCount;
+                if (pastSessions.length === 0 || onlineCount === 0) return null;
+                const pills = [
+                  { id: 'all', label: `All (${pastSessions.length})` },
+                  { id: 'live', label: `Live (${liveCount})` },
+                  { id: 'online', label: `Online (${onlineCount})` },
+                ];
+                return (
+                  <div className="flex gap-1">
+                    {pills.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleSetPastSessionFilter(p.id)}
+                        className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                          pastSessionFilter === p.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="divide-y divide-gray-700">
               {sessions
                 .filter((s) => !s.isActive)
+                .filter((s) => {
+                  if (pastSessionFilter === 'live') return s.source !== 'ignition';
+                  if (pastSessionFilter === 'online') return s.source === 'ignition';
+                  return true;
+                })
                 .map((session) => (
                   <SessionCard
                     key={session.sessionId}
@@ -374,27 +498,33 @@ export const SessionsView = ({ scale }) => {
           )}
         </div>
 
-        {/* Running Total Bankroll */}
-        <BankrollDisplay
-          totalBankroll={totalBankroll}
-          completedSessionCount={completedSessionCount}
-        />
-
-        {/* Preflop Drills entry — hand-vs-hand equity trainer */}
-        <button
-          onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
-          className="absolute bottom-8 right-48 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
-        >
-          Preflop Drills
-        </button>
-
-        {/* Postflop Drills entry — range-vs-board trainer */}
-        <button
-          onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
-          className="absolute bottom-8 right-8 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium z-10 transition-colors"
-        >
-          Postflop Drills
-        </button>
+        {/* AUDIT-2026-04-21-SV F5: bottom bar unified. Previously three independent
+            absolute-positioned elements (BankrollDisplay @ bottom-8 left-8,
+            Preflop Drills @ bottom-8 right-48, Postflop Drills @ bottom-8 right-8)
+            risked visual collision at sub-reference scale. Single flex container
+            with justify-between is collision-proof at any scale. */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between items-center px-8 pb-8 z-10 pointer-events-none">
+          <div className="pointer-events-auto">
+            <BankrollDisplay
+              totalBankroll={totalBankroll}
+              completedSessionCount={completedSessionCount}
+            />
+          </div>
+          <div className="flex gap-3 pointer-events-auto">
+            <button
+              onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+            >
+              Preflop Drills
+            </button>
+            <button
+              onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+            >
+              Postflop Drills
+            </button>
+          </div>
+        </div>
 
         {/* Import Confirmation Modal */}
         <ImportConfirmModal
@@ -409,8 +539,14 @@ export const SessionsView = ({ scale }) => {
           isOpen={showCashOutModal}
           cashOutAmount={cashOutAmount}
           onCashOutAmountChange={setCashOutAmount}
+          tipAmount={tipAmount}
+          onTipAmountChange={setTipAmount}
           onConfirm={handleConfirmCashOut}
-          onCancel={() => { setShowCashOutModal(false); setCashOutAmount(''); }}
+          onCancel={() => {
+            setShowCashOutModal(false);
+            setCashOutAmount('');
+            setTipAmount('');
+          }}
         />
       </div>
     </ScaledContainer>

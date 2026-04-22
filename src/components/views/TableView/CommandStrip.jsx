@@ -7,7 +7,7 @@ import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
-import { useGame, useSettings, useUI, useCard, usePlayer, useOnlineAnalysisContext, useToast, useSession } from '../../../contexts';
+import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
 import { useAutoSeatSelection } from '../../../hooks/useAutoSeatSelection';
@@ -76,7 +76,7 @@ export const CommandStrip = ({
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
   const { getSeatPlayerName } = usePlayer();
-  const { advice: gameTreeAdvice } = useOnlineAnalysisContext();
+  const { advice: gameTreeAdvice } = useAnalysisContext();
   const { addToast, showInfo, showWarning } = useToast();
   const { currentSession, setHandCount } = useSession();
 
@@ -129,6 +129,10 @@ export const CommandStrip = ({
   // RT-26: Track undo point for batch undo
   const orbitUndoPointRef = useRef(null);
   const nextHandUndoRef = useRef(null); // RT-37: snapshot for undo toast
+  const resetHandUndoRef = useRef(null); // AUDIT-2026-04-21-TV F1: snapshot for undo toast
+
+  // AUDIT-2026-04-21-TV F1+F5: unified destructive-action undo duration (between-hands-chris budget)
+  const UNDO_TOAST_DURATION_MS = 12000;
 
   const handleOrbitTap = useCallback((targetSeat) => {
     if (currentStreet !== 'preflop') {
@@ -221,7 +225,7 @@ export const CommandStrip = ({
     if (hadActions) {
       addToast(`Hand #${handNumber} completed`, {
         variant: 'success',
-        duration: 5000,
+        duration: UNDO_TOAST_DURATION_MS,
         action: {
           label: 'Undo',
           onClick: () => {
@@ -251,11 +255,52 @@ export const CommandStrip = ({
 
   const handleResetHand = useCallback(() => {
     orbitUndoPointRef.current = null;
-    if (!window.confirm('Reset all actions for this hand?')) return;
+    const hadActions = actionSequence.length > 0;
+
+    // AUDIT-2026-04-21-TV F1: snapshot state for undo toast, replacing window.confirm
+    // Mirrors the Next Hand pattern; mid-hand-chris explicitly forbids modal interrupts.
+    if (hadActions) {
+      resetHandUndoRef.current = {
+        actionSequence: [...actionSequence],
+        dealerButtonSeat,
+        communityCards: [...communityCards],
+        holeCards: [...holeCards],
+        currentStreet,
+        absentSeats: [...absentSeats],
+      };
+    }
+
     resetHand();
-    showWarning('Hand reset');
+
+    if (hadActions) {
+      addToast('Hand reset', {
+        variant: 'warning',
+        duration: UNDO_TOAST_DURATION_MS,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            const snapshot = resetHandUndoRef.current;
+            if (!snapshot) return;
+            dispatchGame({ type: GAME_ACTIONS.HYDRATE_STATE, payload: {
+              actionSequence: snapshot.actionSequence,
+              dealerButtonSeat: snapshot.dealerButtonSeat,
+              currentStreet: snapshot.currentStreet,
+              absentSeats: snapshot.absentSeats,
+            }});
+            dispatchCard({ type: CARD_ACTIONS.HYDRATE_STATE, payload: {
+              communityCards: snapshot.communityCards,
+              holeCards: snapshot.holeCards,
+            }});
+            resetHandUndoRef.current = null;
+            showInfo('Hand restored');
+          },
+        },
+      });
+    } else {
+      showInfo('Hand reset');
+    }
     scheduleAutoSelect();
-  }, [resetHand, showWarning, scheduleAutoSelect]);
+  }, [resetHand, actionSequence, dealerButtonSeat, communityCards, holeCards, currentStreet, absentSeats, addToast, showInfo, dispatchGame, dispatchCard, scheduleAutoSelect]);
 
   const handleClearStreet = useCallback(() => {
     clearStreetActions();
@@ -349,8 +394,11 @@ export const CommandStrip = ({
   }, [customValue, handleSizeSelected, minRaise]);
 
   // Long-press handlers for sizing button customization
-  const handleSizingLongPressStart = useCallback(() => {
+  // AUDIT-2026-04-21-TV F3: capture which slot was pressed so the editor can highlight it
+  const [editingSlotIndex, setEditingSlotIndex] = useState(null);
+  const handleSizingLongPressStart = useCallback((slotIdx) => {
     longPressTimer.current = setTimeout(() => {
+      setEditingSlotIndex(typeof slotIdx === 'number' ? slotIdx : null);
       setSizingEditorOpen(true);
     }, 500);
   }, []);
@@ -549,37 +597,91 @@ export const CommandStrip = ({
         )}
       </div>
 
-      {/* HE-2b: Preflop orbit strip — tap-ahead auto-folds intermediate seats */}
-      {currentStreet === 'preflop' && singleSeat && (
-        <div className="px-3 pb-1.5 pt-0.5 flex gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--panel-border)' }}>
-          {getPreflopOrder(dealerButtonSeat)
-            .filter(s => !absentSeats.includes(s))
+      {/* HE-2b: Preflop orbit strip — tap-ahead auto-folds intermediate seats.
+          AUDIT-2026-04-21-TV F2: each button that would trigger auto-folds shows a preview
+          count badge ("+N") so the scope is visible BEFORE the tap. Preview-before-commit
+          rather than interrupt-to-confirm — keeps flow for mid-hand-chris / ringmaster-in-hand. */}
+      {currentStreet === 'preflop' && singleSeat && (() => {
+        const orbitOrder = getPreflopOrder(dealerButtonSeat).filter(s => !absentSeats.includes(s));
+        const firstToAct = getFirstActionSeat();
+        const currentIdx = orbitOrder.indexOf(firstToAct);
+        const preflopEntries = actionSequence.filter(e => e.street === 'preflop');
+        const computeFoldPreview = (targetSeat) => {
+          const targetIdx = orbitOrder.indexOf(targetSeat);
+          if (currentIdx === -1 || targetIdx === -1 || targetIdx <= currentIdx) return 0;
+          let count = 0;
+          for (let i = currentIdx; i < targetIdx; i++) {
+            const seat = orbitOrder[i];
+            const hasActed = preflopEntries.some(e => e.seat === seat);
+            if (!hasActed) count++;
+          }
+          return count;
+        };
+        return (
+        // AUDIT-2026-04-21-TV F7: orbit strip switched from flex+overflow-x-auto to
+        // flex-wrap. Previously, when the panel was narrow enough that 9 position
+        // buttons couldn't fit in one row, the rightmost buttons were scrolled off
+        // with no affordance — tap-ahead failed silently against invisible seats
+        // (H-PLT07, H-ML05). Wrapping to a second row keeps every seat reachable
+        // at every scale. F2 preview-count badges are absolute-positioned and
+        // remain correctly placed after wrap.
+        <div className="px-3 pb-1.5 pt-0.5 flex flex-wrap gap-1" style={{ borderBottom: '1px solid var(--panel-border)' }}>
+          {orbitOrder
             .map(s => {
               const isCurrent = s === singleSeat;
               const seatActions = actionSequence.filter(e => e.street === 'preflop' && e.seat === s);
               const hasFolded = seatActions.some(e => e.action === 'fold');
               const hasActed = seatActions.length > 0;
+              const foldPreview = computeFoldPreview(s);
               const bg = isCurrent ? '#d4a847' : hasFolded ? '#7f1d1d' : hasActed ? '#14532d' : '#1f2937';
               const color = isCurrent ? '#1a1200' : hasFolded ? '#fca5a5' : hasActed ? '#86efac' : '#6b7280';
               return (
                 <button
                   key={s}
                   onClick={() => handleOrbitTap(s)}
-                  className="btn-press rounded"
+                  data-orbit-fold-preview={foldPreview}
+                  className="btn-press rounded relative"
                   style={{
+                    // AUDIT-2026-04-21-TV F7: flexShrink now 1 (was 0) so buttons
+                    // compress slightly to pack more per row before wrapping. When
+                    // the row still can't fit them all, flex-wrap on the parent
+                    // sends overflowing buttons to a second row — no silent
+                    // off-screen content.
                     height: '36px', padding: '4px 8px', fontSize: '12px', fontWeight: isCurrent ? 800 : 600,
-                    background: bg, color, whiteSpace: 'nowrap', flexShrink: 0,
+                    background: bg, color, whiteSpace: 'nowrap', flexShrink: 1,
                     textDecoration: hasFolded ? 'line-through' : 'none',
                     border: isCurrent ? '2px solid #fbbf24' : '1px solid transparent',
                   }}
                 >
                   {getPositionName(s, dealerButtonSeat)}
                   {hasActed && !hasFolded && !isCurrent && ' \u2713'}
+                  {foldPreview > 0 && (
+                    <span
+                      aria-label={`Tap would fold ${foldPreview} seat${foldPreview > 1 ? 's' : ''}`}
+                      style={{
+                        position: 'absolute',
+                        top: -6,
+                        right: -4,
+                        fontSize: 9,
+                        fontWeight: 800,
+                        padding: '1px 4px',
+                        borderRadius: 8,
+                        background: '#7f1d1d',
+                        color: '#fca5a5',
+                        border: '1px solid #b91c1c',
+                        letterSpacing: 0.3,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      +{foldPreview}
+                    </span>
+                  )}
                 </button>
               );
             })}
         </div>
-      )}
+        );
+      })()}
 
       {/* Action Buttons + Sizing + Batch recording */}
       {hasSeatSelected && currentStreet !== 'showdown' && (
@@ -638,6 +740,7 @@ export const CommandStrip = ({
             onSizingLongPressEnd={handleSizingLongPressEnd}
             onSaveSizing={handleSaveSizing}
             onResetSizing={handleResetSizing}
+            editingSlotIndex={editingSlotIndex}
           />
 
           {/* Batch recording — Rest Fold / Fold Cold / Check All */}

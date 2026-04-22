@@ -16,7 +16,8 @@
  *   - Selected swatch gets a gold ring; tapping again is a no-op.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import PlayerAvatar from '../../ui/PlayerAvatar';
 import AvatarRenderer from '../../ui/AvatarRenderer';
 import {
@@ -118,10 +119,28 @@ const CategoryBlock = ({ label, children }) => (
 // Main component
 // -----------------------------------------------------------------------------
 
+const SECONDARY_CATEGORIES = ['eyes', 'eyeColor', 'glasses', 'hat'];
+
+const hasAnySecondarySelection = (features) => {
+  if (!features) return false;
+  if (features.glasses && !features.glasses.endsWith('.none')) return true;
+  if (features.hat && !features.hat.endsWith('.none')) return true;
+  if (features.eyes && features.eyes !== DEFAULT_AVATAR_FEATURES.eyes) return true;
+  if (features.eyeColor && features.eyeColor !== DEFAULT_AVATAR_FEATURES.eyeColor) return true;
+  return false;
+};
+
 export const AvatarFeatureBuilder = ({ avatarFeatures, onFeatureChange, previewName }) => {
   const features = avatarFeatures || {};
   const hairChosen = !!features.hair && features.hair !== 'hair.none';
   const beardChosen = !!features.beard && features.beard !== 'beard.none';
+
+  // F8 + F9: secondary-detail rows (eyes/glasses/hat + their colors) collapse
+  // by default to match PhysicalSection's density pattern. Auto-open if the
+  // record already has meaningful selections in this group (edit-mode), so
+  // existing data isn't hidden from the user.
+  const [moreOpen, setMoreOpen] = useState(() => hasAnySecondarySelection(features));
+  const MoreIcon = moreOpen ? ChevronDown : ChevronRight;
 
   return (
     <div className="bg-white border border-gray-200 rounded p-3 space-y-4" data-testid="avatar-feature-builder">
@@ -190,43 +209,64 @@ export const AvatarFeatureBuilder = ({ avatarFeatures, onFeatureChange, previewN
         </CategoryBlock>
       ) : null}
 
-      <CategoryBlock label="Eyes">
-        <FeatureShapeRow
-          category="eyes"
-          selectedId={features.eyes}
-          onSelect={(id) => onFeatureChange('eyes', id)}
-          avatarFeatures={features}
-        />
-      </CategoryBlock>
+      {/* Secondary block — collapsible. Matches PhysicalSection pattern. */}
+      <div className="border-t border-gray-100 pt-2">
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-gray-500 font-semibold hover:text-gray-700"
+          data-testid="avatar-more-toggle"
+        >
+          <MoreIcon size={14} />
+          More details (eyes, glasses, hat)
+        </button>
 
-      <CategoryBlock label="Eye Color">
-        <ColorSwatchRow
-          palette={EYE_COLORS}
-          selectedId={features.eyeColor}
-          onSelect={(id) => onFeatureChange('eyeColor', id)}
-          category="eyeColor"
-        />
-      </CategoryBlock>
+        {moreOpen ? (
+          <div className="mt-3 space-y-4">
+            <CategoryBlock label="Eyes">
+              <FeatureShapeRow
+                category="eyes"
+                selectedId={features.eyes}
+                onSelect={(id) => onFeatureChange('eyes', id)}
+                avatarFeatures={features}
+              />
+            </CategoryBlock>
 
-      <CategoryBlock label="Glasses">
-        <FeatureShapeRow
-          category="glasses"
-          selectedId={features.glasses}
-          onSelect={(id) => onFeatureChange('glasses', id)}
-          avatarFeatures={features}
-        />
-      </CategoryBlock>
+            <CategoryBlock label="Eye Color">
+              <ColorSwatchRow
+                palette={EYE_COLORS}
+                selectedId={features.eyeColor}
+                onSelect={(id) => onFeatureChange('eyeColor', id)}
+                category="eyeColor"
+              />
+            </CategoryBlock>
 
-      <CategoryBlock label="Hat">
-        <FeatureShapeRow
-          category="hat"
-          selectedId={features.hat}
-          onSelect={(id) => onFeatureChange('hat', id)}
-          avatarFeatures={features}
-        />
-      </CategoryBlock>
+            <CategoryBlock label="Glasses">
+              <FeatureShapeRow
+                category="glasses"
+                selectedId={features.glasses}
+                onSelect={(id) => onFeatureChange('glasses', id)}
+                avatarFeatures={features}
+              />
+            </CategoryBlock>
+
+            <CategoryBlock label="Hat">
+              <FeatureShapeRow
+                category="hat"
+                selectedId={features.hat}
+                onSelect={(id) => onFeatureChange('hat', id)}
+                avatarFeatures={features}
+              />
+            </CategoryBlock>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };
+
+// Exported for tests.
+export const __INTERNAL__ = { SECONDARY_CATEGORIES, hasAnySecondarySelection };
 
 export default AvatarFeatureBuilder;

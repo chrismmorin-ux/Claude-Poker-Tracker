@@ -51,6 +51,12 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
       buyIn: sessionData.buyIn || null,
       rebuyTransactions: sessionData.rebuyTransactions || [],
       cashOut: null,  // Always null when creating session
+      // AUDIT-2026-04-21-SV F2: optional tip amount logged at cash-out.
+      // JTBD-SM-21 names tip logging explicitly; prior to this addition net P&L
+      // silently overcounted by the tip amount for every tipped session.
+      // Backward-compat: legacy sessions without the field read as undefined →
+      // treated as 0 downstream via `(session.tipAmount || 0)` pattern.
+      tipAmount: null,
       reUp: sessionData.reUp || 0,
       goal: sessionData.goal || null,
       notes: sessionData.notes || null,
@@ -509,7 +515,9 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
  * @param {string} userId - User ID (defaults to 'guest')
  * @returns {Promise<void>}
  */
-export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID) => {
+// AUDIT-2026-04-21-SV F2: `tipAmount` is additive-optional. Legacy sessions without
+// the field remain valid; readers treat undefined as 0. No IDB version bump needed.
+export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID, tipAmount = null) => {
   try {
     const db = await getDB();
     const activeKey = `active_${userId || GUEST_USER_ID}`;
@@ -536,6 +544,11 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
         session.endTime = Date.now();
         session.isActive = false;
         session.cashOut = cashOut;
+        // AUDIT-2026-04-21-SV F2: persist tip when provided; skip field when null
+        // to keep legacy-session parity on round-trip.
+        if (tipAmount !== null && tipAmount !== undefined) {
+          session.tipAmount = tipAmount;
+        }
 
         sessionsStore.put(session);
         activeStore.delete(activeKey);

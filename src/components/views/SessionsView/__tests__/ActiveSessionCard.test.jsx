@@ -7,9 +7,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ActiveSessionCard } from '../ActiveSessionCard';
 
-// Mock lucide-react
+// Mock lucide-react — extended 2026-04-21 when ActiveSessionCard started
+// using useToast (which transitively imports Toast.jsx icons).
 vi.mock('lucide-react', () => ({
   Square: () => <span data-testid="square-icon">■</span>,
+  X: () => <span data-testid="x-icon">×</span>,
+  AlertCircle: () => <span data-testid="alert-icon">!</span>,
+  CheckCircle: () => <span data-testid="check-icon">✓</span>,
+  Info: () => <span data-testid="info-icon">i</span>,
+  AlertTriangle: () => <span data-testid="warn-icon">⚠</span>,
+}));
+
+// AUDIT-2026-04-21-SV F4: mock useToast so rendering doesn't require a ToastProvider.
+// The SV-F4 fix imports useToast for the rebuy undo-toast; we only care that the
+// component renders and behaves — not that a real Toast fires in unit tests.
+vi.mock('../../../../contexts/ToastContext', () => ({
+  useToast: () => ({
+    addToast: vi.fn(),
+    showInfo: vi.fn(),
+    showSuccess: vi.fn(),
+    showError: vi.fn(),
+    showWarning: vi.fn(),
+  }),
 }));
 
 describe('ActiveSessionCard', () => {
@@ -157,7 +176,8 @@ describe('ActiveSessionCard', () => {
     it('shows input when Add Rebuy clicked', () => {
       render(<ActiveSessionCard {...defaultProps} />);
       fireEvent.click(screen.getByText('+ Add Rebuy'));
-      expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+      // AUDIT-2026-04-21-SV F4: rebuy input is type=text + inputMode=decimal (role: textbox)
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
     });
 
     it('shows Confirm and Cancel buttons when adding rebuy', () => {
@@ -171,7 +191,8 @@ describe('ActiveSessionCard', () => {
       render(<ActiveSessionCard {...defaultProps} />);
       fireEvent.click(screen.getByText('+ Add Rebuy'));
 
-      const input = screen.getByRole('spinbutton');
+      // AUDIT-2026-04-21-SV F4: type=text + inputMode=decimal → role textbox
+      const input = screen.getByRole('textbox');
       fireEvent.change(input, { target: { value: '100' } });
       fireEvent.click(screen.getByText('Confirm'));
 
@@ -196,7 +217,8 @@ describe('ActiveSessionCard', () => {
       render(<ActiveSessionCard {...defaultProps} />);
       fireEvent.click(screen.getByText('+ Add Rebuy'));
 
-      const input = screen.getByRole('spinbutton');
+      // AUDIT-2026-04-21-SV F4: type=text + inputMode=decimal → role textbox
+      const input = screen.getByRole('textbox');
       fireEvent.change(input, { target: { value: '0' } });
       fireEvent.click(screen.getByText('Confirm'));
 

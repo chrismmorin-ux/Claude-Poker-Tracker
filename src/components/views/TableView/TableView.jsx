@@ -35,7 +35,7 @@ export const TableView = ({ scale }) => {
   const numSeats = LIMITS.NUM_SEATS;
 
   // Toast notifications from context
-  const { showSuccess } = useToast();
+  const { showSuccess, addToast } = useToast();
 
   // Game handlers from hook
   const {
@@ -205,8 +205,27 @@ export const TableView = ({ scale }) => {
     computeEquity,
   });
 
-  // Range detail modal state
+  // Range detail modal state.
+  // AUDIT-2026-04-21-TV F12: `lastRangeDetailSeatRef` persists the most-recent
+  // viewed seat so an accidental close doesn't force re-navigation. `handleOpenRangeDetail`
+  // writes to both state and ref; onClose clears only state. A "reopen last"
+  // affordance reads from the ref.
   const [rangeDetailSeat, setRangeDetailSeat] = useState(null);
+  const lastRangeDetailSeatRef = useRef(null);
+  const handleOpenRangeDetail = useCallback((seat) => {
+    if (seat !== null && seat !== undefined) {
+      lastRangeDetailSeatRef.current = seat;
+    }
+    setRangeDetailSeat(seat);
+  }, []);
+  const handleCloseRangeDetail = useCallback(() => {
+    setRangeDetailSeat(null);
+  }, []);
+  const reopenLastRangeDetail = useCallback(() => {
+    if (lastRangeDetailSeatRef.current !== null) {
+      setRangeDetailSeat(lastRangeDetailSeatRef.current);
+    }
+  }, []);
   const rangeDetailPlayerId = rangeDetailSeat ? (getSeatPlayer(rangeDetailSeat)?.playerId || null) : null;
   const rangeDetailTendencies = rangeDetailPlayerId ? tendencyMap[rangeDetailPlayerId] : null;
   const rangeDetailProfile = rangeDetailTendencies?.rangeProfile || null;
@@ -335,6 +354,12 @@ export const TableView = ({ scale }) => {
     openPlayerPicker({ seat });
   };
 
+  const handleSwapPlayer = (seat) => {
+    // F10: picker in swap-mode — same code path as find, title reflects intent.
+    setContextMenu(null);
+    openPlayerPicker({ seat, swapMode: true });
+  };
+
   const handleAssignPlayer = (seat, playerId) => {
     assignPlayerToSeat(seat, playerId);
     setContextMenu(null);
@@ -342,8 +367,25 @@ export const TableView = ({ scale }) => {
   };
 
   const handleClearPlayer = (seat) => {
+    // F2: capture prior assignment so we can offer Undo. Mirrors the retro-link
+    // undo pattern — destructive action is reversible for 6s via toast action.
+    const priorPlayer = getSeatPlayer(seat);
+    const priorPlayerId = priorPlayer?.playerId ?? null;
+    const priorName = priorPlayer?.name || `seat ${seat}`;
+
     clearSeatAssignment(seat);
     setContextMenu(null);
+
+    if (priorPlayerId) {
+      addToast(`Cleared ${priorName} from seat ${seat}`, {
+        variant: 'info',
+        duration: 6000,
+        action: {
+          label: 'Undo',
+          onClick: () => assignPlayerToSeat(seat, priorPlayerId),
+        },
+      });
+    }
   };
 
   const handleHoleCardClick = useCallback((index) => {
@@ -511,7 +553,7 @@ export const TableView = ({ scale }) => {
                   onDealerDragStart={handleDealerDragStart}
                   onHoleCardClick={handleHoleCardClick}
                   onToggleVisibility={handleToggleHoleCardsVisibility}
-                  onOpenRangeDetail={setRangeDetailSeat}
+                  onOpenRangeDetail={handleOpenRangeDetail}
                   isNextToAct={seat === nextToActSeat && currentStreet !== 'showdown'}
                 />
               ))}
@@ -541,6 +583,7 @@ export const TableView = ({ scale }) => {
               onMakeDealer={handleMakeDealer}
               onCreateNewPlayer={handleCreateNewPlayer}
               onFindPlayer={handleFindPlayer}
+              onSwapPlayer={handleSwapPlayer}
               onAssignPlayer={handleAssignPlayer}
               onClearPlayer={handleClearPlayer}
               recentPlayers={getRecentPlayers(20, true)}
@@ -562,9 +605,22 @@ export const TableView = ({ scale }) => {
         rangeProfile={rangeDetailProfile}
         rangeSummary={rangeDetailSummary}
         playerName={rangeDetailSeat ? (getSeatPlayerName(rangeDetailSeat) || `Seat ${rangeDetailSeat}`) : ''}
-        onClose={() => setRangeDetailSeat(null)}
+        onClose={handleCloseRangeDetail}
         isOpen={rangeDetailSeat !== null}
       />
+
+      {/* AUDIT-2026-04-21-TV F12: reopen-last affordance. Renders only when a seat
+          has been previously viewed AND the panel is currently closed. Between-hands-chris
+          who accidentally dismissed the range can re-enter with one tap. */}
+      {rangeDetailSeat === null && lastRangeDetailSeatRef.current !== null && (
+        <button
+          onClick={reopenLastRangeDetail}
+          className="fixed bottom-4 left-4 z-30 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-xs text-gray-200 shadow-lg"
+          aria-label={`Reopen range panel for seat ${lastRangeDetailSeatRef.current}`}
+        >
+          ↻ Reopen range (S{lastRangeDetailSeatRef.current})
+        </button>
+      )}
 
       {/* Card selector is now inline in CommandStrip */}
     </div>

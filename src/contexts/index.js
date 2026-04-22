@@ -15,6 +15,8 @@ export { TendencyProvider, useTendency, useSeatTendency } from './TendencyContex
 export { TournamentProvider, useTournament } from './TournamentContext';
 export { SyncBridgeProvider, useSyncBridge } from './SyncBridgeContext';
 export { OnlineSessionProvider, useOnlineSession } from './OnlineSessionContext';
-export { OnlineAnalysisProvider, useOnlineAnalysisContext } from './OnlineAnalysisContext';
+// AUDIT-2026-04-21-TV F11: `useAnalysisContext` is the canonical name.
+// `useOnlineAnalysisContext` is retained as a deprecated alias in the source module.
+export { OnlineAnalysisProvider, useAnalysisContext, useOnlineAnalysisContext } from './OnlineAnalysisContext';
 export { EquityWorkerProvider, useEquityWorker } from './EquityWorkerContext';
 export { TournamentBridge } from './TournamentBridge';

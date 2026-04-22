@@ -87,10 +87,14 @@ const visibleFeatureLabels = (avatarFeatures) => {
   return out;
 };
 
-export const ResultCard = ({ player, score, onSelect, hasActiveFilters }) => {
+export const ResultCard = ({ player, score, onSelect, hasActiveFilters, assignedToSeat }) => {
   const features = visibleFeatureLabels(player.avatarFeatures);
   const matched = score?.matchedFeatures ?? new Set();
   const showAccent = !!score?.allFiltersMatch && hasActiveFilters;
+  // F6: when this player is already sitting somewhere else at the table,
+  // surface it on the card so the user chooses knowingly. The actual move is
+  // handled on pick — silent double-assign no longer happens.
+  const showSeatBadge = typeof assignedToSeat === 'number';
 
   return (
     <button
@@ -118,6 +122,15 @@ export const ResultCard = ({ player, score, onSelect, hasActiveFilters }) => {
           </div>
           {player.nickname ? (
             <span className="text-xs text-gray-400 truncate">“{player.nickname}”</span>
+          ) : null}
+          {showSeatBadge ? (
+            <span
+              className="shrink-0 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border bg-blue-50 border-blue-300 text-blue-900"
+              data-testid={`result-card-${player.playerId}-assigned-badge`}
+              title={`Currently at seat ${assignedToSeat} — picking will move them here`}
+            >
+              at seat {assignedToSeat}
+            </span>
           ) : null}
         </div>
         {features.length > 0 ? (

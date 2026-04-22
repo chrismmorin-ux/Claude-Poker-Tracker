@@ -6,7 +6,7 @@ import {
   STREETS,
   LIMITS,
 } from '../../../constants/gameConstants';
-import { useCard, useGame, useUI, usePlayer } from '../../../contexts';
+import { useCard, useGame, useUI, usePlayer, useSession, useToast } from '../../../contexts';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useShowdownHandlers } from '../../../hooks/useShowdownHandlers';
@@ -44,6 +44,9 @@ export const ShowdownView = ({ scale }) => {
     smallBlindSeat,
     bigBlindSeat,
     dispatchGame,
+    // AUDIT-2026-04-21-SDV F1: currentStreet + absentSeats needed for undo snapshot
+    currentStreet,
+    absentSeats,
   } = useGame();
 
   // Get UI state from UIContext
@@ -56,7 +59,13 @@ export const ShowdownView = ({ scale }) => {
     closeCardSelector,
     showdownMode,
     setShowdownMode,
+    // AUDIT-2026-04-21-SDV F1: openShowdownView needed to re-open on undo
+    openShowdownView,
   } = useUI();
+
+  // AUDIT-2026-04-21-SDV F1: session hand count + toast for Next Hand undo
+  const { handCount, setHandCount } = useSession();
+  const { addToast, showInfo } = useToast();
 
   // Player names for heads-up display
   const { getSeatPlayerName } = usePlayer();
@@ -89,6 +98,19 @@ export const ShowdownView = ({ scale }) => {
     nextHand,
     numSeats: LIMITS.NUM_SEATS,
     log: (...args) => console.debug('[Showdown]', ...args),
+    // AUDIT-2026-04-21-SDV F1: snapshot inputs for toast+undo on Next Hand
+    dealerButtonSeat,
+    currentStreet,
+    absentSeats,
+    communityCards,
+    holeCards,
+    allPlayerCards,
+    holeCardsVisible,
+    handCount,
+    setHandCount,
+    openShowdownView,
+    addToast,
+    showInfo,
   });
 
   // Showdown card selection
@@ -151,6 +173,21 @@ export const ShowdownView = ({ scale }) => {
   const anyoneHasWon = actionSequence.some(
     e => e.street === 'showdown' && e.action === ACTIONS.WON
   );
+
+  // AUDIT-2026-04-21-SDV F4: count of still-active seats at showdown, used to
+  // drive the "mucks N others" passive sub-label on Quick-Mode Won buttons.
+  // Mirrors the scope computation inside useShowdownHandlers.handleWonSeat.
+  const activeShowdownSeatCount = useMemo(() => {
+    return SEAT_ARRAY.filter(s => {
+      const status = isSeatInactive(s);
+      if (status) return false; // folded/absent
+      if (actionSequence.some(
+        e => e.street === 'showdown' && e.seat === s &&
+             (e.action === ACTIONS.MUCKED || e.action === ACTIONS.WON)
+      )) return false;
+      return true;
+    }).length;
+  }, [actionSequence, isSeatInactive]);
 
   // Derive winner seat for display
   const winnerSeat = useMemo(() => {
@@ -274,6 +311,9 @@ export const ShowdownView = ({ scale }) => {
                       onWon={handleWonSeat}
                       hideCards
                       quickMode
+                      /* AUDIT-2026-04-21-SDV F4: tapping Won on this seat would auto-muck
+                         all OTHER active seats — preview the count. */
+                      wonAutoMuckCount={Math.max(0, activeShowdownSeatCount - 1)}
                     />
                   );
                 })}
@@ -318,16 +358,28 @@ export const ShowdownView = ({ scale }) => {
                 </div>
 
                 {isAllCardsAssigned ? (
-                  <ActionHistoryGrid
-                    SEAT_ARRAY={SEAT_ARRAY}
-                    STREETS={STREETS}
-                    actionSequence={actionSequence}
-                    allPlayerCards={allPlayerCards}
-                    holeCards={holeCards}
-                    mySeat={mySeat}
-                    isSeatInactive={isSeatInactive}
-                    getHandAbbreviation={getHandAbbreviation}
-                  />
+                  <>
+                    {/* AUDIT-2026-04-21-SDV F7: explain the empty-rankings state.
+                        useShowdownEquity returns [] when board.length < 5 (preflop
+                        all-in, or turn-ended hand). Without this label, the seat
+                        rows show no ranking badge and the user can't tell if the
+                        computation failed, is pending, or genuinely doesn't apply. */}
+                    {rankings.length === 0 && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-3 text-sm text-amber-800">
+                        Hand rankings require all 5 board cards to be entered.
+                      </div>
+                    )}
+                    <ActionHistoryGrid
+                      SEAT_ARRAY={SEAT_ARRAY}
+                      STREETS={STREETS}
+                      actionSequence={actionSequence}
+                      allPlayerCards={allPlayerCards}
+                      holeCards={holeCards}
+                      mySeat={mySeat}
+                      isSeatInactive={isSeatInactive}
+                      getHandAbbreviation={getHandAbbreviation}
+                    />
+                  </>
                 ) : (
                   <CardGrid
                     communityCards={communityCards}

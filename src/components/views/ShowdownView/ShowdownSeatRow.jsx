@@ -33,6 +33,9 @@ export const ShowdownSeatRow = ({
   onWon,
   hideCards = false,
   quickMode = false,
+  // AUDIT-2026-04-21-SDV F4: when tapping Won would auto-muck ≥1 other seats,
+  // surface a passive count sub-label so the scope is visible BEFORE the tap.
+  wonAutoMuckCount = 0,
 }) => {
   const canInteract = mode === 'selection' && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked;
   const isFolded = inactiveStatus === SEAT_STATUS.FOLDED;
@@ -137,12 +140,27 @@ export const ShowdownSeatRow = ({
             {!someoneHasWon && (
               <button
                 onClick={() => onWon(seat)}
-                className={`btn-press bg-green-500 hover:bg-green-600 text-white rounded font-semibold ${
+                className={`btn-press bg-green-500 hover:bg-green-600 text-white rounded font-semibold flex flex-col items-center justify-center ${
                   quickMode ? 'text-base px-4 py-3' : 'text-xs px-2 py-1'
                 }`}
                 style={quickMode ? { minHeight: '48px' } : undefined}
               >
-                Won
+                <span>Won</span>
+                {/* AUDIT-2026-04-21-SDV F4: passive scope-preview in Quick Mode with 2+ others */}
+                {quickMode && wonAutoMuckCount >= 2 && (
+                  <span
+                    aria-label={`Tap will auto-muck ${wonAutoMuckCount} other seats`}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      opacity: 0.9,
+                      letterSpacing: '0.3px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    mucks {wonAutoMuckCount} others
+                  </span>
+                )}
               </button>
             )}
           </div>

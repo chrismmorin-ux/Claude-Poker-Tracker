@@ -29,11 +29,19 @@ export const PlayerPickerView = ({ scale = 1 }) => {
   const {
     allPlayers,
     assignPlayerToSeat,
+    clearSeatAssignment,
+    getPlayerSeat,
+    getSeatPlayer,
     linkPlayerToPriorHandsInSession,
     undoRetroactiveLink,
   } = usePlayer();
   const { currentSession } = useSession();
   const { addToast } = useToast();
+
+  // F10: swap mode. When entered via SeatContextMenu "Swap Player…" on an
+  // occupied seat, the top bar labels the action explicitly and the current
+  // occupant is known. Semantically equivalent to assign; UX surfaces intent.
+  const swapMode = !!pickerContext?.swapMode;
 
   const rootRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -63,11 +71,37 @@ export const PlayerPickerView = ({ scale = 1 }) => {
       closePlayerPicker();
       return;
     }
+
+    // F6: if the picked player is already assigned to a *different* seat this
+    // session, clear the prior seat BEFORE assigning to the new one. Prevents
+    // the silent double-assign that existed pre-audit. The toast surfaces the
+    // move so the user isn't surprised.
+    const priorSeatForPick = getPlayerSeat(player.playerId);
+    const movedFromSeat = priorSeatForPick && priorSeatForPick !== currentSeat
+      ? priorSeatForPick
+      : null;
+
+    if (movedFromSeat) {
+      try {
+        clearSeatAssignment(movedFromSeat);
+      } catch {
+        // Non-fatal — proceed with assign. Worst case is a duplicate, which
+        // downstream code paths can still reconcile.
+      }
+    }
+
     try {
       await assignPlayerToSeat(currentSeat, player.playerId);
     } catch (err) {
       addToast(`Could not assign player: ${err.message}`, { variant: 'error' });
       return;
+    }
+
+    if (movedFromSeat) {
+      addToast(
+        `Moved ${player.name} from seat ${movedFromSeat} to seat ${currentSeat}`,
+        { variant: 'info', duration: 6000 },
+      );
     }
 
     if (sessionId) {
@@ -97,6 +131,8 @@ export const PlayerPickerView = ({ scale = 1 }) => {
   }, [
     currentSeat,
     assignPlayerToSeat,
+    clearSeatAssignment,
+    getPlayerSeat,
     linkPlayerToPriorHandsInSession,
     undoRetroactiveLink,
     sessionId,
@@ -118,12 +154,21 @@ export const PlayerPickerView = ({ scale = 1 }) => {
     closePlayerPicker();
   }, [closePlayerPicker]);
 
-  const title = currentSeat ? `Pick for Seat ${currentSeat}` : 'Pick Player';
+  // F10: swap-mode title. When the user arrived here via "Swap Player…" on
+  // an occupied seat, label it so intent is obvious.
+  const currentOccupantName = swapMode && currentSeat
+    ? (getSeatPlayer(currentSeat)?.name ?? null)
+    : null;
+  const title = swapMode && currentSeat
+    ? (currentOccupantName
+        ? `Swap ${currentOccupantName} (seat ${currentSeat})`
+        : `Swap Seat ${currentSeat}`)
+    : (currentSeat ? `Pick for Seat ${currentSeat}` : 'Pick Player');
 
   return (
     <div
       ref={rootRef}
-      className="min-h-screen bg-gray-100 flex flex-col"
+      className="h-screen bg-gray-100 flex flex-col overflow-hidden"
       style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
       data-testid="player-picker-view"
     >
@@ -190,15 +235,26 @@ export const PlayerPickerView = ({ scale = 1 }) => {
           </div>
         ) : (
           <div className="space-y-2">
-            {results.map(({ player, score }) => (
-              <ResultCard
-                key={player.playerId}
-                player={player}
-                score={score}
-                onSelect={handlePickPlayer}
-                hasActiveFilters={hasActiveFilters}
-              />
-            ))}
+            {results.map(({ player, score }) => {
+              // F6: pass the other-seat assignment (if any) so the card can
+              // render an "at seat N" badge. Badge is only shown when the
+              // player is assigned to a seat *different* from currentSeat —
+              // picking from-current-seat is a no-op, not a move.
+              const assignedSeat = getPlayerSeat(player.playerId);
+              const showSeat = assignedSeat && assignedSeat !== currentSeat
+                ? assignedSeat
+                : null;
+              return (
+                <ResultCard
+                  key={player.playerId}
+                  player={player}
+                  score={score}
+                  onSelect={handlePickPlayer}
+                  hasActiveFilters={hasActiveFilters}
+                  assignedToSeat={showSeat}
+                />
+              );
+            })}
           </div>
         )}
       </div>

@@ -62,10 +62,12 @@ describe('ActionHistoryGrid', () => {
       expect(container.firstChild).toHaveClass('bg-white', 'rounded', 'shadow');
     });
 
-    it('renders Labels buttons for all 9 seats', () => {
+    it('renders Seat N column headers for all 9 seats (SDV-F6)', () => {
+      // AUDIT-2026-04-21-SDV F6: dead Labels buttons replaced with Seat N headers.
       render(<ActionHistoryGrid {...defaultProps} />);
-      const labelsButtons = screen.getAllByText('Labels');
-      expect(labelsButtons.length).toBe(9);
+      for (let seat = 1; seat <= 9; seat++) {
+        expect(screen.getByText(`Seat ${seat}`)).toBeInTheDocument();
+      }
     });
 
     it('renders all street sections', () => {

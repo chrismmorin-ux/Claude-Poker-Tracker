@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useOnlineAnalysisContext } from '../../../contexts/OnlineAnalysisContext';
+import { useAnalysisContext } from '../../../contexts/OnlineAnalysisContext';
 import { useSyncBridge } from '../../../contexts/SyncBridgeContext';
 import { SURFACE, BORDER, TEXT, FONT, GOLD, COLOR } from './panelTokens';
 import { CompactSeatStrip } from './CompactSeatStrip';
@@ -64,7 +64,7 @@ const PANEL_ANIMATIONS = `
 `;
 
 export const ExtensionPanel = () => {
-  const { tendencyMap, handCount, advice, isComputing } = useOnlineAnalysisContext();
+  const { tendencyMap, handCount, advice, isComputing } = useAnalysisContext();
   const syncBridge = useSyncBridge?.() || {};
   const liveHandState = syncBridge.liveHandState;
 

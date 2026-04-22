@@ -249,15 +249,20 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
               )}
               {useGameTree && isStale && (
                 <span style={{
-                  fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                  fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 3,
                   background: '#7f1d1d', color: '#f87171', letterSpacing: 0.5,
                 }}>
                   STALE
                 </span>
               )}
+              {/* AUDIT-2026-04-21-TV F4: explicit AGING badge replaces opacity-only fade.
+                  Promoted font size from 9 → 11 to meet H-PLT01 glanceability threshold. */}
               {useGameTree && isFading && !isStale && (
-                <span style={{ fontSize: 9, color: '#6b7280' }}>
-                  {Math.round(adviceAge / 1000)}s ago
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 3,
+                  background: '#78350f', color: '#fbbf24', letterSpacing: 0.5,
+                }}>
+                  AGING · {Math.round(adviceAge / 1000)}s
                 </span>
               )}
             </div>

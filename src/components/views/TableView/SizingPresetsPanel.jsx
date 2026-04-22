@@ -18,6 +18,8 @@ export const SizingPresetsPanel = ({
   onSizingLongPressStart, onSizingLongPressEnd,
   onSaveSizing, onResetSizing,
   engineOptimal,
+  // AUDIT-2026-04-21-TV F3: surface which slot the long-press opened the editor from
+  editingSlotIndex = null,
 }) => {
   if (!sizingAction || sizingOptions.length === 0) return null;
 
@@ -58,11 +60,12 @@ export const SizingPresetsPanel = ({
             <button
               key={label}
               onClick={() => onSizeSelected(amount)}
-              onMouseDown={onSizingLongPressStart}
+              onMouseDown={() => onSizingLongPressStart(idx)}
               onMouseUp={onSizingLongPressEnd}
               onMouseLeave={onSizingLongPressEnd}
-              onTouchStart={onSizingLongPressStart}
+              onTouchStart={() => onSizingLongPressStart(idx)}
               onTouchEnd={onSizingLongPressEnd}
+              data-slot-index={idx}
               className="btn-press rounded-md font-bold text-white shadow"
               style={{
                 height: '68px', background: getActionGradient('bet'), fontSize: '15px',
@@ -81,17 +84,25 @@ export const SizingPresetsPanel = ({
         })}
       </div>
 
-      {/* Sizing Editor Popup */}
+      {/* Sizing Editor Popup
+          AUDIT-2026-04-21-TV F3: highlight the slot the user long-pressed, plus an
+          unambiguous "Editing slot N" label so the save target is visible. */}
       {sizingEditorOpen && (
         <div className="mb-2 p-2 rounded-lg" style={{ background: '#1a1d23', border: '1px solid var(--gold)' }}>
           <div className="text-white font-bold mb-2" style={{ fontSize: '13px' }}>
             Customize {sizingKey?.replace('_', ' ')}
+            {editingSlotIndex != null && sizingOptions[editingSlotIndex] && (
+              <span style={{ fontSize: '11px', color: '#d4a847', fontWeight: 600, marginLeft: 8 }}>
+                · editing <span style={{ textDecoration: 'underline' }}>{sizingOptions[editingSlotIndex].label}</span>
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-4 gap-1.5 mb-2">
             {editorValues.map((val, idx) => {
               const isPostflopBet = sizingKey === 'postflop_bet';
               const base = isPostflopBet ? (potTotal || 1) : (sizingKey === 'preflop_open' ? blindsBb : currentBet || blindsBb);
               const dollarAmount = Math.round(base * val);
+              const isEditingSlot = editingSlotIndex === idx;
               return (
                 <div key={idx} className="flex flex-col items-center gap-1">
                   <input
@@ -103,10 +114,16 @@ export const SizingPresetsPanel = ({
                       setEditorValues(newVals);
                     }}
                     step="any"
+                    autoFocus={isEditingSlot}
+                    data-editor-slot-index={idx}
                     className="w-full px-1 rounded text-white text-center font-semibold focus:outline-none"
-                    style={{ height: '36px', fontSize: '14px', background: '#374151', border: '1px solid var(--panel-border)' }}
+                    style={{
+                      height: '36px', fontSize: '14px',
+                      background: isEditingSlot ? '#2a2f3a' : '#374151',
+                      border: isEditingSlot ? '2px solid #d4a847' : '1px solid var(--panel-border)',
+                    }}
                   />
-                  <span className="text-gray-400" style={{ fontSize: '11px' }}>${dollarAmount}</span>
+                  <span className="text-gray-400" style={{ fontSize: '11px', fontWeight: isEditingSlot ? 700 : 400, color: isEditingSlot ? '#d4a847' : undefined }}>${dollarAmount}</span>
                 </div>
               );
             })}

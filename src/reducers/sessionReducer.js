@@ -90,6 +90,9 @@ const rawSessionReducer = (state, action) => {
           ...state.currentSession,
           endTime: action.payload.endTime,
           cashOut: action.payload.cashOut || null,
+          // AUDIT-2026-04-21-SV F2: tipAmount is additive-optional on END_SESSION.
+          // Absent action payloads (legacy callers) leave the field null.
+          tipAmount: action.payload.tipAmount || null,
           isActive: false
         }
       };

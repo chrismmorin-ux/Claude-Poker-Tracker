@@ -108,7 +108,17 @@ const ViewRouter = () => {
           case SCREEN.PLAYER_PICKER: return <VEB viewName="Player Picker" onReturnToTable={onReturnToTable}><PlayerPickerView scale={scale} /></VEB>;
           case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
           case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
-          default: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
+          default: {
+            // Unknown SCREEN value — surface via console and fall back to Stats.
+            // A stale/deleted SCREEN constant (e.g., after removing a view)
+            // could land here via `uiState.editorContext.prevScreen` or a
+            // history ref. INV-15 requires this observable fallback. RT-102.
+            if (import.meta.env.DEV) {
+              // eslint-disable-next-line no-console
+              console.warn(`[ViewRouter] unknown currentView='${currentView}', falling back to Stats`);
+            }
+            return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
+          }
         }
       })()}
     </Suspense>
