@@ -52,8 +52,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules/firebase/')) return 'firebase'
+          if (id.includes('/src/utils/exploitEngine/')) return 'exploitEngine'
         },
       },
     },

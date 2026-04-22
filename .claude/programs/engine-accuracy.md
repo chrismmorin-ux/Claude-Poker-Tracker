@@ -1,9 +1,9 @@
 # Program: Engine Accuracy
 
-Status: GREEN
+Status: GREEN (2026-04-21 — RT-108 CI gate shipped)
 Owner: eng-engine (failure-engineer + systems-architect personas)
-Last assessed: 2026-04-07 (R5)
-Last verified against code: 2026-04-07
+Last assessed: 2026-04-21 (RT-108 close)
+Last verified against code: 2026-04-21
 
 ---
 
@@ -25,6 +25,9 @@ Last verified against code: 2026-04-07
 - RT-38: Fix adjustedRealization double-discount + add floor
 - RT-40: Worker restart counter reset after stability period
 - RT-41: Guard NaN from zero-weight drawCombos
+- ~~**RT-108**~~ — COMPLETE 2026-04-21. Engine-vs-authored diff CI shipped: `src/utils/postflopDrillContent/__tests__/engineAuthoredDrift.test.js` + baseline snapshot covers 30+ decision nodes × 8 lines. Drift detection verified bidirectionally.
+- **RT-111** (REVIEW): `drillModeEngine` wrapper with bailout + sampleSize + caveats — single entry point for any drill consumer of `evaluateGameTree`; forbid direct imports from drillContent after it lands.
+- **RT-115** (REVIEW): Minimum-combo guard + sampleSize flag on bucket aggregators — prevents false-precision teaching on 1-2 combo buckets.
 
 ## Milestone Gates
 
@@ -44,6 +47,8 @@ Last verified against code: 2026-04-07
 | Division without NaN guard in exploitEngine | "Missing NaN guard in [file]:[function]" | P0 |
 | Position/bucket label used as decision input | "INV-07/NEV-03 violation: label-as-input in [file]" | P0 |
 | Style adjustment stacked on defining stats | "NEV-05 violation: double-counting in [file]" | P0 |
+| Authored EV claim in drill content with no snapshot-diff coverage | "Drift risk: [file] authored EV not in RT-108 snapshot suite" | P1 |
+| Direct import of `gameTreeEvaluator` from `drillContent/` post-RT-111 | "INV-08.a violation: direct engine consumption from drill content in [file]" | P1 |
 
 ## History
 
@@ -53,3 +58,5 @@ Last verified against code: 2026-04-07
 | 2026-04-07 | GREEN | R4 roundtable. Worker migration (RT-10) complete but dual-instantiation found (RT-27). Preflop path bypasses Worker (RT-31). Circular import tracked (RT-33). All runtime metrics remain GREEN. |
 | 2026-04-07 | GREEN | R5 roundtable. adjustedRealization double-discount in multiway (RT-38), NaN from zero-weight drawCombos (RT-41). Worker restart counter never resets (RT-40). handAnalysis→exploitEngine coupling violates INV-08 (RT-35). All runtime metrics GREEN. |
 | 2026-04-20 | GREEN | Drills Consolidation Roundtable — audit scoped to design doc, not engine code. No engine-accuracy findings. `drillContent/` module (cross-street scheduler, shape classifier) imported by both pre- and postflop modes today; consolidation exposes this coupling as load-bearing (RT-100, RT-101) but does not alter engine correctness. Prototype pollution concern in `aggregateFrameworkAccuracy` (RT-96) is persistence-layer, not engine. Runtime metrics unchanged. |
+| 2026-04-21 | YELLOW | Line Study Bucket-Teaching Roundtable — engine runtime metrics remain GREEN, but roundtable surfaced that NO engine-vs-authored diff test exists. Items 25-27 pattern (~30 accuracy constant revisions) silently invalidates any authored EV claim in Line Study content (`lines.js` 2090 LOC) with zero CI signal. Also formalized a pre-existing INV-08 violation: `postflopDrillContent/handTypeBreakdown.js:32` and `rangeVsBoard.js:17` import from `exploitEngine/` — permitted as INV-08.a exception (RT-109), but future drill consumption of `gameTreeEvaluator` must route via `drillModeEngine` wrapper (RT-111) to carry `sampleSize` + `bailedOut` + `caveats[]`. Engine itself is correct; gap is in how drill-layer consumers validate against it and surface incomplete results. Downgrade to GREEN once RT-108 (CI gate) ships. |
+| 2026-04-21 | GREEN | RT-108 CI gate shipped same day. `engineAuthoredDrift.test.js` + `__snapshots__/engine-authored-drift.json` now snapshots deterministic engine outputs (narrowed ranges, bucket segmentation, fold-curve probes, sentinel constants) per decision node across all 8 authored lines. Drift detection verified bidirectionally (perturb POP_CALLING_RATES.marginal 0.55→0.60 failed with exact line-pointer diff; revert restored green). Engine-accuracy program returns to GREEN — silent drift is now a blocking CI failure. |

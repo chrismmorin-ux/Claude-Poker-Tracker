@@ -692,6 +692,14 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       board: ['T♥', '9♥', '6♠'],
       pot: 20.5,
       villainAction: { kind: 'donk', size: 0.33 },
+      // RT-106 (schema v2) exemplar: hand-level teaching — node pins hero's
+      // specific holding (J♥T♠, the hand the decision prompt already speaks
+      // about), plus the bucket taxonomy this node spans. Bucket taxonomy
+      // is pinned in RT-110; these strings are illustrative for v2.
+      heroHolding: {
+        combos: ['J♥T♠'],
+        bucketCandidates: ['topPair', 'flushDraw', 'openEnder', 'overpair', 'air'],
+      },
       frameworks: ['range_advantage', 'range_morphology', 'board_tilt'],
       sections: [
         {

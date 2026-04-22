@@ -1,0 +1,565 @@
+{
+  "schemaVersion": 1,
+  "generator": "RT-108 engine-authored drift CI",
+  "nodes": [
+    {
+      "lineId": "btn-vs-bb-3bp-ip-wet-t96",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "T♥",
+        "9♥",
+        "6♠"
+      ],
+      "villainAction": "donk",
+      "narrowAction": "bet",
+      "totalCombos": 43,
+      "totalWeight": 31,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 9.6774,
+        "strong": 77.4194,
+        "marginal": 0,
+        "draw": 4.0323,
+        "air": 8.871
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-3bp-ip-wet-t96",
+      "nodeId": "river_brick_v_calls",
+      "street": "river",
+      "board": [
+        "T♥",
+        "9♥",
+        "6♠",
+        "2♣",
+        "3♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 61,
+      "totalWeight": 58,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 5.1724,
+        "strong": 6.8966,
+        "marginal": 0,
+        "draw": 0,
+        "air": 87.931
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-3bp-ip-wet-t96",
+      "nodeId": "river_brick_v_checkraises",
+      "street": "turn",
+      "board": [
+        "T♥",
+        "9♥",
+        "6♠",
+        "2♣"
+      ],
+      "villainAction": "checkraise",
+      "narrowAction": "bet",
+      "totalCombos": 43,
+      "totalWeight": 31,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 9.6774,
+        "strong": 77.4194,
+        "marginal": 0,
+        "draw": 3.2258,
+        "air": 9.6774
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-3bp-ip-wet-t96",
+      "nodeId": "river_checkback",
+      "street": "river",
+      "board": [
+        "T♥",
+        "9♥",
+        "6♠",
+        "2♣",
+        "3♦"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 39,
+      "totalWeight": 31,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 9.6774,
+        "strong": 77.4194,
+        "marginal": 0,
+        "draw": 0,
+        "air": 12.9032
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-3bp-ip-wet-t96",
+      "nodeId": "turn_after_call",
+      "street": "turn",
+      "board": [
+        "T♥",
+        "9♥",
+        "6♠",
+        "2♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 61,
+      "totalWeight": 58,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 5.1724,
+        "strong": 6.8966,
+        "marginal": 0,
+        "draw": 6.4655,
+        "air": 81.4655
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-sb-srp-mw-j85",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "J♠",
+        "8♥",
+        "5♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 25,
+      "totalWeight": 20,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0,
+        "strong": 10,
+        "marginal": 25,
+        "draw": 5,
+        "air": 60
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-sb-srp-mw-j85",
+      "nodeId": "river_after_mw_barrel",
+      "street": "river",
+      "board": [
+        "J♠",
+        "8♥",
+        "5♦",
+        "2♣",
+        "7♠"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 22,
+      "totalWeight": 20,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 10,
+        "strong": 0,
+        "marginal": 30,
+        "draw": 0,
+        "air": 60
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-sb-srp-mw-j85",
+      "nodeId": "turn_after_cbet",
+      "street": "turn",
+      "board": [
+        "J♠",
+        "8♥",
+        "5♦",
+        "2♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 22,
+      "totalWeight": 20,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0,
+        "strong": 10,
+        "marginal": 10,
+        "draw": 20,
+        "air": 60
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-sb-srp-mw-j85",
+      "nodeId": "turn_after_checkback",
+      "street": "turn",
+      "board": [
+        "J♠",
+        "8♥",
+        "5♦",
+        "2♣"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 12,
+      "totalWeight": 11,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0,
+        "strong": 54.5455,
+        "marginal": 45.4545,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 352,
+      "totalWeight": 331,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 2.719,
+        "strong": 3.6254,
+        "marginal": 12.6888,
+        "draw": 0,
+        "air": 80.9668
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "river_after_barrel",
+      "street": "river",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣",
+        "3♦",
+        "8♠"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 308,
+      "totalWeight": 307,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 2.9316,
+        "strong": 10.4235,
+        "marginal": 31.9218,
+        "draw": 0,
+        "air": 54.7231
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "river_after_flop_checkback",
+      "street": "river",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣",
+        "3♦",
+        "8♠"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 308,
+      "totalWeight": 307,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 2.9316,
+        "strong": 10.4235,
+        "marginal": 31.9218,
+        "draw": 0,
+        "air": 54.7231
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "river_after_turn_checkback",
+      "street": "river",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣",
+        "3♦",
+        "8♠"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 167,
+      "totalWeight": 164,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 5.4878,
+        "strong": 19.5122,
+        "marginal": 75,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "turn_brick",
+      "street": "turn",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣",
+        "3♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 335,
+      "totalWeight": 327,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 2.7523,
+        "strong": 4.2813,
+        "marginal": 15.9021,
+        "draw": 1.2232,
+        "air": 75.841
+      }
+    },
+    {
+      "lineId": "btn-vs-bb-srp-ip-dry-q72r",
+      "nodeId": "turn_checked_back",
+      "street": "turn",
+      "board": [
+        "Q♠",
+        "7♥",
+        "2♣",
+        "3♦"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 176,
+      "totalWeight": 174,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 5.1724,
+        "strong": 8.046,
+        "marginal": 86.7816,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "co-vs-bb-srp-oop-paired-k77",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 218,
+      "totalWeight": 210,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0.4762,
+        "strong": 12.8571,
+        "marginal": 86.6667,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "co-vs-bb-srp-oop-paired-k77",
+      "nodeId": "river_after_barrel",
+      "street": "river",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣",
+        "2♥",
+        "4♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 209,
+      "totalWeight": 207,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0.4831,
+        "strong": 14.4928,
+        "marginal": 85.0242,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "co-vs-bb-srp-oop-paired-k77",
+      "nodeId": "turn_brick",
+      "street": "turn",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣",
+        "2♥"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 220,
+      "totalWeight": 210,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0.4762,
+        "strong": 12.8571,
+        "marginal": 86.6667,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "co-vs-btn-bb-srp-mw-oop",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "Q♥",
+        "5♠",
+        "3♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 258,
+      "totalWeight": 227,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 0,
+        "strong": 6.1674,
+        "marginal": 5.7269,
+        "draw": 1.3216,
+        "air": 86.7841
+      }
+    },
+    {
+      "lineId": "co-vs-btn-bb-srp-mw-oop",
+      "nodeId": "turn_after_cbet",
+      "street": "turn",
+      "board": [
+        "Q♥",
+        "5♠",
+        "3♦",
+        "8♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 217,
+      "totalWeight": 210,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 4.2857,
+        "strong": 6.6667,
+        "marginal": 22.381,
+        "draw": 3.8095,
+        "air": 62.8571
+      }
+    }
+  ],
+  "skippedNodes": [
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "flop_root"
+    },
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "river_after_turn_call"
+    },
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "turn_after_check"
+    },
+    {
+      "lineId": "utg-vs-btn-4bp-deep",
+      "nodeId": "flop_root"
+    },
+    {
+      "lineId": "utg-vs-btn-squeeze-mp-caller",
+      "nodeId": "pre_root"
+    }
+  ],
+  "foldCurveProbes": [
+    {
+      "baseFold": 0.5,
+      "fraction": 0.33,
+      "response": 0.4302
+    },
+    {
+      "baseFold": 0.5,
+      "fraction": 0.5,
+      "response": 0.4552
+    },
+    {
+      "baseFold": 0.5,
+      "fraction": 0.75,
+      "response": 0.5
+    },
+    {
+      "baseFold": 0.5,
+      "fraction": 1,
+      "response": 0.5448
+    },
+    {
+      "baseFold": 0.7,
+      "fraction": 0.5,
+      "response": 0.6552
+    },
+    {
+      "baseFold": 0.3,
+      "fraction": 1.5,
+      "response": 0.4012
+    }
+  ],
+  "constants": {
+    "POP_CALLING_RATES": {
+      "nuts": 0.98,
+      "strong": 0.95,
+      "marginal": 0.55,
+      "draw": 0.8,
+      "air": 0.08
+    },
+    "POP_BETTING_RATES": {
+      "nuts": 0.8,
+      "strong": 0.55,
+      "marginal": 0.25,
+      "draw": 0.35,
+      "air": 0.25
+    },
+    "BUCKET_EQUITY_ANCHORS": {
+      "nuts": 0.08,
+      "strong": 0.3,
+      "marginal": 0.55,
+      "draw": 0.5,
+      "air": 0.88
+    }
+  }
+}

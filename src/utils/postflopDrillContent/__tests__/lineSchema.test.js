@@ -7,6 +7,7 @@ import {
   STREETS,
   POT_TYPES,
   VILLAIN_ACTION_KINDS,
+  SCHEMA_VERSION,
 } from '../lineSchema';
 
 // ---------- Fixture builders ---------- //
@@ -346,5 +347,106 @@ describe('lineStats', () => {
     const stats = lineStats(line);
     expect(stats.branches).toBe(3);
     expect(stats.stubBranches).toBe(1);
+  });
+});
+
+// ---------- v2: heroHolding (RT-106) ---------- //
+
+describe('SCHEMA_VERSION', () => {
+  it('exports schema version 2 (RT-106)', () => {
+    expect(SCHEMA_VERSION).toBe(2);
+  });
+});
+
+describe('Node.heroHolding (RT-106)', () => {
+  it('accepts a node with no heroHolding (additive-optional)', () => {
+    const line = minimalValidLine();
+    expect(line.nodes.root.heroHolding).toBeUndefined();
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts heroHolding with combos only', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { combos: ['A♠K♥'] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts heroHolding with bucketCandidates only', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { bucketCandidates: ['topSet', 'tptk'] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts heroHolding with both combos and bucketCandidates', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = {
+      combos: ['A♠K♥', '7♦7♣'],
+      bucketCandidates: ['topSet', 'overpair'],
+    };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects heroHolding that is not an object', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = 'AsKh';
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('heroHolding must be an object'))).toBe(true);
+  });
+
+  it('rejects empty heroHolding (neither field present)', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = {};
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('requires combos or bucketCandidates'))).toBe(true);
+  });
+
+  it('rejects empty combos array', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { combos: [] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('combos must be a non-empty array'))).toBe(true);
+  });
+
+  it('rejects malformed combo string', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { combos: ['AsKh'] }; // ascii suits not allowed
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("combos[0] 'AsKh'"))).toBe(true);
+  });
+
+  it('rejects combo with duplicate card', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { combos: ['A♠A♠'] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('duplicate card'))).toBe(true);
+  });
+
+  it('rejects empty bucketCandidates array', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { bucketCandidates: [] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('bucketCandidates must be a non-empty array'))).toBe(true);
+  });
+
+  it('rejects bucketCandidates containing a non-string entry', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { bucketCandidates: ['topSet', 42] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('bucketCandidates[1]'))).toBe(true);
   });
 });

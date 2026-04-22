@@ -285,5 +285,51 @@
         "new_tech_debt_items": 4
       }
     }
+  },
+  {
+    "date": "2026-04-21",
+    "source": "eng-engine-line-study-bucket-teaching",
+    "scope": "Line Study bucket-level teaching proposal (range-level → hero-hand-class × archetype-conditioned villain range)",
+    "metrics": {
+      "test_count": 6125,
+      "test_pass_rate": 0.99984,
+      "test_files": 229,
+      "test_failed": 1,
+      "test_failed_detail": "precisionAudit.test.js — pre-existing shape-lane tolerance flake, unrelated to roundtable",
+      "extension_tests": 1974,
+      "backlog_next": 0,
+      "backlog_review": 27,
+      "backlog_paused": 1,
+      "backlog_in_progress": 0,
+      "programs": {
+        "security": "GREEN",
+        "engine-accuracy": "YELLOW",
+        "design": "ACTIVE",
+        "test-health": "YELLOW"
+      },
+      "stale_docs": 0,
+      "open_failure_modes": 0,
+      "architecture_version": "v123",
+      "system_model_version": "1.9.3",
+      "roundtable_findings": {
+        "total_new": 13,
+        "P0": 2,
+        "P1": 7,
+        "P2": 3,
+        "P3": 1,
+        "highest_wsjf_score": 4.0,
+        "highest_wsjf_items": ["RT-108 engine-vs-authored diff CI", "RT-117 exploitEngine code-split"],
+        "proposal_status": "GATED — 5 owner decisions required before any RT-106..118 approvals. 4 load-bearing preconditions surfaced (hero-holding schema, calculator dispatcher, bucket→combo adapter, attempt-schema migration) not in original proposal scope.",
+        "new_invariants": ["INV-08.a permitted postflopDrillContent → exploitEngine exception"],
+        "new_failure_modes": [
+          "FM-Bucket-False-Precision",
+          "FM-Archetype-Correctness-Contradiction",
+          "FM-Engine-Drift-Silent-Invalidation",
+          "FM-Drill-Layer-Synthetic-Input-Epistemics"
+        ],
+        "new_coupling_entries": ["C-14 postflopDrillContent → exploitEngine"],
+        "owner_decisions_required": 5
+      }
+    }
   }
 ]

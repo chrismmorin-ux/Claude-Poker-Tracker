@@ -5,7 +5,7 @@ staleness-threshold-days: 30
 ---
 
 # System Model — Poker Tracker
-**Version**: 1.9.2 | **Updated**: 2026-04-20 | **Owner**: Drills Consolidation Roundtable (RT-92..105 findings)
+**Version**: 1.9.3 | **Updated**: 2026-04-21 | **Owner**: Line Study Bucket-Teaching Roundtable (RT-106..118 findings)
 
 Single source of truth for system understanding, invariants, risks, and cross-cutting concerns.
 Read this before any multi-file change. Update after any architectural shift.
@@ -30,6 +30,7 @@ Read this before any multi-file change. Update after any architectural shift.
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
 | `tournamentEngine/` (4 modules) | Blind levels, blind-out calc, dropout prediction | Reads tournament config; produces scheduling/projection data |
 | `drillContent/` (4 modules) | Preflop-drill frameworks, matchup library, scheduler, combo counting | Pure data + predicates powering the Preflop Drills view |
+| `postflopDrillContent/` (11 modules) | Postflop-drill frameworks, scenario library, hand-type breakdown, line walkthrough DAG | Pure data + predicates powering Postflop Drills view. **MAY import from exploitEngine/ + pokerCore/** (INV-08.a exception, 2026-04-21 RT-109). Future live-engine consumption must route via `drillModeEngine` wrapper (RT-111). |
 | `persistence/` (12 modules) | IndexedDB v15, 9 stores, migrations | Sole interface to IndexedDB; all access through exported functions |
 | Ignition Extension | Chrome MV3, WebSocket capture, side panel HUD | Separate codebase (`ignition-poker-tracker/`), communicates via message passing |
 
@@ -215,6 +216,16 @@ New player observed → populationPriors.js creates default profile
 | ~~`render-orchestrator.js` multiway pot odds~~ | ~~slice(-1) on actionSequence~~ | — | — | **Resolved RT-64 (2026-04-12)**: added findFacedBet() backward walk for the bet hero actually faces |
 | ~~`background/service-worker.js` capture port~~ | ~~validateMessage gate missing~~ | — | — | **Resolved RT-65 (2026-04-12)**: gate applied; 5 new validators added to message-schemas.js |
 
+### 5.1c Additional Failure Modes (Line Study Bucket-Teaching Roundtable 2026-04-21)
+
+**FM-Bucket-False-Precision.** Bucket aggregator (e.g., `handTypeBreakdown.js:96-103` pattern) computes per-bucket mean equity/EV with no minimum-N gate. On monotone or paired boards after range narrowing, a bucket may contain 1-2 combos. Output renders "betEV: 2.41 bb" with full numeric precision. Feature would teach confidence in statistical noise. Detector: RT-115 — `sampleSize` field + `lowConfidence` flag attached to aggregator output; UI renders caveat badge when `lowConfidence`.
+
+**FM-Archetype-Correctness-Contradiction.** Current `Decision.branches[].correct: boolean` (`lineSchema.js:134`) collapses across archetypes. If archetype becomes a UI toggle (fish/reg/pro) without schema change, the authored-correct branch stays green even when wrong for the current archetype — the displayed engine output contradicts the displayed "correct" badge. Erodes trust in all authored line content. Detector: RT-107 — `correctByArchetype?: { [id]: boolean }` with validator enforcing ≥1 correct branch per declared archetype.
+
+**FM-Engine-Drift-Silent-Invalidation.** Engine constants (`FOLD_CURVE_PARAMS`, `STYLE_STEEPNESS_MULT`, `POP_CALLING_RATES` in `gameTreeConstants.js` / `villainModelData.js`) have been revised across Items 25, 26, 27 (~30 accuracy changes). Any authored EV number or EV-relative claim in `lines.js` silently invalidates on engine update — existing tests assert schema/structure, zero EV correctness assertions. Authored content ages into being wrong with no CI signal. Detector: RT-108 — fixed-seed snapshot of `evaluateGameTree` over each authored line's boards; any output drift fails CI.
+
+**FM-Drill-Layer-Synthetic-Input-Epistemics.** `gameTreeEvaluator` is calibrated against observed real-hand data via `villainModel`, style priors, fold-curve fitting. In drill-mode context there are no observed hands — synthetic archetype stubs fall back to `POPULATION_PRIORS` + style steepness modifier. Output is numerically precise but epistemically ungrounded; "fish donk on JT6" is mathematically near-identical to "population donk on JT6" with a small style modifier. Treating drill-mode EV numbers as ground-truth misleads learners about what the numbers mean. Detector: RT-111 — `drillModeEngine` wrapper returns `caveats[]` including `'synthetic-range'` when no observed data underlies the computation.
+
 ### 5.1b Additional Failure Modes (Drills Consolidation Roundtable 2026-04-20)
 
 **FM-Implicit-Height-Contract.** Mode components under `src/components/views/(Preflop|Postflop)DrillsView/` use `h-full overflow-hidden` on their outermost `div`, relying on their parent container's `flex-1` + `1600×720` chrome to resolve. Deleting or restructuring the parent silently breaks layout; no import graph catches it. Repro: remove outer `h-full overflow-hidden` wrapper; `ShapeMode` `LaneRow` scroll vanishes. Relevant for any view restructuring proposal, including drills-consolidation Phase 7.
@@ -260,6 +271,7 @@ New player observed → populationPriors.js creates default profile
 | `currentLiveContext` write paths | `handleLiveContext()` (canonical) | `handlePipelineStatus` direct `.set()` | Divergent semantics — position lock, `_receivedAt`, pending-advice promotion only run on canonical path (RT-59) |
 | Module-level timer ownership | `_planPanelAutoExpandTimer`, `tourneyTimerInterval`, staleContext interval, `_transitionTimer` | `clearForTableSwitch` / `destroy` | Timers owned by IIFE, not coordinator — unreachable from lifecycle hooks; orphan-fire after table switch (RT-60) |
 | Dead-function closures over deleted vars | `renderBriefingPanel`, `renderObservationPanel`, `computeFocusedVillain` wrapper | Deleted module vars (`currentLiveContext`, `currentTableState`, `lastHandCount` etc.) | Strict-mode ReferenceError if any click path reaches them (RT-58) |
+| C-14: `postflopDrillContent/` consumes `exploitEngine/` | `handTypeBreakdown.js:32` (`classifyComboFull` from `postflopNarrower`), `rangeVsBoard.js:17` (`computeAdvantage` from `rangeSegmenter`) | Live-advisor modules calibrated on observed hands | Synthetic archetype inputs produce numerically precise but epistemically ungrounded output. Drill consumers must route via `drillModeEngine` wrapper post-RT-111 (carries `caveats[]`, `sampleSize`, `bailedOut`). Direct imports of `gameTreeEvaluator` from `drillContent/` forbidden after RT-111 lands. (RT-109 — permitted exception under INV-08.a) |
 
 ### 6.2 Cross-Module Interactions
 

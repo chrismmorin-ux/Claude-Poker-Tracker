@@ -44,6 +44,11 @@ export const LineNodeRenderer = ({
         )}
       </div>
 
+      {/* Hero holding (RT-106 schema v2 — hand-level teaching anchor) */}
+      {node.heroHolding && (
+        <HeroHoldingRow heroHolding={node.heroHolding} />
+      )}
+
       {/* Sections */}
       <div className="space-y-4">
         {node.sections.map((section, i) => (
@@ -68,6 +73,49 @@ export const LineNodeRenderer = ({
         <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-4 text-sm text-gray-300">
           <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">End of line</div>
           Use <strong className="text-gray-100">Restart line</strong> above to replay, or <strong className="text-gray-100">Back to picker</strong> to pick another line.
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ---------- Hero holding (RT-106) ---------- //
+
+const HeroHoldingRow = ({ heroHolding }) => {
+  const { combos, bucketCandidates } = heroHolding || {};
+  const hasCombos = Array.isArray(combos) && combos.length > 0;
+  const hasBuckets = Array.isArray(bucketCandidates) && bucketCandidates.length > 0;
+  if (!hasCombos && !hasBuckets) return null;
+  return (
+    <div className="rounded-lg border border-amber-800/60 bg-amber-900/20 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-amber-300/90 mb-1">
+        Your hand
+      </div>
+      {hasCombos && (
+        <div className="flex flex-wrap gap-1.5 mb-1.5">
+          {combos.map((c) => (
+            <span
+              key={`combo-${c}`}
+              className="px-2 py-0.5 rounded-md bg-amber-950/60 border border-amber-700 text-amber-100 font-mono text-sm"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
+      {hasBuckets && (
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[10px] uppercase tracking-wide text-gray-500 self-center">
+            or
+          </span>
+          {bucketCandidates.map((b) => (
+            <span
+              key={`bucket-${b}`}
+              className="px-2 py-0.5 rounded-full bg-gray-900/50 border border-gray-700 text-gray-300 text-[11px]"
+            >
+              {b}
+            </span>
+          ))}
         </div>
       )}
     </div>

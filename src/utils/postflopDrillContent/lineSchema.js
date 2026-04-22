@@ -19,6 +19,10 @@
  *     id, street, board[], pot,
  *     villainAction?: { kind, size? } | null,
  *     heroAction?:    { kind, size? } | null,
+ *     heroHolding?:   {                // v2 (RT-106): hand-level teaching
+ *       combos?: string[],             //   specific hero combos, e.g. ['A♠K♥']
+ *       bucketCandidates?: string[]    //   bucket labels for bucket-EV view
+ *     },
  *     sections: Section[],
  *     decision?: Decision,            // absent == terminal node
  *     frameworks?: string[],          // framework IDs this node teaches
@@ -38,9 +42,27 @@
  * Pure module — no imports from UI, state, or persistence layers.
  */
 
+/**
+ * Schema version — bumped from 1 → 2 on 2026-04-21 (RT-106) to add the
+ * optional `Node.heroHolding` field. The field is additive and nullable;
+ * existing content without it continues to validate under v2.
+ */
+export const SCHEMA_VERSION = 2;
+
 export const SECTION_KINDS = Object.freeze([
   'prose', 'formula', 'example', 'compute', 'why', 'adjust', 'mismatch',
 ]);
+
+/**
+ * Regex for a 2-card hero combo, using the unicode-suit convention the rest
+ * of the codebase uses (`parseCard` in pokerCore/cardParser). Rank is one of
+ * 2-9/T/J/Q/K/A; suit is one of the four unicode suit glyphs.
+ *
+ * Examples that match: "A♠K♥", "7♦7♣", "T♠9♠".
+ * Does NOT enforce the two cards are distinct — that check lives in the
+ * validator below so the error message can name the offending field.
+ */
+const COMBO_REGEX = /^([2-9TJQKA])([♠♥♦♣])([2-9TJQKA])([♠♥♦♣])$/;
 
 export const STREETS = Object.freeze(['flop', 'turn', 'river']);
 
@@ -200,6 +222,58 @@ const validateVillainAction = (va, ctx) => {
   return errs;
 };
 
+/**
+ * Validate the optional `heroHolding` field on a Node (RT-106, schema v2).
+ *
+ * Shape: `{ combos?: string[], bucketCandidates?: string[] }`. At least one
+ * of the two arrays must be present and non-empty. `combos` entries match
+ * the `COMBO_REGEX` format and must have two distinct cards. `bucketCandidates`
+ * entries are free-form non-empty strings — the bucket taxonomy is pinned in
+ * RT-110 and not enforced here to avoid pre-committing that naming.
+ */
+const validateHeroHolding = (heroHolding, ctx) => {
+  const errs = [];
+  if (!isPlainObject(heroHolding)) {
+    errs.push(`${ctx}: heroHolding must be an object`);
+    return errs;
+  }
+  const hasCombos = heroHolding.combos !== undefined;
+  const hasBuckets = heroHolding.bucketCandidates !== undefined;
+  if (!hasCombos && !hasBuckets) {
+    errs.push(`${ctx}: heroHolding requires combos or bucketCandidates`);
+    return errs;
+  }
+  if (hasCombos) {
+    if (!Array.isArray(heroHolding.combos) || heroHolding.combos.length === 0) {
+      errs.push(`${ctx}: heroHolding.combos must be a non-empty array`);
+    } else {
+      heroHolding.combos.forEach((c, i) => {
+        if (typeof c !== 'string' || !COMBO_REGEX.test(c)) {
+          errs.push(`${ctx}: heroHolding.combos[${i}] '${c}' must match rank+suit×2 (e.g. 'A♠K♥')`);
+          return;
+        }
+        // Distinct-card check: split into the two card strings (rank + suit glyph).
+        const m = c.match(COMBO_REGEX);
+        if (m && m[1] === m[3] && m[2] === m[4]) {
+          errs.push(`${ctx}: heroHolding.combos[${i}] '${c}' has duplicate card`);
+        }
+      });
+    }
+  }
+  if (hasBuckets) {
+    if (!Array.isArray(heroHolding.bucketCandidates) || heroHolding.bucketCandidates.length === 0) {
+      errs.push(`${ctx}: heroHolding.bucketCandidates must be a non-empty array`);
+    } else {
+      heroHolding.bucketCandidates.forEach((b, i) => {
+        if (!nonEmptyString(b)) {
+          errs.push(`${ctx}: heroHolding.bucketCandidates[${i}] must be a non-empty string`);
+        }
+      });
+    }
+  }
+  return errs;
+};
+
 const validateNode = (node, id, nodeIds) => {
   const errs = [];
   if (!isPlainObject(node)) {
@@ -238,6 +312,9 @@ const validateNode = (node, id, nodeIds) => {
     if (!Array.isArray(node.frameworks) || node.frameworks.some((f) => !nonEmptyString(f))) {
       errs.push(`nodes['${id}']: frameworks must be array of non-empty strings`);
     }
+  }
+  if (node.heroHolding != null) {
+    errs.push(...validateHeroHolding(node.heroHolding, `nodes['${id}']`));
   }
   return errs;
 };
