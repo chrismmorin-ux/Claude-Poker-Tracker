@@ -7,8 +7,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeBucketEVs, isRowApplicable } from '../BucketEVPanel';
+import { computeBucketEVs, isRowApplicable, parseComboString } from '../BucketEVPanel';
 import { findLine } from '../../../../utils/postflopDrillContent/lines';
+import { encodeCard } from '../../../../utils/pokerCore/cardParser';
 
 // The canonical JT6 exemplar has heroHolding on flop_root.
 const getJT6Line = () => findLine('btn-vs-bb-3bp-ip-wet-t96');
@@ -230,5 +231,103 @@ describe('JT6 flop_root bucketCandidates (LSW-H1 interim trim)', () => {
     // Node pot is 20.5; after BB's 33% donk, compute should verify
     // against the post-donk 27.3/6.8 figures the intro prose asserts.
     expect(compute.seed).toEqual({ pot: 27.3, bet: 6.8 });
+  });
+});
+
+// LSW-H2 (2026-04-22) — hero-combo-specific EV (surface audit S2).
+describe('parseComboString (LSW-H2)', () => {
+  it('parses a canonical combo string into two encoded cards', () => {
+    const out = parseComboString('J♥T♠');
+    // Rank encoding: J=9, T=8. Suit encoding depends on SUITS order in
+    // gameConstants; the helper guarantees c1 ≠ c2 and both ≥ 0.
+    expect(out).not.toBeNull();
+    expect(out.card1).toBeGreaterThanOrEqual(0);
+    expect(out.card2).toBeGreaterThanOrEqual(0);
+    expect(out.card1).not.toBe(out.card2);
+    // Ranks must be J and T (one of each) after decoding.
+    const rank1 = out.card1 >> 2;
+    const rank2 = out.card2 >> 2;
+    expect(new Set([rank1, rank2])).toEqual(new Set([8, 9]));
+  });
+
+  it('returns null for malformed input', () => {
+    expect(parseComboString('JhTs')).toBeNull(); // ascii suits not accepted by parseAndEncode
+    expect(parseComboString('J♥')).toBeNull(); // too short
+    expect(parseComboString('')).toBeNull();
+    expect(parseComboString(null)).toBeNull();
+    expect(parseComboString(42)).toBeNull();
+  });
+
+  it('returns null for combos with duplicate cards', () => {
+    expect(parseComboString('J♥J♥')).toBeNull();
+  });
+});
+
+describe('computeBucketEVs — pinnedCombo block (LSW-H2)', () => {
+  it('returns pinnedCombo: null when node has no single-combo heroHolding', async () => {
+    const line = getJT6Line();
+    const node = { ...getJT6FlopNode(), heroHolding: { bucketCandidates: ['topPair'] } };
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    expect(out.pinnedCombo).toBeNull();
+  });
+
+  it('computes pinnedCombo block for JT6 flop_root (J♥T♠)', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    // Sanity: fixture keeps a single combo post-H1.
+    expect(node.heroHolding.combos).toEqual(['J♥T♠']);
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    // When the hero range context is in the v1 library, pinnedCombo is
+    // non-null and carries the computed per-combo EV shape.
+    if (!out.rangeError) {
+      expect(out.pinnedCombo).not.toBeNull();
+      expect(out.pinnedCombo.comboString).toBe('J♥T♠');
+      expect(out.pinnedCombo.equity).toBeGreaterThan(0);
+      expect(out.pinnedCombo.equity).toBeLessThan(1);
+      expect(out.pinnedCombo.evs).toBeDefined();
+      expect(Array.isArray(out.pinnedCombo.ranking)).toBe(true);
+      // Ranking must contain one of the DEFAULT_ACTIONS IDs.
+      expect(out.pinnedCombo.ranking.length).toBeGreaterThan(0);
+    }
+  }, 15000);
+
+  it('pinnedCombo equity for J♥T♠ on T♥9♥6♠ is within a plausible range vs a typical 3bet range', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo) return; // skip if range-unavailable
+    // JT on T96ss vs BB's 3bet range (JJ+, AK/AQs, KQs, plus some A-high
+    // blocker bluffs) is roughly 35–55% equity per combinatorial expansion.
+    // Generous tolerance to account for MC variance at the default trial
+    // count. Upper bound excludes "hero crushes" readings that would
+    // indicate a range-lookup bug.
+    expect(out.pinnedCombo.equity).toBeGreaterThan(0.20);
+    expect(out.pinnedCombo.equity).toBeLessThan(0.75);
+  }, 15000);
+
+  it('pinnedCombo best-action EV differs from topPair bucket EV (per-combo ≠ bucket average)', async () => {
+    const line = getJT6Line();
+    const node = getJT6FlopNode();
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    if (out.rangeError || !out.pinnedCombo) return;
+    const bucketEntry = out.byBucket.topPair;
+    if (!bucketEntry?.result) return;
+    const pinnedBest = out.pinnedCombo.evs[out.pinnedCombo.ranking[0]]?.ev;
+    const bucketBest = bucketEntry.result.evs[bucketEntry.result.ranking[0]]?.ev;
+    // The per-combo and bucket-average EVs should diverge (point of H2).
+    // Don't over-specify the exact direction — the equity delta depends on
+    // whether J♥T♠'s true equity is above or below the topPair class
+    // average. Just assert they're not identical.
+    if (typeof pinnedBest === 'number' && typeof bucketBest === 'number') {
+      expect(Math.abs(pinnedBest - bucketBest)).toBeGreaterThan(0.05);
+    }
+  }, 15000);
+
+  it('omits pinnedCombo gracefully when heroHolding.combos is malformed', async () => {
+    const line = getJT6Line();
+    const node = { ...getJT6FlopNode(), heroHolding: { combos: ['BOGUS!'], bucketCandidates: ['topPair'] } };
+    const out = await computeBucketEVs({ node, line, archetype: 'reg' });
+    // parseComboString rejects malformed strings → pinnedPromise resolves null.
+    expect(out.pinnedCombo).toBeNull();
   });
 });

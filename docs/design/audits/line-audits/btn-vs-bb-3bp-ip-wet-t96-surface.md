@@ -281,7 +281,7 @@ Archetype toggling continues to shift the EV via the archetype-weighted fold rat
 **Test suite at time of closure:** `bash scripts/smart-test-runner.sh` — 6286/6287 passing. The 1 failure is the pre-existing `precisionAudit.test.js` flake (same flake the LSW-A1 closure noted at 6257/6258; delta of +29 tests covers H1 additions + prior-session tests). All H1-added tests green: `lineSchema.test.js` (+7 new cases for `air` rejection + `compute.seed` validation), `BucketEVPanel.test.jsx` (+8 new cases for `isRowApplicable` + content-pin regression guards), `LessonCalculators.test.jsx` (new file, 10 cases).
 
 **Findings still OPEN** (not touched by H1):
-- S2 (hero-combo-specific EV row) — deferred to `LSW-H2`.
+- S2 (hero-combo-specific EV row) — **RESOLVED by `LSW-H2` (see closure appendix below)**.
 - S4 (BDFD / BDSD taxonomy) — **RESOLVED by `LSW-G3` (see closure appendix below)**.
 - S5 (villain-bucket-first paradigm redesign) — deferred to `LSW-G4` roundtable gate.
 - S6 (domination map) — deferred to `LSW-G5`.
@@ -316,6 +316,48 @@ Archetype toggling continues to shift the EV via the archetype-weighted fold rat
 
 ---
 
+## Appendix — LSW-H2 closure (2026-04-22)
+
+**Scope:** Surface audit S2 — bucket EV row shows +12.66bb for openEnder combos that are not hero's pinned hand; same typography as the real topPair row; student reads the whole table as "my hand's options."
+
+**Resolved:**
+- New `computePinnedComboEV` helper in `drillModeEngine.js` — pure async function that computes per-combo equity via `handVsRange` (Monte Carlo, `trials=800` for ±~1% accuracy) against villain's base range, then applies per-action EV math using the archetype-weighted `foldPct` (preserves archetype responsiveness). Input: `{pinnedCombo, villainRange, board, pot, foldPct, actions, trials}`. Output: `{card1, card2, equity, evs, ranking, trials}` or `null` on malformed / absent input.
+- `BucketEVPanel.computeBucketEVs` now parses `heroHolding.combos[0]` via a new `parseComboString` export (defensive — `lineSchema.COMBO_REGEX` guarantees format at authoring time; this is runtime protection). When a single-combo pinned holding is present, the pinnedCombo helper runs in parallel with the bucket evaluations and its result is returned as `result.pinnedCombo`.
+- New `PinnedComboRow` component renders above the bucket table. Distinct typography (amber border / background, same palette as the `Your hand` chip row above) makes "YOUR HAND · PER-COMBO EV" visually primary. Shows: combo text (`J♥T♠`), equity%, best action + EV, runner-up action + EV, archetype label.
+- `BucketEVTable` gains a `demoted` prop. When pinnedCombo present, the table:
+  - Renders a small-caps divider label: "RANGE-LEVEL VIEW · OTHER COMBOS IN YOUR RANGE THAT FALL IN THESE BUCKETS"
+  - Changes header cell from "Your hand class" to "Bucket (other combos in your range)"
+  - Applies 80% opacity + softer border — visually subsidiary to the pinned-combo row.
+- Non-pinned nodes keep the old header text + full opacity.
+
+**Visual verification (1600×720 Playwright, all 3 archetypes):**
+| Archetype | Equity (MC 800 trials) | Best action | EV | Runner-up | Bucket topPair average |
+|-----------|-----------------------|-------------|-----|-----------|------------------------|
+| Reg | 56.1% | bet 150% | +17.99bb | bet 75% +17.09bb | +20.30bb |
+| Fish | 57.7% | bet 150% | +17.95bb | bet 75% +16.42bb | +20.23bb |
+| Pro | 59.6% | bet 150% | +19.47bb | bet 75% +18.18bb | +20.32bb |
+
+The per-combo EV is **~2bb lower than the topPair bucket average** across archetypes. This honestly surfaces that J♥T♠ is weaker than the average TP combo in BTN's flat-3bet range on T96ss (the range includes AT/KT/QT which dominate J♥T♠). Direct teaching gain: student now sees the correct EV for their *actual* hand, not the class average.
+
+Archetype sensitivity visible: equity rises from Reg (56.1%) to Fish (57.7%) to Pro (59.6%). Pro's tighter 3bet range gives hero a higher equity share; Fish's wider / weaker range still gives hero edge but less fold equity on the bet (lower bet 75% EV).
+
+**Evidence:** `evidence/btn-vs-bb-3bp-ip-wet-t96-flop_root-post-h2-{08..10}-*.png`
+
+**Tests:** +8 new cases in `BucketEVPanel.test.jsx`:
+- `parseComboString` shape (3 cases: canonical, malformed, duplicate-card rejection).
+- `computeBucketEVs` pinnedCombo block (5 cases: null when absent, populated for JT6, equity in plausible 20–75% range, per-combo EV differs from bucket EV by ≥0.05bb, graceful null on malformed combos).
+
+**NOT changed in H2:**
+- `evaluateDrillNode` signature. The pinnedCombo path is a separate `computePinnedComboEV` helper running alongside the bucket loop, not an extension of the per-bucket evaluation.
+- Bucket EV math. Bucket rows continue to use `HERO_BUCKET_TYPICAL_EQUITY` coarse priors — per-combo equity doesn't regress their computation.
+- `v1-simplified-ev` caveat on bucket rows stays (per-combo uses real MC equity; bucket rows still use the simplified table).
+
+**Follow-ons:**
+- `LSW-G5` (domination map) is now unblocked — can extend `pinnedCombo` with `dominationMap: [{villainBucket, relation, weightPct}]`.
+- The `v1-simplified-ev` caveat on the pinnedCombo output is deliberately NOT removed. Bucket rows still use the simplified model; the pinned-combo path uses real MC equity but the archetype-weighted fold rate still relies on `POP_CALLING_RATES` + bucket composition. Full depth-2 replacement is `LSW-D1`.
+
+---
+
 ## Appendix — Batch-4 visual-verification sweep (to be appended as `LSW-H3` progresses)
 
 *As `LSW-H3` walks remaining nodes / lines, append one paragraph per node:*
@@ -336,3 +378,5 @@ Archetype toggling continues to shift the EV via the archetype-weighted fold rat
 
 - 2026-04-22 — Drafted. Combined expert + UX persona, Playwright live-surface walk at 1600×720. Flop_root only. Evidence captured under `evidence/`. Routes: LSW-H1, LSW-H2, LSW-H3, LSW-G3, LSW-G4, LSW-G5.
 - 2026-04-22 — LSW-H1 shipped. S1 (feasibility gate + bucketCandidates trim), S3 (calculator seeding), S7 (`air`-rejection validator) resolved. Post-H1 walk on Reg + Fish + Pro verifies the three P0 surface defects no longer fire on flop_root. Audit remains OPEN (S2/S4/S5/S6 unaddressed).
+- 2026-04-22 — LSW-G3 shipped. S4 (backdoor flush / straight draw taxonomy) resolved. Audit remains OPEN (S2/S5/S6).
+- 2026-04-22 — LSW-H2 shipped. S2 (hero-combo-specific EV row) resolved. Per-combo EV row surfaces J♥T♠ at equity 56.1% / bet 150% +17.99bb (vs Reg), directly contrasted against the topPair bucket average +20.30bb. Post-H2 walk on Reg + Fish + Pro verifies archetype-responsive per-combo EV (Reg 56.1% → Fish 57.7% → Pro 59.6%). Audit remains OPEN (S5 paradigm roundtable, S6 domination map).

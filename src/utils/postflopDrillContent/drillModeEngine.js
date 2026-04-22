@@ -61,6 +61,7 @@ import {
 import { MIN_COMBO_SAMPLE } from './handTypeBreakdown';
 import { calcValueBetEV } from '../exploitEngine/foldEquityCalculator';
 import { POP_CALLING_RATES } from '../exploitEngine/gameTreeConstants';
+import { handVsRange } from '../pokerCore/monteCarloEquity';
 
 /**
  * Coarse "typical equity vs villain's range" table keyed by hero bucket.
@@ -320,5 +321,137 @@ export const evaluateDrillNode = async ({
     ranking,
     bailedOut,
     caveats,
+  };
+};
+
+// =============================================================================
+// LSW-H2 — hero-combo-specific EV (surface audit S2)
+// =============================================================================
+//
+// Bucket-level EV is an aggregate: it approximates "if hero held a hand in
+// this bucket, this would be the EV." When the node pins a specific combo
+// (e.g., J♥T♠), the bucket-level number is *wrong* for that specific hand
+// for three reasons:
+//
+//  1. The bucket average collapses across combos the hero does not hold
+//     (e.g., authored `openEnder` bucket EV is averaged from combos in the
+//     range that are open-enders — none of which is hero's pinned combo).
+//  2. Per-combo equity vs villain's range is strictly more accurate than
+//     the `HERO_BUCKET_TYPICAL_EQUITY` coarse prior.
+//  3. Backdoor potential stacked on top of a made-hand primary shape
+//     (e.g., TP + BDFD + BDSD for J♥T♠ on T♥9♥6♠) is lost in the
+//     strongest-wins bucket classifier — per-combo equity captures it.
+//
+// This helper computes per-combo equity via `handVsRange` (Monte Carlo,
+// deterministic within ~±1% at the default trial count) then reuses the
+// same action EV math as the bucket path. The `foldPct` input is the
+// archetype-weighted fold rate already computed for the bucket call, so
+// fold-equity stays archetype-responsive (fish/reg/pro shift the output).
+//
+// Shape contract: returns null when `pinnedCombo` is absent or malformed;
+// otherwise returns `{ card1, card2, equity, evs, ranking }`. The caller
+// combines this with the bucket output in a single `computeBucketEVs`
+// response for the panel to render side-by-side.
+
+/**
+ * Compute per-combo EV for a pinned hero holding.
+ *
+ * @param {{
+ *   pinnedCombo: { card1: number, card2: number } | null,
+ *   villainRange: Float64Array,
+ *   board: number[],
+ *   pot: number,
+ *   foldPct: number,              // from villainFoldRateFromComposition
+ *   actions?: Array<{id, kind, sizing?}>,
+ *   trials?: number,              // MC trials (default 800 for ±~1%)
+ * }} args
+ * @returns {Promise<{
+ *   card1: number, card2: number,
+ *   equity: number,
+ *   evs: Record<string, { ev: number, action: string, kind: string, sizing?: number, isProfitable?: boolean }>,
+ *   ranking: string[],
+ *   trials: number,
+ * } | null>}
+ */
+export const computePinnedComboEV = async ({
+  pinnedCombo,
+  villainRange,
+  board,
+  pot,
+  foldPct,
+  actions = DEFAULT_ACTIONS,
+  trials = 800,
+}) => {
+  if (!pinnedCombo
+      || typeof pinnedCombo !== 'object'
+      || !Number.isFinite(pinnedCombo.card1)
+      || !Number.isFinite(pinnedCombo.card2)
+      || pinnedCombo.card1 === pinnedCombo.card2) {
+    return null;
+  }
+  if (!villainRange || !Array.isArray(board) || board.length < 3 || board.length > 5) {
+    return null;
+  }
+  // Hero cards must not collide with board (defensive — content should never
+  // pin a combo that uses board cards, but malformed authoring shouldn't
+  // crash the panel).
+  if (board.includes(pinnedCombo.card1) || board.includes(pinnedCombo.card2)) {
+    return null;
+  }
+
+  const { equity } = await handVsRange(
+    [pinnedCombo.card1, pinnedCombo.card2],
+    villainRange,
+    board,
+    { trials },
+  );
+
+  const evs = Object.create(null);
+  for (const action of actions) {
+    if (action.kind === 'check') {
+      evs[action.id] = {
+        ev: equity * pot,
+        action: action.id,
+        kind: 'check',
+      };
+      continue;
+    }
+    if (action.kind === 'bet') {
+      const sizing = typeof action.sizing === 'number' ? action.sizing : 0.75;
+      const betSize = pot * sizing;
+      const { ev, isProfitable } = calcValueBetEV({
+        potSize: pot,
+        betSize,
+        foldPct,
+        heroEquity: equity,
+      });
+      evs[action.id] = {
+        ev,
+        action: action.id,
+        kind: 'bet',
+        sizing,
+        isProfitable,
+      };
+      continue;
+    }
+    evs[action.id] = {
+      ev: 0,
+      action: action.id,
+      kind: action.kind,
+      unsupported: true,
+    };
+  }
+
+  const ranking = Object.entries(evs)
+    .sort(([, a], [, b]) => b.ev - a.ev)
+    .map(([id]) => id);
+
+  return {
+    card1: pinnedCombo.card1,
+    card2: pinnedCombo.card2,
+    equity,
+    evs,
+    ranking,
+    trials,
   };
 };

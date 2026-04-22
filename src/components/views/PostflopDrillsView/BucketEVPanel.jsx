@@ -13,15 +13,36 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { evaluateDrillNode } from '../../../utils/postflopDrillContent/drillModeEngine';
+import {
+  evaluateDrillNode,
+  computePinnedComboEV,
+  villainFoldRateFromComposition,
+} from '../../../utils/postflopDrillContent/drillModeEngine';
 import { isKnownBucket } from '../../../utils/postflopDrillContent/bucketTaxonomy';
-import { isKnownArchetype } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
+import {
+  buildArchetypeWeightedRange,
+  isKnownArchetype,
+} from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
 import { archetypeRangeFor } from '../../../utils/postflopDrillContent/archetypeRanges';
-import { parseBoard } from '../../../utils/pokerCore/cardParser';
+import { parseBoard, parseAndEncode } from '../../../utils/pokerCore/cardParser';
 
 // =============================================================================
 // Pure data function — testable in isolation
 // =============================================================================
+
+/**
+ * Parse a combo string like "J♥T♠" into a `{ card1, card2 }` pair of encoded
+ * card integers, or null if the string is malformed. `lineSchema.COMBO_REGEX`
+ * guarantees the format when authored content passes `validateLine`; this
+ * helper is defensive for runtime calls with arbitrary input.
+ */
+export const parseComboString = (str) => {
+  if (typeof str !== 'string' || str.length !== 4) return null;
+  const c1 = parseAndEncode(str.slice(0, 2));
+  const c2 = parseAndEncode(str.slice(2, 4));
+  if (c1 < 0 || c2 < 0 || c1 === c2) return null;
+  return { card1: c1, card2: c2 };
+};
 
 /**
  * Compute bucket-EV results for every `heroHolding.bucketCandidates` entry
@@ -40,9 +61,11 @@ import { parseBoard } from '../../../utils/pokerCore/cardParser';
  */
 export const computeBucketEVs = async ({ node, line, archetype }) => {
   const candidates = node?.heroHolding?.bucketCandidates || [];
+  const combosStr = node?.heroHolding?.combos;
+  const pinnedComboStr = Array.isArray(combosStr) && combosStr.length === 1 ? combosStr[0] : null;
   const byBucket = Object.create(null);
-  if (candidates.length === 0) {
-    return { archetype, byBucket };
+  if (candidates.length === 0 && !pinnedComboStr) {
+    return { archetype, byBucket, pinnedCombo: null };
   }
 
   // Derive hero + villain ranges. archetypeRangeFor throws when the (position,
@@ -87,11 +110,43 @@ export const computeBucketEVs = async ({ node, line, archetype }) => {
         byBucket[bucketId] = { error: 'range-unavailable' };
       }
     }
-    return { archetype, byBucket, rangeError };
+    return { archetype, byBucket, pinnedCombo: null, rangeError };
   }
 
   const board = parseBoard(node.board);
   const pot = Number(node.pot) || 0;
+
+  // LSW-H2 (2026-04-22) — hero-combo-specific EV runs alongside bucket
+  // evaluation. Computes once (orthogonal to buckets), uses MC vs the
+  // archetype-independent base villain range for equity, then applies the
+  // archetype-weighted `foldPct` for fold-equity. Fold rate varies with
+  // archetype (fish/reg/pro) via the bucket-composition shift — equity
+  // does not (showdown equity is fixed once cards are pinned).
+  const pinnedComboIds = pinnedComboStr ? parseComboString(pinnedComboStr) : null;
+  const pinnedPromise = pinnedComboIds
+    ? (async () => {
+        try {
+          const weightedVillain = buildArchetypeWeightedRange({
+            archetype,
+            baseRange: villainRange,
+            board,
+          });
+          const foldPct = villainFoldRateFromComposition(weightedVillain);
+          const block = await computePinnedComboEV({
+            pinnedCombo: pinnedComboIds,
+            villainRange,
+            board,
+            pot,
+            foldPct,
+          });
+          return block ? { ...block, comboString: pinnedComboStr } : null;
+        } catch (err) {
+          // Pinned path is additive — if it errors, log onto the result
+          // but don't poison the bucket response.
+          return { error: err.message || String(err), comboString: pinnedComboStr };
+        }
+      })()
+    : Promise.resolve(null);
 
   // Ranges available — run per-bucket evaluations in parallel.
   const jobs = candidates.map(async (bucketId) => {
@@ -107,12 +162,12 @@ export const computeBucketEVs = async ({ node, line, archetype }) => {
       return [bucketId, { error: err.message || String(err) }];
     }
   });
-  const settled = await Promise.all(jobs);
+  const [settled, pinnedCombo] = await Promise.all([Promise.all(jobs), pinnedPromise]);
   for (const [bucketId, entry] of settled) {
     byBucket[bucketId] = entry;
   }
 
-  return { archetype, byBucket };
+  return { archetype, byBucket, pinnedCombo };
 };
 
 // =============================================================================
@@ -217,12 +272,71 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
       )}
 
       {revealed && !loading && data && (
-        <BucketEVTable
-          data={data}
-          candidates={candidates}
-          pinnedCombos={node?.heroHolding?.combos}
-        />
+        <>
+          {data.pinnedCombo && <PinnedComboRow pinnedCombo={data.pinnedCombo} archetype={safeArchetype} />}
+          {candidates && candidates.length > 0 && (
+            <BucketEVTable
+              data={data}
+              candidates={candidates}
+              pinnedCombos={node?.heroHolding?.combos}
+              demoted={Boolean(data.pinnedCombo)}
+            />
+          )}
+        </>
       )}
+    </div>
+  );
+};
+
+// ---------- Sub-component: pinned-combo EV row (LSW-H2) ---------- //
+
+/**
+ * Renders the primary EV row for the pinned hero combo. Distinct typography
+ * from the bucket-table rows so students read "here is MY hand's EV" as
+ * different from "here is the average EV for combos in this bucket class."
+ */
+const PinnedComboRow = ({ pinnedCombo, archetype }) => {
+  if (!pinnedCombo) return null;
+  if (pinnedCombo.error) {
+    return (
+      <div className="rounded border border-rose-800 bg-rose-950/30 px-3 py-2 text-xs text-rose-200">
+        Per-combo EV error{pinnedCombo.comboString ? ` for ${pinnedCombo.comboString}` : ''}: {pinnedCombo.error}
+      </div>
+    );
+  }
+  const bestId = pinnedCombo.ranking?.[0];
+  const secondId = pinnedCombo.ranking?.[1];
+  const best = bestId ? pinnedCombo.evs[bestId] : null;
+  const second = secondId ? pinnedCombo.evs[secondId] : null;
+  const comboLabel = pinnedCombo.comboString || `${pinnedCombo.card1},${pinnedCombo.card2}`;
+  return (
+    <div className="rounded-md border border-amber-700/70 bg-amber-900/20 p-3 space-y-1.5">
+      <div className="flex items-baseline justify-between">
+        <div className="text-[10px] uppercase tracking-wide text-amber-300/90">
+          Your hand · per-combo EV
+        </div>
+        <div className="text-[10px] uppercase tracking-wide text-gray-500">
+          vs {archetype}
+        </div>
+      </div>
+      <div className="flex items-baseline gap-4 flex-wrap">
+        <span className="font-mono text-lg text-amber-100">{comboLabel}</span>
+        <span className="text-[11px] text-gray-400">
+          equity <span className="font-mono text-gray-200">{(pinnedCombo.equity * 100).toFixed(1)}%</span>
+        </span>
+        {best && (
+          <span className="text-[11px] text-gray-400">
+            best <span className="text-teal-300 font-medium">{actionLabel(bestId, best)}</span>
+            <span className="ml-1.5 font-mono text-teal-200">{formatEV(best.ev)}</span>
+          </span>
+        )}
+        {second && (
+          <span className="text-[11px] text-gray-500">
+            runner-up <span className="mr-1">{actionLabel(secondId, second)}</span>
+            <span className="font-mono">{formatEV(second.ev)}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 };
@@ -252,7 +366,7 @@ export const isRowApplicable = (entry) => {
   return (entry.result.sampleSize || 0) > 0;
 };
 
-const BucketEVTable = ({ data, candidates, pinnedCombos }) => {
+const BucketEVTable = ({ data, candidates, pinnedCombos, demoted = false }) => {
   if (data.rangeError) {
     return (
       <div className="bg-rose-900/30 border border-rose-800 text-rose-200 rounded px-3 py-2 text-xs">
@@ -277,14 +391,29 @@ const BucketEVTable = ({ data, candidates, pinnedCombos }) => {
     ? candidates.filter((b) => !isRowApplicable(data.byBucket[b]))
     : [];
 
+  // LSW-H2 (2026-04-22): when a pinned-combo row renders above, the bucket
+  // table becomes subsidiary. Demote visually (divider + label) and relabel
+  // the header from "Your hand class" to something that makes explicit this
+  // is NOT per-combo data. Non-demoted mode (no pinned combo) keeps the
+  // original "Your hand class" header — it's accurate for pure range-level
+  // teaching nodes.
+  const headerLabel = demoted
+    ? 'Bucket (other combos in your range)'
+    : 'Your hand class';
+
   return (
     <div className="space-y-2">
+      {demoted && applicable.length > 0 && (
+        <div className="pt-1 text-[10px] uppercase tracking-wide text-gray-500">
+          Range-level view · other combos in your range that fall in these buckets
+        </div>
+      )}
       {applicable.length > 0 ? (
-        <div className="overflow-hidden rounded border border-gray-700">
-          <table className="w-full text-xs">
+        <div className={`overflow-hidden rounded border ${demoted ? 'border-gray-800' : 'border-gray-700'}`}>
+          <table className={`w-full text-xs ${demoted ? 'opacity-80' : ''}`}>
             <thead>
               <tr className="bg-gray-900/60 text-gray-400">
-                <th className="text-left px-2.5 py-1.5 font-medium">Your hand class</th>
+                <th className="text-left px-2.5 py-1.5 font-medium">{headerLabel}</th>
                 <th className="text-left px-2.5 py-1.5 font-medium">Best action</th>
                 <th className="text-right px-2.5 py-1.5 font-medium">EV</th>
                 <th className="text-right px-2.5 py-1.5 font-medium">Runner-up</th>
@@ -299,7 +428,7 @@ const BucketEVTable = ({ data, candidates, pinnedCombos }) => {
           </table>
         </div>
       ) : (
-        hasPinnedCombo && (
+        hasPinnedCombo && !demoted && (
           <div className="bg-gray-900/40 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 italic">
             No bucket with live combos for this authored candidate list.
           </div>
