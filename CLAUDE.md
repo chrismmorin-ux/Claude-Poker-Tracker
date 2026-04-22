@@ -65,6 +65,27 @@ Generic statistical reasoning (uniform priors, z-tests, linear assumptions) is a
 
 **First-principles decision modeling (CRITICAL):** Villain decisions derive from equity, pot odds, SPR, and players remaining — NEVER from position labels, bucket labels, or style categories directly. Labels are outputs of the decision process, not inputs. Do not add `if (position === 'EP') foldRate *= 1.05` — compute from game state. Do not use `POP_CALLING_RATES[bucket]` when per-combo equity is available — use the logistic. Do not stack style adjustments on top of the stats that define the style — that's double-counting. See POKER_THEORY.md §7 and exploitEngine/CLAUDE.md anti-patterns.
 
+## Design Program Guardrail
+**Before any UX-touching change** (new views, new widgets, interaction changes, destructive actions, layout refactors, visible copy changes on primary controls):
+
+1. Read `docs/design/LIFECYCLE.md` — the 5 feature gates (Entry → Blind-Spot → Research → Design → Implementation).
+2. Complete **Gate 1 (Entry)** before anything else: scope classification, personas identified, JTBD identified, gap analysis output (GREEN / YELLOW / RED).
+3. If Gate 1 is YELLOW or RED, or the work introduces a new surface / targets an underserved persona / crosses product lines: run **Gate 2 (Blind-Spot Roundtable)** per `docs/design/ROUNDTABLES.md` before specifying the design.
+4. **Gate 4 (Design)** is not bypassable — a surface artifact in `docs/design/surfaces/` must exist (or be authored same-session) for any UX change.
+5. Commits and PR descriptions must reference the audit-id, surface-id, or spec-id the change implements.
+
+**The anti-pattern the program prevents:** "Feature X went to dev, design phase was skipped, and we assumed existing personas covered it." Gate 1 forces the explicit gap question. Gate 2 surfaces the things the framework itself can't see.
+
+Framework entry points:
+- [docs/design/README.md](docs/design/README.md) — framework overview
+- [docs/design/METHODOLOGY.md](docs/design/METHODOLOGY.md) — 5-step audit process
+- [docs/design/PROGRAM.md](docs/design/PROGRAM.md) — program charter
+- [docs/design/LIFECYCLE.md](docs/design/LIFECYCLE.md) — feature gates
+- [docs/design/ROUNDTABLES.md](docs/design/ROUNDTABLES.md) — blind-spot templates
+- `.claude/programs/design.md` — program governance file
+
+Do NOT write production code for a UX change without having passed Gates 1 and 4. This supersedes "Plan first, code second" with a stronger version for UX work specifically.
+
 ## Architecture (v123)
 See `SYSTEM_MODEL.md` §1 for full component map, dependency graph, and extension boundary.
 Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views, 4 engines, IndexedDB v13.
