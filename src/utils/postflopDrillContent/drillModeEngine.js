@@ -507,6 +507,32 @@ const highCardIn = (ranks) => (c) => {
   return ranks.includes(r);
 };
 
+// LSW-G5.2 (2026-04-22): pair+draw composite filters. Relies on the
+// `drawFeatures` sidecar now attached to each segmentRange combo.
+// Hierarchy is mutually exclusive so pair+draw combos are counted in
+// exactly one composite group: FD takes priority over OESD takes priority
+// over gutshot. Bare-pair groups (no draw at all) take an inverse filter
+// so they exclude any combo counted in a composite.
+const hasAnyDirectDraw = (c) =>
+  !!(c.drawFeatures && (c.drawFeatures.hasFlushDraw
+    || c.drawFeatures.hasOESD
+    || c.drawFeatures.hasGutshot));
+const hasFlushDraw = (c) => !!(c.drawFeatures && c.drawFeatures.hasFlushDraw);
+const hasOesdOnly = (c) =>
+  !!(c.drawFeatures && c.drawFeatures.hasOESD && !c.drawFeatures.hasFlushDraw);
+const hasGutshotOnly = (c) =>
+  !!(c.drawFeatures && c.drawFeatures.hasGutshot
+    && !c.drawFeatures.hasOESD && !c.drawFeatures.hasFlushDraw);
+const noDirectDraw = (c) => !hasAnyDirectDraw(c);
+
+// Composite filter + type list helper: pair+draw rows apply to all
+// pair-tier handTypes so the disclosure doesn't explode into
+// middlePair+FD, bottomPair+FD, topPair+FD, etc. — instead the student
+// sees "Pair + Flush Draw (any pair tier)" as a single row with the
+// weightPct aggregate, and the sub-composition (which pair tier) is
+// visible via the individual bare-pair rows.
+const ALL_PAIR_TYPES = ['overpair', 'topPairGood', 'topPairWeak', 'middlePair', 'bottomPair', 'weakPair'];
+
 const DOMINATION_GROUPS = Object.freeze([
   { id: 'premium',         label: 'Premium (SF / Quads / Boat)', types: ['straightFlush', 'quads', 'fullHouse'] },
   { id: 'nutFlush',        label: 'Nut Flush',                   types: ['nutFlush'] },
@@ -517,12 +543,21 @@ const DOMINATION_GROUPS = Object.freeze([
   { id: 'set',             label: 'Set',                         types: ['set'] },
   { id: 'trips',           label: 'Trips',                       types: ['trips'] },
   { id: 'twoPair',         label: 'Two Pair',                    types: ['twoPair'] },
-  { id: 'overpair',        label: 'Overpair',                    types: ['overpair'] },
-  { id: 'tpStrong',        label: 'Top Pair Strong Kicker',      types: ['topPairGood'] },
-  { id: 'tpWeak',          label: 'Top Pair Weak Kicker',        types: ['topPairWeak'] },
-  { id: 'middlePair',      label: 'Middle Pair',                 types: ['middlePair'] },
-  { id: 'bottomPair',      label: 'Bottom Pair',                 types: ['bottomPair'] },
-  { id: 'weakPair',        label: 'Underpair (below board)',     types: ['weakPair'] },
+  // LSW-G5.2: pair-tier groups split by draw presence. Composite rows
+  // aggregate across all pair tiers (so one "Pair+FD" row, not six) —
+  // keeps the disclosure readable. Bare-pair rows use a noDirectDraw
+  // filter so they exclude combos counted in a composite row (no
+  // double-counting; sum of weightPct across pair-family rows equals
+  // the range's total pair-tier fraction).
+  { id: 'pairPlusFD',      label: 'Pair + Flush Draw',           types: ALL_PAIR_TYPES, comboFilter: hasFlushDraw },
+  { id: 'pairPlusOesd',    label: 'Pair + OESD',                 types: ALL_PAIR_TYPES, comboFilter: hasOesdOnly },
+  { id: 'pairPlusGutshot', label: 'Pair + Gutshot',              types: ALL_PAIR_TYPES, comboFilter: hasGutshotOnly },
+  { id: 'overpair',        label: 'Overpair',                    types: ['overpair'],        comboFilter: noDirectDraw },
+  { id: 'tpStrong',        label: 'Top Pair Strong Kicker',      types: ['topPairGood'],     comboFilter: noDirectDraw },
+  { id: 'tpWeak',          label: 'Top Pair Weak Kicker',        types: ['topPairWeak'],     comboFilter: noDirectDraw },
+  { id: 'middlePair',      label: 'Middle Pair',                 types: ['middlePair'],      comboFilter: noDirectDraw },
+  { id: 'bottomPair',      label: 'Bottom Pair',                 types: ['bottomPair'],      comboFilter: noDirectDraw },
+  { id: 'weakPair',        label: 'Underpair (below board)',     types: ['weakPair'],        comboFilter: noDirectDraw },
   { id: 'comboDraw',       label: 'Combo Draw (FD + straight)',  types: ['comboDraw'] },
   { id: 'nutFlushDraw',    label: 'Nut Flush Draw',              types: ['nutFlushDraw'] },
   { id: 'nonNutFlushDraw', label: 'Non-nut Flush Draw',          types: ['nonNutFlushDraw'] },
