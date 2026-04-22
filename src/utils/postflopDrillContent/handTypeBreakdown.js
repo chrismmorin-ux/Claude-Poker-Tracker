@@ -34,6 +34,14 @@ import { classifyComboFull } from '../exploitEngine/postflopNarrower';
 export { HAND_TYPES, HAND_TYPE_GROUPS, HAND_TYPE_LABELS };
 
 /**
+ * Minimum distinct combos for a per-bucket average to be considered reliable
+ * teaching content. Buckets below this floor are flagged `lowConfidence` so
+ * the UI can caveat (or suppress) numeric precision. Ships with RT-115 and
+ * is consumed by bucket-EV surfaces shipped under RT-111 onwards.
+ */
+export const MIN_COMBO_SAMPLE = 3;
+
+/**
  * Produce the per-hand-type breakdown of a weighted range on a flop.
  *
  * @param {Float64Array} range        — 169-cell weighted grid
@@ -72,6 +80,8 @@ export const handTypeBreakdown = (range, board, boardTexture = null) => {
       avgDrawOuts: 0,
       avgImprovementOuts: 0,
       avgTotalEquityOuts: 0,
+      sampleSize: 0,        // RT-115 — alias of count, explicit teaching-layer field
+      lowConfidence: false,  // RT-115 — true when 0 < count < MIN_COMBO_SAMPLE
     };
   }
 
@@ -101,6 +111,10 @@ export const handTypeBreakdown = (range, board, boardTexture = null) => {
       acc.avgImprovementOuts /= acc.weight;
       acc.avgTotalEquityOuts /= acc.weight;
     }
+    // RT-115: expose sample-size + low-confidence flag. Absent-bucket
+    // (count=0) is not "low confidence" — it's just not part of the range.
+    acc.sampleSize = acc.count;
+    acc.lowConfidence = acc.count > 0 && acc.count < MIN_COMBO_SAMPLE;
   }
 
   // Build group aggregation for the UI.
@@ -111,13 +125,17 @@ export const handTypeBreakdown = (range, board, boardTexture = null) => {
       label: HAND_TYPE_LABELS[ht] || ht,
       ...perType[ht],
     }));
+    const totalCount = types.reduce((s, t) => s + t.count, 0);
     byGroup[groupId] = {
       id: groupId,
       label: group.label,
       types,
-      totalCount:  types.reduce((s, t) => s + t.count, 0),
+      totalCount,
       totalWeight: types.reduce((s, t) => s + t.weight, 0),
       totalPct:    types.reduce((s, t) => s + t.pct, 0),
+      // RT-115: group-level sample-size flag mirrors per-type semantics.
+      sampleSize: totalCount,
+      lowConfidence: totalCount > 0 && totalCount < MIN_COMBO_SAMPLE,
     };
   }
 

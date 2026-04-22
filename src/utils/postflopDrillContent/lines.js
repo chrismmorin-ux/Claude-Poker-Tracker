@@ -732,6 +732,20 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             + 'protection" move than a value bet. Shift toward raising '
             + 'flop with strong draws and folding less.',
         },
+        // RT-113 exemplar — compute sections were placeholder text until
+        // 2026-04-21. This interactive calculator lets the student compute
+        // call pot-odds facing the 33% donk here and check their break-even
+        // equity against the authored "TPTK has enough equity to call" claim.
+        {
+          kind: 'compute',
+          calculator: 'potOdds',
+          heading: 'Pot odds for calling the donk',
+          intro:
+            'Verify: BB leads ~6.8bb (33% of 20.5bb). Hero calls 6.8bb into a '
+            + '20.5 + 6.8 = 27.3bb pot. Break-even equity = 6.8 / (27.3 + 6.8). '
+            + 'TPTK with a backdoor flush plays strong even against BB\'s '
+            + 'donk range at this price.',
+        },
       ],
       decision: {
         prompt: 'BB donks 33%. Hero with J♥T♠ (top pair + backdoor flush)?',

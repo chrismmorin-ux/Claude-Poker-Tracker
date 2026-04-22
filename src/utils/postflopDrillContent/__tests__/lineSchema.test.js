@@ -450,3 +450,83 @@ describe('Node.heroHolding (RT-106)', () => {
     expect(errors.some((e) => e.includes('bucketCandidates[1]'))).toBe(true);
   });
 });
+
+// ---------- v2: Decision.branches[].correctByArchetype (RT-107) ---------- //
+
+describe('Decision.branches[].correctByArchetype (RT-107)', () => {
+  it('accepts branches without correctByArchetype (additive-optional)', () => {
+    const line = minimalValidLine();
+    // baseline fixture has no correctByArchetype anywhere — still valid
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('accepts correctByArchetype when at least one branch is correct per declared archetype', () => {
+    const line = minimalValidLine();
+    line.nodes.root.decision.branches[0].correctByArchetype = { fish: true, pro: false };
+    line.nodes.root.decision.branches[1].correctByArchetype = { fish: false, pro: true };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects correctByArchetype whose value is not boolean', () => {
+    const line = minimalValidLine();
+    line.nodes.root.decision.branches[0].correctByArchetype = { fish: 'yes' };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("correctByArchetype['fish']"))).toBe(true);
+  });
+
+  it('rejects correctByArchetype that is not an object', () => {
+    const line = minimalValidLine();
+    line.nodes.root.decision.branches[0].correctByArchetype = 'fish';
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('correctByArchetype must be an object'))).toBe(true);
+  });
+
+  it('rejects empty correctByArchetype object', () => {
+    const line = minimalValidLine();
+    line.nodes.root.decision.branches[0].correctByArchetype = {};
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('must have at least one archetype key'))).toBe(true);
+  });
+
+  it('rejects when an archetype has no correct branch across the decision', () => {
+    const line = minimalValidLine();
+    // Declare fish archetype but never mark any branch correct under it.
+    line.nodes.root.decision.branches[0].correctByArchetype = { fish: false };
+    line.nodes.root.decision.branches[1].correctByArchetype = { fish: false };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes("archetype 'fish' has no branch"))).toBe(true);
+  });
+
+  it('different branches may declare different archetype sets, each must have ≥1 correct', () => {
+    // RT-107 allows a branch to opt into a subset of archetypes; the decision-
+    // level check aggregates across all branches.
+    const line = minimalValidLine();
+    line.nodes.root.decision.branches[0].correctByArchetype = { fish: true };
+    line.nodes.root.decision.branches[1].correctByArchetype = { pro: true };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it('flat `correct` still authoritative when correctByArchetype absent', () => {
+    // This test codifies the fallback contract: existing content without
+    // correctByArchetype continues to work exactly as before (archetype
+    // toggle is post-v1; renderer reads branch.correct until RT-107 ships
+    // a toggle).
+    const line = minimalValidLine();
+    // No correctByArchetype anywhere.
+    line.nodes.root.decision.branches.forEach((b) => {
+      expect(b.correctByArchetype).toBeUndefined();
+    });
+    const { ok } = validateLine(line);
+    expect(ok).toBe(true);
+  });
+});

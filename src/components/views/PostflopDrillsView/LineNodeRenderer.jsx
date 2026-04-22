@@ -12,6 +12,10 @@ import { archetypeRangeFor, contextLabel } from '../../../utils/postflopDrillCon
 import { parseFlopString } from '../../../utils/postflopDrillContent/scenarioLibrary';
 import { parseBoard } from '../../../utils/pokerCore/cardParser';
 import { RangeFlopBreakdown } from './RangeFlopBreakdown';
+// RT-113 — wire ComputeSection to the shared calculator registry. The import
+// crosses drill-view directories (Preflop → Postflop). Acceptable for now;
+// proper consolidation into `_shared/drillInternals/` tracked under RT-94.
+import { CALCULATORS } from '../PreflopDrillsView/LessonCalculators';
 
 export const LineNodeRenderer = ({
   node,
@@ -258,13 +262,35 @@ const ExampleSection = ({ section }) => {
   );
 };
 
-const ComputeSection = ({ section }) => (
-  <div className="bg-gray-800/70 border border-dashed border-gray-700 rounded-lg p-4 text-xs text-gray-400">
-    <div className="uppercase tracking-wide text-gray-500 mb-1">Compute · {section.calculator}</div>
-    {section.heading && <div className="text-sm text-gray-200 font-semibold mb-1">{section.heading}</div>}
-    <em className="text-gray-500">Interactive calculator registry ships in a later phase.</em>
-  </div>
-);
+// RT-113 — real calculator dispatcher. Falls back to a visible error state
+// when `section.calculator` is unknown so authoring mistakes surface in dev.
+const ComputeSection = ({ section }) => {
+  const Calculator = CALCULATORS[section.calculator];
+  if (!Calculator) {
+    return (
+      <div className="bg-rose-900/30 border border-rose-800 text-rose-200 rounded px-3 py-2 text-xs">
+        Unknown calculator: {String(section.calculator)}
+      </div>
+    );
+  }
+  return (
+    <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-4 space-y-2">
+      <div className="text-[10px] uppercase tracking-wide text-gray-500">
+        Compute · {section.calculator}
+      </div>
+      {section.heading && (
+        <h3 className="text-sm font-semibold text-gray-200">{section.heading}</h3>
+      )}
+      {section.intro && (
+        <p className="text-sm text-gray-300 leading-relaxed">{section.intro}</p>
+      )}
+      <Calculator />
+      {section.takeaway && (
+        <p className="text-xs text-gray-400 italic leading-relaxed">{section.takeaway}</p>
+      )}
+    </div>
+  );
+};
 
 // ---------- Decision ---------- //
 

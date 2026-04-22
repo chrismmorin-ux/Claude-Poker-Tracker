@@ -33,7 +33,10 @@
  *
  *   Decision = {
  *     prompt: string,
- *     branches: [{ label, nextId|null, correct: boolean, rationale }]
+ *     branches: [{
+ *       label, nextId|null, correct: boolean, rationale,
+ *       correctByArchetype?: { [archetypeId]: boolean }  // v2 (RT-107)
+ *     }]
  *   }
  *
  * Villain shape is `villains[]` (array) from day 1 so multiway support in
@@ -134,6 +137,41 @@ const validateSection = (section, ctx) => {
   return errs;
 };
 
+/**
+ * Validate the optional `branch.correctByArchetype` field (RT-107, schema v2).
+ *
+ * Must be a plain object whose keys are non-empty strings (archetype IDs —
+ * enum not enforced here to keep the taxonomy extensible) and whose values
+ * are strictly booleans. Returns the list of archetype IDs whose value is
+ * `true`, for the decision-level "≥1 correct per archetype" aggregation.
+ */
+const validateCorrectByArchetype = (cba, ctx) => {
+  const errs = [];
+  const correctIds = [];
+  if (cba === undefined) return { errs, correctIds, archetypeIds: [] };
+  if (!isPlainObject(cba)) {
+    errs.push(`${ctx}: correctByArchetype must be an object`);
+    return { errs, correctIds, archetypeIds: [] };
+  }
+  const archetypeIds = Object.keys(cba);
+  if (archetypeIds.length === 0) {
+    errs.push(`${ctx}: correctByArchetype must have at least one archetype key`);
+    return { errs, correctIds, archetypeIds };
+  }
+  for (const id of archetypeIds) {
+    if (!nonEmptyString(id)) {
+      errs.push(`${ctx}: correctByArchetype keys must be non-empty strings`);
+      continue;
+    }
+    if (typeof cba[id] !== 'boolean') {
+      errs.push(`${ctx}: correctByArchetype['${id}'] must be boolean`);
+      continue;
+    }
+    if (cba[id]) correctIds.push(id);
+  }
+  return { errs, correctIds, archetypeIds };
+};
+
 const validateDecision = (decision, ctx, nodeIds) => {
   const errs = [];
   if (!isPlainObject(decision)) {
@@ -148,6 +186,9 @@ const validateDecision = (decision, ctx, nodeIds) => {
     return errs;
   }
   let hasCorrect = false;
+  // RT-107: for each archetype referenced across branches, track whether at
+  // least one branch is correct under it.
+  const archetypeHasCorrect = new Map();
   decision.branches.forEach((b, i) => {
     const bctx = `${ctx}.branches[${i}]`;
     if (!isPlainObject(b)) { errs.push(`${bctx}: must be an object`); return; }
@@ -161,8 +202,24 @@ const validateDecision = (decision, ctx, nodeIds) => {
     if (b.nextId && !nodeIds.has(b.nextId)) {
       errs.push(`${bctx}: nextId '${b.nextId}' does not resolve to a node`);
     }
+    if (b.correctByArchetype !== undefined) {
+      const { errs: cbaErrs, correctIds, archetypeIds } = validateCorrectByArchetype(
+        b.correctByArchetype, bctx,
+      );
+      errs.push(...cbaErrs);
+      for (const id of archetypeIds) {
+        if (!archetypeHasCorrect.has(id)) archetypeHasCorrect.set(id, false);
+      }
+      for (const id of correctIds) archetypeHasCorrect.set(id, true);
+    }
   });
   if (!hasCorrect) errs.push(`${ctx}: decision needs at least one branch with correct=true`);
+  // RT-107 — every archetype referenced by any branch must have ≥1 correct branch.
+  for (const [id, anyCorrect] of archetypeHasCorrect.entries()) {
+    if (!anyCorrect) {
+      errs.push(`${ctx}: archetype '${id}' has no branch with correctByArchetype['${id}']=true`);
+    }
+  }
   return errs;
 };
 

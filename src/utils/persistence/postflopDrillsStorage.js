@@ -5,8 +5,9 @@
  *   {
  *     drillId:     number (autoIncrement),
  *     userId:      string,
- *     drillType:   'estimate' | 'framework',
- *     scenarioKey: string (e.g., 'BTN_open_vs_BB_call_Ah_Kd_7s'),
+ *     drillType:   'estimate' | 'framework' | 'recipe' | 'line',
+ *     scenarioKey: string (e.g., 'BTN_open_vs_BB_call_Ah_Kd_7s', or
+ *                  '<lineId>:<nodeId>' for drillType='line'),
  *     context:     { position, action, vs? },
  *     opposingContext: { position, action, vs? } | null,
  *     board:       string (e.g., 'As Kh 7d'),
@@ -15,7 +16,21 @@
  *     correct:     boolean,
  *     delta:       number | null ( |user% - truth%| for estimate mode ),
  *     timestamp:   number,
+ *
+ *     // RT-114 (schema v2, 2026-04-21) — additive-optional. Both fields are
+ *     // enum-checked at aggregate time against the canonical drill-content
+ *     // taxonomies; records with unknown IDs are filtered out of
+ *     // taxonomy-aware aggregators (but the raw record stays in IDB).
+ *     // Validated against `isKnownArchetype` (fish/reg/pro) and
+ *     // `isKnownBucket` (28 bucket IDs) in `postflopDrillContent/`.
+ *     archetypeId?: string,  // e.g., 'fish' | 'reg' | 'pro'
+ *     bucketId?:    string,  // e.g., 'topSet' | 'tptk' | 'flushDraw'
  *   }
+ *
+ * IDB is schemaless at the record level — no database version bump is needed
+ * for adding the two optional fields. Legacy records (before 2026-04-21) have
+ * neither field; aggregate-by-archetype / aggregate-by-bucket helpers skip
+ * them via the same "unknown ID" path as tampered records.
  */
 
 import {
@@ -95,12 +110,22 @@ export const clearPostflopDrills = async (userId = GUEST_USER_ID) => {
  * Aggregate accuracy per framework id from a list of drill attempts.
  * Returns { [frameworkId]: { attempts, correct, accuracy } }.
  * Expects each drill to carry `truth.frameworks` (array of framework ids that applied).
+ *
+ * Shape contract (RT-100): this function returns a *subset* of the preflop
+ * `aggregateFrameworkAccuracy` shape. Postflop drills do not record a numeric
+ * equity `delta` (estimate is a % guess, framework is set-matching), so
+ * `avgDelta` and `deltaSamples` are intentionally absent. Any caller that
+ * merges preflop + postflop aggregates must handle the missing fields
+ * explicitly — `undefined` will propagate `NaN` into arithmetic.
  */
 export const aggregatePostflopFrameworkAccuracy = (drills) => {
-  const out = {};
+  // Object.create(null) + string-id guard prevents prototype-chain writes from
+  // tampered IDB records. RT-96.
+  const out = Object.create(null);
   for (const d of drills) {
     const fwIds = d?.truth?.frameworks || [];
     for (const id of fwIds) {
+      if (typeof id !== 'string' || id.length === 0) continue;
       if (!out[id]) out[id] = { attempts: 0, correct: 0, accuracy: 0 };
       out[id].attempts++;
       if (d.correct) out[id].correct++;

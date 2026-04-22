@@ -11,6 +11,7 @@ import {
   pctAnyPairPlus,
   HAND_TYPES,
   HAND_TYPE_GROUPS,
+  MIN_COMBO_SAMPLE,
 } from '../handTypeBreakdown';
 import { parseRangeString, createRange, rangeIndex } from '../../pokerCore/rangeMatrix';
 import { parseBoard } from '../../pokerCore/cardParser';
@@ -177,5 +178,74 @@ describe('handTypeBreakdown — aggregate helpers', () => {
     const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
     const sum = pctAir(bd) + pctWeakDraws(bd) + pctStrongDraws(bd) + pctAnyPairPlus(bd);
     expect(sum).toBeCloseTo(1, 2);
+  });
+});
+
+// ---------- RT-115: sampleSize + lowConfidence flags ---------- //
+
+describe('handTypeBreakdown — sampleSize + lowConfidence (RT-115)', () => {
+  test('MIN_COMBO_SAMPLE is 3', () => {
+    expect(MIN_COMBO_SAMPLE).toBe(3);
+  });
+
+  test('per-type sampleSize mirrors count', () => {
+    const range = archetypeRangeFor({ position: 'BTN', action: 'open' });
+    const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
+    for (const ht of HAND_TYPES) {
+      expect(bd.handTypes[ht].sampleSize).toBe(bd.handTypes[ht].count);
+    }
+  });
+
+  test('absent bucket (count=0) is NOT lowConfidence', () => {
+    // AA on K72 — nothing should be a flush combo.
+    const range = parseRangeString('AA');
+    const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
+    expect(bd.handTypes.nutFlush.count).toBe(0);
+    expect(bd.handTypes.nutFlush.lowConfidence).toBe(false);
+  });
+
+  test('≥3 combos is NOT lowConfidence', () => {
+    // AA (6 combos) on K72r → 6 overpair combos.
+    const range = parseRangeString('AA');
+    const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
+    expect(bd.handTypes.overpair.count).toBe(6);
+    expect(bd.handTypes.overpair.lowConfidence).toBe(false);
+  });
+
+  test('invariant: for every bucket, lowConfidence iff 0 < count < MIN_COMBO_SAMPLE', () => {
+    const range = archetypeRangeFor({ position: 'BTN', action: 'open' });
+    const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
+    for (const ht of HAND_TYPES) {
+      const b = bd.handTypes[ht];
+      const shouldFlag = b.count > 0 && b.count < MIN_COMBO_SAMPLE;
+      expect(b.lowConfidence).toBe(shouldFlag);
+    }
+  });
+
+  test('byGroup exposes group-level sampleSize + lowConfidence', () => {
+    const range = parseRangeString('AA');
+    const bd = handTypeBreakdown(range, flop('K♠', '7♥', '2♦'));
+    for (const g of Object.values(bd.byGroup)) {
+      expect(g.sampleSize).toBe(g.totalCount);
+      if (g.totalCount > 0 && g.totalCount < MIN_COMBO_SAMPLE) {
+        expect(g.lowConfidence).toBe(true);
+      } else {
+        expect(g.lowConfidence).toBe(false);
+      }
+    }
+  });
+
+  test('narrow 2-combo bucket triggers lowConfidence', () => {
+    // Build a range of exactly one combo — a suited specific holding.
+    // parseRangeString supports specific-hand suited like 'AhKh' via rangeIndex.
+    // We want a bucket that ends up with 1-2 combos on a tailored flop.
+    // Use: range = QQ only (6 combos pre). On Q♠ Q♥ 2♦ board, Q♣Q♦ is the only
+    // live combo (the two Q♠/Q♥ are dead). That's 1 combo — all "quads".
+    const range = parseRangeString('QQ');
+    const bd = handTypeBreakdown(range, flop('Q♠', 'Q♥', '2♦'));
+    // Exactly one quads combo remains (Q♣Q♦).
+    expect(bd.handTypes.quads.count).toBe(1);
+    expect(bd.handTypes.quads.sampleSize).toBe(1);
+    expect(bd.handTypes.quads.lowConfidence).toBe(true);
   });
 });

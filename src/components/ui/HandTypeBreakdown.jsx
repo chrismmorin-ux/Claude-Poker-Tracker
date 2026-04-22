@@ -140,9 +140,20 @@ export const HandTypeBreakdown = ({ handTypes, totalCombos, bucketEquities, size
             }}>
               {g.members.length > 1 && g.members.map((m, i) => {
                 const drawDetail = formatDrawDetail(m.type, m);
+                // RT-115 — flag low-sample sub-types so the learner knows the
+                // percentage is thin statistical ground, not precision.
+                const lowConf = m.lowConfidence && m.count > 0;
                 return (
                   <span key={m.type}>
                     {HAND_TYPE_LABELS[m.type]} {Math.round(m.pct)}%
+                    {lowConf && (
+                      <span
+                        style={{ color: '#78716c', marginLeft: 2 }}
+                        title={`Low sample: ${m.count} combo${m.count === 1 ? '' : 's'} — treat as directional, not precise`}
+                      >
+                        ◦
+                      </span>
+                    )}
                     {drawDetail && <span style={{ color: '#4b5563' }}> ({drawDetail})</span>}
                     {i < g.members.length - 1 ? ' · ' : ''}
                   </span>
