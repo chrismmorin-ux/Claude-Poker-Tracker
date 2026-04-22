@@ -713,15 +713,19 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
         },
         {
           kind: 'why',
-          heading: 'Why BB donks here',
+          heading: 'Why BB donks here — a live-pool exploit, not a principled play',
           body:
-            'BB\'s 3bet range is polarized: big pairs (TT+), AQ/AK, KQs, '
-            + 'plus some A5s/A4s blocker bluffs. On T96ss, BB has nut '
-            + 'advantage — more sets (TT, 99, 66), many overpairs (JJ-AA) '
-            + 'that are under pressure and prefer to charge draws. The '
-            + 'small donk targets hero\'s capped flatting range (which '
-            + 'reads weighted toward TT-JJ, AQ, suited broadways, small '
-            + 'pocket pairs that flopped second-pair-ish).',
+            'In solver, BB checks this texture most of the time: BTN has '
+            + 'more sets (99/TT/66 at decent frequency in flat-3bet ranges) '
+            + 'and more straight / two-pair combos (JT/T9/98 suited) than '
+            + 'BB\'s 3bet range, so BTN — not BB — has nut advantage on '
+            + 'T96ss. BUT live BBs donk this spot often as a range-'
+            + 'protection move, and understanding how to respond to the '
+            + 'live-pool donk is where real EV lives. BB\'s donk range is '
+            + 'usually polarized: overpairs (JJ+) that want to charge '
+            + 'draws, the occasional slow-played set, plus A-high blocker '
+            + 'bluffs (A5s/A4s). See POKER_THEORY.md §9.1 for the '
+            + 'documented divergence.',
         },
         {
           kind: 'adjust',
@@ -761,11 +765,12 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             // to see which branch turns green under each villain type.
             correctByArchetype: { fish: false, reg: true, pro: true },
             rationale:
-              'Correct. TPTK-ish with a backdoor flush has too much '
-              + 'equity and showdown value to fold. Raising punishes BB\'s '
-              + 'overpair region (JJ+) which doesn\'t fold and reopens us '
-              + 'to a 3bet. Calling keeps the pot controllable, realizes '
-              + 'our equity in position, and floats wider IP in 3BPs pays.',
+              'Correct. Top-pair-strong-kicker (JT on T-high) with a '
+              + 'backdoor flush has too much equity and showdown value to '
+              + 'fold. Raising punishes BB\'s overpair region (JJ+) which '
+              + 'doesn\'t fold and reopens us to a 3bet. Calling keeps the '
+              + 'pot controllable, realizes our equity in position, and '
+              + 'floats wider IP in 3BPs pays.',
           },
           {
             label: 'Raise to 9bb',
@@ -778,12 +783,18 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             // turns TPTK into a bluff vs villain\'s polarized donk range).
             correctByArchetype: { fish: true, reg: false, pro: false },
             rationale:
-              'Raise-folds our own equity. Against BB\'s polarized donk '
-              + 'range, raising folds out the bluffs we beat (A-high '
-              + 'blocker combos) and gets called or 3bet by the entire '
-              + 'overpair/set region. We end up bloating the pot with a '
-              + 'one-pair hand that wants to see both turn and river '
-              + 'cheap to realize equity.',
+              'Raise-folds our own equity against reg/pro. Against BB\'s '
+              + 'polarized donk range, raising folds out the bluffs we '
+              + 'beat (A-high blocker combos) and gets called or 3bet by '
+              + 'the entire overpair/set region — turning our top-pair-'
+              + 'strong-kicker into a bluff vs villain\'s polarized donk '
+              + 'range. We end up bloating the pot with a one-pair hand '
+              + 'that wants to see both turn and river cheap to realize '
+              + 'equity. Note: the raise-as-exploit vs fish only holds '
+              + 'against the wide-donking "calling-station donker" who '
+              + 'calls raises with middle pair and weak TP. Vs a tighter '
+              + 'fish who donks mostly made hands and folds to aggression, '
+              + 'calling still wins more.',
           },
           {
             label: 'Fold',
@@ -863,7 +874,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
           },
           {
             label: 'Overbet (110% pot, ~37bb)',
-            nextId: 'river_brick_v_checkraises',
+            nextId: 'turn_brick_v_checkraises',
             correct: false,
             rationale:
               'Wrong shape. Overbet sizing in 3BP on a brick turn after '
@@ -975,13 +986,14 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
           kind: 'why',
           heading: 'Why this is a bluff-catch, not a fold',
           body:
-            'Pot odds: 25.5 to win 76.5 → we need ~25% equity. Against a '
-            + 'polar range in 3BP on a brick-runout two-tone board, BB\'s '
-            + 'natural bluff frequency is typically 30-40%: enough missed '
-            + 'draws and A-high floats carry through, and villain knows '
-            + 'our checked turn cannot defend wide. Hero\'s top pair is '
-            + 'a bluff-catcher that crushes the bluff region and loses '
-            + 'to the value region — call-or-fold.',
+            'Pot odds: 25.5 to call into a 59.5bb pot → we need ~30% '
+            + 'equity (standard formula: bet / (pot + bet) = 25.5 / 85). '
+            + 'Against a polar range in 3BP on a brick-runout two-tone '
+            + 'board, BB\'s natural bluff frequency is typically 30-40%: '
+            + 'enough missed draws and A-high floats carry through, and '
+            + 'villain knows our checked turn cannot defend wide. Hero\'s '
+            + 'top pair is a bluff-catcher that crushes the bluff region '
+            + 'and loses to the value region — call-or-fold.',
         },
         {
           kind: 'adjust',
@@ -1010,7 +1022,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
           },
           {
             label: 'Fold',
-            nextId: 'terminal_flop_overfold',
+            nextId: 'terminal_river_overfold_bluffcatch',
             correct: false,
             rationale:
               'Overfold. Folding top pair to a polar river bet in '
@@ -1033,11 +1045,18 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
     },
 
     // ===== TURN OVERBET GOT CHECK-RAISED — the "bluff didn't fold them" spot =====
-    river_brick_v_checkraises: {
-      id: 'river_brick_v_checkraises',
+    // Pot flow (reconciled LSW-F1-A7):
+    //   Turn-start pot: 34. Hero overbets 110% = 37.4.
+    //   BB check-raises to 3× hero's bet = 112.2 total.
+    //   Pot at hero's decision: 34 + 37.4 + 112.2 = 183.6 (~184).
+    //   Hero's call cost if calling: 112.2 − 37.4 = 74.8.
+    //   Post-call pot: 184 + 74.8 = 258.4 (~258).
+    //   Required equity to call: 74.8 / 258.4 ≈ 29%.
+    turn_brick_v_checkraises: {
+      id: 'turn_brick_v_checkraises',
       street: 'turn',
       board: ['T♥', '9♥', '6♠', '2♣'],
-      pot: 108.0,
+      pot: 184.0,
       villainAction: { kind: 'checkraise', size: 3.0 },
       frameworks: ['range_morphology', 'nut_advantage'],
       sections: [
@@ -1056,10 +1075,11 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
           kind: 'why',
           heading: 'The math of continuing',
           body:
-            'To call the check-raise: price ~47bb to win ~155bb → needs '
-            + '~30% equity. Our top pair vs BB\'s check-raise range '
-            + 'averages ~18-22% equity. Folding is correct even though '
-            + 'the pot is large — pot odds are not met.',
+            'To call the check-raise: price ~75bb to call into a ~184bb '
+            + 'pot → we need ~29% equity (74.8 / 258.4). Our top pair vs '
+            + 'BB\'s check-raise range averages ~18-22% equity. Folding '
+            + 'is correct even though the pot is large — pot odds are '
+            + 'not met.',
         },
         {
           kind: 'adjust',
@@ -1072,7 +1092,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
         },
       ],
       decision: {
-        prompt: 'BB check-raises the overbet to 90bb total. Hero with JT?',
+        prompt: 'BB check-raises the overbet to 112bb total. Hero with JT?',
         branches: [
           {
             label: 'Fold',
@@ -1089,7 +1109,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             nextId: 'terminal_called_cr_light',
             correct: false,
             rationale:
-              'Equity-light call. We pay ~47bb to continue with ~20% '
+              'Equity-light call. We pay ~75bb to continue with ~20% '
               + 'equity, then face the river with no plan. The pot '
               + 'odds do not justify it. The sunk-cost trap — '
               + '"I already invested this much" — is the classic '
@@ -1171,7 +1191,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       id: 'terminal_correct_fold_cr',
       street: 'turn',
       board: ['T♥', '9♥', '6♠', '2♣'],
-      pot: 108.0,
+      pot: 184.0,
       sections: [
         {
           kind: 'prose',
@@ -1218,7 +1238,11 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       id: 'terminal_flop_raise_folds_weak',
       street: 'flop',
       board: ['T♥', '9♥', '6♠'],
-      pot: 50.0,
+      // pot reflects BB calling the raise (20.5 pre + 9 hero raise + 9 BB
+      // call = 38.5). The terminal's copy addresses the losing-line case
+      // ("gets called or 3-bet by everything that dominates us"), so the
+      // call-state pot is the pedagogically-aligned value.
+      pot: 38.5,
       sections: [
         {
           kind: 'prose',
@@ -1247,7 +1271,7 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       id: 'terminal_called_cr_light',
       street: 'turn',
       board: ['T♥', '9♥', '6♠', '2♣'],
-      pot: 200.0,
+      pot: 258.0,
       sections: [
         {
           kind: 'prose',
@@ -1276,6 +1300,11 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       id: 'terminal_river_overbet_spew',
       street: 'river',
       board: ['T♥', '9♥', '6♠', '2♣', '3♦'],
+      // pot is the parent-node pot at the moment of the spew (78 from
+      // river_brick_v_calls, the most-common reaching path). This terminal
+      // is also reached from river_checkback → jam (pot 59.5) but the
+      // copy is pot-agnostic — the lesson is about sizing discipline, not
+      // exact end-state chip count.
       pot: 78.0,
       sections: [
         {
@@ -1288,6 +1317,39 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             + 'villain calls with the hands we lose to. Thin-value '
             + 'bets require a range that clearly dominates the call '
             + 'region; we do not have that here.',
+        },
+      ],
+    },
+
+    // New terminal (LSW-F1-A8) — reached only from river_checkback → Fold.
+    // Splits off from terminal_flop_overfold which was previously shared
+    // across two different mistakes; the flop-fold copy didn't address the
+    // river-bluff-catch-fold pedagogy.
+    terminal_river_overfold_bluffcatch: {
+      id: 'terminal_river_overfold_bluffcatch',
+      street: 'river',
+      board: ['T♥', '9♥', '6♠', '2♣', '3♦'],
+      pot: 59.5,
+      sections: [
+        {
+          kind: 'prose',
+          heading: 'Bluff-catcher fold — left money on the table',
+          body:
+            'Top pair is a pure bluff-catcher on this river, and pot '
+            + 'odds paid against BB\'s polar range. Folding here is '
+            + 'where winning regs systematically leak — the line where '
+            + 'population overfolds most. You needed to call.',
+        },
+        {
+          kind: 'why',
+          heading: 'Takeaway',
+          body:
+            'Capped ranges facing polar aggression defend by bluff-'
+            + 'catching at the right pot odds, not by folding. The '
+            + 'threshold is mechanical: if pot odds give us ~30% equity '
+            + 'and villain\'s polar bluff frequency is 30-40%, the call '
+            + 'prints. Folding this exact spot is the single biggest '
+            + 'recreational leak in 3BP lines.',
         },
       ],
     },

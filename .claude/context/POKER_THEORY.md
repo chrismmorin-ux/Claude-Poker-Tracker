@@ -470,3 +470,21 @@ Before adding any constant, multiplier, or lookup table, ask:
 12. **Double-counting style and stats**: Style IS stats. A "Fish" is defined by VPIP>40 + PFR<10. Applying a Fish multiplier AND a VPIP>40 multiplier AND a low-AF multiplier counts the same signal 3×. Each behavioral dimension should be counted exactly once — use the highest-fidelity source available and skip the rest. (See §7.4)
 
 13. **Treating IP/OOP as a binary structural fact**: IP/OOP is contextual — UTG+1 is IP vs UTG but OOP vs everyone else. The advantage comes from acting last (better information, free cards, equity realization), not from a label. Whether a player is IP depends on who they're against in the current hand, not their seat number.
+
+---
+
+## 9. Documented Divergences
+
+This section catalogs places where our authored content or engine defaults intentionally depart from solver baseline to teach — or serve — live-pool realities. Each entry names the content, the divergence, and the justification. Entries are added via the LSW-A* audit stream when external validation surfaces a category-D disagreement (external source disagrees but our position is deliberate).
+
+### 9.1 Live-pool donk framing in 3BP on non-broadway middling boards
+
+**Content:** `btn-vs-bb-3bp-ip-wet-t96` Line Study line + any future line where BB donks in 3BP on middling non-broadway boards (T96, T98, 987, 876, etc.).
+
+**Divergence:** In solver-baseline (per GTO Wizard "Navigating Range Disadvantage as the 3-Bettor"), BB checks most of this texture in 3BP OOP: PFR caller (BTN) has more sets, two-pair, and suited-connector straight combos — BTN has nut advantage, not BB. Our authored line has BB donking at 33% frequency on T96ss.
+
+**Justification:** This is a common live-pool tendency (888poker + PokerNews "Donk Betting in Small-Stakes Live NL"). Our target student is a live-pool player who will face the spot many times per session. Teaching the response to the live-pool donk has real EV for them; insisting on solver-pure BB behavior would mean not teaching this spot at all.
+
+**How it is surfaced to the student:** The line's `why` section on `flop_root` explicitly labels BB's donk as a live-pool deviation, not a principled nut-advantage play. Students internalize "this is how you respond when BB donks — a real live-pool pattern," not "BB should donk here."
+
+**Originating audit:** LSW-A1 (`docs/design/audits/line-audits/btn-vs-bb-3bp-ip-wet-t96.md`), category-D finding D1.

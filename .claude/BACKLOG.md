@@ -140,6 +140,75 @@ Owner-approved 2026-04-20. New Postflop Drills tab: branching street-by-street h
 
 ---
 
+## IN_PROGRESS — Line Study Slice Widening (LSW)
+
+Owner-approved 2026-04-22. Follow-on from RT-106..118 bucket-teaching roundtable: widens the single-node bucket-EV vertical slice (JT6 donk, `btn-vs-bb-3bp-ip-wet-t96`) to meaningful coverage across the 8 authored lines, paired with a per-line poker-expert accuracy audit run first to catch content errors before widening lands on them. Charter: `docs/projects/line-study-slice-widening.project.md`. Audit template: `docs/design/audits/line-audits/_TEMPLATE.md`. Handoff: (not yet started — next session creates `.claude/handoffs/lsw-a1-*.md`).
+
+**Structure:** Stream A (8 audits, each with mandatory per-decision-node web-research validation) → Stream F (content-wrong findings) + **Stream G (engine-wrong findings — new 2026-04-22)** → Stream B (heroHolding widening, 3 tiers) → Stream D (depth-2 engine, EV cache). Stream C (correctByArchetype) threads into B commits. Stream E polish rolls inline.
+
+**Audit standard (2026-04-22):** every decision node requires external web-research validation — POKER_THEORY.md is our prior, not evidence. Queries categorize A (no disagreement), B (our content wrong → Stream F), C (our engine wrong → Stream G), D (intentional divergence — document in POKER_THEORY.md §11). Zero-query audits fail review.
+
+**Current state baseline:** 1 of 25 decision nodes has `heroHolding`; 1 of 25 decision nodes has `correctByArchetype`; `v1-simplified-ev` caveat present everywhere.
+
+### Stream A — Per-line expert audits (8 sessions, runs first)
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-A1 | P1 | COMPLETE (DRAFT — awaits owner review) | **Audit `btn-vs-bb-3bp-ip-wet-t96` (2026-04-22)** — 12 nodes (5 decision) walked through seven dimensions with ≥2 web-research queries per decision node (11 queries total: 5 A, 4 B, 2 D). **Verdict: YELLOW.** 10 findings: 3 P1 content errors + 3 P2 structural + 4 P3 polish. Key findings: (1) line's premise "BB has nut advantage on T96ss" is REVERSED per GTO Wizard — BTN has nut advantage on non-broadway middling boards; the donk is a real live-pool tendency, not a principled play. (2) **`river_checkback` pot-odds math error: claims "25% equity" for a 75% pot bet; correct is 30%.** Internal inconsistency: either the sizing is 50% or the math is wrong. (3) Pot-accounting cascade on `river_brick_v_checkraises` + 2 child terminals. Routing: LSW-F1 opened (all 10 content fixes); LSW-G1 + LSW-G2 deferred (2 engine candidates blocked on solver access); 1 POKER_THEORY.md §11 entry queued for intentional-divergence framing. Bucket-teaching queue: 2 high-leverage widening targets (`river_brick_v_calls` fish-thin-value flip + `river_checkback` bluff-catch flip) — both blocked on F1 shipping first. | ✓ Audit file at `docs/design/audits/line-audits/btn-vs-bb-3bp-ip-wet-t96.md`; ✓ bucket-teaching queue populated (2 HIGH leverage, 1 PARTIAL, 1 SKIP); ✓ external-validation log per decision node; ✓ Stream F1 opened (P1); ✓ Stream G candidates parked deferred; ✓ Category-D divergence queued for POKER_THEORY.md §11 | Claude (main) 2026-04-22 |
+| LSW-A2 | P1 | NEXT | **Audit `btn-vs-bb-srp-ip-dry-q72r`** — 15 nodes (6 decision). First-authored line, highest-frequency SRP. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A3 | P1 | NEXT | **Audit `co-vs-bb-srp-oop-paired-k77`** — 3 nodes (2 decision). Most common real spot (OOP SRP); small node count. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A4 | P1 | NEXT | **Audit `sb-vs-btn-3bp-oop-wet-t98`** — 4 nodes (2 decision). 3BP OOP on wet board — high-leverage OOP defense. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A5 | P2 | NEXT | **Audit `co-vs-btn-bb-srp-mw-oop`** — 3 nodes (2 decision). MW SRP OOP — tests MW framework coverage from LS Phase 5. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A6 | P2 | NEXT | **Audit `btn-vs-bb-sb-srp-mw-j85`** — 10 nodes (4 decision). MW SRP IP — biggest MW node count. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A7 | P2 | NEXT | **Audit `utg-vs-btn-squeeze-mp-caller`** — 2 nodes (1 decision). Preflop-heavy MW squeeze; narrow but pedagogically unique. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+| LSW-A8 | P2 | NEXT | **Audit `utg-vs-btn-4bp-deep`** — 3 nodes (1 decision). Rarest spot; audit last. | ✓ Audit file + verdict + queue table + external-validation log per decision node (zero-query audits fail review) + F batch if content-wrong + G batch if engine-wrong | — |
+
+### Stream B — `heroHolding` widening (5 sessions, per-line gated by Stream A)
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-B1 | P1 | BLOCKED by LSW-A1..A8 (per-line) | **Flop decision roots** — author `heroHolding` on 7 remaining flop roots. Hero combo + bucketCandidates pulled from each line's audit queue. Single commit per session. | ✓ 7 flop roots have validated `heroHolding`; ✓ `lineSchema.validateLine` passes for all 8 lines; ✓ `engineAuthoredDrift.test.js` green (re-baseline if snapshot shifts); ✓ 1600×720 visual verification of picker + reveal panel on each | — |
+| LSW-B2 | P2 | BLOCKED by LSW-B1 + per-line A | **Turn decision nodes where bucket shifts** — nodes where turn card peels/completes/pairs and the student's bucket class changes. Node list from Stream A dimension-6 output (est. ~8 nodes). | ✓ Every flagged turn decision has `heroHolding`; ✓ tests green; ✓ visual verification | — |
+| LSW-B3 | P3 | BLOCKED by LSW-B2 | **River decision nodes** — narrow-specificity bucket teaching (nutFlush vs secondFlush vs weakFlush, etc.). Node list from Stream A (est. ~10 nodes). | ✓ Every flagged river decision has `heroHolding`; ✓ tests green; ✓ visual verification | — |
+
+### Stream C — `correctByArchetype` widening
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-C | P1 | THREADED into LSW-B1..B3 | **Archetype correctness widening** — each B tier commit ALSO authors `correctByArchetype` on decision branches where the audit declared a fish/reg/pro split. Not a separate session. | ✓ Every decision with audit-declared archetype split has `correctByArchetype`; ✓ `resolveBranchCorrect` fallback continues to hold for decisions without; ✓ walkthrough toolbar toggles flip badge coherently | — |
+
+### Stream D — Engine accuracy follow-on (3 sessions, parked until A+B1+B2 land)
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-D1 | P1 | BLOCKED by LSW-B2 | **Depth-2 injection** — wire `depth2Eval` → `evaluateGameTree` depth-2 rollout in `drillModeEngine.js`. Replace `HERO_BUCKET_TYPICAL_EQUITY` coarse table with real per-combo equity. Plumb `bailedOut` + `time-budget-bailout` caveat from depth-2. Remove `v1-simplified-ev` caveat when depth-2 was used. Re-baseline `engineAuthoredDrift.test.js` (sentinel constants may shift). | ✓ `v1-simplified-ev` caveat no longer appears on live panel (except when depth-2 bailed out); ✓ drill-mode EV within 5% of `evaluateGameTree` depth-2 output on a validation probe grid; ✓ tests green | — |
+| LSW-D2 | P2 | BLOCKED by LSW-D1 | **EV cache + engineVersion stamp (NEV-12 forward requirement from RT-118)** — in-memory cache keyed by `(bucketId, archetype, boardHash, pot, engineVersion)`; invalidate on version mismatch. | ✓ Cache hit rate >80% on full LinePicker → every-decision walk (one-time measurement); ✓ `engineVersion` bump invalidates cache (unit-tested); ✓ NEV-12 invariant passes | — |
+
+### Stream E — Polish (rolling, no separate tickets)
+
+Threaded into any B or D session: caveat copy pass, empty-bucket UX wording, low-sample UX crowding check, 1600×720 toolbar stress test after B1 ships.
+
+### Stream F — Content fixes from audit category-B findings (opened per audit as needed)
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-F1 | P1 | COMPLETE (2026-04-22) | **JT6 line content fixes from LSW-A1 audit** — shipped single commit: A1 (flop_root `why` rewrite, frames BB donk as live-pool exploit not nut-advantage-driven), A2 (raise-vs-fish sub-archetype nuance), A3 (TPTK-ish → top-pair-strong-kicker), A5 (river_checkback pot-odds 25% → 30% for 75% bet — math rewritten in why-section), A6 (node rename `river_brick_v_checkraises` → `turn_brick_v_checkraises`, 2 string changes), A7 (pot-accounting reconciled: node pot 108→184, child terminals 108→184 and 200→258; prompt "90bb total"→"112bb total"; why-section math: "47bb to win 155bb"→"75bb to call into 184bb pot, ~29% equity"), A8 (new terminal `terminal_river_overfold_bluffcatch` for river-fold path; river_checkback Fold branch rerouted), A9 (`terminal_flop_raise_folds_weak` pot 50→38.5 reflecting BB-calls-raise state with comment; NOT removed per plan — schema requires pot), A10 (`terminal_river_overbet_spew` pot kept at 78 for most-common reach path with comment documenting the multi-path ambiguity). **A4 (framework citation thin) deferred** per audit's own guidance ("do NOT pad frameworks"). D1 (live-pool donk divergence) added as POKER_THEORY.md §9.1. engineAuthoredDrift snapshot regenerated for the node-key rename. | ✓ All P1 shipped; ✓ P2/P3 shipped except A4 explicitly deferred; ✓ lineSchema validates all lines; ✓ postflop-drill 311/311 green; ✓ full suite 6257/6258 (1 pre-existing precisionAudit flake unrelated); ✓ build clean; ✓ LSW-A1 audit sign-off closed with linked commit (commit hash TBD at commit time) | Claude (main) 2026-04-22 |
+| LSW-F* | varies | LAZY | **Future content-fix batches per audit** — one F entry opened per audit that found category-B P0/P1 issues (our authored content disagrees with external truth). Single-commit batch applying the audit's findings to `lines.js` (and `frameworks.js` / `multiwayFrameworks.js` if framework citation changes). | ✓ Audit's category-B P0/P1 findings show all items shipped or explicitly waived with reasoning | — |
+
+### Stream G — Engine / system upgrades from audit category-C findings (new 2026-04-22, opened per finding)
+
+Audit-driven engine changes: when external validation reveals a number our *engine* produces is wrong, it routes here. This is the feedback loop the owner requested 2026-04-22 — "any deviations from our predictions should inform changes or upgrades to our system."
+
+Typical surfaces: `POP_CALLING_RATES`, `HERO_BUCKET_TYPICAL_EQUITY`, `ARCHETYPE_BUCKET_MULTIPLIERS`, fold-curve parameters, bucket taxonomy refinements, hand-classification edge cases.
+
+| ID | Pri | Status | Description | Accept Criteria | Claimed By |
+|----|-----|--------|-------------|-----------------|------------|
+| LSW-G1 | P2 | DEFERRED (blocked on solver access) | **Candidate: `HERO_BUCKET_TYPICAL_EQUITY.topPair` overstates on wet boards.** LSW-A1 surfaced: authored "~40%+ equity" claim for JT on T96ss vs BB's 3bet range is consistent with combinatorial estimation (37–44%) but far below our current `HERO_BUCKET_TYPICAL_EQUITY.topPair = 0.68` constant. This suggests the table needs board-texture conditioning, not just bucket-level values. **Blocked on:** access to GTO Wizard subscription or a direct PioSOLVER run to verify the exact equity distribution on T96ss in 3BP. | ✓ Solver-verified equity value; ✓ new board-conditioned table or multiplier lands; ✓ tests updated; ✓ LSW-A1 audit category-C row resolved | — |
+| LSW-G2 | P3 | DEFERRED (blocked on population data) | **Candidate: `ARCHETYPE_BUCKET_MULTIPLIERS.fish` may not shift bucket composition enough to reflect live-pool fish donk ranges.** LSW-A1 audit suggests fish-archetype donk ranges on wet middling boards contain more `middlePair` + `gutshot` + random-draw combos than our current multipliers reproduce. **Blocked on:** population-anchored fish-range dataset (live cash tracker data or published fish-pool study). | ✓ Revised multipliers backed by population data; ✓ archetypeRangeBuilder tests updated; ✓ LSW-A1 audit category-C row resolved | — |
+| LSW-G* | varies | LAZY | **Future engine change tickets from audit findings** — one G entry per category-C audit finding. Cites the originating audit + external source + specific engine change + test delta. Every G ticket re-baselines `engineAuthoredDrift.test.js` and may loop back to re-run the audit node it surfaced from. | ✓ Engine change shipped + tests green + drift snapshot re-baselined + originating audit's category-C row marked resolved | — |
+
+---
+
 ## IN_PROGRESS — Player Entry Overhaul (PEO)
 
 Owner-approved 2026-04-16. 4-session program to rebuild live-table player selection UX for mobile-landscape casino use. Plan: `C:\Users\chris\.claude\plans\fluttering-booping-puddle.md`. Charter: `.claude/projects/player-entry-overhaul.md`. Sequenced as S1 data-layer → S2 editor → S3 picker + wire entries → S4 cutover + cleanup. No feature flags per CLAUDE.md — staging handles rollout.
