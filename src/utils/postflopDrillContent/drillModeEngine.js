@@ -482,19 +482,63 @@ export const computePinnedComboEV = async ({
 // is pedagogically critical — vs overpair hero is dominated; vs same-TP the
 // answer depends on kicker. Merging them hides the distinction.
 
+// LSW-G5.1 (2026-04-22): precision-split the domination taxonomy so each
+// meaningful hand class is its own row. Rationale: on future streets, more
+// cards come — the equity delta between a nut flush draw and a gutshot is
+// ~6%/trial vs ~4%/trial and the nut card also BLOCKS villain's nut-flush
+// bluff-catching. Collapsing all draws into one row erases the planning
+// signal the student needs. "Overcards" splits by high card because an A
+// blocks villain's best bluffs (and best bluff-catching calls), while a
+// K-high hand's equity profile is different (more domination by AK, less
+// blocker pressure). Pair tier splits by kicker strength because vs hero's
+// TP, TPTK-vs-TP-weak is a ~20-point equity swing.
+//
+// Pair+draw composite classification (e.g., "middle pair with BDFD +
+// gutshot") is still collapsed under the primary made-hand shape — the
+// classifier returns strongest-first. Surfacing pair+draw as its own row
+// requires two-dimensional hand classification and is deferred to a v3
+// enhancement. Students looking at a middlePair row should mentally note
+// that some combos in that region have draws on top.
+//
+// Helper predicate for rank-filtered overcards groups. Returns true when the
+// combo's higher hole card matches one of the target ranks.
+const highCardIn = (ranks) => (c) => {
+  const r = Math.max(c.card1 >> 2, c.card2 >> 2);
+  return ranks.includes(r);
+};
+
 const DOMINATION_GROUPS = Object.freeze([
-  { id: 'premium',   label: 'Premium (SF/quads/boat)', types: ['straightFlush', 'quads', 'fullHouse'] },
-  { id: 'flush',     label: 'Flush',                   types: ['nutFlush', 'secondFlush', 'weakFlush'] },
-  { id: 'straight',  label: 'Straight',                types: ['nutStraight', 'nonNutStraight'] },
-  { id: 'set',       label: 'Set / Trips',             types: ['set', 'trips'] },
-  { id: 'twoPair',   label: 'Two Pair',                types: ['twoPair'] },
-  { id: 'overpair',  label: 'Overpair',                types: ['overpair'] },
-  { id: 'topPair',   label: 'Top Pair (other)',        types: ['topPairGood', 'topPairWeak'] },
-  { id: 'midLow',    label: 'Mid/Low Pair',            types: ['middlePair', 'bottomPair', 'weakPair'] },
-  { id: 'draws',     label: 'Direct Draws',            types: ['comboDraw', 'nutFlushDraw', 'nonNutFlushDraw', 'oesd', 'gutshot'] },
-  { id: 'overcards', label: 'Overcards',               types: ['overcards'] },
-  { id: 'backdoor',  label: 'Backdoor Only',           types: ['airBackdoorCombo', 'airBackdoorFlush', 'airBackdoorStraight'] },
-  { id: 'air',       label: 'Air',                     types: ['air'] },
+  { id: 'premium',         label: 'Premium (SF / Quads / Boat)', types: ['straightFlush', 'quads', 'fullHouse'] },
+  { id: 'nutFlush',        label: 'Nut Flush',                   types: ['nutFlush'] },
+  { id: 'secondFlush',     label: 'K-high Flush',                types: ['secondFlush'] },
+  { id: 'weakFlush',       label: 'Low Flush',                   types: ['weakFlush'] },
+  { id: 'nutStraight',     label: 'Nut Straight',                types: ['nutStraight'] },
+  { id: 'nonNutStraight',  label: 'Non-nut Straight',            types: ['nonNutStraight'] },
+  { id: 'set',             label: 'Set',                         types: ['set'] },
+  { id: 'trips',           label: 'Trips',                       types: ['trips'] },
+  { id: 'twoPair',         label: 'Two Pair',                    types: ['twoPair'] },
+  { id: 'overpair',        label: 'Overpair',                    types: ['overpair'] },
+  { id: 'tpStrong',        label: 'Top Pair Strong Kicker',      types: ['topPairGood'] },
+  { id: 'tpWeak',          label: 'Top Pair Weak Kicker',        types: ['topPairWeak'] },
+  { id: 'middlePair',      label: 'Middle Pair',                 types: ['middlePair'] },
+  { id: 'bottomPair',      label: 'Bottom Pair',                 types: ['bottomPair'] },
+  { id: 'weakPair',        label: 'Underpair (below board)',     types: ['weakPair'] },
+  { id: 'comboDraw',       label: 'Combo Draw (FD + straight)',  types: ['comboDraw'] },
+  { id: 'nutFlushDraw',    label: 'Nut Flush Draw',              types: ['nutFlushDraw'] },
+  { id: 'nonNutFlushDraw', label: 'Non-nut Flush Draw',          types: ['nonNutFlushDraw'] },
+  { id: 'oesd',            label: 'Open-Ended Straight Draw',    types: ['oesd'] },
+  { id: 'gutshot',         label: 'Gutshot',                     types: ['gutshot'] },
+  { id: 'overcardsAx',     label: 'Overcards (Ax)',              types: ['overcards'], comboFilter: highCardIn([12]) },
+  { id: 'overcardsKx',     label: 'Overcards (Kx)',              types: ['overcards'], comboFilter: highCardIn([11]) },
+  { id: 'overcardsQxJx',   label: 'Overcards (Qx / Jx)',         types: ['overcards'], comboFilter: highCardIn([10, 9]) },
+  { id: 'overcardsOther',  label: 'Overcards (other)',           types: ['overcards'], comboFilter: (c) => {
+    const r = Math.max(c.card1 >> 2, c.card2 >> 2);
+    return r < 9;  // Shouldn't trigger on most boards — included for completeness
+  } },
+  { id: 'backdoorCombo',   label: 'Backdoor Combo (BDFD+BDSD)',  types: ['airBackdoorCombo'] },
+  { id: 'backdoorFlush',   label: 'Backdoor Flush Draw Only',    types: ['airBackdoorFlush'] },
+  { id: 'backdoorStraight',label: 'Backdoor Straight Draw Only', types: ['airBackdoorStraight'] },
+  { id: 'air',             label: 'Air',                         types: ['air'] },
 ]);
 
 /**
@@ -518,11 +562,12 @@ export const classifyDomination = (equity) => {
  * preserves per-cell weight semantics so `handVsRange` sees villain's ranges
  * as weighted.
  */
-const partialRangeFromCombos = (combos, targetTypes) => {
+const partialRangeFromCombos = (combos, targetTypes, comboFilter = null) => {
   const grid = createRange();
   const targets = new Set(targetTypes);
   for (const c of combos) {
     if (!targets.has(c.handType)) continue;
+    if (comboFilter && !comboFilter(c)) continue;
     const r1 = c.card1 >> 2;
     const r2 = c.card2 >> 2;
     const suited = (c.card1 & 3) === (c.card2 & 3);
@@ -581,14 +626,15 @@ export const computeDominationMap = async ({
   // Run MC per group in parallel.
   const heroCards = [pinnedCombo.card1, pinnedCombo.card2];
   const jobs = DOMINATION_GROUPS.map(async (group) => {
-    const grid = partialRangeFromCombos(seg.combos, group.types);
+    const grid = partialRangeFromCombos(seg.combos, group.types, group.comboFilter);
     let groupWeight = 0;
     let groupCount = 0;
+    const targetTypes = new Set(group.types);
     for (const c of seg.combos) {
-      if (group.types.includes(c.handType)) {
-        groupWeight += c.weight;
-        groupCount++;
-      }
+      if (!targetTypes.has(c.handType)) continue;
+      if (group.comboFilter && !group.comboFilter(c)) continue;
+      groupWeight += c.weight;
+      groupCount++;
     }
     const weightPct = total > 0 ? (groupWeight / total) * 100 : 0;
     if (groupWeight <= 0) {
