@@ -55,6 +55,7 @@ SYSTEM_MODEL.md §4 references this file.
 | NEV-09 | `foldPct * potSize` without equity-when-called term | Overestimates bluffs, underestimates value bets | Test assertions on calcBluffEV | 2026-04-06 |
 | NEV-10 | Synchronous IndexedDB access on main thread | UI freezes on large datasets | Code review | 2026-04-06 |
 | NEV-11 | Unescaped dynamic data in `innerHTML` assignments | XSS in extension context (popup, sidebar) | Grep for innerHTML | 2026-04-06 |
+| NEV-12 | Aggregator/accumulator objects keyed by user-, IDB-, or extension-sourced string values must NOT use `const out = {};`; must use `Object.create(null)` + a `typeof key === 'string'` guard at insertion. Applies to: drill-attempt aggregators (RT-96 origin; RT-114 drillAnalytics), bucket/archetype aggregators (RT-112, RT-115), any future cache keyed on authored/replay data. | Prototype pollution via `__proto__`/`constructor`/`prototype` keys in tampered IDB records or malformed wire payloads can silently corrupt the JS runtime. | Grep for aggregator-shape `const X = {};\s*\n.*for .*\s+X\[` patterns outside this invariant's exempted callers. Enforced structurally by prototype-free assertions in aggregator tests (e.g., `archetypeRangeBuilder.test.js`, `bucketTaxonomy.test.js`, `drillAnalytics.test.js`). | 2026-04-21 |
 
 ---
 

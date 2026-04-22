@@ -56,6 +56,11 @@ export const EquityWorkerProvider = ({ children }) => {
 
           if (data.error) {
             pending.reject(new Error(data.error));
+          } else if (Array.isArray(data.results)) {
+            // RT-116 batch response — resolve with the full array. Per-item
+            // errors are delivered as `{ error }` entries inside `results`;
+            // the batch promise itself only rejects on whole-batch failure.
+            pending.resolve(data.results);
           } else {
             pending.resolve(data.result);
           }
@@ -149,11 +154,58 @@ export const EquityWorkerProvider = ({ children }) => {
     });
   }, [isWorkerHealthy]);
 
+  /**
+   * RT-116 — batch equity computation. Collapses N round-trips into 1
+   * postMessage. Per-request errors are returned inline as `{ error }` entries
+   * in the results array so one malformed combo does not fail the batch.
+   *
+   * @param {Array<{ heroCards: number[], villainRange: Float64Array, board: number[], options?: object }>} requests
+   * @returns {Promise<Array<{ result?: any, error?: string }>>}
+   */
+  const computeEquityBatch = useCallback((requests) => {
+    if (!Array.isArray(requests)) {
+      return Promise.reject(new Error('computeEquityBatch: requests must be an array'));
+    }
+    if (requests.length === 0) {
+      return Promise.resolve([]);
+    }
+    if (!workerRef.current) {
+      // Fallback to main-thread — still single-threaded but matches the
+      // batch return shape so callers don't branch on worker health.
+      return Promise.all(requests.map((r) =>
+        handVsRange(r.heroCards, r.villainRange, r.board, r.options)
+          .then((result) => ({ result }))
+          .catch((err) => ({ error: err && err.message ? err.message : String(err) })),
+      ));
+    }
+
+    return new Promise((resolve, reject) => {
+      const id = nextIdRef.current++;
+      pendingRef.current.set(id, { resolve, reject });
+
+      // Clone ranges before posting; transfer each buffer so the worker
+      // receives them zero-copy. Buffers are distinct across requests.
+      const transfer = [];
+      const serializedRequests = requests.map((r) => {
+        const rangeCopy = new Float64Array(r.villainRange);
+        transfer.push(rangeCopy.buffer);
+        return {
+          heroCards: r.heroCards,
+          board: r.board,
+          villainRange: rangeCopy,
+          options: r.options,
+        };
+      });
+      workerRef.current.postMessage({ id, batch: true, requests: serializedRequests }, transfer);
+    });
+  }, [isWorkerHealthy]);
+
   const value = useMemo(() => ({
     computeEquity,
+    computeEquityBatch,
     isWorkerReady,
     isWorkerHealthy,
-  }), [computeEquity, isWorkerReady, isWorkerHealthy]);
+  }), [computeEquity, computeEquityBatch, isWorkerReady, isWorkerHealthy]);
 
   return (
     <EquityWorkerContext.Provider value={value}>
