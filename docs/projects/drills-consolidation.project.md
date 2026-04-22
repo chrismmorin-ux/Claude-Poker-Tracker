@@ -1,9 +1,10 @@
 ---
 id: drills-consolidation
 name: Drills Consolidation — Unified Study view driven by persona + jobs-to-be-done
-status: proposed
+status: rejected
 priority: P2
 created: 2026-04-20
+closed: 2026-04-22
 backlog-id: DC
 ---
 
@@ -11,7 +12,12 @@ backlog-id: DC
 
 ## Status
 
-**Proposed.** Not yet approved to execute. This doc is the design pass requested on 2026-04-20.
+**REJECTED 2026-04-22.** Owner explicitly rejected the consolidation path. The four drill-views pattern (LessonsMode, EstimateMode, FrameworkMode, LineMode) is the supported architecture; no unified StudyView will be built. The associated backlog items (RT-93, RT-94, RT-97, RT-98, RT-99, RT-103) are marked REJECTED in `.claude/BACKLOG.md`. This charter is preserved for historical context only — do not reactivate without a fresh owner go-ahead and a concrete current-state bug it would fix.
+
+The non-layout-dependent items from the 2026-04-21 roundtable (RT-95 calculator registry, RT-96 prototype-pollution fix, RT-100/101/104/105 documentation, RT-102 dev observability) did ship and remain in place. The drill-view support layer is now codified in `.claude/context/DRILL_VIEWS.md`.
+
+<details>
+<summary>Original proposal text (archived 2026-04-22)</summary>
 
 **Blocking dependency:** Line Study (active, Phase 4 of 6). This proposal sequences all execution after Line Study closes. Restructuring the container mid-flight would churn LS without benefit.
 
@@ -306,3 +312,6 @@ All phases execute **after Line Study closes** (Phase 6 of line-study). Do not s
 | 2026-04-20 | Job-based nav, not street-based | JTBD analysis: 5 jobs × 2 streets = cleaner than 2 streets × 7 modes. Discovery follows intent, not material. |
 | 2026-04-20 | Shell restructure only; no Mode internal changes | Maximum user value at minimum risk. Each Mode is already battle-tested. |
 | 2026-04-20 | Single "Study" entry point | Two buttons on SessionsView for a single-user app is clutter. |
+
+
+</details>

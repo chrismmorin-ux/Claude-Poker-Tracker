@@ -42,32 +42,34 @@ Minimum viable compliance state: W0 + W1 + H1 = ~10 sessions. Stops at all-surfa
 
 ## REVIEW / COMPLETE — Drills Consolidation Roundtable (2026-04-20, follow-up 2026-04-21)
 
-6-expert audit on `docs/projects/drills-consolidation.project.md`. Owner directed on 2026-04-21 to fix items that improve the code without revamping the layout — six items shipped (RT-95, RT-96, RT-100, RT-101, RT-104, RT-105). Layout-dependent items (RT-93, RT-97, RT-98, RT-99) and structural-refactor items (RT-94, RT-103) held pending owner decision on whether to pursue consolidation.
+6-expert audit on `docs/projects/drills-consolidation.project.md`. Owner directed on 2026-04-21 to fix items that improve the code without revamping the layout — six items shipped (RT-95, RT-96, RT-100, RT-101, RT-104, RT-105). **2026-04-22: owner explicitly rejected the consolidation** — the 6 layout-dependent / consolidation-prep items (RT-93, RT-94, RT-97, RT-98, RT-99, RT-103) are now REJECTED rather than HELD. They can be re-opened if/when Scholar-persona goals change or StudyView is reactivated, but neither should be assumed; current drill-views pattern is the supported architecture. The `drills-consolidation.project.md` charter is also superseded by this rejection.
 
 | ID | Pri | Status | Description | Accept Criteria | Claimed By |
 |----|-----|--------|-------------|-----------------|------------|
 | RT-92 | P1 | COMPLETE | ~~Block drills-consolidation until Line Study closes~~ — naturally satisfied 2026-04-20 when Line Study Phases 1–6 all shipped. | ✓ LS closed; handoff archived | Shipped 2026-04-21 |
-| RT-93 | P1 | HELD | Fix design-doc defects before execution | Deferred: owner has not committed to executing consolidation. Revisit if/when consolidation is reactivated. | — |
-| RT-94 | P1 | HELD | Create `src/components/_shared/drillInternals/` barrel | Deferred: primary justification is consolidation prep; touches 15+ files with real breakage risk; no current-state bug it fixes. Revisit if consolidation is reactivated. | — |
+| RT-93 | P1 | REJECTED (2026-04-22) | ~~Fix design-doc defects before execution~~ — design-doc fixes are only meaningful if the doc drives execution. Owner rejected consolidation; doc is superseded. | N/A | — |
+| RT-94 | P1 | REJECTED (2026-04-22) | ~~Create `src/components/_shared/drillInternals/` barrel~~ — primary justification was consolidation prep. Touches 15+ files with real breakage risk and zero current-state bug payoff. Four drill-views pattern is the supported shape. | N/A | — |
 | RT-95 | P1 | COMPLETE | INV-08 violation: lessons.test.js imports from views/ | Shipped 2026-04-21. New `src/utils/drillContent/calculatorRegistry.js` exports `CALCULATOR_NAMES` + `isKnownCalculator`; lessons.test.js imports from registry; `LessonCalculators.jsx` imports `CALCULATOR_NAMES` and runs a dev-only parity check against its `CALCULATORS` object. | ✓ grep shows no `from.*views.*Calculators` in `src/utils/`; ✓ lessons.test.js + preflopDrillsStorage.test.js green (20/20); ✓ dev-mode drift warning if calculator surfaces diverge | Shipped 2026-04-21 |
 | RT-96 | P2 | COMPLETE | Prototype pollution in aggregateFrameworkAccuracy | Shipped 2026-04-21. Both `aggregateFrameworkAccuracy` (preflop) and `aggregatePostflopFrameworkAccuracy` now use `Object.create(null)` + `typeof id !== 'string'` guard. Tampered IDB records with non-string framework IDs are silently dropped rather than mutating `Object.prototype`. | ✓ Tests green (20/20 in preflopDrillsStorage.test.js); ✓ both aggregates hardened identically | Shipped 2026-04-21 |
-| RT-97 | P2 | HELD | Chrome budget audit at 1600×720 | Deferred: only relevant if StudyView is built. Partially addressed in DRILL_VIEWS.md §1 (current chrome documented at ~120 px, budget rule established at ≤180 px). | — |
-| RT-98 | P2 | HELD | Street-filter persistence + default spec | Deferred: layout-specific. | — |
-| RT-99 | P2 | HELD | Dev-preview route gating for StudyView scaffold | Deferred: only relevant if StudyView is built. | — |
+| RT-97 | P2 | REJECTED (2026-04-22) | ~~Chrome budget audit at 1600×720~~ — only relevant for StudyView. Current four-view pattern already documented in DRILL_VIEWS.md §1 (≤180 px budget, ~120 px actual) which is sufficient without StudyView. | N/A | — |
+| RT-98 | P2 | REJECTED (2026-04-22) | ~~Street-filter persistence + default spec~~ — layout-specific to StudyView. No action required on the four-view pattern. | N/A | — |
+| RT-99 | P2 | REJECTED (2026-04-22) | ~~Dev-preview route gating for StudyView scaffold~~ — StudyView is not being built. No scaffold, no gate needed. | N/A | — |
 | RT-100 | P2 | COMPLETE | Normalize aggregate return shapes (preflop vs postflop) | Shipped 2026-04-21. Shape difference (`avgDelta`/`deltaSamples` preflop-only) now documented inline in `postflopDrillsStorage.js` and in `.claude/context/DRILL_VIEWS.md` §4 with explicit caller-handling guidance for future unified consumers. | ✓ Both aggregates documented with identical / differ-list contract; ✓ caller guidance for merged consumers explicit | Shipped 2026-04-21 |
 | RT-101 | P2 | COMPLETE | drillType history key mismatch (recipe vs line) | Shipped 2026-04-21. Convention documented in `.claude/context/DRILL_VIEWS.md` §3: table of `drillType` → store → identifier field, with guidance for iterators (branch on type or fallback `matchupKey \|\| scenarioKey`). | ✓ Table covers all 6 drillType × store combinations; ✓ rule for adding a new drillType explicit | Shipped 2026-04-21 |
 | RT-102 | P3 | COMPLETE | SCREEN enum default fallback + dev observability | Shipped 2026-04-21. `PokerTracker.jsx` default case now emits `console.warn('[ViewRouter] unknown currentView=…')` in DEV before falling back to Stats. Makes stranded-screen state observable rather than silent. Two-step deprecation protocol (pre-delete sweep of prevScreen refs) and uiConstants.js comment pattern deferred to the next SCREEN removal. | ✓ Default case exists (was already present); ✓ dev warning on unknown values | Shipped 2026-04-21 (partial) |
-| RT-103 | P3 | HELD | ESLint rule: utils/ must not import from views/ | Deferred: project has no ESLint configuration; would require setting up the entire lint framework first. Reconsider when/if ESLint is introduced. | — |
+| RT-103 | P3 | REJECTED (2026-04-22) | ~~ESLint rule: utils/ must not import from views/~~ — project has no ESLint configuration and no plan to introduce one; ruleset-of-one is not worth standing up the entire lint framework. INV-08 is enforced via test-time discipline + INV-08.a exception for drill-content layer. | N/A | — |
 | RT-104 | P3 | COMPLETE | Hoisted-persistence-hook pattern doc | Shipped 2026-04-21. Documented in `.claude/context/DRILL_VIEWS.md` §2 with concrete wrong/right JSX examples and generalization to other IDB-loading hooks (`usePlayerTendencies`, `useTournamentPersistence`). | ✓ Doc exists with wrong-vs-right example; ✓ generalization rule stated | Shipped 2026-04-21 |
 | RT-105 | P3 | COMPLETE | Height-contract documentation | Shipped 2026-04-21. Documented in `.claude/context/DRILL_VIEWS.md` §1 with ASCII diagram of the height chain, ownership list, and ≤180 px chrome budget rule for the 1600×720 target. | ✓ Doc enumerates contract; ✓ chrome budget rule explicit | Shipped 2026-04-21 |
 
 **Net outcome of 2026-04-21 follow-up session:**
 - 6 items shipped (RT-95, RT-96, RT-100, RT-101, RT-102, RT-104, RT-105) — hardening + documentation, zero functional change
 - 1 item naturally satisfied (RT-92)
-- 6 items held pending owner decision on consolidation (RT-93, RT-94, RT-97, RT-98, RT-99, RT-103)
+- ~~6 items held pending owner decision on consolidation (RT-93, RT-94, RT-97, RT-98, RT-99, RT-103)~~
 - New file: `src/utils/drillContent/calculatorRegistry.js`
 - New file: `.claude/context/DRILL_VIEWS.md` (consolidated reference for four drill-view patterns)
 - Tests: 20/20 affected tests green; one pre-existing precision-audit failure unrelated to this work
+
+**2026-04-22 owner decision: REJECTED.** Owner explicitly rejected the drills-consolidation / StudyView path. The 6 previously-HELD items (RT-93, RT-94, RT-97, RT-98, RT-99, RT-103) moved to REJECTED. The four drill-views pattern (LessonsMode, EstimateMode, FrameworkMode, LineMode) is the supported architecture. `docs/projects/drills-consolidation.project.md` is superseded — the charter can be archived. Roundtable section is now fully closed.
 
 ---
 
