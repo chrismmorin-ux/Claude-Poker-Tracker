@@ -56,6 +56,11 @@ const CALL_RANGES = {
   'BTN_vs_MP2':   '22-TT,ATs-AJs,KTs+,QTs+,JTs,T9s,98s,87s,76s,AJo-AQo,KQo',
   // SB flat vs BTN (rare — mostly 3bet or fold; narrow call range)
   'SB_vs_BTN':    '22-JJ,ATs-AQs,A5s-A2s,KTs+,QTs+,JTs,T9s,98s,AJo-AQo',
+  // BTN calling a BB 3-bet (used by the btn-vs-bb-3bp-ip-wet-t96 line).
+  // Semantically a "call-of-3bet" range rather than cold-call; kept in the
+  // same table for v1 to avoid a schema expansion. Excludes the 4bet portion
+  // (AKs, AKo, QQ+ 4bet instead) and the true junk that folds.
+  'BTN_vs_BB':    '22-JJ,ATs-AQs,A5s-A4s,KTs+,QTs+,JTs,T9s,98s,AJo-AQo,KQo',
 };
 
 // 3bet ranges (in-position and out-of-position) — linear + polar mix

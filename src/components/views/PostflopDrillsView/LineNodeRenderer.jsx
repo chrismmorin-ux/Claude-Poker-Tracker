@@ -16,6 +16,7 @@ import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 // crosses drill-view directories (Preflop → Postflop). Acceptable for now;
 // proper consolidation into `_shared/drillInternals/` tracked under RT-94.
 import { CALCULATORS } from '../PreflopDrillsView/LessonCalculators';
+import { BucketEVPanel } from './BucketEVPanel';
 
 export const LineNodeRenderer = ({
   node,
@@ -27,6 +28,9 @@ export const LineNodeRenderer = ({
   canAdvance,
   isTerminal,
 }) => {
+  const hasBucketCandidates =
+    Array.isArray(node?.heroHolding?.bucketCandidates) &&
+    node.heroHolding.bucketCandidates.length > 0;
   return (
     <div className="space-y-5">
       {/* Node header */}
@@ -51,6 +55,13 @@ export const LineNodeRenderer = ({
       {/* Hero holding (RT-106 schema v2 — hand-level teaching anchor) */}
       {node.heroHolding && (
         <HeroHoldingRow heroHolding={node.heroHolding} />
+      )}
+
+      {/* Bucket-EV panel — first user-visible payoff of RT-106..118. Mounts
+          only when node declares bucketCandidates; reveal-on-click to
+          respect the 1600×720 viewport. */}
+      {hasBucketCandidates && (
+        <BucketEVPanel node={node} line={line} />
       )}
 
       {/* Sections */}
