@@ -11,6 +11,7 @@ import { FRAMEWORKS } from '../../../utils/postflopDrillContent/frameworks';
 import { archetypeRangeFor, contextLabel } from '../../../utils/postflopDrillContent/archetypeRanges';
 import { parseFlopString } from '../../../utils/postflopDrillContent/scenarioLibrary';
 import { parseBoard } from '../../../utils/pokerCore/cardParser';
+import { resolveBranchCorrect } from '../../../utils/postflopDrillContent/lineSchema';
 import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 // RT-113 — wire ComputeSection to the shared calculator registry. The import
 // crosses drill-view directories (Preflop → Postflop). Acceptable for now;
@@ -21,6 +22,7 @@ import { BucketEVPanel } from './BucketEVPanel';
 export const LineNodeRenderer = ({
   node,
   line,
+  archetype,
   revealed,
   selectedBranchIndex,
   onSelectBranch,
@@ -61,7 +63,7 @@ export const LineNodeRenderer = ({
           only when node declares bucketCandidates; reveal-on-click to
           respect the 1600×720 viewport. */}
       {hasBucketCandidates && (
-        <BucketEVPanel node={node} line={line} />
+        <BucketEVPanel node={node} line={line} archetype={archetype} />
       )}
 
       {/* Sections */}
@@ -75,6 +77,7 @@ export const LineNodeRenderer = ({
       {node.decision && (
         <DecisionPanel
           decision={node.decision}
+          archetype={archetype}
           revealed={revealed}
           selectedBranchIndex={selectedBranchIndex}
           onSelectBranch={onSelectBranch}
@@ -305,7 +308,7 @@ const ComputeSection = ({ section }) => {
 
 // ---------- Decision ---------- //
 
-const DecisionPanel = ({ decision, revealed, selectedBranchIndex, onSelectBranch, onAdvance, canAdvance }) => (
+const DecisionPanel = ({ decision, archetype, revealed, selectedBranchIndex, onSelectBranch, onAdvance, canAdvance }) => (
   <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
     <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">Decision</div>
     <div className="text-base font-bold text-white mb-3">{decision.prompt}</div>
@@ -315,6 +318,7 @@ const DecisionPanel = ({ decision, revealed, selectedBranchIndex, onSelectBranch
           key={i}
           branch={branch}
           index={i}
+          archetype={archetype}
           selected={selectedBranchIndex === i}
           revealed={revealed}
           onSelect={() => onSelectBranch(i)}
@@ -335,11 +339,21 @@ const DecisionPanel = ({ decision, revealed, selectedBranchIndex, onSelectBranch
   </div>
 );
 
-const BranchButton = ({ branch, index, selected, revealed, onSelect }) => {
+const BranchButton = ({ branch, index, archetype, selected, revealed, onSelect }) => {
+  // Archetype-aware correctness (RT-107). Falls back to flat `correct` when
+  // branch lacks correctByArchetype or archetype isn't declared on it.
+  const branchCorrect = resolveBranchCorrect(branch, archetype);
+  // Indicator that correctness for this branch is archetype-sensitive —
+  // used for a subtle "(vs fish)" / "(vs pro)" hint on the badge.
+  const hasArchetypeOverride =
+    archetype
+    && branch.correctByArchetype
+    && typeof branch.correctByArchetype[archetype] === 'boolean';
+
   const base = 'w-full text-left rounded-lg border transition-colors px-3 py-2';
   let colors = 'bg-gray-900/40 border-gray-700 hover:bg-gray-800 hover:border-gray-600';
   if (revealed) {
-    if (branch.correct) {
+    if (branchCorrect) {
       colors = 'bg-emerald-900/30 border-emerald-700 text-gray-200';
     } else if (selected) {
       colors = 'bg-rose-900/30 border-rose-700 text-gray-200';
@@ -356,10 +370,12 @@ const BranchButton = ({ branch, index, selected, revealed, onSelect }) => {
           <span className="text-gray-500 mr-2">{String.fromCharCode(65 + index)}.</span>
           {branch.label}
         </span>
-        {revealed && branch.correct && (
-          <span className="text-[10px] uppercase tracking-wide text-emerald-400 font-semibold">correct</span>
+        {revealed && branchCorrect && (
+          <span className="text-[10px] uppercase tracking-wide text-emerald-400 font-semibold">
+            correct{hasArchetypeOverride ? ` vs ${archetype}` : ''}
+          </span>
         )}
-        {revealed && !branch.correct && selected && (
+        {revealed && !branchCorrect && selected && (
           <span className="text-[10px] uppercase tracking-wide text-rose-400 font-semibold">your pick</span>
         )}
       </div>

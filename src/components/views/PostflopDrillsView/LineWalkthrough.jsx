@@ -20,10 +20,19 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { LineStateTracker } from './LineStateTracker';
 import { LineNodeRenderer } from './LineNodeRenderer';
 import { LineBranchBreadcrumb } from './LineBranchBreadcrumb';
+import { listKnownArchetypes } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
+import { resolveBranchCorrect } from '../../../utils/postflopDrillContent/lineSchema';
+
+const ARCHETYPE_LABELS = { fish: 'Fish', reg: 'Reg', pro: 'Pro' };
 
 export const LineWalkthrough = ({ line, onExit, onAttempt }) => {
   const [path, setPath] = useState([{ nodeId: line.rootId, branchIndex: null }]);
   const [revealedAt, setRevealedAt] = useState({}); // nodeId -> branchIndex chosen
+  // Archetype state lives at the walkthrough level so the toggle drives both
+  // the BucketEVPanel recompute AND the per-branch correctness badge in
+  // LineNodeRenderer. Default 'reg' is the archetype-agnostic baseline;
+  // students opting into fish/pro see how the answer changes.
+  const [archetype, setArchetype] = useState('reg');
 
   const currentEntry = path[path.length - 1];
   const currentNode = line.nodes[currentEntry.nodeId];
@@ -36,8 +45,13 @@ export const LineWalkthrough = ({ line, onExit, onAttempt }) => {
       const branch = currentNode.decision.branches[branchIndex];
       setRevealedAt((prev) => ({ ...prev, [currentNode.id]: branchIndex }));
 
+      // Archetype-aware correctness: use correctByArchetype[archetype] when
+      // available, else fall back to the flat `correct`. `correctLabels` lists
+      // branches currently considered correct under the active archetype, so
+      // the UI's reveal feedback matches the toggle.
+      const correct = resolveBranchCorrect(branch, archetype);
       const correctLabels = currentNode.decision.branches
-        .filter((b) => b.correct)
+        .filter((b) => resolveBranchCorrect(b, archetype))
         .map((b) => b.label);
 
       if (onAttempt) {
@@ -45,15 +59,18 @@ export const LineWalkthrough = ({ line, onExit, onAttempt }) => {
           lineId: line.id,
           nodeId: currentNode.id,
           branchLabel: branch.label,
-          correct: !!branch.correct,
+          correct,
           correctLabels,
           frameworks: currentNode.frameworks || [],
           board: currentNode.board,
           setup: line.setup,
+          // RT-114 — attempt records carry archetype so per-archetype
+          // accuracy stats can be computed via drillAnalytics.
+          archetypeId: archetype,
         });
       }
     },
-    [currentNode, revealedAt, onAttempt, line.id, line.setup],
+    [currentNode, revealedAt, onAttempt, line.id, line.setup, archetype],
   );
 
   const handleAdvance = useCallback(() => {
@@ -106,10 +123,32 @@ export const LineWalkthrough = ({ line, onExit, onAttempt }) => {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Breadcrumb + exit */}
+      {/* Breadcrumb + archetype toggle + exit */}
       <div className="flex items-center justify-between mb-3 flex-none">
         <LineBranchBreadcrumb line={line} path={path} onRetryFromIndex={handleRetryFromIndex} />
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-1 pr-2 mr-1 border-r border-gray-700"
+            title="Villain archetype — shifts bucket EV + which branch is correct for this archetype"
+          >
+            <span className="text-[10px] uppercase tracking-wide text-gray-500 mr-1">Villain:</span>
+            {listKnownArchetypes().map((a) => {
+              const active = a === archetype;
+              return (
+                <button
+                  key={a}
+                  onClick={() => setArchetype(a)}
+                  className={`px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+                    active
+                      ? 'bg-teal-700/40 border-teal-600 text-teal-100'
+                      : 'bg-gray-900/50 border-gray-700 text-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {ARCHETYPE_LABELS[a] || a}
+                </button>
+              );
+            })}
+          </div>
           <button
             onClick={handleRestart}
             className="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs px-3 py-1.5 rounded transition-colors"
@@ -133,6 +172,7 @@ export const LineWalkthrough = ({ line, onExit, onAttempt }) => {
             <LineNodeRenderer
               node={currentNode}
               line={line}
+              archetype={archetype}
               revealed={isRevealed}
               selectedBranchIndex={selectedBranchIndex}
               onSelectBranch={handleSelectBranch}

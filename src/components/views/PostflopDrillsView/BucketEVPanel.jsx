@@ -12,10 +12,10 @@
  * state + archetype selection.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { evaluateDrillNode } from '../../../utils/postflopDrillContent/drillModeEngine';
 import { isKnownBucket } from '../../../utils/postflopDrillContent/bucketTaxonomy';
-import { listKnownArchetypes } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
+import { isKnownArchetype } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
 import { archetypeRangeFor } from '../../../utils/postflopDrillContent/archetypeRanges';
 import { parseBoard } from '../../../utils/pokerCore/cardParser';
 
@@ -119,12 +119,6 @@ export const computeBucketEVs = async ({ node, line, archetype }) => {
 // Presentational component
 // =============================================================================
 
-const ARCHETYPE_LABELS = {
-  fish: 'Fish',
-  reg: 'Reg',
-  pro: 'Pro',
-};
-
 const formatEV = (ev) => {
   if (!Number.isFinite(ev)) return '—';
   const sign = ev >= 0 ? '+' : '';
@@ -148,13 +142,19 @@ const CAVEAT_LABELS = {
   'time-budget-bailout': 'partial result',
 };
 
-export const BucketEVPanel = ({ node, line }) => {
+/**
+ * Controlled panel: `archetype` comes from the parent LineWalkthrough so a
+ * single top-bar toggle drives both this panel AND the BranchButton
+ * correctness badges (RT-107). Falls back to 'reg' if archetype prop is
+ * missing / unknown.
+ */
+export const BucketEVPanel = ({ node, line, archetype }) => {
   const candidates = node?.heroHolding?.bucketCandidates;
   const hasCandidates = Array.isArray(candidates) && candidates.length > 0;
+  const safeArchetype = isKnownArchetype(archetype) ? archetype : 'reg';
 
   const [revealed, setRevealed] = useState(false);
   const [loading, setLoading]   = useState(false);
-  const [archetype, setArchetype] = useState('fish');
   const [data, setData] = useState(null);
 
   const runFor = useCallback(async (arch) => {
@@ -171,47 +171,34 @@ export const BucketEVPanel = ({ node, line }) => {
 
   const handleReveal = useCallback(() => {
     setRevealed(true);
-    runFor(archetype);
-  }, [archetype, runFor]);
+    runFor(safeArchetype);
+  }, [safeArchetype, runFor]);
 
-  const handleArchetypeChange = useCallback((next) => {
-    setArchetype(next);
-    if (revealed) runFor(next);
-  }, [revealed, runFor]);
+  // Recompute when the controlling archetype changes AFTER first reveal. The
+  // first reveal handler already kicks off the initial run for the current
+  // archetype; this effect keeps the table coherent with the toolbar toggle
+  // on subsequent changes.
+  useEffect(() => {
+    if (revealed) runFor(safeArchetype);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeArchetype]);
 
   if (!hasCandidates) return null;
 
   return (
     <div className="rounded-lg border border-teal-800/60 bg-teal-900/10 p-4 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-baseline justify-between">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-teal-300/90">
             Bucket-level EV
           </div>
           <div className="text-xs text-gray-400 mt-0.5">
-            How does the answer change with your hand class and villain type?
+            How does the answer change with your hand class?
           </div>
         </div>
         {revealed && (
-          <div className="flex gap-1">
-            {listKnownArchetypes().map((a) => {
-              const active = a === archetype;
-              return (
-                <button
-                  key={a}
-                  onClick={() => handleArchetypeChange(a)}
-                  disabled={loading}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
-                    active
-                      ? 'bg-teal-700/40 border-teal-600 text-teal-100'
-                      : 'bg-gray-900/50 border-gray-700 text-gray-300 hover:border-gray-500'
-                  } disabled:opacity-50`}
-                  title={`Villain archetype: ${ARCHETYPE_LABELS[a] || a}`}
-                >
-                  {ARCHETYPE_LABELS[a] || a}
-                </button>
-              );
-            })}
+          <div className="text-[10px] uppercase tracking-wide text-gray-500">
+            vs {safeArchetype} · change archetype in the toolbar above
           </div>
         )}
       </div>
@@ -221,7 +208,7 @@ export const BucketEVPanel = ({ node, line }) => {
           onClick={handleReveal}
           className="w-full bg-teal-700 hover:bg-teal-600 text-white text-sm font-medium px-3 py-2 rounded transition-colors"
         >
-          Reveal bucket EVs
+          Reveal bucket EVs vs {safeArchetype}
         </button>
       )}
 

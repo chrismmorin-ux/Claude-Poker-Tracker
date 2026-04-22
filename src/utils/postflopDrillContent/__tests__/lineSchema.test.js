@@ -8,6 +8,7 @@ import {
   POT_TYPES,
   VILLAIN_ACTION_KINDS,
   SCHEMA_VERSION,
+  resolveBranchCorrect,
 } from '../lineSchema';
 
 // ---------- Fixture builders ---------- //
@@ -528,5 +529,44 @@ describe('Decision.branches[].correctByArchetype (RT-107)', () => {
     });
     const { ok } = validateLine(line);
     expect(ok).toBe(true);
+  });
+});
+
+describe('resolveBranchCorrect', () => {
+  it('returns flat correct when no archetype is active', () => {
+    expect(resolveBranchCorrect({ correct: true })).toBe(true);
+    expect(resolveBranchCorrect({ correct: false })).toBe(false);
+  });
+
+  it('returns flat correct when branch has no correctByArchetype', () => {
+    expect(resolveBranchCorrect({ correct: true }, 'fish')).toBe(true);
+    expect(resolveBranchCorrect({ correct: false }, 'pro')).toBe(false);
+  });
+
+  it('returns archetype-specific value when correctByArchetype[archetype] is defined', () => {
+    const branch = { correct: true, correctByArchetype: { fish: false, reg: true, pro: true } };
+    expect(resolveBranchCorrect(branch, 'fish')).toBe(false);
+    expect(resolveBranchCorrect(branch, 'reg')).toBe(true);
+    expect(resolveBranchCorrect(branch, 'pro')).toBe(true);
+  });
+
+  it('falls back to flat correct when archetype not declared in correctByArchetype', () => {
+    // Branch declares only fish; asking for pro should fall back to flat correct.
+    const branch = { correct: true, correctByArchetype: { fish: false } };
+    expect(resolveBranchCorrect(branch, 'fish')).toBe(false);
+    expect(resolveBranchCorrect(branch, 'pro')).toBe(true);
+    expect(resolveBranchCorrect(branch, 'whale')).toBe(true);
+  });
+
+  it('handles null/undefined branch gracefully', () => {
+    expect(resolveBranchCorrect(null)).toBe(false);
+    expect(resolveBranchCorrect(undefined, 'fish')).toBe(false);
+  });
+
+  it('ignores non-boolean correctByArchetype entries (schema would reject them, but be defensive)', () => {
+    const branch = { correct: true, correctByArchetype: { fish: 'truthy-string' } };
+    // Schema validator would reject this at validate time; resolver falls
+    // back to flat correct when the entry is non-boolean.
+    expect(resolveBranchCorrect(branch, 'fish')).toBe(true);
   });
 });

@@ -467,6 +467,27 @@ export const validateLine = (line) => {
 };
 
 /**
+ * Resolve a branch's correctness against an optional archetype toggle.
+ *
+ * Fallback contract (RT-107):
+ *   - If `branch.correctByArchetype[archetype]` is defined, return it.
+ *   - Otherwise return `branch.correct` (the flat boolean is the default
+ *     answer; new archetype-aware content opts in per-branch).
+ *
+ * @param {{correct: boolean, correctByArchetype?: Record<string, boolean>}} branch
+ * @param {string} [archetype]
+ * @returns {boolean}
+ */
+export const resolveBranchCorrect = (branch, archetype) => {
+  if (!branch) return false;
+  if (archetype && isPlainObject(branch.correctByArchetype)
+      && typeof branch.correctByArchetype[archetype] === 'boolean') {
+    return branch.correctByArchetype[archetype];
+  }
+  return !!branch.correct;
+};
+
+/**
  * Summary stats for a line — reachable count, decision/terminal split,
  * stub branches (branches whose nextId is null AND whose target node is
  * absent). Used by the UI's completeness badge.
