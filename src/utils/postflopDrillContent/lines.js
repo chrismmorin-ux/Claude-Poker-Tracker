@@ -754,6 +754,12 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             label: 'Call',
             nextId: 'turn_after_call',
             correct: true,
+            // RT-107 exemplar — the "typical-villain" answer (reg/pro) is
+            // to call. Vs a sticky fish whose donk range is wider and
+            // stickier, raising for thin value can dominate — see the
+            // Raise branch below. Toggle archetype in the UI (post-RT-111)
+            // to see which branch turns green under each villain type.
+            correctByArchetype: { fish: false, reg: true, pro: true },
             rationale:
               'Correct. TPTK-ish with a backdoor flush has too much '
               + 'equity and showdown value to fold. Raising punishes BB\'s '
@@ -765,6 +771,12 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             label: 'Raise to 9bb',
             nextId: 'terminal_flop_raise_folds_weak',
             correct: false,
+            // RT-107 exemplar — vs a sticky fish who donks wide with weak
+            // pairs and won\'t fold TPTK / overpair to the raise, raising
+            // for thin value extracts chips the call-line leaves on the
+            // table. Vs a reg or pro the rationale below applies (raising
+            // turns TPTK into a bluff vs villain\'s polarized donk range).
+            correctByArchetype: { fish: true, reg: false, pro: false },
             rationale:
               'Raise-folds our own equity. Against BB\'s polarized donk '
               + 'range, raising folds out the bluffs we beat (A-high '
@@ -777,6 +789,9 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
             label: 'Fold',
             nextId: 'terminal_flop_overfold',
             correct: false,
+            // Fold is wrong across every archetype. No `correctByArchetype`
+            // needed — flat `correct: false` is authoritative by RT-107\'s
+            // fallback rule when the field is absent.
             rationale:
               'Structural overfold. JTs type hands have ~40%+ equity '
               + 'against BB\'s 3bet range on T96ss — folding a hand this '
