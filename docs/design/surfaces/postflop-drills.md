@@ -30,9 +30,11 @@ Postflop range-vs-board + line-study trainer. Six tabs. Shipped today: **Line** 
 Primary:
 - `JTBD-DS-43` 10-minute quick drill (Line: pick by SPI)
 - `JTBD-DS-44` correct-answer reasoning — built into Line node reveals
+- `JTBD-DS-48` understand villain's range composition as decision driver — served by `bucket-ev-panel-v2` P1 post-Path-2 restructure
+- `JTBD-DS-49` weighted-total EV decomposition — served by `bucket-ev-panel-v2` P2 (`WeightedTotalTable`)
+- `JTBD-DS-50` walk a hand line branch-by-branch (Line Study — promoted from implicit 2026-04-22)
+- `JTBD-DS-51` range-shape recognition (Explorer + Line per-node decomposition — promoted from implicit 2026-04-22)
 - `JTBD-MH-06` multiway range-vs-ranges equity on flop (Explorer + Line multiway)
-- (line-study JTBD, implicit) walk a hand line branch-by-branch with consequences shown
-- (range-shape recognition, implicit) understand villain's range before deciding how to play
 
 Secondary:
 - `JTBD-MH-09` SPR-aware strategy cues — surfaced as SPI annotations
@@ -43,6 +45,7 @@ Secondary:
 
 - [Scholar (drills only)](../personas/core/scholar-drills-only.md) — primary
 - [Study block](../personas/situational/study-block.md) — situational primary
+- [First-principles learner](../personas/situational/first-principles-learner.md) — situational primary for the bucket-ev-panel-v2 restructure (range-first cognition habit formation)
 - [Apprentice](../personas/core/apprentice-student.md) — primary learner
 - [Rounder](../personas/core/rounder.md), [Hybrid Semi-Pro](../personas/core/hybrid-semi-pro.md) — session warm-up + targeted leak work
 - [Coach](../personas/core/coach.md) — could assign Line Study lines as homework (proposed CO-51)
@@ -140,3 +143,4 @@ Secondary:
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
+- 2026-04-22 — JTBD list updated post-LSW-J1: DS-48/49 added as Active (served by `bucket-ev-panel-v2`); DS-50/51 promoted from "implicit" to explicit atlas references.

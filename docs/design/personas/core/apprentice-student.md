@@ -53,6 +53,7 @@ Paying a coach or self-studying with a small friend group. Improving, serious ab
 
 - [Flag-a-hand in session](../situational/flag-for-coach.md) (placeholder)
 - [Drill assignment](../situational/study-block.md)
+- [First-principles learner](../situational/first-principles-learner.md) — the range-first-cognition-habit-formation window specifically
 
 ## Related JTBD
 

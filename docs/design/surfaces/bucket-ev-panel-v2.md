@@ -87,7 +87,7 @@ The v2 panel composes from small primitives. Each primitive is independent, inde
   - Sub-total comparison between value vs bluff is the primary teaching payload for V5.
 - **`thin-value`** — rows grouped into `HANDS THAT BEAT YOU` (relation ∈ {crushed, dominated}) and `HANDS THAT PAY YOU` (relation ∈ {favored, dominating}). The ratio `beatWeight / payWeight` is rendered as `valueBeatRatio` in the output (see contract below) and is the primary teaching payload for V6.
 
-**Visible-row cap.** Default 6 visible rows. Groups beyond 6 collapsed behind a single "Show all N groups (M% of range)" disclosure row. The cap keeps P1 above fold at 1600×720 (see Q4 resolution) and preserves the invariant (villain decomposition primary-positioned).
+**Visible-row cap (responsive).** Default at ≥1200px viewports: 6 visible rows. At <1200px: still 6. At <900px: cap drops to 4. At <640px: cap drops to 3. Groups beyond the cap collapsed behind a single `"Show all N groups (M% of range)"` disclosure row (Gate-4 F04 — unified with P2's column disclosure pattern). The cap keeps P1 above fold across the viewport range (Gate-4 F02 + H-ML01) and preserves I-DM-1 (villain decomposition primary-positioned).
 
 **Column-header annotation for archetype invariance.** The `weight %` column header carries the small-text note `(base range — unaffected by archetype)` with a `(?)` tap for the why. This is the v1-ship mitigation for axis-7 deferral: students who switch archetypes and notice weightPct unchanged are preempted by the explicit annotation rather than discovering the "inconsistency" via support tickets.
 
@@ -131,7 +131,7 @@ Fold            —             | —          | —        | —         |   0.
 
 Rows read left-to-right as the arithmetic the student needs to see.
 
-**Visible-column cap.** Max 5 per-group columns + Total. Groups beyond the top-4-by-weight collapse into `Other (+N)` aggregated column. Full expansion on tap. The teaching payload is the arithmetic *structure*, not every individual term — "Other" containing a 6% tail doesn't undermine the pedagogy, and the 12-column edge case doesn't collapse readability.
+**Visible-column cap (responsive, Gate-4 F04 unified pattern).** At ≥1200px viewports: max 5 per-group columns + Total. Groups beyond top-4-by-weight collapse behind a `"Show all N terms"` disclosure (same pattern as P1's row-overflow — Gate-4 F04 unification). At <1200px: downgrade to 3 columns (`Beats you / Pays you / Other` + Total). At <900px: downgrade to vertical layout (actions in rows, per-group contributions in sub-rows, expandable per action). Teaching payload is the arithmetic *structure*; the responsive degradation preserves that across viewport sizes without losing readability.
 
 **Engine dependency (critical).** `P2` requires `actionEVs[].perGroupContribution` from `computeBucketEVsV2`. This is **net-new computation**, not an additive rename of v1's output — the v1 engine has two parallel pipelines (equity via `handVsRange`, EV via coarse `HERO_BUCKET_TYPICAL_EQUITY`) that never cross. P2 requires the join. See the data contract section for `computeDecomposedActionEVs` signature; this is a new function shipped in Commit 2, not a reshape of `computeBucketEVs`.
 
@@ -198,6 +198,18 @@ P5 renders the array as a horizontal trace ("flop-donk-called → turn-check →
 
 Clickable → modal with detailed methodology. Default: one-line summary.
 
+### P6b — `GlossaryBlock` (promoted from Q1 per Gate-4 F01)
+
+**What it is.** A first-class inline glossary addressing H-N06 (recognition over recall) + H-N10 (help) for the bucket-taxonomy vocabulary. First-principles-learner persona explicitly flags the vocabulary gap.
+
+**Default render.** A 1-line affordance at the bottom of the panel (directly above P6): `"Bucket definitions ▸ (showing N labels on this node)"`.
+
+**Expanded render.** On tap, inline-expands (not modal — preserves scroll context) into a two-column list: left column = `displayName` label, right column = 1-sentence definition pulled from `BUCKET_TAXONOMY[id].definition` (new required field on taxonomy entries). Only labels currently rendered on the node appear — the glossary scopes to what the student is looking at.
+
+**Per-label inline tap (F14 constraint).** Every bucket label rendered in P1 + P2 is itself tappable and shows a tooltip / inline popover with the same 1-sentence definition. **Tap area ≥ 44 DOM-px** — achieved by extending the clickable region to include the surrounding cell padding, not just the text's bounding box. Enforced via a shared `<BucketLabel labelId="topPairGood" />` component used by P1 and P2 so the tap-area rule is centralized.
+
+**Label display rule (H-N02).** All P1 + P2 + P6b bucket-label text renders via `BUCKET_TAXONOMY[id].displayName` (e.g., "Top pair, good kicker"), NOT the code-id (`topPairGood`). Authored content may still reference code-ids; rendering must resolve.
+
 ### P7 — `PerVillainDecomposition` (MW extension seam)
 
 **What it is.** For MW variants (axis 4), renders one `VillainRangeDecomposition` block per villain, vertically stacked, with a combined "cascading fold probability" footer that shows the multi-villain math.
@@ -216,14 +228,14 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V1 — HU villain-first flop (donk / cbet / check-back-then-probe)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P6 + P6b
 **Example line-node:** `btn-vs-bb-3bp-ip-wet-t96 / flop_root` (JT6 donk)
 **Hero actions:** typically call / raise / fold (3 branches)
 **v1 ship:** ✅ — this is the current JT6 flop_root retrofitted; zero feature additions beyond primitive ordering + P4 strip.
 
 ### V2 — HU hero-first flop (villain checked)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P6 + P6b
 **Example line-node:** `btn-vs-bb-srp-ip-dry-q72r / flop_root` (Q72r, BB checked)
 **Hero actions:** typically cbet 33% / cbet 75% / check (3 branches)
 **What P1 shows:** villain's **continuing range** decomposed (what villain would check-call / check-raise with). Crucially, this is a *narrower* range than "villain's flat-3bet range" — it's the subset that reached this node.
@@ -231,14 +243,14 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V3 — HU villain-first turn (barrel on previous-called street)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 (street narrowing) + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 (street narrowing) + P6 + P6b
 **Example line-node:** `btn-vs-bb-3bp-ip-wet-t96 / turn_brick_v_checkraises`
 **Key new primitive:** P5 — shows how villain's range narrowed from flop-donk-range to flop-donk-called-hero-raise-range.
 **v1 ship:** ✅
 
 ### V4 — HU hero-first turn (villain checked twice)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6 + P6b
 **Example line-node:** `btn-vs-bb-3bp-ip-wet-t96 / turn_after_call` (brick turn, BB checked)
 **What P1 shows:** villain's **range-that-called-flop-and-checked-turn** — materially condensed.
 **Hero actions:** bet-various / check-back / overbet
@@ -246,7 +258,7 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V5 — River bluff-catch (hero faces bet, hero hand is bluff-catcher)
 
-**Primitives:** P1(bluff-catch mode) + P2 + P4 + P3(single-combo) + P5 + P6
+**Primitives:** P1(bluff-catch mode) + P2 + P4 + P3(single-combo) + P5 + P6 + P6b
 **Trigger:** `node.decision.kind = 'bluff-catch'`
 **Example line-node:** `btn-vs-bb-3bp-ip-wet-t96 / river_checkback` (hero checked turn → BB bet 75% river)
 **What P1 shows:** villain's **polar range** rendered with the polar-split divider — VALUE REGION above (`relation ∈ {crushed, dominated}`, sub-total shown), BLUFF REGION below (`relation ∈ {favored, dominating}`, sub-total shown). The sub-total comparison *is* the primary teaching payload — not delegated to P4's summary. A student reading P1 with the split sees "value = 55% · bluffs = 38% · close = 7%" and has the call/fold decomposition visible directly.
@@ -257,7 +269,7 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V6 — River thin-value (hero has marginal made hand, considers betting)
 
-**Primitives:** P1(thin-value mode) + P2 + P4 + P3(single-combo) + P5 + P6
+**Primitives:** P1(thin-value mode) + P2 + P4 + P3(single-combo) + P5 + P6 + P6b
 **Trigger:** `node.decision.kind = 'thin-value'`
 **Example line-node:** `btn-vs-bb-3bp-ip-wet-t96 / river_brick_v_calls` (checked to hero on river, hero has JT)
 **What P1 shows:** villain's **check-call-check range** rendered with the thin-value split — HANDS THAT BEAT YOU above (`relation ∈ {crushed, dominated}`, sub-total), HANDS THAT PAY YOU below (`relation ∈ {favored, dominating}`, sub-total). The `valueBeatRatio` output field surfaces `beatWeight / payWeight` directly.
@@ -268,13 +280,13 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V7 — River thin-value decision after checkback (hero has strong made hand)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6 + P6b
 **Example scenarios:** not authored yet; a candidate for B3 (hero has top pair, villain has checked all three streets, hero can extract value from bluff-catchers).
 **v1 ship:** ✅ as a variant spec; authored-content ships in B3.
 
 ### V8 — Hero open-bet into capped range (leading river)
 
-**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6
+**Primitives:** P1 + P2 + P4 + P3(single-combo) + P5 + P6 + P6b
 **Example scenarios:** not authored yet; a candidate for future content once LSW-A audits identify the spot.
 **v1 ship:** ✅ as spec; deferred authoring.
 
@@ -285,7 +297,7 @@ Each variant is a named composition of the primitives above + a specific input s
 
 ### V10 — Range-level teaching (no pinned combo — hero "scenario")
 
-**Primitives:** P1 + P2 + P3(range-level, bar chart) + P4 (modified for range-level) + P6
+**Primitives:** P1 + P2 + P3(range-level, bar chart) + P4 (modified for range-level) + P6 + P6b
 **Example scenarios:** BTN opens range vs BB defend — what's my action distribution across my full range?
 **v1 ship:** ❌ — deferred to v1.1. Spec primitive (P3 range-level) exists; P2 in this mode shows per-bucket expected actions rather than per-action expected EV. Implementation meaningfully different from V1-V8; deferred.
 
@@ -438,6 +450,15 @@ interface ComputeBucketEVsOutput {
   // MW only (v1 returns null)
   perVillainDecompositions?: Array<{ villainId: string; ...same shape as decomposition }>;
   cascadingFoldProbability?: number;
+
+  // Error discriminant (Gate-4 F03 + H-N09). When populated, all other fields
+  // may be absent; panel renders a banner instead of the primitives.
+  errorState?: {
+    kind: 'range-unavailable' | 'timeout' | 'malformed-hero' | 'engine-internal' | 'taxonomy-mismatch';
+    userMessage: string;   // e.g., "Villain range for 'btn_vs_bb_3bp_bb_flat' is not authored yet."
+    diagnostic: string;    // e.g., dev-only stack trace or key lookup detail
+    recovery?: string;     // e.g., "Retry · Open an issue · Return to line picker"
+  };
 }
 ```
 
@@ -547,17 +568,19 @@ Content authors pick a handler by name; engine dispatches. New lines → new han
 
 Every primitive must serve at least one persona × JTBD cell. Empty cells mean that persona doesn't use that primitive, and it's intentional.
 
-**Note on JTBD status.** Entries marked `(proposed)` refer to JTBDs not yet in `docs/design/jtbd/domains/drills-and-study.md`. LSW-J1 ships DS-48/49/50/51 as active. CO-51 remains proposed and is not in LSW-J1 scope — Coach-persona coverage is accurate-once-CO-51-ships, aspirational today.
+**Note on JTBD status.** DS-48/49/50/51 are now **Active** in `docs/design/jtbd/domains/drills-and-study.md` (LSW-J1 shipped 2026-04-22). CO-51 remains `(proposed)` and is not in LSW-J1 scope — Coach-persona coverage via CO-51 is aspirational until CO-51 promotes.
+
+First-principles-learner situational persona shipped at `docs/design/personas/situational/first-principles-learner.md` (LSW-J2, 2026-04-22) and is the primary paradigm-sensitive persona for this surface.
 
 | Primitive | Scholar / Apprentice / First-principles-learner | Chris (live-player) | Coach | Rounder / Hybrid |
 |-----------|-------------------------------------------------|---------------------|-------|------------------|
-| P1 (villain decomposition) | DS-48 primary (proposed) | SR-88 (similar-spot recall) | CO-51 (proposed) | DS-44 (why the correct answer) |
-| P2 (weighted-total) | DS-49 primary (proposed) | DS-44 | CO-51 (proposed) | DS-44 |
+| P1 (villain decomposition) | DS-48 primary (active) | SR-88 (similar-spot recall) | CO-51 (proposed) | DS-44 (why the correct answer) |
+| P2 (weighted-total) | DS-49 primary (active) | DS-44 | CO-51 (proposed) | DS-44 |
 | P3 (hero view) | DS-44 (anchor to student's hand) | MH-03 (match to my hand) | CO-51 (proposed) | DS-43 (quick drill) |
 | P4 (action recommendation) | DS-43 | — | CO-51 (proposed) | DS-43 |
-| P5 (street narrowing) | DS-48 sub-outcome (proposed) | SR-88 | CO-51 (proposed) | DS-44 |
+| P5 (street narrowing) | DS-48 sub-outcome (active) | SR-88 | CO-51 (proposed) | DS-44 |
 | P6 (confidence) | DS-44 (honest uncertainty) | — | CO-51 (proposed) | — |
-| P7 (per-villain MW) | DS-48 + MH-06 (proposed) | — | CO-51 (proposed) | MH-06 |
+| P7 (per-villain MW) | DS-48 + MH-06 (active) | — | CO-51 (proposed) | MH-06 |
 
 **Coverage gaps revealed:**
 - **Newcomer persona** is not served by any primitive directly — the vocabulary (bucket labels, equity-vs-range, weighted-total) assumes prior exposure. This is a known limitation; bucket-label glossary (G4-impl P3) partially addresses it but Newcomer is not the v2 target.
@@ -634,7 +657,9 @@ These seams are the spec's correctness check: if any future axis-change requires
 **Commit 3 — JT6 flop_root migration + `BucketEVPanelV2` ship.**
 - Convert JT6 flop_root's `heroHolding` → `heroView` in `lines.js`. (The `heroHolding` field is removed from this one node — not kept alongside.)
 - Author `BucketEVPanelV2.jsx` composing primitives per the spec.
-- Author `panels/VillainRangeDecomposition.jsx`, `panels/WeightedTotalTable.jsx`, `panels/HeroViewBlock.jsx`, `panels/ActionRecommendationStrip.jsx`, `panels/StreetNarrowingContext.jsx`, `panels/ConfidenceDisclosure.jsx` per the primitives section.
+- Author `panels/VillainRangeDecomposition.jsx`, `panels/WeightedTotalTable.jsx`, `panels/HeroViewBlock.jsx`, `panels/ActionRecommendationStrip.jsx`, `panels/StreetNarrowingContext.jsx`, `panels/ConfidenceDisclosure.jsx`, `panels/GlossaryBlock.jsx` per the primitives section.
+- Author shared `<BucketLabel labelId={...} />` component used by P1 + P2 + P6b for consistent label rendering (`displayName` lookup), inline tap-for-definition, and ≥44 DOM-px tap-area enforcement (Gate-4 F01/F14).
+- `BUCKET_TAXONOMY` entries in `bucketTaxonomy.js` gain required `definition: string` field — 1-sentence plain-language glossary text per entry.
 - Author `panels/variantRecipes.js` — the `VARIANT_RECIPES` constant mapping variant IDs to ordered primitive arrays. `BucketEVPanelV2` reads from this, does not inline the ordering.
 - `LineNodeRenderer.jsx` branches on `heroView` presence: v3 node → `BucketEVPanelV2`, v1 node → `BucketEVPanel` (legacy).
 - Tests: `BucketEVPanelV2.test.jsx` (behavioral — P1 rows render, P2 arithmetic present, P5 present on non-root, P3 interface does not accept EV prop); `variantRecipes.test.js` (V1-V6 recipes valid).
@@ -668,6 +693,8 @@ Post-review, Q3 + Q4 are resolved in-spec; Q5 absorbed into the decisionKind ren
 **~~Q4 RESOLVED.~~** Above-fold layout at 1600×720: P5 docks above P1 (max 2 lines, ~60px); P1 visible-row cap 6; P2 visible-column cap 5; below P2 comes P4 (1 line) + P3 (1-2 lines) + P6 (1 line). Total above-fold ~440-470px on a 480px budget. Overflow beyond caps goes into "show all" taps, not scroll.
 
 **~~Q5 RESOLVED.~~** P4's phrasing is driven by `decisionKind`. For `thin-value` with check-back correct, P4 says "Correct: check back — villain's calling range beats you 3.4× more than it pays." For `bluff-catch`, P4 uses the value/bluff-ratio phrasing. Authored `recommendation.authoredReason` overrides the templated variant when present.
+
+**~~Q1 RESOLVED by Gate-4 F01.~~** Bucket-label glossary is now a first-class primitive (P6b) with inline tap-for-definition on every label. Not deferred to Gate-4; shipped in Commit 3.
 
 **Q6.** For V10 (range-level teaching, v1.1), what's the action-output shape? Per-bucket expected action ("topPairGood → bet 75% 90%, check 10%") vs per-action expected EV across the range? The spec defers the call.
 
@@ -713,6 +740,14 @@ All three invariants satisfied across the composition.
 ## Change log
 
 - 2026-04-22 — Draft authored. Covers axes 1–5 in v1 ship scope per owner directive on bluff-catch + thin-value; axes 6–8 as extension seams. Launched 3 parallel specialist reviews (systems-architect / product-ux-engineer / senior-engineer).
+- 2026-04-22 — **Gate-4 heuristic audit shipped** at `docs/design/audits/2026-04-22-heuristic-bucket-ev-panel-v2.md`. Verdict YELLOW. 4 P1 findings resolved in-spec this revision:
+  - **F01 glossary:** new P6b primitive (`GlossaryBlock`) added; inline bucket-label tap-for-definition with ≥44 DOM-px tap area enforced; `displayName` required rendering rule (H-N02).
+  - **F02 responsive:** P1 row cap + P2 column cap degrade cleanly across ≥1200/≥900/≥640 viewport thresholds. P5 collapses to 1 line at <1200.
+  - **F03 error state:** `errorState` discriminant added to `ComputeBucketEVsV2Output`; P1 renders banner on error.
+  - **F04 disclosure consistency:** P1 row overflow + P2 column overflow both use "Show all N" pattern; dropped inconsistent "Other (+N)" as standalone pattern.
+  - 8 P2 findings (F05-F12) tracked in audit's open-questions and spec's risks/open-questions sections; do not block Commit 1.
+  - 3 P3 findings (F13-F14) either subsumed by F01 (F14) or deferred to Gate-4 v2 pass (F13).
+- 2026-04-22 — **Gate-3 J1 + J2 shipped.** DS-48/49/50/51 JTBDs added to atlas (LSW-J1); first-principles-learner situational persona shipped (LSW-J2). JTBD coverage table updated — (proposed) tags removed from DS-48/49/50/51; CO-51 remains proposed.
 - 2026-04-22 — Reviews returned, all YELLOW. Revised spec in-place to address P0/P1 findings:
   - **P0 (systems-architect + senior-engineer):** data contract — dropped "additive" claim; introduced `computeBucketEVsV2` as separate new export alongside unchanged v1; `computeDecomposedActionEVs` explicitly named as net-new computation for P2's `perGroupContribution`.
   - **P0 (senior-engineer):** Commit-5 trigger made mechanical (grep `heroHolding|byBucket|PinnedComboRow|BucketEVTable` returns empty); migration guard rejects dual-authored `heroHolding + heroView`.

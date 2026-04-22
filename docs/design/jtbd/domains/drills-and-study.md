@@ -38,6 +38,37 @@ Jobs around learning and concept mastery, typically off-table.
 
 - State: **Proposed** (DISC-12).
 
+## DS-48 — Understand villain's range composition as the decision driver
+
+> When studying a specific decision, I want to see villain's range decomposed by hand-type groups with per-group weight and my equity vs each, so my decision reasoning is range-vs-range not hand-vs-hand.
+
+- State: **Active** (2026-04-22) — served by `bucket-ev-panel-v2` P1 primitive post-Path-2 restructure.
+- Doctrine: first-principles decision modeling (`POKER_THEORY.md §7`, `feedback_first_principles_decisions.md`).
+- Measures of success: student can name the largest group in villain's range on any studied decision; student's hypothesized correct action agrees with the weighted-total EV on ≥80% of drills after concept internalization.
+
+## DS-49 — See weighted-total EV decomposition for a decision
+
+> When studying a specific decision, I want to see the arithmetic — `Σ(villain-bucket weight × my EV vs bucket) = total EV per action` — so the correct answer is traceable, not asserted.
+
+- State: **Active** (2026-04-22) — served by `bucket-ev-panel-v2` P2 primitive (`WeightedTotalTable`).
+- Distinct from DS-44 ("correct-answer reasoning"), which is neutral on hero-first vs range-first framing; DS-49 specifically requires the arithmetic be visible as terms, not just as a final EV number.
+- Measures of success: student can identify which villain group contributes the largest EV term for the correct action; student can explain why the same hand action shifts EV between archetypes when shown the table.
+
+## DS-50 — Walk a hand line branch-by-branch with consequences shown
+
+> When studying a multi-street scenario, I want to walk the decision tree node-by-node and see every branch's rationale, so I learn the whole-hand pattern, not just isolated spots.
+
+- State: **Active** — served by Line Study (`LineWalkthrough` + `LineNodeRenderer` + `LineBranchBreadcrumb`), shipped 2026-04-20.
+- Promoted from implicit on 2026-04-22 (previously listed only in `postflop-drills.md` as "line-study JTBD, implicit"). Atlas-explicit now.
+
+## DS-51 — Understand villain's range shape on any flop before deciding
+
+> When studying a board texture, I want the full breakdown of villain's range vs the flop (made hands / draws / whiff), so I internalize the range shape, not just individual hand equities.
+
+- State: **Active** — served by Explorer mode (`RangeFlopBreakdown` + `ContextPicker` + `BoardPicker`) + Line Study's per-node decomposition.
+- Promoted from implicit on 2026-04-22 (previously listed only in `postflop-drills.md` as "range-shape recognition, implicit"). Atlas-explicit now.
+- Distinct from DS-48: DS-51 is hero-range-agnostic ("what does villain's range look like here?"); DS-48 is hero-anchored ("given my hand, what does villain have that I need to beat?").
+
 ---
 
 ## Domain-wide constraints
@@ -48,3 +79,4 @@ Jobs around learning and concept mastery, typically off-table.
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-22 — Added DS-48 / DS-49 / DS-50 / DS-51 (LSW-J1). DS-48 + DS-49 open new first-principles-teaching outcomes served by `bucket-ev-panel-v2`. DS-50 + DS-51 promote outcomes previously marked "implicit" in `surfaces/postflop-drills.md` to explicit atlas entries.
