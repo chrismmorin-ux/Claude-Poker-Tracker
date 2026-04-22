@@ -106,8 +106,8 @@ Wrapped in `ScaledContainer`.
 
 ## Known issues
 
-- No prior audit findings.
-- Wave 4 audit (specialized surfaces) will examine: the two-surface seat-assignment flow (picker vs this), filter density, avatar rendering consistency, and bulk-delete affordance (missing today).
+- **DCOMP-W4-A1 audit (2026-04-22) — verdict RED.** 4 P0 (destructive-action anti-patterns: F1 Clear All Seats native confirm, F2 Delete Player blocking modal, F3 per-seat Clear silent commit, F4 style/guard mismatch bundled with F1), 4 P1 (F5 row-action touch targets 20–35×20, F6 per-seat Clear 24×16, F7 Clear All Seats 28px height — all under ≥44 minimum; F8 filter row density 29% of viewport). P2 bulk-delete missing (F9 — deferred), P3 inline tag editing (F10 — deferred). Full audit: `../audits/2026-04-22-players-view.md`. Fixes queued as DCOMP-W4-A1-F1..F8 in BACKLOG.
+- Wave 4 audit COMPLETE for players-view. Tournament + online + settings audits remain.
 
 ## Potentially missing
 
@@ -135,3 +135,4 @@ Wrapped in `ScaledContainer`.
 ## Change log
 
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
+- 2026-04-22 — DCOMP-W4-A1 audit appended; Known-issues updated with 13 findings (4 P0, 4 P1, 2 P2, 3 P3/deferred).
