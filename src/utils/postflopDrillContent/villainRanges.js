@@ -45,8 +45,13 @@ export const VILLAIN_RANGE_ALIASES = Object.freeze({
   // btn-vs-bb-srp-ip-dry-q72r — BB flat-call range vs BTN's open.
   btn_vs_bb_srp_bb_flat: Object.freeze({ position: 'BB', action: 'call', vs: 'BTN' }),
 
-  // co-vs-bb-srp-oop-paired-k77 — BB flat-call range vs CO's open.
-  co_vs_bb_srp_bb_flat: Object.freeze({ position: 'BB', action: 'call', vs: 'CO' }),
+  // sb-vs-bb-srp-oop-paired-k77 — BB flat-call range vs SB's open.
+  // LSW-F3-A1 (2026-04-22): renamed from `co_vs_bb_srp_bb_flat` when the
+  // K77 line was relabeled CO → SB to fix a position/action-flow mismatch.
+  // CO was IP vs BB postflop but the line's authored action flow had hero
+  // acting first on every street (OOP), so SB (which IS OOP vs BB) is the
+  // correct matchup.
+  sb_vs_bb_srp_bb_flat: Object.freeze({ position: 'BB', action: 'call', vs: 'SB' }),
 
   // Deferred aliases (LSW-B1 tier 2 — ranges not yet authored in archetypeRanges.js):
   //   sb_vs_btn_3bp_btn_range  — BTN 3bet range vs SB's open (T98 wet line)

@@ -366,78 +366,6 @@
       }
     },
     {
-      "lineId": "co-vs-bb-srp-oop-paired-k77",
-      "nodeId": "flop_root",
-      "street": "flop",
-      "board": [
-        "K♠",
-        "7♦",
-        "7♣"
-      ],
-      "villainAction": "check",
-      "narrowAction": "check",
-      "totalCombos": 218,
-      "totalWeight": 210,
-      "isCapped": true,
-      "isWeaklyCapped": true,
-      "bucketPct": {
-        "nuts": 0.4762,
-        "strong": 12.8571,
-        "marginal": 86.6667,
-        "draw": 0,
-        "air": 0
-      }
-    },
-    {
-      "lineId": "co-vs-bb-srp-oop-paired-k77",
-      "nodeId": "river_after_barrel",
-      "street": "river",
-      "board": [
-        "K♠",
-        "7♦",
-        "7♣",
-        "2♥",
-        "4♦"
-      ],
-      "villainAction": "check",
-      "narrowAction": "check",
-      "totalCombos": 209,
-      "totalWeight": 207,
-      "isCapped": true,
-      "isWeaklyCapped": true,
-      "bucketPct": {
-        "nuts": 0.4831,
-        "strong": 14.4928,
-        "marginal": 85.0242,
-        "draw": 0,
-        "air": 0
-      }
-    },
-    {
-      "lineId": "co-vs-bb-srp-oop-paired-k77",
-      "nodeId": "turn_brick",
-      "street": "turn",
-      "board": [
-        "K♠",
-        "7♦",
-        "7♣",
-        "2♥"
-      ],
-      "villainAction": "check",
-      "narrowAction": "check",
-      "totalCombos": 220,
-      "totalWeight": 210,
-      "isCapped": true,
-      "isWeaklyCapped": true,
-      "bucketPct": {
-        "nuts": 0.4762,
-        "strong": 12.8571,
-        "marginal": 86.6667,
-        "draw": 0,
-        "air": 0
-      }
-    },
-    {
       "lineId": "co-vs-btn-bb-srp-mw-oop",
       "nodeId": "flop_root",
       "street": "flop",
@@ -482,6 +410,78 @@
         "marginal": 22.381,
         "draw": 3.8095,
         "air": 62.8571
+      }
+    },
+    {
+      "lineId": "sb-vs-bb-srp-oop-paired-k77",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 399,
+      "totalWeight": 377,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 1.5915,
+        "strong": 13.5279,
+        "marginal": 84.8806,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "sb-vs-bb-srp-oop-paired-k77",
+      "nodeId": "river_after_barrel",
+      "street": "river",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣",
+        "2♥",
+        "4♦"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 365,
+      "totalWeight": 364,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 2.1978,
+        "strong": 20.8791,
+        "marginal": 76.9231,
+        "draw": 0,
+        "air": 0
+      }
+    },
+    {
+      "lineId": "sb-vs-bb-srp-oop-paired-k77",
+      "nodeId": "turn_brick",
+      "street": "turn",
+      "board": [
+        "K♠",
+        "7♦",
+        "7♣",
+        "2♥"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 379,
+      "totalWeight": 372,
+      "isCapped": true,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 1.6129,
+        "strong": 16.6667,
+        "marginal": 81.7204,
+        "draw": 0,
+        "air": 0
       }
     }
   ],

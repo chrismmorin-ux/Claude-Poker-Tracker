@@ -62,7 +62,10 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
       },
       decisionKind: 'standard',
       decisionStrategy: 'pure',
-      frameworks: ['range_advantage', 'range_morphology', 'board_tilt', 'capped_range_check'],
+      // LSW-F2-A2 (2026-04-22): dropped `capped_range_check` (flop-wide BB
+      // check isn't selectively capping anything) in favor of `nut_advantage`
+      // which the `why` section actually discusses.
+      frameworks: ['range_advantage', 'range_morphology', 'board_tilt', 'nut_advantage'],
       sections: [
         {
           kind: 'prose',
@@ -75,13 +78,21 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
         {
           kind: 'why',
           heading: 'Who owns this board',
+          // LSW-F2-A1 (2026-04-22): acknowledge live-pool framing. Modern
+          // solver has BB 3bet QQ+/JJ/TT/AJs+/AQo+ vs BTN opens; "BB flats
+          // without the overpairs" is a live-cash convention. Tightens nut
+          // advantage claim from "both favor BTN" to "modest, not strong"
+          // because if live BB flats QQ, both players have 3 QQ combos on
+          // the flop (tied on top set). See POKER_THEORY.md §9.2.
           body:
             'BTN open range has every Q combo (QQ for set, AQ/KQ for TPTK, '
             + 'QJs/QTs for TP-good) plus the entire overpair tier (AA, KK). '
-            + 'BB flats without the overpairs (3bets KK+/AA pre) — its nut '
-            + 'region on this flop is ~2% (only 77, 22 sets) and its typical '
-            + 'value hands cap at AQ/KQ top-pair-good. Range advantage AND '
-            + 'nut advantage both favor BTN.',
+            + 'BB flats without the overpairs at the stakes this line '
+            + 'targets (live cash flats QQ-TT much more often than solver, '
+            + 'which 3bets QQ+/JJ/TT+). Its nut region on this flop is '
+            + '~2–5% (77/22 sets, rare QQ if flatted) and its typical value '
+            + 'hands cap at AQ/KQ top-pair-good. Range advantage clearly '
+            + 'favors BTN; nut advantage is modest, not strong.',
         },
         {
           kind: 'prose',
@@ -255,10 +266,14 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
             label: 'Call',
             nextId: 'river_after_flop_checkback',
             correct: true,
+            // LSW-F2-A3 (2026-04-22): pot-odds "~30%" → "~27%". For a 60%
+            // pot bet, required equity is 0.6 / (1.6 + 0.6) = 27.3%. Call
+            // is still clearly +EV at either threshold, but the teaching
+            // number is now precise.
             rationale:
               'Correct. Our range has enough pair-strength hands to call '
               + 'down comfortably, and overfolding against a probe bet is '
-              + 'a classic exploit point. Pot odds of ~30% require modest '
+              + 'a classic exploit point. Pot odds of ~27% require modest '
               + 'equity; any pair plus ace-high with a backdoor has it.',
           },
           {
@@ -393,13 +408,22 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
             label: 'Call',
             nextId: 'terminal_bluff_catch_win',
             correct: true,
+            // LSW-F2-A4 (2026-04-22): rewrote the blocker reasoning.
+            // Previous "99 blocks 99 itself" was nonsensical (a hand can't
+            // block itself in any meaningful sense). New text clarifies
+            // that 99's blocker effect here is essentially neutral and
+            // that the decision rests on population bluff frequency —
+            // per GTO Wizard "Calling Down Over-Bluffed Lines" population
+            // over-bluffs this capped-IP-checked-turn line.
             rationale:
-              'Correct. Our medium pair blocks some of villain\'s '
-              + 'slowplay region (QQ impossible here since we\'re on 99, '
-              + 'but 99 blocks 99 itself). MDF math plus villain\'s '
-              + 'typical polar bluff frequency makes the call +EV. '
-              + 'Overfolding this spot is the most common leak at the '
-              + 'stakes where this line matters.',
+              'Correct. Our 99 removes 3 slow-play combos from villain\'s '
+              + 'range (villain can\'t hold 99) but doesn\'t block any of '
+              + 'BB\'s typical bluff region (A-high busted backdoor stuff). '
+              + 'Net blocker effect is neutral — the decision rests on '
+              + 'population bluff frequency, not on blockers. Population '
+              + 'over-bluffs this capped-IP-checked-turn line; overfolding '
+              + 'here is the most common leak at the stakes this line '
+              + 'targets.',
           },
           {
             label: 'Fold',
@@ -463,11 +487,22 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
             label: 'Bet 50% pot for value',
             nextId: 'terminal_thin_value_win',
             correct: true,
+            // LSW-F2-A5 (2026-04-22): kept 50% sizing (owner preference)
+            // but added explicit rationale sentence explaining why this is
+            // slightly larger than canonical 33% — villain's probe-turn-
+            // called-then-checked-river range is weaker but LESS condensed
+            // than the double-barrel-called range on the sibling branch
+            // (`river_after_barrel`). Teaching the *reason* preserves the
+            // lesson; tightening to 33% would lose the spot-specific nuance.
             rationale:
               'Correct. Villain\'s range is weak pairs and busted airs; '
               + 'weak pair will hero-call our modest sizing enough of the '
-              + 'time to make this very +EV. This is the value we '
-              + 'deferred by checking flop.',
+              + 'time to make this very +EV. 50% is slightly larger than '
+              + 'canonical 33% thin-value because villain\'s probe-turn-'
+              + 'called-then-checked-river range is weaker but LESS '
+              + 'condensed than the double-barrel-called range on the '
+              + 'sibling branch (compare `river_after_barrel` where 33% '
+              + 'is right). This is the value we deferred by checking flop.',
           },
           {
             label: 'Check back',
@@ -580,7 +615,10 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
       id: 'terminal_bluff_catch_win',
       street: 'river',
       board: ['Q♠', '7♥', '2♣', '3♦', '8♠'],
-      pot: 16.0,
+      // LSW-F2-A6 (2026-04-22): 16.0 → 22.7. Math: turn pot 9.1 + BB's
+      // 75% river bet 6.825 + hero's 6.825 call = 22.75, rounded to 22.7.
+      // Previous 16.0 didn't derive from any authored sizing.
+      pot: 22.7,
       sections: [
         {
           kind: 'prose',
@@ -663,7 +701,11 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
       id: 'terminal_river_raise_spew',
       street: 'river',
       board: ['Q♠', '7♥', '2♣', '3♦', '8♠'],
-      pot: 16.0,
+      // LSW-F2-A6 (2026-04-22): 16.0 → 22.7 to match pot-at-hero's-decision
+      // (same as `terminal_bluff_catch_win`). Raise branch bloats further
+      // on the raise path but the pot-at-decision point is 22.7; terminal
+      // display is instructional, not exact post-raise-resolution.
+      pot: 22.7,
       sections: [
         {
           kind: 'prose',
@@ -1868,19 +1910,27 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
   },
 };
 
-// ---------- Line 4: CO vs BB SRP OOP, paired K♠7♦7♣ ---------- //
+// ---------- Line 4: SB vs BB SRP OOP, paired K♠7♦7♣ ---------- //
+//
+// LSW-F3-A1 (2026-04-22): renamed from CO vs BB → SB vs BB. The original
+// declaration (CO hero) was incompatible with the line's own action flow
+// (hero acts first on every street) because CO is IP vs BB postflop. The
+// line is an OOP-hero teaching spot and SB vs BB is the canonical OOP
+// small-cbet matchup. All teaching content (small cbet on paired board,
+// nut advantage, brick-turn barrel, river thin value) carries through
+// unchanged. See `docs/design/audits/line-audits/sb-vs-bb-srp-oop-paired-k77.md`.
 
-const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
-  id: 'co-vs-bb-srp-oop-paired-k77',
-  title: 'CO vs BB · SRP · Paired K♠7♦7♣',
+const LINE_SB_VS_BB_SRP_OOP_PAIRED = {
+  id: 'sb-vs-bb-srp-oop-paired-k77',
+  title: 'SB vs BB · SRP · Paired K♠7♦7♣',
   summary:
-    'Single-raised pot, hero in CO but BB defended so hero is OOP on a '
-    + 'paired board. Teaches small-cbet frequency on paired textures and '
-    + 'turn card-reading.',
+    'Single-raised pot, SB open and BB defended. SB is OOP on a paired '
+    + 'board — the classic small-cbet teaching spot. Teaches small-cbet '
+    + 'frequency on paired textures and turn card-reading.',
   tags: ['hu', 'srp', 'oop', 'paired', 'dry'],
   setup: {
-    hero: { position: 'CO', action: 'open' },
-    villains: [{ position: 'BB', action: 'call', vs: 'CO' }],
+    hero: { position: 'SB', action: 'open' },
+    villains: [{ position: 'BB', action: 'call', vs: 'SB' }],
     potType: 'srp',
     effStack: 100,
   },
@@ -1907,8 +1957,9 @@ const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
         classLabel: 'top pair, top kicker (paired board)',
       },
       villainRangeContext: {
-        // Resolves to { position: 'BB', action: 'call', vs: 'CO' }.
-        baseRangeId: 'co_vs_bb_srp_bb_flat',
+        // LSW-F3-A1 (2026-04-22): baseRangeId renamed with the line.
+        // Resolves to { position: 'BB', action: 'call', vs: 'SB' }.
+        baseRangeId: 'sb_vs_bb_srp_bb_flat',
       },
       decisionKind: 'standard',
       decisionStrategy: 'pure',
@@ -1944,18 +1995,23 @@ const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
     turn_brick: {
       id: 'turn_brick',
       street: 'turn',
+      // LSW-F3-A2 (2026-04-22): turn barrel 50%→33%. Paired-board canon
+      // is small-sizing continuation (same 33% as flop); the "reduced nut
+      // advantage because trips are in both ranges" principle that drove
+      // flop sizing also applies on the brick turn. Pot updated to match
+      // (flop 5.5 + 1.8 cbet + 1.8 call = 9.1 unchanged).
       board: ['K♠', '7♦', '7♣', '2♥'],
       pot: 9.1,
       villainAction: null,
       frameworks: ['range_morphology'],
       sections: [
         { kind: 'prose', heading: 'Turn brick 2♥, villain called flop cbet.', body: 'BB called the small cbet with Kx (weak), middling pocket pairs (55-QQ), some 7x slowplays, occasional backdoor float. Hero\'s range still has more value (better Kx, overpairs).' },
-        { kind: 'why', heading: 'Continue barreling?', body: 'Turn is a pure brick. Hero\'s nut advantage intact; villain\'s range narrow. Another small value bet extracts from weaker Kx and folds out mid pocket pairs.' },
+        { kind: 'why', heading: 'Continue barreling?', body: 'Turn is a pure brick. Hero\'s nut advantage intact; villain\'s range narrow. Same small-sizing logic as flop — paired board\'s reduced nut advantage means we don\'t want to price out the middle pairs we\'re ahead of.' },
       ],
       decision: {
         prompt: 'Hero acts. Barrel or check?',
         branches: [
-          { label: 'Bet 50% pot', nextId: 'river_after_barrel', correct: true, rationale: 'Correct. Nut advantage persists; charge villain\'s middle pairs and weak Kx.' },
+          { label: 'Bet 33% pot', nextId: 'river_after_barrel', correct: true, rationale: 'Correct. Small-sizing continuation on paired texture charges weak Kx and middle pairs without pricing them out. Matches the flop-sizing logic.' },
           { label: 'Check', nextId: 'terminal_turn_check_paired', correct: false, rationale: 'Passive. Gives villain a free card and forfeits thin value from middling pairs.' },
           { label: 'Overbet', nextId: 'terminal_overbet_river_paired', correct: false, rationale: 'Folds out weaker pairs we beat; polar sizing needs polar range which hero lacks here.' },
         ],
@@ -1965,7 +2021,9 @@ const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
       id: 'river_after_barrel',
       street: 'river',
       board: ['K♠', '7♦', '7♣', '2♥', '4♦'],
-      pot: 18.1,
+      // LSW-F3-A2 (2026-04-22): pot 18.1 → 15.1 after turn sizing changed
+      // to 33% (turn 9.1 + 3.0 bet + 3.0 call = 15.1).
+      pot: 15.1,
       villainAction: null,
       frameworks: ['range_morphology'],
       sections: [
@@ -1980,9 +2038,19 @@ const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
         ],
       },
     },
-    terminal_thin_value_paired: { id: 'terminal_thin_value_paired', street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 18.1, sections: [{ kind: 'prose', heading: 'Thin value prints', body: 'Small bets vs weak capped ranges are the core of paired-board EV.' }] },
-    terminal_checkback_paired:  { id: 'terminal_checkback_paired',  street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 18.1, sections: [{ kind: 'prose', heading: 'Missed value', body: 'Villain checks = weak; bet cleans up the pot.' }] },
-    terminal_overbet_river_paired: { id: 'terminal_overbet_river_paired', street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 18.1, sections: [{ kind: 'prose', heading: 'Overbet folds weak', body: 'Oversizing against capped ranges folds out weak-pair calls.' }] },
+    // LSW-F3-A2 + F3-A3 (2026-04-22): river terminal pots updated from
+    // 18.1 → 15.1 to reflect the turn-sizing cascade. Shared terminals
+    // (terminal_checkback_paired, terminal_overbet_river_paired) are set
+    // to the river-parent path pot value because it's the most-common
+    // reach path; flop/turn reach paths carry their own implicit pot
+    // drift (documented in the LSW-A3 audit).
+    terminal_thin_value_paired: { id: 'terminal_thin_value_paired', street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 15.1, sections: [{ kind: 'prose', heading: 'Thin value prints', body: 'Small bets vs weak capped ranges are the core of paired-board EV.' }] },
+    // `terminal_checkback_paired` is reached from both flop_root → Check (pot 5.5)
+    // AND river_after_barrel → Check (pot 15.1). Pot set to river-parent path.
+    terminal_checkback_paired:  { id: 'terminal_checkback_paired',  street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 15.1, sections: [{ kind: 'prose', heading: 'Missed value', body: 'Villain checks = weak; bet cleans up the pot.' }] },
+    // `terminal_overbet_river_paired` is reached from both turn_brick → Overbet (pot 9.1)
+    // AND river_after_barrel → Bet 75% (pot 15.1). Pot set to river-parent path.
+    terminal_overbet_river_paired: { id: 'terminal_overbet_river_paired', street: 'river', board: ['K♠', '7♦', '7♣', '2♥', '4♦'], pot: 15.1, sections: [{ kind: 'prose', heading: 'Overbet folds weak', body: 'Oversizing against capped ranges folds out weak-pair calls.' }] },
     terminal_oversized_paired: { id: 'terminal_oversized_paired', street: 'flop', board: ['K♠', '7♦', '7♣'], pot: 5.5, sections: [{ kind: 'prose', heading: 'Oversized paired cbet', body: 'Polar size on merged range — mismatched.' }] },
     terminal_turn_check_paired: { id: 'terminal_turn_check_paired', street: 'turn', board: ['K♠', '7♦', '7♣', '2♥'], pot: 9.1, sections: [{ kind: 'prose', heading: 'Turn check-back', body: 'Gave up the barrel lane on a nut-advantaged brick turn.' }] },
   },
@@ -1998,8 +2066,16 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
     + 'two-tone + middling connected. Teaches overpair defense and '
     + 'equity-realization on scary boards.',
   tags: ['hu', '3bp', 'oop', 'wet', 'two-tone', 'middling'],
+  // LSW-F4-A1 (2026-04-22): hero.action 'fourBet' → 'call' and dropped the
+  // author's inline "treat as 4bp" note. The line is a 3BP (SB flat-3bet
+  // defense), not a 4BP. Pot 21.0 reconciles with 3BP math (SB open 3bb +
+  // BTN 3bet 9bb + SB call 9bb = 21). 4BP math would give pot ~45bb at
+  // SPR ~2. `potType: '3bp'` was already correct; `hero.action: 'fourBet'`
+  // was the orphaned declaration. See POKER_THEORY.md §9.3 for the
+  // Category-D divergence (SB flat-3bet is near-solver-impossible; this
+  // line is intentionally live-pool-targeted).
   setup: {
-    hero: { position: 'SB', action: 'fourBet', vs: 'BTN' }, // note: ACT is "open from SB" but wrapped as 4bet vs BTN 3bet — treat as 4bp for schema
+    hero: { position: 'SB', action: 'call', vs: 'BTN' },
     villains: [{ position: 'BTN', action: 'threeBet', vs: 'SB' }],
     potType: '3bp',
     effStack: 90,
@@ -2012,17 +2088,35 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
       board: ['T♠', '9♠', '8♥'],
       pot: 21.0,
       villainAction: null,
-      frameworks: ['range_advantage', 'nut_advantage', 'range_morphology'],
+      // LSW-F4-A3 (2026-04-22): dropped inverted `range_advantage` +
+      // `nut_advantage` (BTN has both on T98ss, not hero as SB caller).
+      // Replaced with `board_tilt` (T98ss tilts to BTN's 3bet range).
+      frameworks: ['range_morphology', 'board_tilt'],
       sections: [
-        { kind: 'prose', heading: 'Wet middling two-tone 3BP — straight on board, every draw alive.', body: 'Hero in SB flatted BTN 3bet (rare but OK with QQ, AK, AQs in modern frames). Flop T98ss contains a made straight (QJ, J7, 76), flush draws, open-enders. Every range has equity redistribution.' },
-        { kind: 'mismatch', heading: 'Overpair is NOT the nuts here', body: 'AA on T98ss is crushed by 3bet-range straights (QJs, JJ coin-flip with hero range). This is the classic "my overpair isn\'t nutted on wet boards" teaching spot.' },
+        // LSW-F4-A5 (2026-04-22): acknowledge SB-flat-3bet divergence
+        // explicitly. Solver is 3bet-or-fold from SB; live pool flats
+        // with QQ-TT/AK more often. See POKER_THEORY.md §9.3.
+        { kind: 'prose', heading: 'Wet middling two-tone 3BP — straight on board, every draw alive.', body: 'Hero in SB flatted BTN 3bet — **a live-pool pathway** (modern solver has SB 3bet-or-fold vs BTN 3bets; SB barely flats). Flop T♠9♠8♥ contains a made straight (QJ, J7, 76), flush draws, open-enders. Every range has equity redistribution.' },
+        // LSW-F4-A2 (2026-04-22): rewrote framing. Previous "AA is a bluff-
+        // catcher, not a nut hand" overstated the weakness — AA has ~60%
+        // equity vs BTN's 3bet range on T98ss (ahead of range but vulnerable).
+        // "Strong-but-vulnerable" is the correct overpair mental model;
+        // "bluff-catcher" (30-50% equity vs polar range) is a different
+        // concept. Also removed factual error "JJ coin-flip with hero range"
+        // (AA vs JJ = ~81/19, not 50/50).
+        { kind: 'mismatch', heading: 'Overpair ≠ nut on wet boards', body: 'AA on T98ss is a **strong-but-vulnerable** hand — we\'re ahead of BTN\'s range (~60% equity) but many runout cards threaten that edge. We\'re vulnerable to 3bet-range straights (QJs) and sets (TT/99/88, ~9 combos), though still clearly ahead of overpairs below (JJ-KK) and draws. The teaching point: pot-control with big pairs on connected wet textures is not about being behind — it\'s about equity realization and stack preservation.' },
       ],
       decision: {
         prompt: 'Hero acts OOP with A♦A♣.',
         branches: [
-          { label: 'Check (pot control)', nextId: 'turn_after_check', correct: true, rationale: 'Correct. AA on T98ss is a bluff-catcher, not a nut hand. Check-call keeps BTN\'s bluffs in; check-raise overcommits.' },
-          { label: 'Bet 33% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Thin value + equity denial doesn\'t justify — BTN\'s continue range crushes AA on this texture.' },
-          { label: 'Bet 75% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Polar sizing with a non-nut hand on a wet board. BTN calls with draws and sets, raises with straights. AA is a mess.' },
+          // LSW-F4-A2 + F4-A5 (2026-04-22): rationale reframed and solver-
+          // mix acknowledgment added. Check is the DOMINANT solver action
+          // on this texture (~79% of OOP range checks on low-card-tilted
+          // wet flops in 3BP), but it's not pure — solver also mixes in
+          // ~10% small-polar bets with strong-but-vulnerable overpairs.
+          { label: 'Check (pot control)', nextId: 'turn_after_check', correct: true, rationale: 'Correct. AA has ~60% equity vs BTN\'s range on T98ss — ahead of range but vulnerable to many turn/river cards (any J, Q, 7, 6, or spade). Check lets us realize equity cheaply against the draws and overpairs below us, while avoiding bloating a pot we can\'t bet-fold if BTN check-raises. Bet is also a valid mixed strategy in solver (~10% freq with strong overpairs), but check is the dominant choice at this depth and texture.' },
+          { label: 'Bet 33% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Defensible as a mixed strategy but not the dominant line. A small bet here builds pot on a texture where turn/river cards threaten our equity; the EV loss from bad runouts typically outweighs the protection gained against draws.' },
+          { label: 'Bet 75% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Polar sizing with a non-nut hand on a wet board. BTN calls with draws and sets, raises with straights. AA loses equity realization on a size that folds nothing we beat.' },
         ],
       },
     },
@@ -2067,6 +2161,11 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
     terminal_fold_river_wet: { id: 'terminal_fold_river_wet', street: 'river', board: ['T♠', '9♠', '8♥', '2♣', '7♠'], pot: 49.0, sections: [{ kind: 'prose', heading: 'Save your stack', body: 'Overpair discipline on wet runouts is a core 3BP skill.' }] },
     terminal_crying_call_wet: { id: 'terminal_crying_call_wet', street: 'river', board: ['T♠', '9♠', '8♥', '2♣', '7♠'], pot: 49.0, sections: [{ kind: 'prose', heading: 'Called light on a scare runout', body: 'BTN\'s bluff frequency on runouts that complete draws is low.' }] },
     terminal_overfold_aa: { id: 'terminal_overfold_aa', street: 'turn', board: ['T♠', '9♠', '8♥', '2♣'], pot: 21.0, sections: [{ kind: 'prose', heading: 'Overfold', body: 'AA too strong to fold to one turn bet on a not-yet-scary card.' }] },
+    // LSW-F4-A6 (2026-04-22): `terminal_raise_wet_aa` is reached from
+    // both `turn_after_check → Raise` (parent pot 21.0) AND
+    // `river_after_turn_call → Raise` (parent pot 49.0). Pot set to
+    // turn-parent path (21.0) as the primary reach path; river-parent
+    // reach carries implicit pot drift documented in the LSW-A4 audit.
     terminal_raise_wet_aa: { id: 'terminal_raise_wet_aa', street: 'turn', board: ['T♠', '9♠', '8♥', '2♣'], pot: 21.0, sections: [{ kind: 'prose', heading: 'Raise into wet range', body: 'Raising with non-nut hands on wet boards invites worse outcomes.' }] },
     terminal_bet_wet_aa: { id: 'terminal_bet_wet_aa', street: 'flop', board: ['T♠', '9♠', '8♥'], pot: 21.0, sections: [{ kind: 'prose', heading: 'Betting non-nut hands on wet', body: 'AA on T98ss wants to pot control, not build the pot.' }] },
   },
@@ -2236,7 +2335,7 @@ export const LINES = [
   LINE_BTN_VS_BB_SRP_DRY_Q72R,
   LINE_BTN_VS_BB_3BP_WET_T96,
   LINE_BTN_VS_BB_SB_SRP_MW_J85,
-  LINE_CO_VS_BB_SRP_OOP_PAIRED,
+  LINE_SB_VS_BB_SRP_OOP_PAIRED,
   LINE_SB_VS_BTN_3BP_OOP_WET,
   LINE_UTG_VS_BTN_4BP_DEEP,
   LINE_CO_VS_BTN_BB_SRP_MW_OOP,

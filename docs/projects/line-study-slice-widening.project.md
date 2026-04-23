@@ -99,7 +99,7 @@ Previous estimate (one session per line) assumed POKER_THEORY.md + authored-cont
 |---|----|---------|-------|-------|----------------|--------|
 | 1 | LSW-A1 | `btn-vs-bb-3bp-ip-wet-t96` | BTN vs BB · 3BP · Wet T♥9♥6♠ — villain donks | 12 | 5 | NEXT |
 | 2 | LSW-A2 | `btn-vs-bb-srp-ip-dry-q72r` | BTN vs BB · SRP · Dry Q72r | 15 | 6 | NEXT |
-| 3 | LSW-A3 | `co-vs-bb-srp-oop-paired-k77` | CO vs BB · SRP · Paired K♠7♦7♣ | 3 | 2 | NEXT |
+| 3 | LSW-A3 | `sb-vs-bb-srp-oop-paired-k77` | SB vs BB · SRP · Paired K♠7♦7♣ | 3 | 2 | COMPLETE 2026-04-22 (renamed CO→SB via LSW-F3 to fix position mismatch) |
 | 4 | LSW-A4 | `sb-vs-btn-3bp-oop-wet-t98` | SB vs BTN · 3BP · Wet T♠9♠8♥ | 4 | 2 | NEXT |
 | 5 | LSW-A5 | `co-vs-btn-bb-srp-mw-oop` | CO vs BTN + BB · 3-way SRP · Q♥5♠3♦ — hero OOP | 3 | 2 | NEXT |
 | 6 | LSW-A6 | `btn-vs-bb-sb-srp-mw-j85` | BTN vs BB + SB · 3-way SRP · J♠8♥5♦ | 10 | 4 | NEXT |
@@ -139,7 +139,7 @@ Add `heroHolding.combos` + `heroHolding.bucketCandidates` to every flop decision
 | # | Line | Node |
 |---|------|------|
 | 1 | `btn-vs-bb-srp-ip-dry-q72r` | `flop_root` |
-| 2 | `co-vs-bb-srp-oop-paired-k77` | `flop_root` |
+| 2 | `sb-vs-bb-srp-oop-paired-k77` | `flop_root` |
 | 3 | `sb-vs-btn-3bp-oop-wet-t98` | `flop_root` |
 | 4 | `utg-vs-btn-4bp-deep` | `flop_root` |
 | 5 | `btn-vs-bb-sb-srp-mw-j85` | `flop_root` |
@@ -286,7 +286,7 @@ Phase 2 and Phase 3 are partially parallelizable per-line (line-3's audit can cl
 - `docs/design/audits/line-audits/_TEMPLATE.md` (created)
 - `docs/design/audits/line-audits/btn-vs-bb-3bp-ip-wet-t96.md` (LSW-A1)
 - `docs/design/audits/line-audits/btn-vs-bb-srp-ip-dry-q72r.md` (LSW-A2)
-- `docs/design/audits/line-audits/co-vs-bb-srp-oop-paired-k77.md` (LSW-A3)
+- `docs/design/audits/line-audits/sb-vs-bb-srp-oop-paired-k77.md` (LSW-A3; renamed from CO via LSW-F3 on 2026-04-22)
 - `docs/design/audits/line-audits/sb-vs-btn-3bp-oop-wet-t98.md` (LSW-A4)
 - `docs/design/audits/line-audits/co-vs-btn-bb-srp-mw-oop.md` (LSW-A5)
 - `docs/design/audits/line-audits/btn-vs-bb-sb-srp-mw-j85.md` (LSW-A6)

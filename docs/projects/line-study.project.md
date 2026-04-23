@@ -300,7 +300,7 @@ Fill out the content library: 6 multiway lessons, 3 more HU lines (covering the 
   5. `mw-cbet-shifts` — C-bet Frequency on Textured Boards in Multiway
   6. `mw-overcalling` — Overcalling Theory
 - [x] 3 new HU lines:
-  - `co-vs-bb-srp-oop-paired-k77` — CO vs BB SRP OOP paired K77
+  - `sb-vs-bb-srp-oop-paired-k77` — SB vs BB SRP OOP paired K77 (originally authored as CO; renamed via LSW-F3 2026-04-22 to fix position mismatch — see audit `docs/design/audits/line-audits/sb-vs-bb-srp-oop-paired-k77.md`)
   - `sb-vs-btn-3bp-oop-wet-t98` — SB vs BTN 3BP OOP wet T98ss
   - `utg-vs-btn-4bp-deep` — UTG vs BTN 4BP A♠K♦2♠ (low-SPR)
 - [x] 2 new MW lines:

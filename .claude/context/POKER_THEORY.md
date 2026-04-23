@@ -488,3 +488,27 @@ This section catalogs places where our authored content or engine defaults inten
 **How it is surfaced to the student:** The line's `why` section on `flop_root` explicitly labels BB's donk as a live-pool deviation, not a principled nut-advantage play. Students internalize "this is how you respond when BB donks — a real live-pool pattern," not "BB should donk here."
 
 **Originating audit:** LSW-A1 (`docs/design/audits/line-audits/btn-vs-bb-3bp-ip-wet-t96.md`), category-D finding D1.
+
+### 9.2 Live-pool BB flat-call range in BTN-vs-BB SRPs
+
+**Content:** `btn-vs-bb-srp-ip-dry-q72r` Line Study line + any future BTN-vs-BB SRP line that references BB's flat range composition.
+
+**Divergence:** Modern solver (per [PokerCoaching 100bb HUNL charts](https://poker-coaching.s3.amazonaws.com/tools/preflop-charts/100bb-hunl-cash-game-charts.pdf) and [Betting Data Lab — 3bet Range Strategy](https://betting-data-lab.com/poker-3bet-range-strategy-for-cash-games-what-actually-works/)) has BB 3bet TT+/AJs+/AQo+ vs BTN opens with polarization (QQ 3bets 98% across positions, JJ/TT majority 3bet, AK/AQ/AJs majority 3bet, blocker bluffs). Our authored `flop_root.why` on the Q72r line assumes BB flats QQ-TT (3bets only KK+/AA). This is an older live-pool convention, not solver-current.
+
+**Justification:** Live pool at 2/5–5/10 cash flats QQ-TT much more often than solver recommends, especially vs button opens where stack preservation and set-mining incentives push the flat frequency up. The line's target student is a live-cash player; teaching them to expect the wider flat range composition matches the table they actually sit at.
+
+**How it is surfaced to the student:** The line's `why` section on `flop_root` explicitly labels the BB flat-range assumption as the live-stakes convention ("live cash flats QQ-TT much more often than solver, which 3bets QQ+/JJ/TT+"). The "nut advantage" framing is tightened to "modest, not strong" to reflect that if BB flats QQ, both players have 3 QQ combos on the flop (tied on top set).
+
+**Originating audit:** LSW-A2 (`docs/design/audits/line-audits/btn-vs-bb-srp-ip-dry-q72r.md`), category-D finding.
+
+### 9.3 SB flat-call of BTN 3-bet
+
+**Content:** `sb-vs-btn-3bp-oop-wet-t98` Line Study line + any future line where SB defends a 3bet via flat call.
+
+**Divergence:** Modern solver ([888 Poker — SB vs BB 3bets Strategy](https://www.888poker.com/magazine/sb-vs-bb-3bets-strategy); [Upswing — React to Preflop 3-Bets](https://upswingpoker.com/vs-3-bet-pre-flop-position-strategy-revealed/)) has SB essentially never flat-call a BTN 3bet — the correct preflop action is 3bet-or-fold almost exclusively. Structural reasons: SB plays OOP vs polar range from a vulnerable seat; flat-calling signals weakness and invites BB squeeze exposure.
+
+**Justification:** Live pool at 2/5 and below flats 3bets with QQ-TT and AKs/AQs more often than solver (especially in tougher games where 4-betting light gets run over by nits). The T98 line exists to teach overpair discipline on wet flops — a high-frequency live spot — and the SB-flat-3bet pathway is the only way to construct that spot in an SRP/3BP framing. Without the live-pool flat, we'd have no "AA OOP in 3BP on wet board" teaching node at all.
+
+**How it is surfaced to the student:** The line's `flop_root.prose` section (first paragraph) explicitly labels the SB-flat-3bet as "a live-pool pathway (modern solver has SB 3bet-or-fold vs BTN 3bets; SB barely flats)." Students internalize "this is how you defend AA on wet 3BP flops when the preflop pathway did put you OOP — the response matters more than the rare pathway."
+
+**Originating audit:** LSW-A4 (`docs/design/audits/line-audits/sb-vs-btn-3bp-oop-wet-t98.md`), category-D finding D2.

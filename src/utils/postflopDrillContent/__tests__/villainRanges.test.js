@@ -33,8 +33,8 @@ describe('VILLAIN_RANGE_ALIASES', () => {
     expect(VILLAIN_RANGE_ALIASES.btn_vs_bb_srp_bb_flat).toMatchObject({
       position: 'BB', action: 'call', vs: 'BTN',
     });
-    expect(VILLAIN_RANGE_ALIASES.co_vs_bb_srp_bb_flat).toMatchObject({
-      position: 'BB', action: 'call', vs: 'CO',
+    expect(VILLAIN_RANGE_ALIASES.sb_vs_bb_srp_bb_flat).toMatchObject({
+      position: 'BB', action: 'call', vs: 'SB',
     });
   });
 
@@ -58,7 +58,7 @@ describe('isKnownBaseRangeId', () => {
   it('returns true for seeded aliases', () => {
     expect(isKnownBaseRangeId('btn_vs_bb_3bp_bb_range')).toBe(true);
     expect(isKnownBaseRangeId('btn_vs_bb_srp_bb_flat')).toBe(true);
-    expect(isKnownBaseRangeId('co_vs_bb_srp_bb_flat')).toBe(true);
+    expect(isKnownBaseRangeId('sb_vs_bb_srp_bb_flat')).toBe(true);
   });
 
   it('returns false for unknown aliases + non-string inputs', () => {
@@ -93,8 +93,8 @@ describe('villainRangeFor', () => {
     expect(total).toBeGreaterThan(0);
   });
 
-  it('resolves the K77 alias (BB flat vs CO open)', () => {
-    const range = villainRangeFor('co_vs_bb_srp_bb_flat');
+  it('resolves the K77 alias (BB flat vs SB open)', () => {
+    const range = villainRangeFor('sb_vs_bb_srp_bb_flat');
     expect(range).toBeInstanceOf(Float64Array);
     let total = 0;
     for (let i = 0; i < range.length; i++) total += range[i];
