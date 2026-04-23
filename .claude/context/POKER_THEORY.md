@@ -512,3 +512,27 @@ This section catalogs places where our authored content or engine defaults inten
 **How it is surfaced to the student:** The line's `flop_root.prose` section (first paragraph) explicitly labels the SB-flat-3bet as "a live-pool pathway (modern solver has SB 3bet-or-fold vs BTN 3bets; SB barely flats)." Students internalize "this is how you defend AA on wet 3BP flops when the preflop pathway did put you OOP — the response matters more than the rare pathway."
 
 **Originating audit:** LSW-A4 (`docs/design/audits/line-audits/sb-vs-btn-3bp-oop-wet-t98.md`), category-D finding D2.
+
+### 9.4 Live-pool small-sizing donk composition skews value-heavy
+
+**Content:** Any line where BB (or OOP) donks at small sizing (25-50% pot) on flop or turn — initial reference: `btn-vs-bb-3bp-ip-wet-t96` `flop_root` and analogous IP-vs-OOP donk spots on wet/connected boards.
+
+**Divergence:** Solver-balanced polar ranges at small sizings should be approximately 50:50 value:bluff (or wider on bluff side at small sizings to maintain pot-odds balance). Population observed composition at live 1/2-5/10 NL cash skews systematically value-heavy: ~60-80% value / 20-40% bluff. Pool donks overpairs and middle-pair value at solver-non-aligned frequencies; pool donks blocker-bluffs (A-high blockers) less than solver prescribes.
+
+**Justification:** This composition skew is the load-bearing exploit in IP-vs-OOP-donk lines. Hero's response (call-wider for value-catching, raise-less because raise folds out the bluff region we beat) depends on knowing the actual composition diverges from solver-balanced. Teaching against the solver-balanced range produces under-defends (over-folds vs the value-heavy actual range) and over-raises (folds out the bluffs we dominate).
+
+**How it is surfaced to the student:** Upper-surface artifacts cite the value-heavy composition explicitly in §5 (population baseline) with composition tables (e.g., `btn-vs-bb-3bp-ip-wet-t96-flop_root.md` §2.10-2.16). The §6 exploit recommendation traces the deviation-from-solver to this composition rather than to a "raise more" or "fold more" rule of thumb.
+
+**Originating audit:** Stage 4 leading-theory comparison for `btn-vs-bb-3bp-ip-wet-t96-flop_root` (`docs/upper-surface/comparisons/btn-vs-bb-3bp-ip-wet-t96-flop_root-external.md`), proposed §9.X entry.
+
+### 9.5 Live-pool over-bluffs the capped-IP-checked-turn → polar-OOP-river-bet pattern
+
+**Content:** Any line where IP signals capped range via checking (back) the turn, and OOP responds with polar river aggression — initial reference: `btn-vs-bb-srp-ip-dry-q72r` `river_after_turn_checkback` and analogous SRP/3BP river-after-turn-checkback structures.
+
+**Divergence:** Solver-balanced polar bet ranges at 75% sizing should be approximately 70:30 value:bluff (matches MDF-balance). Population at live 1/2-5/10 NL cash bluffs this exact pattern at materially higher rates — ~55-60% value / 40-50% bluff. The pool's over-bluff stems from misreading hero's capped-checked-turn signal as universally weak and over-attacking with polar aggression that maintains too-many bluff combos for solver-balance.
+
+**Justification:** This is one of the highest-leverage exploitable patterns in live cash. Hero's response (call medium pair vs polar river bets; default-call across reg/pro/fish; archetype-override only vs confirmed nits) depends on the over-bluff calibration. The exploit framing is well-documented in coaching content (Doug Polk's "two most over-bluffed lines in cash"; GTO Wizard "Calling Down the Over-Bluffed Lines in Lower Limits" though stake-scope of source is online-micro per Stage 4 finding).
+
+**How it is surfaced to the student:** Upper-surface artifact `btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback.md` §5 Claim 1 establishes the over-bluff baseline; §6 default recommendation cashes the exploit; §12 Assumption C surfaces the nit-archetype-override as the only fold case. Drill-card surface (`docs/upper-surface/drill-cards/...`) names the headline falsifier (sample showing bluff fraction ≤22%) at the recommendation site.
+
+**Originating audit:** Stage 4 leading-theory comparison for `btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback` (`docs/upper-surface/comparisons/btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback-external.md`), proposed §9.X entry.
