@@ -10,6 +10,12 @@
  * Separation: the pure `computeBucketEVs` function does the data work
  * (testable in isolation). The component is a thin shell around reveal
  * state + archetype selection.
+ *
+ * Commit 1 of LSW-G4-IMPL (2026-04-22): sub-components (PinnedComboRow,
+ * DominationMapDisclosure, BucketEVTable, BucketRow, InapplicableDisclosure)
+ * extracted to `./panels/` with no behavior change. The pure data functions
+ * and the composition shell remain here. `isRowApplicable` moved to
+ * `./panels/panelHelpers.js` and re-exported below for test back-compat.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -26,6 +32,10 @@ import {
 } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
 import { archetypeRangeFor } from '../../../utils/postflopDrillContent/archetypeRanges';
 import { parseBoard, parseAndEncode } from '../../../utils/pokerCore/cardParser';
+import { PinnedComboRow } from './panels/PinnedComboRow';
+import { DominationMapDisclosure } from './panels/DominationMapDisclosure';
+import { BucketEVTable } from './panels/BucketEVTable';
+import { isRowApplicable as isRowApplicableImpl } from './panels/panelHelpers';
 
 // =============================================================================
 // Pure data function — testable in isolation
@@ -186,32 +196,16 @@ export const computeBucketEVs = async ({ node, line, archetype }) => {
   return { archetype, byBucket, pinnedCombo };
 };
 
+/**
+ * Re-exported from `./panels/panelHelpers.js` for test back-compat.
+ * Tests import `isRowApplicable` from this file's surface; moving the
+ * implementation is an internal reorganization.
+ */
+export const isRowApplicable = isRowApplicableImpl;
+
 // =============================================================================
 // Presentational component
 // =============================================================================
-
-const formatEV = (ev) => {
-  if (!Number.isFinite(ev)) return '—';
-  const sign = ev >= 0 ? '+' : '';
-  return `${sign}${ev.toFixed(2)}bb`;
-};
-
-const actionLabel = (actionId, evEntry) => {
-  if (!evEntry) return actionId;
-  if (evEntry.kind === 'check') return 'check';
-  if (evEntry.kind === 'bet' && typeof evEntry.sizing === 'number') {
-    return `bet ${Math.round(evEntry.sizing * 100)}%`;
-  }
-  return actionId;
-};
-
-const CAVEAT_LABELS = {
-  'synthetic-range':    'synthetic range',
-  'v1-simplified-ev':   'simplified EV',
-  'low-sample-bucket':  'low sample',
-  'empty-bucket':       'no combos',
-  'time-budget-bailout': 'partial result',
-};
 
 /**
  * Controlled panel: `archetype` comes from the parent LineWalkthrough so a
@@ -304,339 +298,5 @@ export const BucketEVPanel = ({ node, line, archetype }) => {
         </>
       )}
     </div>
-  );
-};
-
-// ---------- Sub-component: domination-map disclosure (LSW-G5) ---------- //
-
-const RELATION_STYLE = {
-  crushed:    { color: 'text-rose-300',    bg: 'bg-rose-950/30',    border: 'border-rose-800',    label: 'crushed' },
-  dominated:  { color: 'text-orange-300',  bg: 'bg-orange-950/30',  border: 'border-orange-800',  label: 'dominated' },
-  neutral:    { color: 'text-amber-300',   bg: 'bg-amber-950/30',   border: 'border-amber-800',   label: 'coin-flip' },
-  favored:    { color: 'text-teal-300',    bg: 'bg-teal-950/30',    border: 'border-teal-800',    label: 'favored' },
-  dominating: { color: 'text-emerald-300', bg: 'bg-emerald-950/30', border: 'border-emerald-800', label: 'dominating' },
-};
-
-/**
- * Collapsible disclosure below the pinned-combo row. Shows one line per
- * villain hand-type group with weight %, hero equity vs that group, and
- * a relation badge. Sorted heaviest-first so students see the dominant
- * villain region at the top.
- */
-const DominationMapDisclosure = ({ dominationMap }) => {
-  const [open, setOpen] = useState(false);
-  const n = dominationMap.length;
-  return (
-    <div className="border border-gray-800 rounded bg-gray-900/30">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-200"
-      >
-        <span>Domination vs villain's range · {n} hand-type group{n === 1 ? '' : 's'}</span>
-        <span className="text-gray-600">{open ? '▾' : '▸'}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-2 pt-1 space-y-1">
-          {dominationMap.map((row) => {
-            const style = RELATION_STYLE[row.relation] || RELATION_STYLE.neutral;
-            return (
-              <div
-                key={row.id}
-                className="flex items-center justify-between gap-3 text-[11px] py-1 border-b border-gray-800/50 last:border-b-0"
-              >
-                <div className="flex items-center gap-2 min-w-[150px]">
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wide font-semibold border ${style.color} ${style.bg} ${style.border}`}
-                    title={`Hero equity ${(row.equity * 100).toFixed(0)}% → ${row.relation}`}
-                  >
-                    {style.label}
-                  </span>
-                  <span className="text-gray-200">{row.label}</span>
-                </div>
-                <div className="flex items-center gap-4 text-gray-500 font-mono flex-1 justify-end">
-                  <span title={`${row.sampleSize} combos`}>{row.weightPct.toFixed(1)}% of range</span>
-                  <span className={style.color}>{(row.equity * 100).toFixed(0)}% eq</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ---------- Sub-component: pinned-combo EV row (LSW-H2) ---------- //
-
-/**
- * Renders the primary EV row for the pinned hero combo. Distinct typography
- * from the bucket-table rows so students read "here is MY hand's EV" as
- * different from "here is the average EV for combos in this bucket class."
- */
-const PinnedComboRow = ({ pinnedCombo, archetype }) => {
-  if (!pinnedCombo) return null;
-  if (pinnedCombo.error) {
-    return (
-      <div className="rounded border border-rose-800 bg-rose-950/30 px-3 py-2 text-xs text-rose-200">
-        Per-combo EV error{pinnedCombo.comboString ? ` for ${pinnedCombo.comboString}` : ''}: {pinnedCombo.error}
-      </div>
-    );
-  }
-  const bestId = pinnedCombo.ranking?.[0];
-  const secondId = pinnedCombo.ranking?.[1];
-  const best = bestId ? pinnedCombo.evs[bestId] : null;
-  const second = secondId ? pinnedCombo.evs[secondId] : null;
-  const comboLabel = pinnedCombo.comboString || `${pinnedCombo.card1},${pinnedCombo.card2}`;
-  return (
-    <div className="rounded-md border border-amber-700/70 bg-amber-900/20 p-3 space-y-1.5">
-      <div className="flex items-baseline justify-between">
-        <div className="text-[10px] uppercase tracking-wide text-amber-300/90">
-          Your hand · per-combo EV
-        </div>
-        <div className="text-[10px] uppercase tracking-wide text-gray-500">
-          vs {archetype}
-        </div>
-      </div>
-      <div className="flex items-baseline gap-4 flex-wrap">
-        <span className="font-mono text-lg text-amber-100">{comboLabel}</span>
-        <span className="text-[11px] text-gray-400">
-          equity <span className="font-mono text-gray-200">{(pinnedCombo.equity * 100).toFixed(1)}%</span>
-        </span>
-        {best && (
-          <span className="text-[11px] text-gray-400">
-            best <span className="text-teal-300 font-medium">{actionLabel(bestId, best)}</span>
-            <span className="ml-1.5 font-mono text-teal-200">{formatEV(best.ev)}</span>
-          </span>
-        )}
-        {second && (
-          <span className="text-[11px] text-gray-500">
-            runner-up <span className="mr-1">{actionLabel(secondId, second)}</span>
-            <span className="font-mono">{formatEV(second.ev)}</span>
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ---------- Sub-component: the EV table ---------- //
-
-// LSW-H1 (2026-04-22): when the node pins a specific hero combo, buckets
-// whose filter produces zero combos in the authored range are NOT "your
-// hand class" — they're either infeasible for the pinned combo or absent
-// from the range segment. Surfacing them inline with "No combos in range"
-// under a header that reads "Your hand class" is actively misleading. Gate
-// them behind a disclosure when a pinned combo is present. Nodes without
-// a pinned combo (pure range-level teaching) keep the inline-every-row
-// rendering — zero-sample rows are legitimate there.
-//
-// Heuristic for "applicable": `sampleSize > 0` for a successfully-computed
-// result. Not perfect (a bucket the pinned combo doesn't fall in could
-// still be non-empty in the range and show a misleading EV — S2, tracked
-// under LSW-H2), but a significant honesty improvement over rendering
-// every authored bucket regardless.
-export const isRowApplicable = (entry) => {
-  if (!entry) return false;
-  if (entry.error) return false;
-  if (!entry.result) return false;
-  const caveats = entry.result.caveats || [];
-  if (caveats.includes('empty-bucket')) return false;
-  return (entry.result.sampleSize || 0) > 0;
-};
-
-const BucketEVTable = ({ data, candidates, pinnedCombos, demoted = false }) => {
-  if (data.rangeError) {
-    return (
-      <div className="bg-rose-900/30 border border-rose-800 text-rose-200 rounded px-3 py-2 text-xs">
-        Range unavailable — {data.rangeError}
-      </div>
-    );
-  }
-
-  // Collect global caveats across all successful bucket results (dedup).
-  const globalCaveats = new Set();
-  for (const entry of Object.values(data.byBucket)) {
-    if (entry?.result?.caveats) {
-      for (const c of entry.result.caveats) globalCaveats.add(c);
-    }
-  }
-
-  const hasPinnedCombo = Array.isArray(pinnedCombos) && pinnedCombos.length >= 1;
-  const applicable = hasPinnedCombo
-    ? candidates.filter((b) => isRowApplicable(data.byBucket[b]))
-    : candidates;
-  const inapplicable = hasPinnedCombo
-    ? candidates.filter((b) => !isRowApplicable(data.byBucket[b]))
-    : [];
-
-  // LSW-H2 (2026-04-22): when a pinned-combo row renders above, the bucket
-  // table becomes subsidiary. Demote visually (divider + label) and relabel
-  // the header from "Your hand class" to something that makes explicit this
-  // is NOT per-combo data. Non-demoted mode (no pinned combo) keeps the
-  // original "Your hand class" header — it's accurate for pure range-level
-  // teaching nodes.
-  const headerLabel = demoted
-    ? 'Bucket (other combos in your range)'
-    : 'Your hand class';
-
-  return (
-    <div className="space-y-2">
-      {demoted && applicable.length > 0 && (
-        <div className="pt-1 text-[10px] uppercase tracking-wide text-gray-500">
-          Range-level view · other combos in your range that fall in these buckets
-        </div>
-      )}
-      {applicable.length > 0 ? (
-        <div className={`overflow-hidden rounded border ${demoted ? 'border-gray-800' : 'border-gray-700'}`}>
-          <table className={`w-full text-xs ${demoted ? 'opacity-80' : ''}`}>
-            <thead>
-              <tr className="bg-gray-900/60 text-gray-400">
-                <th className="text-left px-2.5 py-1.5 font-medium">{headerLabel}</th>
-                <th className="text-left px-2.5 py-1.5 font-medium">Best action</th>
-                <th className="text-right px-2.5 py-1.5 font-medium">EV</th>
-                <th className="text-right px-2.5 py-1.5 font-medium">Runner-up</th>
-                <th className="text-center px-2.5 py-1.5 font-medium w-16">Sample</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applicable.map((bucketId) => (
-                <BucketRow key={bucketId} bucketId={bucketId} entry={data.byBucket[bucketId]} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        hasPinnedCombo && !demoted && (
-          <div className="bg-gray-900/40 border border-gray-800 rounded px-3 py-2 text-xs text-gray-400 italic">
-            No bucket with live combos for this authored candidate list.
-          </div>
-        )
-      )}
-
-      {hasPinnedCombo && inapplicable.length > 0 && (
-        <InapplicableDisclosure buckets={inapplicable} byBucket={data.byBucket} />
-      )}
-
-      {globalCaveats.size > 0 && (
-        <div className="flex flex-wrap gap-1.5 items-center text-[10px] text-gray-500">
-          <span className="uppercase tracking-wide">Caveats:</span>
-          {[...globalCaveats].map((c) => (
-            <span
-              key={c}
-              className="px-1.5 py-0.5 rounded bg-gray-800/70 border border-gray-700 text-gray-300"
-            >
-              {CAVEAT_LABELS[c] || c}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// LSW-H1 (2026-04-22): collapsed disclosure for buckets that returned
-// zero live combos when the node pins a specific hero combo. Keeps the
-// main table focused on buckets that actually carry an EV for hero; still
-// shows the inapplicable list on demand so the authored candidate list
-// remains auditable from the UI.
-const InapplicableDisclosure = ({ buckets, byBucket }) => {
-  const [open, setOpen] = useState(false);
-  const n = buckets.length;
-  return (
-    <div className="border border-gray-800 rounded bg-gray-900/30">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-gray-200"
-      >
-        <span>
-          {n} bucket{n === 1 ? '' : 's'} not applicable to your hand
-        </span>
-        <span className="text-gray-600">{open ? '▾' : '▸'}</span>
-      </button>
-      {open && (
-        <ul className="px-3 py-1.5 text-[11px] text-gray-500 space-y-0.5">
-          {buckets.map((bucketId) => {
-            const entry = byBucket[bucketId];
-            const reason = entry?.error
-              ? entry.error
-              : (entry?.result?.caveats?.includes('empty-bucket') ? 'no combos in range' : 'no combos');
-            return (
-              <li key={bucketId} className="font-mono">
-                {bucketId} <span className="text-gray-600 italic not-italic font-normal">— {reason}</span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-};
-
-const BucketRow = ({ bucketId, entry }) => {
-  if (!entry) {
-    return (
-      <tr className="border-t border-gray-800">
-        <td colSpan={5} className="px-2.5 py-1.5 text-gray-500 italic">No data for {bucketId}</td>
-      </tr>
-    );
-  }
-  if (entry.error === 'unknown-bucket') {
-    return (
-      <tr className="border-t border-gray-800">
-        <td className="px-2.5 py-1.5 font-mono text-gray-400">{bucketId}</td>
-        <td colSpan={4} className="px-2.5 py-1.5 text-gray-500 italic">
-          Unknown bucket — authored content references a label not in the v1 taxonomy.
-        </td>
-      </tr>
-    );
-  }
-  if (entry.error) {
-    return (
-      <tr className="border-t border-gray-800">
-        <td className="px-2.5 py-1.5 font-mono text-gray-400">{bucketId}</td>
-        <td colSpan={4} className="px-2.5 py-1.5 text-rose-300 italic">Error: {entry.error}</td>
-      </tr>
-    );
-  }
-
-  const result = entry.result;
-  const bestId = result.ranking[0];
-  const secondId = result.ranking[1];
-  const best = result.evs[bestId];
-  const second = secondId ? result.evs[secondId] : null;
-  const sampleLow = result.caveats.includes('low-sample-bucket') || result.caveats.includes('empty-bucket');
-  const emptyBucket = result.caveats.includes('empty-bucket');
-
-  return (
-    <tr className="border-t border-gray-800 hover:bg-gray-900/40">
-      <td className="px-2.5 py-1.5 font-mono text-gray-200">{bucketId}</td>
-      {emptyBucket ? (
-        <td colSpan={3} className="px-2.5 py-1.5 text-gray-500 italic">
-          No combos in range
-        </td>
-      ) : (
-        <>
-          <td className="px-2.5 py-1.5 text-teal-300 font-medium">{actionLabel(bestId, best)}</td>
-          <td className="px-2.5 py-1.5 text-right font-mono text-teal-200">{formatEV(best.ev)}</td>
-          <td className="px-2.5 py-1.5 text-right text-gray-400">
-            {second ? (
-              <span>
-                <span className="text-[10px] mr-1">{actionLabel(secondId, second)}</span>
-                <span className="font-mono">{formatEV(second.ev)}</span>
-              </span>
-            ) : (
-              '—'
-            )}
-          </td>
-        </>
-      )}
-      <td className="px-2.5 py-1.5 text-center">
-        <span className={sampleLow ? 'text-amber-300' : 'text-gray-500'} title={`${result.sampleSize} combo${result.sampleSize === 1 ? '' : 's'}`}>
-          {result.sampleSize}
-        </span>
-      </td>
-    </tr>
   );
 };
