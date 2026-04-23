@@ -42,6 +42,26 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
       board: ['Q♠', '7♥', '2♣'],
       pot: 5.5,
       villainAction: { kind: 'check' },
+      // LSW-G4-IMPL Commit 4 (2026-04-22) — LSW-B1 line migration.
+      // Q72r is the canonical merged-range cbet teaching spot. Hero is
+      // BTN with A♠Q♣ (TPTK, no draw — rainbow board has no flush draw
+      // potential for hero; no straight draw for AQ on Q72). Pinned to
+      // topPairGood per G5.1-aligned taxonomy; feeds the v2 panel's
+      // villain-first decomposition with hero's pov anchored.
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♠Q♣'],
+        bucketCandidates: ['topPairGood'],
+        classLabel: 'top pair, top kicker',
+      },
+      villainRangeContext: {
+        // Resolves to { position: 'BB', action: 'call', vs: 'BTN' } via
+        // villainRanges.js. BB's flat-call range vs BTN's open is the
+        // starting villain range on this SRP flop.
+        baseRangeId: 'btn_vs_bb_srp_bb_flat',
+      },
+      decisionKind: 'standard',
+      decisionStrategy: 'pure',
       frameworks: ['range_advantage', 'range_morphology', 'board_tilt', 'capped_range_check'],
       sections: [
         {
@@ -1872,6 +1892,26 @@ const LINE_CO_VS_BB_SRP_OOP_PAIRED = {
       board: ['K♠', '7♦', '7♣'],
       pot: 5.5,
       villainAction: null,
+      // LSW-G4-IMPL Commit 4 (2026-04-22) — LSW-B1 line migration.
+      // K77 paired-board small-cbet teaching. Hero is CO with A♥K♦ (top
+      // pair, ace kicker) — no flush draw potential (no two-suited
+      // combination), no straight draw (paired board, no 4-card
+      // consecutive). Pinned topPairGood for cbet-teaching pedagogy.
+      // G4-TD note: on K77 the `trips` bucket is feasible for BTN's
+      // 7x holdings but NOT for AKo; bucketCandidates excludes it
+      // correctly as infeasible for this specific pinned combo.
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♥K♦'],
+        bucketCandidates: ['topPairGood'],
+        classLabel: 'top pair, top kicker (paired board)',
+      },
+      villainRangeContext: {
+        // Resolves to { position: 'BB', action: 'call', vs: 'CO' }.
+        baseRangeId: 'co_vs_bb_srp_bb_flat',
+      },
+      decisionKind: 'standard',
+      decisionStrategy: 'pure',
       frameworks: ['range_advantage', 'whiff_rate'],
       sections: [
         {
