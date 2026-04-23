@@ -351,129 +351,42 @@ describe('lineStats', () => {
   });
 });
 
-// ---------- v2: heroHolding (RT-106) ---------- //
+// ---------- schema v3 hardened — heroHolding deprecated (Commit 5) ------ //
 
 describe('SCHEMA_VERSION', () => {
-  it('exports schema version 3 (LSW-G4-IMPL Commit 2.5)', () => {
+  it('exports schema version 3 (hardened via LSW-G4-IMPL Commit 5)', () => {
     // 1 → 2 (2026-04-21, RT-106): heroHolding
     // 2 → 3 (2026-04-22, LSW-G4-IMPL 2.5): heroView + villainRangeContext +
     //                                       decisionKind + decisionStrategy
+    // 3 hardened (2026-04-22, Commit 5): heroHolding deprecated entirely
     expect(SCHEMA_VERSION).toBe(3);
   });
 });
 
-describe('Node.heroHolding (RT-106)', () => {
-  it('accepts a node with no heroHolding (additive-optional)', () => {
+describe('Node.heroHolding deprecation (LSW-G4-IMPL Commit 5)', () => {
+  it('accepts a node with no heroHolding (field simply absent)', () => {
     const line = minimalValidLine();
     expect(line.nodes.root.heroHolding).toBeUndefined();
-    const { ok, errors } = validateLine(line);
+    const { ok } = validateLine(line);
     expect(ok).toBe(true);
-    expect(errors).toEqual([]);
   });
 
-  it('accepts heroHolding with combos only', () => {
+  it('rejects any node declaring heroHolding — v1 pipeline removed', () => {
+    const line = minimalValidLine();
+    line.nodes.root.heroHolding = { combos: ['A♠K♥'], bucketCandidates: ['tptk'] };
+    const { ok, errors } = validateLine(line);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => e.includes('heroHolding is removed in schema v3'))).toBe(true);
+  });
+
+  it('rejection message points authors at the v3 migration path', () => {
     const line = minimalValidLine();
     line.nodes.root.heroHolding = { combos: ['A♠K♥'] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(true);
-    expect(errors).toEqual([]);
-  });
-
-  it('accepts heroHolding with bucketCandidates only', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { bucketCandidates: ['topSet', 'tptk'] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(true);
-    expect(errors).toEqual([]);
-  });
-
-  it('accepts heroHolding with both combos and bucketCandidates', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = {
-      combos: ['A♠K♥', '7♦7♣'],
-      bucketCandidates: ['topSet', 'overpair'],
-    };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(true);
-    expect(errors).toEqual([]);
-  });
-
-  it('rejects heroHolding that is not an object', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = 'AsKh';
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('heroHolding must be an object'))).toBe(true);
-  });
-
-  it('rejects empty heroHolding (neither field present)', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = {};
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('requires combos or bucketCandidates'))).toBe(true);
-  });
-
-  it('rejects empty combos array', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { combos: [] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('combos must be a non-empty array'))).toBe(true);
-  });
-
-  it('rejects malformed combo string', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { combos: ['AsKh'] }; // ascii suits not allowed
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes("combos[0] 'AsKh'"))).toBe(true);
-  });
-
-  it('rejects combo with duplicate card', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { combos: ['A♠A♠'] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('duplicate card'))).toBe(true);
-  });
-
-  it('rejects empty bucketCandidates array', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { bucketCandidates: [] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('bucketCandidates must be a non-empty array'))).toBe(true);
-  });
-
-  it('rejects bucketCandidates containing a non-string entry', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = { bucketCandidates: ['topSet', 42] };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes('bucketCandidates[1]'))).toBe(true);
-  });
-
-  // LSW-H1 (2026-04-22) — surface audit S7.
-  it('rejects `air` in bucketCandidates when combos is non-empty (range-level bucket vs pinned combo)', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = {
-      combos: ['A♠K♥'],
-      bucketCandidates: ['topSet', 'air'],
-    };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(false);
-    expect(errors.some((e) => e.includes("may not include 'air'"))).toBe(true);
-  });
-
-  it('accepts `air` in bucketCandidates when no combos are pinned (pure range-level teaching)', () => {
-    const line = minimalValidLine();
-    line.nodes.root.heroHolding = {
-      bucketCandidates: ['topSet', 'air'],
-    };
-    const { ok, errors } = validateLine(line);
-    expect(ok).toBe(true);
-    expect(errors).toEqual([]);
+    const { errors } = validateLine(line);
+    const msg = errors.join(' ');
+    expect(msg).toMatch(/heroView/);
+    expect(msg).toMatch(/villainRangeContext/);
+    expect(msg).toMatch(/decisionKind/);
   });
 });
 

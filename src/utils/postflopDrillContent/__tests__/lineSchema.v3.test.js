@@ -141,31 +141,37 @@ describe('validateLine accepts v3 nodes', () => {
 
 // ----- Migration guard -----------------------------------------------------
 
-describe('migration guard: heroHolding + heroView cannot coexist', () => {
-  it('rejects a node with both heroHolding and heroView', () => {
+describe('heroHolding hard-deprecation (Commit 5)', () => {
+  it('rejects a node with heroHolding alongside heroView', () => {
     const line = makeV3Line({
       nodeOverrides: {
         heroHolding: { combos: ['J♥T♠'], bucketCandidates: ['topPair'] },
-        // heroView is already present in the fixture
       },
     });
     const result = validateLine(line);
     expect(result.ok).toBe(false);
-    expect(result.errors.join('\n')).toMatch(/heroHolding OR heroView, not both/);
+    expect(result.errors.join('\n')).toMatch(/heroHolding is removed in schema v3/);
   });
 
-  it('still accepts legacy v2 content with heroHolding only', () => {
+  it('rejects a node with heroHolding only — v1 pipeline is removed', () => {
     const line = makeV3Line({
-      nodeOverrides: {
-        heroView: undefined,
-        heroHolding: { combos: ['J♥T♠'], bucketCandidates: ['topPair'] },
-      },
+      nodeOverrides: { heroView: undefined },
     });
-    // Remove heroView to simulate a v2 node
     delete line.nodes.flop_root.heroView;
     line.nodes.flop_root.heroHolding = { combos: ['J♥T♠'], bucketCandidates: ['topPair'] };
     const result = validateLine(line);
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/heroHolding is removed in schema v3/);
+  });
+
+  it('rejection message guides author to the v3 migration path', () => {
+    const line = makeV3Line({ nodeOverrides: { heroView: undefined } });
+    delete line.nodes.flop_root.heroView;
+    line.nodes.flop_root.heroHolding = { combos: ['J♥T♠'] };
+    const msg = validateLine(line).errors.join(' ');
+    expect(msg).toMatch(/heroView/);
+    expect(msg).toMatch(/villainRangeContext/);
+    expect(msg).toMatch(/decisionKind/);
   });
 });
 

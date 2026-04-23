@@ -17,7 +17,6 @@ import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 // crosses drill-view directories (Preflop → Postflop). Acceptable for now;
 // proper consolidation into `_shared/drillInternals/` tracked under RT-94.
 import { CALCULATORS } from '../PreflopDrillsView/LessonCalculators';
-import { BucketEVPanel } from './BucketEVPanel';
 import { BucketEVPanelV2 } from './BucketEVPanelV2';
 
 export const LineNodeRenderer = ({
@@ -31,19 +30,11 @@ export const LineNodeRenderer = ({
   canAdvance,
   isTerminal,
 }) => {
-  // LSW-G4-IMPL Commit 3 (2026-04-22): dual-path rendering during the v1→v2
-  // migration window. Schema v3 nodes declare `heroView` → render via v2
-  // panel (villain-first primary per I-DM-1). Legacy v2 nodes keep
-  // `heroHolding` → render via v1 panel (hero-first). The schema migration
-  // guard in validateNode rejects simultaneous heroHolding + heroView so
-  // this branch is always clean.
-  // Commit 5 deletes the v1 branch once every live-rendered node is
-  // migrated via LSW-B1..B3.
+  // LSW-G4-IMPL Commit 5 (2026-04-22): v1 panel deleted. Only v3 `heroView`
+  // is rendered — via the villain-first `BucketEVPanelV2` composition.
+  // The schema validator rejects any node declaring `heroHolding`
+  // (migration guard), so no v1-shape content can sneak back in.
   const hasHeroView = Boolean(node?.heroView);
-  const hasBucketCandidates =
-    !hasHeroView
-    && Array.isArray(node?.heroHolding?.bucketCandidates)
-    && node.heroHolding.bucketCandidates.length > 0;
   return (
     <div className="space-y-5">
       {/* Node header */}
@@ -65,22 +56,9 @@ export const LineNodeRenderer = ({
         )}
       </div>
 
-      {/* Hero holding (RT-106 v2 schema) — v1 panel path only. v2 nodes
-          render the HeroViewBlock inside BucketEVPanelV2 composition. */}
-      {node.heroHolding && !hasHeroView && (
-        <HeroHoldingRow heroHolding={node.heroHolding} />
-      )}
-
-      {/* v2 panel (BucketEVPanelV2) — villain-first composition for schema
-          v3 nodes. Primitives visible on mount (no reveal gate) per I-DM-1. */}
+      {/* v2 panel — villain-first primary for every node with heroView. */}
       {hasHeroView && (
         <BucketEVPanelV2 node={node} line={line} archetype={archetype} />
-      )}
-
-      {/* v1 panel (BucketEVPanel) — hero-first reveal-on-click. Kept for
-          legacy nodes awaiting LSW-B1..B3 migration. Commit 5 deletes it. */}
-      {hasBucketCandidates && (
-        <BucketEVPanel node={node} line={line} archetype={archetype} />
       )}
 
       {/* Sections */}
@@ -108,49 +86,6 @@ export const LineNodeRenderer = ({
         <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-4 text-sm text-gray-300">
           <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">End of line</div>
           Use <strong className="text-gray-100">Restart line</strong> above to replay, or <strong className="text-gray-100">Back to picker</strong> to pick another line.
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ---------- Hero holding (RT-106) ---------- //
-
-const HeroHoldingRow = ({ heroHolding }) => {
-  const { combos, bucketCandidates } = heroHolding || {};
-  const hasCombos = Array.isArray(combos) && combos.length > 0;
-  const hasBuckets = Array.isArray(bucketCandidates) && bucketCandidates.length > 0;
-  if (!hasCombos && !hasBuckets) return null;
-  return (
-    <div className="rounded-lg border border-amber-800/60 bg-amber-900/20 px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wide text-amber-300/90 mb-1">
-        Your hand
-      </div>
-      {hasCombos && (
-        <div className="flex flex-wrap gap-1.5 mb-1.5">
-          {combos.map((c) => (
-            <span
-              key={`combo-${c}`}
-              className="px-2 py-0.5 rounded-md bg-amber-950/60 border border-amber-700 text-amber-100 font-mono text-sm"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
-      {hasBuckets && (
-        <div className="flex flex-wrap gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-gray-500 self-center">
-            or
-          </span>
-          {bucketCandidates.map((b) => (
-            <span
-              key={`bucket-${b}`}
-              className="px-2 py-0.5 rounded-full bg-gray-900/50 border border-gray-700 text-gray-300 text-[11px]"
-            >
-              {b}
-            </span>
-          ))}
         </div>
       )}
     </div>

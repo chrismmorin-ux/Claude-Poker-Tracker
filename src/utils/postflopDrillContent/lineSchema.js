@@ -52,12 +52,21 @@
  *   2 → 3 (2026-04-22, LSW-G4-IMPL Commit 2.5): added optional
  *                                `Node.heroView`, `Node.villainRangeContext`,
  *                                `Node.decisionKind`, `Node.decisionStrategy`
- *                                per the `bucket-ev-panel-v2` spec. All
- *                                v3 additions are additive + nullable;
- *                                legacy v2 content continues to validate.
- *                                Migration guard rejects dual-authored
- *                                nodes (simultaneous `heroHolding` AND
- *                                `heroView`).
+ *                                per the `bucket-ev-panel-v2` spec.
+ *                                Initially v2 legacy content (heroHolding
+ *                                alone) continued to validate; dual-
+ *                                authoring rejected.
+ *   3 → 3 hardened (2026-04-22, Commit 5): `heroHolding` is hard-deprecated.
+ *                                Validator rejects any node declaring it.
+ *                                Rationale: the v1 analysis pipeline that
+ *                                consumed heroHolding had surfaced
+ *                                pervasive errors (coarse
+ *                                HERO_BUCKET_TYPICAL_EQUITY priors, S1
+ *                                infeasible-bucket rendering, S5 hero-
+ *                                first framing violating first-principles
+ *                                doctrine). Deleting the code + hard-
+ *                                rejecting the field prevents silent
+ *                                regressions.
  */
 export const SCHEMA_VERSION = 3;
 
@@ -342,70 +351,18 @@ const validateVillainAction = (va, ctx) => {
   return errs;
 };
 
-/**
- * Validate the optional `heroHolding` field on a Node (RT-106, schema v2).
- *
- * Shape: `{ combos?: string[], bucketCandidates?: string[] }`. At least one
- * of the two arrays must be present and non-empty. `combos` entries match
- * the `COMBO_REGEX` format and must have two distinct cards. `bucketCandidates`
- * entries are free-form non-empty strings — the bucket taxonomy is pinned in
- * RT-110 and not enforced here to avoid pre-committing that naming.
- */
-const validateHeroHolding = (heroHolding, ctx) => {
-  const errs = [];
-  if (!isPlainObject(heroHolding)) {
-    errs.push(`${ctx}: heroHolding must be an object`);
-    return errs;
-  }
-  const hasCombos = heroHolding.combos !== undefined;
-  const hasBuckets = heroHolding.bucketCandidates !== undefined;
-  if (!hasCombos && !hasBuckets) {
-    errs.push(`${ctx}: heroHolding requires combos or bucketCandidates`);
-    return errs;
-  }
-  if (hasCombos) {
-    if (!Array.isArray(heroHolding.combos) || heroHolding.combos.length === 0) {
-      errs.push(`${ctx}: heroHolding.combos must be a non-empty array`);
-    } else {
-      heroHolding.combos.forEach((c, i) => {
-        if (typeof c !== 'string' || !COMBO_REGEX.test(c)) {
-          errs.push(`${ctx}: heroHolding.combos[${i}] '${c}' must match rank+suit×2 (e.g. 'A♠K♥')`);
-          return;
-        }
-        // Distinct-card check: split into the two card strings (rank + suit glyph).
-        const m = c.match(COMBO_REGEX);
-        if (m && m[1] === m[3] && m[2] === m[4]) {
-          errs.push(`${ctx}: heroHolding.combos[${i}] '${c}' has duplicate card`);
-        }
-      });
-    }
-  }
-  if (hasBuckets) {
-    if (!Array.isArray(heroHolding.bucketCandidates) || heroHolding.bucketCandidates.length === 0) {
-      errs.push(`${ctx}: heroHolding.bucketCandidates must be a non-empty array`);
-    } else {
-      heroHolding.bucketCandidates.forEach((b, i) => {
-        if (!nonEmptyString(b)) {
-          errs.push(`${ctx}: heroHolding.bucketCandidates[${i}] must be a non-empty string`);
-        }
-      });
-    }
-  }
-  // LSW-H1 (2026-04-22): `air` is a range-level bucket (the portion of a
-  // range that missed the board). When the node pins a specific combo via
-  // `combos`, asking for the EV of that combo's "air" classification is a
-  // category error — a pinned combo is either air or not; it's a predicate,
-  // not a candidate. Reject at validation time so authoring can't drift.
-  if (hasCombos && hasBuckets
-      && Array.isArray(heroHolding.combos) && heroHolding.combos.length >= 1
-      && Array.isArray(heroHolding.bucketCandidates)
-      && heroHolding.bucketCandidates.includes('air')) {
-    errs.push(`${ctx}: heroHolding.bucketCandidates may not include 'air' when combos is non-empty (air is a range-level bucket; a pinned combo is either air or not)`);
-  }
-  return errs;
-};
-
 // ---------- v3 field validators (LSW-G4-IMPL Commit 2.5) ---------- //
+
+// Note: `validateHeroHolding` + the v2 `heroHolding` field were deleted in
+// LSW-G4-IMPL Commit 5 (2026-04-22). The field was flagged for hard
+// deprecation because the v1 analysis pipeline it fed had surfaced
+// pervasive analytical errors during the LSW audit sweep (coarse
+// HERO_BUCKET_TYPICAL_EQUITY priors, S1 infeasible-bucket rendering, S5
+// hero-first paradigm violation of first-principles doctrine). Keeping
+// the validator alive would permit content to silently regress back
+// through the deleted engine path. validateNode now rejects any node
+// declaring `heroHolding` at all, directing authors to the v3 `heroView`
+// + `villainRangeContext` + `decisionKind` field set instead.
 
 /**
  * Validate `Node.heroView` — v3 replacement for `heroHolding`, per
@@ -566,14 +523,14 @@ const validateNode = (node, id, nodeIds) => {
       errs.push(`nodes['${id}']: frameworks must be array of non-empty strings`);
     }
   }
-  // v2 `heroHolding` + v3 `heroView` — migration guard: never both on one
-  // node. Dual-authoring is always a bug (the panel branches on heroView
-  // presence; keeping both around would render through two code paths).
-  if (node.heroHolding != null && node.heroView != null) {
-    errs.push(`nodes['${id}']: must declare heroHolding OR heroView, not both (schema v3 migration guard)`);
-  }
+  // LSW-G4-IMPL Commit 5 (2026-04-22): `heroHolding` is hard-deprecated.
+  // The v1 analysis pipeline it fed had surfaced pervasive errors during
+  // the LSW audit sweep (coarse equity priors, infeasible-bucket
+  // rendering, hero-first framing violating first-principles doctrine).
+  // Validator now rejects any node declaring the field so regressions
+  // can't slip back in. Migrate to `heroView` + `villainRangeContext`.
   if (node.heroHolding != null) {
-    errs.push(...validateHeroHolding(node.heroHolding, `nodes['${id}']`));
+    errs.push(`nodes['${id}']: heroHolding is removed in schema v3 — migrate to heroView + villainRangeContext + decisionKind. See bucket-ev-panel-v2 spec.`);
   }
   if (node.heroView != null) {
     errs.push(...validateHeroView(node.heroView, `nodes['${id}']`));
