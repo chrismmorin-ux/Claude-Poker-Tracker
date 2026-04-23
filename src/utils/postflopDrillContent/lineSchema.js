@@ -46,11 +46,58 @@
  */
 
 /**
- * Schema version — bumped from 1 → 2 on 2026-04-21 (RT-106) to add the
- * optional `Node.heroHolding` field. The field is additive and nullable;
- * existing content without it continues to validate under v2.
+ * Schema version history:
+ *   1 → 2 (2026-04-21, RT-106): added optional `Node.heroHolding` for
+ *                                hand-level teaching.
+ *   2 → 3 (2026-04-22, LSW-G4-IMPL Commit 2.5): added optional
+ *                                `Node.heroView`, `Node.villainRangeContext`,
+ *                                `Node.decisionKind`, `Node.decisionStrategy`
+ *                                per the `bucket-ev-panel-v2` spec. All
+ *                                v3 additions are additive + nullable;
+ *                                legacy v2 content continues to validate.
+ *                                Migration guard rejects dual-authored
+ *                                nodes (simultaneous `heroHolding` AND
+ *                                `heroView`).
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+/**
+ * Allowed values for `Node.heroView.kind` — see `bucket-ev-panel-v2` spec
+ * axis 3. v1 ship supports single-combo only; combo-set + range-level are
+ * stubs that panel v2 will error on via its `errorState` path.
+ */
+export const HERO_VIEW_KINDS = Object.freeze([
+  'single-combo', 'combo-set', 'range-level',
+]);
+
+/**
+ * Allowed values for `Node.decisionKind` — drives P1 rendering mode in
+ * `bucket-ev-panel-v2`. Extending this list requires adding the matching
+ * render mode to P1 and updating the handler map.
+ */
+export const DECISION_KINDS = Object.freeze([
+  'standard', 'bluff-catch', 'thin-value',
+]);
+
+/**
+ * Allowed values for `Node.decisionStrategy`. `mixed` is an extension seam
+ * (axis 8) — v1 ship treats everything as `pure` at render time.
+ */
+export const DECISION_STRATEGIES = Object.freeze(['pure', 'mixed']);
+
+/**
+ * Allowed `NarrowingSpec.kind` values — composable descriptors that
+ * dispatch to engine handlers in `drillModeEngine.js`. Additive: adding a
+ * new narrowing pattern means adding an entry here PLUS a matching handler
+ * to the engine's map. See the v2 spec's "schema extensions" section.
+ */
+export const NARROWING_SPEC_KINDS = Object.freeze([
+  'keep-continuing-vs-action',
+  'keep-call-range',
+  'drop-raises',
+  'keep-check-range',
+  'keep-bet-range',
+]);
 
 export const SECTION_KINDS = Object.freeze([
   'prose', 'formula', 'example', 'compute', 'why', 'adjust', 'mismatch',
@@ -358,6 +405,128 @@ const validateHeroHolding = (heroHolding, ctx) => {
   return errs;
 };
 
+// ---------- v3 field validators (LSW-G4-IMPL Commit 2.5) ---------- //
+
+/**
+ * Validate `Node.heroView` — v3 replacement for `heroHolding`, per
+ * `bucket-ev-panel-v2` spec. Shape:
+ *   { kind: HERO_VIEW_KINDS, combos?: string[], bucketCandidates?: string[],
+ *     classLabel?: string }
+ */
+const validateHeroView = (heroView, ctx) => {
+  const errs = [];
+  if (!isPlainObject(heroView)) {
+    errs.push(`${ctx}: heroView must be an object`);
+    return errs;
+  }
+  if (!HERO_VIEW_KINDS.includes(heroView.kind)) {
+    errs.push(`${ctx}: heroView.kind '${heroView.kind}' must be one of ${HERO_VIEW_KINDS.join(', ')}`);
+  }
+  // single-combo / combo-set require a non-empty combos array; range-level
+  // requires a `range` field (deferred in v1; validator accepts any-typed
+  // `range` so v1.1 content can land without schema rev).
+  if (heroView.kind === 'single-combo' || heroView.kind === 'combo-set') {
+    if (!Array.isArray(heroView.combos) || heroView.combos.length === 0) {
+      errs.push(`${ctx}: heroView.combos must be a non-empty array for kind '${heroView.kind}'`);
+    } else {
+      heroView.combos.forEach((c, i) => {
+        if (typeof c !== 'string' || !COMBO_REGEX.test(c)) {
+          errs.push(`${ctx}: heroView.combos[${i}] '${c}' must match rank+suit×2 (e.g. 'J♥T♠')`);
+          return;
+        }
+        const m = c.match(COMBO_REGEX);
+        if (m && m[1] === m[3] && m[2] === m[4]) {
+          errs.push(`${ctx}: heroView.combos[${i}] '${c}' has duplicate card`);
+        }
+      });
+    }
+    // single-combo is strict: must be exactly one combo.
+    if (heroView.kind === 'single-combo'
+        && Array.isArray(heroView.combos)
+        && heroView.combos.length !== 1) {
+      errs.push(`${ctx}: heroView.combos must have exactly 1 entry for kind 'single-combo', got ${heroView.combos.length}`);
+    }
+  }
+  if (heroView.bucketCandidates !== undefined) {
+    if (!Array.isArray(heroView.bucketCandidates) || heroView.bucketCandidates.length === 0) {
+      errs.push(`${ctx}: heroView.bucketCandidates must be a non-empty array when present`);
+    } else {
+      heroView.bucketCandidates.forEach((b, i) => {
+        if (!nonEmptyString(b)) {
+          errs.push(`${ctx}: heroView.bucketCandidates[${i}] must be a non-empty string`);
+        }
+      });
+      // LSW-H1 parity: `air` in bucketCandidates on a pinned-combo node is
+      // a category error — a single combo is either air or not.
+      if (heroView.kind === 'single-combo' && heroView.bucketCandidates.includes('air')) {
+        errs.push(`${ctx}: heroView.bucketCandidates may not include 'air' when heroView.kind is 'single-combo' (air is range-level; a pinned combo is either air or not)`);
+      }
+    }
+  }
+  if (heroView.classLabel !== undefined && !nonEmptyString(heroView.classLabel)) {
+    errs.push(`${ctx}: heroView.classLabel must be a non-empty string when present`);
+  }
+  return errs;
+};
+
+/**
+ * Validate `NarrowingSpec` — composable descriptor the engine uses to narrow
+ * villain's range between streets. Shape:
+ *   { kind: NARROWING_SPEC_KINDS, actions?: string[], filter?: string, params?: object }
+ */
+const validateNarrowingSpec = (spec, ctx) => {
+  const errs = [];
+  if (!isPlainObject(spec)) {
+    errs.push(`${ctx}: narrowingSpec must be an object`);
+    return errs;
+  }
+  if (!NARROWING_SPEC_KINDS.includes(spec.kind)) {
+    errs.push(`${ctx}: narrowingSpec.kind '${spec.kind}' must be one of ${NARROWING_SPEC_KINDS.join(', ')}`);
+  }
+  if (spec.actions !== undefined) {
+    if (!Array.isArray(spec.actions) || spec.actions.some((a) => !nonEmptyString(a))) {
+      errs.push(`${ctx}: narrowingSpec.actions must be array of non-empty strings when present`);
+    }
+  }
+  if (spec.filter !== undefined && !nonEmptyString(spec.filter)) {
+    errs.push(`${ctx}: narrowingSpec.filter must be a non-empty string when present`);
+  }
+  if (spec.params !== undefined && !isPlainObject(spec.params)) {
+    errs.push(`${ctx}: narrowingSpec.params must be an object when present`);
+  }
+  return errs;
+};
+
+/**
+ * Validate `Node.villainRangeContext` — v3 field pointing at
+ * `villainRanges.js` via `baseRangeId`, with optional narrowing metadata.
+ * Shape:
+ *   { baseRangeId: string, narrowingSpec?: NarrowingSpec, narrowingLabel?: string }
+ *
+ * Cross-layer check (baseRangeId existence) is deliberately NOT done here —
+ * the schema validator is pure and can't import `villainRanges.js` without
+ * pulling the whole range library into every schema test. Callers that need
+ * resolution guarantees (like the engine's `computeBucketEVsV2`) catch
+ * unknown aliases at runtime via `villainRangeFor` throwing.
+ */
+const validateVillainRangeContext = (vrc, ctx) => {
+  const errs = [];
+  if (!isPlainObject(vrc)) {
+    errs.push(`${ctx}: villainRangeContext must be an object`);
+    return errs;
+  }
+  if (!nonEmptyString(vrc.baseRangeId)) {
+    errs.push(`${ctx}: villainRangeContext.baseRangeId must be a non-empty string`);
+  }
+  if (vrc.narrowingSpec !== undefined) {
+    errs.push(...validateNarrowingSpec(vrc.narrowingSpec, `${ctx}.narrowingSpec`));
+  }
+  if (vrc.narrowingLabel !== undefined && !nonEmptyString(vrc.narrowingLabel)) {
+    errs.push(`${ctx}: villainRangeContext.narrowingLabel must be a non-empty string when present`);
+  }
+  return errs;
+};
+
 const validateNode = (node, id, nodeIds) => {
   const errs = [];
   if (!isPlainObject(node)) {
@@ -397,8 +566,30 @@ const validateNode = (node, id, nodeIds) => {
       errs.push(`nodes['${id}']: frameworks must be array of non-empty strings`);
     }
   }
+  // v2 `heroHolding` + v3 `heroView` — migration guard: never both on one
+  // node. Dual-authoring is always a bug (the panel branches on heroView
+  // presence; keeping both around would render through two code paths).
+  if (node.heroHolding != null && node.heroView != null) {
+    errs.push(`nodes['${id}']: must declare heroHolding OR heroView, not both (schema v3 migration guard)`);
+  }
   if (node.heroHolding != null) {
     errs.push(...validateHeroHolding(node.heroHolding, `nodes['${id}']`));
+  }
+  if (node.heroView != null) {
+    errs.push(...validateHeroView(node.heroView, `nodes['${id}']`));
+  }
+  if (node.villainRangeContext != null) {
+    errs.push(...validateVillainRangeContext(node.villainRangeContext, `nodes['${id}'].villainRangeContext`));
+  }
+  if (node.decisionKind !== undefined) {
+    if (!DECISION_KINDS.includes(node.decisionKind)) {
+      errs.push(`nodes['${id}']: decisionKind '${node.decisionKind}' must be one of ${DECISION_KINDS.join(', ')}`);
+    }
+  }
+  if (node.decisionStrategy !== undefined) {
+    if (!DECISION_STRATEGIES.includes(node.decisionStrategy)) {
+      errs.push(`nodes['${id}']: decisionStrategy '${node.decisionStrategy}' must be one of ${DECISION_STRATEGIES.join(', ')}`);
+    }
   }
   return errs;
 };

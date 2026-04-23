@@ -354,8 +354,11 @@ describe('lineStats', () => {
 // ---------- v2: heroHolding (RT-106) ---------- //
 
 describe('SCHEMA_VERSION', () => {
-  it('exports schema version 2 (RT-106)', () => {
-    expect(SCHEMA_VERSION).toBe(2);
+  it('exports schema version 3 (LSW-G4-IMPL Commit 2.5)', () => {
+    // 1 → 2 (2026-04-21, RT-106): heroHolding
+    // 2 → 3 (2026-04-22, LSW-G4-IMPL 2.5): heroView + villainRangeContext +
+    //                                       decisionKind + decisionStrategy
+    expect(SCHEMA_VERSION).toBe(3);
   });
 });
 
