@@ -98,6 +98,121 @@ export const BUCKET_TAXONOMY = Object.freeze({
   air:           Object.freeze(['air']),
 });
 
+/**
+ * Plain-language 1-sentence definitions for every bucket. Drives the inline
+ * glossary (P6b GlossaryBlock per `bucket-ev-panel-v2` spec) and the
+ * tap-for-definition popover on bucket labels. Every BUCKET_TAXONOMY key
+ * has a matching entry — the test suite enforces 1:1 coverage so new
+ * taxonomy additions surface as missing-definition test failures.
+ *
+ * Definitions are student-language, not developer-language: prefer "A flush
+ * using the nut-suit card" over "nutFlush handType."
+ */
+export const BUCKET_DEFINITIONS = Object.freeze({
+  // Monster made hands
+  straightFlush: 'A straight and a flush at the same time — five consecutive cards all the same suit.',
+  quads:         'Four of a kind.',
+  boat:          'A full house — three of a kind plus a pair.',
+  fullHouse:     'A full house — three of a kind plus a pair.',
+
+  // Flushes
+  flush:         'Five cards of the same suit. Combines nut-flush / K-high flush / low flush.',
+  nutFlush:      'A flush using the nut-suit card — cannot be beaten by another flush.',
+  secondFlush:   'A K-high flush — loses only to the ace-high nut flush.',
+  weakFlush:     'A flush below K-high — can be outflushed by a bigger flush.',
+
+  // Straights
+  straight:      'Five consecutive cards — combines nut and non-nut straights.',
+  nutStraight:   'The highest possible straight on this board — cannot be outstraighted.',
+
+  // Big made-hand tier
+  set:           'Three of a kind using a pocket pair — two of your hand cards hit the board-rank.',
+  trips:         'Three of a kind using one of your cards plus a paired board.',
+  twoPair:       'Two pairs using both your hole cards with the board.',
+
+  // Pair tier
+  overpair:      'A pocket pair larger than any card on the board.',
+  topPair:       'A pair using the highest board card. Combines good-kicker and weak-kicker variants.',
+  tptk:          'Top pair with a strong kicker (A or K usually) — the top of the top-pair region.',
+  topPairWeak:   'Top pair with a weak kicker — beaten by same top-pair + better kicker.',
+  middlePair:    'A pair using the middle-ranked board card.',
+  bottomPair:    'A pair using the lowest-ranked board card.',
+  weakPair:      'An under-pair (pocket pair smaller than the lowest board card).',
+
+  // Draws
+  flushDraw:       'Four cards of the same suit, one card away from a flush.',
+  nutFlushDraw:    'A flush draw using the nut-suit card — the best flush draw.',
+  nonNutFlushDraw: 'A flush draw that would not make the nut flush.',
+  comboDraw:       'A flush draw plus a straight draw on the same hand — high equity semi-bluff.',
+  openEnder:       'An open-ended straight draw — four consecutive cards, 8 outs to a straight.',
+  oesd:            'An open-ended straight draw — four consecutive cards, 8 outs to a straight.',
+  gutshot:         'An inside straight draw — needs one specific rank, 4 outs.',
+  overcards:       'Two unpaired cards higher than every board card — equity from pairing up or bluff value.',
+
+  // Backdoor-only draws
+  backdoorFlushDraw:    'One card of a suit plus two on the board — runner-runner flush potential.',
+  backdoorStraightDraw: 'Three consecutive cards across hand and board — runner-runner straight potential.',
+  backdoorCombo:        'Both backdoor flush draw and backdoor straight draw in the same hand.',
+
+  // Nothing
+  air:           'No pair, no draw, no showdown value — just high-card.',
+});
+
+/**
+ * Display names for bucket IDs — used by the `BucketLabel` primitive in the
+ * v2 panel so students see natural-language labels ("Top pair, good kicker")
+ * rather than developer shorthand ("topPairGood").
+ */
+export const BUCKET_DISPLAY_NAMES = Object.freeze({
+  straightFlush: 'Straight flush',
+  quads: 'Quads',
+  boat: 'Full house',
+  fullHouse: 'Full house',
+  flush: 'Flush',
+  nutFlush: 'Nut flush',
+  secondFlush: 'K-high flush',
+  weakFlush: 'Low flush',
+  straight: 'Straight',
+  nutStraight: 'Nut straight',
+  set: 'Set',
+  trips: 'Trips',
+  twoPair: 'Two pair',
+  overpair: 'Overpair',
+  topPair: 'Top pair',
+  tptk: 'Top pair, top kicker',
+  topPairWeak: 'Top pair, weak kicker',
+  middlePair: 'Middle pair',
+  bottomPair: 'Bottom pair',
+  weakPair: 'Weak / underpair',
+  flushDraw: 'Flush draw',
+  nutFlushDraw: 'Nut flush draw',
+  nonNutFlushDraw: 'Non-nut flush draw',
+  comboDraw: 'Combo draw (FD + straight)',
+  openEnder: 'Open-ended straight draw',
+  oesd: 'Open-ended straight draw',
+  gutshot: 'Gutshot',
+  overcards: 'Overcards',
+  backdoorFlushDraw: 'Backdoor flush draw',
+  backdoorStraightDraw: 'Backdoor straight draw',
+  backdoorCombo: 'Backdoor combo (FD + straight)',
+  air: 'Air',
+});
+
+/**
+ * Resolve a bucket ID to its display name, falling back to the ID itself
+ * when unknown (so new taxonomy entries aren't invisible in the UI while
+ * their display entry is authored).
+ */
+export const displayNameForBucket = (bucketId) =>
+  BUCKET_DISPLAY_NAMES[bucketId] || bucketId;
+
+/**
+ * Resolve a bucket ID to its 1-sentence definition, returning null when
+ * unknown (caller decides whether to fallback).
+ */
+export const definitionForBucket = (bucketId) =>
+  BUCKET_DEFINITIONS[bucketId] || null;
+
 /** All authored bucket IDs known to this adapter. */
 export const listKnownBuckets = () => Object.keys(BUCKET_TAXONOMY);
 

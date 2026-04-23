@@ -11,9 +11,28 @@ import { computeBucketEVs, isRowApplicable, parseComboString } from '../BucketEV
 import { findLine } from '../../../../utils/postflopDrillContent/lines';
 import { encodeCard } from '../../../../utils/pokerCore/cardParser';
 
-// The canonical JT6 exemplar has heroHolding on flop_root.
+// The canonical JT6 exemplar. Post-Commit-3 the live JT6 flop_root uses
+// the v3 `heroView` field instead of the v2 `heroHolding` field — the v1
+// BucketEVPanel code path reads `heroHolding`, so these tests wrap the
+// live node to synthesize the legacy v2 shape they expect. Commit 5 of the
+// migration will retire these tests along with the v1 panel.
 const getJT6Line = () => findLine('btn-vs-bb-3bp-ip-wet-t96');
-const getJT6FlopNode = () => getJT6Line().nodes.flop_root;
+const getJT6FlopNode = () => {
+  const liveNode = getJT6Line().nodes.flop_root;
+  // Legacy heroHolding fixture mirroring the pre-v3 authoring. The fields
+  // v1 BucketEVPanel reads are explicit here so test expectations match
+  // the v1 code path even after JT6's content migrated to heroView.
+  return {
+    ...liveNode,
+    heroHolding: {
+      combos: ['J♥T♠'],
+      bucketCandidates: ['topPair'],
+    },
+    // heroView is deliberately stripped so these tests exercise the v1
+    // computeBucketEVs code path, not the v2 panel.
+    heroView: undefined,
+  };
+};
 
 describe('computeBucketEVs — shape', () => {
   it('returns { archetype, byBucket } with an entry per bucketCandidate', async () => {

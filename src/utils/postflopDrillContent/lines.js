@@ -692,23 +692,34 @@ const LINE_BTN_VS_BB_3BP_WET_T96 = {
       board: ['T♥', '9♥', '6♠'],
       pot: 20.5,
       villainAction: { kind: 'donk', size: 0.33 },
-      // RT-106 (schema v2) exemplar: hand-level teaching — node pins hero's
-      // specific holding (J♥T♠, the hand the decision prompt already speaks
-      // about), plus the bucket taxonomy this node spans. Bucket taxonomy
-      // is pinned in RT-110; these strings are illustrative for v2.
-      heroHolding: {
+      // LSW-G4-IMPL Commit 3 (2026-04-22) — JT6 flop_root migrated from
+      // schema v2 `heroHolding` to schema v3 `heroView` + `villainRangeContext`
+      // + `decisionKind`. This is the canary node for the bucket-ev-panel-v2
+      // villain-first restructure. The schema validator's migration guard
+      // rejects dual-authored nodes (both heroHolding + heroView), so the
+      // v2 field is removed rather than kept alongside.
+      heroView: {
+        kind: 'single-combo',
         combos: ['J♥T♠'],
-        // LSW-H1 (2026-04-22): reduced from 5 buckets to `topPair` only as
-        // honest interim. The original list — `['topPair', 'flushDraw',
-        // 'openEnder', 'overpair', 'air']` — contained four buckets
-        // infeasible for J♥T♠ on T♥9♥6♠ (hero has one heart = backdoor FD
-        // not a direct FD; J-T-9 is 3-in-a-row not an OESD; JT is not an
-        // overpair; air is a range-level bucket that can't apply to a
-        // pinned combo). Surface audit S1 flagged. Re-expand once
-        // LSW-G3 ships `backdoorFlushDraw` + `backdoorStraightDraw`
-        // taxonomy — then: `['topPair', 'backdoorFlushDraw', 'backdoorStraightDraw']`.
-        bucketCandidates: ['topPair'],
+        // Matches the G5.1-split taxonomy consumed by the v2 domination
+        // map. Re-expand once LSW-G3 integration is fully reflected in
+        // bucketCandidates surfacing (e.g., add 'backdoorFlushDraw' +
+        // 'backdoorStraightDraw' once the hero-combo EV row wants to
+        // surface them separately on the range-level view).
+        bucketCandidates: ['topPairGood'],
+        classLabel: 'top pair, good kicker',
       },
+      villainRangeContext: {
+        // Resolves to { position: 'BB', action: 'threeBet', vs: 'BTN' } via
+        // villainRanges.js alias map. BB's 3bet-range is the villain range
+        // that arrived at this flop.
+        baseRangeId: 'btn_vs_bb_3bp_bb_range',
+        // flop_root has no narrowing — BB's 3bet range IS the starting
+        // villain range for the hand. narrowingSpec would be populated on
+        // turn_after_call and beyond.
+      },
+      decisionKind: 'standard', // not bluff-catch (hero faces donk, not polar bet) and not thin-value.
+      decisionStrategy: 'pure',
       frameworks: ['range_advantage', 'range_morphology', 'board_tilt'],
       sections: [
         {

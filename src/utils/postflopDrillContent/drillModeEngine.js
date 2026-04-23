@@ -534,47 +534,69 @@ const noDirectDraw = (c) => !hasAnyDirectDraw(c);
 const ALL_PAIR_TYPES = ['overpair', 'topPairGood', 'topPairWeak', 'middlePair', 'bottomPair', 'weakPair'];
 
 const DOMINATION_GROUPS = Object.freeze([
-  { id: 'premium',         label: 'Premium (SF / Quads / Boat)', types: ['straightFlush', 'quads', 'fullHouse'] },
-  { id: 'nutFlush',        label: 'Nut Flush',                   types: ['nutFlush'] },
-  { id: 'secondFlush',     label: 'K-high Flush',                types: ['secondFlush'] },
-  { id: 'weakFlush',       label: 'Low Flush',                   types: ['weakFlush'] },
-  { id: 'nutStraight',     label: 'Nut Straight',                types: ['nutStraight'] },
-  { id: 'nonNutStraight',  label: 'Non-nut Straight',            types: ['nonNutStraight'] },
-  { id: 'set',             label: 'Set',                         types: ['set'] },
-  { id: 'trips',           label: 'Trips',                       types: ['trips'] },
-  { id: 'twoPair',         label: 'Two Pair',                    types: ['twoPair'] },
+  { id: 'premium',         label: 'Premium (SF / Quads / Boat)', definition: 'Straight flush, quads, or full house — almost always a call + raise region.', types: ['straightFlush', 'quads', 'fullHouse'] },
+  { id: 'nutFlush',        label: 'Nut Flush',                   definition: 'A flush using the ace of the board-suit — unbeatable by another flush.', types: ['nutFlush'] },
+  { id: 'secondFlush',     label: 'K-high Flush',                definition: 'A flush with K-high — loses only to the nut flush.', types: ['secondFlush'] },
+  { id: 'weakFlush',       label: 'Low Flush',                   definition: 'A flush below K-high — can be outflushed by stronger flushes.', types: ['weakFlush'] },
+  { id: 'nutStraight',     label: 'Nut Straight',                definition: 'The highest possible straight on this board.', types: ['nutStraight'] },
+  { id: 'nonNutStraight',  label: 'Non-nut Straight',            definition: 'A straight that is not the best possible — loses to higher straights.', types: ['nonNutStraight'] },
+  { id: 'set',             label: 'Set',                         definition: 'Three of a kind using a pocket pair — top of the value region.', types: ['set'] },
+  { id: 'trips',           label: 'Trips',                       definition: 'Three of a kind using one hole card + a paired board rank.', types: ['trips'] },
+  { id: 'twoPair',         label: 'Two Pair',                    definition: 'Two pairs using both hole cards with the board.', types: ['twoPair'] },
   // LSW-G5.2: pair-tier groups split by draw presence. Composite rows
   // aggregate across all pair tiers (so one "Pair+FD" row, not six) —
   // keeps the disclosure readable. Bare-pair rows use a noDirectDraw
   // filter so they exclude combos counted in a composite row (no
   // double-counting; sum of weightPct across pair-family rows equals
   // the range's total pair-tier fraction).
-  { id: 'pairPlusFD',      label: 'Pair + Flush Draw',           types: ALL_PAIR_TYPES, comboFilter: hasFlushDraw },
-  { id: 'pairPlusOesd',    label: 'Pair + OESD',                 types: ALL_PAIR_TYPES, comboFilter: hasOesdOnly },
-  { id: 'pairPlusGutshot', label: 'Pair + Gutshot',              types: ALL_PAIR_TYPES, comboFilter: hasGutshotOnly },
-  { id: 'overpair',        label: 'Overpair',                    types: ['overpair'],        comboFilter: noDirectDraw },
-  { id: 'tpStrong',        label: 'Top Pair Strong Kicker',      types: ['topPairGood'],     comboFilter: noDirectDraw },
-  { id: 'tpWeak',          label: 'Top Pair Weak Kicker',        types: ['topPairWeak'],     comboFilter: noDirectDraw },
-  { id: 'middlePair',      label: 'Middle Pair',                 types: ['middlePair'],      comboFilter: noDirectDraw },
-  { id: 'bottomPair',      label: 'Bottom Pair',                 types: ['bottomPair'],      comboFilter: noDirectDraw },
-  { id: 'weakPair',        label: 'Underpair (below board)',     types: ['weakPair'],        comboFilter: noDirectDraw },
-  { id: 'comboDraw',       label: 'Combo Draw (FD + straight)',  types: ['comboDraw'] },
-  { id: 'nutFlushDraw',    label: 'Nut Flush Draw',              types: ['nutFlushDraw'] },
-  { id: 'nonNutFlushDraw', label: 'Non-nut Flush Draw',          types: ['nonNutFlushDraw'] },
-  { id: 'oesd',            label: 'Open-Ended Straight Draw',    types: ['oesd'] },
-  { id: 'gutshot',         label: 'Gutshot',                     types: ['gutshot'] },
-  { id: 'overcardsAx',     label: 'Overcards (Ax)',              types: ['overcards'], comboFilter: highCardIn([12]) },
-  { id: 'overcardsKx',     label: 'Overcards (Kx)',              types: ['overcards'], comboFilter: highCardIn([11]) },
-  { id: 'overcardsQxJx',   label: 'Overcards (Qx / Jx)',         types: ['overcards'], comboFilter: highCardIn([10, 9]) },
-  { id: 'overcardsOther',  label: 'Overcards (other)',           types: ['overcards'], comboFilter: (c) => {
+  { id: 'pairPlusFD',      label: 'Pair + Flush Draw',           definition: 'A pair plus a direct flush draw — semi-bluff jamming region.', types: ALL_PAIR_TYPES, comboFilter: hasFlushDraw },
+  { id: 'pairPlusOesd',    label: 'Pair + OESD',                 definition: 'A pair plus an open-ended straight draw — high-equity barreling region.', types: ALL_PAIR_TYPES, comboFilter: hasOesdOnly },
+  { id: 'pairPlusGutshot', label: 'Pair + Gutshot',              definition: 'A pair plus a gutshot straight draw — pot-control region.', types: ALL_PAIR_TYPES, comboFilter: hasGutshotOnly },
+  { id: 'overpair',        label: 'Overpair',                    definition: 'A pocket pair larger than every board card.', types: ['overpair'], comboFilter: noDirectDraw },
+  { id: 'tpStrong',        label: 'Top Pair Strong Kicker',      definition: 'Top pair with a strong kicker (A/K usually).', types: ['topPairGood'], comboFilter: noDirectDraw },
+  { id: 'tpWeak',          label: 'Top Pair Weak Kicker',        definition: 'Top pair with a weak kicker — beaten by same TP + better kicker.', types: ['topPairWeak'], comboFilter: noDirectDraw },
+  { id: 'middlePair',      label: 'Middle Pair',                 definition: 'A pair using the middle board card.', types: ['middlePair'], comboFilter: noDirectDraw },
+  { id: 'bottomPair',      label: 'Bottom Pair',                 definition: 'A pair using the lowest board card.', types: ['bottomPair'], comboFilter: noDirectDraw },
+  { id: 'weakPair',        label: 'Underpair (below board)',     definition: 'A pocket pair below the lowest board card.', types: ['weakPair'], comboFilter: noDirectDraw },
+  { id: 'comboDraw',       label: 'Combo Draw (FD + straight)',  definition: 'Flush draw + straight draw on the same hand — highest-equity semi-bluff region.', types: ['comboDraw'] },
+  { id: 'nutFlushDraw',    label: 'Nut Flush Draw',              definition: 'Flush draw using the nut-suit card — best FD, also blocks villain nut flush.', types: ['nutFlushDraw'] },
+  { id: 'nonNutFlushDraw', label: 'Non-nut Flush Draw',          definition: 'A flush draw that would not make the nut flush.', types: ['nonNutFlushDraw'] },
+  { id: 'oesd',            label: 'Open-Ended Straight Draw',    definition: 'Four consecutive cards — 8 outs to a straight.', types: ['oesd'] },
+  { id: 'gutshot',         label: 'Gutshot',                     definition: 'Inside straight draw — 4 outs to a straight.', types: ['gutshot'] },
+  { id: 'overcardsAx',     label: 'Overcards (Ax)',              definition: 'Two unpaired overcards with an ace — bluffs with blocker pressure on villain nut calls.', types: ['overcards'], comboFilter: highCardIn([12]) },
+  { id: 'overcardsKx',     label: 'Overcards (Kx)',              definition: 'Two unpaired overcards with a king — bluffs with moderate blocker value.', types: ['overcards'], comboFilter: highCardIn([11]) },
+  { id: 'overcardsQxJx',   label: 'Overcards (Qx / Jx)',         definition: 'Two unpaired overcards headed by Q or J — lower blocker value, still live to pair.', types: ['overcards'], comboFilter: highCardIn([10, 9]) },
+  { id: 'overcardsOther',  label: 'Overcards (other)',           definition: 'Two unpaired overcards below J-high — rare; minimal equity.', types: ['overcards'], comboFilter: (c) => {
     const r = Math.max(c.card1 >> 2, c.card2 >> 2);
     return r < 9;  // Shouldn't trigger on most boards — included for completeness
   } },
-  { id: 'backdoorCombo',   label: 'Backdoor Combo (BDFD+BDSD)',  types: ['airBackdoorCombo'] },
-  { id: 'backdoorFlush',   label: 'Backdoor Flush Draw Only',    types: ['airBackdoorFlush'] },
-  { id: 'backdoorStraight',label: 'Backdoor Straight Draw Only', types: ['airBackdoorStraight'] },
-  { id: 'air',             label: 'Air',                         types: ['air'] },
+  { id: 'backdoorCombo',   label: 'Backdoor Combo (BDFD+BDSD)',  definition: 'Air with both backdoor flush and backdoor straight potential.', types: ['airBackdoorCombo'] },
+  { id: 'backdoorFlush',   label: 'Backdoor Flush Draw Only',    definition: 'Air with backdoor flush draw only — runner-runner flush potential.', types: ['airBackdoorFlush'] },
+  { id: 'backdoorStraight',label: 'Backdoor Straight Draw Only', definition: 'Air with backdoor straight draw only — runner-runner straight potential.', types: ['airBackdoorStraight'] },
+  { id: 'air',             label: 'Air',                         definition: 'No pair, no draw, no showdown value — pure high-card.', types: ['air'] },
 ]);
+
+/**
+ * Public accessor for DOMINATION_GROUPS — used by the v2 panel's GlossaryBlock
+ * to surface definitions + labels for currently-rendered groups.
+ *
+ * Returns an array of `{ id, label, definition }` without the internal
+ * `types` / `comboFilter` plumbing. Separate export from the raw internal
+ * array to keep consumers from reaching into engine internals.
+ */
+export const listDominationGroupMeta = () =>
+  DOMINATION_GROUPS.map(({ id, label, definition }) => ({ id, label, definition }));
+
+/**
+ * Find a single DOMINATION_GROUPS metadata entry by id. Returns null when
+ * the id isn't in the taxonomy (so callers can fall back to bucketTaxonomy
+ * for BUCKET_TAXONOMY keys that don't match DOMINATION_GROUPS ids).
+ */
+export const dominationGroupMetaFor = (groupId) => {
+  const g = DOMINATION_GROUPS.find((x) => x.id === groupId);
+  if (!g) return null;
+  return { id: g.id, label: g.label, definition: g.definition };
+};
 
 /**
  * Classify hero's equity vs a specific villain-hand-type group into a

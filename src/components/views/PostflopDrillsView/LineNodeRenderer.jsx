@@ -18,6 +18,7 @@ import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 // proper consolidation into `_shared/drillInternals/` tracked under RT-94.
 import { CALCULATORS } from '../PreflopDrillsView/LessonCalculators';
 import { BucketEVPanel } from './BucketEVPanel';
+import { BucketEVPanelV2 } from './BucketEVPanelV2';
 
 export const LineNodeRenderer = ({
   node,
@@ -30,9 +31,19 @@ export const LineNodeRenderer = ({
   canAdvance,
   isTerminal,
 }) => {
+  // LSW-G4-IMPL Commit 3 (2026-04-22): dual-path rendering during the v1→v2
+  // migration window. Schema v3 nodes declare `heroView` → render via v2
+  // panel (villain-first primary per I-DM-1). Legacy v2 nodes keep
+  // `heroHolding` → render via v1 panel (hero-first). The schema migration
+  // guard in validateNode rejects simultaneous heroHolding + heroView so
+  // this branch is always clean.
+  // Commit 5 deletes the v1 branch once every live-rendered node is
+  // migrated via LSW-B1..B3.
+  const hasHeroView = Boolean(node?.heroView);
   const hasBucketCandidates =
-    Array.isArray(node?.heroHolding?.bucketCandidates) &&
-    node.heroHolding.bucketCandidates.length > 0;
+    !hasHeroView
+    && Array.isArray(node?.heroHolding?.bucketCandidates)
+    && node.heroHolding.bucketCandidates.length > 0;
   return (
     <div className="space-y-5">
       {/* Node header */}
@@ -54,14 +65,20 @@ export const LineNodeRenderer = ({
         )}
       </div>
 
-      {/* Hero holding (RT-106 schema v2 — hand-level teaching anchor) */}
-      {node.heroHolding && (
+      {/* Hero holding (RT-106 v2 schema) — v1 panel path only. v2 nodes
+          render the HeroViewBlock inside BucketEVPanelV2 composition. */}
+      {node.heroHolding && !hasHeroView && (
         <HeroHoldingRow heroHolding={node.heroHolding} />
       )}
 
-      {/* Bucket-EV panel — first user-visible payoff of RT-106..118. Mounts
-          only when node declares bucketCandidates; reveal-on-click to
-          respect the 1600×720 viewport. */}
+      {/* v2 panel (BucketEVPanelV2) — villain-first composition for schema
+          v3 nodes. Primitives visible on mount (no reveal gate) per I-DM-1. */}
+      {hasHeroView && (
+        <BucketEVPanelV2 node={node} line={line} archetype={archetype} />
+      )}
+
+      {/* v1 panel (BucketEVPanel) — hero-first reveal-on-click. Kept for
+          legacy nodes awaiting LSW-B1..B3 migration. Commit 5 deletes it. */}
       {hasBucketCandidates && (
         <BucketEVPanel node={node} line={line} archetype={archetype} />
       )}
