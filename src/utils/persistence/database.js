@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 16;
+export const DB_VERSION = 17;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -60,6 +60,7 @@ export const TOURNAMENTS_STORE_NAME = 'tournaments';
 export const PLAYER_DRAFTS_STORE_NAME = 'playerDrafts';
 export const PREFLOP_DRILLS_STORE_NAME = 'preflopDrills';
 export const POSTFLOP_DRILLS_STORE_NAME = 'postflopDrills';
+export const VILLAIN_ASSUMPTIONS_STORE_NAME = 'villainAssumptions';
 
 const MODULE_NAME = 'Persistence';
 

@@ -26,6 +26,7 @@ import {
   EquityWorkerProvider,
   TournamentBridge,
 } from './contexts';
+import { AssumptionProvider } from './contexts/AssumptionContext';
 
 /**
  * AppProviders - Wraps children in all context providers
@@ -74,6 +75,7 @@ export const AppProviders = ({
             <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
               <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
                 <TendencyProvider>
+                  <AssumptionProvider>
                   <SyncBridgeProvider>
                     <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
                       <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
@@ -89,6 +91,7 @@ export const AppProviders = ({
                       </SettingsProvider>
                     </CardProvider>
                   </SyncBridgeProvider>
+                  </AssumptionProvider>
                 </TendencyProvider>
               </PlayerProvider>
             </TournamentProvider>

@@ -17,6 +17,7 @@ import {
   PLAYER_DRAFTS_STORE_NAME,
   PREFLOP_DRILLS_STORE_NAME,
   POSTFLOP_DRILLS_STORE_NAME,
+  VILLAIN_ASSUMPTIONS_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -467,6 +468,26 @@ const migrateV16 = (db) => {
   }
 };
 
+/**
+ * v17: Create villainAssumptions store for the Exploit Deviation Engine.
+ * Compound key [villainId, assumptionId]. Indexes on status + lastUpdated
+ * for retirement queries + staleness sweeps.
+ *
+ * Origin: exploit-deviation project Phase 6 Commit 7; architecture §8.1.
+ */
+const migrateV17 = (db) => {
+  if (!db.objectStoreNames.contains(VILLAIN_ASSUMPTIONS_STORE_NAME)) {
+    const store = db.createObjectStore(VILLAIN_ASSUMPTIONS_STORE_NAME, {
+      keyPath: ['villainId', 'id'],
+    });
+    store.createIndex('villainId', 'villainId', { unique: false });
+    store.createIndex('status', 'status', { unique: false });
+    store.createIndex('lastUpdated', 'evidence.lastUpdated', { unique: false });
+    store.createIndex('schemaVersion', 'schemaVersion', { unique: false });
+    log('VillainAssumptions object store created (v17)');
+  }
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -568,4 +589,6 @@ export const runMigrations = (db, transaction, oldVersion) => {
 
   // v16: postflopDrills store (additive, Postflop Drills feature)
   if (oldVersion < 16) migrateV16(db);
+
+  if (oldVersion < 17) migrateV17(db);
 };

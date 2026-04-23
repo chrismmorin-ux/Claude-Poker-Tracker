@@ -30,6 +30,7 @@ const PlayerEditorView = lazy(() => import('./components/views/PlayerEditorView/
 const PlayerPickerView = lazy(() => import('./components/views/PlayerPickerView/PlayerPickerView').then(m => ({ default: m.PlayerPickerView })));
 const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsView/PreflopDrillsView').then(m => ({ default: m.PreflopDrillsView })));
 const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
+const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -108,6 +109,7 @@ const ViewRouter = () => {
           case SCREEN.PLAYER_PICKER: return <VEB viewName="Player Picker" onReturnToTable={onReturnToTable}><PlayerPickerView scale={scale} /></VEB>;
           case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
           case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
+          case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)

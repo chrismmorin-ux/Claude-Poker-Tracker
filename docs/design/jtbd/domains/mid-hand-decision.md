@@ -69,6 +69,41 @@ Jobs that must complete *during* a hand, under time pressure. The domain with th
 - Failure modes: silent pot drift from missed action entry; side-pot reconstruction obscured; no way to flag "I don't trust this" without a modal.
 - Primary surface: `TableView/PotDisplay`.
 
+## MH-12 — See the specific assumption(s) cited as backing for a recommendation
+
+> When the app recommends a non-balanced action, I want to see the specific behavioral assumption(s) about villain that justify the deviation, rendered in a form I can read in ≤ 1.5 seconds, so I trust or override with full context.
+
+- State: **Proposed** (implementation in exploit-deviation project Phase 9).
+- Primary persona: [Mid-Hand Chris](../../personas/situational/mid-hand-chris.md) (highest stakes for trust).
+- Secondary: all table-playing personas who benefit from auditable recommendations.
+- Success criteria:
+  - Citation compressed to **single line** always-visible in sidebar ("villain folds rivers 17% • why →").
+  - Tap-to-expand reveals three-line reasoning.
+  - Every cited assumption references a `VillainAssumption.id` + `narrative.citationShort` (schema v1.1 §1.8).
+  - Fresh/stale behavior honored per sidebar doctrine freshness-sidecar invariant.
+- Failure modes:
+  - Citation rendered in verbose form that exceeds 1.5s read budget.
+  - Citation displayed for assumptions that aren't `actionableLive` per schema v1.1 §1.10.
+  - Citation references stale evidence without staleness indication.
+- Surface origin: Gate 2 Blind-Spot Roundtable 2026-04-23 (`../../audits/2026-04-23-exploit-deviation-blindspot.md` Stage B).
+
+## MH-13 — Dismiss or downrank a live-cited assumption in the moment
+
+> When I see a live citation that I disagree with in the moment, I want to silently override the recommendation without fighting the app, so my instinct is respected and the tool stays a tool.
+
+- State: **Proposed** (implementation in exploit-deviation project Phase 9).
+- Primary persona: [Mid-Hand Chris](../../personas/situational/mid-hand-chris.md).
+- Success criteria:
+  - Hero can take any action regardless of the citation — no blocking modal, no "are you sure", no friction.
+  - Overrides are recorded silently for post-session review (drives `dialOverrideRate` metric in `calibration.md` §3.2).
+  - Dial affordance itself is NOT visible in live per Theory Roundtable CC-5 — override is via just playing the alternative action.
+- Failure modes:
+  - App fights hero's action with a warning or confirmation.
+  - Override not recorded, so calibration metric can't learn from it.
+  - Dial made visible in live, adding cognitive load under time pressure.
+- Distinct from MH-10 ("plain-English why") — MH-10 is about *understanding* the recommendation; MH-13 is about *silently disagreeing* with it.
+- Surface origin: Gate 2 Blind-Spot Roundtable 2026-04-23 (`../../audits/2026-04-23-exploit-deviation-blindspot.md` Stage B).
+
 ---
 
 ## Domain-wide constraints
@@ -80,3 +115,4 @@ Jobs that must complete *during* a hand, under time pressure. The domain with th
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-23 — Added MH-12 (citation for live recommendations) + MH-13 (silent override during live) as output of Gate 2 Blind-Spot Roundtable for exploit-deviation project. See `../../audits/2026-04-23-exploit-deviation-blindspot.md`.

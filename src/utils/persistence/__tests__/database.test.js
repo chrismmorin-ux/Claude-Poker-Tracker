@@ -57,7 +57,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 10 object stores', async () => {
+    it('creates all 11 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -71,7 +71,8 @@ describe('database initialization', () => {
       expect(storeNames).toContain(PLAYER_DRAFTS_STORE_NAME);
       expect(storeNames).toContain(PREFLOP_DRILLS_STORE_NAME);
       expect(storeNames).toContain(POSTFLOP_DRILLS_STORE_NAME);
-      expect(storeNames.length).toBe(10);
+      expect(storeNames).toContain('villainAssumptions'); // v17 — exploit-deviation project
+      expect(storeNames.length).toBe(11);
       db.close();
     });
 
