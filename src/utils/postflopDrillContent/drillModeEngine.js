@@ -698,3 +698,489 @@ export const computeDominationMap = async ({
     .filter((r) => r.relation !== 'empty')
     .sort((a, b) => b.weightPct - a.weightPct);
 };
+
+// =============================================================================
+// LSW-G4-IMPL Commit 2 — engine v2 for bucket-ev-panel-v2
+// =============================================================================
+//
+// Per the v2 spec (`docs/design/surfaces/bucket-ev-panel-v2.md`), the panel
+// rewrite requires two new engine functions:
+//
+//  - `computeDecomposedActionEVs`: for each hero action and each villain
+//    DOMINATION_GROUP, compute the per-group EV contribution. Produces the
+//    `perGroupContribution` array that drives P2's WeightedTotalTable.
+//  - `computeBucketEVsV2`: orchestrator that joins `computeDominationMap`
+//    with per-group EV computation, picks the best action, and returns the
+//    `ComputeBucketEVsV2Output` shape (decomposition + actionEVs +
+//    recommendation + valueBeatRatio for bluff-catch/thin-value +
+//    confidence + optional errorState).
+//
+// These are NEW exports alongside the v1 `computeBucketEVs` (in BucketEVPanel.jsx)
+// and the existing `evaluateDrillNode` / `computePinnedComboEV` here.
+// v1 remains unchanged until Commit 5 of the migration path deletes it.
+//
+// Per-group fold rate. DOMINATION_GROUPS are finer-grained than the segmenter
+// hand-types POP_CALLING_RATES is keyed by — split groups like `overcardsAx`,
+// `pairPlusFD`, `pairPlusOesd` don't have direct entries. `GROUP_CALL_RATES`
+// is a v2 prior table with coarse population-anchored call frequencies per
+// group. Depth-2 integration (LSW-D1) will replace these with empirical
+// fit from observed fold curves.
+
+export const GROUP_CALL_RATES = Object.freeze({
+  // Made-hand region — calls nearly always
+  premium:          0.98,
+  nutFlush:         0.98,
+  secondFlush:      0.92,
+  weakFlush:        0.85,
+  nutStraight:      0.95,
+  nonNutStraight:   0.88,
+  set:              0.95,
+  trips:            0.92,
+  twoPair:          0.82,
+  // Pair tier split by draw presence
+  pairPlusFD:       0.78,
+  pairPlusOesd:     0.65,
+  pairPlusGutshot:  0.55,
+  overpair:         0.75,
+  tpStrong:         0.65,
+  tpWeak:           0.48,
+  middlePair:       0.35,
+  bottomPair:       0.22,
+  weakPair:         0.18,
+  // Direct draws (equity + fold-to-barrel dynamics)
+  comboDraw:        0.80,
+  nutFlushDraw:     0.65,
+  nonNutFlushDraw:  0.52,
+  oesd:             0.48,
+  gutshot:          0.22,
+  // Overcards split by blocker rank
+  overcardsAx:      0.18,
+  overcardsKx:      0.12,
+  overcardsQxJx:    0.08,
+  overcardsOther:   0.05,
+  // Backdoor-only air
+  backdoorCombo:    0.15,
+  backdoorFlush:    0.10,
+  backdoorStraight: 0.08,
+  // Pure air
+  air:              0.02,
+});
+
+/**
+ * Look up per-group call rate, defaulting to 0.3 when the group is unknown
+ * (shouldn't happen with current DOMINATION_GROUPS but is defensive against
+ * future taxonomy expansions landing before this table updates).
+ */
+const groupCallRate = (groupId) => {
+  const r = GROUP_CALL_RATES[groupId];
+  if (Number.isFinite(r)) return r;
+  return 0.3;
+};
+
+/**
+ * Compute per-group per-action EV contributions.
+ *
+ * For each hero action × each villain DOMINATION_GROUP:
+ *  - bet of size B into pot P:
+ *      perGroupEV = foldRate × P + (1 - foldRate) × [equity × (P + 2B) - B]
+ *      where foldRate = 1 - GROUP_CALL_RATES[group]
+ *  - check:
+ *      perGroupEV = equity × P   (showdown at current pot)
+ *  - call / fold / raise / jam: v1 flag unsupported with ev=0
+ *
+ * Totals across groups: totalEV = Σ (weightPct_g / 100) × perGroupEV_g
+ *
+ * @param {{
+ *   decomposition: Array<{ id, label, equity, weightPct, sampleSize, relation }>,
+ *   heroActions: Array<{ label, kind, betFraction? }>,
+ *   pot: number,
+ * }} args
+ * @returns {Array<{
+ *   actionLabel: string,
+ *   kind: string,
+ *   betFraction?: number,
+ *   perGroupContribution: Array<{ groupId: string, ev: number, weightTimesEV: number }>,
+ *   totalEV: number,
+ *   totalEVCI: { low: number, high: number },
+ *   isBest: boolean,
+ *   unsupported?: boolean,
+ * }>}
+ */
+export const computeDecomposedActionEVs = ({ decomposition, heroActions, pot }) => {
+  if (!Array.isArray(decomposition)) {
+    throw new Error('computeDecomposedActionEVs: decomposition must be an array');
+  }
+  if (!Array.isArray(heroActions) || heroActions.length === 0) {
+    throw new Error('computeDecomposedActionEVs: heroActions must be a non-empty array');
+  }
+  if (!Number.isFinite(pot) || pot < 0) {
+    throw new Error('computeDecomposedActionEVs: pot must be a non-negative finite number');
+  }
+
+  const actionEVs = heroActions.map((action) => {
+    const perGroupContribution = [];
+    let totalEV = 0;
+    let unsupported = false;
+
+    if (action.kind === 'bet' || action.kind === 'raise' || action.kind === 'jam') {
+      const betFrac = Number.isFinite(action.betFraction) ? action.betFraction : 0.75;
+      const betSize = pot * betFrac;
+      for (const group of decomposition) {
+        const foldRate = 1 - groupCallRate(group.groupId);
+        const eq = Number.isFinite(group.heroEquity) ? group.heroEquity : 0;
+        // EV of bet vs this group:
+        //   fold:  +pot
+        //   call:  equity × (pot + 2B) − B
+        const ev = foldRate * pot + (1 - foldRate) * (eq * (pot + 2 * betSize) - betSize);
+        const weight = group.weightPct / 100;
+        const contrib = weight * ev;
+        totalEV += contrib;
+        perGroupContribution.push({
+          groupId: group.groupId,
+          ev,
+          weightTimesEV: contrib,
+        });
+      }
+    } else if (action.kind === 'check') {
+      for (const group of decomposition) {
+        const eq = Number.isFinite(group.heroEquity) ? group.heroEquity : 0;
+        const ev = eq * pot; // showdown at current pot
+        const weight = group.weightPct / 100;
+        const contrib = weight * ev;
+        totalEV += contrib;
+        perGroupContribution.push({
+          groupId: group.groupId,
+          ev,
+          weightTimesEV: contrib,
+        });
+      }
+    } else if (action.kind === 'fold') {
+      // Folding = 0 EV by definition (no money gained or lost beyond what's
+      // already in the pot, which is sunk).
+      for (const group of decomposition) {
+        perGroupContribution.push({
+          groupId: group.groupId,
+          ev: 0,
+          weightTimesEV: 0,
+        });
+      }
+      totalEV = 0;
+    } else if (action.kind === 'call') {
+      // v1 ship does not model an explicit call action (villain acted first —
+      // hero's only EV question is whether the immediate pot-odds work). This
+      // path exists so authored `heroActions` including 'call' don't crash;
+      // a future extension computes call-EV properly.
+      for (const group of decomposition) {
+        perGroupContribution.push({
+          groupId: group.groupId,
+          ev: 0,
+          weightTimesEV: 0,
+        });
+      }
+      unsupported = true;
+    } else {
+      // Unknown kind — mark unsupported; caller can extend.
+      for (const group of decomposition) {
+        perGroupContribution.push({
+          groupId: group.groupId,
+          ev: 0,
+          weightTimesEV: 0,
+        });
+      }
+      unsupported = true;
+    }
+
+    // Confidence interval — rough ±5% MC band propagated from domination
+    // equity samples. Per-row equity CI is not tracked here; v1 ships a
+    // constant band until LSW-D1 integrates per-group MC variance.
+    const totalEVCI = { low: totalEV - 0.5, high: totalEV + 0.5 };
+
+    return {
+      actionLabel: action.label,
+      kind: action.kind,
+      betFraction: action.betFraction,
+      perGroupContribution,
+      totalEV,
+      totalEVCI,
+      isBest: false, // set below after ranking
+      ...(unsupported ? { unsupported: true } : {}),
+    };
+  });
+
+  // Rank by totalEV (supported actions only); mark best.
+  const supported = actionEVs.filter((a) => !a.unsupported);
+  if (supported.length > 0) {
+    const bestEV = Math.max(...supported.map((a) => a.totalEV));
+    for (const a of supported) {
+      if (a.totalEV === bestEV) { a.isBest = true; break; }
+    }
+  }
+
+  return actionEVs;
+};
+
+/**
+ * Compute value-vs-beat ratio for bluff-catch / thin-value variants.
+ * Splits the decomposition into "hero beats" (relation ∈ {favored, dominating})
+ * and "hero loses to" (relation ∈ {crushed, dominated}) weight totals.
+ *
+ * For bluff-catch: `valueWeight` is villain's value region; `bluffOrPayWeight`
+ * is the bluff region (hero beats these).
+ * For thin-value: `valueWeight` is hands that beat hero; `bluffOrPayWeight`
+ * is hands hero beats (villain calls with worse).
+ *
+ * Returns null when decomposition is empty or all groups are neutral.
+ */
+export const computeValueBeatRatio = (decomposition) => {
+  if (!Array.isArray(decomposition) || decomposition.length === 0) return null;
+  let valueWeight = 0;
+  let bluffOrPayWeight = 0;
+  for (const group of decomposition) {
+    if (group.relation === 'crushed' || group.relation === 'dominated') {
+      valueWeight += group.weightPct;
+    } else if (group.relation === 'favored' || group.relation === 'dominating') {
+      bluffOrPayWeight += group.weightPct;
+    }
+    // neutral groups contribute to neither side
+  }
+  if (valueWeight === 0 && bluffOrPayWeight === 0) return null;
+  const ratio = bluffOrPayWeight > 0 ? valueWeight / bluffOrPayWeight : Infinity;
+  return { valueWeight, bluffOrPayWeight, ratio };
+};
+
+/**
+ * v2 orchestrator for bucket-ev-panel-v2. Single-villain (HU) scope in v1
+ * ship; multi-villain support via `perVillainDecompositions` is a future
+ * extension blocked on LSW-G6.
+ *
+ * @param {{
+ *   nodeId: string,
+ *   lineId: string,
+ *   street: 'flop' | 'turn' | 'river',
+ *   board: number[],              // encoded cards (3-5)
+ *   pot: number,
+ *   effStack?: number,
+ *   villains: Array<{ position: string, baseRange: Float64Array }>,
+ *   heroView: { kind: 'single-combo' | 'combo-set' | 'range-level', combos?: Array<{card1, card2}> | Array<string>, ... },
+ *   decisionKind?: 'standard' | 'bluff-catch' | 'thin-value',
+ *   actionHistory?: Array<object>,
+ *   heroActions: Array<{ label: string, kind: string, betFraction?: number }>,
+ *   decisionStrategy?: 'pure' | 'mixed',
+ *   archetype: 'reg' | 'fish' | 'pro',
+ *   mcTrials?: number,
+ *   timeBudgetMs?: number,
+ * }} input
+ * @returns {Promise<{
+ *   decomposition: Array<object>,
+ *   actionEVs: Array<object>,
+ *   recommendation: { actionLabel: string, authoredReason?: string, templatedReason?: string },
+ *   valueBeatRatio: object | null,
+ *   streetNarrowing: Array<object> | null,
+ *   confidence: { mcTrials: number, populationPriorSource: string, archetype: string, caveats: string[] },
+ *   perVillainDecompositions: Array | null,
+ *   cascadingFoldProbability: number | null,
+ *   errorState: object | null,
+ * }>}
+ */
+export const computeBucketEVsV2 = async (input) => {
+  const startTime = Date.now();
+  // Validate the minimum required fields. Fail fast with errorState so the
+  // panel renders a banner (P1 F03 rule) rather than crashing.
+  if (!input || typeof input !== 'object') {
+    return bucketEVsV2Error('engine-internal', 'Missing input object', 'input is null/undefined');
+  }
+  const { board, pot, villains, heroView, heroActions, archetype, decisionKind = 'standard',
+          mcTrials = 500, timeBudgetMs = 400, actionHistory = null } = input;
+
+  if (!Array.isArray(board) || board.length < 3 || board.length > 5) {
+    return bucketEVsV2Error('malformed-hero', 'Board must have 3-5 cards',
+      `board was ${JSON.stringify(board)}`);
+  }
+  if (!Number.isFinite(pot) || pot < 0) {
+    return bucketEVsV2Error('engine-internal', 'Invalid pot',
+      `pot was ${pot} (expected non-negative finite number)`);
+  }
+  if (!Array.isArray(villains) || villains.length === 0) {
+    return bucketEVsV2Error('range-unavailable', 'No villain in input',
+      'villains array was empty or missing');
+  }
+  if (villains.length > 1) {
+    // MW path deferred to LSW-G6. Not a panel-blocking error — surface a
+    // structured message so the panel can render the cascading-deferred
+    // banner without routing through the error path.
+    return bucketEVsV2Error('engine-internal', 'Multiway not yet supported',
+      `villains.length was ${villains.length}; MW engine is LSW-G6`,
+      'Wait for LSW-G6 multiway engine to ship, or use an HU line.');
+  }
+  if (!heroView || !['single-combo', 'combo-set', 'range-level'].includes(heroView.kind)) {
+    return bucketEVsV2Error('malformed-hero', 'heroView.kind invalid',
+      `heroView was ${JSON.stringify(heroView)}`);
+  }
+  if (!Array.isArray(heroActions) || heroActions.length === 0) {
+    return bucketEVsV2Error('engine-internal', 'heroActions empty',
+      'heroActions array missing or empty');
+  }
+  if (!isKnownArchetype(archetype)) {
+    return bucketEVsV2Error('engine-internal', 'Unknown archetype',
+      `archetype was '${archetype}'`);
+  }
+
+  // v1 ship: single-combo heroView supported. combo-set and range-level stub
+  // with errorState (implemented in v1.1 + v1.1 respectively).
+  if (heroView.kind !== 'single-combo') {
+    return bucketEVsV2Error('engine-internal', `heroView.kind '${heroView.kind}' not yet supported`,
+      'single-combo is the only v1-ship mode; combo-set and range-level are v1.1+',
+      'Use heroView.kind = "single-combo" for now.');
+  }
+
+  const pinnedCombo = heroView.combos?.[0];
+  if (!pinnedCombo || !Number.isFinite(pinnedCombo.card1) || !Number.isFinite(pinnedCombo.card2)) {
+    return bucketEVsV2Error('malformed-hero', 'Pinned combo invalid',
+      `heroView.combos[0] was ${JSON.stringify(pinnedCombo)}`);
+  }
+
+  const villain = villains[0];
+  if (!villain.baseRange) {
+    return bucketEVsV2Error('range-unavailable', 'Villain range missing',
+      `villains[0].baseRange is not set`);
+  }
+
+  // 1. Compute decomposition (per-group equity + weight + relation).
+  let decomposition;
+  try {
+    const map = await computeDominationMap({
+      pinnedCombo,
+      villainRange: villain.baseRange,
+      board,
+      trialsPerGroup: Math.min(Math.floor(mcTrials / 2), 500),
+    });
+    if (!map) {
+      return bucketEVsV2Error('engine-internal', 'Domination map could not be computed',
+        'computeDominationMap returned null — check input validity');
+    }
+    decomposition = map.map((g) => ({
+      groupId: g.id,
+      groupLabel: g.label,
+      weightPct: g.weightPct,
+      heroEquity: g.equity,
+      heroEquityCI: {
+        low: Math.max(0, g.equity - 0.05),
+        high: Math.min(1, g.equity + 0.05),
+        method: 'mc',
+      },
+      relation: g.relation,
+      comboCount: g.sampleSize,
+    }));
+  } catch (err) {
+    return bucketEVsV2Error('engine-internal', 'Domination map threw',
+      err.message || String(err), 'Retry · Check line authoring');
+  }
+
+  // Time budget check — depth-2 integration respects this in a later commit.
+  // v1 just logs a soft caveat if we're over.
+  const caveats = ['synthetic-range', 'v1-simplified-ev'];
+  if (Date.now() - startTime > timeBudgetMs) {
+    caveats.push('time-budget-soft');
+  }
+
+  // 2. Compute per-action EVs from the decomposition.
+  const actionEVs = computeDecomposedActionEVs({
+    decomposition,
+    heroActions,
+    pot,
+  });
+
+  // 3. Pick the best supported action. Template a one-line reason by
+  // decisionKind. Authored reasons (line content) override templates at
+  // render time (see v2 spec recommendation field).
+  const best = actionEVs.find((a) => a.isBest) || actionEVs[0];
+  const templatedReason = templateReasonForAction(best, decisionKind);
+
+  // 4. valueBeatRatio — only populated for bluff-catch / thin-value.
+  const valueBeatRatio = (decisionKind === 'bluff-catch' || decisionKind === 'thin-value')
+    ? computeValueBeatRatio(decomposition)
+    : null;
+
+  // 5. streetNarrowing — ordered array of narrowing events (axis 5). v1 ship
+  // emits the array only when `actionHistory` is present. Actual range
+  // narrowing is applied by the caller-upstream (content layer); engine
+  // surfaces the audit trail.
+  let streetNarrowing = null;
+  if (Array.isArray(actionHistory) && actionHistory.length > 0) {
+    streetNarrowing = actionHistory.map((e) => ({
+      street: e.street,
+      actor: e.actor,
+      action: e.action,
+      sizing: e.sizing,
+      narrowingSpec: e.narrowingSpec || { kind: 'keep-continuing-vs-action' },
+      // priorWeight / narrowedWeight filled once the narrower engine ships;
+      // placeholder values keep the shape stable for panel consumers.
+      priorWeight: 100,
+      narrowedWeight: 100,
+    }));
+  }
+
+  return {
+    decomposition,
+    actionEVs,
+    recommendation: {
+      actionLabel: best?.actionLabel ?? '',
+      templatedReason,
+      // authoredReason undefined; content layer sets when node authors it.
+    },
+    valueBeatRatio,
+    streetNarrowing,
+    confidence: {
+      mcTrials,
+      populationPriorSource: 'GROUP_CALL_RATES + archetypeRangeBuilder',
+      archetype,
+      caveats,
+    },
+    perVillainDecompositions: null, // MW deferred to LSW-G6
+    cascadingFoldProbability: null,
+    errorState: null,
+  };
+};
+
+/**
+ * Helper to produce a uniform error return. Fills the rest of the
+ * `ComputeBucketEVsV2Output` shape with null/empty so consumers can
+ * safely access any field without branching on errorState first.
+ */
+const bucketEVsV2Error = (kind, userMessage, diagnostic, recovery = null) => ({
+  decomposition: [],
+  actionEVs: [],
+  recommendation: { actionLabel: '', templatedReason: '' },
+  valueBeatRatio: null,
+  streetNarrowing: null,
+  confidence: {
+    mcTrials: 0,
+    populationPriorSource: '',
+    archetype: '',
+    caveats: [],
+  },
+  perVillainDecompositions: null,
+  cascadingFoldProbability: null,
+  errorState: { kind, userMessage, diagnostic, ...(recovery ? { recovery } : {}) },
+});
+
+/**
+ * Templated one-line reason for the best action, shaped by `decisionKind`.
+ * Authored reasons in line content take precedence at render time; this
+ * is the fallback when no authored copy exists.
+ */
+const templateReasonForAction = (best, decisionKind) => {
+  if (!best || best.unsupported) {
+    return '';
+  }
+  const label = best.actionLabel;
+  const ev = best.totalEV.toFixed(2);
+  if (decisionKind === 'bluff-catch') {
+    return `Correct: ${label}. Your hand beats villain's bluff region and loses to the value region — the math works as a call-or-fold decision (+${ev}bb).`;
+  }
+  if (decisionKind === 'thin-value') {
+    return `Correct: ${label}. Villain's range contains more hands that beat you than hands that pay — ${label} is the traceable answer at +${ev}bb.`;
+  }
+  // standard
+  return `Correct: ${label} at +${ev}bb — weighted across villain's decomposition, this is the highest-EV option.`;
+};
