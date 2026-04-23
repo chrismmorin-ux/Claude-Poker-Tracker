@@ -40,6 +40,47 @@ Gate 1 flagged 4 open questions for owner before Gate 2: phasing-scope-for-Gate-
 
 ---
 
+### Upper-Surface Reasoning Program (rubric: `docs/upper-surface/RUBRIC.md`, plan: `C:\Users\chris\.claude\plans\cryptic-moseying-sprout.md`)
+
+Owner-described purpose: forced exhaustive multi-perspective theoretical analyses of decision nodes — exposes weak claims on the page, generates a gradeable standard, surfaces to user as pre-session drill content. Plan completed 2026-04-23 producing rubric (v1 → v2.2), 2 pilot artifacts (flop + river), 2 self-audits, 2 leading-theory comparisons, 2 drill cards, and Gate 1 entry for pre-session drill UX.
+
+| ID | Pri | Status | Description | Accept Criteria |
+|----|-----|--------|-------------|-----------------|
+| US-1 | P2 | NEXT | **Corpus scaling** — author additional upper-surface artifacts (target ≥15 total: 3+ lines × ~5 nodes each) to make pre-session drill UX meaningful | 15+ artifacts in `docs/upper-surface/reasoning-artifacts/`. v2.2-rubric-compliant. Each with companion audit + comparison + drill card. |
+| US-2 | P3 | LATER | Pilot refits to v2.2 (full pass) | Flop + river artifacts re-rated to v2.2 with full §13 D13 reflexive checks applied (current refits are minimal — §3 + §11 row-tag for flop, §5 + §11 row-tag for river). All v2/v2.1-era F-findings tracked in audits closed. |
+| US-3 | P3 | BLOCKED by US-1 | Pre-Session Drill Gate 2 — Blind-Spot Roundtable | Per `docs/design/audits/2026-04-23-entry-pre-session-drill.md` recommendation, defer until corpus reaches ≥15 artifacts. 5-stage roundtable; verdict GREEN/YELLOW/RED; addresses 6 open owner questions from Gate 1. |
+| US-4 | P3 | BLOCKED by US-3 | Pre-Session Drill Gate 3 — Research (conditional on US-3 verdict) | Author DS-56/57/58/59 as `Proposed` in `drills-and-study.md`; possibly owner-interview on session-prep workflow. |
+| US-5 | P3 | BLOCKED by US-3/US-4 | Pre-Session Drill Gate 4 — Design | `surfaces/postflop-drills.md` updated with Pre-Session mode addition + interaction spec + mobile decision. |
+| US-6 | P3 | LATER | LSW soft-flag tightening | Stage 4 surfaced 2 soft flags (flop: equity-vs-subset distinction in LSW external-validation; river: stake-caveat for "25-35% bluffs"). Owner approved no re-audits; documentation-only fix. Add one-line scope-caveats to LSW external-validation logs at next LSW-program touch. **2026-04-23 update:** LSW audits A5-A8 (shipped 2026-04-23) now use `A-with-nuance` / `A-with-stake-caveat` categorization inline, codifying the discipline forward. Retroactive tightening of A1 + the pilot upper-surface artifacts still pending. Two soft-flag targets (flop equity-vs-subset; river 25-35% bluffs stake-caveat) remain un-applied. |
+
+Plan completion summary: 13 docs in `docs/upper-surface/` + 1 in `docs/design/audits/` + 2 §9 entries appended to `POKER_THEORY.md` (§9.4, §9.5). Drill UX RED-blocked on corpus growth (US-1) — design gates execute when corpus is meaningful.
+
+---
+
+### Played-Hand Review Protocol (project: `docs/projects/played-hand-review-protocol.project.md`)
+
+Owner-described purpose: close the depth gap between the theoretical programs (Upper-Surface reasoning artifacts, LSW line-study) and the shallow played-hand review surface by making `HandReplayView` a **consumer** of the theoretical library. Flag a played hand → resolve each decision to its canonical upper-surface / LSW analog → render linked ledger + counterfactual tree + drill card in a modal overlay. **Narrow / bridge scope** — consumer-only in v1. Phase 1 (Gates 1+2+3) + Phase 2 (SPOT-KEY spike) CLOSED 2026-04-23. **PAUSED** behind LSW + exploit-deviation per owner Option C directive.
+
+| ID | Pri | Status | Description | Accept Criteria |
+|----|-----|--------|-------------|-----------------|
+| HRP-G1 | P2 | COMPLETE (2026-04-23) | Gate 1 — Entry | Artifact at `docs/design/audits/2026-04-23-entry-played-hand-review-protocol.md`. Verdict YELLOW (3 JTBD gaps in existing SR domain; 0 persona gaps). |
+| HRP-G2 | P2 | COMPLETE (2026-04-23) | Gate 2 — Blind-Spot Roundtable | Artifact at `docs/design/audits/2026-04-23-blindspot-played-hand-review-protocol.md`. Six custom voices × 5 stages; verdict YELLOW; 7 new JTBDs; 7 Stage-C rules; 8 Stage-E rules; material design shift (ledger = modal overlay, not inline). |
+| HRP-G3 | P2 | COMPLETE (2026-04-23) | Gate 3 — JTBD authoring | SR-28..34 authored in `docs/design/jtbd/domains/session-review.md` (4 Active: SR-28 deep review, SR-29 analog resolution, SR-30 counterfactual tree, SR-31 flag queue; 3 Proposed: SR-32, SR-33, SR-34). ATLAS.md updated. No new domain, no new personas. |
+| HRP-SPIKE | P2 | COMPLETE (2026-04-23) | SPOT-KEY feasibility spike | Artifact at `docs/projects/played-hand-review-protocol/spot-key-spike.md`. GREEN verdict. ~70% of dimensions free from existing helpers (texture + position vocabularies match upper-surface encoding verbatim); ~30 LoC shallow build (pot-type + shorthand); ~100 LoC hard build (node classifier). Typical coverage ~60–70% confident-or-partial. |
+| HRP-G4-SPEC | P2 | PAUSED | Gate 4 — Surface specs | Update `surfaces/hand-replay-view.md` (ledger-link + modal overlay + match confidence + L-key shortcut), `surfaces/analysis-view.md` (HandBrowser flag filter + flag indicator + last-reviewed column), `surfaces/showdown-view.md` (HE-17 producer entry). Author new `surfaces/hand-review-modal.md`. Schema spec for `hand.flags[]` + `hand.reviewState`. Effort: M. |
+| HRP-E-RESOLVER | P2 | BLOCKED by HRP-G4-SPEC | Stream E — `spotResolver/` engine module | Per spike's proposed architecture: 7 files in `src/utils/spotResolver/` (extractor, pot-type inference, board shorthand, node classifier, corpus index, match scorer, golden tests). ~200 LoC + ~150 LoC test corpus. No imports from exploitEngine/ or rangeEngine/. Effort: M-L. |
+| HRP-E-SCHEMA | P2 | BLOCKED by HRP-G4-SPEC | Stream E — IDB schema migration | `hand.flags[]` + `hand.reviewState` additive fields. Backwards-compatible load path for legacy hands. IDB version bump. Effort: S. |
+| HRP-E-TREE-EXPOSE | P2 | NEXT (independent) | Stream E — Expose depth-2/3 counterfactual tree | `gameTreeEvaluator.js` output is currently discarded at `useHandReplayAnalysis` boundary. Thread through so replay analysis carries the already-computed tree. Feeds SR-30. Can ship independently of other HRP work. Effort: S. |
+| HRP-U-BROWSER | P2 | BLOCKED by HRP-G4-SPEC + HRP-E-SCHEMA | Stream U — HandBrowser flag filter + indicator + last-reviewed column | HE-17 consumer side. Feature-flagged rollout. Effort: S-M. |
+| HRP-U-MODAL | P2 | BLOCKED by HRP-G4-SPEC + HRP-E-RESOLVER + HRP-E-TREE-EXPOSE | Stream U — hand-review-modal | Tabs (summary / claims ledger / counterfactual tree / drill card / full artifact). Progressive disclosure. Match confidence. Audit-state propagation from linked artifact. Effort: L. |
+| HRP-U-SHOWDOWN | P2 | BLOCKED by HRP-G4-SPEC + HRP-E-SCHEMA | Stream U — ShowdownView HE-17 producer entry | Flag-for-review gesture at record commit time. Effort: S. |
+| HRP-U-POLISH | P2 | BLOCKED by HRP-U-MODAL | Stream U — First-open tutorial + inline glossary + L keyboard shortcut | Gate 2 Stage-E rules. Touch-target + dead-zone rules. Effort: S-M. |
+| HRP-COORD-MH12 | P2 | LATER | Coordinate with exploit-deviation on `AssumptionCard` shared component | Shared infra opportunity per Gate 2 Stage D. Whichever project reaches the ledger-row render first authors the component; the other consumes. Effort: S. |
+
+Handoff: `.claude/handoffs/hrp-gates-1-2-3-spike.md`. Two verification items deferred to HRP-G4-SPEC entry: (1) HE-17 implementation status — is `hand.flags` field present today or atlas-listed only? (2) Offline precache — are upper-surface `.md` files + LSW `lines.js` in PWA precache manifest?
+
+---
+
 ### Design Program Compliance (project: `.claude/projects/design-compliance.md`, roadmap: `docs/design/ROADMAP.md`)
 
 | ID | Pri | Status | Description | Accept Criteria |

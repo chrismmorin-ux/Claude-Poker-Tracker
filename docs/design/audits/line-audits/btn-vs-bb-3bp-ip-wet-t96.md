@@ -348,6 +348,92 @@ Both deferred. Will re-audit these nodes with solver access once obtained.
 - 2026-04-22 — Draft (external-validation methodology first-applied).
 - 2026-04-22 — Closed. LSW-F1 shipped in a single commit: A1 (flop_root `why` rewrite), A2 (raise-vs-fish nuance), A3 (TPTK-ish → top-pair-strong-kicker), A5 (river_checkback pot-odds 25% → 30%), A6 (node rename → `turn_brick_v_checkraises`), A7 (pot-accounting reconciliation: 108→184, 108→184, 200→258; prompt "90bb" → "112bb"; math: "47bb to win 155bb" → "75bb to call into 184bb pot, ~29% equity"), A8 (new terminal `terminal_river_overfold_bluffcatch`), A9 + A10 (pot values corrected rather than removed — schema requires pot). D1 documented as POKER_THEORY.md §9.1. A4 deferred. `engineAuthoredDrift` baseline regenerated for the node-key rename. 311/311 postflop tests green; full suite 6257/6258 (1 pre-existing precisionAudit flake unrelated).
 - 2026-04-22 — Companion surface audit opened: [`btn-vs-bb-3bp-ip-wet-t96-surface.md`](btn-vs-bb-3bp-ip-wet-t96-surface.md) covers UI rendering (explicitly scoped out of this content audit). Adds 7 findings (3 P0, 3 P1, 1 P2) against `BucketEVPanel` / `PotOddsCalculator` / `BUCKET_TAXONOMY`. Routes: LSW-H1, LSW-H2, LSW-H3 (new Stream H — surface quality); LSW-G3, LSW-G4, LSW-G5. `LSW-B1` now BLOCKED by `LSW-H1 + LSW-H3` in addition to `LSW-A1..A8`.
+- 2026-04-23 — **Addendum: `turn_brick_v_checkraises` effStack reconciliation** appended (see Addendum section below). Narrow-scope re-audit prompted by upper-surface reasoning-artifact Stage 4h lsw-impact flag — audited doc:
+  [`docs/upper-surface/reasoning-artifacts/btn-vs-bb-3bp-ip-wet-t96-turn_brick_v_checkraises.md`](../../upper-surface/reasoning-artifacts/btn-vs-bb-3bp-ip-wet-t96-turn_brick_v_checkraises.md) §1 F-finding + Stage 4h lsw-impact flag 1. Addendum is additive and does NOT modify closed findings; one new finding (ADD-1) proposed with owner-decision options.
+
+---
+
+## Addendum 2026-04-23 — `turn_brick_v_checkraises` effStack reconciliation
+
+**Scope.** This addendum is narrow: it addresses exactly one question raised by a downstream upper-surface reasoning artifact — does the authored `effStack: 90` reconcile with the turn action at `turn_brick_v_checkraises` (BB check-raising hero's overbet to 112bb total turn contribution)?
+
+**Answer.** **No — the numbers are inconsistent.** BB check-raising to a total turn contribution of 112bb requires BB to have **at least 112bb behind at the start of the turn.** With the authored `effStack: 90` and BB's prior commitments (10bb preflop 3bet + 6.8bb flop donk = 16.8bb committed before turn), BB has **73.2bb remaining at start of turn.** BB cannot physically put in a 112bb check-raise at this depth — the stacks don't cover it.
+
+### Finding
+
+- **ADD-1 — effStack: 90 does not support the authored 112bb turn check-raise** (Dimension 1, structural)
+  - **Severity:** 2 (P2). The teaching content is correct (fold is the right call given pot odds + range), and students won't derive wrong lessons — but the stack-depth declaration is internally inconsistent with the action, and a careful student who derives SPR or remaining-stack will notice.
+  - **Observation:** `lines.js:746 effStack: 90`. BB action chain:
+    - Preflop: BB 3bet ~10bb → BB remaining 80bb.
+    - Flop: BB donk 6.8bb (33% of 20.5 pot) → BB remaining 73.2bb.
+    - Turn (hero's 110% overbet = 37.4bb, BB check-raises to 112bb total per prompt): **BB would need 112bb behind — has 73.2bb.** Impossible.
+    - BB's largest legal check-raise at this depth is **73.2bb total turn contribution** (all-in jam = remaining stack). Minimum legal CR is 2× hero's bet = 74.8bb total, which BB also cannot afford — so the only legal action structure at 90bb effStack after a 110% pot overbet is either (a) BB must CR all-in-for-less (a common live cash rule — put in everything, no min-raise requirement), or (b) BB must have sufficient stack (≥~112bb eff) for the authored action.
+  - **Upper-surface-flagged origin:** [`docs/upper-surface/reasoning-artifacts/btn-vs-bb-3bp-ip-wet-t96-turn_brick_v_checkraises.md`](../../upper-surface/reasoning-artifacts/btn-vs-bb-3bp-ip-wet-t96-turn_brick_v_checkraises.md) §1 F-finding and Stage 4h lsw-impact flag 1 both identified this inconsistency.
+
+### Recommended fix — three options for owner decision
+
+Each option is complete and self-contained; owner picks one.
+
+**Option A — Update `effStack` to reflect deep-stack assumption (authoring intent most likely)**
+- Change `lines.js:746 effStack: 90` → `effStack: 130` (or `150` for round number).
+- No other changes needed; all authored sizings become self-consistent (BB's 112bb turn CR requires BB ≥112bb behind at turn start → effStack ≥130bb preflop).
+- **Pedagogical consequence:** the line becomes an explicitly-deep-stack 3BP lesson. Students benefit from understanding that the turn overbet-check-raise spot is primarily a deep-stack occurrence; at 100bb effStack, 3BP rarely reaches a turn overbet-and-check-raise (stacks usually commit earlier).
+- **Cost:** 1 node-value change. `engineAuthoredDrift.test.js` (RT-108) baseline update needed.
+- **Pros:** Preserves the authored turn action and pedagogical richness; makes the line "correctly labeled." 
+- **Cons:** Changes the line's stated stack depth, which may affect how the line is selected / framed in the LineWalkthrough UI (deep-stack 3BP is a less-common configuration than 100bb 3BP).
+- **Recommendation:** **Owner-preferred if the line's authorial intent was deep-stack 3BP teaching.** The teaching content of the turn-CR node (sunk-cost trap, polar value range) is most pedagogically rich in deep-stack, where aggression has the most room to escalate.
+
+**Option B — Tighten BB's check-raise sizing to be 90bb-effStack-compatible**
+- Change `lines.js:1148` `villainAction: { kind: 'checkraise', size: 3.0 }` → `{ kind: 'checkraise', size: 'jam' }` OR `{ kind: 'checkraise', size: 1.96 }` (BB jams remaining 73.2bb = 1.96× hero's 37.4bb bet).
+- Update `turn_brick_v_checkraises.prompt` from "BB check-raises the overbet to 112bb total" → "BB jams the overbet (all-in for ~73bb)" or "BB check-raise jams."
+- Update `turn_brick_v_checkraises.pot` from 184 to match new math: pot after hero's 37.4 overbet = 71.4; BB jams 73.2 → pot = 71.4 + 73.2 = 144.6 ≈ **145**.
+- Update `why` section math: call cost = 73.2 - 37.4 = 35.8bb into 144.6+35.8 = 180.4bb pot → required equity 35.8/180.4 ≈ 20%. Hero's equity still 18-22% — call remains marginal-fold, teaching content preserved.
+- Update child terminals: `terminal_correct_fold_cr` pot = 184 → 145; `terminal_called_cr_light` pot = 258 → 145 + 35.8 + 35.8 = 216.6 ≈ **217**.
+- **Pedagogical consequence:** Line remains 100bb-effStack. Turn action becomes "BB jams" rather than "BB check-raises to 3×", which is less structurally rich (jam is a simpler action) but more realistic at 100bb eff.
+- **Cost:** 4 node changes + math cascade + `engineAuthoredDrift.test.js` baseline update.
+- **Pros:** Preserves 100bb-effStack framing which is the most-common-stake configuration.
+- **Cons:** Loses the "3× check-raise" teaching element (which is specifically about mid-range CR sizing, not jam). Teaching shifts from "aggression-escalation trap" to "all-in-trap."
+
+**Option C — Add explicit deep-stack note without changing numbers**
+- Add a `caveat` or `note` section to `flop_root` or to the `turn_brick_v_checkraises` node saying: "Note: This line assumes a deeper-than-usual 130bb+ effective stack to reach the authored turn check-raise sizing. At standard 100bb cash, the equivalent spot would be a BB check-raise-jam (see Option B structural variant)."
+- Keep `effStack: 90` and all existing sizings.
+- **Pedagogical consequence:** Student reads the note and understands the assumption. Teaches "the deep-stack version of this spot looks like this."
+- **Cost:** 1 section addition. No math changes.
+- **Pros:** Minimum change; preserves all authored content.
+- **Cons:** Has authoring admit-failure flavor ("we know the numbers don't match; here's a note about it"). Internal inconsistency remains in the schema. Students may find the note confusing if they're not paying close attention to stack depths.
+
+### Recommendation
+
+**Option A** is the cleanest fix: change `effStack` from 90 to 130 (or 150). The authored turn action (BB check-raising to 112bb total) is **pedagogically richer than a jam** because it teaches mid-sizing check-raise dynamics + the specific "sunk-cost trap" after an ineffective overbet. This content is worth preserving. The cost (1 value change + RT-108 re-baseline) is small.
+
+**Option B** is second choice if preserving 100bb-effStack is structurally important to the line's role in the library (e.g., if 100bb cash is the canonical LSW target and deviating would fragment the stake-depth variety).
+
+**Option C** is a documentation-only escape hatch — usable if owner wants minimum change + is OK with the internal inconsistency. Least preferred.
+
+### Effort
+
+- **Option A:** S — one value change, one drift-baseline regenerate, optional UI-selection review.
+- **Option B:** M — 4-node cascade + math, content ripple, drift-baseline regenerate.
+- **Option C:** S — single section addition.
+
+### Risk
+
+- **Option A:** Low. No content changes; pedagogy intact. Drift baseline re-baseline is routine.
+- **Option B:** Medium. Math cascade must be exact across 4 nodes and 2 terminal children. Error risk in pot-value updates.
+- **Option C:** Very low. No mechanical risk; cosmetic caveat only.
+
+### Proposed backlog item
+
+`LSW-F-T96-ADD-1 — effStack reconciliation on turn_brick_v_checkraises` — owner picks Option A/B/C at review time.
+
+### This addendum's relationship to the closed A1 audit
+
+The A1 audit closed 2026-04-22 did NOT surface this specific finding because:
+- A1's L-river_brick_v_checkraises-F2 covered pot-accounting drift (108/71.4/90/200) but focused on pot values reconciling with EACH OTHER across authored node prompts, NOT on stacks physically supporting the actions.
+- The LSW-F1 fix that shipped (pot values 108→184, prompt "90bb" → "112bb") resolved the pot-internal-reconciliation issue but implicitly relies on the turn-CR size (112bb total) — which this addendum now flags as stack-incompatible.
+- The upper-surface reasoning-artifact work (post-A1) is the downstream trigger: the artifact's §1 structural check found the effStack-vs-action incompatibility that A1's scope didn't catch.
+
+**Addendum status:** Under the LSW charter, audits are immutable after close. This addendum adds a **new section** to the audit document without modifying any prior-closed sections. The original fix-list, verdict, sign-off, and change-log entries for 2026-04-22 remain unchanged and canonical. This is acceptable practice per audit-charter: additive-append-only.
 
 ---
 
