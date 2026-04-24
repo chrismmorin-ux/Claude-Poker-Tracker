@@ -37,6 +37,7 @@ import {
   drillSessionAbandoned,
   assumptionDialChanged,
 } from '../reducers/assumptionReducer';
+import { useCitedDecisions } from './useCitedDecisions';
 
 const TIME_BUDGET_CARD_COUNTS = Object.freeze({
   5: 3,
@@ -85,6 +86,28 @@ export const usePresessionDrill = () => {
   const currentCard = mode === 'retry'
     ? (retryDeck[retryIndex] ?? null)
     : (deck[currentCardIndex] ?? null);
+
+  // Cited decisions — lazy memoized per assumption.id. Combines deck + retry deck so
+  // both modes share cache. Honesty check (dial=0 → recommendedAction === baselineAction)
+  // is enforced structurally by produceCitedDecision; nothing to add here.
+  const allCardsForCitation = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const a of deck.concat(retryDeck)) {
+      if (a && a.id && !seen.has(a.id)) {
+        seen.add(a.id);
+        out.push(a);
+      }
+    }
+    return out;
+  }, [deck, retryDeck]);
+
+  const { citedDecisionsById, isAnyLoading: isAnyCitedDecisionLoading } = useCitedDecisions(
+    allCardsForCitation,
+    state.villainTendencies,
+  );
+
+  const currentCitedDecision = currentCard ? citedDecisionsById[currentCard.id] : null;
 
   // Available villains for entry-mode selector
   const availableVillains = useMemo(() => {
@@ -252,7 +275,12 @@ export const usePresessionDrill = () => {
     retryIndex,
     isRevealed,
     drillSession: state.drillSession,
+    assumptions: state.assumptions,
+    villainTendencies: state.villainTendencies,
     sessionSummary,
+    citedDecisionsById,
+    currentCitedDecision,
+    isAnyCitedDecisionLoading,
 
     // Actions
     setTimeBudget,

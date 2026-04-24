@@ -96,3 +96,75 @@ describe('DrillExit — CTAs', () => {
     expect(screen.getByTestId('drill-exit-back-to-entry').style.minHeight).toBe('48px');
   });
 });
+
+describe('DrillExit — inline DrillReview (Session 16 Q2 option D)', () => {
+  const drillSession = {
+    sessionId: 'drill-1',
+    startedAt: '2026-04-23T00:00:00Z',
+    cardsShown: [
+      { cardIndex: 0, assumptionId: 'a1', heroAnswered: 'correct', dialOverride: null, retryQueued: false },
+      { cardIndex: 1, assumptionId: 'a2', heroAnswered: 'retry-later', dialOverride: null, retryQueued: true },
+    ],
+  };
+  const assumptions = {
+    a1: { id: 'a1', villainId: 'v42', narrative: { citationShort: 'a1-short', humanStatement: 'a1-human' } },
+    a2: { id: 'a2', villainId: 'v42', narrative: { citationShort: 'a2-short', humanStatement: 'a2-human' } },
+  };
+
+  it('does NOT show toggle when drillSession is missing', () => {
+    render(<DrillExit {...baseProps} />);
+    expect(screen.queryByTestId('drill-exit-toggle-review')).not.toBeInTheDocument();
+  });
+
+  it('does NOT show toggle when cardsShown is empty', () => {
+    render(<DrillExit
+      {...baseProps}
+      drillSession={{ sessionId: 'x', startedAt: '', cardsShown: [] }}
+      assumptions={{}}
+    />);
+    expect(screen.queryByTestId('drill-exit-toggle-review')).not.toBeInTheDocument();
+  });
+
+  it('shows toggle button when drillSession has cards', () => {
+    render(<DrillExit {...baseProps} drillSession={drillSession} assumptions={assumptions} />);
+    expect(screen.getByTestId('drill-exit-toggle-review')).toBeInTheDocument();
+  });
+
+  it('toggle button starts collapsed, inline review hidden', () => {
+    render(<DrillExit {...baseProps} drillSession={drillSession} assumptions={assumptions} />);
+    expect(screen.getByTestId('drill-exit-toggle-review').textContent).toMatch(/See full review/i);
+    expect(screen.queryByTestId('drill-exit-inline-review')).not.toBeInTheDocument();
+  });
+
+  it('clicking toggle expands inline DrillReview', () => {
+    render(<DrillExit {...baseProps} drillSession={drillSession} assumptions={assumptions} />);
+    fireEvent.click(screen.getByTestId('drill-exit-toggle-review'));
+    expect(screen.getByTestId('drill-exit-inline-review')).toBeInTheDocument();
+    expect(screen.getByTestId('drill-exit-toggle-review').textContent).toMatch(/Hide review/i);
+  });
+
+  it('clicking toggle again collapses inline DrillReview', () => {
+    render(<DrillExit {...baseProps} drillSession={drillSession} assumptions={assumptions} />);
+    const toggle = screen.getByTestId('drill-exit-toggle-review');
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(screen.queryByTestId('drill-exit-inline-review')).not.toBeInTheDocument();
+  });
+
+  it('inline review renders DrillReview stats when expanded', () => {
+    render(<DrillExit
+      {...baseProps}
+      sessionSummary={{ correct: 1, retryLater: 1, totalCards: 2, mood: 'neutral', hitRate: 0.5 }}
+      drillSession={drillSession}
+      assumptions={assumptions}
+    />);
+    fireEvent.click(screen.getByTestId('drill-exit-toggle-review'));
+    expect(screen.getByTestId('drill-review-stats')).toBeInTheDocument();
+    expect(screen.getByTestId('drill-review-rows')).toBeInTheDocument();
+  });
+
+  it('toggle button touch-target ≥ 44', () => {
+    render(<DrillExit {...baseProps} drillSession={drillSession} assumptions={assumptions} />);
+    expect(screen.getByTestId('drill-exit-toggle-review').style.minHeight).toBe('48px');
+  });
+});

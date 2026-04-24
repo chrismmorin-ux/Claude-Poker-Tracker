@@ -14,15 +14,19 @@
  *   - Touch targets ≥ 44 DOM-px
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { DrillReview } from './DrillReview';
 
 export const DrillExit = ({
   deck,
   retryDeck,
   sessionSummary,
+  drillSession,
+  assumptions,
   onStartSession,
   onBackToEntry,
 }) => {
+  const [showReview, setShowReview] = useState(false);
   const totalReviewed = sessionSummary?.totalCards ?? 0;
   const correct = sessionSummary?.correct ?? 0;
   const retryLater = sessionSummary?.retryLater ?? 0;
@@ -43,9 +47,15 @@ export const DrillExit = ({
   // Tonight's watchlist — combine the highest-composite cards from both decks
   const watchlist = [...deck, ...retryDeck].slice(0, 5);
 
+  // Inline review toggle — Option D per Session 16 handoff Q2.
+  // DrillReview mounts here rather than requiring a separate navigation step.
+  const hasReviewableSession = drillSession
+    && drillSession.cardsShown
+    && drillSession.cardsShown.length > 0;
+
   return (
     <div className="w-full h-full bg-gray-900 flex flex-col" style={{ width: 1600, height: 720 }}>
-      <div className="flex-1 flex items-center justify-center px-8 py-6 overflow-y-auto">
+      <div className="flex-1 flex items-start justify-center px-8 py-6 overflow-y-auto">
         <div className="max-w-2xl w-full text-center">
           <h1 className="text-3xl font-bold text-white mb-2" data-testid="drill-exit-headline">
             {headline}
@@ -80,7 +90,7 @@ export const DrillExit = ({
             When you see these spots live, the app will cite them in the sidebar.
           </p>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-wrap">
             <button
               type="button"
               onClick={onStartSession}
@@ -90,6 +100,17 @@ export const DrillExit = ({
             >
               Start session now
             </button>
+            {hasReviewableSession && (
+              <button
+                type="button"
+                onClick={() => setShowReview((prev) => !prev)}
+                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                style={{ minHeight: 48, minWidth: 180 }}
+                data-testid="drill-exit-toggle-review"
+              >
+                {showReview ? 'Hide review ▲' : 'See full review ▼'}
+              </button>
+            )}
             <button
               type="button"
               onClick={onBackToEntry}
@@ -100,6 +121,20 @@ export const DrillExit = ({
               Back to drill entry
             </button>
           </div>
+
+          {/* Inline DrillReview — option D per Session 16 handoff */}
+          {showReview && hasReviewableSession && (
+            <div className="mt-8 text-left" data-testid="drill-exit-inline-review">
+              <div style={{ minHeight: 480 }}>
+                <DrillReview
+                  drillSession={drillSession}
+                  sessionSummary={sessionSummary}
+                  assumptions={assumptions}
+                  onClose={() => setShowReview(false)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

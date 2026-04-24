@@ -184,6 +184,169 @@ describe('produceAssumptions — Canonical Example 2 (thin value vs station)', (
   });
 });
 
+describe('produceAssumptions — foldToTurnBarrel (double-barrel extension)', () => {
+  const makeTurnBarrelTendency = (overrides = {}) => ({
+    villainId: 'v-nit',
+    style: 'Nit',
+    totalObservations: 78,
+    adaptationObservations: 4,
+    observedRates: {
+      foldToTurnBarrel: { rate: 0.74, n: 62, lastUpdated: '2026-04-23T10:00:00Z' },
+    },
+    ...overrides,
+  });
+
+  const turnState = () => ({
+    street: 'turn',
+    position: 'IP',
+    texture: 'any',
+    spr: 4,
+    heroIsAggressor: true,
+    nodeId: 'turn-barrel-spot',
+  });
+
+  it('emits for over-folder on turn barrel spot', () => {
+    const results = produceAssumptions(makeTurnBarrelTendency(), turnState());
+    const assumption = results.find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    expect(assumption).toBeDefined();
+    expect(assumption.consequence.deviationType).toBe('line-change');
+  });
+
+  it('passes schema validation', () => {
+    const assumption = produceAssumptions(makeTurnBarrelTendency(), turnState())
+      .find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    expect(validateAssumption(assumption).ok).toBe(true);
+  });
+
+  it('not applicable when hero is not aggressor', () => {
+    const results = produceAssumptions(makeTurnBarrelTendency(), { ...turnState(), heroIsAggressor: false });
+    expect(results.find((a) => a.claim.predicate === 'foldToTurnBarrel')).toBeUndefined();
+  });
+
+  it('not applicable on flop', () => {
+    const results = produceAssumptions(makeTurnBarrelTendency(), { ...turnState(), street: 'flop' });
+    expect(results.find((a) => a.claim.predicate === 'foldToTurnBarrel')).toBeUndefined();
+  });
+
+  it('operator deltas shift fold up when villain over-folds', () => {
+    const assumption = produceAssumptions(makeTurnBarrelTendency(), turnState())
+      .find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    const delta = assumption.operator.transform.actionDistributionDelta;
+    expect(delta.fold).toBeGreaterThan(0);
+    const sum = (delta.fold ?? 0) + (delta.call ?? 0) + (delta.raise ?? 0);
+    expect(Math.abs(sum)).toBeLessThan(0.001);
+  });
+
+  it('narrative cites observed rate and sample size', () => {
+    const assumption = produceAssumptions(makeTurnBarrelTendency(), turnState())
+      .find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    expect(assumption.narrative.humanStatement).toMatch(/74%/);
+    expect(assumption.narrative.humanStatement).toMatch(/n=62/);
+  });
+
+  it('dividend magnitude increases with over-fold extent', () => {
+    // Use includeBelowThreshold so we get outputs across the range of observed
+    // rates regardless of whether each crosses the quality gate.
+    const low = produceAssumptions(
+      makeTurnBarrelTendency({
+        observedRates: { foldToTurnBarrel: { rate: 0.62, n: 62, lastUpdated: '2026-04-23T10:00:00Z' } },
+      }),
+      turnState(),
+      {},
+      { includeBelowThreshold: true },
+    ).find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    const high = produceAssumptions(
+      makeTurnBarrelTendency({
+        observedRates: { foldToTurnBarrel: { rate: 0.82, n: 62, lastUpdated: '2026-04-23T10:00:00Z' } },
+      }),
+      turnState(),
+      {},
+      { includeBelowThreshold: true },
+    ).find((a) => a.claim.predicate === 'foldToTurnBarrel');
+    expect(high.consequence.expectedDividend.mean)
+      .toBeGreaterThan(low.consequence.expectedDividend.mean);
+  });
+});
+
+describe('produceAssumptions — cbetFrequency (float vs range-bettor)', () => {
+  const makeRangeBettorTendency = (overrides = {}) => ({
+    villainId: 'v-lag',
+    style: 'LAG',
+    totalObservations: 92,
+    adaptationObservations: 6,
+    observedRates: {
+      cbetFrequency: { rate: 0.91, n: 88, lastUpdated: '2026-04-23T10:00:00Z' },
+    },
+    ...overrides,
+  });
+
+  const defenderState = () => ({
+    street: 'flop',
+    position: 'IP',
+    texture: 'any',
+    spr: 8,
+    heroIsAggressor: false,
+    villainIsAggressor: true,
+    nodeId: 'flop-defender-spot',
+  });
+
+  it('emits for range-bettor on flop defender spot', () => {
+    const results = produceAssumptions(makeRangeBettorTendency(), defenderState());
+    const assumption = results.find((a) => a.claim.predicate === 'cbetFrequency');
+    expect(assumption).toBeDefined();
+    expect(assumption.consequence.deviationType).toBe('line-change');
+  });
+
+  it('passes schema validation', () => {
+    const assumption = produceAssumptions(makeRangeBettorTendency(), defenderState())
+      .find((a) => a.claim.predicate === 'cbetFrequency');
+    expect(validateAssumption(assumption).ok).toBe(true);
+  });
+
+  it('not applicable when hero is aggressor', () => {
+    const results = produceAssumptions(makeRangeBettorTendency(), {
+      ...defenderState(),
+      heroIsAggressor: true,
+      villainIsAggressor: false,
+    });
+    expect(results.find((a) => a.claim.predicate === 'cbetFrequency')).toBeUndefined();
+  });
+
+  it('not applicable postflop off-flop', () => {
+    const results = produceAssumptions(makeRangeBettorTendency(), { ...defenderState(), street: 'turn' });
+    expect(results.find((a) => a.claim.predicate === 'cbetFrequency')).toBeUndefined();
+  });
+
+  it('narrative calls villain a range-bettor', () => {
+    const assumption = produceAssumptions(makeRangeBettorTendency(), defenderState())
+      .find((a) => a.claim.predicate === 'cbetFrequency');
+    expect(assumption.narrative.humanStatement).toMatch(/range-bettor/i);
+    expect(assumption.narrative.humanStatement).toMatch(/91%/);
+  });
+
+  it('LAG style prior boosts confidence for range-cbets', () => {
+    const assumption = produceAssumptions(makeRangeBettorTendency(), defenderState())
+      .find((a) => a.claim.predicate === 'cbetFrequency');
+    expect(assumption.evidence.prior.type).toBe('style');
+    // LAG prior is Beta(8, 3) → alpha + beta = 11 (PRIOR_WEIGHT ≈ 10)
+    expect(assumption.evidence.prior.alpha + assumption.evidence.prior.beta).toBeCloseTo(11, 0);
+  });
+
+  it('Nit style prior lowers expected cbet frequency', () => {
+    const nitTendency = {
+      ...makeRangeBettorTendency(),
+      style: 'Nit',
+      observedRates: {
+        cbetFrequency: { rate: 0.45, n: 22, lastUpdated: '2026-04-23T10:00:00Z' },
+      },
+    };
+    const results = produceAssumptions(nitTendency, defenderState(), {}, { includeBelowThreshold: true });
+    const a = results.find((x) => x.claim.predicate === 'cbetFrequency');
+    // Nit + observed 45% cbet → well below the 85% threshold → low confidence
+    expect(a.evidence.posteriorConfidence).toBeLessThan(0.2);
+  });
+});
+
 describe('produceAssumptions — quality gate integration', () => {
   it('sorts results descending by composite', () => {
     const results = produceAssumptions(makeFishTendency(), riverState());
@@ -227,15 +390,21 @@ describe('produceAssumptions — quality gate integration', () => {
 });
 
 describe('PRODUCTION_RECIPES registry', () => {
-  it('ships three recipes in Commit 4', () => {
+  it('ships Commit 4 recipes + Session 18 additions', () => {
     expect(Object.keys(PRODUCTION_RECIPES)).toEqual(
-      expect.arrayContaining(['foldToRiverBet', 'foldToCbet', 'thinValueFrequency']),
+      expect.arrayContaining([
+        'foldToRiverBet',
+        'foldToCbet',
+        'thinValueFrequency',
+        'foldToTurnBarrel',
+        'cbetFrequency',
+      ]),
     );
   });
 
   it('is frozen', () => {
     expect(() => {
-      PRODUCTION_RECIPES.foldToTurnBarrel = {};
+      PRODUCTION_RECIPES.somethingNew = {};
     }).toThrow();
   });
 });

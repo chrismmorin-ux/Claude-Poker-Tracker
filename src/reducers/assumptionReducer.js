@@ -30,6 +30,8 @@ import { SCHEMA_VERSION } from '../utils/assumptionEngine';
 export const ASSUMPTION_ACTIONS = Object.freeze({
   ASSUMPTION_PRODUCED: 'ASSUMPTION_PRODUCED',           // payload: assumption
   ASSUMPTIONS_BULK_LOADED: 'ASSUMPTIONS_BULK_LOADED',   // payload: assumption[]  (IDB hydration)
+  VILLAIN_TENDENCY_LOADED: 'VILLAIN_TENDENCY_LOADED',   // payload: villainTendency  (sidecar to assumptions, used for synthesis)
+  VILLAIN_TENDENCIES_BULK_LOADED: 'VILLAIN_TENDENCIES_BULK_LOADED', // payload: villainTendency[]
   ASSUMPTION_RETIRED: 'ASSUMPTION_RETIRED',             // payload: { id, reason }
   ASSUMPTION_DIAL_CHANGED: 'ASSUMPTION_DIAL_CHANGED',   // payload: { id, newDial }
   CITED_DECISION_EMITTED: 'CITED_DECISION_EMITTED',     // payload: { nodeId, citedDecision }
@@ -54,6 +56,10 @@ export const initialAssumptionState = {
 
   // Per-villain actionable subset: villainId → assumptionId[]
   activeByVillain: {},
+
+  // Per-villain tendency snapshot used by baselineSynthesis (style + observedRates).
+  // Populated by seed flow + future tendency-loader; sidecar to assumptions store.
+  villainTendencies: {},
 
   // Categorizations (emergent): villainId → VillainCategorization
   categorizations: {},
@@ -96,21 +102,54 @@ const rawAssumptionReducer = (state = initialAssumptionState, action) => {
       const nextAssumptions = { ...state.assumptions, [a.id]: a };
       const isActive = a.quality?.actionableInDrill === true || a.quality?.actionableLive === true;
       const nextActiveByVillain = updateActiveByVillain(state.activeByVillain, a, isActive);
+      const nextVillainTendencies = extractTendencyFromAssumption(state.villainTendencies, a);
 
-      return { ...state, assumptions: nextAssumptions, activeByVillain: nextActiveByVillain };
+      return {
+        ...state,
+        assumptions: nextAssumptions,
+        activeByVillain: nextActiveByVillain,
+        villainTendencies: nextVillainTendencies,
+      };
     }
 
     case ASSUMPTION_ACTIONS.ASSUMPTIONS_BULK_LOADED: {
       const records = Array.isArray(action.payload) ? action.payload : [];
       const nextAssumptions = { ...state.assumptions };
       const nextActiveByVillain = { ...state.activeByVillain };
+      let nextVillainTendencies = state.villainTendencies;
       for (const a of records) {
         if (!a || typeof a.id !== 'string') continue;
         nextAssumptions[a.id] = a;
         const isActive = a.quality?.actionableInDrill === true || a.quality?.actionableLive === true;
         Object.assign(nextActiveByVillain, updateActiveByVillain(nextActiveByVillain, a, isActive));
+        nextVillainTendencies = extractTendencyFromAssumption(nextVillainTendencies, a);
       }
-      return { ...state, assumptions: nextAssumptions, activeByVillain: nextActiveByVillain };
+      return {
+        ...state,
+        assumptions: nextAssumptions,
+        activeByVillain: nextActiveByVillain,
+        villainTendencies: nextVillainTendencies,
+      };
+    }
+
+    case ASSUMPTION_ACTIONS.VILLAIN_TENDENCY_LOADED: {
+      const t = action.payload;
+      if (!t || typeof t.villainId !== 'string') return state;
+      return {
+        ...state,
+        villainTendencies: { ...state.villainTendencies, [t.villainId]: t },
+      };
+    }
+
+    case ASSUMPTION_ACTIONS.VILLAIN_TENDENCIES_BULK_LOADED: {
+      const records = Array.isArray(action.payload) ? action.payload : [];
+      if (records.length === 0) return state;
+      const next = { ...state.villainTendencies };
+      for (const t of records) {
+        if (!t || typeof t.villainId !== 'string') continue;
+        next[t.villainId] = t;
+      }
+      return { ...state, villainTendencies: next };
     }
 
     case ASSUMPTION_ACTIONS.ASSUMPTION_RETIRED: {
@@ -247,6 +286,23 @@ const rawAssumptionReducer = (state = initialAssumptionState, action) => {
 // =============================================================================
 
 /**
+ * Extract `_villainSnapshot` sidecar field on an assumption into the tendency
+ * map. Returns the updated map (no-op if no snapshot or already present).
+ * Snapshots are produced at production time per assumptionProducer; persisted
+ * with the assumption record. Powers baselineSynthesis style lookup without
+ * a separate IDB store.
+ */
+const extractTendencyFromAssumption = (current, assumption) => {
+  const snap = assumption?._villainSnapshot;
+  if (!snap || typeof snap.villainId !== 'string') return current;
+  // Idempotent: if existing tendency for this villainId carries the same style,
+  // skip the merge to avoid producing a new state object on every dispatch.
+  const existing = current[snap.villainId];
+  if (existing && existing.style === snap.style) return current;
+  return { ...current, [snap.villainId]: { ...existing, ...snap } };
+};
+
+/**
  * Add/remove an assumption's id from the villain's active-list depending on
  * whether it's actionable. Returns the updated activeByVillain map.
  */
@@ -279,6 +335,7 @@ const ASSUMPTION_STATE_SCHEMA = {
   emotionalStateCache: { type: 'object', required: true },
   citedDecisionCache: { type: 'object', required: true },
   calibrationMetrics: { type: 'object', required: true },
+  villainTendencies: { type: 'object', required: true },
   drillSession: { type: 'object', required: false }, // null allowed when required: false
   schemaVersion: { type: 'string', required: true },
 };
@@ -301,6 +358,16 @@ export const assumptionProduced = (assumption) => ({
 export const assumptionsBulkLoaded = (assumptions) => ({
   type: ASSUMPTION_ACTIONS.ASSUMPTIONS_BULK_LOADED,
   payload: assumptions,
+});
+
+export const villainTendencyLoaded = (villainTendency) => ({
+  type: ASSUMPTION_ACTIONS.VILLAIN_TENDENCY_LOADED,
+  payload: villainTendency,
+});
+
+export const villainTendenciesBulkLoaded = (tendencies) => ({
+  type: ASSUMPTION_ACTIONS.VILLAIN_TENDENCIES_BULK_LOADED,
+  payload: tendencies,
 });
 
 export const assumptionRetired = (id, reason) => ({

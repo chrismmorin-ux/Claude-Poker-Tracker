@@ -16,6 +16,7 @@ export const DrillFlashcards = ({
   cardIndex,
   totalCards,
   currentCard,
+  citedDecision,
   isRevealed,
   timeBudgetMinutes,
   onReveal,
@@ -93,6 +94,7 @@ export const DrillFlashcards = ({
           ) : (
             <DrillReveal
               card={currentCard}
+              citedDecision={citedDecision}
               onSetDial={onSetDial}
             />
           )}

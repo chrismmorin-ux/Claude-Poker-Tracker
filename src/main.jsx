@@ -6,10 +6,14 @@ import './index.css'
 // Dev-only: expose seed data helpers on window for console access
 // Usage: window.__seedTestData() / window.__clearTestData()
 // Range engine seed data: window.__seedRangeData() / window.__clearRangeData()
+// Drill seed: window.__seedDrillAssumptions() / window.__clearDrillAssumptions() / window.__inspectDrillAssumptions()
+// Drill backtest (Tier-2 activation-rate): window.__runDrillBacktest()
 if (import.meta.env.DEV) {
   import('./__dev__/seedTestData')
   import('./__dev__/seedRangeTestData')
   import('./__dev__/handSimulator')
+  import('./__dev__/seedDrillAssumptions')
+  import('./__dev__/runDrillBacktest')
 }
 
 // PWA update listener — reload when new service worker activates

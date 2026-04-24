@@ -93,6 +93,7 @@ export const PresessionDrillView = ({ scale }) => {
           cardIndex={drill.currentCardIndex}
           totalCards={drill.deck.length}
           currentCard={drill.currentCard}
+          citedDecision={drill.currentCitedDecision}
           isRevealed={drill.isRevealed}
           timeBudgetMinutes={drill.timeBudget}
           onReveal={drill.revealCard}
@@ -117,6 +118,7 @@ export const PresessionDrillView = ({ scale }) => {
           cardIndex={drill.retryIndex}
           totalCards={drill.retryDeck.length}
           currentCard={drill.currentCard}
+          citedDecision={drill.currentCitedDecision}
           isRevealed={drill.isRevealed}
           timeBudgetMinutes={drill.timeBudget}
           onReveal={drill.revealCard}
@@ -131,6 +133,8 @@ export const PresessionDrillView = ({ scale }) => {
           deck={drill.deck}
           retryDeck={drill.retryDeck}
           sessionSummary={drill.sessionSummary}
+          drillSession={drill.drillSession}
+          assumptions={drill.assumptions}
           onStartSession={backToTable}
           onBackToEntry={drill.exitToEntry}
         />

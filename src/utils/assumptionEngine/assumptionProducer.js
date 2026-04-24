@@ -160,6 +160,14 @@ const buildAssumption = (recipe, villainTendency, gameState, sessionContext, ctx
     quality,
     status: actionability.actionableInDrill ? 'active' : 'candidate',
     validation: { timesApplied: 0, realizedDividend: 0, calibrationGap: 0, lastValidated: null },
+    // Snapshot the villain's style + key tendency rates so downstream surfaces
+    // (baselineSynthesis, useCitedDecisions) can reproduce the production-time
+    // context without an additional persistence layer. Additive sidecar — does
+    // not alter assumption semantics.
+    _villainSnapshot: {
+      villainId: villainTendency.villainId,
+      style: villainTendency.style ?? 'Unknown',
+    },
   };
 };
 
@@ -510,13 +518,191 @@ const thinValueFrequencyRecipe = {
 };
 
 // ───────────────────────────────────────────────────────────────────────────
+// Recipe: foldToTurnBarrel — double-barrel extension vs over-folder
+// ───────────────────────────────────────────────────────────────────────────
+
+const foldToTurnBarrelRecipe = {
+  predicate: 'foldToTurnBarrel',
+  tendencyKey: 'foldToTurnBarrel',
+
+  applicable: (_villain, gameState) =>
+    gameState.street === 'turn' && gameState.heroIsAggressor === true,
+
+  prior: (villain) => stylePriorForFoldRate(villain.style, 'turn'),
+
+  claim: (_evidence) => ({
+    predicate: 'foldToTurnBarrel',
+    operator: '>=',
+    threshold: 0.60, // fold rate ≥ 60% → double-barrel extension justified
+    scope: {
+      street: 'turn',
+      position: 'any',
+      texture: 'any',
+      sprRange: [2, 8],
+      betSizeRange: [0.5, 0.85],
+      playersToAct: 0,
+      activationFrequency: 0.12,
+    },
+  }),
+
+  stability: (villain, observed) => defaultStabilityV1(villain, observed),
+
+  recognizability: (_gameState) => ({
+    triggerDescription: 'Hero cbet flop + facing villain call; turn reached heads-up',
+    conditionsCount: 2,
+    heroCognitiveLoad: 'low',
+    score: 0.85,
+  }),
+
+  consequence: (_villain, evidence, _gameState) => {
+    // Dividend scales with how far over-folding the villain is; extension of
+    // bluff barrels into fold equity is pure EV per POKER_THEORY.md §3.3.
+    const aboveThreshold = Math.max(0, evidence.pointEstimate - 0.60);
+    const meanBB = 0.50 + aboveThreshold * 7;
+    const sd = Math.max(0.17, meanBB * 0.30);
+    return {
+      deviationId: 'extendTurnBarrelRange',
+      deviationType: 'line-change',
+      expectedDividend: {
+        mean: meanBB,
+        sd,
+        sharpe: meanBB / sd,
+        unit: 'bb per 100 trigger firings',
+      },
+      affectedHands: "hero's semi-bluff + air floats that would normally give up turn",
+    };
+  },
+
+  counterExploit: (villain, consequence, posteriorConfidence) =>
+    defaultCounterExploitV1(villain, consequence, posteriorConfidence),
+
+  operator: (_villain, _gameState) => ({
+    target: 'villain',
+    nodeSelector: { street: 'turn', heroAction: 'barrel' },
+    transform: {
+      // Villain overfolds turn → shift fold up, call down, raise down.
+      actionDistributionDelta: { fold: 0.12, call: -0.10, raise: -0.02 },
+    },
+    currentDial: 0,
+    dialFloor: 0.3,
+    dialCeiling: 0.9,
+    suppresses: [],
+  }),
+
+  narrative: (villain, evidence, _consequence) => {
+    const pct = Math.round(evidence.pointEstimate * 100);
+    return {
+      humanStatement: `Villain folds to turn barrel ${pct}% (n=${evidence.sampleSize})`,
+      citationShort: `fold-to-turn ${pct}% @ n=${evidence.sampleSize}`,
+      citationLong: `Over ${evidence.sampleSize} observed turn-barrel decisions, villain folded ${evidence.observationCount}. Their flop-call range is dominated by weak pairs + gutshots that do not continue turn.`,
+      teachingPattern: "They called flop light and folded turn. Keep barreling — don't give up your air.",
+      analogAnchor: villain.style === 'Nit' ? "passive Nit who flop-peels and turn-bails" : undefined,
+    };
+  },
+
+  scopeKey: (_gameState) => 'turn:aggressor',
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+// Recipe: cbetFrequency — floating/check-raising vs range-bettor
+// ───────────────────────────────────────────────────────────────────────────
+
+const cbetFrequencyRecipe = {
+  predicate: 'cbetFrequency',
+  tendencyKey: 'cbetFrequency',
+
+  applicable: (_villain, gameState) =>
+    gameState.street === 'flop'
+    && gameState.heroIsAggressor === false
+    && gameState.villainIsAggressor === true,
+
+  prior: (villain) => styleCbetFrequencyPrior(villain.style),
+
+  claim: (_evidence) => ({
+    predicate: 'cbetFrequency',
+    operator: '>=',
+    threshold: 0.85, // cbet rate ≥ 85% → villain range-bets, range is uncapped+weak
+    scope: {
+      street: 'flop',
+      position: 'any',
+      texture: 'any',
+      sprRange: [3, 15],
+      betSizeRange: [0.25, 0.66],
+      playersToAct: 0,
+      activationFrequency: 0.18,
+    },
+  }),
+
+  stability: (villain, observed) => defaultStabilityV1(villain, observed),
+
+  recognizability: (_gameState) => ({
+    triggerDescription: 'Hero called preflop; villain is PFA and bet flop',
+    conditionsCount: 2,
+    heroCognitiveLoad: 'medium',
+    score: 0.80,
+  }),
+
+  consequence: (_villain, evidence, _gameState) => {
+    // Dividend scales with how far over-c-betting the villain is. Beyond
+    // population ~75%, each extra 5% of cbet frequency meaningfully widens
+    // hero's float + check-raise range. POKER_THEORY.md §3.4 (range width).
+    const aboveThreshold = Math.max(0, evidence.pointEstimate - 0.85);
+    const meanBB = 0.35 + aboveThreshold * 10;
+    const sd = Math.max(0.14, meanBB * 0.32);
+    return {
+      deviationId: 'floatWiderVsRangeBettor',
+      deviationType: 'line-change',
+      expectedDividend: {
+        mean: meanBB,
+        sd,
+        sharpe: meanBB / sd,
+        unit: 'bb per 100 trigger firings',
+      },
+      affectedHands: "hero's backdoor draws + weak pairs that are normally fold/check-call",
+    };
+  },
+
+  counterExploit: (villain, consequence, posteriorConfidence) =>
+    defaultCounterExploitV1(villain, consequence, posteriorConfidence),
+
+  operator: (_villain, _gameState) => ({
+    target: 'villain',
+    nodeSelector: { street: 'flop', heroAction: 'float-or-check-raise' },
+    transform: {
+      // When hero floats, villain's uncapped-weak range folds more on turn.
+      // Express the downstream state: villain fold distribution increases when
+      // the range is dominated by air.
+      actionDistributionDelta: { fold: 0.10, call: -0.08, raise: -0.02 },
+    },
+    currentDial: 0,
+    dialFloor: 0.3,
+    dialCeiling: 0.9,
+    suppresses: [],
+  }),
+
+  narrative: (villain, evidence, _consequence) => {
+    const pct = Math.round(evidence.pointEstimate * 100);
+    return {
+      humanStatement: `Villain cbets ${pct}% of flops (n=${evidence.sampleSize}) — range-bettor`,
+      citationShort: `cbet ${pct}% @ n=${evidence.sampleSize}`,
+      citationLong: `Over ${evidence.sampleSize} observed opportunities, villain cbet ${evidence.observationCount} flops. Their cbet range is their entire preflop range — not range-narrowed for board texture.`,
+      teachingPattern: 'They cbet everything. Float wider IP with backdoors; check-raise medium-wet boards.',
+      analogAnchor: villain.style === 'LAG' ? "reg who range-bets and barrels air" : undefined,
+    };
+  },
+
+  scopeKey: (_gameState) => 'flop:defender',
+};
+
+// ───────────────────────────────────────────────────────────────────────────
 // Recipe registry
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
  * PRODUCTION_RECIPES: keyed by recipe identifier, iterated by produceAssumptions.
- * Commit 4 ships 3 of 18+ predicates. Extending is a bounded task per CLAUDE.md
- * "4-file touch for new predicate" rule:
+ * Commit 4 shipped 3 of 18+ predicates; Session 18 adds foldToTurnBarrel +
+ * cbetFrequency. Extending is a bounded task per CLAUDE.md "4-file touch for
+ * new predicate" rule:
  *   1. Add entry to PREDICATE_KEYS (done in Commit 3).
  *   2. Add recipe here.
  *   3. Add narrative template (inline or separate file in narratives/).
@@ -526,6 +712,8 @@ export const PRODUCTION_RECIPES = Object.freeze({
   foldToRiverBet: foldToRiverBetRecipe,
   foldToCbet: foldToCbetRecipe,
   thinValueFrequency: thinValueFrequencyRecipe,
+  foldToTurnBarrel: foldToTurnBarrelRecipe,
+  cbetFrequency: cbetFrequencyRecipe,
 });
 
 // Export assumption builder for targeted testing
@@ -555,6 +743,22 @@ const stylePriorForFoldRate = (style, street) => {
     alpha: base.alpha,
     beta: base.beta,
   };
+};
+
+/**
+ * Style-conditioned prior for villain cbet frequency.
+ * Population cbet ~70%; LAG + aggressive regs lean higher, Nits lean lower.
+ * Same PRIOR_WEIGHT ≈ 10 convention.
+ */
+const styleCbetFrequencyPrior = (style) => {
+  const base = {
+    Fish:    { alpha: 5, beta: 5 }, // fish cbet irregular ~50%
+    Nit:     { alpha: 4, beta: 6 }, // nit selectively cbets value ~40%
+    LAG:     { alpha: 8, beta: 3 }, // lag range-bets ~73%
+    TAG:     { alpha: 6, beta: 4 }, // tag ~60%
+    Unknown: { alpha: 6, beta: 4 }, // population lean
+  }[style] || { alpha: 6, beta: 4 };
+  return { type: style === 'Unknown' ? 'population' : 'style', alpha: base.alpha, beta: base.beta };
 };
 
 /**

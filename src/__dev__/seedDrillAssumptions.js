@@ -42,16 +42,20 @@ const makeNitTightTendency = () => ({
   adaptationObservations: 3,
   observedRates: {
     foldToCbet: { rate: 0.78, n: 71, lastUpdated: new Date().toISOString() },
+    // Session 18 — Nit over-folds turn barrels too
+    foldToTurnBarrel: { rate: 0.72, n: 58, lastUpdated: new Date().toISOString() },
   },
 });
 
 const makeLagTendency = () => ({
   villainId: 'seed-lag-aggressive',
   style: 'LAG',
-  totalObservations: 38,
-  adaptationObservations: 5,
+  totalObservations: 92,
+  adaptationObservations: 6,
   observedRates: {
     foldToRiverBet: { rate: 0.20, n: 35, lastUpdated: new Date().toISOString() },
+    // Session 18 — LAG is a range-cbettor
+    cbetFrequency: { rate: 0.91, n: 88, lastUpdated: new Date().toISOString() },
   },
 });
 
@@ -88,6 +92,27 @@ export const seedDrillAssumptions = async () => {
     heroIsAggressor: true,
     nodeId: 'seed-dry-flop',
   };
+  // Session 18 — turn barrel spot for foldToTurnBarrel recipe
+  const turnBarrelState = {
+    street: 'turn',
+    position: 'IP',
+    texture: 'any',
+    spr: 4,
+    heroIsAggressor: true,
+    betSizePot: 0.66,
+    nodeId: 'seed-turn-barrel',
+  };
+  // Session 18 — flop defender spot for cbetFrequency recipe
+  const flopDefenderState = {
+    street: 'flop',
+    position: 'IP',
+    texture: 'any',
+    spr: 8,
+    heroIsAggressor: false,
+    villainIsAggressor: true,
+    betSizePot: 0.50,
+    nodeId: 'seed-flop-defender',
+  };
 
   const sessionContext = { villainBBDelta: 0, stake: 'cash' };
 
@@ -97,13 +122,17 @@ export const seedDrillAssumptions = async () => {
   const fishAssumptions = produceAssumptions(makeFishStationTendency(), riverState, sessionContext);
   allAssumptions.push(...fishAssumptions);
 
-  // Villain 2: Nit tight on dry flop
+  // Villain 2: Nit tight — dry flop + turn barrel
   const nitAssumptions = produceAssumptions(makeNitTightTendency(), dryFlopIPState, sessionContext);
   allAssumptions.push(...nitAssumptions);
+  const nitTurnAssumptions = produceAssumptions(makeNitTightTendency(), turnBarrelState, sessionContext);
+  allAssumptions.push(...nitTurnAssumptions);
 
-  // Villain 3: LAG on river
+  // Villain 3: LAG — river bluff-prune + flop defender vs range-bettor
   const lagAssumptions = produceAssumptions(makeLagTendency(), riverState, sessionContext);
   allAssumptions.push(...lagAssumptions);
+  const lagDefenderAssumptions = produceAssumptions(makeLagTendency(), flopDefenderState, sessionContext);
+  allAssumptions.push(...lagDefenderAssumptions);
 
   if (allAssumptions.length === 0) {
     console.warn('[seedDrillAssumptions] No assumptions produced — priors may have been too tight. Nothing saved.');

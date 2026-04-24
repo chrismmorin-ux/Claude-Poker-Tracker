@@ -21,6 +21,7 @@ import { BankrollDisplay } from './BankrollDisplay';
 import { useToast } from '../../../contexts/ToastContext';
 import { useSession, useUI, useTournament, useSyncBridge } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
+import { ENABLE_PRESESSION_DRILL } from '../PresessionDrillView';
 
 /**
  * SessionsView component
@@ -523,6 +524,16 @@ export const SessionsView = ({ scale }) => {
             >
               Postflop Drills
             </button>
+            {ENABLE_PRESESSION_DRILL && (
+              <button
+                onClick={() => setCurrentScreen(SCREEN.PRESESSION_DRILL)}
+                className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+                style={{ minHeight: 48 }}
+                data-testid="sessions-view-presession-drill-cta"
+              >
+                Prepare for tonight
+              </button>
+            )}
           </div>
         </div>
 

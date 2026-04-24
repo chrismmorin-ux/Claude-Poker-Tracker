@@ -15,3 +15,7 @@ export { computeBlend, isZeroBlend, computeDialFromQuality } from './dialMath';
 
 // Shapley-style attribution
 export { computeShapleyContributions, attributionsSumToTotal } from './attribution';
+
+// Baseline synthesis + computation (Commit 11 — DrillReveal real labels)
+export { synthesizeNodeFromAssumption, villainRangeForStyle } from './baselineSynthesis';
+export { computeBaselineForAssumption } from './computeBaselineForAssumption';
