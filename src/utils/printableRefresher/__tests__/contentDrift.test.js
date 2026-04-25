@@ -3,9 +3,10 @@
  *
  * Implements the 6 checks from `docs/projects/printable-refresher/content-drift-ci.md`.
  * Per Phase 5 sequencing this file ships incrementally:
- *   - S2 (this commit): Check 1 (contentHash recomputation, with stub-prefix
- *     hard-fail guard) + Check 6 (lineage-footer 7-field completeness).
- *   - S3: Check 2 (source-util whitelist/blacklist) + Check 3 (CD forbidden-string grep).
+ *   - S2: Check 1 (contentHash recomputation, with stub-prefix hard-fail guard) +
+ *         Check 6 (lineage-footer 7-field completeness).
+ *   - S3 (this commit): Check 2 (source-util whitelist/blacklist) +
+ *                       Check 3 (CD forbidden-string grep).
  *   - S4: Check 4 (schemaVersion bump discipline with proseOnlyEdit escape hatch) +
  *         Check 5 (markdown-vs-generated precedence).
  *
@@ -21,7 +22,10 @@ import {
   computeSourceHash,
   derive7FieldLineage,
   isStubContentHash,
+  printFooter,
 } from '../lineage.js';
+import { validateSourceUtils } from '../sourceUtilPolicy.js';
+import { validateCopyDiscipline } from '../copyDisciplinePatterns.js';
 
 describe('contentDrift CI — Check 1 (contentHash vs recomputation)', () => {
   describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
@@ -93,6 +97,48 @@ describe('contentDrift CI — Check 6 (lineage-footer completeness, red line #12
         expect(typeof lineage.bucketDefinitionsCited).toBe('string');
         expect(lineage.bucketDefinitionsCited.trim().length).toBeGreaterThan(0);
       }
+    });
+  });
+});
+
+describe('contentDrift CI — Check 2 (source-util whitelist + blacklist)', () => {
+  describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
+    test('passes source-util policy', () => {
+      const result = validateSourceUtils(m);
+      if (!result.valid) {
+        const detail = result.violations
+          .map((v) => `  • [${v.kind}] ${v.detail}`)
+          .join('\n');
+        throw new Error(
+          `Source-util violation on ${m.cardId}:\n${detail}\n` +
+          `Per charter §Source-util whitelist/blacklist + Voice 3 F4/F6, calibration / ` +
+          `assumption / per-villain utilities must not ship on paper. Refactor to source ` +
+          `from src/utils/pokerCore/ + src/constants/gameTreeConstants.js + ` +
+          `.claude/context/POKER_THEORY.md, or redirect the card to an on-screen surface.`
+        );
+      }
+      expect(result.valid).toBe(true);
+    });
+  });
+});
+
+describe('contentDrift CI — Check 3 (CD forbidden-string grep)', () => {
+  describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
+    test('passes CD-1..CD-5 copy discipline', () => {
+      const lineage = derive7FieldLineage(m, { engineVersion: 'test', appVersion: 'test' });
+      const renderedFooter = printFooter(lineage);
+      const result = validateCopyDiscipline(m, renderedFooter);
+      if (!result.valid) {
+        const detail = result.violations
+          .map((v) => `  • [${v.rule}] ${v.label}\n    excerpt: ${v.excerpt}`)
+          .join('\n');
+        throw new Error(
+          `Copy-discipline violation on ${m.cardId}:\n${detail}\n` +
+          `See docs/projects/printable-refresher/copy-discipline.md for rules. ` +
+          `Adding/removing patterns requires persona-level review per amendment rule.`
+        );
+      }
+      expect(result.valid).toBe(true);
     });
   });
 });
