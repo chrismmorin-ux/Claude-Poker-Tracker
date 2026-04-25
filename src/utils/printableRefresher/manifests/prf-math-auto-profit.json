@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-AUTO-PROFIT",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "Auto-profit threshold — single-bullet bluff (rake-agnostic, 100bb effective)",
+  "bodyMarkdown": "Bet B into pot P needs villain to fold at least B/(P+B) of their range to be auto-profit before equity is considered. Rake-agnostic at 100bb effective; pure pot-odds derivation.\n\nWorked example: bet 6 into pot 8 → break-even fold frequency = 6/14 = 42.9%.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §3.1 (auto-profit threshold derivation)",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields (formula is field-invariant)"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (auto-profit threshold) presented as one card.",
+  "atomicityJustificationWordCount": 8,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:stub-pending-PRF-G5-CI-S2-recomputation",
+  "lastVersionedAt": "2026-04-25T00:00:00Z"
+}
