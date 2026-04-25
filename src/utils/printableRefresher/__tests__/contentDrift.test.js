@@ -1,23 +1,21 @@
 /**
  * contentDrift.test.js — the load-bearing PRF CI gate.
  *
- * Implements the 6 checks from `docs/projects/printable-refresher/content-drift-ci.md`.
- * Per Phase 5 sequencing this file ships incrementally:
- *   - S2: Check 1 (contentHash recomputation, with stub-prefix hard-fail guard) +
- *         Check 6 (lineage-footer 7-field completeness).
- *   - S3 (this commit): Check 2 (source-util whitelist/blacklist) +
- *                       Check 3 (CD forbidden-string grep).
- *   - S4: Check 4 (schemaVersion bump discipline with proseOnlyEdit escape hatch) +
- *         Check 5 (markdown-vs-generated precedence).
- *
- * The schemaVersion-bump escape hatch in Check 1 (RT-108) requires git access
- * and is wired in S4 alongside Check 4. Until then a hash mismatch is hard-fail.
+ * Implements all 6 checks from `docs/projects/printable-refresher/content-drift-ci.md`.
+ * Phase 5 sequencing reached completion at S4 (this file's final form):
+ *   - S2: Check 1 (contentHash recomputation) + Check 6 (lineage-footer completeness).
+ *   - S3: Check 2 (source-util whitelist/blacklist) + Check 3 (CD forbidden-string grep).
+ *   - S4 (current): Check 4 (schemaVersion bump discipline + proseOnlyEdit escape hatch)
+ *                   + Check 5 (markdown-vs-generated placeholder resolution; hardcoded-
+ *                              numeric warning emits via console.warn but does not fail).
+ *                   + RT-108 escape-hatch wiring on Check 1 — clearer error messages
+ *                     for the bumped-but-stale-hash case via getSchemaVersionChange.
  *
  * Spec: docs/projects/printable-refresher/content-drift-ci.md
  */
 
 import { describe, test, expect } from 'vitest';
-import { manifests } from '../cardRegistry.js';
+import { manifests, manifestEntries } from '../cardRegistry.js';
 import {
   computeSourceHash,
   derive7FieldLineage,
@@ -26,6 +24,16 @@ import {
 } from '../lineage.js';
 import { validateSourceUtils } from '../sourceUtilPolicy.js';
 import { validateCopyDiscipline } from '../copyDisciplinePatterns.js';
+import { getSchemaVersionChange, evaluateCheck4 } from '../getSchemaVersionChange.js';
+
+const MANIFESTS_DIR_REL = 'src/utils/printableRefresher/manifests';
+
+function manifestRelPathFor(cardId) {
+  const entry = manifestEntries.find((e) => e.manifest.cardId === cardId);
+  return entry ? `${MANIFESTS_DIR_REL}/${entry.filename}` : null;
+}
+
+const PLACEHOLDER_REGEX = /\{\{([\w.-]+(?:\[[^\]]+\])?)\}\}/g;
 
 describe('contentDrift CI — Check 1 (contentHash vs recomputation)', () => {
   describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
@@ -41,18 +49,30 @@ describe('contentDrift CI — Check 1 (contentHash vs recomputation)', () => {
       expect(stub).toBe(false);
     });
 
-    test('manifest.contentHash equals computeSourceHash(manifest)', async () => {
+    test('manifest.contentHash equals computeSourceHash(manifest) (with RT-108 escape-hatch messaging)', async () => {
       const recomputed = await computeSourceHash(m);
-      if (recomputed !== m.contentHash) {
+      if (recomputed === m.contentHash) {
+        expect(recomputed).toBe(m.contentHash);
+        return;
+      }
+
+      // Hash mismatches. Inspect git context to produce an actionable message.
+      const change = getSchemaVersionChange(m, { manifestRelPath: manifestRelPathFor(m.cardId) });
+      if (change.exists && change.bumped) {
         throw new Error(
-          `Content drift on ${m.cardId}: stored contentHash is ${m.contentHash} ` +
-          `but recomputed value is ${recomputed}. ` +
-          `Either bump schemaVersion + update contentHash (intentional re-version), ` +
-          `or revert the source-util change. ` +
-          `(S4 wires the schemaVersion-bump escape hatch; until then any drift is hard-fail.)`
+          `Content drift on ${m.cardId} (RT-108 escape hatch): schemaVersion bumped from ` +
+          `${change.prior.schemaVersion} to ${m.schemaVersion} but contentHash was not updated. ` +
+          `Run: node scripts/refresher-compute-hash.js ${m.cardId} ` +
+          `→ updates manifest.contentHash to recomputed ${recomputed}. ` +
+          `(Stored: ${m.contentHash}.)`
         );
       }
-      expect(recomputed).toBe(m.contentHash);
+      throw new Error(
+        `Content drift on ${m.cardId}: stored contentHash is ${m.contentHash} ` +
+        `but recomputed value is ${recomputed}. ` +
+        `Either bump schemaVersion + run scripts/refresher-compute-hash.js (intentional re-version), ` +
+        `or revert the source-util change.`
+      );
     });
   });
 });
@@ -139,6 +159,67 @@ describe('contentDrift CI — Check 3 (CD forbidden-string grep)', () => {
         );
       }
       expect(result.valid).toBe(true);
+    });
+  });
+});
+
+describe('contentDrift CI — Check 4 (schemaVersion bump discipline)', () => {
+  describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
+    test('passes schemaVersion-bump + proseOnlyEdit decision tree', () => {
+      const change = getSchemaVersionChange(m, { manifestRelPath: manifestRelPathFor(m.cardId) });
+      const result = evaluateCheck4(change);
+      if (!result.pass) {
+        throw new Error(
+          `schemaVersion-bump discipline violation on ${m.cardId}: ${result.reason}\n` +
+          `See docs/projects/printable-refresher/content-drift-ci.md §Check 4 for the 5-branch decision tree.`
+        );
+      }
+      expect(result.pass).toBe(true);
+    });
+  });
+});
+
+describe('contentDrift CI — Check 5 (markdown-vs-generated placeholder resolution)', () => {
+  describe.each(manifests.map((m) => [m.cardId, m]))('%s', (_cardId, m) => {
+    test('every {{placeholder}} in bodyMarkdown resolves via generatedFields', () => {
+      const body = String(m.bodyMarkdown || '');
+      const generatedFields = m.generatedFields || {};
+      const placeholders = [...body.matchAll(PLACEHOLDER_REGEX)].map((mm) => mm[1]);
+      const unresolved = placeholders.filter((p) => {
+        const baseKey = p.split('[')[0];
+        return !(baseKey in generatedFields);
+      });
+      if (unresolved.length > 0) {
+        throw new Error(
+          `Markdown-vs-generated violation on ${m.cardId}: ` +
+          `bodyMarkdown references placeholder(s) [${unresolved.join(', ')}] ` +
+          `but generatedFields does not declare them. ` +
+          `Either add the entry to generatedFields (with a resolvable path#fn reference) ` +
+          `or replace the placeholder with prose. ` +
+          `See docs/projects/printable-refresher/content-drift-ci.md §Check 5.`
+        );
+      }
+      expect(unresolved).toEqual([]);
+    });
+
+    test('hardcoded numerics in bodyMarkdown emit warnings (soft gate, not failure)', () => {
+      // Spec §Check 5: WARN, not fail. We pass any time, but log to console.warn
+      // so reviewers can see hardcoded numbers that could have been generated.
+      const body = String(m.bodyMarkdown || '');
+      const generatedFields = m.generatedFields || {};
+      const theoryCitation = String(m.theoryCitation || '');
+      const hasGenerated = Object.keys(generatedFields).length > 0;
+      const hasTheoryCitation = theoryCitation.trim().length > 0;
+      const numerics = [...body.matchAll(/\b\d+(?:\.\d+)?%/g)];
+      if (numerics.length > 0 && !hasGenerated && !hasTheoryCitation) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[Check 5 soft-warn] ${m.cardId}: bodyMarkdown contains ${numerics.length} hardcoded numeric value(s) ` +
+          `with neither generatedFields nor theoryCitation backing. ` +
+          `Author should justify (worked example / glossary) or migrate to a generated placeholder.`
+        );
+      }
+      expect(true).toBe(true);
     });
   });
 });
