@@ -57,7 +57,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 11 object stores', async () => {
+    it('creates all 19 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -72,7 +72,17 @@ describe('database initialization', () => {
       expect(storeNames).toContain(PREFLOP_DRILLS_STORE_NAME);
       expect(storeNames).toContain(POSTFLOP_DRILLS_STORE_NAME);
       expect(storeNames).toContain('villainAssumptions'); // v17 — exploit-deviation project
-      expect(storeNames.length).toBe(11);
+      expect(storeNames).toContain('subscription'); // v18 — MPMF G5-B1 entitlement foundation
+      // v19 — EAL Phase 6 Stream D B3 (Session 11)
+      expect(storeNames).toContain('exploitAnchors');
+      expect(storeNames).toContain('anchorObservations');
+      expect(storeNames).toContain('anchorObservationDrafts');
+      expect(storeNames).toContain('anchorCandidates');
+      expect(storeNames).toContain('perceptionPrimitives');
+      // v20 — PRF Phase 5 (PRF-G5-MIG)
+      expect(storeNames).toContain('userRefresherConfig');
+      expect(storeNames).toContain('printBatches');
+      expect(storeNames.length).toBe(19);
       db.close();
     });
 

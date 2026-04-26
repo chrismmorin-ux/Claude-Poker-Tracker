@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 17;
+export const DB_VERSION = 20;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -61,6 +61,26 @@ export const PLAYER_DRAFTS_STORE_NAME = 'playerDrafts';
 export const PREFLOP_DRILLS_STORE_NAME = 'preflopDrills';
 export const POSTFLOP_DRILLS_STORE_NAME = 'postflopDrills';
 export const VILLAIN_ASSUMPTIONS_STORE_NAME = 'villainAssumptions';
+// MPMF G5-B1 (2026-04-25) — entitlement state for monetization & PMF.
+// Single record per install (keypath: userId). Per WRITERS.md §subscription store.
+export const SUBSCRIPTION_STORE_NAME = 'subscription';
+
+// EAL Phase 6 Stream D (2026-04-25, S11) — exploit anchor library v19 stores.
+// Per `docs/projects/exploit-anchor-library/schema-delta.md` §5.1
+// + `docs/projects/exploit-anchor-library/WRITERS.md` (13 writers across 4 main stores
+// + drafts sidecar per `docs/design/surfaces/hand-replay-observation-capture.md`).
+export const EXPLOIT_ANCHORS_STORE_NAME = 'exploitAnchors';
+export const ANCHOR_OBSERVATIONS_STORE_NAME = 'anchorObservations';
+export const ANCHOR_OBSERVATION_DRAFTS_STORE_NAME = 'anchorObservationDrafts';
+export const ANCHOR_CANDIDATES_STORE_NAME = 'anchorCandidates';
+export const PERCEPTION_PRIMITIVES_STORE_NAME = 'perceptionPrimitives';
+
+// PRF Phase 5 (2026-04-26, PRF-G5-MIG) — printable refresher v20 stores.
+// Per `docs/projects/printable-refresher/idb-migration.md` §Stores added.
+// Dynamic-target rule (max(currentVersion+1, 18)) resolved statically to v20
+// because EAL claimed v19 first; PRF computes max(19+1, 18) = 20.
+export const USER_REFRESHER_CONFIG_STORE_NAME = 'userRefresherConfig';
+export const PRINT_BATCHES_STORE_NAME = 'printBatches';
 
 const MODULE_NAME = 'Persistence';
 
