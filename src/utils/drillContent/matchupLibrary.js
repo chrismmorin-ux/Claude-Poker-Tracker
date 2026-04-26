@@ -1,3 +1,4 @@
+// @coherence-exempt: curated preflop matchup teaching examples — drill-mode content; live preflop decisions go through preflopAdvisor.js.
 /**
  * matchupLibrary.js — curated seed matchups grouped by framework.
  *

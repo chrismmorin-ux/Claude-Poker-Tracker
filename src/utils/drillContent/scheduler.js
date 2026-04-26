@@ -1,3 +1,4 @@
+// @coherence-exempt: drill matchup scheduler — picks the next practice problem; no live-decision output.
 /**
  * scheduler.js — picks the next drill matchup, weighted toward weak frameworks.
  *

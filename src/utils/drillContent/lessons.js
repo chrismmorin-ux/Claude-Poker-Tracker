@@ -1,3 +1,4 @@
+// @coherence-exempt: curated lesson copy + worked examples for the Lessons tab — pure educational content.
 /**
  * lessons.js — curated teaching content for the Lessons tab.
  *

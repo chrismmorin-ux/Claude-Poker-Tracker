@@ -1,3 +1,4 @@
+// @coherence-exempt: drill-mode estimate calibration helpers — practice-mode feedback only, no flow into live decisions.
 /**
  * estimateInsights.js — post-submit feedback helpers for EstimateMode.
  *

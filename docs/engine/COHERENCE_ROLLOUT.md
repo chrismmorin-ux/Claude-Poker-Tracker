@@ -203,7 +203,7 @@ src/utils/handAnalysis/**/*.{js,jsx}
 src/utils/anchorLibrary/**/*.{js,jsx}
 src/utils/skillAssessment/**/*.{js,jsx}
 src/utils/assumptionEngine/**/*.{js,jsx}
-src/utils/drillContent/shapes.js
+src/utils/drillContent/**/*.{js,jsx}
 src/utils/analysisPipeline.js
 src/utils/citedDecision/**/*.{js,jsx}
 src/utils/emotionalState/**/*.{js,jsx}

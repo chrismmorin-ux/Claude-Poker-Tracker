@@ -1,3 +1,4 @@
+// @coherence-exempt: combo-counting helpers used internally by drillContent/frameworks.js — no consumer outside drill mode.
 /**
  * straightCombos.js — pure combo-counting utilities for the Blocker/Straight
  * Coverage framework.

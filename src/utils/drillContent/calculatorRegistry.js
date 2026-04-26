@@ -1,3 +1,4 @@
+// @coherence-exempt: data-layer name list for the lessons UI calculator registry — no decision-relevant output.
 /**
  * calculatorRegistry.js — pure list of calculator names referenced by lessons.
  *

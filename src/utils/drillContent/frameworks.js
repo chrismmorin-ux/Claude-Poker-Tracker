@@ -1,3 +1,4 @@
+// @coherence-exempt: equity-decomposition lenses for drill content — consumed only by PreflopDrillsView teaching modes.
 /**
  * frameworks.js — catalog of preflop equity frameworks.
  *
