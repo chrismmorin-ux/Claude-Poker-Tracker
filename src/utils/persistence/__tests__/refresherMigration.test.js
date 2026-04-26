@@ -144,15 +144,23 @@ afterEach(async () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('DB_VERSION (PRF-G5-MIG case 6 — collision-resolution)', () => {
-  it('is at v20 — dynamic-target rule resolved statically (EAL claimed v19 first)', () => {
-    expect(DB_VERSION).toBe(20);
-  });
-
   it('PRF claim satisfies max(currentVersion + 1, 18) ≥ 18 invariant', () => {
     // Spec §Coordination rule: TARGET_VERSION = max(currentVersion + 1, 18).
-    // EAL Phase 6 Stream D shipped v19; PRF computes max(19+1, 18) = 20.
-    // The dynamic-target rule resolves at compile time so v20 is statically chosen.
+    // EAL Phase 6 Stream D shipped v19; PRF claims v20 statically.
+    // Subsequent MPMF G5-B2 telemetry migration bumps DB_VERSION to v21+.
+    // The PRF claim (v20) is preserved through the migration chain — only the
+    // top-level DB_VERSION advances. PRF migrateV20 still owns userRefresherConfig
+    // + printBatches; later migrations are additive on top.
     expect(DB_VERSION).toBeGreaterThanOrEqual(18);
+  });
+
+  it('PRF migration runs at v20 regardless of how high DB_VERSION advances', () => {
+    // The migrateV20 function in migrations.js claims version 20. Future
+    // migrations (v21+) are owned by other projects (e.g., MPMF G5-B2 telemetry).
+    // This invariant is asserted indirectly — if PRF stores exist after a
+    // fresh getDB() call, then migrateV20 ran successfully somewhere in the chain.
+    // The actual store-existence assertion lives in case 1 below.
+    expect(DB_VERSION).toBeGreaterThanOrEqual(20);
   });
 });
 

@@ -58,8 +58,8 @@ afterEach(async () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('DB_VERSION', () => {
-  it('is at v20 (after PRF-G5-MIG bumped 19 → 20)', () => {
-    expect(DB_VERSION).toBe(20);
+  it('is at v21 (after PRF-G5-MIG bumped 19→20, then MPMF G5-B2 telemetry migration bumped 20→21)', () => {
+    expect(DB_VERSION).toBe(21);
   });
 });
 
