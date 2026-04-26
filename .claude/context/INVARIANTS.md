@@ -37,6 +37,7 @@ SYSTEM_MODEL.md §4 references this file.
 | I-PEO-4 | Undo tokens carry the exact `handIds` captured at link time; revert touches only those hands (and only if still mapped to the linked player) | `buildUnlinkPlan()` in `handLinking.js` | Full | 2026-04-16 |
 | INV-14 | Components under `src/components/views/<ViewName>/` must not be imported from outside their own view folder. Cross-view helpers live in `src/components/_shared/`. | Manual code review + future ESLint rule (RT-103) | None (structural) — currently violated by drill views | Proposed 2026-04-20 — VIOLATED |
 | INV-15 | SCREEN constants may only be removed after a two-step deprecation: (1) mark deprecated in `uiConstants.js`, (2) sweep all `prevScreen`/history refs, (3) delete. Bulk deletion without sweep is forbidden. `PokerTracker.jsx` routing switch must have a `default:` fallback to `SCREEN.TABLE`. | Code review; no mechanical enforcement yet | None | Proposed 2026-04-20 |
+| INV-COH-01 | Every decision-relevant primitive (file matching designated paths in `docs/engine/COHERENCE_ROLLOUT.md`) appears in the canonical pipeline manifest as `status: 'integrated'` OR in the integration debt ledger with `targetIntegration.deadline >= today`. Exemption requires `// @coherence-exempt: <reason>` pragma. | `scripts/coherence-scan.cjs` exit code (Phase 3+ blocking; Phase 1 advisory) | Full (scanner + 36 unit tests) | 2026-04-26 — Phase 1 |
 
 ---
 

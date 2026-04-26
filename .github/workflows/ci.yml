@@ -17,3 +17,16 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm test
+      - name: Model Coherence scan (advisory — Phase 1)
+        run: node scripts/coherence-scan.cjs
+        continue-on-error: true
+      - name: Upload coherence manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coherence-manifests
+          path: |
+            .claude/coherence-report.json
+            docs/engine/CANONICAL_PIPELINE.md
+            docs/engine/SURFACE_SUBSCRIBERS.md
+            docs/engine/INTEGRATION_DEBT.md

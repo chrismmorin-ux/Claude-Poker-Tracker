@@ -45,6 +45,8 @@ coverage/
 .claude/.last-edit.json
 .claude/.test-state.json
 .claude/scheduled_tasks.lock
+.claude/.coherence-cache/
+.claude/coherence-report.json
 nul
 
 # Screenshots (debug artifacts)

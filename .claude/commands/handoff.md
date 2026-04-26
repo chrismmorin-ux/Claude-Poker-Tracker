@@ -42,6 +42,13 @@ Status: ACTIVE | Written: <date>
 ## System Model Updates Needed
 <Did this session change architecture, add invariants, discover coupling, or make decisions that should be reflected in SYSTEM_MODEL.md? If yes, list what needs updating.>
 
+## Coherence Declarations
+<INCLUDE ONLY IF this session touched files matched by `coherence-scan.cjs` designated paths — see `.claude/programs/model-coherence.md`. To check: `node scripts/coherence-scan.cjs --staged` after staging the session's files. Otherwise OMIT this whole section.>
+
+- **New primitives shipped** — list any new `__coherence__` blocks added (id, kind, status). If `pending-absorption`, name the deadline.
+- **Pending-absorption deadlines hit / approaching** — any deadlines this session resolved (status flipped to `integrated`) or that are now <30 days out.
+- **Surface drift detected** — orphan tags, dangling consumers, or expectedConsumers gaps newly observed in `.claude/coherence-report.json`. Note any that the next session should triage.
+
 ## Test Status
 <Last test run results — passing count, any failures>
 ```

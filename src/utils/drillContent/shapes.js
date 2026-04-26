@@ -22,6 +22,28 @@
 
 import { parseHandClass } from '../pokerCore/preflopEquity';
 
+// Coherence metadata — see .claude/programs/model-coherence.md and
+// docs/engine/COHERENCE_SCHEMA.md. This is the canonical Phase 1 example of
+// failure-mode #1 (concept exists, surface never consumes it). The deadline is
+// a Phase-1 placeholder pending owner confirmation; adjust per actual roadmap.
+export const __coherence__ = {
+  id: 'drill.shapes',
+  kind: 'research',
+  produces: ['shape', 'frame', 'intermediate-state'],
+  status: 'pending-absorption',
+  targetIntegration: {
+    layer: 'aggregator',
+    expectedConsumers: ['hook.live-action-advisor', 'surface.extension-sidebar'],
+    deadline: '2026-07-01',
+    predicate: 'After sidebar UX pass — shapes consumed by live recommendation flow',
+  },
+  owners: {
+    introducedBy: 'handoff:shape-language-session1',
+    persona: 'product-ux-engineer',
+  },
+  notes: 'Today consumed only by drill content / drill-mode UI education layer. Long-term intent: lane/shape information enriches live recommendations on the table and in the Ignition sidebar. Tracked as failure mode #1 in `.claude/programs/model-coherence.md`.',
+};
+
 // ---------- Helpers ---------- //
 
 // Ranks: 0=2, ..., 8=T, 9=J, 10=Q, 11=K, 12=A.
