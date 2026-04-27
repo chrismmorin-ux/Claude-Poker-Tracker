@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-POT-ODDS",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "Pot odds — breakeven equity to call (rake-agnostic, 100bb effective)",
+  "bodyMarkdown": "Facing a bet B into pot P, the call needs at least B/(P+B+B) equity vs the betting range to break even. Equivalent to: cost-to-call divided by total pot after the call. Rake-agnostic at 100bb effective; pure pot-odds derivation, no implied odds adjustment.\n\nWorked examples (P = current pot before the bet):\n- Bet P (pot-size): need 33% equity. 1 / 3 = 0.333.\n- Bet P/2 (half-pot): need 25% equity. 0.5 / 2.0 = 0.25.\n- Bet P/3 (third-pot): need 20% equity. 0.333 / 1.667 = 0.20.\n- Bet 2P (overbet): need 40% equity. 2 / 5 = 0.40.\n\nThis is the floor; villain's range, position, and runout structure determine whether equity reaches it. See POKER_THEORY.md §6.3 for the symmetric breakeven-bluff form.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §6.3 (Breakeven Bluff Frequency — pot odds is the symmetric form from the calling side)",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields (formula is field-invariant)"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (pot odds breakeven) presented as one card.",
+  "atomicityJustificationWordCount": 9,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:c10ee792046e7f11e7fea6527165264927f44728bd4c691dafcccc809ce48fdd",
+  "lastVersionedAt": "2026-04-26T00:00:00Z"
+}

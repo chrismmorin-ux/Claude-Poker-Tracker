@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-SPR-ZONES",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "SPR strategy zones — 5 bands by stack-to-pot ratio (rake-agnostic, all stack depths)",
+  "bodyMarkdown": "Stack-to-pot ratio (SPR) at the flop = effective stack / pot. The five canonical zones drive postflop strategy.\n\n- MICRO (SPR 0–2): commit-or-fold board. Top pair good kicker is usually committing.\n- LOW (SPR 2–4): TPTK / overpair commits; medium pairs face 2-street decisions.\n- MEDIUM (SPR 4–8): standard postflop. Range advantage drives sizing; cbet ranges are wider.\n- HIGH (SPR 8–13): implied-odds territory. Sets, suited connectors, and gap-1 hands gain value; one-pair hands lose stack-off threshold.\n- DEEP (SPR 13+): deep-stack play. Set-mining + nut hands; one-pair retreats; sizing tells more than range vs range advantage.\n\nDerivation: SPR = effectiveStack / pot at the moment of measurement (typically flop). Zones reflect the geometry of how many pot-sized bets fit before all-in. Rake-agnostic; field-invariant across cash and tournament. See POKER_THEORY.md §3 (Postflop Theory) for the zone-by-zone strategy implications.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §3 (Postflop Theory) — SPR zone strategy. Phase 1 5-zone enumeration ratified at project_rake_spr_antes (2026-03-29).",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields; formula is field-invariant"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (5 SPR zones with strategy implications) presented as one card.",
+  "atomicityJustificationWordCount": 12,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:9bf57f78283f5ee6703bcc61a74daec8fc41e16ced1ab840466dfc3b60f40d14",
+  "lastVersionedAt": "2026-04-26T00:00:00Z"
+}

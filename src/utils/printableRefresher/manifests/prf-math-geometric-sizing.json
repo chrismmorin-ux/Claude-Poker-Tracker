@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-GEOMETRIC-SIZING",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "Geometric sizing — sequence to all-in by river (rake-agnostic, 100bb effective)",
+  "bodyMarkdown": "To get all-in by the river with N remaining streets at a constant fraction-of-pot sizing, the geometric sequence is: bet fraction f satisfies (1 + 2f)^N = effectiveStack / pot.\n\nSolve for f given N streets remaining:\n- 3 streets (flop, turn, river): f = ((SPR + 1)^(1/3) - 1) / 2.\n- 2 streets (turn, river): f = ((SPR + 1)^(1/2) - 1) / 2.\n- 1 street (river): f = SPR / 2 (jam).\n\nWorked examples (rake-agnostic, 100bb effective):\n- SPR 5 over 3 streets: f ≈ 0.40 (40% pot bet each street).\n- SPR 8 over 3 streets: f ≈ 0.54 (54% pot bet each street).\n- SPR 13 over 2 streets: f ≈ 0.87 (87% pot bet each remaining street).\n\nThis is the geometric default; sizing tells, range advantage, and texture pull from this baseline.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §3 (Postflop Theory) — geometric sizing baseline. Phase 1 derivation per project_rake_spr_antes (2026-03-29).",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields; geometric formula is field-invariant"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (geometric sizing across streets) presented as one card.",
+  "atomicityJustificationWordCount": 10,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:3b07592f2958a45051f771f3e46c3cda2349f49c1f692b1ca64e16183c20c51e",
+  "lastVersionedAt": "2026-04-26T00:00:00Z"
+}
