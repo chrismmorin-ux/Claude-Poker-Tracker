@@ -241,6 +241,46 @@ test.describe('PrintableRefresherView — visual regression', () => {
     await expect(wrapper.locator('.refresher-print-page').first()).toHaveScreenshot('print-preview-1up-a4-bw-page1.png');
   });
 
+  // S27 — includeLineage=off variant. Confirms the
+  // .print-preview-container[data-include-lineage="off"] CSS selector
+  // hides .refresher-card-region-4-5 (the 7-field lineage footer) on
+  // every card in the grid. Visual baseline shows footers absent vs
+  // the default 12-up-color baseline (which shows them present).
+  test('PrintPreview — 12-up Letter Color, lineage off', async ({ page }) => {
+    await setPrintPrefs(page, { cardsPerSheet: 12, includeLineage: false });
+    await gotoRefresher(page);
+    await page.getByLabel('Open print preview').click();
+    await page.locator('.print-preview-container').waitFor({ state: 'visible' });
+    await expect(page.locator('.print-preview-container')).toHaveScreenshot('print-preview-12up-letter-color-lineage-off.png');
+  });
+
+  // S27 — SuppressConfirmModal opened on a math card. Verifies the
+  // ≤2-tap suppress flow modal renders correctly across browsers
+  // (R-8.1 zero-data-loss enforcement at the writer + checkbox-gated
+  // primary button per surface spec §SuppressConfirmModal).
+  test('SuppressConfirmModal — opened on math card', async ({ page }) => {
+    await gotoRefresher(page);
+    // Click the ⛔ Suppress chip on the first card row to open the modal.
+    await page.getByLabel('Suppress math class').first().click();
+    const dialog = page.getByRole('dialog');
+    await dialog.waitFor({ state: 'visible' });
+    await expect(dialog).toHaveScreenshot('suppress-confirm-modal-math.png');
+  });
+
+  // S27 — LineageModal opened from CardDetail. Verifies the read-only
+  // 7-field lineage display renders correctly across browsers (red
+  // line #12 lineage-mandatory; surface spec §LineageModal).
+  test('LineageModal — opened from CardDetail', async ({ page }) => {
+    await gotoRefresher(page);
+    // Open CardDetail for the first card via the ⓘ Detail chip.
+    await page.getByLabel('Open card detail').first().click();
+    // Click the "Where does this number come from?" CTA to open the lineage modal.
+    await page.getByLabel('Open lineage modal').click();
+    const dialog = page.getByRole('dialog');
+    await dialog.waitFor({ state: 'visible' });
+    await expect(dialog).toHaveScreenshot('lineage-modal-math-auto-profit.png');
+  });
+
   test('PrintConfirmationModal — opened on top of PrintPreview', async ({ page }) => {
     await gotoRefresher(page);
     await page.getByLabel('Open print preview').click();
