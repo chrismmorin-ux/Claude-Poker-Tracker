@@ -10,6 +10,7 @@ import { VenuesManager } from './VenuesManager';
 import { GameTypesManager } from './GameTypesManager';
 import { DataAndAbout } from './DataAndAbout';
 import { ErrorLogPanel } from './ErrorLogPanel';
+import { RefresherSettings } from './RefresherSettings';
 
 export const SettingsView = ({ scale }) => {
   const { showSuccess, showError, showWarning, addToast } = useToast();
@@ -125,6 +126,8 @@ export const SettingsView = ({ scale }) => {
             showError={showError}
             addToast={addToast}
           />
+
+          <RefresherSettings />
 
           <ErrorLogPanel showSuccess={showSuccess} />
         </div>

@@ -231,4 +231,77 @@ test.describe('PrintableRefresherView — visual regression', () => {
     await page.locator('.refresher-staleness-banner').waitFor({ state: 'visible' });
     await expect(page.getByRole('main')).toHaveScreenshot('catalog-staleness-banner.png');
   });
+
+  test('Settings — Refresher section visible (S24)', async ({ page }) => {
+    // Navigate to Settings via hash. Setting hash then reloading reliably
+    // triggers React's mount-time useEffect HASH_TO_SCREEN routing (per the
+    // gotoRefresher trap documented above — set hash BEFORE reload, not after).
+    await page.evaluate(() => {
+      window.location.hash = '#settings';
+    });
+    await page.reload();
+    const section = page.locator('[data-testid="refresher-settings-section"]');
+    await section.waitFor({ state: 'visible' });
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toHaveScreenshot('settings-refresher-section.png');
+  });
+
+  test('end-to-end: enable staleness in Settings → banner appears in Refresher (S24)', async ({ page }) => {
+    // Pre-seed a stale batch so flipping the toggle has something to surface.
+    await page.evaluate(async () => {
+      const db = await new Promise((res, rej) => {
+        const r = indexedDB.open('PokerTrackerDB');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+      const tx = db.transaction('printBatches', 'readwrite');
+      await new Promise((res, rej) => {
+        const r = tx.objectStore('printBatches').put({
+          batchId: 'snap-e2e-batch',
+          printedAt: '2026-04-24T00:00:00Z',
+          label: 's24-e2e',
+          cardIds: ['PRF-MATH-AUTO-PROFIT'],
+          engineVersion: 'v122',
+          appVersion: 'v122',
+          perCardSnapshots: {
+            'PRF-MATH-AUTO-PROFIT': { contentHash: 'sha256:OLD-AUTO', version: '1' },
+          },
+        });
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+      await new Promise((res, rej) => {
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+      db.close();
+    });
+
+    // 1) Confirm banner is hidden in Refresher with default (staleness OFF).
+    await page.evaluate(() => {
+      window.location.hash = '#printableRefresher';
+    });
+    await page.reload();
+    await page.getByText('Print preview →').waitFor({ state: 'visible' });
+    expect(await page.locator('.refresher-staleness-banner').count()).toBe(0);
+
+    // 2) Navigate to Settings via hash (Refresher view hides sidebar so we
+    // can't click a sidebar Settings button from here).
+    await page.evaluate(() => {
+      window.location.hash = '#settings';
+    });
+    await page.reload();
+    const onBtn = page.locator('[data-testid="refresher-settings-section"]')
+      .getByRole('button', { name: 'On' });
+    await onBtn.waitFor({ state: 'visible' });
+    await onBtn.click();
+    await expect(onBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // 3) Navigate back to Refresher; banner should now appear.
+    await page.evaluate(() => {
+      window.location.hash = '#printableRefresher';
+    });
+    await page.reload();
+    await page.locator('.refresher-staleness-banner').waitFor({ state: 'visible' });
+  });
 });
