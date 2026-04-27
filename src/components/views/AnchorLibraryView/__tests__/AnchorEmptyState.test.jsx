@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 /**
- * AnchorEmptyState.test.jsx — render coverage for newcomer + zero-anchors variants.
+ * AnchorEmptyState.test.jsx — render coverage for all variants.
  *
- * EAL Phase 6 — Session 18 (S18).
+ * EAL Phase 6 — Session 18 (S18) + Session 19 (S19, zero-filter-matches).
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AnchorEmptyState } from '../AnchorEmptyState';
 import { ANCHOR_LIBRARY_UNLOCK_THRESHOLD } from '../../../../constants/anchorLibraryConstants';
 
@@ -63,6 +63,35 @@ describe('AnchorEmptyState — newcomer variant', () => {
     const { container } = render(<AnchorEmptyState variant="newcomer" handsSeen={5} />);
     expect(container.querySelector('progress')).toBeNull();
     expect(container.querySelector('[role="progressbar"]')).toBeNull();
+  });
+});
+
+describe('AnchorEmptyState — zero-filter-matches variant (S19)', () => {
+  it('renders the "No anchors match your filters" headline', () => {
+    render(<AnchorEmptyState variant="zero-filter-matches" onClearFilters={() => {}} />);
+    expect(screen.getByText(/No anchors match your filters/i)).toBeInTheDocument();
+  });
+
+  it('renders an active "Clear filters" button', () => {
+    render(<AnchorEmptyState variant="zero-filter-matches" onClearFilters={() => {}} />);
+    expect(screen.getByRole('button', { name: /Clear all filters/i })).toBeInTheDocument();
+  });
+
+  it('Clear filters button dispatches onClearFilters', () => {
+    const onClearFilters = vi.fn();
+    render(<AnchorEmptyState variant="zero-filter-matches" onClearFilters={onClearFilters} />);
+    fireEvent.click(screen.getByRole('button', { name: /Clear all filters/i }));
+    expect(onClearFilters).toHaveBeenCalled();
+  });
+
+  it('does NOT crash when onClearFilters is missing', () => {
+    render(<AnchorEmptyState variant="zero-filter-matches" />);
+    expect(() => fireEvent.click(screen.getByRole('button', { name: /Clear all filters/i }))).not.toThrow();
+  });
+
+  it('exposes data-variant="zero-filter-matches"', () => {
+    render(<AnchorEmptyState variant="zero-filter-matches" onClearFilters={() => {}} />);
+    expect(screen.getByTestId('anchor-library-empty-state')).toHaveAttribute('data-variant', 'zero-filter-matches');
   });
 });
 
