@@ -13,8 +13,11 @@
  * Baseline storage: `tests/playwright/printable-refresher.spec.js-snapshots/`
  * (Playwright default; auto-created on first --update-snapshots run).
  *
- * Cross-browser (firefox + webkit) deferred to S24+ — start with chromium
- * for faster CI iteration and the most reliable @page CSS support.
+ * Cross-browser baselines (S25): chromium + firefox + webkit. Each project
+ * captures its own per-browser baselines under the same `<spec>-snapshots/`
+ * directory with file suffixes `-{chromium,firefox,webkit}-{platform}.png`.
+ * Per-browser thresholds slightly relaxed for firefox + webkit to absorb
+ * subpixel rendering jitter at A22 viewport.
  *
  * Galaxy A22 1600×720 viewport per CLAUDE.md mobile-optimized target.
  */
@@ -68,6 +71,26 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 720 } },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1600, height: 720 } },
+      expect: {
+        // Firefox font hinting + subpixel positioning differs from Chromium
+        // by a few hundred pixels per snapshot at A22 viewport. Relax slightly
+        // so genuine layout regressions still fail but rendering jitter doesn't.
+        toHaveScreenshot: { maxDiffPixels: 800, threshold: 0.25, animations: 'disabled' },
+      },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'], viewport: { width: 1600, height: 720 } },
+      expect: {
+        // WebKit on Windows has the largest rendering jitter (font fallback +
+        // antialiasing differences). Tune more generously; layout regressions
+        // are still caught but per-pixel diff allowance is larger.
+        toHaveScreenshot: { maxDiffPixels: 1200, threshold: 0.3, animations: 'disabled' },
+      },
     },
   ],
 
