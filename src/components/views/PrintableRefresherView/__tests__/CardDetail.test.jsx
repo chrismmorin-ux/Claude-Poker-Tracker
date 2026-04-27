@@ -47,9 +47,39 @@ describe('CardDetail — basic render', () => {
     expect(screen.getByText(/Auto-profit threshold/)).toBeInTheDocument();
   });
 
-  it('renders placeholder for non-math classes pending S20+ templates', () => {
-    render(<CardDetail card={{ ...baseCard, class: 'preflop' }} onBack={vi.fn()} />);
-    expect(screen.getByRole('status')).toHaveTextContent(/template for class.*preflop/);
+  it('dispatches preflop class to PreflopCardTemplate (no placeholder)', () => {
+    const { container } = render(
+      <CardDetail card={{ ...baseCard, class: 'preflop' }} onBack={vi.fn()} />
+    );
+    expect(container.querySelector('article.refresher-card-preflop')).not.toBeNull();
+    expect(container.querySelector('article.refresher-card-preflop')).toHaveAttribute(
+      'data-card-class',
+      'preflop'
+    );
+  });
+
+  it('dispatches equity class to EquityCardTemplate', () => {
+    const { container } = render(
+      <CardDetail card={{ ...baseCard, class: 'equity' }} onBack={vi.fn()} />
+    );
+    expect(container.querySelector('article.refresher-card-equity')).not.toBeNull();
+  });
+
+  it('dispatches exceptions class to ExceptionsCardTemplate', () => {
+    const { container } = render(
+      <CardDetail card={{ ...baseCard, class: 'exceptions' }} onBack={vi.fn()} />
+    );
+    expect(container.querySelector('article.refresher-card-exceptions')).not.toBeNull();
+  });
+
+  it('renders placeholder for unknown class (defensive default)', () => {
+    render(<CardDetail card={{ ...baseCard, class: 'unknown-class' }} onBack={vi.fn()} />);
+    // Placeholder is the only role=status node when class is unknown (no stale).
+    const statuses = screen.getAllByRole('status');
+    const placeholder = statuses.find((el) =>
+      /template for class.*unknown-class/.test(el.textContent || '')
+    );
+    expect(placeholder).toBeDefined();
   });
 
   it('renders status footer with class + tier + schemaVersion', () => {
