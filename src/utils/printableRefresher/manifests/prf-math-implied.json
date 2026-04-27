@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-IMPLIED",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "Implied odds — pot-odds adjustment for hidden draws (rake-agnostic, 100bb effective)",
+  "bodyMarkdown": "Pot odds alone reject most drawing-hand calls. Implied odds adjust the threshold by adding expected future winnings to the denominator.\n\nFormula: required_equity = call_cost / (current_pot + call_cost + expected_future_winnings).\n\nEquivalently: effective_pot_odds_threshold ≈ base_pot_odds_threshold × (current_pot + call_cost) / (current_pot + call_cost + expected_future_winnings).\n\nSet-mining floor: pocket pair flops a set ~1-in-8 (~12% turn-or-river hit). Calling needs ~15:1 implied to break even on the set-mine alone.\n\nWorked examples (rake-agnostic, 100bb effective):\n- 9-out flush draw on flop, facing half-pot bet (base 25% threshold): unaided equity ≈ 35% turn-or-river → already calls without implied. With implied (expect 0.6× pot extra when hit), threshold drops further to ~18%.\n- Pocket pair set-mining 100bb deep, opener bets 3bb after raise to 7bb (pot 17bb, call 4bb, base 19% threshold): unaided ≈ 12% — needs implied. Stack-off potential when set hits adds ~80bb of winnings → effective threshold ≈ 6%, set-mine call clearly +EV.\n\nReverse implied odds: top-pair weak-kicker on draw-heavy boards LOSES bets when hits — invert sign on expected future winnings.\n\nSee POKER_THEORY.md §1.5 (Pot Odds and Implied Odds) for the canonical derivation.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §1.5 (Pot Odds and Implied Odds) — canonical implied-odds + reverse-implied-odds derivation.",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields; implied-odds derivation is field-invariant"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (implied odds adjustment to pot odds) presented as one card.",
+  "atomicityJustificationWordCount": 12,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:b6f34cbe71c77b6d2a528368139b1dcd2201df2379c49659a0b30f7fb3fd0d79",
+  "lastVersionedAt": "2026-04-26T00:00:00Z"
+}

@@ -1,0 +1,34 @@
+{
+  "cardId": "PRF-MATH-BINOMIAL",
+  "schemaVersion": 1,
+  "class": "math",
+  "title": "Binomial survival — multi-out / multi-street draw probability (rake-agnostic, 100bb effective)",
+  "bodyMarkdown": "Drawing-hand equity over multiple streets uses the binomial complement: P(at-least-one-hit) = 1 - P(no-hit-each-trial), where trials are sequential card reveals.\n\nFlop-to-river formula with O outs and 47 unseen cards on flop, 46 on turn:\nP(hit-by-river) = 1 - (47-O)/47 × (46-O)/46.\n\nWorked examples (rake-agnostic, 100bb effective; outs counted vs current draw structure, no blocker adjustment):\n- 9-out flush draw, flop-to-river: 1 - (38/47)(37/46) ≈ 35.0%.\n- 8-out open-ender, flop-to-river: 1 - (39/47)(38/46) ≈ 31.5%.\n- 4-out gutshot, flop-to-river: 1 - (43/47)(42/46) ≈ 16.5%.\n- 15-out flush + open-ender (combo draw), flop-to-river: 1 - (32/47)(31/46) ≈ 54.1%.\n\nRunner-runner (need both turn AND river to be specific cards):\nP(both) = (out_turn / 47) × (out_river / 46).\n- Backdoor flush (need 2 of suit on turn+river when holding 2 of suit on flop): 10/47 × 9/46 ≈ 4.2%.\n- Backdoor straight (varies by gappedness): typically 1-3%.\n\nTurn-to-river only (simpler binomial; 1 trial of 46 unseen):\nP(hit-on-river) = O / 46.\n\nDiscount the raw binomial when blockers reduce the effective out count or when hitting still loses (reverse implied — see PRF-MATH-IMPLIED). See POKER_THEORY.md §6.6 (Combo Counting) for the unseen-card combinatorics underlying the formula.",
+  "generatedFields": {},
+  "sourceUtils": [],
+  "theoryCitation": "POKER_THEORY.md §6.6 (Combo Counting) — unseen-card combinatorics underlying multi-trial draw probability.",
+  "assumptions": {
+    "stakes": "rake-agnostic",
+    "rake": null,
+    "effectiveStack": 100,
+    "field": "all 9-handed live cash and tournament fields; binomial formula is field-invariant"
+  },
+  "bucketDefinitionsCited": null,
+  "atomicityJustification": "Single derivation (binomial multi-trial draw probability) presented as one card.",
+  "atomicityJustificationWordCount": 10,
+  "phase": "B",
+  "tier": "free",
+  "cd5_exempt": false,
+  "cd5_exempt_justification": null,
+  "proseOnlyEdit": false,
+  "fidelityChecklist": {
+    "F1_no_archetype_as_input": true,
+    "F2_math_visible": true,
+    "F3_scenario_declared": true,
+    "F4_source_trail_footer": true,
+    "F5_pure_exception_provenance_unambiguous": true,
+    "F6_prescriptions_computed": true
+  },
+  "contentHash": "sha256:54bd0f0c00e5eee3c8e75da727e33ee6fe52ef6f2da7e9e1d29f2fd305add0ae",
+  "lastVersionedAt": "2026-04-26T00:00:00Z"
+}
