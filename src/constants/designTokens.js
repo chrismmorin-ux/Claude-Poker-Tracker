@@ -79,6 +79,7 @@ export const NAV_COLORS = {
   tournament: { base: '#ca8a04', hover: '#a16207' },  // yellow-600/700
   extension:  { base: '#059669', hover: '#047857' },  // emerald-600/700
   online:     { base: '#0284c7', hover: '#0369a1' },  // sky-600/700
+  printableRefresher: { base: '#c05621', hover: '#9c4318' },  // burnt-orange (math card accent)
   settings:   { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
 };
 
