@@ -24,3 +24,5 @@ export { TournamentBridge } from './TournamentBridge';
 export { EntitlementProvider, useEntitlement } from './EntitlementContext';
 // PRF Phase 5 (2026-04-26, PRF-G5-HK) — printable refresher state.
 export { RefresherProvider, useRefresher } from './RefresherContext';
+// EAL Phase 6 Stream D B3 (2026-04-27, S14) — exploit anchor library state.
+export { AnchorLibraryProvider, useAnchorLibrary } from './AnchorLibraryContext';

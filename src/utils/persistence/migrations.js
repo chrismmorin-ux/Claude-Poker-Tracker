@@ -26,6 +26,7 @@ import {
   PERCEPTION_PRIMITIVES_STORE_NAME,
   USER_REFRESHER_CONFIG_STORE_NAME,
   PRINT_BATCHES_STORE_NAME,
+  TELEMETRY_CONSENT_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -694,6 +695,57 @@ const migrateV20 = (db, transaction) => {
   }
 };
 
+/**
+ * v21: Create telemetryConsent object store + seed guest record.
+ *
+ * MPMF G5-B2 (2026-04-26) — Telemetry Foundation.
+ *
+ * Additive-only schema migration. Creates a dedicated singleton-per-user
+ * store keyed by `userId`, no autoIncrement, no indexes. Mirrors the v18
+ * subscription store pattern. Avoids a write-race that would have existed
+ * if telemetry consent had been nested under the settings record (since
+ * useSettingsPersistence overwrites the whole settings record on every
+ * non-telemetry settings change).
+ *
+ * The seeded guest record has `firstLaunchSeenAt: null` which causes the
+ * FirstLaunchTelemetryPanel to render exactly once on next boot for new
+ * installs and existing users who haven't seen it. After dismissal,
+ * MPMF-AP-13 enforces no-re-fire via the reducer.
+ *
+ * Idempotent via existence check before create.
+ */
+const migrateV21 = (db, transaction) => {
+  log('Upgrading to v21: telemetryConsent store + guest seed');
+
+  if (!db.objectStoreNames.contains(TELEMETRY_CONSENT_STORE_NAME)) {
+    db.createObjectStore(TELEMETRY_CONSENT_STORE_NAME, {
+      keyPath: 'userId',
+      autoIncrement: false,
+    });
+    log('telemetryConsent object store created (v21)');
+
+    // Seed the guest record. Mirrors v18 subscription seed pattern: lands
+    // atomically with the create inside the upgrade transaction.
+    try {
+      const store = transaction.objectStore(TELEMETRY_CONSENT_STORE_NAME);
+      store.put({
+        userId: GUEST_USER_ID,
+        firstLaunchSeenAt: null,
+        categories: {
+          usage: true,
+          session_replay: true,
+          error_tracking: true,
+          feature_flags: true,
+        },
+        schemaVersion: '1.0.0',
+      });
+      log('telemetryConsent guest record seeded');
+    } catch (e) {
+      logError('v21 telemetryConsent seed failed:', e);
+    }
+  }
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -808,4 +860,8 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // (additive, PRF-G5-MIG; spec dynamic-target max(currentVersion+1, 18) resolved to 20
   // because EAL claimed v19 first)
   if (oldVersion < 20) migrateV20(db, transaction);
+
+  // v21: telemetry sub-state on settings records (additive, MPMF G5-B2 Telemetry Foundation;
+  // dynamic-target max(currentVersion+1, 21) resolved to 21)
+  if (oldVersion < 21) migrateV21(db, transaction);
 };

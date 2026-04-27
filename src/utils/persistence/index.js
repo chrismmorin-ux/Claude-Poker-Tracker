@@ -124,3 +124,17 @@ export {
   clearPostflopDrills,
   aggregatePostflopFrameworkAccuracy,
 } from './postflopDrillsStorage';
+
+// Subscription / Entitlement CRUD operations (MPMF G5-B1)
+export {
+  getSubscription,
+  putSubscription,
+  deleteSubscription,
+} from './subscriptionStore';
+
+// Telemetry consent CRUD operations (MPMF G5-B2)
+export {
+  getTelemetryConsent,
+  putTelemetryConsent,
+  deleteTelemetryConsent,
+} from './telemetryConsentStore';

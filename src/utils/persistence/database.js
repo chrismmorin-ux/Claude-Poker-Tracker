@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 20;
+export const DB_VERSION = 21;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -81,6 +81,14 @@ export const PERCEPTION_PRIMITIVES_STORE_NAME = 'perceptionPrimitives';
 // because EAL claimed v19 first; PRF computes max(19+1, 18) = 20.
 export const USER_REFRESHER_CONFIG_STORE_NAME = 'userRefresherConfig';
 export const PRINT_BATCHES_STORE_NAME = 'printBatches';
+
+// MPMF G5-B2 (2026-04-26) — telemetry consent state at v21.
+// Dedicated store (rather than nested under settings) avoids a write race
+// between useSettingsPersistence and useTelemetryConsentPersistence — both
+// reducers share state, but they own non-overlapping IDB regions.
+// Singleton per user, keyed by userId. See subscriptionStore for the
+// closest pattern.
+export const TELEMETRY_CONSENT_STORE_NAME = 'telemetryConsent';
 
 const MODULE_NAME = 'Persistence';
 

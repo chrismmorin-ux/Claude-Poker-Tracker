@@ -13,6 +13,8 @@ import { EV_COLORS } from '../../../constants/designTokens';
 import { getPlayerName } from '../../../utils/handAnalysis';
 import { HeroCoachingCard } from './HeroCoachingCard';
 import { VillainAnalysisSection } from './VillainAnalysisSection';
+// EAL Phase 6 Stream D B3 (S17, 2026-04-27) — Tier 0 owner observation capture.
+import { AnchorObservationSection } from './AnchorObservationSection';
 
 export const ReviewPanel = ({
   replay,
@@ -200,6 +202,15 @@ export const ReviewPanel = ({
           villainStyle={villainStyle}
         />
       </div>
+
+      {/* G. Anchor Observation Capture (EAL S17, Tier 0) */}
+      {hand?.handId && (
+        <AnchorObservationSection
+          handId={hand.handId}
+          initialStreetKey={currentStreet}
+          initialActionIndex={currentActionIndex}
+        />
+      )}
 
       {/* F. Model Accuracy Summary */}
       {modelAccuracy && (

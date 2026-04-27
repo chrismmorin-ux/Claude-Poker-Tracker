@@ -70,6 +70,10 @@ Secondary:
 │   │ VillainAnalysisSection     │                   │
 │   │   per villain: decision +  │                   │
 │   │   EV + equity + bluff/value│                   │
+│   │ Section G — Anchor         │                   │
+│   │   Observations (EAL Phase 5)                   │
+│   │   (see hand-replay-        │                   │
+│   │    observation-capture.md) │                   │
 │   └────────────────────────────┘                   │
 └────────────────────────────────────────────────────┘
 ```
@@ -137,6 +141,7 @@ Secondary:
 - `sessions-view` — secondary entry via SessionCard.
 - `table-view` — source of the recorded hand (via ShowdownView commit).
 - `showdown-view` — the record-committing surface whose output this replays.
+- `hand-replay-observation-capture` — Section G inline capture widget (EAL Phase 5). Adds Tier 0 observation-tagging affordance to `ReviewPanel.jsx` below `VillainAnalysisSection`.
 
 ---
 
@@ -144,3 +149,4 @@ Secondary:
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-04-22 — DCOMP-W2-A1 combined Gate-2 + Gate-4 audit appended. Verdict YELLOW. 12 findings.
+- 2026-04-24 — Anatomy diagram updated + Related surfaces list gained `hand-replay-observation-capture` (EAL Gate 4 S3). Section G is a new inline widget inside `ReviewPanel.jsx` below `VillainAnalysisSection`; implementation in Phase 5 of exploit-anchor-library.

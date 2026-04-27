@@ -20,6 +20,8 @@ import { tournamentReducer, initialTournamentState } from '../reducers/tournamen
 import { entitlementReducer, initialEntitlementState } from '../reducers/entitlementReducer';
 // PRF Phase 5 (2026-04-26, PRF-G5-HK) — printable refresher reducer.
 import { refresherReducer, initialRefresherState } from '../reducers/refresherReducer';
+// EAL Phase 6 Stream D B3 (2026-04-27, S14) — exploit anchor library reducer.
+import { anchorLibraryReducer, initialAnchorLibraryState } from '../reducers/anchorLibraryReducer';
 import { usePersistence } from './usePersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
@@ -50,6 +52,11 @@ export const useAppState = () => {
   // inside RefresherProvider via useRefresherPersistence (hydrate-only;
   // writers.js owns IDB writes).
   const [refresherState, dispatchRefresher] = useReducer(refresherReducer, initialRefresherState);
+  // EAL Phase 6 Stream D B3 (S14) — exploit anchor library state. Hydration
+  // happens inside AnchorLibraryProvider via useAnchorLibraryPersistence —
+  // parallel `Promise.all` over 4 wrapper getAlls + 400ms debounced
+  // per-slice diff-write (mirrors EntitlementProvider pattern).
+  const [anchorLibraryState, dispatchAnchorLibrary] = useReducer(anchorLibraryReducer, initialAnchorLibraryState);
 
   // =========================================================================
   // PERSISTENCE - Auto-save/restore for all state types
@@ -87,6 +94,7 @@ export const useAppState = () => {
     tournamentState,
     entitlementState,
     refresherState,
+    anchorLibraryState,
 
     // Dispatchers
     dispatchGame,
@@ -99,6 +107,7 @@ export const useAppState = () => {
     dispatchTournament,
     dispatchEntitlement,
     dispatchRefresher,
+    dispatchAnchorLibrary,
 
   };
 };

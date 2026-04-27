@@ -32,6 +32,7 @@ const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsVie
 const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
 const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
 const PrintableRefresherView = lazy(() => import('./components/views/PrintableRefresherView').then(m => ({ default: m.PrintableRefresherView })));
+const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryView').then(m => ({ default: m.AnchorLibraryView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -51,6 +52,7 @@ const HASH_TO_SCREEN = {
   '#players': 'players',
   '#settings': 'settings',
   '#printableRefresher': 'printableRefresher',
+  '#anchorLibrary': 'anchorLibrary',
 };
 
 const ViewRouter = () => {
@@ -113,6 +115,7 @@ const ViewRouter = () => {
           case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
           case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
           case SCREEN.PRINTABLE_REFRESHER: return <VEB viewName="Printable Refresher" onReturnToTable={onReturnToTable}><PrintableRefresherView scale={scale} /></VEB>;
+          case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)
@@ -136,8 +139,8 @@ const ViewRouter = () => {
 
 const AppRoot = () => {
   const {
-    gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState, entitlementState, refresherState,
-    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament, dispatchEntitlement, dispatchRefresher,
+    gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState, entitlementState, refresherState, anchorLibraryState,
+    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament, dispatchEntitlement, dispatchRefresher, dispatchAnchorLibrary,
   } = useAppState();
 
   const blinds = useMemo(
@@ -158,6 +161,7 @@ const AppRoot = () => {
       settingsState={settingsState} dispatchSettings={dispatchSettings}
       entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}
       refresherState={refresherState} dispatchRefresher={dispatchRefresher}
+      anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}
     >
       <UpdateBanner />
       <ViewRouter />

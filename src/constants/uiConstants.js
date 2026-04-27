@@ -25,6 +25,9 @@ export const SCREEN = {
   // Printable Refresher (PRF) — Phase 5 UI; first explicit Reference-mode surface.
   // Dispatched at mount via currentIntent: 'Reference' per surfaces/printable-refresher.md.
   PRINTABLE_REFRESHER: 'printableRefresher',
+  // Exploit Anchor Library (EAL) — Phase 6+; flat-list study surface for anchors.
+  // Per surfaces/anchor-library.md. Deep-link target for capture toast Undo (S18+).
+  ANCHOR_LIBRARY: 'anchorLibrary',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

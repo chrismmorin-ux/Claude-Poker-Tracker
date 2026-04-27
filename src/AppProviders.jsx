@@ -27,6 +27,7 @@ import {
   TournamentBridge,
   EntitlementProvider,
   RefresherProvider,
+  AnchorLibraryProvider,
 } from './contexts';
 import { AssumptionProvider } from './contexts/AssumptionContext';
 import { manifests as refresherCardRegistry } from './utils/printableRefresher/cardRegistry';
@@ -75,10 +76,14 @@ export const AppProviders = ({
   // PRF Phase 5 (PRF-G5-HK) — printable refresher state.
   refresherState,
   dispatchRefresher,
+  // EAL Phase 6 Stream D B3 (S14) — exploit anchor library state.
+  anchorLibraryState,
+  dispatchAnchorLibrary,
 }) => (
   <ToastProvider>
     <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
       <EntitlementProvider entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}>
+        <AnchorLibraryProvider anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}>
         <RefresherProvider
           refresherState={refresherState}
           dispatchRefresher={dispatchRefresher}
@@ -114,6 +119,7 @@ export const AppProviders = ({
             </UIProvider>
           </GameProvider>
         </RefresherProvider>
+        </AnchorLibraryProvider>
       </EntitlementProvider>
     </AuthProvider>
   </ToastProvider>
