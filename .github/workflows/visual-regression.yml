@@ -1,0 +1,104 @@
+# .github/workflows/visual-regression.yml
+#
+# Playwright visual regression suite for the Printable Refresher (PRF).
+# Runs the cross-browser snapshot tests committed in S23–S27 (39 baselines,
+# 13 snapshot tests + 1 behavior-only e2e × 3 browsers = 42 runs).
+#
+# ──────────────────────────────────────────────────────────────────────────
+# CROSS-PLATFORM BASELINE GAP — S28 bootstrapping note (read before failing
+# this workflow):
+#
+# All 39 baselines committed today are Windows-suffixed
+# (`*-{chromium,firefox,webkit}-win32.png`) because they were generated on
+# the owner's local Windows machine. CI runs on `ubuntu-latest`, which
+# Playwright auto-suffixes baselines as `*-{browser}-linux.png`. Both
+# coexist (Playwright suffixes baselines by platform), but Linux baselines
+# do not yet exist in the repo, so the first CI runs WILL report "missing
+# baseline" for all snapshot assertions. This is expected during S28
+# bootstrapping; the job is gated `continue-on-error: true` so it does not
+# block PRs.
+#
+# Resolution path (future session, owner-driven):
+#   1. Regenerate Linux baselines locally via the official Playwright Linux
+#      image so the runtime matches the GitHub Actions runner exactly:
+#        docker run --rm -v "$PWD:/work" -w /work \
+#          mcr.microsoft.com/playwright:v1.59.1-noble \
+#          sh -c "npm ci && npm run test:visual:update"
+#      (or via WSL on Windows; or by downloading the playwright-report
+#      artifact from this workflow and committing the actual_*.png renders
+#      under the matching baseline names — slower but works without Docker.)
+#   2. Commit the new `*-{browser}-linux.png` files in
+#      `tests/playwright/printable-refresher.spec.js-snapshots/`. The
+#      existing `!tests/playwright/**/*.png` `.gitignore` exception covers
+#      them.
+#   3. Remove `continue-on-error: true` from the test step in this file so
+#      visual regressions become a hard PR gate.
+#
+# Until step 3 lands, this workflow is ADVISORY only. Failures surface as
+# `::warning` annotations + `playwright-report-<run_id>` artifacts (download
+# from the workflow-run page for the visual diff viewer).
+#
+# Wall time: ~3.5m locally. CI may differ depending on runner specs.
+# Optimization opportunity (deferred): playwright.config.js currently uses
+# `workers: 1` because the dev server + IDB are shared per-worker; could
+# parallelize to `workers: 3` (one per browser) with per-worker dev-server
+# isolation to cut wall time to ~1.5m if CI cost becomes an issue.
+# ──────────────────────────────────────────────────────────────────────────
+
+name: Visual Regression
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  playwright-visual:
+    name: Playwright visual regression (PRF)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium firefox webkit
+
+      - name: Install Playwright system deps (Linux)
+        run: npx playwright install-deps chromium firefox webkit
+
+      - name: Run visual regression tests
+        id: visual-test
+        run: npm run test:visual
+        continue-on-error: true
+
+      - name: Upload Playwright report on failure
+        if: ${{ !cancelled() && steps.visual-test.outcome != 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            tests/playwright/.test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Surface advisory failure
+        if: steps.visual-test.outcome != 'success'
+        run: |
+          echo "::warning title=Visual regression advisory::Visual regression tests failed. Until Linux baselines are committed this is expected. Download playwright-report-${{ github.run_id }} from the workflow-run page for the visual diff viewer."
