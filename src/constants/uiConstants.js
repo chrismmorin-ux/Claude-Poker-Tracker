@@ -22,6 +22,9 @@ export const SCREEN = {
   // Player Entry Overhaul (PEO) screens — S1 ships constants; S2/S3 wire views
   PLAYER_EDITOR: 'playerEditor',
   PLAYER_PICKER: 'playerPicker',
+  // Printable Refresher (PRF) — Phase 5 UI; first explicit Reference-mode surface.
+  // Dispatched at mount via currentIntent: 'Reference' per surfaces/printable-refresher.md.
+  PRINTABLE_REFRESHER: 'printableRefresher',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',
