@@ -55,11 +55,17 @@ screenshots/
 !public/*.png
 # Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
 !docs/design/audits/**/*.png
+# Playwright snapshot baselines ARE tracked (visual regression source-of-truth)
+!tests/playwright/**/*.png
 audit-*.png
 verify-*.png
 .local-model-backups/
 .claude/logs/*.log
 .playwright-mcp/
+# Playwright test artifacts (per-run output; not the baselines)
+tests/playwright/.test-results/
+playwright-report/
+test-results/
 .firebase
 
 # Ignition poker tracker — build artifacts and deps only

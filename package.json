@@ -14,7 +14,10 @@
     "test:component": "vitest run --project component",
     "test:hooks": "vitest run --project hooks",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "test:visual:debug": "playwright test --headed"
   },
   "dependencies": {
     "firebase": "^12.6.0",
@@ -25,6 +28,7 @@
   },
   "devDependencies": {
     "@babel/parser": "^7.29.2",
+    "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@vitejs/plugin-react": "^5.1.2",
