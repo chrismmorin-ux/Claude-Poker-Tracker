@@ -12,23 +12,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
+// Mutable mock state — tests can override per scenario via `mockRefresherState`.
+let mockRefresherState;
+
 // Mock contexts before importing the view
 vi.mock('../../../../contexts', () => ({
-  useRefresher: () => ({
-    config: { cardVisibility: {}, suppressedClasses: [] },
-    printBatches: [],
-    isReady: true,
-    getAllCards: () => sampleActiveCards,
-    getActiveCards: () => sampleActiveCards,
-    getPinnedCards: () => [],
-    getSuppressedCards: () => [],
-    getCardsForBatchPrint: () => [],
-    getStaleCards: () => [],
-    setCardVisibility: vi.fn().mockResolvedValue(undefined),
-    setClassSuppressed: vi.fn().mockResolvedValue(undefined),
-    patchConfig: vi.fn().mockResolvedValue(undefined),
-    recordPrintBatch: vi.fn().mockResolvedValue({ batchId: 'x' }),
-  }),
+  useRefresher: () => mockRefresherState,
   useUI: () => ({
     setCurrentScreen: vi.fn(),
   }),
@@ -74,6 +63,26 @@ import { PrintableRefresherView } from '..';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Reset mock state to defaults — tests can override before render.
+  mockRefresherState = {
+    config: {
+      cardVisibility: {},
+      suppressedClasses: [],
+      notifications: { staleness: false },
+    },
+    printBatches: [],
+    isReady: true,
+    getAllCards: () => sampleActiveCards,
+    getActiveCards: () => sampleActiveCards,
+    getPinnedCards: () => [],
+    getSuppressedCards: () => [],
+    getCardsForBatchPrint: () => [],
+    getStaleCards: () => [],
+    setCardVisibility: vi.fn().mockResolvedValue(undefined),
+    setClassSuppressed: vi.fn().mockResolvedValue(undefined),
+    patchConfig: vi.fn().mockResolvedValue(undefined),
+    recordPrintBatch: vi.fn().mockResolvedValue({ batchId: 'x' }),
+  };
 });
 
 describe('PrintableRefresherView — basic render', () => {
@@ -246,5 +255,132 @@ describe('PrintableRefresherView — print preview navigation (S21)', () => {
     render(<PrintableRefresherView />);
     fireEvent.click(screen.getByLabelText(/Open print preview/i));
     expect(screen.queryByLabelText(/Open print preview/i)).toBeNull();
+  });
+});
+
+describe('PrintableRefresherView — staleness banner (S22)', () => {
+  /** Helper: configure mock to surface a stale card + meet AP-PRF-08 opt-in gate. */
+  const setupStaleScenario = ({ notificationsOptIn = true } = {}) => {
+    mockRefresherState.config = {
+      ...mockRefresherState.config,
+      notifications: { staleness: notificationsOptIn },
+    };
+    mockRefresherState.printBatches = [
+      {
+        batchId: 'batch-1',
+        printedAt: '2026-04-24T00:00:00Z',
+        label: null,
+        cardIds: ['PRF-MATH-AUTO-PROFIT', 'PRF-PREFLOP-CO-OPEN'],
+        perCardSnapshots: {
+          'PRF-MATH-AUTO-PROFIT': { contentHash: 'sha256:OLD-AUTO', version: '1' },
+          'PRF-PREFLOP-CO-OPEN': { contentHash: 'sha256:def', version: '1' },
+        },
+      },
+    ];
+    mockRefresherState.getStaleCards = () => [
+      {
+        ...sampleActiveCards[0],
+        isStale: true,
+        printedHash: 'sha256:OLD-AUTO',
+        currentHash: 'sha256:abc',
+        printedAt: '2026-04-24T00:00:00Z',
+        batchId: 'batch-1',
+        batchLabel: null,
+        staleSinceBatch: 'batch-1',
+      },
+    ];
+  };
+
+  it('banner renders when staleness opt-in is on AND stale cards exist', () => {
+    setupStaleScenario();
+    render(<PrintableRefresherView />);
+    const banner = screen.getByRole('status', { name: '' });
+    // role=status is shared with stale-card markers — find the banner specifically
+    expect(screen.getAllByRole('status').some((el) =>
+      el.classList.contains('refresher-staleness-banner')
+    )).toBe(true);
+    expect(screen.getByLabelText(/Review stale cards/i)).toBeInTheDocument();
+  });
+
+  it('banner is hidden by default (AP-PRF-08 opt-in OFF)', () => {
+    setupStaleScenario({ notificationsOptIn: false });
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('banner is hidden when no stale cards', () => {
+    mockRefresherState.config = {
+      ...mockRefresherState.config,
+      notifications: { staleness: true },
+    };
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('banner is hidden when no print batches (no laminate to be stale)', () => {
+    mockRefresherState.config = {
+      ...mockRefresherState.config,
+      notifications: { staleness: true },
+    };
+    mockRefresherState.printBatches = [];
+    mockRefresherState.getStaleCards = () => [];
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('Dismiss button hides the banner for the session', () => {
+    setupStaleScenario();
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).not.toBeNull();
+    fireEvent.click(screen.getByLabelText(/Dismiss staleness banner/i));
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('Review stale cards filters the catalog to stale cards only', () => {
+    setupStaleScenario();
+    render(<PrintableRefresherView />);
+    // Both fixture cards visible by default (only 1 is stale)
+    expect(screen.getByText('PRF-MATH-AUTO-PROFIT')).toBeInTheDocument();
+    expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/Review stale cards/i));
+    // After review-stale: only the stale card remains; "stale only" indicator visible
+    expect(screen.getByText('PRF-MATH-AUTO-PROFIT')).toBeInTheDocument();
+    expect(screen.queryByText('PRF-PREFLOP-CO-OPEN')).toBeNull();
+    expect(screen.getByText(/stale only/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Show all cards/i)).toBeInTheDocument();
+  });
+
+  it('Show all cards button restores the unfiltered catalog', () => {
+    setupStaleScenario();
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Review stale cards/i));
+    fireEvent.click(screen.getByLabelText(/Show all cards/i));
+    expect(screen.getByText('PRF-MATH-AUTO-PROFIT')).toBeInTheDocument();
+    expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
+    expect(screen.queryByText(/stale only/i)).toBeNull();
+  });
+
+  it('Review stale cards also dismisses the banner', () => {
+    setupStaleScenario();
+    const { container } = render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Review stale cards/i));
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('banner is hidden in print-preview mode', () => {
+    setupStaleScenario();
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).not.toBeNull();
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
+  });
+
+  it('banner is hidden in card-detail mode', () => {
+    setupStaleScenario();
+    const { container } = render(<PrintableRefresherView />);
+    expect(container.querySelector('.refresher-staleness-banner')).not.toBeNull();
+    const detailButtons = screen.getAllByLabelText(/Open card detail/i);
+    fireEvent.click(detailButtons[0]);
+    expect(container.querySelector('.refresher-staleness-banner')).toBeNull();
   });
 });

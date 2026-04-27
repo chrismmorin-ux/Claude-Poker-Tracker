@@ -39,6 +39,7 @@ import { CardDetail } from './CardDetail';
 import { SuppressConfirmModal } from './SuppressConfirmModal';
 import { PrintPreview } from './PrintPreview';
 import { PrintConfirmationModal } from './PrintConfirmationModal';
+import { StalenessBanner } from './StalenessBanner';
 
 const CLASS_FILTER_OPTIONS = ['preflop', 'math', 'equity', 'exceptions'];
 
@@ -110,6 +111,9 @@ export const PrintableRefresherView = () => {
   // S21 — print-preview + print-confirm navigation state
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [pendingPrintConfirm, setPendingPrintConfirm] = useState(null);
+  // S22 — staleness banner state (session-only dismiss + stale-only filter)
+  const [stalenessBannerDismissed, setStalenessBannerDismissed] = useState(false);
+  const [showOnlyStale, setShowOnlyStale] = useState(false);
 
   // Choose the base set per "show suppressed" toggle.
   const baseCards = useMemo(
@@ -117,14 +121,33 @@ export const PrintableRefresherView = () => {
     [view.filter.showSuppressed, refresher],
   );
 
-  const filteredSorted = useMemo(
-    () => applyFiltersAndSort(baseCards, view),
-    [baseCards, view],
-  );
-
   const staleCardIds = useMemo(() => {
     const stale = refresher.getStaleCards();
     return new Set(stale.map((c) => c.cardId));
+  }, [refresher]);
+
+  const filteredSorted = useMemo(() => {
+    const sorted = applyFiltersAndSort(baseCards, view);
+    if (showOnlyStale) {
+      return sorted.filter((c) => staleCardIds.has(c.cardId));
+    }
+    return sorted;
+  }, [baseCards, view, showOnlyStale, staleCardIds]);
+
+  // S22 — banner-copy data: stale count + most-recent batch info.
+  const stalenessBannerData = useMemo(() => {
+    const staleCards = refresher.getStaleCards();
+    if (staleCards.length === 0) return null;
+    const batches = refresher.printBatches || [];
+    if (batches.length === 0) return null;
+    // printBatches is DESC-sorted by reducer (REFRESHER_BATCH_APPENDED prepends).
+    const mostRecent = batches[0];
+    return {
+      staleCount: staleCards.length,
+      batchCardCount: Array.isArray(mostRecent.cardIds) ? mostRecent.cardIds.length : 0,
+      batchPrintedAt: mostRecent.printedAt,
+      batchLabel: mostRecent.label || null,
+    };
   }, [refresher]);
 
   // selectedCard for CardDetail — pull from the full annotated set so a
@@ -133,6 +156,16 @@ export const PrintableRefresherView = () => {
     if (!selectedCardId) return null;
     return refresher.getAllCards().find((c) => c.cardId === selectedCardId) || null;
   }, [selectedCardId, refresher]);
+
+  // AP-PRF-08 gate — banner only renders when notifications.staleness opt-in
+  // is enabled (Phase 1 default OFF; settings UI to flip the flag is future
+  // work). Banner is structurally complete + dormant until owner opts in.
+  const stalenessBannerVisible =
+    !showPrintPreview &&
+    !selectedCard &&
+    !stalenessBannerDismissed &&
+    refresher.config?.notifications?.staleness === true &&
+    stalenessBannerData !== null;
 
   // ── Action handlers ─────────────────────────────────────────────────
   const handlePin = useCallback(
@@ -223,6 +256,16 @@ export const PrintableRefresherView = () => {
 
   const handlePrintCancel = useCallback(() => {
     setPendingPrintConfirm(null);
+  }, []);
+
+  // S22 — staleness banner handlers
+  const handleReviewStale = useCallback(() => {
+    setShowOnlyStale(true);
+    setStalenessBannerDismissed(true);
+  }, []);
+
+  const handleDismissBanner = useCallback(() => {
+    setStalenessBannerDismissed(true);
   }, []);
 
   const handlePrintConfirm = useCallback(
@@ -394,6 +437,18 @@ export const PrintableRefresherView = () => {
         </select>
       </section>
 
+      {/* S22 — staleness banner (catalog mode only; gated on AP-PRF-08 opt-in) */}
+      {stalenessBannerVisible && stalenessBannerData && (
+        <StalenessBanner
+          staleCount={stalenessBannerData.staleCount}
+          batchCardCount={stalenessBannerData.batchCardCount}
+          batchPrintedAt={stalenessBannerData.batchPrintedAt}
+          batchLabel={stalenessBannerData.batchLabel}
+          onReviewStale={handleReviewStale}
+          onDismiss={handleDismissBanner}
+        />
+      )}
+
       {/* Showing N of M (only in catalog mode) */}
       {!selectedCard && !showPrintPreview && (
         <div
@@ -401,9 +456,37 @@ export const PrintableRefresherView = () => {
             fontSize: '0.75rem',
             color: '#9ca3af',
             marginBottom: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            flexWrap: 'wrap',
           }}
         >
-          Showing {filteredSorted.length} of {baseCards.length} cards
+          <span>
+            Showing {filteredSorted.length} of {baseCards.length} cards
+            {showOnlyStale && ' · stale only'}
+          </span>
+          {showOnlyStale && (
+            <button
+              type="button"
+              onClick={() => setShowOnlyStale(false)}
+              aria-label="Show all cards"
+              style={{
+                minHeight: 32,
+                padding: '0.25rem 0.625rem',
+                background: '#1f2937',
+                color: '#e5e7eb',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: '#374151',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+              }}
+            >
+              Show all cards
+            </button>
+          )}
         </div>
       )}
 
