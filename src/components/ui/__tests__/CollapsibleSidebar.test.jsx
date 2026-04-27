@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CollapsibleSidebar } from '../CollapsibleSidebar';
+import { NAV_COLORS } from '../../../constants/designTokens';
 
 const MOCK_SCREEN = {
   TABLE: 'table',
@@ -196,6 +200,32 @@ describe('CollapsibleSidebar', () => {
         <CollapsibleSidebar {...defaultProps} selectedPlayers={[9]} dealerButtonSeat={1} />
       );
       expect(screen.getByText('Cutoff')).toBeInTheDocument();
+    });
+  });
+
+  // Static source-scan guard: every navItem's `navKey` must exist in NAV_COLORS.
+  // A missing key throws at render time when the sidebar maps over navItems and
+  // accesses `colors.base` on undefined. The render-time tests above mock
+  // useUI / SCREEN and don't always exercise every nav entry, so a textual
+  // check on the source is the cheapest catch-all.
+  describe('NAV_COLORS coverage', () => {
+    const sidebarSource = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '..', 'CollapsibleSidebar.jsx'),
+      'utf8'
+    );
+
+    const navKeys = Array.from(sidebarSource.matchAll(/navKey:\s*['"]([^'"]+)['"]/g)).map(
+      (m) => m[1]
+    );
+
+    it('extracts at least one navKey from CollapsibleSidebar source', () => {
+      expect(navKeys.length).toBeGreaterThan(0);
+    });
+
+    it.each(navKeys)('NAV_COLORS has an entry for navKey %s', (navKey) => {
+      expect(NAV_COLORS[navKey]).toBeDefined();
+      expect(NAV_COLORS[navKey].base).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(NAV_COLORS[navKey].hover).toMatch(/^#[0-9a-f]{6}$/i);
     });
   });
 });
