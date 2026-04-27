@@ -19,6 +19,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { computeBucketEVsV2 } from '../../../utils/postflopDrillContent/drillModeEngine';
+import { computeDepth2Plan } from '../../../utils/postflopDrillContent/computeDepth2Plan';
+import { getOrCompute } from '../../../utils/postflopDrillContent/engineCache';
 import { villainRangeFor } from '../../../utils/postflopDrillContent/villainRanges';
 import { isKnownArchetype } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
 import { parseBoard, parseAndEncode } from '../../../utils/pokerCore/cardParser';
@@ -30,6 +32,45 @@ import { ActionRecommendationStrip } from './panels/ActionRecommendationStrip';
 import { StreetNarrowingContext } from './panels/StreetNarrowingContext';
 import { ConfidenceDisclosure } from './panels/ConfidenceDisclosure';
 import { GlossaryBlock } from './panels/GlossaryBlock';
+
+/**
+ * Compute the adjusted caveats list for the bucket panel given a depth-2
+ * cross-check result. Pure helper exported for tests.
+ *
+ *  - When depth-2 unavailable / errored → caveats unchanged.
+ *  - When depth-2 best-action MATCHES bucket-EV best-action → replace
+ *    `'v1-simplified-ev'` with `'depth2-cross-validated'`.
+ *  - When depth-2 best-action MISMATCHES → keep `'v1-simplified-ev'` (honest
+ *    signaling) but add `'depth2-divergent'` so the student knows the
+ *    simplified path disagreed with the solver.
+ *
+ * Best-action match is a leading-token comparison ("bet 75%" → "bet";
+ * "Raise to 9bb" → "raise") since bucket-EV labels include sizings and
+ * depth-2 labels are bare action kinds.
+ */
+export const adjustCaveatsForDepth2 = (bucketCaveats, bucketBestLabel, depth2Plan) => {
+  const caveats = Array.isArray(bucketCaveats) ? bucketCaveats.slice() : [];
+  if (!depth2Plan || depth2Plan.errorState || !depth2Plan.bestActionLabel) {
+    return caveats;
+  }
+  const firstToken = (s) => {
+    if (typeof s !== 'string') return '';
+    const trimmed = s.trim().toLowerCase();
+    if (trimmed.length === 0) return '';
+    return trimmed.split(/[\s_-]+/)[0];
+  };
+  const bucketTok = firstToken(bucketBestLabel);
+  const depth2Tok = firstToken(depth2Plan.bestActionLabel);
+  if (!bucketTok || !depth2Tok) return caveats;
+  const aligned = bucketTok === depth2Tok;
+  const idx = caveats.indexOf('v1-simplified-ev');
+  if (aligned && idx !== -1) {
+    caveats[idx] = 'depth2-cross-validated';
+  } else if (!aligned) {
+    caveats.push('depth2-divergent');
+  }
+  return caveats;
+};
 
 // Registry mapping primitive ids to their component. The renderer consults
 // this — adding a new primitive means adding its id + component here AND
@@ -191,7 +232,11 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
     }
     let cancelled = false;
     setLoading(true);
-    computeBucketEVsV2(input.input)
+    // LSW-D2: cache by stable (line, node, archetype) tuple. engineCache
+    // composes the engineVersion stamp into the key so a version bump
+    // invalidates implicitly.
+    const cacheKey = `${input.input.lineId || '?'}:${input.input.nodeId || '?'}:${safeArchetype}`;
+    getOrCompute('bucketEVsV2', cacheKey, () => computeBucketEVsV2(input.input))
       .then((out) => {
         if (!cancelled) setResult(out);
       })
@@ -219,6 +264,42 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
       cancelled = true;
     };
   }, [input]);
+
+  // LSW-D2 follow-on (2026-04-27): cross-validate against depth-2 plan when
+  // available. Cache hit if HandPlanSection already ran the same compute on
+  // this (line, node, archetype). Replaces the `'v1-simplified-ev'` caveat
+  // with `'depth2-cross-validated'` (best-action match) or
+  // `'depth2-divergent'` (mismatch) when depth-2 succeeds. Preserves I-DM-2
+  // arithmetic-traceability — does NOT modify decomposition or actionEVs.
+  const [depth2Plan, setDepth2Plan] = useState(null);
+
+  useEffect(() => {
+    if (!input || input.errorPreflight) {
+      setDepth2Plan(null);
+      return undefined;
+    }
+    const heroComboString = Array.isArray(heroView?.combos) ? heroView.combos[0] : null;
+    if (!heroComboString) {
+      setDepth2Plan(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const cacheKey = `${input.input.lineId || '?'}:${input.input.nodeId || '?'}:${safeArchetype}`;
+    const depth2Input = {
+      heroCombo: heroComboString,
+      villainRange: input.input.villains?.[0]?.baseRange,
+      board: input.input.board,
+      pot: input.input.pot,
+      villainAction: node?.villainAction || null,
+      decisionKind: input.input.decisionKind || 'standard',
+      effectiveStack: input.input.effStack || 100,
+      contextHints: { archetype: safeArchetype },
+    };
+    getOrCompute('depth2Plan', cacheKey, () => computeDepth2Plan(depth2Input))
+      .then((p) => { if (!cancelled) setDepth2Plan(p); })
+      .catch(() => { if (!cancelled) setDepth2Plan(null); });
+    return () => { cancelled = true; };
+  }, [input, safeArchetype, heroView, node]);
 
   // v2 panel only renders on nodes with heroView — LineNodeRenderer branches
   // on that presence. Guard anyway for robustness.
@@ -296,7 +377,14 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
       streetNarrowing: result.streetNarrowing,
     },
     P6: {
-      confidence: result.confidence,
+      confidence: {
+        ...result.confidence,
+        caveats: adjustCaveatsForDepth2(
+          result.confidence?.caveats,
+          result.recommendation?.actionLabel,
+          depth2Plan,
+        ),
+      },
     },
     P6b: {
       labelIds: visibleLabels,

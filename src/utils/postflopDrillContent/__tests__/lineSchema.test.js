@@ -354,12 +354,13 @@ describe('lineStats', () => {
 // ---------- schema v3 hardened — heroHolding deprecated (Commit 5) ------ //
 
 describe('SCHEMA_VERSION', () => {
-  it('exports schema version 3 (hardened via LSW-G4-IMPL Commit 5)', () => {
+  it('exports schema version 4 (LSW-P2: comboPlans field added)', () => {
     // 1 → 2 (2026-04-21, RT-106): heroHolding
     // 2 → 3 (2026-04-22, LSW-G4-IMPL 2.5): heroView + villainRangeContext +
     //                                       decisionKind + decisionStrategy
     // 3 hardened (2026-04-22, Commit 5): heroHolding deprecated entirely
-    expect(SCHEMA_VERSION).toBe(3);
+    // 3 → 4 (2026-04-27, LSW-P2): comboPlans (hand-plan layer)
+    expect(SCHEMA_VERSION).toBe(4);
   });
 });
 

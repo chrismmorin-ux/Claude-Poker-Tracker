@@ -25,8 +25,8 @@ import {
 // ----- Version + enum exports -----------------------------------------------
 
 describe('schema v3 version + enums', () => {
-  it('SCHEMA_VERSION is 3', () => {
-    expect(SCHEMA_VERSION).toBe(3);
+  it('SCHEMA_VERSION is 4 (bumped to 4 on 2026-04-27 by LSW-P2 comboPlans addition; v3 fields remain valid)', () => {
+    expect(SCHEMA_VERSION).toBe(4);
   });
 
   it('HERO_VIEW_KINDS contains single-combo / combo-set / range-level', () => {

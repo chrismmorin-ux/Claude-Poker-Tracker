@@ -60,7 +60,7 @@ Read these before starting any phase:
 
 ## Streams
 
-**Six** parallel work streams. Stream A runs first and gates Stream B/C on a per-line basis (B/C cannot land on a line until that line's audit closes GREEN/YELLOW without open P0s). Stream G is new (2026-04-22): reactive engine/system upgrades flowing from Stream A's external-validation findings.
+**Seven** parallel work streams. Stream A runs first and gates Stream B/C on a per-line basis (B/C cannot land on a line until that line's audit closes GREEN/YELLOW without open P0s). Stream G is new (2026-04-22): reactive engine/system upgrades flowing from Stream A's external-validation findings. Stream P is new (2026-04-27): hand-plan layer added as a parallel authoring + rendering dimension on top of B/C.
 
 | Stream | Status | Description | Gate |
 |--------|--------|-------------|------|
@@ -70,6 +70,7 @@ Read these before starting any phase:
 | D | [ ] | Engine accuracy follow-on: depth-2 injection + EV cache | A + B1 + B2 stable |
 | E | [ ] | Polish (copy pass, empty-bucket UX, 1600×720 verification) | Rolling |
 | G | [ ] | Engine / system upgrades from audit findings (new 2026-04-22) | Opened per-finding by Stream A, each G-* a dedicated session |
+| P | [x] foundational | Hand Plan layer — **foundational P1/P2/P4/P5 CLOSED 2026-04-27** (taxonomy + schema + engine-derived plan + UI all shipped, +122 tests, Playwright-verified at 1600×720); authored plans (P3/P6/P7) deferred to LSW-v2. Sub-charter: [`line-study-slice-widening/stream-p-hand-plan.md`](line-study-slice-widening/stream-p-hand-plan.md). | LSW-D1 (depth-2 injection) will populate the `nextStreetPlan` stub + clear `v1-simplified-ev` caveat |
 
 ---
 
@@ -271,12 +272,14 @@ Pragmatic sequencing over calendar time:
 | 2′ | [ ] | Stream G tickets — close all category-C P0/P1 findings (engine-wrong) | Every audit's category-C findings have shipped G tickets or are deferred with reasoning |
 | 3 | [ ] | Stream B1 — flop roots | 7 flop roots authored, tests green |
 | 4 | [ ] | Stream B2 — turn bucket-shifts | Flagged turns authored, tests green |
+| 4′ | [x] | **Stream P1 + P2 — hand-plan taxonomy + schema** (added 2026-04-27 per Stream P sub-charter) — **CLOSED 2026-04-27** | ✓ 12 chips in `planRules.js` + spec doc `hand-plan-layer.md`; ✓ SCHEMA_VERSION 3 → 4 with `comboPlans` validator; ✓ 17 + 25 = 42 new tests |
+| 4″ | [x] | **Stream P4 + P5 — engine-derived plan + UI integration** (added 2026-04-27 per Stream P sub-charter) — **CLOSED 2026-04-27** | ✓ `planDerivation.js` wraps `computeBucketEVsV2` (nextStreetPlan stub for LSW-D1); ✓ `<HandPlanSection>` + `<RuleChipModal>` shipped; ✓ conditional default visibility per Q2=C + `sessionStorage`-toggle; ✓ 1600×720 Playwright walk on JT6 flop_root + turn_after_call; ✓ 33 + 33 = 66 new tests; **Full PostflopDrillsView + postflopDrillContent suites: 495/495 (+122 from pre-Stream-P)** |
 | 5 | [ ] | Stream D1 — depth-2 | `v1-simplified-ev` caveat removed |
 | 6 | [ ] | Stream B3 — rivers | Flagged rivers authored, tests green |
 | 7 | [ ] | Stream D2 — cache | NEV-12 invariant + engineVersion stamp live |
-| 8 | [ ] | Closeout | Verdicts GREEN across all 8 lines; backlog zero-P1 across Stream F and Stream G |
+| 8 | [ ] | Closeout | Verdicts GREEN across all 8 lines; backlog zero-P1 across Stream F, Stream G, **and Stream P (foundational P1/P2/P4/P5)**; **Stream P deferred items (P3/P6/P7) parked into LSW-v2 backlog** |
 
-Phase 2 and Phase 3 are partially parallelizable per-line (line-3's audit can close and its B1 node can ship while line-4's audit is still underway). Phase 2′ is dependent per-line on the specific engine change — some Stream G findings (e.g., `POP_CALLING_RATES` tweaks) may span multiple lines and should be batched.
+Phase 2 and Phase 3 are partially parallelizable per-line (line-3's audit can close and its B1 node can ship while line-4's audit is still underway). Phase 2′ is dependent per-line on the specific engine change — some Stream G findings (e.g., `POP_CALLING_RATES` tweaks) may span multiple lines and should be batched. Phases 4′/4″ are inserted between current 4 and 5; P4 has a soft dependency on D1 (Phase 5) — P4 may ship before D1, inheriting the `v1-simplified-ev` caveat on engine-derived plans, which is then cleared automatically when D1 lands.
 
 ---
 
@@ -326,6 +329,7 @@ Phase 2 and Phase 3 are partially parallelizable per-line (line-3's audit can cl
 | 2026-04-22 | Audit order is SPI-proxy, not alphabetical | Higher-frequency + higher-pot lines gate more downstream work; failing fast on the biggest lines surfaces systemic issues earlier. |
 | 2026-04-22 | Each audit is immutable after close | Same rule as every other audit in `docs/design/audits/`. Follow-up audits create `-v2` files. |
 | 2026-04-22 | Stream D parks until A + B1 + B2 land | Depth-2 EV numbers shift sentinel constants the audit evaluated against. Running D earlier would force re-audit. |
+| 2026-04-27 | Stream P added (Hand Plan layer): foundational P1/P2/P4/P5 active now, content P3/P6/P7 deferred to LSW-v2 | Sub-charter at `line-study-slice-widening/stream-p-hand-plan.md` — bucket-keyed `comboPlans` with per-combo overrides + conditional default visibility + clickable rule chips. Foundational bundle (4–5 sessions) ships engine-derived plans on every node immediately, addressing the GTOwizard-style hole-card-specific plan gap; authored plans wait until v1 student-usage data identifies which nodes earn teaching depth. v1 closeout slips 4–5 sessions, not 7–12. |
 
 ---
 

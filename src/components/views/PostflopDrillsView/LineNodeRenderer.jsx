@@ -18,6 +18,7 @@ import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 // proper consolidation into `_shared/drillInternals/` tracked under RT-94.
 import { CALCULATORS } from '../PreflopDrillsView/LessonCalculators';
 import { BucketEVPanelV2 } from './BucketEVPanelV2';
+import { HandPlanSection } from './panels/HandPlanSection';
 
 export const LineNodeRenderer = ({
   node,
@@ -59,6 +60,13 @@ export const LineNodeRenderer = ({
       {/* v2 panel — villain-first primary for every node with heroView. */}
       {hasHeroView && (
         <BucketEVPanelV2 node={node} line={line} archetype={archetype} />
+      )}
+
+      {/* Hand Plan Layer — Stream P P5. Authored plan (when comboPlans
+          present) + engine-derived plan (depth-2 forward-look ships with
+          LSW-D1; v1 surfaces per-action EVs). Renders only on heroView nodes. */}
+      {hasHeroView && (
+        <HandPlanSection node={node} line={line} archetype={archetype} />
       )}
 
       {/* Sections */}

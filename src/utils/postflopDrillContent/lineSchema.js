@@ -45,6 +45,8 @@
  * Pure module — no imports from UI, state, or persistence layers.
  */
 
+import { isKnownRuleChip } from './planRules';
+
 /**
  * Schema version history:
  *   1 → 2 (2026-04-21, RT-106): added optional `Node.heroHolding` for
@@ -67,8 +69,21 @@
  *                                doctrine). Deleting the code + hard-
  *                                rejecting the field prevents silent
  *                                regressions.
+ *   3 → 4 (2026-04-27, LSW-P2): added optional `Node.comboPlans` for the
+ *                                Hand Plan Layer (Stream P sub-charter).
+ *                                Bucket-keyed plan entries with optional
+ *                                per-combo overrides. Rule chip IDs validated
+ *                                against `planRules.PLAN_RULE_CHIPS`. Bucket
+ *                                keys validated against `heroView.bucketCandidates`.
+ *                                Override combo keys format-validated and (for
+ *                                single-combo / combo-set heroViews) checked
+ *                                against `heroView.combos`. Cross-layer combo-
+ *                                set membership against engine bucket
+ *                                enumeration is deferred to the engine, mirroring
+ *                                the `villainRangeContext.baseRangeId` precedent.
+ *                                Purely additive — legacy content remains valid.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /**
  * Allowed values for `Node.heroView.kind` — see `bucket-ev-panel-v2` spec
@@ -137,6 +152,15 @@ export const VILLAIN_ACTION_KINDS = Object.freeze([
 export const HERO_ACTION_KINDS = Object.freeze([
   'check', 'bet', 'cbet', 'call', 'raise', 'fold',
 ]);
+
+/**
+ * Hard cap on `Node.comboPlans[bucketId].planText` length (and per-combo
+ * override planText). 320 chars ≈ 1-3 sentences — long enough to express a
+ * plan, short enough to keep the rendered plan section glanceable per
+ * H-PLT01 (live-table sub-second readability). Exported so author tooling
+ * + lint can consume it.
+ */
+export const PLAN_TEXT_MAX_CHARS = 320;
 
 // ---------- Primitive guards ---------- //
 
@@ -484,6 +508,111 @@ const validateVillainRangeContext = (vrc, ctx) => {
   return errs;
 };
 
+// ---------- v4 field validators (LSW-P2) ---------- //
+
+/**
+ * Validate one `comboPlans` entry — either a top-level bucket entry or a
+ * per-combo override. Both share the `{ planText, ruleChips }` shape; only
+ * the bucket-level entry may carry an `overrides` field, which is enforced
+ * by passing `allowOverrides=true` from the bucket-level call site.
+ *
+ * Pure validator — combo-set membership against the engine's bucket
+ * enumeration is deferred to the engine, mirroring the `villainRangeContext`
+ * precedent. The schema validates shape + chip ID resolution + (when a
+ * `heroView.combos` membership set is supplied) override-key membership.
+ */
+const validateComboPlanEntry = (entry, ctx, { allowOverrides = false } = {}) => {
+  const errs = [];
+  if (!isPlainObject(entry)) {
+    errs.push(`${ctx}: must be an object`);
+    return errs;
+  }
+  if (!nonEmptyString(entry.planText) || entry.planText.trim().length === 0) {
+    errs.push(`${ctx}: planText must be a non-empty trimmed string`);
+  } else if (entry.planText.length > PLAN_TEXT_MAX_CHARS) {
+    errs.push(`${ctx}: planText (${entry.planText.length} chars) exceeds ${PLAN_TEXT_MAX_CHARS}-char limit`);
+  }
+  if (!Array.isArray(entry.ruleChips) || entry.ruleChips.length === 0) {
+    errs.push(`${ctx}: ruleChips must be a non-empty array`);
+  } else {
+    entry.ruleChips.forEach((chipId, i) => {
+      if (!nonEmptyString(chipId)) {
+        errs.push(`${ctx}.ruleChips[${i}]: must be a non-empty string`);
+      } else if (!isKnownRuleChip(chipId)) {
+        errs.push(`${ctx}.ruleChips[${i}]: chip '${chipId}' is not registered in planRules.PLAN_RULE_CHIPS`);
+      }
+    });
+  }
+  if (!allowOverrides && entry.overrides !== undefined) {
+    errs.push(`${ctx}: overrides not allowed inside an override (overrides is a flat one-level structure)`);
+  }
+  return errs;
+};
+
+/**
+ * Validate `Node.comboPlans` — bucket-keyed forward-plan map per the
+ * Hand Plan Layer surface spec. Shape:
+ *   {
+ *     [bucketId]: {
+ *       planText: string,
+ *       ruleChips: string[],
+ *       overrides?: { [combo]: { planText, ruleChips } }
+ *     }
+ *   }
+ *
+ * @param {object} comboPlans     — the field value
+ * @param {string} ctx            — error-message context
+ * @param {object} options
+ * @param {Set<string>} options.allowedBuckets — node's `heroView.bucketCandidates` as a Set; required.
+ * @param {Set<string> | null} options.allowedCombos — node's `heroView.combos` as a Set, or null when heroView is range-level.
+ */
+const validateComboPlans = (comboPlans, ctx, { allowedBuckets, allowedCombos }) => {
+  const errs = [];
+  if (!isPlainObject(comboPlans)) {
+    errs.push(`${ctx}: comboPlans must be an object`);
+    return errs;
+  }
+  const planEntries = Object.entries(comboPlans);
+  if (planEntries.length === 0) {
+    errs.push(`${ctx}: comboPlans must have at least one bucket entry when present (omit field instead of leaving empty)`);
+    return errs;
+  }
+  for (const [bucketId, entry] of planEntries) {
+    const bctx = `${ctx}['${bucketId}']`;
+    if (!nonEmptyString(bucketId)) {
+      errs.push(`${bctx}: bucket key must be a non-empty string`);
+      continue;
+    }
+    if (!allowedBuckets.has(bucketId)) {
+      errs.push(`${bctx}: bucket '${bucketId}' is not in heroView.bucketCandidates`);
+      continue;
+    }
+    errs.push(...validateComboPlanEntry(entry, bctx, { allowOverrides: true }));
+    if (!isPlainObject(entry) || entry.overrides === undefined) continue;
+    if (!isPlainObject(entry.overrides)) {
+      errs.push(`${bctx}.overrides: must be an object when present`);
+      continue;
+    }
+    for (const [combo, override] of Object.entries(entry.overrides)) {
+      const octx = `${bctx}.overrides['${combo}']`;
+      if (typeof combo !== 'string' || !COMBO_REGEX.test(combo)) {
+        errs.push(`${octx}: override key '${combo}' must match rank+suit×2 (e.g. 'J♥T♠')`);
+        continue;
+      }
+      const m = combo.match(COMBO_REGEX);
+      if (m && m[1] === m[3] && m[2] === m[4]) {
+        errs.push(`${octx}: override key '${combo}' has duplicate card`);
+        continue;
+      }
+      if (allowedCombos && !allowedCombos.has(combo)) {
+        errs.push(`${octx}: override key '${combo}' is not in heroView.combos`);
+      }
+      errs.push(...validateComboPlanEntry(override, octx, { allowOverrides: false }));
+    }
+  }
+  return errs;
+};
+
 const validateNode = (node, id, nodeIds) => {
   const errs = [];
   if (!isPlainObject(node)) {
@@ -546,6 +675,26 @@ const validateNode = (node, id, nodeIds) => {
   if (node.decisionStrategy !== undefined) {
     if (!DECISION_STRATEGIES.includes(node.decisionStrategy)) {
       errs.push(`nodes['${id}']: decisionStrategy '${node.decisionStrategy}' must be one of ${DECISION_STRATEGIES.join(', ')}`);
+    }
+  }
+  // LSW-P2 (2026-04-27): comboPlans requires heroView with bucketCandidates
+  // populated — bucket keys need a target to validate against. If heroView
+  // is absent or has no bucketCandidates, comboPlans cannot be anchored.
+  if (node.comboPlans !== undefined) {
+    if (!isPlainObject(node.heroView)
+        || !Array.isArray(node.heroView.bucketCandidates)
+        || node.heroView.bucketCandidates.length === 0) {
+      errs.push(`nodes['${id}']: comboPlans requires heroView with non-empty bucketCandidates to anchor bucket keys`);
+    } else {
+      const allowedBuckets = new Set(node.heroView.bucketCandidates);
+      const allowedCombos = Array.isArray(node.heroView.combos)
+        ? new Set(node.heroView.combos)
+        : null;
+      errs.push(...validateComboPlans(
+        node.comboPlans,
+        `nodes['${id}'].comboPlans`,
+        { allowedBuckets, allowedCombos },
+      ));
     }
   }
   return errs;
