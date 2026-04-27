@@ -212,6 +212,35 @@ test.describe('PrintableRefresherView — visual regression', () => {
     await expect(wrapper.locator('.refresher-print-page').first()).toHaveScreenshot('print-preview-1up-letter-bw-page1.png');
   });
 
+  // S26 — A4 page-size variants. Confirms the
+  // .print-preview-container[data-page-size="a4"] CSS selector compresses
+  // row heights correctly for A4's 11.69in page (vs Letter's 11in).
+  test('PrintPreview — 12-up A4 Color', async ({ page }) => {
+    await setPrintPrefs(page, { pageSize: 'a4', cardsPerSheet: 12 });
+    await gotoRefresher(page);
+    await page.getByLabel('Open print preview').click();
+    await page.locator('.print-preview-container').waitFor({ state: 'visible' });
+    await expect(page.locator('.print-preview-container')).toHaveScreenshot('print-preview-12up-a4-color.png');
+  });
+
+  test('PrintPreview — 4-up A4 Color', async ({ page }) => {
+    await setPrintPrefs(page, { pageSize: 'a4', cardsPerSheet: 4 });
+    await gotoRefresher(page);
+    await page.getByLabel('Open print preview').click();
+    await page.locator('.print-preview-container').waitFor({ state: 'visible' });
+    await expect(page.locator('.print-preview-container')).toHaveScreenshot('print-preview-4up-a4-color.png');
+  });
+
+  test('PrintPreview — 1-up A4 B&W', async ({ page }) => {
+    await setPrintPrefs(page, { pageSize: 'a4', cardsPerSheet: 1, colorMode: 'bw' });
+    await gotoRefresher(page);
+    await page.getByLabel('Open print preview').click();
+    const wrapper = page.locator('.print-preview-container');
+    await wrapper.waitFor({ state: 'visible' });
+    await wrapper.locator('.refresher-print-page').first().scrollIntoViewIfNeeded();
+    await expect(wrapper.locator('.refresher-print-page').first()).toHaveScreenshot('print-preview-1up-a4-bw-page1.png');
+  });
+
   test('PrintConfirmationModal — opened on top of PrintPreview', async ({ page }) => {
     await gotoRefresher(page);
     await page.getByLabel('Open print preview').click();
