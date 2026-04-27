@@ -18,7 +18,7 @@ vi.mock('../../../../contexts', () => ({
     config: { cardVisibility: {}, suppressedClasses: [] },
     printBatches: [],
     isReady: true,
-    getAllCards: () => [],
+    getAllCards: () => sampleActiveCards,
     getActiveCards: () => sampleActiveCards,
     getPinnedCards: () => [],
     getSuppressedCards: () => [],
@@ -119,9 +119,58 @@ describe('PrintableRefresherView — basic render', () => {
     expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
   });
 
-  it('renders deferred-features footer', () => {
+  it('renders deferred-features footer (S19+ pending items)', () => {
     render(<PrintableRefresherView />);
-    expect(screen.getByText(/Print preview, batch print, and card detail will land in Session 19\+/i)).toBeInTheDocument();
+    expect(screen.getByText(/Print preview and batch print will land in Session 20\+/i)).toBeInTheDocument();
+  });
+});
+
+describe('PrintableRefresherView — sub-view + modal navigation (S19)', () => {
+  it('clicking Detail chip on a CardRow opens the CardDetail sub-view', () => {
+    render(<PrintableRefresherView />);
+    // Click first detail chip (one per row; 2 cards in fixture)
+    const detailButtons = screen.getAllByLabelText(/Open card detail/i);
+    fireEvent.click(detailButtons[0]);
+    // Detail sub-view shows back-to-catalog button
+    expect(screen.getByLabelText(/Back to catalog/i)).toBeInTheDocument();
+  });
+
+  it('Back-to-catalog navigates back to catalog list', () => {
+    render(<PrintableRefresherView />);
+    const detailButtons = screen.getAllByLabelText(/Open card detail/i);
+    fireEvent.click(detailButtons[0]);
+    fireEvent.click(screen.getByLabelText(/Back to catalog/i));
+    // Catalog rows visible again — both fixture cards
+    expect(screen.getByText('PRF-MATH-AUTO-PROFIT')).toBeInTheDocument();
+    expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
+  });
+
+  it('clicking Suppress chip opens SuppressConfirmModal (no longer no-op)', () => {
+    render(<PrintableRefresherView />);
+    const suppressButtons = screen.getAllByLabelText(/Suppress.*class/i);
+    fireEvent.click(suppressButtons[0]);
+    // Modal renders with confirm button
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Suppress math class/i })).toBeInTheDocument();
+  });
+
+  it('SuppressConfirmModal Cancel button closes the modal', () => {
+    render(<PrintableRefresherView />);
+    const suppressButtons = screen.getAllByLabelText(/Suppress.*class/i);
+    fireEvent.click(suppressButtons[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('"Showing N of M" status hidden in detail view', () => {
+    render(<PrintableRefresherView />);
+    // Catalog mode shows the status
+    expect(screen.getByText(/Showing 2 of 2 cards/i)).toBeInTheDocument();
+    // Open detail
+    const detailButtons = screen.getAllByLabelText(/Open card detail/i);
+    fireEvent.click(detailButtons[0]);
+    // Status hidden
+    expect(screen.queryByText(/Showing 2 of 2 cards/i)).toBeNull();
   });
 });
 

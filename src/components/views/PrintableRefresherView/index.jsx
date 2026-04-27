@@ -34,6 +34,8 @@ import { useRefresherView } from '../../../hooks/useRefresherView';
 import { useUI } from '../../../contexts';
 import { SCREEN } from '../../../constants/uiConstants';
 import { CardCatalog } from './CardCatalog';
+import { CardDetail } from './CardDetail';
+import { SuppressConfirmModal } from './SuppressConfirmModal';
 
 const CLASS_FILTER_OPTIONS = ['preflop', 'math', 'equity', 'exceptions'];
 
@@ -99,6 +101,9 @@ export const PrintableRefresherView = () => {
   const { view, setFilter, setSort, setShowSuppressed } = useRefresherView();
 
   const [errorMessage, setErrorMessage] = useState('');
+  // S19 — sub-view + modal navigation state
+  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [pendingSuppress, setPendingSuppress] = useState(null);
 
   // Choose the base set per "show suppressed" toggle.
   const baseCards = useMemo(
@@ -115,6 +120,13 @@ export const PrintableRefresherView = () => {
     const stale = refresher.getStaleCards();
     return new Set(stale.map((c) => c.cardId));
   }, [refresher]);
+
+  // selectedCard for CardDetail — pull from the full annotated set so a
+  // detail view stays reachable even if the catalog filter would hide it.
+  const selectedCard = useMemo(() => {
+    if (!selectedCardId) return null;
+    return refresher.getAllCards().find((c) => c.cardId === selectedCardId) || null;
+  }, [selectedCardId, refresher]);
 
   // ── Action handlers ─────────────────────────────────────────────────
   const handlePin = useCallback(
@@ -144,31 +156,50 @@ export const PrintableRefresherView = () => {
   );
 
   const handleSuppress = useCallback(
-    async (card) => {
-      // Phase 1 — confirmation modal deferred to S19. For now, log + no-op.
-      // This wires the action chip to the writer; the modal flow lands later.
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[PrintableRefresherView] Suppress action invoked for class',
-        card.class,
-        '— SuppressConfirmModal not yet wired (S19 deliverable). No write performed.',
-      );
+    (card) => {
+      // S19 — opens SuppressConfirmModal. Confirm flow calls
+      // refresher.setClassSuppressed via handleSuppressConfirm below.
+      setPendingSuppress({ classId: card.class, currentlySuppressed: card.classSuppressed === true });
     },
     [],
   );
 
-  const handleOpenDetail = useCallback(
-    (card) => {
-      // Phase 1 — CardDetail sub-view deferred to S19. Log + no-op.
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[PrintableRefresherView] Detail action invoked for',
-        card.cardId,
-        '— CardDetail sub-view not yet wired (S19 deliverable).',
-      );
-    },
-    [],
-  );
+  const handleSuppressConfirm = useCallback(async () => {
+    if (!pendingSuppress) return;
+    const { classId, currentlySuppressed } = pendingSuppress;
+    try {
+      if (currentlySuppressed) {
+        await refresher.setClassSuppressed({
+          classId,
+          suppress: false,
+          ownerInitiated: true,
+        });
+      } else {
+        await refresher.setClassSuppressed({
+          classId,
+          suppress: true,
+          confirmed: true,
+        });
+      }
+      setPendingSuppress(null);
+      setErrorMessage('');
+    } catch (err) {
+      // Re-throw so the modal can surface the error inline.
+      throw err;
+    }
+  }, [pendingSuppress, refresher]);
+
+  const handleSuppressCancel = useCallback(() => {
+    setPendingSuppress(null);
+  }, []);
+
+  const handleOpenDetail = useCallback((card) => {
+    setSelectedCardId(card.cardId);
+  }, []);
+
+  const handleBackToCatalog = useCallback(() => {
+    setSelectedCardId(null);
+  }, []);
 
   const handleClassFilterToggle = useCallback(
     (cls) => {
@@ -311,16 +342,18 @@ export const PrintableRefresherView = () => {
         </select>
       </section>
 
-      {/* Showing N of M */}
-      <div
-        style={{
-          fontSize: '0.75rem',
-          color: '#9ca3af',
-          marginBottom: '0.5rem',
-        }}
-      >
-        Showing {filteredSorted.length} of {baseCards.length} cards
-      </div>
+      {/* Showing N of M (only in catalog mode) */}
+      {!selectedCard && (
+        <div
+          style={{
+            fontSize: '0.75rem',
+            color: '#9ca3af',
+            marginBottom: '0.5rem',
+          }}
+        >
+          Showing {filteredSorted.length} of {baseCards.length} cards
+        </div>
+      )}
 
       {/* Error toast (lightweight; full ToastContext deferred) */}
       {errorMessage && (
@@ -340,15 +373,36 @@ export const PrintableRefresherView = () => {
         </div>
       )}
 
-      {/* Catalog */}
-      <CardCatalog
-        cards={filteredSorted}
-        staleCardIds={staleCardIds}
-        onPin={handlePin}
-        onHide={handleHide}
-        onSuppress={handleSuppress}
-        onOpenDetail={handleOpenDetail}
-      />
+      {/* Detail vs Catalog */}
+      {selectedCard ? (
+        <CardDetail
+          card={selectedCard}
+          isStale={staleCardIds.has(selectedCard.cardId)}
+          onBack={handleBackToCatalog}
+          onPin={handlePin}
+          onHide={handleHide}
+          onSuppress={handleSuppress}
+        />
+      ) : (
+        <CardCatalog
+          cards={filteredSorted}
+          staleCardIds={staleCardIds}
+          onPin={handlePin}
+          onHide={handleHide}
+          onSuppress={handleSuppress}
+          onOpenDetail={handleOpenDetail}
+        />
+      )}
+
+      {/* Suppress confirmation modal overlay */}
+      {pendingSuppress && (
+        <SuppressConfirmModal
+          classId={pendingSuppress.classId}
+          currentlySuppressed={pendingSuppress.currentlySuppressed}
+          onConfirm={handleSuppressConfirm}
+          onCancel={handleSuppressCancel}
+        />
+      )}
 
       {/* Phase 1 deferred features placeholder */}
       <footer
@@ -360,7 +414,7 @@ export const PrintableRefresherView = () => {
           color: '#6b7280',
         }}
       >
-        Print preview, batch print, and card detail will land in Session 19+.
+        Print preview and batch print will land in Session 20+.
       </footer>
     </div>
   );

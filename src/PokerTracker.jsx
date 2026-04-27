@@ -50,6 +50,7 @@ const HASH_TO_SCREEN = {
   '#sessions': 'sessions',
   '#players': 'players',
   '#settings': 'settings',
+  '#printableRefresher': 'printableRefresher',
 };
 
 const ViewRouter = () => {
