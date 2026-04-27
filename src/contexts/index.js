@@ -20,3 +20,7 @@ export { OnlineSessionProvider, useOnlineSession } from './OnlineSessionContext'
 export { OnlineAnalysisProvider, useAnalysisContext, useOnlineAnalysisContext } from './OnlineAnalysisContext';
 export { EquityWorkerProvider, useEquityWorker } from './EquityWorkerContext';
 export { TournamentBridge } from './TournamentBridge';
+// MPMF G5-B1 (2026-04-25) — entitlement state for monetization & PMF.
+export { EntitlementProvider, useEntitlement } from './EntitlementContext';
+// PRF Phase 5 (2026-04-26, PRF-G5-HK) — printable refresher state.
+export { RefresherProvider, useRefresher } from './RefresherContext';

@@ -25,8 +25,11 @@ import {
   OnlineAnalysisProvider,
   EquityWorkerProvider,
   TournamentBridge,
+  EntitlementProvider,
+  RefresherProvider,
 } from './contexts';
 import { AssumptionProvider } from './contexts/AssumptionContext';
+import { manifests as refresherCardRegistry } from './utils/printableRefresher/cardRegistry';
 
 /**
  * AppProviders - Wraps children in all context providers
@@ -66,38 +69,52 @@ export const AppProviders = ({
   dispatchTournament,
   settingsState,
   dispatchSettings,
+  // MPMF G5-B1 — entitlement state for monetization & PMF.
+  entitlementState,
+  dispatchEntitlement,
+  // PRF Phase 5 (PRF-G5-HK) — printable refresher state.
+  refresherState,
+  dispatchRefresher,
 }) => (
   <ToastProvider>
     <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
-      <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
-        <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
-          <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
-            <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
-              <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-                <TendencyProvider>
-                  <AssumptionProvider>
-                  <SyncBridgeProvider>
-                    <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
-                      <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
-                        <OnlineSessionProvider>
-                          <EquityWorkerProvider>
-                            <OnlineAnalysisProvider>
-                              <TournamentBridge>
-                                {children}
-                              </TournamentBridge>
-                            </OnlineAnalysisProvider>
-                          </EquityWorkerProvider>
-                        </OnlineSessionProvider>
-                      </SettingsProvider>
-                    </CardProvider>
-                  </SyncBridgeProvider>
-                  </AssumptionProvider>
-                </TendencyProvider>
-              </PlayerProvider>
-            </TournamentProvider>
-          </SessionProvider>
-        </UIProvider>
-      </GameProvider>
+      <EntitlementProvider entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}>
+        <RefresherProvider
+          refresherState={refresherState}
+          dispatchRefresher={dispatchRefresher}
+          cardRegistry={refresherCardRegistry}
+        >
+          <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
+            <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
+              <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
+                <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
+                  <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
+                    <TendencyProvider>
+                      <AssumptionProvider>
+                      <SyncBridgeProvider>
+                        <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
+                          <SettingsProvider settingsState={settingsState} dispatchSettings={dispatchSettings}>
+                            <OnlineSessionProvider>
+                              <EquityWorkerProvider>
+                                <OnlineAnalysisProvider>
+                                  <TournamentBridge>
+                                    {children}
+                                  </TournamentBridge>
+                                </OnlineAnalysisProvider>
+                              </EquityWorkerProvider>
+                            </OnlineSessionProvider>
+                          </SettingsProvider>
+                        </CardProvider>
+                      </SyncBridgeProvider>
+                      </AssumptionProvider>
+                    </TendencyProvider>
+                  </PlayerProvider>
+                </TournamentProvider>
+              </SessionProvider>
+            </UIProvider>
+          </GameProvider>
+        </RefresherProvider>
+      </EntitlementProvider>
     </AuthProvider>
   </ToastProvider>
 );

@@ -16,6 +16,10 @@ import { playerReducer, initialPlayerState } from '../reducers/playerReducer';
 import { settingsReducer, initialSettingsState } from '../reducers/settingsReducer';
 import { authReducer, initialAuthState } from '../reducers/authReducer';
 import { tournamentReducer, initialTournamentState } from '../reducers/tournamentReducer';
+// MPMF G5-B1 (2026-04-25) — entitlement reducer.
+import { entitlementReducer, initialEntitlementState } from '../reducers/entitlementReducer';
+// PRF Phase 5 (2026-04-26, PRF-G5-HK) — printable refresher reducer.
+import { refresherReducer, initialRefresherState } from '../reducers/refresherReducer';
 import { usePersistence } from './usePersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
@@ -39,6 +43,13 @@ export const useAppState = () => {
   const [settingsState, dispatchSettings] = useReducer(settingsReducer, initialSettingsState);
   const [authState, dispatchAuth] = useReducer(authReducer, initialAuthState);
   const [tournamentState, dispatchTournament] = useReducer(tournamentReducer, initialTournamentState);
+  // MPMF G5-B1 — entitlement state. Hydration happens inside EntitlementProvider
+  // via useEntitlementPersistence (mirrors PlayerProvider pattern).
+  const [entitlementState, dispatchEntitlement] = useReducer(entitlementReducer, initialEntitlementState);
+  // PRF Phase 5 (PRF-G5-HK) — printable refresher state. Hydration happens
+  // inside RefresherProvider via useRefresherPersistence (hydrate-only;
+  // writers.js owns IDB writes).
+  const [refresherState, dispatchRefresher] = useReducer(refresherReducer, initialRefresherState);
 
   // =========================================================================
   // PERSISTENCE - Auto-save/restore for all state types
@@ -74,6 +85,8 @@ export const useAppState = () => {
     settingsState,
     authState,
     tournamentState,
+    entitlementState,
+    refresherState,
 
     // Dispatchers
     dispatchGame,
@@ -84,6 +97,8 @@ export const useAppState = () => {
     dispatchSettings,
     dispatchAuth,
     dispatchTournament,
+    dispatchEntitlement,
+    dispatchRefresher,
 
   };
 };
