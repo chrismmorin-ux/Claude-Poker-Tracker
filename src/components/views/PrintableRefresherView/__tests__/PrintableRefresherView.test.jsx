@@ -119,9 +119,9 @@ describe('PrintableRefresherView — basic render', () => {
     expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
   });
 
-  it('renders deferred-features footer (S19+ pending items)', () => {
+  it('renders the Print preview entry point in the catalog footer (S21)', () => {
     render(<PrintableRefresherView />);
-    expect(screen.getByText(/Print preview and batch print will land in Session 20\+/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Open print preview/i)).toBeInTheDocument();
   });
 });
 
@@ -198,5 +198,53 @@ describe('PrintableRefresherView — chip interactions', () => {
     render(<PrintableRefresherView />);
     fireEvent.click(screen.getByLabelText(/Show suppressed/i));
     expect(true).toBe(true);
+  });
+});
+
+describe('PrintableRefresherView — print preview navigation (S21)', () => {
+  it('"Print preview →" button opens the PrintPreview sub-view', () => {
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    expect(screen.getByRole('heading', { name: /Print preview/i })).toBeInTheDocument();
+  });
+
+  it('Back button in PrintPreview returns to catalog', () => {
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    fireEvent.click(screen.getByLabelText(/Back to catalog/i));
+    // Catalog rows visible again
+    expect(screen.getByText('PRF-MATH-AUTO-PROFIT')).toBeInTheDocument();
+    expect(screen.getByText('PRF-PREFLOP-CO-OPEN')).toBeInTheDocument();
+  });
+
+  it('"Send to print dialog →" opens PrintConfirmationModal', () => {
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    fireEvent.click(screen.getByLabelText(/Send to print dialog/i));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Confirm batch print/i })).toBeInTheDocument();
+  });
+
+  it('PrintConfirmationModal Cancel returns to PrintPreview without firing recordPrintBatch', () => {
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    fireEvent.click(screen.getByLabelText(/Send to print dialog/i));
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // Still in PrintPreview view (not catalog)
+    expect(screen.getByLabelText(/Send to print dialog/i)).toBeInTheDocument();
+  });
+
+  it('"Showing N of M" status hidden in print-preview view', () => {
+    render(<PrintableRefresherView />);
+    expect(screen.getByText(/Showing 2 of 2 cards/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    expect(screen.queryByText(/Showing 2 of 2 cards/i)).toBeNull();
+  });
+
+  it('Print preview entry point is hidden when in print-preview view', () => {
+    render(<PrintableRefresherView />);
+    fireEvent.click(screen.getByLabelText(/Open print preview/i));
+    expect(screen.queryByLabelText(/Open print preview/i)).toBeNull();
   });
 });

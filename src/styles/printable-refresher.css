@@ -1,0 +1,171 @@
+/*
+ * printable-refresher.css — global stylesheet for the Printable Refresher print flow.
+ *
+ * Why global: `@page` rules cannot live in component-scoped styles, and the
+ * `.print-preview-container` WYSIWYG selector pattern needs the same rules to
+ * apply in two contexts (on-screen preview AND `@media print`). Duplicating
+ * the rule bodies once here is cleaner than threading print props through
+ * every template.
+ *
+ * Architecture:
+ *   - `@media print { ... }` block — applied when the browser print dialog
+ *     fires `window.print()`. The active card grid renders to paper as-is.
+ *   - `.print-preview-container { ... }` block — applied on-screen when the
+ *     PrintPreview sub-view is rendered. Mirrors the @media print rules so
+ *     what the owner sees IS what prints.
+ *
+ * Spec: docs/projects/printable-refresher/print-css-doctrine.md (Region 1-6,
+ *       4 grid modes, 2 page sizes, 2 color modes, forbidden mechanisms).
+ *
+ * Forbidden imports (CI-grep `scripts/check-refresher-bundle.sh`):
+ *   no html2canvas / jspdf / pdf-lib — print mechanism is window.print() only.
+ *
+ * PRF Phase 5 — Session 21 (PRF-G5-UI).
+ */
+
+/* ─── Page geometry ───────────────────────────────────────────────────────── */
+
+@page {
+  size: letter;
+  margin: 0.4in;
+}
+
+/* ─── Print-only rules (apply at @media print AND in .print-preview-container) ── */
+
+/* Card containment — break-inside: avoid prevents card splitting across pages.
+ * page-break-inside: avoid is the legacy property name (Safari + older engines). */
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .refresher-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Hide application chrome — only the print preview container should print. */
+  body > #root > *:not(.print-preview-host) {
+    display: none !important;
+  }
+  .refresher-print-page {
+    page-break-after: always;
+    break-after: page;
+  }
+  .refresher-print-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
+
+/* ─── Print-preview WYSIWYG mirror ────────────────────────────────────────── */
+
+.print-preview-container {
+  background: #fff;
+  color: #000;
+  padding: 0.5in;
+  margin: 0;
+  display: block;
+}
+
+.print-preview-container .refresher-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ─── Grid layouts (4 modes via data-cards-per-sheet attribute) ───────────── */
+/* Each grid mode applies BOTH on-screen (.print-preview-container) AND when
+ * printing (@media print). Card dimensions assume Letter @ 0.4in margin =
+ * usable area 7.7" × 10.2"; A4 @ 0.4in margin ≈ 7.27" × 10.49" — close enough
+ * that 1fr columns + min-content rows scale gracefully. */
+
+.refresher-print-page {
+  display: grid;
+  gap: 0.15in;
+  width: 100%;
+  margin: 0 0 0.4in 0;
+  page-break-after: always;
+  break-after: page;
+}
+
+.refresher-print-page[data-cards-per-sheet="12"] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 2.25in;
+}
+
+.refresher-print-page[data-cards-per-sheet="6"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 3.25in;
+}
+
+.refresher-print-page[data-cards-per-sheet="4"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 4.875in;
+}
+
+.refresher-print-page[data-cards-per-sheet="1"] {
+  grid-template-columns: 1fr;
+  grid-auto-rows: 10in;
+}
+
+/* ─── A4 page-size variant ────────────────────────────────────────────────── */
+/* When data-page-size="a4" on the print preview container, slightly compress
+ * the row heights to fit A4's 11.69" page height (vs Letter's 11"). The @page
+ * rule itself is still `letter` by default; owner selects A4 in browser print
+ * dialog separately. The preview simulation reflects the layout. */
+
+.print-preview-container[data-page-size="a4"] .refresher-print-page[data-cards-per-sheet="12"] {
+  grid-auto-rows: 2.4in;
+}
+.print-preview-container[data-page-size="a4"] .refresher-print-page[data-cards-per-sheet="6"] {
+  grid-auto-rows: 3.5in;
+}
+.print-preview-container[data-page-size="a4"] .refresher-print-page[data-cards-per-sheet="4"] {
+  grid-auto-rows: 5.2in;
+}
+.print-preview-container[data-page-size="a4"] .refresher-print-page[data-cards-per-sheet="1"] {
+  grid-auto-rows: 10.7in;
+}
+
+/* ─── B&W color mode ──────────────────────────────────────────────────────── */
+/* When data-color-mode="bw" on the preview container OR body during print,
+ * desaturate the entire surface. Accent colors (navy / burnt-orange / teal /
+ * maroon) flatten to grayscale tones; pairs with shape/weight encoding from
+ * H-PM02 so info doesn't depend on color alone. */
+
+.print-preview-container[data-color-mode="bw"],
+.print-preview-container[data-color-mode="bw"] .refresher-card {
+  filter: grayscale(100%);
+}
+
+@media print {
+  body[data-color-mode="bw"] .refresher-card {
+    filter: grayscale(100%);
+  }
+}
+
+/* ─── Lineage footer toggle (data-include-lineage="off") ──────────────────── */
+
+.print-preview-container[data-include-lineage="off"] .refresher-card-region-4-5,
+.print-preview-container[data-include-lineage="off"] .refresher-exceptions-audit-id {
+  display: none;
+}
+
+@media print {
+  body[data-include-lineage="off"] .refresher-card-region-4-5,
+  body[data-include-lineage="off"] .refresher-exceptions-audit-id {
+    display: none;
+  }
+}
+
+/* ─── Card sizing inside grid cells ───────────────────────────────────────── */
+/* Templates render an <article class="refresher-card refresher-card-{class}">.
+ * In grid context, force them to fill their grid cell. */
+
+.refresher-print-page .refresher-card {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}

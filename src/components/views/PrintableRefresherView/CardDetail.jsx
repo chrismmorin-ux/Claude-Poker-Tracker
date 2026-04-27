@@ -17,10 +17,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { MathCardTemplate } from './MathCardTemplate';
-import { PreflopCardTemplate } from './PreflopCardTemplate';
-import { EquityCardTemplate } from './EquityCardTemplate';
-import { ExceptionsCardTemplate } from './ExceptionsCardTemplate';
+import { ClassDispatchedTemplate } from './ClassDispatchedTemplate';
 import { LineageModal } from './LineageModal';
 
 const ACTION_BUTTON_STYLE = {
@@ -33,39 +30,6 @@ const ACTION_BUTTON_STYLE = {
   cursor: 'pointer',
   fontSize: '0.875rem',
 };
-
-function ClassDispatchedTemplate({ manifest, runtime }) {
-  if (!manifest) return null;
-  switch (manifest.class) {
-    case 'math':
-      return <MathCardTemplate manifest={manifest} runtime={runtime} />;
-    case 'preflop':
-      return <PreflopCardTemplate manifest={manifest} runtime={runtime} />;
-    case 'equity':
-      return <EquityCardTemplate manifest={manifest} runtime={runtime} />;
-    case 'exceptions':
-      return <ExceptionsCardTemplate manifest={manifest} runtime={runtime} />;
-    default:
-      // Unknown class — placeholder pending future template authoring.
-      return (
-        <div
-          role="status"
-          style={{
-            padding: '2rem',
-            textAlign: 'center',
-            background: '#111827',
-            border: '1px dashed #374151',
-            borderRadius: '0.5rem',
-            color: '#9ca3af',
-            fontSize: '0.875rem',
-          }}
-        >
-          Card template for class &quot;{manifest.class}&quot; will land in a future session. The card
-          data is loaded; only the rendering layer is missing.
-        </div>
-      );
-  }
-}
 
 /**
  * @param {object} props

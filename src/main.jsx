@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import PokerTrackerWireframes from './PokerTracker.jsx'
 import './index.css'
+import './styles/printable-refresher.css'
 
 // Dev-only: expose seed data helpers on window for console access
 // Usage: window.__seedTestData() / window.__clearTestData()

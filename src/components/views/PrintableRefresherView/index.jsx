@@ -33,9 +33,12 @@ import { useRefresher } from '../../../contexts';
 import { useRefresherView } from '../../../hooks/useRefresherView';
 import { useUI } from '../../../contexts';
 import { SCREEN } from '../../../constants/uiConstants';
+import { ENGINE_VERSION, APP_VERSION } from '../../../constants/runtimeVersions';
 import { CardCatalog } from './CardCatalog';
 import { CardDetail } from './CardDetail';
 import { SuppressConfirmModal } from './SuppressConfirmModal';
+import { PrintPreview } from './PrintPreview';
+import { PrintConfirmationModal } from './PrintConfirmationModal';
 
 const CLASS_FILTER_OPTIONS = ['preflop', 'math', 'equity', 'exceptions'];
 
@@ -104,6 +107,9 @@ export const PrintableRefresherView = () => {
   // S19 — sub-view + modal navigation state
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [pendingSuppress, setPendingSuppress] = useState(null);
+  // S21 — print-preview + print-confirm navigation state
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [pendingPrintConfirm, setPendingPrintConfirm] = useState(null);
 
   // Choose the base set per "show suppressed" toggle.
   const baseCards = useMemo(
@@ -200,6 +206,52 @@ export const PrintableRefresherView = () => {
   const handleBackToCatalog = useCallback(() => {
     setSelectedCardId(null);
   }, []);
+
+  // S21 — print-preview + print-confirm handlers
+  const handleOpenPrintPreview = useCallback(() => {
+    setShowPrintPreview(true);
+    setSelectedCardId(null); // print-preview replaces detail/catalog view
+  }, []);
+
+  const handleClosePrintPreview = useCallback(() => {
+    setShowPrintPreview(false);
+  }, []);
+
+  const handleRequestPrintConfirm = useCallback((batchContext) => {
+    setPendingPrintConfirm(batchContext);
+  }, []);
+
+  const handlePrintCancel = useCallback(() => {
+    setPendingPrintConfirm(null);
+  }, []);
+
+  const handlePrintConfirm = useCallback(
+    async ({ printedAt, label }) => {
+      if (!pendingPrintConfirm) return;
+      const { cardIds, perCardSnapshots } = pendingPrintConfirm;
+      try {
+        await refresher.recordPrintBatch({
+          printedAt: `${printedAt}T00:00:00Z`,
+          label,
+          cardIds,
+          engineVersion: ENGINE_VERSION,
+          appVersion: APP_VERSION,
+          perCardSnapshots,
+        });
+        // Fire the browser print dialog AFTER the IDB write resolves so the
+        // batch is recorded even if the owner dismisses the dialog.
+        if (typeof window !== 'undefined' && typeof window.print === 'function') {
+          window.print();
+        }
+        setPendingPrintConfirm(null);
+        setErrorMessage('');
+      } catch (err) {
+        // Re-throw so the modal surfaces the writer-rejection inline.
+        throw err;
+      }
+    },
+    [pendingPrintConfirm, refresher],
+  );
 
   const handleClassFilterToggle = useCallback(
     (cls) => {
@@ -343,7 +395,7 @@ export const PrintableRefresherView = () => {
       </section>
 
       {/* Showing N of M (only in catalog mode) */}
-      {!selectedCard && (
+      {!selectedCard && !showPrintPreview && (
         <div
           style={{
             fontSize: '0.75rem',
@@ -373,8 +425,13 @@ export const PrintableRefresherView = () => {
         </div>
       )}
 
-      {/* Detail vs Catalog */}
-      {selectedCard ? (
+      {/* PrintPreview > CardDetail > CardCatalog precedence */}
+      {showPrintPreview ? (
+        <PrintPreview
+          onBack={handleClosePrintPreview}
+          onRequestPrintConfirm={handleRequestPrintConfirm}
+        />
+      ) : selectedCard ? (
         <CardDetail
           card={selectedCard}
           isStale={staleCardIds.has(selectedCard.cardId)}
@@ -404,18 +461,50 @@ export const PrintableRefresherView = () => {
         />
       )}
 
-      {/* Phase 1 deferred features placeholder */}
-      <footer
-        style={{
-          marginTop: '1.5rem',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid #1f2937',
-          fontSize: '0.75rem',
-          color: '#6b7280',
-        }}
-      >
-        Print preview and batch print will land in Session 20+.
-      </footer>
+      {/* Print confirmation modal overlay */}
+      {pendingPrintConfirm && (
+        <PrintConfirmationModal
+          context={pendingPrintConfirm}
+          onConfirm={handlePrintConfirm}
+          onCancel={handlePrintCancel}
+        />
+      )}
+
+      {/* Catalog footer — Print preview entry point (S21+) */}
+      {!showPrintPreview && !selectedCard && (
+        <footer
+          style={{
+            marginTop: '1.5rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid #1f2937',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleOpenPrintPreview}
+            aria-label="Open print preview"
+            style={{
+              minHeight: 44,
+              padding: '0.5rem 0.875rem',
+              background: '#0f766e',
+              color: '#fff',
+              border: '1px solid #14b8a6',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+            }}
+          >
+            Print preview →
+          </button>
+          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+            Renders all active cards on a printable grid.
+          </span>
+        </footer>
+      )}
     </div>
   );
 };
