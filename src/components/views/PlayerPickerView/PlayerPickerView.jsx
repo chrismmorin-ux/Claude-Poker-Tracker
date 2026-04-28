@@ -18,6 +18,7 @@ import { useSession } from '../../../contexts/SessionContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { usePlayerPicker } from '../../../hooks/usePlayerPicker';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
+import { ScaledContainer } from '../../ui/ScaledContainer';
 import NameSearchInput from './NameSearchInput';
 import FilterChips from './FilterChips';
 import ResultCard from './ResultCard';
@@ -166,12 +167,13 @@ export const PlayerPickerView = ({ scale = 1 }) => {
     : (currentSeat ? `Pick for Seat ${currentSeat}` : 'Pick Player');
 
   return (
-    <div
-      ref={rootRef}
-      className="h-screen bg-gray-100 flex flex-col overflow-hidden"
-      style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
-      data-testid="player-picker-view"
-    >
+    <ScaledContainer scale={scale}>
+      <div
+        ref={rootRef}
+        className="bg-gray-100 flex flex-col overflow-hidden"
+        style={{ width: 1600, height: 720 }}
+        data-testid="player-picker-view"
+      >
       {/* Top bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between bg-gray-900 text-white px-3 py-3 border-b border-gray-700">
         <button
@@ -263,7 +265,8 @@ export const PlayerPickerView = ({ scale = 1 }) => {
         nameQuery={nameQuery}
         onClick={handleCreateFromQuery}
       />
-    </div>
+      </div>
+    </ScaledContainer>
   );
 };
 

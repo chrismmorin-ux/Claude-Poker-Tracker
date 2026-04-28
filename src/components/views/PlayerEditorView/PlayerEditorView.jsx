@@ -22,6 +22,7 @@ import { usePlayer } from '../../../contexts/PlayerContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { usePlayerEditor } from '../../../hooks/usePlayerEditor';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
+import { ScaledContainer } from '../../ui/ScaledContainer';
 import BackToTableBar from './BackToTableBar';
 import DraftResumeBanner from './DraftResumeBanner';
 import NameSection from './NameSection';
@@ -127,12 +128,13 @@ export const PlayerEditorView = ({ scale = 1 }) => {
     : (editorContext?.mode === 'edit' ? 'Edit Player' : 'New Player');
 
   return (
-    <div
-      ref={rootRef}
-      className="h-screen bg-gray-100 flex flex-col overflow-hidden"
-      style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
-      data-testid="player-editor-view"
-    >
+    <ScaledContainer scale={scale}>
+      <div
+        ref={rootRef}
+        className="bg-gray-100 flex flex-col overflow-hidden"
+        style={{ width: 1600, height: 720 }}
+        data-testid="player-editor-view"
+      >
       <BackToTableBar
         onBack={handleBack}
         onSave={handleSave}
@@ -205,7 +207,8 @@ export const PlayerEditorView = ({ scale = 1 }) => {
           ) : null}
         </div>
       )}
-    </div>
+      </div>
+    </ScaledContainer>
   );
 };
 
