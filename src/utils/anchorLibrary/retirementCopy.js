@@ -6,10 +6,14 @@
  *   - Generator is deterministic from (action, anchor); no free-form LLM at runtime.
  *   - CI-grep target for forbidden-string violations (FORBIDDEN_PATTERNS export).
  *
- * Three primary actions:
+ * Four primary actions:
  *   - `retire`    — anchor moves to status='retired'; visible in flat-list.
  *   - `suppress`  — status='suppressed'; library entry preserved.
  *   - `reset`     — calibration posterior dropped; 2-tap confirm required (destructive).
+ *   - `re-enable` — owner-initiated un-retirement; status='active' + origin='owner-un-retire'.
+ *                   2-tap confirm per journey doc §"Variation E — Un-retirement"; the gate
+ *                   isn't about data loss — it's about red line #3 (durable overrides) and
+ *                   AP-05 refusal of "reconsider retired" nudges. Explicit deliberate action.
  *
  * One reverse action:
  *   - `undo`      — toast text + reverse-dispatch label.
@@ -102,6 +106,22 @@ const ACTION_COPY = {
     undoneToastTemplate: (name) => `${name} calibration restored.`,
     overrideReason: 'manual-reset',
     targetStatus: null, // status unchanged on reset; only operator + calibrationGap stamp
+    destructive: true,
+  },
+  're-enable': {
+    titleTemplate: (name) => `Re-enable ${name}?`,
+    subText:
+      'Re-enabling resumes Tier 2 calibration with preserved evidence history. ' +
+      'Origin marked as owner un-retire. The anchor will fire on live surfaces again ' +
+      'once it meets quality thresholds.',
+    confirmLabel: 'Re-enable',
+    // Per journey doc §"Variation E" — 2-tap confirm. Reuses destructive-checkbox UI
+    // for explicit deliberate-action enforcement (red line #3 durable overrides).
+    destructiveCheckboxLabel: 'I want this anchor to fire on live surfaces again',
+    successToastTemplate: (name) => `${name} re-enabled.`,
+    undoneToastTemplate: (name) => `${name} restored.`,
+    overrideReason: 'owner-un-retire',
+    targetStatus: 'active',
     destructive: true,
   },
 };

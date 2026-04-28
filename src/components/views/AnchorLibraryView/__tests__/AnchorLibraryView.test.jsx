@@ -558,6 +558,63 @@ describe('AnchorLibraryView — S20 expansion + tooltip wiring', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
+// S23 — Re-enable action on retired/suppressed anchors (Variation E)
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('AnchorLibraryView — S23 Re-enable journey', () => {
+  const seedRetiredAnchor = () => {
+    mockAnchorLibrary.selectAllAnchors = () => [
+      {
+        id: 'anchor:retired:1',
+        archetypeName: 'Retired Anchor',
+        status: 'retired',
+        polarity: 'overfold',
+        tier: 2,
+        lineSequence: [{ street: 'flop' }],
+        evidence: { pointEstimate: 0.5 },
+        gtoBaseline: { method: 'MDF', referenceRate: 0.5 },
+        perceptionPrimitiveIds: [],
+        validation: { timesApplied: 3, lastFiredAt: '2026-04-25T12:00:00Z' },
+      },
+    ];
+  };
+
+  it('expanded retired anchor shows [Re-enable] button (not Retire/Suppress/Reset)', () => {
+    seedRetiredAnchor();
+    mockExpandedCardIds = new Set(['anchor:retired:1']);
+    render(<AnchorLibraryView />);
+    expect(screen.getByTestId('panel-action-re-enable')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel-action-retire')).toBeNull();
+    expect(screen.queryByTestId('panel-action-suppress')).toBeNull();
+    expect(screen.queryByTestId('panel-action-reset')).toBeNull();
+  });
+
+  it('Re-enable opens RetirementConfirmModal with data-action="re-enable"', () => {
+    seedRetiredAnchor();
+    mockExpandedCardIds = new Set(['anchor:retired:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-re-enable'));
+    const modal = screen.getByTestId('retirement-modal');
+    expect(modal.getAttribute('data-action')).toBe('re-enable');
+    expect(modal.getAttribute('data-destructive')).toBe('true');
+    expect(screen.getByTestId('retirement-modal-destructive-checkbox')).toBeInTheDocument();
+  });
+
+  it('Re-enable confirm dispatches ANCHOR_OVERRIDDEN with status=active', () => {
+    seedRetiredAnchor();
+    mockExpandedCardIds = new Set(['anchor:retired:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-re-enable'));
+    fireEvent.click(screen.getByTestId('retirement-modal-destructive-checkbox'));
+    fireEvent.click(screen.getByTestId('retirement-modal-confirm'));
+    expect(mockDispatchAnchorLibrary).toHaveBeenCalledTimes(1);
+    const dispatched = mockDispatchAnchorLibrary.mock.calls[0][0];
+    expect(dispatched.payload.anchor.status).toBe('active');
+    expect(dispatched.payload.anchor.operator.overrideReason).toBe('owner-un-retire');
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
 // S20 — loadAllSessions side-finding fix
 // ───────────────────────────────────────────────────────────────────────────
 

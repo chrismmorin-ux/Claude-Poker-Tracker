@@ -21,15 +21,18 @@ const sampleAnchor = {
 };
 
 describe('retirementCopy — module exports', () => {
-  it('RETIREMENT_ACTIONS lists the 3 primary actions', () => {
-    expect(RETIREMENT_ACTIONS).toEqual(expect.arrayContaining(['retire', 'suppress', 'reset']));
-    expect(RETIREMENT_ACTIONS.length).toBe(3);
+  it('RETIREMENT_ACTIONS lists the 4 primary actions (S23 added re-enable)', () => {
+    expect(RETIREMENT_ACTIONS).toEqual(
+      expect.arrayContaining(['retire', 'suppress', 'reset', 're-enable']),
+    );
+    expect(RETIREMENT_ACTIONS.length).toBe(4);
   });
 
-  it('isKnownRetirementAction recognizes the 3 primary actions', () => {
+  it('isKnownRetirementAction recognizes the 4 primary actions', () => {
     expect(isKnownRetirementAction('retire')).toBe(true);
     expect(isKnownRetirementAction('suppress')).toBe(true);
     expect(isKnownRetirementAction('reset')).toBe(true);
+    expect(isKnownRetirementAction('re-enable')).toBe(true);
     expect(isKnownRetirementAction('UNRETIRE')).toBe(false);
     expect(isKnownRetirementAction('')).toBe(false);
     expect(isKnownRetirementAction(null)).toBe(false);
@@ -110,6 +113,39 @@ describe('buildRetirementCopy — Reset variation (destructive)', () => {
     const c = buildRetirementCopy('reset', sampleAnchor);
     expect(c.overrideReason).toBe('manual-reset');
     expect(c.targetStatus).toBeNull();
+  });
+});
+
+describe('buildRetirementCopy — Re-enable variation (S23)', () => {
+  it('renders Re-enable copy distinct from Retire/Suppress/Reset', () => {
+    const c = buildRetirementCopy('re-enable', sampleAnchor);
+    expect(c.title).toContain('Re-enable');
+    expect(c.title).toContain(sampleAnchor.archetypeName);
+    expect(c.subText).toContain('Re-enabling resumes Tier 2 calibration');
+    expect(c.confirmLabel).toBe('Re-enable');
+  });
+
+  it('exposes overrideReason="owner-un-retire" + targetStatus="active"', () => {
+    const c = buildRetirementCopy('re-enable', sampleAnchor);
+    expect(c.overrideReason).toBe('owner-un-retire');
+    expect(c.targetStatus).toBe('active');
+  });
+
+  it('marks destructive=true for 2-tap confirm gate', () => {
+    expect(buildRetirementCopy('re-enable', sampleAnchor).destructive).toBe(true);
+  });
+
+  it('exposes destructiveCheckboxLabel for 2-tap confirm', () => {
+    const c = buildRetirementCopy('re-enable', sampleAnchor);
+    expect(c.destructiveCheckboxLabel).toBeTruthy();
+    expect(c.destructiveCheckboxLabel).toMatch(/fire on live surfaces/);
+  });
+
+  it('builds success + undone toast strings with archetype name', () => {
+    const c = buildRetirementCopy('re-enable', sampleAnchor);
+    expect(c.successToast).toContain(sampleAnchor.archetypeName);
+    expect(c.successToast).toContain('re-enabled');
+    expect(c.undoneToast).toContain(sampleAnchor.archetypeName);
   });
 });
 
@@ -195,6 +231,11 @@ describe('validateRetirementCopyBundle — full-bundle enforcement', () => {
 
   it('returns valid=true for the shipped Reset bundle', () => {
     const bundle = buildRetirementCopy('reset', sampleAnchor);
+    expect(validateRetirementCopyBundle(bundle).valid).toBe(true);
+  });
+
+  it('returns valid=true for the shipped Re-enable bundle (S23)', () => {
+    const bundle = buildRetirementCopy('re-enable', sampleAnchor);
     expect(validateRetirementCopyBundle(bundle).valid).toBe(true);
   });
 

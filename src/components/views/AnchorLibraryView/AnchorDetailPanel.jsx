@@ -299,9 +299,12 @@ export const AnchorDetailPanel = ({
         </button>
       </div>
 
-      {/* Section 7 — Override actions (stubs) */}
+      {/* Section 7 — Override actions (status-conditional per journey doc).
+          Active/expiring/candidate → [Retire] [Suppress] [Reset]
+          Retired/suppressed       → [Re-enable] (un-retirement, Variation E) */}
       <div
         data-testid="panel-overrides"
+        data-actions-variant={status === 'retired' || status === 'suppressed' ? 're-enable' : 'override'}
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -310,63 +313,87 @@ export const AnchorDetailPanel = ({
           borderTop: '1px solid #1f2937',
         }}
       >
-        <button
-          type="button"
-          onClick={handleOverride('retire')}
-          aria-label={`Retire anchor ${anchor.archetypeName || ''}`.trim()}
-          data-testid="panel-action-retire"
-          data-action="retire"
-          style={{
-            minHeight: 40,
-            padding: '0.5rem 0.75rem',
-            background: '#1f2937',
-            color: '#fca5a5',
-            border: '1px solid #374151',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            fontSize: '0.8125rem',
-          }}
-        >
-          Retire
-        </button>
-        <button
-          type="button"
-          onClick={handleOverride('suppress')}
-          aria-label={`Suppress anchor ${anchor.archetypeName || ''}`.trim()}
-          data-testid="panel-action-suppress"
-          data-action="suppress"
-          style={{
-            minHeight: 40,
-            padding: '0.5rem 0.75rem',
-            background: '#1f2937',
-            color: '#fcd34d',
-            border: '1px solid #374151',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            fontSize: '0.8125rem',
-          }}
-        >
-          Suppress
-        </button>
-        <button
-          type="button"
-          onClick={handleOverride('reset')}
-          aria-label={`Reset calibration for ${anchor.archetypeName || ''}`.trim()}
-          data-testid="panel-action-reset"
-          data-action="reset"
-          style={{
-            minHeight: 40,
-            padding: '0.5rem 0.75rem',
-            background: '#1f2937',
-            color: '#a7f3d0',
-            border: '1px solid #374151',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            fontSize: '0.8125rem',
-          }}
-        >
-          Reset calibration
-        </button>
+        {(status === 'retired' || status === 'suppressed') ? (
+          <button
+            type="button"
+            onClick={handleOverride('re-enable')}
+            aria-label={`Re-enable anchor ${anchor.archetypeName || ''}`.trim()}
+            data-testid="panel-action-re-enable"
+            data-action="re-enable"
+            style={{
+              minHeight: 40,
+              padding: '0.5rem 0.75rem',
+              background: '#1f2937',
+              color: '#86efac',
+              border: '1px solid #374151',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              fontSize: '0.8125rem',
+            }}
+          >
+            Re-enable
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleOverride('retire')}
+              aria-label={`Retire anchor ${anchor.archetypeName || ''}`.trim()}
+              data-testid="panel-action-retire"
+              data-action="retire"
+              style={{
+                minHeight: 40,
+                padding: '0.5rem 0.75rem',
+                background: '#1f2937',
+                color: '#fca5a5',
+                border: '1px solid #374151',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+              }}
+            >
+              Retire
+            </button>
+            <button
+              type="button"
+              onClick={handleOverride('suppress')}
+              aria-label={`Suppress anchor ${anchor.archetypeName || ''}`.trim()}
+              data-testid="panel-action-suppress"
+              data-action="suppress"
+              style={{
+                minHeight: 40,
+                padding: '0.5rem 0.75rem',
+                background: '#1f2937',
+                color: '#fcd34d',
+                border: '1px solid #374151',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+              }}
+            >
+              Suppress
+            </button>
+            <button
+              type="button"
+              onClick={handleOverride('reset')}
+              aria-label={`Reset calibration for ${anchor.archetypeName || ''}`.trim()}
+              data-testid="panel-action-reset"
+              data-action="reset"
+              style={{
+                minHeight: 40,
+                padding: '0.5rem 0.75rem',
+                background: '#1f2937',
+                color: '#a7f3d0',
+                border: '1px solid #374151',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+              }}
+            >
+              Reset calibration
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

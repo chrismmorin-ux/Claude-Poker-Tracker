@@ -190,6 +190,31 @@ describe('useAnchorRetirement — confirmRetirement happy path', () => {
     expect(updated.operator.calibrationResetAt).toBe(FIXED_TS);
   });
 
+  it('Re-enable (S23) dispatches status=active + overrideReason=owner-un-retire on retired anchor', () => {
+    const retiredAnchor = { ...sampleAnchor, status: 'retired' };
+    const { result } = renderHook(() => useAnchorRetirement({
+      dispatchAnchorLibrary: dispatch, toast, now: () => FIXED_TS,
+    }));
+    act(() => result.current.beginRetirement('re-enable', retiredAnchor));
+    act(() => result.current.confirmRetirement());
+    const updated = dispatch.mock.calls[0][0].payload.anchor;
+    expect(updated.status).toBe('active');
+    expect(updated.operator.overrideReason).toBe('owner-un-retire');
+    expect(updated.operator.lastOverrideBy).toBe('owner');
+  });
+
+  it('Re-enable success toast says "re-enabled" with archetype name', () => {
+    const retiredAnchor = { ...sampleAnchor, status: 'retired' };
+    const { result } = renderHook(() => useAnchorRetirement({
+      dispatchAnchorLibrary: dispatch, toast, now: () => FIXED_TS,
+    }));
+    act(() => result.current.beginRetirement('re-enable', retiredAnchor));
+    act(() => result.current.confirmRetirement());
+    expect(toast.addToast).toHaveBeenCalledTimes(1);
+    expect(toast.addToast.mock.calls[0][0]).toMatch(/re-enabled/);
+    expect(toast.addToast.mock.calls[0][0]).toContain(retiredAnchor.archetypeName);
+  });
+
   it('clears pendingCopy after dispatch', () => {
     const { result } = renderHook(() => useAnchorRetirement({
       dispatchAnchorLibrary: dispatch, toast, now: () => FIXED_TS,

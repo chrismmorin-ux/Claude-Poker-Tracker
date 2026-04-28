@@ -221,11 +221,12 @@ describe('AnchorDetailPanel — section 6: Deep-link button (S20 stub)', () => {
 });
 
 describe('AnchorDetailPanel — section 7: Override actions (S20 stubs)', () => {
-  it('renders all 3 override action buttons', () => {
-    render(<AnchorDetailPanel anchor={buildAnchor()} />);
+  it('renders all 3 override action buttons for active anchor', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'active' })} />);
     expect(screen.getByTestId('panel-action-retire')).toBeTruthy();
     expect(screen.getByTestId('panel-action-suppress')).toBeTruthy();
     expect(screen.getByTestId('panel-action-reset')).toBeTruthy();
+    expect(screen.queryByTestId('panel-action-re-enable')).toBeNull();
   });
 
   it('Retire button has data-action="retire" and ≥40px tap target', () => {
@@ -246,6 +247,57 @@ describe('AnchorDetailPanel — section 7: Override actions (S20 stubs)', () => 
 
     fireEvent.click(screen.getByTestId('panel-action-reset'));
     expect(onOverrideAction).toHaveBeenCalledWith('reset', 'anchor:test:1');
+  });
+});
+
+describe('AnchorDetailPanel — Re-enable action (S23, status-conditional)', () => {
+  it('renders [Re-enable] (only) for retired anchors', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'retired' })} />);
+    expect(screen.getByTestId('panel-action-re-enable')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel-action-retire')).toBeNull();
+    expect(screen.queryByTestId('panel-action-suppress')).toBeNull();
+    expect(screen.queryByTestId('panel-action-reset')).toBeNull();
+  });
+
+  it('renders [Re-enable] (only) for suppressed anchors', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'suppressed' })} />);
+    expect(screen.getByTestId('panel-action-re-enable')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel-action-retire')).toBeNull();
+    expect(screen.queryByTestId('panel-action-suppress')).toBeNull();
+    expect(screen.queryByTestId('panel-action-reset')).toBeNull();
+  });
+
+  it('renders [Retire/Suppress/Reset] for expiring anchors (not yet terminal)', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'expiring' })} />);
+    expect(screen.getByTestId('panel-action-retire')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel-action-re-enable')).toBeNull();
+  });
+
+  it('renders [Retire/Suppress/Reset] for candidate anchors', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'candidate' })} />);
+    expect(screen.getByTestId('panel-action-retire')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel-action-re-enable')).toBeNull();
+  });
+
+  it('exposes data-actions-variant attribute for visual/test reach', () => {
+    const { rerender } = render(<AnchorDetailPanel anchor={buildAnchor({ status: 'active' })} />);
+    expect(screen.getByTestId('panel-overrides').getAttribute('data-actions-variant')).toBe('override');
+    rerender(<AnchorDetailPanel anchor={buildAnchor({ status: 'retired' })} />);
+    expect(screen.getByTestId('panel-overrides').getAttribute('data-actions-variant')).toBe('re-enable');
+  });
+
+  it('Re-enable button has data-action="re-enable" + ≥40px tap target', () => {
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'retired' })} />);
+    const btn = screen.getByTestId('panel-action-re-enable');
+    expect(btn.getAttribute('data-action')).toBe('re-enable');
+    expect(parseInt(btn.style.minHeight, 10)).toBeGreaterThanOrEqual(40);
+  });
+
+  it('Re-enable click invokes onOverrideAction with action="re-enable" + anchorId', () => {
+    const onOverrideAction = vi.fn();
+    render(<AnchorDetailPanel anchor={buildAnchor({ status: 'retired' })} onOverrideAction={onOverrideAction} />);
+    fireEvent.click(screen.getByTestId('panel-action-re-enable'));
+    expect(onOverrideAction).toHaveBeenCalledWith('re-enable', 'anchor:test:1');
   });
 });
 
