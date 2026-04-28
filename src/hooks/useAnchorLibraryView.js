@@ -20,6 +20,11 @@
  *   can be added then.
  *
  * EAL Phase 6 — Session 19 (S19).
+ *
+ * S20 addition: `expandedCardIds` (Set<string>) for the long-press transparency
+ * panel. Session-scoped (NOT persisted to localStorage) per surface §State —
+ * each visit starts collapsed. Multi-anchor expansion allowed (per surface
+ * §"Known behavior" #1) for comparison use case.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -91,6 +96,9 @@ const toggleInArray = (arr, value) => {
  */
 export const useAnchorLibraryView = () => {
   const [view, setView] = useState(loadFromStorage);
+  // Session-scoped, NOT persisted. Each visit starts with all cards collapsed.
+  // Per surface spec §State + §"Known behavior" #1 — multi-anchor expansion allowed.
+  const [expandedCardIds, setExpandedCardIds] = useState(() => new Set());
 
   useEffect(() => {
     saveToStorage(view);
@@ -132,6 +140,40 @@ export const useAnchorLibraryView = () => {
     setView({ filters: { ...EMPTY_FILTERS }, sort: DEFAULT_SORT_STRATEGY });
   }, []);
 
+  const toggleCardExpansion = useCallback((id) => {
+    if (typeof id !== 'string' || id.length === 0) return;
+    setExpandedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const expandCard = useCallback((id) => {
+    if (typeof id !== 'string' || id.length === 0) return;
+    setExpandedCardIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const collapseCard = useCallback((id) => {
+    if (typeof id !== 'string' || id.length === 0) return;
+    setExpandedCardIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const collapseAllCards = useCallback(() => {
+    setExpandedCardIds((prev) => (prev.size === 0 ? prev : new Set()));
+  }, []);
+
   return {
     view,
     toggleFilter,
@@ -139,6 +181,11 @@ export const useAnchorLibraryView = () => {
     setSort,
     clearFilters,
     resetView,
+    expandedCardIds,
+    toggleCardExpansion,
+    expandCard,
+    collapseCard,
+    collapseAllCards,
   };
 };
 

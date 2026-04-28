@@ -28,12 +28,14 @@
  * EAL Phase 6 — Session 18 (S18) + Session 19 (S19).
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import { useAnchorLibrary } from '../../../contexts/AnchorLibraryContext';
 import { useUI, useSession } from '../../../contexts';
+import { useToast } from '../../../contexts/ToastContext';
 import { SCREEN } from '../../../constants/uiConstants';
 import { ANCHOR_LIBRARY_UNLOCK_THRESHOLD } from '../../../constants/anchorLibraryConstants';
 import { useAnchorLibraryView } from '../../../hooks/useAnchorLibraryView';
+import { useLongPressTooltipState } from '../../../hooks/useAnchorCardLongPress';
 import {
   selectAnchorsFiltered,
   isFilterEmpty,
@@ -42,6 +44,7 @@ import { applySortStrategy } from '../../../utils/anchorLibrary/anchorSortStrate
 import { AnchorCard } from './AnchorCard';
 import { AnchorEmptyState } from './AnchorEmptyState';
 import { AnchorFilters } from './AnchorFilters';
+import { AnchorLongPressTooltip } from './AnchorLongPressTooltip';
 
 /**
  * Compute total hands the owner has seen across all sessions, for the newcomer
@@ -60,8 +63,27 @@ const computeTotalHandsSeen = (allSessions, currentSession) => {
 export const AnchorLibraryView = () => {
   const { selectAllAnchors, isReady } = useAnchorLibrary();
   const ui = useUI();
-  const { allSessions, currentSession } = useSession();
-  const { view, toggleFilter, setSort, clearFilters } = useAnchorLibraryView();
+  const { allSessions, currentSession, loadAllSessions } = useSession();
+  const toast = useToast();
+  const {
+    view,
+    toggleFilter,
+    setSort,
+    clearFilters,
+    expandedCardIds,
+    toggleCardExpansion,
+  } = useAnchorLibraryView();
+  const { showTooltip, dismissTooltip } = useLongPressTooltipState();
+
+  // S20 fix for the side-finding from S19 verification: load archived sessions
+  // on view mount so `handsSeen` reflects the owner's total history (not just
+  // the in-flight currentSession). Otherwise a returning owner with a finished
+  // session registers as newcomer until SessionsView is visited.
+  useEffect(() => {
+    if (typeof loadAllSessions === 'function') {
+      loadAllSessions();
+    }
+  }, [loadAllSessions]);
 
   const handsSeen = useMemo(
     () => computeTotalHandsSeen(allSessions, currentSession),
@@ -83,6 +105,28 @@ export const AnchorLibraryView = () => {
   const handleBack = useCallback(() => {
     ui.setCurrentScreen(SCREEN.TABLE);
   }, [ui]);
+
+  // S20 stub callbacks — override actions + Calibration Dashboard deep-link.
+  // Both surface visible UI but wire to deferred features (W-EA-3 retirement
+  // journey + Calibration Dashboard view). Toasts make the deferred state
+  // explicit instead of leaving the buttons silently inert.
+  const handleOverrideAction = useCallback((action, anchorId) => {
+    const labels = { retire: 'Retire', suppress: 'Suppress', reset: 'Reset calibration' };
+    const verb = labels[action] || action;
+    toast.showInfo(`${verb}: retirement journey ships in a future session.`);
+    // Future S21+ wiring: dispatchAnchorLibrary({ type: 'ANCHOR_OVERRIDDEN', payload: { anchorId, action } })
+  }, [toast]);
+
+  const handleOpenDashboard = useCallback((anchorId) => {
+    toast.showInfo('Calibration Dashboard ships in a future session.');
+    // Future wiring: ui.setCurrentScreen(SCREEN.CALIBRATION_DASHBOARD) with deep-link payload anchorId
+    void anchorId;
+  }, [toast]);
+
+  // First successful long-press auto-dismisses the discovery tooltip.
+  const handleLongPressFire = useCallback(() => {
+    if (showTooltip) dismissTooltip();
+  }, [showTooltip, dismissTooltip]);
 
   const isNewcomer = handsSeen < ANCHOR_LIBRARY_UNLOCK_THRESHOLD;
   const filtersActive = !isFilterEmpty(view.filters);
@@ -157,6 +201,14 @@ export const AnchorLibraryView = () => {
         />
       )}
 
+      {/* S20 — first-run discovery tooltip (renders only when showList; gated by localStorage) */}
+      {showList && (
+        <AnchorLongPressTooltip
+          show={showTooltip}
+          onDismiss={dismissTooltip}
+        />
+      )}
+
       {/* Showing N of M hint (only when list rendered) */}
       {showList && (
         <div
@@ -192,7 +244,14 @@ export const AnchorLibraryView = () => {
         >
           {sortedAnchors.map((anchor) => (
             <li key={anchor.id || anchor.archetypeName}>
-              <AnchorCard anchor={anchor} />
+              <AnchorCard
+                anchor={anchor}
+                isExpanded={expandedCardIds.has(anchor.id)}
+                onToggleExpand={toggleCardExpansion}
+                onOverrideAction={handleOverrideAction}
+                onOpenDashboard={handleOpenDashboard}
+                onLongPressFire={handleLongPressFire}
+              />
             </li>
           ))}
         </ul>

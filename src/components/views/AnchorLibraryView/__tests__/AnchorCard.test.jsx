@@ -162,21 +162,104 @@ describe('AnchorCard — ⓘ button', () => {
     expect(info).toHaveAttribute('aria-label', `Show details for ${baseAnchor.archetypeName}`);
   });
 
-  it('has aria-expanded="false" at S18 (panel not yet shipped)', () => {
+  it('has aria-expanded="false" when isExpanded prop is false (default)', () => {
     render(<AnchorCard anchor={baseAnchor} />);
     expect(screen.getByTestId('anchor-card-info')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('invokes onInfoTap with the anchor when tapped', () => {
-    const onInfoTap = vi.fn();
-    render(<AnchorCard anchor={baseAnchor} onInfoTap={onInfoTap} />);
-    fireEvent.click(screen.getByTestId('anchor-card-info'));
-    expect(onInfoTap).toHaveBeenCalledWith(baseAnchor);
+  it('has aria-expanded="true" when isExpanded prop is true', () => {
+    render(<AnchorCard anchor={baseAnchor} isExpanded={true} />);
+    expect(screen.getByTestId('anchor-card-info')).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('is inert (no crash) when onInfoTap is omitted', () => {
+  it('aria-label switches to "Hide details" when expanded', () => {
+    render(<AnchorCard anchor={baseAnchor} isExpanded={true} />);
+    const info = screen.getByTestId('anchor-card-info');
+    expect(info).toHaveAttribute('aria-label', `Hide details for ${baseAnchor.archetypeName}`);
+  });
+
+  it('invokes onToggleExpand with the anchor id when ⓘ tapped', () => {
+    const onToggleExpand = vi.fn();
+    render(<AnchorCard anchor={baseAnchor} onToggleExpand={onToggleExpand} />);
+    fireEvent.click(screen.getByTestId('anchor-card-info'));
+    expect(onToggleExpand).toHaveBeenCalledWith(baseAnchor.id);
+  });
+
+  it('is inert (no crash) when onToggleExpand is omitted', () => {
     render(<AnchorCard anchor={baseAnchor} />);
     expect(() => fireEvent.click(screen.getByTestId('anchor-card-info'))).not.toThrow();
+  });
+});
+
+describe('AnchorCard — S20 expansion + panel', () => {
+  it('renders AnchorDetailPanel when isExpanded=true', () => {
+    render(<AnchorCard anchor={baseAnchor} isExpanded={true} />);
+    expect(screen.getByTestId('anchor-detail-panel')).toBeInTheDocument();
+  });
+
+  it('does NOT render AnchorDetailPanel when isExpanded=false', () => {
+    render(<AnchorCard anchor={baseAnchor} isExpanded={false} />);
+    expect(screen.queryByTestId('anchor-detail-panel')).toBeNull();
+  });
+
+  it('exposes data-expanded attribute on the article', () => {
+    const { rerender } = render(<AnchorCard anchor={baseAnchor} isExpanded={false} />);
+    expect(screen.getByTestId('anchor-card')).toHaveAttribute('data-expanded', 'false');
+    rerender(<AnchorCard anchor={baseAnchor} isExpanded={true} />);
+    expect(screen.getByTestId('anchor-card')).toHaveAttribute('data-expanded', 'true');
+  });
+
+  it('panel ▲ collapse button toggles expansion via onToggleExpand', () => {
+    const onToggleExpand = vi.fn();
+    render(<AnchorCard anchor={baseAnchor} isExpanded={true} onToggleExpand={onToggleExpand} />);
+    fireEvent.click(screen.getByTestId('anchor-detail-panel-collapse'));
+    expect(onToggleExpand).toHaveBeenCalledWith(baseAnchor.id);
+  });
+
+  it('threads onOverrideAction through to panel buttons', () => {
+    const onOverrideAction = vi.fn();
+    render(
+      <AnchorCard
+        anchor={baseAnchor}
+        isExpanded={true}
+        onOverrideAction={onOverrideAction}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('panel-action-retire'));
+    expect(onOverrideAction).toHaveBeenCalledWith('retire', baseAnchor.id);
+  });
+
+  it('threads onOpenDashboard through to panel deep-link button', () => {
+    const onOpenDashboard = vi.fn();
+    render(
+      <AnchorCard
+        anchor={baseAnchor}
+        isExpanded={true}
+        onOpenDashboard={onOpenDashboard}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('panel-deep-link-dashboard'));
+    expect(onOpenDashboard).toHaveBeenCalledWith(baseAnchor.id);
+  });
+
+  it('ⓘ tap stops propagation to article-level handlers', () => {
+    const articleClick = vi.fn();
+    const onToggleExpand = vi.fn();
+    render(
+      <div onClick={articleClick}>
+        <AnchorCard anchor={baseAnchor} onToggleExpand={onToggleExpand} />
+      </div>,
+    );
+    fireEvent.click(screen.getByTestId('anchor-card-info'));
+    expect(onToggleExpand).toHaveBeenCalledTimes(1);
+    expect(articleClick).not.toHaveBeenCalled();
+  });
+
+  it('exposes touch-action and user-select styles to suppress browser long-press menu', () => {
+    render(<AnchorCard anchor={baseAnchor} />);
+    const card = screen.getByTestId('anchor-card');
+    expect(card.style.userSelect).toBe('none');
+    expect(card.style.touchAction).toBe('pan-y');
   });
 });
 

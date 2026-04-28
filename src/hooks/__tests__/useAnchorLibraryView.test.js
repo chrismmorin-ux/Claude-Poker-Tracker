@@ -172,3 +172,83 @@ describe('useAnchorLibraryView — localStorage round-trip', () => {
     expect(result2.current.view.sort).toBe('last-fired');
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// S20 — expanded-card state (session-scoped, NOT persisted)
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('useAnchorLibraryView — expandedCardIds (S20)', () => {
+  it('starts with an empty Set on first mount', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    expect(result.current.expandedCardIds).toBeInstanceOf(Set);
+    expect(result.current.expandedCardIds.size).toBe(0);
+  });
+
+  it('toggleCardExpansion adds an unexpanded card to the set', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.toggleCardExpansion('anchor:test:1'));
+    expect(result.current.expandedCardIds.has('anchor:test:1')).toBe(true);
+  });
+
+  it('toggleCardExpansion removes an already-expanded card', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.toggleCardExpansion('anchor:test:1'));
+    act(() => result.current.toggleCardExpansion('anchor:test:1'));
+    expect(result.current.expandedCardIds.has('anchor:test:1')).toBe(false);
+  });
+
+  it('expandCard idempotently adds (no double-toggle bug)', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.expandCard('anchor:test:1'));
+    act(() => result.current.expandCard('anchor:test:1'));
+    expect(result.current.expandedCardIds.has('anchor:test:1')).toBe(true);
+    expect(result.current.expandedCardIds.size).toBe(1);
+  });
+
+  it('collapseCard removes only the targeted id', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.expandCard('anchor:a'));
+    act(() => result.current.expandCard('anchor:b'));
+    act(() => result.current.collapseCard('anchor:a'));
+    expect(result.current.expandedCardIds.has('anchor:a')).toBe(false);
+    expect(result.current.expandedCardIds.has('anchor:b')).toBe(true);
+  });
+
+  it('collapseAllCards empties the set', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.expandCard('anchor:a'));
+    act(() => result.current.expandCard('anchor:b'));
+    act(() => result.current.collapseAllCards());
+    expect(result.current.expandedCardIds.size).toBe(0);
+  });
+
+  it('multi-anchor expansion is allowed (per surface §Known behavior #1)', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.expandCard('anchor:a'));
+    act(() => result.current.expandCard('anchor:b'));
+    act(() => result.current.expandCard('anchor:c'));
+    expect(result.current.expandedCardIds.size).toBe(3);
+  });
+
+  it('expansion state is NOT persisted to localStorage (session-scoped)', () => {
+    const { result, unmount } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.expandCard('anchor:test:1'));
+    unmount();
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    expect(stored.expandedCardIds).toBeUndefined();
+
+    // Fresh mount → empty set
+    const { result: result2 } = renderHook(() => useAnchorLibraryView());
+    expect(result2.current.expandedCardIds.size).toBe(0);
+  });
+
+  it('rejects non-string IDs (defensive)', () => {
+    const { result } = renderHook(() => useAnchorLibraryView());
+    act(() => result.current.toggleCardExpansion(null));
+    act(() => result.current.toggleCardExpansion(undefined));
+    act(() => result.current.toggleCardExpansion(42));
+    act(() => result.current.toggleCardExpansion(''));
+    expect(result.current.expandedCardIds.size).toBe(0);
+  });
+});

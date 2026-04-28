@@ -1,31 +1,29 @@
 /**
- * AnchorCard.jsx — collapsed per-anchor row for AnchorLibraryView.
+ * AnchorCard.jsx — collapsed per-anchor row + expanded transparency panel.
  *
- * Per `docs/design/surfaces/anchor-library.md` §"Card — AnchorCard". S18 ships
- * the collapsed state only; the long-press/ⓘ-tap transparency panel is
- * deferred to S20 along with `useAnchorCardLongPress`.
+ * Per `docs/design/surfaces/anchor-library.md` §"Card — AnchorCard" + §"Expanded".
+ * S18 shipped the collapsed state with an inert ⓘ button; S20 wires up:
+ *   - long-press detection via `useAnchorCardLongPress` (400ms threshold + motion-cancel)
+ *   - ⓘ-tap → toggle expansion (same expansion target as long-press)
+ *   - inline `<AnchorDetailPanel>` rendered when `isExpanded` is true
+ *   - dynamic `aria-expanded` reflecting current state
  *
- * S18 collapsed render:
- *   - Archetype name (wraps to 2 lines, ellipsis at 3+)
- *   - Status dot + chip (● active / ○ retired / ◐ expiring / ⊘ suppressed / ? candidate)
- *   - Tier chip
- *   - Street + polarity chips
- *   - Confidence dial (10-segment bar from evidence.pointEstimate)
- *   - Firing count (`fired N×`)
- *   - ⓘ icon (≥44×44 tap target; inert at S18, parent receives onInfoTap)
+ * Collapse paths:
+ *   - ▲ collapse button at top of panel (primary)
+ *   - ⓘ tap when already expanded (toggle)
+ *   - tap on the card body header outside the ⓘ button (when expanded)
  *
  * Anti-pattern compliance:
- *   - AP-04 — no scalar "calibration score" rendered. Confidence dial is the
- *     only quantitative element + always displayed alongside the % alt-text.
- *   - Red line #5 — no streak indicator, no "this many anchors mastered."
- *   - Red line #6 — retired anchors render with same structural prominence
- *     as active; only the status dot/chip distinguishes them (no dimming
- *     beyond the `○` glyph + status chip text).
+ *   - AP-04 — no scalar "calibration score" rendered.
+ *   - Red line #5 — no streak indicator.
+ *   - Red line #6 — retired anchors render with same structural prominence as active.
  *
- * EAL Phase 6 — Session 18 (S18).
+ * EAL Phase 6 — Session 18 (S18) + Session 20 (S20 long-press + panel wiring).
  */
 
 import React from 'react';
+import { useAnchorCardLongPress } from '../../../hooks/useAnchorCardLongPress';
+import { AnchorDetailPanel } from './AnchorDetailPanel';
 
 const STATUS_GLYPHS = {
   active: '●',
@@ -80,9 +78,21 @@ const ConfidenceDial = ({ pointEstimate }) => {
 /**
  * @param {Object} props
  * @param {Object} props.anchor — ExploitAnchor record (see schema-delta §2)
- * @param {() => void} [props.onInfoTap] — invoked on ⓘ tap; inert at S18 if omitted
+ * @param {boolean} [props.isExpanded] — whether the transparency panel is shown
+ * @param {(anchorId: string) => void} [props.onToggleExpand] — invoked by long-press OR ⓘ tap
+ * @param {(action: 'retire'|'suppress'|'reset', anchorId: string) => void} [props.onOverrideAction]
+ * @param {(anchorId: string) => void} [props.onOpenDashboard]
+ * @param {() => void} [props.onLongPressFire] — invoked once when long-press successfully fires
+ *   (used by parent to dismiss the first-run tooltip).
  */
-export const AnchorCard = ({ anchor, onInfoTap }) => {
+export const AnchorCard = ({
+  anchor,
+  isExpanded = false,
+  onToggleExpand,
+  onOverrideAction,
+  onOpenDashboard,
+  onLongPressFire,
+}) => {
   if (!anchor || typeof anchor !== 'object') return null;
 
   const status = typeof anchor.status === 'string' ? anchor.status : 'candidate';
@@ -101,9 +111,28 @@ export const AnchorCard = ({ anchor, onInfoTap }) => {
   const archetypeName = typeof anchor.archetypeName === 'string' && anchor.archetypeName.length > 0
     ? anchor.archetypeName
     : '(unnamed anchor)';
+  const anchorId = typeof anchor.id === 'string' ? anchor.id : '';
 
-  const handleInfoTap = () => {
-    if (typeof onInfoTap === 'function') onInfoTap(anchor);
+  const handleToggle = () => {
+    if (typeof onToggleExpand === 'function' && anchorId) onToggleExpand(anchorId);
+  };
+
+  // Long-press wiring: pointer-handlers spread onto the article element.
+  // Tooltip auto-dismiss: onLongPressFire fires once when timer completes.
+  const { pressHandlers, isPressing } = useAnchorCardLongPress({
+    onLongPress: () => {
+      if (typeof onToggleExpand === 'function' && anchorId) onToggleExpand(anchorId);
+    },
+    onFire: typeof onLongPressFire === 'function' ? onLongPressFire : undefined,
+  });
+
+  const handleInfoTap = (e) => {
+    e.stopPropagation();
+    handleToggle();
+  };
+
+  const handleCollapse = () => {
+    handleToggle();
   };
 
   return (
@@ -111,6 +140,9 @@ export const AnchorCard = ({ anchor, onInfoTap }) => {
       data-testid="anchor-card"
       data-anchor-id={anchor.id || ''}
       data-status={status}
+      data-expanded={isExpanded ? 'true' : 'false'}
+      data-pressing={isPressing ? 'true' : 'false'}
+      {...pressHandlers}
       style={{
         position: 'relative',
         padding: '0.75rem 0.875rem',
@@ -120,6 +152,16 @@ export const AnchorCard = ({ anchor, onInfoTap }) => {
         display: 'flex',
         flexDirection: 'column',
         gap: '0.375rem',
+        // Subtle visual feedback during press (per H-N06: discoverable affordance)
+        boxShadow: isPressing ? 'inset 0 0 0 1px #4b5563' : 'none',
+        transition: 'box-shadow 100ms ease-out',
+        // Disable native text-selection so long-press doesn't trigger selection UI
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        // Disable iOS Safari long-press callout menu
+        WebkitTouchCallout: 'none',
+        // Touch-action: pan-y allows vertical scrolling but cancels horizontal swipes
+        touchAction: 'pan-y',
       }}
     >
       {/* Top row: archetype name + ⓘ icon */}
@@ -143,15 +185,15 @@ export const AnchorCard = ({ anchor, onInfoTap }) => {
         <button
           type="button"
           onClick={handleInfoTap}
-          aria-label={`Show details for ${archetypeName}`}
-          aria-expanded="false"
+          aria-label={`${isExpanded ? 'Hide' : 'Show'} details for ${archetypeName}`}
+          aria-expanded={isExpanded ? 'true' : 'false'}
           data-testid="anchor-card-info"
           style={{
             minHeight: 44,
             minWidth: 44,
             padding: '0.25rem',
             background: 'transparent',
-            color: '#9ca3af',
+            color: isExpanded ? '#e5e7eb' : '#9ca3af',
             border: '1px solid transparent',
             borderRadius: '0.375rem',
             cursor: 'pointer',
@@ -199,6 +241,16 @@ export const AnchorCard = ({ anchor, onInfoTap }) => {
         <ConfidenceDial pointEstimate={pointEstimate} />
         <span style={{ color: '#9ca3af' }}>· fired {timesApplied}×</span>
       </div>
+
+      {/* S20 — Inline transparency panel */}
+      {isExpanded && (
+        <AnchorDetailPanel
+          anchor={anchor}
+          onCollapse={handleCollapse}
+          onOverrideAction={onOverrideAction}
+          onOpenDashboard={onOpenDashboard}
+        />
+      )}
     </article>
   );
 };

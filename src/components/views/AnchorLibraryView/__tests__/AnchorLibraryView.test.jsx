@@ -24,6 +24,12 @@ let mockView;
 let mockToggleFilter;
 let mockSetSort;
 let mockClearFilters;
+let mockToggleCardExpansion;
+let mockExpandedCardIds;
+let mockShowTooltip;
+let mockDismissTooltip;
+let mockShowInfo;
+let mockLoadAllSessions;
 
 vi.mock('../../../../contexts/AnchorLibraryContext', () => ({
   useAnchorLibrary: () => mockAnchorLibrary,
@@ -34,6 +40,18 @@ vi.mock('../../../../contexts', () => ({
   useSession: () => mockSession,
 }));
 
+vi.mock('../../../../contexts/ToastContext', () => ({
+  useToast: () => ({
+    showInfo: mockShowInfo,
+    showError: vi.fn(),
+    showSuccess: vi.fn(),
+    showWarning: vi.fn(),
+    addToast: vi.fn(),
+    dismissToast: vi.fn(),
+    toasts: [],
+  }),
+}));
+
 vi.mock('../../../../hooks/useAnchorLibraryView', () => ({
   useAnchorLibraryView: () => ({
     view: mockView,
@@ -42,8 +60,25 @@ vi.mock('../../../../hooks/useAnchorLibraryView', () => ({
     setFilters: vi.fn(),
     clearFilters: mockClearFilters,
     resetView: vi.fn(),
+    expandedCardIds: mockExpandedCardIds,
+    toggleCardExpansion: mockToggleCardExpansion,
+    expandCard: vi.fn(),
+    collapseCard: vi.fn(),
+    collapseAllCards: vi.fn(),
   }),
 }));
+
+vi.mock('../../../../hooks/useAnchorCardLongPress', async () => {
+  const actual = await vi.importActual('../../../../hooks/useAnchorCardLongPress');
+  return {
+    ...actual,
+    useLongPressTooltipState: () => ({
+      showTooltip: mockShowTooltip,
+      dismissTooltip: mockDismissTooltip,
+      hasDismissed: !mockShowTooltip,
+    }),
+  };
+});
 
 import { AnchorLibraryView } from '../AnchorLibraryView';
 import { ANCHOR_LIBRARY_UNLOCK_THRESHOLD } from '../../../../constants/anchorLibraryConstants';
@@ -68,6 +103,12 @@ beforeEach(() => {
   mockToggleFilter = vi.fn();
   mockSetSort = vi.fn();
   mockClearFilters = vi.fn();
+  mockToggleCardExpansion = vi.fn();
+  mockExpandedCardIds = new Set();
+  mockShowTooltip = false; // default: tooltip already dismissed; tests opt in
+  mockDismissTooltip = vi.fn();
+  mockShowInfo = vi.fn();
+  mockLoadAllSessions = vi.fn();
   mockView = { filters: { ...EMPTY_FILTERS }, sort: DEFAULT_SORT_STRATEGY };
   mockAnchorLibrary = {
     isReady: true,
@@ -77,6 +118,7 @@ beforeEach(() => {
   mockSession = {
     allSessions: [{ id: 's1', handCount: ANCHOR_LIBRARY_UNLOCK_THRESHOLD + 5 }],
     currentSession: null,
+    loadAllSessions: mockLoadAllSessions,
   };
 });
 
@@ -364,5 +406,112 @@ describe('AnchorLibraryView — S19 filters + sort wiring', () => {
     const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     // Largest sampleSize first: 50 → 20 → 5
     expect(headings).toEqual(['Bravo', 'Charlie', 'Alpha']);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// S20 — long-press panel + tooltip + override-stub wiring
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('AnchorLibraryView — S20 expansion + tooltip wiring', () => {
+  const seedOneAnchor = () => {
+    mockAnchorLibrary.selectAllAnchors = () => [
+      { id: 'anchor:test:1', archetypeName: 'Test One', status: 'active', polarity: 'overfold', tier: 2, lineSequence: [{ street: 'flop' }, { street: 'river' }], evidence: { pointEstimate: 0.6 }, gtoBaseline: { method: 'MDF', referenceRate: 0.5 }, perceptionPrimitiveIds: ['PP-01'], validation: { timesApplied: 5, lastFiredAt: '2026-04-26T12:00:00Z' } },
+    ];
+  };
+
+  it('passes isExpanded=true to AnchorCard when its id is in expandedCardIds', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    expect(screen.getByTestId('anchor-detail-panel')).toBeInTheDocument();
+  });
+
+  it('passes isExpanded=false to AnchorCard when its id is NOT in expandedCardIds', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(); // empty
+    render(<AnchorLibraryView />);
+    expect(screen.queryByTestId('anchor-detail-panel')).toBeNull();
+  });
+
+  it('ⓘ tap dispatches toggleCardExpansion with anchor id', () => {
+    seedOneAnchor();
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('anchor-card-info'));
+    expect(mockToggleCardExpansion).toHaveBeenCalledWith('anchor:test:1');
+  });
+
+  it('renders first-run tooltip when showTooltip=true and list non-empty', () => {
+    seedOneAnchor();
+    mockShowTooltip = true;
+    render(<AnchorLibraryView />);
+    expect(screen.getByTestId('anchor-long-press-tooltip')).toBeInTheDocument();
+  });
+
+  it('does NOT render tooltip when showTooltip=false', () => {
+    seedOneAnchor();
+    mockShowTooltip = false;
+    render(<AnchorLibraryView />);
+    expect(screen.queryByTestId('anchor-long-press-tooltip')).toBeNull();
+  });
+
+  it('does NOT render tooltip when list is empty (no anchors to discover on)', () => {
+    mockAnchorLibrary.selectAllAnchors = () => [];
+    mockShowTooltip = true;
+    render(<AnchorLibraryView />);
+    expect(screen.queryByTestId('anchor-long-press-tooltip')).toBeNull();
+  });
+
+  it('"Got it" tooltip dismiss invokes dismissTooltip', () => {
+    seedOneAnchor();
+    mockShowTooltip = true;
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('anchor-long-press-tooltip-dismiss'));
+    expect(mockDismissTooltip).toHaveBeenCalledTimes(1);
+  });
+
+  it('Override action button (Retire) fires showInfo toast with deferred-feature copy', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-retire'));
+    expect(mockShowInfo).toHaveBeenCalledTimes(1);
+    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Retire/);
+    expect(mockShowInfo.mock.calls[0][0]).toMatch(/future session/);
+  });
+
+  it('Override action toast labels match action verb', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-suppress'));
+    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Suppress/);
+    fireEvent.click(screen.getByTestId('panel-action-reset'));
+    expect(mockShowInfo.mock.calls[1][0]).toMatch(/Reset calibration/);
+  });
+
+  it('Deep-link to Calibration Dashboard fires showInfo toast with deferred-feature copy', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-deep-link-dashboard'));
+    expect(mockShowInfo).toHaveBeenCalledTimes(1);
+    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Calibration Dashboard/);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// S20 — loadAllSessions side-finding fix
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('AnchorLibraryView — loadAllSessions on mount (S20 fix)', () => {
+  it('invokes loadAllSessions on first mount', () => {
+    render(<AnchorLibraryView />);
+    expect(mockLoadAllSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not crash when loadAllSessions is unavailable', () => {
+    mockSession = { allSessions: [], currentSession: null };
+    expect(() => render(<AnchorLibraryView />)).not.toThrow();
   });
 });
