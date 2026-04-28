@@ -36,6 +36,7 @@ import { SCREEN } from '../../../constants/uiConstants';
 import { ANCHOR_LIBRARY_UNLOCK_THRESHOLD } from '../../../constants/anchorLibraryConstants';
 import { useAnchorLibraryView } from '../../../hooks/useAnchorLibraryView';
 import { useLongPressTooltipState } from '../../../hooks/useAnchorCardLongPress';
+import { useAnchorRetirement } from '../../../hooks/useAnchorRetirement';
 import {
   selectAnchorsFiltered,
   isFilterEmpty,
@@ -45,6 +46,7 @@ import { AnchorCard } from './AnchorCard';
 import { AnchorEmptyState } from './AnchorEmptyState';
 import { AnchorFilters } from './AnchorFilters';
 import { AnchorLongPressTooltip } from './AnchorLongPressTooltip';
+import { RetirementConfirmModal } from './RetirementConfirmModal';
 
 /**
  * Compute total hands the owner has seen across all sessions, for the newcomer
@@ -61,7 +63,7 @@ const computeTotalHandsSeen = (allSessions, currentSession) => {
 };
 
 export const AnchorLibraryView = () => {
-  const { selectAllAnchors, isReady } = useAnchorLibrary();
+  const { selectAllAnchors, isReady, dispatchAnchorLibrary } = useAnchorLibrary();
   const ui = useUI();
   const { allSessions, currentSession, loadAllSessions } = useSession();
   const toast = useToast();
@@ -74,6 +76,13 @@ export const AnchorLibraryView = () => {
     toggleCardExpansion,
   } = useAnchorLibraryView();
   const { showTooltip, dismissTooltip } = useLongPressTooltipState();
+  // S21 — retirement journey orchestrator (replaces S20 toast stubs).
+  const {
+    pendingCopy,
+    beginRetirement,
+    cancelRetirement,
+    confirmRetirement,
+  } = useAnchorRetirement({ dispatchAnchorLibrary, toast });
 
   // S20 fix for the side-finding from S19 verification: load archived sessions
   // on view mount so `handsSeen` reflects the owner's total history (not just
@@ -106,16 +115,15 @@ export const AnchorLibraryView = () => {
     ui.setCurrentScreen(SCREEN.TABLE);
   }, [ui]);
 
-  // S20 stub callbacks — override actions + Calibration Dashboard deep-link.
-  // Both surface visible UI but wire to deferred features (W-EA-3 retirement
-  // journey + Calibration Dashboard view). Toasts make the deferred state
-  // explicit instead of leaving the buttons silently inert.
+  // S21 — override action callback opens the retirement confirm modal via the
+  // orchestrator hook. The hook owns dispatch + 12s undo toast wiring;
+  // AnchorLibraryView just hands off action + anchor (looked up by id from
+  // the same allAnchors memo used by the list render).
   const handleOverrideAction = useCallback((action, anchorId) => {
-    const labels = { retire: 'Retire', suppress: 'Suppress', reset: 'Reset calibration' };
-    const verb = labels[action] || action;
-    toast.showInfo(`${verb}: retirement journey ships in a future session.`);
-    // Future S21+ wiring: dispatchAnchorLibrary({ type: 'ANCHOR_OVERRIDDEN', payload: { anchorId, action } })
-  }, [toast]);
+    const anchor = allAnchors.find((a) => a && a.id === anchorId);
+    if (!anchor) return;
+    beginRetirement(action, anchor);
+  }, [allAnchors, beginRetirement]);
 
   const handleOpenDashboard = useCallback((anchorId) => {
     toast.showInfo('Calibration Dashboard ships in a future session.');
@@ -256,6 +264,14 @@ export const AnchorLibraryView = () => {
           ))}
         </ul>
       )}
+
+      {/* S21 — retirement confirm modal (rendered at view root so backdrop
+          covers full viewport; pendingCopy=null hides) */}
+      <RetirementConfirmModal
+        copy={pendingCopy}
+        onCancel={cancelRetirement}
+        onConfirm={confirmRetirement}
+      />
     </div>
   );
 };

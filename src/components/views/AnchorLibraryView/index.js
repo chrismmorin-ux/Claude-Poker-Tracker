@@ -10,3 +10,4 @@ export { AnchorEmptyState } from './AnchorEmptyState';
 export { AnchorFilters } from './AnchorFilters';
 export { AnchorDetailPanel } from './AnchorDetailPanel';
 export { AnchorLongPressTooltip } from './AnchorLongPressTooltip';
+export { RetirementConfirmModal } from './RetirementConfirmModal';

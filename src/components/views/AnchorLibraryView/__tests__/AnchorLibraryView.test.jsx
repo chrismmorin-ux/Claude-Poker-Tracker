@@ -29,7 +29,10 @@ let mockExpandedCardIds;
 let mockShowTooltip;
 let mockDismissTooltip;
 let mockShowInfo;
+let mockAddToast;
+let mockShowError;
 let mockLoadAllSessions;
+let mockDispatchAnchorLibrary;
 
 vi.mock('../../../../contexts/AnchorLibraryContext', () => ({
   useAnchorLibrary: () => mockAnchorLibrary,
@@ -43,10 +46,10 @@ vi.mock('../../../../contexts', () => ({
 vi.mock('../../../../contexts/ToastContext', () => ({
   useToast: () => ({
     showInfo: mockShowInfo,
-    showError: vi.fn(),
+    showError: mockShowError,
     showSuccess: vi.fn(),
     showWarning: vi.fn(),
-    addToast: vi.fn(),
+    addToast: mockAddToast,
     dismissToast: vi.fn(),
     toasts: [],
   }),
@@ -108,11 +111,15 @@ beforeEach(() => {
   mockShowTooltip = false; // default: tooltip already dismissed; tests opt in
   mockDismissTooltip = vi.fn();
   mockShowInfo = vi.fn();
+  mockAddToast = vi.fn();
+  mockShowError = vi.fn();
   mockLoadAllSessions = vi.fn();
+  mockDispatchAnchorLibrary = vi.fn();
   mockView = { filters: { ...EMPTY_FILTERS }, sort: DEFAULT_SORT_STRATEGY };
   mockAnchorLibrary = {
     isReady: true,
     selectAllAnchors: () => [],
+    dispatchAnchorLibrary: mockDispatchAnchorLibrary,
   };
   // Default: post-threshold (so newcomer state doesn't dominate tests)
   mockSession = {
@@ -470,33 +477,83 @@ describe('AnchorLibraryView — S20 expansion + tooltip wiring', () => {
     expect(mockDismissTooltip).toHaveBeenCalledTimes(1);
   });
 
-  it('Override action button (Retire) fires showInfo toast with deferred-feature copy', () => {
+  it('Override action button (Retire) opens RetirementConfirmModal (S21 — replaces S20 stub toast)', () => {
     seedOneAnchor();
     mockExpandedCardIds = new Set(['anchor:test:1']);
     render(<AnchorLibraryView />);
     fireEvent.click(screen.getByTestId('panel-action-retire'));
-    expect(mockShowInfo).toHaveBeenCalledTimes(1);
-    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Retire/);
-    expect(mockShowInfo.mock.calls[0][0]).toMatch(/future session/);
+    const modal = screen.getByTestId('retirement-modal');
+    expect(modal).toBeInTheDocument();
+    expect(modal.getAttribute('data-action')).toBe('retire');
+    expect(modal.getAttribute('data-destructive')).toBe('false');
   });
 
-  it('Override action toast labels match action verb', () => {
+  it('Suppress action opens modal with data-action="suppress"', () => {
     seedOneAnchor();
     mockExpandedCardIds = new Set(['anchor:test:1']);
     render(<AnchorLibraryView />);
     fireEvent.click(screen.getByTestId('panel-action-suppress'));
-    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Suppress/);
-    fireEvent.click(screen.getByTestId('panel-action-reset'));
-    expect(mockShowInfo.mock.calls[1][0]).toMatch(/Reset calibration/);
+    expect(screen.getByTestId('retirement-modal').getAttribute('data-action')).toBe('suppress');
   });
 
-  it('Deep-link to Calibration Dashboard fires showInfo toast with deferred-feature copy', () => {
+  it('Reset action opens modal with data-destructive="true"', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-reset'));
+    const modal = screen.getByTestId('retirement-modal');
+    expect(modal.getAttribute('data-action')).toBe('reset');
+    expect(modal.getAttribute('data-destructive')).toBe('true');
+    expect(screen.getByTestId('retirement-modal-destructive-checkbox')).toBeInTheDocument();
+  });
+
+  it('Cancel button on modal closes without dispatching', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-retire'));
+    fireEvent.click(screen.getByTestId('retirement-modal-cancel'));
+    expect(screen.queryByTestId('retirement-modal')).toBeNull();
+    expect(mockDispatchAnchorLibrary).not.toHaveBeenCalled();
+  });
+
+  it('Confirm button dispatches ANCHOR_OVERRIDDEN + fires success toast', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-retire'));
+    fireEvent.click(screen.getByTestId('retirement-modal-confirm'));
+    expect(mockDispatchAnchorLibrary).toHaveBeenCalledTimes(1);
+    const dispatched = mockDispatchAnchorLibrary.mock.calls[0][0];
+    expect(dispatched.type).toBe('ANCHOR_OVERRIDDEN');
+    expect(dispatched.payload.anchor.status).toBe('retired');
+    expect(mockAddToast).toHaveBeenCalledTimes(1);
+    const [_msg, opts] = mockAddToast.mock.calls[0];
+    expect(opts.variant).toBe('success');
+    expect(opts.duration).toBe(12000);
+    expect(opts.action.label).toBe('Undo');
+  });
+
+  it('Reset Confirm is disabled until "I understand" checkbox ticked', () => {
+    seedOneAnchor();
+    mockExpandedCardIds = new Set(['anchor:test:1']);
+    render(<AnchorLibraryView />);
+    fireEvent.click(screen.getByTestId('panel-action-reset'));
+    fireEvent.click(screen.getByTestId('retirement-modal-confirm'));
+    expect(mockDispatchAnchorLibrary).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('retirement-modal-destructive-checkbox'));
+    fireEvent.click(screen.getByTestId('retirement-modal-confirm'));
+    expect(mockDispatchAnchorLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it('Deep-link to Calibration Dashboard still fires showInfo toast (no modal)', () => {
     seedOneAnchor();
     mockExpandedCardIds = new Set(['anchor:test:1']);
     render(<AnchorLibraryView />);
     fireEvent.click(screen.getByTestId('panel-deep-link-dashboard'));
     expect(mockShowInfo).toHaveBeenCalledTimes(1);
     expect(mockShowInfo.mock.calls[0][0]).toMatch(/Calibration Dashboard/);
+    expect(screen.queryByTestId('retirement-modal')).toBeNull();
   });
 });
 
