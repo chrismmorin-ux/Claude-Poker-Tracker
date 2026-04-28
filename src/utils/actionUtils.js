@@ -91,6 +91,10 @@ export const getActionAbbreviation = (action) => {
 
 /**
  * Returns the valid primitive actions for the current game state.
+ * Multi-seat mode excludes BET/RAISE because there is no per-seat sizing UI for batches.
+ * Otherwise the legality rules are identical to single-seat — multi-seat must still
+ * respect street and hasBet (no CHECK when facing a bet, no CHECK preflop where the
+ * BB is a forced bet).
  * @param {string} street - Current street ('preflop', 'flop', 'turn', 'river')
  * @param {boolean} hasBet - Whether there's already a bet on this street
  * @param {boolean} isMultiSeat - Whether tracking multiple seats simultaneously
@@ -98,7 +102,7 @@ export const getActionAbbreviation = (action) => {
  */
 export function getValidActions(street, hasBet, isMultiSeat) {
   const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
-  if (isMultiSeat) return [CHECK, CALL, FOLD]; // Multi-seat: only non-sizing actions
-  if (street === 'preflop') return [CALL, RAISE, FOLD]; // Blinds are forced bets — no CHECK or BET preflop
-  return hasBet ? [CALL, RAISE, FOLD] : [CHECK, BET, FOLD];
+  if (street === 'preflop') return isMultiSeat ? [CALL, FOLD] : [CALL, RAISE, FOLD];
+  if (hasBet) return isMultiSeat ? [CALL, FOLD] : [CALL, RAISE, FOLD];
+  return isMultiSeat ? [CHECK, FOLD] : [CHECK, BET, FOLD];
 }

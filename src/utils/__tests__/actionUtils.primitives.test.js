@@ -10,10 +10,21 @@ const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
 
 describe('getValidActions', () => {
   describe('multi-seat mode', () => {
-    it('returns non-sizing actions (CHECK, CALL, FOLD) regardless of street or bet state', () => {
-      expect(getValidActions('preflop', false, true)).toEqual([CHECK, CALL, FOLD]);
-      expect(getValidActions('flop', true, true)).toEqual([CHECK, CALL, FOLD]);
-      expect(getValidActions('river', false, true)).toEqual([CHECK, CALL, FOLD]);
+    // Multi-seat excludes BET/RAISE (no per-seat sizing UI for batches) but must
+    // still respect street/hasBet — CHECK is illegal when facing a bet or preflop.
+    it('preflop: CALL, FOLD only (BB forced bet — no CHECK, no per-seat RAISE)', () => {
+      expect(getValidActions('preflop', false, true)).toEqual([CALL, FOLD]);
+      expect(getValidActions('preflop', true, true)).toEqual([CALL, FOLD]);
+    });
+    it('postflop facing a bet: CALL, FOLD only (no CHECK)', () => {
+      expect(getValidActions('flop', true, true)).toEqual([CALL, FOLD]);
+      expect(getValidActions('turn', true, true)).toEqual([CALL, FOLD]);
+      expect(getValidActions('river', true, true)).toEqual([CALL, FOLD]);
+    });
+    it('postflop with no bet: CHECK, FOLD only (no per-seat BET)', () => {
+      expect(getValidActions('flop', false, true)).toEqual([CHECK, FOLD]);
+      expect(getValidActions('turn', false, true)).toEqual([CHECK, FOLD]);
+      expect(getValidActions('river', false, true)).toEqual([CHECK, FOLD]);
     });
   });
 

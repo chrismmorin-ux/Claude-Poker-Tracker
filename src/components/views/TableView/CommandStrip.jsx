@@ -355,7 +355,14 @@ export const CommandStrip = ({
     return sizingAction === PRIMITIVE_ACTIONS.BET ? 'postflop_bet' : 'postflop_raise';
   }, [sizingAction, currentStreet, currentBet, blinds.bb]);
 
-  const customMultipliers = sizingKey ? (settings.customBetSizes?.[sizingKey] || null) : null;
+  // Treat empty array as "use defaults". Empty arrays were previously written
+  // when the sizing editor was opened without `openSizingEditor` initializing
+  // editorValues from current sizingOptions; recovering that state here so users
+  // already affected don't have to reset settings manually.
+  const storedMultipliers = sizingKey ? settings.customBetSizes?.[sizingKey] : null;
+  const customMultipliers = Array.isArray(storedMultipliers) && storedMultipliers.length > 0
+    ? storedMultipliers
+    : null;
 
   const sizingOptions = sizingAction
     ? getSizingOptions(currentStreet, sizingAction, blinds, potInfo.total, currentBet, customMultipliers)
@@ -393,15 +400,29 @@ export const CommandStrip = ({
     }
   }, [customValue, handleSizeSelected, minRaise]);
 
-  // Long-press handlers for sizing button customization
+  // Editor state for sizing customization
+  const [editorValues, setEditorValues] = useState([]);
   // AUDIT-2026-04-21-TV F3: capture which slot was pressed so the editor can highlight it
   const [editingSlotIndex, setEditingSlotIndex] = useState(null);
+
+  // Long-press handlers for sizing button customization.
+  // Initializes editorValues from current sizingOptions before opening the editor.
+  // Without this, editorValues stayed at its initial [] and Save would persist an
+  // empty array, hiding the entire sizing-presets panel until settings were reset.
   const handleSizingLongPressStart = useCallback((slotIdx) => {
     longPressTimer.current = setTimeout(() => {
+      let nextValues;
+      if (sizingKey === 'postflop_bet') {
+        const pot = potInfo.total || 1;
+        nextValues = sizingOptions.map(o => parseFloat((o.amount / pot).toFixed(2)));
+      } else {
+        nextValues = sizingOptions.map(o => parseFloat(o.label.replace('x', '').replace('/', '')));
+      }
+      setEditorValues(customMultipliers || nextValues);
       setEditingSlotIndex(typeof slotIdx === 'number' ? slotIdx : null);
       setSizingEditorOpen(true);
     }, 500);
-  }, []);
+  }, [sizingKey, sizingOptions, customMultipliers, potInfo.total]);
 
   const handleSizingLongPressEnd = useCallback(() => {
     if (longPressTimer.current) {
@@ -410,27 +431,15 @@ export const CommandStrip = ({
     }
   }, []);
 
-  // Editor state for sizing customization
-  const [editorValues, setEditorValues] = useState([]);
-
-  const openSizingEditor = useCallback(() => {
-    const current = sizingOptions.map(o => o.label);
-    if (sizingKey === 'postflop_bet') {
-      const fracs = sizingOptions.map(o => {
-        const pot = potInfo.total || 1;
-        return parseFloat((o.amount / pot).toFixed(2));
-      });
-      setEditorValues(customMultipliers || fracs);
-    } else {
-      const mults = sizingOptions.map(o => parseFloat(o.label.replace('x', '').replace('/', '')));
-      setEditorValues(customMultipliers || mults);
-    }
-    setSizingEditorOpen(true);
-  }, [sizingOptions, sizingKey, customMultipliers, potInfo.total]);
-
   const handleSaveSizing = useCallback(() => {
     if (!sizingKey) return;
-    const newCustom = { ...(settings.customBetSizes || {}), [sizingKey]: editorValues };
+    // Refuse to persist an empty/all-zero preset list — would hide the sizing panel.
+    const cleaned = (editorValues || []).filter(v => Number.isFinite(v) && v > 0);
+    if (cleaned.length === 0) {
+      setSizingEditorOpen(false);
+      return;
+    }
+    const newCustom = { ...(settings.customBetSizes || {}), [sizingKey]: cleaned };
     updateSetting('customBetSizes', newCustom);
     setSizingEditorOpen(false);
   }, [sizingKey, editorValues, settings.customBetSizes, updateSetting]);
