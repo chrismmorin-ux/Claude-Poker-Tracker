@@ -18,7 +18,21 @@
 
 **Product line:** Main app
 **Tier placement:** Plus+ (full player database; Free tier has 50-player cap on source data)
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-04-26 (supersession marked)
+
+---
+
+## Superseded by Table-Build (Gate 4 ratified 2026-04-26)
+
+This surface is **fully absorbed** by the new [`table-build`](./table-build.md) surface.
+
+- **NameSearchInput + FilterChips + ResultCard sorting** → Table-Build's CandidateColumn with stability-aware ranking (per `docs/projects/table-build/schema-delta.md` §4).
+- **CreateFromQueryCTA** → Table-Build's inline "+ Create new" continuation past zero matches.
+- **BatchSeatRibbon** → Table-Build's persistent `tableBuildSession` state (separate from per-player draft autosave).
+
+Until Table-Build ships and is verified at Gate 5, this surface remains operative. After Gate 5 verification, `PlayerPickerView/` code paths archive.
+
+**Cross-references:** [Gate 1](../audits/2026-04-26-entry-table-build.md) · [Gate 2](../audits/2026-04-26-blindspot-table-build.md) · [Gate 3](../../projects/table-build/gate3-research.md) · [Surface artifact](./table-build.md).
 
 ---
 
@@ -140,3 +154,4 @@ All Session 2 audit findings now implemented.
 ## Change log
 
 - 2026-04-21 — Created Session 2.
+- 2026-04-26 — Marked fully superseded by Table-Build (Gate 4 ratified). Code paths archive after Gate 5 verification.

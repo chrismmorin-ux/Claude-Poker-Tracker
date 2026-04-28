@@ -22,7 +22,7 @@ Doesn't even play that much. Loves solving poker as a puzzle. Range-geek, GTO-cu
 
 ## Goals
 
-- Daily drill streak.
+- Daily drill streak. *(Deferred: gamification mechanics require explicit opt-in per Gate 2 red line #5 — no streaks / shame / engagement-pressure in default behavior. Scholar's streak preference is an opt-in mode, not a default. See `docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding.md`.)*
 - Master preflop charts for any format.
 - Understand postflop frequencies in detail.
 - Feel fluency — know they're improving objectively.
@@ -76,7 +76,23 @@ Doesn't even play that much. Loves solving poker as a puzzle. Range-geek, GTO-cu
 - [DISC] Spaced repetition for charts.
 - [DISC] Skill map / mastery tracker.
 - [DISC] Custom drill from own hand history (if they occasionally play).
-- [DISC] Daily streak + gentle gamification.
+- [DISC] Daily streak + gentle gamification. *(Opt-in only; defaults off per autonomy red lines.)*
+
+---
+
+## Skill-state attribute (for adaptive-learning features)
+
+Scholar's skill evolves per-domain (preflop ranges, postflop frequencies, Shape Language descriptors, ICM intuition). Model skill as a **per-domain attribute** with the same shape used for Chris Live Player:
+
+- `level` — discrete mastery band.
+- `confidence` — Bayesian credible interval.
+- `lastValidatedAt` — timestamp of most recent evidence.
+- `trendDirection` — improving / stable / plateaued / decaying.
+- `userMuteState` — `none` / `already-known` / `not-interested`.
+
+Scholar's attribute carries the **same invariants** as Chris's (Reference-mode does not write; Deliberate/Discover do; user declaration is distinct from behavioral signal; decay on read). Full shape and rationale: `docs/design/personas/core/chris-live-player.md` §"Skill-state attribute."
+
+**Scholar differs from Chris** in engagement preferences (Scholar welcomes streak / coverage / mastery-progression telemetry), but all opt-in-only per red line #5. The skill-state attribute itself is identical.
 
 ## Proto caveats
 
@@ -87,3 +103,4 @@ Doesn't even play that much. Loves solving poker as a puzzle. Range-geek, GTO-cu
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-23 — Added **Skill-state attribute** section (inherits Chris's invariants). Flagged streak-gamification goal as opt-in-only per Gate 2 red line #5. Output of Gate 3 of Poker Shape Language adaptive-seeding project. See `docs/projects/poker-shape-language/gate3-decision-memo.md`.

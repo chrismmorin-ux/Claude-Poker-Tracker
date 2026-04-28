@@ -132,19 +132,71 @@ The user may be interrupted at any moment by the dealer, another player, or a ph
 
 ---
 
+## Session-continuity heuristics (H-SC)
+
+New category 2026-04-24 for Monetization & PMF project. Applies specifically to commerce + session-continuity surfaces that intersect with live-play. Project-specific; only load-bearing when commerce UX is present.
+
+---
+
+## H-SC01 — Paywall never interrupts active work
+
+The most autonomy-critical surface in the app is a live hand in progress. Commerce UX must NEVER interrupt this state. A free-tier user who hits a usage quota (e.g., "3 deep analyses per session") mid-hand completes the hand; the paywall modal fires at hand-end or session-end, never mid-hand.
+
+**Background:** red line #8 (no cross-surface commerce contamination) + MPMF-AP-12 (paywall-mid-hand refusal). Under Q1=A verdict, this heuristic binds commerce UX on live-play surfaces (TableView, LiveAdviceBar, SizingPresetsPanel).
+
+**Implications for surfaces:**
+- Paywall modal (Gate 4 MPMF-G4-S2) subscribes to `isHandInProgress()` state; defers modal trigger to hand-end boundary.
+- Usage-threshold paywalls (L3) defer to natural session boundary if triggered mid-hand.
+- Depth-of-analysis paywalls (L6) defer to post-hand review surface, never during live decision.
+- Feature-first-open paywalls (L2) blocked from TableView while any hand is in progress.
+- Upgrade CTA placement adapts by context: primary off-table, tertiary or absent during live hand (per H-PLT07 state-aware primary action).
+
+**Violated when:**
+- Paywall modal covers the table UI while hero has an active decision.
+- Quota-exhaustion alert interrupts hand entry.
+- Upgrade banner appears on LiveAdviceBar during active hand.
+
+**Test assertion (Gate 5 MPMF-G5-SC):** mock a mid-hand state + trigger a paywall condition → assert modal does NOT render until hand completes.
+
+---
+
+## H-SC02 — Trial state legible outside settings
+
+A free-tier user unsure which tier they're on must be able to verify in ≤ 2 taps from anywhere in the app. Hiding tier state behind multiple navigation steps violates red line #2 (transparency on demand) and creates evaluation-period anxiety — a returning-evaluator who doesn't know whether their trial is still active is in a worst-case cognitive state.
+
+**Background:** SA-72 JTBD (understand-what's-free-what's-paid-and-why) + red line #2. Distinct from H-PLT01 glanceability (H-PLT01 is about speed; H-SC02 is about discoverability).
+
+**Implications for surfaces:**
+- Trial-state indicator (Gate 4 MPMF-G4-S4) lives in a persistent location (top-right nav or Settings-adjacent chip) visible across all main routes.
+- Indicator is ≤ 150ms glanceable (inherits H-PLT01 on live-play surfaces).
+- Tap on indicator → direct route to BillingSettings surface with current tier, next bill, cancellation path all visible.
+- Inline locked-feature badges ("Plus feature") tap → explainer + tier-info, not aggressive upsell.
+
+**Violated when:**
+- User must open Settings → scroll → find Billing → tap → see tier (4+ taps).
+- Tier state hidden behind account/profile menu nested deeply.
+- Locked features have no indication of which tier unlocks them.
+
+**Test assertion (Gate 5):** from any main route, user can reach tier-state info in ≤ 2 taps (measured via UI test harness).
+
+---
+
 ## Applying these alongside Nielsen
 
 Nielsen heuristics are broad; these are narrow. In an audit:
 1. Run through H-N01…H-N10 first.
 2. For each surface, also run through H-PLT01…H-PLT08.
-3. A finding may cite multiple heuristics — that strengthens severity.
+3. For commerce / session-continuity surfaces, run H-SC01 + H-SC02.
+4. A finding may cite multiple heuristics — that strengthens severity.
 
-Mid-hand surfaces weight H-PLT01 / H-PLT02 / H-PLT07 highest.
+Mid-hand surfaces weight H-PLT01 / H-PLT02 / H-PLT07 / **H-SC01** highest.
 Between-hands surfaces weight H-PLT06 / H-PLT08 highest.
 Post-session surfaces weight classic Nielsen over these.
+Commerce UX surfaces (pricing / paywall / billing / trial / cancellation) weight **H-SC01 + H-SC02** alongside red-line compliance.
 
 ---
 
 ## Change log
 
 - 2026-04-21 — Created.
+- 2026-04-24 — Added H-SC (session-continuity) heuristic category with H-SC01 (paywall-never-interrupts-active-work) + H-SC02 (trial-state-legible-outside-settings). Output of Monetization & PMF Gate 4 Batch 1 authoring. Applies specifically to commerce UX on live-play surfaces (H-SC01) and across the app (H-SC02). Distinct from H-PLT category in that H-SC heuristics only bind when commerce UX is present; not universal. See `docs/projects/monetization-and-pmf.project.md` §Acceptance Criteria red lines #8 + #10 + `docs/design/audits/2026-04-24-blindspot-monetization-and-pmf.md` §Stage E.

@@ -21,7 +21,23 @@
 
 **Product line:** Main app
 **Tier placement:** Free+ (core player-management flow, though unlimited players are Plus+)
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-04-26 (partial supersession marked)
+
+---
+
+## Partial supersession by Table-Build (Gate 4 ratified 2026-04-26)
+
+The **create-from-query path** (entered from `PlayerPickerView` → CreateFromQueryCTA, with `nameSeed`) is **absorbed** by [`table-build`](./table-build.md). Table-Build presents create as a continuation past zero matches on the same screen — not a route change.
+
+The **edit-existing path** (entered from `PlayersView` row → "Edit", with `playerId` and `mode: 'edit'`) **survives**. Post-Session-Chris's deep-edit JTBD (PM-07) is still served here. Draft autosave (`usePlayerDraft`) continues to work as today; draft-resume banner unchanged.
+
+Net effect on this surface:
+- Entry from `PlayerPickerView` deprecates after Gate 5.
+- Entry from `SeatContextMenu` → "Create New Player" deprecates after Gate 5 (collapses into "Open Table-Build").
+- Entry from `PlayersView` row → "Edit" remains.
+- AvatarFeatureBuilder + NameSection + NotesSection + ImageUploadSection remain operative for the edit path.
+
+**Cross-references:** [Gate 1](../audits/2026-04-26-entry-table-build.md) · [Gate 2](../audits/2026-04-26-blindspot-table-build.md) · [Surface artifact](./table-build.md).
 
 ---
 
@@ -142,3 +158,4 @@ Root: `min-h-screen bg-gray-100 flex flex-col` with `transform: scale(scale)`, `
 ## Change log
 
 - 2026-04-21 — Created Session 2.
+- 2026-04-26 — Marked partially superseded by Table-Build (Gate 4 ratified). Create-from-query path absorbed; edit-existing path survives.

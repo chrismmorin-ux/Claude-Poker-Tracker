@@ -15,7 +15,32 @@
 
 **Product line:** Main app
 **Tier placement:** Free+ (capped player count in Free per INVENTORY F-05). Full cross-session range profiles + analytics are Plus+ / Pro.
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-04-26 (partial supersession marked)
+
+---
+
+## Partial supersession by Table-Build (Gate 4 ratified 2026-04-26)
+
+The **seat-assignment grid** (`SeatAssignmentGrid` + the click-to-assign + drag-to-assign + Clear All Seats + per-seat Clear flows) is **absorbed** by [`table-build`](./table-build.md). The Ringmaster pre-game seat-fill JTBD (PM-05) and the parallel-to-picker assignment flow both move to Table-Build.
+
+The **database browser** (PlayerRow list, PlayerFilters, sort, search, range-detail overlay, edit/delete actions, Bulk-operations potentially) **survives** as the post-session and out-of-session player-management surface. Post-Session-Chris (PM-07 edits) and bulk-cleanup workflows still live here.
+
+### DCOMP-W4-A1 backlog re-scope (Gate 4 ratified 2026-04-26)
+
+The 2026-04-22 audit produced 8 findings. Reality check: F1 / F2 / F3 / F6 already shipped (Batches A + B, commits `0715034` + `38b334b`) — Table-Build will replace the affected code paths post-Gate-5 but the safety improvements landed in the interim. Updated disposition:
+
+| Finding | Current status | Action |
+|---|---|---|
+| F1 — Clear All Seats native confirm → toast+undo | ✅ COMPLETE (Batch A) | None — already shipped; replaced post-Gate-5 |
+| F2 — Delete Player modal → deferred-delete | ✅ COMPLETE (Batch B) | None — already shipped; survives in database browser |
+| F3 — Per-seat Clear silent commit → toast+undo | ✅ COMPLETE (Batch A) | None — already shipped; replaced post-Gate-5 |
+| F5 — Row action targets (Range/Edit/Delete) | NEXT (P1) | Keep NEXT — independent ship |
+| F6 — Per-seat Clear touch target | ✅ COMPLETE (Batch A) | None — already shipped; replaced post-Gate-5 |
+| F7 — Clear All Seats button height | NEXT (P2) | **PAUSE** — Table-Build absorbs; not worth shipping |
+| F8 — Filter persist + collapse | NEXT (P2) | Keep NEXT — independent ship; design informs Table-Build filter too |
+| F13 — Seed avatarFeatures in dev data | NEXT (P3) | **PROMOTE P0 / Phase 0** — prerequisite for Table-Build dev verification |
+
+**Cross-references:** [Gate 1](../audits/2026-04-26-entry-table-build.md) · [Gate 2](../audits/2026-04-26-blindspot-table-build.md) · [DCOMP-W4-A1 audit](../audits/2026-04-22-players-view.md) · [Surface artifact](./table-build.md).
 
 ---
 
@@ -136,3 +161,4 @@ Wrapped in `ScaledContainer`.
 
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
 - 2026-04-22 — DCOMP-W4-A1 audit appended; Known-issues updated with 13 findings (4 P0, 4 P1, 2 P2, 3 P3/deferred).
+- 2026-04-26 — Marked partially superseded by Table-Build (Gate 4 ratified). Seat-assignment grid absorbed; database browser + bulk operations survive. DCOMP-W4-A1 F1/F3/F6/F7 paused; F2/F5/F8 ship independent; F13 Phase 0 prerequisite.

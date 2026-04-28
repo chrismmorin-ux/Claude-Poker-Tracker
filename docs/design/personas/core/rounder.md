@@ -27,6 +27,7 @@ Plays $2/$5 and $5/$10 live cash 20+ hours per week, treats poker like a second 
 - Maximize hourly by picking best tables and seats.
 - Review hands away from the table systematically.
 - Trust the app enough to let exploit advice shade real-money decisions.
+- Carry vetted reference material (laminated cards) to the venue without touching the phone in off-hand windows (Gate 3 of Printable Refresher project, 2026-04-24).
 
 ## Frustrations
 
@@ -90,3 +91,4 @@ Plays $2/$5 and $5/$10 live cash 20+ hours per week, treats poker like a second 
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-24 — Added carry-vetted-reference Goal bullet. Output of Gate 3 for Printable Refresher project (`docs/projects/printable-refresher.project.md`). Rounder is secondary persona for stepped-away-from-hand situational (primary: Chris).

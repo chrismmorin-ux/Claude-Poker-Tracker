@@ -12,7 +12,25 @@
 
 **Product line:** Main app
 **Tier placement:** Free+ (core table UX)
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-04-26 (entry-point change marked)
+
+---
+
+## Entry-point change for Table-Build (Gate 4 ratified 2026-04-26)
+
+The two existing menu entries that touch the player-assignment flow collapse into a **single entry**:
+
+- ❌ "🔍 Find Player…" → opened `PlayerPickerView`
+- ❌ "+ Create New Player" → opened `PlayerEditorView` (create mode)
+- ✅ "Open Table-Build" → opens [`table-build`](./table-build.md) with `pickerContext.seat` set
+
+Rationale: Table-Build is match-or-create on a single surface; surfacing two distinct menu entries forces a premature commitment to a flow ("am I matching or creating?") that the user often doesn't know yet.
+
+The other menu items (Make My Seat, Make Dealer, Clear, Recent fast-assign) are unaffected.
+
+JTBD-PM-01 (Clear) routing unchanged; JTBD-PM-02 + PM-03 + PM-04 + PM-10 all route through the new collapsed entry.
+
+**Cross-references:** [Gate 1](../audits/2026-04-26-entry-table-build.md) · [Gate 2](../audits/2026-04-26-blindspot-table-build.md) · [Surface artifact](./table-build.md).
 
 ---
 
@@ -125,3 +143,4 @@ All four seat-context-menu findings addressed Session 3 (2026-04-21). Awaiting v
 ## Change log
 
 - 2026-04-21 — Created Session 2.
+- 2026-04-26 — Entry-point change marked: "Find Player…" + "Create New Player" collapse into single "Open Table-Build" entry per Table-Build Gate 4. Other menu items unaffected.

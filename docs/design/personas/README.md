@@ -8,12 +8,14 @@ Who uses (or could use) the app. Organized hierarchically.
 
 ```
 personas/
-├─ core/                         ← archetypes (~15)
+├─ core/                         ← archetypes (~16)
 │   ├─ chris-live-player.md     ← primary & reference
+│   ├─ evaluator.md             ← prospective-buyer cognitive state (pre-commitment)
 │   └─ [13 end-user archetypes]  ← design targets across the market
 └─ situational/                  ← the same core in a specific moment
     ├─ [chris-specific × 4]      ← mid-hand, between-hands, seat-swap, post-session
-    └─ [cross-persona × 6]       ← e.g., bubble-decision, home-game-settle
+    ├─ [evaluator-specific × 2]  ← trial-first-session, returning-evaluator
+    └─ [cross-persona × 6+]      ← e.g., bubble-decision, home-game-settle, stepped-away-from-hand
 ```
 
 - **Core personas** are durable archetypes. One person can match only one core at a time (though archetypes evolve — The Weekend Warrior may become The Rounder over years).
@@ -56,6 +58,7 @@ Situational sub-personas carry the time / attention / cognitive-load constraints
 | [Newcomer](./core/newcomer.md) | Any low-stakes | Learn in context | Main | $0–10 |
 | [Analyst](./core/analyst-api-user.md) | Online mostly | Raw export + API | Main + API | $30–60 |
 | [Traveler](./core/traveler.md) | Live cross-border | Multi-currency tracking | Main | $30–80 |
+| [Evaluator](./core/evaluator.md) | N/A (pre-commitment) | Evaluate whether app fits | Either (main-app first) | pre-WTP; trial cohort |
 
 ---
 
@@ -64,6 +67,7 @@ Situational sub-personas carry the time / attention / cognitive-load constraints
 | Persona | Status | Basis |
 |---------|--------|-------|
 | Chris | PROTO, partially verified | Direct observation from owner interaction |
+| Evaluator | Owner-Confirmed (structural), PROTO-evidential | Owner-ratified 2026-04-24 at Monetization & PMF Gate 3 (structural shape confirmed); full Verified pending Stream D telemetry 30-60-day window |
 | All 14 others | PROTO, **unverified** | Synthesis from market research (competitive products + community discussion) |
 
 None of the 14 end-user archetypes have been validated by direct observation. They are *design targets*, not *research conclusions*. Upgrading any to VERIFIED requires: real-world interview, telemetry analysis, or documented user study. Until then, treat as hypothesis-driven design targets — useful for divergent thinking, dangerous to treat as ground truth.
@@ -84,3 +88,4 @@ None of the 14 end-user archetypes have been validated by direct observation. Th
 ## Change log
 
 - 2026-04-21 — Created Session 1b (engine expansion).
+- 2026-04-24 — Added Evaluator core persona (16th core) + `trial-first-session` situational + `returning-evaluator` situational as output of Monetization & PMF project Gate 1 authoring + Gate 3 owner ratification. Architecture diagram updated to reflect new cast. Evidence-status table gained row for Evaluator (Owner-Confirmed structural / PROTO-evidential — full Verified pending telemetry). Evaluator fills the prospective-buyer cognitive-state gap — every other persona describes already-committed users; Evaluator is the person deciding whether to become one. Sub-shapes (E-CHRIS / E-SCHOLAR / E-IGNITION) documented as attributes in `evaluator.md`, not forked to separate core personas (Gate 2 audit Stage A verdict + Gate 3 Q10=B verdict). See `docs/projects/monetization-and-pmf/gate3-owner-interview.md` + `docs/design/audits/2026-04-24-blindspot-monetization-and-pmf.md`.

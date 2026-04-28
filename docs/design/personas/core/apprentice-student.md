@@ -26,6 +26,7 @@ Paying a coach or self-studying with a small friend group. Improving, serious ab
 - Complete assigned drills between sessions.
 - Understand the *reasoning* behind right vs. wrong decisions.
 - Track personal skill improvement objectively over time.
+- Receive coach-curated printable packs as physical study aids (Gate 3 of Printable Refresher project, 2026-04-24).
 
 ## Frustrations
 
@@ -78,6 +79,7 @@ Paying a coach or self-studying with a small friend group. Improving, serious ab
 - [DISC] Skill map / mastery tracker.
 - [DISC] In-context jargon explanations (first-hover tooltips).
 - [DISC] Shareable flagged hands with coach (read-only).
+- [DISC] Accept a coach-authored printable pack (PDF or in-app bundle) into personal library.
 
 ## Proto caveats
 
@@ -88,3 +90,4 @@ Paying a coach or self-studying with a small friend group. Improving, serious ab
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-24 — Added coach-curated printable pack Goal + Missing-feature bullet. Output of Gate 3 for Printable Refresher project (`docs/projects/printable-refresher.project.md`). Coach persona parallel addition deferred to future project (CO-* domain already scoped).

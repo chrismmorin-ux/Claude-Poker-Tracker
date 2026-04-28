@@ -366,6 +366,176 @@ All jobs related to associating (or disassociating) player records with seats at
 
 ---
 
+## JTBD-PM-10 — Cold-read a table at session start with mixed match-or-create flow
+
+### Job statement
+
+> When I sit down at a new table needing to populate 5–8 seats over 5–15 minutes, with some half-recognized faces and most strangers, I want a single landscape-optimized surface that fluidly handles match-or-create plus stable + ephemeral feature capture, so I don't context-switch between picker, editor, and database views and don't compromise the first hand.
+
+### Dimensions
+
+- **Functional:** 5–8 seats go from unassigned to assigned in one continuous flow on one surface. Mix of `match` (existing record assignment) and `create` (new record + assignment). Per-seat clothing observations captured to seat record, not player record. Build state survives interruption (phone sleep, mid-hand pitch, Seat-Swap handoff).
+- **Emotional:** Set up before the first hand; not scrambling mid-hand. Confident that recognition will work next session because stable features were captured deliberately.
+- **Social:** Glance-at-phone discreet — observation feel light, not "running a forensic interview."
+
+### Applicable personas
+
+- [Cold-Read Chris](../../personas/situational/cold-read-chris.md) — primary. The persona this JTBD is authored for.
+- [Chris (live player)](../../personas/core/chris-live-player.md) — core.
+- [Ringmaster (home host)](../../personas/core/ringmaster-home-host.md) — secondary; database is regular-heavy so match dominates, but the same surface serves with adaptive disclosure.
+
+### Success criteria
+
+- [ ] < 5 minutes to populate 7 seats when ~50% are matches.
+- [ ] < 10 minutes when all 7 are creates with ≥3 stable features captured per seat.
+- [ ] Build state survives phone sleep, mid-hand pitch interruption, and Seat-Swap handoff.
+- [ ] Save-and-next green-light state is "≥3 stable features captured" (not "all features filled").
+- [ ] Possible-Matches panel (PM-11) fires before save when overlap threshold met.
+- [ ] Layout chrome ≤25% of 1600×720 viewport; input + candidate-header + first 4 candidate rows visible above keyboard fold simultaneously.
+- [ ] Feature-creation chrome collapses to slim header until the user types past zero matches or taps create.
+- [ ] First-session Newcomer can use the surface productively without encountering stability-flag override controls (progressive disclosure for first ≥3 saved players).
+
+### Failure modes
+
+- Chrome consumes >25% of landscape viewport (DCOMP-W4-A1 F8 echoes — current PlayersView filter row is 29%).
+- Virtual keyboard occludes candidate list while user types — typing blind.
+- Feature-creation chrome forced visible before user has typed past zero matches — Ringmaster wastes screen real estate on creates that won't happen.
+- Merge confirmation (PM-11) navigates away from Table-Build, forcing user to re-enter and lose build progress.
+- Build state lost on phone sleep — only the in-flight player draft survives, not "seat 4 of 8 filled" progress.
+- Stability-flag override UI overwhelms first-session Newcomer.
+- "Save player" requires full AvatarFeatureBuilder traversal — too slow for 7-seat session start.
+
+### Surfaces involved
+
+- `surfaces/table-build.md` — primary action surface (new, Gate 4 deliverable).
+- `surfaces/seat-context-menu.md` — entry point; "Find Player" + "Create New Player" entries collapse to "Open Table-Build".
+- `surfaces/player-picker.md` — superseded.
+- `surfaces/player-editor.md` — create-from-query path superseded; edit-existing path retained.
+- `surfaces/players-view.md` — seat-assignment grid superseded; database-browser + bulk-operations retained.
+
+### Related JTBD
+
+- **Composes with:** PM-02 (assign known), PM-03 (create new), PM-05 (batch-assign — PM-10 is the unified-surface variant), PM-06 (retro-link), PM-09 (find by features).
+- **Composes with:** PM-11 (dedup on save), PM-12 (today-feature capture).
+- **Distinct from:** PM-05 by specifying mixed-mode + unified-surface constraints; PM-05 is the umbrella job, PM-10 is the surface-specific persona-action.
+
+### Notes / non-obvious constraints
+
+- Cold-Read Chris's two-handed window (dealer hasn't pitched cards) is one of the few persona-actions where the one-handed-landscape constraint relaxes. Surface design can assume two-handed for the first 2–3 minutes, then degrade gracefully.
+- Time budget per seat is non-uniform: ~30s for matches, ~60s for creates with 3 stable features, up to 2 min for creates with notes + ethnicity + clothing.
+
+---
+
+## JTBD-PM-11 — Detect potential duplicates on save and offer manual merge
+
+### Job statement
+
+> When I'm about to save a new player whose stable features and partial name overlap with an existing record above some threshold, I want the surface to surface those candidates with side-by-side compare and a manual-merge action that preserves stats, range profile, and hand history of the surviving record — so I don't silently create a duplicate I'll have to clean up later.
+
+### Dimensions
+
+- **Functional:** Duplicate-detection runs on weighted stable-feature score + name-prefix score + ethnicity-overlap score. Threshold-crossing candidates surface in an inline panel above the save button (not a modal, not a navigate-away). User reviews **evidence** (overlapping-features list), not a confidence number. Manual merge into the surviving record preserves stats, range profile, hand history, and retro-link history. Merge action emits a 12s toast+undo with a session-scoped pre-merge cache.
+- **Emotional:** Not creating a duplicate I'll have to find and clean up later. Trust that the system shows me why it thinks these are the same person, not just that it thinks so.
+- **Social:** Invisible to others; happens silently on save.
+
+### Applicable personas
+
+- [Cold-Read Chris](../../personas/situational/cold-read-chris.md) — primary. Mid-build save is where this JTBD fires.
+- [Post-Session Chris](../../personas/situational/post-session-chris.md) — secondary; cleanup of pre-merge duplicates that escaped detection.
+- [Chris (live player)](../../personas/core/chris-live-player.md) — core.
+
+### Success criteria
+
+- [ ] Possible-Matches panel renders the **evidence** for the proposed match (matched-features list, e.g. "name prefix matched, ethnicity matched, skin+hair stable-feature matched"), never a confidence score.
+- [ ] Merge action is one-tap from the panel.
+- [ ] Merge preserves stats, range profile, hand history, retro-link history of the surviving record.
+- [ ] Undo available for ≥12s after merge.
+- [ ] Auto-merge never fires; user confirmation always required.
+- [ ] Merge UI lands as inline panel inside Table-Build; never unmounts the surface.
+- [ ] Threshold formula is documented (Gate 3 deliverable) and tunable.
+
+### Failure modes
+
+- Confidence score shown instead of evidence list — user is asked to trust an opaque inference (autonomy red line #2 violation).
+- Auto-merge fires silently — user discovers later that two records collapsed into one without consent (autonomy red line #3 violation).
+- Merge unmounts Table-Build → user must re-enter the surface and loses build progress.
+- Merge fails to preserve hand history → existing player's stats corrupted by merge.
+- Threshold too aggressive → noise; too conservative → silent duplicates pass through.
+- Undo doesn't restore both records pristine.
+
+### Surfaces involved
+
+- `surfaces/table-build.md` — Possible-Matches panel + merge UI.
+- `surfaces/players-view.md` — merged record continues here in the database browser.
+
+### Related JTBD
+
+- **Composes with:** PM-02 (the "this is the same as existing" path), PM-03 (the create path that triggered the panel), PM-09 (visual-feature search shares the stable-feature-score sub-formula).
+- **Supersedes:** the inline duplicate-name warning currently in `PlayerEditorView/NameSection` — that warning fires on name-only and offers no merge.
+
+### Notes / non-obvious constraints
+
+- Autonomy red line #2 (full transparency on demand) applied at this JTBD: panel renders **what** matched, not **how confident** the system is. A "85% match" number is the wrong primitive.
+- Threshold formula is a Gate 3 research deliverable. Starting proposal: `name_prefix × 0.4 + ethnicity_match × 0.2 + skin_match × 0.15 + build_match × 0.15 + hair_color_stable_match × 0.1`, threshold tunable.
+- Ringmaster persona benefits most from this JTBD — high regular density means high duplicate-creation risk if a regular's appearance changes between sessions.
+
+---
+
+## JTBD-PM-12 — Capture today-only observations without polluting the player record
+
+### Job statement
+
+> When I want to note that a player is wearing a vest today, has a today's-hat read, or is in sunglasses, I want those observations to live on the per-seat-per-session record — visible during this session for recognition, decaying or re-prompting at session end so they don't permanently distort the player's stable feature record.
+
+### Dimensions
+
+- **Functional:** today-features captured in a `seatClothingObservations` store (parallel pattern to EAL `anchorObservations`), keyed by `sessionId + seatNumber + playerId`. Visible on the seat avatar during session. Decay / promote / discard at session end per the lifetime rule (Gate 1 Q4). Promote `today → always` on the player record after N consecutive observed sessions per the promotion rule (Gate 1 Q3); user-overridden stability is sticky against re-promotion (autonomy red line #3).
+- **Emotional:** Capturing useful recognition cues without committing them to the durable record. Confident that today's vest doesn't pollute next session's match.
+- **Social:** Brief observation entry, not data entry.
+
+### Applicable personas
+
+- [Cold-Read Chris](../../personas/situational/cold-read-chris.md) — primary.
+- [Seat-Swap Chris](../../personas/situational/seat-swap-chris.md) — secondary; same observation pattern on mid-session arrivals.
+- [Chris (live player)](../../personas/core/chris-live-player.md) — core.
+
+### Success criteria
+
+- [ ] today-feature capture is one-tap from the Table-Build seat panel.
+- [ ] today-features render visibly on seat avatars during session.
+- [ ] today→always auto-promotion occurs after ≥N consecutive observed sessions (N is a Gate 3 deliverable; default proposal N=2).
+- [ ] User override of an auto-promotion is durable: explicit `today` setting persists against future auto-promote attempts.
+- [ ] today-features do not appear on the player record's stable feature view.
+- [ ] today-feature stability flag carries `source: 'inferred' | 'user'`; re-inference path respects `source === 'user'`.
+
+### Failure modes
+
+- today-feature pollutes player record (e.g., "vest" appears on the player's `avatarFeatures` instead of `seatClothingObservations`).
+- Auto-promotion fires without user awareness; user discovers a beard variant they thought was today-only is now the player's permanent feature.
+- User override of auto-promotion silently re-fires next session (autonomy red line #3 violation).
+- today-feature persists past session end without review prompt or decay.
+- Storing `seatClothingObservations` couples to EAL infrastructure such that an EAL schema change forces a player-management migration.
+
+### Surfaces involved
+
+- `surfaces/table-build.md` — primary capture surface.
+- Seat avatars (TableView, ShowdownView) — render today-features during session.
+- Post-Session Chris flow — review prompt at session end if Q4 verdict is option (b).
+
+### Related JTBD
+
+- **Composes with:** PM-02, PM-03, PM-10.
+- **Architectural sibling:** EAL's `anchorObservation` capture pattern (same conceptual shape — ephemeral per-instance observation that may promote to a sticky annotation after repeat-occurrence). Architectural pattern reused; storage parallel (separate store per Gate 2 Stage B verdict).
+
+### Notes / non-obvious constraints
+
+- The autonomy contract here mirrors EAL's anchor lifecycle: inferred status is durable but **never overrides** explicit user intent. The shape `{ value: 'today' | 'always' | 'unknown', source: 'inferred' | 'user' }` is load-bearing.
+- Today-feature lifetime at session end (Q4) and promotion threshold (Q3) are Gate 3 research deliverables. Defaults proposed: N=2 sessions for promotion; option (c) auto-promote-to-unknown for session-end lifetime, with optional Post-Session-Chris review prompt as a follow-up.
+- Cross-session render: a `today` feature is visible on the seat during the session it was captured AND during any future session where the same player sits (rendered with stability indicator) — until either auto-promotion fires or user explicitly demotes/discards.
+
+---
+
 ## Change log
 
 - 2026-04-21 — Created. All 9 entries defined to support Session 2 audit.
+- 2026-04-26 — Added PM-10 (cold-read mixed match-or-create), PM-11 (duplicate-detection + manual merge), PM-12 (today-only observation capture). Authored as Gate 3 deliverable for the Table-Build surface (`docs/design/audits/2026-04-26-entry-table-build.md` Gate 1 RED → `2026-04-26-blindspot-table-build.md` Gate 2 YELLOW). Pairs with new situational persona [Cold-Read Chris](../../personas/situational/cold-read-chris.md).

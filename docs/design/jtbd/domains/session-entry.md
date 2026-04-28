@@ -44,6 +44,29 @@ Jobs around preparation for, and review of, a specific poker session. Distinct f
   - Pattern-outcome attribution wrong — claims a pattern "fired" when it didn't, or vice versa.
 - **Integration:** Extends SessionsView with a new tab rather than creating a new routed view.
 
+## SE-04 — Pre-session kinesthetic visualization / rehearsal via physical artifact
+
+> When I prepare for tonight's session, I want a physical artifact I can walk through slowly, touch, mark up with dry-erase, order on a desk, and internalize — so decision patterns become muscle-memory rather than lookup-dependence, and so I walk into the session primed without having been glued to a phone screen.
+
+- **State:** Active (pending Printable Refresher Gate 4 — Phase 1 ships the physical artifact; pre-session integration hooks in Phase 4+).
+- **Primary persona:** [Pre-Session Preparer](../../personas/situational/presession-preparer.md). Secondary: [stepped-away-from-hand](../../personas/situational/stepped-away-from-hand.md) in the `pre-session-at-venue` context variant.
+- **Autonomy constraint:** opt-in only. No auto-generation of "tonight's pack." User explicitly selects cards for a rehearsal batch. Tone is neutral/supportive per `presession-preparer` mood-awareness requirements — never anxiety-inducing ("tonight's villains are coming!" ✗).
+- **Mechanism:** Printable Refresher exports a batch selected by the user for tonight's venue / stakes / game-type. Laminated cards serve kinesthetic rehearsal — physical tactile interaction the in-app view cannot replicate. Distinct mechanism from SE-01 (which is villain-watchlist-specific).
+- **Success criteria:**
+  - User can produce a pre-session batch in <5 min from card-selection to print-ready PDF.
+  - Card layout supports dry-erase annotation (H-PM03 light ink budget + white-space reserved for notes).
+  - Print-preview WYSIWYG before commit (H-N03 paper-no-undo safety net).
+  - Batch archived in `printBatches` store for stale-diff (CC-83) on next pre-session.
+- **Failure modes:**
+  - Generic pack auto-pushed — violates autonomy red line #15 (no proactive print-output).
+  - "Cards you haven't studied lately" nag — violates red line #5 + #14 (no completion tracking).
+  - Cross-contamination into SE-01 watchlist (SE-04 is generic rehearsal; SE-01 is villain-specific — must not merge).
+- **Distinct from:**
+  - **SE-01** (tonight's watchlist) — SE-01 is villain-conditioned pattern-spotting; SE-04 is generic-principles kinesthetic rehearsal. They can be used together but serve different outcomes.
+  - **DS-46** (spaced repetition for charts) — DS-46 is declarative-memory drill mechanism; SE-04 is kinesthetic-memorization via physical object, distinct cognitive modality.
+  - **DS-60** (carry-reference-offline) — DS-60 is the reference-carrying JTBD for the off-hand-at-venue window; SE-04 is pre-session rehearsal home-or-venue. Both served by the Printable Refresher surface but distinct situational frames.
+- Doctrine basis: Printable Refresher Gate 2 audit Voice 2 §Missing JTBDs PRF-NEW-4; `docs/projects/printable-refresher.project.md` §Risks #4 content-scope phasing notes SE-04 as a Phase-4+ integration hook; `presession-preparer.md` §Goals "rehearse recognition."
+
 ## SE-03 — Scale commitment to a specific deviation via drill-side dial
 
 > When I disagree with the drill's confidence level on a specific pattern, I want to dial my commitment up or down and watch the recommendation re-converge, so I own the decision and the tool serves me rather than dictates to me.
@@ -84,3 +107,4 @@ Jobs around preparation for, and review of, a specific poker session. Distinct f
 ## Change log
 
 - 2026-04-23 — Created as Gate 3 output of exploit-deviation project Phase 3. SE-01, SE-02, SE-03 authored. New domain registered in `ATLAS.md` same session.
+- 2026-04-24 — Added SE-04 (pre-session kinesthetic visualization / rehearsal via physical artifact). Output of Gate 3 for Printable Refresher project. SE-04 is a parallel-use-case to SE-01 — SE-01 is villain-specific pattern rehearsal; SE-04 is generic-principles kinesthetic rehearsal; users may pair them in one pre-session prep routine. See `docs/design/audits/2026-04-24-blindspot-printable-refresher.md` + `docs/projects/printable-refresher/gate2-voices/02-market-lens.md` §Missing JTBDs PRF-NEW-4.
