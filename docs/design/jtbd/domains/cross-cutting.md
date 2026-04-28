@@ -135,6 +135,97 @@ Jobs that span multiple surfaces and don't belong to any one domain — undo, re
 
 - State: **Proposed** (DISC-17, deferred).
 
+## CC-90 — System-recognition / cross-element fluency
+
+> When I see an indicator anywhere in the sidebar (or, by extension, anywhere in the app), I want its visual treatment to map to a single concept-class I already know — so I don't have to re-decode the same idea per zone or per surface.
+
+- State: **Active** (pending Sidebar Holistic Coherence Gate 4 shell spec).
+- **Primary personas:** [Multi-Tabler](../../personas/core/multi-tabler.md), [Online MTT Shark](../../personas/core/online-mtt-shark.md), [Hybrid Semi-Pro](../../personas/core/hybrid-semi-pro.md), [Apprentice](../../personas/core/apprentice-student.md). **Acute** for the [sidebar-fluency-acquiring](../../personas/situational/sidebar-fluency-acquiring.md) situational, where re-decoding cost is paid up-front and not amortized.
+- **Pre-condition framing:** This is the JTBD the *other* glance JTBDs depend on. `JTBD-MH-01` (see recommended action), `JTBD-MH-09` (street + pot awareness), and every other mid-hand glance presupposes that the user knows what kind of element they are looking at without reading it. Until CC-90 is served, no glance JTBD can be reliably audited — every "glance failed" finding is ambiguous between *bad glance design* and *unfamiliar visual language*.
+- **Mechanism:**
+  - Sidebar shell spec (Gate 4 of SHC) declares one canonical visual treatment per cross-zone concept-class. Doctrine v3 **R-1.6** (treatment-type consistency) makes the rule binding on Stage 4 specs and Stage 6 PRs.
+  - Each cross-zone concept (confidence, freshness, status, locked, unknown, priority) declares its treatment-type — exactly one of `{dot, badge, opacity-modulated value, text label, icon}` — in the shell spec's element-family map.
+  - Cross-zone re-occurrences re-use the declared type. New treatment-types added by a panel without prior cross-zone audit fail the Stage 6 PR gate per R-1.6.
+  - Color-as-signal isolation (D-2 forensics) is a shell-spec concern (deferred from doctrine v3 under Option II); each color token maps to exactly one concept-class within the sidebar.
+- **Anti-nag / anti-clutter guarantees:**
+  - No tooltips on first hover to compensate for incoherence; coherence is the teaching mechanism, not annotations.
+  - No legends or keys rendered alongside elements; the vocabulary must be small enough to be remembered, not looked up.
+  - Vocabulary minimalism is mandatory — adding a sixth shape-class for an existing concept is a violation, not an enhancement.
+- **Served by:** sidebar shell spec (`surfaces/sidebar-shell-spec.md` provisional, Gate 4 of SHC); `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.6 (binding rule).
+- **Distinct from:**
+  - **CC-91** (predictable affordance vocabulary) — CC-91 is about *interaction outcomes* of affordance shapes (chevron-vs-underline-vs-badge); CC-90 is about *concept identity* of indicators (dot-vs-opacity-vs-badge for the same concept). Both cover visual coherence, different sub-spaces. A sidebar can satisfy CC-91 (chevron always navigates) while violating CC-90 (confidence rendered three ways).
+  - **ON-83** (first-hover jargon explanations) — ON-83 covers *terminology* fluency (MDF, SPR); CC-90 covers *visual-language* fluency (dot semantics). Disjoint failure modes; both contribute to total decoding cost.
+  - **H-N6** (recognition rather than recall, heuristic) — CC-90 is the user-outcome side of the same property H-N6 names from the framework side. Heuristic is the auditor's lens; JTBD is the user's outcome.
+- Doctrine basis: SHC Gate 1 audit §3.2 + Gate 2 Stage B finding B2.a + doctrine v3 §1 R-1.6 (`docs/SIDEBAR_DESIGN_PRINCIPLES.md`); cited forensics D-1 (`render-orchestrator.js:150-151,169` + `:442-444,450` + `render-tiers.js:70-74`).
+
+## CC-91 — Predictable affordance vocabulary
+
+> When I see an affordance shape (chevron, underline, badge, dot, pill, divider) anywhere in the sidebar, I want it to mean the same interaction outcome wherever it appears — so I can act on it without re-checking what tapping it will do.
+
+- State: **Active** (pending Sidebar Holistic Coherence Gate 4 shell spec; concretizes existing doctrine **R-1.5**).
+- **Primary personas:** [Multi-Tabler](../../personas/core/multi-tabler.md), [Apprentice](../../personas/core/apprentice-student.md), [Hybrid Semi-Pro](../../personas/core/hybrid-semi-pro.md). **Acute** for the [sidebar-fluency-acquiring](../../personas/situational/sidebar-fluency-acquiring.md) situational, where misprediction of a tap outcome costs a re-glance plus reorientation.
+- **R-1.5 dangling-reference framing:** Doctrine R-1.5 references an "SR-4 spec index" of affordance vocabulary that has never been authored. CC-91 is the user-outcome that the missing index would serve. The Gate 4 shell spec **becomes** the SR-4 spec index by reference (SHC Gate 1 §5.1; SHC Gate 2 Stage E finding E2). Authoring the spec closes the dangling reference and makes R-1.5 enforceable.
+- **Mechanism:**
+  - Sidebar shell spec declares the licensed affordance vocabulary — small, bounded set (target ≤6 shapes). Each shape declares its **single** licensed interaction outcome (e.g., chevron → in-place expansion; underline → cross-zone navigation; badge → ambient state, no interaction).
+  - R-1.5 binds Stage 4 specs to the vocabulary; ad-hoc affordances (a chevron that navigates instead of expanding; an underline that has no click handler) fail the Stage 6 PR gate.
+  - Drill-down expansion location is also bound: in-place by default per R-1.5; non-in-place expansions (modal, navigation away from sidebar) require explicit justification in the element's Stage 4 spec.
+- **Anti-nag / anti-clutter guarantees:**
+  - No `cursor: pointer` on non-interactive elements; visual interactivity must match real interactivity.
+  - No "click here" labels appended to compensate for unclear affordances; the affordance must speak for itself per the vocabulary.
+  - No on-hover preview popovers used as a substitute for predictable affordance-to-outcome mapping.
+- **Served by:** sidebar shell spec (Gate 4 of SHC); `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.5 (binding rule, originally added 2026-04-12 v2; CC-91 is its outcome-side framing).
+- **Distinct from:**
+  - **CC-90** (system-recognition / cross-element fluency) — see distinction in CC-90 above.
+  - **CC-79** (navigation that returns to prior position) — CC-79 covers *navigation outcome predictability* across views; CC-91 covers *affordance-to-outcome predictability* before tapping. CC-91 is about the prediction; CC-79 is about the recovery if the navigation does happen.
+  - **R-1.5 directly** — R-1.5 is the binding rule (auditor-facing); CC-91 is the user-outcome (user-facing). Same property, two framings.
+- Doctrine basis: SHC Gate 1 audit §3.2 + Gate 2 Stage B finding B2.b + `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.5 (originally added 2026-04-12 v2; cited "SR-4 spec index" reference becomes the shell spec under SHC Gate 4).
+
+## CC-92 — Panel-blame / data-provenance (in-the-moment runtime blame routing)
+
+> When the sidebar (or app) gives me an unexpected read or recommendation, I want to identify which zone or data source produced it — so I know whether to trust the next hand's advice and which subsystem to mistrust if I caught a wrong call.
+
+- State: **Active** (pending Sidebar Holistic Coherence Gate 4 shell spec; mechanism pass deferred to Gate 3 architectural inventory).
+- **Primary personas:** [Multi-Tabler](../../personas/core/multi-tabler.md), [Online MTT Shark](../../personas/core/online-mtt-shark.md), [Hybrid Semi-Pro](../../personas/core/hybrid-semi-pro.md). **Acute** for [Apprentice](../../personas/core/apprentice-student.md) (their reasoning learning loop depends on attributing wrong reads to the right cause). Secondary for the [sidebar-fluency-acquiring](../../personas/situational/sidebar-fluency-acquiring.md) situational (panel-blame is how they recover from misreads cheaply).
+- **Behavioral framing:** When the sidebar's Z3 recommendation says BET 65% but the user calls and shows down a clear value-bet, the user's next action depends on diagnosis: was the recommendation wrong because (a) Z2's player tendency model was stale, (b) Z4's villain-style model overrode it, (c) the underlying engine produced the wrong call, or (d) an architectural disagreement between zones produced the surface output. The user cannot improve their use of the sidebar without being able to **route blame to a zone**.
+- **Mechanism:**
+  - Sidebar shell spec declares per-recommendation **provenance affordance**: each Z3 recommendation can be drilled down to the zones / data sources it derived from (Z2 player model, Z4 villain style, engine version + game-tree branch).
+  - Zone-level health signals (R-1.7 staleness shape-class) communicate freshness state of each zone independently — so the user can read "Z2 stale + Z3 confident" as a coherence violation in the moment.
+  - The Gate 3 **architectural observation pass** (SHC Gate 2 Stage E6 + Gate 2 §Required follow-ups) is the prerequisite: until each freshness signal is mapped to its computing code, triggering event, clearing condition, and timer, panel-blame at the user level is not implementable. Mechanism coherence is upstream of provenance affordance.
+- **Anti-nag / anti-clutter guarantees:**
+  - Provenance is **on-demand, not always-on**. The Z3 recommendation does not bear a permanent "derived from Z2 + Z4" tag; the affordance is drill-down per R-1.5 (chevron → in-place expansion).
+  - No blame-language in copy; the affordance reports source, not fault. ("Derived from Z2 player model (live) + Z4 villain style (stale 17s)" — neutral.)
+  - No automatic retraction of recommendations that diverge from a stale source; the user decides whether to discount.
+- **Served by:** sidebar shell spec (Gate 4 of SHC); SHC Gate 3 architectural observation pass (`docs/design/audits/2026-04-27-blindspot-sidebar-holistic-coherence.md` Required follow-ups Gate 3, item 5).
+- **Distinct from:**
+  - **CC-82** (trust-the-sheet / lineage-stamped reference artifacts) — CC-82 is **asset-level** provenance (where did this printed card come from?), used at study time. CC-92 is **runtime** blame routing (which zone produced this live read?), used in the heat of decision. Same trust-primitive family; different time scale, different surface (artifact vs ambient indicator), different recovery action (audit later vs discount now).
+  - **MH-12** (live-cited assumption trust bridge) — MH-12 is the *outcome* of provenance: the user, having seen the source, trusts or discounts the claim. CC-92 is the **affordance** that lets MH-12 happen. CC-92 must be served before MH-12 can be served for sidebar recommendations.
+  - **CC-83** (know-my-reference-is-stale) — CC-83 is staleness surfacing for **artifacts the user takes outside the app** (printed cards, exported PDFs). CC-92 includes staleness as one provenance dimension but is broader (source identity, version, derivation chain) and applies in-app.
+- Doctrine basis: SHC Gate 2 audit Stage B finding B5 + Gate 2 §Required follow-ups Gate 3 item 5 (architectural observation pass as prerequisite); `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.7 *Caveat* (mechanism coherence is shell-spec concern, not closed by R-1.7 alone).
+
+## CC-93 — Trust-the-stack / cross-product consistency (sidebar↔OnlineView)
+
+> When the sidebar gives me one read and the main-app OnlineView gives me a different read for the same hand and same villain, I want to know which one is more current — so I can pick a side instead of being paralyzed by disagreement.
+
+- State: **Active** (pending Sidebar Holistic Coherence Gate 4 shell spec + cross-product extension stage; partner surface `surfaces/online-view.md` will receive coherence-extension note).
+- **Primary personas:** [Hybrid Semi-Pro](../../personas/core/hybrid-semi-pro.md) — canonical user, moves between sidebar and main-app OnlineView within a single session by definition. Secondary for [Apprentice](../../personas/core/apprentice-student.md) (online variant) and the [sidebar-fluency-acquiring](../../personas/situational/sidebar-fluency-acquiring.md) situational (cross-product variants pay extra fluency tax until coherence extends).
+- **Sync-degenerate framing:** Two surfaces in one product is a degenerate case of multi-device sync. The framework currently has no JTBD for "two surfaces disagree, which to trust." CC-93 is that JTBD; if the framework later adds true multi-device sync, CC-93 generalizes naturally.
+- **Mechanism:**
+  - Sidebar shell spec scoped to the sidebar in Gate 4 first; concept inventory (freshness, confidence, status, locked, unknown) authored to be **directly portable** to main-app surfaces (SHC Gate 2 Stage D finding D1).
+  - Cross-product extension (later stage) extends the shell spec to `surfaces/online-view.md`, `surfaces/analysis-view.md`, `surfaces/hand-plan-layer.md`, `surfaces/bucket-ev-panel-v2.md`. Each main-app surface receives a "pending cross-product coherence extension" note in Gate 4; the actual extension is staged separately.
+  - For runtime disagreement, each surface communicates its own freshness via the shape-class enumeration (R-1.7 dot/badge/strip). The user resolves disagreement by comparing freshness signals — *the more current source wins by default*; the user is not asked to adjudicate.
+  - `designTokens.js` is the single source of truth for colors per memory; the shell spec describes **semantic mappings** onto existing tokens (Stage D finding D2), not parallel color systems.
+- **Anti-nag / anti-clutter guarantees:**
+  - No active "you may be looking at stale data" warnings when freshness differs between surfaces; the freshness signal on each surface is sufficient.
+  - No automatic re-sync / refetch triggered by cross-surface disagreement; user controls cadence (consistent with CC-83 anti-nag posture).
+  - No forced reconciliation modal ("Sidebar says X, OnlineView says Y, confirm which to keep"); reconciliation is implicit — the live one wins.
+- **Served by:** sidebar shell spec (Gate 4 of SHC, cross-product extension stage); `surfaces/online-view.md`, `surfaces/analysis-view.md`, `surfaces/hand-plan-layer.md`, `surfaces/bucket-ev-panel-v2.md` (partner surfaces receiving coherence-extension note in Gate 4 per SHC Gate 2 Stage D finding D3).
+- **Distinct from:**
+  - **CC-90** (system-recognition / cross-element fluency) — CC-90 is *intra-sidebar* visual coherence; CC-93 is *cross-product* visual + data coherence. CC-90 is the prerequisite (each surface internally coherent); CC-93 extends to between-surface coherence.
+  - **CC-92** (panel-blame / data-provenance) — CC-92 is *intra-surface* blame routing (which zone of the sidebar produced this read?); CC-93 is *cross-surface* trust resolution (which of two surfaces is current?). Both are trust-primitives; different scopes (one zone vs many surfaces).
+  - **CC-77** (state recovery to exact position after crash) — CC-77 is recovery from crash (state lost); CC-93 is reconciliation of two live, valid-but-divergent states. Distinct mechanisms (recovery vs reconciliation).
+  - **CC-80** (configurable alerts / notifications) — CC-80 is opt-in push for transient events; CC-93 is passive display of source-currency. Different data flow (app→user vs surface↔surface).
+- Doctrine basis: SHC Gate 2 audit Stage B finding B6 + Stage D findings D1 + D2 + D3; `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.6 + R-1.7 (intra-sidebar foundation that cross-product extension builds on).
+
 ---
 
 ## Domain-wide constraints
@@ -148,3 +239,4 @@ Jobs that span multiple surfaces and don't belong to any one domain — undo, re
 - 2026-04-21 — Created Session 1b.
 - 2026-04-24 — Added CC-82 (trust-the-sheet / lineage-stamped reference artifacts) + CC-83 (know-my-reference-is-stale / staleness surfacing). Output of Gate 3 for Printable Refresher project. Both JTBDs are cross-project patterns (not PRF-specific) — other projects shipping engine-derived reference artifacts (Range Lab, Study Home, anchor-library cards, line-study sheets) inherit the same doctrine. See `docs/design/audits/2026-04-24-blindspot-printable-refresher.md` (Gate 2) + `docs/projects/printable-refresher.project.md` §Working principles #2 + #6.
 - 2026-04-24 — Added CC-88 (have-the-app-observe-my-usage-honestly-and-transparently). Output of Gate 3 for Monetization & PMF project. Cross-project pattern — any future project installing telemetry, session replay, or usage tracking inherits the same consent-gating + incognito-per-event + off-switch-always-visible pattern (mirrors red line #9 from `chris-live-player.md` §Autonomy constraint, promoted to persona-level invariant by EAL Gate 3). Q8 owner verdict determines default behavior (opt-in vs opt-out-with-panel vs tier-dependent). See `docs/design/audits/2026-04-24-blindspot-monetization-and-pmf.md` (Gate 2) + `docs/projects/monetization-and-pmf.project.md` §Q8.
+- 2026-04-27 — Added CC-90 (system-recognition / cross-element fluency), CC-91 (predictable affordance vocabulary), CC-92 (panel-blame / data-provenance — in-the-moment runtime blame routing), CC-93 (trust-the-stack / cross-product consistency — sidebar↔OnlineView). Output of Gate 3 deliverable #2 of Sidebar Holistic Coherence project (Scope A, fluent-user / training-cost only). Pairs with new situational persona [sidebar-fluency-acquiring](../../personas/situational/sidebar-fluency-acquiring.md). All four are cross-cutting per Gate 2 Stage B finding B4 (apply to main-app surfaces too); sidebar is the immediate scope, main-app extension follows in Gate 4 cross-product stage. See `docs/design/audits/2026-04-27-entry-sidebar-holistic-coherence.md` + `docs/design/audits/2026-04-27-blindspot-sidebar-holistic-coherence.md` + `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 R-1.6 + R-1.7 (doctrine v3, 2026-04-27).

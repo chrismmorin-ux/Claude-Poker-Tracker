@@ -33,6 +33,7 @@ Every UX-touching change flows through five gates. Gates 1, 4, and 5 are mandato
    - Surface addition (new view, new panel, new widget).
    - Cross-surface journey change.
    - Product-line expansion (main-app + sidebar).
+   - **System-coherence audit** (added 2026-04-27) — surfaces all exist, but a *concept* (status, freshness, confidence, affordance, density rhythm) is rendered inconsistently across them. Targets cross-zone or cross-surface design-language coherence rather than feature content. Output likely a new artifact *type* (shell spec / design-language doc) that single surface artifacts reference. Lifecycle path: 1, 2, (3), 4, 5 — same as cross-product feature, justified by RED entry verdict + missing artifact type. Precedent: Sidebar Holistic Coherence (SHC) project, 2026-04-27 (`docs/design/audits/2026-04-27-entry-sidebar-holistic-coherence.md` §1).
 2. **Personas identified**: list of core + situational personas relevant. Explicit check: *"Does our current cast actually cover this feature, or do we need a new persona?"*
 3. **JTBD identified**: list of JTBD IDs the change serves. Explicit check: *"Does any proposed outcome not map to an existing JTBD?"*
 4. **Gap analysis output**:
@@ -156,6 +157,7 @@ A pattern of bypasses without follow-up is itself a signal that the program need
 | New routed view | 1, 2, (3), 4, 5 |
 | Feature targeting unserved persona | 1, 2, 3, 4, 5 |
 | Cross-product feature (main + sidebar) | 1, 2, (3), 4, 5 |
+| System-coherence audit (cross-zone or cross-surface design-language) | 1, 2, 3, 4, 5 |
 
 ---
 
@@ -190,3 +192,4 @@ A pattern of bypasses without follow-up is itself a signal that the program need
 ## Change log
 
 - 2026-04-21 — Created. Part of Design Program establishment.
+- 2026-04-27 — Added `System-coherence audit` as a recognized Gate 1 scope classification + applying-gates table row. Output of SHC project Gate 4 (framework-level finding from Gate 1 §1, ratified by Gate 4 deliverable list). The framework previously had no category for "surfaces all exist, they just don't speak the same visual/interaction language" — SHC was authored under a `cross-surface journey change` classification with explicit acknowledgment that the category didn't fit. Future projects targeting cross-zone or cross-surface coherence (e.g., main-app design-language extension following SHC; future cross-product status vocabulary) now have a registered scope classification with SHC as precedent.
