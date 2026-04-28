@@ -3,9 +3,9 @@
 **Program:** Sidebar Rebuild (SR-0 → SR-7) — Stage 2 artifact
 **Master plan:** `C:\Users\chris\.claude\plans\composed-fluttering-snowflake.md`
 **Forensics:** `.claude/projects/sidebar-rebuild/00-forensics.md` (symptoms S1–S5, mechanisms M1–M8)
-**Status:** APPROVED by owner 2026-04-12 (all 5 sign-off decisions approved; amendments to R-7.3 and R-7.1 applied per owner recommendation acceptance). **Second amendment round approved 2026-04-12** — UX-model reframe: R-1.2 revised, R-1.5 added, R-1.3 rationale reinforced (see §11 amendment log).
-**Date:** 2026-04-12
-**Doctrine version:** 2 (v1 = initial approval; v2 = UX-model reframe, 2026-04-12)
+**Status:** APPROVED by owner 2026-04-12 (all 5 sign-off decisions approved; amendments to R-7.3 and R-7.1 applied per owner recommendation acceptance). **Second amendment round approved 2026-04-12** — UX-model reframe: R-1.2 revised, R-1.5 added, R-1.3 rationale reinforced. **Third amendment round approved 2026-04-27** — Cross-zone consistency invariants: R-1.6 (treatment-type consistency) added, R-1.7 (staleness shape-class consistency) added; token-semantic-isolation proposal deferred to shell spec (see §11 amendment log).
+**Date:** 2026-04-27
+**Doctrine version:** 3 (v1 = initial approval; v2 = UX-model reframe, 2026-04-12; v3 = cross-zone consistency invariants, 2026-04-27)
 
 ---
 
@@ -51,6 +51,19 @@ The doctrine is binding on:
   - *Prevents:* ad-hoc affordances that break the pathway (e.g. a chevron that looks like expansion but actually navigates; an underline that looks navigable but has no click handler); drill-downs landing in unexpected locations, disorienting the user.
   - *Derived from:* owner's use-pattern clarification (2026-04-12, v2). Under targeted-glance, the pathway from "I need X" to "I see X" must be stable and predictable; ambiguous affordances force the user to abandon spatial memory and re-scan, which breaks the model.
   - *Added (2026-04-12, owner-approved, v2).*
+
+- **R-1.6** Within the sidebar, any data concept that is rendered in two or more zones (or two or more elements within a single zone) MUST use the **same visual treatment type** — exactly one of: colored dot, colored badge, opacity-modulated value, text label, icon. A concept rendered as `dot` in one location and `opacity-class` in another is a spec violation.
+  - *Prevents:* D-1 — confidence rendered three incompatible ways (Z2 unified header `render-orchestrator.js:150–151, 169` uses `confidence-dot green/yellow/red`; Z2 context strip `render-orchestrator.js:442–444, 450` uses opacity classes `conf-player`/`conf-mixed`/`conf-population` modulating data-value brightness; Z4 glance tier `render-tiers.js:70–74` uses `confidence-dot` with inline `n=` sample label). Divergence exists *within Z2*, not just across zones — the opacity-class form is invisible to anyone scanning for "confidence" because it modulates the value's brightness with no legend.
+  - *Constrains:* Stage 4 specs must declare the treatment type for each cross-zone concept. Cross-zone re-occurrences of the concept must re-use the declared type. New treatment-types added by a panel without prior cross-zone audit fail the Stage 6 PR gate.
+  - *Does NOT prescribe:* which colors, fonts, or sizes are used. Per §10, those remain per-element-spec / shell-spec scope. R-1.6 governs only the *category* of treatment.
+  - *Added (2026-04-27, owner-approved, v3).*
+
+- **R-1.7** Every staleness or freshness signal across all zones MUST use a consistent shape-class — drawn from the doctrine's affordance vocabulary index (R-1.5 references; SR-4 / shell-spec authoritative). Until the vocabulary index is authored, the canonical shape-classes are: **dot** (state-derived freshness), **badge** (timer-driven aging), **strip** (zone-level health). A panel that introduces a fourth pattern is a spec violation.
+  - *Prevents:* D-3 — staleness rendered with two incompatible patterns and no shared parent. Z0 pipeline-health (`render-orchestrator.js:1324–1342`) uses colored dot (`status-dot yellow/green/red`) + status text, no aging counter, state derived from `pipeline.tableCount` + `handCount`. Z2 stale advice (`side-panel.js:1068–1087`) uses `.stale-badge` text element appended to `action-bar` with aging counter ("Stale 23s") or recomputing label, threshold-driven (10s + street-mismatch), refreshed per-second via `coordinator.scheduleTimer('adviceAgeBadge', …)` (`side-panel.js:1093–1094`). A user who learns "yellow dot = stale data" from Z0 will not recognize "Stale 23s" text badge in Z2 as the same concept-class.
+  - *Constrains:* Stage 4 specs must select one of the canonical shape-classes for any freshness signal. New shape-classes require a doctrine amendment (i.e., extension of the canonical enumeration via §11).
+  - *Does NOT prescribe:* the colors of the dot, the typography of the badge, the position within the zone, or the timer/triggering mechanism. R-1.7 governs the *shape-class*; mechanism consistency is a shell-spec concern (see deferred SHC item).
+  - *Caveat:* R-1.7 is shape-class-consistency only. Two zones can comply with R-1.7 (both using `dot`) and still diverge architecturally — Z0 dot is state-derived, Z2 stale signal could be timer-driven — producing different *behavior* under the same shape. The Sidebar Holistic Coherence audit (`docs/design/audits/2026-04-27-blindspot-sidebar-holistic-coherence.md` Stage E6) flags mechanism coherence as a Gate 3 / shell-spec concern; R-1.7 alone does not close that gap.
+  - *Added (2026-04-27, owner-approved, v3). Originally proposed as R-1.8 in `.claude/projects/sidebar-rebuild/08-doctrine-amendment-proposal-r16-r17-r18.md`; renumbered to R-1.7 for sequential rule ordering after the proposed R-1.7 (token-semantic isolation) was deferred to the shell spec under Option II.*
 
 ---
 
@@ -268,6 +281,26 @@ Rules amended mid-program flow back into any Stage 4 spec that depended on the p
 - **R-1.5 (new).** Every element declares a glance pathway (remembered location / default summary / drill-down affordance / expansion location). Drill-down affordances come from a consistent vocabulary; same visual pattern = same interaction everywhere.
 
 Rules added or revised under v2 apply to all Stage 4 specs authored hereafter. Specs already drafted under v1 (none yet — SR-4 has not started) must be re-reviewed under v2.
+
+**v3 — 2026-04-27 (cross-zone consistency invariants — Option II)**
+
+Source: `.claude/projects/sidebar-rebuild/08-doctrine-amendment-proposal-r16-r17-r18.md`. Driven by Sidebar Holistic Coherence Gate 2 audit (`docs/design/audits/2026-04-27-blindspot-sidebar-holistic-coherence.md`) finding E6. Owner approved Option II 2026-04-27.
+
+Forensics class **D** (Drift) introduced — parallel to S1–S5 symptoms and M1–M8 mechanisms. D-class entries document post-SR design-language drifts cataloged by the SHC audit:
+- **D-1** — Confidence rendered three incompatible ways across Z2/Z4 (verified at `render-orchestrator.js:150–151, 169` + `:442–444, 450` + `render-tiers.js:70–74`).
+- **D-2** — `#fbbf24` serves five semantic roles in `shared/design-tokens.js` (lines 31, 47, 61, 77, 94). **Forensics retained but no R-rule cites it under Option II** — token-semantic isolation deferred to shell spec.
+- **D-3** — Staleness rendered with two incompatible patterns and disjoint mechanisms (Z0 `status-dot` state-derived at `render-orchestrator.js:1324–1342` vs Z2 `.stale-badge` timer-driven at `side-panel.js:1068–1087`).
+
+Rules added:
+- **R-1.6 (new).** Cross-zone treatment-type consistency. Cites D-1.
+- **R-1.7 (new).** Staleness shape-class consistency. Cites D-3. **Renumbered from proposed R-1.8** because the proposed R-1.7 (token-semantic isolation, citing D-2) was not approved at doctrine level.
+
+Rules deferred:
+- **R-1.7 as originally proposed** (token-semantic isolation, citing D-2). Owner directive Option II: this rule's substantive concern brushes against §10's exclusion of visual design (colours, fonts, exact sizes). The cross-zone yellow collision will be addressed in the shell spec (Gate 4 deliverable of SHC audit) as positive token-semantic vocabulary, rather than as a prescriptive doctrine rule. The proposal file remains in `.claude/projects/sidebar-rebuild/` as the authoritative record of the deferral, including the proposed §10 clarification text that was *not* adopted.
+
+§10 not amended under Option II. The doctrine retains its current scope exclusion of visual design; cross-zone consistency invariants R-1.6 and R-1.7 are scoped as *structural* (treatment-type and shape-class enumeration), not visual (colors / fonts / sizes), and slot into §1 without §10 amendment.
+
+Rules added under v3 apply to all Stage 4 specs authored hereafter. Pre-existing zone surface artifacts (Z0, Z2, Z3, Z4) are NOT retroactively forced into compliance — remediation timing is a Gate 5 / backlog concern. Per the proposal §"What this proposal is NOT": rules govern new spec authorship and PR review; existing violations may persist until remediation PRs land.
 
 ---
 
