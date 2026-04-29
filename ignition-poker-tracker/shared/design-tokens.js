@@ -109,6 +109,16 @@ export const TOKENS = {
   'font-md':  '14px',
   'font-lg':  '14px',
 
+  // Typography ladder (Doctrine v8 R-1.12 + INV-DENSITY-1..5 — 3-tier role-based,
+  // rem units mandatory). Per shell-spec §VI.6 attention-budget map: --type-display
+  // for primary action words, --type-body for numerics + prose, --type-meta-stat
+  // for labels + sample counts + stale badges. Future PRs migrate inline px font
+  // literals (~132 sites) onto this ladder; this PR introduces the tokens + the
+  // FM-DENSITY-1 stale-badge fix only.
+  'type-display':   '1.5rem',     // 24px equivalent
+  'type-body':      '0.875rem',   // 14px equivalent
+  'type-meta-stat': '0.6875rem',  // 11px equivalent (was 9px on stale-badge — sub-WCAG)
+
   // Font weights
   'weight-normal':  '400',
   'weight-medium':  '500',
@@ -164,6 +174,11 @@ export const injectTokens = () => {
     css += `  --style-${style}-text: ${colors.text};\n`;
   }
   css += '}\n';
+
+  // Doctrine v8 R-1.12 V-density.2 — tabular-nums modifier class. Future PRs
+  // migrate inline `font-variant-numeric: tabular-nums` declarations onto this
+  // class; introduced here as the migration target.
+  css += '.tabular-nums { font-variant-numeric: tabular-nums; }\n';
 
   const el = document.createElement('style');
   el.id = 'poker-design-tokens';
