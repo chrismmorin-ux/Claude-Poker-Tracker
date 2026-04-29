@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
-import { BACKUP_FREQUENCIES, SETTINGS_FIELDS } from '../../../constants/settingsConstants';
+import { SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
 import { useBuildVersion } from '../../../hooks/useBuildVersion';
 
@@ -144,26 +144,14 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
     <div className="bg-gray-800 rounded-lg p-5">
       <h3 className="text-lg font-bold mb-4" style={{ color: '#d4a847' }}>Data & About</h3>
 
-      {/* Backup Settings */}
+      {/* Backup Settings — W4-A4-F5: compressed from 3 disabled buttons to a
+          single info line. Backup infra is tracked under F-P18; until it lands,
+          the panel doesn't need to reserve full-row chrome for a feature that
+          can't be selected. */}
       <div className="mb-4">
-        <label className="block text-gray-300 text-sm font-medium mb-2">
-          Backup Frequency <span className="text-gray-500">(coming soon)</span>
-        </label>
-        <div className="flex gap-2">
-          {BACKUP_FREQUENCIES.map((freq) => (
-            <button
-              key={freq}
-              disabled
-              className={`px-4 min-h-[44px] rounded-lg font-medium text-sm opacity-50 ${
-                settings.backupFrequency === freq
-                  ? 'bg-orange-600 text-white cursor-not-allowed'
-                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {freq.charAt(0).toUpperCase() + freq.slice(1)}
-            </button>
-          ))}
-        </div>
+        <p className="text-sm text-gray-400">
+          Automatic backups <span className="text-gray-500">— coming soon</span>
+        </p>
       </div>
 
       {/* Error Reporting */}
