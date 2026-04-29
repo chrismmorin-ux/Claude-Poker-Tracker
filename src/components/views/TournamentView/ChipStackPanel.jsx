@@ -12,6 +12,9 @@ import { SEAT_ARRAY, LIMITS } from '../../../constants/gameConstants';
 import { ordinalSuffix } from '../../../utils/displayUtils';
 import { GOLD } from '../../../constants/designTokens';
 import { IcmBadge } from '../../ui/IcmBadge';
+import { useToast } from '../../../contexts/ToastContext';
+
+const UNDO_TOAST_DURATION_MS = 12000;
 
 /**
  * @param {Object} props
@@ -42,6 +45,7 @@ export const ChipStackPanel = ({
 }) => {
   const [editingSeat, setEditingSeat] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const { addToast, showSuccess } = useToast();
 
   const costPerOrbit = currentBlinds.sb + currentBlinds.bb + (currentBlinds.ante * LIMITS.NUM_SEATS);
 
@@ -57,16 +61,34 @@ export const ChipStackPanel = ({
   const [pendingTypoSeat, setPendingTypoSeat] = useState(null);
   const commitEdit = () => {
     if (editingSeat != null && editValue !== '') {
+      const seat = editingSeat;
       const newVal = Number(editValue) || 0;
-      const prevVal = chipStacks[editingSeat] || 0;
+      const prevVal = chipStacks[seat] || 0;
       // Order-of-magnitude sanity check — prompt if 10×+ change (up or down).
-      if (prevVal > 0 && (newVal >= prevVal * 10 || (newVal > 0 && newVal <= prevVal / 10)) && pendingTypoSeat !== editingSeat) {
-        setPendingTypoSeat(editingSeat);
+      if (prevVal > 0 && (newVal >= prevVal * 10 || (newVal > 0 && newVal <= prevVal / 10)) && pendingTypoSeat !== seat) {
+        setPendingTypoSeat(seat);
         // Keep the edit mode open with the value; user re-confirms.
         return;
       }
-      onUpdateStack(editingSeat, newVal);
+      onUpdateStack(seat, newVal);
       setPendingTypoSeat(null);
+      // W4-A2-F4: toast+undo safety net — covers typos that pass the 10× guard
+      // (e.g., 8500→850 is a 10× swing the guard catches; 8500→7500 doesn't,
+      // but is still recoverable via Undo). Skip the toast for first-entry
+      // commits (prevVal=0) since there's nothing meaningful to revert to.
+      if (prevVal !== newVal && prevVal > 0) {
+        addToast(`Seat ${seat} stack: ${prevVal.toLocaleString()} → ${newVal.toLocaleString()}`, {
+          variant: 'warning',
+          duration: UNDO_TOAST_DURATION_MS,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              onUpdateStack(seat, prevVal);
+              showSuccess(`Seat ${seat} stack restored to ${prevVal.toLocaleString()}`);
+            },
+          },
+        });
+      }
     }
     setEditingSeat(null);
     setEditValue('');
@@ -250,6 +272,23 @@ export const ChipStackPanel = ({
               }}
             />
           </div>
+        </div>
+      )}
+
+      {/* W4-A2-F8: explicit no-hero-seat empty state. Renders only when there
+          ARE other stacks tracked (otherwise the existing "No chip stacks
+          tracked" empty state below covers it). */}
+      {heroStack == null && seatsWithStacks.length > 0 && (
+        <div
+          role="status"
+          className="rounded-lg p-3 text-center"
+          style={{
+            background: 'rgba(212,168,71,0.05)',
+            border: `1px dashed rgba(212,168,71,0.4)`,
+          }}
+        >
+          <p className="text-sm text-gray-300">No hero seat selected</p>
+          <p className="text-xs text-gray-500 mt-0.5">Set your seat in TableView to track your stack</p>
         </div>
       )}
 
