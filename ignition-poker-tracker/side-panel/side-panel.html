@@ -1264,6 +1264,24 @@
     .deep-header-title { font-size: var(--font-base); font-weight: var(--weight-medium); color: var(--text-secondary); flex: 1; }
     .deep-chevron { font-size: var(--font-sm); color: var(--text-faint); transition: transform 0.25s ease; flex-shrink: 0; }
     .deep-section.open .deep-chevron { transform: rotate(180deg); }
+
+    /* V-affordance §IV.3 + INV-AFFORD-3 — canonical chevron class
+       (Doctrine v6 R-1.10). Future PRs migrate the 4 legacy chevron
+       classes (.deep-chevron / .collapsible-chevron / .pp-chevron /
+       .tourney-bar-chevron) onto this single class. Self-driven rotation
+       (.affordance-chevron.open) is canonical; parent-driven legacy
+       contexts (.deep-section.open .affordance-chevron and
+       .collapsible-content.open .affordance-chevron) are supported during
+       migration so the renderChevron() helper Just Works in either
+       context. */
+    .affordance-chevron {
+      font-size: var(--font-sm); color: var(--text-faint);
+      transition: transform var(--ease-base);
+      flex-shrink: 0;
+    }
+    .affordance-chevron.open { transform: rotate(180deg); }
+    .deep-section.open .affordance-chevron { transform: rotate(180deg); }
+    .collapsible-content.open .affordance-chevron { transform: rotate(180deg); }
     .deep-body { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1); }
     .deep-section.open .deep-body { max-height: 800px; }
     .deep-content { padding: 0 10px 8px; }

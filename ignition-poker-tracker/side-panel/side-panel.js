@@ -38,6 +38,10 @@ import {
   buildStatusBar,
 } from './render-orchestrator.js';
 import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
+import {
+  renderChevron,
+  installAffordanceListener,
+} from '../shared/render-affordance.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
 import { moreAnalysisFsm } from './fsms/more-analysis.fsm.js';
@@ -636,10 +640,21 @@ injectTokens();
 
     // Timer
     barHtml += `<span class="tourney-bar-timer" id="tourney-bar-timer"></span>`;
-    barHtml += `<span class="tourney-bar-chevron${coordinator.get('tournamentCollapsed') ? '' : ' open'}" id="tourney-bar-chevron">\u25BE</span>`;
+    // V-affordance \u00A7IV migration \u2014 canonical chevron via renderChevron.
+    // Click is intercepted by the delegated affordance listener installed
+    // once at module init (see installAffordanceListener call below); the
+    // bar's data-affordance attrs declare the binding.
+    barHtml += renderChevron({
+      id: 'tourney-bar-chevron',
+      open: !coordinator.get('tournamentCollapsed'),
+    });
 
     showEl(bar);
     bar.innerHTML = barHtml;
+    bar.setAttribute('data-affordance', 'chevron');
+    bar.setAttribute('data-affordance-target', 'tourney-bar');
+    bar.setAttribute('role', 'button');
+    bar.setAttribute('aria-expanded', String(!coordinator.get('tournamentCollapsed')));
 
     // Timer countdown — RT-52: re-query DOM element on each tick (innerHTML replaces it)
     // RT-60: registered via coordinator so table switch / unload cancels it.
@@ -663,18 +678,16 @@ injectTokens();
       coordinator.scheduleTimer('tourneyTimer', updateTimer, 1000, 'interval');
     }
 
-    // Click to expand/collapse detail. SR-6.5: handler only flips state +
-    // schedules render. The classList sync below runs on every render, so the
-    // classes follow the boolean without direct DOM writes in the handler.
-    bar.onclick = () => {
-      coordinator.set('tournamentCollapsed', !coordinator.get('tournamentCollapsed'));
-      scheduleRender('tourney_toggle', PRIORITY.IMMEDIATE);
-    };
-    // Sync classes from coordinator state — idempotent, runs every render.
+    // Click handling migrated to delegated affordance listener (V-affordance
+    // §IV.8 single-delegated-listener pattern). The bar's data-affordance
+    // attrs above declare the binding; the listener registered at module init
+    // (search for "tourney-bar-affordance") flips state + schedules render.
+    // SR-6.5 invariant preserved: handler only flips state, never mutates DOM.
+    // The chevron re-emits with the correct `open` modifier each render via
+    // renderChevron({ open: ... }) above, so no separate classList sync is
+    // needed.
     const collapsed = coordinator.get('tournamentCollapsed');
-    const chevron = $('tourney-bar-chevron');
     detail.classList.toggle('open', !collapsed);
-    if (chevron) chevron.classList.toggle('open', !collapsed);
 
     // ── Detail content ──
     if (!detailContent) return;
@@ -1577,6 +1590,20 @@ injectTokens();
       seatPopover.style.left = `${Math.max(4, Math.min(coords.left, window.innerWidth - 310))}px`;
     }
   };
+
+  // V-affordance §IV.8 — single delegated listener for all chevron
+  // affordances declared via [data-affordance="chevron"]. SR-6.5 invariant
+  // preserved: handlers only flip state + schedule render, never mutate DOM.
+  // Future PRs migrate the remaining chevron sites (.collapsible-chevron ×2,
+  // .pp-chevron ×1) onto this registry; the deep-section chevrons in
+  // render-tiers.js are visual-only (parent-driven) and don't need handler
+  // entries. Search "tourney-bar-affordance" to find this binding.
+  const affordanceRegistry = new Map();
+  affordanceRegistry.set('tourney-bar', () => {
+    coordinator.set('tournamentCollapsed', !coordinator.get('tournamentCollapsed'));
+    scheduleRender('tourney_toggle', PRIORITY.IMMEDIATE);
+  });
+  installAffordanceListener(document, affordanceRegistry);
 
   // Event delegation for seat circle clicks (pin/unpin + popover).
   // SR-6.5: handler only dispatches; renderSeatPopover owns DOM.

@@ -9,6 +9,7 @@
  */
 
 import { $, showEl, hideEl, escapeHtml } from './render-utils.js';
+import { renderChevron } from '../shared/render-affordance.js';
 
 // =========================================================================
 // TIER 1 — GLANCE STRIP
@@ -421,7 +422,7 @@ export const renderRangeBreakdownSection = (segmentation, { autoOpen = false } =
   return `<div class="deep-section${autoOpen ? ' open' : ''}" data-section="range-breakdown">
     <div class="deep-header"><span class="deep-header-icon">\u229E</span>
       <span class="deep-header-title">Villain Range${comboLabel}</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">
       <div class="rb-stacked-bar">${barHtml}</div>
       <div class="rb-groups">${rowsHtml}</div>
@@ -452,7 +453,7 @@ export const renderAllRecsSection = (recs) => {
   return `<div class="deep-section" data-section="recs">
     <div class="deep-header"><span class="deep-header-icon">\u2630</span>
       <span class="deep-header-title">All Recommendations</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">${items}</div></div>
   </div>`;
 };
@@ -475,7 +476,7 @@ export const renderStreetTendenciesSection = (streets) => {
   return `<div class="deep-section" data-section="tendencies">
     <div class="deep-header"><span class="deep-header-icon">\u{1F4CA}</span>
       <span class="deep-header-title">Villain Street Tendencies</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">${rows}</div></div>
   </div>`;
 };
@@ -517,7 +518,7 @@ export const renderFoldCurveSection = (foldMeta, currentBetFraction, { autoOpen 
   return `<div class="deep-section${autoOpen ? ' open' : ''}" data-section="foldcurve">
     <div class="deep-header"><span class="deep-header-icon">\u223F</span>
       <span class="deep-header-title">Fold Curve \u00B7 ${escapeHtml(src)}</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">
       <div class="fold-curve-wrap">
         <svg class="fold-curve-svg" viewBox="0 0 ${W} ${H}" fill="none">
@@ -549,7 +550,7 @@ export const renderFoldBreakdownSection = (foldMeta, foldPct) => {
   return `<div class="deep-section" data-section="foldpct">
     <div class="deep-header"><span class="deep-header-icon">%</span>
       <span class="deep-header-title">Fold% Breakdown \u00B7 ${finalPct}%</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
         <span style="font-size:var(--font-sm);color:var(--text-muted)">Base estimate</span>
@@ -574,7 +575,7 @@ export const renderComboStatsSection = (stats) => {
   return `<div class="deep-section" data-section="combos">
     <div class="deep-header"><span class="deep-header-icon">\u2295</span>
       <span class="deep-header-title">Combo Distribution</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">
       <div class="combo-bar-wrap">
         <div class="combo-seg ahead" style="width:${aPct}%">${ahead}</div>
@@ -604,7 +605,7 @@ export const renderModelAuditSection = (mq, tm, sampleSize) => {
   return `<div class="deep-section" data-section="audit">
     <div class="deep-header"><span class="deep-header-icon">\u2699</span>
       <span class="deep-header-title">Model Audit</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">${rows}</div></div>
   </div>`;
 };
@@ -621,7 +622,7 @@ export const renderVulnerabilitiesSection = (vulns) => {
   return `<div class="deep-section" data-section="vulns">
     <div class="deep-header"><span class="deep-header-icon">\u26A1</span>
       <span class="deep-header-title">Active Vulnerabilities</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">${items}</div></div>
   </div>`;
 };
@@ -650,7 +651,7 @@ export const renderNarrowingLogSection = (narrowingLog) => {
   return `<div class="deep-section" data-section="narrowing">
     <div class="deep-header"><span class="deep-header-icon">\u2198</span>
       <span class="deep-header-title">Range Narrowing</span>
-      <span class="deep-chevron">\u25BE</span></div>
+      ${renderChevron()}</div>
     <div class="deep-body"><div class="deep-content">${items}</div></div>
   </div>`;
 };
