@@ -31,6 +31,14 @@ const PANEL_DIR = resolve(__dirname, '..');
 
 const sidePanelJs = readFileSync(resolve(PANEL_DIR, 'side-panel.js'), 'utf8');
 const stateInvariantsJs = readFileSync(resolve(PANEL_DIR, 'state-invariants.js'), 'utf8');
+// V-3 §II — the "Stale — recomputing" user-facing label was extracted into
+// shared/render-staleness.js#getStaleBadgeText at Gate 5 PR-4 (2026-04-29).
+// This test now searches both files to verify the label still exists at
+// the canonical writer surface.
+const renderStalenessJs = readFileSync(
+  resolve(PANEL_DIR, '..', 'shared', 'render-staleness.js'),
+  'utf8',
+);
 
 describe('R-7.2 / SR-8.3 — cross-panel invariant coverage', () => {
   describe('Layer 1: render gate (computeAdviceStaleness)', () => {
@@ -58,7 +66,13 @@ describe('R-7.2 / SR-8.3 — cross-panel invariant coverage', () => {
     });
 
     it('"Stale — recomputing" label is the user-facing surface', () => {
-      expect(sidePanelJs).toMatch(/Stale \\u2014 recomputing|Stale — recomputing/);
+      // Post Gate 5 PR-4 (V-3 §II): the canonical label-generator lives
+      // in shared/render-staleness.js#getStaleBadgeText; side-panel.js
+      // calls into it via the imported helper. Either file containing
+      // the literal satisfies the cross-panel surface contract.
+      const sidePanelMatch = /Stale \\u2014 recomputing|Stale — recomputing/.test(sidePanelJs);
+      const stalenessMatch = /Stale \\u2014 recomputing|Stale — recomputing/.test(renderStalenessJs);
+      expect(sidePanelMatch || stalenessMatch).toBe(true);
     });
   });
 

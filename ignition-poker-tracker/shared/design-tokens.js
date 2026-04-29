@@ -87,6 +87,19 @@ export const TOKENS = {
   'conf-tier-low':     '#f87171',  // population estimate only
   'conf-tier-unknown': '#6b7280',  // model output absent / sample absent
 
+  // Freshness tier (V-3 §II + R-1.8 — closed 5-tier register; concept-
+  // class-isolated from --conf-tier-* and --m-* per INV-TOKEN-2). Per
+  // shell-spec §II tiers map to: LIVE=fresh signal, AGING=10–60s,
+  // STALE=>60s, UNKNOWN=signal-absent, REJECTED=SW-replay-rejection. The
+  // existing `.stale-badge` (#eab308 yellow) is preserved as the AGING
+  // hue; LIVE / UNKNOWN / REJECTED are introduced for forthcoming
+  // signal sites.
+  'fresh-tier-live':     '#4ade80',  // signal current (within agingMs threshold)
+  'fresh-tier-aging':    '#eab308',  // matches existing .stale-badge yellow
+  'fresh-tier-stale':    '#f87171',  // age beyond stale floor
+  'fresh-tier-unknown':  '#6b7280',  // signal absent / source missing
+  'fresh-tier-rejected': '#dc2626',  // SW replay rejection / explicit rejection
+
   // Tournament (demoted to neutral)
   'tournament-accent': '#6b7280',
 

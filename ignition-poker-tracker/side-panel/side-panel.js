@@ -42,6 +42,12 @@ import {
   renderChevron,
   installAffordanceListener,
 } from '../shared/render-affordance.js';
+import {
+  FRESHNESS_TIERS,
+  FRESHNESS_MECHANISMS,
+  mapAgeToTier,
+  getStaleBadgeText,
+} from '../shared/render-staleness.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
 import { moreAnalysisFsm } from './fsms/more-analysis.fsm.js';
@@ -1078,6 +1084,10 @@ injectTokens();
     return { isStale: aged, ageMs, reason: aged ? 'aged' : null };
   };
 
+  // V-3 \u00a7II canonical writer for FRESH_SIGNAL_REGISTRY.STALE_ADVICE
+  // (timer-driven-aging mechanism, Z2-action-bar scope). Per INV-FRESH-4
+  // this is the SINGLE writer for the .stale-badge slot inside #action-bar
+  // \u2014 dom-mutation-discipline.test.js will lint future additions.
   const updateStaleAdviceBadge = (isStale, ageMs, reason) => {
     const actionBarEl = $('action-bar');
     if (!actionBarEl) return;
@@ -1089,14 +1099,23 @@ injectTokens();
     if (!badge) {
       badge = document.createElement('span');
       badge.className = 'stale-badge';
+      badge.setAttribute('role', 'status');
+      badge.setAttribute('aria-live', 'polite');
+      badge.setAttribute('data-fresh-mechanism', FRESHNESS_MECHANISMS.TIMER_DRIVEN_AGING);
+      badge.setAttribute('data-fresh-scope', 'Z2-action-bar');
       actionBarEl.appendChild(badge);
     }
-    if (reason === 'street-mismatch') {
-      badge.textContent = 'Stale \u2014 recomputing';
-      return;
-    }
-    const seconds = ageMs != null ? Math.round(ageMs / 1000) : null;
-    badge.textContent = seconds != null && seconds >= 0 ? `Stale ${seconds}s` : 'Stale';
+    const ageSec = ageMs != null ? ageMs / 1000 : null;
+    const tier = mapAgeToTier(ageMs, { reason });
+    badge.setAttribute('data-fresh-tier', tier);
+    // Tier-class sync \u2014 aging/stale visual treatment driven by token-backed
+    // .fresh-tier-* class (separable from concept-class-isolated colors).
+    badge.classList.remove(
+      'fresh-tier-live', 'fresh-tier-aging', 'fresh-tier-stale',
+      'fresh-tier-unknown', 'fresh-tier-rejected',
+    );
+    badge.classList.add(`fresh-tier-${tier}`);
+    badge.textContent = getStaleBadgeText({ tier, ageSec, reason });
   };
 
   // Refresh the badge text each second without churning the full render.
