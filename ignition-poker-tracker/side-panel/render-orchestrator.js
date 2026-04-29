@@ -18,6 +18,10 @@ import {
   renderComboStatsSection, renderModelAuditSection,
   renderVulnerabilitiesSection,
 } from './render-tiers.js';
+import {
+  renderConfidenceBadge,
+  mapModelSourceToTier,
+} from '../shared/render-confidence.js';
 
 // =========================================================================
 // COMPUTE FOCUSED VILLAIN
@@ -147,8 +151,7 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     const vSample = (pinnedData?.sampleSize) || advice.villainSampleSize;
     const vHeadline = (pinnedData?.villainHeadline) || vp?.headline;
     const mq = advice.modelQuality;
-    const confClass = mq?.overallSource === 'player_model' ? 'green'
-      : mq?.overallSource === 'mixed' ? 'yellow' : 'red';
+    const confTier = mapModelSourceToTier(mq?.overallSource);
 
     html += `<div class="uh-villain-side">`;
     if (villainIsFolded) {
@@ -164,9 +167,7 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
       html += `<span class="uh-style-badge" style="background:${colors.bg};color:${colors.text}">${vStyle}</span>`;
     }
     if (vSample) html += `<span class="uh-sample">n=${vSample}</span>`;
-    const confLabel = confClass === 'green' ? 'Player model'
-      : confClass === 'yellow' ? 'Mixed (model + population)' : 'Population estimate';
-    html += `<span class="confidence-dot ${confClass}" title="${confLabel}"></span>`;
+    html += renderConfidenceBadge({ tier: confTier });
     html += `</div></div>`;
 
     html += `</div>`; // uh-row1
@@ -438,16 +439,17 @@ export const buildContextStripHTML = (advice, liveContext, opts = {}) => {
 
   const rec = advice.recommendations[0];
 
-  // Confidence class for opacity (spec §4: player=100%, mixed=80%, population=60%)
-  const confSource = advice.modelQuality?.overallSource;
-  const confClass = confSource === 'player_model' ? 'conf-player'
-    : confSource === 'mixed' ? 'conf-mixed' : 'conf-population';
+  // V-2 §III.5 scope boundary — equity / pot odds / SPR / sample-count
+  // are mathematically exact derived values and do NOT carry confidence.
+  // The prior `cs-value.conf-{player,mixed,population}` opacity classes
+  // are deleted (Gate 5 PR-3, 2026-04-29). Confidence applies to engine
+  // model outputs only — see render-confidence.js + Z2 unified-header.
 
   let html = '<div class="cs-row1">';
 
   // Equity
   if (advice.heroEquity != null) {
-    html += `<div class="cs-item"><span class="cs-label">Equity:</span> <span class="cs-value ${confClass}">${Math.round(advice.heroEquity * 100)}%</span></div>`;
+    html += `<div class="cs-item"><span class="cs-label">Equity:</span> <span class="cs-value">${Math.round(advice.heroEquity * 100)}%</span></div>`;
   }
 
   // Pot odds (when facing a bet) or SPR
@@ -459,15 +461,16 @@ export const buildContextStripHTML = (advice, liveContext, opts = {}) => {
     const pot = advice.potSize ?? ctx?.pot ?? 0;
     if (betAmount > 0 && pot > 0) {
       const potOdds = Math.round((betAmount / (pot + betAmount)) * 100);
-      html += `<div class="cs-item"><span class="cs-label">Pot odds:</span> <span class="cs-value ${confClass}">${potOdds}%</span></div>`;
+      html += `<div class="cs-item"><span class="cs-label">Pot odds:</span> <span class="cs-value">${potOdds}%</span></div>`;
     }
   } else if (advice.treeMetadata?.spr != null) {
-    html += `<div class="cs-item"><span class="cs-label">SPR:</span> <span class="cs-value ${confClass}">${advice.treeMetadata.spr}</span></div>`;
+    html += `<div class="cs-item"><span class="cs-label">SPR:</span> <span class="cs-value">${advice.treeMetadata.spr}</span></div>`;
   }
 
-  // Model sample size
+  // Model sample size — `Nh` form per INV-DENSITY-3 (raw observation count
+  // standalone, NOT paired with confidence dot — that's the `n=N` form).
   if (advice.villainSampleSize != null) {
-    html += `<div class="cs-item"><span class="cs-label">Model:</span> <span class="cs-value ${confClass}">${advice.villainSampleSize}h</span></div>`;
+    html += `<div class="cs-item"><span class="cs-label">Model:</span> <span class="cs-value">${advice.villainSampleSize}h</span></div>`;
   }
 
   html += '</div>';

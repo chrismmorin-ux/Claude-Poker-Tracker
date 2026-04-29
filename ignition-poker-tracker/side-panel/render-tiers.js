@@ -10,6 +10,10 @@
 
 import { $, showEl, hideEl, escapeHtml } from './render-utils.js';
 import { renderChevron } from '../shared/render-affordance.js';
+import {
+  renderConfidenceBadge,
+  mapModelSourceToTier,
+} from '../shared/render-confidence.js';
 
 // =========================================================================
 // TIER 1 — GLANCE STRIP
@@ -65,14 +69,15 @@ export const renderGlanceStrip = (advice, liveContext) => {
   }
   pillsEl.innerHTML = pillsHtml;
 
-  // Confidence dot
+  // Confidence dot — V-2 §III canonical render via renderConfidenceBadge.
+  // Per §III.4 + INV-DENSITY-3, the `n=N` form is bound to the dot pairing
+  // (the badge helper emits both atomically when sampleSize is provided).
   const confEl = $('glance-confidence');
   const mq = advice.modelQuality;
-  const confClass = mq?.overallSource === 'player_model' ? 'green'
-    : mq?.overallSource === 'mixed' ? 'yellow' : 'red';
-  const nLabel = advice.villainSampleSize ? `n=${advice.villainSampleSize}` : '';
-  confEl.innerHTML = `<span class="confidence-dot ${confClass}"></span>`
-    + (nLabel ? `<span class="confidence-label">${escapeHtml(nLabel)}</span>` : '');
+  confEl.innerHTML = renderConfidenceBadge({
+    tier: mapModelSourceToTier(mq?.overallSource),
+    sampleSize: advice.villainSampleSize,
+  });
 
   // Board + hero cards + pot
   const cardsEl = $('glance-cards');

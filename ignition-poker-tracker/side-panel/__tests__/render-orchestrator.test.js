@@ -221,13 +221,15 @@ describe('buildUnifiedHeaderHTML', () => {
     expect(result.html).toContain('TAG');
   });
 
-  it('renders confidence dot', () => {
+  it('renders confidence dot via render-confidence canonical class', () => {
     const f = flopWithAdvice;
     const result = buildUnifiedHeaderHTML(f.lastGoodAdvice, f.currentLiveContext, {
       focusedVillainSeat: 3,
       currentLiveContext: f.currentLiveContext,
     });
-    expect(result.html).toContain('confidence-dot green');
+    // V-2 §III + R-1.6 — canonical .conf-tier-* ordinal classes (was
+    // legacy `green`/`yellow`/`red` color-literal classes pre-PR-3).
+    expect(result.html).toContain('confidence-dot conf-tier-high');
   });
 
   it('renders meta pills (pot, street, SPR, depth)', () => {

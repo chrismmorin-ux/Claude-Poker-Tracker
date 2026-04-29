@@ -490,10 +490,37 @@
     .cs-response-call   { color: var(--text-secondary); }
     .cs-response-raise  { color: #f87171; }
     .cs-dot { color: var(--text-faint); margin: 0 4px; }
-    /* Confidence as opacity (spec §4) */
-    .cs-value.conf-player { opacity: 1.0; }
-    .cs-value.conf-mixed { opacity: 0.8; }
-    .cs-value.conf-population { opacity: 0.6; }
+
+    /* V-2 §III.5 scope boundary — equity / pot odds / SPR / sample-count
+       are mathematically exact derived values and do NOT carry confidence.
+       The prior `.cs-value.conf-{player,mixed,population}` opacity classes
+       were deleted at Gate 5 PR-3 (2026-04-29). */
+
+    /* V-2 §III + R-1.6 — canonical confidence-dot rule. Concept-class-
+       isolated from --m-* tokens (INV-TOKEN-2). The .conf-tier-{high,mid,
+       low,unknown} ordinal classes drive color via design-tokens
+       --conf-tier-* entries. Future PRs may migrate the dot dimensions
+       onto a Layer-2 spacing token; for now the literals match the
+       prototype reference (8×8). Per V-2 §III.5 the prior cs-value
+       opacity classes are deleted — equity / pot odds / SPR are
+       mathematically exact and do NOT carry confidence. */
+    .confidence-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .confidence-dot.conf-tier-high    { background: var(--conf-tier-high); }
+    .confidence-dot.conf-tier-mid     { background: var(--conf-tier-mid); }
+    .confidence-dot.conf-tier-low     { background: var(--conf-tier-low); }
+    .confidence-dot.conf-tier-unknown { background: var(--conf-tier-unknown); }
+    .confidence-label {
+      font-size: var(--type-meta-stat);
+      color: var(--text-muted);
+      margin-left: 4px;
+      font-variant-numeric: tabular-nums;
+    }
 
     /* ══════════════════════════════════════════════════════════
        CARDS STRIP — Board + hero cards (compact)

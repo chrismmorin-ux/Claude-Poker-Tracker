@@ -78,6 +78,15 @@ export const TOKENS = {
   'm-orange': '#f97316',
   'm-red':    '#f87171',
 
+  // Confidence tier (V-2 §III + R-1.6 — engine model outputs only;
+  // concept-class-isolated from --m-* per INV-TOKEN-2). Visual hex matches
+  // existing M-zone hues so behavior is preserved across the migration;
+  // the concept-class isolation is at the token-name layer.
+  'conf-tier-high':    '#4ade80',  // player_model — full confidence
+  'conf-tier-mid':     '#fbbf24',  // mixed model + population
+  'conf-tier-low':     '#f87171',  // population estimate only
+  'conf-tier-unknown': '#6b7280',  // model output absent / sample absent
+
   // Tournament (demoted to neutral)
   'tournament-accent': '#6b7280',
 
