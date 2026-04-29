@@ -60,9 +60,6 @@ export const DEFAULT_SETTINGS = {
     postflop_bet: null,    // e.g. [0.25, 0.5, 0.75, 1.0] — fractions of pot
     postflop_raise: null,  // e.g. [2, 3, 4, 5] — multipliers of current bet
   },
-
-  // Privacy/telemetry
-  errorReportingEnabled: true,
 };
 
 // =============================================================================
@@ -100,6 +97,5 @@ export const SETTINGS_FIELDS = {
   BACKUP_FREQUENCY: 'backupFrequency',
   CUSTOM_VENUES: 'customVenues',
   CUSTOM_GAME_TYPES: 'customGameTypes',
-  ERROR_REPORTING_ENABLED: 'errorReportingEnabled',
 };
 

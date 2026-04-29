@@ -111,7 +111,6 @@ export const createMockSettingsState = (overrides = {}) => {
     backupFrequency: 'manual',
     customVenues: [],
     customGameTypes: [],
-    errorReportingEnabled: true,
   };
 
   return {

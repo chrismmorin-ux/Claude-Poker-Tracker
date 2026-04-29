@@ -154,20 +154,12 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
         </p>
       </div>
 
-      {/* Error Reporting */}
-      <div className="mb-4">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.errorReportingEnabled}
-            onChange={(e) => updateSetting(SETTINGS_FIELDS.ERROR_REPORTING_ENABLED, e.target.checked)}
-            className="w-5 h-5 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-gray-300 text-sm">
-            Enable error reporting <span className="text-gray-500">(helps improve the app)</span>
-          </span>
-        </label>
-      </div>
+      {/* W4-A4-F8: removed vaporware "Enable error reporting" checkbox. The
+          flag never wired to any external transmission; nothing in errorHandler
+          or errorLog consumed it. Keeping a UI toggle that does nothing was
+          actively misleading ("helps improve the app" — but no data leaves
+          the device). Re-introduce only when an actual error-reporting service
+          is integrated. */}
 
       {/* Version Info */}
       <div className="mb-4 pt-3 border-t border-gray-700 space-y-1">

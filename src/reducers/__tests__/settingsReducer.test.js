@@ -36,7 +36,6 @@ describe('settingsReducer', () => {
       expect(settings.backupFrequency).toBe('manual');
       expect(settings.customVenues).toEqual([]);
       expect(settings.customGameTypes).toEqual([]);
-      expect(settings.errorReportingEnabled).toBe(true);
     });
   });
 
