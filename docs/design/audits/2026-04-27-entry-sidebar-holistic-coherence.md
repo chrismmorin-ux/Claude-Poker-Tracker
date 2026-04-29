@@ -5,7 +5,7 @@
 **Working project name:** Sidebar Holistic Coherence (SHC)
 **Scope at entry:** A holistic design pass on the extension sidebar treating its 5 zones + their elements as **one system** rather than as a collection of independently-authored panels. Owner-flagged: "These have accumulated incrementally, without any thought given to their interconnectivity or relatedness. It might be the case we need to develop something else to achieve this properly."
 **Gate:** 1 (Entry — mandatory per `docs/design/LIFECYCLE.md`)
-**Status:** DRAFT — pending owner review
+**Status:** APPROVED 2026-04-29 (owner ratification of full SHC Gates 1-4)
 
 ---
 

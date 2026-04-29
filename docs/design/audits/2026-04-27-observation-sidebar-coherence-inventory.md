@@ -6,7 +6,7 @@
 **Gate:** 3 (Research — deliverables #4 + #5)
 **Scope:** Scope A locked (fluent-user / training-cost only; no first-impression / E-IGNITION concerns).
 **Method:** Visual layer derived from pre-existing harness screenshots (16 static + 8 temporal in `ignition-poker-tracker/side-panel/harness/screenshots/`) + fixtures.js state shapes. Architectural layer derived from direct read of `render-orchestrator.js`, `render-tiers.js`, `render-street-card.js`, `side-panel.js`, `shared/design-tokens.js`, `shared/stats-engine.js`. **No live `npm run harness` walk** this session — flagged as a follow-up if the existing screenshots are stale relative to current main.
-**Status:** DRAFT — pending owner review
+**Status:** APPROVED 2026-04-29 (owner ratification of full SHC Gates 1-4)
 
 ---
 

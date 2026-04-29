@@ -5,7 +5,7 @@
 **Working project name:** Sidebar Holistic Coherence (SHC)
 **Gate:** 3 (Research) — deliverable #6, **closes Gate 3**
 **Scope:** Scope A locked (fluent-user / training-cost only).
-**Status:** DRAFT — pending owner review
+**Status:** APPROVED 2026-04-29 (owner ratification of full SHC Gates 1-4)
 
 ---
 
@@ -160,7 +160,7 @@ This baseline cites the following as authoritative:
 - **No proposed shell-spec content.** Gate 4 work; this is the evidence base, not the design.
 - **No prescription on what colors / shapes / token names to use.** Findings 1–3 set up the *problem*; Gate 4 picks the solution.
 - **No backlog ranking of remediation work.** Gate 5 + Gate 4 together produce a remediation plan; this baseline is upstream of that.
-- **No verification that Gate 3 deliverables are owner-approved.** Status is DRAFT for #4 + #5 + #6; #1 + #2 + #3 also DRAFT pending owner pass.
+- **~~No verification that Gate 3 deliverables are owner-approved.~~** [Limitation closed 2026-04-29 — owner ratified SHC Gates 1-4 in full; this baseline + Gate 1 audit + Gate 2 blind-spot + Gate 3 observation inventory all flipped APPROVED.]
 - **No telemetry / direct-observation evidence for the fluency-acquiring persona.** SFA1–SFA4 caveats remain proto. This baseline is necessary but not sufficient; post-launch instrumentation will close the loop.
 
 ---

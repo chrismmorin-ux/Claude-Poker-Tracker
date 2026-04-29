@@ -3,7 +3,7 @@
 **Gate:** 2 (Blind-Spot Roundtable — triggered by RED Gate 1 verdict per `2026-04-27-entry-sidebar-holistic-coherence.md`)
 **Auditor:** Claude (main)
 **Working project name:** Sidebar Holistic Coherence (SHC)
-**Status:** DRAFT — pending owner review + outside-lens pass
+**Status:** APPROVED 2026-04-29 (owner ratification of full SHC Gates 1-4; outside-lens pass completed via product-ux-engineer specialist contributions across V-2/V-3/V-color-tokens/V-affordance/V-status/V-density roundtables)
 
 ---
 
