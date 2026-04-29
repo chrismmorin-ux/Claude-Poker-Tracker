@@ -8,11 +8,15 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { logger } from '../utils/errorHandler';
-import { initializeSeatRanges, analyzeTimelineAction } from '../utils/handAnalysis';
+import {
+  initializeSeatRanges, analyzeTimelineAction, buildCounterfactualTree,
+} from '../utils/handAnalysis';
+import { getCardsForStreet } from '../utils/pokerCore/cardParser';
 import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
 import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { buildSituationKey } from '../utils/exploitEngine/decisionAccumulator';
 import { queryActionDistribution } from '../utils/exploitEngine/villainDecisionModel';
+import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 
 /**
  * @param {Object|null} selectedHand - The hand record
@@ -53,8 +57,9 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
       const results = [];
 
       for (let i = 0; i < timeline.length; i++) {
+        const entry = timeline[i];
         const result = await analyzeTimelineAction({
-          entry: timeline[i],
+          entry,
           index: i,
           timeline,
           seatRanges,
@@ -71,6 +76,30 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
           results,
           deps: { narrowByBoard, segmentRange, buildSituationKey, queryActionDistribution },
         });
+        // Abort if a different hand was selected mid-loop — prevents stale
+        // results from clobbering newer state.
+        if (handId !== lastHandIdRef.current) return;
+
+        // HRP-E-TREE-EXPOSE: depth-2/3 game tree per postflop entry, hero or
+        // villain. Helper handles preflop / missing-card skips and engine
+        // errors, returning null cleanly. Sequential — engine has shared
+        // caches, so concurrency would inflate worst-case latency.
+        result.counterfactualTree = await buildCounterfactualTree({
+          entry,
+          index: i,
+          timeline,
+          seatRanges,
+          seatPlayers,
+          tendencyMap,
+          heroSeat,
+          heroCards,
+          cardsForStreet: getCardsForStreet(communityCards, entry.street),
+          potAtPoint: result?.potAtPoint ?? 0,
+          boardTexture: result?.boardTexture,
+          deps: { evaluateGameTree },
+        });
+        if (handId !== lastHandIdRef.current) return;
+
         results.push(result);
       }
 

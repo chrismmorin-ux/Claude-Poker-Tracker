@@ -208,6 +208,139 @@ export const buildHeroCoaching = async ({
 };
 
 /**
+ * Build the depth-2/3 counterfactual game tree for a single timeline entry.
+ *
+ * Evaluates from hero's seat at the state present at this entry — board, pot,
+ * villain's narrowed range, villain's most-recent action on this street.
+ * For hero-actor entries this answers "what alternative action could hero have
+ * taken?". For villain-actor entries it is entirely counterfactual from hero's
+ * seat — "if hero had been on turn at this state, what's the EV landscape?".
+ * Downstream consumers (SR-30 modal) own the labeling.
+ *
+ * Returns null when the engine cannot evaluate:
+ *   - preflop entries (engine is postflop-only)
+ *   - <3 community cards
+ *   - missing or unparseable hero hole cards
+ *   - no usable villain range
+ *   - engine throws
+ *
+ * INV-08: `evaluateGameTree` is injected via `deps` (engine import lives in
+ * the hook caller, not in this module). Callers must supply it; otherwise the
+ * helper returns null without computing.
+ *
+ * @param {Object} params
+ * @param {Object} params.entry           Current timeline entry
+ * @param {number} params.index           Its index in timeline
+ * @param {Array}  params.timeline        Full timeline
+ * @param {Object} params.seatRanges      { [seat]: Float64Array } — narrowed at this point
+ * @param {Object} params.seatPlayers     { [seat]: playerId }
+ * @param {Object} params.tendencyMap     { [playerId]: { villainModel, af, vpip, ... } }
+ * @param {number} params.heroSeat
+ * @param {string[]} params.heroCards     Hero hole card strings (length 2)
+ * @param {string[]} params.cardsForStreet Community cards revealed at this street
+ * @param {number} params.potAtPoint      Pot before this entry
+ * @param {Object} [params.boardTexture]  Optional pre-computed texture (passed as contextHint)
+ * @param {Object} params.deps            { evaluateGameTree }
+ * @returns {Promise<Object|null>}
+ */
+export const buildCounterfactualTree = async ({
+  entry, index, timeline, seatRanges, seatPlayers, tendencyMap,
+  heroSeat, heroCards, cardsForStreet, potAtPoint, boardTexture,
+  deps = {},
+}) => {
+  const { evaluateGameTree } = deps;
+  if (!evaluateGameTree) return null;
+  if (!entry || entry.street === 'preflop') return null;
+  if (!cardsForStreet || cardsForStreet.length < 3) return null;
+  if (!heroCards || heroCards.length !== 2) return null;
+
+  const h0 = parseAndEncode(heroCards[0]);
+  const h1 = parseAndEncode(heroCards[1]);
+  if (h0 < 0 || h1 < 0) return null;
+
+  // Find most-recent villain on the SAME street before this entry.
+  // Their range/action defines what hero is "facing" from the engine's perspective.
+  let villainSeat = null;
+  let villainPlayerId = null;
+  let villainRange = null;
+  let villainAction = null;
+  let villainBet = 0;
+  for (let j = index - 1; j >= 0; j--) {
+    const prev = timeline[j];
+    if (prev.street !== entry.street) break;
+    if (String(prev.seat) === String(heroSeat)) continue;
+    villainSeat = Number(prev.seat);
+    villainPlayerId = seatPlayers?.[prev.seat] ?? seatPlayers?.[villainSeat];
+    villainRange = seatRanges?.[prev.seat] ?? seatRanges?.[String(prev.seat)] ?? null;
+    const prevPrim = LEGACY_TO_PRIMITIVE[prev.action] ?? prev.action;
+    if (prevPrim === PRIMITIVE_ACTIONS.BET) {
+      villainAction = 'bet';
+      villainBet = prev.amount || 0;
+    } else if (prevPrim === PRIMITIVE_ACTIONS.RAISE) {
+      villainAction = 'raise';
+      villainBet = prev.amount || 0;
+    }
+    break;
+  }
+
+  // First-to-act on a street (no prior villain action this street): fall back to
+  // the first non-hero seat with a range so the engine has a villain to model.
+  if (!villainRange) {
+    for (const [seatKey, range] of Object.entries(seatRanges || {})) {
+      if (String(seatKey) === String(heroSeat) || !range) continue;
+      villainRange = range;
+      villainSeat = Number(seatKey);
+      villainPlayerId = seatPlayers?.[seatKey] ?? seatPlayers?.[villainSeat];
+      break;
+    }
+  }
+  if (!villainRange) return null;
+
+  const board = parseBoard(cardsForStreet);
+  if (!board || board.length < 3) return null;
+
+  const tendency = villainPlayerId != null ? tendencyMap?.[villainPlayerId] : null;
+  const playerStats = tendency ? {
+    af: tendency.af, cbet: tendency.cbet, vpip: tendency.vpip,
+    style: tendency.style, threeBet: tendency.threeBet,
+  } : undefined;
+  const villainModel = tendency?.villainModel;
+
+  let result;
+  try {
+    result = await evaluateGameTree({
+      villainRange,
+      board,
+      heroCards: [h0, h1],
+      potSize: potAtPoint,
+      villainAction: villainAction || undefined,
+      villainBet,
+      playerStats,
+      villainModel,
+      contextHints: boardTexture ? { boardTexture } : {},
+    });
+  } catch (e) {
+    return null;
+  }
+
+  if (!result || !Array.isArray(result.recommendations)) return null;
+
+  return {
+    recommendations: result.recommendations,
+    treeMetadata: result.treeMetadata,
+    foldPct: result.foldPct,
+    foldMeta: result.foldMeta,
+    modelQuality: result.modelQuality,
+    bucketEquities: result.bucketEquities,
+    villainContext: {
+      villainSeat,
+      villainAction,
+      villainBet,
+    },
+  };
+};
+
+/**
  * Analyze a single timeline action — computes range narrowing, segmentation,
  * equity, EV assessment, showdown classification, and hero coaching.
  *
@@ -432,6 +565,7 @@ export const analyzeTimelineAction = async ({
     order: entry.order,
     posName,
     posCategory,
+    potAtPoint,
     rangeAtPoint: rangeAtPoint ? new Float64Array(rangeAtPoint) : null,
     rangeLabel: seatRangeLabels[seat] || null,
     preActionRanges,

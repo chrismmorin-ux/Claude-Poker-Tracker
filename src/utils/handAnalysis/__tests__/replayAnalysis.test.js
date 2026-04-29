@@ -42,6 +42,7 @@ import {
   estimateRangeEquityPct,
   initializeSeatRanges,
   analyzeTimelineAction,
+  buildCounterfactualTree,
 } from '../replayAnalysis';
 
 // ─── classifyAction ─────────────────────────────────────────────────────────
@@ -329,5 +330,201 @@ describe('analyzeTimelineAction', () => {
     if (result.rangeAtPoint) {
       expect(result.rangeAtPoint).not.toBe(seatRanges['3']);
     }
+  });
+});
+
+// ─── buildCounterfactualTree (HRP-E-TREE-EXPOSE) ────────────────────────────
+
+describe('buildCounterfactualTree', () => {
+  const heroSeat = 1;
+  const heroCards = ['Jh', 'Td'];
+  const cardsForStreet = ['Ah', 'Kd', 'Qs'];
+  const seatPlayers = { 1: 'hero', 3: 'villain' };
+  const villainRange = new Float64Array(169).fill(0.5);
+
+  const makeEngineSuccess = () => vi.fn().mockResolvedValue({
+    recommendations: [
+      { action: 'bet', ev: 5.2, sizing: { betSize: 10 }, depth: 2, handPlan: { reasoning: 'value' } },
+      { action: 'check', ev: 3.1, depth: 2 },
+    ],
+    treeMetadata: { depth: 2, depthReached: 2, computeMs: 87, sprZone: 'MEDIUM' },
+    foldPct: { bet: 0.42 },
+    foldMeta: { bet: { source: 'model' } },
+    modelQuality: { overallSource: 'observed', facingBetConfidence: 0.45 },
+    bucketEquities: { strong: 0.7 },
+    segmentation: { buckets: { nuts: { pct: 12 } } }, // should be stripped from output
+    heroEquity: 0.55, // should be stripped
+    boardTexture: { texture: 'dry' }, // should be stripped
+  });
+
+  const baseParams = () => ({
+    entry: { seat: '1', street: 'flop', action: 'bet', order: 2, amount: 10 },
+    index: 1,
+    timeline: [
+      { seat: '3', street: 'flop', action: 'bet', order: 1, amount: 10 },
+      { seat: '1', street: 'flop', action: 'bet', order: 2, amount: 10 },
+    ],
+    seatRanges: { '3': villainRange },
+    seatPlayers,
+    tendencyMap: { villain: { af: 1.5, vpip: 28, style: 'TAG', villainModel: { _buckets: {} } } },
+    heroSeat,
+    heroCards,
+    cardsForStreet,
+    potAtPoint: 30,
+    boardTexture: { texture: 'dry' },
+    deps: { evaluateGameTree: makeEngineSuccess() },
+  });
+
+  it('returns null for preflop entries (engine is postflop-only)', async () => {
+    const params = baseParams();
+    params.entry = { ...params.entry, street: 'preflop' };
+    expect(await buildCounterfactualTree(params)).toBeNull();
+    expect(params.deps.evaluateGameTree).not.toHaveBeenCalled();
+  });
+
+  it('returns null when evaluateGameTree dep is not injected', async () => {
+    const params = baseParams();
+    params.deps = {};
+    expect(await buildCounterfactualTree(params)).toBeNull();
+  });
+
+  it('returns null when fewer than 3 community cards revealed', async () => {
+    const params = baseParams();
+    params.cardsForStreet = ['Ah', 'Kd'];
+    expect(await buildCounterfactualTree(params)).toBeNull();
+    expect(params.deps.evaluateGameTree).not.toHaveBeenCalled();
+  });
+
+  it('returns null when hero cards are missing or wrong length', async () => {
+    const a = baseParams(); a.heroCards = null;
+    const b = baseParams(); b.heroCards = ['Jh'];
+    const c = baseParams(); c.heroCards = [];
+    expect(await buildCounterfactualTree(a)).toBeNull();
+    expect(await buildCounterfactualTree(b)).toBeNull();
+    expect(await buildCounterfactualTree(c)).toBeNull();
+  });
+
+  it('returns null when no villain range is available anywhere', async () => {
+    const params = baseParams();
+    params.seatRanges = {}; // no ranges at all
+    expect(await buildCounterfactualTree(params)).toBeNull();
+    expect(params.deps.evaluateGameTree).not.toHaveBeenCalled();
+  });
+
+  it('returns null when engine throws', async () => {
+    const params = baseParams();
+    params.deps.evaluateGameTree = vi.fn().mockRejectedValue(new Error('engine boom'));
+    expect(await buildCounterfactualTree(params)).toBeNull();
+  });
+
+  it('returns null when engine result has no recommendations array', async () => {
+    const params = baseParams();
+    params.deps.evaluateGameTree = vi.fn().mockResolvedValue({ treeMetadata: {} });
+    expect(await buildCounterfactualTree(params)).toBeNull();
+  });
+
+  it('happy path: returns shaped tree with recommendations + villainContext + metadata', async () => {
+    const params = baseParams();
+    const result = await buildCounterfactualTree(params);
+
+    expect(result).not.toBeNull();
+    expect(result.recommendations).toHaveLength(2);
+    expect(result.recommendations[0].action).toBe('bet');
+    expect(result.treeMetadata.depth).toBe(2);
+    expect(result.foldPct.bet).toBeCloseTo(0.42);
+    expect(result.modelQuality.overallSource).toBe('observed');
+    expect(result.villainContext).toEqual({
+      villainSeat: 3,
+      villainAction: 'bet',
+      villainBet: 10,
+    });
+  });
+
+  it('strips segmentation/heroEquity/boardTexture from output (already on the analysis row)', async () => {
+    const params = baseParams();
+    const result = await buildCounterfactualTree(params);
+    expect(result).not.toHaveProperty('segmentation');
+    expect(result).not.toHaveProperty('heroEquity');
+    expect(result).not.toHaveProperty('boardTexture');
+  });
+
+  it('passes hero perspective inputs to the engine (board, heroCards encoded, pot, villainAction/Bet)', async () => {
+    const params = baseParams();
+    await buildCounterfactualTree(params);
+
+    expect(params.deps.evaluateGameTree).toHaveBeenCalledTimes(1);
+    const call = params.deps.evaluateGameTree.mock.calls[0][0];
+    expect(call.villainRange).toBe(villainRange);
+    expect(Array.isArray(call.board)).toBe(true);
+    expect(call.board.length).toBe(3);
+    expect(Array.isArray(call.heroCards)).toBe(true);
+    expect(call.heroCards).toHaveLength(2);
+    expect(call.potSize).toBe(30);
+    expect(call.villainAction).toBe('bet');
+    expect(call.villainBet).toBe(10);
+    expect(call.playerStats).toMatchObject({ af: 1.5, vpip: 28, style: 'TAG' });
+    expect(call.villainModel).toBeDefined();
+    expect(call.contextHints.boardTexture).toEqual({ texture: 'dry' });
+  });
+
+  it('detects raise as facing action with bet size', async () => {
+    const params = baseParams();
+    params.timeline[0] = { seat: '3', street: 'flop', action: 'raise', order: 1, amount: 30 };
+    await buildCounterfactualTree(params);
+    const call = params.deps.evaluateGameTree.mock.calls[0][0];
+    expect(call.villainAction).toBe('raise');
+    expect(call.villainBet).toBe(30);
+  });
+
+  it('treats prior villain check as no-facing-bet (villainAction stays undefined)', async () => {
+    const params = baseParams();
+    params.timeline[0] = { seat: '3', street: 'flop', action: 'check', order: 1 };
+    await buildCounterfactualTree(params);
+    const call = params.deps.evaluateGameTree.mock.calls[0][0];
+    expect(call.villainAction).toBeUndefined();
+    expect(call.villainBet).toBe(0);
+  });
+
+  it('does not cross street boundaries when scanning for villain action', async () => {
+    const params = baseParams();
+    // Hero is now first to act on flop; the prior bet was on preflop and must NOT carry over
+    params.timeline = [
+      { seat: '3', street: 'preflop', action: 'raise', order: 1, amount: 6 },
+      { seat: '1', street: 'flop', action: 'bet', order: 2, amount: 10 },
+    ];
+    params.entry = params.timeline[1];
+    params.index = 1;
+    await buildCounterfactualTree(params);
+    const call = params.deps.evaluateGameTree.mock.calls[0][0];
+    // Falls back to seat range (not a street-villain action), so no facing bet
+    expect(call.villainAction).toBeUndefined();
+    expect(call.villainBet).toBe(0);
+  });
+
+  it('falls back to first non-hero seat range when no same-street villain has acted', async () => {
+    const params = baseParams();
+    params.timeline = [{ seat: '1', street: 'flop', action: 'check', order: 1 }];
+    params.entry = params.timeline[0];
+    params.index = 0;
+    const result = await buildCounterfactualTree(params);
+    expect(result).not.toBeNull();
+    expect(result.villainContext.villainSeat).toBe(3);
+    expect(result.villainContext.villainAction).toBeNull();
+  });
+
+  it('villain-actor entry: still produces tree from hero perspective at this state', async () => {
+    const params = baseParams();
+    // Make this entry be the villain's bet itself (counterfactual: "if hero faced this state…")
+    params.timeline = [
+      { seat: '1', street: 'flop', action: 'check', order: 1 },
+      { seat: '3', street: 'flop', action: 'bet', order: 2, amount: 10 },
+    ];
+    params.entry = params.timeline[1];
+    params.index = 1;
+    const result = await buildCounterfactualTree(params);
+    expect(result).not.toBeNull();
+    expect(result.recommendations).toHaveLength(2);
+    // No prior villain on this street → villainContext reflects fallback
+    expect(result.villainContext.villainSeat).toBe(3);
   });
 });

@@ -8,6 +8,7 @@ export { analyzeDecisionPoint, getAvailableStreets } from './handReviewAnalyzer'
 export { analyzeWithHindsight } from './hindsightAnalysis';
 export {
   initializeSeatRanges, analyzeTimelineAction, buildHeroCoaching,
+  buildCounterfactualTree,
 } from './replayAnalysis';
 export {
   buildTimeline, getStreetTimeline, getPlayerTimeline,
