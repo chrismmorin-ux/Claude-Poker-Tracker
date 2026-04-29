@@ -22,6 +22,7 @@ import {
   renderConfidenceBadge,
   mapModelSourceToTier,
 } from '../shared/render-confidence.js';
+import { STATUS_TIERS } from '../shared/render-status.js';
 
 // =========================================================================
 // COMPUTE FOCUSED VILLAIN
@@ -1318,15 +1319,22 @@ export const buildModelAuditHTML = (advice) => {
 // =========================================================================
 
 /**
- * Build status bar text and dot class.
+ * Build status bar tier and text.
+ *
+ * Returns a V-status \u00A7I axis-1 tier value (per shared/render-status.js
+ * STATUS_TIERS register) \u2014 not a DOM class string. Callers route through
+ * the canonical writer registry: production code uses applyMonotonicTier()
+ * (so this writer can never silently downgrade a more-severe tier set
+ * earlier in the same render frame); the harness uses writeStatusDot()
+ * directly so fixture switches re-paint authoritatively.
  *
  * @param {Object|null} pipeline
  * @param {number} handCount
- * @returns {{ dotClass: string, text: string }}
+ * @returns {{ tier: string, text: string }}
  */
 export const buildStatusBar = (pipeline, handCount) => {
   if (!pipeline) {
-    return { dotClass: 'status-dot yellow', text: 'Service worker not responding' };
+    return { tier: STATUS_TIERS.DEGRADED, text: 'Service worker not responding' };
   }
 
   const tableCount = pipeline?.tableCount || 0;
@@ -1335,12 +1343,12 @@ export const buildStatusBar = (pipeline, handCount) => {
   const tableLabel = tableIds.length > 0 ? ` (id:${tableIds[0]})` : '';
 
   if (tableCount > 0 && handCount > 0) {
-    return { dotClass: 'status-dot green', text: `Tracking${tableLabel} \u00B7 ${handCount} hands` };
+    return { tier: STATUS_TIERS.LIVE, text: `Tracking${tableLabel} \u00B7 ${handCount} hands` };
   } else if (handCount > 0) {
-    return { dotClass: 'status-dot green', text: `${handCount} hands captured` };
+    return { tier: STATUS_TIERS.LIVE, text: `${handCount} hands captured` };
   } else if (tableCount > 0) {
-    return { dotClass: 'status-dot yellow', text: `Connected${tableLabel} \u2014 waiting for hands` };
+    return { tier: STATUS_TIERS.DEGRADED, text: `Connected${tableLabel} \u2014 waiting for hands` };
   } else {
-    return { dotClass: 'status-dot yellow', text: '' }; // Caller fills via diagnostic status
+    return { tier: STATUS_TIERS.DEGRADED, text: '' }; // Caller fills via diagnostic status
   }
 };

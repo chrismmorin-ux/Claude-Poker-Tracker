@@ -3,9 +3,13 @@
  *
  * Implements the 3-axis status decomposition (connection-state /
  * app-bridge-state / pipeline-stage-health) resolved at SHC Gate 4
- * V-status walkthrough (2026-04-28, doctrine v7 R-1.11 + INV-STATUS-1..5)
- * and partially implemented at Gate 5 PR-5 (2026-04-29) — connection-state
- * axis only; app-bridge + pipeline-stage axes deferred to follow-up PRs.
+ * V-status walkthrough (2026-04-28, doctrine v7 R-1.11 + INV-STATUS-1..5).
+ * Gate 5 PR-5 shipped the canonical connection-state writer alongside a
+ * legacy-class bridge (so unmigrated writers kept rendering); Gate 5 PR-6
+ * migrated the remaining 4 writers (updateStatusBar / staleContext /
+ * updateStatusFromDiag / harness.js) and deleted the bridge — all dot
+ * paints now flow through writeStatusDot / applyMonotonicTier and emit
+ * canonical .conn-* classes only.
  *
  * Shell-spec source: docs/design/surfaces/sidebar-shell-spec.md §I.
  * Doctrine source:   docs/SIDEBAR_DESIGN_PRINCIPLES.md §1 R-1.11.
@@ -16,8 +20,9 @@
  * value emits defined class) covered at the helper layer. Currently-
  * shipping bugs FM-STATUS-1 (silent severity downgrade at
  * side-panel.js:1893-1894) and FM-STATUS-2 (versionMismatch silent
- * persistence at :225-227) closed in this PR via callers using these
- * helpers.
+ * persistence at :225-227) closed at PR-5 via callers using these helpers.
+ *
+ * App-bridge axis-2 + pipeline axis-3 are deferred to follow-up PRs.
  */
 
 // ===========================================================================
@@ -66,34 +71,20 @@ export const mapConnStateToTier = (connState) => {
 };
 
 // ===========================================================================
-// Legacy class ↔ tier bridge (for backward-compat reads on the dot)
+// tierFromElementClassName — read current tier from a status-dot element
 // ===========================================================================
-// The legacy color-literal classes .green/.yellow/.red predate this register
-// (see side-panel.html .status-dot.green at :52-57). The bridge lets
-// applyMonotonicTier() inspect the dot's current class and resolve its
-// severity even when an unmigrated writer (#2 updateStatusBar / #4
-// updateStatusFromDiag / #5 harness.js) wrote it. Future PRs migrate those
-// writers to canonical .conn-* classes, at which point this bridge becomes
-// the only legacy-shim consumer and can be deleted.
-
-const LEGACY_CLASS_TO_TIER = Object.freeze({
-  green: STATUS_TIERS.LIVE,
-  yellow: STATUS_TIERS.DEGRADED,
-  red: STATUS_TIERS.FATAL,
-});
+// Consumed by applyMonotonicTier to decide whether to honor or refuse a
+// new write per INV-STATUS-2. Reads the canonical data-status-tier attr
+// first (set by writeStatusDot), then falls back to a .conn-* class scan.
+// The legacy .green/.yellow/.red read-fallback was removed at Gate 5 PR-6
+// once all writers stopped emitting legacy color-literal classes.
 
 const tierFromElementClassName = (el) => {
   if (!el || !el.classList) return null;
-  // Prefer canonical attr if present (writer used the new vocabulary)
   const attrTier = el.getAttribute && el.getAttribute('data-status-tier');
   if (attrTier && Object.values(STATUS_TIERS).includes(attrTier)) return attrTier;
-  // Fall back to canonical .conn-* class
   for (const tier of Object.values(STATUS_TIERS)) {
     if (el.classList.contains(`conn-${tier}`)) return tier;
-  }
-  // Fall back to legacy .green/.yellow/.red
-  for (const [legacy, tier] of Object.entries(LEGACY_CLASS_TO_TIER)) {
-    if (el.classList.contains(legacy)) return tier;
   }
   return null;
 };
@@ -101,10 +92,10 @@ const tierFromElementClassName = (el) => {
 // ===========================================================================
 // applyMonotonicTier — INV-STATUS-2 monotonicity-respecting writer
 // ===========================================================================
-// Inspects the dot's current tier (via canonical attr / class / legacy
-// class) and writes the new tier only if `newTier` severity ≥ current
-// severity. Returns the tier actually applied (may equal current if the
-// write was rejected for monotonicity).
+// Inspects the dot's current tier (via canonical attr / class) and writes
+// the new tier only if `newTier` severity ≥ current severity. Returns the
+// tier actually applied (may equal current if the write was rejected for
+// monotonicity).
 //
 //   const applied = applyMonotonicTier(dotEl, STATUS_TIERS.DEGRADED);
 //   // if dot was already FATAL, applied === FATAL (no downgrade)
@@ -126,30 +117,18 @@ export const applyMonotonicTier = (dotEl, newTier) => {
 // ===========================================================================
 // writeStatusDot — direct-write helper (bypasses monotonicity check)
 // ===========================================================================
-// Use this for the canonical writer (renderConnectionStatus) where the
-// connState change is authoritative. Other writers should prefer
-// applyMonotonicTier so they can't silently downgrade severity.
-
-const LEGACY_TIER_TO_CLASS = Object.freeze({
-  live: 'green',
-  disconnected: 'yellow',
-  degraded: 'yellow',
-  fatal: 'red',
-});
+// Use this for canonical writers (renderConnectionStatus, harness fixture
+// re-paint) where the new state is authoritative. Other writers should
+// prefer applyMonotonicTier so they can't silently downgrade severity.
 
 export const writeStatusDot = (dotEl, tier) => {
   if (!dotEl) return;
   if (!Object.values(STATUS_TIERS).includes(tier)) {
     throw new Error(`status tier "${tier}" not in closed 4-tier register`);
   }
-  // Canonical declaration via data-status-tier attribute (matches
-  // PR-2's data-affordance pattern).
+  // Canonical declaration: data-status-tier attribute (machine-readable
+  // single source of tier truth, mirrors PR-2's data-affordance pattern)
+  // + .conn-{tier} class (CSS paint binding to --status-conn-* tokens).
   dotEl.setAttribute('data-status-tier', tier);
-  // Emit BOTH the canonical .conn-* class AND the legacy color-literal
-  // class so unmigrated CSS selectors keep working until PR-6 deletes the
-  // legacy rules. Concept-class isolation per INV-TOKEN-2 is preserved at
-  // the canonical-class layer.
-  const legacy = LEGACY_TIER_TO_CLASS[tier];
-  // status-dot stays as the structural class; tier classes layer on top.
-  dotEl.className = `status-dot conn-${tier} ${legacy}`;
+  dotEl.className = `status-dot conn-${tier}`;
 };

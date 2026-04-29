@@ -18,6 +18,7 @@ import {
   buildModelAuditHTML,
   buildStatusBar,
 } from '../render-orchestrator.js';
+import { STATUS_TIERS } from '../../shared/render-status.js';
 import {
   flopWithAdvice,
   preflopNoAdvice,
@@ -594,36 +595,53 @@ describe('buildModelAuditHTML (SR-6.14, new)', () => {
 // =========================================================================
 
 describe('buildStatusBar', () => {
-  it('returns yellow dot when no pipeline', () => {
+  // V-status §I (Gate 5 PR-6): buildStatusBar returns a tier value from the
+  // closed 4-tier register, not a DOM class string. Callers route through
+  // the canonical writer registry (applyMonotonicTier in production,
+  // writeStatusDot in the harness).
+
+  it('returns DEGRADED tier when no pipeline', () => {
     const result = buildStatusBar(null, 0);
-    expect(result.dotClass).toContain('yellow');
+    expect(result.tier).toBe(STATUS_TIERS.DEGRADED);
     expect(result.text).toContain('Service worker not responding');
   });
 
-  it('returns green dot when tracking with hands', () => {
+  it('returns LIVE tier when tracking with hands', () => {
     const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 15);
-    expect(result.dotClass).toContain('green');
+    expect(result.tier).toBe(STATUS_TIERS.LIVE);
     expect(result.text).toContain('Tracking');
     expect(result.text).toContain('15 hands');
   });
 
-  it('returns green dot with just hand count', () => {
+  it('returns LIVE tier with just hand count', () => {
     const result = buildStatusBar({ tableCount: 0, tables: {} }, 10);
-    expect(result.dotClass).toContain('green');
+    expect(result.tier).toBe(STATUS_TIERS.LIVE);
     expect(result.text).toContain('10 hands captured');
   });
 
-  it('returns yellow dot when connected but no hands', () => {
+  it('returns DEGRADED tier when connected but no hands', () => {
     const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 0);
-    expect(result.dotClass).toContain('yellow');
+    expect(result.tier).toBe(STATUS_TIERS.DEGRADED);
     expect(result.text).toContain('Connected');
     expect(result.text).toContain('waiting for hands');
   });
 
-  it('returns empty text for diagnostic fallback', () => {
+  it('returns DEGRADED tier with empty text for diagnostic fallback', () => {
     const result = buildStatusBar({ tableCount: 0, tables: {} }, 0);
-    expect(result.dotClass).toContain('yellow');
+    expect(result.tier).toBe(STATUS_TIERS.DEGRADED);
     expect(result.text).toBe('');
+  });
+
+  it('returns a tier from the closed 4-tier register only', () => {
+    const fixtures = [
+      [null, 0],
+      [{ tableCount: 1, tables: { '1': {} } }, 5],
+      [{ tableCount: 0, tables: {} }, 0],
+    ];
+    for (const [pipeline, handCount] of fixtures) {
+      const result = buildStatusBar(pipeline, handCount);
+      expect(Object.values(STATUS_TIERS)).toContain(result.tier);
+    }
   });
 });
 

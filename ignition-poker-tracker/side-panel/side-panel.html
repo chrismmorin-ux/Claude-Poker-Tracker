@@ -49,19 +49,14 @@
       border-radius: 50%; flex-shrink: 0;
       transition: background var(--ease-base);
     }
-    .status-dot.green {
-      background: var(--m-green);
-      animation: pulse 3s ease-in-out infinite;
-    }
-    .status-dot.yellow { background: var(--m-yellow); }
-    .status-dot.red { background: var(--m-red); }
 
     /* V-status §I + R-1.11 — canonical connection-state tier classes.
-       Concept-class-isolated from --m-* per INV-TOKEN-2. Coexists with the
-       legacy .green/.yellow/.red rules above during the multi-PR migration;
-       PR-6+ deletes the legacy rules once all 5 writer sites
-       (renderConnectionStatus / updateStatusBar / staleContext /
-       updateStatusFromDiag / harness.js) emit canonical classes. */
+       Concept-class-isolated from --m-* per INV-TOKEN-2. The legacy
+       .green/.yellow/.red color-literal rules were deleted at Gate 5 PR-6
+       once all 5 writer sites (renderConnectionStatus / updateStatusBar /
+       staleContext / updateStatusFromDiag / harness.js) emitted canonical
+       .conn-* classes via the writeStatusDot / applyMonotonicTier helpers
+       in shared/render-status.js. */
     .status-dot.conn-live {
       background: var(--status-conn-live);
       animation: pulse 3s ease-in-out infinite;

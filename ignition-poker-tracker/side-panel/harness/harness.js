@@ -10,6 +10,7 @@
  */
 
 import { injectTokens } from '../../shared/design-tokens.js';
+import { writeStatusDot } from '../../shared/render-status.js';
 import {
   computeFocusedVillain,
   buildActionBarHTML,
@@ -80,7 +81,11 @@ function applyState(state) {
   const status = buildStatusBar(pipeline, hasHands ? handCount : 0);
   const dot = $('status-dot');
   const text = $('status-text');
-  if (dot) dot.className = status.dotClass;
+  // V-status §I writer #5 (Gate 5 PR-6): harness uses writeStatusDot
+  // (direct, non-monotonic) so fixture switches re-paint authoritatively
+  // — applyMonotonicTier would block scenario→scenario downgrades like
+  // appDisconnected → flopWithAdvice.
+  if (dot) writeStatusDot(dot, status.tier);
   if (text) text.textContent = status.text || 'Waiting...';
   $('hand-count').textContent = hasHands ? handCount : 0;
 

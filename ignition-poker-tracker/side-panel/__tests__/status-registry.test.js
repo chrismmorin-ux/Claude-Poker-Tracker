@@ -2,7 +2,12 @@
 /**
  * status-registry.test.js — Doctrine v7 R-1.11 + V-status §I lint gates
  * for the §I status vocabulary resolved at SHC Gate 4 V-status walkthrough
- * (2026-04-28) and partially implemented at Gate 5 PR-5 (2026-04-29).
+ * (2026-04-28). Gate 5 PR-5 introduced the canonical writer + a
+ * legacy-class bridge; Gate 5 PR-6 migrated all 5 writer sites and deleted
+ * the bridge — the .green/.yellow/.red color-literal classes are no
+ * longer emitted or read by any production writer, so the read/emit
+ * fallback tests were dropped here at PR-6.
+ *
  * Provides INV-STATUS-1..5 partial coverage at the helper layer.
  *
  * Asserts:
@@ -17,10 +22,9 @@
  *   - applyMonotonicTier() refuses to downgrade visible severity within
  *     the same render frame (INV-STATUS-2)
  *   - applyMonotonicTier() reads canonical data-status-tier attr first,
- *     then canonical .conn-* class, then legacy .green/.yellow/.red as
- *     final fallback
- *   - writeStatusDot() emits canonical declarations (data-status-tier
- *     attr + .conn-* class + legacy color class for unmigrated CSS)
+ *     then canonical .conn-* class as fallback
+ *   - writeStatusDot() emits canonical declarations only (data-status-tier
+ *     attr + .conn-* class — no legacy color-literal classes)
  *   - tier validation throws on values outside the closed enumeration
  *
  * Doctrine source: docs/SIDEBAR_DESIGN_PRINCIPLES.md §1 R-1.11.
@@ -121,22 +125,21 @@ describe('writeStatusDot — canonical declaration emission', () => {
     expect(dot.classList.contains('conn-fatal')).toBe(true);
   });
 
-  it('emits legacy color class for unmigrated CSS (live → green)', () => {
+  it('does NOT emit legacy color-literal classes (PR-6 bridge removal)', () => {
+    const tiers = [STATUS_TIERS.LIVE, STATUS_TIERS.DEGRADED, STATUS_TIERS.DISCONNECTED, STATUS_TIERS.FATAL];
+    for (const tier of tiers) {
+      const dot = makeDot();
+      writeStatusDot(dot, tier);
+      expect(dot.classList.contains('green')).toBe(false);
+      expect(dot.classList.contains('yellow')).toBe(false);
+      expect(dot.classList.contains('red')).toBe(false);
+    }
+  });
+
+  it('emits exactly 2 classes — structural .status-dot and canonical .conn-{tier}', () => {
     const dot = makeDot();
     writeStatusDot(dot, STATUS_TIERS.LIVE);
-    expect(dot.classList.contains('green')).toBe(true);
-  });
-
-  it('emits legacy color class (degraded → yellow)', () => {
-    const dot = makeDot();
-    writeStatusDot(dot, STATUS_TIERS.DEGRADED);
-    expect(dot.classList.contains('yellow')).toBe(true);
-  });
-
-  it('emits legacy color class (fatal → red)', () => {
-    const dot = makeDot();
-    writeStatusDot(dot, STATUS_TIERS.FATAL);
-    expect(dot.classList.contains('red')).toBe(true);
+    expect(Array.from(dot.classList).sort()).toEqual(['conn-live', 'status-dot']);
   });
 
   it('preserves the structural .status-dot class', () => {
@@ -204,22 +207,20 @@ describe('applyMonotonicTier — INV-STATUS-2 monotonic write', () => {
     expect(applyMonotonicTier(dot, STATUS_TIERS.DEGRADED)).toBe(STATUS_TIERS.FATAL);
   });
 
-  it('reads legacy .red class as FATAL when canonical attr/class absent', () => {
+  it('reads canonical .conn-{tier} class when attr absent', () => {
     const dot = makeDot();
-    dot.classList.add('red');
+    dot.classList.add('conn-fatal');
     expect(applyMonotonicTier(dot, STATUS_TIERS.DEGRADED)).toBe(STATUS_TIERS.FATAL);
   });
 
-  it('reads legacy .yellow class as DEGRADED', () => {
+  it('IGNORES legacy color-literal classes (PR-6 read fallback removed)', () => {
+    // Defensive lock: if a stray .red/.yellow/.green legacy class somehow
+    // appeared (e.g., DOM clobbering), the read fallback no longer maps it
+    // to a tier — applyMonotonicTier treats the dot as untiered and
+    // applies the new tier unconditionally.
     const dot = makeDot();
-    dot.classList.add('yellow');
-    expect(applyMonotonicTier(dot, STATUS_TIERS.LIVE)).toBe(STATUS_TIERS.DEGRADED);
-  });
-
-  it('reads legacy .green class as LIVE (allowed to upgrade)', () => {
-    const dot = makeDot();
-    dot.classList.add('green');
-    expect(applyMonotonicTier(dot, STATUS_TIERS.FATAL)).toBe(STATUS_TIERS.FATAL);
+    dot.classList.add('red');
+    expect(applyMonotonicTier(dot, STATUS_TIERS.LIVE)).toBe(STATUS_TIERS.LIVE);
   });
 
   it('throws on tier outside closed enumeration', () => {

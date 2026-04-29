@@ -818,7 +818,11 @@ injectTokens();
     $('hand-count').textContent = handCount == null ? '\u2014' : handCount;
 
     const result = buildStatusBar(pipeline, handCount);
-    dot.className = result.dotClass;
+    // V-status \u00a7I writer #2 (Gate 5 PR-6): routes through applyMonotonicTier
+    // so updateStatusBar can never silently downgrade a more-severe tier
+    // set earlier in the same render frame by renderConnectionStatus
+    // (e.g., FATAL contextDead). INV-STATUS-2 monotonicity at helper layer.
+    applyMonotonicTier(dot, result.tier);
     text.textContent = result.text || getDiagnosticStatus(diagData, fallbackState);
   };
 
@@ -2650,7 +2654,10 @@ injectTokens();
       const dot = $('status-dot');
       const text = $('status-text');
       if (dot && text) {
-        dot.className = 'status-dot yellow';
+        // V-status §I writer #4 (Gate 5 PR-6): routes through applyMonotonicTier
+        // so the diagnostic-fallback paint cannot silently downgrade a FATAL
+        // dot from renderConnectionStatus. INV-STATUS-2 enforcement.
+        applyMonotonicTier(dot, STATUS_TIERS.DEGRADED);
         text.textContent = getDiagnosticStatus(coordinator.get('cachedDiag'), coordinator.get('swFallbackState'));
       }
     }
