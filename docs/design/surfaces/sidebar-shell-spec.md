@@ -3,7 +3,7 @@
 **ID:** `sidebar-shell-spec`
 **Surface role:** **Cross-zone reference** — declares the shared visual + interaction vocabulary that single-zone artifacts (Z0, Z2, Z3, Z4) reference for concepts that recur across zones (status, freshness, confidence, affordance vocabulary, color semantics, density rhythm, attention budget). Not a renderable surface; an authoritative reference document.
 **Related docs:**
-- `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 (binding rules — R-1.5 affordance vocabulary [text amended 2026-04-28 to cite §IV], R-1.6 treatment-type consistency, R-1.7 staleness shape-class consistency, **R-1.8 freshness-mechanism declaration + INV-FRESH-1..5**, **R-1.9 color-token concept-class isolation + INV-TOKEN-1..5**, **R-1.10 affordance vocabulary + INV-AFFORD-1..5**, **R-1.11 status-vocabulary + INV-STATUS-1..5**)
+- `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 (binding rules — R-1.5 affordance vocabulary [text amended 2026-04-28 to cite §IV], R-1.6 treatment-type consistency, R-1.7 staleness shape-class consistency, **R-1.8 freshness-mechanism declaration + INV-FRESH-1..5**, **R-1.9 color-token concept-class isolation + INV-TOKEN-1..5**, **R-1.10 affordance vocabulary + INV-AFFORD-1..5**, **R-1.11 status-vocabulary + INV-STATUS-1..5**, **R-1.12 density-rhythm + attention-budget + INV-DENSITY-1..5**)
 - `docs/design/audits/2026-04-27-entry-sidebar-holistic-coherence.md` (Gate 1 — establishes the missing-artifact gap)
 - `docs/design/audits/2026-04-27-blindspot-sidebar-holistic-coherence.md` (Gate 2 — Scope A locked; outside-lens findings)
 - `docs/design/audits/2026-04-27-observation-sidebar-coherence-inventory.md` (Gate 3 — visual catalog + architectural mechanism map)
@@ -14,7 +14,7 @@
 
 **Product line:** Sidebar (Scope A). Cross-product extension to main-app surfaces (`online-view.md`, `analysis-view.md`, `hand-plan-layer.md`, `bucket-ev-panel-v2.md`) staged as a follow-up after this spec ships.
 **Tier placement:** All sidebar tiers (Pro, Sidebar-Lite). The shell spec is binding regardless of which features are gated.
-**Status:** **PARTIAL** — §I + §II + §III + §IV + §V RESOLVED (V-2 owner-approved 2026-04-27, V-3 + V-color-tokens + V-affordance + V-status owner-approved 2026-04-28); §VI section remains SCAFFOLD pending V-density walkthrough. V-1 (color overhaul scope = (c) full discipline) locked; V-color-tokens operationalizes V-1 (c); V-affordance closes R-1.5 dangling SR-4-spec-index reference; V-status closes the last concept-class section. Doctrine v3 (R-1.6 + R-1.7) + v4 (R-1.8 + INV-FRESH-1..5) + v5 (R-1.9 + INV-TOKEN-1..5) + v6 (R-1.5 amendment + R-1.10 + INV-AFFORD-1..5) + v7 (R-1.11 + INV-STATUS-1..5) bind this spec. Originally authored as Gate 4 SCAFFOLD 2026-04-27.
+**Status:** **RESOLVED** — §I + §II + §III + §IV + §V + §VI ALL RESOLVED (V-2 owner-approved 2026-04-27; V-3 + V-color-tokens + V-affordance + V-status + V-density owner-approved 2026-04-28). Full design-language doctrine in place: doctrine v3 (R-1.6 + R-1.7) + v4 (R-1.8 + INV-FRESH-1..5) + v5 (R-1.9 + INV-TOKEN-1..5) + v6 (R-1.5 amendment + R-1.10 + INV-AFFORD-1..5) + v7 (R-1.11 + INV-STATUS-1..5) + v8 (R-1.12 + INV-DENSITY-1..5) bind this spec. **Gate 4 effectively closes** with v8 amendment. Originally authored as Gate 4 SCAFFOLD 2026-04-27 + filled in via 6 V-decision walkthroughs across 2026-04-27/28.
 
 ---
 
@@ -1003,18 +1003,208 @@ Code paths that violate §V.1–§V.11 — flagged at code review and at automat
 
 ## §VI — Density rhythm + attention budget
 
-**Concept-class:** `density-rhythm` — how tightly information packs; which zone wins the eye in which state.
+**Concept-class:** `density-rhythm` — typography ladder, spacing rhythm, sample-count lexical forms, tap-target floor, and attention-budget map (which zone wins the eye in which state).
 
-**Coverage:** Per inventory §CC-F + Gate 1 §4.2 missing artifact "Attention budget" — currently no documented hierarchy of zone-by-zone eye-priority under different states.
+**Coverage:** Per Gate 3 inventory `2026-04-27-observation-sidebar-coherence-inventory.md` Cross-cutting Findings F-6 (lexical inconsistency) + F-7 (decorative-glyph drift) + Gate 1 §4.2 missing artifacts (typography ladder + density rhythm + attention budget). Plus FM-DENSITY-1..6 surfaced by V-density 5-specialist roundtable, including FM-DENSITY-1 currently-shipping 9px-illegible-on-Galaxy-A22-DPR bug.
 
-**Vocabulary content (pending — see §V open decisions):**
-- Row-height + padding + gap conventions per zone-tier (Z0 chrome, Z2 advice header, Z3 decision content, Z4 deep analysis).
-- Typography ladder enumeration (font-sizes 24px / 14px / 11px per `design-tokens.js:104`; weight tiers; color tiers).
-- Attention-budget map: which zone owns the user's eye in {active hand, between hands, error, tournament context} — explicit ranking.
-- DriveHUD precedent (LEDGER COMP-DRIVEHUD): profile-segmented density. **Likely deferred** to a future iteration; v1 ships a single density rhythm.
-- GTO Wizard precedent (LEDGER COMP-GTOWIZARD): product-level density ladder (compact/medium/large + 4 layouts) as user-controlled setting. **Likely deferred** to v2; v1 ships a single setting.
+**Status:** **§VI RESOLVED 2026-04-28** per owner approval of V-density roundtable synthesis. **CLOSES the shell-spec §I-§VI sequence.** All five V-density.1–V-density.5 sub-decisions resolved. Doctrine v8 amendment (R-1.12 + INV-DENSITY-1..5) bundled. Implementation deferred to Gate 5.
 
-**Binding rules:** Doctrine §10 retained un-amended (visual design / colours / fonts / exact sizes are per-element-spec scope). The attention-budget map is structural, not visual.
+### §VI.1 — Typography ladder (3-tier role-based + tabular-nums modifier)
+
+**Closed enumeration — 3 tiers + 1 modifier class.** New tiers require doctrine amendment via §11.
+
+| Token | Role | Size (rem) | Equivalent |
+|---|---|---|---|
+| `--type-display` | Action badge label, EV number, fold-% number | `1.5rem` | 24px @ root 16px |
+| `--type-body` | Pot size, SPR, equity %, board cards, recommendation text, villain headline | `0.875rem` | 14px @ root 16px |
+| `--type-meta-stat` | Sample count (`n=N` or `Nh`), confidence label, action-amount under seat arc, badge text | `0.6875rem` | 11px @ root 16px |
+| `.tabular-nums` (modifier) | CSS class applied alongside any tier; binds `font-variant-numeric: tabular-nums` for column-aligned numerics | — | — |
+
+**Ratio interpretation:** specs reference these tokens; per-element specs may override the rem value within doctrine §10 per-element-spec scope. The 3-tier closed-enumeration is binding (R-1.12 INV-DENSITY-1 + INV-DENSITY-2); the specific rem value is per-element advisory.
+
+**`.tabular-nums` modifier rationale:** CSS variables cannot natively bind `font-variant-numeric` (only color/length/string-like properties bind). Per cto-agent's NUMERIC-tier proposal, tabular-nums needs a separate CSS class layer. Class-based modifier composes cleanly with any `--type-*` tier.
+
+**Existing token migration:** `font-micro/xs/sm/base/md/lg` (6 names → 3 effective sizes per `design-tokens.js:104-115`) DEPRECATED. `injectTokens()` emits BOTH old + new names during transition (deprecation alias mechanism per V-color-tokens precedent). Old names removed in follow-up PR after harness fixture-diff = 0 across the SHC milestone.
+
+**Action-word migration:** `24px` action-word currently HARDCODED at `side-panel.html:400` (no token entry). Migrates to `--type-display` per INV-DENSITY-2 token-completeness.
+
+### §VI.2 — Unit system: `rem` mandate (V-density.3)
+
+All `font-size` declarations use `rem` units. Sidebar runs in Chrome MV3 extension panel at browser-native zoom; `rem` respects user OS-level font-size preferences + browser zoom settings per WCAG 2.1 SC 1.4.4 (Resize Text, AA).
+
+**Sidebar-vs-main-app distinction:** main-app uses `useScale.js` viewport-fit transform (`min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`). Sidebar has no analogous scale mechanism. rem for sidebar; main-app keeps px per its scale system. Cross-product reconciliation deferred to V-5.
+
+**Grandfathered allowlist** (current px violations; explicit Gate 5 milestone for migration):
+- `9px` stale-badge font at `side-panel.html:74` — **FM-DENSITY-1 currently shipping illegible on Galaxy A22 DPR**. HIGHEST PRIORITY remediation.
+- `10px` invariant-badge font at `side-panel.html:84`.
+- `11px` seat-sample text at `side-panel.html:191`.
+- `14px` body literals at `side-panel.html:540` and similar.
+- `24px` action-word literal at `side-panel.html:400`.
+
+These 5 sites grandfathered via `density-registry.test.js` allowlist; Gate 5 PR migrates them to `--type-*` tokens with rem values.
+
+### §VI.3 — Spacing rhythm
+
+**Closed enumeration — `--sp-1..6` raw scale + zone-tier semantic tokens.** New token-tier additions require doctrine amendment.
+
+**Raw scale (existing, retained):**
+```
+--sp-1: 4px      --sp-4: 16px
+--sp-2: 8px      --sp-5: 20px
+--sp-3: 12px     --sp-6: 24px
+```
+
+**Zone-tier semantic tokens (NEW under V-density):**
+```
+--zone-chrome-padding   /* Z0 status-bar inner padding */
+--zone-advice-padding   /* Z2 unified header inner padding */
+--zone-content-padding  /* Z3 decision content + cards strip */
+--zone-deep-padding     /* Z4 deep analysis sub-sections */
+```
+
+Plus density-toggle groundwork (deferred to V-density v2 UI):
+```
+--density-zone-gap      /* inter-zone separator gap */
+--density-row-min       /* minimum row height for tappable rows */
+```
+
+**Forbidden patterns** (per INV-DENSITY-2):
+- Inline `padding: <px>` / `margin: <px>` / `gap: <px>` literals outside the grandfathered allowlist.
+- ~89 currently-violating sites in `side-panel.html` grandfathered with explicit Gate 5 milestone for migration.
+
+### §VI.4 — F-6 lexical resolution (INV-DENSITY-3)
+
+**Two intentional forms, mutually exclusive by context:**
+
+| Form | Use site | Source upstream | Pairing |
+|---|---|---|---|
+| `n=N` (e.g., `n=45`) | Z2 unified header confidence dot pairing; Z4 glance tier | `advice.villainSampleSize` (engine model training-set sample) | **Paired with `--conf-tier-*` dot** per §III.4 |
+| `Nh` (e.g., `45h`) | Z3 stat chips standalone | `cachedSeatStats[*].sampleSize` (cumulative observation count) | **No dot pairing** (raw stat) |
+
+The shipped form is `{N}h` for stat chips (confirmed at `render-orchestrator.js:763`, `:470` and pinned by tests at `zone-bars.test.js:231, 434`); `n=N` form lives at Z4 glance-tier `confidence-label` per `render-tiers.js:70-74`. **Both forms are intentional and codified in §VI.** No mixing within a single render context (INV-DENSITY-3 lint-enforced via fixture-output scan).
+
+§VI.4 closes the cross-cutting Finding F-6 ambiguity surfaced in Gate 3 inventory.
+
+### §VI.5 — Tap-target floor (INV-DENSITY-4)
+
+**WCAG 2.5.5 ≥44×44 CSS-pixel floor** for every interactive element.
+
+**Grandfathered allowlist** (extends INV-AFFORD-4 keyboard-reachability allowlist with tap-target-size column):
+- Seat-arc circles (32×32px at `side-panel.html:131`) — **FM-DENSITY-4 documented:** arc-end seats overlap (~20px center-to-center under `:hover scale(1.15)`); silent wrong-villain-pin risk. Geometry-bound; full 44×44 unachievable without ring-redesign.
+- Stat-chip pin (per V-affordance Class B exception) — closed-list of 2 spatial-convention affordances per §IV; tap-target-size declared in same allowlist row.
+
+`affordance-registry.test.js` extended with `tapTargetSize` column per affordance entry; INV-DENSITY-4 lint-enforces ≥44×44 OR allowlist entry.
+
+### §VI.6 — Attention-budget map (V-density.4 explicit ranked table)
+
+**Closed enumeration of system states + tier vocabulary.** New states or tiers require doctrine amendment.
+
+**Tier vocabulary:**
+- **PRIMARY** — this zone wins the eye; its typography and contrast settings are the reference; all other zones render at lower effective contrast.
+- **supporting** — second-priority eye-target; supports the primary zone with related context.
+- **secondary** — third-priority; on-screen but visually subordinate.
+- **ambient** — present but non-competitive; chrome-level.
+- **available-collapsed** — content exists but behind a chevron; visual weight is the collapsed header only.
+- **suppressed** — hidden or rendered as empty placeholder for the current state.
+
+**Attention-budget map** (binding contract per INV-DENSITY-5):
+
+| System state | Z0 | Z1 | Z2 | Z3 | Z4 | Tournament bar |
+|---|---|---|---|---|---|---|
+| `active-hand-advice` | ambient | ambient | **PRIMARY** | supporting | available-collapsed | suppressed |
+| `active-hand-analyzing` | ambient | ambient | secondary | **PRIMARY** | available-collapsed | n/a |
+| `between-hands` | ambient | **PRIMARY** | supporting | secondary | suppressed | supporting |
+| `between-hands-tournament` | ambient | **PRIMARY** | supporting | supporting | suppressed | supporting (NOT primary) |
+| `fatal-error` | **PRIMARY** | suppressed | suppressed | suppressed | suppressed | suppressed |
+| `empty-no-table` | **PRIMARY** | suppressed | suppressed | suppressed | suppressed | suppressed |
+
+**Attention budget vs §3 R-3.* interruption tiers (failure-engineer boundary insight):** §3 R-3.1 governs **preemption rights** (when a signal can interrupt other content); §VI attention-budget governs **visual-weight allocation** (how much eye-space per zone per state). Orthogonal concerns. A zone can be `informational` interruption-tier (§3) while `PRIMARY` attention-tier (§VI) — these are not the same axis.
+
+**Tournament-bar declaration:** during `between-hands-tournament` state, tournament bar is `supporting` tier (NOT primary). Border weight downweighted to structural-divider weight; M-ratio status carried by `--m-zone-*` tokens without full-width high-contrast border (per V-color-tokens).
+
+**Recovery banner (§I): `emergency` interruption-tier per R-3.1.** Banner DOM is outside `#hud-content`; preempts active-hand content per R-3.2. Recovery banner is NOT a tier in the §VI attention-budget map — it is an escalation surface that fires when system-state transitions to `fatal-error`.
+
+### §VI.7 — Density toggle (deferred to V-density v2)
+
+GTO Wizard precedent (LEDGER `EVID-2026-04-27-COMP-GTOWIZARD`): "product-level density ladder is a first-class user setting" — compact/medium/large + 4 layouts. **For sidebar, scoped to two-value comfortable/compact toggle.**
+
+**v8 lands token groundwork:** `--density-zone-gap` and `--density-row-min` tokens authored. Comfortable mode (default): `--density-zone-gap: var(--sp-2)` (8px); `--density-row-min: 32px`. Compact mode (deferred): `--density-zone-gap: var(--sp-1)` (4px); `--density-row-min: 24px` — buys ~20% more vertical space in Z3.
+
+**v2 deferred work:** UI toggle in Settings; `useDensityMode` hook; harness fixture coverage for both modes.
+
+### §VI.8 — Module ownership (no new module)
+
+§VI does NOT extract a new render module. Typography is implemented via CSS custom properties consumed by existing render modules; no domain-specific render-time logic exists for density (parallel to V-color-tokens which had no JS module extraction — tokens are CSS-consumption, not render-time).
+
+`shared/design-tokens.js` extends with `--type-*` + `--zone-*-padding` + `--density-*` tokens. `shared/design-tokens.meta.js` extends with `typography` + `spacing` + `attention-budget` concept-class entries.
+
+**Forbidden:** `shared/render-density.js` cargo-cult extraction. Density rules are declarative; CSS owns the rhythm.
+
+### §VI.9 — Behavioral invariants (R-1.12 INV-DENSITY-1..5)
+
+R-1.12's five invariants are repeated here for spec-author convenience; the doctrine version is authoritative.
+
+- **INV-DENSITY-1 (Typography unit discipline).** font-size MUST use `rem`. px outside grandfathered allowlist forbidden. Lint-enforced.
+- **INV-DENSITY-2 (Token completeness + spacing tokenization).** Every typographic role has one `--type-*` token. Every spacing value uses `--sp-*` or `--zone-*-padding`. Lint-enforced.
+- **INV-DENSITY-3 (F-6 lexical exclusivity).** `n=N` paired with confidence dot; `Nh` standalone. No mixing within render context. Lint-enforced via fixture-output scan.
+- **INV-DENSITY-4 (Tap-target floor).** ≥44×44 OR grandfathered allowlist entry. Extends INV-AFFORD-4. Lint-enforced.
+- **INV-DENSITY-5 (Attention-budget declaration).** Closed enumeration of system-states × zone-tiers per §VI.6. New entries require doctrine amendment.
+
+### §VI.10 — Required co-shipping (Gate 5 prerequisites)
+
+12 cleanups bundled with V-density:
+
+1. `--type-display` / `--type-body` / `--type-meta-stat` token entries (rem-based) authored in `design-tokens.js`.
+2. `.tabular-nums` CSS class modifier authored.
+3. `--zone-{chrome,advice,content,deep}-padding` semantic spacing tokens.
+4. `--density-zone-gap` / `--density-row-min` density-toggle groundwork tokens.
+5. Deprecation alias mechanism: `injectTokens()` emits both old `font-*` and new `type-*` during transition.
+6. **`9px` stale-badge font migration (HIGHEST PRIORITY)** — currently shipping WCAG SC 1.4.4 violation per FM-DENSITY-1.
+7. 4 other inline-px violations migrated or grandfathered (10px, 11px, 14px, 24px sites).
+8. ~89 inline spacing literals migrated or grandfathered allowlist with Gate 5 milestone.
+9. `density-registry.test.js` authored (parallel to `freshness-signal-registry.test.js` / `design-token-registry.test.js` / `affordance-registry.test.js` / `status-registry.test.js`).
+10. `dom-mutation-discipline.test.js` extension: tap-target ≥44×44 (INV-DENSITY-4) + lexical-form scan (INV-DENSITY-3).
+11. `affordance-registry.test.js` extension: tap-target-size column on existing INV-AFFORD-4 grandfathered allowlist.
+12. `shared/design-tokens.meta.js` extended with `typography` + `spacing` + `attention-budget` concept-class entries.
+
+**NO `Object.freeze` on typography/spacing tokens** until rem migration completes (FM-DENSITY-5 caution — would lock px units pre-migration, creating breaking API change).
+
+**Mirror-lock test scope (INV-TOKEN-4 cross-product extension):** typography tokens (`--type-*`) NOT included in mirror-lock for v1 (main-app uses Tailwind utility classes, not CSS variable tokens). Cross-product typography reconciliation deferred to V-5 separate project.
+
+### §VI.11 — Forbidden patterns
+
+Code paths that violate §VI.1–§VI.10 — flagged at code review and at automated lint via R-1.12 enforcement:
+
+1. **Forbidden: inline `font-size: <px>` literals** outside `design-tokens.js` and decorative-glyph/icon-only contexts (INV-DENSITY-1).
+2. **Forbidden: inline `padding|margin|gap: <px>` literals** outside the grandfathered allowlist (INV-DENSITY-2).
+3. **Forbidden: typography size chosen per-element ad-hoc** — all text consumes `--type-*` token (INV-DENSITY-2).
+4. **Forbidden: mixing `n=N` and `Nh` lexical forms** within a single render context (INV-DENSITY-3).
+5. **Forbidden: interactive element below 44×44 CSS-pixel** without grandfathered allowlist entry (INV-DENSITY-4 / WCAG 2.5.5).
+6. **Forbidden: zone-level element claiming PRIMARY attention-tier in active-hand state** without §VI.6 attention-budget map declaration (INV-DENSITY-5).
+7. **Forbidden: `font-size` token declared in `px` units** in `design-tokens.js` (rem mandate per V-density.3).
+8. **Forbidden: `Object.freeze(TOKENS)` on typography/spacing entries** until rem migration completes (FM-DENSITY-5 — would lock px units pre-migration).
+9. **Forbidden: `font-size: 9px` or `10px`** (below INV-DENSITY-1 11px floor; both currently grandfathered with Gate 5 migration milestone).
+10. **Forbidden: `cursor: pointer` on element below 44×44** without INV-DENSITY-4 allowlist entry. Cross-cuts INV-AFFORD-2 (no lying affordances).
+
+### §VI.12 — Cross-cutting boundaries
+
+- **§VI ↔ V-1 (c) full color discipline:** `--type-*` tokens reference `--text-*` color tiers per §V; no new color introduced.
+- **§VI ↔ §III V-2 confidence:** confidence labels render in `--type-meta-stat` tier; sample-count `n=N` form bound to dot pairing (§III.4 + INV-DENSITY-3).
+- **§VI ↔ §II V-3 freshness:** stale-badge timer-driven aging counter renders in `--type-meta-stat` tier; FM-DENSITY-1 9px-illegible bug remediated by INV-DENSITY-1 rem migration.
+- **§VI ↔ §IV V-affordance:** chevron / underline / pill / circle affordances inherit `--type-*` for label text; tap-target floor (INV-DENSITY-4) extends INV-AFFORD-4 allowlist.
+- **§VI ↔ §V V-color-tokens:** §V token graph extended with `--type-*` typography tokens + `--zone-*-padding` semantic spacing. Mirror-lock scope NOT extended to typography for v1 (Tailwind boundary).
+- **§VI ↔ §I V-status:** §I status indicators use `--type-meta-stat` (status text) + `--type-body` (status-bar header). FM-STATUS-1 silent-severity-downgrade fix is independent of §VI.
+- **§VI ↔ §3 R-3.* interruption tiers:** orthogonal axes. §3 governs preemption rights; §VI attention-budget governs visual-weight allocation. Recovery banner `emergency` per R-3.1 + outside §VI map.
+
+**Binding rules:** **R-1.12 (density-rhythm + attention-budget discipline + INV-DENSITY-1..5, doctrine v8)** + companion `density-registry.test.js` + `dom-mutation-discipline.test.js` extension + `affordance-registry.test.js` tap-target-size extension (Gate 5).
+
+---
+
+## §I-§VI Sequence Closes (Gate 4 design-language doctrine complete)
+
+§VI's resolution closes the §I-§VI shell-spec sequence. Doctrine v8 = **8 binding rules in §1** (R-1.1 through R-1.12) + **5 categories of behavioral invariants** (INV-FRESH-1..5, INV-TOKEN-1..5, INV-AFFORD-1..5, INV-STATUS-1..5, INV-DENSITY-1..5 = 25 binding invariants total) + **5 companion test infrastructures** (`freshness-signal-registry.test.js`, `design-token-registry.test.js`, `affordance-registry.test.js`, `status-registry.test.js`, `density-registry.test.js`) + extended `dom-mutation-discipline.test.js`. **Gate 4 of SHC project effectively closes with v8 amendment.**
+
+Per the strengthened long-term lens (`memory/feedback_long_term_over_transition.md`): operationalized 5 consecutive doctrine amendments (v4-v8). Each absorbed adjacent architectural cleanups rather than deferring them. Gate 5 implementation will require multi-PR rollout staged across the 5 doctrine rules + 25 invariants + 5 test infrastructures.
 
 ---
 
@@ -1026,7 +1216,10 @@ Code paths that violate §V.1–§V.11 — flagged at code review and at automat
 - ✅ **V-3 — Freshness vocabulary + mechanism coherence:** **5-tier register + extracted `shared/render-staleness.js` module + R-1.8 doctrine rule with INV-FRESH-1..5 + F-8 distinguishing badge + V-2.4 conditional stale→confidence-unknown** approved 2026-04-28 after 5-specialist roundtable + owner meta-direction strengthening. All five sub-decisions resolved: V-3.1 = include aging tier; V-3.2 = R-1.8 doctrine rule NOW (reverses default per `feedback_long_term_over_transition.md` strengthened lens); V-3.3 = `shared/` placement NOW (reverses default; V-2 amended to match); V-3.4 = §I owns `#status-dot` exclusively + `dom-mutation-discipline.test.js` enforcement; V-3.5 = add `rejected` 5th tier NOW (reverses default; INV-FRESH-5 makes RT-68/69 SW-replay rejection observable). Vocabulary at §II. Doctrine v4 amendment (R-1.8) bundled.
 - ✅ **V-color-tokens — color-token concept-class isolation + operationalization of V-1 (c):** **verbose-explicit naming (`--cat-`/`--qtr-`/`--m-zone-`/`--fold-pct-`/`--conf-tier-`/`--fresh-tier-`) + Layer-1 primitive constants + Layer-2 semantic tokens + ordinal hex pool reservation for all ordinal concept-classes + categorical hue migration (Fish→hot-pink, LAG→deep-orange, TAG→cyan-teal, LP→violet) + STYLE_COLORS / STYLE_TOKENS consolidation (design-tokens.js canonical) + `shared/design-tokens.meta.js` companion file + R-1.9 doctrine rule with INV-TOKEN-1..5** approved 2026-04-28 after 5-specialist roundtable. All five sub-decisions resolved long-term-aggressive: V-color.1 = verbose-explicit naming; V-color.2 = categorical hex migration NOW (rebaseline 4-7 fixtures); V-color.3 = `design-tokens.js` canonical; V-color.4 = R-1.9 doctrine rule NOW; V-color.5 = mirror-lock test NOW. Vocabulary at §V. Doctrine v5 amendment (R-1.9) bundled. **§II.2 + §III.3 amended** with token-binding citations. **Required co-shipping:** side-panel.html hex sweep + `--m-*` rename across 51 sites + STYLE_COLORS re-export + meta file + deprecation alias mechanism + 24-fixture rebaseline + `design-token-registry.test.js` + `token-concept-class-collision.test.js` + mirror-lock test + `shared/tier-thresholds.js` extraction. **Cross-cutting amendment 2026-04-28 (V-affordance):** §V extended with `--action-class-*` (CALL/BET/RAISE/FOLD pill colors) + `--affordance-*` (chevron/underline/pill state colors) concept-class entries.
 - ✅ **V-affordance — affordance vocabulary discipline + closes R-1.5 dangling SR-4-spec-index:** **6-shape closed enumeration (chevron / underline / pill / circle / divider / decorative-glyph) + Class A/B distinction (visual-required vs spatial-convention licensed exception) + chevron direction VERIFIED via codebase (down=collapsed / up=expanded; existing CSS contract correct at side-panel.html:1266) + closed glyph registry of 4 (★ ♦ ● →) + `chip` sub-form for hand-plan branch labels (disambiguates pill double-use) + ARIA contract mandated per shape + extracted `shared/render-affordance.js` module + `data-affordance` attribute + single delegated listener pattern + R-1.10 doctrine rule with INV-AFFORD-1..5** approved 2026-04-28 after 5-specialist roundtable. All V-afford.1–V-afford.5 long-term-aggressive: V-afford.1 = 6 shapes (cto-agent's framing); V-afford.2 = R-1.5 amendment + R-1.10 NEW (failure-engineer's behavioral-invariants case); V-afford.3 = deep-chevron rotation rule VERIFIED (no grandfathered exception needed); V-afford.4 = INV-AFFORD-4 grandfathered allowlist with milestone; V-afford.5 = long-press deferred to V-affordance v2. Vocabulary at §IV. Doctrine v6 amendment (R-1.5 text + R-1.10) bundled. **R-1.5 text amended** to cite §IV explicitly. **§V cross-cutting amendment** with `--action-class-*` + `--affordance-*` entries (without these, Gate 5 implementers reach for `--qtr-*` and recreate cross-concept collision). Required co-shipping: 8 items including `shared/render-affordance.js` module + 4-chevron-class collapse + click-wiring consolidation + `affordance-registry.test.js` + dom-mutation-discipline extension + INV-AFFORD-4 grandfathered allowlist + hero seat-arc ring migration to non-color encoding + `render-orchestrator.js:147` `||` → `??` fix + `.show-toggle-btn` element-type fix.
-- ✅ **V-status — status concept-class discipline + 3-axis decomposition:** **3-axis register (connection-state / app-bridge-state / pipeline-stage-health) + dot/badge/strip per axis + `--status-conn-*` + `--status-app-*` + `--status-pipeline-*` token entries + new `_P.orange_status` Layer 1 primitive (distinct from `_P.orange_deep`) + extracted `shared/render-status.js` module (pure classifier; writer in IIFE) + 5-writer consolidation to 1 + comprehensive ARIA mandate (role="status" ambient; role="alert" + assertive on recovery banner) + R-1.11 doctrine rule with INV-STATUS-1..5** approved 2026-04-28 after 5-specialist roundtable. All V-status.1–V-status.5 long-term-aggressive: V-status.1 = R-1.11 NEW + INV-STATUS-1..5 (rejecting cto-agent's "no new rule" position per strengthened lens); V-status.2 = 3-axis sub-prefix; V-status.3 = new `_P.orange_status` Layer 1 primitive; V-status.4 = `versionMismatch` = fatal tier (red dot + recovery banner); V-status.5 = 30s connected-waiting timeout + escalation. Vocabulary at §I. Doctrine v7 amendment (R-1.11) bundled. **§V cross-cutting amendment** with status concept-class entries + new orange primitive. **§II.3 cross-cutting:** `connection-status` row MOVES from §II.3 to §I.3. **§II.9 co-shipping #1 amended** from "dual-writer" to "5-writer" with explicit line numbers (cto-agent + senior-engineer + failure-engineer codebase verification). Required co-shipping: 12 items including `shared/render-status.js` module + 5-writer consolidation + `staleContext` inline override at `:1847-1848` REMOVED (closes FM-STATUS-1 silent severity downgrade) + `versionMismatch` dot-class fix at `:215-217` (closes FM-STATUS-2) + `updateStatusFromDiag` migration + `updateAppStatus` orphan migration + `--status-*` tokens + `_P.orange_status` primitive + `status-registry.test.js` + dom-mutation-discipline extension + `STATE_FIELD_SCOPES.md` `lastGoodExploits` clearing-path extension + ARIA contract + INV-STATUS-4 timer registration. New forensics: 6 FM-STATUS-1..6 entries surfaced by failure-engineer, including a currently-shipping silent-severity-downgrade bug.
+- ✅ **V-status — status concept-class discipline + 3-axis decomposition:** **3-axis register (connection-state / app-bridge-state / pipeline-stage-health) + dot/badge/strip per axis + `--status-conn-*` + `--status-app-*` + `--status-pipeline-*` token entries + new `_P.orange_status` Layer 1 primitive (distinct from `_P.orange_deep`) + extracted `shared/render-status.js` module (pure classifier; writer in IIFE) + 5-writer consolidation to 1 + comprehensive ARIA mandate (role="status" ambient; role="alert" + assertive on recovery banner) + R-1.11 doctrine rule with INV-STATUS-1..5** approved 2026-04-28 after 5-specialist roundtable. All V-status.1–V-status.5 long-term-aggressive. Vocabulary at §I. Doctrine v7 amendment (R-1.11) bundled. **§V cross-cutting amendment** with status concept-class entries + new orange primitive. **§II.3 cross-cutting:** `connection-status` row MOVES from §II.3 to §I.3. **§II.9 co-shipping #1 amended** from "dual-writer" to "5-writer". Required co-shipping: 12 items. New forensics: FM-STATUS-1..6, including currently-shipping silent-severity-downgrade.
+- ✅ **V-density — density-rhythm + attention-budget discipline (CLOSES §I-§VI sequence):** **3-tier role-based typography ladder (`--type-display` / `--type-body` / `--type-meta-stat`) + `.tabular-nums` CSS modifier class + rem unit mandate + `--zone-*-padding` semantic spacing tokens + F-6 lexical exclusivity (`n=N` paired with confidence dot vs `Nh` standalone) + WCAG 2.5.5 ≥44×44 tap-target floor + 6-row attention-budget map (system-state × zone × tier) + R-1.12 doctrine rule with INV-DENSITY-1..5** approved 2026-04-28 after 5-specialist roundtable. All V-density.1–V-density.5 long-term-aggressive: V-density.1 = full INV-DENSITY-1..5 (cto-agent reverses V-status "no new rule" position on V-density evidence); V-density.2 = 3-tier + tabular-nums modifier class; V-density.3 = `rem` for sidebar (extension context — Chrome panel runs at browser-native zoom; main-app keeps px per `useScale.js` boundary); V-density.4 = explicit ranked attention-budget map (product-ux-engineer's 6-row table); V-density.5 = full INV-DENSITY-2 with grandfathered allowlist (~89 spacing-literal sites). Vocabulary at §VI. Doctrine v8 amendment (R-1.12) bundled. **§V cross-cutting amendment (4th time)** with `--type-*` typography tokens + `--zone-*-padding` semantic spacing + `.tabular-nums` modifier-class binding. **§III V-2 confidence cross-cutting:** typographic-ladder reference updated to cite §VI tier names. New forensics: FM-DENSITY-1..6, including FM-DENSITY-1 currently-shipping 9px-illegible-on-Galaxy-A22-DPR bug (WCAG SC 1.4.4 violation). Required co-shipping: 12 items including 5 inline-px violations grandfathered + ~89 spacing-literal sites grandfathered + `density-registry.test.js` + dom-mutation-discipline + affordance-registry tap-target column extensions. NO `Object.freeze` on typography/spacing tokens until rem migration completes.
+
+**Gate 4 design-language doctrine COMPLETE.** All 6 sections resolved. Doctrine v8 = 8 binding rules (R-1.1–R-1.12) + 25 binding behavioral invariants (5 INV-* categories × 5 entries each) + 5 companion test infrastructures + extended `dom-mutation-discipline.test.js`. Implementation = Gate 5 multi-PR rollout.
 
 **Pending decisions** (defaults below; subject to owner walkthrough):
 
@@ -1086,4 +1279,8 @@ When §I–§VI carry vocabulary content, the following updates land in tandem:
 - 2026-04-28 — **§II RESOLVED + V-2 §III.6 path amended.** V-3 freshness vocabulary + mechanism coherence filled in after 5-specialist roundtable + owner meta-direction strengthening (`memory/feedback_long_term_over_transition.md` updated 2026-04-28 to reject "minimum v1 scope" defaults in favor of "long-term-correct architecture even if scope/complexity grows now"). All five V-3 sub-decisions resolved with the long-term-aggressive option (V-3.1 include aging, V-3.2 R-1.8 doctrine rule NOW, V-3.3 `shared/` placement NOW, V-3.4 §I owns status-dot + lint enforcement, V-3.5 add `rejected` 5th tier NOW). Doctrine v4 amendment authored inline (option (i)) — adds R-1.8 binding rule + INV-FRESH-1..5 behavioral invariants in `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1 + §11 amendment-log entry. **V-2 §III.6 amended:** `render-confidence.js` relocated from `side-panel/` to `shared/` for symmetry with `render-staleness.js`; one path-string change (V-2 was spec-only at amendment time, no Gate 5 code shipped). Status remains PARTIAL — §I §IV §V §VI sections still pending corresponding V-decisions. Implementation deferred to Gate 5 — this commit is spec + doctrine.
 - 2026-04-28 (later same day) — **§V RESOLVED + §II.2 + §III.3 amended with token bindings.** V-color-tokens vocabulary filled in after 5-specialist roundtable. All five V-color.* sub-decisions resolved long-term-aggressive: V-color.1 = verbose-explicit concept-class-prefixed naming; V-color.2 = categorical hex migration NOW per V-1-safe migration table (Fish hot-pink, LAG deep-orange, TAG cyan-teal, LP violet); V-color.3 = `design-tokens.js` canonical for STYLE_COLORS / STYLE_TOKENS consolidation (`stats-engine.js:STYLE_COLORS` becomes re-export wrapper); V-color.4 = R-1.9 doctrine rule NOW with INV-TOKEN-1..5 behavioral invariants (closes the v3 Option II token-isolation deferral); V-color.5 = mirror-lock test NOW (`shared/design-tokens.js` ↔ `src/constants/designTokens.js` parity enforcer). Two-layer token graph (Layer 1 module-private primitives + Layer 2 exported semantic tokens via `Object.freeze(TOKENS)`). Quality-tier hex pool reserved for ALL ordinal concept-classes (confidence + freshness + fold-% + M-ratio + EV + priority); each consumes via concept-class-distinct CSS variable name. M-tokens renamed (`--m-green/yellow/orange/red` → `--m-zone-safe/warning/danger/critical`); fold-% gradient gets dedicated `--fold-pct-*` tokens; `shared/tier-thresholds.js` extracted for shared ordinal classifier. `--conf-tier-*` and `--fresh-tier-*` token entries added to `design-tokens.js` (previously CSS class names with no token backing — V-2 / V-3 implementations would have hardcoded hex without this). `shared/design-tokens.meta.js` companion file authored for automated D-2 violation detection. Doctrine v5 amendment authored inline — adds R-1.9 binding rule + INV-TOKEN-1..5. §II.2 + §III.3 binding citations updated to specify exact tokens. **Required co-shipping:** ~46 hex literals in `side-panel.html` swept to `var(--token)` + 51 `--m-*` references renamed (42 in side-panel.html) + STYLE_COLORS / STYLE_TOKENS consolidation + meta file + deprecation alias mechanism in `injectTokens()` + 24-fixture rebaseline (4-7 fixtures expected to diff at categorical hex level) + 3 new test files (`design-token-registry.test.js`, `token-concept-class-collision.test.js`, mirror-lock cross-file test). Status remains PARTIAL — §I §IV §VI sections still pending. Implementation deferred to Gate 5 — this commit is spec + doctrine.
 - 2026-04-28 (third edit same day) — **§IV RESOLVED + R-1.5 text amended + §V cross-cutting extended.** V-affordance vocabulary filled in after 5-specialist roundtable + V-afford.3 codebase verification (`side-panel.html:1266` confirmed `.deep-section.open .deep-chevron { transform: rotate(180deg) }` exists — Gate 3 inventory CC-D-1 vs CC-D-2 chevron-direction "inconsistency" finding was observational drift, not real CSS divergence; the existing-correct contract is uniform). All V-afford.1–V-afford.5 sub-decisions resolved long-term-aggressive: V-afford.1 = 6 shapes (cto-agent's framing — chevron / underline / pill / circle / divider / decorative-glyph); V-afford.2 = R-1.5 text amendment + R-1.10 NEW with INV-AFFORD-1..5 (failure-engineer's behavioral-invariants case under strengthened lens); V-afford.3 = deep-chevron rotation VERIFIED (no grandfathered exception needed); V-afford.4 = INV-AFFORD-4 grandfathered allowlist with explicit Gate 5 milestone for keyboard-reachability remediation; V-afford.5 = long-press deferred to V-affordance v2 (no current sidebar use case). Closed glyph registry of 4 (★ ♦ ● →) + `chip` sub-form for hand-plan branch labels (disambiguates pill double-use). ARIA contract mandated per shape (chevron → role=button + aria-expanded; pill → role=button + aria-label; circle → role=button + aria-pressed + aria-label; divider → role=separator; decorative-glyph → aria-hidden=true). Extracted `shared/render-affordance.js` per V-2/V-3 precedent. Single delegated listener click-wiring pattern via `data-affordance` attributes — eliminates handler-on-detached-element race with V-3 scheduleRender (failure-engineer's structural-guarantee finding). Doctrine v6 amendment authored inline — R-1.5 text amended + R-1.10 NEW + INV-AFFORD-1..5. **§V cross-cutting amendment:** new `--action-class-*` concept-class (CALL/BET/RAISE/FOLD pill coloring) + `--affordance-*` concept-class (chevron/underline/pill state colors). **Required co-shipping (8 items):** `shared/render-affordance.js` module + 4 parallel chevron CSS classes collapsed to `.affordance-chevron` (D-4 forensics) + click-wiring consolidation per `data-affordance` pattern (eliminates handler-races) + `affordance-registry.test.js` + `dom-mutation-discipline.test.js` extension + `.show-toggle-btn` element-type fix (`<button>` → `<a>`/`role="link"`) + `render-orchestrator.js:147` `||` → `??` fix (pinned-villain sample-size substitution bug, already in §III.7) + hero seat-arc ring migration to non-color encoding (V-1 (c) compliance — ★ glyph is canonical hero indicator). New forensics: D-4 (chevron CSS-class proliferation: 4 parallel definitions + 9 emit sites in render-tiers.js), D-5 (click-affordance signposting bimodality: 14+ `cursor: pointer` declarations with no class-level affordance association). Status remains PARTIAL — §I + §VI still pending. Implementation deferred to Gate 5 — this commit is spec + doctrine.
+- 2026-04-28 (fifth edit same day) — **§VI RESOLVED + §V cross-cutting extended (4th time) + §III V-2 confidence cross-cutting + Gate 4 design-language doctrine COMPLETE.** V-density vocabulary filled in after 5-specialist roundtable. All V-density.1–V-density.5 sub-decisions resolved long-term-aggressive: V-density.1 = full INV-DENSITY-1..5 (cto-agent reverses V-status "no new rule" position — V-density's evidence is the strongest yet for binding-doctrine + lint-enforcement: 132 inline `font-*` declarations + 89 spacing-literal violations + currently-shipping WCAG SC 1.4.4 failure at FM-DENSITY-1 9px stale-badge); V-density.2 = 3-tier role-based typography ladder (`--type-display` / `--type-body` / `--type-meta-stat`) + `.tabular-nums` CSS modifier class (CSS variables can't bind `font-variant-numeric` natively — class-based modifier composes cleanly); V-density.3 = `rem` mandate for sidebar (extension Chrome panel runs at browser-native zoom; main-app keeps px per `useScale.js` boundary — V-5 cross-product reconciliation deferred); V-density.4 = explicit ranked attention-budget map (product-ux-engineer's 6-row table: state × zone × tier; tier vocabulary = PRIMARY / supporting / secondary / ambient / available-collapsed / suppressed); V-density.5 = full INV-DENSITY-2 with grandfathered allowlist (~89 inline spacing-literal sites + 5 inline-px font violations grandfathered with explicit Gate 5 milestone). Existing token-ladder bug fixed (6 names → 3 sizes at `design-tokens.js:104-115`; `font-micro/xs/sm/base` aliasing 11px + `font-md/lg` aliasing 14px + `24px` action-word HARDCODED at `side-panel.html:400` outside any token). Deprecation alias mechanism in `injectTokens()` (parallel to V-color-tokens precedent). NO `Object.freeze` on typography/spacing tokens until rem migration completes (FM-DENSITY-5 caution — V-color-tokens-style freeze would lock px units pre-migration, creating breaking API change). 6-row attention-budget map binding per INV-DENSITY-5 — first explicit ranked declaration of zone visual-weight per system state across the doctrine; closes Gate 1 §4.2 missing-artifact "Attention budget — documented hierarchy of how zones compete for eye time." Doctrine v8 amendment authored inline — R-1.12 NEW + INV-DENSITY-1..5. **§V cross-cutting (4th time):** added `--type-display` / `--type-body` / `--type-meta-stat` tokens (rem-based) + `.tabular-nums` modifier class + `--zone-{chrome,advice,content,deep}-padding` semantic spacing tokens. **§III V-2 confidence cross-cutting:** typographic-ladder reference updated to cite §VI `--type-meta-stat` for confidence labels and sample-count text per §III.4. **Required co-shipping (12 items):** rem migration of 5 inline-px sites (HIGHEST PRIORITY: FM-DENSITY-1 9px stale-badge currently shipping illegible on Galaxy A22 DPR — WCAG SC 1.4.4 violation) + ~89 spacing-literal grandfathered allowlist + `density-registry.test.js` + dom-mutation-discipline.test.js tap-target + lexical-form extensions + affordance-registry tap-target-size column extension + design-tokens.meta.js extension. New forensics: FM-DENSITY-1..6 (illegibility + tap-target crowding + F-6 re-entry + cross-product undetected divergence). **§I RESOLVED in same-day session 4 above; this entry covers §VI specifically — final shell-spec section.**
+
+**Gate 4 design-language doctrine COMPLETE.** Shell-spec §I-§VI all RESOLVED. Doctrine v3-v8 = 8 binding rules (R-1.1–R-1.12) in §1 + 25 binding behavioral invariants (5 INV-* categories × 5 entries each: INV-FRESH/TOKEN/AFFORD/STATUS/DENSITY-1..5) + 5 companion test infrastructures (`freshness-signal-registry.test.js`, `design-token-registry.test.js`, `affordance-registry.test.js`, `status-registry.test.js`, `density-registry.test.js`) + extended `dom-mutation-discipline.test.js`. Strengthened long-term lens (`memory/feedback_long_term_over_transition.md`) operationalized 5 consecutive doctrine amendments (v4-v8). All 5 D-class forensics (D-1 confidence, D-2 color, D-3 staleness, D-4 chevron, D-5 click-affordance bimodality) plus 12 FM-* forensics (FM-STATUS-1..6, FM-DENSITY-1..6) bound by doctrine. Implementation deferred to Gate 5 — this commit is spec + doctrine.
+
 - 2026-04-28 (fourth edit same day) — **§I RESOLVED + §V cross-cutting extended (3rd time) + §II.3 cross-cutting (connection-status registry MOVES to §I.3).** V-status vocabulary filled in after 5-specialist roundtable. All V-status.1–V-status.5 sub-decisions resolved long-term-aggressive: V-status.1 = R-1.11 NEW + INV-STATUS-1..5 (rejecting cto-agent's "no new rule" position per strengthened lens — fourth consecutive doctrine amendment with binding lint-test + spec-only-is-wishlist pattern explicitly rejected); V-status.2 = 3-axis sub-prefix (`--status-conn-*` + `--status-app-*` + `--status-pipeline-*`); V-status.3 = new `_P.orange_status` Layer 1 primitive distinct from `_P.orange_deep` (avoids INV-TOKEN-2 collision with `--cat-style-lag-text` + `--m-zone-danger`); V-status.4 = `versionMismatch` classified as fatal tier (red dot + recovery banner); V-status.5 = 30s connected-waiting threshold escalating to `connected-timeout` state. 3-axis decomposition: connection-state (4 values: live/degraded/disconnected/fatal) → dot; app-bridge-state (2 values: synced/absent) → badge; pipeline-stage-health (per-stage binary: nominal/failed) → strip (visibility-gated to `!hasHands`). Recovery banner = emergency-tier R-3.1 (correctly tiered today; banner DOM outside `#hud-content`). **Architectural finding A-A widened from dual-writer to 5-writer** via cto-agent + senior-engineer + failure-engineer codebase verification: `side-panel.js:198-218` (renderConnectionStatus) + `:785-794` (updateStatusBar) + `:1847-1848` (renderAll inline override during staleContext — currently causes FM-STATUS-1 silent severity downgrade in production: contextDead red dot overwritten to yellow in same frame, untested) + `:2590-2593` (updateStatusFromDiag) + `harness.js:81` (test-fixture, grandfathered allowlist). Comment at line 136 ("renderConnectionStatus owns all status-dot writes") is documentary, not enforced. **6 new FM-STATUS-1..6 forensics surfaced** by failure-engineer including FM-STATUS-1 silent-severity-downgrade currently shipping. Extracted `shared/render-status.js` per V-2/V-3/V-affordance precedent: pure classifier `classifyStatus({connState, pipeline, handCount, appConnected})` returning 3-axis state struct; HTML emitters `renderStatusDot` / `renderAppStatusBadge` / `renderPipelineStrip`. 5 writer sites consolidated to 1 (`renderConnectionStatus` becomes sole writer; `staleContext` inline override REMOVED — closes FM-STATUS-1; `versionMismatch` dot-class assignment added at `:215-217` — closes FM-STATUS-2; `updateStatusFromDiag` migrated to dispatch; `updateAppStatus` orphan routed through render snapshot). Doctrine v7 amendment authored inline — adds R-1.11 binding rule + INV-STATUS-1..5 (single-writer per Z0 slot, severity monotonicity within render frame, no-lying-status, connected-waiting escalation, app-bridge staleness clearing). **§V cross-cutting amendment (3rd time):** `--status-conn-{live, degraded, disconnected, fatal}` + `--status-app-{synced, absent}` + `--status-pipeline-{nominal, failed}` (8 entries) + new `_P.orange_status` Layer 1 primitive. **§II.3 cross-cutting:** `connection-status` row REMOVED from §II.3 freshness registry; MOVES to §I.3 status registry per §II.4 boundary clarification. **§II.9 co-shipping #1 amended** from "dual-writer resolution" to "5-writer consolidation". **Required co-shipping (12 items):** `shared/render-status.js` module + 5-writer consolidation + `staleContext` inline override REMOVED + `versionMismatch` className fix + `updateStatusFromDiag` migration + `updateAppStatus` orphan migration + `--status-*` tokens + `_P.orange_status` primitive + `status-registry.test.js` + dom-mutation-discipline.test.js extension + `STATE_FIELD_SCOPES.md` `lastGoodExploits` clearing-path extension (`connection:appDisconnected` added) + ARIA contract (`role="status"` + `aria-live="polite"` ambient; `role="alert"` + `aria-live="assertive"` recovery banner — only assertive site in sidebar) + INV-STATUS-4 timer registration (`coordinator.scheduleTimer('connectedWaitingTimeout', 30_000)`). Comprehensive ARIA mandate per shape closes the "only 1 `aria-expanded` site in entire codebase" accessibility gap. **Gate 4 reaches §I + §II + §III + §IV + §V resolved (5 of 6 sections); only §VI density remains.** Status PARTIAL until §VI lands; implementation deferred to Gate 5 — this commit is spec + doctrine.

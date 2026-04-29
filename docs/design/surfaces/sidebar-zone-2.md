@@ -3,10 +3,48 @@
 **ID:** `sidebar-zone-2`
 **Zone role:** Active-hand decision surface (advice + sizing presets + recommendation reasoning). Top of the decision-tier stack per R-3.3 interruption discipline — only other decision-tier events may preempt Z2 when a hand is active.
 **Related docs:**
-- `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1, §3 (R-3.3 interruption discipline), §5 (render contract — single-owner-per-slot)
+- `docs/SIDEBAR_DESIGN_PRINCIPLES.md` §1, §3 (R-3.3 interruption discipline), §5 (render contract — single-owner-per-slot); doctrine v8 binding rules — see SHC cross-references below
+- `docs/design/surfaces/sidebar-shell-spec.md` §III confidence (V-2 RESOLVED 2026-04-27) + §IV affordance + §V color tokens + §VI density
 - `docs/design/surfaces/sidebar-zones-overview.md`
 - `.claude/handoffs/sr-4-z2-decision.md` (SR-4 handoff)
 - Extension code: `ignition-poker-tracker/render-orchestrator.js` (routes advice content into Z2)
+
+---
+
+## SHC Shell-Spec Cross-References (added 2026-04-29)
+
+Z2 Decision elements (action-recommendation badge, EV display, villain headline, confidence dot, sample count, sizing presets) implement vocabulary resolved across V-2/V-affordance/V-color-tokens/V-density walkthroughs.
+
+**Concept-classes consumed:**
+- **§III confidence** — confidence dot at `render-orchestrator.js:150-151, 169` (Z2 unified header) — D-1 forensics canonical site. Migrates to `shared/render-confidence.js` extracted module per §III.6. 4-tier register `high/medium/low/unknown`. Sample count `n=N` form (paired with dot per §III.4 + INV-DENSITY-3). Z2 context-strip opacity classes (`conf-player`/`conf-mixed`/`conf-population`) at `:441-444, 450, 462, 465, 470` REMOVED per §III.5 scope boundary (confidence applies to engine model outputs only, NOT mathematically exact derived values like equity / pot odds / SPR).
+- **§IV affordance** — action-recommendation pill (CALL/BET/RAISE/FOLD) per §IV.1; `pill` shape with click-action interaction outcome. ARIA contract: `role="button"` + `aria-label` + `aria-disabled="true"` when advice is stale.
+- **§V color tokens** — `--conf-tier-{high,mid,low,unknown}` for confidence dot; **`--action-class-{call,bet,raise,fold}-{bg,text,base}`** (V-affordance §IV.11 cross-cutting amendment — categorical concept-class, NOT ordinal `--qtr-*` reuse).
+- **§VI density** — `--type-display` for action-word (24px → 1.5rem, currently HARDCODED at `side-panel.html:400` — Gate 5 migration); `--type-body` for villain headline + EV; `--type-meta-stat` for confidence label + sample count. **PRIMARY tier in `active-hand-advice` state per §VI.6 attention-budget map.**
+
+**Doctrine binding rules:**
+- **R-1.6** treatment-type consistency (confidence dot is canonical D-1 forensic; resolved by V-2)
+- **R-1.9** color-token concept-class isolation (action-pill colors get distinct concept-class from quality-tier)
+- **R-1.10** affordance vocabulary (action-pill is licensed shape; ARIA mandate per shape)
+- **R-1.12** density-rhythm + attention-budget (PRIMARY tier in active-hand-advice)
+- **R-3.3** interruption discipline (Z2 decision-tier; only other decision-tier events preempt)
+
+**INV-* invariants binding on Z2:**
+- **INV-TOKEN-1..5** — confidence colors via `--conf-tier-*` tokens; action-class colors distinct from `--qtr-*`
+- **INV-AFFORD-1** — action pill is the click-action affordance; no over-signposting (no chevron + pill on same element)
+- **INV-DENSITY-1** — `--type-display` uses rem; HARDCODED 24px at `:400` migrates to token
+- **INV-DENSITY-3** — `n=N` form bound to confidence-dot pairing per §III.4
+
+**Currently-shipping bugs documented:**
+- **D-1 (resolved by V-2)** — confidence rendered three incompatible ways at `render-orchestrator.js:150-151, 169` + `:441-444, 450` + `render-tiers.js:70-74`. Pure render-layer divergence; same upstream `mq.overallSource`. Lowest-cost forensic to fix (no upstream changes).
+- **render-orchestrator.js:147 `||` vs `??` bug** (per §III.7 forbidden pattern #6) — `(pinnedData?.sampleSize) || advice.villainSampleSize` causes wrong sample substitution when `sampleSize === 0`.
+
+**Gate 5 co-shipping items relevant to this zone:**
+- New `shared/render-confidence.js` module per §III.6 (path amended 2026-04-28 to `shared/`)
+- Z2 context-strip opacity classes deleted; equity / pot-odds / SPR render at full opacity always (§III.5 scope boundary)
+- `confidence-dot green/yellow/red` color-literal CSS replaced with `conf-tier-{high,mid,low,unknown}` ordinal classes
+- `--action-class-*` concept-class entries in `design-tokens.js` (V-affordance §IV.11 cross-cutting)
+- `render-orchestrator.js:147` `||` → `??` fix
+- 24px action-word migration from inline literal to `--type-display` token (rem)
 
 **Product line:** Sidebar (primary) + cross-surface JTBD mirrors on main-app TableView (LiveAdviceBar)
 **Tier placement:** Pro
