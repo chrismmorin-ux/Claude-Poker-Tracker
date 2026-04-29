@@ -319,7 +319,7 @@ Handoff: `.claude/handoffs/hrp-gates-1-2-3-spike.md`. Two verification items def
 | DCOMP-W4-A4-F12 | P3 | NEXT | **DataAndAbout dev-tools collapsible** | Dev-build DataAndAbout panel is tallest at 400+ lines with sim + seed/clear buttons. Collapse dev-tools into a separate expandable sub-panel. | — |
 | DCOMP-W3 | P3 | NEXT | Wave 3 — Drills (preflop/postflop) audit + WIP tab decision | Audit + owner decision on WIP tabs' fate. Est. 3–4 sessions. Gate 2 for drills. |
 | DCOMP-W5 | P3 | BLOCKED by W4 | Wave 5 — Sidebar framework integration (5 zones) | Surface artifacts for Z0–Z4; heuristic cross-mapping. Est. 3–4 sessions. |
-| DCOMP-H1 | P2 | NEXT (parallel) | Hygiene H1 — Triage initial 20-item discovery gap list | Each discovery moved to QUEUED / REJECTED / ARCHIVED. Est. 1 session. |
+| DCOMP-H1 | P2 | COMPLETE (2026-04-22) | Hygiene H1 — Triage initial 20-item discovery gap list | Closed via verification — triage was already shipped 2026-04-22 and inlined into `docs/design/discoveries/2026-04-21-initial-gap-list.md`. All 20 items classified: 7 QUEUED (DISC-P01, P02, 02, 04, 06, 10, 14), 11 ARCHIVED, 2 REJECTED (DISC-03 voice input, DISC-17 mixed games) — per-item rationale inline. Status log on the discovery file already records "2026-04-22 — TRIAGED (DCOMP-H1)". Individual break-out files for QUEUED items deferred per file convention until owner promotes one to an active backlog slot. |
 | DCOMP-H2 | P3 | SCHEDULED 2026-07-21 | Hygiene H2 — First quarterly PROTO persona validation pass | ≥5 of 15 personas validated or explicitly kept PROTO. Est. 1 session. |
 
 Sequencing: W0 first (preconditions), then W1 → W2 → W4 → W3 → W5 recommended. H1 runs parallel with W0 or W1. Re-sequence allowed per owner priority.
