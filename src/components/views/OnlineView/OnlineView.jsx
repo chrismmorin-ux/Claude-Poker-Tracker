@@ -25,7 +25,7 @@ export const OnlineView = ({ scale }) => {
   } = useOnlineSession();
 
   const { tendencyMap, handCount, isLoading, advice } = useAnalysisContext();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -43,13 +43,14 @@ export const OnlineView = ({ scale }) => {
       const text = await file.text();
       await importFromJson(text);
       loadSessions();
+      showSuccess('Hand file imported');
     } catch (err) {
       showError(`Import failed: ${err.message}`);
     } finally {
       setIsImporting(false);
       e.target.value = '';
     }
-  }, [importFromJson, loadSessions, showError]);
+  }, [importFromJson, loadSessions, showError, showSuccess]);
 
   const selectedSeatData = selectedSeat ? tendencyMap[selectedSeat] : null;
 
