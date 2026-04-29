@@ -20,6 +20,7 @@ The contracts here are the design-framework's record: *what cross-surface invari
 ## Contracts
 
 - [persisted-hand-schema.md](./persisted-hand-schema.md) — shape of a hand record in the `hands` IDB store. Writer: `TableView` → `ShowdownView` commit. Readers: `HandReplayView`, `AnalysisView`, export pipeline.
+- [tournament-to-table.md](./tournament-to-table.md) — fields exposed by `TournamentContext` and consumed by `TableView` via `useTournament()`. Writer: `tournamentReducer` + 1Hz ticker. Readers: `TableView` (8 fields), `TournamentView` (full surface).
 
 ---
 
@@ -39,4 +40,5 @@ Create a new file following the `persisted-hand-schema.md` pattern:
 
 ## Change log
 
+- 2026-04-29 — Added `tournament-to-table` contract per DCOMP-W4-A2-F10. Documents 8 fields exposed by `TournamentContext` and consumed by `TableView`. Cross-references W4-A2-F8 (heroStack fix) + W4-A2-F9 (satellite honesty banner) as known drift entries.
 - 2026-04-21 — Created. Seeded with persisted-hand-schema in response to blind-spot audit 2026-04-21 table-view §D1.

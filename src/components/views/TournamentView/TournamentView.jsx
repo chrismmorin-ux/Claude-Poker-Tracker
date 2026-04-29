@@ -189,7 +189,7 @@ export const TournamentView = ({ scale }) => {
             <p className="text-gray-400 text-lg mb-4">No active tournament</p>
             <button
               onClick={handleBackToTable}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+              className="px-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
             >
               Back to Table
             </button>
@@ -228,6 +228,29 @@ export const TournamentView = ({ scale }) => {
           onResume={resumeTimer}
           onSkipLevel={handleAdvanceLevel}
         />
+
+        {/* W4-A2-F9: Satellite-mode honesty banner. ICM math stays calibrated
+            for standard MTT payout structure; satellite payouts are flat above
+            the bubble, which inverts late-game push/fold decisions. The banner
+            flags the mismatch until the math is recalibrated. */}
+        {config.format === 'SATELLITE' && (
+          <div
+            role="status"
+            className="rounded-lg p-3 flex items-start gap-2"
+            style={{
+              background: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.4)',
+            }}
+          >
+            <span className="text-amber-400 text-lg leading-none" aria-hidden="true">⚠</span>
+            <div className="text-sm text-amber-200">
+              <strong className="font-semibold">Satellite detected</strong>
+              {' — '}
+              advice is calibrated for standard MTT structure and may be incorrect.
+              ICM math does not yet account for flat-payout dynamics above the bubble.
+            </div>
+          </div>
+        )}
 
         {/* Main content: Predictions + Chip Stacks side by side */}
         <div className="flex-1 grid grid-cols-2 gap-3 min-h-0 overflow-hidden">
@@ -322,7 +345,7 @@ export const TournamentView = ({ scale }) => {
           <div className="flex justify-between items-center">
             <button
               onClick={handleBackToTable}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+              className="flex items-center gap-2 px-4 min-h-[44px] bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
             >
               <ArrowLeft size={16} />
               Back to Table

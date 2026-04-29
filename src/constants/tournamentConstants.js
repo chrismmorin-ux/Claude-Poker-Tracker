@@ -75,6 +75,11 @@ export const TOURNAMENT_FORMATS = {
   FREEZEOUT: { label: 'Freezeout', allowRebuys: false },
   REBUY: { label: 'Rebuy', allowRebuys: true },
   BOUNTY: { label: 'Bounty', allowRebuys: false },
+  // W4-A2-F9: Satellite mode is supported as a format selection so users can
+  // mark sessions truthfully. ICM math is NOT recalibrated for satellite
+  // payout structures — TournamentView renders an honesty banner when this
+  // format is active to flag that gap. Fixing the math is a separate ticket.
+  SATELLITE: { label: 'Satellite', allowRebuys: false },
 };
 
 export const TOURNAMENT_FORMAT_KEYS = Object.keys(TOURNAMENT_FORMATS);
