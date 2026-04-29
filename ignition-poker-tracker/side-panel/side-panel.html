@@ -55,6 +55,20 @@
     }
     .status-dot.yellow { background: var(--m-yellow); }
     .status-dot.red { background: var(--m-red); }
+
+    /* V-status §I + R-1.11 — canonical connection-state tier classes.
+       Concept-class-isolated from --m-* per INV-TOKEN-2. Coexists with the
+       legacy .green/.yellow/.red rules above during the multi-PR migration;
+       PR-6+ deletes the legacy rules once all 5 writer sites
+       (renderConnectionStatus / updateStatusBar / staleContext /
+       updateStatusFromDiag / harness.js) emit canonical classes. */
+    .status-dot.conn-live {
+      background: var(--status-conn-live);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .status-dot.conn-degraded     { background: var(--status-conn-degraded); }
+    .status-dot.conn-disconnected { background: var(--status-conn-disconnected); }
+    .status-dot.conn-fatal        { background: var(--status-conn-fatal); }
     .status-text { flex: 1; color: var(--text-secondary); }
     /* RT-48: stale advice indicator — yellow-orange border + "Stale Ns"
        badge on action bar and plan panel when advice age > 10s or

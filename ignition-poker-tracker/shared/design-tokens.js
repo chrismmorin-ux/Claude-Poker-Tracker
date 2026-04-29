@@ -100,6 +100,17 @@ export const TOKENS = {
   'fresh-tier-unknown':  '#6b7280',  // signal absent / source missing
   'fresh-tier-rejected': '#dc2626',  // SW replay rejection / explicit rejection
 
+  // Connection status tier (V-status §I axis-1 + R-1.11 — closed 4-tier
+  // register; concept-class-isolated from --m-* / --conf-tier-* /
+  // --fresh-tier-* per INV-TOKEN-2). Visual hex matches existing M-zone
+  // hues so behavior is preserved across the migration; PR-6+ will delete
+  // the legacy .status-dot.green/.yellow/.red rules and rely solely on
+  // the canonical .conn-* classes wired below.
+  'status-conn-live':         '#4ade80',  // connected, traffic flowing
+  'status-conn-degraded':     '#fbbf24',  // connected-waiting / version-mismatch
+  'status-conn-disconnected': '#f97316',  // port disconnected; recoverable
+  'status-conn-fatal':        '#f87171',  // contextDead / SW context invalidated
+
   // Tournament (demoted to neutral)
   'tournament-accent': '#6b7280',
 

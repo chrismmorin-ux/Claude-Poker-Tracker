@@ -48,6 +48,12 @@ import {
   mapAgeToTier,
   getStaleBadgeText,
 } from '../shared/render-staleness.js';
+import {
+  STATUS_TIERS,
+  mapConnStateToTier,
+  applyMonotonicTier,
+  writeStatusDot,
+} from '../shared/render-status.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
 import { moreAnalysisFsm } from './fsms/more-analysis.fsm.js';
@@ -205,26 +211,29 @@ injectTokens();
   // SR-6.5: connection status dot/text driven entirely from coordinator
   // `connState` slot. Port callbacks set the slot; this writes DOM.
   // R-2.3 remediation for audit sites #1–3.
+  // V-status §I (R-1.11 + INV-STATUS-1..5): canonical writer for the
+  // connection-state axis. Uses writeStatusDot() to emit both the
+  // canonical .conn-* tier class + legacy .green/.yellow/.red color
+  // class so unmigrated CSS keeps working until PR-6 deletes legacy.
   const renderConnectionStatus = (snap) => {
     const dot = $('status-dot');
     const text = $('status-text');
     if (!dot || !text) return;
     const c = snap.connState || {};
+    const tier = mapConnStateToTier(c);
+    writeStatusDot(dot, tier);
     if (c.connected) {
       // Connected — leave text to updateStatusBar (hand count / live info).
-      // Only reset the dot class; text ownership belongs to the status-bar renderer.
-      dot.className = 'status-dot green';
+      // Text ownership belongs to the status-bar renderer.
       return;
     }
-    if (c.cause === 'contextDead') {
-      dot.className = 'status-dot red';
-      if (c.text) text.textContent = c.text;
-    } else if (c.cause === 'disconnect') {
-      dot.className = 'status-dot yellow';
-      if (c.text) text.textContent = c.text;
-    } else if (c.cause === 'versionMismatch') {
-      if (c.text) text.textContent = c.text;
-    }
+    // FM-STATUS-2 fix (V-status §I): the prior code set `text.textContent`
+    // for `versionMismatch` but did NOT update the className, leaving any
+    // previous severity (e.g., red contextDead) silently visible while
+    // text claimed a different state. writeStatusDot() above now sets the
+    // tier-class unconditionally per INV-STATUS-3 (no-lying-status). This
+    // branch only handles text routing.
+    if (c.text) text.textContent = c.text;
   };
 
   if (recoveryBtn) {
@@ -1889,9 +1898,14 @@ injectTokens();
     }
 
     // --- Stale context indicator ---
+    // V-status \u00a7I FM-STATUS-1 fix: route through applyMonotonicTier so the
+    // staleContext writer can never silently downgrade a FATAL contextDead
+    // dot to DEGRADED yellow within the same render frame (INV-STATUS-2
+    // monotonicity). The text overwrite remains unconditional \u2014 a stale
+    // text under a FATAL dot is acceptable; a wrong dot color is not.
     if (snap.staleContext && liveCtx) {
       const dot = $('status-dot');
-      if (dot) dot.className = 'status-dot yellow';
+      if (dot) applyMonotonicTier(dot, STATUS_TIERS.DEGRADED);
       const text = $('status-text');
       if (text) text.textContent = 'Data may be stale \u2014 waiting for update\u2026';
     }
