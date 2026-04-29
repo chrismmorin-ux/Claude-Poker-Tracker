@@ -9,7 +9,23 @@
  * bolding + matched-feature accents).
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+
+// W4-A1-F8 Phase 1: persist PlayerFilters state to localStorage so the
+// 10 selects + search + sort survive a reload. Mirrors the SV-F7 pattern
+// from SessionsView.jsx but generalized to a JSON-encoded bundle.
+const STORAGE_KEY = 'playersView.filters';
+
+const loadInitialFilters = () => {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
 
 // =============================================================================
 // scorePlayerMatch — pure highlight primitive (PEO-3)
@@ -100,16 +116,32 @@ export const scorePlayerMatch = (player, query = {}) => {
  * @returns {Object} Filtered players, filter state, and setters
  */
 export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
-  // Filter state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTag, setFilterTag] = useState('');
-  const [filterGender, setFilterGender] = useState('');
-  const [filterBuild, setFilterBuild] = useState('');
-  const [filterEthnicity, setFilterEthnicity] = useState('');
-  const [filterFacialHair, setFilterFacialHair] = useState('');
-  const [filterHat, setFilterHat] = useState(''); // '', 'yes', 'no'
-  const [filterSunglasses, setFilterSunglasses] = useState(''); // '', 'yes', 'no'
-  const [sortBy, setSortBy] = useState('lastSeen'); // 'lastSeen', 'name', 'handCount'
+  // Filter state — initialized from localStorage (W4-A1-F8 Phase 1).
+  // useMemo([]) so the read happens once on mount, not on every render.
+  const initial = useMemo(loadInitialFilters, []);
+  const [searchTerm, setSearchTerm] = useState(initial.searchTerm ?? '');
+  const [filterTag, setFilterTag] = useState(initial.filterTag ?? '');
+  const [filterGender, setFilterGender] = useState(initial.filterGender ?? '');
+  const [filterBuild, setFilterBuild] = useState(initial.filterBuild ?? '');
+  const [filterEthnicity, setFilterEthnicity] = useState(initial.filterEthnicity ?? '');
+  const [filterFacialHair, setFilterFacialHair] = useState(initial.filterFacialHair ?? '');
+  const [filterHat, setFilterHat] = useState(initial.filterHat ?? ''); // '', 'yes', 'no'
+  const [filterSunglasses, setFilterSunglasses] = useState(initial.filterSunglasses ?? ''); // '', 'yes', 'no'
+  const [sortBy, setSortBy] = useState(initial.sortBy ?? 'lastSeen'); // 'lastSeen', 'name', 'handCount'
+
+  // Persist on any filter change. Single bundled write keeps the storage
+  // shape consistent and avoids 10 individual setItem calls.
+  useEffect(() => {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        searchTerm, filterTag, filterGender, filterBuild, filterEthnicity,
+        filterFacialHair, filterHat, filterSunglasses, sortBy,
+      }));
+    } catch {
+      // localStorage unavailable (private mode, quota exceeded) — silent.
+    }
+  }, [searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, sortBy]);
 
   // Filtered and sorted players
   const filteredPlayers = useMemo(() => {

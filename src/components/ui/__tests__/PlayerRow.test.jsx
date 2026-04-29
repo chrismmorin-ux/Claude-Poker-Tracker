@@ -233,13 +233,15 @@ describe('PlayerRow', () => {
   });
 
   describe('action buttons', () => {
+    // W4-A1-F5: action buttons are icon-only with aria-label for accessibility;
+    // selectors use getByRole + name (aria-label) instead of getByText.
     it('renders Edit button', () => {
       render(
         <table><tbody>
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      expect(screen.getByText('Edit')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     });
 
     it('renders Delete button', () => {
@@ -248,7 +250,7 @@ describe('PlayerRow', () => {
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      expect(screen.getByText('Delete')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
     });
 
     it('calls onEdit when Edit button clicked', () => {
@@ -258,7 +260,7 @@ describe('PlayerRow', () => {
         </tbody></table>
       );
 
-      fireEvent.click(screen.getByText('Edit'));
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
       expect(defaultProps.onEdit).toHaveBeenCalled();
     });
@@ -270,7 +272,7 @@ describe('PlayerRow', () => {
         </tbody></table>
       );
 
-      fireEvent.click(screen.getByText('Delete'));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
       expect(defaultProps.onDelete).toHaveBeenCalled();
     });
@@ -282,7 +284,7 @@ describe('PlayerRow', () => {
         </tbody></table>
       );
 
-      fireEvent.click(screen.getByText('Edit'));
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
       // onClick should not be called
       expect(defaultProps.onClick).not.toHaveBeenCalled();
@@ -295,10 +297,71 @@ describe('PlayerRow', () => {
         </tbody></table>
       );
 
-      fireEvent.click(screen.getByText('Delete'));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
       // onClick should not be called
       expect(defaultProps.onClick).not.toHaveBeenCalled();
+    });
+
+    // W4-A1-F5: hit-target + tooltip + badge persistence
+    it('Edit/Delete buttons meet ≥44×44 hit-target minimum', () => {
+      render(
+        <table><tbody>
+          <PlayerRow {...defaultProps} />
+        </tbody></table>
+      );
+      const editBtn = screen.getByRole('button', { name: 'Edit' });
+      const deleteBtn = screen.getByRole('button', { name: 'Delete' });
+      // Tailwind classes assert sizing — DOM doesn't compute layout in jsdom
+      expect(editBtn.className).toMatch(/min-h-\[44px\]/);
+      expect(editBtn.className).toMatch(/min-w-\[44px\]/);
+      expect(deleteBtn.className).toMatch(/min-h-\[44px\]/);
+      expect(deleteBtn.className).toMatch(/min-w-\[44px\]/);
+    });
+
+    it('action buttons carry tooltips via title attribute', () => {
+      render(
+        <table><tbody>
+          <PlayerRow {...defaultProps} />
+        </tbody></table>
+      );
+      expect(screen.getByRole('button', { name: 'Edit' })).toHaveAttribute('title', 'Edit');
+      expect(screen.getByRole('button', { name: 'Delete' })).toHaveAttribute('title', 'Delete');
+    });
+
+    it('Range button renders only when onOpenRangeDetail is provided', () => {
+      const { rerender } = render(
+        <table><tbody>
+          <PlayerRow {...defaultProps} onOpenRangeDetail={undefined} />
+        </tbody></table>
+      );
+      expect(screen.queryByRole('button', { name: 'Range' })).not.toBeInTheDocument();
+
+      rerender(
+        <table><tbody>
+          <PlayerRow {...defaultProps} onOpenRangeDetail={vi.fn()} />
+        </tbody></table>
+      );
+      expect(screen.getByRole('button', { name: 'Range' })).toBeInTheDocument();
+    });
+
+    it('Exploits toggle preserves the pendingBriefingCount badge', () => {
+      // pendingBriefingCount is derived internally from briefings; the badge
+      // renders count from briefings filtered to reviewStatus pending|stale.
+      const player = createMockPlayer({
+        exploitBriefings: [
+          { reviewStatus: 'pending' },
+          { reviewStatus: 'pending' },
+          { reviewStatus: 'stale' },
+          { reviewStatus: 'reviewed' }, // not counted
+        ],
+      });
+      render(
+        <table><tbody>
+          <PlayerRow {...defaultProps} player={player} />
+        </tbody></table>
+      );
+      expect(screen.getByText('3')).toBeInTheDocument();
     });
   });
 

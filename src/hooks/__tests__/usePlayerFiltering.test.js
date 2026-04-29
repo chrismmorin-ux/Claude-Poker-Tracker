@@ -3,10 +3,16 @@
  * usePlayerFiltering.test.js - Tests for player filtering hook
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePlayerFiltering, scorePlayerMatch } from '../usePlayerFiltering';
 import { createMockPlayer } from '../../test/utils';
+
+// W4-A1-F8: clean localStorage between tests so filter persistence from one
+// test doesn't leak default-state assumptions of the next.
+beforeEach(() => {
+  try { localStorage.clear(); } catch {}
+});
 
 describe('usePlayerFiltering', () => {
   // Test players fixture
@@ -591,5 +597,104 @@ describe('scorePlayerMatch', () => {
       });
       expect(r.passesFilters).toBe(false);
     });
+  });
+});
+
+// =============================================================================
+// W4-A1-F8 Phase 1 — localStorage persistence
+// =============================================================================
+
+describe('usePlayerFiltering — localStorage persistence (W4-A1-F8)', () => {
+  const STORAGE_KEY = 'playersView.filters';
+
+  it('hydrates filter state from localStorage on mount', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      searchTerm: 'alice',
+      filterGender: 'female',
+      sortBy: 'name',
+    }));
+
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    expect(result.current.searchTerm).toBe('alice');
+    expect(result.current.filterGender).toBe('female');
+    expect(result.current.sortBy).toBe('name');
+    // Unspecified fields fall back to defaults
+    expect(result.current.filterTag).toBe('');
+    expect(result.current.filterHat).toBe('');
+  });
+
+  it('persists filter state to localStorage when changed', () => {
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    act(() => {
+      result.current.setSearchTerm('bob');
+      result.current.setFilterBuild('heavy');
+      result.current.setSortBy('handCount');
+    });
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.searchTerm).toBe('bob');
+    expect(stored.filterBuild).toBe('heavy');
+    expect(stored.sortBy).toBe('handCount');
+  });
+
+  it('falls back to defaults when localStorage is empty', () => {
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    expect(result.current.searchTerm).toBe('');
+    expect(result.current.filterGender).toBe('');
+    expect(result.current.sortBy).toBe('lastSeen');
+    expect(result.current.hasActiveFilters).toBe(false);
+  });
+
+  it('falls back to defaults when stored JSON is corrupt', () => {
+    localStorage.setItem(STORAGE_KEY, 'not-valid-json{');
+
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    expect(result.current.searchTerm).toBe('');
+    expect(result.current.sortBy).toBe('lastSeen');
+  });
+
+  it('falls back to defaults when stored value is not an object', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify('a string, not an object'));
+
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    expect(result.current.searchTerm).toBe('');
+  });
+
+  it('clearFilters resets state and persists the cleared bundle', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      searchTerm: 'alice',
+      filterGender: 'female',
+    }));
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    act(() => {
+      result.current.clearFilters();
+    });
+
+    expect(result.current.searchTerm).toBe('');
+    expect(result.current.filterGender).toBe('');
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.searchTerm).toBe('');
+    expect(stored.filterGender).toBe('');
+  });
+
+  it('survives localStorage write throwing (e.g. quota exceeded)', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError');
+    });
+
+    const { result } = renderHook(() => usePlayerFiltering([]));
+
+    expect(() => {
+      act(() => result.current.setSearchTerm('bob'));
+    }).not.toThrow();
+    expect(result.current.searchTerm).toBe('bob');
+
+    setItemSpy.mockRestore();
   });
 });

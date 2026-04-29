@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { Layers, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { TendencyStats } from './TendencyStats';
 import { ExploitList } from './ExploitList';
 import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
@@ -183,18 +184,20 @@ export const PlayerRow = ({
         <div className="text-sm text-gray-400">{formatRelativeTime(player.lastSeenAt)}</div>
       </td>
 
-      {/* Actions */}
+      {/* Actions — DCOMP-W4-A1-F5: icon-only ≥44×44 hit areas + tooltips */}
       <td className="px-4 py-3">
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-1 justify-end">
           {onOpenRangeDetail && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenRangeDetail(player.playerId);
               }}
-              className="text-green-600 hover:text-green-800 text-sm font-medium"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded text-green-600 hover:text-green-800 hover:bg-green-50"
+              title="Range"
+              aria-label="Range"
             >
-              Range
+              <Layers size={18} />
             </button>
           )}
           <button
@@ -202,30 +205,36 @@ export const PlayerRow = ({
               e.stopPropagation();
               onEdit();
             }}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            title="Edit"
+            aria-label="Edit"
           >
-            Edit
+            <Pencil size={18} />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="text-red-600 hover:text-red-800 text-sm font-medium"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded text-red-600 hover:text-red-800 hover:bg-red-50"
+            title="Delete"
+            aria-label="Delete"
           >
-            Delete
+            <Trash2 size={18} />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowExploits(!showExploits);
             }}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium relative"
-            title="Toggle exploit notes"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded text-gray-500 hover:text-gray-700 hover:bg-gray-100 relative"
+            title={showExploits ? 'Hide exploit notes' : 'Show exploit notes'}
+            aria-label={showExploits ? 'Hide exploit notes' : 'Show exploit notes'}
+            aria-expanded={showExploits}
           >
-            {showExploits ? '▴' : '▾'}
+            {showExploits ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             {pendingBriefingCount > 0 && (
-              <span className="absolute -top-1 -right-2 w-4 h-4 bg-amber-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-amber-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                 {pendingBriefingCount}
               </span>
             )}
