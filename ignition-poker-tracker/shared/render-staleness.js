@@ -3,9 +3,19 @@
  *
  * Implements the closed 5-tier freshness register + mechanism declarations
  * resolved at SHC Gate 4 V-3 walkthrough (2026-04-27, doctrine v4 R-1.8 +
- * INV-FRESH-1..5) and implemented at Gate 5 PR-4 (2026-04-29). Closes the
- * D-3 forensic — staleness rendered with two incompatible patterns + three
- * disjoint clearing mechanisms across `render-orchestrator.js:1324-1342`
+ * INV-FRESH-1..5).
+ *
+ * Gate 5 PR-4 (2026-04-29) shipped FRESHNESS_TIERS + FRESHNESS_MECHANISMS
+ * + FRESH_SIGNAL_REGISTRY + mapAgeToTier + getStaleBadgeText + renderStaleBadge.
+ *
+ * Gate 5 PR-13 (2026-04-30) ships the composed classifier (`classifyFreshness`)
+ * + AGING-tier dot helper (`renderFreshnessDot`) + V-2.4 carry-forward gate
+ * (`renderConfidenceForFreshness`). Closes the V-3 §II module API contract
+ * per shell-spec §II.7. PR-14 wires production callers; this PR is module
+ * + tests only.
+ *
+ * Closes the D-3 forensic — staleness rendered with two incompatible patterns
+ * + three disjoint clearing mechanisms across `render-orchestrator.js:1324-1342`
  * (Z0 state-derived dot) and `side-panel.js:1064-1112` (Z2 timer-driven
  * badge).
  *
@@ -19,6 +29,12 @@
  * extend dom-mutation-discipline.test.js to assert no .stale-badge mutation
  * occurs outside the canonical writer registered in this module.
  */
+
+import {
+  CONFIDENCE_TIERS,
+  mapModelSourceToTier,
+  renderConfidenceBadge,
+} from './render-confidence.js';
 
 // ===========================================================================
 // CLOSED 5-TIER FRESHNESS REGISTER (V-3 §II.1)
@@ -141,4 +157,148 @@ export const renderStaleBadge = ({
     + ` data-fresh-mechanism="${mechanism}"`
     + ` data-fresh-scope="${scope}"`
     + ` role="status" aria-live="polite">${text}</span>`;
+};
+
+// ===========================================================================
+// classifyFreshness — composed pure classifier (V-3 §II.7 API contract)
+// ===========================================================================
+// Per shell-spec §II.1, the 5-tier register integrates several conditions:
+//   • _receivedAt absent / age unknown                    → UNKNOWN
+//   • SW-replay rejection / coordinator rejection event   → REJECTED
+//   • street-mismatch (advice.currentStreet ≠ ctx)        → STALE
+//   • staleContext flag set (60s phase fired)             → STALE
+//   • else age-based: ≤agingMs LIVE / ≤staleMs AGING / else STALE
+//
+// Caller-defined thresholds via `opts.agingMs` + `opts.staleMs` (defaults
+// match `mapAgeToTier`'s 10s/60s pair, which lines up with the existing
+// `computeAdviceStaleness` semantics in side-panel.js — PR-14 will route
+// computeAdviceStaleness through here).
+//
+// `coordState` is a lightweight projection of RenderCoordinator state; the
+// fields read are `staleContext: bool` + (PR-14 may add) `lastRejectionAt`.
+// Pure module discipline (per V-2 / V-color-tokens precedent): no
+// `Date.now()` reads, no coordinator imports — `now` and state are injected.
+//
+// Spec §II.6 V-2.4 carry-forward: when this returns STALE / REJECTED /
+// UNKNOWN, callers route confidence rendering through
+// `renderConfidenceForFreshness` so a stale-but-confident badge can't
+// mislead at glance time.
+
+export const classifyFreshness = (advice, liveCtx, coordState = {}, now = Date.now(), opts = {}) => {
+  // Hard rejection short-circuit. Per spec §II.1: "RT-68/69 SW-replay
+  // rejection is observable to the coordinator via the rejection event."
+  // Production wiring (PR-14) will set `rejected: true` on the advice
+  // record OR a coordinator state slot when the SW drops a frame; here
+  // we accept both surfaces so the contract is wiring-agnostic.
+  if (advice && advice.rejected === true) return FRESHNESS_TIERS.REJECTED;
+  if (coordState.rejected === true) return FRESHNESS_TIERS.REJECTED;
+
+  // _receivedAt absent → UNKNOWN. Per §II.1: "cold-start, post-120s clear."
+  // Same "silent-failure protection" rationale V-2 used to separate
+  // CONFIDENCE_TIERS.UNKNOWN from LOW.
+  if (!advice || advice._receivedAt == null) return FRESHNESS_TIERS.UNKNOWN;
+
+  const ageMs = now - advice._receivedAt;
+
+  // Street-mismatch is irrecoverable per §II.1: hard threshold treated as
+  // STALE regardless of elapsed time. Mirrors the existing
+  // computeAdviceStaleness `reason: 'street-mismatch'` short-circuit.
+  const isStreetMismatch = !!(
+    liveCtx
+    && advice.currentStreet
+    && liveCtx.currentStreet
+    && advice.currentStreet !== liveCtx.currentStreet
+  );
+  if (isStreetMismatch) {
+    return mapAgeToTier(ageMs, { ...opts, reason: 'street-mismatch' });
+  }
+
+  // staleContext 60s flag → STALE per spec §II.1. The flag itself is
+  // owned by side-panel.js's two-phase staleContext timer; this module
+  // only consumes the resolved boolean.
+  if (coordState.staleContext === true) {
+    return FRESHNESS_TIERS.STALE;
+  }
+
+  // Default age-based classification.
+  return mapAgeToTier(ageMs, opts);
+};
+
+// ===========================================================================
+// renderFreshnessDot — AGING / UNKNOWN / REJECTED tier dot emission
+// ===========================================================================
+// Per spec §II.1 the AGING tier is a dot (no counter, no text label) — this
+// helper emits the canonical `.fresh-tier-{tier}` markup for tier-class
+// signaling. STALE renders via `renderStaleBadge` because it carries the
+// aging counter; LIVE renders nothing (absence is the signal).
+//
+// The dot is non-interactive (per shell-spec §IV ↔ §II boundary —
+// freshness signals are NOT affordances); the ARIA live-region contract
+// from §II.10 is mandatory.
+
+export const renderFreshnessDot = ({
+  tier,
+  scope = 'Z2-action-bar',
+  mechanism = FRESHNESS_MECHANISMS.TIMER_DRIVEN_AGING,
+  ariaLabel = null,
+} = {}) => {
+  if (!Object.values(FRESHNESS_TIERS).includes(tier)) {
+    throw new Error(`freshness tier "${tier}" not in closed 5-tier register`);
+  }
+  if (!Object.values(FRESHNESS_MECHANISMS).includes(mechanism)) {
+    throw new Error(`freshness mechanism "${mechanism}" not in closed registry`);
+  }
+  // Spec §II.1: LIVE tier renders nothing — absence is the signal. Calling
+  // with tier=LIVE returns the empty string so callers can compose without
+  // a conditional check at every call site.
+  if (tier === FRESHNESS_TIERS.LIVE) return '';
+  const labelAttr = ariaLabel
+    ? ` aria-label="${ariaLabel.replace(/"/g, '&quot;')}"`
+    : '';
+  return `<span class="freshness-dot fresh-tier-${tier}"`
+    + ` data-fresh-tier="${tier}"`
+    + ` data-fresh-mechanism="${mechanism}"`
+    + ` data-fresh-scope="${scope}"`
+    + ` role="status" aria-live="polite"${labelAttr}></span>`;
+};
+
+// ===========================================================================
+// renderConfidenceForFreshness — V-2.4 carry-forward gate
+// ===========================================================================
+// Per shell-spec §II.6 (V-2.4 carry-forward, conditional gate resolution):
+// when freshness ∈ { STALE, REJECTED, UNKNOWN } the underlying decision
+// context has likely changed; the engine's prior confidence assertion is
+// no longer applicable. The composed helper pre-clears modelQuality so the
+// confidence badge renders as `conf-tier-unknown` (grey dot) regardless of
+// the actual `mq.overallSource` value.
+//
+// AGING and LIVE tiers preserve the actual confidence — `aging` indicates
+// elapsed time but data still likely valid (still on-street, recoverable).
+//
+// Single call site for the gate; prevents divergence between callers per
+// failure-engineer roundtable Q4. Both modules import from `shared/`; the
+// helper lives here because its conditional logic is freshness-driven.
+
+const FRESHNESS_TIERS_THAT_CORRUPT_CONFIDENCE = Object.freeze(new Set([
+  FRESHNESS_TIERS.STALE,
+  FRESHNESS_TIERS.REJECTED,
+  FRESHNESS_TIERS.UNKNOWN,
+]));
+
+export const renderConfidenceForFreshness = (advice, freshnessTier) => {
+  if (!Object.values(FRESHNESS_TIERS).includes(freshnessTier)) {
+    throw new Error(`freshness tier "${freshnessTier}" not in closed 5-tier register`);
+  }
+  if (FRESHNESS_TIERS_THAT_CORRUPT_CONFIDENCE.has(freshnessTier)) {
+    // Force unknown — the engine's prior confidence assertion is no longer
+    // applicable when freshness is STALE / REJECTED / UNKNOWN.
+    return renderConfidenceBadge({ tier: CONFIDENCE_TIERS.UNKNOWN });
+  }
+  // LIVE / AGING — pass-through to the underlying confidence renderer.
+  const mq = advice?.modelQuality;
+  const tier = mapModelSourceToTier(mq?.overallSource);
+  const sampleSize = (advice?.villainSampleSize != null && Number.isFinite(advice.villainSampleSize))
+    ? advice.villainSampleSize
+    : null;
+  return renderConfidenceBadge({ tier, sampleSize });
 };
