@@ -1508,10 +1508,17 @@
       width: 10px; height: 10px; border-radius: 50%;
       background: var(--border-subtle); transition: background 0.3s;
     }
-    .stage-dot.ok { background: var(--m-green); }
-    .stage-dot.warn { background: var(--m-yellow); }
-    .stage-dot.fail { background: var(--m-red); }
-    .stage-dot.unknown { background: var(--border-subtle); }
+
+    /* V-status §I axis-3 + R-1.11 — canonical pipeline-stage tier classes.
+       Concept-class-isolated from --m-* / --status-conn-* / --status-app-*
+       per INV-TOKEN-2. Replaces the legacy .stage-dot.{ok,warn,fail,unknown}
+       rules deleted at Gate 5 PR-8 once the single writer site
+       (renderPipelineHealth's setDot) emitted canonical classes via the
+       writePipelineStageDot helper in shared/render-status.js. */
+    .stage-dot.pipeline-ok      { background: var(--status-pipeline-ok); }
+    .stage-dot.pipeline-warn    { background: var(--status-pipeline-warn); }
+    .stage-dot.pipeline-fail    { background: var(--status-pipeline-fail); }
+    .stage-dot.pipeline-unknown { background: var(--status-pipeline-unknown); }
     .stage-label {
       color: var(--text-muted); font-size: var(--font-xs);
       text-transform: uppercase; letter-spacing: 0.5px;
@@ -1688,27 +1695,27 @@
   <div id="pipeline-health" class="pipeline-health hidden">
     <div class="pipeline-stages">
       <div class="pipeline-stage" id="stage-probe">
-        <div class="stage-dot unknown" id="stage-dot-probe"></div>
+        <div class="stage-dot pipeline-unknown" id="stage-dot-probe" data-pipeline-tier="unknown"></div>
         <span class="stage-label">Probe</span>
       </div>
       <div class="pipeline-connector"></div>
       <div class="pipeline-stage" id="stage-bridge">
-        <div class="stage-dot unknown" id="stage-dot-bridge"></div>
+        <div class="stage-dot pipeline-unknown" id="stage-dot-bridge" data-pipeline-tier="unknown"></div>
         <span class="stage-label">Bridge</span>
       </div>
       <div class="pipeline-connector"></div>
       <div class="pipeline-stage" id="stage-filter">
-        <div class="stage-dot unknown" id="stage-dot-filter"></div>
+        <div class="stage-dot pipeline-unknown" id="stage-dot-filter" data-pipeline-tier="unknown"></div>
         <span class="stage-label">Filter</span>
       </div>
       <div class="pipeline-connector"></div>
       <div class="pipeline-stage" id="stage-port">
-        <div class="stage-dot unknown" id="stage-dot-port"></div>
+        <div class="stage-dot pipeline-unknown" id="stage-dot-port" data-pipeline-tier="unknown"></div>
         <span class="stage-label">Port</span>
       </div>
       <div class="pipeline-connector"></div>
       <div class="pipeline-stage" id="stage-panel">
-        <div class="stage-dot unknown" id="stage-dot-panel"></div>
+        <div class="stage-dot pipeline-unknown" id="stage-dot-panel" data-pipeline-tier="unknown"></div>
         <span class="stage-label">Panel</span>
       </div>
     </div>

@@ -10,29 +10,33 @@
  *   - Gate 5 PR-6 migrated the remaining 4 axis-1 writers and deleted
  *     the bridge — all #status-dot paints flow through writeStatusDot /
  *     applyMonotonicTier and emit canonical .conn-* classes only.
- *   - Gate 5 PR-7 (this revision) ships the app-bridge axis-2 vocabulary
- *     (closed 2-tier register: synced / absent) + writeAppStatusBadge
- *     canonical writer + 2 production writer migrations
- *     (updateAppStatus + harness app-badge writer). Axis-2 is binary
- *     and authoritative — no monotonicity helper required since both
- *     writer sites are the unique source of truth for their respective
- *     surfaces (production = exploit-push driven; harness = fixture-
- *     driven). INV-STATUS-1 single-writer-per-slot is enforced by the
- *     writer-registry lint at side-panel/__tests__/status-writer-
- *     registry.test.js.
+ *   - Gate 5 PR-7 ships the app-bridge axis-2 vocabulary (closed 2-tier
+ *     register: synced / absent) + writeAppStatusBadge canonical writer
+ *     + 2 production writer migrations (updateAppStatus + harness app-
+ *     badge writer). Axis-2 is binary and authoritative — no monotonicity
+ *     helper required.
+ *   - Gate 5 PR-8 (this revision) ships the pipeline-stage axis-3
+ *     vocabulary (closed 4-tier register: ok / warn / fail / unknown)
+ *     + writePipelineStageDot canonical writer + renderPipelineHealth
+ *     setDot migration. The shell-spec outline declared a binary
+ *     {nominal, failed} shape; PR-8 promotes it to the 4-tier register
+ *     reflecting the codebase's actual operator-distinguishable states,
+ *     since `unknown` and `warn` each carry distinct actionable
+ *     information.
  *
  * Shell-spec source: docs/design/surfaces/sidebar-shell-spec.md §I.
  * Doctrine source:   docs/SIDEBAR_DESIGN_PRINCIPLES.md §1 R-1.11.
  *
- * Closes the canonical layer of the V-status §I axis-1 + axis-2
- * vocabulary; INV-STATUS-1 (single-writer per slot), INV-STATUS-2
- * (severity monotonicity within frame — applies to axis-1 only),
- * INV-STATUS-3 (no-lying-status / every cause value emits defined class)
- * covered at the helper layer. Currently-shipping bugs FM-STATUS-1 +
- * FM-STATUS-2 closed at PR-5.
+ * Closes the canonical layer of all 3 V-status §I axes;
+ * INV-STATUS-1 (single-writer per slot), INV-STATUS-2 (severity
+ * monotonicity within frame — applies to axis-1 only), INV-STATUS-3
+ * (no-lying-status / every cause value emits defined class) covered at
+ * the helper layer. Currently-shipping bugs FM-STATUS-1 + FM-STATUS-2
+ * closed at PR-5.
  *
- * Pipeline axis-3 (5-stage strip + per-stage nominal/failed register) is
- * deferred to PR-8.
+ * Pipeline visibility-gating, INV-STATUS-4 (connected-waiting 30s timer),
+ * INV-STATUS-5 (lastGoodExploits clearing-path) are deferred to follow-up
+ * PRs.
  */
 
 // ===========================================================================
@@ -192,4 +196,41 @@ export const writeAppStatusBadge = (badgeEl, tier) => {
   badgeEl.setAttribute('data-app-status-tier', tier);
   badgeEl.className = `app-status app-${tier}`;
   badgeEl.textContent = APP_TIER_TEXT[tier];
+};
+
+// ===========================================================================
+// AXIS-3 — PIPELINE-STAGE-HEALTH (V-status §I axis-3)
+// ===========================================================================
+// Closed 4-tier register. Each of the 5 capture-pipeline stages (probe /
+// bridge / filter / port / panel) reports its own state independently;
+// the strip composes 5 dots. The shell-spec outline declared a binary
+// {nominal, failed} shape — Gate 5 PR-8 promotes this to the 4-tier
+// vocabulary that matches the codebase's actual operator-distinguishable
+// states, since `unknown` (no signal yet) and `warn` (late but recoverable)
+// each carry distinct actionable information that collapsing to binary
+// would lose. Adding a new tier requires a doctrine amendment per R-1.11.
+
+export const STATUS_PIPELINE_TIERS = Object.freeze({
+  OK:      'ok',      // stage healthy
+  WARN:    'warn',    // late / reconnecting / recoverable
+  FAIL:    'fail',    // stage broken / unrecoverable
+  UNKNOWN: 'unknown', // no signal yet / boot-race
+});
+
+// ===========================================================================
+// writePipelineStageDot — canonical writer for #stage-dot-* slots
+// ===========================================================================
+// INV-STATUS-1 (single canonical writer per slot): renderPipelineHealth's
+// setDot is the sole production caller; the harness only toggles the
+// strip's container visibility, not individual stage dots. Each per-stage
+// computation in renderPipelineHealth is independently authoritative —
+// no monotonicity helper required (the stages don't write each other).
+
+export const writePipelineStageDot = (dotEl, tier) => {
+  if (!dotEl) return;
+  if (!Object.values(STATUS_PIPELINE_TIERS).includes(tier)) {
+    throw new Error(`pipeline-stage tier "${tier}" not in closed 4-tier register`);
+  }
+  dotEl.setAttribute('data-pipeline-tier', tier);
+  dotEl.className = `stage-dot pipeline-${tier}`;
 };

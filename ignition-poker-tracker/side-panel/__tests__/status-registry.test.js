@@ -36,11 +36,13 @@ import {
   STATUS_TIERS,
   STATUS_SEVERITY,
   STATUS_APP_TIERS,
+  STATUS_PIPELINE_TIERS,
   mapConnStateToTier,
   mapAppConnectedToTier,
   applyMonotonicTier,
   writeStatusDot,
   writeAppStatusBadge,
+  writePipelineStageDot,
 } from '../../shared/render-status.js';
 
 describe('§I status — closed 4-tier connection-state register (V-status §I)', () => {
@@ -337,5 +339,103 @@ describe('writeAppStatusBadge — canonical declaration emission', () => {
     writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
     expect(badge.classList.contains('app-synced')).toBe(true);
     expect(badge.classList.contains('app-absent')).toBe(false);
+  });
+});
+
+// =============================================================================
+// V-status §I axis-3 — PIPELINE-STAGE-HEALTH (Gate 5 PR-8)
+// =============================================================================
+// Closed 4-tier register reflecting the codebase's actual operator-
+// distinguishable states. The shell-spec outline declared a binary
+// {nominal, failed} shape; PR-8 promotes it to the 4-tier register since
+// `unknown` and `warn` each carry distinct actionable information.
+
+describe('§I status — closed 4-tier pipeline-stage register (axis-3)', () => {
+  it('exposes exactly 4 tiers', () => {
+    expect(Object.keys(STATUS_PIPELINE_TIERS)).toHaveLength(4);
+  });
+
+  it('the 4 tiers are ok / warn / fail / unknown', () => {
+    expect(Object.values(STATUS_PIPELINE_TIERS).sort()).toEqual(
+      ['fail', 'ok', 'unknown', 'warn'],
+    );
+  });
+
+  it('STATUS_PIPELINE_TIERS is frozen (closed register)', () => {
+    expect(Object.isFrozen(STATUS_PIPELINE_TIERS)).toBe(true);
+  });
+});
+
+describe('writePipelineStageDot — canonical declaration emission', () => {
+  const makeDot = () => {
+    const dot = document.createElement('div');
+    dot.className = 'stage-dot';
+    return dot;
+  };
+
+  it('sets data-pipeline-tier attribute', () => {
+    const dot = makeDot();
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    expect(dot.getAttribute('data-pipeline-tier')).toBe('ok');
+  });
+
+  it('emits canonical .pipeline-{tier} class', () => {
+    const dot = makeDot();
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.FAIL);
+    expect(dot.classList.contains('pipeline-fail')).toBe(true);
+  });
+
+  it('emits exactly 2 classes — structural .stage-dot + canonical .pipeline-{tier}', () => {
+    const dot = makeDot();
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.WARN);
+    expect(Array.from(dot.classList).sort()).toEqual(['pipeline-warn', 'stage-dot']);
+  });
+
+  it('does NOT emit legacy bare-token classes (.ok / .warn / .fail / .unknown)', () => {
+    // Defensive lock against PR-8 bridge regression: the canonical writer
+    // emits the namespaced .pipeline-* class; the bare tokens are gone.
+    const tiers = [
+      STATUS_PIPELINE_TIERS.OK,
+      STATUS_PIPELINE_TIERS.WARN,
+      STATUS_PIPELINE_TIERS.FAIL,
+      STATUS_PIPELINE_TIERS.UNKNOWN,
+    ];
+    for (const tier of tiers) {
+      const dot = makeDot();
+      writePipelineStageDot(dot, tier);
+      // The exact tier value (e.g., 'ok') must not appear as a standalone
+      // class; only the namespaced 'pipeline-ok' is allowed.
+      expect(dot.classList.contains(tier)).toBe(false);
+    }
+  });
+
+  it('preserves the structural .stage-dot class', () => {
+    const dot = makeDot();
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    expect(dot.classList.contains('stage-dot')).toBe(true);
+  });
+
+  it('throws on tier outside closed enumeration', () => {
+    const dot = makeDot();
+    expect(() => writePipelineStageDot(dot, 'green')).toThrow(
+      /not in closed 4-tier register/,
+    );
+  });
+
+  it('returns silently when called with no element', () => {
+    expect(() => writePipelineStageDot(null, STATUS_PIPELINE_TIERS.OK)).not.toThrow();
+  });
+
+  it('toggles between tiers cleanly (no class accumulation)', () => {
+    const dot = makeDot();
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.UNKNOWN);
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.WARN);
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.FAIL);
+    expect(dot.classList.contains('pipeline-unknown')).toBe(false);
+    expect(dot.classList.contains('pipeline-warn')).toBe(false);
+    expect(dot.classList.contains('pipeline-fail')).toBe(true);
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    expect(dot.classList.contains('pipeline-fail')).toBe(false);
+    expect(dot.classList.contains('pipeline-ok')).toBe(true);
   });
 });

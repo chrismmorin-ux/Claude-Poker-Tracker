@@ -55,6 +55,8 @@ import {
   writeStatusDot,
   mapAppConnectedToTier,
   writeAppStatusBadge,
+  STATUS_PIPELINE_TIERS,
+  writePipelineStageDot,
 } from '../shared/render-status.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
@@ -864,9 +866,14 @@ injectTokens();
     const now = Date.now();
     const detail = $('pipeline-detail');
 
-    const setDot = (id, state) => {
+    // V-status §I axis-3 (Gate 5 PR-8): every stage-dot paint flows
+    // through writePipelineStageDot. The tier string passed by callers
+    // ('ok'/'warn'/'fail'/'unknown') is validated against the closed
+    // STATUS_PIPELINE_TIERS register at the helper layer — an unknown
+    // tier throws, preventing silent class drift outside the register.
+    const setDot = (id, tier) => {
       const dot = $(`stage-dot-${id}`);
-      if (dot) dot.className = `stage-dot ${state}`;
+      writePipelineStageDot(dot, tier);
     };
 
     // No diagnostics at all — check SW fallback for more info

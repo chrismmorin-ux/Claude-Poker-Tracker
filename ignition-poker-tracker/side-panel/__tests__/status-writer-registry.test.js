@@ -3,19 +3,25 @@
  *
  * Doctrine v7 R-1.11 + INV-STATUS-1 (single canonical writer registry per
  * status slot). Co-shipping deliverable from V-status §I.12 (Gate 5 PR-6
- * for axis-1, extended at PR-7 for axis-2).
+ * for axis-1, extended at PR-7 for axis-2 + PR-8 for axis-3).
  *
- * Two axes covered:
+ * Three axes covered:
  *   - axis-1 (#status-dot): 5 writer sites migrated at PR-5/PR-6 to
  *     writeStatusDot / applyMonotonicTier. Closed 4-tier register.
  *   - axis-2 (#app-status): 2 writer sites migrated at PR-7 to
  *     writeAppStatusBadge. Closed 2-tier register.
+ *   - axis-3 (#stage-dot-*): single writer site (renderPipelineHealth's
+ *     setDot) migrated at PR-8 to writePipelineStageDot. Closed 4-tier
+ *     register.
  *
  * The lint is static — it scans production source for forbidden patterns:
- *   - No legacy color-literal class strings written to either slot.
+ *   - No legacy color-literal class strings written to any slot.
+ *   - No template-literal className builds (`stage-dot ${state}`) — the
+ *     canonical writer owns class composition.
  *   - No setAttribute('class', …) or classList.add(<tier>) bypass.
- *   - Every $('status-dot') / $('app-status') lookup must be paired
- *     with at least one canonical-writer call in the same file.
+ *   - Every $('status-dot') / $('app-status') / $('stage-dot-…') lookup
+ *     must be paired with at least one canonical-writer call in the
+ *     same file.
  *
  * Behavior under runtime conditions is covered by status-registry.test.js.
  *
@@ -74,20 +80,38 @@ const LEGACY_DOT_CLASS_LITERAL = /['"`]status-dot\s+(green|yellow|red)['"`]/g;
 // legacy `connected`/`disconnected` modifier (deleted at PR-7).
 const LEGACY_APP_CLASS_LITERAL = /['"`]app-status\s+(connected|disconnected)['"`]/g;
 
+// Match any string literal containing "stage-dot " followed by a bare
+// state token (matches the legacy `'stage-dot ok'` / `"stage-dot warn"`
+// patterns deleted at PR-8). The canonical writer emits `.pipeline-*`
+// namespaced classes; bare state tokens are forbidden post-migration.
+const LEGACY_STAGE_CLASS_LITERAL = /['"`]stage-dot\s+(ok|warn|fail|unknown)['"`]/g;
+
+// Match template-literal className builds with an interpolation slot:
+// `\`stage-dot \${state\}\`` would compose a class string outside the
+// canonical writer's vocabulary. The canonical writer takes a tier value
+// and emits the composed class internally; consumers should never
+// template-build a stage-dot class.
+const STAGE_TEMPLATE_LITERAL = /`stage-dot\s+\$\{/g;
+
 // Match any direct setAttribute('class', …) call (cross-namespace; this
 // is a tier-class bypass regardless of which element owns it — the
 // canonical writer registry never calls setAttribute('class')).
 // Combined with the import-presence check, ensures any new #status-dot
-// or #app-status consumer can't silently dispatch a class write.
+// / #app-status / #stage-dot-* consumer can't silently dispatch a class
+// write.
 const FORBIDDEN_SETATTR_CLASS = /\.setAttribute\s*\(\s*['"`]class['"`]\s*,/g;
 
 // Match `el.classList.add('<status-tier>')` / `.remove(` / `.toggle(`
 // calls. The canonical writers manage classes wholesale via .className =,
 // so per-class manipulation outside the registry would drift from the
 // closed register. Token list covers axis-1 (color-literal + canonical
-// .conn-*) and axis-2 (legacy connected/disconnected + canonical
-// .app-synced/.app-absent).
-const FORBIDDEN_CLASSLIST_OP = /\.classList\.(?:add|remove|toggle)\s*\(\s*['"`](?:green|yellow|red|conn-[a-z]+|connected|disconnected|app-synced|app-absent)['"`]/g;
+// .conn-*) + axis-2 (legacy connected/disconnected + canonical
+// .app-synced/.app-absent) + axis-3 (canonical .pipeline-{tier}). The
+// axis-3 bare state tokens (ok/warn/fail/unknown) are NOT in this list
+// because they're too common as standalone English words; the literal-
+// pattern lint above (LEGACY_STAGE_CLASS_LITERAL) covers them in the
+// stage-dot context.
+const FORBIDDEN_CLASSLIST_OP = /\.classList\.(?:add|remove|toggle)\s*\(\s*['"`](?:green|yellow|red|conn-[a-z]+|connected|disconnected|app-synced|app-absent|pipeline-(?:ok|warn|fail|unknown))['"`]/g;
 
 describe('§I status — writer-registry lint (Gate 5 PR-6+PR-7 V-status §I.12)', () => {
   for (const rel of SOURCES) {
@@ -111,6 +135,16 @@ describe('§I status — writer-registry lint (Gate 5 PR-6+PR-7 V-status §I.12)
 
       it('contains no legacy `app-status {connected|disconnected}` class literal', () => {
         const matches = noLineComments.match(LEGACY_APP_CLASS_LITERAL) || [];
+        expect(matches).toEqual([]);
+      });
+
+      it('contains no legacy `stage-dot {ok|warn|fail|unknown}` class literal', () => {
+        const matches = noLineComments.match(LEGACY_STAGE_CLASS_LITERAL) || [];
+        expect(matches).toEqual([]);
+      });
+
+      it('contains no template-literal `stage-dot ${…}` className build', () => {
+        const matches = noLineComments.match(STAGE_TEMPLATE_LITERAL) || [];
         expect(matches).toEqual([]);
       });
 
@@ -196,6 +230,34 @@ describe('§I status axis-2 — every #app-status lookup is paired with a regist
       const code = stripCommentsOnly(src);
       const lookups = (code.match(APP_STATUS_LOOKUP) || []).length;
       const writes = (code.match(APP_REGISTRY_CALL) || []).length;
+      if (lookups === 0) return; // pure module / no consumer surface
+      expect(writes).toBeGreaterThanOrEqual(1);
+    });
+  }
+});
+
+describe('§I status axis-3 — every #stage-dot-* lookup is paired with a registry write', () => {
+  // Positive contract check for axis-3 (Gate 5 PR-8): each pipeline-stage
+  // dot is canonically written via writePipelineStageDot. Any file that
+  // looks up a stage-dot element (literal or template-string id like
+  // `stage-dot-${id}`) must also call the helper at least once.
+
+  // Match both literal `$('stage-dot-probe')` and template
+  // `$(\`stage-dot-${id}\`)` lookup forms. The grouped alternation
+  // covers $() and getElementById().
+  const STAGE_DOT_LOOKUP = /\$\(\s*[`'"]stage-dot-[^`'")]*[`'"]\s*\)|getElementById\(\s*[`'"]stage-dot-[^`'")]*[`'"]\s*\)/g;
+  const PIPELINE_REGISTRY_CALL = /\bwritePipelineStageDot\s*\(/g;
+
+  const stripCommentsOnly = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+  for (const rel of SOURCES) {
+    it(`${rel} has at least one registry call when it looks up #stage-dot-*`, () => {
+      const src = readFileSync(resolve(REPO_DIR, rel), 'utf8');
+      const code = stripCommentsOnly(src);
+      const lookups = (code.match(STAGE_DOT_LOOKUP) || []).length;
+      const writes = (code.match(PIPELINE_REGISTRY_CALL) || []).length;
       if (lookups === 0) return; // pure module / no consumer surface
       expect(writes).toBeGreaterThanOrEqual(1);
     });

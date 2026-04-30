@@ -123,6 +123,18 @@ export const TOKENS = {
   'status-app-absent-bg':   'rgba(255, 152, 0, 0.15)',
   'status-app-absent-text': '#fbbf24',
 
+  // Pipeline-stage status tier (V-status §I axis-3 + R-1.11 — closed
+  // 4-tier register; concept-class-isolated from --status-conn-* /
+  // --status-app-* / --m-* per INV-TOKEN-2. Per-stage register reports
+  // independent stage health. Visual hex matches the legacy stage-dot
+  // colors so paint is preserved across the migration; PR-8 deletes the
+  // .stage-dot.{ok,warn,fail,unknown} legacy rules and binds
+  // .pipeline-* canonical classes to these tokens.
+  'status-pipeline-ok':      '#4ade80', // stage healthy
+  'status-pipeline-warn':    '#fbbf24', // late / reconnecting
+  'status-pipeline-fail':    '#f87171', // broken / unrecoverable
+  'status-pipeline-unknown': '#374151', // no signal yet (matches --border-subtle)
+
   // Tournament (demoted to neutral)
   'tournament-accent': '#6b7280',
 
