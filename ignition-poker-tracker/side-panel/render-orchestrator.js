@@ -182,7 +182,7 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     html += `</div>`; // uh-row1
   } else {
     // Live but no advice yet
-    html += `<div class="uh-row1"><div class="uh-action-side"><span style="color:var(--text-muted);font-size:var(--font-sm)">Analyzing\u2026</span></div></div>`;
+    html += `<div class="uh-row1"><div class="uh-action-side"><span style="color:var(--text-muted);font-size:var(--type-meta-stat)">Analyzing\u2026</span></div></div>`;
   }
 
   // Row 2: Cards

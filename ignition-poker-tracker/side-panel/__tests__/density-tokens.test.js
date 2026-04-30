@@ -77,3 +77,36 @@ describe('FM-DENSITY-1 — stale-badge WCAG SC 1.4.4 violation closure', () => {
     expect(staleBadgeRule[0]).toMatch(/font-size\s*:\s*var\(--type-meta-stat\)/);
   });
 });
+
+// =========================================================================
+// V-density §VI typography ladder sweep — PR-15 (2026-04-30)
+// =========================================================================
+// PR-15 migrated all sidebar render-path consumers from the legacy
+// 6-name --font-{micro,xs,sm,base,md,lg} tokens to the canonical 3-tier
+// --type-{display,body,meta-stat} ladder per shell-spec §VI.1. Value-
+// preserving at root 16px (--type-meta-stat = 0.6875rem = 11px;
+// --type-body = 0.875rem = 14px); the rem mandate per §VI.2 closes the
+// V-1 (c) accessibility gap (px ignores user OS-level font preferences +
+// browser zoom; rem respects per WCAG 2.1 SC 1.4.4 AA).
+
+describe('V-density §VI typography ladder sweep — PR-15 sidebar source files', () => {
+  const SOURCE_FILES = [
+    'side-panel.html',
+    'side-panel.js',
+    'render-orchestrator.js',
+    'render-tiers.js',
+    'render-street-card.js',
+  ];
+
+  for (const file of SOURCE_FILES) {
+    it(`${file} contains zero var(--font-*) references (sweep complete)`, () => {
+      const src = readFileSync(resolve(__dirname, '..', file), 'utf8');
+      // After PR-15 the canonical 3-tier ladder owns every font-size site
+      // in the sidebar render path. Reintroducing a --font-* reference
+      // re-fragments the closed §VI.1 register and re-opens the
+      // R-1.12 INV-DENSITY-1/2 enforcement gap.
+      const matches = src.match(/var\(--font-/g) || [];
+      expect(matches).toEqual([]);
+    });
+  }
+});

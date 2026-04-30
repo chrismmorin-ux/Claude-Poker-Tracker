@@ -245,29 +245,29 @@ const renderVillainContextHeader = (advice, liveContext, appSeatData, focusedVil
   const isMultiway = activeOpponents.length > 1;
 
   let html = `<div style="display:flex;align-items:center;gap:6px;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--divider-subtle)">`;
-  html += `<span style="font-size:var(--font-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:0.5px">${isMultiway ? 'Villain' : 'vs'}</span>`;
-  html += `<span style="font-weight:var(--weight-bold);color:var(--gold);font-size:var(--font-md)">S${villainSeat}</span>`;
+  html += `<span style="font-size:var(--type-meta-stat);color:var(--text-faint);text-transform:uppercase;letter-spacing:0.5px">${isMultiway ? 'Villain' : 'vs'}</span>`;
+  html += `<span style="font-weight:var(--weight-bold);color:var(--gold);font-size:var(--type-body)">S${villainSeat}</span>`;
   if (style) {
-    html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);padding:1px 4px;border-radius:3px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
+    html += `<span style="font-size:var(--type-meta-stat);font-weight:var(--weight-bold);padding:1px 4px;border-radius:3px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
   }
   if (sample > 0) {
-    html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);color:var(--text-faint)">${sample}h</span>`;
+    html += `<span style="font-family:Consolas,monospace;font-size:var(--type-meta-stat);color:var(--text-faint)">${sample}h</span>`;
   }
   if (isMultiway) {
-    html += `<span style="font-size:var(--font-micro);color:var(--text-faint);margin-left:auto">${activeOpponents.length} opponents</span>`;
+    html += `<span style="font-size:var(--type-meta-stat);color:var(--text-faint);margin-left:auto">${activeOpponents.length} opponents</span>`;
   }
   html += `</div>`;
 
   // Headline below context bar — always reserve height for layout stability
   if (headline) {
-    html += `<div style="font-size:var(--font-sm);color:var(--text-secondary);font-style:italic;margin-bottom:6px;line-height:1.3;min-height:18px">${escapeHtml(headline)}</div>`;
+    html += `<div style="font-size:var(--type-meta-stat);color:var(--text-secondary);font-style:italic;margin-bottom:6px;line-height:1.3;min-height:18px">${escapeHtml(headline)}</div>`;
   } else {
     html += `<div style="min-height:18px;margin-bottom:6px"></div>`;
   }
 
   // Disambiguation note — fixed slot to prevent layout shift
   if (adviceTargetsDifferent) {
-    html += `<div style="font-size:var(--font-xs);color:var(--text-muted);padding:2px 6px;margin-bottom:6px;border-radius:3px;background:var(--surface-inset)">Advice computed vs S${adviceSeat}</div>`;
+    html += `<div style="font-size:var(--type-meta-stat);color:var(--text-muted);padding:2px 6px;margin-bottom:6px;border-radius:3px;background:var(--surface-inset)">Advice computed vs S${adviceSeat}</div>`;
   } else {
     html += `<div style="height:0;overflow:hidden;margin:0;padding:0"></div>`;
   }
@@ -305,7 +305,7 @@ const renderActivePlayers = (liveContext, appSeatData) => {
     html += `<div style="display:flex;align-items:center;gap:3px;padding:2px 6px;background:var(--surface-inset);border-radius:4px;border:1px solid var(--border-default);font-size:9px">`;
     html += `<span style="font-weight:var(--weight-bold);color:var(--text-primary)">S${seat}</span>`;
     if (style) {
-      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);padding:0 3px;border-radius:2px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
+      html += `<span style="font-size:var(--type-meta-stat);font-weight:var(--weight-bold);padding:0 3px;border-radius:2px;background:${colors.bg};color:${colors.text}">${escapeHtml(style)}</span>`;
     }
     if (sample > 0) {
       html += `<span style="color:var(--text-faint)">${sample}h</span>`;
@@ -320,7 +320,7 @@ const renderActivePlayers = (liveContext, appSeatData) => {
   }
 
   if (overflow > 0) {
-    html += `<span style="display:flex;align-items:center;padding:2px 6px;background:var(--surface-inset);border-radius:4px;border:1px dashed var(--border-default);font-size:var(--font-xs);color:var(--text-faint)">+${overflow} more</span>`;
+    html += `<span style="display:flex;align-items:center;padding:2px 6px;background:var(--surface-inset);border-radius:4px;border:1px dashed var(--border-default);font-size:var(--type-meta-stat);color:var(--text-faint)">+${overflow} more</span>`;
   }
 
   html += `</div>`;
@@ -366,7 +366,7 @@ const renderActionTimeline = (liveContext) => {
     // Street label
     const stLabel = st === 'preflop' ? 'Pre' : st.charAt(0).toUpperCase() + st.slice(1);
     html += `<div style="display:flex;align-items:center;gap:3px;margin-bottom:2px;flex-wrap:wrap">`;
-    html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px;min-width:24px">${stLabel}</span>`;
+    html += `<span style="font-size:var(--type-meta-stat);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px;min-width:24px">${stLabel}</span>`;
 
     // Action chips
     for (const a of streetActions) {
@@ -376,9 +376,9 @@ const renderActionTimeline = (liveContext) => {
       const amt = a.amount > 0 ? `$${a.amount < 1 ? a.amount.toFixed(2) : a.amount.toFixed(0)}` : '';
       const border = isHeroAction ? ';border:1px solid var(--gold-dim)' : '';
       const fullAction = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-      html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
+      html += `<span style="font-family:Consolas,monospace;font-size:var(--type-meta-stat);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
       html += `S${a.seat}${label}`;
-      if (amt) html += `<span style="font-size:var(--font-micro);opacity:0.7">${amt}</span>`;
+      if (amt) html += `<span style="font-size:var(--type-meta-stat);opacity:0.7">${amt}</span>`;
       html += `</span>`;
     }
 
@@ -417,10 +417,10 @@ const renderCompactTimeline = (liveContext, currentStreet) => {
 
     if (!isCurrent) {
       // Past street: collapsed count chip
-      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--text-faint);padding:1px 3px;background:var(--surface-inset);border-radius:2px" title="${streetActions.length} actions">${stLabel} ${streetActions.length}</span>`;
+      html += `<span style="font-size:var(--type-meta-stat);font-weight:var(--weight-bold);color:var(--text-faint);padding:1px 3px;background:var(--surface-inset);border-radius:2px" title="${streetActions.length} actions">${stLabel} ${streetActions.length}</span>`;
     } else {
       // Current street: show action chips
-      html += `<span style="font-size:var(--font-micro);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px">${stLabel}</span>`;
+      html += `<span style="font-size:var(--type-meta-stat);font-weight:var(--weight-bold);color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.5px">${stLabel}</span>`;
       for (const a of streetActions) {
         const label = ACTION_LABELS[a.action] || '?';
         const color = ACTION_COLORS[a.action] || 'var(--text-faint)';
@@ -428,9 +428,9 @@ const renderCompactTimeline = (liveContext, currentStreet) => {
         const amt = a.amount > 0 ? `$${a.amount < 1 ? a.amount.toFixed(2) : a.amount.toFixed(0)}` : '';
         const border = isHeroAction ? ';border:1px solid var(--gold-dim)' : '';
         const fullAction = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-        html += `<span style="font-family:Consolas,monospace;font-size:var(--font-micro);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
+        html += `<span style="font-family:Consolas,monospace;font-size:var(--type-meta-stat);font-weight:600;color:${color};padding:0 2px;border-radius:2px;background:var(--surface-inset)${border}" title="Seat ${a.seat} ${fullAction}${amt ? ' ' + amt : ''}">`;
         html += `S${a.seat}${label}`;
-        if (amt) html += `<span style="font-size:var(--font-micro);opacity:0.7">${amt}</span>`;
+        if (amt) html += `<span style="font-size:var(--type-meta-stat);opacity:0.7">${amt}</span>`;
         html += `</span>`;
       }
     }
@@ -472,7 +472,7 @@ const renderHandPlanTree = (plan) => {
       </div>`;
     }
     if (b.scaryCards?.length > 0) {
-      html += `<div style="font-size:var(--font-xs);color:var(--m-yellow);margin-top:2px">Scary: ${escapeHtml(b.scaryCards.join(', '))}</div>`;
+      html += `<div style="font-size:var(--type-meta-stat);color:var(--m-yellow);margin-top:2px">Scary: ${escapeHtml(b.scaryCards.join(', '))}</div>`;
     }
     html += `</div>`;
   }
@@ -643,7 +643,7 @@ const renderPreflopContent = (advice, liveContext, appSeatData, focusedVillain) 
     if (vpStats?.tendency || stats) {
       html += `<div class="street-card-section">${renderSectionLabel('Villain Preflop')}`;
       if (vpStats?.tendency) {
-        html += `<div style="font-size:var(--font-base);color:var(--text-secondary);margin-bottom:4px;font-style:italic">${escapeHtml(vpStats.tendency)}</div>`;
+        html += `<div style="font-size:var(--type-meta-stat);color:var(--text-secondary);margin-bottom:4px;font-style:italic">${escapeHtml(vpStats.tendency)}</div>`;
       }
       if (stats) {
         const rows = [];
@@ -651,7 +651,7 @@ const renderPreflopContent = (advice, liveContext, appSeatData, focusedVillain) 
         if (stats.foldToCbet != null) rows.push(['F-CB', stats.foldToCbet + '%']);
         if (stats.threeBet != null) rows.push(['3-Bet', stats.threeBet + '%']);
         if (rows.length > 0) {
-          html += `<div style="display:flex;gap:12px;font-size:var(--font-sm)">`;
+          html += `<div style="display:flex;gap:12px;font-size:var(--type-meta-stat)">`;
           for (const [label, val] of rows) {
             html += `<span style="color:var(--text-muted)">${label}: <span style="color:var(--text-primary);font-weight:600">${val}</span></span>`;
           }
@@ -669,7 +669,7 @@ const renderPreflopContent = (advice, liveContext, appSeatData, focusedVillain) 
   html += renderTopVulnerability(advice?.villainProfile, advice?.villainSeat);
 
   if (!html) {
-    html = `<div style="color:var(--text-faint);text-align:center;padding:16px;font-size:var(--font-sm)">Waiting for action data\u2026</div>`;
+    html = `<div style="color:var(--text-faint);text-align:center;padding:16px;font-size:var(--type-meta-stat)">Waiting for action data\u2026</div>`;
   }
 
   return html;
@@ -686,7 +686,7 @@ const renderMultiwayEquity = (multiwayEquity) => {
   if (!multiwayEquity?.equity) return '';
   const eq = Math.round(multiwayEquity.equity * 100);
   const color = eq >= 50 ? 'var(--green)' : eq >= 30 ? 'var(--gold)' : 'var(--red)';
-  return `<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:var(--radius-md);background:var(--surface-inset);font-size:var(--font-xs)">
+  return `<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:var(--radius-md);background:var(--surface-inset);font-size:var(--type-meta-stat)">
     <span style="color:var(--text-faint)">vs All</span>
     <span style="color:${color};font-weight:600">${eq}%</span>
   </div>`;
@@ -795,10 +795,10 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
       : '';
     html += `<div class="street-card-section">`;
     html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">`;
-    html += `<span style="color:var(--text-muted);font-size:var(--font-sm)">S${focused.seat} equity</span>`;
-    html += `<span style="color:${eqColor};font-weight:700;font-size:var(--font-base)">${eqPct}%</span>`;
+    html += `<span style="color:var(--text-muted);font-size:var(--type-meta-stat)">S${focused.seat} equity</span>`;
+    html += `<span style="color:${eqColor};font-weight:700;font-size:var(--type-meta-stat)">${eqPct}%</span>`;
     if (widthStr) {
-      html += `<span style="color:var(--text-faint);font-size:var(--font-xs)">${widthStr}</span>`;
+      html += `<span style="color:var(--text-faint);font-size:var(--type-meta-stat)">${widthStr}</span>`;
     }
     html += `</div></div>`;
   }
@@ -863,7 +863,7 @@ const renderUnifiedStreetContent = (street, advice, liveContext, appSeatData, fo
 
   if (!html) {
     const streetLabel = street === 'preflop' ? 'action data' : street;
-    html = `<div style="color:var(--text-faint);text-align:center;padding:16px;font-size:var(--font-sm)">Waiting for ${streetLabel}\u2026</div>`;
+    html = `<div style="color:var(--text-faint);text-align:center;padding:16px;font-size:var(--type-meta-stat)">Waiting for ${streetLabel}\u2026</div>`;
   }
 
   return html;
@@ -960,7 +960,7 @@ const renderPreflopExtras = (advice, appSeatData, focusedVillain) => {
     if (vpStats?.tendency || stats) {
       html += `<div class="street-card-section">${renderSectionLabel('Villain Preflop')}`;
       if (vpStats?.tendency) {
-        html += `<div style="font-size:var(--font-base);color:var(--text-secondary);margin-bottom:4px;font-style:italic">${escapeHtml(vpStats.tendency)}</div>`;
+        html += `<div style="font-size:var(--type-meta-stat);color:var(--text-secondary);margin-bottom:4px;font-style:italic">${escapeHtml(vpStats.tendency)}</div>`;
       }
       if (stats) {
         const rows = [];
@@ -968,7 +968,7 @@ const renderPreflopExtras = (advice, appSeatData, focusedVillain) => {
         if (stats.foldToCbet != null) rows.push(['F-CB', stats.foldToCbet + '%']);
         if (stats.threeBet != null) rows.push(['3-Bet', stats.threeBet + '%']);
         if (rows.length > 0) {
-          html += `<div style="display:flex;gap:12px;font-size:var(--font-sm)">`;
+          html += `<div style="display:flex;gap:12px;font-size:var(--type-meta-stat)">`;
           for (const [label, val] of rows) {
             html += `<span style="color:var(--text-muted)">${label}: <span style="color:var(--text-primary);font-weight:600">${val}</span></span>`;
           }
@@ -1046,7 +1046,7 @@ const renderBetweenHandsContent = (appSeatData, focusedVillain, tournament, live
   }
 
   if (!html) {
-    html = `<div style="color:var(--text-faint);text-align:center;padding:20px;font-size:var(--font-sm)">Waiting for next hand\u2026</div>`;
+    html = `<div style="color:var(--text-faint);text-align:center;padding:20px;font-size:var(--type-meta-stat)">Waiting for next hand\u2026</div>`;
   }
 
   return html;

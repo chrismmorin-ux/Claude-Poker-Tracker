@@ -1571,15 +1571,15 @@ injectTokens();
     let promptHtml = '';
     if (!appConnected) {
       promptHtml = `<div class="street-card-section" style="text-align:center;padding:8px 0;border-top:1px solid var(--border-default);margin-top:6px">
-        <a href="#" id="launch-app-link" style="color:var(--gold);font-weight:bold;font-size:var(--font-sm);text-decoration:none;cursor:pointer">
+        <a href="#" id="launch-app-link" style="color:var(--gold);font-weight:bold;font-size:var(--type-meta-stat);text-decoration:none;cursor:pointer">
           Launch Poker Tracker \u2192
         </a>
-        <div style="font-size:var(--font-xs);color:var(--text-faint);margin-top:4px">
+        <div style="font-size:var(--type-meta-stat);color:var(--text-faint);margin-top:4px">
           Open app for exploit tips &amp; live advice
         </div>
       </div>`;
     } else {
-      promptHtml = `<div class="street-card-section" style="text-align:center;padding:4px 0;font-size:var(--font-xs);color:var(--text-faint)">
+      promptHtml = `<div class="street-card-section" style="text-align:center;padding:4px 0;font-size:var(--type-meta-stat);color:var(--text-faint)">
         App connected \u2014 analyzing opponents\u2026
       </div>`;
     }
@@ -1622,7 +1622,7 @@ injectTokens();
       html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">`;
       html += `<span style="font-weight:bold;color:var(--gold)">Seat ${seatNum}</span>`;
       html += `<span class="uh-style-badge" style="background:${colors.bg};color:${colors.text}">${style}</span>`;
-      if (seatStats?.sampleSize) html += `<span style="font-size:var(--font-xs);color:var(--text-faint)">${seatStats.sampleSize}h</span>`;
+      if (seatStats?.sampleSize) html += `<span style="font-size:var(--type-meta-stat);color:var(--text-faint)">${seatStats.sampleSize}h</span>`;
       html += `</div>`;
     } else {
       html += `<div style="font-weight:bold;color:var(--gold);margin-bottom:6px">Seat ${seatNum}</div>`;
@@ -1635,7 +1635,7 @@ injectTokens();
       html += `<div class="seat-popover-headline">${escapeHtml(app.villainHeadline)}</div>`;
     }
     if (vp?.maturityLabel) {
-      html += `<div style="font-size:var(--font-xs);color:var(--text-muted);margin-bottom:4px">${escapeHtml(vp.maturityLabel)} (${vp.totalObservations || 0} obs)</div>`;
+      html += `<div style="font-size:var(--type-meta-stat);color:var(--text-muted);margin-bottom:4px">${escapeHtml(vp.maturityLabel)} (${vp.totalObservations || 0} obs)</div>`;
     }
     if (vp?.decisionModelDescription) {
       html += `<div class="seat-popover-trait">${escapeHtml(vp.decisionModelDescription)}</div>`;
@@ -1644,14 +1644,14 @@ injectTokens();
     // Basic stats (always available from local capture, even without app)
     if (seatStats && seatStats.sampleSize > 0) {
       html += `<div class="seat-popover-label">Stats</div>`;
-      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--font-sm)">`;
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat)">`;
       if (seatStats.vpip != null) html += `<span style="color:var(--text-muted)">VPIP</span><span style="font-weight:600">${seatStats.vpip}%</span>`;
       if (seatStats.pfr != null) html += `<span style="color:var(--text-muted)">PFR</span><span style="font-weight:600">${seatStats.pfr}%</span>`;
       if (seatStats.af != null) html += `<span style="color:var(--text-muted)">AF</span><span style="font-weight:600">${seatStats.af === Infinity ? '\u221E' : seatStats.af.toFixed(1)}</span>`;
       html += `</div>`;
       // App-provided stats
       if (app?.stats) {
-        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--font-sm);margin-top:2px">`;
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat);margin-top:2px">`;
         if (app.stats.cbet != null) html += `<span style="color:var(--text-muted)">C-Bet</span><span style="font-weight:600">${app.stats.cbet}%</span>`;
         if (app.stats.foldToCbet != null) html += `<span style="color:var(--text-muted)">Fold CB</span><span style="font-weight:600">${app.stats.foldToCbet}%</span>`;
         html += `</div>`;
