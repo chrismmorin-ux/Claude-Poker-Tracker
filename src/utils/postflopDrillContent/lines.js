@@ -1503,10 +1503,13 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
           body:
             'HU BTN-vs-BB on J85r, cbet frequency is ~75% at 33% pot. 3-way, '
             + 'the math inverts: if each villain continues 50% vs 33% bet, '
-            + 'P(both fold) = 0.25. Bluff-only cbets need 50%+ fold equity '
-            + 'to break even at this size — we\'re nowhere near that. Plus, '
-            + 'when someone DOES continue, we face two ranges instead of '
-            + 'one — the probability someone has you beat rises.',
+            + 'P(both fold) = 0.25. Bluff-only cbets at 33% sizing need 25% '
+            + 'fold equity to break even — we\'re right at that threshold, '
+            + 'so any reduction in per-villain fold rate (even to 45%) turns '
+            + 'the bluff -EV. Add tiny error bars and the bluff starts '
+            + 'bleeding. Plus, when someone DOES continue, we face two '
+            + 'ranges instead of one — the probability someone has you beat '
+            + 'rises.',
         },
         {
           kind: 'adjust',
@@ -1574,7 +1577,7 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
       id: 'turn_after_cbet',
       street: 'turn',
       board: ['J♠', '8♥', '5♦', '2♣'],
-      pot: 25.0,
+      pot: 20.0,
       villainAction: { kind: 'check' },
       frameworks: ['equity_redistribution', 'nut_necessity'],
       sections: [
@@ -1582,12 +1585,13 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
           kind: 'prose',
           heading: 'One villain called flop. Turn 2♣ brick. Both check to hero.',
           body:
-            'BB called the flop cbet; SB folded. The hand is now effectively '
-            + 'HU (BTN vs BB) on the turn. But the lesson is in the preflop '
-            + 'calibration — if we\'d cbet the wider HU-style range, we\'d '
-            + 'have needed to barrel turn with hands that don\'t want to, '
-            + 'or give up lots of equity on rivers. The polar cbet puts '
-            + 'us in control.',
+            'BB called the flop cbet; SB folded. Pot 20 reflects flop_root '
+            + 'pot 10 + hero 5bb cbet + BB call 5bb (SB folded). The hand is '
+            + 'now effectively HU (BTN vs BB) on the turn. But the lesson is '
+            + 'in the preflop calibration — if we\'d cbet the wider HU-style '
+            + 'range, we\'d have needed to barrel turn with hands that don\'t '
+            + 'want to, or give up lots of equity on rivers. The polar cbet '
+            + 'puts us in control.',
         },
         {
           kind: 'why',
@@ -1656,7 +1660,10 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
             + 'into the checked-back pot" spot — uncomfortable because '
             + 'we\'re sandwiched: SB represents something, BB can check-raise '
             + 'or call-and-trap. But pot odds are reasonable and our '
-            + 'range has equity.',
+            + 'range has equity. Caveat: solver donk-leads after a checked-back '
+            + 'flop OOP-MW are <5% frequency; live pool leads more (estimated '
+            + '5-12% MW-SRP, stake-dependent), which is why this spot is '
+            + 'authored.',
         },
         {
           kind: 'why',
@@ -1710,7 +1717,7 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
       id: 'river_after_mw_barrel',
       street: 'river',
       board: ['J♠', '8♥', '5♦', '2♣', '7♠'],
-      pot: 20.0,
+      pot: 25.0,
       villainAction: { kind: 'check' },
       frameworks: ['nut_necessity'],
       sections: [
@@ -1720,10 +1727,12 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
           body:
             'Both villains check river. BB\'s check after turn-call-river '
             + 'indicates weak — his turn call range was pairs + draws, the '
-            + '7♠ didn\'t complete straight draws he\'d have (76s did, but '
-            + 'T9s/64s missed). SB\'s check-check-give-up line on a turn '
-            + 'he led is classic give-up after failing to fold out BB + '
-            + 'hero.',
+            + '7♠ didn\'t complete the straight draws he\'d have (T9s did '
+            + 'make 7-8-9-T-J; 76s needs a 9 or 4 to straighten, not the 7). '
+            + 'SB\'s check-check-give-up line on a turn he led is classic '
+            + 'give-up after failing to fold out BB + hero. Pot 25 reflects '
+            + 'turn_after_checkback pot 10 + SB lead 5bb + hero call 5bb + '
+            + 'BB call 5bb.',
         },
         {
           kind: 'why',
@@ -1873,9 +1882,11 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
           kind: 'prose',
           heading: 'Overfold vs MW lead',
           body:
-            'Folding TPTK vs a 50% lead in 3-way is a leak of ~4bb/100 '
-            + 'at the scale this matters. SB\'s lead range is too wide to '
-            + 'give up TPTK. Default is call; fold only vs known nit.',
+            'Folding TPTK vs a 50% lead in 3-way is a material EV leak at '
+            + 'any live stake — the call realizes ~60% equity in a spot that '
+            + 'comes up often enough that small mistakes compound. SB\'s '
+            + 'lead range is too wide to give up TPTK. Default is call; fold '
+            + 'only vs known nit.',
         },
       ],
     },
