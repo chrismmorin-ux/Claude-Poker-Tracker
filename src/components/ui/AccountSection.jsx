@@ -13,6 +13,19 @@ import { PasswordInput } from './PasswordInput';
 import { AUTH_PROVIDERS, MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
 import { GOLD } from '../../constants/designTokens';
 
+// W4-A4-F9: persistent dismissal of the guest-mode Sign-In pitch. Local-first
+// users who decline once shouldn't re-read the pitch on every Settings visit.
+// Storage key follows the project's <componentName>.<intent> convention.
+const DISMISSED_STORAGE_KEY = 'accountSection.dismissed';
+
+const loadInitialDismissed = () => {
+  try {
+    return localStorage.getItem(DISMISSED_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowToast }) => {
   const {
     user,
@@ -29,6 +42,17 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
     deleteAccount,
     clearError,
   } = useAuth();
+
+  // W4-A4-F9: persistent guest-pitch dismissal.
+  const [dismissed, setDismissed] = useState(loadInitialDismissed);
+  const handleDismissPitch = useCallback(() => {
+    try {
+      localStorage.setItem(DISMISSED_STORAGE_KEY, '1');
+    } catch {
+      // localStorage unavailable (private mode, quota exceeded) — silent.
+    }
+    setDismissed(true);
+  }, []);
 
   // Password change form state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -151,6 +175,21 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
 
   // GUEST VIEW: Show sign-in/create account options
   if (isGuest) {
+    // W4-A4-F9: dismissed-state footer link. Compact re-entry path for users
+    // who chose "I'll stay local" — they can always click through to sign in.
+    if (dismissed) {
+      return (
+        <div className="text-center py-2">
+          <button
+            onClick={onNavigateToLogin}
+            className="text-xs text-gray-500 hover:text-gray-300 underline"
+          >
+            Sign in to sync across devices
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-gray-800 rounded-lg p-5">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD }}>
@@ -179,6 +218,15 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
             className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
           >
             Create Account
+          </button>
+        </div>
+
+        <div className="text-center mt-3">
+          <button
+            onClick={handleDismissPitch}
+            className="text-xs text-gray-500 hover:text-gray-300 underline"
+          >
+            I&apos;ll stay local
           </button>
         </div>
       </div>
