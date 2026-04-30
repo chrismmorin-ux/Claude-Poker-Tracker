@@ -2243,11 +2243,11 @@ const LINE_CO_VS_BTN_BB_SRP_MW_OOP = {
       villainAction: null,
       frameworks: ['bluff_frequency_collapse', 'position_with_callers', 'hand_class_shift'],
       sections: [
-        { kind: 'prose', heading: '3-way on dry Q53r. Hero CO acts first OOP after BB checks.', body: 'Q53r is dry and high-card; hero has nut advantage over BB but BTN also has broadway range. Hero is sandwiched between BB (behind for OOP) and BTN (behind for IP). Decisions are harder than HU.' },
-        { kind: 'adjust', heading: 'Against tight BTN flats', body: 'BTN flat vs CO is polar: pocket pairs + suited broadways/connectors. Broadways rarely hit Q53 hard. Range-bet small works; BTN folds a lot.' },
+        { kind: 'prose', heading: '3-way on dry Q53r — hero CO sandwiched between BB and BTN', body: 'BB checks first (OOP, range-wide on this texture). Hero CO acts second. BTN is IP and still to act behind. This is the "sandwiched" configuration: BB has already acted (won\'t act again until next street) and BTN is the live opponent ahead in next-decision. Q53r is dry and high-card; hero has nut advantage over BB and parity with BTN\'s broadway-heavy flat range. Decisions are harder than HU.' },
+        { kind: 'adjust', heading: 'Against tight BTN flats', body: 'BTN flat vs CO is polar: pocket pairs + suited broadways/connectors. Broadways rarely hit Q53 hard. Range-bet 50% still works here (BTN folds a lot to any cbet size); the question is whether the extra value from larger sizing outweighs the occasional call from broadway-pairs. Polar 50% slightly preferred for extraction.' },
       ],
       decision: {
-        prompt: 'Hero CO acts first OOP with A♠Q♣.',
+        prompt: 'Hero CO acts second (after BB checks) with A♠Q♣.',
         branches: [
           { label: 'Cbet 50% pot — polar value-focused', nextId: 'turn_after_cbet', correct: true, rationale: 'Correct. TPTK has enough equity and value vs MW range; polar sizing keeps hero\'s range clean.' },
           { label: 'Cbet 33% pot wide', nextId: 'terminal_wide_cbet_oop_mw', correct: false, rationale: 'Wide cbets OOP 3-way burn EV — hero can\'t realize equity as well, and bluffs die.' },
@@ -2259,11 +2259,11 @@ const LINE_CO_VS_BTN_BB_SRP_MW_OOP = {
       id: 'turn_after_cbet',
       street: 'turn',
       board: ['Q♥', '5♠', '3♦', '8♣'],
-      pot: 25.0,
+      pot: 20.0,
       villainAction: null,
       frameworks: ['nut_necessity'],
       sections: [
-        { kind: 'prose', heading: 'Turn 8♣ brick, one villain called, one folded.', body: 'Effectively HU after flop. Hero\'s AQ still ahead of continuing range (weak Qx, second pair).' },
+        { kind: 'prose', heading: 'Turn 8♣ brick, one villain called, one folded.', body: 'Effectively HU after flop. Hero\'s AQ still ahead of continuing range (weak Qx, second pair). Pot 20 reflects flop_root pot 10 + hero 5bb cbet + one-villain-call 5bb (the other villain folded).' },
       ],
       decision: {
         prompt: 'Hero\'s turn play?',
@@ -2274,11 +2274,11 @@ const LINE_CO_VS_BTN_BB_SRP_MW_OOP = {
         ],
       },
     },
-    terminal_thin_value_mw_oop: { id: 'terminal_thin_value_mw_oop', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 25.0, sections: [{ kind: 'prose', heading: 'Thin value in MW-turned-HU', body: 'Handling the MW-to-HU transition correctly is key.' }] },
+    terminal_thin_value_mw_oop: { id: 'terminal_thin_value_mw_oop', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 20.0, sections: [{ kind: 'prose', heading: 'Thin value in MW-turned-HU', body: 'Handling the MW-to-HU transition correctly is key.' }] },
     terminal_wide_cbet_oop_mw: { id: 'terminal_wide_cbet_oop_mw', street: 'flop', board: ['Q♥', '5♠', '3♦'], pot: 10.0, sections: [{ kind: 'prose', heading: 'Wide MW cbet OOP leak', body: 'Bluffs die, equity unrealized.' }] },
     terminal_checkback_oop_mw: { id: 'terminal_checkback_oop_mw', street: 'flop', board: ['Q♥', '5♠', '3♦'], pot: 10.0, sections: [{ kind: 'prose', heading: 'Nut advantage forfeit', body: 'Dry high-card boards want some bets from OOP PFR.' }] },
-    terminal_checkback_mw_oop_turn: { id: 'terminal_checkback_mw_oop_turn', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 25.0, sections: [{ kind: 'prose', heading: 'Passive turn', body: 'Value missed; capped ranges want you to bet.' }] },
-    terminal_overbet_mw_oop: { id: 'terminal_overbet_mw_oop', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 25.0, sections: [{ kind: 'prose', heading: 'Oversizing', body: 'Condensed villain range punishes overbets.' }] },
+    terminal_checkback_mw_oop_turn: { id: 'terminal_checkback_mw_oop_turn', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 20.0, sections: [{ kind: 'prose', heading: 'Passive turn', body: 'Value missed; capped ranges want you to bet.' }] },
+    terminal_overbet_mw_oop: { id: 'terminal_overbet_mw_oop', street: 'turn', board: ['Q♥', '5♠', '3♦', '8♣'], pot: 20.0, sections: [{ kind: 'prose', heading: 'Oversizing', body: 'Condensed villain range punishes overbets.' }] },
   },
 };
 
