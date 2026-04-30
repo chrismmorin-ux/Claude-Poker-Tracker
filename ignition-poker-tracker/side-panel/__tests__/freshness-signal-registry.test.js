@@ -452,3 +452,127 @@ describe('renderConfidenceForFreshness — V-2.4 carry-forward gate (PR-13)', ()
       .toThrow(/not in closed 5-tier register/);
   });
 });
+
+// =========================================================================
+// V-3 §II RT-68/69 rejection wiring — PR-17 (2026-04-30)
+// =========================================================================
+// PR-17 wires the REJECTED freshness tier to RenderCoordinator's
+// handleAdvice rejection paths + RT-69 _pendingAdvice force-clear at
+// hand-new boundary. The state slot `lastRejectionAt` is set on rejection
+// and cleared on accept / hand-new / table-switch. INV-FRESH-5
+// (rejection-is-visible) requires STALE_ADVICE.visibleRejection: true.
+
+describe('V-3 §II RT-68/69 — RenderCoordinator rejection state machine (PR-17)', () => {
+  // Direct import to avoid the side-panel.js IIFE — the coordinator's
+  // rejection-event surface is what we exercise here.
+  const buildCoord = async () => {
+    const { RenderCoordinator } = await import('../render-coordinator.js');
+    let now = 1000;
+    return new RenderCoordinator({
+      renderFn: () => {},
+      getTimestamp: () => now,
+      requestFrame: (cb) => setTimeout(cb, 0),
+      setTimeout: (cb, ms) => setTimeout(cb, ms),
+      clearTimeout: (id) => clearTimeout(id),
+      _setNow: (t) => { now = t; },
+    });
+  };
+
+  const liveCtx = (street = 'flop', handNumber = 100, state = 'FLOP') => ({
+    state,
+    currentStreet: street,
+    heroSeat: 1,
+    pot: 20,
+    foldedSeats: [],
+    actionSequence: [],
+    activeSeatNumbers: [1, 3, 5],
+    communityCards: ['Ah', 'Kh', '7c'],
+    handNumber,
+  });
+
+  const advice = (street = 'flop', handNumber = 100) => ({
+    currentStreet: street,
+    handNumber,
+    villainSeat: 3,
+    recommendations: [{ action: 'bet', ev: 5.2 }],
+  });
+
+  it('lastRejectionAt is null on a fresh coordinator', async () => {
+    const coord = await buildCoord();
+    expect(coord.get('lastRejectionAt')).toBe(null);
+  });
+
+  it('cross-hand contamination stamps lastRejectionAt (RT-68 path 1)', async () => {
+    const coord = await buildCoord();
+    coord.handleLiveContext(liveCtx('flop', 100));
+    expect(coord.get('lastRejectionAt')).toBe(null);
+    // Advice for a different hand (101) than the locked hand (100)
+    coord.handleAdvice(advice('flop', 101));
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+  });
+
+  it('stale-earlier-street advice stamps lastRejectionAt (RT-68 path 2)', async () => {
+    const coord = await buildCoord();
+    coord.handleLiveContext(liveCtx('turn', 100));
+    coord.handleAdvice(advice('flop', 100)); // earlier street
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+  });
+
+  it('successful accept clears lastRejectionAt', async () => {
+    const coord = await buildCoord();
+    coord.handleLiveContext(liveCtx('flop', 100));
+    coord.handleAdvice(advice('flop', 999)); // cross-hand → rejected
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+    coord.handleAdvice(advice('flop', 100)); // matching → accepted
+    expect(coord.get('lastRejectionAt')).toBe(null);
+  });
+
+  it('clearForTableSwitch nulls lastRejectionAt', async () => {
+    const coord = await buildCoord();
+    coord.handleLiveContext(liveCtx('flop', 100));
+    coord.handleAdvice(advice('flop', 999)); // cross-hand → rejected
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+    coord.clearForTableSwitch();
+    expect(coord.get('lastRejectionAt')).toBe(null);
+  });
+
+  it('hand-new boundary clears lastRejectionAt when no pending advice', async () => {
+    const coord = await buildCoord();
+    coord.handleLiveContext(liveCtx('flop', 100));
+    coord.handleAdvice(advice('flop', 999));
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+    // New hand boundary (PREFLOP) — no pending advice held → rejection clears
+    coord.handleLiveContext(liveCtx('preflop', 101, 'PREFLOP'));
+    expect(coord.get('lastRejectionAt')).toBe(null);
+  });
+
+  it('RT-69 force-clear of pending advice stamps lastRejectionAt at hand boundary', async () => {
+    const coord = await buildCoord();
+    // Send advice with no live context — held in _pendingAdvice
+    coord.handleAdvice(advice('flop', 100));
+    expect(coord.get('lastRejectionAt')).toBe(null); // no rejection yet (just held)
+    // New hand boundary arrives — pending advice is force-cleared (it was
+    // for a different hand than the one that just started)
+    coord.handleLiveContext(liveCtx('preflop', 200, 'PREFLOP'));
+    // RT-69 force-clear stamped a rejection (the held advice was discarded)
+    expect(coord.get('lastRejectionAt')).toBeTruthy();
+  });
+
+  it('lastRejectionAt is surfaced in buildSnapshot', async () => {
+    const coord = await buildCoord();
+    expect(coord.buildSnapshot().lastRejectionAt).toBe(null);
+    coord.handleLiveContext(liveCtx('flop', 100));
+    coord.handleAdvice(advice('flop', 999));
+    expect(coord.buildSnapshot().lastRejectionAt).toBeTruthy();
+  });
+});
+
+describe('V-3 §II — STALE_ADVICE.visibleRejection alignment with INV-FRESH-5 (PR-17)', () => {
+  it('FRESH_SIGNAL_REGISTRY.STALE_ADVICE.visibleRejection is true', () => {
+    // INV-FRESH-5: "rejection is visible" — RT-68/69 SW-replay rejection
+    // surfaces as `rejected` tier, distinct from `unknown`. The stale-
+    // badge is the canonical Z2-action-bar consumer; its registry entry
+    // must declare visibleRejection: true to align.
+    expect(FRESH_SIGNAL_REGISTRY.STALE_ADVICE.visibleRejection).toBe(true);
+  });
+});

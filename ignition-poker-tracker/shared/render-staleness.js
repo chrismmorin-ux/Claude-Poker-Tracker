@@ -77,7 +77,14 @@ export const FRESH_SIGNAL_REGISTRY = Object.freeze({
     mechanism: FRESHNESS_MECHANISMS.TIMER_DRIVEN_AGING,
     clearingPath: 'new advice push OR table-switch lifecycle event',
     singleWriter: 'side-panel.js#updateStaleAdviceBadge',
-    visibleRejection: false,        // stale-advice never escalates to REJECTED tier
+    // V-3 §II RT-68/69 (Gate 5 PR-17): aligned with INV-FRESH-5 (rejection
+    // is visible) — the stale-badge surfaces the REJECTED tier when
+    // classifyFreshness returns it. The badge's `class="stale-badge
+    // fresh-tier-rejected"` resolves to --fresh-tier-rejected hex; the
+    // text becomes "Rejected" via getStaleBadgeText. Pre-PR-17 this
+    // field declared `false` (the wiring was deferred); the spec INV
+    // mandates true and PR-17 closes the gap.
+    visibleRejection: true,
   }),
   STALE_CONTEXT: Object.freeze({
     name: 'stale-context',

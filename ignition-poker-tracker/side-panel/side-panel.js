@@ -1160,7 +1160,15 @@ injectTokens();
    * without duplicate maintenance.
    */
   const computeAdviceStaleness = (advice, ctx, now = Date.now()) => {
-    const coordState = { staleContext: coordinator.get('staleContext') === true };
+    // V-3 §II RT-68/69 (Gate 5 PR-17): surface the REJECTED tier when
+    // the coordinator stamped a recent rejection. lastRejectionAt is
+    // null in steady state and a number on the most recent
+    // rejection-event boundary; perHand clearing path nulls it on
+    // accept / hand-new / table-switch (per STATE_FIELD_SCOPES).
+    const coordState = {
+      staleContext: coordinator.get('staleContext') === true,
+      rejected: coordinator.get('lastRejectionAt') != null,
+    };
     const tier = classifyFreshness(advice, ctx, coordState, now);
     const ageMs = advice?._receivedAt ? now - advice._receivedAt : null;
 

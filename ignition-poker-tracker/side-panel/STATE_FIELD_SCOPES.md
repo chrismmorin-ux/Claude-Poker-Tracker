@@ -63,6 +63,7 @@ Cleared by the hand-new block in `handleLiveContext` (on state transition into P
 - `rangeSelectedSeat`
 - `panels` — FSM state map, cleared via dispatchHandNew fan-out
 - `seatPopoverDetail` — cleared via FSM transition on hand-new
+- `lastRejectionAt` — V-3 §II RT-68/69 rejection timestamp (Gate 5 PR-17). Set in `handleAdvice`'s 2 rejection paths (cross-hand contamination + stale-earlier-street) and at the RT-69 hand-new force-clear of `_pendingAdvice`. Cleared on accepted advice push (rejection no longer recent), on the hand-new boundary (perHand), and on `clearForTableSwitch` (per-table superset). Drives the REJECTED freshness tier per `classifyFreshness` + INV-FRESH-5.
 
 All perHand fields are also cleared by `clearForTableSwitch` (a table switch is a superset of a hand boundary).
 

@@ -131,6 +131,15 @@ export class RenderCoordinator {
       // Between-hands Mode A timer state
       modeAExpired: false,
       modeATimerActive: false,
+      // V-3 §II RT-68/69 (Gate 5 PR-17): timestamp of the most recent
+      // advice rejection (RT-68 cross-hand-contamination + RT-68 stale-
+      // earlier-street + RT-69 _pendingAdvice force-clear at hand boundary).
+      // Drives the REJECTED freshness tier surface per shell-spec §II.1 +
+      // INV-FRESH-5 visible-rejection requirement. Cleared on accepted
+      // advice push (rejection no longer recent) + hand-new boundary +
+      // table-switch. perHand scope so a stale rejection from a prior hand
+      // doesn't bleed into the next.
+      lastRejectionAt: null,
       // V-status §I INV-STATUS-4 (Gate 5 PR-9): connected-waiting timeout.
       // When connected with a table but no hands for 30s, escalate the
       // status text to suggest a reload. Cleared via clearConnectedWaitingTimer
@@ -295,6 +304,9 @@ export class RenderCoordinator {
       // V-status §I INV-STATUS-4: surface the timeout flag so renderers can
       // override status text to "Tracking — no hands in 30s; reload may help".
       connectedWaitingExpired: s.connectedWaitingExpired,
+      // V-3 §II RT-68/69 (Gate 5 PR-17): surface the rejection timestamp
+      // so classifyFreshness can resolve the REJECTED tier downstream.
+      lastRejectionAt: s.lastRejectionAt,
       // RT-66 + STP-1: violation surfacing. Both counters exposed — the
       // badge uses `violationCount30s`; diag dumps and governance reports
       // show `violationCountLifetime`. Window is computed at snapshot time
@@ -401,6 +413,11 @@ export class RenderCoordinator {
       snap.recoveryMessage ? 1 : 0,
       snap.connState?.connected ? 1 : 0,
       snap.staleContext ? 1 : 0,
+      // V-3 §II RT-68/69 (PR-17): rejection presence forces a renderKey
+      // diff so classifyFreshness's REJECTED tier surfaces in the next
+      // render frame. Boolean projection keeps the key stable when the
+      // rejection persists (only state transitions matter).
+      snap.lastRejectionAt ? 1 : 0,
       snap.hasTableHands ? 1 : 0,
       // Flag flips must force a re-render (debug-diagnostics toggles
       // 0.7 footer + 4.3 audit panel visibility).
@@ -602,6 +619,10 @@ export class RenderCoordinator {
     const adviceHand = adviceMsg.handNumber ?? null;
     if (lockedHand != null && adviceHand != null && lockedHand !== adviceHand) {
       this.logPipelineEvent('advice_rejected', `cross-hand: ${adviceHand} vs locked ${lockedHand}`);
+      // V-3 §II RT-68 (PR-17): cross-hand contamination is a hard rejection.
+      // Stamp lastRejectionAt so classifyFreshness surfaces the REJECTED
+      // freshness tier on the next render.
+      this._state.lastRejectionAt = this._getTimestamp();
       return false;
     }
 
@@ -623,12 +644,22 @@ export class RenderCoordinator {
         this._state.advicePendingForStreet = null;
       }
       this._pendingAdvice = null;
+      // V-3 §II RT-68 (PR-17): a successful accept invalidates any prior
+      // rejection — the system is back in sync. classifyFreshness will
+      // resolve to LIVE/AGING based on age once lastRejectionAt clears.
+      this._state.lastRejectionAt = null;
       this.logPipelineEvent('advice_accepted', adviceStreet);
       return true;
     }
 
     // Earlier street — stale within same hand, reject outright
     if (adviceRank >= 0 && liveRank >= 0 && adviceRank < liveRank) {
+      // V-3 §II RT-68 (PR-17): stale-earlier-street is also a rejection
+      // path per shell-spec §II.1. SW reanimation could replay an earlier-
+      // street advice from this hand; surface the rejection so the user
+      // knows a payload was dropped.
+      this.logPipelineEvent('advice_rejected', `stale-earlier: ${adviceStreet} vs live ${liveStreet}`);
+      this._state.lastRejectionAt = this._getTimestamp();
       return false;
     }
 
@@ -695,6 +726,12 @@ export class RenderCoordinator {
     // advice street MATCHES the live context street (same hand). If advice
     // is from a later street (e.g., river advice when live is preflop),
     // it's stale from a previous hand — discard it.
+    // V-3 §II RT-69 (PR-17): capture pending-advice presence at entry.
+    // The promotion block below clears `_pendingAdvice` regardless of
+    // whether promotion succeeded; this flag preserves the pre-attempt
+    // signal so the hand-new boundary block can stamp lastRejectionAt
+    // when the boundary force-cleared a held payload (RT-69).
+    const hadPendingAtEntry = !!this._pendingAdvice;
     let promotedPending = false;
     if (this._pendingAdvice) {
       const adviceRank = STREET_RANK[this._pendingAdvice.currentStreet] ?? -1;
@@ -750,6 +787,21 @@ export class RenderCoordinator {
       // promotion succeeded earlier this call, pending is already null (no-op).
       // Otherwise a cross-hand pending would otherwise promote on the next
       // coincidental street match — the exact SW-reanimation failure mode.
+      // V-3 §II RT-69 (PR-17): when a pending advice was held at the
+      // start of this call AND didn't promote (the hand boundary
+      // force-cleared it), surface as a REJECTED freshness signal — the
+      // user should know a payload was discarded. The promotion block
+      // above already nulled `_pendingAdvice` regardless of outcome, so
+      // we use `hadPendingAtEntry && !promotedPending` rather than the
+      // (now-always-null) live `_pendingAdvice` reference.
+      if (hadPendingAtEntry && !promotedPending) {
+        this._state.lastRejectionAt = this._getTimestamp();
+      } else {
+        // No pending advice was dropped — clear any prior-hand rejection
+        // so the new hand doesn't inherit it (perHand scope per
+        // STATE_FIELD_SCOPES).
+        this._state.lastRejectionAt = null;
+      }
       this._pendingAdvice = null;
     }
   }
@@ -866,6 +918,10 @@ export class RenderCoordinator {
     // registered timer was already cancelled by clearAllTimers above;
     // this resets the state mirrors so a fresh table starts clean.
     this.clearConnectedWaitingTimer();
+    // V-3 §II RT-68/69 (PR-17): perTable clearing path — rejection
+    // signal is hand-bound; a fresh table cannot inherit prior-table
+    // rejections (seat references would be wrong context anyway).
+    this._state.lastRejectionAt = null;
     this._pendingAdvice = null;
     this._lastStreetCardHtml = null;
     // SR-6.6: freshness follows currentLiveContext lifecycle. appSeatData
