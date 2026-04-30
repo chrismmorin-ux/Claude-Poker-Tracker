@@ -82,6 +82,7 @@ Never reset (resetting would corrupt `renderKey`):
 - `exploitPushCount`
 - `advicePushCount`
 - `appSeatDataVersion`
+- `adviceAgeTickCount` — V-3 §II.9 co-shipping #2 (Gate 5 PR-14). 1Hz tick counter bumped by the `adviceAgeBadge` interval timer (registered in side-panel.js IIFE). Forces a renderKey diff each tick so the standard render path picks up the age-badge text update — closes the R-2.3 violation flagged by §II.10 forbidden #8 (timer-driven DOM mutation outside render path). Resetting on table-switch would break the post-switch first render's age-badge update.
 
 ## Adding a new field
 

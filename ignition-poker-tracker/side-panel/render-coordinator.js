@@ -122,6 +122,12 @@ export class RenderCoordinator {
       planPanelOpen: false,
       // Versioning for renderKey
       appSeatDataVersion: 0,
+      // V-3 §II.9 co-shipping #2 (Gate 5 PR-14): 1Hz tick counter bumped
+      // by the adviceAgeBadge timer. Including it in renderKey forces a
+      // re-render every second so the age-badge text updates via the
+      // standard render path (R-2.3 compliance). Monotonic — resetting
+      // would cause renderKey collisions and skip the post-bump render.
+      adviceAgeTickCount: 0,
       // Between-hands Mode A timer state
       modeAExpired: false,
       modeATimerActive: false,
@@ -268,6 +274,7 @@ export class RenderCoordinator {
       lastPipeline: s.lastPipeline,
       exploitPushCount: s.exploitPushCount,
       advicePushCount: s.advicePushCount,
+      adviceAgeTickCount: s.adviceAgeTickCount,
       cachedDiag: s.cachedDiag,
       swFallbackState: s.swFallbackState,
       pinnedVillainSeat: s.pinnedVillainSeat,
@@ -383,6 +390,10 @@ export class RenderCoordinator {
       snap.lastHandCount,
       snap.exploitPushCount,
       snap.advicePushCount,
+      // V-3 §II.9 co-shipping #2 (PR-14): force a renderKey diff every 1Hz
+      // tick so the standard render path picks up the age-badge text
+      // change instead of the timer mutating DOM directly.
+      snap.adviceAgeTickCount,
       tournamentFingerprint,
       snap.advicePendingForStreet,
       snap.appSeatDataVersion,
@@ -1082,6 +1093,22 @@ export class RenderCoordinator {
     }
     this._state.modeAExpired = false;
     this._state.modeATimerActive = false;
+  }
+
+  // =======================================================================
+  // V-3 §II.9 co-shipping #2 — adviceAgeBadge 1Hz tick (Gate 5 PR-14)
+  // =======================================================================
+  // The 1Hz advice-age refresh routes through this method instead of
+  // mutating DOM directly from the timer callback. Bumps the renderKey-
+  // gating counter and schedules an IMMEDIATE render — renderAll's
+  // existing `updateStaleAdviceBadge` consumer (called from the standard
+  // render path) recomputes the age and updates the badge inside the
+  // render frame. Closes the R-2.3 violation flagged by §II.10 forbidden
+  // pattern #8: timer-driven DOM mutation outside the render path.
+
+  tickAdviceAge() {
+    this._state.adviceAgeTickCount = (this._state.adviceAgeTickCount || 0) + 1;
+    this.scheduleRender('age_tick', PRIORITY.NORMAL);
   }
 
   // =======================================================================

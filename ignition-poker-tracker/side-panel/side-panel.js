@@ -47,6 +47,7 @@ import {
   FRESHNESS_MECHANISMS,
   mapAgeToTier,
   getStaleBadgeText,
+  classifyFreshness,
 } from '../shared/render-staleness.js';
 import {
   STATUS_TIERS,
@@ -1147,15 +1148,40 @@ injectTokens();
    * `{isStale, ageMs, reason}` — `reason === 'street-mismatch'` when advice
    * lags the live street (SR-6.7 signal); otherwise `'aged'` when age > 10s
    * or live context is missing.
+   *
+   * V-3 §II (Gate 5 PR-14): internally routes through
+   * `shared/render-staleness.js#classifyFreshness` so the 5-tier register
+   * (live/aging/stale/unknown/rejected) becomes the canonical classifier.
+   * The {isStale, ageMs, reason} return shape is preserved for the legacy
+   * call sites — `isStale` is `true` for AGING / STALE / REJECTED tiers
+   * (matching the "show the badge" gating threshold), `false` for LIVE /
+   * UNKNOWN. Ensures any new edge-case logic added to classifyFreshness
+   * (e.g. RT-68/69 rejection wiring in a future PR) propagates here
+   * without duplicate maintenance.
    */
   const computeAdviceStaleness = (advice, ctx, now = Date.now()) => {
-    if (!advice?._receivedAt) return { isStale: false, ageMs: null, reason: null };
-    const ageMs = now - advice._receivedAt;
-    const isStreetMismatch = !!(ctx && advice.currentStreet && ctx.currentStreet
-      && advice.currentStreet !== ctx.currentStreet);
-    if (isStreetMismatch) return { isStale: true, ageMs, reason: 'street-mismatch' };
-    const aged = ageMs > 10_000 || !ctx;
-    return { isStale: aged, ageMs, reason: aged ? 'aged' : null };
+    const coordState = { staleContext: coordinator.get('staleContext') === true };
+    const tier = classifyFreshness(advice, ctx, coordState, now);
+    const ageMs = advice?._receivedAt ? now - advice._receivedAt : null;
+
+    if (tier === FRESHNESS_TIERS.LIVE || tier === FRESHNESS_TIERS.UNKNOWN) {
+      return { isStale: false, ageMs, reason: null };
+    }
+
+    // AGING / STALE / REJECTED — badge gating engaged. Resolve a legacy
+    // `reason` per the original contract: 'rejected' on REJECTED tier;
+    // 'street-mismatch' when advice's currentStreet lags ctx's; else 'aged'.
+    let reason;
+    if (tier === FRESHNESS_TIERS.REJECTED) {
+      reason = 'rejected';
+    } else {
+      const isStreetMismatch = !!(
+        ctx && advice?.currentStreet && ctx.currentStreet
+        && advice.currentStreet !== ctx.currentStreet
+      );
+      reason = isStreetMismatch ? 'street-mismatch' : 'aged';
+    }
+    return { isStale: true, ageMs, reason };
   };
 
   // V-3 \u00a7II canonical writer for FRESH_SIGNAL_REGISTRY.STALE_ADVICE
@@ -1192,16 +1218,21 @@ injectTokens();
     badge.textContent = getStaleBadgeText({ tier, ageSec, reason });
   };
 
-  // Refresh the badge text each second without churning the full render.
-  // Registered under the coordinator so the table-switch lifecycle cancels it
-  // (RT-60 contract). SR-1 / SR-6.3: deferred via microtask because
-  // `coordinator` is declared later in this IIFE (~line 1701).
+  // Refresh the badge text each second by routing the tick through the
+  // standard render path. Registered under the coordinator so the table-
+  // switch lifecycle cancels it (RT-60 contract). SR-1 / SR-6.3: deferred
+  // via microtask because `coordinator` is declared later in this IIFE.
+  //
+  // V-3 §II.9 co-shipping #2 (Gate 5 PR-14): closes the R-2.3 violation
+  // flagged by §II.10 forbidden #8. Pre-PR-14 the timer body called
+  // updateStaleAdviceBadge() directly, mutating DOM outside any render
+  // function. Post-PR-14 the timer bumps a renderKey-gating counter
+  // (`adviceAgeTickCount`) and schedules a render — renderAll's existing
+  // updateStaleAdviceBadge call (line ~2092) handles the badge inside
+  // the render frame. INV-FRESH-4 single-writer-per-slot stays intact;
+  // INV-FRESH-3 same-frame-commit is now actually enforced.
   queueMicrotask(() => coordinator.scheduleTimer('adviceAgeBadge', () => {
-    // SR-6.12: single stale-state evaluator shared with renderAll.
-    const advice = coordinator.get('lastGoodAdvice');
-    const ctx = coordinator.get('currentLiveContext');
-    const { isStale, ageMs, reason } = computeAdviceStaleness(advice, ctx);
-    updateStaleAdviceBadge(isStale, ageMs, reason);
+    coordinator.tickAdviceAge();
   }, 1000, 'interval'));
 
   const renderActionBar = (advice, liveCtx, snap) => {

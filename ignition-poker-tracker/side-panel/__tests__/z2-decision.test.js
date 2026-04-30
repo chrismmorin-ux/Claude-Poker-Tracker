@@ -129,6 +129,13 @@ describe('SR-6.12 B1 — pot + street blank between hands', () => {
 });
 
 describe('SR-6.12 §2.10 — stale-advice consolidation (source pin)', () => {
+  // V-3 §II PR-14 (2026-04-30) migrated computeAdviceStaleness's classifier
+  // from inline arithmetic to `shared/render-staleness.js#classifyFreshness`.
+  // The legacy literal pins (`reason: aged ? 'aged' : null`,
+  // `ageMs > 10_000 || !ctx`) no longer apply — the 5-tier register +
+  // tier→reason mapping replaces them. The legacy `{isStale, ageMs, reason}`
+  // return contract is preserved for call-site stability.
+
   it('computeAdviceStaleness helper exists (single source of truth)', () => {
     expect(js).toMatch(/const computeAdviceStaleness = \(advice, ctx, now = Date\.now\(\)\)/);
   });
@@ -143,18 +150,31 @@ describe('SR-6.12 §2.10 — stale-advice consolidation (source pin)', () => {
     expect(renderBlock).not.toMatch(/advice\.currentStreet !== liveCtx\.currentStreet/);
   });
 
-  it('1 Hz age badge timer also calls computeAdviceStaleness', () => {
+  it('1 Hz age badge timer routes through coordinator.tickAdviceAge (PR-14)', () => {
+    // PR-14: closes R-2.3 violation — timer no longer calls DOM-mutating
+    // updateStaleAdviceBadge directly. Bumps tickCount + scheduleRender
+    // via coordinator.tickAdviceAge; renderAll's existing call site
+    // updates the badge inside the render frame.
     const timerBlock = js.match(/scheduleTimer\('adviceAgeBadge'[\s\S]*?'interval'\)\);/)?.[0] || '';
-    expect(timerBlock).toMatch(/computeAdviceStaleness\(advice, ctx\)/);
+    expect(timerBlock).toMatch(/coordinator\.tickAdviceAge\(\)/);
+    // Legacy-direct-call pattern must not regress.
+    expect(timerBlock).not.toMatch(/updateStaleAdviceBadge\(/);
+    expect(timerBlock).not.toMatch(/computeAdviceStaleness\(/);
   });
 
-  it('helper body returns the four documented reason branches', () => {
-    // Source-level pin: every branch identifier must appear exactly once in
-    // the helper body so future edits that drop a branch fail the gate.
+  it('helper body delegates to classifyFreshness + maps tier → legacy reason', () => {
+    // PR-14: V-3 §II canonical classifier ownership. Helper is a thin
+    // adapter that translates the 5-tier register's classification into
+    // the legacy `{isStale, ageMs, reason}` shape without duplicating
+    // the classification logic.
     const body = js.match(/const computeAdviceStaleness = [\s\S]*?\n  \};/)?.[0] || '';
-    expect(body).toMatch(/reason: null/);
-    expect(body).toMatch(/reason: 'street-mismatch'/);
-    expect(body).toMatch(/reason: aged \? 'aged' : null/);
-    expect(body).toMatch(/ageMs > 10_000 \|\| !ctx/);
+    expect(body).toMatch(/classifyFreshness\(advice, ctx, coordState, now\)/);
+    // The 3 legacy reason values map cleanly from tier:
+    //   FRESHNESS_TIERS.LIVE | UNKNOWN  →  reason: null  (isStale: false)
+    //   FRESHNESS_TIERS.REJECTED         →  reason: 'rejected'
+    //   street-mismatch (within STALE)   →  reason: 'street-mismatch'
+    //   else (AGING / STALE age-driven)  →  reason: 'aged'
+    expect(body).toMatch(/reason\s*=\s*'rejected'/);
+    expect(body).toMatch(/'street-mismatch'\s*:\s*'aged'/);
   });
 });
