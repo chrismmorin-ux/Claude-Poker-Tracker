@@ -147,10 +147,18 @@ export const buildUnifiedHeaderHTML = (advice, liveContext, opts = {}) => {
     const villainIsFolded = focusedVillainSeat && foldedSeats.has(focusedVillainSeat);
     const pinnedData = pinnedVillainSeat ? appSeatData[pinnedVillainSeat] : null;
 
-    const vp = (pinnedData?.villainProfile) || advice.villainProfile;
-    const vStyle = (pinnedData?.style) || advice.villainStyle;
-    const vSample = (pinnedData?.sampleSize) || advice.villainSampleSize;
-    const vHeadline = (pinnedData?.villainHeadline) || vp?.headline;
+    const vp = (pinnedData?.villainProfile) ?? advice.villainProfile;
+    const vStyle = (pinnedData?.style) ?? advice.villainStyle;
+    // V-affordance §IV.10 #7 + §III.7 forbidden #6 (Gate 5 PR-12): `||` was
+    // collapsing `pinnedData.sampleSize === 0` to the advice fallback, hiding
+    // the legitimate "this villain has 0 hands seen at this table" state and
+    // showing the global advice sample size instead. `??` distinguishes
+    // null/undefined (no pinned data at all) from 0 (pinned villain with no
+    // sample yet). Same fix applied to vp/vStyle/vHeadline above for symmetry
+    // — empty-string and 0 are not valid fallback triggers for any of the
+    // 4 fields.
+    const vSample = (pinnedData?.sampleSize) ?? advice.villainSampleSize;
+    const vHeadline = (pinnedData?.villainHeadline) ?? vp?.headline;
     const mq = advice.modelQuality;
     const confTier = mapModelSourceToTier(mq?.overallSource);
 

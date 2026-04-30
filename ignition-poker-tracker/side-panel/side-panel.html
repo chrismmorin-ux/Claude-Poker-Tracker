@@ -157,10 +157,15 @@
       z-index: 1;
     }
     .seat-circle:hover:not(.hero) { transform: scale(1.15); z-index: 2; }
+    /* V-affordance §IV.5 + §IV.10 #8 (Gate 5 PR-12): hero seat identification
+       migrated from gold ring to non-color encoding (4px border weight vs the
+       2px default). Color reserved for ordinal quality-tier signaling per
+       V-1 (c) full color discipline; hero-vs-villain is categorical state.
+       The ★ glyph (rendered into the seat circle text content per
+       render-orchestrator.js seat-arc builder) remains the canonical hero
+       indicator per shell-spec §IV.5 closed glyph registry. */
     .seat-circle.hero {
-      border-color: var(--gold);
-      background: linear-gradient(180deg, var(--surface-card), #1f1a10);
-      color: var(--gold);
+      border-width: 4px;
       cursor: default;
     }
     .seat-circle.focused {
@@ -1838,11 +1843,16 @@
     <pre id="tourney-log-output" class="tourney-log-output"></pre>
   </div>
   <div style="text-align:center;margin-top:6px">
-    <button id="tourney-log-show" class="show-toggle-btn">show tournament log</button>
+    <!-- V-affordance §IV.6 + §IV.12 #8 — `<button>` with navigate semantics
+         is forbidden; declare role="link" so AT consumers receive the
+         underline-affordance contract per shell-spec §IV.2. The element stays
+         <button> for keyboard reachability (INV-AFFORD-4 native interactive)
+         and click-handler compatibility — JS wiring unchanged. -->
+    <button id="tourney-log-show" class="show-toggle-btn" role="link">show tournament log</button>
   </div>
   <!-- SR-6.10: gated by settings.debugDiagnostics. Renderer toggles display. -->
   <div id="diag-footer" style="text-align:center;margin-top:6px;display:none">
-    <button id="diag-show" class="show-toggle-btn subtle">show diagnostics</button>
+    <button id="diag-show" class="show-toggle-btn subtle" role="link">show diagnostics</button>
   </div>
 
   <!-- Seat Popover -->
