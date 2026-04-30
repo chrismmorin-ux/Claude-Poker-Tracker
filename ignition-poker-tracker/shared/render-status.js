@@ -4,25 +4,35 @@
  * Implements the 3-axis status decomposition (connection-state /
  * app-bridge-state / pipeline-stage-health) resolved at SHC Gate 4
  * V-status walkthrough (2026-04-28, doctrine v7 R-1.11 + INV-STATUS-1..5).
- * Gate 5 PR-5 shipped the canonical connection-state writer alongside a
- * legacy-class bridge (so unmigrated writers kept rendering); Gate 5 PR-6
- * migrated the remaining 4 writers (updateStatusBar / staleContext /
- * updateStatusFromDiag / harness.js) and deleted the bridge — all dot
- * paints now flow through writeStatusDot / applyMonotonicTier and emit
- * canonical .conn-* classes only.
+ *
+ *   - Gate 5 PR-5 shipped the canonical connection-state writer (axis-1)
+ *     alongside a legacy-class bridge.
+ *   - Gate 5 PR-6 migrated the remaining 4 axis-1 writers and deleted
+ *     the bridge — all #status-dot paints flow through writeStatusDot /
+ *     applyMonotonicTier and emit canonical .conn-* classes only.
+ *   - Gate 5 PR-7 (this revision) ships the app-bridge axis-2 vocabulary
+ *     (closed 2-tier register: synced / absent) + writeAppStatusBadge
+ *     canonical writer + 2 production writer migrations
+ *     (updateAppStatus + harness app-badge writer). Axis-2 is binary
+ *     and authoritative — no monotonicity helper required since both
+ *     writer sites are the unique source of truth for their respective
+ *     surfaces (production = exploit-push driven; harness = fixture-
+ *     driven). INV-STATUS-1 single-writer-per-slot is enforced by the
+ *     writer-registry lint at side-panel/__tests__/status-writer-
+ *     registry.test.js.
  *
  * Shell-spec source: docs/design/surfaces/sidebar-shell-spec.md §I.
  * Doctrine source:   docs/SIDEBAR_DESIGN_PRINCIPLES.md §1 R-1.11.
  *
- * Closes the canonical layer of the V-status §I axis-1 vocabulary;
- * INV-STATUS-1 (single-writer per slot), INV-STATUS-2 (severity
- * monotonicity within frame), INV-STATUS-3 (no-lying-status / every cause
- * value emits defined class) covered at the helper layer. Currently-
- * shipping bugs FM-STATUS-1 (silent severity downgrade at
- * side-panel.js:1893-1894) and FM-STATUS-2 (versionMismatch silent
- * persistence at :225-227) closed at PR-5 via callers using these helpers.
+ * Closes the canonical layer of the V-status §I axis-1 + axis-2
+ * vocabulary; INV-STATUS-1 (single-writer per slot), INV-STATUS-2
+ * (severity monotonicity within frame — applies to axis-1 only),
+ * INV-STATUS-3 (no-lying-status / every cause value emits defined class)
+ * covered at the helper layer. Currently-shipping bugs FM-STATUS-1 +
+ * FM-STATUS-2 closed at PR-5.
  *
- * App-bridge axis-2 + pipeline axis-3 are deferred to follow-up PRs.
+ * Pipeline axis-3 (5-stage strip + per-stage nominal/failed register) is
+ * deferred to PR-8.
  */
 
 // ===========================================================================
@@ -131,4 +141,55 @@ export const writeStatusDot = (dotEl, tier) => {
   // + .conn-{tier} class (CSS paint binding to --status-conn-* tokens).
   dotEl.setAttribute('data-status-tier', tier);
   dotEl.className = `status-dot conn-${tier}`;
+};
+
+// ===========================================================================
+// AXIS-2 — APP-BRIDGE-STATE (V-status §I axis-2)
+// ===========================================================================
+// Closed 2-tier binary register. The app-bridge state describes whether
+// the main poker-tracker app is open + receiving exploit pushes from the
+// extension. There is no severity ordering — both states are valid;
+// "absent" is not a degraded form of "synced" but a different operational
+// mode. Adding a new tier requires a doctrine amendment per R-1.11 + §I.
+
+export const STATUS_APP_TIERS = Object.freeze({
+  SYNCED: 'synced', // app open, receiving exploit pushes
+  ABSENT: 'absent', // app not open / not receiving pushes
+});
+
+// ===========================================================================
+// mapAppConnectedToTier — bridge from existing appConnected boolean
+// ===========================================================================
+// Upstream slot: `lastGoodExploits.appConnected` (exploit-push driven,
+// reduced to a boolean by the service worker before reaching the panel).
+// INV-STATUS-3 (no-lying-status): the boolean is total — every input
+// emits a defined tier.
+
+export const mapAppConnectedToTier = (appConnected) => (
+  appConnected ? STATUS_APP_TIERS.SYNCED : STATUS_APP_TIERS.ABSENT
+);
+
+// ===========================================================================
+// writeAppStatusBadge — canonical writer for #app-status
+// ===========================================================================
+// INV-STATUS-1 (single canonical writer per slot): both production
+// (updateAppStatus, snap.appConnected driven) and the harness (fixture-
+// driven) reach #app-status through this helper. The badge text is owned
+// by the helper too — text and tier are paired so a stale "App synced"
+// label can never coexist with an absent tier (the FM-STATUS-2 analog
+// for axis-2; defense in depth, no shipping bug surfaced here).
+
+const APP_TIER_TEXT = Object.freeze({
+  synced: 'App synced',
+  absent: 'App not open',
+});
+
+export const writeAppStatusBadge = (badgeEl, tier) => {
+  if (!badgeEl) return;
+  if (!Object.values(STATUS_APP_TIERS).includes(tier)) {
+    throw new Error(`app-status tier "${tier}" not in closed 2-tier register`);
+  }
+  badgeEl.setAttribute('data-app-status-tier', tier);
+  badgeEl.className = `app-status app-${tier}`;
+  badgeEl.textContent = APP_TIER_TEXT[tier];
 };

@@ -111,6 +111,18 @@ export const TOKENS = {
   'status-conn-disconnected': '#f97316',  // port disconnected; recoverable
   'status-conn-fatal':        '#f87171',  // contextDead / SW context invalidated
 
+  // App-bridge status tier (V-status §I axis-2 + R-1.11 — closed 2-tier
+  // register; concept-class-isolated from --status-conn-* + --m-* per
+  // INV-TOKEN-2. Authoritative binary: the main poker-tracker app is
+  // either receiving exploit pushes (synced) or it isn't (absent).
+  // Visual hex matches the legacy app-status pill colors so paint is
+  // preserved across the migration; PR-7 deletes .app-status.connected/
+  // .disconnected and binds .app-synced/.app-absent to these tokens.
+  'status-app-synced-bg':   'rgba(76, 175, 80, 0.15)',
+  'status-app-synced-text': '#4ade80',
+  'status-app-absent-bg':   'rgba(255, 152, 0, 0.15)',
+  'status-app-absent-text': '#fbbf24',
+
   // Tournament (demoted to neutral)
   'tournament-accent': '#6b7280',
 

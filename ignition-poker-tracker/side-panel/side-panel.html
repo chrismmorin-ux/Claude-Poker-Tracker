@@ -110,8 +110,15 @@
       font-size: var(--font-sm); padding: 1px 6px;
       border-radius: 8px; white-space: nowrap;
     }
-    .app-status.connected { background: rgba(76, 175, 80, 0.15); color: var(--m-green); }
-    .app-status.disconnected { background: rgba(255, 152, 0, 0.15); color: var(--m-yellow); }
+
+    /* V-status §I axis-2 + R-1.11 — canonical app-bridge tier classes.
+       Concept-class-isolated from --m-* per INV-TOKEN-2. Replaces the
+       legacy .app-status.connected/.disconnected rules deleted at
+       Gate 5 PR-7 once both writer sites (updateAppStatus / harness
+       app-badge writer) emitted canonical classes via the
+       writeAppStatusBadge helper in shared/render-status.js. */
+    .app-status.app-synced { background: var(--status-app-synced-bg); color: var(--status-app-synced-text); }
+    .app-status.app-absent { background: var(--status-app-absent-bg); color: var(--status-app-absent-text); }
 
     @keyframes pulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
@@ -1673,7 +1680,7 @@
     <div class="status-dot yellow" id="status-dot"></div>
     <span class="status-text" id="status-text">Connecting...</span>
     <span class="hand-count" id="hand-count">0</span>
-    <span class="app-status disconnected" id="app-status">App not open</span>
+    <span class="app-status app-absent" id="app-status" data-app-status-tier="absent">App not open</span>
     <button id="refresh-btn" class="refresh-btn" title="Refresh">&#x27F3;</button>
   </div>
 

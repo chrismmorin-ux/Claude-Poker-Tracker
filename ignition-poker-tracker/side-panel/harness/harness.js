@@ -10,7 +10,11 @@
  */
 
 import { injectTokens } from '../../shared/design-tokens.js';
-import { writeStatusDot } from '../../shared/render-status.js';
+import {
+  writeStatusDot,
+  writeAppStatusBadge,
+  mapAppConnectedToTier,
+} from '../../shared/render-status.js';
 import {
   computeFocusedVillain,
   buildActionBarHTML,
@@ -89,17 +93,11 @@ function applyState(state) {
   if (text) text.textContent = status.text || 'Waiting...';
   $('hand-count').textContent = hasHands ? handCount : 0;
 
-  // App connection badge
+  // App connection badge — V-status §I axis-2 (Gate 5 PR-7) routes
+  // through writeAppStatusBadge so the harness paints via the same
+  // canonical writer as production (INV-STATUS-1 single-writer-per-slot).
   const appBadge = $('app-status');
-  if (appBadge) {
-    if (appConnected) {
-      appBadge.className = 'app-status connected';
-      appBadge.textContent = 'App synced';
-    } else {
-      appBadge.className = 'app-status disconnected';
-      appBadge.textContent = 'App not open';
-    }
-  }
+  if (appBadge) writeAppStatusBadge(appBadge, mapAppConnectedToTier(appConnected));
 
   // Seat arc
   const arc = $('seat-arc');

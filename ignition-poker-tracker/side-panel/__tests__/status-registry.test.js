@@ -35,9 +35,12 @@ import { describe, it, expect } from 'vitest';
 import {
   STATUS_TIERS,
   STATUS_SEVERITY,
+  STATUS_APP_TIERS,
   mapConnStateToTier,
+  mapAppConnectedToTier,
   applyMonotonicTier,
   writeStatusDot,
+  writeAppStatusBadge,
 } from '../../shared/render-status.js';
 
 describe('§I status — closed 4-tier connection-state register (V-status §I)', () => {
@@ -230,5 +233,109 @@ describe('applyMonotonicTier — INV-STATUS-2 monotonic write', () => {
 
   it('returns null when called with no element', () => {
     expect(applyMonotonicTier(null, STATUS_TIERS.LIVE)).toBeNull();
+  });
+});
+
+// =============================================================================
+// V-status §I axis-2 — APP-BRIDGE-STATE (Gate 5 PR-7)
+// =============================================================================
+// Closed 2-tier binary register. App-bridge state is authoritative — no
+// monotonicity helper, since both writer sites (production updateAppStatus
+// + harness app-badge writer) are unique sources of truth for their
+// respective surfaces.
+
+describe('§I status — closed 2-tier app-bridge-state register (axis-2)', () => {
+  it('exposes exactly 2 tiers', () => {
+    expect(Object.keys(STATUS_APP_TIERS)).toHaveLength(2);
+  });
+
+  it('the 2 tiers are synced / absent', () => {
+    expect(Object.values(STATUS_APP_TIERS).sort()).toEqual(['absent', 'synced']);
+  });
+
+  it('STATUS_APP_TIERS is frozen (closed register)', () => {
+    expect(Object.isFrozen(STATUS_APP_TIERS)).toBe(true);
+  });
+});
+
+describe('mapAppConnectedToTier — boolean bridge (INV-STATUS-3)', () => {
+  it('true → SYNCED', () => {
+    expect(mapAppConnectedToTier(true)).toBe(STATUS_APP_TIERS.SYNCED);
+  });
+
+  it('false → ABSENT', () => {
+    expect(mapAppConnectedToTier(false)).toBe(STATUS_APP_TIERS.ABSENT);
+  });
+
+  it('null / undefined → ABSENT (defensive default — no-lying-status)', () => {
+    expect(mapAppConnectedToTier(null)).toBe(STATUS_APP_TIERS.ABSENT);
+    expect(mapAppConnectedToTier(undefined)).toBe(STATUS_APP_TIERS.ABSENT);
+  });
+});
+
+describe('writeAppStatusBadge — canonical declaration emission', () => {
+  const makeBadge = () => {
+    const badge = document.createElement('span');
+    badge.className = 'app-status';
+    return badge;
+  };
+
+  it('sets data-app-status-tier attribute', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(badge.getAttribute('data-app-status-tier')).toBe('synced');
+  });
+
+  it('emits canonical .app-{tier} class', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.ABSENT);
+    expect(badge.classList.contains('app-absent')).toBe(true);
+  });
+
+  it('emits exactly 2 classes — structural .app-status + canonical .app-{tier}', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(Array.from(badge.classList).sort()).toEqual(['app-status', 'app-synced']);
+  });
+
+  it('does NOT emit legacy .connected/.disconnected classes', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(badge.classList.contains('connected')).toBe(false);
+    expect(badge.classList.contains('disconnected')).toBe(false);
+  });
+
+  it('pairs SYNCED tier with "App synced" text', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(badge.textContent).toBe('App synced');
+  });
+
+  it('pairs ABSENT tier with "App not open" text', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.ABSENT);
+    expect(badge.textContent).toBe('App not open');
+  });
+
+  it('throws on tier outside closed enumeration', () => {
+    const badge = makeBadge();
+    expect(() => writeAppStatusBadge(badge, 'connected')).toThrow(
+      /not in closed 2-tier register/,
+    );
+  });
+
+  it('returns silently when called with no element', () => {
+    expect(() => writeAppStatusBadge(null, STATUS_APP_TIERS.SYNCED)).not.toThrow();
+  });
+
+  it('toggles between tiers cleanly (no class accumulation)', () => {
+    const badge = makeBadge();
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.ABSENT);
+    expect(badge.classList.contains('app-synced')).toBe(false);
+    expect(badge.classList.contains('app-absent')).toBe(true);
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(badge.classList.contains('app-synced')).toBe(true);
+    expect(badge.classList.contains('app-absent')).toBe(false);
   });
 });

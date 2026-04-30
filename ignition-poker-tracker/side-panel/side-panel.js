@@ -53,6 +53,8 @@ import {
   mapConnStateToTier,
   applyMonotonicTier,
   writeStatusDot,
+  mapAppConnectedToTier,
+  writeAppStatusBadge,
 } from '../shared/render-status.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
@@ -268,17 +270,18 @@ injectTokens();
   // PUSH HANDLERS
   // =========================================================================
 
-  /** Update the app-connection badge in the status bar. */
+  /**
+   * Update the app-connection badge in the status bar.
+   *
+   * V-status §I axis-2 (Gate 5 PR-7): single canonical writer per
+   * INV-STATUS-1. Pairs tier + text via writeAppStatusBadge so a stale
+   * "App synced" label can never coexist with an ABSENT tier (the
+   * FM-STATUS-2 analog for axis-2).
+   */
   const updateAppStatus = (connected) => {
     const badge = $('app-status');
     if (!badge) return;
-    if (connected) {
-      badge.className = 'app-status connected';
-      badge.textContent = 'App synced';
-    } else {
-      badge.className = 'app-status disconnected';
-      badge.textContent = 'App not open';
-    }
+    writeAppStatusBadge(badge, mapAppConnectedToTier(connected));
   };
 
   /** Handle full pipeline status push (replaces the old poll cycle). */
