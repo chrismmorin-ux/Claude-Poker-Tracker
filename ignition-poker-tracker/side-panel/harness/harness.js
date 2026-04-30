@@ -198,10 +198,14 @@ function applyState(state) {
     if (result.html) {
       showEl(planPanel);
       planBody.innerHTML = result.html;
-      // Auto-open in harness for visibility
+      // Auto-open in harness for visibility — mirror production renderPlanPanel
+      // so all three artifacts (body class / chevron class / aria-expanded) stay
+      // in sync per V-affordance §IV.6 ARIA contract.
       planBody.classList.add('open');
       const chevron = $('pp-chevron');
       if (chevron) chevron.classList.add('open');
+      const toggle = $('pp-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
     } else {
       hideEl(planPanel);
     }

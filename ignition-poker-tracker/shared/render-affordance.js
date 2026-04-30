@@ -9,10 +9,25 @@
  * Doctrine source:   docs/SIDEBAR_DESIGN_PRINCIPLES.md §1 R-1.10.
  *
  * This module is the single source of truth for affordance vocabulary in the
- * sidebar. Future PRs will migrate the 4 chevron CSS classes
- * (.deep-chevron / .collapsible-chevron / .pp-chevron / .tourney-bar-chevron)
- * onto .affordance-chevron and route their click handlers through the
- * delegated listener established here.
+ * sidebar.
+ *
+ * Gate 5 PR-2 (2026-04-29) shipped the vocabulary + delegated listener +
+ * tourney-bar migration.
+ *
+ * Gate 5 PR-11 (2026-04-30) completed the chevron-class collapse: all 4
+ * legacy classes (.deep-chevron / .collapsible-chevron / .pp-chevron /
+ * .tourney-bar-chevron) deleted from side-panel.html — every chevron site
+ * now consumes .affordance-chevron via the renderChevron helper. Click
+ * wiring for pp-toggle / more-analysis / model-audit consolidated into the
+ * affordanceRegistry (single document-rooted listener); per-element
+ * addEventListener pattern eliminated. wireModelAuditClick + dataset.maWired
+ * marker removed — delegated listener at document level survives the Z4
+ * row 4.3 dynamic re-insertion.
+ *
+ * Remaining V-affordance §IV.10 co-shipping items (Gate 5 PR-12+):
+ * #6 .show-toggle-btn element-type fix (button → role=link),
+ * #7 render-orchestrator.js:147 || → ?? fix,
+ * #8 hero seat-arc ring migration to non-color encoding.
  */
 
 // ===========================================================================

@@ -23,6 +23,9 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import {
   AFFORDANCE_SHAPES,
   PILL_SUB_FORM_CHIP,
@@ -32,6 +35,9 @@ import {
   affordanceAttrs,
   installAffordanceListener,
 } from '../../shared/render-affordance.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PANEL_DIR = resolve(__dirname, '..');
 
 describe('§IV affordance — closed 6-shape enumeration (V-affordance §IV.1)', () => {
   it('exposes exactly 6 shape names', () => {
@@ -213,5 +219,79 @@ describe('installAffordanceListener — single delegated click listener', () => 
   it('throws when registry is not a Map', () => {
     const root = makeRoot();
     expect(() => installAffordanceListener(root, {})).toThrow(/Map/);
+  });
+});
+
+// =========================================================================
+// V-affordance §IV.10 #2 — chevron-class collapse regression pin (PR-11)
+// =========================================================================
+// Ensures the 4 legacy chevron CSS classes never resurface. Reintroducing
+// any of them re-fragments the closed §IV.1 6-shape register and reopens
+// the D-4 forensics gap that PR-11 closed.
+
+describe('V-affordance §IV.10 #2 — chevron-class collapse (PR-11)', () => {
+  const html = readFileSync(resolve(PANEL_DIR, 'side-panel.html'), 'utf8');
+  const sidePanelJs = readFileSync(resolve(PANEL_DIR, 'side-panel.js'), 'utf8');
+
+  // Strip JS comments so a leftover `// .pp-chevron migrated to ...` note
+  // doesn't trip the literal scan.
+  const stripJsComments = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+  // Strip HTML comments + CSS comments + leftover prose-in-CSS-block notes
+  // so explanatory text describing the migration doesn't trip the literal scan.
+  const stripHtmlPropose = (src) => src
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const LEGACY_CLASSES = ['pp-chevron', 'collapsible-chevron', 'deep-chevron', 'tourney-bar-chevron'];
+
+  for (const klass of LEGACY_CLASSES) {
+    it(`side-panel.html has no .${klass} CSS rule or class attribute`, () => {
+      const stripped = stripHtmlPropose(html);
+      // Match either `.foo {` (CSS rule) or `class="foo"` / `class="... foo ..."`
+      // (class attribute usage). Both are forbidden post-PR-11.
+      const cssRule = new RegExp(`\\.${klass}\\s*[\\{\\.\\,\\s\\:]`);
+      const classAttr = new RegExp(`class="(?:[^"]*\\s)?${klass}(?:\\s[^"]*)?"`);
+      expect(cssRule.test(stripped)).toBe(false);
+      expect(classAttr.test(stripped)).toBe(false);
+    });
+
+    it(`side-panel.js never emits class="${klass}" in templates`, () => {
+      const stripped = stripJsComments(sidePanelJs);
+      // Template-literal usage like `class="${klass}"` or string concat
+      // building `<span class="..."`. Conservative scan: any literal
+      // string token containing the class name is flagged.
+      const literalUsage = new RegExp(`class\\s*=\\s*["'][^"']*\\b${klass}\\b[^"']*["']`);
+      expect(literalUsage.test(stripped)).toBe(false);
+    });
+  }
+
+  it('side-panel.html declares the 3 new affordance bindings (pp-toggle / more-analysis / model-audit)', () => {
+    expect(html).toMatch(/data-affordance-target="pp-toggle"/);
+    expect(html).toMatch(/data-affordance-target="more-analysis"/);
+    // Model-audit's static HTML is dynamically inserted via MODEL_AUDIT_BTN_HTML;
+    // the parallel binding lives in side-panel.js.
+    expect(sidePanelJs).toMatch(/data-affordance-target="model-audit"/);
+  });
+
+  it('side-panel.js registers handlers for all 4 affordance-target keys', () => {
+    // The 4 keys: tourney-bar (PR-2), pp-toggle / more-analysis / model-audit (PR-11).
+    const stripped = stripJsComments(sidePanelJs);
+    expect(stripped).toMatch(/affordanceRegistry\.set\(\s*['"]tourney-bar['"]/);
+    expect(stripped).toMatch(/affordanceRegistry\.set\(\s*['"]pp-toggle['"]/);
+    expect(stripped).toMatch(/affordanceRegistry\.set\(\s*['"]more-analysis['"]/);
+    expect(stripped).toMatch(/affordanceRegistry\.set\(\s*['"]model-audit['"]/);
+  });
+
+  it('side-panel.js no longer wires per-element click handlers for the 3 migrated targets', () => {
+    // The PR removed: ppToggle.addEventListener / moreAnalysisBtn.addEventListener
+    // / wireModelAuditClick + dataset.maWired marker.
+    const stripped = stripJsComments(sidePanelJs);
+    expect(stripped).not.toMatch(/ppToggle\.addEventListener\s*\(\s*['"]click['"]/);
+    expect(stripped).not.toMatch(/moreAnalysisBtn\.addEventListener\s*\(\s*['"]click['"]/);
+    expect(stripped).not.toMatch(/wireModelAuditClick/);
+    expect(stripped).not.toMatch(/dataset\.maWired/);
   });
 });

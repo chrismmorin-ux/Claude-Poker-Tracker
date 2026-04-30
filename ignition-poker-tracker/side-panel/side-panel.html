@@ -579,12 +579,15 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    .pp-chevron {
+    /* .pp-chevron migrated to .affordance-chevron in V-affordance §IV PR-11
+       (2026-04-30). The font-size: 10px override moved into a one-off
+       modifier `.pp-toggle .affordance-chevron` below to preserve the
+       Plan-Panel's smaller chevron treatment without resurrecting the
+       parallel class — INV-AFFORD-3 + R-1.10 require the closed register. */
+    .pp-toggle .affordance-chevron {
       font-size: 10px;
       margin-left: auto;
-      transition: transform 0.15s ease;
     }
-    .pp-chevron.open { transform: rotate(180deg); }
     .pp-body {
       padding: 0 10px 0;
       max-height: 0;
@@ -649,11 +652,11 @@
       color: var(--gold); font-weight: var(--weight-bold); font-size: var(--font-sm);
       margin-left: auto;
     }
-    .tourney-bar-chevron {
-      font-size: var(--font-sm); color: var(--text-muted);
-      transition: transform var(--ease-base);
-    }
-    .tourney-bar-chevron.open { transform: rotate(180deg); }
+    /* .tourney-bar-chevron migrated to .affordance-chevron in V-affordance
+       §IV PR-2 (2026-04-29) + legacy CSS deleted in PR-11 (2026-04-30).
+       The tourney-bar's chevron color override moves to a one-off modifier
+       so the canonical class stays single-source. */
+    .tournament-bar .affordance-chevron { color: var(--text-muted); }
     .tourney-icm-badge {
       font-size: var(--font-micro); font-weight: var(--weight-bold);
       padding: 1px 5px; border-radius: var(--radius-sm);
@@ -1276,11 +1279,10 @@
       margin-bottom: 8px;
     }
     .collapsible-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
-    .collapsible-chevron {
-      font-size: var(--font-sm);
-      transition: transform var(--ease-base);
-    }
-    .collapsible-chevron.open { transform: rotate(180deg); }
+    /* .collapsible-chevron migrated to .affordance-chevron in V-affordance
+       §IV PR-11 (2026-04-30). The canonical .affordance-chevron carries
+       all visual properties (font-size: var(--font-sm) + color +
+       transition); no per-context overrides required for this site. */
     .collapsible-content {
       max-height: 0; overflow: hidden; opacity: 0;
       transition: max-height var(--ease-slow) ease, opacity var(--ease-base) ease;
@@ -1305,18 +1307,21 @@
     .deep-header:hover { background: var(--surface-elevated); }
     .deep-header-icon { font-size: var(--font-base); color: var(--text-faint); width: 14px; text-align: center; flex-shrink: 0; }
     .deep-header-title { font-size: var(--font-base); font-weight: var(--weight-medium); color: var(--text-secondary); flex: 1; }
-    .deep-chevron { font-size: var(--font-sm); color: var(--text-faint); transition: transform 0.25s ease; flex-shrink: 0; }
-    .deep-section.open .deep-chevron { transform: rotate(180deg); }
+    /* .deep-chevron migrated to .affordance-chevron in V-affordance §IV
+       PR-11 (2026-04-30) — render-tiers.js was already emitting the
+       canonical class via the renderChevron() helper at PR-2; this PR
+       deletes the legacy CSS rule. The .deep-section.open parent-class
+       rotation rule below preserves render-tiers.js's existing behavior. */
 
     /* V-affordance §IV.3 + INV-AFFORD-3 — canonical chevron class
-       (Doctrine v6 R-1.10). Future PRs migrate the 4 legacy chevron
-       classes (.deep-chevron / .collapsible-chevron / .pp-chevron /
-       .tourney-bar-chevron) onto this single class. Self-driven rotation
-       (.affordance-chevron.open) is canonical; parent-driven legacy
-       contexts (.deep-section.open .affordance-chevron and
-       .collapsible-content.open .affordance-chevron) are supported during
-       migration so the renderChevron() helper Just Works in either
-       context. */
+       (Doctrine v6 R-1.10). PR-11 (2026-04-30) collapsed all 4 legacy
+       chevron classes (.deep-chevron / .collapsible-chevron / .pp-chevron
+       / .tourney-bar-chevron) onto this single class. Self-driven rotation
+       (.affordance-chevron.open) is canonical; parent-driven contexts
+       (.deep-section.open .affordance-chevron and
+       .collapsible-content.open .affordance-chevron) are also supported
+       so render-tiers.js's `<div class="deep-section open">` shape and
+       Z4's `<div class="collapsible-content open">` shape Just Work. */
     .affordance-chevron {
       font-size: var(--font-sm); color: var(--text-faint);
       transition: transform var(--ease-base);
@@ -1757,9 +1762,9 @@
         <div class="context-strip hidden" id="context-strip"></div>
         <div class="cards-strip hidden" id="cards-strip"></div>
         <div class="plan-panel hidden" id="plan-panel">
-          <button class="pp-toggle" id="pp-toggle" aria-expanded="false">
+          <button class="pp-toggle" id="pp-toggle" data-affordance="chevron" data-affordance-target="pp-toggle" aria-expanded="false">
             <span class="pp-toggle-label">Plan</span>
-            <span class="pp-chevron" id="pp-chevron">&#x25BE;</span>
+            <span class="affordance-chevron" id="pp-chevron" aria-hidden="true">&#x25BE;</span>
           </button>
           <div class="pp-body" id="pp-body"></div>
         </div>
@@ -1783,18 +1788,18 @@
 
       <!-- Z4: more-analysis + model-audit collapsibles -->
       <div class="zone zone-z4" id="zone-z4">
-        <!-- Z4 row 4.2 "More Analysis" — SR-6.14; classes renamed to .collapsible-* in SR-6.16 -->
-        <div class="collapsible-btn hidden" id="more-analysis-btn">
+        <!-- Z4 row 4.2 "More Analysis" — SR-6.14; classes renamed to .collapsible-* in SR-6.16; chevron migrated to .affordance-chevron + delegated listener in V-affordance §IV PR-11 (2026-04-30). -->
+        <div class="collapsible-btn hidden" id="more-analysis-btn" data-affordance="chevron" data-affordance-target="more-analysis" role="button" aria-expanded="false">
           <span>More Analysis</span>
-          <span class="collapsible-chevron" id="more-analysis-chevron">&#x25BE;</span>
+          <span class="affordance-chevron" id="more-analysis-chevron" aria-hidden="true">&#x25BE;</span>
         </div>
         <div class="collapsible-content" id="more-analysis-content"></div>
         <!-- Z4 row 4.3 "Model Audit" — SR-6.14. Debug-flag gated. Scaffold is
              REMOVED from DOM when settings.debugDiagnostics !== true; reinserted
              by renderModelAudit when flag flips on (Z4 batch invariant 6). -->
-        <div class="collapsible-btn hidden" id="model-audit-btn">
+        <div class="collapsible-btn hidden" id="model-audit-btn" data-affordance="chevron" data-affordance-target="model-audit" role="button" aria-expanded="false">
           <span>Model Audit</span>
-          <span class="collapsible-chevron" id="model-audit-chevron">&#x25BE;</span>
+          <span class="affordance-chevron" id="model-audit-chevron" aria-hidden="true">&#x25BE;</span>
         </div>
         <div class="collapsible-content" id="model-audit-content"></div>
       </div>

@@ -1315,20 +1315,10 @@ injectTokens();
     }
   };
 
-  const ppToggle = $('pp-toggle');
-  if (ppToggle) {
-    ppToggle.addEventListener('click', () => {
-      // RT-61: toggle only updates state + schedules a render; renderPlanPanel
-      // writes the classes/aria. This keeps user-interaction and auto-expand
-      // on the same code path.
-      coordinator.clearTimer('planPanelAutoExpand');
-      coordinator.set('planPanelOpen', !coordinator.get('planPanelOpen'));
-      // SR-6.14: user intent wins for the rest of the hand — auto-expand
-      // predicate checks this flag and will not re-arm until hand:new.
-      coordinator.set('userToggledPlanPanelInHand', true);
-      scheduleRender('planPanel_toggle', PRIORITY.IMMEDIATE);
-    });
-  }
+  // V-affordance §IV PR-11 (2026-04-30): pp-toggle click wiring migrated
+  // to the delegated affordance listener — search "pp-toggle-affordance" for
+  // the registry binding. The button's data-affordance attrs in side-panel.html
+  // declare the binding; renderPlanPanel still owns aria/class writes.
 
   // =========================================================================
   // BETWEEN-HANDS PANEL — Modes A/B/C
@@ -1396,16 +1386,11 @@ injectTokens();
   // deep-expander). Per Z4 batch invariant 2 this row has NO auto-expand.
   // =========================================================================
 
-  const moreAnalysisBtn = $('more-analysis-btn');
+  // V-affordance §IV PR-11 (2026-04-30): more-analysis click wiring migrated
+  // to the delegated affordance listener — search "more-analysis-affordance"
+  // for the registry binding. The button's data-affordance attrs in
+  // side-panel.html declare the binding.
   const moreAnalysisChevron = $('more-analysis-chevron');
-
-  if (moreAnalysisBtn) {
-    moreAnalysisBtn.addEventListener('click', () => {
-      coordinator.dispatch('moreAnalysis', 'userToggle');
-      coordinator.set('moreAnalysisOpen', coordinator.getPanelState('moreAnalysis') === 'open');
-      scheduleRender('moreAnalysis_toggle', PRIORITY.IMMEDIATE);
-    });
-  }
 
   // Shared helper: wire the inner .deep-section collapsible click handlers
   // and restore userCollapsedSections state. Used by both 4.2 and 4.3.
@@ -1448,6 +1433,10 @@ injectTokens();
     const isExpanded = !!coordinator.get('moreAnalysisOpen');
     content.classList.toggle('open', isExpanded);
     if (moreAnalysisChevron) moreAnalysisChevron.classList.toggle('open', isExpanded);
+    // V-affordance §IV.6 ARIA contract: aria-expanded synced on the parent
+    // (the click target per INV-AFFORD-4 ≥44×44 floor — chevron span is
+    // aria-hidden decoration). Mirrors the renderPlanPanel pp-toggle pattern.
+    btn.setAttribute('aria-expanded', String(isExpanded));
 
     if (content.innerHTML === result.html) return;
     content.innerHTML = result.html;
@@ -1464,24 +1453,21 @@ injectTokens();
   // reinserted here.
   // =========================================================================
 
+  // V-affordance §IV PR-11 (2026-04-30): chevron migrated to canonical
+  // .affordance-chevron + delegated-listener wiring via data-affordance
+  // attrs on the parent <div>. Click handler lives in the affordanceRegistry
+  // (search "model-audit-affordance"); per-element addEventListener is gone
+  // (eliminating the dataset.maWired marker too — delegated listener at
+  // document level survives DOM re-insertion).
   const MODEL_AUDIT_BTN_HTML =
-    '<div class="collapsible-btn hidden" id="model-audit-btn">' +
+    '<div class="collapsible-btn hidden" id="model-audit-btn"' +
+    ' data-affordance="chevron" data-affordance-target="model-audit"' +
+    ' role="button" aria-expanded="false">' +
     '<span>Model Audit</span>' +
-    '<span class="collapsible-chevron" id="model-audit-chevron">&#x25BE;</span>' +
+    '<span class="affordance-chevron" id="model-audit-chevron" aria-hidden="true">&#x25BE;</span>' +
     '</div>';
   const MODEL_AUDIT_CONTENT_HTML =
     '<div class="collapsible-content" id="model-audit-content"></div>';
-
-  const wireModelAuditClick = () => {
-    const btn = $('model-audit-btn');
-    if (!btn || btn.dataset.maWired === '1') return;
-    btn.dataset.maWired = '1';
-    btn.addEventListener('click', () => {
-      coordinator.dispatch('modelAudit', 'userToggle');
-      coordinator.set('modelAuditOpen', coordinator.getPanelState('modelAudit') === 'open');
-      scheduleRender('modelAudit_toggle', PRIORITY.IMMEDIATE);
-    });
-  };
 
   const removeModelAuditDom = () => {
     const btn = $('model-audit-btn');
@@ -1493,11 +1479,12 @@ injectTokens();
   const ensureModelAuditDom = () => {
     if ($('model-audit-btn') && $('model-audit-content')) return;
     // Anchor: insert after #more-analysis-content so Z4 row order stays
-    // 4.2 → 4.3 on flag flip-on reconstruction.
+    // 4.2 → 4.3 on flag flip-on reconstruction. The delegated affordance
+    // listener at document level handles clicks on the re-inserted button
+    // automatically — no per-element wiring needed.
     const anchor = $('more-analysis-content');
     if (!anchor || !anchor.parentNode) return;
     anchor.insertAdjacentHTML('afterend', MODEL_AUDIT_BTN_HTML + MODEL_AUDIT_CONTENT_HTML);
-    wireModelAuditClick();
   };
 
   const renderModelAudit = (advice, snap) => {
@@ -1526,12 +1513,15 @@ injectTokens();
       const isExpanded = !!coordinator.get('modelAuditOpen');
       content.classList.toggle('open', isExpanded);
       if (chevron) chevron.classList.toggle('open', isExpanded);
+      // V-affordance §IV.6 ARIA contract: aria-expanded synced on parent.
+      btn.setAttribute('aria-expanded', String(isExpanded));
       return;
     }
     showEl(btn);
     const isExpanded = !!coordinator.get('modelAuditOpen');
     content.classList.toggle('open', isExpanded);
     if (chevron) chevron.classList.toggle('open', isExpanded);
+    btn.setAttribute('aria-expanded', String(isExpanded));
 
     if (content.innerHTML === result.html) return;
     content.innerHTML = result.html;
@@ -1687,15 +1677,49 @@ injectTokens();
   // V-affordance §IV.8 — single delegated listener for all chevron
   // affordances declared via [data-affordance="chevron"]. SR-6.5 invariant
   // preserved: handlers only flip state + schedule render, never mutate DOM.
-  // Future PRs migrate the remaining chevron sites (.collapsible-chevron ×2,
-  // .pp-chevron ×1) onto this registry; the deep-section chevrons in
-  // render-tiers.js are visual-only (parent-driven) and don't need handler
-  // entries. Search "tourney-bar-affordance" to find this binding.
+  // PR-11 (2026-04-30) added pp-toggle / more-analysis / model-audit to the
+  // registry, completing the click-wiring consolidation per §IV.10 #3.
+  // The deep-section chevrons in render-tiers.js are visual-only
+  // (parent-driven via .deep-section.open) and the section-toggle clicks
+  // route through wireDeepSectionToggles' separate listener — they are
+  // not affordance-registry entries by design.
   const affordanceRegistry = new Map();
+
+  // tourney-bar-affordance (PR-2)
   affordanceRegistry.set('tourney-bar', () => {
     coordinator.set('tournamentCollapsed', !coordinator.get('tournamentCollapsed'));
     scheduleRender('tourney_toggle', PRIORITY.IMMEDIATE);
   });
+
+  // pp-toggle-affordance (PR-11): RT-61 — toggle only updates state +
+  // schedules a render; renderPlanPanel writes the classes/aria. Keeps
+  // user-interaction and auto-expand on the same code path. SR-6.14
+  // user-intent flag prevents auto-expand from re-arming until hand:new.
+  affordanceRegistry.set('pp-toggle', () => {
+    coordinator.clearTimer('planPanelAutoExpand');
+    coordinator.set('planPanelOpen', !coordinator.get('planPanelOpen'));
+    coordinator.set('userToggledPlanPanelInHand', true);
+    scheduleRender('planPanel_toggle', PRIORITY.IMMEDIATE);
+  });
+
+  // more-analysis-affordance (PR-11)
+  affordanceRegistry.set('more-analysis', () => {
+    coordinator.dispatch('moreAnalysis', 'userToggle');
+    coordinator.set('moreAnalysisOpen', coordinator.getPanelState('moreAnalysis') === 'open');
+    scheduleRender('moreAnalysis_toggle', PRIORITY.IMMEDIATE);
+  });
+
+  // model-audit-affordance (PR-11): the Z4 4.3 row scaffold is
+  // dynamically inserted/removed on debug-flag toggle. The delegated
+  // listener at document level survives the re-insertion so no per-element
+  // wiring is needed (the prior wireModelAuditClick + dataset.maWired
+  // marker pattern is gone).
+  affordanceRegistry.set('model-audit', () => {
+    coordinator.dispatch('modelAudit', 'userToggle');
+    coordinator.set('modelAuditOpen', coordinator.getPanelState('modelAudit') === 'open');
+    scheduleRender('modelAudit_toggle', PRIORITY.IMMEDIATE);
+  });
+
   installAffordanceListener(document, affordanceRegistry);
 
   // Event delegation for seat circle clicks (pin/unpin + popover).
