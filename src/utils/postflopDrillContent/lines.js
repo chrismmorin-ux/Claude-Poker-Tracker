@@ -2175,7 +2175,7 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
 
 const LINE_UTG_VS_BTN_4BP_DEEP = {
   id: 'utg-vs-btn-4bp-deep',
-  title: 'UTG vs BTN · 4BP · A♠K♦2♠',
+  title: 'UTG vs BTN · 4BP Low-SPR · A♠K♦2♠',
   summary:
     '4-bet pot, UTG hero vs BTN 4bet-caller on Ace-high flop. Teaches '
     + 'range concentration at low SPR and the value of blocker logic.',
@@ -2192,25 +2192,25 @@ const LINE_UTG_VS_BTN_4BP_DEEP = {
       id: 'flop_root',
       street: 'flop',
       board: ['A♠', 'K♦', '2♠'],
-      pot: 55.0,
+      pot: 45.0,
       villainAction: { kind: 'check' },
       frameworks: ['range_morphology', 'capped_range_check'],
       sections: [
-        { kind: 'prose', heading: 'AK2ss in a 4BP, SPR ~0.8. Villain checks.', body: 'Ranges are extremely narrow: hero UTG 4bet range = QQ+/AK mostly; BTN 4bet-call range = QQ-KK/AK/AKs/AQs. AK2ss massively favors AK and AA/KK (sets). Low SPR means decisions are stack-committed.' },
+        { kind: 'prose', heading: 'AK2ss in a 4BP, SPR ~1.7. Villain checks.', body: 'Ranges are extremely narrow: hero UTG 4bet range = QQ+/AK mostly; BTN 4bet-call range = QQ-KK/AK/AKs/AQs. AK2ss massively favors AK and AA/KK (sets). Low SPR (MICRO zone) means decisions are stack-committed.' },
         { kind: 'why', heading: 'Range concentration at 4BP SPR', body: 'Both players have highly concentrated value ranges on this flop. Hero\'s range has all AA/KK (3 combos) + every AK (16 combos) + QQ (6). Villain lacks AA/KK (almost — some 4bet-call), has QQ + AK + occasional AQs.' },
       ],
       decision: {
         prompt: 'Villain checks. Hero with AK.',
         branches: [
           { label: 'Jam (all-in)', nextId: 'terminal_jam_4bp_correct', correct: true, rationale: 'Correct at this SPR. Fold equity + value merge, villain must call with worse Ax. Low SPR = no reason to slow-play.' },
-          { label: 'Bet 50% pot', nextId: 'terminal_bet_50_4bp', correct: false, rationale: 'Suboptimal sizing for 4BP SPR. The pot is already ~55bb; 27bb bet commits us anyway without the all-in threat.' },
+          { label: 'Bet 50% pot', nextId: 'terminal_bet_50_4bp', correct: false, rationale: 'Suboptimal sizing for 4BP SPR. The pot is ~45bb; a half-pot bet commits us anyway without the all-in threat.' },
           { label: 'Check back', nextId: 'terminal_checkback_4bp', correct: false, rationale: 'Slowplay leak. Villain rarely improves on the turn; no reason to give free cards with the top of hero\'s range.' },
         ],
       },
     },
-    terminal_jam_4bp_correct: { id: 'terminal_jam_4bp_correct', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 55.0, sections: [{ kind: 'prose', heading: 'Jam is standard at 4BP SPR', body: 'Range concentration + low SPR = commit all chips with top of range on flop.' }] },
-    terminal_bet_50_4bp: { id: 'terminal_bet_50_4bp', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 55.0, sections: [{ kind: 'prose', heading: 'Half-committed without plan', body: 'Betting half pot in 4BP leaves us married to the pot anyway; no leverage gained over a jam.' }] },
-    terminal_checkback_4bp: { id: 'terminal_checkback_4bp', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 55.0, sections: [{ kind: 'prose', heading: 'Slowplay leak', body: 'With the top of range in 4BP, jam for value. Check-back wastes bet-call EV.' }] },
+    terminal_jam_4bp_correct: { id: 'terminal_jam_4bp_correct', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 45.0, sections: [{ kind: 'prose', heading: 'Jam is standard at 4BP SPR', body: 'Range concentration + low SPR = commit all chips with top of range on flop.' }] },
+    terminal_bet_50_4bp: { id: 'terminal_bet_50_4bp', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 45.0, sections: [{ kind: 'prose', heading: 'Half-committed without plan', body: 'Betting half pot in 4BP leaves us married to the pot anyway; no leverage gained over a jam.' }] },
+    terminal_checkback_4bp: { id: 'terminal_checkback_4bp', street: 'flop', board: ['A♠', 'K♦', '2♠'], pot: 45.0, sections: [{ kind: 'prose', heading: 'Slowplay leak', body: 'With the top of range in 4BP, jam for value. Check-back wastes bet-call EV.' }] },
   },
 };
 
