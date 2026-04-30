@@ -125,6 +125,13 @@ export class RenderCoordinator {
       // Between-hands Mode A timer state
       modeAExpired: false,
       modeATimerActive: false,
+      // V-status §I INV-STATUS-4 (Gate 5 PR-9): connected-waiting timeout.
+      // When connected with a table but no hands for 30s, escalate the
+      // status text to suggest a reload. Cleared via clearConnectedWaitingTimer
+      // (registered timer key 'connectedWaitingTimeout' is also cancelled by
+      // clearAllTimers on table switch / destroy).
+      connectedWaitingExpired: false,
+      connectedWaitingTimerActive: false,
       // Two-phase stale context (Fix 3)
       staleContext: false,
       // Has-hands flag for no-table visibility (Fix 2)
@@ -278,6 +285,9 @@ export class RenderCoordinator {
       hasTableHands: s.hasTableHands,
       planPanelOpen: s.planPanelOpen,
       modeAExpired: s.modeAExpired,
+      // V-status §I INV-STATUS-4: surface the timeout flag so renderers can
+      // override status text to "Tracking — no hands in 30s; reload may help".
+      connectedWaitingExpired: s.connectedWaitingExpired,
       // RT-66 + STP-1: violation surfacing. Both counters exposed — the
       // badge uses `violationCount30s`; diag dumps and governance reports
       // show `violationCountLifetime`. Window is computed at snapshot time
@@ -814,6 +824,10 @@ export class RenderCoordinator {
     this._state.lastAutoExpandAdviceAt = null;
     this._state.userToggledPlanPanelInHand = false;
     this.clearModeATimer();
+    // V-status §I INV-STATUS-4: reset connected-waiting flags. The
+    // registered timer was already cancelled by clearAllTimers above;
+    // this resets the state mirrors so a fresh table starts clean.
+    this.clearConnectedWaitingTimer();
     this._pendingAdvice = null;
     this._lastStreetCardHtml = null;
     // SR-6.6: freshness follows currentLiveContext lifecycle. appSeatData
@@ -1041,6 +1055,88 @@ export class RenderCoordinator {
     }
     this._state.modeAExpired = false;
     this._state.modeATimerActive = false;
+  }
+
+  // =======================================================================
+  // V-STATUS §I INV-STATUS-4 — CONNECTED-WAITING TIMER (Gate 5 PR-9)
+  // =======================================================================
+  // When `connState.connected && tableCount > 0 && handCount === 0` persists
+  // for >30 seconds, escalate the status text to suggest a reload (the dot
+  // remains DEGRADED yellow — the tier is unchanged). Closes FM-STATUS-3:
+  // a silently broken WebSocket previously produced "waiting for hands"
+  // forever with no escalation cue.
+  //
+  // Timer registered through scheduleTimer('connectedWaitingTimeout') per
+  // the RT-60 contract — clearAllTimers (on clearForTableSwitch / destroy)
+  // automatically cancels it. The state flags are reset by
+  // clearConnectedWaitingTimer, which clearForTableSwitch invokes for
+  // belt-and-braces parity with clearModeATimer.
+
+  /**
+   * Start the 30-second connected-waiting timer. Idempotent — calling while
+   * already armed is a no-op. On expiry, sets `connectedWaitingExpired=true`
+   * and triggers a render so the status text reflects the timeout.
+   */
+  startConnectedWaitingTimer() {
+    if (this._state.connectedWaitingTimerActive) return;
+    this._state.connectedWaitingTimerActive = true;
+    this.scheduleTimer('connectedWaitingTimeout', () => {
+      this._state.connectedWaitingExpired = true;
+      this._state.connectedWaitingTimerActive = false;
+      // Remove the registry entry post-fire so hasTimer() reflects "not
+      // armed" — the entry would otherwise linger and create a state-flag-
+      // vs-registry desync. Idempotent: clearTimeout on an already-fired
+      // handle is a no-op.
+      this.clearTimer('connectedWaitingTimeout');
+      this.scheduleRender('connectedWaiting_expired', PRIORITY.IMMEDIATE);
+    }, 30_000);
+  }
+
+  /**
+   * Cancel the connected-waiting timer (if armed) and reset both state
+   * flags. Safe to call when no timer is registered — clearTimer is a
+   * no-op for absent keys.
+   */
+  clearConnectedWaitingTimer() {
+    this.clearTimer('connectedWaitingTimeout');
+    this._state.connectedWaitingExpired = false;
+    this._state.connectedWaitingTimerActive = false;
+  }
+
+  /**
+   * Idempotent driver — evaluate the connected-waiting condition and
+   * arm/clear the timer accordingly. Callers pass a triple of inputs;
+   * the method decides the outcome.
+   *
+   * Spec §I.8: condition = connected && tableCount > 0 && handCount === 0.
+   * `handCount === 0` is strict — `null` (boot-race / not yet computed)
+   * does NOT arm the timer; only a confirmed-empty count does. This
+   * prevents the timer from arming during the first-frame hydration gap
+   * where lastHandCount is briefly null.
+   *
+   * @param {Object} params
+   * @param {boolean} params.connected - port-bridge connected
+   * @param {number} params.tableCount - active table count from pipeline
+   * @param {number|null} params.handCount - lastHandCount (null = unknown)
+   */
+  evaluateConnectedWaitingTimer({ connected, tableCount, handCount }) {
+    const inWaitingState = !!connected && tableCount > 0 && handCount === 0;
+    if (inWaitingState) {
+      // Don't re-arm if we already expired — the user has been told to
+      // reload; keep the message visible until a hand arrives or the
+      // table changes (both clear the flag).
+      if (!this._state.connectedWaitingTimerActive && !this._state.connectedWaitingExpired) {
+        this.startConnectedWaitingTimer();
+      }
+    } else {
+      // Out of the waiting state — clear the timer + reset both flags.
+      // No-op if neither flag is set + no timer is registered.
+      if (this._state.connectedWaitingTimerActive
+          || this._state.connectedWaitingExpired
+          || this.hasTimer('connectedWaitingTimeout')) {
+        this.clearConnectedWaitingTimer();
+      }
+    }
   }
 
   // =======================================================================

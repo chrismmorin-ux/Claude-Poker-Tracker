@@ -144,6 +144,13 @@ if (/this\.clearModeATimer\(\)/.test(clearForTableSwitchBody)) {
   for (const f of MODE_A_OWNED) clearedOnTableSwitch.add(f);
 }
 
+// V-status §I INV-STATUS-4 (Gate 5 PR-9): connected-waiting timer-owned
+// fields are cleared via `clearConnectedWaitingTimer()`. Credit the call.
+const CONNECTED_WAITING_OWNED = ['connectedWaitingExpired', 'connectedWaitingTimerActive'];
+if (/this\.clearConnectedWaitingTimer\(\)/.test(clearForTableSwitchBody)) {
+  for (const f of CONNECTED_WAITING_OWNED) clearedOnTableSwitch.add(f);
+}
+
 // =========================================================================
 // TESTS
 // =========================================================================

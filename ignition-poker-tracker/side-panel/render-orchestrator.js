@@ -1330,9 +1330,13 @@ export const buildModelAuditHTML = (advice) => {
  *
  * @param {Object|null} pipeline
  * @param {number} handCount
+ * @param {boolean} [connectedWaitingExpired=false] - V-status \u00A7I.8 / INV-STATUS-4:
+ *   when true, the connected-waiting timer has fired (table present but
+ *   no hands for 30s); the text escalates to suggest a reload while the
+ *   tier remains DEGRADED yellow per spec.
  * @returns {{ tier: string, text: string }}
  */
-export const buildStatusBar = (pipeline, handCount) => {
+export const buildStatusBar = (pipeline, handCount, connectedWaitingExpired = false) => {
   if (!pipeline) {
     return { tier: STATUS_TIERS.DEGRADED, text: 'Service worker not responding' };
   }
@@ -1347,6 +1351,9 @@ export const buildStatusBar = (pipeline, handCount) => {
   } else if (handCount > 0) {
     return { tier: STATUS_TIERS.LIVE, text: `${handCount} hands captured` };
   } else if (tableCount > 0) {
+    if (connectedWaitingExpired) {
+      return { tier: STATUS_TIERS.DEGRADED, text: `Tracking${tableLabel} \u2014 no hands in 30s; reload may help` };
+    }
     return { tier: STATUS_TIERS.DEGRADED, text: `Connected${tableLabel} \u2014 waiting for hands` };
   } else {
     return { tier: STATUS_TIERS.DEGRADED, text: '' }; // Caller fills via diagnostic status

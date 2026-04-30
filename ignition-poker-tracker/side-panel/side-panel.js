@@ -150,6 +150,9 @@ injectTokens();
     onConnect: () => {
       console.log('[Side Panel] Port connected');
       coordinator.set('connState', { connected: true });
+      // V-status §I INV-STATUS-4: re-evaluate on reconnect — if we already
+      // have pipeline + handCount cached, the timer should arm immediately.
+      evaluateConnectedWaiting();
     },
 
     // SR-6.5: port lifecycle callbacks set state + scheduleRender; the
@@ -157,11 +160,14 @@ injectTokens();
     // DOM writes. R-2.3 violation remediation for audit sites #1–3.
     onDisconnect: () => {
       coordinator.set('connState', { connected: false, cause: 'disconnect', text: 'Reconnecting...' });
+      // V-status §I INV-STATUS-4: not-connected exits the waiting state.
+      evaluateConnectedWaiting();
       scheduleRender('conn_disconnect', PRIORITY.IMMEDIATE);
     },
 
     onContextDead: () => {
       coordinator.set('connState', { connected: false, cause: 'contextDead', text: 'Extension disconnected — reload page' });
+      evaluateConnectedWaiting();
       scheduleRender('conn_contextDead', PRIORITY.IMMEDIATE);
     },
 
@@ -169,9 +175,31 @@ injectTokens();
       console.warn(`[Side Panel] Version mismatch — panel: ${EXTENSION_VERSION}, SW: ${swVersion}`);
       const prev = coordinator.get('connState') || {};
       coordinator.set('connState', { ...prev, cause: 'versionMismatch', text: 'Version mismatch — close & reopen panel' });
+      evaluateConnectedWaiting();
       scheduleRender('conn_versionMismatch', PRIORITY.IMMEDIATE);
     },
   });
+
+  // =========================================================================
+  // V-STATUS §I INV-STATUS-4 — connected-waiting evaluator (Gate 5 PR-9)
+  // =========================================================================
+  // Reads the current connState / pipeline / handCount triple from the
+  // coordinator and asks it to (re)evaluate the connected-waiting timer.
+  // Called from every site that mutates one of the three inputs:
+  // port-state callbacks (above), handlePipelineStatus (after refreshHandStats),
+  // and handleHandsUpdated. Spec: docs/design/surfaces/sidebar-shell-spec.md §I.8.
+  const evaluateConnectedWaiting = () => {
+    const c = coordinator.get('connState') || {};
+    const pipeline = coordinator.get('lastPipeline');
+    const tables = pipeline?.tables || {};
+    const tableCount = pipeline?.tableCount ?? Object.keys(tables).length;
+    const handCount = coordinator.get('lastHandCount');
+    coordinator.evaluateConnectedWaitingTimer({
+      connected: !!c.connected,
+      tableCount,
+      handCount,
+    });
+  };
 
   // Refresh button — request full state push from SW
   const refreshBtn = $('refresh-btn');
@@ -333,11 +361,17 @@ injectTokens();
     const tid = coordinator.get('currentActiveTableId');
     const pip = coordinator.get('lastPipeline');
     await refreshHandStats(tid, pip);
+    // V-status §I INV-STATUS-4: pipeline + handCount are now both fresh —
+    // (re)evaluate the connected-waiting timer.
+    evaluateConnectedWaiting();
   };
 
   /** When hands are updated, re-read storage and recompute stats. */
   const handleHandsUpdated = async (_totalHands) => {
     await refreshHandStats(coordinator.get('currentActiveTableId'), coordinator.get('lastPipeline'));
+    // V-status §I INV-STATUS-4: handCount may have transitioned 0 → N; the
+    // arrival of hands clears the waiting state.
+    evaluateConnectedWaiting();
   };
 
   /** Shared: read hands from storage, compute stats, render. */
@@ -813,8 +847,14 @@ injectTokens();
 
   /**
    * Update status bar — delegates text/class computation to render-orchestrator.js.
+   *
+   * @param {Object|null} pipeline
+   * @param {number|null} handCount
+   * @param {Object|null} diagData
+   * @param {Object|null} fallbackState
+   * @param {boolean} [connectedWaitingExpired=false] - V-status §I.8 escalation flag.
    */
-  const updateStatusBar = (pipeline, handCount, diagData, fallbackState) => {
+  const updateStatusBar = (pipeline, handCount, diagData, fallbackState, connectedWaitingExpired = false) => {
     const dot = $('status-dot');
     const text = $('status-text');
 
@@ -822,7 +862,7 @@ injectTokens();
     // SR-6.10 (Z0 0.2): R-4.2 unknown placeholder. null = boot-race, no data yet.
     $('hand-count').textContent = handCount == null ? '\u2014' : handCount;
 
-    const result = buildStatusBar(pipeline, handCount);
+    const result = buildStatusBar(pipeline, handCount, connectedWaitingExpired);
     // V-status \u00a7I writer #2 (Gate 5 PR-6): routes through applyMonotonicTier
     // so updateStatusBar can never silently downgrade a more-severe tier
     // set earlier in the same render frame by renderConnectionStatus
@@ -1908,7 +1948,16 @@ injectTokens();
 
     // --- Status bar ---
     if (snap.lastPipeline) {
-      updateStatusBar(snap.lastPipeline, snap.lastHandCount, snap.cachedDiag, snap.swFallbackState);
+      // V-status §I INV-STATUS-4: pass connectedWaitingExpired so buildStatusBar
+      // can escalate the text to "Tracking — no hands in 30s; reload may help"
+      // when the 30s timer has fired (tier stays DEGRADED yellow per spec).
+      updateStatusBar(
+        snap.lastPipeline,
+        snap.lastHandCount,
+        snap.cachedDiag,
+        snap.swFallbackState,
+        snap.connectedWaitingExpired
+      );
     }
 
     // --- Stale context indicator ---

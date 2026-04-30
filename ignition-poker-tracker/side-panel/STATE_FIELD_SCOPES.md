@@ -47,6 +47,7 @@ Cleared by `clearForTableSwitch`:
 - `lastGoodExploits`, `lastGoodWeaknesses`, `lastGoodBriefings`, `lastGoodObservations` — STP-1; seat references encode prior-table layout
 - `lastHandCount`, `hasTableHands`, `cachedSeatStats`, `cachedSeatMap` — STP-1; cleared together to avoid R1 arming
 - `modeAExpired`, `modeATimerActive` — cleared via `clearModeATimer()` method
+- `connectedWaitingExpired`, `connectedWaitingTimerActive` — V-status §I INV-STATUS-4 (Gate 5 PR-9). Cleared via `clearConnectedWaitingTimer()` method (which `clearForTableSwitch` calls). The registered timer key `connectedWaitingTimeout` is also cancelled by `clearAllTimers()` at the top of `clearForTableSwitch`, so the cancellation is belt-and-braces.
 - `staleContext` — STP-1; cleared explicitly to match the currentLiveContext null reset
 
 (Per-table state that is intentionally preserved across switches — specifically seat-level exploit data — is documented under `session` above to keep this section's list congruent with `clearForTableSwitch`.)

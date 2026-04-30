@@ -643,6 +643,49 @@ describe('buildStatusBar', () => {
       expect(Object.values(STATUS_TIERS)).toContain(result.tier);
     }
   });
+
+  // V-status §I.8 INV-STATUS-4 (Gate 5 PR-9): connected-waiting escalation.
+  describe('connectedWaitingExpired escalation', () => {
+    it('escalates text when expired=true and tableCount>0 && handCount===0', () => {
+      const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 0, true);
+      expect(result.tier).toBe(STATUS_TIERS.DEGRADED);
+      expect(result.text).toContain('no hands in 30s');
+      expect(result.text).toContain('reload may help');
+      // Spec §I.8: text should NOT contain the pre-expiry "waiting for hands"
+      // string — the escalation replaces it, doesn't append.
+      expect(result.text).not.toContain('waiting for hands');
+    });
+
+    it('keeps the regular "waiting for hands" text when expired=false', () => {
+      const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 0, false);
+      expect(result.text).toContain('waiting for hands');
+      expect(result.text).not.toContain('no hands in 30s');
+    });
+
+    it('keeps tier DEGRADED on expiry (no fatal escalation)', () => {
+      // Spec §I.8 explicitly: "stays yellow" — escalation is text-only.
+      const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 0, true);
+      expect(result.tier).toBe(STATUS_TIERS.DEGRADED);
+    });
+
+    it('expired=true is a no-op when handCount > 0 (tracking branch wins)', () => {
+      const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 5, true);
+      expect(result.tier).toBe(STATUS_TIERS.LIVE);
+      expect(result.text).toContain('Tracking');
+      expect(result.text).not.toContain('no hands in 30s');
+    });
+
+    it('expired=true is a no-op when tableCount === 0 (no table to track)', () => {
+      const result = buildStatusBar({ tableCount: 0, tables: {} }, 0, true);
+      expect(result.text).toBe('');
+    });
+
+    it('defaults connectedWaitingExpired=false when omitted (back-compat)', () => {
+      const result = buildStatusBar({ tableCount: 1, tables: { '123': {} } }, 0);
+      expect(result.text).toContain('waiting for hands');
+      expect(result.text).not.toContain('no hands in 30s');
+    });
+  });
 });
 
 // =========================================================================
