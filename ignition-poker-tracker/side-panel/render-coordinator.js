@@ -770,6 +770,33 @@ export class RenderCoordinator {
     this._state.appSeatDataVersion = (this._state.appSeatDataVersion || 0) + 1;
   }
 
+  /**
+   * V-status §I INV-STATUS-5 (Gate 5 PR-10): app-bridge clearing path.
+   *
+   * Closes FM-STATUS-5: when the main poker-tracker app crashes mid-session,
+   * the SW continues sending pipeline-status pushes with appConnected=false,
+   * but no new exploits push arrives to update lastGoodExploits — leaving its
+   * cached `appConnected: true` to leak into buildSnapshot's appConnected
+   * derive (an OR over both signals) and falsely show the app as synced.
+   *
+   * The fix is to declare a second clearing path for the lastGoodExploits
+   * cohort (exploits + weaknesses + briefings + observations) — this method.
+   * Driver in side-panel.js handlePipelineStatus detects the
+   * lastPipeline.appConnected `true → false` transition and invokes this
+   * method, paralleling clearForTableSwitch which clears the same 4 fields
+   * together. Per spec §I.9 + STATE_FIELD_SCOPES.md.
+   *
+   * Scope: only the app-bridge cohort. Hand-history state (lastHandCount,
+   * cachedSeatStats, currentLiveContext, etc.) survives — the app crashing
+   * doesn't invalidate the panel's own hand observations.
+   */
+  clearForAppDisconnect() {
+    this._state.lastGoodExploits = null;
+    this._state.lastGoodWeaknesses = null;
+    this._state.lastGoodBriefings = null;
+    this._state.lastGoodObservations = null;
+  }
+
   clearForTableSwitch() {
     // RT-60: cancel all registered timers before wiping state so no
     // orphan callback can fire on the next table's context.

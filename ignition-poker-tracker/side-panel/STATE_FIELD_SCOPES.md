@@ -44,7 +44,7 @@ Cleared by `clearForTableSwitch`:
 - `advicePendingForStreet` — STRT-trust fix; per-table per-hand
 - `_lockedHeroSeat`, `_lockedDealerSeat`, `_lockedHandNumber`
 - `userCollapsedSections`
-- `lastGoodExploits`, `lastGoodWeaknesses`, `lastGoodBriefings`, `lastGoodObservations` — STP-1; seat references encode prior-table layout
+- `lastGoodExploits`, `lastGoodWeaknesses`, `lastGoodBriefings`, `lastGoodObservations` — STP-1; seat references encode prior-table layout. **Two declared clearing paths per V-status §I INV-STATUS-5 (Gate 5 PR-10):** (a) `clearForTableSwitch` — table identity changed; seat references stale; (b) `clearForAppDisconnect` — main poker-tracker app disconnected from SW; cached `appConnected: true` would leak into the buildSnapshot OR-derive after the app crashed (FM-STATUS-5). Both paths null the same 4 fields together to keep the cohort coherent.
 - `lastHandCount`, `hasTableHands`, `cachedSeatStats`, `cachedSeatMap` — STP-1; cleared together to avoid R1 arming
 - `modeAExpired`, `modeATimerActive` — cleared via `clearModeATimer()` method
 - `connectedWaitingExpired`, `connectedWaitingTimerActive` — V-status §I INV-STATUS-4 (Gate 5 PR-9). Cleared via `clearConnectedWaitingTimer()` method (which `clearForTableSwitch` calls). The registered timer key `connectedWaitingTimeout` is also cancelled by `clearAllTimers()` at the top of `clearForTableSwitch`, so the cancellation is belt-and-braces.

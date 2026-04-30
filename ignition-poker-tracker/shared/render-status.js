@@ -34,9 +34,26 @@
  * the helper layer. Currently-shipping bugs FM-STATUS-1 + FM-STATUS-2
  * closed at PR-5.
  *
- * Pipeline visibility-gating, INV-STATUS-4 (connected-waiting 30s timer),
- * INV-STATUS-5 (lastGoodExploits clearing-path) are deferred to follow-up
- * PRs.
+ * Gate 5 PR-9 closed INV-STATUS-4 (connected-waiting 30s timer + status-
+ * text escalation) per shell-spec §I.8 — RenderCoordinator's
+ * evaluateConnectedWaitingTimer + buildStatusBar's connectedWaitingExpired
+ * branch own the behavior; the timer flag rides snap.connectedWaitingExpired
+ * into render. Closes FM-STATUS-3.
+ *
+ * Gate 5 PR-10 closed INV-STATUS-5 (lastGoodExploits clearing-path) per
+ * shell-spec §I.9 — RenderCoordinator's clearForAppDisconnect nulls the
+ * 4-field app-bridge cohort when handlePipelineStatus detects
+ * lastPipeline.appConnected transition true→false. STATE_FIELD_SCOPES.md
+ * declares both clearing paths. Closes FM-STATUS-5.
+ *
+ * Gate 5 PR-10 verified pipeline visibility-gating per shell-spec §I.3:
+ * the renderAll branch in side-panel.js gates the strip on
+ * !snap.hasTableHands, matching `hasHands` semantics from buildSnapshot.
+ * pipeline-visibility-gating.test.js source-grep test enforces both
+ * branches exist (regression pin).
+ *
+ * V-status §I is fully closed — all 5 INV-STATUS-* invariants enforced
+ * at canonical layer + behavioral layer + test layer.
  */
 
 // ===========================================================================

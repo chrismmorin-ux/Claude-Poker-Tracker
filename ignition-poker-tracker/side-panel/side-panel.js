@@ -316,7 +316,18 @@ injectTokens();
 
   /** Handle full pipeline status push (replaces the old poll cycle). */
   const handlePipelineStatus = async (pipeline) => {
+    // V-status §I INV-STATUS-5 (Gate 5 PR-10): detect the
+    // lastPipeline.appConnected `true → false` transition BEFORE writing
+    // the new pipeline value, then null the cached app-bridge cohort so a
+    // stale `lastGoodExploits.appConnected: true` can't leak into the
+    // buildSnapshot appConnected OR-derive after the app has crashed.
+    // Closes FM-STATUS-5.
+    const prevAppConnected = !!coordinator.get('lastPipeline')?.appConnected;
+    const newAppConnected = !!pipeline?.appConnected;
     coordinator.set('lastPipeline', pipeline);
+    if (prevAppConnected && !newAppConnected) {
+      coordinator.clearForAppDisconnect();
+    }
 
     // Find active table
     const tables = pipeline?.tables || {};
