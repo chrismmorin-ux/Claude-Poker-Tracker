@@ -32,7 +32,7 @@ Primary:
 - `JTBD-TS-37` stack-depth strategy zone updated live (M-ratio guidance)
 - `JTBD-TS-39` rebuy cost tracking for ROI (via session payout recording on end)
 - `JTBD-SM-19` pause without closing session (pause / resume timer)
-- `JTBD-MH-07` short-stack push/fold with ICM — not served here directly; consumed by `table-view` advice via context
+- `JTBD-MH-07` short-stack push/fold with ICM — **NOT served today.** Verified 2026-04-29 (DCOMP-W4-A2-F11): `TableView/LiveAdviceBar.jsx:152` props are `actionAdvice, liveEquity, boardTexture, gameTreeAdvice, currentStreet` only — no tournament context. `icmPressure` is consumed by `TableHeader` for a passive `IcmBadge` indicator (display-only) and does not adjust LiveAdviceBar's chip-EV-derived push/fold threshold. Same defect as 2026-04-21 TableView audit C3; tracked under [DISC-2026-04-21-push-fold-widget](../discoveries/2026-04-21-push-fold-widget.md) (escalation route — dedicated `PushFoldPanel` widget for ≤15bb decisions).
 
 Secondary:
 - `JTBD-SM-21` clean cash-out / finish recording — lands on end-tournament flow here
@@ -42,11 +42,11 @@ Secondary:
 ## Personas served
 
 - [Circuit Grinder](../personas/core/circuit-grinder.md) — primary persona for live MTT / circuit grinds
-- [Online MTT Shark](../personas/core/online-mtt-shark.md) — primary for online MTT (usually via the sidebar; this view is post-session context)
+- [Online MTT Shark](../personas/core/online-mtt-shark.md) — primary for online MTT — **NOT a live multi-tabling surface**; consulted only off-tabling (review) or on single-table escalation. See [Use-case on TournamentView](../personas/core/online-mtt-shark.md#use-case-on-tournamentview-clarification-2026-04-29) (DCOMP-W4-A2-F12, 2026-04-29).
 - [Chris](../personas/core/chris-live-player.md) — when playing the occasional tournament
 - [Hybrid Semi-Pro](../personas/core/hybrid-semi-pro.md) — shared live/online time
-- [Push/Fold short-stack](../personas/situational/push-fold-short-stack.md), [Bubble decision](../personas/situational/bubble-decision.md), [Final table play](../personas/situational/final-table-play.md) — situational primary
-- [Ringmaster](../personas/core/ringmaster-home-host.md) — home tournaments (limited breadth today)
+- [Push/Fold short-stack](../personas/situational/push-fold-short-stack.md), [Bubble decision](../personas/situational/bubble-decision.md), [Final table play](../personas/situational/final-table-play.md), [Circuit Grinder Between Hands](../personas/situational/circuit-grinder-between-hands.md) — situational primary
+- [Ringmaster](../personas/core/ringmaster-home-host.md) — home tournaments (partially served — explicit scope boundary documented at [Use-case on TournamentView](../personas/core/ringmaster-home-host.md#use-case-on-tournamentview--scope-boundary-2026-04-29); not promoted to first-class per owner ratification 2026-04-29).
 
 ---
 
@@ -140,3 +140,4 @@ Secondary:
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-04-22 — DCOMP-W4-A2 combined Gate-2 + Gate-4 audit appended; Known-issues updated with 13 findings.
+- 2026-04-29 — DCOMP-W4-A2 cluster CLOSED. F11 corrected MH-07 served-by-context claim (verified NOT served — escalation route is DISC-2026-04-21-push-fold-widget). F12 clarified Online MTT Shark + Ringmaster boundaries on Personas-served list. F13 added situational persona cross-reference (Circuit Grinder Between Hands).

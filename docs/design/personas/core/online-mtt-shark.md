@@ -59,6 +59,23 @@ Plays 6–12 concurrent online tournaments — Sunday majors, Bounty Builders, d
 - [Late reg decision](../situational/late-reg-decision.md) (placeholder)
 - [Bubble decision](../situational/bubble-decision.md)
 
+---
+
+## Use-case on `TournamentView` (clarification, 2026-04-29)
+
+The Online MTT Shark's primary live-decision surface is the **sidebar (Z2 Decision)**, not the main-app TournamentView. Multi-tabling 6–12 concurrent windows means TournamentView's full-screen layout is structurally incompatible with their attention budget — they cannot leave a single table to inspect tournament state on the main app without losing tempo on the others.
+
+**TournamentView is consulted in two contexts only:**
+
+1. **Off-tabling review** — between sessions, when reviewing a final-table run for stage-specific leaks. Read-only consumption: ICM pressure, M-ratio guidance at each level, blind-out projections retrospectively.
+2. **Single-table escalation** — when down to one or two remaining tables (deep run), TournamentView's denser projections may justify the surface switch. Specifically: the per-seat ICM payout delta surface (TS-40, currently proposed) would be Online-MTT-Shark-primary if shipped.
+
+**Not a Shark surface for live multi-tabling.** The Shark's live-decision needs are served by:
+- Sidebar Z2 with ICM overlay (cross-product gap noted in 2026-04-21 sidebar-tournament-parity discovery).
+- TableView's `IcmBadge` + `mRatioGuidance` overlay — passive, glanceable, doesn't require leaving the table.
+
+The TournamentView surface artifact's `Personas served` line ("primary for online MTT (usually via the sidebar; this view is post-session context)") encodes the same boundary, with this clarification supplying the "what does post-session context mean" detail the audit Stage A2 flagged as missing.
+
 ## Related JTBD
 
 - `JTBD-TS-*` tournament-specific (all items)
@@ -92,3 +109,4 @@ Plays 6–12 concurrent online tournaments — Sunday majors, Bounty Builders, d
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-29 — DCOMP-W4-A2-F12 closeout: added `Use-case on TournamentView` section resolving audit Stage A2 (ambiguous post-session-context framing).

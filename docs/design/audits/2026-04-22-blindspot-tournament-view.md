@@ -279,8 +279,46 @@ Standard template rubric — see `docs/design/audits/_template.md`.
 
 - **Drafted by:** Claude (main), session 2026-04-22
 - **Reviewed by:** [owner] on [date]
-- **Closed:** [date]
+- **Closed:** 2026-04-29 (P3 tail F11/F12/F13 closed — full DCOMP-W4-A2 cluster shipped)
+
+---
+
+## DCOMP-W4-A2-F11/F12/F13 closeout (2026-04-29)
+
+### F11 — MH-07 served-by-context claim verification
+
+**Verdict:** ESCALATE (claim was aspirational).
+
+**Verification method:** Read `src/components/views/TableView/LiveAdviceBar.jsx:152` and traced `icmPressure` through `TableView.jsx:184-193, :466-467`.
+
+**Finding:** `LiveAdviceBar` props are `actionAdvice, liveEquity, boardTexture, gameTreeAdvice, currentStreet`. **No tournament context**. The `icmPressure` field flows from `useTournament()` → `TableView` → `TableHeader` (line 466) → passive `IcmBadge` indicator only. It is **not** read by the advice-generation pipeline; LiveAdviceBar's push/fold threshold remains chip-EV-derived. The surface artifact's claim ("served via TableView consuming icmPressure") was **aspirational**.
+
+**Resolution:**
+- Surface artifact `surfaces/tournament-view.md:35` patched to declare MH-07 NOT served today, with a code-citation pointer to the verification.
+- Escalation route already exists: [DISC-2026-04-21-push-fold-widget](../discoveries/2026-04-21-push-fold-widget.md) captures the dedicated `PushFoldPanel` widget that would actually serve MH-07 at ≤15bb. No new code ticket opened — the discovery is the existing escalation.
+- Same defect class as the 2026-04-21 TableView audit C3 finding ("Push/fold verdict mismatch at ≤15bb"). F11 confirms the cross-surface pattern: TournamentView's served-by-context claim was an artifact of the surface artifact being authored before the TableView C3 finding landed.
+
+### F12 — Tournament persona patches
+
+**Resolution:**
+1. **A1 — Circuit Grinder between-hands:** Authored [`personas/situational/circuit-grinder-between-hands.md`](../personas/situational/circuit-grinder-between-hands.md). Distinguished from `between-hands-chris.md` (cash) on cognitive load + stakes-of-error axes. Added to `tournament-view.md` situational-primary list.
+2. **A2 — Online MTT Shark scope:** Added "Use-case on TournamentView (clarification, 2026-04-29)" section to `personas/core/online-mtt-shark.md`. Live multi-tabling = sidebar Z2; TournamentView is consulted off-tabling (review) or on single-table escalation (deep run). `tournament-view.md` Personas-served line patched to cross-link.
+3. **A3 — Ringmaster home-tournament scope:** Owner-ratified 2026-04-29 = "document boundary, do not promote." Added "Use-case on TournamentView — scope boundary (2026-04-29)" section to `personas/core/ringmaster-home-host.md` enumerating served (timer/stacks/elimination/finish) vs not-served (cash payout splits, mid-event freezeout conversion, physical button rotation, multi-stake structures, cross-table settle). Discovery candidates flagged (cash-share calculator + cross-table settle) for future Gate 1 evaluation.
+
+### F13 — Tournament JTBD atlas patches
+
+**Numbering collision:** F13 originally proposed TS-43 (blind-out threshold) + TS-44 (rebuy decision at late-reg boundary). Those numbers were already taken — TS-43 (ICM-adjusted decision at bubble) + TS-44 (pay-jump proximity indicator) were authored as part of the 2026-04-21 push-fold-widget discovery cluster. F13 deliverables shipped as **TS-45** + **TS-46** instead.
+
+**Resolution:**
+- **TS-45 — Blind-out threshold reached:** Active (data exists in `TournamentContext.blindOutInfo`; surface alert at threshold-crossing missing). Distinguished from TS-37 (passive M-ratio classification) on threshold-crossing-event vs static-zone axis.
+- **TS-46 — Rebuy decision at late-reg boundary:** Proposed (in-session decision; distinct from TS-39 post-hoc cost tracking). Likely needs Gate 1 entry to move Proposed → Active.
+- Both entries cross-link `circuit-grinder-between-hands.md` as a primary persona, which closes the loop with F12-A1.
+
+### Cluster status
+
+DCOMP-W4-A2 fully closed: 13 findings (F1-F13) all shipped or formally superseded. P0/P1 destructive-action remediation landed in earlier batches (commits `0715034`, `38b334b`, the 2026-04-29 batch). P2 polish + P3 doc tail closed today.
 
 ## Change log
 
 - 2026-04-22 — Draft. Combined Gate-2 roundtable + Gate-4 audit in one artifact because all Stage-C findings mapped 1:1 to Gate-4 heuristic violations; separating would duplicate the evidence block.
+- 2026-04-29 — F11/F12/F13 closeout footer added; cluster status section written; audit closed.

@@ -127,7 +127,7 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | SE-03 | Scale commitment to a specific deviation via drill-side dial | ◐ | Proposed |
 | SE-04 | Pre-session kinesthetic visualization / rehearsal via physical artifact | ◐ | Active (PRF, pending Gate 4) |
 
-### Tournament-specific (TS-35..42)
+### Tournament-specific (TS-35..46)
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -141,6 +141,8 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | TS-42 | Bounty-adjusted EV | ◐ | Proposed |
 | TS-43 | ICM-adjusted decision at bubble | ◐ | Active |
 | TS-44 | Pay-jump proximity indicator | ◐ | Active |
+| TS-45 | Blind-out threshold reached | ◐ | Active |
+| TS-46 | Rebuy decision at late-reg boundary | ◐ | Proposed |
 
 ### Drills and study (DS-43..59)
 

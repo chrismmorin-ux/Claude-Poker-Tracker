@@ -74,6 +74,27 @@ Jobs that only apply to tournament play — ICM, stack depth, pay structure, ant
 - See [bubble-decision situational](../../personas/situational/bubble-decision.md).
 - Primary surfaces: `TableView` (tournament overlay), `TournamentView` (PredictionsPanel).
 
+## TS-45 — Blind-out threshold reached
+
+> When my effective stack drops below the threshold where folding every hand to the break would mean blinding out, I want a clear signal — "If you fold every hand, you blind out in N hands / before the break" — so the choice between waiting for a premium and shoving wide becomes explicit.
+
+- State: **Active** (partially served — `TournamentContext.blindOutInfo` carries the projection; surface exposure on `TournamentView/PredictionsPanel` exists but does not alert at threshold-crossing).
+- Distinguished from TS-37 (stack-depth strategy zone — passive M-ratio classification): TS-45 is a **threshold-crossing event** that triggers a decision moment ("am I committed to playing this level out?").
+- Distinguished from TS-43 (ICM-adjusted bubble decision): TS-45 fires regardless of bubble proximity; it's about the structural deadline (blinds eat me before I act), not the payout-jump deadline.
+- Primary personas: [Circuit Grinder](../../personas/core/circuit-grinder.md), [Online MTT Shark](../../personas/core/online-mtt-shark.md), [push-fold-short-stack situational](../../personas/situational/push-fold-short-stack.md), [Circuit Grinder Between Hands](../../personas/situational/circuit-grinder-between-hands.md).
+- Primary surfaces: `TournamentView` (PredictionsPanel — currently surfaces the data passively, no threshold alert), `TableView` (tournament overlay — currently absent).
+- Authored 2026-04-29 (DCOMP-W4-A2-F13). Resolves audit Stage B1 ("Am I committed to playing out this level?" cluster gap).
+
+## TS-46 — Rebuy decision at late-reg boundary
+
+> When the rebuy / late-registration period is closing within minutes and my stack is short (≤8bb), I want a structured "should I rebuy?" verdict — given my current stack, the field's typical rebuy rate, the prize structure, and the time remaining in late reg — so I don't make the rebuy / no-rebuy call from gut alone.
+
+- State: **Proposed** (DISC missing — distinct from TS-39 which is post-hoc rebuy *cost tracking* for ROI; TS-46 is the *in-session decision* at the late-reg boundary).
+- Distinguished from TS-39: TS-39 records what happened (cost in / payout out) so ROI is honest; TS-46 surfaces the verdict *before* the rebuy commits.
+- Primary personas: [Circuit Grinder](../../personas/core/circuit-grinder.md), [Online MTT Shark](../../personas/core/online-mtt-shark.md), [Hybrid Semi-Pro](../../personas/core/hybrid-semi-pro.md), [Circuit Grinder Between Hands](../../personas/situational/circuit-grinder-between-hands.md).
+- Primary surfaces: `TournamentView` (would slot near PredictionsPanel — does not exist today), `TableView` (overlay banner at threshold).
+- Authored 2026-04-29 (DCOMP-W4-A2-F13). Resolves audit Stage B2 ("should I rebuy?" cluster gap). Likely needs a Gate 1 entry to move from Proposed → Active (requires field-rebuy-rate priors, prize-structure model, time-to-close timer).
+
 ---
 
 ## Domain-wide constraints
@@ -84,3 +105,4 @@ Jobs that only apply to tournament play — ICM, stack depth, pay structure, ant
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-04-29 — Added TS-45 (blind-out threshold reached) + TS-46 (rebuy decision at late-reg boundary) per DCOMP-W4-A2-F13 closeout. Resolves audit Stage B1 + B2. **Numbering note:** F13 originally proposed TS-43 + TS-44 for these jobs, but those numbers were taken by the 2026-04-21 push-fold-widget discovery's TS-43 (ICM-adjusted decision at bubble) + TS-44 (pay-jump proximity indicator); F13 ships at TS-45/46.
