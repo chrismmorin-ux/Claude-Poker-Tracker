@@ -88,9 +88,14 @@
     }
     .action-bar, .plan-panel { position: relative; }
     /* RT-66: state-invariant violation badge, decays after 30s. */
+    /* V-density §VI PR-16 (2026-04-30): 10px → var(--type-meta-stat)
+       (11px). Closes the FM-DENSITY-2 sub-WCAG illegibility risk that
+       paralleled FM-DENSITY-1's stale-badge fix; the +1px size shift is
+       intentional per WCAG SC 1.4.4 floor. line-height stays in px until
+       a §VI.3 spacing-rhythm sweep covers it. */
     .invariant-badge {
       display: inline-block; margin-left: 6px; padding: 0 4px;
-      font-size: 10px; font-weight: 700; line-height: 14px; color: #fff;
+      font-size: var(--type-meta-stat); font-weight: 700; line-height: 14px; color: #fff;
       background: var(--m-red, #ef4444); border-radius: 2px; cursor: help;
     }
     .hand-count { font-weight: var(--weight-bold); color: var(--text-secondary); font-size: var(--type-body); font-variant-numeric: tabular-nums; }
@@ -205,11 +210,14 @@
     .seat-circle.ring-band-large  { box-shadow: 0 0 0 4px rgba(148,163,184,0.95); }
 
     /* SR-6.11 §1.1: R-4.2 `—` placeholder for occupied-zero seats. */
+    /* V-density §VI PR-16 (2026-04-30): 11px → var(--type-meta-stat)
+       (exact match at root 16px; rem mandate per §VI.2 WCAG 2.1 SC 1.4.4
+       compliance — px ignores user OS-level font preferences + browser zoom). */
     .seat-sample-unknown {
       position: absolute;
       bottom: -14px; left: 50%;
       transform: translateX(-50%);
-      font-size: 11px;
+      font-size: var(--type-meta-stat);
       color: var(--text-muted);
       line-height: 1;
       pointer-events: none;
@@ -417,8 +425,12 @@
     }
     .ab-row1 { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
     .ab-row2 { display: flex; align-items: center; gap: 6px; }
+    /* V-density §VI PR-16 (2026-04-30): 24px → var(--type-display)
+       (exact match at root 16px). Action-word is the canonical PRIMARY
+       attention-budget consumer per §VI.6 — display tier reserved for it,
+       EV badge, and fold-% number per §VI.1 ladder. */
     .ab-action-word {
-      font-size: 24px;
+      font-size: var(--type-display);
       font-weight: 700;
       line-height: 1;
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -585,12 +597,13 @@
       letter-spacing: 0.05em;
     }
     /* .pp-chevron migrated to .affordance-chevron in V-affordance §IV PR-11
-       (2026-04-30). The font-size: 10px override moved into a one-off
-       modifier `.pp-toggle .affordance-chevron` below to preserve the
-       Plan-Panel's smaller chevron treatment without resurrecting the
-       parallel class — INV-AFFORD-3 + R-1.10 require the closed register. */
+       (2026-04-30). V-density §VI PR-16 deleted the `font-size: 10px`
+       per-context override — the canonical .affordance-chevron now carries
+       the ladder-derived `var(--type-meta-stat)` (11px), 1px larger than
+       the legacy Plan-toggle treatment. The +1px shift is below the
+       glance-discrimination threshold and removes the source of context-
+       drift that the closed §IV register exists to prevent. */
     .pp-toggle .affordance-chevron {
-      font-size: 10px;
       margin-left: auto;
     }
     .pp-body {
@@ -1730,7 +1743,8 @@
       </div>
     </div>
     <div id="pipeline-detail" class="pipeline-detail"></div>
-    <div id="pipeline-msg-counters" style="display:none;font-size:10px;color:var(--text-faint);padding:2px 8px"></div>
+    <!-- V-density §VI PR-16 (2026-04-30): inline 10px → var(--type-meta-stat) (11px). -->
+    <div id="pipeline-msg-counters" style="display:none;font-size:var(--type-meta-stat);color:var(--text-faint);padding:2px 8px"></div>
     <div id="pid-summary" class="hidden"></div>
   </div>
   </div><!-- /zone-z0 -->

@@ -110,3 +110,60 @@ describe('V-density §VI typography ladder sweep — PR-15 sidebar source files'
     });
   }
 });
+
+// =========================================================================
+// V-density §VI px literal tail — PR-16 (2026-04-30)
+// =========================================================================
+// PR-16 closes the §VI.2 grandfathered allowlist by migrating the 5
+// remaining px-literal font-size sites to the canonical 3-tier ladder:
+//   .invariant-badge        10px → --type-meta-stat (FM-DENSITY-2)
+//   .seat-sample-unknown    11px → --type-meta-stat
+//   .ab-action-word         24px → --type-display
+//   .pp-toggle .affordance-chevron  10px → ladder default 11px (override deleted)
+//   #pipeline-msg-counters inline   10px → --type-meta-stat
+
+describe('V-density §VI px literal tail — PR-16 closes the grandfathered allowlist', () => {
+  // Strip out CSS / HTML / JS comments so prose describing the migration
+  // doesn't trip the literal scan.
+  const stripComments = (src) => src
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+  const html = readFileSync(PANEL_HTML, 'utf8');
+  const stripped = stripComments(html);
+
+  it('side-panel.html declares zero `font-size: <N>px` literals (sweep + tail complete)', () => {
+    const matches = stripped.match(/font-size\s*:\s*[0-9]+px/g) || [];
+    expect(matches).toEqual([]);
+  });
+
+  it('.invariant-badge migrated to var(--type-meta-stat)', () => {
+    const rule = html.match(/\.invariant-badge\s*\{[\s\S]*?\}/);
+    expect(rule[0]).toMatch(/font-size\s*:\s*var\(--type-meta-stat\)/);
+    expect(rule[0]).not.toMatch(/font-size\s*:\s*10px/);
+  });
+
+  it('.seat-sample-unknown migrated to var(--type-meta-stat)', () => {
+    const rule = html.match(/\.seat-sample-unknown\s*\{[\s\S]*?\}/);
+    expect(rule[0]).toMatch(/font-size\s*:\s*var\(--type-meta-stat\)/);
+  });
+
+  it('.ab-action-word migrated to var(--type-display)', () => {
+    const rule = html.match(/\.ab-action-word\s*\{[\s\S]*?\}/);
+    expect(rule[0]).toMatch(/font-size\s*:\s*var\(--type-display\)/);
+  });
+
+  it('.pp-toggle .affordance-chevron has no font-size override (consumes ladder default)', () => {
+    // The PR-11 introduced override is deleted in PR-16; the canonical
+    // .affordance-chevron rule now owns the chevron's font-size for every
+    // context. INV-AFFORD-3 + INV-DENSITY-2 both satisfied by the closed
+    // 6-shape register's single font-size declaration.
+    const rule = html.match(/\.pp-toggle \.affordance-chevron\s*\{[\s\S]*?\}/);
+    expect(rule[0]).not.toMatch(/font-size\s*:/);
+  });
+
+  it('#pipeline-msg-counters inline style migrated to var(--type-meta-stat)', () => {
+    expect(html).toMatch(/id="pipeline-msg-counters"\s+style="[^"]*font-size:var\(--type-meta-stat\)/);
+  });
+});
