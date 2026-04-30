@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
 import { SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
@@ -30,6 +30,8 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
   const [simCount, setSimCount] = useState(10);
   const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
+  // W4-A4-F12: collapse state for the dev-tools sub-panel. Session-scoped.
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
   // W4-A4-F2: Pending sim-clear timer ID for deferred-commit + undo.
   const pendingSimClearRef = useRef(null);
   const { currentVersion, currentBuiltAt, updateAvailable, error: versionError } = useBuildVersion();
@@ -219,81 +221,100 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
         )}
       </div>
 
-      {/* Hand Simulator */}
-      <div className="pt-3 border-t border-gray-700">
-        <h4 className="text-sm font-bold mb-2" style={{ color: '#d4a847' }}>Hand Simulator</h4>
-        <p className="text-gray-400 text-xs mb-2">
-          Simulate realistic hands with 6 archetype players. Range-based preflop, equity-driven postflop.
-        </p>
-        <div className="flex items-center gap-2 mb-2">
-          <label className="text-gray-300 text-xs">Hands:</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={500}
-            value={simCount}
-            onChange={(e) => setSimCount(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
-            className="w-16 px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-          />
-          <button
-            onClick={() => handleSeed('sim')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
-          >
-            {seedLoading === 'sim' ? 'Simulating...' : 'Simulate'}
-          </button>
-          <button
-            onClick={() => handleSeed('clearSim')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
-          >
-            {seedLoading === 'clearSim' ? 'Clearing...' : 'Clear'}
-          </button>
-        </div>
-        {simTotal > 0 && (
-          <p className="text-gray-400 text-xs">
-            Total simulated: <span className="text-white font-medium">{simTotal}</span> hands
-          </p>
-        )}
-      </div>
-
-      {/* Dev Tools - Temporary (dev only) */}
+      {/* W4-A4-F12: Dev Tools collapsible sub-panel. Combines Hand Simulator
+          (was unconditionally rendered until F12; now correctly dev-gated)
+          and the Seed/Clear data buttons. Default collapsed; session-scoped
+          state — collapse resets on reload. Production builds drop this
+          entire block via tree-shaking under the import.meta.env.DEV gate. */}
       {import.meta.env.DEV && (
-      <div className="pt-3 border-t border-gray-700">
-        <h4 className="text-sm font-bold text-yellow-400 mb-2">Dev Tools (Temporary)</h4>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="pt-3 border-t border-gray-700">
           <button
-            onClick={() => handleSeed('basic')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
+            onClick={() => setDevToolsOpen((open) => !open)}
+            className="w-full flex items-center justify-between text-sm font-bold text-yellow-400 mb-2 hover:text-yellow-300"
+            aria-expanded={devToolsOpen}
           >
-            {seedLoading === 'basic' ? 'Seeding...' : 'Seed Basic Data'}
+            <span>Dev Tools (Temporary)</span>
+            {devToolsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
-          <button
-            onClick={() => handleSeed('clearBasic')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
-          >
-            {seedLoading === 'clearBasic' ? 'Clearing...' : 'Clear Basic Data'}
-          </button>
-          <button
-            onClick={() => handleSeed('range')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
-          >
-            {seedLoading === 'range' ? 'Seeding...' : 'Seed Range Data'}
-          </button>
-          <button
-            onClick={() => handleSeed('clearRange')}
-            disabled={seedLoading !== null}
-            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
-          >
-            {seedLoading === 'clearRange' ? 'Clearing...' : 'Clear Range Data'}
-          </button>
+          {devToolsOpen && (
+            <div className="space-y-3">
+              {/* Hand Simulator */}
+              <div>
+                <h4 className="text-sm font-bold mb-2" style={{ color: '#d4a847' }}>Hand Simulator</h4>
+                <p className="text-gray-400 text-xs mb-2">
+                  Simulate realistic hands with 6 archetype players. Range-based preflop, equity-driven postflop.
+                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="text-gray-300 text-xs">Hands:</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={500}
+                    value={simCount}
+                    onChange={(e) => setSimCount(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                    className="w-16 px-2 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleSeed('sim')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'sim' ? 'Simulating...' : 'Simulate'}
+                  </button>
+                  <button
+                    onClick={() => handleSeed('clearSim')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'clearSim' ? 'Clearing...' : 'Clear'}
+                  </button>
+                </div>
+                {simTotal > 0 && (
+                  <p className="text-gray-400 text-xs">
+                    Total simulated: <span className="text-white font-medium">{simTotal}</span> hands
+                  </p>
+                )}
+              </div>
+
+              {/* Seed / Clear data */}
+              <div className="pt-3 border-t border-gray-700">
+                <h4 className="text-xs font-bold text-gray-400 mb-2">Seed / Clear Data</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleSeed('basic')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'basic' ? 'Seeding...' : 'Seed Basic Data'}
+                  </button>
+                  <button
+                    onClick={() => handleSeed('clearBasic')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'clearBasic' ? 'Clearing...' : 'Clear Basic Data'}
+                  </button>
+                  <button
+                    onClick={() => handleSeed('range')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'range' ? 'Seeding...' : 'Seed Range Data'}
+                  </button>
+                  <button
+                    onClick={() => handleSeed('clearRange')}
+                    disabled={seedLoading !== null}
+                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-300 rounded-lg text-xs font-medium"
+                  >
+                    {seedLoading === 'clearRange' ? 'Clearing...' : 'Clear Range Data'}
+                  </button>
+                </div>
+                <p className="text-gray-500 text-xs mt-1">Each click adds a new batch. Check console for details.</p>
+              </div>
+            </div>
+          )}
         </div>
-        <p className="text-gray-500 text-xs mt-1">Each click adds a new batch. Check console for details.</p>
-      </div>
       )}
     </div>
   );
