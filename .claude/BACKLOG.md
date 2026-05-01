@@ -2,7 +2,79 @@
 
 Active work items only. Completed items archived in `BACKLOG_ARCHIVE.md`.
 
-**Last updated:** 2026-04-27 (EAL Gate 5 Phase 6 Stream D B3 — Section G shipped + visual-verified end-to-end; 1 bug fixed) | **Current version:** v123
+**Last updated:** 2026-04-30 (Master Plan 2026-04-30 ratified — 5 workstreams: TIA, PIO, SCF, plus existing C/F continuation) | **Current version:** v123
+
+---
+
+## MASTER PLAN 2026-04-30 — 5-workstream program (charter: `.claude/projects/master-plan-2026-04-30.md`)
+
+Owner-ratified 2026-04-30. Single index for active workstreams. Each entry below is the umbrella; specific items live in the per-workstream sections further down or in linked existing programs.
+
+| WS | Name | Status | Section in this file |
+|----|------|--------|---------------------|
+| **B+E** | TableView Invariant Audit + Straddle (TIA) | NEXT — Phase 1 awaits straddle-scope answer | `## NEXT — TableView Invariant Audit + Straddle (TIA)` |
+| **A** | Player Identification v2 (PIO) | NEXT — Gate 1 ready | `## NEXT — Player Identification v2 (PIO)` |
+| **C** | Predictive Engine Maturation | IN PROGRESS — existing programs continuing | `## NEXT — Exploit Anchor Library` (EAL = primary C track) + scattered game-tree/range items |
+| **D** | Self-Coach Foundation (SCF) | NEXT — Gate 1 ready (parallel with B Phase 1) | `## NEXT — Self-Coach Foundation (SCF)` |
+| **F** | SHC Gate 5 + DCOMP-W4-A3-F4 | IN PROGRESS — background | SHC items in STATUS.md headline; `DCOMP-W4-A3-F4` row in DCOMP table |
+
+**3 open operational questions before Phase 1 starts** (non-blocking, surfaced for owner): straddle scope; D skill-ladder tier names; A Gate 1 timing (recommend parallel with B).
+
+---
+
+## NEXT — TableView Invariant Audit + Straddle (TIA, project: `.claude/projects/master-plan-2026-04-30.md` §B+E)
+
+Owner-ratified 2026-04-30. Audit-first framing — owner reported two action-availability bugs; instinct says more exist; spot-fix would miss the systemic gap. Authors action-availability invariant matrix as test fixture FIRST, runs against current code to enumerate violations, THEN fix wave with each fix tied to matrix row that caught it. Straddle bundled (shared code surface). Discoveries beyond action availability (pot calc, blind posting, sequence order) captured to BACKLOG, not bundled unless trivial.
+
+| ID | Pri | Status | Description | Accept Criteria |
+|----|-----|--------|-------------|-----------------|
+| TIA-1.1 | P0 | NEXT | **Invariant matrix authoring (audit-only, NO fixes)** — `(active_seats × street × prior_action × hero_role × game_state) → expected_action_options`. Cover all preflop contexts (open/3bet/4bet/squeeze/limp/cold-call/iso/blinds-completing) + postflop (cbet/donk/float/probe/CR/3bet-bluff/value) + special states (HU, all-in, dead-money blinds, sit-out). Include 2 owner-reported bugs as fixture rows. | Matrix committed as test fixture; runs against current code; bug count enumerated; zero fixes attempted |
+| TIA-1.2 | P0 | BLOCKED on owner straddle-scope answer | **Straddle wired into matrix** — owner decides: live straddle only? Mississippi? UTG-only? Re-straddle allowed? Then extend matrix to cover straddle action order, blind posting, pot odds. | Matrix extended; new straddle scenarios pinned; matrix re-runs against code |
+| TIA-1.3 | P0 | BLOCKED by TIA-1.1+1.2 | **Fix wave** — address violations in priority order. Each fix gets regression test pinning to matrix row. | 100% matrix cells assert explicitly; zero violations on green tests; failure file `.claude/failures/TABLEVIEW_INVARIANT_GAP.md` written |
+
+**Estimated cost:** 4-5 sessions total (1-2 audit + 1 straddle + 2-3 fix wave).
+
+---
+
+## NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)
+
+Owner-ratified 2026-04-30. Standalone program (NOT a PEO patch — schema additions and recognition search are net-new). Reuses PEO infra (avatar features, draft autosave, retro-link, picker primitives, AvatarRenderer). Replaces PEO `PhysicalSection` (legacy text dropdowns) and `ImageUploadSection` (file-only). Absorbs PlayersView scaling fix, persistence audit, and any open PlayersView P2/P3 in DCOMP-W4. Phone camera capture via web-native `<input capture>` (not custom in-app surface). Gates per `docs/design/LIFECYCLE.md`.
+
+| ID | Pri | Status | Description | Accept Criteria |
+|----|-----|--------|-------------|-----------------|
+| PIO-G1 | P1 | NEXT | **Gate 1 — Entry** | Scope classification + R/Y/G; personas (chris-live-player primary; recognition-under-uncertainty use case verified or amendment scoped); JTBDs proposed (describe-someone-into-existence; build-temporal-attribute-history; convert-uncertain-sighting-to-known-player); PEO reuse inventory ratified |
+| PIO-G2 | P1 | BLOCKED by PIO-G1 | **Gate 2 — Blind-Spot Roundtable** (3-4 voices: UX, Failure, Data-modeling, Cultural-sensitivity) | Audit doc at `docs/design/audits/`; structural risks named; anti-patterns listed; ethnicity/age framing checked for tone-deaf implementations |
+| PIO-G3 | P1 | BLOCKED by PIO-G2 | **Gate 3 — Research** | JTBDs detailed; owner interview on age-bucket spans, wardrobe granularity, sighting-log temporal model, recognition-search ranking weights, phone-camera UX expectations |
+| PIO-G4 | P1 | BLOCKED by PIO-G3 | **Gate 4 — Design surfaces** | New surfaces: `surfaces/player-recognition-search.md`, `surfaces/player-sighting-log.md`, `surfaces/player-wardrobe-entry.md`. Extensions: `surfaces/player-editor.md`, `surfaces/player-picker.md`, `surfaces/players-view.md` (rebuild). |
+| PIO-G5 | P1 | BLOCKED by PIO-G4 | **Gate 5 — Implementation (multi-PR)** | IDB v21+ schema (sighting log store + wardrobe schema + extended Player); camera capture pipeline; multi-attribute weighted scoring; recognition-search UI; PlayersView rebuild; recognition-confidence schema documented for C consumption |
+
+**Absorbed from existing backlog (re-evaluated under PIO):**
+- `DCOMP-W4-A1-F8 Phase 2` (filter drawer collapse, paused) — re-evaluate at PIO-G4
+- Open PlayersView P2/P3 in DCOMP-W4 (filter drawer, etc.) — re-evaluate at PIO-G4
+- PlayersView scaling fix (owner-flagged 2026-04-30) — absorbed
+- PlayersView persistence audit (owner-flagged 2026-04-30) — absorbed
+- `PhysicalSection.jsx` legacy rework — absorbed
+
+**Estimated cost:** 3-4 design sessions + 6-8 implementation = 10-12 sessions.
+
+---
+
+## NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)
+
+Owner-ratified 2026-04-30. Detects user leaks from their actual hands (e.g. fold-to-flop-3bet outside MDF), distills lesson at user's current skill tier, surfaces in study context. Detection infra ~70% built (weaknessDetector, decisionAccumulator, range engine, EAL anchors); missing: skill assessment module, lesson authoring framework, curriculum spine. Gate 1 opens parallel with TIA Phase 1 — Gate 1 is cheap; design lead time compounds; authoring is the long pole (effectively permanent ongoing work).
+
+| ID | Pri | Status | Description | Accept Criteria |
+|----|-----|--------|-------------|-----------------|
+| SCF-G1 | P1 | NEXT (parallel with TIA-1.1) | **Gate 1 — Entry** | Skill ladder tier names ratified (suggested 6 tiers: novice/live-rec/studied-amateur/part-time-grinder/serious-grinder/pro — owner adjusts); per-tier "what they already understand + next teachable concept" map; scope R/Y/G; personas + JTBDs (see-leak-without-being-graded; learn-next-concept-im-ready-for; validate-im-improving) |
+| SCF-G2 | P1 | BLOCKED by SCF-G1 | **Gate 2 — Blind-Spot Roundtable** (Pedagogy, Autonomy/Failure, Privacy, Engineering) | Audit doc; paternalism risk addressed; AP-06 graded-work-framing refusal locked; small-sample false-leak risk addressed; privacy considerations on leak data |
+| SCF-G3 | P1 | BLOCKED by SCF-G2 | **Gate 3 — Research** | JTBDs detailed; owner interview on skill-assessment shape (test-based vs observed vs declared), lesson surface placement (inline replay vs dedicated view vs both), firing frequency (every leak vs aggregated vs owner-triggered) |
+| SCF-G4 | P1 | BLOCKED by SCF-G3 | **Gate 4 — Design** | Surfaces: `surfaces/study-curriculum.md`, `surfaces/lesson-card.md`, `surfaces/skill-assessment.md`, `surfaces/leak-distillation.md`. `src/utils/skillAssessment/` module designed. Lesson authoring template + 5-10 example lessons across tiers. |
+| SCF-G5 | P1 | BLOCKED by SCF-G4 | **Gate 5 — Implementation (multi-PR + ongoing authoring)** | `src/utils/skillAssessment/` ships; lesson authoring framework ships; 1-2 leak rules wired end-to-end; curriculum scaffolding shipped; ≥10 lessons across ≥3 tiers landed |
+
+**Absorbed from memory (now homed in SCF):**
+- `feedback_skill_assessment_core_competency.md` (2026-04-23) — proposed `src/utils/skillAssessment/` module — built inside SCF-G4/G5
+
+**Estimated cost:** 2-3 sessions Gates 1-4 + 3-5 sessions implementation foundation + ongoing authoring (effectively permanent).
 
 ---
 
