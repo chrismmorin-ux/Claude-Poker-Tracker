@@ -1,0 +1,24 @@
+version: 3.5.0
+adopted_at: "2026-05-01T03:46:43.573Z"
+updated_at: "2026-05-01T03:48:48.050Z"
+level: L1
+homebase_path: "C:/Users/chris/Claude HomeBase"
+kit_version_at_install: 3.5.0
+corpus_version: 5bc8a55c064d
+installed_files:
+  CLAUDE.md: "sha256:b5b35fec3b0876644796cd454782a7e7980fbe6d7f2c4178e3095f071adc1662"
+  .claude/commands/onboard-check.md: "sha256:532958c6beb2870943a339eb2fb7f298a83a57f3924ead973d0f6a042abd592a"
+  .claude/commands/feedback.md: "sha256:e7b752acb3dfffe3139728d9fffda2948bea5db4896c693f909c29dcc870ce5a"
+  .claude/commands/checkpoint.md: "sha256:5ac887fb508a25e9b0ca207c4c9f875e6f9bca34d984ca5d759da00a253908ef"
+  docs/bow-contract.md: "sha256:483d89ba26c8fe8ee6d9a3ed544249de6ffbec148e53b9da82818a1926225a57"
+  .cwos-config.yaml: "sha256:7ed87e387f632fafb3e95f1cb570d7f03c163e0544c618cf26cd1e1226e10e8b"
+  .cwos-onboarding.yaml: "sha256:827fceeae768727d297f51078ccf59efe6d1207be4589de0711c96fd65bcb474"
+  .cwos-feedback.yaml: "sha256:6ac7953d528be7891406eb04b3716f703e9175ff761bc4f8f616ee1f78a69088"
+  system/state.md: "sha256:e01884e213f418643e3179a33602f7167a03b6c2558151bbaa223ecbec268d0e"
+  system/intention.md: "sha256:820669279df5045fba0b7398ae5e96fb306e410b9d24f01ecc1af75b940a6f3d"
+  .claude/rules/security-baseline.md: "sha256:1f32c0524a4e5c51af531a54c51d3892fde992d1a89762bf208e7b6ea7c0ec43"
+  .claude/rules/error-handling.md: "sha256:47a51000f7bbab68c9f4f806e389d15ecb1828e1c8f6501388182b830cc165fa"
+  .claude/commands/status.md: "sha256:f1ad6eeb23fefe74e7797713249a488f4183313ab821bd289ec567cbbc0e8ff6"
+  .claude/commands/session-start.md: "sha256:5d6584fec9bda26d5050e815ae972db144032e9a25f6cf12ee82dfff507ef965"
+  .claude/commands/session-end.md: "sha256:96e8b291d6f6ddcff6f51ddae5ad662ff8d12992b5059709d04e84a2954e85f5"
+  .claude/commands/welcome.md: "sha256:ebe9944c6bae2e099fa5aaa6621e494da7b9721333edd492480ce61073653a0d"

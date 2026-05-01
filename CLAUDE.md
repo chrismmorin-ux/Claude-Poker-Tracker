@@ -1,3 +1,177 @@
+# CWOS Session Protocol
+
+**You can ALWAYS just describe what you want in plain English.** Commands below are optional shortcuts — if you say "fix that bug" or "make the homepage faster", Claude does it.
+
+## Adaptive Session Protocol
+
+Claude matches ceremony to task weight automatically.
+
+### Quick Fix Mode
+**When:** Bug, error, small change. Trigger: "fix", "broken", "error", "customer says", single-file scope.
+- Read ONLY: `CLAUDE.md` + `system/state.md` (vital signs)
+- If fix touches a program's `scope_paths` — mention it. If `failures.md` has a related pattern — mention it.
+- No session file. No verification unless financial/security code.
+- After: one line in Recent Sessions (`quick-fix` tag). Append Heavy/Medium implicit decisions to `decisions.md`. Update `usage.yaml` counters silently.
+
+### Standard Mode (default)
+**When:** Feature work, "what's next", multi-file changes. **Default when intent unclear.**
+- **Fast orient:** Read `system-summary.yaml` first (if exists). Escalate to full reads only if vitals failing, programs stale, or critical findings.
+- **Sprint check:** Read `sprint-index.yaml` — lead with active sprint progress if one exists.
+- **Fallback:** Read `system/state.md` + `context.md` + top 3 unclaimed from `queue-index.yaml` + stale programs.
+- Skip `invariants.md`, `decisions.md`, `failures.md` at start (read on-demand).
+- Note project phase from `state.md` — affects priority scoring.
+- **Program alert:** If any program is RED or has stale findings, one-line alert.
+- Track work items. Run `/verify` before done. Update `state.md` after. Append implicit decisions. Update `usage.yaml` silently.
+
+### Strategic Mode
+**When:** User runs `/plan`, `/engine`, `/audit`, says "full session", or invokes `/session-start full`. (Bare `/session-start` is adaptive — lean by default, full when state signals escalation.)
+- Full ceremony: all system files, programs, recommendations, previous handoff. Session YAML. Full verification + state update + GC.
+
+### Mode Rules
+- **Default:** Standard. **Override:** "quick fix" or "full session" forces mode.
+- **Escalation:** Quick Fix touching 3+ files or multiple programs → suggest Standard.
+- **No de-escalation.** Strategic stays Strategic. **Maturity:** Orient less as project matures — targeted intelligence, not comprehensive surveys.
+
+## Engine Selection (Proactive Suggestions)
+
+Claude should **proactively suggest the right engine** for the situation rather than waiting for the user to guess. Reference `kit/engine-selection-protocol.md` for the full decision guide.
+
+**Quick triggers:**
+- "Is this ready to ship?" / pre-launch anxiety → `eng-engine` focus=full
+- "Review this X" → `eng-engine` focus=X (budget trio for scoped, 6-persona for broad)
+- About to refactor / migrate / upgrade → `refactor-prep` / `migration-prep` / `upgrade-prep` FIRST
+- Multiple viable paths → `/decide` + `decision-enhance`
+- "Something feels off" but can't name it → `eng-engine` budget trio, focus=full
+- Production issue → `incident-response`
+
+**After any engine run** — suggest the next engine in the chain if findings warrant it (see `kit/engine-selection-protocol.md` → Engine Chains). Frame suggestions as business outcomes, not engine names: "Your API has critical security issues. Want a deeper attack chain analysis?" not "Run security-deep-dive."
+
+**Do NOT suggest an engine** for narrow lookups, single-line fixes, or when the user already specified exact scope.
+
+## Sprint Protocol
+Work is organized into **sprints** — small batches (3-8 items) with a clear goal, approved once.
+1. **Compose:** `/next` selects items from queue, groups by program/dependencies, classifies as "Just do it" or "Design first"
+2. **Approve:** User reviews goal + items + decisions needed, approves once
+3. **Execute:** "Just do it" = autonomous, brief note, no pause. "Design first" = plan mode, user decisions, then execute.
+4. **Complete:** Run `/next` for next sprint
+- One active sprint at a time. `/next` resumes before proposing new. Mid-session end preserves sprint. User can skip items or cancel.
+
+## Progressive Onboarding & Deferred Installation
+If `.cwos-onboarding.yaml` exists and M5 not complete:
+- Read silently. Suggest ONE natural improvement per session ("Want me to..." not "You need to..."). Never advance 2+ milestones per session. Never show milestone names or YAML to user.
+
+If user invokes an uninstalled command:
+- Check `deferred_commands` manifest. If the command's capability is enabled (or intended) in `.cwos-onboarding.yaml`: install the group silently + dependencies, then run. If the capability is not enabled: explain what's missing and suggest enabling it via `/discover`.
+
+### First Session
+If `.cwos-version` exists and `usage.yaml` shows `welcome_completed` false → run `/welcome` first.
+
+## Graceful Degradation
+
+Commands must work at any milestone. When encountering missing state:
+
+| Severity | Action | Examples |
+|----------|--------|----------|
+| **BLOCKING** | Auto-scaffold silently, proceed | No `queue-index.yaml` → create structure. No `engines/registry.yaml` → install from HomeBase. |
+| **DEGRADED** | Use defaults, mention once | No `invariants.md` → skip checks. No `context.md` → no boosts. |
+| **OPTIONAL** | Skip silently | No custom personas → default analysis. No `usage.yaml` → skip telemetry. |
+
+- Never show YAML paths or milestone names to user. Never say "you need to reach M3 first."
+- When auto-scaffolding: prefer minimal creation. Log to `.cwos-feedback.yaml` friction_log. Read HomeBase path from `.cwos-version.homebase_path`.
+
+## Friction & Feedback
+- If a command fails or needs a workaround: fix silently, log to `.cwos-feedback.yaml` at session end.
+- If user expresses frustration or preference about CWOS: log to `.cwos-feedback.yaml` under `user_feedback`, acknowledge briefly, don't argue.
+- Platform (from `.cwos-onboarding.yaml`): on Windows, prefer Python for datetime, avoid `set -euo pipefail` in hooks, avoid `$$` for PID.
+
+## Standard Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/status` | Health dashboard — vital signs, queue, programs |
+| `/next` | Compose or resume a sprint — batched, prioritized work |
+| `/plan` | Multi-persona deliberation to plan next work bundle |
+| `/engine <name>` | Run a named analysis engine |
+| `/build-engine` | Create a new analysis engine |
+| `/audit` | System self-audit — drift, staleness, invariant violations |
+| `/verify` | Self-verification — build, test, visual, behavioral checks |
+| `/session-start` | Begin session with full orientation |
+| `/session-end` | End session cleanly with state update |
+| `/decide` | Record an architectural decision |
+| `/pulse` | Program dashboard — project areas needing attention |
+| `/workstream` | Queue management (14 subcommands) |
+| `/autopilot` | Schedule hours of autonomous work |
+
+## Path Resolution
+Read `system_dir` from `.cwos-config.yaml` (default: `system`). Substitute in all `system/` file references. Example: `system_dir: .cwos` → `system/state.md` becomes `.cwos/state.md`.
+
+## System State Files
+
+| File | Location | Purpose |
+|------|----------|---------|
+| State | `system/state.md` | Vital signs, metrics, queue summary, sessions |
+| Invariants | `system/invariants.md` | Rules that must always hold, with check commands |
+| Constraints | `system/constraints.md` | Assumptions and boundaries, with verification dates |
+| Decisions | `system/decisions.md` | ADR-style decision log |
+| Failures | `system/failures.md` | Known failure modes — root cause, fix, prevention |
+| Context | `system/context.md` | Active business context — issues, deadlines, opportunities |
+
+The configured `system_dir` is the ONLY valid location. Legacy copies elsewhere are stale — flag via `/audit`.
+
+## Communication Style
+Non-technical founder. Lead with business impact, not technical details. Present 2 options max with clear recommendation. Label items "Business Priority" or "Technical Maintenance". Explain jargon on first use.
+
+## Self-Verification
+- After code changes: run vital sign checks (tests, lint, build)
+- After UI changes: screenshots via Playwright
+- Before commit: run preflight on diff
+- Session end: full verification pass
+
+## Decision Detection Protocol
+
+During ALL work, watch for **implicit decisions** — choices made during implementation that shape product behavior but weren't explicitly recorded.
+
+### Decision Signals
+Flag a choice when it matches any pattern:
+
+| Signal | Example |
+|--------|---------|
+| Behavioral choice | "Form auto-saves every 30s" |
+| Business rule | "Free users get 3 projects" |
+| Error/edge handling | "Retry button on timeout, not error page" |
+| Data model choice | "Store allocations as percentages" |
+| Integration pattern | "Webhook retries 3x with backoff" |
+| Security/access | "Admins can delete but not purge" |
+| UX pattern | "Tabs, not sidebar" |
+| Omission | "No email confirmation for this flow" |
+| Trade-off | "Speed over completeness for search" |
+
+**Not decisions:** Routine code choices, following established patterns, implementing unambiguous specs, framework conventions.
+
+### Detection Rules
+- Flag inline: `**Decision noted:** [summary]` — don't stop working.
+- If significant trade-offs: escalate with `**Decision with trade-offs:** [summary]. This means [consequence].`
+- If multiple valid approaches and user hasn't specified: state choice + reasoning before implementing.
+- Decisions accumulate; formalized at session end via `/session-end`. Weight classification (Heavy/Medium/Light) handled there.
+
+## Proactive Automation
+These rules run automatically, every session, without prompting.
+- **After modifying code:** Run vital sign checks. If touching a program's `scope_paths`, mention it.
+- **Before marking item done:** Run `/verify`.
+- **Domain rules:** Always read `.claude/rules/` — they're mandatory and override general patterns.
+- **Self-healing:** Stale program → auto-generate maintenance item. Failed vital sign → flag + suggest fix. Invariant check commands → run periodically. Kit version behind HomeBase → mention during `/status`.
+
+## Autonomous Work Cycle
+When working autonomously: active sprint → resume | no sprint → `/next` → approve | queue empty → `/audit` → compose | still empty → `/plan` | still empty → drift-detector questions.
+**Always stop and ask user for:** sprint approval, design decisions, critical findings, invariant changes.
+
+---
+<!-- CWOS Preamble End — Project-specific content below -->
+
+<!-- CWOS Preamble End -->
+<!-- Override: project-specific sections below take precedence over preamble defaults -->
+
+
 # CLAUDE.md - Poker Tracker
 
 Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table.

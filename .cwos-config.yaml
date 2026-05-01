@@ -1,0 +1,96 @@
+# CWOS Per-Repo Configuration
+# Controls how CWOS behaves in this repo. All fields are optional —
+# missing fields use sensible defaults. Delete sections you don't need.
+#
+# Installed by /adopt. Customize any time.
+
+schema_version: "1"
+# Where system state files live (state.md, invariants.md, etc.)
+# Default: "system" — change if your repo uses a different convention.
+# Examples: ".cwos", "docs/system", ".claude/system"
+paths:
+  system_dir: system
+
+# How much structure CWOS applies.
+# minimal  — smaller sprints, less ceremony, briefings only
+# standard — balanced defaults (recommended)
+# strategic — larger sprints, full reports, deeper analysis
+ceremony: standard
+
+# Priority scoring adjustments
+priority:
+  auto_promote:
+    critical: true    # Always promote critical findings to work items
+    high: true        # Always promote high findings
+    medium: false     # Require manual review
+    low: false        # Require manual review
+  context_boosts: true  # Enable/disable context boost system in /next
+
+# Sprint composition defaults
+sprints:
+  max_items: 5            # Max items per sprint (overridden by ceremony)
+  max_effort_sessions: 2  # Effort ceiling in sessions (overridden by ceremony)
+
+# Engine behavior defaults
+engines:
+  default_output: briefing  # briefing | report | artifacts
+  auto_chain: true          # Run chained engines automatically
+
+  # Per-engine persona overrides — disable personas that aren't useful for your repo.
+  # Missing = all personas active (default). Only engines using agent-dispatch are affected.
+  # Example:
+  #   persona_overrides:
+  #     eng-engine:
+  #       disabled: [product-ux, performance-engineer]
+  #     business-engine:
+  #       disabled: [operations-engineer]
+  persona_overrides: {}
+
+  # Engine style preferences — composable across three dimensions.
+  # Styles control how agents think (reasoning), how results are presented (output),
+  # and the voice of the briefing (tone). All fields optional.
+  # Missing = use context signal detection, then catalog defaults.
+  #
+  # Reasoning options: dispatch, pre-mortem, dialectical, five-whys, delphi,
+  #                    progressive-deepening, inversion, competing-hypotheses, scenario-planning
+  # Output options:    executive, progressive-disclosure, opinionated, options-matrix, narrative, risk-register
+  # Tone options:      co-founder, mentor, surgeon, auditor, socratic, consultant
+  #
+  # Example:
+  #   styles:
+  #     defaults:
+  #       reasoning: dispatch
+  #       output: executive
+  #       tone: co-founder
+  #     per_engine:
+  #       eng-engine:
+  #         tone: surgeon
+  #       financial-audit:
+  #         tone: auditor
+  #         output: risk-register
+  #       decision-enhance:
+  #         reasoning: dialectical
+  #         output: options-matrix
+  #     signal_detection: true
+  #     suppress_signals: []
+  styles: {}
+
+# Backlog source — where /next reads work items from
+# yaml:          .claude/workstream/queue/ (default CWOS queue)
+# markdown:      reads from a markdown file (set path below)
+# github-issues: reads from GitHub Issues via gh CLI
+backlog:
+  source: yaml
+  path: ""  # Custom path. Empty = default location for the source type.
+
+# Ceremony level presets (reference — these are applied automatically):
+#
+# | Setting              | minimal    | standard   | strategic  |
+# |----------------------|------------|------------|------------|
+# | Sprint item cap      | 3          | 5          | 8          |
+# | Sprint effort cap    | 1 session  | 2 sessions | 4 sessions |
+# | Engine output        | briefing   | briefing   | report     |
+# | Auto-chain engines   | off        | on         | on         |
+# | Session protocol     | quick_fix  | standard   | strategic  |
+#
+# Explicit values in sections above override ceremony presets.

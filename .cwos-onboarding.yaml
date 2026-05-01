@@ -1,0 +1,238 @@
+# CWOS Progressive Onboarding State
+# Created by /adopt. Claude reads this silently during orientation.
+# The user never sees or edits this file directly.
+
+schema_version: "2"
+started_at: "2026-05-01T03:46:43.573Z"
+repo_archetype: frontend
+adoption_level: L1
+platform: win32
+repo_goal: "Deliver the most accurate predictive poker decisions in the moment new data arrives, paired with a complete beginner-to-pro study section."
+
+# Claim-domain detection (written by /adopt Step 2h)
+# Non-empty values trigger conditional install of prog-claims-policy + docs/claims/ templates.
+# Valid entries: clinical | legal | financial | scientific
+# Multi-domain repos list all detected. Empty list means no claim-domain signals detected.
+repo_claims: []
+# True when /adopt detected an AI-as-judge / rubric-grader / simulated-reviewer pattern.
+# Triggers conditional install of docs/claims/evaluator-validation-plan.md.draft.
+has_ai_evaluator: false
+
+# Capability state (ADR-016)
+# User-owned dimension that governs /next scoring and /discover surfaces.
+# Five capabilities mirror kit/MANIFEST.yaml install groups.
+# State enum: enabled | intended | declined | unconfigured
+#   - enabled:      user accepted, setup complete   → items score normally
+#   - intended:     user said yes, setup pending    → setup items boosted, staleness raises priority
+#   - declined:     user said no                    → items suppressed entirely
+#   - unconfigured: user not yet asked              → default scoring until /discover runs
+# /adopt seeds all five as unconfigured, then flips `core` to enabled before exit.
+# /discover writes captured_at and note when state moves out of unconfigured.
+capabilities:
+  core:
+    state: enabled
+    captured_at: "2026-05-01T03:46:43.573Z"
+    note: null
+  workstream:
+    state: unconfigured
+    captured_at: null
+    note: null
+  engines:
+    state: unconfigured
+    captured_at: null
+    note: null
+  governance:
+    state: unconfigured
+    captured_at: null
+    note: null
+  autonomous:
+    state: unconfigured
+    captured_at: null
+    note: null
+
+# Deferred Installation Manifest
+# Commands are grouped and installed on first use. The preamble's Progressive
+# Onboarding section triggers installation when the user needs a capability.
+# Each group installs its commands + any dependencies (personas, scaffolding).
+deferred_commands:
+  core:
+    level: L1
+    commands: [status, session-start, session-end, welcome]
+    dependencies: []
+    installed: true
+  workstream:
+    level: L2
+    commands: [next, workstream]
+    dependencies:
+      - directory: .claude/workstream
+        scaffolding: [config.yaml, queue-index.yaml, findings-index.yaml, engines/registry.yaml, programs/registry.yaml]
+        subdirs: [queue, queue/archive, findings, findings/archive, engines, programs, enhancements, readiness]
+      - files_from: kit/templates/system
+        targets: [invariants.md, constraints.md, decisions.md, failures.md, context.md, scoring.md]
+    installed: true
+  engines:
+    level: L3
+    commands: [engine, build-engine]
+    dependencies:
+      # Personas (core + domain) are now tracked in kit/MANIFEST.yaml
+      # and installed automatically as part of the engines group.
+      - engines_from: engines/standard
+      - rules_from: kit/templates/rules
+    installed: false
+  governance:
+    level: L4
+    commands: [pulse, audit]
+    dependencies: []
+    installed: false
+  autonomous:
+    level: L5
+    commands: [plan, verify, decide]
+    dependencies: []
+    installed: false
+
+# Deferred Tool Installation
+# Tools from docs/TOOL-CATALOG.md, assessed during /adopt Step 3b.
+# Each tool has a detection trigger; /adopt populates this section based on
+# which triggers matched. Tools are installed at their declared milestone.
+# "repo_has_better" means the repo already built this tool more sophisticatedly
+# than the CWOS template — CWOS learns from the repo instead of installing.
+deferred_tools:
+  # Populated by /adopt Step 3b. Example:
+  # - id: T1-01
+  #   name: Assumption Register
+  #   milestone: m2
+  #   status: pending          # pending | installed | repo_has_better | skipped
+  #   template: kit/templates/system/assumptions.md
+  #   repo_existing: null      # path to repo's existing version, if any
+  #   notes: null              # e.g., "Migrate from constraints.md Working Assumptions"
+
+milestones:
+
+  m1_core_install:
+    description: "Core kit installed — preamble, onboard-check, system skeleton, version stamps."
+    done_looks_like: "CLAUDE.md preamble, system/state.md, .cwos-version, and fleet registration all in place."
+    status: complete        # pending | in_progress | complete | skipped
+    completed_at: "2026-05-01T03:46:43.573Z"
+    checks:
+      preamble_installed: true
+      onboard_check_installed: true
+      feedback_installed: true
+      state_template_created: true
+      gitignore_allows_system: false
+      cwos_version_written: true
+      fleet_registered: true
+
+  m2_system_population:
+    description: "System populated — vital signs wired to real commands, invariants and constraints captured, business context recorded."
+    done_looks_like: "state.md vital signs run real commands; invariants.md, constraints.md, and context.md have real rows (no template placeholders)."
+    status: complete
+    completed_at: "2026-05-01T03:48:48.050Z"
+    checks:
+      vital_signs_configured: false    # state.md has real commands, no placeholders
+      vital_signs_passing: false       # at least 1 check ran successfully
+      invariants_populated: false      # at least 1 real invariant (not template placeholder)
+      constraints_populated: false     # at least 1 real constraint
+      context_has_active_item: false   # at least 1 active business context item
+      config_customized: false         # .cwos-config.yaml reviewed and adjusted by user
+    # Suggestions follow understanding-first pattern:
+    # [what you have] + [what the gap is] + [what this enables] + [ask]
+    suggestions:
+      - "Your project has tests and a build process, but right now there's no way to know when they break between sessions. Health monitoring watches for that automatically — takes about 2 minutes to set up. Want me to do it?"
+      - "Your codebase has patterns and rules that should always hold — like 'never commit API keys' or 'all routes need auth.' Right now those rules live in your head. Writing them down means I can check them for you automatically. Want me to find the obvious ones?"
+      - "I can be more helpful when I know what you're working toward — deadlines, customer issues, goals. Right now I'm guessing at priority. A quick context update changes that. What's top of mind for you?"
+      - "Your .cwos-config.yaml controls how much structure I apply — sprint sizes, engine output detail, session ceremony. The defaults are sensible, but a quick review lets you tune CWOS to how you actually work. Want to walk through it?"
+
+  m3_workstream_active:
+    description: "Workstream active — queue holds real items, programs scoped to real file paths, user has seen programs introduced."
+    done_looks_like: "queue-index.yaml has at least 3 items; at least one program's scope.file_patterns matches real files in the repo."
+    status: pending
+    completed_at: null
+    checks:
+      queue_has_items: false           # at least 3 real work items in queue/
+      queue_index_valid: false         # index count matches file count
+      programs_scope_valid: false      # at least 1 program's file_patterns match real files
+      programs_introduced: false       # user has seen the program introduction (set by onboard-check 4c)
+    suggestions:
+      - "I've been finding things that could use attention — TODOs, potential bugs, improvements. But without a queue, those observations disappear between sessions. Setting up a work queue means when you ask 'what's next?', I can give you the highest-impact answer. This also enables **programs** — permanent monitors that watch key areas of your project (security, code quality, your domain logic) so nothing drifts silently. Want me to create a starter queue from what I see?"
+      - "Your programs are installed but could be calibrated more precisely. I can run a quick analysis to customize each one to your specific project — verify file scopes, tailor the domain correctness program to your actual business logic, and run initial baseline checks. One-time setup, about 5 minutes. Want me to do it?"
+
+  m4_first_engine_run:
+    description: "First deep engine run complete — findings pipeline active, registry validated."
+    done_looks_like: "runs/ has at least 1 RUN entry; findings/ has at least 1 FIND entry; every registered engine's skill_path points to a real file."
+    status: pending
+    completed_at: null
+    checks:
+      engine_run_completed: false      # at least 1 RUN-*.yaml exists
+      findings_exist: false            # at least 1 FIND-*.yaml exists
+      engine_registry_valid: false     # all registry skill_paths point to real files
+    suggestions:
+      - "Your system is set up and your queue is active. The next step is a deep analysis — multiple expert perspectives examine your codebase for real issues you might not see. This is where CWOS shifts from organizing your work to actively finding problems before they find you. It takes about 5 minutes and doesn't change any code. Want to try it?"
+      - "I found some engine entries pointing to missing files — this means certain analyses would fail silently. Let me clean those up so everything works when you need it."
+
+  m5_steady_state:
+    description: "Steady state — every active program has been audited and session handoffs are routine."
+    done_looks_like: "Every active program has last_run.date set; at least 1 session file has non-empty handoff_notes."
+    status: pending
+    completed_at: null
+    checks:
+      all_programs_audited: false      # every active program has last_run.date != null
+      session_handoff_written: false   # at least 1 session with handoff notes
+    suggestions:
+      - "You're nearly at steady state — the point where CWOS fades into the background and just works. A few programs haven't had their first audit yet, which means there are parts of your codebase I haven't examined deeply. One quick run fills those gaps. Want me to do it?"
+      - "The last piece is a session handoff — notes that help you (or me) pick up exactly where you left off next time. It's a small thing that prevents the 'wait, what was I doing?' problem. Want to wrap up this session with handoff notes?"
+
+# Archetype-specific requirements
+# /adopt adjusts these based on repo_archetype
+# Defaults per archetype:
+#   saas                  → min_programs: 3, min_invariants: 3, required_engines: [eng-engine, health-check, financial-audit]
+#   frontend              → min_programs: 2, min_invariants: 2, required_engines: [eng-engine, health-check, ux-audit]
+#   data-platform         → min_programs: 2, min_invariants: 2, required_engines: [eng-engine, health-check]
+#   dev-tool              → min_programs: 1, min_invariants: 1, required_engines: [eng-engine, health-check]
+#   research              → min_programs: 1, min_invariants: 1, required_engines: [eng-engine]
+#   research-clinical     → min_programs: 3, min_invariants: 4, required_engines: [eng-engine, health-check] — claims-policy mandatory; stricter invariant floor due to evidence requirements
+#   research-mathematical → min_programs: 2, min_invariants: 3, required_engines: [eng-engine] — anti-hallucination elevated
+#   research-empirical    → min_programs: 2, min_invariants: 2, required_engines: [eng-engine, health-check] — data-provenance mandatory
+#   api-service           → min_programs: 2, min_invariants: 2, required_engines: [eng-engine, health-check]
+archetype_requirements:
+  min_programs: 1
+  min_invariants: 1
+  required_engines: []     # populated by /adopt based on repo_archetype
+
+# Platform notes (populated by /adopt if platform-specific concerns detected)
+platform_notes: []
+# Examples:
+#   - "OneDrive sync may lock files. Commands should not use set -euo pipefail."
+#   - "Windows Git Bash: use Python for datetime operations, not GNU date."
+
+# Friction encountered during onboarding (copied to .cwos-feedback.yaml)
+friction_log: []
+
+# --- cwos-adopt-install deferred_file_manifest ---
+# Generated: 2026-05-01T03:48:48.050Z
+# Total deferred files: 4
+deferred_file_manifest:
+  # core
+  - source: kit/commands/status.md
+    destination: .claude/commands/status.md
+    level: L1
+    install_group: core
+    impact: System health dashboard
+    merge_strategy: overwrite
+  - source: kit/commands/session-start.md
+    destination: .claude/commands/session-start.md
+    level: L1
+    install_group: core
+    impact: Full session orientation with state loading
+    merge_strategy: overwrite
+  - source: kit/commands/session-end.md
+    destination: .claude/commands/session-end.md
+    level: L1
+    install_group: core
+    impact: Clean session close with state updates and handoff notes
+    merge_strategy: overwrite
+  - source: kit/commands/welcome.md
+    destination: .claude/commands/welcome.md
+    level: L1
+    install_group: core
+    impact: First-session guided walkthrough
+    merge_strategy: overwrite

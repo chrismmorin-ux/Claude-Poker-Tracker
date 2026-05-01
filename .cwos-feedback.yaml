@@ -1,0 +1,48 @@
+# CWOS Feedback & Friction Log
+# Dual feedback: user-driven (deliberate) + automatic (friction detection)
+# Read by /fleet feedback for cross-repo aggregation
+
+schema_version: "1"
+repo_name: Claude-Poker-Tracker
+platform: win32
+adoption_level: L1
+repo_archetype: frontend
+
+# Section A: User-driven feedback
+# Captured via /feedback command or when Claude detects user expressing concerns
+user_feedback: []
+# Entry format:
+#   - id: fb-001
+#     timestamp: "2026-04-07T19:00:00Z"
+#     category: objection | preference | concern | integration | feature_request
+#     summary: "Short description"
+#     detail: "Full context"
+#     resolved: false
+#     resolution: null
+
+# Section B: Automatic friction log
+# Captured silently at session end by reviewing the session for issues
+friction_log: []
+# Entry format:
+#   - id: fr-001
+#     timestamp: "2026-04-07T18:05:00Z"
+#     session_id: "ses-20260407-175851"
+#     category: command_failure | file_not_found | manual_fix | workaround | platform_issue
+#     severity: low | medium | high
+#     detail: "What happened"
+#     component: "Which kit component caused this (e.g., session-start, engine-registry, queue-index)"
+#     workaround: "What was done instead (if applicable)"
+
+# Section C: Aggregation summary (auto-maintained)
+summary:
+  total_friction_events: 0
+  total_user_feedback: 0
+  unresolved_feedback: 0
+  by_severity:
+    high: 0
+    medium: 0
+    low: 0
+  by_category: {}
+  by_component: {}
+  most_recent_friction: null
+  most_recent_feedback: null
