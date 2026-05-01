@@ -1,0 +1,25 @@
+id: "FIND-017"
+title: "Texture preservation comment claims L3 dropping but code keeps texture at L1-L3"
+severity: LOW
+status: open
+category: "documentation"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  villainDecisionModel.js:148-161 comment says 'Texture preserved through L3 (3 levels)' but `buildHierarchyPatterns` keeps texture at L1, L2, L3 and drops it at L4. Comment is correct in intent but ambiguous in phrasing — a reader could misinterpret.
+affected_files:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+recommended_fix: |
+  Tighten comment to: 'Texture preserved at L1, L2, L3; dropped at L4' to remove ambiguity.
+theory_citation: "memory: project_game_tree_session2.md"
+agent_corroboration:
+  - "game-tree-villain-audit (F1)"
+dedup_key: "eng-engine-domain-correctness-texture-preservation-comment-claims-l3-dropping-but-code-kee"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

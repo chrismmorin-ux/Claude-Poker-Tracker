@@ -1,0 +1,33 @@
+id: "WS-117"
+title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
+legacy_id: "FIND-002"
+type: finding
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+description: |
+  replayAnalysis.js:24-30 returns `handEquity > 0.5 ? 'value' : 'bluff'` over equities computed by `handVsRange(..., { trials: 500 })`. 500 trials at p≈0.5 gives ~±4.4% margin of error at 95% — easily flips the verdict for borderline equities. The classifier is presented to the user as authoritative.
+accept_criteria:
+  - "Either raise trial count to ≥3000 or return a banded classification (`'value' | 'thin' | 'bluff'`) centered on 0.5 ± MoE; plumb the MoE into the classifier so confidence reflects sample size."
+effort: "M"
+files_involved:
+  - "src/utils/handAnalysis/replayAnalysis.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  engine: "eng-engine"
+  finding_id: "FIND-002"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  origin: "auto-promoted-from-finding"
+auto_expires: false
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

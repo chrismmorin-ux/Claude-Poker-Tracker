@@ -1,0 +1,25 @@
+id: "FIND-006"
+title: "STYLE_FOLD_DEFAULTS raw lookup in multiway opponent fold rate"
+severity: MEDIUM
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  gameTreeEquity.js:574-575 (`multiwayFoldPct`): when no villainModel exists, fold rate is read directly from `STYLE_FOLD_DEFAULTS[opp.playerStats.style]` with no consideration of bet size, pot odds, board texture, or villain equity vs hero's bet. Style label drives the rate alone.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+recommended_fix: |
+  Compute opponent fold rate from a logistic on (range vs hero's bet equity ratio) using style only as a Bayesian prior on logistic steepness, the same way `getLogisticSteepness` does in gameTreeDepth2.
+theory_citation: "POKER_THEORY.md §7.1, §7.5"
+agent_corroboration:
+  - "first-principles-audit (F2)"
+dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-multiway-opponent-fold-rat"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

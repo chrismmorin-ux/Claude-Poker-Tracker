@@ -1,0 +1,31 @@
+id: "WS-075"
+title: "Clear All Seats button height ≥44px"
+legacy_id: "DCOMP-W4-A1-F7"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  **Clear All Seats button height ≥44px**
+accept_criteria:
+  - "102×28 → 102×44 via padding. **Paused** at Table-Build Gate 4 ratification: button lives in the seat-assignment grid that TableBuildView absorbs (`docs/design/surfaces/table-build.md`). Cosmetic P2 on a code path scheduled for replacement is not worth shipping. Reactivate only if Table-Build slips."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "PAUSED (Table-Build absorbs 2026-04-26)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 354
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

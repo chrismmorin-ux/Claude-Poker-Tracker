@@ -1,0 +1,30 @@
+id: "WS-090"
+title: "Preflop-as-flop schema workaround documentation"
+legacy_id: "LSW-G-PreflopEnc"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Preflop-as-flop schema workaround documentation** — `pre_root` in `utg-vs-btn-squeeze-mp-caller` uses `street: 'flop'` for a preflop decision (existing schema doesn't support `'preflop'` as a street kind). H3-F2 in surface audit also flagged this. Document divergence in POKER_THEORY.md §9.x OR add a `'preflop'` street kind to `STREETS` enum + `validateNode` board-length check.
+accept_criteria:
+  - "✓ Either §9.x divergence entry shipped OR `STREETS` enum extended with preflop semantics + tests"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 568
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

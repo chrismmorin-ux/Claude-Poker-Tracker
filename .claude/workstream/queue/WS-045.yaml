@@ -1,0 +1,33 @@
+id: "WS-045"
+title: "Stream B5"
+legacy_id: "SLS-B5"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "shape-language"
+capability: "core"
+program: "design"
+description: |
+  Stream B5 — Advanced (Contour Tree + Basin Map + Hand Trajectory)
+accept_criteria:
+  - "3 advanced descriptors"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-044"
+blocked_by_legacy:
+  - "SLS-B4"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by SLS-B4"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
+  source_line: 204
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

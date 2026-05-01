@@ -1,0 +1,168 @@
+id: launch
+name: Launch Readiness
+schema_version: 3
+lifecycle: temporary   # This program is removed after successful launch
+status: NEW
+
+contract: >
+  The founder can trust that the application will not launch until all critical
+  domains are healthy. This is a gate — it aggregates health from blocking
+  programs and only goes green when they're all ready. The founder doesn't
+  need to track what's left; this program is the single source of truth for
+  "are we ready to launch?"
+
+capability_brief:
+  value: "Acts as the launch gate — aggregates health from blocking programs (security, compliance, domain-correctness, etc.) into a single 'are we ready' answer."
+  problems_prevented:
+    - "Launches happening before all critical programs are green"
+    - "Partial-readiness shipping — security passes but compliance lags, or vice versa"
+    - "Founder having to track readiness across many programs manually"
+    - "Launch-blocker findings going stale and unnoticed in the queue"
+  cost:
+    activation: "~5 min for the baseline gate audit"
+    ongoing: "Periodic /pulse run launch + closing launch-blocker findings as they surface"
+  first_output:
+    - "Launch-readiness baseline (per-blocker status across all blocking programs)"
+    - "Aggregate gate decision (ready / not ready) with reasons"
+    - "Outstanding-blockers list ordered by criticality"
+    - "Readiness trend over recent runs"
+  activation_command: "/pulse run launch baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Blocking Program Health
+    description: "All programs that must be healthy before launch are actually healthy"
+    examples: ["security program has open critical findings", "financial accuracy untested", "compliance incomplete"]
+    detection: "Cross-program health check against launch_gate.blocking_programs"
+
+  - name: Core User Flows
+    description: "Primary user journeys work end-to-end"
+    examples: ["signup flow broken", "payment fails on edge case", "user can't reset password"]
+    detection: "Critical path enumeration and verification"
+
+  - name: Operational Readiness
+    description: "Monitoring, alerting, and incident response are in place"
+    examples: ["no error monitoring", "no alerting on payment failures", "no runbook for common issues"]
+    detection: "Monitoring coverage audit, alerting rule review, runbook existence check"
+
+scope:
+  file_patterns: []    # Launch doesn't monitor code — it monitors other programs
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: active
+tier_triggers:
+  watch: "At least one other program is at active tier"
+  active: "Project phase is pre-launch"
+  critical: "Launch date is set"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Assess launch readiness across all blocking programs and core user flows"
+    problem_classes: all
+    outputs: [baseline_report, blocking_status, readiness_score]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 7
+    focus: "Full launch readiness assessment"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 1
+    focus: "Changes to blocking program health since last check"
+    method: "Read all blocking program health scores, compare to previous"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Adversarial launch readiness"
+    prompt_additions: >
+      CHALLENGE protocol for Launch Readiness. Think like the worst launch day:
+      - What if 10x expected traffic hits on day one?
+      - What's the worst thing a user could encounter in their first 5 minutes?
+      - What data could be lost if the server restarts during peak usage?
+      - What if the payment provider has a 30-minute outage?
+      - What would make the founder's phone ring at 3am on launch night?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "What are we not seeing before launch?"
+    prompt_additions: >
+      BLIND SPOT protocol for Launch Readiness.
+      - What programs should be blocking launch that aren't?
+      - What operational concerns aren't covered by any program?
+      - What do successful launches in this domain typically have that we don't?
+    min_tier: critical
+
+launch_gate:
+  required_program_health: 60   # All blocking programs must have health >= 60
+  blocking_programs: []         # /adopt populates based on archetype
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 5
+    priority_floor: 27
+    escalation:
+      stale_days: 3
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Launch readiness has not been assessed in {days} days. Sprint is blocked. To unblock: /pulse run launch-readiness"
+    block_sprint: true
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: []
+  fed_by: [security, infrastructure, compliance, data-quality, ux, engineering, financial-accuracy]
+  blocks: []
+
+phase_relevance:
+  foundation: low
+  pre-launch: critical
+  launch: critical
+  growth: low
+  maturity: low
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 90
+  evidence_dir: ".claude/workstream/evidence/launch/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Blocking programs identified."
+    level_2: "All blocking programs have run baseline. Readiness score calculated."
+    level_3: "Challenge active. All blocking programs at health >= 40."
+    level_4: "All blocking programs at health >= 60. Launch approved."
+  current_gaps: "Never evaluated."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

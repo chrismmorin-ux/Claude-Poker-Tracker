@@ -1,0 +1,30 @@
+id: "WS-061"
+title: "Corpus scaling"
+legacy_id: "US-1"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  **Corpus scaling** — author additional upper-surface artifacts (target ≥15 total: 3+ lines × ~5 nodes each) to make pre-session drill UX meaningful
+accept_criteria:
+  - "15+ artifacts in `docs/upper-surface/reasoning-artifacts/`. v2.2-rubric-compliant. Each with companion audit + comparison + drill card."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 306
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

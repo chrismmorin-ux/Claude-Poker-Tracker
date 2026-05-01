@@ -1,0 +1,33 @@
+id: "WS-002"
+title: "Straddle wired into matrix"
+legacy_id: "TIA-1.2"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 30.0
+priority_label: "P0"
+category: "tableview-invariant-audit"
+capability: "core"
+program: "engineering"
+description: |
+  **Straddle wired into matrix** — owner decides: live straddle only? Mississippi? UTG-only? Re-straddle allowed? Then extend matrix to cover straddle action order, blind posting, pot odds.
+accept_criteria:
+  - "Matrix extended"
+  - "new straddle scenarios pinned"
+  - "matrix re-runs against code"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED on owner straddle-scope answer"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — TableView Invariant Audit + Straddle (TIA, project: `.claude/projects/master-plan-2026-04-30.md` §B+E)"
+  source_line: 32
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

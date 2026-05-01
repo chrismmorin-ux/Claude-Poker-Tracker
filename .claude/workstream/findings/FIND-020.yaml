@@ -1,0 +1,26 @@
+id: "FIND-020"
+title: "Polarization overbet candidate produces near-duplicate 1.5x and 2.0x sizings"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  Two parallel polarization-overbet paths exist: heroActionBuilder.js:166-170 adds 2x pot when nutAdvantage>0.3 + heroEquity>0.55 + polarization>0.4; villainRangeShapeSizing in gameTreeSizingHelpers.js:92-95 adds 1.5x/2.0x when villain range is `capped`. Both can fire and add three near-duplicate large-bet candidates. Dedup on `Math.abs(targetSize - existing) < potSize * 0.10` may miss the 1.5x↔2.0x pair (gap = 0.5×pot).
+affected_files:
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+recommended_fix: |
+  Consolidate the overbet construction so a single decision rule produces 1 overbet candidate; downstream EV evaluation already handles ranking.
+theory_citation: "POKER_THEORY.md §3.5, §5.7"
+agent_corroboration:
+  - "game-tree-villain-audit (F6)"
+dedup_key: "eng-engine-domain-correctness-polarization-overbet-candidate-produces-near-duplicate-1-5x-"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

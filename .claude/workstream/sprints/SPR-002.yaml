@@ -1,0 +1,63 @@
+id: "SPR-002"
+title: "TableView Invariant Audit — matrix authoring (Phase 1 of Master Plan TIA)"
+status: approved
+goal: |
+  TableView invariant matrix exists as a runnable test fixture covering all preflop,
+  postflop, and special-state contexts, with 2 owner-reported bugs pinned as fixture
+  rows and zero spot-fixes attempted. The matrix establishes the baseline that gates
+  WS-002 (straddle extension) and WS-003 (fix wave).
+
+items:
+  - id: "WS-001"
+    title: "Invariant matrix authoring (audit-only, NO fixes)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Matrix schema: confirm (active_seats × street × prior_action × hero_role × game_state) → expected_action_options shape; agree on prior_action enumeration granularity"
+      - "Test-fixture framework: Vitest + JSON fixture vs programmatic enumeration in code"
+      - "Bug pinning approach: how to encode expected vs observed without writing a fix (.skip with reference, or expected_per_spec vs actual_today columns)"
+      - "Owner-reported bugs: name the 2 bugs to pin as fixture rows so repro paths can be captured"
+    depends_on: []
+    status: pending
+    notes: ""
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1: Matrix schema and prior_action enumeration granularity"
+  - "Item #1: Test-fixture framework (Vitest+JSON vs programmatic)"
+  - "Item #1: Bug-pinning encoding (expected vs observed, no fix)"
+  - "Item #1: Which 2 owner-reported bugs become fixture rows"
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T16:19:57Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo (HomeBase-only path). Manual review: sprint goal is audit-only with explicit no-fix discipline (matches Master Plan binding ratification 'B is audit not spot-fix'). Produces a test fixture strengthening long-term engineering baseline. No anti-goal patterns detected."
+  matches: []
+
+created_at: "2026-05-01T16:19:57Z"
+approved_at: "2026-05-01T16:19:57Z"
+started_at: null
+completed_at: null
+session_ids: []
+
+composition_notes: |
+  Solo-anchor sprint by design. WS-001 is the P0 anchor of Master Plan 2026-04-30
+  Phase 1 (TableView Invariant Audit, audit-first matrix authoring per binding
+  ratification "B is audit not spot-fix"). WS-002 (straddle wired into matrix) and
+  WS-003 (fix wave) are tightly coupled but excluded from this sprint:
+    - WS-002 has status_note "BLOCKED on owner straddle-scope answer" and would
+      force premature decisions on live/Mississippi/UTG-only/re-straddle scope.
+    - WS-003 cannot meaningfully execute until the matrix exists to identify the
+      bugs to fix.
+  Standard ceremony 2-session effort cap also constrains; WS-001+WS-002 = 3 sessions
+  exceeds cap. Single P0 plan-first item is the correct shape.
+
+  Source-class damping: SPR-001 anchor was engine-finding (FIND-003); WS-001 is
+  untagged (founder-driven, backlog-md-migration origin). Founder-driven classes
+  are never damped per Step 2d. No source-class anchoring concern.
+
+  Fleet-anchor rotation: not applicable (poker-tracker repo has no fleet-health
+  program; rotation invariant scopes to HomeBase-distribution paths only).

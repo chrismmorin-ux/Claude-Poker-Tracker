@@ -1,0 +1,25 @@
+id: "FIND-016"
+title: "updateScenarioRanges scales prior grid by single ratio rather than per-cell update"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  rangeEngine/bayesianUpdater.js:116-124: effective frequency is computed once per (position, action) then applied uniformly: `ranges[action][i] = Math.min(1.0, prior[i] * ratio)`. When observed freq >> prior freq, all in-prior cells saturate to 1.0 and lose relative ordering. No per-cell credible interval to defend against this.
+affected_files:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+recommended_fix: |
+  Track per-cell observation counts (or maintain Beta(α,β) per cell when showdowns exist) so showdown anchors don't get washed out by frequency rescaling.
+theory_citation: "RANGE_ENGINE_DESIGN.md §4.5"
+agent_corroboration:
+  - "range-equity-audit (F8)"
+dedup_key: "eng-engine-domain-correctness-updatescenarioranges-scales-prior-grid-by-single-ratio-rathe"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

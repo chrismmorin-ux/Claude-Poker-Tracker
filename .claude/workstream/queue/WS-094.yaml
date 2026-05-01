@@ -1,0 +1,31 @@
+id: "WS-094"
+title: "Future engine change tickets from audit findings"
+legacy_id: "LSW-G*"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 12.0
+priority_label: "varies"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Future engine change tickets from audit findings** — one G entry per category-C audit finding. Cites the originating audit + external source + specific engine change + test delta. Every G ticket re-baselines `engineAuthoredDrift.test.js` and may loop back to re-run the audit node it surfaced from.
+accept_criteria:
+  - "✓ Engine change shipped + tests green + drift snapshot re-baselined + originating audit's category-C row marked resolved"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "LAZY"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 588
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

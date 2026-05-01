@@ -1,0 +1,186 @@
+id: engineering
+name: Engineering Health
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that code quality, architecture, testing, and
+  maintainability are continuously monitored. Problems that would accumulate
+  silently — tech debt, test gaps, architecture drift, dependency rot — are
+  caught by structured protocols before they compound. The founder does not
+  need to know what "good engineering" looks like; the program handles it.
+
+capability_brief:
+  value: "Holds code quality accountable — tech debt, test gaps, architecture drift, and dependency rot get caught by structured protocols before they compound across sessions."
+  problems_prevented:
+    - "Silent test-coverage drift on critical paths between sessions"
+    - "Architecture decay — business logic leaking into handlers, circular imports, god objects"
+    - "Dependency CVEs and outdated packages lingering unpatched"
+    - "Build-pipeline rot (flaky tests, manual deploy steps, slow CI)"
+    - "Complexity creep that slows future AI sessions trying to read the code"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run engineering (14-day sweep) + closing engineering findings alongside other work"
+  first_output:
+    - "Code-quality baseline report covering all six problem classes"
+    - "Coverage / complexity / drift maps with concrete file pointers"
+    - "Dependency-health snapshot (CVEs, unused, version freshness)"
+    - "4-8 findings auto-promoted to your queue as work items"
+  activation_command: "/pulse run engineering baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Test Coverage & Quality
+    description: "Tests exist, are meaningful, and cover critical paths"
+    examples: ["untested payment flow", "tests that pass but don't assert anything", "no integration tests"]
+    detection: "Coverage analysis, test file audit, assertion density check"
+
+  - name: Architecture Drift
+    description: "Code structure diverges from intended patterns over time"
+    examples: ["business logic in API handlers", "circular imports", "god objects accumulating methods"]
+    detection: "Dependency analysis, module boundary checks, file size trends"
+
+  - name: Dependency Health
+    description: "Third-party packages are current, secure, and necessary"
+    examples: ["outdated packages with known CVEs", "unused dependencies", "pinned to vulnerable versions"]
+    detection: "Package audit, unused import scan, version freshness check"
+
+  - name: Error Handling & Resilience
+    description: "Code handles failures gracefully, not just the happy path"
+    examples: ["bare except clauses", "no retry logic on external calls", "silent failures that lose data"]
+    detection: "Exception handling audit, external call patterns, logging coverage"
+
+  - name: Build & Deploy Pipeline
+    description: "CI/CD works, is fast, and catches problems before production"
+    examples: ["flaky tests blocking deploys", "no staging environment", "manual deploy steps"]
+    detection: "CI config review, deploy script audit, pipeline timing analysis"
+
+  - name: Code Maintainability
+    description: "Code is understandable and changeable by the next session's AI"
+    examples: ["functions over 100 lines", "magic numbers", "implicit state coupling between modules"]
+    detection: "Complexity metrics, naming analysis, coupling detection"
+
+scope:
+  file_patterns:
+    - "src/**/*.js"
+    - "src/**/*.jsx"
+    - "ignition-poker-tracker/src/**/*.js"
+    - "scripts/**/*.js"
+    - "scripts/**/*.py"
+    - "tests/**/*.js"
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: watch
+tier_triggers:
+  watch: "Source code exists in scope file_patterns"
+  active: "Application has been deployed or CI pipeline is configured"
+  critical: "Production incident occurred OR major refactor underway"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full codebase assessment: architecture, testing, dependencies, error handling, build pipeline"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Comprehensive review of all engineering problem classes"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent changes: new code quality, test coverage for changes, dependency additions"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial engineering review"
+    prompt_additions: >
+      CHALLENGE protocol for Engineering. For each problem class, ask:
+      - What would break if traffic 10x'd tomorrow?
+      - What test gaps would let a regression ship?
+      - What dependency could break us with a major version bump?
+      - What happens if the database is slow, full, or unreachable?
+      - What parts of the code would a new developer (or AI session) misunderstand?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What engineering risks are we systematically missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Engineering. Review protocol history and ask:
+      - Which problem classes have never produced findings? Verify they're actually clean.
+      - Are there code areas that have grown significantly but aren't in scope?
+      - What engineering practices does the tech stack recommend that we haven't checked?
+      - What classes of bugs have appeared in production that protocols should have caught?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 18
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Engineering program has not been checked in {days} days."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [change-mgmt]
+  fed_by: []
+  blocks: []
+
+phase_relevance:
+  foundation: critical   # architecture decisions happen now
+  pre-launch: high
+  launch: high
+  growth: high
+  maturity: critical     # tech debt is the main focus
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 90
+  evidence_dir: ".claude/workstream/evidence/engineering/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline protocol has run."
+    level_2: "All 6 problem classes checked. Sweep + delta running on cadence."
+    level_3: "Challenge protocol active. Findings trend improving over 3+ sweeps."
+    level_4: "Blind-spot protocol active. Zero critical findings sustained."
+  current_gaps: "Never run."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

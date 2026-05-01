@@ -1,0 +1,33 @@
+id: "WS-093"
+title: "Candidate: ARCHETYPE_BUCKET_MULTIPLIERS.fish may not shift bucket composition enough to reflect live-pool fish donk r..."
+legacy_id: "LSW-G2"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Candidate: `ARCHETYPE_BUCKET_MULTIPLIERS.fish` may not shift bucket composition enough to reflect live-pool fish donk ranges.** LSW-A1 audit suggests fish-archetype donk ranges on wet middling boards contain more `middlePair` + `gutshot` + random-draw combos than our current multipliers reproduce. **Blocked on:** population-anchored fish-range dataset (live cash tracker data or published fish-pool study).
+accept_criteria:
+  - "✓ Revised multipliers backed by population data"
+  - "✓ archetypeRangeBuilder tests updated"
+  - "✓ LSW-A1 audit category-C row resolved"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "DEFERRED (blocked on population data)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 580
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

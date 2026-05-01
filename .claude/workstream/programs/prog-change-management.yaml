@@ -1,0 +1,175 @@
+id: change-management
+name: Knowledge & Decision Integrity
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that decisions are logged, the system model reflects reality,
+  and institutional knowledge doesn't drift or rot. When the AI starts a new session,
+  it has accurate context. When the founder asks "why did we do X?" — the answer exists.
+  This program ensures the repo's memory is reliable, not a fiction that accumulates errors
+  over time.
+
+capability_brief:
+  value: "Keeps the repo's institutional memory honest — decisions are logged, the system model matches reality, and 'why did we do X' has an answer."
+  problems_prevented:
+    - "Undocumented decisions reverting silently in a future session"
+    - "system/state.md and system/invariants.md drifting from actual code behavior"
+    - "ADR rot — old decisions lingering past the context that justified them"
+    - "New sessions starting with stale or fictional context, then building on top of it"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run change-mgmt (14-day cadence) + filing ADRs at decision points (use /decide)"
+  first_output:
+    - "Drift report on system/*.md vs current code reality"
+    - "Missing-ADR list for load-bearing decisions detected in commit history"
+    - "Knowledge-rot risk map (which docs are most stale)"
+    - "Decision-traceability gaps auto-promoted as work items"
+  activation_command: "/pulse run change-mgmt baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Decision Traceability
+    description: "Important decisions are recorded with context and rationale"
+    examples: ["major refactor with no ADR", "architecture choice not documented", "why we use X instead of Y is tribal knowledge"]
+    detection: "Decision log review, git history scan for large changes without ADR, implicit decision detection"
+
+  - name: System Model Currency
+    description: "State files, invariants, and constraints reflect actual code"
+    examples: ["invariant references deleted file", "state.md says 'pre-launch' but app is live", "constraint assumption no longer valid"]
+    detection: "System file cross-reference against code, state vs reality check"
+
+  - name: Documentation Freshness
+    description: "Docs and comments match current behavior"
+    examples: ["README setup steps don't work", "API docs missing new endpoints", "CLAUDE.md references deleted commands"]
+    detection: "Doc-code divergence scan, command verification, setup step testing"
+
+  - name: Session Context Reliability
+    description: "What the AI reads at session start is accurate and complete"
+    examples: ["session handoff notes reference completed work as pending", "stale queue items", "workstream config out of date"]
+    detection: "Workstream file audit, handoff note verification, queue currency check"
+
+scope:
+  file_patterns:
+    - "system/**"
+    - "docs/adr/**"
+    - ".claude/failures/**"
+    - ".claude/context/**"
+    - ".claude/handoffs/**"
+    - "CLAUDE.md"
+    - ".claude/commands/**"
+    - ".claude/workstream/**"
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: active
+tier_triggers:
+  watch: "Repository has system/ directory and CLAUDE.md"
+  active: "Multiple sessions have occurred (workstream has history)"
+  critical: "Major refactor underway OR system model found to be inaccurate"
+
+protocols:
+  baseline:
+    engine: drift-detector
+    focus: "Full knowledge audit: decisions, system model, docs, session context"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: drift-detector
+    cadence_days: 14
+    focus: "Comprehensive knowledge integrity review"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent changes to system files, docs, and workstream state"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial knowledge integrity review"
+    prompt_additions: >
+      CHALLENGE protocol for Knowledge Integrity. Think like a new AI session:
+      - If I read CLAUDE.md right now, would I get an accurate picture of this repo?
+      - Are there decisions embedded in the code that aren't in the decision log?
+      - What invariants in system/invariants.md are no longer true?
+      - What would I get wrong in my first 5 minutes if I trusted everything in system/?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What knowledge drift are we missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Knowledge Integrity. Review history and ask:
+      - What areas of the codebase have no documentation coverage?
+      - Are there decisions made in conversations that never got recorded?
+      - Has the project's direction changed in ways the system model doesn't reflect?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 9
+    escalation:
+      stale_days: 21
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Knowledge integrity program has not been checked in {days} days."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: []
+  fed_by: [engineering]
+  blocks: []
+
+phase_relevance:
+  foundation: high
+  pre-launch: medium
+  launch: medium
+  growth: high
+  maturity: critical
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 90
+  evidence_dir: ".claude/workstream/evidence/change-mgmt/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline has audited all system files."
+    level_2: "All 4 problem classes checked. Decision log started. System model current."
+    level_3: "Challenge active. Drift detection running. All decisions logged."
+    level_4: "Blind-spot active. Zero stale docs. Session context always accurate."
+  current_gaps: "Never run."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

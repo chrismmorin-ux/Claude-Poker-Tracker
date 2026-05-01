@@ -1,0 +1,25 @@
+id: "FIND-010"
+title: "PIP 'active tier' count uses hard 0.3 cutoff without uncertainty propagation"
+severity: MEDIUM
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  rangeEngine/pipCalculator.js:70, 78-91 (`countActiveTiers`): `WEIGHT_THRESHOLD = 0.3` and `if (w > WEIGHT_THRESHOLD) count++` — a binary indicator over Float64 weights. PIP delta is `playerTiers - gtoTiers` with no credible-interval, no sample-size attribution, no confidence label.
+affected_files:
+  - "src/utils/rangeEngine/pipCalculator.js"
+recommended_fix: |
+  Compute per-position confidence (bucket via `bayesianSampleConfidence` of `noRaiseFaced + facedRaise`) and attach `{ pips, confidence }`; render the delta with a confidence badge in `formatPips`.
+theory_citation: "RANGE_ENGINE_DESIGN.md §5.3-5.4, §4.6"
+agent_corroboration:
+  - "range-equity-audit (F6)"
+dedup_key: "eng-engine-domain-correctness-pip-active-tier-count-uses-hard-0-3-cutoff-without-uncertain"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

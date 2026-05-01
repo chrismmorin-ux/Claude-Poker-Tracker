@@ -1,0 +1,25 @@
+id: "FIND-019"
+title: "Double-tightening through depth-3 may over-narrow continuing range"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  gameTreeDepth2.js:818-819, 901-906: `tightenRatesForContinuation(callingRates, 'call')` cascades correctly across turn→river depth-3, but the chained turnCallingRates → riverCallingRates pattern double-tightens. If villain has already been forced through one tightening on the turn (called the flop bet), tightening again for the next street on top of the explicit street-conditional model output may over-narrow.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  Audit that double-tightening through depth-3 doesn't push villain's range below the actual continuing range observed in turn-after-flop-call situation keys (the hierarchy queries should already provide street-conditional rates).
+theory_citation: "POKER_THEORY.md §3.6; memory: project_villain_model_assumptions_fix.md"
+agent_corroboration:
+  - "game-tree-villain-audit (F5)"
+dedup_key: "eng-engine-domain-correctness-double-tightening-through-depth-3-may-over-narrow-continuing"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

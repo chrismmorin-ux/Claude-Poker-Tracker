@@ -1,0 +1,30 @@
+id: "WS-101"
+title: "Replay corpus sequence extension (6 minimum sequences)"
+legacy_id: "RT-74"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "sidebar-recurrence"
+capability: "core"
+program: "engineering"
+description: |
+  Replay corpus sequence extension (6 minimum sequences)
+accept_criteria:
+  - "Extend SR-1 with sub-coalesce interleave playback + transition-trace hashing. Cover: reconnect-mid-advice, SW-reanimate, handNew-within-80ms, two-advice-before-context, donk→cbet, table-switch-during-fade. Owner verifies: `npm run replay` gains new sequence suite that catches at least one seeded race"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"
+  source_line: 657
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

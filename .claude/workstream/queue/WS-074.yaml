@@ -1,0 +1,32 @@
+id: "WS-074"
+title: "Coordinate with exploit-deviation on AssumptionCard shared component"
+legacy_id: "HRP-COORD-MH12"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  Coordinate with exploit-deviation on `AssumptionCard` shared component
+accept_criteria:
+  - "Shared infra opportunity per Gate 2 Stage D. Whichever project reaches the ledger-row render first authors the component"
+  - "the other consumes. Effort: S."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "LATER"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 335
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

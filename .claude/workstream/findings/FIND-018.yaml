@@ -1,0 +1,25 @@
+id: "FIND-018"
+title: "multiwayFoldPct correlation adjustment direction may overshoot ceiling"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  gameTreeEquity.js:580-586: for overbet (betFraction=2.0) with 2 opponents, correlationAdj=1.05 INCREASES allFoldPct above the independent product. The information-cascade interpretation is theoretically defensible but currently boosts BOTH the cascade AND the betFraction effect on each opponent's fold (already inside the per-opponent product for personalized villain models).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+recommended_fix: |
+  Confirm with simulation that the cascade boost doesn't push fold rates above realistic ceilings; document the empirical basis or cap at independent product × small bonus.
+theory_citation: "memory: project_game_tree_tier1.md (24.4)"
+agent_corroboration:
+  - "game-tree-villain-audit (F4)"
+dedup_key: "eng-engine-domain-correctness-multiwayfoldpct-correlation-adjustment-direction-may-oversho"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

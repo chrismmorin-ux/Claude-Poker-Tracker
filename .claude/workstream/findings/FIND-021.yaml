@@ -1,0 +1,25 @@
+id: "FIND-021"
+title: "Block-bet candidate added unconditionally without villain-range check"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  heroActionBuilder.js:173-180: block-bet (0.25x pot) is added whenever hero has river-equity 0.35-0.55. Block-betting is correct only when villain's checking range has bluff-catchers AND would otherwise bet bigger; vs a calling station, 0.25x leaves value on the table.
+affected_files:
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+recommended_fix: |
+  Generation is fine; rely on the EV evaluator to suppress when context unfit. Confirm `evaluateHeroAction` ranks 0.25x below 0.5x against weak-calling-range villains via `eqVsCallRange × (potAfterCall − rake)`.
+theory_citation: "POKER_THEORY.md §4.1 (thin value sizing)"
+agent_corroboration:
+  - "game-tree-villain-audit (F7)"
+dedup_key: "eng-engine-domain-correctness-block-bet-candidate-added-unconditionally-without-villain-ra"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

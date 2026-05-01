@@ -1,0 +1,79 @@
+id: "WS-050"
+title: "UI components for PrintableRefresherView + comprehensive visual regression suite (chromium + firefox + webkit × Lette..."
+legacy_id: "PRF-G5-UI"
+type: improvement
+status: in_progress
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "printable-refresher"
+capability: "core"
+program: "design"
+description: |
+  UI components for PrintableRefresherView + comprehensive visual regression suite (chromium + firefox + webkit × Letter + A4 × lineage on/off + 2 modal overlays) + GitHub Actions CI workflow (advisory, awaiting Linux baselines)
+accept_criteria:
+  - "**S18 (initial UI batch):** SCREEN.PRINTABLE_REFRESHER constant + ViewRouter case wired. `src/components/views/PrintableRefresherView/index.jsx` (top-level shell — header with back button + 4 class filter chips with aria-pressed + showSuppressed toggle + sort dropdown 4-options + \"Showing N of M\" status + lightweight error toast + deferred-features footer"
+  - "uses useRefresher() + useRefresherView() + useUI()"
+  - "applies filters+sort locally before passing to CardCatalog"
+  - "staleCardIds Set built from getStaleCards). `MathCardTemplate.jsx` (Region 1-2 + Region 4-5 layout per print-css-doctrine.md"
+  - "burnt-orange #c05621 accent on title for math class"
+  - "14pt bold serif title"
+  - "10pt body paragraphs split on \\n\\n"
+  - "9pt greyscale mono+serif lineage footer with 7-field printFooter output"
+  - "compact mode hides footer + adds fade-mask for catalog preview). `CardRow.jsx` (cardId + abbreviated title + version line + status badge with 5-state precedence stale > suppressed > hidden > pinned > current"
+  - "4 action chips Pin/Hide/Suppress/Detail with ≥44×44 tap targets per H-ML06 + aria-pressed for active states"
+  - "opacity 0.6 for suppressed/hidden). `CardCatalog.jsx` (vertical list of CardRow"
+  - "empty-state CD-clean copy \"No cards match the current filter. Adjust filters or show suppressed cards.\" — no engagement copy / no imperative tone"
+  - "staleCardIds accepts both Set and Array). 4 test files (48 tests): MathCardTemplate 9 + CardRow 19 + CardCatalog 8 + PrintableRefresherView 12. **S19 (sub-view + modal nav + menu wiring):** 3 new modal/sub-view components shipped + sub-view navigation wired + menu entry added. (1) `SuppressConfirmModal.jsx` — ≤2-tap flow per surface spec: title-aware copy for suppress vs un-suppress + \"I understand\" checkbox + Cancel + primary Confirm button (disabled until checkbox ticked + during submit)"
+  - "aria-modal=true + dialog labelledby title"
+  - "Esc + backdrop-click + Cancel all dispatch onCancel"
+  - "onConfirm async with try/catch surfacing errors inline as alert role"
+  - "≥44px tap targets"
+  - "CD-clean copy (verified mechanically). (2) `LineageModal.jsx` — read-only 7-field lineage rendered as labeled `<dl>` with monospace font + grid layout"
+  - "null bucketDef renders \"(not applicable)\""
+  - "Esc + backdrop + ✕ button all close"
+  - "aria-modal=true"
+  - "red-line-#12 footer disclaimer. (3) `CardDetail.jsx` sub-view — back-to-catalog button + cardId heading + stale badge if isStale + ClassDispatchedTemplate routing math→MathCardTemplate while preflop/equity/exceptions show placeholder pending S20+ templates + LineageModal CTA + 3 actions [Pin/Hide/Suppress class] with aria-pressed + state-aware labels + status footer. (4) `index.jsx` extended with selectedCardId + pendingSuppress state + handleSuppress now opens SuppressConfirmModal (replaces S18 no-op log) + handleSuppressConfirm calls `refresher.setClassSuppressed({suppress: true, confirmed: true})` for suppress and `({suppress: false, ownerInitiated: true})` for un-suppress + handleOpenDetail navigates to CardDetail via state (replaces S18 no-op log) + selectedCard memoized from `getAllCards()` so detail stays reachable even if catalog filter would hide it + conditional render: CardDetail when selectedCardId set"
+  - "SuppressConfirmModal as modal overlay when pendingSuppress set"
+  - "otherwise CardCatalog. (5) Menu wire-up: `CollapsibleSidebar.jsx` adds Refresher entry with `<Printer />` icon between Online and Settings"
+  - "`PokerTracker.jsx` HASH_TO_SCREEN adds `'#printableRefresher'` deep-link mapping. **3 new test files + 1 extended (48 new tests):** SuppressConfirmModal 13 (suppress flow / un-suppress flow / accessibility) + LineageModal 13 (render + close handling + accessibility) + CardDetail 16 (basic render + actions + lineage modal toggle + accessibility) + PrintableRefresherView +6 (sub-view + modal navigation: Detail chip opens CardDetail / Back returns to catalog / Suppress chip opens SuppressConfirmModal / Cancel closes modal / \"Showing N of M\" hidden in detail view + footer-copy update). **96/96 component tests green"
+  - "full PRF scope 710/710 across 26 test files.** **Deferred to S20+:** PrintPreview + PrintConfirmationModal sub-views / 3 remaining card templates (PreflopCardTemplate navy `#1e3a5f` + EquityCardTemplate teal `#0f766e` + ExceptionsCardTemplate maroon `#7f1d1d`) / StalenessBanner / Stakes/stacks/status filter chips beyond class / \"Print selected batch\" + \"Print preview\" buttons / URL routing for sub-views (currently component-state-based). **Visual verification:** TODO at owner level — components unit-tested for render correctness + interaction wiring but no Playwright snapshot or manual browser session yet (PRF-G5-PDF pending). **S20 (3 remaining card templates + dispatcher wiring):** purely additive — case branch + import only into `CardDetail.jsx` ClassDispatchedTemplate (now a `switch` statement"
+  - "default branch retains S19 placeholder for unknown class). 3 new template components + 3 new test files + 1 extended (49 net new tests). (1) `PreflopCardTemplate.jsx` — navy `#1e3a5f` accent. Region 1 title + 14pt bold serif accent. Region 2 renders 13×13 hand grid (169-cell CSS grid, generated from `manifest.generatedFields.rangeGrid` 169-entry array"
+  - "pairs on diagonal as `${r}${r}`, suited above as `${r1}${r2}s`, offsuit below as `${r2}${r1}o`"
+  - "cell shading: full freq → solid accent fill"
+  - "mixed freq → `linear-gradient(to top, accent X%, transparent)` per H-PM02 deuteranopia-friendly intensity"
+  - "outline-only when out-of-range) + sizing hint (`generatedFields.defaultSizing` rendered as accent-colored bold 10pt block under grid). Region 3 derivation/exception callout (italic 9pt prose"
+  - "second+ paragraphs from bodyMarkdown). Lineage footer + compact-mode mask gradient mirror MathCardTemplate. Defensive: missing/wrong-length rangeGrid omits the grid"
+  - "missing sizing omits the sizing block"
+  - "missing second paragraph omits Region 3. (2) `EquityCardTemplate.jsx` — teal `#0f766e` accent. Region 2 renders the equity matrix as a `<table role=\"table\">` with `<th scope=\"col\">` bucket headers from `generatedFields.equityMatrix.headers` + one `<tr>` per row in `equityMatrix.rows` with `<th scope=\"row\">` texture name + cell percentages with `%` suffix and `font-variant-numeric: tabular-nums` for visual alignment. Atomicity cap enforced at render-time: rows sliced to ≤8 per H-PM05 (matches `equityMatrix` shape contract from surface spec). Region 3 bucket-definition citation (italicized 10pt prose from second+ bodyMarkdown paragraphs). (3) `ExceptionsCardTemplate.jsx` — maroon `#7f1d1d` accent. Region 2 classifies bodyMarkdown paragraphs by leading prefix (\"Solver baseline:\" / \"Live-pool divergence:\" / \"Override when:\") into labeled sub-sections with accent-colored 9.5pt bold labels"
+  - "unprefixed paragraphs fall through as plain prose. Region 3 hoists the override paragraph (if present) into a callout with a light-red `#fef2f2` background, dashed top border, accent-colored \"Override when:\" label — visual emphasis on the override trigger per surface spec §Template 4 layout. Region 4-5 lineage footer additionally renders `audit id: <auditId>` line in accent color (the audit-id citation per F4 + F5 fidelity)"
+  - "also exposes `data-audit-id` attribute on the article for CI introspection. (4) `CardDetail.jsx` `ClassDispatchedTemplate` extended from 1-of-1 to 1-of-4 dispatch via `switch (manifest.class)` — case branches for math/preflop/equity/exceptions"
+  - "default placeholder retained for unknown classes (defensive, exercised in test \"renders placeholder for unknown class\"). 4 imports added at top: PreflopCardTemplate / EquityCardTemplate / ExceptionsCardTemplate (MathCardTemplate already present). **3 new test files (49 net new tests):** PreflopCardTemplate 16 (title accent / 169-grid render / grid-omits-when-missing / sizing render / Region 3 callout / Region 3 omits when no second paragraph / lineage footer compact-toggle / null-manifest / data attrs / break-inside / aria-label / data-cell labels / mixed-frequency linear-gradient)"
+  - "EquityCardTemplate 14 (title accent / table render / column headers / row headers / cell percentages with unique values + count for duplicates / row-cap-at-8 / matrix-omits-when-missing / Region 3 bucket citation / lineage compact-toggle / null-manifest / data attrs / break-inside)"
+  - "ExceptionsCardTemplate 16 (title accent / subtitle / solver-baseline-prefix classifies / divergence-prefix classifies / override hoisted to Region 3 / Region 3 omits when no override / auditId in footer / data-audit-id attr / data-audit-id absent when undefined / unprefixed-prose-fallback / lineage compact-toggle hides audit-id / null-manifest / data attrs / break-inside)"
+  - "CardDetail.test.jsx +3 net (replaced 1 placeholder-asserts-for-preflop with 4: dispatches preflop / dispatches equity / dispatches exceptions / falls back to placeholder for unknown class). **All 145/145 view-scope tests green across 10 files (+49 from S19 baseline of 96/7)"
+  - "full PRF scope 714+ across 26+ test files** in isolation. **Visual verification:** Math card detail renders correctly through new switch dispatcher (regression-verified via Playwright snapshot at `prf-s20-math-card-detail-regression.png`)"
+  - "zero console errors at boot or navigation. New 3 templates not yet visually verified at runtime because no preflop/equity/exceptions manifests exist yet — that work is gated on PRF-G5-A (Phase A preflop authoring) and PRF-G5-C (Phase C equity+exceptions authoring). Unit-test coverage substitutes for runtime verification until those phases ship. **Deferred to S21+:** PrintPreview + PrintConfirmationModal sub-views / StalenessBanner / Stakes/stacks/status filter chips beyond class / \"Print selected batch\" + \"Print preview\" buttons / URL routing for sub-views (currently component-state-based). **S21 (print flow end-to-end):** 4 new components + 1 stylesheet + 1 constants file + 4 new test files + 1 extended (~70 net new tests). (1) `ClassDispatchedTemplate.jsx` — lifted from `CardDetail.jsx` to a shared file so PrintPreview can compose without duplicating the switch logic. CardDetail now imports it"
+  - "deleted 4 redundant template imports. (2) `PrintControls.jsx` — 4 toggle groups: Page (Letter/A4) / Cards/sheet (12/6/4/1) / Color (auto/bw) / Footer (Lineage on/off + disabled \"Personal codex: Phase 2+\" with tooltip per AP-PRF-09). aria-pressed reflects state"
+  - "≥44×44 tap targets"
+  - "writes via `refresher.patchConfig({ printPreferences })` debounced 400ms with pending-patch ref accumulation so rapid toggles collapse into a single W-URC-1 IDB write. **Longhand `borderWidth/borderStyle/borderColor`** (not `border` shorthand) — caught a real React rerender warning in Playwright. Surfaces writer-rejection inline as role=alert. (3) `PrintPreview.jsx` — sub-view rendering all active cards in `.refresher-print-page[data-cards-per-sheet]` grids inside a `.print-preview-container` WYSIWYG wrapper. Cards chunked into pages of N where N = cardsPerSheet. Cards rendered via the lifted ClassDispatchedTemplate with a memoized `runtime` prop (`{ engineVersion: 'v123', appVersion: 'v123' }` from new `src/constants/runtimeVersions.js` — replaces the `unknown-engine`/`unknown-app` fallbacks). PrintControls panel mounted above grid"
+  - "\"Send to print dialog →\" primary teal button below. `handleSendToPrintDialog` builds the W-URC-3 batch context (cardIds + perCardSnapshots) from a single `activeCards` array enforcing I-WR-6 1:1 contract from one source. Empty-state copy + button disabled when no active cards. (4) `PrintConfirmationModal.jsx` — modal mirroring SuppressConfirmModal/LineageModal patterns (aria-modal, aria-labelledby, Esc + backdrop close, focus trap, ≥44px tap targets) but **without 2-tap checkbox gate** (printing is normal owner action). Native `<input type=\"date\">` defaulting to today + optional batch-label input + factual reminder copy per CD-1. Confirm calls parent's `onConfirm({printedAt, label})` which awaits `recordPrintBatch(payload)` then fires `window.print()` ONLY if the IDB write resolves"
+  - "re-throws on writer rejection so modal surfaces the error inline as role=alert and does NOT auto-close. (5) `src/styles/printable-refresher.css` — global stylesheet imported via `src/main.jsx` between index.css and dev seeders. `@page { size: letter"
+  - "margin: 0.4in }` default"
+  - "`.refresher-print-page[data-cards-per-sheet=\"12"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "IN PROGRESS (S18+S19+S20+S21+S22+S23+S24+S25+S26+S27+S28 shipped 2026-04-27)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Printable Refresher (project: `docs/projects/printable-refresher.project.md`)"
+  source_line: 257
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

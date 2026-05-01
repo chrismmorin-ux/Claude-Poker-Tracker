@@ -1,0 +1,206 @@
+id: anti-hallucination
+name: Anti-Hallucination & AI Accuracy
+schema_version: 3
+status: NEW
+
+# Per ADR-034 (2026-04-29), this program piggybacks on design-audit's FDB drafts
+# (design/features/FDB-NNN-*.md or .draft.md) as its catalog of load-bearing
+# features to verify. Running /pulse run design baseline first (which generates
+# the FDB drafts) is a prerequisite for running anti-hallucination's baseline.
+# No dedicated anti-hallucination-audit engine is shipped — this is the
+# sixth-and-final sibling in the no-silent-install workstream and chose
+# consolidation over building a sixth pattern-application engine.
+
+contract: >
+  The founder can trust that AI-generated content, code, and data shown to users
+  is accurate, grounded, and not fabricated. In a codebase built primarily by AI,
+  this program ensures that hallucinated logic, invented APIs, phantom dependencies,
+  and false data don't ship to production. This is the meta-program: the AI
+  checking its own work for the classes of errors AI is most prone to.
+
+capability_brief:
+  value: "Catches hallucinated logic, invented APIs, phantom dependencies, and fabricated data before AI-generated content reaches users — the meta-program for AI-built codebases. Consumes design-audit's FDB drafts (or promoted FDBs at design/features/) as its catalog of load-bearing features to verify, so /pulse run design baseline is a prerequisite for the first run."
+  problems_prevented:
+    - "Phantom imports and invented APIs that don't exist in any installed package"
+    - "Fabricated logic that contradicts the documented spec or domain rules"
+    - "Stale or hallucinated documentation drifting from the actual code surface"
+    - "Inconsistent data models — the AI describing one shape while building another"
+    - "Orphaned code the AI added on the assumption it was needed"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run anti-hallucination (14-day sweep) + closing AI-accuracy findings alongside other work"
+  first_output:
+    - "Baseline AI-accuracy report mapping the six problem classes against your code, anchored to design-audit FDBs (load-bearing features the AI is most likely to fabricate details for)"
+    - "Findings on phantom imports / invented APIs / orphaned code / FDB-traceability drift auto-promoted as work items"
+    - "Doc-vs-code consistency snapshot — where comments and READMEs lie about behavior"
+    - "Problem-class coverage map showing where the AI's blind spots are, cross-referenced against FDB code_refs"
+  activation_command: "/pulse run anti-hallucination baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Phantom Dependencies & Imports
+    description: "Code references packages, modules, or APIs that don't exist"
+    examples: ["import from package not in requirements.txt", "calling API endpoint that was never built", "referencing env var that's not set"]
+    detection: "Import resolution check, requirements.txt vs actual imports, env var cross-reference"
+
+  - name: Invented API Contracts
+    description: "Code calls external services with parameters or endpoints that don't match reality"
+    examples: ["Stripe API call with wrong parameter name", "webhook handler expecting fields the provider doesn't send", "SDK method that doesn't exist in the installed version"]
+    detection: "API contract validation against docs/SDKs, response schema verification, version-specific method check"
+
+  - name: False Assumptions in Logic
+    description: "Code assumes things about data, state, or behavior that aren't true"
+    examples: ["assumes user always has email", "assumes API returns sorted data", "assumes timezone is UTC"]
+    detection: "Assumption enumeration, null/undefined path analysis, implicit contract audit"
+
+  - name: Stale or Fictional Documentation
+    description: "Docs, comments, or README describe behavior that doesn't match the code"
+    examples: ["README says 'run npm start' but package.json has no start script", "docstring describes parameters the function doesn't accept", "architecture doc references deleted modules"]
+    detection: "Doc-code cross-reference, command verification, module existence check"
+
+  - name: Inconsistent Data Models
+    description: "Data shapes assumed by different parts of the code don't match"
+    examples: ["frontend expects 'user.name' but API returns 'user.full_name'", "migration adds field but model doesn't reference it", "type definition doesn't match runtime shape"]
+    detection: "Type/schema consistency check, frontend-backend contract comparison, migration-model alignment"
+
+  - name: Orphaned & Dead Code
+    description: "Code exists that serves no purpose, confusing future AI sessions"
+    examples: ["function defined but never called", "feature flag permanently off", "commented-out code blocks", "routes with no handler"]
+    detection: "Dead code analysis, unused export detection, unreachable code identification"
+
+scope:
+  file_patterns:
+    - "src/**/*.js"
+    - "src/**/*.jsx"
+    - "ignition-poker-tracker/src/**/*.js"
+    - "scripts/**/*.js"
+    - "scripts/**/*.py"
+    - "package.json"
+    - "ignition-poker-tracker/package.json"
+    - "docs/**/*.md"
+    - ".claude/context/**/*.md"
+  invariants: []
+  anti_invariants:
+    - "No import may reference a package not listed in dependency files"
+    - "No API call may use parameters not documented by the provider"
+    - "No poker-theory claim in docs may contradict POKER_THEORY.md without explicit ADR"
+  constraints: []
+
+tier: watch
+tier_triggers:
+  watch: "Repository has code generated or substantially modified by AI"
+  active: "Application is deployed to production"
+  critical: "User-facing content is AI-generated OR hallucination bug found in production"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full hallucination audit anchored to design-audit FDBs (consumes design/features/FDB-*.md as the catalog of load-bearing features to verify): phantom deps, API contracts, logic assumptions, docs accuracy, data models, dead code"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Comprehensive accuracy review across all problem classes"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent AI-generated changes: verify imports resolve, API calls are valid, new logic assumptions are sound"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial hallucination detection"
+    prompt_additions: >
+      CHALLENGE protocol for Anti-Hallucination. You are auditing AI-generated code
+      with extreme skepticism. For each file in scope:
+      - Does every import actually resolve to a real, installed package?
+      - Does every external API call use real endpoints with correct parameters?
+      - Do comments and docstrings match what the code actually does?
+      - Are there "too good to be true" solutions that paper over complexity?
+      - Are there error handlers that catch exceptions that can't actually be thrown?
+      - Are there config values that look reasonable but were never verified against the real service?
+      Do NOT trust that code works just because it looks plausible.
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What hallucination patterns are we systematically missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Anti-Hallucination. Review history and ask:
+      - What types of AI errors have appeared that aren't covered by problem classes?
+      - Are there new AI-generated modules that aren't in scope file_patterns?
+      - Have external API versions changed, making previously valid calls incorrect?
+      - Are there integration points (webhooks, callbacks, event handlers) that
+        assume data shapes nobody has verified against real payloads?
+      - What would break if we actually ran every code path end-to-end?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 18
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Anti-hallucination program has not run in {days} days. AI-generated code is accumulating without verification."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [engineering, data-quality]
+  # ADR-034: piggyback on design-audit FDBs as catalog of load-bearing features
+  fed_by: [design]
+  blocks: []
+
+phase_relevance:
+  foundation: high       # AI is generating most code at this phase
+  pre-launch: critical   # must verify before real users
+  launch: high
+  growth: high
+  maturity: medium
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 90
+  evidence_dir: ".claude/workstream/evidence/anti-hallucination/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline has audited all AI-generated code."
+    level_2: "All 6 problem classes checked. Phantom deps and false APIs resolved."
+    level_3: "Challenge protocol active. Import resolution automated. Doc-code sync verified."
+    level_4: "Blind-spot active. Zero hallucination findings sustained. Full contract verification."
+  current_gaps: "Never run."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

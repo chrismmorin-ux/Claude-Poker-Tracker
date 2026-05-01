@@ -1,0 +1,33 @@
+id: "WS-015"
+title: "Stream D"
+legacy_id: "EAL-Stream-D"
+type: improvement
+status: in_progress
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Stream D — IDB v19 migration + Anchor Library view + Calibration Dashboard + HandReplay Tier 0 capture + Session Review rollup
+accept_criteria:
+  - "**B3 capture flow shipped + visually verified (S10..S17 + visual verification):** S10-S17 layers (capture pure-utils + migrateV19 + wrappers + reducer/context/hook + AppRoot wiring + orchestrator hooks + Button/List/Modal components + AnchorObservationSection composite + ReviewPanel.jsx Section G slot) + Playwright visual verification at 1600×720 against 61-hand seeded data (button renders + modal opens with all spec elements + Incognito red-line-#9 visible-and-disabled-when-not-enrolled + chip→Save→list-row→IDB persistence + reload-hydration with \"2m ago\" timestamp). **Real bug caught + fixed during visual verification:** `hand.handId` from IndexedDB is a number (auto-increment PK) but EAL pure-utils require string per schema-delta §3.1 — fixed by string-coercion at the AnchorObservationSection adapter boundary"
+  - "+2 regression tests added. **554 EAL tests green** (23 files"
+  - "+2 from S17 visual-verification fix). The Tier 0 owner observation capture surface is operational at user level. **Remaining:** 3 study surfaces (anchor-library / calibration-dashboard / session-review-anchor-rollup) + Phase 8 LiveAdviceBar anchor badge integration."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "IN PROGRESS (B3 capture flow visually-verified end-to-end COMPLETE 2026-04-25..27 S10..S17 + visual verification)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
+  source_line: 111
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

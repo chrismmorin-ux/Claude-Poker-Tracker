@@ -1,0 +1,175 @@
+# Findings Index — fast-scan summary of all findings
+# Rebuild from: findings/FIND-*.yaml
+# Updated by /engine (via cwos-reconcile)
+
+last_updated: "2026-05-01"
+finding_count: 21
+findings:
+  - id: "FIND-001"
+    title: "Credible intervals computed but never consumed in any UI surface"
+    engine: eng-engine
+    severity: HIGH
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-credible-intervals-computed-but-never-consumed-in-any-ui-sur"
+    created_at: "2026-05-01"
+  - id: "FIND-002"
+    title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
+    engine: eng-engine
+    severity: HIGH
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-hard-0-5-value-bluff-cutoff-over-noisy-500-trial-monte-carlo"
+    created_at: "2026-05-01"
+  - id: "FIND-003"
+    title: "POKER_THEORY.md missing freshness header — drift cannot be tracked"
+    engine: eng-engine
+    severity: HIGH
+    status: resolved
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-poker-theory-md-missing-freshness-header-drift-cannot-be-tra"
+    created_at: "2026-05-01"
+  - id: "FIND-004"
+    title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
+    engine: eng-engine
+    severity: HIGH
+    status: resolved
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-preflopadvisor-js-pfr-vpip-ratio-scaling-stacks-on-style-con"
+    created_at: "2026-05-01"
+  - id: "FIND-005"
+    title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
+    engine: eng-engine
+    severity: HIGH
+    status: resolved
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-postflopnarrower-adaptmultipliers-style-stacks-with-af-vpip-"
+    created_at: "2026-05-01"
+  - id: "FIND-006"
+    title: "STYLE_FOLD_DEFAULTS raw lookup in multiway opponent fold rate"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-multiway-opponent-fold-rat"
+    created_at: "2026-05-01"
+  - id: "FIND-007"
+    title: "STYLE_FOLD_DEFAULTS raw lookup in preflop decisionTreeBuilder"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-preflop-decisiontreebuilde"
+    created_at: "2026-05-01"
+  - id: "FIND-008"
+    title: "No exact-enumerate fast path in handVsRange analysis-layer callers"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-no-exact-enumerate-fast-path-in-handvsrange-analysis-layer-c"
+    created_at: "2026-05-01"
+  - id: "FIND-009"
+    title: "assessEV produces categorical +EV/-EV verdict without confidence gating"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-verdict-without-confiden"
+    created_at: "2026-05-01"
+  - id: "FIND-010"
+    title: "PIP 'active tier' count uses hard 0.3 cutoff without uncertainty propagation"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-pip-active-tier-count-uses-hard-0-3-cutoff-without-uncertain"
+    created_at: "2026-05-01"
+  - id: "FIND-011"
+    title: "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min"
+    created_at: "2026-05-01"
+  - id: "FIND-012"
+    title: "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme"
+    created_at: "2026-05-01"
+  - id: "FIND-013"
+    title: "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5"
+    engine: eng-engine
+    severity: MEDIUM
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s"
+    created_at: "2026-05-01"
+  - id: "FIND-014"
+    title: "gameTreeContext.styleFallback shifts equity ANCHORS by villain style"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-gametreecontext-stylefallback-shifts-equity-anchors-by-villa"
+    created_at: "2026-05-01"
+  - id: "FIND-015"
+    title: "bayesianSampleConfidence advertises Beta priors but ignores them"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-bayesiansampleconfidence-advertises-beta-priors-but-ignores-"
+    created_at: "2026-05-01"
+  - id: "FIND-016"
+    title: "updateScenarioRanges scales prior grid by single ratio rather than per-cell update"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-updatescenarioranges-scales-prior-grid-by-single-ratio-rathe"
+    created_at: "2026-05-01"
+  - id: "FIND-017"
+    title: "Texture preservation comment claims L3 dropping but code keeps texture at L1-L3"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-texture-preservation-comment-claims-l3-dropping-but-code-kee"
+    created_at: "2026-05-01"
+  - id: "FIND-018"
+    title: "multiwayFoldPct correlation adjustment direction may overshoot ceiling"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-multiwayfoldpct-correlation-adjustment-direction-may-oversho"
+    created_at: "2026-05-01"
+  - id: "FIND-019"
+    title: "Double-tightening through depth-3 may over-narrow continuing range"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-double-tightening-through-depth-3-may-over-narrow-continuing"
+    created_at: "2026-05-01"
+  - id: "FIND-020"
+    title: "Polarization overbet candidate produces near-duplicate 1.5x and 2.0x sizings"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-polarization-overbet-candidate-produces-near-duplicate-1-5x-"
+    created_at: "2026-05-01"
+  - id: "FIND-021"
+    title: "Block-bet candidate added unconditionally without villain-range check"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-block-bet-candidate-added-unconditionally-without-villain-ra"
+    created_at: "2026-05-01"

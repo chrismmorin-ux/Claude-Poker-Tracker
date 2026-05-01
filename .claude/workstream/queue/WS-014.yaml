@@ -1,0 +1,32 @@
+id: "WS-014"
+title: "Stream E"
+legacy_id: "EAL-Stream-E"
+type: improvement
+status: in_progress
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Stream E — Tier 1 simulator + retirement evaluator + primitive validity posterior updates
+accept_criteria:
+  - "**Math layer DONE:** anchorLibrary scaffold + validator + scenario runner + 4 synthetic villains + 4 Tier-1 scenarios + retirement evaluator + primitive validity (202 tests green). **Remaining:** Commit 2.5 only — end-to-end producer wiring (replace scenario test stubs with real assumptionEngine integration"
+  - "requires exploit-deviation coordination on PREDICATE_KEYS)."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "IN PROGRESS — math layer COMPLETE (Commits 1+2+3+4 shipped 2026-04-24..25 S6+S7+S8+S9)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
+  source_line: 110
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

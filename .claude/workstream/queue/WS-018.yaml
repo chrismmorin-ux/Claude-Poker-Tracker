@@ -1,0 +1,32 @@
+id: "WS-018"
+title: "Stream B"
+legacy_id: "EAL-Stream-B-expand"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Stream B — Anchor library expansion to 10 anchors
+accept_criteria:
+  - "10 anchors in library, Tier 1-validated"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy:
+  - "EAL-S"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by EAL-Stream-B-matcher"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
+  source_line: 114
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

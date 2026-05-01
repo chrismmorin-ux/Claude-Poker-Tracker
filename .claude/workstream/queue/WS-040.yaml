@@ -1,0 +1,36 @@
+id: "WS-040"
+title: "Stream D"
+legacy_id: "SLS-D"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "shape-language"
+capability: "core"
+program: "design"
+description: |
+  Stream D — Skill-state foundation
+accept_criteria:
+  - "IDB v17→v18 additive (`shapeMastery`, `shapeLessons` stores)"
+  - "reducer"
+  - "context"
+  - "transparency screen functional"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-039"
+blocked_by_legacy:
+  - "SLS-G4"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by SLS-G4"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
+  source_line: 199
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

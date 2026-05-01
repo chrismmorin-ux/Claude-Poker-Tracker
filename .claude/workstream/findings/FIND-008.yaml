@@ -1,0 +1,26 @@
+id: "FIND-008"
+title: "No exact-enumerate fast path in handVsRange analysis-layer callers"
+severity: MEDIUM
+status: open
+category: "equity-calculation"
+program: "domain-correctness"
+problem_class: "Equity calculation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  All four call sites in handAnalysis/replayAnalysis.js + handAnalysis/hindsightAnalysis.js unconditionally use Monte Carlo with 500-1000 trials. Project memory states `exactEnumerateEquity()` exists for ≤20 combos on turn/river. These analysis-layer callers never short-circuit to it.
+affected_files:
+  - "src/utils/handAnalysis/hindsightAnalysis.js"
+  - "src/utils/handAnalysis/replayAnalysis.js"
+recommended_fix: |
+  Pre-compute villain-range combo count and remaining-board cards; route to `exactEnumerateEquity()` when feasible (≤20 combos AND turn/river).
+theory_citation: "POKER_THEORY.md §1.3; RANGE_ENGINE_DESIGN.md §14"
+agent_corroboration:
+  - "range-equity-audit (F3)"
+dedup_key: "eng-engine-domain-correctness-no-exact-enumerate-fast-path-in-handvsrange-analysis-layer-c"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

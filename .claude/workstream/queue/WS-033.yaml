@@ -1,0 +1,33 @@
+id: "WS-033"
+title: "PostHog install + event schema v1"
+legacy_id: "MPMF-G5-PH"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "monetization-and-pmf"
+capability: "core"
+program: "launch"
+description: |
+  PostHog install + event schema v1
+accept_criteria:
+  - "Events flowing"
+  - "persona-inference dashboard + frustration dashboard"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy:
+  - "MPMF-G4-S6"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by MPMF-G4-S6 + Q8 verdict"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
+  source_line: 178
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,64 @@
+id: "SPR-001"
+title: "Close 3 small HIGH findings from /pulse run domain-correctness baseline"
+status: completed
+goal: |
+  Three of the five HIGH findings from today's domain-correctness baseline are closed:
+  POKER_THEORY.md carries a freshness header that lets future drift detection work,
+  and the two style+stat double-counts in preflopAdvisor.js and postflopNarrower.js
+  are gated so style multipliers never stack with the stats that define the style.
+
+items:
+  - id: "WS-118"
+    title: "POKER_THEORY.md missing freshness header — drift cannot be tracked"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Added frontmatter (version/last_verified/changelog/governing_program). 90-day review cadence."
+    finding_id: "FIND-003"
+
+  - id: "WS-119"
+    title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Single-source gate added; 2 regression tests; 48/48 pass."
+    finding_id: "FIND-004"
+
+  - id: "WS-120"
+    title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "!hasModel gate around stat + style blocks; 3 regression tests; 2350/2350 exploitEngine tests pass."
+    finding_id: "FIND-005"
+
+composed_by: auto
+program_focus: domain-correctness
+total_effort: "S+S+S = ~1.5 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T15:42:57Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo (HomeBase-only path); manual review by composer confirms goal is constructive, addresses HIGH-severity engine findings, and matches the prog-domain-correctness contract."
+  matches: []
+
+created_at: "2026-05-01T15:42:57Z"
+approved_at: "2026-05-01T15:42:57Z"
+started_at: "2026-05-01T15:42:57Z"
+completed_at: "2026-05-01T15:42:57Z"
+session_ids: []
+
+composition_notes: |
+  Algorithmic anchor selection picked WS-001 (TIA-1.1) by ID-tiebreak among 10
+  priority-30 candidates. Owner overrode to Alternative B — the domain-correctness
+  cluster — because /pulse had just promoted these 5 HIGH findings same session
+  and the close-out sprint has natural cohesion. WS-116 (UI wiring, plan-first M)
+  and WS-117 (MC trial reframing, plan-first M) deferred to a later Plan-mode
+  sprint per Alternative C trade-off discussion.

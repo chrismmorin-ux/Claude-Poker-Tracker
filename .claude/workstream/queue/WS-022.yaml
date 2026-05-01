@@ -1,0 +1,31 @@
+id: "WS-022"
+title: "Markdown-to-IDB seed idempotency test"
+legacy_id: "EAL-G5-SI"
+type: improvement
+status: in_progress
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Markdown-to-IDB seed idempotency test — re-running seed doesn't duplicate primitives
+accept_criteria:
+  - "**Idempotency shipped:** `migrateV19` re-open test verifies 8 primitives stay 8 (no duplicates) + put-loop overwrites with same content. **Remaining:** content-drift snapshot test comparing PERCEPTION_PRIMITIVE_SEEDS constant against perception-primitives.md content (Phase 6+ build-time generator script)."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "PARTIAL (idempotency shipped 2026-04-25 S11; markdown-vs-IDB content drift test deferred)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
+  source_line: 118
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

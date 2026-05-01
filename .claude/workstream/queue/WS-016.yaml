@@ -1,0 +1,35 @@
+id: "WS-016"
+title: "Stream C"
+legacy_id: "EAL-Stream-C"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Stream C — LiveAdviceBar anchor-badge + SizingPresetsPanel embed + headless observation writer
+accept_criteria:
+  - "Badge renders classifier-fired"
+  - "observation writer logs"
+  - "badge respects 1.5s glance"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy:
+  - "EAL-S"
+  - "EAL-S"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by EAL-Stream-D + EAL-Stream-B-matcher"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
+  source_line: 112
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

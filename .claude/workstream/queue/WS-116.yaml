@@ -1,0 +1,36 @@
+id: "WS-116"
+title: "Credible intervals computed but never consumed in any UI surface"
+legacy_id: "FIND-001"
+type: finding
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+description: |
+  tendencyCalculations.js:343-358 builds `intervals = { vpip, pfr, threeBet, cbet, foldToCbet, foldTo3Bet }` via credibleInterval(...) and returns them on the stat object. A repository-wide grep for `credibleInterval`, `ciLower`, `ciUpper`, or `intervals.vpip` against `src/components/` returns zero matches. Sample-size uncertainty is computed but the user only sees point estimates.
+accept_criteria:
+  - "Wire `stats.intervals.{stat}.lower/upper` through the props chain into PlayerAnalysisPanel, OnlineView seat annotations, and HandReplay ReviewPanel so the user sees the credible band, not just the mean."
+effort: "M"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "src/components/views/PlayerAnalysisPanel.jsx"
+  - "src/components/views/OnlineView.jsx"
+  - "src/components/views/HandReplay/**"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  engine: "eng-engine"
+  finding_id: "FIND-001"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  origin: "auto-promoted-from-finding"
+auto_expires: false
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

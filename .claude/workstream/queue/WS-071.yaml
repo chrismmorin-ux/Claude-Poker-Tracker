@@ -1,0 +1,36 @@
+id: "WS-071"
+title: "Stream U"
+legacy_id: "HRP-U-MODAL"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  Stream U — hand-review-modal
+accept_criteria:
+  - "Tabs (summary / claims ledger / counterfactual tree / drill card / full artifact). Progressive disclosure. Match confidence. Audit-state propagation from linked artifact. Effort: L."
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-067"
+  - "WS-068"
+blocked_by_legacy:
+  - "HRP-G4-SPEC"
+  - "HRP-E-RESOLVER"
+  - "HRP-E-TREE-EXPOSE"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by HRP-G4-SPEC + HRP-E-RESOLVER + HRP-E-TREE-EXPOSE"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 332
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,27 @@
+id: "FIND-005"
+title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
+severity: HIGH
+status: resolved
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  postflopNarrower.js:495-591 (`adaptMultipliers`): lines 511-561 apply AF/foldToCbet/cbet/threeBet/VPIP adjustments. Lines 570-590 then apply Fish/LAG/Nit/LP style adjustments, gated only on `hasObservedAdjustments`. When `seedMultipliers` (villainModel) is present, AF/VPIP/cbet adjustments still fire at 0.5 dampening — they are dampened, not skipped. Style and stats are then both consumed, double-counting the same signal.
+affected_files:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+recommended_fix: |
+  When `seedMultipliers` is provided (villain model is the higher-fidelity source), skip the AF/VPIP/cbet/threeBet/foldToCbet stat adjustments entirely instead of dampening them at 0.5. The model already reflects these stats.
+theory_citation: "POKER_THEORY.md §7.4; exploitEngine/CLAUDE.md anti-pattern (no double-counting)"
+agent_corroboration:
+  - "first-principles-audit (F1)"
+dedup_key: "eng-engine-domain-correctness-postflopnarrower-adaptmultipliers-style-stacks-with-af-vpip-"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: "WS-120"
+resolved_at: "2026-05-01T15:42:57Z"
+resolved_by: "WS-120"

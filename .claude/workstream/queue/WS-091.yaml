@@ -1,0 +1,31 @@
+id: "WS-091"
+title: "Future content-fix batches per audit"
+legacy_id: "LSW-F*"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 12.0
+priority_label: "varies"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Future content-fix batches per audit** — one F entry opened per audit that found category-B P0/P1 issues (our authored content disagrees with external truth). Single-commit batch applying the audit's findings to `lines.js` (and `frameworks.js` / `multiwayFrameworks.js` if framework citation changes).
+accept_criteria:
+  - "✓ Audit's category-B P0/P1 findings show all items shipped or explicitly waived with reasoning"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "LAZY"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 569
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

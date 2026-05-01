@@ -1,0 +1,31 @@
+id: "WS-106"
+title: "Per-zone innerHTML diff + tourneyTimer guard"
+legacy_id: "RT-82"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "sidebar-recurrence"
+capability: "core"
+program: "engineering"
+description: |
+  Per-zone innerHTML diff + `tourneyTimer` guard
+accept_criteria:
+  - "`tourneyTimer` rebuilds innerHTML 60×/min"
+  - "`renderSeatArc`/`renderPipelineHealth`/`renderPidSummary`/`updateAppStatus` write unconditionally. Add `lastHTML === html` fast-path per zone. Owner verifies: tournament bar no longer flickers"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"
+  source_line: 665
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,30 @@
+id: "WS-078"
+title: "OnlineView inline-styles → Tailwind migration"
+legacy_id: "DCOMP-W4-A3-F8"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  **OnlineView inline-styles → Tailwind migration**
+accept_criteria:
+  - "199 lines of `style={{...}}` inline objects throughout OnlineView.jsx + 10+ sub-components. Migrate to Tailwind + tokens from `designTokens.js`. Bundles F7 (touch targets ≥44×44) and F9 (Import-button size consistency empty vs populated state). M-L effort."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 376
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

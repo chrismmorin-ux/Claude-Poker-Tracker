@@ -1,0 +1,32 @@
+id: "WS-048"
+title: "Phase C: Texture-Equity + Exceptions Codex"
+legacy_id: "PRF-G5-C"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "printable-refresher"
+capability: "core"
+program: "design"
+description: |
+  **Phase C: Texture-Equity + Exceptions Codex** (cards #7, #8, #11, #15 reformulated) — per-card fidelity review + bucket-definition glossary prerequisite
+accept_criteria:
+  - "4 YELLOW cards reformulated + shipped with per-card fidelity review"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy:
+  - "PRF-G5-B"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by PRF-G5-B + per-card Voice-3-equivalent fidelity review"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Printable Refresher (project: `docs/projects/printable-refresher.project.md`)"
+  source_line: 247
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

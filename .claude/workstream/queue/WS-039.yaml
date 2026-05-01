@@ -1,0 +1,36 @@
+id: "WS-039"
+title: "Gate 4"
+legacy_id: "SLS-G4"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "shape-language"
+capability: "core"
+program: "design"
+description: |
+  Gate 4 — Design spec
+accept_criteria:
+  - "3 surfaces authored (`shape-language-study-home`, `shape-skill-map`, `lesson-runner`)"
+  - "enrollment journey"
+  - "interaction spec with red-line tests"
+  - "cross-surface skill-state contract"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-038"
+blocked_by_legacy:
+  - "SLS-G3"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by SLS-G3"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
+  source_line: 198
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

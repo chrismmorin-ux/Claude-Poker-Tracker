@@ -1,0 +1,233 @@
+id: design
+name: "Design Program (5-Gate UX Framework)"
+schema_version: 3
+status: ACTIVE
+
+# This program is ALREADY IN ACTIVE USE in this repo.
+#
+# The canonical charter, gate definitions, anti-patterns, and roundtable templates
+# live in docs/design/. The YAML wrapper below adapts the program to CWOS machinery
+# (tier, protocols, accountability) but does NOT redefine the framework itself.
+#
+# Authoritative sources:
+#   docs/design/PROGRAM.md     — program charter
+#   docs/design/LIFECYCLE.md   — 5 feature gates (Entry → Blind-Spot → Research → Design → Implementation)
+#   docs/design/METHODOLOGY.md — 5-step audit process
+#   docs/design/ROUNDTABLES.md — blind-spot templates
+#   docs/design/README.md      — framework overview
+#   .claude/programs/design.md — original program file (preserved as historical narrative)
+#
+# Per CLAUDE.md "Design Program Guardrail", every UX-touching change must pass
+# Gates 1 + 4 before production code. Gate 2 (blind-spot roundtable) fires when
+# Gate 1 is YELLOW/RED, a new surface appears, or an underserved persona is targeted.
+
+contract: >
+  Every UX-touching change in this repo passes through 5 explicit gates before
+  production code: Entry (gap analysis + persona check), Blind-Spot Roundtable
+  (when Gate 1 is YELLOW/RED), Research (JTBD + persona refinement), Design
+  (surface artifact authored), Implementation (multi-PR with audit/spec
+  references). The program prevents the anti-pattern: "Feature X went to dev,
+  design phase was skipped, and we assumed existing personas covered it."
+
+capability_brief:
+  value: "Holds every UX-touching change accountable to 5 gates — gap analysis, blind-spot roundtable, research, design spec, implementation. Prevents UX from rotting between sessions and prevents personas/JTBDs from being treated as complete when they're not."
+  problems_prevented:
+    - "Feature ships without explicit design phase — surface artifact missing"
+    - "Persona / JTBD assumed to cover a feature it doesn't"
+    - "Blind spots in framework invisible until production"
+    - "PROTO personas drifting past 180 days without verification"
+    - "Discovery LOG items aging in CAPTURED state past 60 days"
+    - "Surface CATALOG falling out of sync with active routes"
+  cost:
+    activation: "Already active. Ongoing /pulse run design (14-day cadence)."
+    ongoing: "Per-feature gate enforcement (Gates 1+4 mandatory; Gate 2 conditional). Quarterly persona-validation pass. Triage discovery LOG."
+  first_output:
+    - "Per-surface gate compliance report"
+    - "PROTO-persona staleness list"
+    - "Discovery LOG triage queue"
+    - "Surface CATALOG vs SCREEN constants drift report"
+  activation_command: "/pulse run design"
+  requires_user_input: false
+
+problem_classes:
+  - name: "Gate 1 Entry skipped"
+    description: "UX-touching change made production without scope classification, persona/JTBD identification, or gap analysis (GREEN/YELLOW/RED verdict). Per CLAUDE.md Design Program Guardrail, Gate 1 is non-bypassable for new views/widgets/destructive actions/layout refactors/visible-copy changes on primary controls."
+    examples: ["new SCREEN.* added without gap analysis", "destructive action added without persona check", "layout refactor without scope classification"]
+    detection: "git diff against last sweep, scoped to UX surfaces. Cross-reference each PR description for audit-id or surface-id citation per CLAUDE.md."
+
+  - name: "Gate 2 Blind-Spot skipped"
+    description: "Gate 1 returned YELLOW or RED, or the work introduces a new surface, targets an underserved persona, or crosses product lines — but no blind-spot roundtable was conducted before specifying the design. Per docs/design/ROUNDTABLES.md."
+    examples: ["YELLOW Gate 1 verdict but no audit doc at docs/design/audits/", "new surface bypassing roundtable", "cross-product-line feature without facilitator"]
+    detection: "Cross-reference Gate 1 verdicts in audit docs against existence of corresponding roundtable doc."
+
+  - name: "Gate 4 Design surface artifact missing"
+    description: "UX change in production but no surface artifact exists at docs/design/surfaces/<surface-id>.md. Per CLAUDE.md, this gate is non-bypassable."
+    examples: ["new view in src/components/views/ with no surfaces/<view>.md", "modal added without surface entry", "navigation pattern changed without spec update"]
+    detection: "Cross-reference docs/design/surfaces/CATALOG.md against SCREEN constants and active routes."
+
+  - name: "PROTO persona staleness"
+    description: "Personas marked PROTO (provisional) past 180 days without a verification pass — observation, structured interview, or downgrade to ARCHIVED. Per design.md health metrics."
+    examples: ["15 of 15 personas PROTO baseline 2026-04-21 — no verification by 2026-10-21"]
+    detection: "Scan docs/design/personas/ for `status: PROTO` files older than 180 days from `last_verified` or file creation."
+
+  - name: "Discovery LOG aging"
+    description: "Items in docs/design/discoveries/ stuck in CAPTURED state past 60 days without triage to RESEARCHED or DEFERRED."
+    examples: ["DISC-* in CAPTURED state with capture date > 60 days ago"]
+    detection: "Scan docs/design/discoveries/*.md for status field; flag CAPTURED items past threshold."
+
+  - name: "Surface CATALOG drift"
+    description: "docs/design/surfaces/CATALOG.md falls out of sync with active SCREEN.* constants in src/constants/uiConstants.js. New routes added without surface artifacts."
+    examples: ["SCREEN.PLAYER_EDITOR added (PEO) but missing from CATALOG", "view directory added with no surface entry"]
+    detection: "Diff SCREEN constants against CATALOG entries; report missing surfaces."
+
+  - name: "JTBD domain unserved"
+    description: "JTBD domain referenced by 1+ active discoveries but has 0 served surface artifacts. Tracked as risk, not blocker."
+    examples: ["subscription-account JTBD referenced but no served surface", "coaching domain demand visible in discoveries with no surfaces"]
+    detection: "Cross-reference JTBD domain references in docs/design/jtbd/ against surface artifacts."
+
+  - name: "Audit findings open past SLA"
+    description: "Audit-generated findings in docs/design/audits/*.md still open > 60 days from audit date."
+    examples: ["MPMF audit 2026-04-24 with finding still open 2026-06-25"]
+    detection: "Scan audit docs for unresolved findings; flag those past SLA."
+
+scope:
+  file_patterns:
+    - "src/components/views/**"
+    - "src/components/ui/**"
+    - "src/contexts/**"
+    - "src/hooks/**"
+    - "src/constants/uiConstants.js"
+    - "src/constants/designTokens.js"
+    - "ignition-poker-tracker/src/**/*.js"
+    - "docs/design/**"
+    - ".claude/programs/design.md"
+  invariants:
+    - "Every UX-touching change passes Gate 1 (Entry) before code"
+    - "Every UX-touching change passes Gate 4 (Design surface) before production"
+    - "PR descriptions reference the audit-id, surface-id, or spec-id implemented"
+    - "All routed views have a surface artifact in docs/design/surfaces/"
+    - "All colors centralized in src/constants/designTokens.js"
+    - "All actions defined in ACTIONS constants in src/constants/gameConstants.js"
+  anti_invariants: []
+  constraints:
+    - "Touch targets ≥ 44 DOM-px on interactive rows"
+    - "All views render at 1600x720 without overflow/clipping"
+    - "Components > 700 lines trigger ARCH-003 split obligation"
+
+tier: active
+tier_triggers:
+  watch: "Program installed but framework not yet established"
+  active: "Framework established (docs/design/ populated) AND at least one audit cycle complete"
+  critical: "Surface CATALOG drift > 3 gaps OR audit findings open > 60 days OR Gate 1/4 skipped on shipped feature"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "First audit cycle on a surface using docs/design/METHODOLOGY.md (5-step audit). Persona-driven UX review with heuristics + accessibility + first-principles design."
+    problem_classes: ["Gate 1 Entry skipped", "Gate 4 Design surface artifact missing", "Surface CATALOG drift"]
+    outputs: [audit_report, gap_inventory, finding_list]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Cross-surface health check: PROTO persona staleness, Discovery LOG aging, audit findings past SLA, surface CATALOG drift."
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent UX-touching diffs only. Verify Gate 1 + Gate 4 compliance for each."
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns, cross-reference PR descriptions for audit/surface/spec citations"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 28
+    focus: "Adversarial design review per docs/design/ROUNDTABLES.md blind-spot templates"
+    prompt_additions: >
+      CHALLENGE protocol for the Design Program. Run a blind-spot roundtable on the
+      next-scheduled surface or recent feature. Pull voices appropriate to the
+      surface (UX, Failure, Cultural-sensitivity, etc. per ROUNDTABLES.md). For
+      each, ask:
+      - What persona is missing or under-specified?
+      - What JTBD is being assumed that isn't validated?
+      - What red lines does this surface need that haven't been authored?
+      - What anti-patterns are we walking into?
+      Output: docs/design/audits/<date>-blindspot-<topic>.md with verdict + findings.
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 90
+    focus: "Quarterly framework review — is the 5-gate flow catching what it should?"
+    prompt_additions: >
+      BLIND SPOT protocol for the Design Program itself. Audit recent gates:
+      - Did Gate 1 catch the right gaps? Any false-greens?
+      - Are roundtables surfacing real blind spots or restating Gate 1?
+      - Is Gate 4 surface-artifact coverage keeping up with new routes?
+      - What gates would benefit from a stricter rubric, fewer steps, or
+        different facilitators?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 8
+    priority_floor: 22
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Design program has not run a sweep in {days} days. Run /pulse run design."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: []
+  fed_by: []
+  blocks: []
+
+phase_relevance:
+  foundation: high
+  pre-launch: critical
+  launch: critical
+  growth: high
+  maturity: medium
+
+last_run_by_protocol:
+  baseline: { date: "2026-04-21", engine: "eng-engine", run_id: null, result: "player-selection audit cycle complete; 11 findings closed" }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "Baseline complete on player-selection (2026-04-21). No CWOS-format /pulse run yet — score will populate on first run."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: "docs/design/audits/"
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/design/"
+
+maturity:
+  level: 3
+  criteria:
+    level_1: "Program installed. Framework directory exists."
+    level_2: "First audit cycle complete on one surface."
+    level_3: "Multiple audit cycles complete. Sweep cadence established."
+    level_4: "Quarterly persona-validation cadence in place. Discovery LOG triaged on schedule."
+    level_5: "Framework self-maintains. Gate compliance > 95% for 3+ sweeps."
+  current_gaps: "First sweep (PROTO persona check + discovery LOG triage + CATALOG drift) not yet run via /pulse. Quarterly persona-validation cadence not yet established."
+
+created_at: "2026-04-21"
+updated_at: "2026-05-01"

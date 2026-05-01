@@ -1,0 +1,212 @@
+id: methodology-integrity
+name: "Methodology Integrity"  # Renamed during /adopt (e.g., "Bayesian Model Validity", "Scoring Objectivity", "Evidence Classification")
+schema_version: 3
+status: NEW
+
+# This program checks WHETHER THE METHOD IS SOUND, not whether the answers are right.
+# Domain-correctness verifies outputs. This verifies the PROCESS that produces outputs.
+#
+# Every repo that makes decisions based on computed scores, statistical models,
+# classification systems, or analytical frameworks needs this program.
+#
+# Examples across the fleet:
+#   CPT: Bayesian posteriors with correct priors, honest confidence intervals, min sample sizes
+#   AP:  7-dimension scoring matrix — weights not gamed, missing-data handled fairly, disqualifiers consistent
+#   PA:  Evidence tiers correctly applied, confidence scoring reliable, false label prevention
+#   PU:  Anti-numerology — search space enumerated, blind predictions verified, post-hoc fitting caught
+#   AAI: Metric atomicity — composites don't hide issues, ground truth calibrated
+#   CF:  Cross-scenario consistency — multiple paths to same answer agree
+#   SYN: BLS rule coverage — spec-to-code traceability complete, no orphan rules
+
+contract: >
+  The founder can trust that the methods used to make decisions, classify data,
+  score options, or compute results are themselves sound. Not just "are the answers
+  right?" but "is the way we arrive at answers reliable?" If the methodology has
+  a bias, blind spot, or silent failure mode, this program catches it before
+  decisions are made on flawed reasoning.
+
+capability_brief:
+  value: "Holds the methods themselves accountable — scoring, classification, and decision frameworks are checked for bias, blind spots, and silent failure modes."
+  problems_prevented:
+    - "Methodology bias producing systematically wrong answers across many cases"
+    - "Sample-size or post-hoc-fitting errors in scoring frameworks"
+    - "Cross-method inconsistency where the same input lands in different buckets depending on which path it takes"
+    - "Methodology drift across sessions as the AI tweaks weights or thresholds without an audit trail"
+  cost:
+    activation: "~10 min — founder confirms which methods are load-bearing"
+    ongoing: "Periodic /pulse run methodology-integrity + closing methodology findings alongside other work"
+  first_output:
+    - "Methodology baseline (load-bearing methods enumerated and described)"
+    - "Bias / sample-size / drift audit per method"
+    - "Cross-method consistency report"
+    - "Methodology-vs-spec gaps auto-promoted as work items"
+  activation_command: "/pulse run methodology-integrity baseline"
+  requires_user_input: true
+
+problem_classes:
+  - name: "Scoring/Classification Bias"
+    description: "The method of scoring or classifying produces systematically skewed results"
+    examples: ["[CUSTOMIZE: e.g., missing-data inflates scores, evidence tier misapplied, confidence overfit]"]
+    detection: "Bias audit, calibration check, sensitivity analysis on methodology parameters"
+
+  - name: "Sample Size & Statistical Validity"
+    description: "Decisions are made on insufficient data, or confidence exceeds what the data supports"
+    examples: ["[CUSTOMIZE: e.g., n=5 treated as conclusive, confidence intervals too tight, Bayesian priors miscalibrated]"]
+    detection: "Sample size verification, confidence calibration check, prior sensitivity analysis"
+
+  - name: "Post-Hoc Fitting & Flexibility"
+    description: "Results look good because the method was tuned to match known answers"
+    examples: ["[CUSTOMIZE: e.g., parameters chosen to match first, then 'predicted'; search space not disclosed]"]
+    detection: "Degrees of freedom audit, search space enumeration, blind prediction verification"
+
+  - name: "Cross-Method Consistency"
+    description: "Different methods applied to the same question produce different answers"
+    examples: ["[CUSTOMIZE: e.g., two calculation paths give different totals, aggregation hides detail-level disagreement]"]
+    detection: "Multi-path verification, reconciliation check, aggregate-vs-detail comparison"
+
+  - name: "Methodology Drift"
+    description: "The method changes over time without tracking, invalidating comparisons"
+    examples: ["weights quietly adjusted", "classification criteria evolved without re-scoring old items", "threshold changed but historical data not re-evaluated"]
+    detection: "Methodology version tracking, change log audit, historical consistency check"
+
+scope:
+  file_patterns:
+    - "src/utils/bayesianConfidence*.js"
+    - "src/utils/villainDecisionModel/**"
+    - "src/utils/gameTreeEvaluator*.js"
+    - "src/utils/exploitEngine/**"
+    - "src/utils/rangeEngine/**"
+    - "src/utils/handAnalysis/**"
+    - "src/utils/decisionAccumulator*.js"
+    - "src/utils/weaknessDetector*.js"
+    - "src/utils/skillAssessment/**"
+    - "src/utils/anchorLibrary/**"
+    - "src/utils/handReviewAnalyzer*.js"
+    - "src/utils/heroAnalysis*.js"
+    - "src/utils/significance*.js"
+  invariants:
+    - "All scoring models surface confidence as Bayesian credible interval, not point estimate"
+    - "Any classification (Fish/Nit/LAG/TAG, leak severity, anchor confidence) traces to a documented threshold + sample-size minimum"
+    - "Statistical methods justify their distributional assumption (Gaussian, Beta, Dirichlet, etc.)"
+  anti_invariants:
+    - "No frequentist hypothesis test where Bayesian posterior is required"
+    - "No tier/score change without a sample-size or evidence-tier threshold"
+  constraints: []
+
+tier: active
+tier_triggers:
+  watch: "Application has scoring, classification, or statistical models"
+  active: "Methodology outputs drive user-facing decisions or business actions"
+  critical: "Methodology error found OR methodology drives high-stakes decisions (financial, legal, safety)"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full methodology audit: enumerate all scoring/classification/statistical methods, verify calibration, check for bias"
+    problem_classes: all
+    outputs: [baseline_report, methodology_inventory, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 21
+    focus: "Comprehensive methodology review across all problem classes"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent changes to methodology: scoring weights, classification criteria, model parameters, confidence thresholds"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial methodology review"
+    prompt_additions: >
+      CHALLENGE protocol for Methodology Integrity. Think like a peer reviewer
+      or opposing expert witness:
+      - Could the scoring/classification method produce the "right" answer for
+        the wrong reasons?
+      - What would change if we used different weights, thresholds, or priors?
+      - Are there cases where the method fails silently (returns high confidence
+        when it should return uncertainty)?
+      - If someone wanted to manipulate the outcome, where would they apply pressure?
+      - What data would falsify the methodology's reliability?
+      - Are historical results still valid under the current methodology version?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What methodology weaknesses are we missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Methodology Integrity.
+      - Are there decision methods in the code that aren't covered by this program?
+      - What implicit scoring or ranking happens that nobody thinks of as "methodology"?
+      - Have the domain conditions changed in ways that invalidate the method's assumptions?
+      - What would a domain expert (statistician, physicist, financial auditor) flag
+        that a software engineer would miss?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 18
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Methodology integrity program has not been checked in {days} days. Decision methods may be producing unreliable results."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [domain-correctness]
+  fed_by: [anti-hallucination]
+  blocks: []
+
+phase_relevance:
+  foundation: high
+  pre-launch: high
+  launch: high
+  growth: high
+  maturity: high
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/methodology-integrity/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. All decision methods inventoried."
+    level_2: "All problem classes checked. Calibration baseline established."
+    level_3: "Challenge active. Sensitivity analysis run. Historical consistency verified."
+    level_4: "Blind-spot active. Methodology versioned. Zero unverified decision methods."
+  current_gaps: "Never run."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,35 @@
+id: "WS-119"
+title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
+legacy_id: "FIND-004"
+type: finding
+status: done
+claimed_by: "session-2026-05-01"
+claimed_at: "2026-05-01T15:42:57Z"
+completed_at: "2026-05-01T15:42:57Z"
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+description: |
+  preflopAdvisor.js:147-154 applies a style-conditioned multiplier (priorMean *= styleFoldRate / popFoldRate) gated on `dataSourceWhenNoObserved !== 'model'`. preflopAdvisor.js:158-162 then unconditionally applies `pfrRatio > 0.5 ? *= 0.90 : pfrRatio < 0.3 ? *= 1.08`. Both adjustments encode the same passive-vs-aggressive opener signal — the very stats that classify the style. This is double-counting forbidden by POKER_THEORY.md §7.4.
+accept_criteria:
+  - "Gate the PFR-ratio block under the same `dataSourceWhenNoObserved !== 'model'` guard AND skip when the style adjustment was already applied. Use one or the other as the fold-prior modifier, never both in the same fallback path."
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-001"
+decision_flags: []
+source:
+  engine: "eng-engine"
+  finding_id: "FIND-004"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  origin: "auto-promoted-from-finding"
+auto_expires: false
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+
+completion_notes: "Added single-source gate to preflopAdvisor.js (lines 156-176). PFR-ratio multiplier now skips when style adjustment was already applied. 2 regression tests added; 48/48 pass."

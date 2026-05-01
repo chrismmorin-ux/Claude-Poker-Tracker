@@ -1,0 +1,28 @@
+id: "FIND-004"
+title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
+severity: HIGH
+status: resolved
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  preflopAdvisor.js:147-154 applies a style-conditioned multiplier (priorMean *= styleFoldRate / popFoldRate) gated on `dataSourceWhenNoObserved !== 'model'`. preflopAdvisor.js:158-162 then unconditionally applies `pfrRatio > 0.5 ? *= 0.90 : pfrRatio < 0.3 ? *= 1.08`. Both adjustments encode the same passive-vs-aggressive opener signal — the very stats that classify the style. This is double-counting forbidden by POKER_THEORY.md §7.4.
+affected_files:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+recommended_fix: |
+  Gate the PFR-ratio block under the same `dataSourceWhenNoObserved !== 'model'` guard AND skip when the style adjustment was already applied. Use one or the other as the fold-prior modifier, never both in the same fallback path.
+theory_citation: "POKER_THEORY.md §7.4 (single-source rule); exploitEngine/CLAUDE.md anti-pattern"
+agent_corroboration:
+  - "first-principles-audit (F4)"
+  - "game-tree-villain-audit (F2)"
+dedup_key: "eng-engine-domain-correctness-preflopadvisor-js-pfr-vpip-ratio-scaling-stacks-on-style-con"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: "WS-119"
+resolved_at: "2026-05-01T15:42:57Z"
+resolved_by: "WS-119"

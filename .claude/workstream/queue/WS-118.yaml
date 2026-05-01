@@ -1,0 +1,35 @@
+id: "WS-118"
+title: "POKER_THEORY.md missing freshness header — drift cannot be tracked"
+legacy_id: "FIND-003"
+type: finding
+status: done
+claimed_by: "session-2026-05-01"
+claimed_at: "2026-05-01T15:42:57Z"
+completed_at: "2026-05-01T15:42:57Z"
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+description: |
+  POKER_THEORY.md begins immediately with §1; no `last verified` or `version` field at the top. Without a freshness anchor, the program's drift-detection protocol cannot determine whether the doctrine has been reviewed against the code recently. The doctrine itself is comprehensive (538 lines, 9 sections, 13 mistake-prevention bullets) but undated.
+accept_criteria:
+  - "Add a frontmatter header: `last verified: <date>`, `verified-by: <session>`, `version: <n>`, and a `changelog:` block tracking deltas."
+effort: "S"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-001"
+decision_flags: []
+source:
+  engine: "eng-engine"
+  finding_id: "FIND-003"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  origin: "auto-promoted-from-finding"
+auto_expires: false
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+
+completion_notes: "Added frontmatter header with version/last_verified/changelog block. Drift detection now anchored. Doc content unchanged."

@@ -1,0 +1,70 @@
+schema_version: 1
+# Finding -> work item auto-promotion thresholds
+auto_promote_thresholds:
+  critical: true      # Always promote to work item
+  high: true          # Always promote
+  medium: false       # Manual review needed
+  low: false          # Manual review needed
+
+# Session management
+session_abandon_timeout_hours: 4   # Mark session abandoned after this idle time
+
+# ID Generation Strategy: scan-derived
+# Counters below are ADVISORY CACHE only — never treat as authoritative.
+# To generate a new ID: scan the relevant directory (e.g., queue/WS-*.yaml),
+# extract the max numeric ID, use max+1. Update the cache after.
+# This prevents collisions in concurrent sessions.
+counter_strategy: scan-max-plus-one
+# next_*_id fields are integers (type: integer). Do not quote.
+next_item_id: 121     # integer — scan queue/WS-*.yaml for true max (120 used)
+next_finding_id: 22   # integer — scan findings/FIND-*.yaml for true max (21 used)
+next_run_id: 1        # integer — scan runs/RUN-*.yaml for true max (none yet)
+next_rec_id: 1        # integer — scan recommendations/REC-*.yaml for true max
+next_enh_id: 1        # integer — scan enhancements/ENH-*.yaml for true max
+next_ready_id: 1      # integer — scan readiness/READY-*.yaml for true max
+next_sprint_id: 2     # integer — scan sprints/SPR-*.yaml for true max (SPR-001 used)
+
+# Dedup window for findings with matching dedup_key
+dedup_window_days: 30
+
+# Garbage collection thresholds
+gc:
+  finding_archive_days: 30       # Archive non-promoted findings older than this
+  queue_archive_days: 30         # Archive done queue items older than this
+  sprint_archive_days: 60        # Archive completed sprints older than this
+  run_archive_days: 90           # Archive run logs older than this (if all findings resolved)
+  session_archive_days: 30       # Archive completed sessions older than this
+  graduation_threshold: 3        # N findings with same category+file pattern → graduate to failures.md
+  recurrence_threshold: 2        # N rediscoveries across runs → graduate to invariants.md
+
+# Entity-type registry for GC (cwos-gc.js iterates this list).
+# Adding a new archivable entity type is a config edit, not code.
+archivable_entities:
+  - type: queue
+    dir: queue
+    pattern: "WS-*.yaml"
+    archive_dir: queue/archive
+    done_states: [done]
+    age_source: completed_at
+    age_days_key: queue_archive_days
+  - type: findings
+    dir: findings
+    pattern: "FIND-*.yaml"
+    archive_dir: findings/archive
+    done_states: [resolved, dismissed]
+    age_source: created_at
+    age_days_key: finding_archive_days
+  - type: sessions
+    dir: sessions
+    pattern: "*.yaml"
+    archive_dir: sessions/archive
+    done_states: [completed]
+    age_source: completed_at
+    age_days_key: session_archive_days
+  - type: sprints
+    dir: sprints
+    pattern: "SPR-*.yaml"
+    archive_dir: sprints/archive
+    done_states: [completed, abandoned]
+    age_source: completed_at
+    age_days_key: sprint_archive_days

@@ -1,0 +1,34 @@
+id: "WS-011"
+title: "Gate 3 — Research"
+legacy_id: "SCF-G3"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  **Gate 3 — Research**
+accept_criteria:
+  - "JTBDs detailed"
+  - "owner interview on skill-assessment shape (test-based vs observed vs declared), lesson surface placement (inline replay vs dedicated view vs both), firing frequency (every leak vs aggregated vs owner-triggered)"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-010"
+blocked_by_legacy:
+  - "SCF-G2"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by SCF-G2"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)"
+  source_line: 70
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

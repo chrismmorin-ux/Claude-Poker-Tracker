@@ -1,0 +1,25 @@
+id: "FIND-009"
+title: "assessEV produces categorical +EV/-EV verdict without confidence gating"
+severity: MEDIUM
+status: open
+category: "bayesian-confidence"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  replayAnalysis.js:36-82 (`assessEV`) uses hard thresholds (`valuePct > 50`, `valuePct < 25 && drawPct < 20`) to produce verdict labels. No `dataQuality` or sample-size check before the verdict is returned; small-sample range estimates produce confident-looking labels.
+affected_files:
+  - "src/utils/handAnalysis/replayAnalysis.js"
+recommended_fix: |
+  Gate the verdict on the underlying range profile's `handsProcessed` (or `confidence`); below threshold, return `verdict: 'unknown'` with reason 'insufficient data'.
+theory_citation: "POKER_THEORY.md §6.5; RANGE_ENGINE_DESIGN.md §8.2-8.3"
+agent_corroboration:
+  - "range-equity-audit (F4)"
+dedup_key: "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-verdict-without-confiden"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

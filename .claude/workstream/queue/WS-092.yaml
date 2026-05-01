@@ -1,0 +1,34 @@
+id: "WS-092"
+title: "Candidate: HERO_BUCKET_TYPICAL_EQUITY.topPair overstates on wet boards."
+legacy_id: "LSW-G1"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Candidate: `HERO_BUCKET_TYPICAL_EQUITY.topPair` overstates on wet boards.** LSW-A1 surfaced: authored "~40%+ equity" claim for JT on T96ss vs BB's 3bet range is consistent with combinatorial estimation (37–44%) but far below our current `HERO_BUCKET_TYPICAL_EQUITY.topPair = 0.68` constant. This suggests the table needs board-texture conditioning, not just bucket-level values. **Blocked on:** access to GTO Wizard subscription or a direct PioSOLVER run to verify the exact equity distribution on T96ss in 3BP.
+accept_criteria:
+  - "✓ Solver-verified equity value"
+  - "✓ new board-conditioned table or multiplier lands"
+  - "✓ tests updated"
+  - "✓ LSW-A1 audit category-C row resolved"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "DEFERRED (blocked on solver access)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 579
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

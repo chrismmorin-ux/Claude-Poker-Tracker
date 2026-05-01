@@ -1,0 +1,39 @@
+id: "WS-086"
+title: "Flop decision roots"
+legacy_id: "LSW-B1"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Flop decision roots** — author `heroHolding` on 7 remaining flop roots. Hero combo + bucketCandidates pulled from each line's audit queue. Single commit per session (HU batch + MW batch once G6 lands). **Unblocked so far:** LSW-A1 complete (2026-04-22 content audit), LSW-H1 complete (2026-04-22 surface mechanical fixes), LSW-H3 complete (2026-04-22 visual sweep + per-line feasibility checklist). **Per-line feasibility from LSW-H3 sweep (surface audit appendix):** (a) Q72r `['A♠Q♣']` / `['topPair']`, (b) K77 `['A♥K♦']` / `['topPair']`, (c) T98 `['A♦A♣']` / `['overpair']` (highest-SPI target), (d) AK2 `['A♥K♦']` / `['twoPair']`, (e) J85mw `['A♦J♣']` / `['topPair']` **blocked on LSW-G6**, (f) Q53mw `['A♠Q♣']` / `['topPair']` **blocked on LSW-G6**, (g) UTG-squeeze pre_root **skip — preflop-only, outside B1 scope**. **Still blocked by:** A2..A8 per-line content audits (may revise recommended `combos` / `bucketCandidates`) before authoring on any HU line; LSW-G6 MW bucket-EV engine before authoring on MW lines.
+accept_criteria:
+  - "✓ 4 HU flop roots (Q72r, K77, T98, AK2) authored with validated `heroHolding`"
+  - "✓ 2 MW flop roots (J85, Q53) authored post-G6"
+  - "✓ UTG-squeeze pre_root excluded in acceptance"
+  - "✓ `lineSchema.validateLine` passes for all 8 lines"
+  - "✓ `engineAuthoredDrift.test.js` green (re-baseline if snapshot shifts)"
+  - "✓ 1600×720 visual verification of picker + reveal panel on each"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-095"
+blocked_by_legacy:
+  - "LSW-A2..A8"
+  - "LSW-G6"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by LSW-A2..A8 (HU lines) + LSW-G6 (MW lines)"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 534
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

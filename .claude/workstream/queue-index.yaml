@@ -1,0 +1,1571 @@
+# Queue Index — maintained automatically by /workstream commands
+# This file is the fast-scan summary of all active work items.
+# Commands read this file instead of scanning individual WS-*.yaml files.
+# Full item details are loaded on-demand from queue/WS-<id>.yaml.
+#
+# Rebuild from files: scan queue/WS-*.yaml, extract summary fields
+# Updated by: /workstream create, claim, release, start, done, block
+
+last_updated: "2026-05-01"
+item_count: 120
+items:
+  - id: "WS-001"
+    title: "Invariant matrix authoring (audit-only, NO fixes)"
+    legacy_id: "TIA-1.1"
+    status: claimed
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "tableview-invariant-audit"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-01-next"
+    sprint_id: "SPR-002"
+  - id: "WS-002"
+    title: "Straddle wired into matrix"
+    legacy_id: "TIA-1.2"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "tableview-invariant-audit"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-003"
+    title: "Fix wave"
+    legacy_id: "TIA-1.3"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "tableview-invariant-audit"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-004"
+    title: "Gate 1 — Entry"
+    legacy_id: "PIO-G1"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-005"
+    title: "Gate 2 — Blind-Spot Roundtable"
+    legacy_id: "PIO-G2"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-006"
+    title: "Gate 3 — Research"
+    legacy_id: "PIO-G3"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-007"
+    title: "Gate 4 — Design surfaces"
+    legacy_id: "PIO-G4"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-008"
+    title: "Gate 5 — Implementation (multi-PR)"
+    legacy_id: "PIO-G5"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-009"
+    title: "Gate 1 — Entry"
+    legacy_id: "SCF-G1"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "self-coach-foundation"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-010"
+    title: "Gate 2 — Blind-Spot Roundtable"
+    legacy_id: "SCF-G2"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "self-coach-foundation"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-011"
+    title: "Gate 3 — Research"
+    legacy_id: "SCF-G3"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "self-coach-foundation"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-012"
+    title: "Gate 4 — Design"
+    legacy_id: "SCF-G4"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "self-coach-foundation"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-013"
+    title: "Gate 5 — Implementation (multi-PR + ongoing authoring)"
+    legacy_id: "SCF-G5"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "self-coach-foundation"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-014"
+    title: "Stream E"
+    legacy_id: "EAL-Stream-E"
+    status: in_progress
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-015"
+    title: "Stream D"
+    legacy_id: "EAL-Stream-D"
+    status: in_progress
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-016"
+    title: "Stream C"
+    legacy_id: "EAL-Stream-C"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-017"
+    title: "Stream B"
+    legacy_id: "EAL-Stream-B-matcher"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-018"
+    title: "Stream B"
+    legacy_id: "EAL-Stream-B-expand"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-019"
+    title: "Stream F"
+    legacy_id: "EAL-Stream-F"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-020"
+    title: "Hook-hoisting race test (cross-surface)"
+    legacy_id: "EAL-G5-HH"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-021"
+    title: "Cross-anchor invalidation atomicity test"
+    legacy_id: "EAL-G5-CA"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-022"
+    title: "Markdown-to-IDB seed idempotency test"
+    legacy_id: "EAL-G5-SI"
+    status: in_progress
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-023"
+    title: "Per-seed-anchor snapshot tests (RT-108 pattern)"
+    legacy_id: "EAL-G5-SS"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-024"
+    title: "Tier 1 simulator scenarios for 4 seed anchors"
+    legacy_id: "EAL-G5-T1"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-025"
+    title: "In-app test assertions for 9 autonomy red lines"
+    legacy_id: "EAL-G5-RL"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-026"
+    title: "Phase 8"
+    legacy_id: "EAL-P8-EX"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-027"
+    title: "Q7 legal-scoping session scheduled"
+    legacy_id: "MPMF-G3-Q7"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-028"
+    title: "anti-patterns"
+    legacy_id: "MPMF-G4-AP"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-029"
+    title: "Ignition-mode surface design"
+    legacy_id: "MPMF-G4-IM"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-030"
+    title: "Payment processor integration (Stripe or per Q7)"
+    legacy_id: "MPMF-G5-PP"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-031"
+    title: "PaywallGate shared component"
+    legacy_id: "MPMF-G5-PG"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-032"
+    title: "BillingSettings extension of SettingsView"
+    legacy_id: "MPMF-G5-BS"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-033"
+    title: "PostHog install + event schema v1"
+    legacy_id: "MPMF-G5-PH"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-034"
+    title: "In-app test assertions for 10 commerce red lines"
+    legacy_id: "MPMF-G5-RL"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-035"
+    title: "CI-linted forbidden-copy-strings check"
+    legacy_id: "MPMF-G5-CL"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-036"
+    title: "H-SC01 test"
+    legacy_id: "MPMF-G5-SC"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-037"
+    title: "Phase 8"
+    legacy_id: "MPMF-P8-EX"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "monetization-and-pmf"
+    capability: "core"
+    program: "launch"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-038"
+    title: "Gate 3"
+    legacy_id: "SLS-G3"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-039"
+    title: "Gate 4"
+    legacy_id: "SLS-G4"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-040"
+    title: "Stream D"
+    legacy_id: "SLS-D"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-041"
+    title: "Stream B1"
+    legacy_id: "SLS-B1"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-042"
+    title: "Stream B2"
+    legacy_id: "SLS-B2"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-043"
+    title: "Stream B3"
+    legacy_id: "SLS-B3"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-044"
+    title: "Stream B4"
+    legacy_id: "SLS-B4"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-045"
+    title: "Stream B5"
+    legacy_id: "SLS-B5"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-046"
+    title: "Stream F"
+    legacy_id: "SLS-F"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-047"
+    title: "Phase A: Preflop Refresher"
+    legacy_id: "PRF-G5-A"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-048"
+    title: "Phase C: Texture-Equity + Exceptions Codex"
+    legacy_id: "PRF-G5-C"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-049"
+    title: "Playwright print-to-PDF snapshot tests (16 per MVP card: 4 grids × 2 sizes × 2 color modes) + cross-browser + B&W fal..."
+    legacy_id: "PRF-G5-PDF"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-050"
+    title: "UI components for PrintableRefresherView + comprehensive visual regression suite (chromium + firefox + webkit × Lette..."
+    legacy_id: "PRF-G5-UI"
+    status: in_progress
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-051"
+    title: "Personalization opt-in (deferred)"
+    legacy_id: "PRF-P2-PE"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-052"
+    title: "Personal codex export (DS-61 implementation)"
+    legacy_id: "PRF-P2-CX"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "printable-refresher"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-053"
+    title: "Gate 2"
+    legacy_id: "RL-G2"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-054"
+    title: "Gate 3"
+    legacy_id: "RL-G3"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-055"
+    title: "Gate 4"
+    legacy_id: "RL-G4"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-056"
+    title: "Phase 1"
+    legacy_id: "RL-P1"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-057"
+    title: "Phase 2"
+    legacy_id: "RL-P2"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-058"
+    title: "Phase 3"
+    legacy_id: "RL-P3"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-059"
+    title: "Phase 4"
+    legacy_id: "RL-P4"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-060"
+    title: "Phase 5"
+    legacy_id: "RL-P5"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-061"
+    title: "Corpus scaling"
+    legacy_id: "US-1"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-062"
+    title: "Pilot refits to v2"
+    legacy_id: "US-2"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-063"
+    title: "Pre-Session Drill Gate 2"
+    legacy_id: "US-3"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-064"
+    title: "Pre-Session Drill Gate 3"
+    legacy_id: "US-4"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-065"
+    title: "Pre-Session Drill Gate 4"
+    legacy_id: "US-5"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-066"
+    title: "LSW soft-flag tightening"
+    legacy_id: "US-6"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-067"
+    title: "Gate 4"
+    legacy_id: "HRP-G4-SPEC"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-068"
+    title: "Stream E"
+    legacy_id: "HRP-E-RESOLVER"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-069"
+    title: "Stream E"
+    legacy_id: "HRP-E-SCHEMA"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-070"
+    title: "Stream U"
+    legacy_id: "HRP-U-BROWSER"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-071"
+    title: "Stream U"
+    legacy_id: "HRP-U-MODAL"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-072"
+    title: "Stream U"
+    legacy_id: "HRP-U-SHOWDOWN"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-073"
+    title: "Stream U"
+    legacy_id: "HRP-U-POLISH"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-074"
+    title: "Coordinate with exploit-deviation on AssumptionCard shared component"
+    legacy_id: "HRP-COORD-MH12"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-075"
+    title: "Clear All Seats button height ≥44px"
+    legacy_id: "DCOMP-W4-A1-F7"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-076"
+    title: "Version-mismatch reload: diagnostic + confirm"
+    legacy_id: "DCOMP-W4-A3-F4"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-077"
+    title: "Continue Anyway graceful degradation"
+    legacy_id: "DCOMP-W4-A3-F5"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-078"
+    title: "OnlineView inline-styles → Tailwind migration"
+    legacy_id: "DCOMP-W4-A3-F8"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-079"
+    title: "contracts/sidebar-to-online-view.md"
+    legacy_id: "DCOMP-W4-A3-F10"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-080"
+    title: "Verify Online session classification"
+    legacy_id: "DCOMP-W4-A3-F11"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-081"
+    title: "Online persona + JTBD patches"
+    legacy_id: "DCOMP-W4-A3-F12"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-082"
+    title: "MT-62 offline-fallback verify"
+    legacy_id: "DCOMP-W4-A3-F13"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-083"
+    title: "Wave 3"
+    legacy_id: "DCOMP-W3"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-084"
+    title: "Wave 5"
+    legacy_id: "DCOMP-W5"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-085"
+    title: "Hygiene H2"
+    legacy_id: "DCOMP-H2"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-086"
+    title: "Flop decision roots"
+    legacy_id: "LSW-B1"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-087"
+    title: "Turn decision nodes where bucket shifts"
+    legacy_id: "LSW-B2"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-088"
+    title: "River decision nodes"
+    legacy_id: "LSW-B3"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-089"
+    title: "Archetype correctness widening"
+    legacy_id: "LSW-C"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-090"
+    title: "Preflop-as-flop schema workaround documentation"
+    legacy_id: "LSW-G-PreflopEnc"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-091"
+    title: "Future content-fix batches per audit"
+    legacy_id: "LSW-F*"
+    status: backlog
+    priority_score: 12.0
+    priority_label: "varies"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-092"
+    title: "Candidate: HERO_BUCKET_TYPICAL_EQUITY.topPair overstates on wet boards."
+    legacy_id: "LSW-G1"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-093"
+    title: "Candidate: ARCHETYPE_BUCKET_MULTIPLIERS.fish may not shift bucket composition enough to reflect live-pool fish donk r..."
+    legacy_id: "LSW-G2"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-094"
+    title: "Future engine change tickets from audit findings"
+    legacy_id: "LSW-G*"
+    status: backlog
+    priority_score: 12.0
+    priority_label: "varies"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-095"
+    title: "Multiway bucket-EV engine for BucketEVPanel"
+    legacy_id: "LSW-G6"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-096"
+    title: "Future surface-quality tickets from audit findings"
+    legacy_id: "LSW-H*"
+    status: backlog
+    priority_score: 12.0
+    priority_label: "varies"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-097"
+    title: "Authored plans on canonical flop roots"
+    legacy_id: "LSW-P3"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-098"
+    title: "Audit dimension 8 — plan accuracy"
+    legacy_id: "LSW-P6"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-099"
+    title: "Authored plans on turn bucket-shift nodes"
+    legacy_id: "LSW-P7"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-100"
+    title: "Chip Glossary as Study Surface."
+    legacy_id: "LSP-G"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "line-study-slice-widening"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-101"
+    title: "Replay corpus sequence extension (6 minimum sequences)"
+    legacy_id: "RT-74"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-102"
+    title: "betweenHandsFsm debounce + modeAExpired symmetry"
+    legacy_id: "RT-75"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-103"
+    title: "Freeze incoming live_context at SW boundary"
+    legacy_id: "RT-78"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-104"
+    title: "Microtask-deferred timer registration leak"
+    legacy_id: "RT-79"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-105"
+    title: "SW→side-panel port missing validateMessage"
+    legacy_id: "RT-80"
+    status: backlog
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-106"
+    title: "Per-zone innerHTML diff + tourneyTimer guard"
+    legacy_id: "RT-82"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-107"
+    title: "staleContext dual-writer oscillation"
+    legacy_id: "RT-83"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-108"
+    title: "Content + SW throttle coordination on reconnect"
+    legacy_id: "RT-84"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-109"
+    title: "CAPTURED_HANDS migration bypasses validateHandForRelay"
+    legacy_id: "RT-86"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-110"
+    title: "QuotaExceededError silent swallow on session storage"
+    legacy_id: "RT-87"
+    status: backlog
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-111"
+    title: "Z3 stale-advice zone-wide amber band"
+    legacy_id: "RT-88"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-112"
+    title: "animationend fallback safety timer"
+    legacy_id: "RT-89"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-113"
+    title: "DEALING shimmer animates prior-hand content"
+    legacy_id: "RT-90"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-114"
+    title: "Multiway postflop corpus gap (3"
+    legacy_id: "RT-91"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-115"
+    title: "Stage 6 — Incremental rebuild behind sidebarRebuild flag"
+    legacy_id: "SR-6"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "sidebar-recurrence"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-116"
+    title: "Credible intervals computed but never consumed in any UI surface"
+    legacy_id: "auto-promoted-from-WS-116"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "domain-correctness"
+    capability: "governance"
+    program: "domain-correctness"
+    type: finding
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-117"
+    title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
+    legacy_id: "auto-promoted-from-WS-117"
+    status: backlog
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "domain-correctness"
+    capability: "governance"
+    program: "domain-correctness"
+    type: finding
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+  - id: "WS-118"
+    title: "POKER_THEORY.md missing freshness header — drift cannot be tracked"
+    legacy_id: "FIND-003"
+    status: done
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "domain-correctness"
+    capability: "governance"
+    program: "domain-correctness"
+    type: finding
+    effort: "S"
+    claimed_by: "session-2026-05-01"
+    sprint_id: "SPR-001"
+  - id: "WS-119"
+    title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
+    legacy_id: "FIND-004"
+    status: done
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "domain-correctness"
+    capability: "governance"
+    program: "domain-correctness"
+    type: finding
+    effort: "S"
+    claimed_by: "session-2026-05-01"
+    sprint_id: "SPR-001"
+  - id: "WS-120"
+    title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
+    legacy_id: "FIND-005"
+    status: done
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "domain-correctness"
+    capability: "governance"
+    program: "domain-correctness"
+    type: finding
+    effort: "S"
+    claimed_by: "session-2026-05-01"
+    sprint_id: "SPR-001"

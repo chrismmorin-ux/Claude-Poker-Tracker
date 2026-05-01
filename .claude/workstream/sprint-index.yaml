@@ -1,0 +1,30 @@
+# Sprint Index — fast-scan summary of all sprints
+# Rebuild from: sprints/SPR-*.yaml
+# Updated by /next, /sprint, /session-end
+
+last_updated: "2026-05-01T16:19:57Z"
+sprint_count: 2
+
+sprints:
+  - id: "SPR-001"
+    title: "Close 3 small HIGH findings from /pulse run domain-correctness baseline"
+    status: completed
+    item_count: 3
+    items_done: 3
+    effort_summary: "S+S+S = ~1.5 sessions"
+    program_focus: domain-correctness
+    composed_by: auto
+    created_at: "2026-05-01T15:42:57Z"
+    approved_at: "2026-05-01T15:42:57Z"
+    completed_at: "2026-05-01T15:42:57Z"
+  - id: "SPR-002"
+    title: "TableView Invariant Audit — matrix authoring (Phase 1 of Master Plan TIA)"
+    status: approved
+    item_count: 1
+    items_done: 0
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: engineering
+    composed_by: auto
+    created_at: "2026-05-01T16:19:57Z"
+    approved_at: "2026-05-01T16:19:57Z"
+    completed_at: null

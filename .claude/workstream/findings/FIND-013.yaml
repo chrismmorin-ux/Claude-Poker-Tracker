@@ -1,0 +1,26 @@
+id: "FIND-013"
+title: "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5"
+severity: MEDIUM
+status: open
+category: "theory-drift"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  POKER_THEORY.md §6.5 specifies `bayesianUpdater.js uses ~5 virtual observations as prior weight`. Actual constant in rangeEngine/populationPriors.js:57 is `PRIOR_WEIGHT = 10`. Numeric mismatch — either the doc is stale or the constant drifted; either way the two should agree.
+affected_files:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/rangeEngine/populationPriors.js"
+recommended_fix: |
+  Decide whether the correct value is 5 or 10 (consider revisiting the empirical calibration). Update both the code and POKER_THEORY.md to agree. Add a brief rationale in the doc for the chosen value.
+theory_citation: "POKER_THEORY.md §6.5"
+agent_corroboration:
+  - "theory-drift-anti-pattern-sweep (D3)"
+dedup_key: "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

@@ -1,0 +1,25 @@
+id: "FIND-007"
+title: "STYLE_FOLD_DEFAULTS raw lookup in preflop decisionTreeBuilder"
+severity: MEDIUM
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  decisionTreeBuilder.js:55-58 (`computeFoldPct`) Priority 2 fallback returns a style-keyed constant with zero game-state dependence (no equity, no pot odds, no position, no raise count). The villain-model branch above handles the high-fidelity case; this fires whenever the model is absent.
+affected_files:
+  - "src/utils/exploitEngine/decisionTreeBuilder.js"
+recommended_fix: |
+  Replace the raw lookup with `estimatePreflopFoldPct(stats, 'raise', posContext, null)` from preflopAdvisor.js — already integrates positional matchup + style prior + PFR/VPIP scaling.
+theory_citation: "POKER_THEORY.md §7.1; sub-CLAUDE.md anti-pattern"
+agent_corroboration:
+  - "first-principles-audit (F3)"
+dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-preflop-decisiontreebuilde"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

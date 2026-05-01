@@ -1,0 +1,32 @@
+id: "WS-053"
+title: "Gate 2"
+legacy_id: "RL-G2"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  Gate 2 — Blind-Spot Roundtable
+accept_criteria:
+  - "5 stages complete"
+  - "verdict GREEN/YELLOW/RED"
+  - "follow-ups list populated. Addresses 4 open owner questions from RL-G1."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Ready to Start"
+  source_line: 286
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

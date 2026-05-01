@@ -1,0 +1,25 @@
+id: "FIND-015"
+title: "bayesianSampleConfidence advertises Beta priors but ignores them"
+severity: LOW
+status: open
+category: "bayesian-confidence"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  bayesianConfidence.js:241-262 signature is `(n, priorAlpha=1, priorBeta=1)` and JSDoc says 'effective sample size (prior + observed)' but the body ignores both params and returns `f(n) = 0.10 + 0.83 * (1 - exp(-n / 12))`. Used by decisionAccumulator.js:497 and elsewhere — the priors don't participate.
+affected_files:
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+recommended_fix: |
+  Either remove the unused params + update JSDoc, or make confidence a function of effective `n_eff = n + α + β` so prior strength meaningfully participates.
+theory_citation: "POKER_THEORY.md §6.5"
+agent_corroboration:
+  - "range-equity-audit (F5)"
+dedup_key: "eng-engine-domain-correctness-bayesiansampleconfidence-advertises-beta-priors-but-ignores-"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

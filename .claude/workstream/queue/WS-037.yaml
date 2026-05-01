@@ -1,0 +1,32 @@
+id: "WS-037"
+title: "Phase 8"
+legacy_id: "MPMF-P8-EX"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "monetization-and-pmf"
+capability: "core"
+program: "launch"
+description: |
+  Phase 8 — Extension entitlement-read-only doctrine in `ignition-poker-tracker/CLAUDE.md`
+accept_criteria:
+  - "Doctrine rule added"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy:
+  - "MPMF-G5-ER"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by MPMF-G5-ER"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
+  source_line: 182
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

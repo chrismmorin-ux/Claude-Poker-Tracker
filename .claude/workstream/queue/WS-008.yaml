@@ -1,0 +1,38 @@
+id: "WS-008"
+title: "Gate 5 — Implementation (multi-PR)"
+legacy_id: "PIO-G5"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  **Gate 5 — Implementation (multi-PR)**
+accept_criteria:
+  - "IDB v21+ schema (sighting log store + wardrobe schema + extended Player)"
+  - "camera capture pipeline"
+  - "multi-attribute weighted scoring"
+  - "recognition-search UI"
+  - "PlayersView rebuild"
+  - "recognition-confidence schema documented for C consumption"
+effort: "M"
+files_involved: []
+blocked_by:
+  - "WS-007"
+blocked_by_legacy:
+  - "PIO-G4"
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "BLOCKED by PIO-G4"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)"
+  source_line: 49
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

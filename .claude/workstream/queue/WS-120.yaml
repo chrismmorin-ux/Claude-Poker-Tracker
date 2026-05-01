@@ -1,0 +1,35 @@
+id: "WS-120"
+title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
+legacy_id: "FIND-005"
+type: finding
+status: done
+claimed_by: "session-2026-05-01"
+claimed_at: "2026-05-01T15:42:57Z"
+completed_at: "2026-05-01T15:42:57Z"
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+description: |
+  postflopNarrower.js:495-591 (`adaptMultipliers`): lines 511-561 apply AF/foldToCbet/cbet/threeBet/VPIP adjustments. Lines 570-590 then apply Fish/LAG/Nit/LP style adjustments, gated only on `hasObservedAdjustments`. When `seedMultipliers` (villainModel) is present, AF/VPIP/cbet adjustments still fire at 0.5 dampening — they are dampened, not skipped. Style and stats are then both consumed, double-counting the same signal.
+accept_criteria:
+  - "When `seedMultipliers` is provided (villain model is the higher-fidelity source), skip the AF/VPIP/cbet/threeBet/foldToCbet stat adjustments entirely instead of dampening them at 0.5. The model already reflects these stats."
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-001"
+decision_flags: []
+source:
+  engine: "eng-engine"
+  finding_id: "FIND-005"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  origin: "auto-promoted-from-finding"
+auto_expires: false
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+
+completion_notes: "Wrapped stat-adjustment block in !hasModel gate; style block also gated on !hasModel. Removed dampening factor (no longer needed). 3 regression tests added; 2350/2350 exploitEngine tests pass."

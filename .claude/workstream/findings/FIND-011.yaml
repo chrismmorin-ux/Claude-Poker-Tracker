@@ -1,0 +1,25 @@
+id: "FIND-011"
+title: "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate"
+severity: MEDIUM
+status: open
+category: "bayesian-confidence"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  rangeEngine/traitDetector.js:119-142: gates on `earlyOpp < 5 || lateOpp < 5`, then computes `Math.round((earlyOpens / earlyOpp) * 100)` and triggers when `lateOpenPct > earlyOpenPct * 1.5`. With n=5 and one extra open, the percentage moves 20%+ — false positives from MC-level noise. No Beta posterior comparison of the two rates.
+affected_files:
+  - "src/utils/rangeEngine/traitDetector.js"
+recommended_fix: |
+  Replace with `bayesianDeviationTest` (or pairwise `betaPosterior`-difference probability) requiring posterior P(LP > 1.5×EP) > 0.85; move the 5-hand floor into the prior as STAT_PRIORS.
+theory_citation: "POKER_THEORY.md §6.5; rangeEngine/CLAUDE.md ('no z-tests')"
+agent_corroboration:
+  - "range-equity-audit (F7)"
+dedup_key: "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

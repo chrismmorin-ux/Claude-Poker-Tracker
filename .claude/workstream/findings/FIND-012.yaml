@@ -1,0 +1,28 @@
+id: "FIND-012"
+title: "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md"
+severity: MEDIUM
+status: open
+category: "theory-drift"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "eng-engine"
+  protocol: "baseline"
+  run_id: "run-domain-correctness-baseline-2026-05-01"
+  date: "2026-05-01"
+description: |
+  Engines implement (a) `villainRangeShapeSizing` + `fitFoldCurveParams` personalized fold-curve hierarchy (foldEquityCalculator.js:155, gameTreeSizingHelpers.js:54), (b) 5-zone SPR strategy (MICRO/LOW/MEDIUM/HIGH/DEEP) wired across the game tree, (c) rake-adjusted EV threading (estimateRake, rakeConfig in foldEquityCalculator.js:149-180). POKER_THEORY.md is silent on the algorithm hierarchies and zone boundaries actually used. Code is AHEAD of the theory doc, not behind.
+affected_files:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/potCalculator.js"
+recommended_fix: |
+  Add three sections to POKER_THEORY.md: (a) Personalized Fold Curve Hierarchy (personalized > explicit > style > defaults), (b) 5-zone SPR strategy with zone boundaries and decision rules per zone, (c) Rake-adjusted EV pipeline. Alternative: keep POKER_THEORY.md as principles and create a separate `ENGINE_ALGORITHMS.md` catalog.
+theory_citation: "POKER_THEORY.md §3.5, §6 (gaps); memory: project_rake_spr_antes"
+agent_corroboration:
+  - "theory-drift-anti-pattern-sweep (D1, D2)"
+dedup_key: "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
+promoted_to: ""

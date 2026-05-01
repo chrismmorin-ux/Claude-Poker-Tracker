@@ -1,0 +1,30 @@
+id: "WS-103"
+title: "Freeze incoming live_context at SW boundary"
+legacy_id: "RT-78"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 22.0
+priority_label: "P1"
+category: "sidebar-recurrence"
+capability: "core"
+program: "engineering"
+description: |
+  Freeze incoming live_context at SW boundary
+accept_criteria:
+  - "`service-worker.js` — `Object.freeze` after validation before forwarding. Owner verifies: mutation attempts throw in tests"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"
+  source_line: 661
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,32 @@
+id: "WS-099"
+title: "Authored plans on turn bucket-shift nodes"
+legacy_id: "LSW-P7"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "line-study-slice-widening"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **Authored plans on turn bucket-shift nodes** (~8 nodes flagged dim-6-YES + dim-8-YES). Per-line gated on Stream B2 turn-node coverage. **Reason for deferral:** depends on P3 closure + Stream B2 turn-node coverage. Re-open with P3.
+accept_criteria:
+  - "✓ Every flagged turn decision has `comboPlans` declared"
+  - "✓ tests green"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "DEFERRED — LSW-v2"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
+  source_line: 618
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

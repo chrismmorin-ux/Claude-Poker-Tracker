@@ -1,0 +1,325 @@
+id: domain-correctness
+name: "Poker Theory Integrity"
+schema_version: 3
+status: NEW
+
+# THIS IS THE MOST IMPORTANT PROGRAM IN THIS REPO.
+#
+# The product is a poker decision engine. If the engines produce wrong recommendations,
+# nothing else matters — engineering quality, UX polish, and ship velocity are all
+# wasted on output the user can't trust.
+#
+# Canonical sources of truth:
+#   .claude/context/POKER_THEORY.md           — comprehensive poker theory reference (538 lines, MANDATORY before edits)
+#   src/utils/exploitEngine/CLAUDE.md         — exploit-engine domain rules + anti-patterns
+#   src/utils/rangeEngine/CLAUDE.md           — range-engine domain rules + anti-patterns
+#   docs/RANGE_ENGINE_DESIGN.md               — range engine design spec
+#   memory: feedback_first_principles_decisions.md, feedback_reasoning_quality.md
+#
+# Anti-patterns the program exists to catch (drawn from existing memory):
+#   1. Using POSITION / BUCKET / STYLE labels as DECISION INPUTS (must use equity/potOdds/SPR/players-remaining)
+#   2. Stacking style adjustments on top of stats that already define the style (double-counting)
+#   3. Using POPULATION fold rates when per-combo equity is available (use the logistic)
+#   4. Frequentist methods (z-tests, point estimates) where Bayesian credible intervals are required
+#   5. Treating bet sizing as deterministic of range shape (must be calibrated by showdown data)
+#   6. Hardcoding hero actions from weakness labels (WEAKNESS_EXPLOIT_MAP — known stopgap, must be removed)
+#   7. Conflating "calling station" with "weak range" (orthogonal axes)
+#   8. Linear bet-fold relationships (fold response is logistic, not linear)
+#   9. Treating positions as equally informative (positional equity is non-uniform)
+
+contract: >
+  The founder can trust that every poker recommendation surfaced by this app —
+  range estimates, equity calculations, EV computations, exploit suggestions,
+  villain decision predictions — is grounded in correct poker theory and
+  produces results that hold up under domain-expert scrutiny. The AI brings
+  poker-theoretic analysis the founder cannot independently verify. If this
+  program is healthy, the engines are trustworthy at the table.
+
+capability_brief:
+  value: "Holds the exploit engine, range engine, game tree, villain decision model, and Bayesian inference accountable to POKER_THEORY.md. Catches domain-rule violations that look like working code but produce wrong poker answers."
+  problems_prevented:
+    - "First-principles violations: labels-as-decision-inputs, double-counted style adjustments, frequentist where Bayesian is required"
+    - "Range/equity drift: bucket-anchor approximations where per-combo enumeration is feasible"
+    - "Game-tree errors: incorrect depth-2/3 evaluation, missing rake, wrong polarization sizing, broken multi-way fold correlation"
+    - "Villain-model errors: linear fold response, missing style-conditioned priors, dropped texture context"
+    - "Confidence misrepresentation: point estimates surfaced where credible intervals are required"
+    - "Stale theory: POKER_THEORY.md drifting from engine implementation"
+  cost:
+    activation: "~10-15 min — first audit catalogs current alignment between engines and POKER_THEORY.md"
+    ongoing: "/pulse run domain-correctness on 14-day cadence + delta sweep on every engine commit + close findings before they accumulate"
+  first_output:
+    - "Theory-vs-code drift report: where engines have diverged from POKER_THEORY.md"
+    - "Anti-pattern audit: occurrences of the 9 forbidden patterns above"
+    - "Bayesian-confidence coverage map: which surfaces use credible intervals vs point estimates"
+    - "Game-tree completeness check: depth-2/3 wiring, rake threading, SPR zones, multi-way correlation"
+    - "Findings auto-promoted to queue at priority floor 27"
+  activation_command: "/pulse run domain-correctness baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: "First-principles decision modeling"
+    description: "Villain decisions must derive from equity, pot odds, SPR, and players remaining — NEVER from position/bucket/style labels directly. Labels are OUTPUTS of the decision process, not inputs. Stacking style on top of the stats that define style is double-counting."
+    examples:
+      - "if (position === 'EP') foldRate *= 1.05  // wrong — derive from per-position pre-flop equity, not the label"
+      - "POP_CALLING_RATES[bucket] used when per-combo equity available — should use logistic"
+      - "applying style multiplier on top of villain.vpip + villain.pfr — those stats DEFINE the style, double-counting"
+    detection: "grep for hardcoded position/bucket/style label conditionals in src/utils/exploitEngine/, src/utils/rangeEngine/, src/utils/villainDecisionModel/ — cross-reference against POKER_THEORY.md §7 + exploitEngine/CLAUDE.md anti-patterns"
+
+  - name: "Range estimation correctness"
+    description: "Range engine must use Bayesian methods with population priors, never frequentist methods. Per-combo equity preferred over bucket-anchor approximations when computationally feasible. Sample-size confidence must propagate as credible intervals, not point estimates."
+    examples:
+      - "z-test on small-sample VPIP — should be Bayesian credible interval"
+      - "uniform prior on villain range — should be population prior conditioned on stakes/pool"
+      - "bucket-anchor equity used in depth-1 game tree where per-combo enumeration was viable"
+    detection: "Audit src/utils/rangeEngine/* for prior/posterior shape, sample-size handling, credible-interval propagation. Cross-reference RANGE_ENGINE_DESIGN.md."
+
+  - name: "Equity calculation correctness"
+    description: "Equity computation must be Monte Carlo with sufficient samples or exact enumeration when ≤20 combos. Stratified sampling for flush-bearing turn cards. Texture-aware adjustments to equity realization (wet OOP ×0.92, dry OOP ×1.05)."
+    examples:
+      - "Equity rollout with too-few samples for required confidence band"
+      - "Missing exact enumeration fast-path on small ranges"
+      - "Equity realization without texture adjustment"
+    detection: "Audit src/utils/handAnalysis/equityCalc.js, computeRiverCheckEV, computeRiverBetEV, exactEnumerateEquity. Cross-reference POKER_THEORY.md §5."
+
+  - name: "Game tree EV correctness"
+    description: "Game tree must compute depth-2/3 EV correctly with rake threading, polarization sizing, blocker effects, multi-way fold correlation, and 5-zone SPR strategy. Action-rate-weighted sub-range equity for filtered actions. Bet-sizing range shapes (air/value/draw/capped/polarized)."
+    examples:
+      - "depth-2 raise response disabled (enableDepth2Raise=false) when budget allows"
+      - "Rake not threaded through foldEquityCalc → depth-2/3"
+      - "Multi-way fold correlation missing in 3+ player pots"
+      - "Polarization sizing missing for river overbet"
+    detection: "Audit src/utils/gameTreeEvaluator.js, src/utils/villainDecisionModel/, src/utils/foldEquityCalc.js. Verify rake threading via potCalculator. Cross-reference POKER_THEORY.md §6 + memory: project_game_tree_*."
+
+  - name: "Bayesian confidence representation"
+    description: "Sample-size-aware confidence must propagate as credible intervals (Bayesian) not point estimates (frequentist). All decision-display surfaces must reflect uncertainty (worthiness, dataQuality, confidence-weighted display)."
+    examples:
+      - "Point-estimate fold% surfaced where credible interval is computed upstream"
+      - "Action recommendation displayed without sample-size caveat"
+      - "Confidence band not narrowing as samples accumulate"
+    detection: "Audit src/utils/bayesianConfidence.js + downstream consumers (PlayerAnalysisPanel, OnlineView, HandReplay). Verify credible interval bounds reach UI."
+
+  - name: "Villain decision model fidelity"
+    description: "Villain model must use style-conditioned priors (Fish/Nit/LAG/TAG override population), per-bucket differential scaling (calling station inflates marginals, not air uniformly), logistic fold response (not linear), street-conditional depth-2 rates, texture preservation through L3 of hierarchy."
+    examples:
+      - "Linear fold% scaling on bet size"
+      - "Style applied as multiplier on top of vpip/pfr — double-counted"
+      - "Texture dropped at L2 of villain model hierarchy"
+      - "Multiway model treats sequential decisions as independent"
+    detection: "Audit src/utils/villainDecisionModel/. Cross-reference memory: project_villain_model_assumptions_fix.md."
+
+  - name: "Exploit generation soundness"
+    description: "Exploits must derive from game-tree EV computation, not from hardcoded weakness-label maps. Weaknesses (villain behavior observations) ≠ exploits (hero recommendations). Current WEAKNESS_EXPLOIT_MAP is a known stopgap awaiting Phase 4D removal."
+    examples:
+      - "New exploit added via WEAKNESS_EXPLOIT_MAP entry instead of game tree"
+      - "Hero action recommended without game-tree EV justification"
+      - "Same weakness producing same exploit across all situations (situation-blind)"
+    detection: "Audit src/utils/exploitEngine/generateExploits.js. Check WEAKNESS_EXPLOIT_MAP usage — should be shrinking, not growing. Cross-reference memory: feedback_weakness_exploit_separation.md."
+
+  - name: "Theory-spec drift"
+    description: "POKER_THEORY.md must remain the canonical doctrine. Engine implementations must not silently diverge from it. ADR required for any deliberate divergence."
+    examples:
+      - "Engine uses formula X but POKER_THEORY.md states formula Y"
+      - "New algorithm added without theory-doc update"
+      - "POKER_THEORY.md last verified > 90 days ago"
+    detection: "Grep engine implementations for formulas/thresholds; cross-reference against POKER_THEORY.md content. Stale-date check on `last verified` line."
+
+  - name: "Anti-pattern enforcement"
+    description: "Anti-patterns enumerated in src/utils/exploitEngine/CLAUDE.md and src/utils/rangeEngine/CLAUDE.md must not appear in committed code."
+    examples:
+      - "Conflating calling station with weak range"
+      - "Treating bet sizing as deterministic of range shape (without showdown calibration)"
+      - "Treating positions as equally informative"
+    detection: "Re-read sub-directory CLAUDE.md anti-pattern sections; grep for the anti-patterns in committed code."
+
+scope:
+  file_patterns:
+    - "src/utils/exploitEngine/**"
+    - "src/utils/rangeEngine/**"
+    - "src/utils/pokerCore/**"
+    - "src/utils/handAnalysis/**"
+    - "src/utils/assumptionEngine/**"
+    - "src/utils/tournamentEngine/**"
+    - "src/utils/villainDecisionModel/**"
+    - "src/utils/gameTreeEvaluator*.js"
+    - "src/utils/bayesianConfidence*.js"
+    - "src/utils/foldEquityCalc*.js"
+    - "src/utils/potCalculator*.js"
+    - "src/utils/preflopAdvisor*.js"
+    - "src/utils/actionAdvisor*.js"
+    - "src/utils/decisionAccumulator*.js"
+    - "src/utils/weaknessDetector*.js"
+    - "src/utils/anchorLibrary/**"
+    - "src/utils/skillAssessment/**"
+    - "src/utils/refresher/**"
+    - "src/__dev__/**"
+    - ".claude/context/POKER_THEORY.md"
+    - "docs/RANGE_ENGINE_DESIGN.md"
+  invariants:
+    - "POKER_THEORY.md is read before any commit touching exploitEngine/, rangeEngine/, pokerCore/, or handAnalysis/"
+    - "Sub-directory CLAUDE.md anti-patterns checked before commits in their domain"
+    - "Villain decisions derive from equity/potOdds/SPR/players-remaining — never from position/bucket/style labels"
+    - "Style adjustments are not stacked on top of the stats that define the style"
+    - "Sample-size confidence propagates as Bayesian credible intervals, not frequentist point estimates"
+    - "Per-combo equity preferred over bucket-anchor when ≤20 combos and turn/river"
+    - "Rake is threaded through the entire EV pipeline (foldEquityCalc → gameTree → depth-2/3 → preflopAdvisor)"
+    - "WEAKNESS_EXPLOIT_MAP usage shrinks over time toward zero (Phase 4D goal)"
+  anti_invariants:
+    - "No frequentist statistical method (z-test, point estimate without credible interval) in inference paths"
+    - "No hardcoded position/bucket/style label as decision input"
+    - "No new entry added to WEAKNESS_EXPLOIT_MAP"
+    - "No 'population prior' that ignores stakes/pool conditioning"
+  constraints:
+    - "Tests use Vitest + fake-indexeddb (not jsdom mocks for IDB)"
+    - "Engine modules must NOT import from src/components/views/"
+    - "Engine modules MAY import from src/utils/pokerCore/ (shared infra)"
+
+tier: critical
+tier_triggers:
+  watch: "Engine code exists in scope file_patterns"
+  active: "Engines surface recommendations to user (live or via study modes)"
+  critical: "Domain bug found in production OR engine accuracy is product differentiator"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full poker-theory audit. Catalog alignment between engines and POKER_THEORY.md. Enumerate anti-pattern occurrences. Verify Bayesian confidence propagation and game-tree completeness."
+    problem_classes: all
+    outputs: [baseline_report, theory_drift_report, anti_pattern_audit, initial_findings]
+    prompt_additions: >
+      Use poker-theory expertise. The audit must be conducted by an engineer
+      who understands MDF, auto-profit threshold, equity realization, range/nut
+      advantage, capped/uncapped ranges, Bayesian credible intervals,
+      population priors, value betting >50% threshold, polarization sizing,
+      blocker effects, multi-way fold correlation, and 5-zone SPR strategy.
+      Generic statistical reasoning will NOT catch the right things in this
+      codebase. Read POKER_THEORY.md before producing findings.
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Comprehensive review against all problem classes"
+    problem_classes: all
+    min_tier: active
+    prompt_additions: >
+      Re-read POKER_THEORY.md and the two sub-directory CLAUDE.md files. For
+      each problem class, ask whether the codebase has drifted since the last
+      sweep. Flag specific commits or files where drift introduces a violation.
+
+  delta:
+    engine: preflight
+    cadence_days: 3
+    focus: "Recent engine changes only — strict guardrail against the 9 anti-patterns and theory drift"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Adversarial poker-theory review — assume the engine is wrong until proven otherwise"
+    prompt_additions: >
+      CHALLENGE protocol for Poker Theory Integrity. Think like a high-stakes
+      coach reviewing a junior solver:
+      - For each engine output the user sees, can it be justified by a specific
+        theorem / proof / first-principles derivation?
+      - What boards/spots would expose the model's weakest assumptions?
+      - Where does the implementation use a label as an input shortcut where
+        derivation from equity/SPR/pot-odds is computationally feasible?
+      - What specific GTO baselines disagree with the engine's recommendation?
+      - Where does the model treat sequential events (turn, river) as
+        independent when they are conditionally dependent on prior streets?
+      - What real-game phenomena (rake, ICM, multi-way correlation, table
+        dynamics) does the engine ignore?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Theory-blind-spot review: what poker concepts is the codebase missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Poker Theory Integrity.
+      - What poker theory concepts have published research the codebase doesn't
+        implement (e.g., new GTO solver findings, recent population studies,
+        ICM corrections)?
+      - What player types or game formats are under-served by current models
+        (e.g., short-deck variants, mixed-game spots, deep-stack edge cases)?
+      - What model components have been static for 6+ months — are they still
+        correct, or has the field moved on?
+      - Are there theory-doc claims in POKER_THEORY.md that no implementation
+        backs? Or implementation choices that no theory entry justifies?
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 5
+    priority_floor: 27
+    escalation:
+      stale_days: 7
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Poker Theory Integrity has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run domain-correctness"
+    block_sprint: true
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [engineering, methodology-integrity]
+  fed_by: [anti-hallucination]
+  blocks: [launch]
+
+phase_relevance:
+  foundation: critical
+  pre-launch: critical
+  launch: critical
+  growth: critical
+  maturity: critical
+
+last_run_by_protocol:
+  baseline: { date: "2026-05-01", engine: "eng-engine", run_id: "run-domain-correctness-baseline-2026-05-01", result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified" }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 2
+health_updated_at: "2026-05-01T15:42:57Z"
+health_ceiling: 6
+health_ceiling_reason: "Baseline run completed 2026-05-01. SPR-001 closed 3 of 5 HIGH findings same session (FIND-003/004/005). Score 2/6 unchanged (capped by remaining 2 HIGH + 8 MEDIUM); cap pressure reduced (3+ HIGH cap no longer fires). Sweep raises ceiling to 7."
+findings_open: 18
+work_items_open: 2
+
+evidence:
+  last_audit_report: null
+  protocol_history:
+    - date: "2026-05-01"
+      protocol: baseline
+      engine: eng-engine
+      run_id: "run-domain-correctness-baseline-2026-05-01"
+      findings: 21
+      work_items: 5
+      result: "4-agent roundtable; engines clean on 9 anti-patterns; 5 HIGH findings around credible-interval UI propagation, MC trial counts, theory-doc freshness, and 2 specific style+stat double-counts"
+      health_score: 2
+    - date: "2026-05-01"
+      sprint_id: "SPR-001"
+      action: "closed-findings"
+      findings_resolved: ["FIND-003", "FIND-004", "FIND-005"]
+      work_items_completed: ["WS-118", "WS-119", "WS-120"]
+      result: "POKER_THEORY.md freshness header added; preflopAdvisor.js + postflopNarrower.js single-source gates added; 2350/2350 exploitEngine tests pass"
+      health_score: 2
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/domain-correctness/"
+
+maturity:
+  level: 2
+  criteria:
+    level_1: "Program established. Domain rules inventoried (POKER_THEORY.md exists)."
+    level_2: "All problem classes checked. Sub-directory CLAUDE.md anti-patterns enforced. Bayesian confidence threaded through inference paths."
+    level_3: "Challenge protocol active. Theory-vs-code drift report green. Anti-patterns at zero count for 3+ sweeps."
+    level_4: "Blind-spot protocol active. POKER_THEORY.md updates traced to research. Zero domain errors in production sustained."
+  current_gaps: "SPR-001 (2026-05-01) closed FIND-003/004/005. 2 HIGH findings remaining (FIND-001 credible-interval UI wiring, FIND-002 MC trial reframing) — both flagged plan-first; bundle in Plan-mode sprint. 8 MEDIUM and 8 LOW findings open for sweep/challenge cycles."
+
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

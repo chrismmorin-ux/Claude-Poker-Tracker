@@ -1,0 +1,31 @@
+id: "WS-108"
+title: "Content + SW throttle coordination on reconnect"
+legacy_id: "RT-84"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "sidebar-recurrence"
+capability: "core"
+program: "engineering"
+description: |
+  Content + SW throttle coordination on reconnect
+accept_criteria:
+  - "Independent 200 ms windows reset on reconnect → 400 ms worst case. Deferred — mitigated in practice once RT-68 ships"
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "LATER"
+source:
+  origin: "backlog-md-migration-2026-05-01"
+  legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"
+  source_line: 667
+created_at: "2026-05-01"
+updated_at: "2026-05-01"
