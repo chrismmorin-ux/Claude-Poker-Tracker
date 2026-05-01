@@ -188,36 +188,42 @@ npm test                             # Tests (verbose, for debugging)
 
 ## Session Start Protocol (MANDATORY)
 
+CWOS-canonical. The CWOS preamble at the top of this file controls overall session ceremony; this section adds poker-tracker specifics.
+
 ### Always (every session)
-1. Read `.claude/STATUS.md` — understand project state, active sessions, alerts
-2. Read ALL files in `.claude/handoffs/` — know what other sessions own, avoid file conflicts
-3. Before editing any file: verify no other ACTIVE session owns it (check handoff "Files I Own" sections)
+1. Read `system/state.md` — vital signs, queue summary, program health, recent sessions
+2. Read `.claude/workstream/queue-index.yaml` (top-priority unclaimed) — know what work is open
+3. Check `.claude/workstream/sessions/` for any ACTIVE session — avoid file conflicts before editing
 
 ### If multi-file or structural work
 4. Read `.claude/context/SYSTEM_MODEL.md` — architecture, invariants, failure surfaces
-5. Create or update your handoff file in `.claude/handoffs/` when you claim work
+5. Claim work via `/workstream claim WS-NNN` (CWOS) before editing
 
 ### If touching engine code (exploitEngine/, rangeEngine/, pokerCore/)
 6. Read `.claude/context/POKER_THEORY.md`
 7. Read the sub-directory `CLAUDE.md` in the engine you're editing
 
 ### If resuming a project
-8. Read the project file referenced in STATUS.md
+8. Read the project file in `.claude/projects/` referenced from `system/state.md` Recent Sessions
+
+Legacy `.claude/handoffs/` directory preserved for historical reference (pre-CWOS, frozen 2026-04-30). Do NOT write new handoffs there — use `/session-end` to write to CWOS sessions.
 
 Do NOT start coding until applicable steps are complete.
 
 ## Context Loading Guide
 
+`state` = `system/state.md`. `queue` = `.claude/workstream/queue-index.yaml`. `sessions` = `.claude/workstream/sessions/`.
+
 | Task Type | Read | Skip |
 |-----------|------|------|
-| One-file UI fix | STATUS, handoffs/ | SYSTEM_MODEL, POKER_THEORY |
-| Multi-file feature | STATUS, handoffs/, SYSTEM_MODEL §1-§3 | POKER_THEORY (unless engine) |
-| Engine work | STATUS, handoffs/, SYSTEM_MODEL, POKER_THEORY, engine CLAUDE.md | STATE_SCHEMA |
-| Reducer/state change | STATUS, handoffs/, SYSTEM_MODEL §3, STATE_SCHEMA | POKER_THEORY |
-| Persistence/IndexedDB | STATUS, handoffs/, SYSTEM_MODEL §2, PERSISTENCE_OVERVIEW | POKER_THEORY |
-| Extension work | STATUS, handoffs/, ignition CLAUDE.md | Main SYSTEM_MODEL |
+| One-file UI fix | state, sessions | SYSTEM_MODEL, POKER_THEORY |
+| Multi-file feature | state, queue, sessions, SYSTEM_MODEL §1-§3 | POKER_THEORY (unless engine) |
+| Engine work | state, queue, sessions, SYSTEM_MODEL, POKER_THEORY, engine CLAUDE.md | STATE_SCHEMA |
+| Reducer/state change | state, sessions, SYSTEM_MODEL §3, STATE_SCHEMA | POKER_THEORY |
+| Persistence/IndexedDB | state, sessions, SYSTEM_MODEL §2, PERSISTENCE_OVERVIEW | POKER_THEORY |
+| Extension work | state, sessions, ignition CLAUDE.md | Main SYSTEM_MODEL |
 | Architecture review | Everything | — |
-| Bug fix (unknown scope) | STATUS, handoffs/, SYSTEM_MODEL §5-§6, failures/ | Expand as needed |
+| Bug fix (unknown scope) | state, sessions, SYSTEM_MODEL §5-§6, system/failures.md | Expand as needed |
 
 ## System Model (Read Before Any Multi-File Change)
 `.claude/context/SYSTEM_MODEL.md` is the single source of truth for architecture, invariants, failure surfaces, coupling, and system understanding. Read it before any structural change. Update it after any architectural shift.
@@ -295,23 +301,25 @@ Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views,
 `DEBUG = false` at line 8 of `PokerTracker.jsx`
 
 ## Starting New Work
-1. Follow Session Start Protocol above (STATUS.md + handoffs)
-2. Check `.claude/BACKLOG.md` — claim item with `/backlog claim <id>`
-3. `/project start <name>` for multi-file tasks
-4. Read `.claude/context/SYSTEM_MODEL.md` for architectural context, then read affected files
-5. Write `/handoff` before ending your session
-6. 4+ files changed → `EnterPlanMode`
+1. Follow Session Start Protocol above (`system/state.md` + queue-index + sessions)
+2. Run `/next` — composes a sprint from `.claude/workstream/queue/` (CWOS, primary). Or run `/workstream` for direct queue management.
+3. Read `.claude/context/SYSTEM_MODEL.md` for architectural context, then read affected files
+4. Run `/session-end` before ending your session — writes a CWOS session file with handoff notes
+5. 4+ files changed → `EnterPlanMode`
+
+`.claude/BACKLOG-legacy.md` is the pre-CWOS backlog, preserved for historical reference. Active items were migrated to `.claude/workstream/queue/WS-*.yaml` on 2026-05-01 — read those, not the legacy file. `.claude/BACKLOG_ARCHIVE.md` is the completed-items archive and remains valid historical context. `.claude/handoffs/` (140+ files) is the pre-CWOS handoff archive, frozen — do not write new files there.
 
 ### Handoff Proportionality
-- **Single-file fix, no multi-session risk:** No handoff needed. Update STATUS.md if state changed.
-- **Multi-file change, single session:** Create handoff, list owned files, close before session ends.
-- **Multi-session project:** Full ceremony — `/project start`, claim in BACKLOG, `/handoff` at end.
+- **Single-file fix, no multi-session risk:** No session file needed. Update `system/state.md` Recent Sessions row if state changed.
+- **Multi-file change, single session:** Run `/session-end` with handoff notes; CWOS writes the session file.
+- **Multi-session project:** Full ceremony — claim via `/workstream claim`, `/session-end` at session boundary, project file in `.claude/projects/`.
 
-## Work Discovery (When Backlog Is Empty)
-1. Run `/health-check` — scan for staleness, regressions, drift
-2. Run `/eng-engine` — roundtable audit producing prioritized findings
-3. Check SYSTEM_MODEL.md tech debt register (§11) for items with resolution paths
-4. Ask the user — they may have requests not captured in governance
+## Work Discovery (When Queue Is Empty)
+1. Run `/next` — auto-replenishes from active programs below their target ceiling (Step 1e).
+2. Run `/health-check` — scan for staleness, regressions, drift.
+3. Run `/eng-engine` — roundtable audit producing prioritized findings.
+4. Check SYSTEM_MODEL.md tech debt register (§11) for items with resolution paths.
+5. Ask the user — they may have requests not captured in governance.
 Do not invent work. If all checks pass and user has no requests, the project is healthy.
 
 ## Responsive Design
