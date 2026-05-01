@@ -1,6 +1,23 @@
+---
+version: 1.0
+last_verified: 2026-05-01
+verified_by: cwos-domain-correctness-baseline-2026-05-01
+verification_protocol: "/pulse run domain-correctness baseline"
+review_cadence_days: 90
+next_review: 2026-07-30
+governing_program: prog-domain-correctness
+governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
+changelog:
+  - date: 2026-05-01
+    version: 1.0
+    change: "Frontmatter header added (FIND-003 / WS-118). Doc content unchanged. Subsequent edits MUST bump `version` and add a changelog entry recording what changed and why."
+---
+
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
 
 Read this file before modifying ANY file in `exploitEngine/` or `rangeEngine/`. This is not optional.
+
+> **Drift policy.** This doc is canonical doctrine. If an engine implements a formula, threshold, or algorithm that doesn't appear here — or vice versa — that's drift. Either update this doc with an ADR-backed citation or open a finding. The `prog-domain-correctness` baseline + sweep protocols cross-check engine code against this file every 14 days; the `last_verified` field above must advance on each pass.
 
 ---
 
