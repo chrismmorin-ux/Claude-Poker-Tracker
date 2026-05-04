@@ -102,6 +102,9 @@ export const getActionAbbreviation = (action) => {
  */
 export function getValidActions(street, hasBet, isMultiSeat) {
   const { CHECK, BET, CALL, RAISE, FOLD } = PRIMITIVE_ACTIONS;
+  // WS-129: showdown street has no betting actions. Defense-in-depth — without this,
+  // the function falls through to [CHECK, BET, FOLD] which is illegal for showdown.
+  if (street === 'showdown') return [];
   if (street === 'preflop') return isMultiSeat ? [CALL, FOLD] : [CALL, RAISE, FOLD];
   if (hasBet) return isMultiSeat ? [CALL, FOLD] : [CALL, RAISE, FOLD];
   return isMultiSeat ? [CHECK, FOLD] : [CHECK, BET, FOLD];

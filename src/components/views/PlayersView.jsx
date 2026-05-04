@@ -26,6 +26,7 @@ export const PlayersView = ({ scale = 1 }) => {
     setCurrentScreen,
     SCREEN,
     openPlayerEditor,
+    openPlayerProfile,
   } = useUI();
   const {
     allPlayers,
@@ -80,6 +81,15 @@ export const PlayersView = ({ scale = 1 }) => {
     setFilterHat,
     filterSunglasses,
     setFilterSunglasses,
+    // PIO G5 child D (WS-163 / SPR-035) — new filter axes
+    filterAgeDecade,
+    setFilterAgeDecade,
+    filterWardrobe,
+    setFilterWardrobe,
+    filterJewelry,
+    setFilterJewelry,
+    filterLogo,
+    setFilterLogo,
     clearFilters,
   } = usePlayerFiltering(playerState.allPlayers, tendencyMap);
 
@@ -111,6 +121,12 @@ export const PlayersView = ({ scale = 1 }) => {
 
   const handleOpenEdit = (player) => {
     openPlayerEditor({ mode: 'edit', playerId: player.playerId });
+  };
+
+  // PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — row-tap routes to Profile View.
+  // Edit button on the row remains for one-tap-to-edit access.
+  const handleOpenProfile = (player) => {
+    openPlayerProfile(player.playerId, SCREEN.PLAYERS);
   };
 
   // Find next empty seat (using LIMITS.NUM_SEATS instead of hardcoded 9)
@@ -442,6 +458,14 @@ export const PlayersView = ({ scale = 1 }) => {
           filterTag={filterTag}
           setFilterTag={setFilterTag}
           allStyleTags={allStyleTags}
+          filterAgeDecade={filterAgeDecade}
+          setFilterAgeDecade={setFilterAgeDecade}
+          filterWardrobe={filterWardrobe}
+          setFilterWardrobe={setFilterWardrobe}
+          filterJewelry={filterJewelry}
+          setFilterJewelry={setFilterJewelry}
+          filterLogo={filterLogo}
+          setFilterLogo={setFilterLogo}
         />
 
         {/* Stats */}
@@ -498,7 +522,10 @@ export const PlayersView = ({ scale = 1 }) => {
                     isSelecting={!!selectedSeat}
                     onDragStart={() => handleDragStart(player.playerId)}
                     onDragEnd={handleDragEnd}
-                    onClick={() => selectedSeat && handlePlayerClick(player.playerId)}
+                    onClick={() => selectedSeat
+                      ? handlePlayerClick(player.playerId)
+                      : handleOpenProfile(player)
+                    }
                     onEdit={() => handleOpenEdit(player)}
                     onDelete={() => handleRequestDeletePlayer(player)}
                     tendencyStats={tendencyMap[player.playerId] || null}

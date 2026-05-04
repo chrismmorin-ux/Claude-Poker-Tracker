@@ -44,20 +44,11 @@ export const PhysicalSection = ({
       </button>
       {open ? (
         <div className="p-3 pt-0 space-y-3">
-          <div>
-            <label className="block text-[11px] uppercase tracking-wide text-gray-500 mb-1">
-              Ethnicity
-            </label>
-            <select
-              value={ethnicity || ''}
-              onChange={(e) => onEthnicityChange(e.target.value)}
-              className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              data-testid="physical-ethnicity"
-            >
-              <option value="">—</option>
-              {ETHNICITY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
+          {/* Legacy ethnicity dropdown hidden (WS-163 / SPR-035) — replaced by
+              EthnicityTagsSection. The `ethnicity` field stays on Player records
+              for backward-compat with prior read paths but is no longer edited
+              here. The unused props (ethnicity / onEthnicityChange) remain in
+              the component signature so existing callers don't break. */}
 
           <div>
             <label className="block text-[11px] uppercase tracking-wide text-gray-500 mb-1">Build</label>

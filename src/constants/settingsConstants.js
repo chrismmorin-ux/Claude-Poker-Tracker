@@ -22,6 +22,13 @@ export const SETTINGS_ACTIONS = {
   REMOVE_CUSTOM_VENUE: 'REMOVE_CUSTOM_VENUE',
   ADD_CUSTOM_GAME_TYPE: 'ADD_CUSTOM_GAME_TYPE',
   REMOVE_CUSTOM_GAME_TYPE: 'REMOVE_CUSTOM_GAME_TYPE',
+  // SCF self-coach settings (WS-148 / SPR-033) — UI lands in WS-159.
+  SET_SELF_COACH_SIGNAL_TOGGLE: 'SET_SELF_COACH_SIGNAL_TOGGLE',
+  SET_SELF_COACH_SIGNAL_WEIGHT: 'SET_SELF_COACH_SIGNAL_WEIGHT',
+  SET_SELF_COACH_OWNER_TIER: 'SET_SELF_COACH_OWNER_TIER',
+  // PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
+  // Default OFF per AP-PIO-03 (privacy-first; user must opt in).
+  SET_PRIVACY_PHOTO_CAPTURE_ENABLED: 'SET_PRIVACY_PHOTO_CAPTURE_ENABLED',
 };
 
 // =============================================================================
@@ -59,6 +66,34 @@ export const DEFAULT_SETTINGS = {
     preflop_raise: null,   // e.g. [2, 3, 4, 5] — multipliers of current bet
     postflop_bet: null,    // e.g. [0.25, 0.5, 0.75, 1.0] — fractions of pot
     postflop_raise: null,  // e.g. [2, 3, 4, 5] — multipliers of current bet
+  },
+
+  // SCF self-coach settings (WS-148 / SPR-033). Default weights per
+  // SCF Gate 4 v1 spec §SCF-G4-SPINE; toggles default on. ownerTier is
+  // owner-set only via the SelfCoachView Settings panel (WS-159) — never
+  // inferred (AP-SCF-03). Do NOT render any of these as user-facing rank
+  // labels — see feedback_scf_learning_state_not_tier_rank.md.
+  selfCoach: {
+    signalToggles: {
+      enableLeak: true,
+      enableDrill: true,
+      enableTest: true,
+      enableRecent: true,
+    },
+    signalWeights: {
+      W_leak: 0.5,
+      W_drill: 0.3,
+      W_test: 0.15,
+      W_recent: 0.05,
+    },
+    ownerTier: null, // 'novice' | 'live-rec' | 'studied-amateur' | 'part-time-grinder' | 'serious-grinder' | 'pro' | null
+  },
+
+  // PIO privacy controls (WS-165 / SPR-036, 2026-05-04). Per AP-PIO-03:
+  // photo capture is OFF by default; user must explicitly opt in. Camera
+  // entry button visibility is gated by `photoCaptureEnabled === true`.
+  privacy: {
+    photoCaptureEnabled: false,
   },
 };
 

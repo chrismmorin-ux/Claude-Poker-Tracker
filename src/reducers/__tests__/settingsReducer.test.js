@@ -275,6 +275,111 @@ describe('settingsReducer', () => {
     });
   });
 
+  describe('SCF self-coach (WS-148 / SPR-033)', () => {
+    it('default selfCoach state matches SCF G4 v1 spec', () => {
+      expect(DEFAULT_SETTINGS.selfCoach).toBeDefined();
+      expect(DEFAULT_SETTINGS.selfCoach.signalToggles).toEqual({
+        enableLeak: true,
+        enableDrill: true,
+        enableTest: true,
+        enableRecent: true,
+      });
+      expect(DEFAULT_SETTINGS.selfCoach.signalWeights).toEqual({
+        W_leak: 0.5,
+        W_drill: 0.3,
+        W_test: 0.15,
+        W_recent: 0.05,
+      });
+      expect(DEFAULT_SETTINGS.selfCoach.ownerTier).toBeNull();
+    });
+
+    it('SET_SELF_COACH_SIGNAL_TOGGLE flips a single toggle', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_TOGGLE,
+        payload: { name: 'enableLeak', enabled: false },
+      });
+      expect(newState.settings.selfCoach.signalToggles.enableLeak).toBe(false);
+      // Other toggles unchanged
+      expect(newState.settings.selfCoach.signalToggles.enableDrill).toBe(true);
+    });
+
+    it('SET_SELF_COACH_SIGNAL_TOGGLE coerces enabled to boolean', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_TOGGLE,
+        payload: { name: 'enableTest', enabled: 0 },
+      });
+      expect(newState.settings.selfCoach.signalToggles.enableTest).toBe(false);
+    });
+
+    it('SET_SELF_COACH_SIGNAL_WEIGHT updates a single weight', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_WEIGHT,
+        payload: { name: 'W_leak', weight: 0.8 },
+      });
+      expect(newState.settings.selfCoach.signalWeights.W_leak).toBe(0.8);
+      // Other weights unchanged
+      expect(newState.settings.selfCoach.signalWeights.W_drill).toBe(0.3);
+    });
+
+    it('SET_SELF_COACH_SIGNAL_WEIGHT rejects non-finite values', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_WEIGHT,
+        payload: { name: 'W_leak', weight: 'garbage' },
+      });
+      expect(newState).toEqual(state);
+    });
+
+    it('SET_SELF_COACH_OWNER_TIER updates the owner-set tier', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_OWNER_TIER,
+        payload: { tier: 'studied-amateur' },
+      });
+      expect(newState.settings.selfCoach.ownerTier).toBe('studied-amateur');
+    });
+
+    it('SET_SELF_COACH_OWNER_TIER accepts null to clear', () => {
+      // Pre-set tier first
+      let s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_OWNER_TIER,
+        payload: { tier: 'pro' },
+      });
+      expect(s.settings.selfCoach.ownerTier).toBe('pro');
+      s = settingsReducer(s, {
+        type: SETTINGS_ACTIONS.SET_SELF_COACH_OWNER_TIER,
+        payload: { tier: null },
+      });
+      expect(s.settings.selfCoach.ownerTier).toBeNull();
+    });
+  });
+
+  describe('PIO privacy (WS-165 / SPR-036)', () => {
+    it('default photoCaptureEnabled is false (AP-PIO-03 privacy-first)', () => {
+      expect(DEFAULT_SETTINGS.privacy).toBeDefined();
+      expect(DEFAULT_SETTINGS.privacy.photoCaptureEnabled).toBe(false);
+    });
+
+    it('SET_PRIVACY_PHOTO_CAPTURE_ENABLED toggles the flag', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_PRIVACY_PHOTO_CAPTURE_ENABLED,
+        payload: { enabled: true },
+      });
+      expect(s1.settings.privacy.photoCaptureEnabled).toBe(true);
+      const s2 = settingsReducer(s1, {
+        type: SETTINGS_ACTIONS.SET_PRIVACY_PHOTO_CAPTURE_ENABLED,
+        payload: { enabled: false },
+      });
+      expect(s2.settings.privacy.photoCaptureEnabled).toBe(false);
+    });
+
+    it('coerces enabled to boolean', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_PRIVACY_PHOTO_CAPTURE_ENABLED,
+        payload: { enabled: 1 },
+      });
+      expect(s.settings.privacy.photoCaptureEnabled).toBe(true);
+    });
+  });
+
   describe('unknown action', () => {
     it('returns current state for unknown action', () => {
       const newState = settingsReducer(state, {

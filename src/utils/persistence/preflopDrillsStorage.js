@@ -63,7 +63,11 @@ export const loadPreflopDrills = async (userId = GUEST_USER_ID) => {
       const idx = store.index('userId');
       const req = idx.getAll(userId);
       req.onsuccess = () => {
-        const sorted = (req.result || []).sort((a, b) => b.timestamp - a.timestamp);
+        // drillId tiebreak: same-ms saves would otherwise return in insertion
+        // (oldest-first) order, breaking the "newest first" contract.
+        const sorted = (req.result || []).sort(
+          (a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId,
+        );
         resolve(sorted);
       };
       req.onerror = () => reject(req.error);

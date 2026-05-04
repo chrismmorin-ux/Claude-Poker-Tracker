@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { resetDBPool } from '../database';
+import { resetDBPool, closeDB } from '../database';
 
 // Mock the errorHandler to suppress logs during tests
 vi.mock('../../errorHandler', () => ({
@@ -50,6 +50,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  closeDB(); // WS-126: prevent stale-DB pollution into next test's IDBFactory swap
   delete globalThis.window;
 });
 

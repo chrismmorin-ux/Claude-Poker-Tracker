@@ -3,21 +3,28 @@
  * OnlineAnalysisContext.test.jsx - Tests for analysis pipeline provider
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { OnlineAnalysisProvider, useOnlineAnalysisContext } from '../OnlineAnalysisContext';
+
+// Mutable mock for SyncBridge so per-test we can flip versionMismatch
+// without re-defining the module mock every time.
+const mockSyncBridge = {
+  liveHandState: null,
+  pushExploits: vi.fn(),
+  pushAdvice: vi.fn(),
+  isExtensionConnected: false,
+  versionMismatch: false,
+};
+
+const liveActionAdvisorSpy = vi.fn(() => ({ advice: null, isComputing: false }));
 
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({ user: null }),
 }));
 
 vi.mock('../SyncBridgeContext', () => ({
-  useSyncBridge: () => ({
-    liveHandState: null,
-    pushExploits: vi.fn(),
-    pushAdvice: vi.fn(),
-    isExtensionConnected: false,
-  }),
+  useSyncBridge: () => mockSyncBridge,
 }));
 
 vi.mock('../OnlineSessionContext', () => ({
@@ -35,10 +42,7 @@ vi.mock('../../hooks/useOnlineAnalysis', () => ({
 }));
 
 vi.mock('../../hooks/useLiveActionAdvisor', () => ({
-  useLiveActionAdvisor: () => ({
-    advice: null,
-    isComputing: false,
-  }),
+  useLiveActionAdvisor: (...args) => liveActionAdvisorSpy(...args),
 }));
 
 vi.mock('../../utils/persistence/database', () => ({
@@ -53,6 +57,14 @@ vi.mock('../EquityWorkerContext', () => ({
 }));
 
 const wrapper = ({ children }) => <OnlineAnalysisProvider>{children}</OnlineAnalysisProvider>;
+
+beforeEach(() => {
+  // Reset per-test
+  mockSyncBridge.liveHandState = null;
+  mockSyncBridge.versionMismatch = false;
+  mockSyncBridge.isExtensionConnected = false;
+  liveActionAdvisorSpy.mockClear();
+});
 
 describe('OnlineAnalysisContext', () => {
   it('provides analysis state', () => {
@@ -70,5 +82,28 @@ describe('OnlineAnalysisContext', () => {
     expect(() => {
       renderHook(() => useOnlineAnalysisContext());
     }).toThrow('useAnalysisContext must be used within OnlineAnalysisProvider');
+  });
+
+  // WS-077: live-flow advice gating
+  it('passes liveHandState through to advisor when versions match', () => {
+    const fakeLiveHandState = { tableId: 't1', currentStreet: 'flop', actionSequence: [] };
+    mockSyncBridge.liveHandState = fakeLiveHandState;
+    mockSyncBridge.versionMismatch = false;
+
+    renderHook(() => useOnlineAnalysisContext(), { wrapper });
+
+    expect(liveActionAdvisorSpy).toHaveBeenCalled();
+    expect(liveActionAdvisorSpy.mock.calls[0][0]).toBe(fakeLiveHandState);
+  });
+
+  it('passes null to advisor when versionMismatch is true (suppresses live advice)', () => {
+    const fakeLiveHandState = { tableId: 't1', currentStreet: 'flop', actionSequence: [] };
+    mockSyncBridge.liveHandState = fakeLiveHandState;
+    mockSyncBridge.versionMismatch = true;
+
+    renderHook(() => useOnlineAnalysisContext(), { wrapper });
+
+    expect(liveActionAdvisorSpy).toHaveBeenCalled();
+    expect(liveActionAdvisorSpy.mock.calls[0][0]).toBe(null);
   });
 });

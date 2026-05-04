@@ -801,6 +801,21 @@ describe('buildStatus', () => {
     expect(validateStatus(buildStatus({ connected: true })).valid).toBe(true);
     expect(validateStatus(buildStatus({ request: true })).valid).toBe(true);
   });
+
+  // WS-076: extensionVersion is optional, additive — older app builds
+  // ignore it; newer builds use it as the user-readable companion to
+  // protocolVersion in the version-mismatch diagnostic.
+  it('threads optional extensionVersion through (for diagnostic UI)', () => {
+    const s = buildStatus({ connected: true, protocolVersion: 2, extensionVersion: '0.9.0' });
+    expect(s.extensionVersion).toBe('0.9.0');
+    expect(validateStatus(s).valid).toBe(true);
+  });
+
+  it('omits extensionVersion when not provided (backward-compatible)', () => {
+    const s = buildStatus({ connected: true, protocolVersion: 2 });
+    expect('extensionVersion' in s).toBe(false);
+    expect(validateStatus(s).valid).toBe(true);
+  });
 });
 
 // ============================================================================

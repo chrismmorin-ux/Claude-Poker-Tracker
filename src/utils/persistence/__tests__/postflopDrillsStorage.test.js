@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { resetDBPool } from '../database';
+import { resetDBPool, closeDB } from '../database';
 
 vi.mock('../../errorHandler', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -23,6 +23,7 @@ describe('postflopDrillsStorage', () => {
   });
 
   afterEach(() => {
+    closeDB(); // WS-126: prevent stale-DB pollution into next test's IDBFactory swap
     delete globalThis.window;
   });
 

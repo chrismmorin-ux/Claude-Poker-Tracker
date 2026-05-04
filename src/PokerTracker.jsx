@@ -33,6 +33,10 @@ const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsV
 const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
 const PrintableRefresherView = lazy(() => import('./components/views/PrintableRefresherView').then(m => ({ default: m.PrintableRefresherView })));
 const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryView').then(m => ({ default: m.AnchorLibraryView })));
+// SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface for Drill-this affordance.
+const LessonDetailView = lazy(() => import('./components/views/LessonDetailView').then(m => ({ default: m.LessonDetailView })));
+// PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface (sighting history + stability).
+const PlayerProfileView = lazy(() => import('./components/views/PlayerProfileView/PlayerProfileView').then(m => ({ default: m.PlayerProfileView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -116,6 +120,8 @@ const ViewRouter = () => {
           case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
           case SCREEN.PRINTABLE_REFRESHER: return <VEB viewName="Printable Refresher" onReturnToTable={onReturnToTable}><PrintableRefresherView scale={scale} /></VEB>;
           case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
+          case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
+          case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)

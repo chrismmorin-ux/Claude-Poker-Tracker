@@ -5,7 +5,7 @@
  * hero coaching (HeroCoachingCard), villain analysis (VillainAnalysisSection).
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { getPositionName } from '../../../utils/positionUtils';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { STREET_LABELS_SHORT } from '../../../constants/gameConstants';
@@ -15,6 +15,18 @@ import { HeroCoachingCard } from './HeroCoachingCard';
 import { VillainAnalysisSection } from './VillainAnalysisSection';
 // EAL Phase 6 Stream D B3 (S17, 2026-04-27) — Tier 0 owner observation capture.
 import { AnchorObservationSection } from './AnchorObservationSection';
+// HSP-W1 (WS-143 / SPR-029, 2026-05-03) — first-consumer wire for the Hero State Primitive.
+// Renders canonical-vs-actual side-by-side panels per hero decision point.
+// Surface spec: docs/design/surfaces/hand-replay-view.md §"HeroStateSection".
+import { HeroStateSection } from './HeroStateSection';
+// SCF G5 / WS-158 (2026-05-03) — hero-leak badge inside HeroCoachingCard.
+// Per chris-live-player.md autonomy red lines #5 + #8: source-util-policy
+// whitelisted (review-mode only); no shame copy in alignment labels.
+import { useHeroLeaks } from '../../../hooks/useHeroLeaks';
+import { deriveSituationKey } from '../../../utils/skillAssessment/deriveSituationKey';
+import { GUEST_USER_ID } from '../../../utils/persistence/index';
+// SCF G5 / WS-147 (SPR-032, 2026-05-03) — Drill-this navigates to LessonDetailView via UIContext.
+import { useUI } from '../../../contexts';
 
 export const ReviewPanel = ({
   replay,
@@ -33,6 +45,7 @@ export const ReviewPanel = ({
     availableStreets, timelineLength, potAtPoint,
     stepForward, stepBack, jumpToStart, jumpToEnd, jumpToStreet,
     analysisLens, setAnalysisLens,
+    visibleActions,
   } = replay;
 
   // Determine if selected villain's cards are known (revealed or always visible)
@@ -55,6 +68,22 @@ export const ReviewPanel = ({
   // Is current action a hero action?
   const isHeroAction = heroSeat && currentActionEntry && Number(currentActionEntry.seat) === heroSeat;
   const heroCoaching = currentAnalysis?.heroAnalysis || null;
+
+  // SCF G5 / WS-158 — derive situation key for current decision point + look up active leak.
+  const situationKey = useMemo(
+    () => isHeroAction
+      ? deriveSituationKey({ hand, actionEntry: currentActionEntry, heroSeat, buttonSeat })
+      : null,
+    [isHeroAction, hand, currentActionEntry, heroSeat, buttonSeat],
+  );
+  const heroLeakState = useHeroLeaks(GUEST_USER_ID, situationKey);
+  // SCF G5 / WS-147 (SPR-032, 2026-05-03) — Drill-this opens LessonDetailView.
+  // Per autonomy red line #5: navigation only, no graded transition copy.
+  const { openLessonDetail } = useUI();
+  const onDrillLeak = useCallback((leak) => {
+    if (!leak?.relatedConceptId) return;
+    openLessonDetail(leak.relatedConceptId);
+  }, [openLessonDetail]);
 
   // Model accuracy summary across all villain actions with predictions
   const modelAccuracy = useMemo(() => {
@@ -165,23 +194,52 @@ export const ReviewPanel = ({
             </div>
           )}
 
-          {/* Action class (value/bluff) */}
-          {currentAnalysis?.actionClass && (
+          {/* Action class (value/thin/bluff) — MoE-banded per FIND-002 */}
+          {currentAnalysis?.actionClass?.class && (
             <div className="mt-1">
               <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                currentAnalysis.actionClass === 'value'
+                currentAnalysis.actionClass.class === 'value'
                   ? 'bg-green-900/50 text-green-400'
-                  : 'bg-red-900/50 text-red-400'
+                  : currentAnalysis.actionClass.class === 'thin'
+                    ? 'bg-yellow-900/50 text-yellow-400'
+                    : 'bg-red-900/50 text-red-400'
               }`}>
-                {currentAnalysis.actionClass}
+                {currentAnalysis.actionClass.class === 'thin' ? 'thin value' : currentAnalysis.actionClass.class}
+                {currentAnalysis.actionClass.moe != null && (
+                  <span className="ml-1 opacity-75 normal-case font-normal">
+                    (±{(currentAnalysis.actionClass.moe * 100).toFixed(1)}%)
+                  </span>
+                )}
               </span>
             </div>
           )}
         </div>
       )}
 
-      {/* D. Hero Coaching Card */}
-      {isHeroAction && <HeroCoachingCard heroCoaching={heroCoaching} />}
+      {/* D. Hero Coaching Card (with SCF leak badge per WS-158 / SPR-031) */}
+      {isHeroAction && (
+        <HeroCoachingCard
+          heroCoaching={heroCoaching}
+          leak={heroLeakState.leak}
+          onSnooze={heroLeakState.snooze}
+          onDismiss={heroLeakState.dismiss}
+          onDrill={onDrillLeak}
+        />
+      )}
+
+      {/* D2. HSP HandReplay wire (WS-143 / SPR-029, 2026-05-03) */}
+      {isHeroAction && (
+        <HeroStateSection
+          hand={hand}
+          currentActionEntry={currentActionEntry}
+          visibleActions={visibleActions}
+          heroSeat={heroSeat}
+          buttonSeat={buttonSeat}
+          villainProfile={villainAnalysis?.villainProfile || null}
+          villainRange={villainAnalysis?.villainRange || null}
+          villainModel={villainAnalysis?.villainModel || null}
+        />
+      )}
 
       {/* E. Villain Analysis */}
       <div className="flex-1 overflow-y-auto min-h-0">

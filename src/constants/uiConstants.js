@@ -28,6 +28,16 @@ export const SCREEN = {
   // Exploit Anchor Library (EAL) — Phase 6+; flat-list study surface for anchors.
   // Per surfaces/anchor-library.md. Deep-link target for capture toast Undo (S18+).
   ANCHOR_LIBRARY: 'anchorLibrary',
+  // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface.
+  // Per docs/projects/self-coach-foundation/lesson-authoring-template.md +
+  // src/utils/skillAssessment/CLAUDE.md source-util-policy whitelist (read-allowed
+  // from HandReplayView via Drill-this affordance + future SelfCoachView Curriculum).
+  LESSON_DETAIL: 'lessonDetail',
+  // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface.
+  // Sighting history + per-attribute stability descriptors + manual-add-sighting modal.
+  // Row-tap from PlayersView opens this (was PlayerEditor pre-WS-163).
+  // Per docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md §PIO-G4-S1.
+  PLAYER_PROFILE: 'playerProfile',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

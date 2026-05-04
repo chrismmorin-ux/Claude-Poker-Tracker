@@ -36,6 +36,10 @@ export const UI_ACTIONS = {
   // PEO-1: fullscreen player-entry routes
   SET_EDITOR_CONTEXT: 'SET_EDITOR_CONTEXT',
   SET_PICKER_CONTEXT: 'SET_PICKER_CONTEXT',
+  // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail nav state.
+  SET_LESSON_DETAIL: 'SET_LESSON_DETAIL',
+  // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile nav state.
+  SET_PLAYER_PROFILE: 'SET_PLAYER_PROFILE',
 };
 
 import { SCREEN } from '../constants/uiConstants';
@@ -67,6 +71,16 @@ export const initialUiState = {
   // pickerContext: null | { seat, batchMode, assignedSeats, prevScreen }
   editorContext: null,
   pickerContext: null,
+  // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail nav state.
+  // lessonConceptId: which lesson the LessonDetailView should show.
+  // lessonReturnScreen: where back-nav should return to (typically HAND_REPLAY).
+  lessonConceptId: null,
+  lessonReturnScreen: null,
+  // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile nav state.
+  // profilePlayerId: which player the PlayerProfileView should show.
+  // profileReturnScreen: where back-nav should return to (typically PLAYERS).
+  profilePlayerId: null,
+  profileReturnScreen: null,
 };
 
 // =============================================================================
@@ -99,6 +113,12 @@ export const UI_STATE_SCHEMA = {
   // PEO-1 contexts (nullable objects)
   editorContext: { type: 'object', required: false },
   pickerContext: { type: 'object', required: false },
+  // SCF G5 child 3 (WS-147)
+  lessonConceptId: { type: 'string', required: false },
+  lessonReturnScreen: { type: 'string', required: false },
+  // PIO G5 child C (WS-162)
+  profilePlayerId: { type: 'string', required: false },
+  profileReturnScreen: { type: 'string', required: false },
 };
 
 // =============================================================================
@@ -289,6 +309,20 @@ const rawUiReducer = (state, action) => {
         ...state,
         replayHandId: action.payload.handId ?? action.payload,
         replayHand: action.payload.hand ?? null,
+      };
+
+    case UI_ACTIONS.SET_LESSON_DETAIL:
+      return {
+        ...state,
+        lessonConceptId: action.payload?.lessonConceptId ?? null,
+        lessonReturnScreen: action.payload?.lessonReturnScreen ?? null,
+      };
+
+    case UI_ACTIONS.SET_PLAYER_PROFILE:
+      return {
+        ...state,
+        profilePlayerId: action.payload?.profilePlayerId ?? null,
+        profileReturnScreen: action.payload?.profileReturnScreen ?? null,
       };
 
     // PEO-1: open/close fullscreen player-entry routes. Payload is either

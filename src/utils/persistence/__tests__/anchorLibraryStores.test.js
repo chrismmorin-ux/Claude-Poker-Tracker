@@ -58,8 +58,8 @@ afterEach(async () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('DB_VERSION', () => {
-  it('is at v21 (after PRF-G5-MIG bumped 19→20, then MPMF G5-B2 telemetry migration bumped 20→21)', () => {
-    expect(DB_VERSION).toBe(21);
+  it('is at v23 (after PIO G5 / WS-160 sightingLogs + playerPhotos bumped 22→23)', () => {
+    expect(DB_VERSION).toBe(23);
   });
 });
 

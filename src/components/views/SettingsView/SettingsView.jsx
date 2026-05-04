@@ -11,6 +11,8 @@ import { GameTypesManager } from './GameTypesManager';
 import { DataAndAbout } from './DataAndAbout';
 import { ErrorLogPanel } from './ErrorLogPanel';
 import { RefresherSettings } from './RefresherSettings';
+// PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
+import { PrivacySection } from './PrivacySection';
 
 export const SettingsView = ({ scale }) => {
   const { showSuccess, showError, showWarning, addToast } = useToast();
@@ -29,6 +31,7 @@ export const SettingsView = ({ scale }) => {
     removeCustomVenue,
     addCustomGameType,
     removeCustomGameType,
+    dispatchSettings,
   } = useSettings();
 
   const handleShowToast = useCallback((message, type) => {
@@ -128,6 +131,11 @@ export const SettingsView = ({ scale }) => {
           />
 
           <RefresherSettings />
+
+          <PrivacySection
+            settings={settings}
+            dispatchSettings={dispatchSettings}
+          />
 
           <ErrorLogPanel showSuccess={showSuccess} />
         </div>

@@ -35,6 +35,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    lessonConceptId,
+    lessonReturnScreen,
+    profilePlayerId,
+    profileReturnScreen,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -177,6 +181,45 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
   }, [dispatchUi, pickerContext]);
 
+  // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — open lesson detail surface
+  // from a Drill-this affordance. Captures return screen so back-nav routes
+  // back to the surface that triggered (typically HandReplay).
+  const openLessonDetail = useCallback((conceptId, returnScreen = null) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_LESSON_DETAIL,
+      payload: {
+        lessonConceptId: conceptId,
+        lessonReturnScreen: returnScreen || currentView,
+      },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.LESSON_DETAIL });
+  }, [dispatchUi, currentView]);
+
+  const closeLessonDetail = useCallback(() => {
+    const prev = lessonReturnScreen || SCREEN.HISTORY;
+    dispatchUi({ type: UI_ACTIONS.SET_LESSON_DETAIL, payload: { lessonConceptId: null, lessonReturnScreen: null } });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, lessonReturnScreen]);
+
+  // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — open player profile surface.
+  // Row-tap from PlayersView routes here. Captures returnScreen for back-nav.
+  const openPlayerProfile = useCallback((playerId, returnScreen = null) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_PLAYER_PROFILE,
+      payload: {
+        profilePlayerId: playerId,
+        profileReturnScreen: returnScreen || currentView,
+      },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_PROFILE });
+  }, [dispatchUi, currentView]);
+
+  const closePlayerProfile = useCallback(() => {
+    const prev = profileReturnScreen || SCREEN.PLAYERS;
+    dispatchUi({ type: UI_ACTIONS.SET_PLAYER_PROFILE, payload: { profilePlayerId: null, profileReturnScreen: null } });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, profileReturnScreen]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -197,6 +240,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    lessonConceptId,
+    lessonReturnScreen,
+    profilePlayerId,
+    profileReturnScreen,
     // Screen constants
     SCREEN,
     // Handlers
@@ -226,6 +273,12 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerEditor,
     openPlayerPicker,
     closePlayerPicker,
+    // SCF G5 child 3 — lesson detail navigation
+    openLessonDetail,
+    closeLessonDetail,
+    // PIO G5 child C — player profile navigation
+    openPlayerProfile,
+    closePlayerProfile,
   }), [
     currentView,
     selectedPlayers,
@@ -244,6 +297,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    lessonConceptId,
+    lessonReturnScreen,
+    profilePlayerId,
+    profileReturnScreen,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -269,6 +326,10 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerEditor,
     openPlayerPicker,
     closePlayerPicker,
+    openLessonDetail,
+    closeLessonDetail,
+    openPlayerProfile,
+    closePlayerProfile,
   ]);
 
   return (

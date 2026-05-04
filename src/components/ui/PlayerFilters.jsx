@@ -11,6 +11,11 @@ import {
   GENDER_OPTIONS,
   FACIAL_HAIR_OPTIONS
 } from '../../constants/playerConstants';
+// PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — palette imports for new filter chips.
+import { WARDROBE_PALETTE } from '../../utils/playerMatching/wardrobePalette';
+import { JEWELRY_PALETTE } from '../../utils/playerMatching/jewelryPalette';
+import { LOGO_PALETTE } from '../../utils/playerMatching/logoPalette';
+import { AGE_DECADE_OPTIONS } from '../views/PlayerEditorView/AgeDecadeSection';
 
 /**
  * PlayerFilters - Search, sort, and physical feature filter controls
@@ -55,7 +60,16 @@ export const PlayerFilters = ({
   setFilterSunglasses,
   filterTag,
   setFilterTag,
-  allStyleTags
+  allStyleTags,
+  // PIO G5 child D (WS-163 / SPR-035) — new filter axes
+  filterAgeDecade,
+  setFilterAgeDecade,
+  filterWardrobe,
+  setFilterWardrobe,
+  filterJewelry,
+  setFilterJewelry,
+  filterLogo,
+  setFilterLogo,
 }) => {
   return (
     <>
@@ -164,6 +178,61 @@ export const PlayerFilters = ({
           <option value="">All Styles</option>
           {allStyleTags.map(tag => (
             <option key={tag} value={tag}>{tag}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* PIO G5 child D (WS-163 / SPR-035) — new identification filter axes */}
+      <div className="mt-2 grid grid-cols-4 gap-2">
+        {/* Age Decade */}
+        <select
+          value={filterAgeDecade ?? ''}
+          onChange={(e) => setFilterAgeDecade(e.target.value)}
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          data-testid="player-filter-age-decade"
+        >
+          <option value="">All Ages</option>
+          {AGE_DECADE_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+
+        {/* Wardrobe */}
+        <select
+          value={filterWardrobe ?? ''}
+          onChange={(e) => setFilterWardrobe(e.target.value)}
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          data-testid="player-filter-wardrobe"
+        >
+          <option value="">All Wardrobe</option>
+          {WARDROBE_PALETTE.map((entry) => (
+            <option key={entry.id} value={entry.id}>{entry.label}</option>
+          ))}
+        </select>
+
+        {/* Jewelry */}
+        <select
+          value={filterJewelry ?? ''}
+          onChange={(e) => setFilterJewelry(e.target.value)}
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          data-testid="player-filter-jewelry"
+        >
+          <option value="">All Jewelry</option>
+          {JEWELRY_PALETTE.map((entry) => (
+            <option key={entry.id} value={entry.id}>{entry.label}</option>
+          ))}
+        </select>
+
+        {/* Logo */}
+        <select
+          value={filterLogo ?? ''}
+          onChange={(e) => setFilterLogo(e.target.value)}
+          className="px-2 py-2 bg-gray-700 border border-gray-600 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          data-testid="player-filter-logo"
+        >
+          <option value="">All Logos</option>
+          {LOGO_PALETTE.map((entry) => (
+            <option key={entry.id} value={entry.id}>{entry.label}</option>
           ))}
         </select>
       </div>

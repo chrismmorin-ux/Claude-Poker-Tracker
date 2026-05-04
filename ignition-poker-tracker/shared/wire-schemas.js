@@ -379,13 +379,15 @@ export const validateLiveContext = (context) => {
  * @param {Object} opts
  * @param {boolean} opts.connected
  * @param {number} [opts.protocolVersion]
+ * @param {string} [opts.extensionVersion] - Extension manifest version (e.g. "0.9.0"); user-readable companion to protocolVersion
  * @param {boolean} [opts.contextDead]
  * @param {boolean} [opts.request] - True if this is a status request (not response)
  * @returns {Object} Wire-format status
  */
-export const buildStatus = ({ connected, protocolVersion, contextDead, request }) => {
+export const buildStatus = ({ connected, protocolVersion, extensionVersion, contextDead, request }) => {
   const msg = { connected };
   if (protocolVersion !== undefined) msg.protocolVersion = protocolVersion;
+  if (extensionVersion !== undefined) msg.extensionVersion = extensionVersion;
   if (contextDead !== undefined) msg.contextDead = contextDead;
   if (request !== undefined) msg.request = request;
   return msg;

@@ -48,12 +48,15 @@ import {
 // ─── classifyAction ─────────────────────────────────────────────────────────
 
 describe('classifyAction', () => {
-  it('returns "value" for bet with >50% equity', () => {
-    expect(classifyAction(0.65, PRIMITIVE_ACTIONS.BET)).toBe('value');
+  // ── Backward-compat path: no MoE supplied → binary cutoff ──
+  it('returns { class: "value" } for bet with >50% equity (binary fallback)', () => {
+    expect(classifyAction(0.65, PRIMITIVE_ACTIONS.BET))
+      .toEqual({ class: 'value', equity: 0.65, moe: null });
   });
 
-  it('returns "bluff" for bet with <50% equity', () => {
-    expect(classifyAction(0.30, PRIMITIVE_ACTIONS.RAISE)).toBe('bluff');
+  it('returns { class: "bluff" } for raise with <50% equity (binary fallback)', () => {
+    expect(classifyAction(0.30, PRIMITIVE_ACTIONS.RAISE))
+      .toEqual({ class: 'bluff', equity: 0.30, moe: null });
   });
 
   it('returns null for non-aggressive actions', () => {
@@ -67,9 +70,46 @@ describe('classifyAction', () => {
     expect(classifyAction(undefined, PRIMITIVE_ACTIONS.RAISE)).toBeNull();
   });
 
-  it('returns "value" at exactly 50% boundary (>0.5)', () => {
-    expect(classifyAction(0.51, PRIMITIVE_ACTIONS.BET)).toBe('value');
-    expect(classifyAction(0.50, PRIMITIVE_ACTIONS.BET)).toBe('bluff');
+  it('binary fallback: >0.5 → value, <=0.5 → bluff', () => {
+    expect(classifyAction(0.51, PRIMITIVE_ACTIONS.BET).class).toBe('value');
+    expect(classifyAction(0.50, PRIMITIVE_ACTIONS.BET).class).toBe('bluff');
+  });
+
+  it('treats moe=0 as binary fallback (parity with no-opts call)', () => {
+    expect(classifyAction(0.50, PRIMITIVE_ACTIONS.BET, { moe: 0 }))
+      .toEqual({ class: 'bluff', equity: 0.50, moe: null });
+    expect(classifyAction(0.65, PRIMITIVE_ACTIONS.BET, { moe: 0 }).class).toBe('value');
+  });
+
+  // ── Banded path: FIND-002 close-out — MoE-symmetric thresholds around 0.5 ──
+  it('bands "thin" when equity is within MoE of 0.5 (slightly above)', () => {
+    // 0.55 < 0.5 + 0.044 = 0.544 ... actually 0.55 > 0.544, so this is value.
+    // Use 0.52 to land cleanly inside [0.456, 0.544] thin band.
+    expect(classifyAction(0.52, PRIMITIVE_ACTIONS.BET, { moe: 0.044 }))
+      .toEqual({ class: 'thin', equity: 0.52, moe: 0.044 });
+  });
+
+  it('bands "thin" when equity is within MoE of 0.5 (slightly below)', () => {
+    // 0.46 > 0.5 - 0.044 = 0.456 → thin
+    expect(classifyAction(0.46, PRIMITIVE_ACTIONS.BET, { moe: 0.044 }))
+      .toEqual({ class: 'thin', equity: 0.46, moe: 0.044 });
+  });
+
+  it('returns "value" when equity > 0.5 + moe', () => {
+    expect(classifyAction(0.60, PRIMITIVE_ACTIONS.BET, { moe: 0.044 }))
+      .toEqual({ class: 'value', equity: 0.60, moe: 0.044 });
+  });
+
+  it('returns "bluff" when equity < 0.5 - moe', () => {
+    expect(classifyAction(0.40, PRIMITIVE_ACTIONS.BET, { moe: 0.044 }))
+      .toEqual({ class: 'bluff', equity: 0.40, moe: 0.044 });
+  });
+
+  it('tighter MoE (more trials) shrinks the thin band', () => {
+    // moe=0.018 (3000 trials) → thin band is [0.482, 0.518]
+    expect(classifyAction(0.52, PRIMITIVE_ACTIONS.BET, { moe: 0.018 }).class).toBe('value');
+    expect(classifyAction(0.50, PRIMITIVE_ACTIONS.BET, { moe: 0.018 }).class).toBe('thin');
+    expect(classifyAction(0.46, PRIMITIVE_ACTIONS.BET, { moe: 0.018 }).class).toBe('bluff');
   });
 });
 

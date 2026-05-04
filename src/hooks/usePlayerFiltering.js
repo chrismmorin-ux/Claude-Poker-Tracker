@@ -127,6 +127,11 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
   const [filterFacialHair, setFilterFacialHair] = useState(initial.filterFacialHair ?? '');
   const [filterHat, setFilterHat] = useState(initial.filterHat ?? ''); // '', 'yes', 'no'
   const [filterSunglasses, setFilterSunglasses] = useState(initial.filterSunglasses ?? ''); // '', 'yes', 'no'
+  // PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — new filter axes.
+  const [filterAgeDecade, setFilterAgeDecade] = useState(initial.filterAgeDecade ?? '');
+  const [filterWardrobe, setFilterWardrobe] = useState(initial.filterWardrobe ?? '');
+  const [filterJewelry, setFilterJewelry] = useState(initial.filterJewelry ?? '');
+  const [filterLogo, setFilterLogo] = useState(initial.filterLogo ?? '');
   const [sortBy, setSortBy] = useState(initial.sortBy ?? 'lastSeen'); // 'lastSeen', 'name', 'handCount'
 
   // Persist on any filter change. Single bundled write keeps the storage
@@ -136,12 +141,14 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       if (typeof localStorage === 'undefined') return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         searchTerm, filterTag, filterGender, filterBuild, filterEthnicity,
-        filterFacialHair, filterHat, filterSunglasses, sortBy,
+        filterFacialHair, filterHat, filterSunglasses,
+        filterAgeDecade, filterWardrobe, filterJewelry, filterLogo,
+        sortBy,
       }));
     } catch {
       // localStorage unavailable (private mode, quota exceeded) — silent.
     }
-  }, [searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, sortBy]);
+  }, [searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, filterAgeDecade, filterWardrobe, filterJewelry, filterLogo, sortBy]);
 
   // Filtered and sorted players
   const filteredPlayers = useMemo(() => {
@@ -197,6 +204,28 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       result = result.filter(p => !p.sunglasses);
     }
 
+    // PIO G5 child D (WS-163 / SPR-035) — new filter axes.
+
+    // Filter by age decade (string equality on Player.ageDecade)
+    if (filterAgeDecade) {
+      result = result.filter(p => p.ageDecade === filterAgeDecade);
+    }
+
+    // Filter by wardrobe (array-contains on Player.wardrobe)
+    if (filterWardrobe) {
+      result = result.filter(p => Array.isArray(p.wardrobe) && p.wardrobe.includes(filterWardrobe));
+    }
+
+    // Filter by jewelry (array-contains on Player.jewelry)
+    if (filterJewelry) {
+      result = result.filter(p => Array.isArray(p.jewelry) && p.jewelry.includes(filterJewelry));
+    }
+
+    // Filter by logo (array-contains on Player.logo)
+    if (filterLogo) {
+      result = result.filter(p => Array.isArray(p.logo) && p.logo.includes(filterLogo));
+    }
+
     // Sort
     result.sort((a, b) => {
       if (sortBy === 'lastSeen') {
@@ -214,7 +243,7 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
     });
 
     return result;
-  }, [allPlayers, searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, sortBy, tendencyMap]);
+  }, [allPlayers, searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, filterAgeDecade, filterWardrobe, filterJewelry, filterLogo, sortBy, tendencyMap]);
 
   // Get unique style tags from all players for filter dropdown
   const allStyleTags = useMemo(() => {
@@ -237,6 +266,10 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
     setFilterFacialHair('');
     setFilterHat('');
     setFilterSunglasses('');
+    setFilterAgeDecade('');
+    setFilterWardrobe('');
+    setFilterJewelry('');
+    setFilterLogo('');
   }, []);
 
   // Check if any filters are active
@@ -249,9 +282,13 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       filterEthnicity ||
       filterFacialHair ||
       filterHat ||
-      filterSunglasses
+      filterSunglasses ||
+      filterAgeDecade ||
+      filterWardrobe ||
+      filterJewelry ||
+      filterLogo
     );
-  }, [searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses]);
+  }, [searchTerm, filterTag, filterGender, filterBuild, filterEthnicity, filterFacialHair, filterHat, filterSunglasses, filterAgeDecade, filterWardrobe, filterJewelry, filterLogo]);
 
   return {
     // Filtered results
@@ -281,6 +318,16 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
     setFilterHat,
     filterSunglasses,
     setFilterSunglasses,
+
+    // PIO G5 child D (WS-163 / SPR-035) — new filter axes
+    filterAgeDecade,
+    setFilterAgeDecade,
+    filterWardrobe,
+    setFilterWardrobe,
+    filterJewelry,
+    setFilterJewelry,
+    filterLogo,
+    setFilterLogo,
 
     // Utility
     clearFilters,

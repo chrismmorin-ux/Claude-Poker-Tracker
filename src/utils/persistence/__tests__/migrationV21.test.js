@@ -13,12 +13,7 @@
  * MPMF G5-B2 (2026-04-26).
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-vi.mock('../../errorHandler', () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), action: vi.fn() },
-  DEBUG: false,
-}));
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
   resetDBPool,
@@ -30,7 +25,13 @@ import {
   STORE_NAME,
   PLAYERS_STORE_NAME,
 } from '../database';
-import { initDB } from '../database';
+// WS-124 (2026-05-01): switched from initDB to getDB. initDB does not attach
+// an onversionchange handler to the returned DB; the test held connections
+// across tests, blocking subsequent indexedDB.deleteDatabase calls and causing
+// 12 of 14 tests to time out at 5000ms / 10000ms. getDB attaches the handler
+// (database.js:171-174) so deleteDatabase can close prior connections cleanly.
+// Sister test refresherMigration.test.js uses getDB and works.
+import { getDB } from '../database';
 import {
   getTelemetryConsent,
   putTelemetryConsent,
@@ -65,12 +66,12 @@ describe('DB_VERSION', () => {
 
 describe('migrateV21 — fresh install', () => {
   it('creates the telemetryConsent store on initial open', async () => {
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(TELEMETRY_CONSENT_STORE_NAME)).toBe(true);
   });
 
   it('seeds the guest record with default opt-out shape (firstLaunchSeenAt null, all categories ON)', async () => {
-    await initDB();
+    await getDB();
     const record = await getTelemetryConsent(GUEST_USER_ID);
     expect(record).not.toBeNull();
     expect(record.userId).toBe(GUEST_USER_ID);
@@ -87,11 +88,11 @@ describe('migrateV21 — fresh install', () => {
 
 describe('migrateV21 — idempotency', () => {
   it('does not duplicate seed when re-opened at the same version', async () => {
-    await initDB();
+    await getDB();
     closeDB();
     resetDBPool();
 
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(TELEMETRY_CONSENT_STORE_NAME)).toBe(true);
 
     const record = await getTelemetryConsent(GUEST_USER_ID);
@@ -100,7 +101,7 @@ describe('migrateV21 — idempotency', () => {
   });
 
   it('does not overwrite a pre-existing dismissal on re-open', async () => {
-    await initDB();
+    await getDB();
     const dismissed = {
       userId: GUEST_USER_ID,
       firstLaunchSeenAt: '2026-04-26T10:00:00.000Z',
@@ -111,7 +112,7 @@ describe('migrateV21 — idempotency', () => {
     closeDB();
     resetDBPool();
 
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(TELEMETRY_CONSENT_STORE_NAME)).toBe(true);
 
     const record = await getTelemetryConsent(GUEST_USER_ID);
@@ -123,30 +124,30 @@ describe('migrateV21 — idempotency', () => {
 
 describe('migrateV21 — pre-v21 stores untouched', () => {
   it('preserves the settings store', async () => {
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(SETTINGS_STORE_NAME)).toBe(true);
   });
 
   it('preserves the hands store', async () => {
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(STORE_NAME)).toBe(true);
   });
 
   it('preserves the players store', async () => {
-    const db = await initDB();
+    const db = await getDB();
     expect(db.objectStoreNames.contains(PLAYERS_STORE_NAME)).toBe(true);
   });
 });
 
 describe('telemetryConsentStore CRUD', () => {
   it('returns null for an unknown user', async () => {
-    await initDB();
+    await getDB();
     const record = await getTelemetryConsent('non-existent-user');
     expect(record).toBeNull();
   });
 
   it('round-trips a written record', async () => {
-    await initDB();
+    await getDB();
     const record = {
       userId: 'test-user-1',
       firstLaunchSeenAt: '2026-04-26T11:00:00.000Z',
@@ -159,7 +160,7 @@ describe('telemetryConsentStore CRUD', () => {
   });
 
   it('replaces an existing record on put', async () => {
-    await initDB();
+    await getDB();
     await putTelemetryConsent({
       userId: 'lifecycle-user',
       firstLaunchSeenAt: null,
@@ -178,13 +179,13 @@ describe('telemetryConsentStore CRUD', () => {
   });
 
   it('throws when userId missing on put', async () => {
-    await initDB();
+    await getDB();
     await expect(putTelemetryConsent({ categories: {} })).rejects.toThrow(/userId/);
     await expect(putTelemetryConsent(null)).rejects.toThrow(/userId/);
   });
 
   it('deletes a record', async () => {
-    await initDB();
+    await getDB();
     let r = await getTelemetryConsent(GUEST_USER_ID);
     expect(r).not.toBeNull();
     await deleteTelemetryConsent(GUEST_USER_ID);
@@ -193,7 +194,7 @@ describe('telemetryConsentStore CRUD', () => {
   });
 
   it('does not throw when deleting an unknown user', async () => {
-    await initDB();
+    await getDB();
     await expect(deleteTelemetryConsent('does-not-exist')).resolves.toBeUndefined();
   });
 });

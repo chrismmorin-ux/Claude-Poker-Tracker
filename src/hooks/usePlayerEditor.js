@@ -52,6 +52,18 @@ const DEFAULT_FIELDS = {
   notes: '',
   avatar: '',           // legacy image upload
   avatarFeatures: null, // PEO-1 feature sub-object
+  // PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — new identification attributes.
+  // Per docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md §PIO-G4-PEX.
+  ageDecade: null,        // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null
+  ethnicityTags: [],      // multi-select replaces legacy `ethnicity` (read-only kept)
+  wardrobe: [],           // palette IDs from wardrobePalette.js
+  jewelry: [],            // palette IDs from jewelryPalette.js
+  logo: [],               // palette IDs from logoPalette.js
+  // PIO G5 child B (WS-161 / SPR-036, 2026-05-04) — camera-captured photo blob.
+  // Set via savePhotoAtomically (atomic 2-store IDB write); not edited inline.
+  // The form field is hydrated from the loaded Player record + updated when the
+  // CameraButton's onPhotoSaved callback fires.
+  photoBlobId: null,
 };
 
 // Fields we accept from a loaded player or draft. Anything outside this set

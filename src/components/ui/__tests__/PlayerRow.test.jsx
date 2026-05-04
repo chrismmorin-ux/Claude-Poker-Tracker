@@ -168,14 +168,17 @@ describe('PlayerRow', () => {
       expect(row.className).toContain('cursor-pointer');
     });
 
-    it('does not apply cursor-pointer when not selecting', () => {
+    it('applies cursor-pointer always (row tap routes to Profile per WS-163)', () => {
+      // Per WS-163 / SPR-035: row tap always navigates (to Profile when not
+      // selecting a seat; to seat-assignment when selecting). cursor-pointer
+      // is now unconditional.
       const { container } = render(
         <table><tbody>
           <PlayerRow {...defaultProps} isSelecting={false} />
         </tbody></table>
       );
       const row = container.querySelector('tr');
-      expect(row.className).not.toContain('cursor-pointer');
+      expect(row.className).toContain('cursor-pointer');
     });
   });
 

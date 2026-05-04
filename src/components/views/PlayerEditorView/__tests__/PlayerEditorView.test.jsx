@@ -45,6 +45,12 @@ vi.mock('../../../../contexts/PlayerContext', () => ({
 vi.mock('../../../../contexts/ToastContext', () => ({
   useToast: () => mockToast,
 }));
+// PIO G5 child B (WS-161 / SPR-036) — CameraButton uses useSettings to read
+// the privacy.photoCaptureEnabled toggle. Mock so PlayerEditorView tests
+// don't need a SettingsProvider.
+vi.mock('../../../../contexts/SettingsContext', () => ({
+  useSettings: () => ({ settings: { privacy: { photoCaptureEnabled: false } } }),
+}));
 
 // Mock the editor hook so the view's save button triggers onSaveComplete
 // deterministically without wiring the full persistence stack.

@@ -27,6 +27,9 @@ import {
   USER_REFRESHER_CONFIG_STORE_NAME,
   PRINT_BATCHES_STORE_NAME,
   TELEMETRY_CONSENT_STORE_NAME,
+  HERO_LEAKS_STORE_NAME,
+  SIGHTING_LOGS_STORE_NAME,
+  PLAYER_PHOTOS_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -714,6 +717,112 @@ const migrateV20 = (db, transaction) => {
  *
  * Idempotent via existence check before create.
  */
+/** v22: heroLeaks store (additive, SCF G5 child 1 / SPR-030 / WS-145).
+ * Composite keypath [playerId, situationKey] per SCF G3 SCHEMA spec.
+ * Read-allowed surfaces: HandReplayView (review-mode), SelfCoachView.
+ * BLACKLISTED: live-table surfaces per chris-live-player.md autonomy red line #8.
+ * See src/utils/skillAssessment/CLAUDE.md for source-util-policy whitelist.
+ */
+const migrateV22 = (db) => {
+  log('Upgrading to v22: heroLeaks store (SCF G5)');
+
+  if (!db.objectStoreNames.contains(HERO_LEAKS_STORE_NAME)) {
+    const store = db.createObjectStore(HERO_LEAKS_STORE_NAME, {
+      keyPath: ['playerId', 'situationKey'],
+      autoIncrement: false,
+    });
+    store.createIndex('by_playerId', 'playerId', { unique: false });
+    store.createIndex('by_situationKey', 'situationKey', { unique: false });
+    store.createIndex('by_severity', 'severity', { unique: false });
+    log('heroLeaks object store created (v22)');
+  }
+};
+
+/**
+ * v23: PIO Gate 5 child A — sightingLogs + playerPhotos stores +
+ * player schema extensions (PIO-G4-MIG per audit lines 391–427).
+ *
+ * Per `docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md`.
+ * Pattern follows EAL v19 (4-store additive bump) + heroLeaks v22 (single
+ * store) — proven shapes, no transactional risk.
+ *
+ * Three operations:
+ *   1. Create `sightingLogs` (5 indexes per audit line 403)
+ *   2. Create `playerPhotos` (1 index for cascade-on-delete)
+ *   3. Walk `players` cursor → add default fields for new attributes
+ */
+const migrateV23 = (db, transaction) => {
+  log('Upgrading to v23: sightingLogs + playerPhotos stores + player schema extensions (PIO G5 child A)');
+
+  // --- 1. sightingLogs store ---
+  if (!db.objectStoreNames.contains(SIGHTING_LOGS_STORE_NAME)) {
+    const store = db.createObjectStore(SIGHTING_LOGS_STORE_NAME, {
+      keyPath: 'sightingId',
+      autoIncrement: true,
+    });
+    store.createIndex('by_playerId', 'playerId', { unique: false });
+    store.createIndex('by_playerId_sessionId', ['playerId', 'sessionId'], { unique: false });
+    store.createIndex('by_featuresSeen', 'featuresSeen', { unique: false, multiEntry: true });
+    store.createIndex('by_capturedAt', 'capturedAt', { unique: false });
+    store.createIndex('by_venueId', 'venueId', { unique: false });
+    log('sightingLogs object store created (v23)');
+  }
+
+  // --- 2. playerPhotos store ---
+  if (!db.objectStoreNames.contains(PLAYER_PHOTOS_STORE_NAME)) {
+    const store = db.createObjectStore(PLAYER_PHOTOS_STORE_NAME, {
+      keyPath: 'blobId',
+      autoIncrement: true,
+    });
+    store.createIndex('by_playerId', 'playerId', { unique: false });
+    log('playerPhotos object store created (v23)');
+  }
+
+  // --- 3. Extend `players` schema (data migration; skip fresh install) ---
+  if (!db.objectStoreNames.contains(PLAYERS_STORE_NAME)) return;
+
+  const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
+  const cursor = playersStore.openCursor();
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (c) {
+      const player = c.value;
+      let changed = false;
+      if (player.ageDecade === undefined) {
+        player.ageDecade = null;
+        changed = true;
+      }
+      if (player.ethnicityTags === undefined) {
+        player.ethnicityTags = [];
+        changed = true;
+      }
+      if (player.wardrobe === undefined) {
+        player.wardrobe = [];
+        changed = true;
+      }
+      if (player.jewelry === undefined) {
+        player.jewelry = [];
+        changed = true;
+      }
+      if (player.logo === undefined) {
+        player.logo = [];
+        changed = true;
+      }
+      if (player.photoBlobId === undefined) {
+        player.photoBlobId = null;
+        changed = true;
+      }
+      if (changed) c.update(player);
+      c.continue();
+    } else {
+      log('v23 migration: player schema extension complete');
+    }
+  };
+  cursor.onerror = (e) => {
+    logError('v23 player cursor failed:', e.target.error);
+  };
+};
+
 const migrateV21 = (db, transaction) => {
   log('Upgrading to v21: telemetryConsent store + guest seed');
 
@@ -864,4 +973,12 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // v21: telemetry sub-state on settings records (additive, MPMF G5-B2 Telemetry Foundation;
   // dynamic-target max(currentVersion+1, 21) resolved to 21)
   if (oldVersion < 21) migrateV21(db, transaction);
+
+  // v22: heroLeaks store (additive, SCF G5 child 1 / SPR-030 / WS-145)
+  // Composite keypath [playerId, situationKey] per SCF G3 SCHEMA spec.
+  if (oldVersion < 22) migrateV22(db);
+
+  // v23: PIO Gate 5 child A — sightingLogs + playerPhotos stores +
+  // player schema extensions (additive; PIO-G4-MIG / SPR-034 / WS-160).
+  if (oldVersion < 23) migrateV23(db, transaction);
 };

@@ -50,6 +50,7 @@ import * as errors from '../shared/error-reporter.js';
           const status = buildStatus({
             connected: true,
             protocolVersion: msg.protocolVersion || PROTOCOL_VERSION,
+            extensionVersion,
           });
           window.postMessage({
             type: BRIDGE_MSG.STATUS,
@@ -92,6 +93,7 @@ import * as errors from '../shared/error-reporter.js';
               ...buildStatus({
                 connected: !!msg.state.captureAlive,
                 protocolVersion: PROTOCOL_VERSION,
+                extensionVersion,
               }),
               _v: PROTOCOL_VERSION,
               timestamp: Date.now(),

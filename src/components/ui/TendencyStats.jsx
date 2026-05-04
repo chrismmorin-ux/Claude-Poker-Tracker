@@ -22,6 +22,26 @@ const formatStat = (value, suffix = '%') => {
 };
 
 /**
+ * Format the credible-interval suffix (e.g. "±4.4%") for display next to a percentage stat.
+ * Returns null when interval is missing, sampleSize is unknown, or sampleSize > showThreshold
+ * (band becomes tight at large n; surface noise instead of signal). FIND-001 / SPR-017.
+ */
+const formatBandSuffix = (interval, sampleSize, showThreshold = 200) => {
+  if (!interval || sampleSize == null || sampleSize > showThreshold) return null;
+  const halfWidth = ((interval.upper - interval.lower) / 2) * 100;
+  return `±${halfWidth.toFixed(1)}%`;
+};
+
+/**
+ * Render a credible-interval band suffix span if available; otherwise nothing.
+ */
+const BandSuffix = ({ interval, sampleSize }) => {
+  const band = formatBandSuffix(interval, sampleSize);
+  if (!band) return null;
+  return <span className="text-[9px] text-gray-400 ml-0.5 font-normal">{band}</span>;
+};
+
+/**
  * TendencyStats component
  * @param {Object} props
  * @param {Object} props.stats - { vpip, pfr, af, threeBet, cbet, sampleSize, style }
@@ -29,17 +49,19 @@ const formatStat = (value, suffix = '%') => {
 export const TendencyStats = ({ stats }) => {
   if (!stats || stats.sampleSize < MIN_DISPLAY_SAMPLE) return null;
 
-  const { vpip, pfr, af, threeBet, cbet, sampleSize, style } = stats;
+  const { vpip, pfr, af, threeBet, cbet, sampleSize, style, intervals } = stats;
 
   return (
     <div className="flex items-center gap-2 text-xs mt-1">
-      {/* Stat values */}
+      {/* Stat values — credible-interval suffix per FIND-001 / SPR-017 */}
       <span className="text-gray-500">
         <span className="font-medium text-gray-700">VPIP</span> {formatStat(vpip)}
+        <BandSuffix interval={intervals?.vpip} sampleSize={sampleSize} />
       </span>
       <span className="text-gray-400">|</span>
       <span className="text-gray-500">
         <span className="font-medium text-gray-700">PFR</span> {formatStat(pfr)}
+        <BandSuffix interval={intervals?.pfr} sampleSize={sampleSize} />
       </span>
       <span className="text-gray-400">|</span>
       <span className="text-gray-500">
@@ -50,6 +72,7 @@ export const TendencyStats = ({ stats }) => {
           <span className="text-gray-400">|</span>
           <span className="text-gray-500">
             <span className="font-medium text-gray-700">3B</span> {formatStat(threeBet)}
+            <BandSuffix interval={intervals?.threeBet} sampleSize={sampleSize} />
           </span>
         </>
       )}
@@ -58,6 +81,7 @@ export const TendencyStats = ({ stats }) => {
           <span className="text-gray-400">|</span>
           <span className="text-gray-500">
             <span className="font-medium text-gray-700">CB</span> {formatStat(cbet)}
+            <BandSuffix interval={intervals?.cbet} sampleSize={sampleSize} />
           </span>
         </>
       )}

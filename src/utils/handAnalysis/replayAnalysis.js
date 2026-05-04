@@ -18,15 +18,45 @@ import { getPopulationPrior } from '../rangeEngine/populationPriors';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
 
 /**
- * Determine if a player's hand at showdown was a value bet or bluff
- * at a given action point based on their hand's equity vs opponent range.
+ * Classify a bet/raise as value, thin value, or bluff based on the actor's
+ * hand equity vs opponent range — with optional sample-size-aware banding.
+ *
+ * MoE-symmetric banding (POKER_THEORY.md §181 "Thin value betting"):
+ *   - 'value' when equity > 0.5 + moe (clearly above the >50% threshold)
+ *   - 'thin'  when |equity - 0.5| <= moe (within Monte-Carlo noise of the boundary)
+ *   - 'bluff' when equity < 0.5 - moe (clearly below)
+ *
+ * Backward-compat: if `moe` is null/undefined/0, falls back to the original
+ * binary cutoff (>0.5 → 'value', else 'bluff') so legacy callers keep working.
+ *
+ * @param {number} handEquity — actor's equity vs opponent calling range
+ * @param {string} action — must be BET or RAISE; null returned otherwise
+ * @param {{ moe?: number }} [opts] — `moe` is the 95% MoE half-width (e.g.
+ *   `handVsRange().ciHalf`). When supplied, enables banded classification.
+ * @returns {{ class: 'value'|'thin'|'bluff', equity: number, moe: number|null } | null}
  */
-export const classifyAction = (handEquity, action) => {
+export const classifyAction = (handEquity, action, opts = {}) => {
   if (action !== PRIMITIVE_ACTIONS.BET && action !== PRIMITIVE_ACTIONS.RAISE) {
     return null;
   }
   if (handEquity === null || handEquity === undefined) return null;
-  return handEquity > 0.5 ? 'value' : 'bluff';
+
+  const { moe = null } = opts;
+
+  if (moe === null || moe === undefined || moe === 0) {
+    return {
+      class: handEquity > 0.5 ? 'value' : 'bluff',
+      equity: handEquity,
+      moe: null,
+    };
+  }
+
+  let klass;
+  if (handEquity > 0.5 + moe) klass = 'value';
+  else if (handEquity < 0.5 - moe) klass = 'bluff';
+  else klass = 'thin';
+
+  return { class: klass, equity: handEquity, moe };
 };
 
 /**
@@ -489,7 +519,7 @@ export const analyzeTimelineAction = async ({
             const sdResult = await handVsRange(
               [s0, s1], seatRanges[opponentSeat], board, { trials: 500 }
             );
-            actionClass = classifyAction(sdResult.equity, action);
+            actionClass = classifyAction(sdResult.equity, action, { moe: sdResult.ciHalf });
           } catch (e) {
             // Non-critical
           }

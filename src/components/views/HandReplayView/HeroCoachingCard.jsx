@@ -2,14 +2,24 @@
  * HeroCoachingCard.jsx - Hero coaching analysis card for hand replay
  *
  * Shows EV assessment with numeric value, equity comparison bar,
- * optimal play suggestion, alternative actions, and weakness pattern callout.
+ * optimal play suggestion, alternative actions, weakness pattern callout,
+ * and (per SCF Gate 4 / WS-145) hero-leak inline annotation badge with
+ * expanded CD-5 claim card + Drill/Dismiss/Snooze affordances.
+ *
+ * Per chris-live-player.md autonomy red lines #5 + #7:
+ *   - No shame / engagement-pressure copy in leak claims
+ *   - Editor's-note tone only
+ * Lint-style enforcement in HeroCoachingCard.test.jsx.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { EV_COLORS } from '../../../constants/designTokens';
 
-export const HeroCoachingCard = ({ heroCoaching }) => {
-  if (!heroCoaching) return null;
+export const HeroCoachingCard = ({ heroCoaching, leak = null, onSnooze = null, onDismiss = null, onDrill = null }) => {
+  if (!heroCoaching && !leak) return null;
+  // Allow leak-only rendering (e.g., when heroCoaching is degraded but a leak fired
+  // from prior aggregated data). Common case: both present.
+  if (!heroCoaching) heroCoaching = {};
 
   const ev = heroCoaching.evAssessment?.expectedValue;
   // Only show numeric EV for calls/folds (precise) — bet/raise EV uses full-range equity, not calling range
@@ -104,6 +114,97 @@ export const HeroCoachingCard = ({ heroCoaching }) => {
           </div>
           <div className="text-amber-300/70 text-[9px]">
             {heroCoaching.weaknessMatch.message}
+          </div>
+        </div>
+      )}
+
+      {/* SCF Gate 4 / WS-145 — hero-leak inline annotation */}
+      {leak && (
+        <HeroLeakBadge leak={leak} onSnooze={onSnooze} onDismiss={onDismiss} onDrill={onDrill} />
+      )}
+    </div>
+  );
+};
+
+const HeroLeakBadge = ({ leak, onSnooze, onDismiss, onDrill }) => {
+  const [expanded, setExpanded] = useState(false);
+  const pct = (n) => (n != null ? `${Math.round(n * 100)}%` : '—');
+
+  return (
+    <div
+      className="mt-2 bg-amber-900/20 rounded border border-amber-600/30"
+      data-testid="hero-leak-badge"
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left px-2 py-1.5 flex items-center justify-between"
+        aria-expanded={expanded}
+        aria-controls="hero-leak-claim-card"
+      >
+        <span className="text-amber-400 text-[10px] font-semibold">
+          ⚑ leak: {leak.label}
+        </span>
+        <span className="text-gray-500 text-[10px]" aria-hidden>
+          {expanded ? '▲' : '▶ tap'}
+        </span>
+      </button>
+      {expanded && (
+        <div
+          id="hero-leak-claim-card"
+          className="px-2 pb-2 pt-1 space-y-1 border-t border-amber-700/30"
+          data-testid="hero-leak-claim-card"
+        >
+          {/* CD-5 4 mandatory fields */}
+          <div className="text-amber-300/90 text-[10px] font-semibold" data-testid="cd5-field-situation">
+            {leak.label}
+          </div>
+          <div className="text-amber-200/80 text-[10px]" data-testid="cd5-field-observation">
+            fold-to-cbet rate {pct(leak.observedRate)} [{pct(leak.ciLower)}, {pct(leak.ciUpper)}] over {leak.sampleSize} hands
+          </div>
+          <div className="text-amber-200/80 text-[10px]" data-testid="cd5-field-baseline">
+            Solver baseline: {pct(leak.solverBaseline)}
+          </div>
+          <div className="text-amber-200/60 text-[9px]" data-testid="cd5-field-threshold">
+            Sample threshold: 30 hands
+          </div>
+          {leak.relatedConceptId && (
+            <div className="text-amber-200/60 text-[9px]" data-testid="cd5-related-drill">
+              Related drill: {leak.relatedConceptId}
+            </div>
+          )}
+          {/* Affordances */}
+          <div className="flex gap-1.5 pt-2 mt-1 border-t border-amber-700/30">
+            {onDrill && (
+              <button
+                type="button"
+                onClick={() => onDrill(leak)}
+                className="px-2 py-0.5 text-[10px] bg-amber-700/40 hover:bg-amber-700/60 text-amber-100 rounded"
+                data-testid="leak-affordance-drill"
+              >
+                Drill this
+              </button>
+            )}
+            {onDismiss && (
+              <button
+                type="button"
+                onClick={() => onDismiss(leak)}
+                className="px-2 py-0.5 text-[10px] bg-gray-700/60 hover:bg-gray-600/60 text-gray-200 rounded"
+                data-testid="leak-affordance-dismiss"
+              >
+                Dismiss
+              </button>
+            )}
+            {onSnooze && (
+              <button
+                type="button"
+                onClick={() => onSnooze(leak)}
+                className="px-2 py-0.5 text-[10px] bg-gray-700/60 hover:bg-gray-600/60 text-gray-200 rounded"
+                data-testid="leak-affordance-snooze"
+              >
+                Snooze
+              </button>
+            )}
           </div>
         </div>
       )}

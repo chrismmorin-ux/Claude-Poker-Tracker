@@ -101,13 +101,24 @@ export const VillainAnalysisSection = ({
           <span className="text-white text-lg font-mono font-bold">
             {villainCards[0]} {villainCards[1]}
           </span>
-          {villainAnalysis?.actionClass && (
+          {villainAnalysis?.actionClass?.class && (
             <span className={`ml-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-              villainAnalysis.actionClass === 'value'
+              villainAnalysis.actionClass.class === 'value'
                 ? 'bg-green-900/50 text-green-400'
-                : 'bg-red-900/50 text-red-400'
+                : villainAnalysis.actionClass.class === 'thin'
+                  ? 'bg-yellow-900/50 text-yellow-400'
+                  : 'bg-red-900/50 text-red-400'
             }`}>
-              {villainAnalysis.actionClass === 'value' ? 'Value' : 'Bluff'}
+              {villainAnalysis.actionClass.class === 'value'
+                ? 'Value'
+                : villainAnalysis.actionClass.class === 'thin'
+                  ? 'Thin Value'
+                  : 'Bluff'}
+              {villainAnalysis.actionClass.moe != null && (
+                <span className="ml-1 opacity-75 normal-case font-normal">
+                  (±{(villainAnalysis.actionClass.moe * 100).toFixed(1)}%)
+                </span>
+              )}
             </span>
           )}
         </div>

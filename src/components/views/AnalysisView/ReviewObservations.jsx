@@ -45,14 +45,27 @@ const EVBadge = ({ evAssessment }) => {
   );
 };
 
+// MoE-banded per FIND-002: actionClass is { class, equity, moe } | null
 const ActionClassBadge = ({ actionClass }) => {
-  if (!actionClass) return null;
-  const colors = actionClass === 'value'
+  if (!actionClass?.class) return null;
+  const colors = actionClass.class === 'value'
     ? 'bg-green-800 text-green-200 border-green-600'
-    : 'bg-purple-800 text-purple-200 border-purple-600';
+    : actionClass.class === 'thin'
+      ? 'bg-yellow-800 text-yellow-200 border-yellow-600'
+      : 'bg-purple-800 text-purple-200 border-purple-600';
+  const label = actionClass.class === 'value'
+    ? 'Value Bet'
+    : actionClass.class === 'thin'
+      ? 'Thin Value'
+      : 'Bluff';
   return (
     <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${colors}`}>
-      {actionClass === 'value' ? 'Value Bet' : 'Bluff'}
+      {label}
+      {actionClass.moe != null && (
+        <span className="ml-1 opacity-75 normal-case font-normal">
+          (±{(actionClass.moe * 100).toFixed(1)}%)
+        </span>
+      )}
     </span>
   );
 };

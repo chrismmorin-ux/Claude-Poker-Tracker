@@ -17,6 +17,10 @@ import { saveOnlineHand } from '../utils/persistence/handsStorage';
 import { getOrCreateOnlineSession } from '../utils/persistence/sessionsStorage';
 import { BRIDGE_MSG, PROTOCOL_VERSION } from '../utils/bridgeProtocol';
 import {
+  readReloadFlag, clearReloadFlag,
+  readDismissedFlag, writeDismissedFlag, clearDismissedFlag,
+} from '../utils/versionMismatchStorage';
+import {
   buildExploitSeat, buildActionAdvice, buildTournament, buildErrorReport,
   validateHandForRelay, validateLiveContext, validateStatus,
 } from '@extension-shared/wire-schemas.js';
@@ -32,6 +36,17 @@ import { validateHandRecord } from '@extension-shared/hand-format.js';
 export const useSyncBridgeImpl = (userId) => {
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
   const [versionMismatch, setVersionMismatch] = useState(false);
+  const [extProtocolVersion, setExtProtocolVersion] = useState(null);
+  const [extManifestVersion, setExtManifestVersion] = useState(null);
+  const [postReloadStatus, setPostReloadStatus] = useState(null);
+  // WS-077: subjective override for "I know about the mismatch, continue
+  // anyway." Decoupled from the objective `versionMismatch` so we can keep
+  // the underlying signal alive while the user proceeds — used to suppress
+  // live-flow advice (whose source data is the most version-sensitive
+  // surface) regardless of dismiss state, while still resuming hand
+  // imports. Initialized from sessionStorage so a refresh inside the same
+  // session preserves the user's choice.
+  const [dismissedDespiteMismatch, setDismissedDespiteMismatch] = useState(() => readDismissedFlag());
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [importedCount, setImportedCount] = useState(0);
   const [syncError, setSyncError] = useState(null);
@@ -45,6 +60,11 @@ export const useSyncBridgeImpl = (userId) => {
   const consecutiveFailures = useRef(0);
   const circuitBreakerTrippedAt = useRef(null);
   const versionMismatchRef = useRef(false);
+  // Pre-reload version snapshot — set on mount if sessionStorage flag exists.
+  // Held in a ref so the first STATUS comparison after mount can decide
+  // whether the reload actually fixed the mismatch ('recovered') or not
+  // ('still-mismatched'). Cleared by `clearPostReloadStatus()`.
+  const reloadFlagRef = useRef(readReloadFlag());
 
   // Sync ref so push callbacks can read connection state without re-creating
   useEffect(() => { connectedRef.current = isExtensionConnected; }, [isExtensionConnected]);
@@ -222,15 +242,54 @@ export const useSyncBridgeImpl = (userId) => {
         lastHeartbeatResponse.current = Date.now();
         setIsExtensionConnected(event.data.connected !== false);
 
-        // Detect protocol version mismatch
+        // Capture both versions for the diagnostic surface (WS-076).
+        // protocolVersion is an integer; extensionVersion (NEW, optional)
+        // is the manifest string like "0.9.0" — older extension builds may
+        // omit it, so default to null rather than undefined.
         const extVersion = event.data.protocolVersion;
-        if (extVersion !== undefined && extVersion !== PROTOCOL_VERSION) {
+        const manifestVersion = event.data.extensionVersion ?? null;
+        if (extVersion !== undefined) setExtProtocolVersion(extVersion);
+        setExtManifestVersion(manifestVersion);
+
+        // Detect protocol version mismatch. WS-077 splits the user-override
+        // (`dismissedDespiteMismatch`) from the objective signal:
+        //   mismatched + !dismissed → gate imports, surface banner
+        //   mismatched +  dismissed → un-gate imports per user choice, pip shows
+        //   !mismatched              → clear both signals + storage flag
+        const mismatched = extVersion !== undefined && extVersion !== PROTOCOL_VERSION;
+        if (mismatched) {
           setVersionMismatch(true);
-          versionMismatchRef.current = true;
-          logger.warn('SyncBridge', 'Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION + '. Hand imports halted.');
+          // Read the latest dismissed value from a ref-safe source: state may
+          // be stale inside this closure (handler captured at mount), so read
+          // sessionStorage directly. Cheap; sessionStorage is in-memory.
+          const dismissed = readDismissedFlag();
+          versionMismatchRef.current = !dismissed;
+          if (!dismissed) {
+            logger.warn('SyncBridge', 'Protocol version mismatch: extension=' + extVersion + ' app=' + PROTOCOL_VERSION + '. Hand imports halted.');
+          }
         } else {
           setVersionMismatch(false);
           versionMismatchRef.current = false;
+          // Versions reconverged — user's dismiss override is no longer
+          // meaningful. Clear it both in state and in sessionStorage so a
+          // subsequent re-mismatch starts fresh. Read from sessionStorage
+          // (not closure-captured state) since this useEffect is created
+          // once at mount with `[importHands]` deps; closure-captured state
+          // would be stale after the user dismisses.
+          if (readDismissedFlag()) {
+            setDismissedDespiteMismatch(false);
+            clearDismissedFlag();
+          }
+        }
+
+        // Resolve post-reload verification flag (WS-076). The flag was
+        // written pre-reload from the diagnostic modal; on the first
+        // STATUS comparison after mount we either confirm recovery or
+        // surface "still mismatched" copy. Subsequent STATUS messages
+        // are no-ops because reloadFlagRef.current is cleared.
+        if (reloadFlagRef.current && extVersion !== undefined) {
+          setPostReloadStatus(mismatched ? 'still-mismatched' : 'recovered');
+          reloadFlagRef.current = null;
         }
       }
 
@@ -281,16 +340,36 @@ export const useSyncBridgeImpl = (userId) => {
     };
   }, [importHands]);
 
-  // Allow user to force-continue despite version mismatch
+  // Allow user to force-continue despite version mismatch (WS-077). The
+  // user's override is decoupled from the objective `versionMismatch`
+  // signal: imports resume (versionMismatchRef.current=false un-gates the
+  // hand-import path at line ~199), but `versionMismatch` itself stays
+  // true so consumers (OnlineAnalysisContext) can keep suppressing
+  // version-sensitive surfaces (live-flow advice). The choice is persisted
+  // to sessionStorage so an in-session refresh doesn't re-prompt.
   const dismissVersionMismatch = useCallback(() => {
-    setVersionMismatch(false);
+    setDismissedDespiteMismatch(true);
     versionMismatchRef.current = false;
-    logger.warn('SyncBridge', 'Version mismatch dismissed by user — resuming imports');
+    writeDismissedFlag();
+    logger.warn('SyncBridge', 'Version mismatch dismissed by user — imports resumed; live advice remains suppressed');
+  }, []);
+
+  // Clear the post-reload status after the consumer has handled it
+  // (e.g., shown a recovery toast). Also wipes the sessionStorage flag.
+  const clearPostReloadStatus = useCallback(() => {
+    setPostReloadStatus(null);
+    clearReloadFlag();
   }, []);
 
   return {
     isExtensionConnected,
     versionMismatch,
+    dismissedDespiteMismatch,
+    extProtocolVersion,
+    extManifestVersion,
+    appProtocolVersion: PROTOCOL_VERSION,
+    postReloadStatus,
+    clearPostReloadStatus,
     dismissVersionMismatch,
     lastSyncTime,
     importedCount,

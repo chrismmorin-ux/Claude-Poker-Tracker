@@ -30,6 +30,14 @@ import AvatarFeatureBuilder from './AvatarFeatureBuilder';
 import PhysicalSection from './PhysicalSection';
 import NotesSection from './NotesSection';
 import ImageUploadSection from './ImageUploadSection';
+// PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — new identification attribute sections.
+import { AgeDecadeSection } from './AgeDecadeSection';
+import { EthnicityTagsSection } from './EthnicityTagsSection';
+import { WardrobeSection } from './WardrobeSection';
+import { JewelrySection } from './JewelrySection';
+import { LogoSection } from './LogoSection';
+// PIO G5 child B (WS-161 / SPR-036, 2026-05-04) — camera capture button.
+import { CameraButton } from './CameraButton';
 
 const SEATING_TITLE = (seat) => `Assign to Seat ${seat}`;
 
@@ -165,6 +173,13 @@ export const PlayerEditorView = ({ scale = 1 }) => {
             nameInputRef={nameInputRef}
           />
 
+          {/* PIO G5 child B (WS-161 / SPR-036) — camera capture (gated by Settings privacy toggle). */}
+          <CameraButton
+            playerId={editorContext?.playerId ?? null}
+            photoBlobId={fields.photoBlobId}
+            onPhotoSaved={(blobId) => updateField('photoBlobId', blobId)}
+          />
+
           <AvatarFeatureBuilder
             avatarFeatures={fields.avatarFeatures}
             onFeatureChange={updateAvatarFeature}
@@ -184,6 +199,33 @@ export const PlayerEditorView = ({ scale = 1 }) => {
             onHatChange={(v) => updateField('hat', v)}
             sunglasses={fields.sunglasses}
             onSunglassesChange={(v) => updateField('sunglasses', v)}
+          />
+
+          {/* PIO G5 child D (WS-163 / SPR-035) — 5 new identification attribute sections. */}
+          <AgeDecadeSection
+            value={fields.ageDecade}
+            onChange={(v) => updateField('ageDecade', v)}
+          />
+
+          <EthnicityTagsSection
+            value={fields.ethnicityTags}
+            legacyEthnicity={fields.ethnicity}
+            onChange={(v) => updateField('ethnicityTags', v)}
+          />
+
+          <WardrobeSection
+            value={fields.wardrobe}
+            onChange={(v) => updateField('wardrobe', v)}
+          />
+
+          <JewelrySection
+            value={fields.jewelry}
+            onChange={(v) => updateField('jewelry', v)}
+          />
+
+          <LogoSection
+            value={fields.logo}
+            onChange={(v) => updateField('logo', v)}
           />
 
           <NotesSection

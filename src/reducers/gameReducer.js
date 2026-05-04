@@ -165,9 +165,19 @@ const rawGameReducer = (state, action) => {
       if (typeof afterIndex !== 'number' || afterIndex < 0 || afterIndex >= state.actionSequence.length) {
         return state;
       }
+      const newSequence = state.actionSequence.slice(0, afterIndex);
+      // WS-130 BUG-CANDIDATE-UNDO-STREET-DESYNC: rewind currentStreet when
+      // undo erases all entries for it. Without this, currentStreet stays at
+      // (e.g.) 'flop' even though the sequence has no flop entries left —
+      // subsequent button rendering and next-action computation operate
+      // against an inconsistent state.
+      const lastStreet = newSequence.length > 0
+        ? newSequence[newSequence.length - 1].street
+        : 'preflop';
       return {
         ...state,
-        actionSequence: state.actionSequence.slice(0, afterIndex),
+        actionSequence: newSequence,
+        currentStreet: lastStreet,
       };
     }
 

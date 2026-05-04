@@ -20,6 +20,10 @@ export const SyncBridgeProvider = ({ children }) => {
   const value = useMemo(() => bridge, [
     bridge.isExtensionConnected,
     bridge.versionMismatch,
+    bridge.dismissedDespiteMismatch,
+    bridge.extProtocolVersion,
+    bridge.extManifestVersion,
+    bridge.postReloadStatus,
     bridge.lastSyncTime,
     bridge.importedCount,
     bridge.syncError,
@@ -27,7 +31,9 @@ export const SyncBridgeProvider = ({ children }) => {
     bridge.liveHandState,
     bridge.lastImportedTableSession,
     bridge.dismissVersionMismatch,
+    bridge.clearPostReloadStatus,
     // pushExploits, pushAdvice, pushTournament omitted — stable refs (connectedRef pattern)
+    // appProtocolVersion is a constant — no need to track for memo invalidation
   ]);
 
   return (

@@ -4,7 +4,7 @@ import { LAYOUT, STREETS, LIMITS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 import { getActionGradient, BATCH_COLORS } from '../../../constants/designTokens';
 import { getValidActions } from '../../../utils/actionUtils';
-import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet } from '../../../utils/sequenceUtils';
+import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet, hasSeatFolded } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
 import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession } from '../../../contexts';
@@ -313,17 +313,42 @@ export const CommandStrip = ({
 
   const isMultiSeat = selectedPlayers.length > 1;
   const hasSeatSelected = selectedPlayers.length > 0;
-  const hasBet = currentStreet !== 'preflop' ? hasBetOrRaiseOnStreet(actionSequence, currentStreet) : false;
-  const rawValidActions = hasSeatSelected ? getValidActions(currentStreet, hasBet, isMultiSeat) : [];
+  const singleSelectedSeat = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
 
-  // BB option: when BB faces no raise preflop, they CHECK (not CALL) since blind is already posted
+  // WS-129 FOLDED-SEAT-ACTS guard: re-selecting an already-folded seat shows
+  // no action buttons. Folded seats can still be selected to view their actions
+  // (handled by the existing seat highlight) but no NEW action can be recorded.
+  const selectedSeatHasFolded = singleSelectedSeat
+    ? hasSeatFolded(actionSequence, singleSelectedSeat)
+    : false;
+
+  // WS-129 HAND-OVER-BUTTONS guard: when only one (or zero) ACTIVE seat remains
+  // (not absent, not folded across any street), the hand is decided — no further
+  // actions render. Uses activeSeatCount (from useSeatUtils, already destructured
+  // above) which counts hand-level survivors, not street-level responders.
+  const handIsDecided = activeSeatCount <= 1;
+
+  const hasBet = currentStreet !== 'preflop' ? hasBetOrRaiseOnStreet(actionSequence, currentStreet) : false;
+  const rawValidActions = hasSeatSelected && !selectedSeatHasFolded && !handIsDecided
+    ? getValidActions(currentStreet, hasBet, isMultiSeat)
+    : [];
+
+  // BB option: when BB faces no raise preflop, they CHECK (not CALL) since blind is already posted.
+  // WS-129 SB-COMPLETING: SB completing into limpers is the sister case — same
+  // CALL→CHECK transform when SB faces only limps with no raise.
+  const noPreflopRaise = !actionSequence.some(e => e.street === 'preflop' && e.action === 'raise');
   const isBBOption = currentStreet === 'preflop'
     && !isMultiSeat
     && selectedPlayers.length === 1
     && selectedPlayers[0] === bigBlindSeat
-    && !actionSequence.some(e => e.street === 'preflop' && e.action === 'raise');
+    && noPreflopRaise;
+  const isSBCompleting = currentStreet === 'preflop'
+    && !isMultiSeat
+    && selectedPlayers.length === 1
+    && selectedPlayers[0] === smallBlindSeat
+    && noPreflopRaise;
 
-  const validActions = isBBOption
+  const validActions = (isBBOption || isSBCompleting)
     ? rawValidActions.map(a => a === PRIMITIVE_ACTIONS.CALL ? PRIMITIVE_ACTIONS.CHECK : a)
     : rawValidActions;
 

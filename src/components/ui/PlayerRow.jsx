@@ -17,12 +17,27 @@ import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
  */
 const getDescriptionSummary = (player) => {
   const parts = [];
-  if (player.ethnicity) parts.push(player.ethnicity);
+  // PIO G5 child D (WS-163 / SPR-035) — prefer ethnicityTags over legacy ethnicity.
+  if (Array.isArray(player.ethnicityTags) && player.ethnicityTags.length > 0) {
+    parts.push(player.ethnicityTags.join('/'));
+  } else if (player.ethnicity) {
+    parts.push(player.ethnicity);
+  }
+  if (player.ageDecade) parts.push(player.ageDecade);
   if (player.gender) parts.push(player.gender);
   if (player.build) parts.push(player.build);
   if (player.facialHair && player.facialHair !== 'Clean-shaven') parts.push(player.facialHair);
   if (player.hat) parts.push('Hat');
   if (player.sunglasses) parts.push('Sunglasses');
+  if (Array.isArray(player.wardrobe) && player.wardrobe.length > 0) {
+    parts.push(player.wardrobe.slice(0, 2).join('/'));
+  }
+  if (Array.isArray(player.jewelry) && player.jewelry.length > 0) {
+    parts.push(player.jewelry.slice(0, 2).join('/'));
+  }
+  if (Array.isArray(player.logo) && player.logo.length > 0) {
+    parts.push(player.logo[0]);
+  }
   return parts.length > 0 ? parts.join(', ') : 'No description';
 };
 
@@ -104,13 +119,14 @@ export const PlayerRow = ({
   return (
     <>
     <tr
-      className={`transition-colors ${
+      className={`transition-colors cursor-pointer ${
         isAssigned ? 'bg-blue-900/20 hover:bg-blue-900/30' : 'hover:bg-gray-700/30'
-      } ${isSelecting ? 'cursor-pointer' : ''}`}
+      }`}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      data-testid="player-row"
     >
       {/* Player */}
       <td className="px-4 py-3">

@@ -20,11 +20,17 @@ export const OnlineAnalysisProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?.uid || GUEST_USER_ID;
   const { selectedSessionId } = useOnlineSession();
-  const { liveHandState, pushExploits, pushAdvice, isExtensionConnected } = useSyncBridge();
+  const { liveHandState, pushExploits, pushAdvice, isExtensionConnected, versionMismatch } = useSyncBridge();
 
   const { tendencyMap, handCount, isLoading } = useOnlineAnalysis(selectedSessionId, userId);
   const { computeEquity } = useEquityWorker();
-  const { advice, isComputing } = useLiveActionAdvisor(liveHandState, tendencyMap, { equityFn: computeEquity });
+  // WS-077: suppress live-flow advice whenever versions diverge — even
+  // after the user clicks "Continue Anyway" — because liveHandState is the
+  // most version-sensitive surface. Hand imports (validated by
+  // wire-schemas + record-shape checks) and tendencyMap (computed from
+  // already-stored hand records) are unaffected and continue to flow.
+  const safeLiveHandState = versionMismatch ? null : liveHandState;
+  const { advice, isComputing } = useLiveActionAdvisor(safeLiveHandState, tendencyMap, { equityFn: computeEquity });
 
   // Push exploit data to extension when analysis updates
   useEffect(() => {

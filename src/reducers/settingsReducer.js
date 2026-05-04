@@ -152,6 +152,78 @@ const rawSettingsReducer = (state, action) => {
         },
       };
 
+    // SCF self-coach signal toggles (WS-148 / SPR-033)
+    case SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_TOGGLE: {
+      const { name, enabled } = action.payload;
+      const current = state.settings.selfCoach || DEFAULT_SETTINGS.selfCoach;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          selfCoach: {
+            ...current,
+            signalToggles: {
+              ...current.signalToggles,
+              [name]: !!enabled,
+            },
+          },
+        },
+      };
+    }
+
+    // SCF self-coach signal weights
+    case SETTINGS_ACTIONS.SET_SELF_COACH_SIGNAL_WEIGHT: {
+      const { name, weight } = action.payload;
+      const numericWeight = Number(weight);
+      if (!Number.isFinite(numericWeight)) return state;
+      const current = state.settings.selfCoach || DEFAULT_SETTINGS.selfCoach;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          selfCoach: {
+            ...current,
+            signalWeights: {
+              ...current.signalWeights,
+              [name]: numericWeight,
+            },
+          },
+        },
+      };
+    }
+
+    // SCF self-coach owner-set tier (AP-SCF-03 — never inferred)
+    case SETTINGS_ACTIONS.SET_SELF_COACH_OWNER_TIER: {
+      const { tier } = action.payload;
+      const current = state.settings.selfCoach || DEFAULT_SETTINGS.selfCoach;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          selfCoach: {
+            ...current,
+            ownerTier: tier ?? null,
+          },
+        },
+      };
+    }
+
+    // PIO privacy: photo capture enabled (WS-165 / SPR-036, AP-PIO-03)
+    case SETTINGS_ACTIONS.SET_PRIVACY_PHOTO_CAPTURE_ENABLED: {
+      const { enabled } = action.payload;
+      const current = state.settings.privacy || DEFAULT_SETTINGS.privacy;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          privacy: {
+            ...current,
+            photoCaptureEnabled: !!enabled,
+          },
+        },
+      };
+    }
+
     default:
       return state;
   }

@@ -11,7 +11,12 @@ import { useUI, usePlayer, useTendency } from '../../../contexts';
 import { useHandReview } from '../../../hooks/useHandReview';
 import { useHandReplayAnalysis } from '../../../hooks/useHandReplayAnalysis';
 import { useReplayState } from '../../../hooks/useReplayState';
-import { loadHandById } from '../../../utils/persistence/index';
+// SCF G5 / WS-158 (2026-05-03) — runs hero-leak detection on mount; skips
+// when hand count unchanged. Source-util-policy whitelisted (HandReplayView
+// + SelfCoachView only). Per chris-live-player.md autonomy red line #8 —
+// MUST NOT be imported from live-table surfaces.
+import { useHeroLeakDetection } from '../../../hooks/useHeroLeakDetection';
+import { loadHandById, GUEST_USER_ID } from '../../../utils/persistence/index';
 import { buildTimeline, buildSeatNameMap, getPlayerName } from '../../../utils/handAnalysis';
 import { getPositionName } from '../../../utils/positionUtils';
 import { LAYOUT, SEAT_ARRAY, SEAT_POSITIONS } from '../../../constants/gameConstants';
@@ -54,6 +59,11 @@ export const HandReplayView = ({ scale }) => {
 
   // Replay stepping state
   const replay = useReplayState(timeline, hand, actionAnalysis);
+
+  // SCF G5 / WS-158 — fire hero-leak detection. Runs on mount; skipped when
+  // hand count unchanged. Result is consumed via useHeroLeaks in ReviewPanel.
+  // GUEST_USER_ID until auth-scoped userId is wired through HandReplayView.
+  useHeroLeakDetection(GUEST_USER_ID);
 
   const handleBack = useCallback(() => {
     setCurrentScreen(SCREEN.HISTORY);

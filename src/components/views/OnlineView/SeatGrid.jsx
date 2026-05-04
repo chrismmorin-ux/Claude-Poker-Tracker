@@ -89,16 +89,28 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
                   </>
                 ) : (
                   <>
-                    {/* Fallback: VPIP/PFR/AF stats */}
+                    {/* Fallback: VPIP/PFR/AF stats — credible-interval suffix per FIND-001 / SPR-017 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                       <span style={{ color: '#6b7280' }}>VPIP</span>
                       <span style={{ fontWeight: 'bold', color: data.vpip > 40 ? '#ef4444' : data.vpip < 15 ? '#22c55e' : '#e0e0e0' }}>
                         {data.vpip}%
+                        {data.intervals?.vpip && data.sampleSize <= 200 && (
+                          <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 4, fontWeight: 'normal' }}>
+                            ±{(((data.intervals.vpip.upper - data.intervals.vpip.lower) / 2) * 100).toFixed(1)}%
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                       <span style={{ color: '#6b7280' }}>PFR</span>
-                      <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>{data.pfr}%</span>
+                      <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>
+                        {data.pfr}%
+                        {data.intervals?.pfr && data.sampleSize <= 200 && (
+                          <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 4, fontWeight: 'normal' }}>
+                            ±{(((data.intervals.pfr.upper - data.intervals.pfr.lower) / 2) * 100).toFixed(1)}%
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                       <span style={{ color: '#6b7280' }}>AF</span>

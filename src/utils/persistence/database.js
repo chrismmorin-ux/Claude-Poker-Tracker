@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 21;
+export const DB_VERSION = 23;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -89,6 +89,25 @@ export const PRINT_BATCHES_STORE_NAME = 'printBatches';
 // Singleton per user, keyed by userId. See subscriptionStore for the
 // closest pattern.
 export const TELEMETRY_CONSENT_STORE_NAME = 'telemetryConsent';
+
+// SCF Gate 5 child 1 (2026-05-03, SPR-030 / WS-145) — hero-leak detection storage.
+// Composite keypath [playerId, situationKey] per SCF G3 SCHEMA.
+// Read-allowed surfaces: HandReplayView (review-mode only), SelfCoachView.
+// BLACKLISTED: live-table surfaces per chris-live-player.md autonomy red line #8.
+// See src/utils/skillAssessment/CLAUDE.md for the source-util-policy whitelist.
+export const HERO_LEAKS_STORE_NAME = 'heroLeaks';
+
+// PIO Gate 5 child A (2026-05-04, SPR-034 / WS-160) — player identification v2 stores.
+// Per `docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-MIG.
+//
+// `sightingLogs` — append-only per-event store; 5 indexes (playerId, playerId+sessionId
+// composite, featuresSeen multiEntry, capturedAt, venueId). Stores attribute snapshots
+// per sighting (Bayesian-Beta posteriors derived at read-time via `computeStability()`).
+//
+// `playerPhotos` — blob storage; cascade-on-delete when Player deleted. 1 index
+// (playerId). Per `docs/design/surfaces/camera-capture-modal.md` §Atomic-txn binding.
+export const SIGHTING_LOGS_STORE_NAME = 'sightingLogs';
+export const PLAYER_PHOTOS_STORE_NAME = 'playerPhotos';
 
 const MODULE_NAME = 'Persistence';
 
@@ -194,9 +213,17 @@ export const closeDB = () => {
 };
 
 /**
- * Reset pool state without closing (for test isolation with fake-indexeddb).
+ * Reset pool state for test isolation with fake-indexeddb. Defensively closes
+ * the cached DB before nullifying — WS-126 root cause was test files that
+ * skipped closeDB() in afterEach, leaving stale event handlers that race with
+ * subsequent tests' IDBFactory swap. Closing here is a belt-and-suspenders
+ * guarantee: any caller that reaches resetDBPool gets clean teardown even if
+ * they didn't call closeDB explicitly.
  */
 export const resetDBPool = () => {
+  if (cachedDb) {
+    try { cachedDb.close(); } catch (_) { /* ignore — fake-indexeddb may have already torn down */ }
+  }
   cachedDb = null;
   dbPromise = null;
 };

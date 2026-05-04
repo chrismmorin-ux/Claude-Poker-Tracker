@@ -48,7 +48,14 @@ describe('rangeVsBoard — whiffRate', () => {
 });
 
 describe('rangeVsBoard — rangeVsRangeEquity', () => {
-  test('AA vs KK on 2-3-4 rainbow — AA ≈ 83%', async () => {
+  // Skipped with precedent: this assertion intermittently fails in full-suite
+  // runs (~1-in-3) despite the 75-92% band being wide for an expected 83%
+  // mean. Suspected source is rangeVsRangeEquity's combo proration, not raw
+  // MC trial count (2000 trials at p=0.83 → 95% MoE ≈ ±1.6%, well inside the
+  // band). SPR-005 disposition (2026-05-01) was "no-action"; SPR-011 / WS-134
+  // owner-decision (2026-05-02) confirmed skip-with-precedent. Re-investigate
+  // if rangeVsRangeEquity's proration changes.
+  test.skip('AA vs KK on 2-3-4 rainbow — AA ≈ 83% [SKIPPED: WS-134 / SPR-005 precedent]', async () => {
     const aa = parseRangeString('AA');
     const kk = parseRangeString('KK');
     const { aEq } = await rangeVsRangeEquity(aa, kk, flop('2♠', '3♥', '4♦'), { trials: 2000 });

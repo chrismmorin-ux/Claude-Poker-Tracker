@@ -138,3 +138,22 @@ export {
   putTelemetryConsent,
   deleteTelemetryConsent,
 } from './telemetryConsentStore';
+
+// PIO Gate 5 child A — sighting log CRUD (SPR-034 / WS-160)
+export {
+  appendSighting,
+  getSightingsForPlayer,
+  getSightingsBySession,
+  getSightingsByFeature,
+  deleteSightingsForPlayer,
+} from './sightingLogsStore';
+
+// PIO Gate 5 child A — player photo blob CRUD (SPR-034 / WS-160)
+export {
+  savePhoto,
+  getPhotoBlob,
+  deletePhotosForPlayer,
+} from './playerPhotosStore';
+
+// PIO Gate 5 child B — atomic photo save (SPR-036 / WS-161)
+export { savePhotoAtomically } from './savePhotoAtomically';

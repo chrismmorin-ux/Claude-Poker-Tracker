@@ -519,7 +519,7 @@ const BROADWAY_BROADWAY_LANES = [
     id: 'vs-lower-broadway-no-shared',
     villainDesc: 'Lower broadway villain (T or J high), no shared rank — you dominate with your high cards',
     matches: (v, h) => !v.pair && !villainIsAx(v) && sharedRank(h, v) < 0 && v.rankHigh < h.rankHigh && v.rankHigh >= T,
-    baseEquity: 0.66,
+    baseEquity: 0.62, // WS-125: was 0.66 (author estimate); precisionAudit measured KQo vs JTs/JTo/T9s mean = 62.1%
     band: [0.55, 0.72],
     modifiers: {},
     representatives: ['JTs', 'JTo', 'T9s'],
@@ -924,7 +924,7 @@ const MIDDLING_OFFSUIT_LANES = [
     id: 'vs-ax-split-no-shared',
     villainDesc: 'Ax dominator with kicker within or below your range',
     matches: (v, h) => villainIsAx(v) && sharedRank(h, v) < 0 && v.rankLow <= h.rankHigh,
-    baseEquity: 0.40,
+    baseEquity: 0.44, // WS-125: was 0.40 (author estimate); precisionAudit measured 87o vs A5o mean = 43.8%
     band: [0.33, 0.47],
     modifiers: { villainSuited: -0.03 },
     representatives: ['AJo', 'A8s', 'A5o'],

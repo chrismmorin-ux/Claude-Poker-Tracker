@@ -57,7 +57,7 @@ describe('database initialization', () => {
       db.close();
     });
 
-    it('creates all 20 object stores', async () => {
+    it('creates all 23 object stores', async () => {
       const db = await initDB();
       const storeNames = Array.from(db.objectStoreNames);
 
@@ -84,7 +84,12 @@ describe('database initialization', () => {
       expect(storeNames).toContain('printBatches');
       // v21 — MPMF G5-B2 telemetry foundation
       expect(storeNames).toContain('telemetryConsent');
-      expect(storeNames.length).toBe(20);
+      // v22 — SCF G5 child 1 / WS-145 heroLeaks
+      expect(storeNames).toContain('heroLeaks');
+      // v23 — PIO G5 child A / WS-160 sightingLogs + playerPhotos
+      expect(storeNames).toContain('sightingLogs');
+      expect(storeNames).toContain('playerPhotos');
+      expect(storeNames.length).toBe(23);
       db.close();
     });
 
