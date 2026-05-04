@@ -1,0 +1,43 @@
+id: "SPR-004"
+title: "Triage migrationV21 telemetryConsentStore CRUD failures (vital-sign YELLOW)"
+status: completed
+goal: |
+  The 14 failing tests in src/utils/persistence/__tests__/migrationV21.test.js
+  > telemetryConsentStore CRUD have a documented root cause and disposition.
+  Outcome is one of: (a) fixed and tests pass; (b) deferred with reason +
+  followup WS opened; (c) marked it.skip with comment naming the underlying
+  issue. Vital sign in system/state.md updated to reflect new state.
+
+items:
+  - id: "WS-124"
+    title: "Triage migrationV21 test failures (14 failing in telemetryConsentStore CRUD)"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Disposition: fix-now. Root cause = test-side initDB-vs-getDB misuse (initDB returns DB without onversionchange handler; held connections block subsequent deleteDatabase calls). Fixed by swapping 15 initDB() sites for getDB(). 14 tests pass in 32ms. Audit-only — zero production source diff."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+total_effort: "S = ~0.5 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T18:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: triage of pre-existing test failures, scope is investigative + dispositional, no production refactor implied. No anti-goal patterns."
+  matches: []
+
+created_at: "2026-05-01T18:30:00Z"
+approved_at: "2026-05-01T18:30:00Z"
+started_at: "2026-05-01T18:30:00Z"
+completed_at: "2026-05-01T18:55:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Single-item triage sprint. WS-124 anchored over ICP-2 (OnlineView audit) by
+  founder direction — vital sign was YELLOW and triage takes precedence over
+  program continuity per founder call. ICP-2 returns to top of queue after
+  this sprint closes.

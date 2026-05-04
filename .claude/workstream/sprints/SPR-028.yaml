@@ -1,0 +1,150 @@
+id: "SPR-028"
+title: "WS-115 (SR-6) decomposition — break umbrella into 16 dependency-ordered child tickets"
+status: completed
+goal: |
+  Stage 6 sidebar rebuild ("16 PRs, dependency-ordered" per WS-115) is
+  decomposed into actionable child WS tickets. Each child has its own
+  scope, accept_criteria, blocked_by chain, and effort tag. WS-115 itself
+  is repositioned as a tracking parent that points at the children.
+
+  Why this matters: WS-115 is currently a P0 umbrella that algorithmically
+  anchors /next every cycle but can't be productively executed as a single
+  sprint — a sprint anchored on it just produces ambiguity. Decomposition
+  unblocks the SR program for real execution (single-PR sprints) and
+  resolves the priority-drift where a vague P0 dominates the queue.
+
+  Master Plan rhythm interruption: 4 consecutive HSP sprints (SPR-024..
+  SPR-027) closed the HSP build phase. WS-143 (HSP-W1 HandReplay wire) is
+  unblocked but P2; founder picked WS-115 decomposition over WS-143
+  continuation to clear the long-standing P0 umbrella before resuming
+  HSP-to-SCF chain work.
+
+items:
+  - id: "WS-115"
+    title: "Stage 6 — Incremental rebuild behind sidebarRebuild flag (DECOMPOSITION)"
+    mode: plan-first
+    effort: M
+    status: done
+    finding_id: null
+    decision_flags:
+      - "RESOLVED via plan-mode discovery: WS-115 is a stale P0. The underlying SR-6 program (all ~17 PRs) RESOLVED 2026-04-15 per .claude/failures/SIDEBAR_REBUILD_PROGRAM.md. Decomposition not needed — work already shipped."
+      - "Founder picked option 1 (mark done + record discovery) over options 2 (also bulk-audit other migrated headers), 3 (re-scope to post-cutover follow-ups), 4 (cancel sprint)."
+    depends_on: []
+    started_at: "2026-05-03T06:45:00Z"
+    completed_at: "2026-05-03T07:00:00Z"
+    completion_notes: |
+      Plan-mode investigation discovered WS-115 is a stale P0 caught by
+      backlog-migration miss. The underlying SR-6 program RESOLVED
+      2026-04-15 per .claude/failures/SIDEBAR_REBUILD_PROGRAM.md (SR-0
+      through SR-7a, 4 days, 19 commits). Final metrics: 4/4 blocking
+      deltas closed, 8/8 mechanisms M1–M8 fixed, 13/13 S-signatures
+      deterministic, tests 1795→1837.
+
+      Verified:
+        - Post-mortem closure record reads "Status: RESOLVED 2026-04-15"
+        - sidebarRebuild flag DELETED in SR-7a per post-mortem "What
+          didn't land as designed" section ("the flag never gated
+          anything ... SR-7a deleted the flag rather than flip-and-keep")
+        - Confirmed via grep: only `debugDiagnostics` survives in
+          ignition-poker-tracker/shared/settings.js
+        - The canonical 16-PR breakdown is documented at
+          docs/sidebar-rebuild/05-architecture-delta.md §5 (lines
+          293-316) for historical reference
+
+      Updated WS-115 + queue-index.yaml status to done with status_note
+      pointing at the post-mortem. Founder chose not to author retroactive
+      child tickets for already-shipped work (would be busywork).
+
+      Audit finding recorded in this sprint's retro_findings: backlog
+      migration on 2026-05-01 picked up the BACKLOG.md "NEXT — Sidebar
+      Recurrence Program 2026-04-15 (owner-approved)" header without
+      cross-checking .claude/failures/*.md post-mortems. Mitigation
+      suggestion deferred to a future /audit engine pass (option 2 from
+      AskUserQuestion was declined; documented here for retrieval).
+    notes: ""
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Sidebar Recurrence Program — SR-6 (Stage 6 incremental rebuild behind feature flag); long-standing P0 umbrella decomposition"
+total_effort: "M = ~1.5 sessions tagged (research + decomposition); +S optional if SR-6.1 ships in same sprint"
+decisions_needed:
+  - "Item #1 (WS-115): Decomposition source — which docs ground the 16-PR list."
+  - "Item #1 (WS-115): Child ticket scope — gate check per-child or sprint-level."
+  - "Item #1 (WS-115): Whether to ship SR-6.1 (flag plumbing) in same sprint."
+  - "Item #1 (WS-115): WS-115 disposition after decomposition (tracking parent vs done)."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T06:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-027). Manual review: scope is queue-hygiene work — replacing a vague umbrella with actionable children. Anti-goals around 'self-aggrandizing complexity' don't apply because the decomposition reduces ambiguity rather than adding ceremony. The SR program itself was founder-driven post-mortem work."
+  matches: []
+
+created_at: "2026-05-03T06:45:00Z"
+approved_at: "2026-05-03T06:45:00Z"
+started_at: "2026-05-03T06:45:00Z"
+completed_at: "2026-05-03T07:00:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+retro_findings:
+  - id: "RETRO-SPR-028-001"
+    surfaced_by: "WS-115 plan-mode investigation"
+    finding: |
+      BACKLOG migration miss: WS-115 (legacy_id SR-6) was migrated 2026-05-01
+      from BACKLOG.md § "NEXT — Sidebar Recurrence Program 2026-04-15
+      (owner-approved)" as a P0 work item. Plan-mode discovered the underlying
+      SR-6 program RESOLVED 2026-04-15 (per .claude/failures/SIDEBAR_REBUILD_PROGRAM.md).
+      The migration script took the BACKLOG header at face value without
+      cross-checking .claude/failures/*.md post-mortems.
+    mitigation_suggestion: |
+      Future migration runs (or an /audit engine pass on the existing migrated
+      queue) should cross-check legacy_section headers against the failures
+      directory. Heuristic: any queue item with source.origin ==
+      "backlog-md-migration-2026-05-01" whose legacy_section header references
+      a date BEFORE the migration date AND a topic name matching a
+      .claude/failures/*.md filename should be flagged for verification before
+      sitting at full priority. May surface other stale items that the
+      decomposition attempt would catch case-by-case.
+    severity: "low"
+    blast_radius: "queue-hygiene only — no production code or behavior impact"
+    deferred_to: "future /audit engine pass; not blocking SPR-029"
+
+composition_notes: |
+  Founder pivot: algorithm picked WS-115 (P0/30) as top, but proposal
+  flagged its umbrella nature. Founder picked option 3 ("decompose the
+  umbrella") so the sprint anchor became WS-115 with explicit
+  decomposition scope.
+
+  Anchor selection: WS-115 (algorithmic top by priority_score). HSP momentum
+  paused for 1 sprint to clear the long-standing P0; WS-143 (HSP-W1)
+  remains unblocked + ready as the natural SPR-029 candidate.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-144 (spr-followup), WS-138 (untagged), WS-142
+      (untagged). No class saturated.
+    - WS-115 source: backlog-md-migration → untagged → NOT damped.
+
+  Soft-block check (Step 2-prereq): WS-115 has no blocked_by_note.
+
+  Fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): no programs with block_sprint:true are stale.
+
+  Auto-replenishment (Step 1e): not run — kit scripts missing in adopter repo.
+
+  Mode classification per Step 3d:
+    - WS-115: M effort + improvement type → plan-first (4 decisions surfaced).
+
+  Scope reality check: WS-115 as written is too vague to ship code on. The
+  realistic execution is "produce the decomposition" not "ship Stage 6."
+  Sprint goal explicitly names this — decomposition is the deliverable;
+  optional SR-6.1 ship is conditional.
+
+  Tooling friction unchanged from SPR-022..SPR-027: 4 missing
+  kit/scripts/cwos-* scripts. Manual fallbacks used.
+
+  Note for SPR-029+ planning: After WS-115 decomposition lands (~16 new
+  child tickets WS-145..WS-160), SPR-029 candidates are:
+    - WS-143 (HSP-W1 HandReplay wire) — natural HSP continuation
+    - SR-6.1 (flag plumbing) — first child of decomposed WS-115
+    - Other P1 candidates: WS-078 (OnlineView Tailwind), MPMF G5 cluster,
+      WS-008 (PIO Gate 5)

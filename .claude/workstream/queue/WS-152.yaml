@@ -1,0 +1,66 @@
+id: "WS-152"
+title: "HSP-A4 — River archetype taxonomy + templates (~8 archetypes)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Define the river archetype taxonomy and author the templates. Mirrors v1
+  WS-138/139 shape; populates HERO_STATE_DESIGN.md §4.5 (currently marked
+  "defer to v2").
+
+  Provisional taxonomy (~8; finalize during ticket):
+    - RIVER_TRIPLE_BARREL_IP       — bet flop, bet turn, bet river IP
+    - RIVER_TRIPLE_BARREL_OOP      — bet flop, bet turn, bet river OOP
+    - RIVER_VS_TRIPLE_BARREL_IP    — called flop+turn, facing river bet IP
+    - RIVER_VS_TRIPLE_BARREL_OOP   — called flop+turn, facing river bet OOP
+    - RIVER_BLOCK_BET              — small lead OOP for thin value / bluff catch
+    - RIVER_VS_BLOCK_BET           — facing block bet (raise/call/fold matrix)
+    - RIVER_BLUFF_CATCHER          — checking down with showdown value, must
+                                      decide call vs fold vs raise on bet
+    - RIVER_THIN_VALUE             — value bet at river, sizing-to-value-region
+                                      decision
+
+  River-specific concerns (call out in templates):
+    - No draws — equity is binary (have it / don't); polarized vs merged ranges
+      dominate
+    - Blocker reasoning matters more than on earlier streets
+    - MDF + bluff-to-value ratio drives bluff-catcher decisions
+    - Per-combo equity is exact (no MC needed) — narratives can be precise
+
+  Output location: docs/design/hero-state-templates/river/*.md.
+
+  Match v1 §5 voice. CONVENTIONS.md compliance.
+accept_criteria:
+  - "docs/HERO_STATE_DESIGN.md §4.5 river-taxonomy table populated"
+  - "8 (final count tbd during ticket) markdown files in docs/design/hero-state-templates/river/"
+  - "Each file: frontmatter + headline + body + branchSummary"
+  - "Slot placeholders only; no hardcoded numerics"
+  - "MDF + blocker references where structurally relevant (bluff-catcher, thin value)"
+  - "Voice + structure match v1 §5 worked examples"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (extend §4.5)"
+  - "docs/design/hero-state-templates/river/ (NEW)"
+  - "docs/design/hero-state-templates/CONVENTIONS.md (read)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-153"
+sprint_id: ""
+decision_flags:
+  - "Final archetype count + boundaries"
+  - "Whether to break BLUFF_CATCHER by IP/OOP (likely yes) or single archetype with adjustment"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §4.5 + project_hero_state_primitive.md v2 backlog"
+status_note: "v2 authoring; parallel-friendly with WS-151/154/155/157"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

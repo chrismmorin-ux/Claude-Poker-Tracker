@@ -1,0 +1,64 @@
+id: "SPR-009"
+title: "FW-1 Sprint B — gameReducer UNDO + preflopAdvisor position-vocab + OnlineView pluralization"
+status: completed
+goal: |
+  Close the 3 remaining audit pinned_bug rows across reducer, engine, and UI
+  surfaces:
+    - WS-130: gameReducer UNDO street-rewind (BUG-CANDIDATE-UNDO-STREET-DESYNC)
+    - WS-131: preflopAdvisor position-vocab normalization (BUG-CANDIDATE-PFA-POSITION-VOCAB)
+    - WS-132: OnlineView pluralization (BUG-CANDIDATE-PLURAL-HANDS)
+  After this sprint, all 7 audit-surfaced bugs are closed; matrix fixtures
+  show ZERO pinned_bug rows.
+
+items:
+  - id: "WS-130"
+    title: "FW-1 gameReducer UNDO street-rewind"
+    mode: execute
+    effort: M
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Production fix at gameReducer.js:163-181. Audit fixture row UNDO-B-010 flipped to matches; UNDO-B-020 expected currentStreet updated to reflect new rewind behavior. Existing 46-test gameReducer.test.js stays green."
+    finding_id: null
+  - id: "WS-131"
+    title: "FW-1 preflopAdvisor position-vocabulary normalization"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Added normalizePositionToCategory helper + applied at Tier 0.5 + Tier 1 lookups. PFA-FT-006 fixture row flipped to matches with input updated to BTN/UTG (which normalizes to LATE/EARLY, in the table). 48-test preflopAdvisor.test.js stays green. No theory regression — position labels remain Tier-1 priors only."
+    finding_id: null
+  - id: "WS-132"
+    title: "FW-1 OnlineView pluralization"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Cosmetic fix at OnlineView.jsx:159 — pluralization-aware ternary. OV-MC-002 fixture row flipped to matches."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Fix Wave 1 (FW-1 Sprint B of 2)"
+total_effort: "M+S+S = ~2 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T22:15:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is closure of audit-surfaced pinned_bug rows. Engine change (WS-131) is normalization-only — no theory change per CLAUDE.md Poker Analysis Guardrail. Reducer change (WS-130) updates state invariant per audit spec. No anti-goal patterns."
+  matches: []
+
+created_at: "2026-05-01T22:15:00Z"
+approved_at: "2026-05-01T22:15:00Z"
+started_at: "2026-05-01T22:15:00Z"
+completed_at: "2026-05-01T22:40:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Sprint B of 2 in Fix Wave 1 (FW-1). Three independent surfaces (reducer +
+  engine + UI) bundled because each is single-file and small enough to fit
+  the standard 2-session cap together. Sequenced after Sprint A so engine +
+  reducer changes ship on a known-GREEN test baseline.

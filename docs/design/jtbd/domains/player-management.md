@@ -535,7 +535,70 @@ All jobs related to associating (or disassociating) player records with seats at
 
 ---
 
+---
+
+# PIO Umbrella JTBDs  *(PIO Gate 1, 2026-05-02)*
+
+The 3 umbrella JTBDs that the **Player Identification v2 (PIO)** program serves. PM-10/11/12 (authored 2026-04-26 for the table-build sub-surface) are **sub-jobs** of these umbrellas, not parallel entries. Authored alongside `docs/design/audits/2026-05-02-entry-player-identification-v2.md`.
+
+**Scope per owner decision 2026-05-02:** across-session at same venue. Cross-venue / cross-operator deferred to PIO-G2 amendment if owner plays at 2+ venues.
+
+## PM-13 — Describe someone into existence
+
+> When I sit at a table with a player I half-recognize or have never seen, I want to capture them as a record from any combination of partial signals (name fragment, half-stable visual features, today's wardrobe, a photo) — without forcing a complete identity I don't actually know yet.
+
+- **State:** Active (PIO Gate 3, 2026-05-02 — promoted from Proposed)
+- **Primary persona:** [Chris (live player)](../../personas/core/chris-live-player.md); [Cold-Read Chris](../../personas/situational/cold-read-chris.md) (situational, when at a new table)
+- **Sub-jobs:** PM-10 (cold-read mixed match-or-create), PM-11 (duplicate-detection + manual merge)
+- **Net-new behaviors (PIO Gate 4-5):** photo capture as a partial-signal source (face when other signals are unknown), sighting-record persistence even when name is unknown
+- **Distinct from PM-03** (create new and assign to seat): PM-03 assumes you have enough information to commit a complete record; PM-13 explicitly supports the partial-information case where identity is still being assembled across sessions.
+- **Surfaces:** table-build (existing audited entry surface) + camera capture modal (PIO-G4-S2) + Player Profile / Sighting History (PIO-G4-S1)
+- **Success criterion:** Owner can commit a Player record from any combination of partial signals (name fragment OR visual features OR today's wardrobe OR a captured photo) without forcing a complete identity. Save flow never blocks on missing fields; possible-matches panel surfaces overlapping records before commit (per cold-read-chris §What a surface must offer #7).
+- **Load-bearing constraint:** red lines #1 (opt-in), #2 (transparency — possible-matches panel before commit), #4 (reversibility — record edit available post-creation).
+- **Failure modes:**
+  - Commit-blocked-on-missing-fields. Save button must always be tappable; missing-name records save as "Unnamed (sighting)" placeholder.
+  - Silent auto-merge into a similar-feature record. AP-PIO-04 + cold-read-chris §What a surface must NOT do #3 forbid auto-merge; manual side-by-side compare is non-negotiable.
+  - Photo capture without explicit user-tap. AP-PIO-03 binding.
+
+## PM-14 — Build temporal attribute history
+
+> When I observe a player across sessions at the same venue, I want their attribute observations (clothing today, wardrobe trends, age estimate, jewelry) to accumulate as a temporal record — so that "always wears the silver chain" becomes a stable feature and "today wearing a Dolphins jersey" is one session's observation.
+
+- **State:** Active (PIO Gate 3, 2026-05-02 — promoted from Proposed)
+- **Primary persona:** [Chris (live player)](../../personas/core/chris-live-player.md); [Post-Session Chris](../../personas/situational/post-session-chris.md) (situational, for review of sighting log post-session)
+- **Sub-jobs:** PM-12 (per-seat-per-session observations as sighting-log feeders)
+- **Net-new behaviors (PIO Gate 4-5):** sighting-log store (`sightingLogs` IDB v22, per-event grain + read-side rollup per PIO-G3-SLOG), stability formula (Bayesian-Beta posterior with n≥5 floor per PIO-G3-STAB), cross-session aggregation, sighting-history read surface (PIO-G4-S1)
+- **Scope:** across-session at same venue (per owner decision 2026-05-02). Cross-venue / cross-operator deferred; `venueId` field reserved on sighting-log records for graceful future amendment.
+- **Distinct from PM-12** (per-seat-per-session clothing observations): PM-12 captures *one* session's observation on *one* seat; PM-14 is the cross-session aggregate that PM-12 feeds into.
+- **Success criterion:** Per-feature observations accumulate across sessions in `sightingLogs` store; stability formula renders per-feature `'always' \| 'sometimes' \| 'today-only'` labels with `±X.X%` MoE on Player Profile (PIO-G4-S1) when n≥5; below-floor surfaces render `"Insufficient sample (need {5 - n} more sightings)"` factual placeholder per AP-PIO-04.
+- **Load-bearing constraint:** red line #8 (no cross-surface contamination — sighting-log NEVER feeds exploit engine; AP-PIO-01); red line #4 (reversibility — sighting can be deleted per record).
+- **Failure modes:**
+  - Stability claim renders below n≥5 floor. Forbidden — surfaces consume `computeStability()` output and respect `null` return.
+  - `featuresSeen` snapshot writes to live-decision surface. AP-PIO-02 forbids; sourceUtilPolicy whitelist enforces (Gate 5 CI-grep).
+  - Cross-venue silently aggregating sightings from different venues. Schema reserves `venueId` field; Gate 5 read paths filter by venue.
+
+## PM-15 — Convert uncertain sighting to known player
+
+> When I have an uncertain sighting (a player I think I recognize from past sessions), I want a recognition disambiguation flow — comparing my current observation against candidate matches in the temporal history — so I can confidently link the sighting to an existing player or commit it as a new record.
+
+- **State:** Active (PIO Gate 3, 2026-05-02 — promoted from Proposed)
+- **Primary persona:** [Chris (live player)](../../personas/core/chris-live-player.md); [Cold-Read Chris](../../personas/situational/cold-read-chris.md) (situational, when ambiguity is high at session start)
+- **Sub-jobs:** net-new disambiguation interactions (PIO-G4-DISAMB)
+- **Net-new behaviors (PIO Gate 4-5):** stability-weighted recognition ranking (`scorePlayerMatch` extended with `stabilityWeights` parameter per PIO-G3-STAB integration spec), candidate-comparison UI showing temporal-history snapshots, link-or-create commitment flow
+- **Distinct from PM-09** (find a player by visual features): PM-09 is direct lookup ("show me players matching these features"); PM-15 is *probabilistic comparison* ("does this sighting match any of these candidates, and how confident are we?").
+- **Success criterion:** When current-session observation overlaps with one or more historical Player records (stability-weighted match score above threshold), recognition disambiguation flow surfaces candidate cards with confidence display (`'87% match score'` per AP-PIO-04 neutral copy). User picks candidate (link sighting to existing player) or "Create new record" (no match). System never auto-merges.
+- **Load-bearing constraint:** red line #1 (opt-in) — the user is always the arbiter. The system surfaces candidates with confidence; never auto-merges. Red line #5 (no shame) — when the system suggests a wrong candidate, the framing must be neutral, not "you got it wrong."
+- **Failure modes:**
+  - Auto-merge on high-confidence match. Forbidden — disambiguation UI is non-negotiable.
+  - Shame copy on mismatch. AP-PIO-04 forbids forbidden phrases ("Are you sure?", "We're confident this is X").
+  - Confidence display absent. Red line #2 (transparency) requires `'X% match'` rendered on every candidate card.
+
+---
+
 ## Change log
 
 - 2026-04-21 — Created. All 9 entries defined to support Session 2 audit.
 - 2026-04-26 — Added PM-10 (cold-read mixed match-or-create), PM-11 (duplicate-detection + manual merge), PM-12 (today-only observation capture). Authored as Gate 3 deliverable for the Table-Build surface (`docs/design/audits/2026-04-26-entry-table-build.md` Gate 1 RED → `2026-04-26-blindspot-table-build.md` Gate 2 YELLOW). Pairs with new situational persona [Cold-Read Chris](../../personas/situational/cold-read-chris.md).
+- 2026-05-02 — Added **PIO Umbrella JTBDs section** with PM-13 (describe-someone-into-existence), PM-14 (build-temporal-attribute-history), PM-15 (convert-uncertain-sighting-to-known-player). Authored by PIO Gate 1 (`docs/design/audits/2026-05-02-entry-player-identification-v2.md`, SPR-013 / WS-004). PM-10/11/12 reframed as **sub-jobs** of these umbrellas (their content unchanged; relationship cross-refs added). Owner-decided scope: across-session at same venue, cross-venue deferred.
+- 2026-05-02 — **PM-13/14/15 detail-out shipped by PIO Gate 3** (`docs/design/audits/2026-05-02-gate3-research-player-identification-v2.md`, SPR-019 / WS-006). State promoted Proposed → Active for all 3 umbrellas. Added per-umbrella: success criterion + load-bearing constraint refs (red lines) + 2-3 failure modes. Cross-refs to PIO-G3-SLOG / PIO-G3-STAB schemas + PIO-G4-S1 / S2 / DISAMB surface carry-forwards.
+- 2026-05-02 — **PIO Gate 4 surface placement annotations** (`docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md`, SPR-021 / WS-007). PM-13 surfaces: `table-build` (entry; capture flow) + `player-editor` PEX subsection (post-create edit) + `player-profile` (post-create review). PM-14 surfaces: `player-profile` (per-attribute stability + sighting log) + `sightingLogs` IDB store with manual-add affordance. PM-15 surfaces: `table-build` PossibleMatchesPanel (PIO-G4-DISAMB confidence bar + verbal label) + `player-profile` (post-disambiguation verification). Cultural-sensitivity binding affirmed throughout per memory `feedback_pio_identification_utility_first.md`: identification utility binds; cultural-sensitivity is a reviewing voice. Master Plan §A surface list reconciled — extends Table-Build (long-term home), not archiving PlayerPicker.

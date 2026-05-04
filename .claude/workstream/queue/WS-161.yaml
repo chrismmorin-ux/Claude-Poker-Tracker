@@ -1,0 +1,54 @@
+id: "WS-161"
+title: "PIO G5 child B — Camera Capture Modal (S2)"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T14:50:00Z"
+completed_at: "2026-05-04T16:25:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  Native phone-camera capture pipeline per
+  `docs/design/surfaces/camera-capture-modal.md`. 2-stage flow:
+    1. Native `<input type="file" accept="image/*" capture="environment">`
+       → viewfinder via URL.createObjectURL; 1:1 frame CSS overlay; Shutter button.
+    2. Auto-crop center 1:1 via canvas API; preview; Retake / Accept.
+
+  On Accept: single IDB transaction writes `playerPhotos` blob +
+  `players.photoBlobId` reference (atomic per camera-capture-modal.md
+  §Atomic-txn binding).
+
+  Phone-only approach (no MediaDevices/getUserMedia). Master toggle gates
+  visibility (Settings `photoCaptureEnabled` from WS-165).
+accept_criteria:
+  - "CameraCaptureModal.jsx renders 2-stage flow"
+  - "1:1 crop via canvas API; ~25KB per 256×256 JPEG @ 0.85 quality"
+  - "Atomic write: playerPhotos blob + players.photoBlobId in single transaction"
+  - "Cascade-on-delete via existing deletePhotosForPlayer (from WS-160)"
+  - "Master toggle gating: button hidden when photoCaptureEnabled=false"
+  - "AP-PIO-03 binding: never auto-launches camera"
+  - "Tests + Playwright visual smoke (mobile)"
+effort: "M"
+files_involved:
+  - "src/components/views/PlayerEditorView/CameraCaptureModal.jsx (NEW)"
+  - "src/components/views/PlayerEditorView/__tests__/CameraCaptureModal.test.jsx (NEW)"
+  - "src/utils/playerMatching/cropToSquare.js (NEW canvas-based crop helper)"
+  - "src/components/views/PlayerEditorView/PlayerEditorView.jsx (wire camera button)"
+blocked_by:
+  - "WS-160"
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-036"
+decision_flags:
+  - "Crop dimensions: 256×256 vs 512×512"
+  - "Camera button placement in PlayerEditor: top-right vs inline near NameSection vs new section"
+  - "Photo display in Profile View: replace Header avatar vs separate section"
+status_note: "CLAIMED SPR-036 (paired with WS-165). Executes 2nd; reads photoCaptureEnabled from settings.privacy."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

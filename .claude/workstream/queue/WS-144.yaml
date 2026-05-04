@@ -1,0 +1,60 @@
+id: "WS-144"
+title: "HSP-B0 — Implement equityVsRangeParts role-translator (src/utils/heroState/equityVsRangeParts.js)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T01:00:00Z"
+completed_at: "2026-05-03T02:25:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Implement the role-translator module that produces HSP's 4-class equity
+  partition (vsValue / vsBluff / vsDraw / vsAir) by composing existing
+  primitives:
+    - rangeSegmenter.segmentRange + enrichWithEquity (strength partition + per-bucket hero equity)
+    - villainProfileBuilder.getStyle (villain style)
+    - gameTreeEquity.computePolarization (polarization signal)
+
+  Created by WS-137 audit (2026-05-03) which rejected building a
+  standalone villainRangePartitioner.js because rangeSegmenter.js already
+  provides comprehensive strength-class partitioning. The gap is
+  role-conditioning, not partitioning — which is a thin translation
+  layer that lives in heroState/ rather than rangeEngine/ or
+  exploitEngine/ because role-conditioning depends on action+style
+  (downstream of both engines).
+
+  Full API spec is in docs/HERO_STATE_DESIGN.md §9.3 (appended by WS-137
+  audit). Decision table for strength→role mapping is in §9.1 Q2.
+accept_criteria:
+  - "src/utils/heroState/equityVsRangeParts.js exports computeEquityVsRangeParts (async) + translateStrengthToRole (pure)"
+  - "translateStrengthToRole: ≥12 unit tests covering all 4 quadrants of (aggressor × polarized) + BB-defender + non-BB-defender + river"
+  - "computeEquityVsRangeParts: integration tests for role-equity aggregation math, null handling, preflop short-circuit, capped-range edge case"
+  - "All tests pass via npx vitest"
+  - "Build clean (npm run build)"
+  - "Full suite green (bash scripts/smart-test-runner.sh) — no regressions"
+  - "Module is consistent with rangeEngine + exploitEngine patterns: uses Float64Array(169) range inputs, reuses BUCKETS vocabulary internally, no GTO assumptions, no z-tests, Bayesian-compatible"
+effort: "S"
+files_involved:
+  - "src/utils/heroState/equityVsRangeParts.js (NEW)"
+  - "src/utils/heroState/__tests__/equityVsRangeParts.test.js (NEW)"
+  - "src/utils/exploitEngine/rangeSegmenter.js (read — segmentRange, enrichWithEquity, segmentToRanges)"
+  - "src/utils/exploitEngine/gameTreeEquity.js (read — computePolarization)"
+  - "src/utils/exploitEngine/villainProfileBuilder.js (read — getStyle)"
+  - "src/utils/heroState/types.js (read — EquityVsRangeParts typedef + ACTION_CONTEXTS)"
+  - "docs/HERO_STATE_DESIGN.md §9.3 (read — full API spec)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-142"
+sprint_id: "SPR-025"
+decision_flags: []
+source:
+  origin: "ws-137-audit-2026-05-03"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §9"
+status_note: "Created from WS-137 audit verdict (2026-05-03). Replaces the imagined villainRangePartitioner.js as a thinner role-translator. Lives in heroState/ not rangeEngine/. Full API spec in design doc §9.3."
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

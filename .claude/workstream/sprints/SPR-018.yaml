@@ -1,0 +1,124 @@
+id: "SPR-018"
+title: "SCF Gate 3 — Self-Coach Foundation Research (D-line Master Plan Phase 3 entry)"
+status: completed
+goal: |
+  Self-Coach Foundation passes Gate 3 (Research) — 5 Gate-2 carry-forwards
+  specified (hero-leak detector schema, per-tier teachable-concept map
+  ratification, curriculum-spine format, CO-54..57 Active-state authoring,
+  IDB v22 schema delta), unblocking SCF Gate 4 (Design surfaces).
+
+  Master Plan rhythm:
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2)
+    SPR-015: PIO-G2 (A-line, Gate 2)
+    SPR-016: FIND-002 close (P0 break)
+    SPR-017: FIND-001 close (P0 break)
+    SPR-018: SCF-G3 (D-line, Gate 3) ← this sprint, first Phase-3 Research gate
+  Next natural anchor after SPR-018: PIO-G3 (WS-006, A-line Phase-3) per
+  alternation cadence.
+
+  Source-class damping (Step 2d): last 3 anchors had source-classes
+  [engine-finding, engine-finding, untagged]. Engine-finding SATURATED.
+  WS-011 source-class is `untagged` (backlog-md-migration); NOT damped.
+  Strict-score-order alternative would be WS-076/WS-115 (also untagged, P0
+  30.0 vs WS-011's 22.0) — Master Plan rhythm chosen by founder explicit
+  approval after 2-sprint P0 break.
+
+items:
+  - id: "WS-011"
+    title: "SCF Gate 3 — Research (skill-assessment shape, lesson surface placement, firing frequency, plus 5 SCF-G3-* carry-forwards from Gate 2)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Skill-assessment shape (test-based mini-quiz vs observed drill+hand-history vs declared owner-set in Settings)"
+      - "Lesson surface placement (inline HandReplayView contextual vs dedicated SelfCoachView destination vs both)"
+      - "Leak-firing frequency (every leak immediate vs aggregated post-session vs owner-triggered only)"
+      - "Per-tier teachable-concept map walkthrough (SCF-G1 draft amendments via owner introspection)"
+      - "Curriculum-spine format (hand-authored DAG vs computed-from-leak-frequency vs hybrid recommended)"
+      - "Hero-leak detector schema (Beta-Binomial CI + n>=30 floor + situation-key bucketing mirroring decisionAccumulator.js; new heroLeaks IDB store v22)"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T06:35:00Z"
+    completed_at: "2026-05-02T07:25:00Z"
+    notes: |
+      Gate 3 audit shipped at docs/design/audits/2026-05-02-gate3-research-self-coach-foundation.md (~360 lines).
+
+      Owner-decided scope (4 of 6 decision flags via plan-mode AskUserQuestion 2026-05-02):
+        - Skill-assessment shape: observed PRIMARY + opt-in owner-volunteered tests (CRITICAL nuance to AP-SCF-01)
+        - Lesson surface placement: both inline + dedicated SelfCoachView
+        - Leak-firing frequency: every leak fired immediately on hand-replay
+        - Curriculum-spine format: three-signal hybrid (DAG + drill mastery + leak frequency + test results)
+
+      Inline-handled (recommended-with-rationale; owner amends in review):
+        - Per-tier teachable-concept map: ratify Gate 1 draft + Appendix A scenario walkthrough (6 tiers walked)
+        - Hero-leak detector schema: mirror weaknessDetector.js + decisionAccumulator.js; Beta-Binomial CI; n>=30 floor; HERO_LEAK_PRIORS authored
+
+      CRITICAL AP-SCF-01 NUANCE AMENDMENT:
+        System-imposed grading on hero-leak surfaces: REFUSED.
+        Owner-volunteered tests on opt-in test surfaces: PERMITTED.
+        Opt-in gate is the load-bearing autonomy contract.
+        Memory entry: feedback_owner_volunteered_grading.md (binding for all future SCF + coaching + assessment work).
+
+      5 SCF-G3-* carry-forwards specified (BLOCKING Gate 4):
+        - SCF-G3-DETECTOR: heroLeakDetector.js + heroDecisionAccumulator.js modules; 7-dim situation-key bucketing; Beta-Binomial CI; per-stat HERO_LEAK_PRIORS (8 stats authored); n>=30 floor; sourceUtilPolicy whitelist.
+        - SCF-G3-TIERMAP: Gate 1 draft ratified; Appendix A 6-tier scenario walkthrough; 2 owner-amendable cells flagged (live-rec value-vs-bluff threshold; pro GTO-solver-baseline).
+        - SCF-G3-SPINE: 4-signal composite formula nextConcept = argmax(W_leak*leakFreq + W_drill*(1-mastery) + W_test*(1-testDelta) - W_recent*recencyPenalty); initial weights 0.5/0.3/0.15/0.05; scheduler.js additive integration contract.
+        - SCF-G3-CO: CO-54/55/56 Proposed→Active; CO-56 wording amendment (non-graded framing per AP-SCF-01); CO-57 stays Proposed (Gate 4 v2 deferral).
+        - SCF-G3-SCHEMA: heroLeaks IDB store v22 (composite keypath, 3 indexes, full record shape); userSettings.tier extension; userSettings.perDomainMastery map; additive migration via dynamic-version pattern.
+
+      Companion files updated this sprint (3):
+        - docs/design/jtbd/domains/coaching.md — CO-54/55/56 state Proposed→Active; CO-56 success criterion gets non-graded-framing clause; CO-57 stays Proposed with Gate 4 v2 deferral note; CO-55 spine-signals annotation added.
+        - docs/projects/self-coach-foundation/copy-discipline.md — CD-2 nuance section added: "Allowed: owner-volunteered test surfaces" with explicit examples + manifest flag (cd5_exempt: 'owner-volunteered-test') for CI-lint exemption.
+        - docs/projects/self-coach-foundation/anti-patterns.md — AP-SCF-01 re-statement: refusal scope narrowed to system-imposed; owner-volunteered tests permitted with opt-in gate as autonomy contract.
+
+      Verification: zero src/ diff (audit-only; new file + 1 M coaching.md + 2 M companion files in self-coach-foundation/); cross-references resolve; no production code touched.
+
+      Open questions deferred to Gate 4: CO-57 confidence-elicitation interaction pattern (v2); HERO_LEAK_PRIORS tuning; composite-signal weight tuning; SelfCoachView placement; inline leak annotation visual; Settings tier-set + N05 confirm; drill scheduler tier-aware integration.
+
+      Master Plan rhythm: SCF Phase 3 entry complete. Next natural anchor in A/D alternation: WS-006 (PIO-G3 Research, A-line first Phase-3 Research gate).
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF Gate 3 of 5; Master Plan §D; D-line first Phase-3 Research gate)"
+total_effort: "M+ (decision-dense; ~1.5-2 sessions)"
+decisions_needed:
+  - "Item #1 (WS-011): 6 decision flags — skill-assessment shape + lesson surface placement + leak-firing frequency + per-tier teachable-concept map + curriculum-spine format + hero-leak detector schema"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T06:35:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is design-program Gate 3 Research per docs/design/LIFECYCLE.md — explicitly mandated by SCF Gate 2 (5 SCF-G3-* carry-forwards named as BLOCKING Gate 4). 6 decision flags are owner-interview shape per WS-011 accept_criteria + Gate 2 carry-forward extensions. AP-SCF-01..06 from SCF Gate 2 + 9 autonomy red lines from chris-live-player.md inherited and binding. No anti-goal angle."
+  matches: []
+
+created_at: "2026-05-02T06:35:00Z"
+approved_at: "2026-05-02T06:35:00Z"
+started_at: "2026-05-02T06:35:00Z"
+completed_at: "2026-05-02T07:25:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-011 is M-effort but actually decision-
+  dense (6 decision flags spanning skill-assessment / surface placement /
+  firing frequency / tier-map / curriculum-spine / detector-schema). Gate 3
+  audit will use multi-round AskUserQuestion to gather decisions.
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-116 (engine-finding), WS-117 (engine-finding), WS-005 (untagged).
+    - Engine-finding count = 2 → SATURATED for next sprint.
+    - WS-011 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+    - Damping does not bind here.
+
+  Master Plan rhythm restored after 2-sprint P0 break (SPR-016 + SPR-017
+  closed FIND-002 + FIND-001, all 5 baseline HIGHs now resolved).
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged) + WS-115 (P0
+  30.0 untagged) above WS-011 (P1 22.0). Founder explicitly chose Master
+  Plan rhythm in /next prompt; both P0s deferred to next sprint or later.
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* per fr-001..004
+  + fr-010. Same fallbacks (manual anti-goal scan; YAML-direct queue
+  reads; manual index lockstep edits; shadow-event skip).
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).

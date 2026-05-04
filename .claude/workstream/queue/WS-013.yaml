@@ -1,11 +1,34 @@
 id: "WS-013"
-title: "Gate 5 — Implementation (multi-PR + ongoing authoring)"
+title: "Gate 5 — Implementation (multi-PR + ongoing authoring) — TRACKING PARENT"
 legacy_id: "SCF-G5"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
+status: tracking-parent
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T08:45:00Z"
 completed_at: null
+children: ["WS-145", "WS-146", "WS-147", "WS-148", "WS-149"]
+status_note: |
+  DECOMPOSED 2026-05-03 by SPR-030 plan-mode. The original 5 accept_criteria
+  were too large for a single sprint. Founder picked option A1 — decompose
+  into 5 child tickets matching the accept_criteria:
+
+    WS-145 — skillAssessment framework + first leak rule (IP cbet defense
+             overfold). Ships in SPR-030. L effort.
+    WS-146 — additional leak rules (catalog-driven, ongoing). Blocked by
+             WS-145. M effort per sprint claim.
+    WS-147 — lesson authoring framework. Blocked by WS-145. M effort.
+    WS-148 — curriculum scaffolding (6-tier ladder + composite signal).
+             Blocked by WS-145 + WS-147. M effort.
+    WS-149 — ≥10 reference lessons across ≥3 tiers. Blocked by WS-147.
+             M effort (content-heavy).
+
+  WS-013 itself is tracking-parent only — no direct work. Future sprints
+  pick from WS-145..WS-149 children.
+
+  Per founder direction (2026-05-03 plan-mode): "build it right to support
+  the gamut of potential leaks, then fill them in as we author them."
+  Catalog at docs/projects/self-coach-foundation/leak-catalog.md authored
+  in SPR-030 captures the full enumeration of planned leak types.
 priority_score: 22.0
 priority_label: "P1"
 category: "self-coach-foundation"
@@ -26,7 +49,7 @@ blocked_by:
 blocked_by_legacy:
   - "SCF-G4"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-030"
 decision_flags: []
 status_note: "BLOCKED by SCF-G4"
 source:

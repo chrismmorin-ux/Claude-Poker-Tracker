@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-05-01T16:19:57Z"
-sprint_count: 2
+last_updated: "2026-05-03T14:30:00Z"
+sprint_count: 32
 
 sprints:
   - id: "SPR-001"
@@ -19,12 +19,418 @@ sprints:
     completed_at: "2026-05-01T15:42:57Z"
   - id: "SPR-002"
     title: "TableView Invariant Audit — matrix authoring (Phase 1 of Master Plan TIA)"
-    status: approved
+    status: completed
     item_count: 1
-    items_done: 0
+    items_done: 1
     effort_summary: "M = ~1.5 sessions"
     program_focus: engineering
     composed_by: auto
     created_at: "2026-05-01T16:19:57Z"
     approved_at: "2026-05-01T16:19:57Z"
-    completed_at: null
+    completed_at: "2026-05-01T16:45:00Z"
+  - id: "SPR-003"
+    title: "ICP-1 — pattern codification + first non-UI seed audit (gameReducer UNDO)"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+S = ~2 sessions"
+    program_focus: engineering
+    program_initiative: "Invariant Coverage Program (ICP-1 of 5)"
+    composed_by: auto
+    created_at: "2026-05-01T17:00:00Z"
+    approved_at: "2026-05-01T17:00:00Z"
+    completed_at: "2026-05-01T18:15:00Z"
+  - id: "SPR-004"
+    title: "Triage migrationV21 telemetryConsentStore CRUD failures (vital-sign YELLOW)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "S = ~0.5 sessions"
+    program_focus: engineering
+    composed_by: auto
+    created_at: "2026-05-01T18:30:00Z"
+    approved_at: "2026-05-01T18:30:00Z"
+    completed_at: "2026-05-01T18:55:00Z"
+  - id: "SPR-005"
+    title: "Close remaining unit-project failures (post-WS-124): TelemetryConsentContext test + 2 baseEquity drifts"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "S = ~0.5 sessions"
+    program_focus: engineering
+    composed_by: auto
+    created_at: "2026-05-01T19:10:00Z"
+    approved_at: "2026-05-01T19:10:00Z"
+    completed_at: "2026-05-01T19:30:00Z"
+  - id: "SPR-006"
+    title: "ICP-2 OnlineView audit (highest-blast-radius UI surface)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5-2 sessions"
+    program_focus: engineering
+    program_initiative: "Invariant Coverage Program (ICP-2 of 5)"
+    composed_by: auto
+    created_at: "2026-05-01T19:50:00Z"
+    approved_at: "2026-05-01T19:50:00Z"
+    completed_at: "2026-05-01T20:30:00Z"
+  - id: "SPR-007"
+    title: "ICP-3 exploitEngine audit (highest theoretical-correctness ROI; critical-tier alignment)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~2 sessions"
+    program_focus: domain-correctness
+    program_initiative: "Invariant Coverage Program (ICP-3 of 5)"
+    composed_by: auto
+    created_at: "2026-05-01T20:35:00Z"
+    approved_at: "2026-05-01T20:35:00Z"
+    completed_at: "2026-05-01T21:15:00Z"
+  - id: "SPR-008"
+    title: "FW-1 Sprint A — TableView fix wave + WS-126 flake (vital sign clearance)"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+M = ~2 sessions"
+    program_focus: engineering
+    program_initiative: "Fix Wave 1 (FW-1 Sprint A of 2)"
+    composed_by: auto
+    created_at: "2026-05-01T21:30:00Z"
+    approved_at: "2026-05-01T21:30:00Z"
+    completed_at: "2026-05-01T22:15:00Z"
+  - id: "SPR-009"
+    title: "FW-1 Sprint B — gameReducer UNDO + preflopAdvisor position-vocab + OnlineView pluralization"
+    status: completed
+    item_count: 3
+    items_done: 3
+    effort_summary: "M+S+S = ~2 sessions"
+    program_focus: engineering
+    program_initiative: "Fix Wave 1 (FW-1 Sprint B of 2)"
+    composed_by: auto
+    created_at: "2026-05-01T22:15:00Z"
+    approved_at: "2026-05-01T22:15:00Z"
+    completed_at: "2026-05-01T22:40:00Z"
+  - id: "SPR-010"
+    title: "TIA Phase 2 — Straddle scope decision + matrix extension (Master Plan B+E close-out)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: engineering
+    program_initiative: "TableView Invariant Audit Phase 2 (Master Plan B+E close-out)"
+    composed_by: auto
+    created_at: "2026-05-02T00:45:00Z"
+    approved_at: "2026-05-02T00:45:00Z"
+    completed_at: "2026-05-02T01:05:00Z"
+  - id: "SPR-011"
+    title: "Housekeeping close-out — TIA admin close + Tests vital sign restoration"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "S+S = ~1 session"
+    program_focus: engineering
+    program_initiative: "Housekeeping close-out before Master Plan Phase 2 starts"
+    composed_by: auto
+    created_at: "2026-05-02T01:15:00Z"
+    approved_at: "2026-05-02T01:15:00Z"
+    completed_at: "2026-05-02T01:35:00Z"
+  - id: "SPR-012"
+    title: "SCF Gate 1 — Self-Coach Foundation Entry (Master Plan Phase 2 starter)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation (SCF Gate 1 of 5; Master Plan §D)"
+    composed_by: auto
+    created_at: "2026-05-02T01:45:00Z"
+    approved_at: "2026-05-02T01:45:00Z"
+    completed_at: "2026-05-02T02:30:00Z"
+  - id: "SPR-013"
+    title: "PIO Gate 1 — Player Identification v2 Entry (Master Plan A-line, Phase 2 stagger)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO Gate 1 of 5; Master Plan §A; A/D stagger continuation)"
+    composed_by: auto
+    created_at: "2026-05-02T02:50:00Z"
+    approved_at: "2026-05-02T02:50:00Z"
+    completed_at: "2026-05-02T03:30:00Z"
+  - id: "SPR-014"
+    title: "SCF Gate 2 — Self-Coach Foundation Blind-Spot Roundtable (Master Plan D-line, Phase 2 stagger continuation)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation (SCF Gate 2 of 5; Master Plan §D; A/D stagger alternation continuation)"
+    composed_by: auto
+    created_at: "2026-05-02T03:35:00Z"
+    approved_at: "2026-05-02T03:35:00Z"
+    completed_at: "2026-05-02T04:25:00Z"
+  - id: "SPR-015"
+    title: "PIO Gate 2 — Player Identification v2 Blind-Spot Roundtable (Master Plan A-line, Phase 2 stagger alternation)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions"
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO Gate 2 of 5; Master Plan §A; A/D stagger alternation continuation)"
+    composed_by: auto
+    created_at: "2026-05-02T04:30:00Z"
+    approved_at: "2026-05-02T04:30:00Z"
+    completed_at: "2026-05-02T05:25:00Z"
+  - id: "SPR-016"
+    title: "FIND-002 close-out — MoE-banded value/bluff classifier (domain-correctness P0 deferral pivot)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M typed (actual S — single file core + 3 UI consumers)"
+    program_focus: domain-correctness
+    program_initiative: "P0 deferral pivot — first domain-correctness program work since SPR-007 (9 sprints)"
+    composed_by: auto
+    created_at: "2026-05-02T05:30:00Z"
+    approved_at: "2026-05-02T05:30:00Z"
+    completed_at: "2026-05-02T06:05:00Z"
+  - id: "SPR-017"
+    title: "FIND-001 close-out — credible intervals UI wiring (last open HIGH from domain-correctness baseline)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M typed (actual S — 2 file edits + 1 v2 follow-up ticket)"
+    program_focus: domain-correctness
+    program_initiative: "P0 momentum continuation — closed last HIGH from 2026-05-01 baseline; ALL 5 baseline HIGH findings now resolved"
+    composed_by: auto
+    created_at: "2026-05-02T06:10:00Z"
+    approved_at: "2026-05-02T06:10:00Z"
+    completed_at: "2026-05-02T06:30:00Z"
+  - id: "SPR-018"
+    title: "SCF Gate 3 — Self-Coach Foundation Research (D-line Master Plan Phase 3 entry)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M+ decision-dense; 1 new audit + 3 modified docs"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation (SCF Gate 3 of 5; Master Plan §D; D-line first Phase-3 Research gate; AP-SCF-01 nuance amendment ratified)"
+    composed_by: auto
+    created_at: "2026-05-02T06:35:00Z"
+    approved_at: "2026-05-02T06:35:00Z"
+    completed_at: "2026-05-02T07:25:00Z"
+  - id: "SPR-019"
+    title: "PIO Gate 3 — Player Identification v2 Research (A-line Master Plan Phase 3 entry)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M+ decision-dense; ~470-line audit + 3 companion file updates"
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO Gate 3 of 5; Master Plan §A; A-line first Phase-3 Research gate; A/D stagger alternation COMPLETE at Gate 3)"
+    composed_by: auto
+    created_at: "2026-05-02T07:30:00Z"
+    approved_at: "2026-05-02T07:30:00Z"
+    completed_at: "2026-05-02T08:15:00Z"
+  - id: "SPR-020"
+    title: "SCF Gate 4 — Self-Coach Foundation Design surfaces (D-line Master Plan Phase 4 entry)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M+ decision-dense; actual ~1.5 sessions (audit doc + 4 surfaces + module + template + 5 lessons + companions; zero src/ diff)"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation (SCF Gate 4 of 5; Master Plan §D; D-line first Phase-4 Design gate; A/D stagger continues — PIO-G4 next per alternation)"
+    composed_by: auto
+    created_at: "2026-05-02T08:20:00Z"
+    approved_at: "2026-05-02T08:20:00Z"
+    completed_at: "2026-05-02T09:30:00Z"
+  - id: "SPR-021"
+    title: "PIO Gate 4 — Player Identification v2 Design surfaces (A-line Master Plan Phase 4 entry)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M+ decision-dense; actual ~1.5 sessions (audit + 2 surfaces + 4 extensions + 3 project docs + 3 companion updates; zero src/ diff; surface coordination scope shrink reduced authoring vs initial estimate)"
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO Gate 4 of 5; Master Plan §A; A-line first Phase-4 Design gate; A/D Phase-4 alternation COMPLETE — both lines Phase-4 done)"
+    composed_by: auto
+    created_at: "2026-05-02T09:35:00Z"
+    approved_at: "2026-05-02T09:35:00Z"
+    completed_at: "2026-05-02T11:00:00Z"
+  - id: "SPR-022"
+    title: "Version-mismatch reload diagnostic + confirm (P0 break after Master Plan Phase-4 alternation complete)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M typed (actual M — 4 app files + 2 extension files + 2 test files); plan-mode 3 owner decisions; 10/10 storage + 31/31 OnlineView invariants + 80/80 wire-schemas + 20/20 integration-pipeline + 2251/2251 full extension + 7/7 SyncBridge consumers + 7587/7587 app smart-test-runner; build clean (7.25s)"
+    program_focus: engineering
+    program_initiative: "P0 break after Master Plan A/D Phase-4 alternation (deferred 5 sprints since SPR-018; engineering program watch-tier first attention since FW-1 SPR-008/SPR-009)"
+    composed_by: auto
+    created_at: "2026-05-02T11:00:00Z"
+    approved_at: "2026-05-02T11:00:00Z"
+    completed_at: "2026-05-02T13:00:00Z"
+  - id: "SPR-023"
+    title: "Continue Anyway graceful degradation (WS-077 — sibling P1 follow-up to WS-076)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M typed (actual M — 6 files: 1 storage + 1 hook + 1 context + 1 analysis-ctx + 1 view + 4 test files); plan-mode 3 owner decisions; 17/17 storage + 4/4 OnlineAnalysisContext + 42/48 OnlineView invariants + 5/5 SyncBridge consumers + 9477/9507 full smart-test-runner; build clean (5.41s)"
+    program_focus: engineering
+    program_initiative: "Direct WS-076 continuation (DCOMP-W4-A3-F5 sibling to F4); engineering program continuity while context is hot"
+    composed_by: auto
+    created_at: "2026-05-02T13:05:00Z"
+    approved_at: "2026-05-02T13:05:00Z"
+    completed_at: "2026-05-02T14:30:00Z"
+  - id: "SPR-024"
+    title: "HSP foundation — HeroState type schema + range-engine partitioning audit"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "S+S (~45 min; WS-140 types.js + 11/11 dedicated vitest + clean 6.48s build; WS-137 audit + verdict + full API spec appended to HERO_STATE_DESIGN.md §9; new WS-144 created; WS-142 deps revised; full smart-test-runner 9488/9518 passed (30 skipped) — zero regressions)"
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive workstream (HSP foundation; load-bearing dep for SCF Gate 5 leak-rule wiring; founder-promoted 2026-05-02 from docs/HERO_STATE_DESIGN.md)"
+    composed_by: auto
+    created_at: "2026-05-03T00:00:00Z"
+    approved_at: "2026-05-03T00:00:00Z"
+    completed_at: "2026-05-03T00:45:00Z"
+  - id: "SPR-025"
+    title: "HSP build — equityVsRangeParts role-translator + classifyArchetype"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "S+M (~2.5h actual; WS-144 ~165 LoC + 17 tests + §9.3.1 doc; WS-141 ~120 LoC + 32 tests + types.js ARCHETYPE_IDS+potType extension + §4.3.1 doc; 4 spec ambiguities resolved via 2 plan-mode AskUserQuestion rounds; full smart-test-runner 9537/9567 (30 skipped, 0 regressions); clean builds)"
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive workstream (HSP build phase; load-bearing dep for SCF Gate 5; direct continuation of SPR-024 HSP foundation; WS-142 unblocked from code-deps)"
+    composed_by: auto
+    created_at: "2026-05-03T01:00:00Z"
+    approved_at: "2026-05-03T01:00:00Z"
+    completed_at: "2026-05-03T03:55:00Z"
+  - id: "SPR-026"
+    title: "HSP narrative authoring — 8 preflop + 10 flop archetype templates"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+M tagged (~50 min actual — markdown authoring well under realistic estimate); 18 templates + CONVENTIONS.md + FLOP_MULTIWAY v1 stub; 2 spec ambiguities (slot syntax, FLOP_MULTIWAY scope) resolved via 2 plan-mode AskUserQuestion rounds; WS-142 has zero remaining content/code blockers"
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive workstream (HSP authoring phase; last content dep for WS-142 orchestrator; direct continuation of SPR-024 + SPR-025)"
+    composed_by: auto
+    created_at: "2026-05-03T04:00:00Z"
+    approved_at: "2026-05-03T04:00:00Z"
+    completed_at: "2026-05-03T04:50:00Z"
+  - id: "SPR-027"
+    title: "HSP-B2 buildHeroState() orchestrator"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L tagged (~1.5h actual — far under 3-session estimate; orchestrator is composition not novel algorithms); 4 source files + 4 test files (~520 LoC src + ~700 LoC tests); 62 new tests (parseFrontmatter:12 + interpolateTemplate:18 + loadTemplates:8 + buildHeroState:24); 2 spec ambiguities (failure mode, YAML parsing) resolved via 1 plan-mode AskUserQuestion round + 3 decisions deferred per accept_criteria allowance; full smart-test-runner 9599/9629 (30 skipped, 0 regressions); HERO_STATE_DESIGN.md §10 documents implementation policy"
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive workstream (HSP orchestrator phase; WS-143 UNBLOCKED → WS-013 SCF Gate 5)"
+    composed_by: auto
+    created_at: "2026-05-03T05:00:00Z"
+    approved_at: "2026-05-03T05:00:00Z"
+    completed_at: "2026-05-03T06:30:00Z"
+  - id: "SPR-028"
+    title: "WS-115 (SR-6) decomposition — break umbrella into 16 dependency-ordered child tickets"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged (research + decomposition planned). Actual: ~30 min plan-mode investigation only — discovered WS-115 is a stale P0 (SR-6 program RESOLVED 2026-04-15 per post-mortem; ~17 PRs already shipped; sidebarRebuild flag DELETED in SR-7a). No code/test changes; no decomposition authored. WS-115 marked done with status_note pointing at post-mortem. Retro finding recorded: BACKLOG migration miss — future /audit pass should cross-check migrated headers against failures directory."
+    program_focus: engineering
+    program_initiative: "Sidebar Recurrence Program — SR-6 Stage 6 stale-P0 closure (queue-hygiene)"
+    composed_by: auto
+    created_at: "2026-05-03T06:45:00Z"
+    approved_at: "2026-05-03T06:45:00Z"
+    completed_at: "2026-05-03T07:00:00Z"
+  - id: "SPR-029"
+    title: "HSP-W1 — Wire HeroState to HandReplay review (first consumer surface)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged (~1.5h actual); 3-deliverable cross-program ticket: Gate 1 audit (GREEN, Gate 2 not required) + Gate 4 surface spec update (5 JTBDs added; Anatomy + new §HeroStateSection) + Implementation (HeroStateSection.jsx + heroStateReplayUtils.js + ReviewPanel wire-in + 21 component tests). Full smart-test-runner 9620/9650 (30 skipped, 0 regressions); +21 net tests vs pre-WS-143; HERO_STATE_DESIGN.md §11 documents implementation. WS-013 (SCF Gate 5) FULLY UNBLOCKED."
+    program_focus: "domain-correctness + design (cross-program)"
+    program_initiative: "Hero State Primitive workstream (HSP first-consumer wire; closed HSP-to-SCF chain — Master Plan §D Phase 5 unblock)"
+    composed_by: auto
+    created_at: "2026-05-03T07:15:00Z"
+    approved_at: "2026-05-03T07:15:00Z"
+    completed_at: "2026-05-03T08:30:00Z"
+  - id: "SPR-030"
+    title: "SCF G5 — first leak rule wired end-to-end (WS-013 slice)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L tagged (founder reframe expanded scope mid-plan-mode); 4-phase delivery: WS-013 decomposition into 5 children + leak-catalog.md (25 leak types across 10 categories) + skillAssessment/ extensible framework (5 source files + CLAUDE.md + 47 tests) + IDB v22 heroLeaks store migration + useHeroLeaks hook + HeroCoachingCard CD-5 badge with Drill/Dismiss/Snooze affordances + 13 component tests; 60 net new tests; full smart-test-runner 9680/9710 (30 skipped, 0 regressions); first SCF leak rule (IP cbet defense overfold) shipped end-to-end; framework supports gamut of future leaks via single-file rule additions (registry pattern via import.meta.glob)"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — framework + catalog + first leak (Master Plan §D Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-03T08:45:00Z"
+    approved_at: "2026-05-03T08:45:00Z"
+    completed_at: "2026-05-03T11:00:00Z"
+  - id: "SPR-031"
+    title: "SCF G5 chain activation — detection trigger + 2nd catalog rule"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+S tagged (~1h actual); WS-158 trigger wire — accumulator refactor extracted deriveSituationKey helper + heroLeakDetectionPipeline orchestrator + useHeroLeakDetection hook with count-cache + HandReplayView mount trigger + ReviewPanel consumer wire (15 new tests); WS-146 first claim — hero-bb-defense-width rule + 13 tests (catalog: 2/25 shipped). End-to-end SCF chain LIVE. Full smart-test-runner 9708/9738 (30 skipped, 0 regressions); +28 net tests; build clean (5.87s)"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — chain activation + catalog-driven authoring proof (Master Plan §D Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-03T11:15:00Z"
+    approved_at: "2026-05-03T11:15:00Z"
+    completed_at: "2026-05-03T13:15:00Z"
+  - id: "SPR-032"
+    title: "SCF G5 child 3 — lesson authoring framework + 1-2 reference lessons"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M = ~1.5 sessions tagged; WS-147 lesson framework + 2 reference lessons (cbet-defense + bb-defense matching shipped leak rules) SHIPPED; Drill-this affordance now navigates to LessonDetailView (was console.log stub); 16 new tests, 9724 passing total, build clean"
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — lesson framework + Drill-this end-to-end (Master Plan §D Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-03T13:30:00Z"
+    approved_at: "2026-05-03T13:30:00Z"
+    completed_at: "2026-05-03T15:30:00Z"
+  - id: "SPR-033"
+    title: "SCF G5 child 4 — curriculum infrastructure (mastery + composite + descriptor + tier map)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged; WS-148 curriculum infrastructure spine SHIPPED. 4 modules (tierConceptMap + conceptMastery + composite + learningStateDescriber) + 62 new tests + concept-kind architecture (3 kinds) + lesson migration (cluster umbrellas + dropped numeric prefixes) + leak rule re-pointing + selfCoach settings state + WS-159 backlog for SelfCoachView surface. 9793 passing total (+69 vs SPR-032 baseline). Build clean (6.23s)."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — curriculum infrastructure spine (Master Plan §D Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-03T15:45:00Z"
+    approved_at: "2026-05-03T15:45:00Z"
+    completed_at: "2026-05-04T09:30:00Z"
+  - id: "SPR-034"
+    title: "PIO Gate 5 — decompose multi-PR umbrella + ship first child"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged; WS-008 decomposed into 6 children (WS-160..165) + Child A (WS-160) SHIPPED. IDB v23 + 2 stores (sightingLogs + playerPhotos) + Player schema extensions + computeStability utility + 33 new tests. 9826 passing total (+33 vs SPR-033 baseline). Build clean. Mirrors SCF G5 chain pattern. WS-161/162/163 unblocked."
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO) Gate 5 — Implementation (Master Plan §A Phase 2-5)"
+    composed_by: auto
+    created_at: "2026-05-04T09:45:00Z"
+    approved_at: "2026-05-04T09:45:00Z"
+    completed_at: "2026-05-04T11:25:00Z"
+  - id: "SPR-035"
+    title: "PIO G5 children B+C — Player Profile View + PlayersView/PlayerEditor extensions"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+M ≈ 3 sessions tagged. WS-162 (Player Profile View) + WS-163 (PV + PEX extensions) BOTH SHIPPED. PlayerProfileView fullscreen route + 5 new editor sections (AgeDecade/EthnicityTags/Wardrobe/Jewelry/Logo) + 3 palette files + PaletteChipsInput shared + 4 new filter chips + row-tap routing change to Profile + PlayerRow description extension. 32 new component tests (11 ProfileView + 21 PEX). 9857 passing total (+64 vs SPR-034 baseline). Build clean (5.51s). PlayersView fully testable end-to-end for new attribute model."
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO) Gate 5 — Profile View + PV/PEX extensions (Master Plan §A Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-04T11:30:00Z"
+    approved_at: "2026-05-04T11:30:00Z"
+    completed_at: "2026-05-04T14:40:00Z"
+  - id: "SPR-036"
+    title: "PIO G5 children E+F — Settings photo-toggle + Camera Capture Modal"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "S + M ≈ 2 sessions tagged. BOTH SHIPPED. WS-165: settings.privacy.photoCaptureEnabled toggle + PrivacySection + CI-grep test enforcing source-util-policy whitelist. WS-161: cropToSquare + savePhotoAtomically + CameraCaptureModal (2-stage native + canvas crop) + CameraButton (gated by toggle) + PlayerPhotoAvatar (shared). PlayerEditor wired; PlayerProfileView Header uses photo avatar. 9908 passing total (+51 vs SPR-035 baseline). Build clean. Photo-capture flow live end-to-end."
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO) Gate 5 — Settings toggle + Camera (Master Plan §A Phase 5)"
+    composed_by: auto
+    created_at: "2026-05-04T14:50:00Z"
+    approved_at: "2026-05-04T14:50:00Z"
+    completed_at: "2026-05-04T16:30:00Z"

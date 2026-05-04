@@ -2,10 +2,11 @@ id: "WS-012"
 title: "Gate 4 — Design"
 legacy_id: "SCF-G4"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T08:20:00Z"
+started_at: "2026-05-02T08:20:00Z"
+completed_at: "2026-05-02T09:30:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "self-coach-foundation"
@@ -22,9 +23,19 @@ blocked_by:
 blocked_by_legacy:
   - "SCF-G3"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by SCF-G3"
+sprint_id: "SPR-020"
+decision_flags:
+  - "SelfCoachView information architecture (tab structure: curriculum / leak history / study queue / settings; landing pane; navigation pattern)"
+  - "Inline leak annotation in HandReplayView (badge style + position + expand affordance + AP-SCF-01-compliant copy)"
+  - "Lesson card schema (required vs optional fields: tier, leak-tag, exposition, drill linkage, citation, owner-volunteered-test toggle, success criteria, version/lineage; CD-2 nuance compliance)"
+  - "Skill-assessment surface (3-mode UI: observed primary read-only / opt-in owner-volunteered tests / declared-in-Settings; AP-SCF-01 nuance wiring per feedback_owner_volunteered_grading.md)"
+  - "Leak-distillation pipeline UI (leak → tier resolution → lesson recommendation; immediate-firing affordance per Gate 3; dismiss/snooze/drill-now pattern)"
+  - "Curriculum-spine UI render (3-signal composite from SCF-G3-SPINE: DAG view + mastery view + leak-frequency view + nextConcept visualization; default view; switching pattern)"
+  - "src/utils/skillAssessment/ module shape (shared core + per-leak adapters per memory feedback_skill_assessment_core_competency.md; integration contracts with weaknessDetector.js + decisionAccumulator.js + drillScheduler)"
+  - "Settings tier-set + N05 confirm pattern (owner declares tier; CO-57 v2 disposition: in-scope this gate or stays deferred)"
+  - "HERO_LEAK_PRIORS initial values + composite-signal weights lock-in (W_leak/W_drill/W_test/W_recent baseline 0.5/0.3/0.15/0.05 per Gate 3 — confirm or tune)"
+  - "Initial 5-10 example lessons authoring (tier coverage map; leak targets; authoring template draft; mandatory-fields walkthrough)"
+status_note: "RESOLVED 2026-05-02 — Gate 4 Design audit shipped at docs/design/audits/2026-05-02-gate4-design-self-coach-foundation.md (~700 lines). 4 owner-decided + 6 inline-handled decisions ratified. TWO BINDING ARCHITECTURAL CONSTRAINTS from owner clarification: (1) drills + tests share substrate (no parallel prediction engine; src/utils/skillAssessment/ is thin aggregation layer); (2) drill coverage may NOT be encompassing (5/19 drill-backed, 4/19 partial, 10/19 pending; gap concepts get test_substrate: 'pending'). 5 SCF-G3-* carry-forwards (DETECTOR/TIERMAP/SPINE/CO/SCHEMA) ALL bound. Deliverables: 4 new surfaces + 1 HRV extension + 2 drill-surface extensions + skillAssessment module spec + lesson authoring template + 5 reference lessons (covering Tier 1, 3, 4, 5; all drill-backed) + 4 companion updates (coaching.md / CATALOG.md / copy-discipline.md / anti-patterns.md). AP × CD × 9-red-lines walkthroughs all clear. Zero src/ diff. SCF Gate 5 unblocked. Master Plan rhythm: D-line Phase 4 entry COMPLETE; next anchor WS-007 (PIO-G4) per A/D alternation."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)"

@@ -1,0 +1,61 @@
+id: "WS-145"
+title: "SCF G5 child 1 — skillAssessment framework + first leak rule (IP cbet defense overfold)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T08:50:00Z"
+completed_at: "2026-05-03T11:00:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  First child of WS-013 (SCF Gate 5 umbrella decomposition, 2026-05-03). Ships
+  the SCF skill-assessment framework end-to-end with one leak rule as proof
+  of architecture.
+
+  Scope: src/utils/skillAssessment/ directory with heroDecisionAccumulator.js
+  (generic hero-side bucketer), heroLeakDetector.js (registry pattern via
+  import.meta.glob), solverBaselines.js (extensible lookup), leakRules/
+  directory with heroIpCbetOverfold.js (the §SCF-G4 example) + _template.js
+  for future rules, CLAUDE.md domain rules. Plus IDB v22 migration for
+  heroLeaks store, useHeroLeaks hook, HeroCoachingCard badge + expanded
+  CD-5 card + Drill/Dismiss/Snooze affordances.
+
+  Per founder direction (2026-05-03 plan-mode): build the framework right to
+  support the gamut of future leaks; ship the simplest rule as proof; queue
+  remaining rules + skill-assessment expansion + lessons + curriculum as
+  child tickets WS-146..WS-149.
+accept_criteria:
+  - "src/utils/skillAssessment/ directory with framework + first rule shipped"
+  - "Leak catalog doc at docs/projects/self-coach-foundation/leak-catalog.md authored (enumeration of all planned leak types)"
+  - "IDB v22 heroLeaks store migration ships (additive only)"
+  - "useHeroLeaks hook reads from IDB, honors snoozedUntil + dismissedAt"
+  - "HeroCoachingCard renders badge when n≥30 + severity threshold met"
+  - "Expanded CD-5 card has 4 mandatory fields per copy-discipline.md"
+  - "Drill/Dismiss/Snooze affordances render + persist correctly"
+  - "Autonomy red line #5 lint test (no shame copy)"
+  - "All tests pass; build clean; full smart-test-runner no regressions"
+effort: "L"
+files_involved:
+  - "src/utils/skillAssessment/ (NEW dir)"
+  - "src/utils/skillAssessment/leakRules/ (NEW dir)"
+  - "src/utils/persistence/migrations.js (or wherever schema bumps)"
+  - "src/hooks/useHeroLeaks.js (NEW)"
+  - "src/components/views/HandReplayView/HeroCoachingCard.jsx"
+  - "docs/projects/self-coach-foundation/leak-catalog.md (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-146"
+  - "WS-147"
+sprint_id: "SPR-030"
+decision_flags: []
+source:
+  origin: "ws-013-decomposition-spr-030-2026-05-03"
+  parent_ws: "WS-013"
+  parent_doc: "docs/projects/master-plan-2026-04-30.md §D + docs/design/audits/2026-05-02-gate4-design-self-coach-foundation.md"
+status_note: "First WS-013 child; ships SCF framework + first leak rule end-to-end"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

@@ -1,0 +1,42 @@
+id: "SPR-005"
+title: "Close remaining unit-project failures (post-WS-124): TelemetryConsentContext test + 2 baseEquity drifts"
+status: completed
+goal: |
+  After WS-124 closed 12 of 14 unit failures, the remaining unit-project surface
+  is back to GREEN. Author the missing TelemetryConsentContext test (closes the
+  schema-validation drift assertion); update 2 baseEquity values in
+  drillContent/shapes.js (closes precisionAudit lane drift); document
+  rangeVsBoard as a confirmed Monte Carlo flake requiring no action.
+
+items:
+  - id: "WS-125"
+    title: "Fix remaining unit-project test failures (post-WS-124): TelemetryConsentContext test + 2 baseEquity drift"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Fix 1: 12-assertion TelemetryConsentContext.test.jsx mirroring EntitlementContext pattern. Fix 2: 2 single-line baseEquity updates in shapes.js (lane composition untouched; measured-vs-declared aligned per owner direction). Fix 3: rangeVsBoard NO action — confirmed flake."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+total_effort: "S = ~0.5 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T19:10:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: targeted fixes for pre-existing test drift; no production logic change beyond 2 already-spec-approved baseEquity numbers; new context test is missing-coverage gap-fill mirroring established sibling pattern. No anti-goal patterns."
+  matches: []
+
+created_at: "2026-05-01T19:10:00Z"
+approved_at: "2026-05-01T19:10:00Z"
+started_at: "2026-05-01T19:10:00Z"
+completed_at: "2026-05-01T19:30:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Single-item sprint follow-up to SPR-004. Plan mode used to confirm scope
+  (3 reported failures → 2 real + 1 flake) and gather owner direction on
+  the precisionAudit fix (align spec to measured, vs alternatives).

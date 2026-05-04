@@ -1,0 +1,120 @@
+id: "SPR-034"
+title: "PIO Gate 5 — decompose multi-PR umbrella + ship first child"
+status: completed
+goal: |
+  Pivot from D-workstream (SCF — 4 consecutive sprints SPR-030..033) to
+  A-workstream (Player Identification v2) per Master Plan §A Phase 2-5
+  staggering. WS-008 ("Gate 5 — Implementation (multi-PR)") gets
+  decomposed in plan-mode into dependency-ordered children matching the
+  5 sub-deliverables in its accept_criteria; the first child ships in
+  this sprint.
+
+  Mirrors the proven SCF G5 chain pattern: WS-013 was decomposed in
+  SPR-030 plan-mode into WS-145..149, with one child shipping per sprint.
+  Same shape applies to WS-008.
+
+  Master Plan rhythm:
+    SPR-002:        WS-001 — TIA Phase 1 (B+E) — DONE
+    SPR-030..033:   D-workstream (SCF G5) — DONE (infrastructure spine + WS-159 follow-up)
+    SPR-034:        A-workstream (PIO G5) — decomposition + first child (this sprint)
+    SPR-035+:       continue A children + interleave D follow-ups (WS-159 SelfCoachView,
+                    WS-149 lessons, WS-146 ongoing leak rules) per master plan rhythm
+
+items:
+  - id: "WS-008"
+    title: "PIO Gate 5 — decompose multi-PR umbrella + ship first child"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags: []
+    decisions_locked:
+      - "Decomposition: 6 children (A-F) mapped 1:1 to Gate 4 design surface IDs (not 5 — split scoring + DISAMB into combined Child E + carved out Child F for SET + SUP)"
+      - "First-child anchor: WS-160 (Child A) — IDB v23 + computeStability scaffold; highest leverage; lowest UI risk"
+      - "Sequencing: A blocks B/C/D; B/C/D parallel after A; E waits for D + Table-Build G5 (soft-blocked); F waits for D"
+      - "Plan-mode: Table-Build coordination moot — heroLeaks (SCF v22) already passed v22; PIO bumps cleanly to v23"
+      - "Plan-mode: SIGHTING_FEATURE_PRIORS ships empty (uniform fallback); corpus-tuned values deferred to WS-162"
+    depends_on: []
+    started_at: "2026-05-04T09:45:00Z"
+    completed_at: "2026-05-04T11:25:00Z"
+    notes: |
+      DECOMPOSED + first-child SHIPPED:
+
+      Decomposition (WS-008 → 6 children):
+        - WS-160 (Child A): IDB v23 + computeStability scaffold — SHIPPED THIS SPRINT
+        - WS-161 (Child B): Camera Capture Modal — backlog (unblocked)
+        - WS-162 (Child C): Player Profile View — backlog (unblocked)
+        - WS-163 (Child D): PlayersView + PlayerEditor extensions — backlog (unblocked)
+        - WS-164 (Child E): Multi-attribute ranking + scoring (PVA + DISAMB) — backlog (blocked by D + Table-Build G5 soft-block)
+        - WS-165 (Child F): Settings photo-toggle + CI-grep (SET + SUP) — backlog (blocked by D)
+
+      WS-160 deliverables:
+        - src/utils/persistence/database.js: DB_VERSION 22→23 + SIGHTING_LOGS_STORE_NAME + PLAYER_PHOTOS_STORE_NAME constants
+        - src/utils/persistence/migrations.js: migrateV23 (sightingLogs 5 indexes + playerPhotos 1 index + players cursor walk for 6 default fields)
+        - src/utils/persistence/sightingLogsStore.js (NEW): appendSighting + getSightingsForPlayer + getSightingsBySession + getSightingsByFeature + deleteSightingsForPlayer
+        - src/utils/persistence/playerPhotosStore.js (NEW): savePhoto + getPhotoBlob + deletePhotosForPlayer (cascade)
+        - src/utils/persistence/index.js: barrel re-exports
+        - src/utils/playerMatching/computeStability.js (NEW, ~200 LoC): Bayesian-Beta posterior + 'always'/'sometimes'/'today-only' banding per audit §PIO-G3-STAB
+        - src/utils/playerMatching/SIGHTING_FEATURE_PRIORS.js (NEW): empty-object scaffold + JSDoc schema
+        - src/utils/persistence/__tests__/sightingLogsStore.test.js (13 tests)
+        - src/utils/persistence/__tests__/playerPhotosStore.test.js (9 tests)
+        - src/utils/playerMatching/__tests__/computeStability.test.js (11 tests)
+        - src/utils/persistence/__tests__/database.test.js: bumped expected version 22→23 + store count 21→23
+        - src/utils/persistence/__tests__/anchorLibraryStores.test.js: DB_VERSION assertion 22→23
+
+      Tests: 9826 passed / 30 skipped / 0 failed (+33 net vs SPR-033 baseline of 9793). Build clean (5.68s).
+
+      6 child queue YAMLs authored (WS-160..165). WS-008 marked decomposed. queue-index.yaml updated.
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO) Gate 5 — Implementation (Master Plan §A Phase 2-5)"
+total_effort: "M = ~1.5 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-008): Decomposition layout (5 children mapped from accept_criteria)"
+  - "Item #1 (WS-008): First-child anchor"
+  - "Item #1 (WS-008): Sequencing strategy (sequential vs parallel against stub schema)"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-04T09:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-033). Manual review: PIO is identification utility per feedback_pio_identification_utility_first.md (owner-stance, identification utility binds over cultural-sensitivity reviewing voice); decomposition is structural work matching proven SCF G5 pattern; no autonomy-violation or shame-copy risk; AP-PIO refusals stay narrow (demographic-targeted recommendations / tone-deaf framing / auto-photo-capture / cross-surface contamination — not demographic categories themselves)."
+  matches: []
+
+created_at: "2026-05-04T09:45:00Z"
+approved_at: "2026-05-04T09:45:00Z"
+started_at: "2026-05-04T09:45:00Z"
+completed_at: "2026-05-04T11:25:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection: WS-008 (PIO G5 Implementation) chosen over continuing
+  SCF chain. Rationale:
+    - 4 consecutive D-workstream sprints (SPR-030..033); SCF infrastructure
+      spine just closed cleanly. Continuing would extend the arc past its
+      natural break point.
+    - Master Plan §A Phase 2-5 explicitly calls for "A staggered with D"
+      after Phase 1 closure. A Gates 1-4 are done (WS-005..007); G5 ready.
+    - WS-008 P=22.0 (P1) — highest-priority unblocked candidate.
+
+  Source-class damping (Step 2d): last 3 anchors WS-145 (spr-followup),
+  WS-158 (spr-followup), WS-147 (spr-followup), WS-148 (spr-followup) —
+  ALL founder-driven, never damped. WS-008 source: backlog-md-migration
+  → untagged → not damped.
+
+  Mode classification: M effort + improvement type + 3 decision flags
+  → plan-first.
+
+  Plan-mode tasks:
+    1. Read PEO (Player Entry Overhaul) shipped infrastructure that
+       PIO reuses (avatar system + IDB v14 + PlayerEditor + PlayerPicker).
+    2. Read PIO Gate 4 design surfaces (player-editor.md, players-view.md,
+       player-management.md, etc.).
+    3. Decompose WS-008 into 5 children matching accept_criteria.
+    4. Pick first-child anchor + ship it.
+
+  Note for SPR-035+ planning: 4-5 PIO G5 children remaining + interleave
+  D follow-ups (WS-159 SelfCoachView surface, WS-149 sub-concept lessons,
+  WS-146 ongoing leak rules) per master plan rhythm.

@@ -1,0 +1,72 @@
+id: "WS-157"
+title: "HSP-X3 — LLM-augmented narrative authorship for long tail (research/spike, NOT v1-catalog replacement)"
+type: research
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Resolve docs/HERO_STATE_DESIGN.md §7.3 open question: LLM-augmented narrative
+  authorship for the long tail of archetype × adjustment combinations that
+  hand-authored templates can't cover.
+
+  IMPORTANT: This is a RESEARCH/SPIKE ticket, NOT a v1-catalog replacement.
+  v1 templates (and v2 turn/river/multiway templates from WS-151..WS-154)
+  remain hand-authored. LLM augmentation only fills gaps where the
+  parametric template + adjustment composition produce awkward or generic
+  narrative on a long-tail combination.
+
+  Goals:
+    1. Identify which long-tail combinations actually surface in production
+       (instrument heroStateReplayUtils to log archetype × top-3-adjustments
+       triples that fired).
+    2. For high-frequency long-tail combinations, decide: hand-author a new
+       sub-template OR delegate to LLM call with HeroState as input.
+    3. If LLM path: design prompt that takes structured HeroState + safety
+       constraints (no first-principles violations, must reference computed
+       equity values, must match v1 voice).
+    4. Ratify or reject: under what circumstances LLM augmentation ships.
+
+  Hard guards (binding for LLM path):
+    - LLM never produces a plan; only a narrative wrapper around the
+      already-computed plan
+    - LLM output validated against archetypeFamily voice notes before render
+    - No archetype-ID-as-decision-input — LLM cannot influence equity / EV /
+      action selection
+    - Offline / no-network path must still ship a valid (if generic)
+      narrative
+
+  Possible reject outcome: hand-author all long-tail combinations as v3
+  catalog expansion instead of LLM. That's a valid outcome — document the
+  rationale in §7.3 if so.
+accept_criteria:
+  - "Long-tail frequency analysis from production usage instrumented + reviewed"
+  - "Decision recorded in HERO_STATE_DESIGN.md §7.3: hand-author v3 expansion vs LLM augmentation vs hybrid"
+  - "If LLM: prompt design + safety constraints + validation pipeline + offline fallback"
+  - "If hand-author: v3 archetype list + tickets created"
+  - "If hybrid: split criteria documented (which combinations get which treatment)"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (resolve §7.3)"
+  - "src/utils/heroState/heroStateReplayUtils.js (instrument, possibly)"
+  - "src/utils/heroState/llmNarrativeAugmenter.js (NEW, possibly)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Whether LLM augmentation ships at all — reject is a valid outcome"
+  - "Long-tail threshold — at what frequency does a combination warrant treatment"
+  - "Online-only LLM vs cached-LLM-fallback for offline play"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7.3"
+status_note: "v2 research/spike; reject is a valid outcome; deliberately P3"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

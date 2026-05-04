@@ -1,0 +1,85 @@
+id: "WS-136"
+title: "HSP — Hero State Primitive (master) — design + workstream coordination"
+type: feature
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-02T00:00:00Z"
+completed_at: "2026-05-03T08:30:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Master ticket for HSP — a hero-perspective synthesis primitive that classifies
+  decision points into canonical archetypes and exposes plan-by-branch
+  articulation ("here's a really good way to think about this position").
+
+  Design spec: docs/HERO_STATE_DESIGN.md (v0.1, 2026-05-02).
+
+  Founder-promoted to workstream 2026-05-02 after design conversation. Foundational
+  dependency for SCF (master plan workstream D — leak-to-lesson loop needs a
+  canonical "correct frame" reference). Provides a unified primitive consumed by:
+    - Live advisor (OnlineView seat annotation)
+    - PRF playbook cards (pre-session)
+    - HandReplay review (post-hand)
+    - SCF leak detector (canonical baseline for hero deviation measurement)
+
+  Why a primitive, not a presentation layer:
+    - Reuse across 4 consumers; presentation-only forces composition drift
+    - Skill-assessment baseline must be canonical (per skill-assessment-as-core-
+      competency feedback)
+    - Rides on existing game-state machine; adds perspective node, not new graph
+
+  First-principles guard (per POKER_THEORY.md §7 + exploitEngine/CLAUDE.md):
+    archetype IDs are OUTPUTS of classification, never INPUTS to plan computation.
+    Plans derive from equity / SPR / pot odds / players remaining. Templates are
+    presentation; plans are computed.
+
+  Children (7 work items):
+    - WS-137 (HSP-G1 audit)     — Range-engine partitioning audit
+    - WS-138 (HSP-A1 authoring) — 8 preflop archetype narratives
+    - WS-139 (HSP-A2 authoring) — 10 flop archetype narratives
+    - WS-140 (HSP-T1 type)      — HeroState type schema
+    - WS-141 (HSP-B1 classify)  — classifyArchetype()
+    - WS-142 (HSP-B2 build)     — buildHeroState() orchestrator
+    - WS-143 (HSP-W1 wire)      — Wire to HandReplay review (first consumer)
+
+  Cross-program: wiring tickets touching UI surfaces (W1, plus future PRF +
+  OnlineView + SCF integrations) need design-program Gate 1+4 per
+  docs/design/LIFECYCLE.md. The primitive itself is engine work
+  (domain-correctness program).
+
+  Scope addition pending: prog-domain-correctness.yaml scope.file_patterns should
+  add 'src/utils/heroState/**' once code lands so sweep/delta audits pick it up.
+  Tracked here so it isn't forgotten.
+
+accept_criteria:
+  - "All 7 child work items closed (WS-137 through WS-143)"
+  - "src/utils/heroState/ exists with type schema, classifier, builder"
+  - "First consumer (HandReplay review) renders HeroState narrative end-to-end"
+  - "18 archetype narratives authored and rendered with parametric interpolation"
+  - "First-principles guard enforced — no archetype-ID-as-decision-input in code"
+  - "prog-domain-correctness.yaml scope updated to include src/utils/heroState/**"
+effort: "L"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md"
+  - "src/utils/heroState/ (NEW)"
+  - "src/utils/rangeEngine/ (audit only)"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml (scope update)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "SCF (master plan workstream D — leak-to-lesson loop)"
+sprint_id: ""
+decision_flags:
+  - "Adjustment composition rule (precedence-by-magnitude vs multiply vs sum) — open question §7.2"
+  - "Narrative authorship workflow (hand-authored templates vs LLM-augmented) — open question §7.3"
+  - "Caching strategy (re-derive vs cache by decision-key hash) — open question §7.6"
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_doc: "docs/HERO_STATE_DESIGN.md"
+  conversation_session: "session-2026-05-02-design-hsp"
+status_note: "RESOLVED 2026-05-03 — entire HSP workstream shipped in ~8 sprints over 1 day. All 8 children done (WS-137 audit, WS-144 translator created from audit, WS-138/139 18 archetype templates, WS-140 type schema, WS-141 classifier, WS-142 buildHeroState orchestrator, WS-143 HandReplay first-consumer wire). prog-domain-correctness.yaml scope file_patterns updated to include src/utils/heroState/**. SCF Gate 5 (WS-013) now unblocked. Design doc grew to §11 (added §9 audit verdict, §10 build-policy, §11 wire-policy)."
+created_at: "2026-05-02"
+updated_at: "2026-05-03"

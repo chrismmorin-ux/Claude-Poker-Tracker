@@ -1,0 +1,67 @@
+id: "WS-164"
+title: "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 18.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  Recognition-search + disambiguation per PIO Gate 4 audit §PIO-G4-PVA
+  (lines 297–348) + §PIO-G4-DISAMB (lines 191–236).
+
+  scorePlayerMatch(player, query) returns weighted score [0..1] using:
+    - 8-dim weight vector (per audit): 0.35 name + 0.10 age + 0.10 skin
+      + 0.10 ethnicity + 0.10 hair + 0.05 jewelry + 0.05 wardrobe +
+      0.05 hat + 0.05 logo
+    - Per-dim contribution scaled by computeStability() (from WS-160) —
+      stable attributes contribute full weight, varying contribute less
+
+  Confidence bar + label rendering per PIO-G4-DISAMB:
+    - Strong match: score ≥ 0.7 (green, 7+/10 segments, "strong match")
+    - Partial match: 0.4 ≤ score < 0.7 (yellow, 4-7/10, "partial match")
+    - Weak match: score < 0.4 (red, <4/10, "weak match")
+    - AP-PIO-04 binding: factual labels, never "are you sure?"
+
+  Wires into Table-Build CandidateColumn (when Table-Build Gate 5 ships).
+  Filters in PlayersView (from WS-163) feed into the same scorePlayerMatch
+  flow.
+
+  Also authors recognition-confidence schema doc for C consumption.
+accept_criteria:
+  - "scorePlayerMatch(player, query) → number in [0..1]"
+  - "8-dim weight vector + stability scaling per audit §PIO-G4-PVA"
+  - "Confidence bar + label rendering per PIO-G4-DISAMB"
+  - "Live re-rank in CandidateColumn on every FeatureColumn change"
+  - "AP-PIO-04 lint test: no shame/are-you-sure copy"
+  - "Tests covering edge cases (empty query, all-same attributes, varying stability)"
+  - "docs/projects/player-identification-v2/recognition-confidence-schema.md (NEW)"
+effort: "M"
+files_involved:
+  - "src/utils/playerMatching/scorePlayerMatch.js (NEW)"
+  - "src/utils/playerMatching/__tests__/scorePlayerMatch.test.js (NEW)"
+  - "src/components/views/PlayerProfileView/ConfidenceBar.jsx (NEW shared)"
+  - "src/components/views/TableBuildView/CandidateColumn.jsx (modify when exists)"
+  - "src/components/views/PlayersView.jsx (rewire to scorePlayerMatch)"
+  - "docs/projects/player-identification-v2/recognition-confidence-schema.md (NEW)"
+blocked_by:
+  - "WS-163"
+blocked_by_note: "Also depends on Table-Build Gate 5 — separate workstream not yet ticketed; consult founder if Table-Build CandidateColumn is needed before this child can ship to a real surface."
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Weight vector tuning: ship audit defaults vs author corpus-tuned variants"
+  - "Confidence thresholds: ship audit defaults (0.7 / 0.4) vs corpus-tuned"
+  - "Table-Build coordination: wait for Table-Build Gate 5 surface OR ship as PlayersView-internal first"
+  - "recognition-confidence-schema.md: author here vs defer to Phase 5+ exploit-engine consumer"
+status_note: "Blocked by WS-163 + soft-blocked on Table-Build Gate 5 (CandidateColumn surface)."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

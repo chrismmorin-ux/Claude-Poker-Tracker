@@ -1,0 +1,59 @@
+id: "WS-158"
+title: "SCF G5 followup — wire hero-leak detection trigger + ReviewPanel consumer"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T12:15:00Z"
+completed_at: "2026-05-03T13:00:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  Activate the SCF leak-detection pipeline end-to-end. SPR-030 / WS-145
+  shipped the framework + first rule + storage + hook + badge slot, but the
+  trigger that runs the detector and writes to IDB was deferred. Without
+  this ticket, no badges actually appear in the running app.
+
+  Scope:
+    - New hook src/hooks/useHeroLeakDetection.js (or integrate into existing
+      analysisPipeline) that loads hands, runs heroDecisionAccumulator +
+      detectHeroLeaks, calls replacePlayerLeaks
+    - Wire ReviewPanel to call useHeroLeaks per hero decision point + pass
+      leak/onSnooze/onDismiss/onDrill props into HeroCoachingCard
+    - Add a derive-situation-key helper so the consumer side can key into
+      heroLeaks for the current decision context
+    - End-to-end test demonstrating: synthetic hand history → detector run
+      → IDB write → useHeroLeaks read → badge renders
+
+  v1 trigger location decision: HandReplayView mount (simplest; scoped per
+  replay open). Future sprint may move to context-level trigger if perf
+  measurements warrant.
+accept_criteria:
+  - "Hero-leak detection runs against hand history and writes to heroLeaks IDB"
+  - "ReviewPanel passes leak + callbacks into HeroCoachingCard"
+  - "Badge renders in HandReplayView when leak fires for current decision point"
+  - "End-to-end integration test (synthetic data → IDB → render)"
+  - "All tests pass; build clean; full smart-test-runner no regressions"
+  - "Visual verification noted (or explicitly deferred with rationale)"
+effort: "M"
+files_involved:
+  - "src/hooks/useHeroLeakDetection.js (NEW)"
+  - "src/components/views/HandReplayView/ReviewPanel.jsx"
+  - "src/components/views/HandReplayView/HandReplayView.jsx (trigger location)"
+  - "src/utils/skillAssessment/heroLeakDetectionPipeline.js (NEW orchestrator)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-031"
+decision_flags:
+  - "Trigger location: HandReplayView mount (simplest) vs analysisPipeline integration vs context-level hook"
+  - "Hand history scope: all hero hands vs recent N (perf trade-off)"
+  - "Situation key derivation in consumer: derive at render-time per currentActionEntry, or pre-compute alongside HeroState"
+source:
+  origin: "spr-030-deferred-2026-05-03"
+  parent_ws: "WS-145"
+status_note: "Activates SCF leak-detection pipeline end-to-end; deferred from SPR-030 per scope discipline"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

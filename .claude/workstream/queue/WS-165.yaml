@@ -1,0 +1,53 @@
+id: "WS-165"
+title: "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T14:50:00Z"
+completed_at: "2026-05-04T15:30:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  Privacy-control toggle + CI enforcement of source-util-policy.
+
+  **Settings extension (PIO-G4-SET):**
+  - Add `photoCaptureEnabled` boolean to settings.privacy section (default OFF).
+  - When OFF, camera entry button (from WS-163) is hidden app-wide.
+  - AP-PIO-03 binding: photo capture is OFF by default (privacy-first).
+
+  **CI-grep enforcement (PIO-G4-SUP):**
+  - Author CI-grep test that scans for forbidden imports — PIO modules
+    (sightingLogsStore, playerPhotosStore, playerMatching/*, PlayerProfileView)
+    MUST NOT be imported by blacklisted live-table surfaces (OnlineView,
+    sidebar HUD, TableView, TournamentView, ShowdownView).
+  - Mirror the SCF source-util-policy enforcement (deferred to a future
+    SCF ticket; PIO can pioneer the pattern).
+accept_criteria:
+  - "settings.privacy.photoCaptureEnabled boolean with reducer action"
+  - "Settings UI for the toggle (privacy section in SettingsView)"
+  - "Camera button visibility gated by toggle in WS-163 PlayerEditor"
+  - "CI-grep test rejects PIO imports from blacklisted live-table surfaces"
+  - "Default OFF (AP-PIO-03 privacy-first)"
+  - "Tests for reducer + visibility gating + CI-grep"
+effort: "S"
+files_involved:
+  - "src/constants/settingsConstants.js (add SET_PRIVACY_PHOTO_CAPTURE_ENABLED + DEFAULT_SETTINGS.privacy.photoCaptureEnabled)"
+  - "src/reducers/settingsReducer.js (add reducer case)"
+  - "src/components/views/SettingsView/PrivacySection.jsx (NEW or extend existing)"
+  - "scripts/ci-grep-source-util-policy.js (NEW)"
+  - "src/utils/persistence/__tests__/sourceUtilPolicy.test.js (NEW)"
+blocked_by:
+  - "WS-163"
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-036"
+decision_flags: []
+status_note: "CLAIMED SPR-036. Paired with WS-161 (camera modal reads the toggle for visibility gating). Executes first."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

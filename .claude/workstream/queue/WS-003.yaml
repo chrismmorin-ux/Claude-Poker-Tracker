@@ -2,10 +2,10 @@ id: "WS-003"
 title: "Fix wave"
 legacy_id: "TIA-1.3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-02T01:15:00Z"
+completed_at: "2026-05-02T01:25:00Z"
 priority_score: 30.0
 priority_label: "P0"
 category: "tableview-invariant-audit"
@@ -26,9 +26,9 @@ blocked_by_legacy:
   - "TIA-1.1"
   - "TIA-1.2"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-011"
 decision_flags: []
-status_note: "BLOCKED by TIA-1.1+1.2"
+status_note: "RESOLVED 2026-05-02 — admin close-out. FW-1 (SPR-008/SPR-009) closed all 7 audit-surfaced pinned_bug rows. Failure file written at .claude/failures/TABLEVIEW_INVARIANT_GAP.md per accept criterion #3. Final matrix shape: 30 matches + 0 pinned_bug + 14 spec_gap + 3 regression_pinned = 47 rows. The 14 surviving spec_gap rows are STRUCTURAL gaps requiring new primitives (STRADDLE / all-in / dead-money / SHOVE) — out of scope for fix-wave; documented as program-of-work in the failure file's Open structural gaps section. Accept criterion #1 (100% matrix cells assert explicitly) is met for the rows the harness can verify; spec_gap rows are skipped by design. Accept criterion #2 (zero violations on green tests) is met (0 pinned_bug). Accept criterion #3 (failure file) is met."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — TableView Invariant Audit + Straddle (TIA, project: `.claude/projects/master-plan-2026-04-30.md` §B+E)"

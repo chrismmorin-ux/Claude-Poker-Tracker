@@ -1,0 +1,93 @@
+id: "WS-124"
+title: "Triage migrationV21 test failures (14 failing in telemetryConsentStore CRUD)"
+type: bug
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T18:30:00Z"
+completed_at: "2026-05-01T18:55:00Z"
+priority_score: 26.0
+priority_label: "P1"
+category: "test-health"
+capability: "core"
+program: "engineering"
+description: |
+  `npx vitest run --project unit src/utils/persistence/__tests__/migrationV21.test.js`
+  fails with 14 errors in the `telemetryConsentStore CRUD` describe block:
+    - round-trips a written record
+    - replaces an existing record on put
+    - throws when userId missing on put
+    - deletes a record
+    - does not throw when deleting an unknown user
+    (and ~9 others in the same suite)
+
+  Surfaced 2026-05-01 during SPR-003 close-out unit-suite run. Reproduces in
+  isolation — NOT introduced by ICP-1 (only test files added; persistence layer
+  not touched per `git diff src/utils/persistence/`).
+
+  Vital signs in `system/state.md` claim "Tests: GREEN" but reality has 14
+  failing tests. Either:
+    a) Tests have been silently broken for some prior period (drift)
+    b) Environmental flake under specific conditions (fake-indexeddb concurrency,
+       teardown ordering, etc.)
+    c) Real persistence-layer regression that telemetryConsentStore exercises
+
+  Triage scope: identify root cause and disposition (fix vs skip-with-reason
+  vs accept). Out of scope: any structural rewrite of telemetryConsentStore or
+  migration v21. If root cause is a real persistence-layer issue, file a
+  follow-on WS for the fix.
+accept_criteria:
+  - "Root cause identified: which of (a) drift / (b) env-flake / (c) real bug"
+  - "Disposition recorded in WS notes: fix-now / skip-with-reason / accept-as-known-flake"
+  - "If fix-now: separate fix WS opened with clear repro + scope"
+  - "If skip-with-reason: tests marked `it.skip` with comment naming this WS-124 + the underlying issue"
+  - "system/state.md vital sign updated to reflect outcome (back to GREEN if resolved, document YELLOW reason if accepting)"
+effort: "S"
+files_involved:
+  - "src/utils/persistence/__tests__/migrationV21.test.js"
+  - "src/utils/persistence/telemetryConsentStore.js"
+  - "src/utils/persistence/migrations.js"
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+notes: |
+  **Disposition: fix-now (1-line + import swap, AUDIT-ONLY in test file).**
+
+  **Root cause:** migrationV21.test.js called `initDB()` directly to obtain a
+  DB handle for assertions. `initDB` (database.js:108) does NOT attach an
+  `onversionchange` handler to the returned DB — only `getDB` (database.js:166-180)
+  does (via `db.onversionchange = () => { db.close(); cachedDb = null; };`).
+
+  Sequence of failure:
+    1. Test 1 calls `initDB()`, holds DB connection in local var
+    2. Connection has no onversionchange handler
+    3. Test 1 ends; afterEach closes cachedDb (which is null — `initDB` doesn't
+       populate the cache, only `getDB` does)
+    4. Open connection from test 1 leaks across to test 2
+    5. Test 2 beforeEach calls `indexedDB.deleteDatabase(DB_NAME)` — fake-indexeddb
+       sees the open connection and waits for it to close (would normally fire
+       onblocked, but with onsuccess/onerror listeners present, the request hangs)
+    6. `await deleteEntireDB()` never resolves → hook timeout at 10s
+    7. All subsequent tests fail with hook-timeout cascade (12 of 14 fail)
+
+  **Fix applied:** swapped `initDB()` calls (15 sites) for `getDB()`. Mirrors
+  working sister test refresherMigration.test.js. database.test.js works with
+  initDB directly because IT swaps the entire IDBFactory in beforeEach
+  (`globalThis.indexedDB = new IDBFactory()`) — sidesteps connection re-use.
+
+  **Audit-only discipline:** zero production source changes. Only
+  src/utils/persistence/__tests__/migrationV21.test.js modified.
+
+  **Verification:** all 14 tests pass in 32ms (was 12 failing + 116-second hang).
+
+  **Follow-on consideration (not done in this triage):** `initDB` is exported
+  and would benefit from defensive `onversionchange` attachment so direct
+  callers don't get the footgun. Production has only 2 `initDB` callers (the
+  no-await side-effect-init in usePersistence.js and 2 dev-only handSimulator
+  uses), so this is low-priority hardening — open a separate WS if pursued.
+status_note: "RESOLVED 2026-05-01 — root cause was test-side initDB-vs-getDB misuse, not a real persistence bug"
+source:
+  origin: "SPR-003 verification surfaced pre-existing test failures"
+  conversation: "ICP-1 close-out vital-sign verification, 2026-05-01"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

@@ -1,0 +1,98 @@
+id: "SPR-013"
+title: "PIO Gate 1 — Player Identification v2 Entry (Master Plan A-line, Phase 2 stagger)"
+status: completed
+goal: |
+  Player Identification v2 Gate 1 (Entry) ships — scope classification,
+  persona ratification (cold-read-chris reuse vs amendment), 3 JTBDs
+  proposed, PEO-reuse inventory ratified, R/Y/G gap analysis. Master Plan
+  A-line begins, completing the A/D Gate 1 stagger ratified in §3.
+
+  Major reconciliation work: the 2026-04-26 table-build entry audit already
+  covers a substantial portion of PIO's surface (cold-read-chris persona,
+  PM-10/11/12 JTBDs, stability flags, ethnicity tags, clothing-as-seat-
+  observation). Plan mode resolves whether PIO-G1 subsumes / extends /
+  references-and-supplements that prior audit.
+
+items:
+  - id: "WS-004"
+    title: "PIO Gate 1 — Entry (persona + JTBDs + PEO-reuse + R/Y/G)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Recognition-under-uncertainty use case scope (verify or amendment per Master Plan §A)"
+      - "Relationship to 2026-04-26 table-build audit (subset/superset/separate)"
+      - "3 named JTBDs (describe-someone-into-existence / build-temporal-attribute-history / convert-uncertain-sighting-to-known-player) — confirm/amend"
+      - "PM-10/11/12 reconciliation (table-build's proposed JTBDs vs PIO-G1 named JTBDs)"
+      - "PEO reuse inventory boundaries (per Master Plan ratification: A reuses PEO infra)"
+    depends_on: []
+    status: done
+    notes: |
+      Gate 1 audit shipped at docs/design/audits/2026-05-02-entry-player-identification-v2.md (294 lines, 24 headings, 5 Critical scope-shifting discoveries, 4 outputs, PEO Reuse Inventory, Recommended Gate 2 scope, 8 open questions).
+
+      Owner-decided scope (plan-mode AskUserQuestion 2026-05-02):
+        - Recognition-under-uncertainty: across-session at same venue (cross-venue deferred)
+        - PM-10/11/12 framing: sub-jobs of PIO's 3 named umbrella JTBDs
+        - Phone-camera-capture: Gate 4 v1 (ships with first PIO surface)
+
+      Key prior-art reconciliation:
+        - Table-build (2026-04-26): Gate 1 RED + Gate 2 YELLOW BOTH shipped. PM-10/11/12 fully authored in player-management.md (not just proposed). PIO-G1 references both audits as prior art; does NOT re-author cold-read-chris persona or re-litigate stability-flag defaults.
+        - PIO is the SUPERSET umbrella. Table-build is the session-start entry surface. PIO Gate 4 will add a Player Profile / Sighting History surface + camera modal.
+        - Cold-read-chris (Proto, situational) inherited from table-build; PIO Gate 2 does NOT re-validate the persona.
+
+      JTBD work:
+        - PM-13 describe-someone-into-existence (umbrella) → PM-10 + PM-11 sub-jobs
+        - PM-14 build-temporal-attribute-history (umbrella) → PM-12 sub-job
+        - PM-15 convert-uncertain-sighting-to-known-player (umbrella) → net-new disambiguation
+        - All 3 authored in player-management.md "PIO Umbrella JTBDs" section
+        - ATLAS updated: PM domain header bumped to PM-01..15; by-domain table backfilled with PM-10/11/12 (which were missing) plus PM-13/14/15
+
+      PEO Reuse Inventory ratified:
+        - ~60% as-is (routes / avatar / draft persistence / atomic ops / I-PEO-1..4 invariants)
+        - ~30% extend (avatar constants + AvatarFeatureBuilder + scorePlayerMatch + player schema)
+        - ~10% net-new (sightingLogsStore + CameraCapture + Player Profile surface)
+
+      Verdict: RED (4 RED + 7 YELLOW + 1 GREEN dimensions). Gate 2 mandatory. 8 open questions for owner; Gate 3 likely required for stability formula + sighting-log schema.
+
+      Verification: zero production code changes (audit-only). 3 design docs touched (1 new audit + 2 modified). All conform to template.
+
+      Master Plan A/D Gate 1 stagger COMPLETE — both A-line (PIO-G1) and D-line (SCF-G1) Gate 1 audits shipped in this session.
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO Gate 1 of 5; Master Plan §A; A/D stagger continuation)"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-004): 5 decision flags — recognition-uncertainty scope + table-build relationship + 3 JTBDs + PM-10/11/12 reconciliation + PEO reuse inventory"
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-02T02:50:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is design-program Gate 1 audit per docs/design/LIFECYCLE.md — explicitly mandated by CLAUDE.md Design Program Guardrail. No anti-goal patterns: this IS the framework the program prevents skipping; plan-mode will surface and reconcile prior-art (2026-04-26 table-build audit) rather than re-author."
+  matches: []
+
+created_at: "2026-05-02T02:50:00Z"
+approved_at: "2026-05-02T02:50:00Z"
+started_at: "2026-05-02T02:55:00Z"
+completed_at: "2026-05-02T03:30:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-004 is M-effort + has substantial
+  decision_flags + reconciliation overhead with prior 2026-04-26 table-
+  build audit, so it earns its own sprint without companions.
+
+  Master Plan §3 binding ratification #6 (A and D Gates 1→5 staggered):
+  D-G1 shipped via SPR-012 (SCF-G1). SPR-013 is A-G1 to complete the
+  Phase 2 stagger entry.
+
+  Prior-art continuity (significant): 2026-04-26 entry-table-build audit
+  exists with cold-read-chris (NEW situational persona) + PM-10/11/12
+  proposed JTBDs + stability flags / ethnicity tags / clothing-as-seat-
+  observation schema work. PIO-G1's job is reconciliation, not re-author.
+
+  fleet-rotation invariant: not applicable (adopted repo).
+
+  Program rotation: SPR-012 + SPR-013 are both design-program. Engineering
+  saturation from SPR-001..009 is broken; design-program now leading
+  Phase 2.

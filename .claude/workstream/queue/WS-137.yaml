@@ -1,0 +1,56 @@
+id: "WS-137"
+title: "HSP-G1 — Range-engine partitioning audit (does villainRangePartitioner.js need to be built?)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T00:00:00Z"
+completed_at: "2026-05-03T00:45:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  HSP prerequisite audit. HeroState.equity.vsRangeParts requires the rangeEngine
+  to expose villain range partitioned by class (value / draw / bluff / air).
+
+  Audit src/utils/rangeEngine/ to determine:
+    1. Does any module already expose villain range partitioned by class?
+    2. If not, what's the gap and what would villainRangePartitioner.js look like?
+    3. Are the partition boundaries computable from current range outputs
+       (combo lists + equity per combo) or do they require new infrastructure?
+    4. What classes are needed at what street?
+       - Preflop: no draws — value / marginal / air
+       - Flop:   value / draw / bluff / air
+       - Turn:   value / draw / bluff / air
+       - River:  no draws — value / bluff-catcher / air
+
+  Output: gap report appended to docs/HERO_STATE_DESIGN.md §7.5 + decision on
+  whether to build villainRangePartitioner.js as a separate ticket or fold into
+  HSP-B2 (buildHeroState orchestrator).
+
+  Per CLAUDE.md poker analysis guardrail: read POKER_THEORY.md +
+  src/utils/rangeEngine/CLAUDE.md before audit.
+accept_criteria:
+  - "Gap report appended to docs/HERO_STATE_DESIGN.md (§7.5 resolution)"
+  - "Decision recorded: build villainRangePartitioner.js separately, or fold into HSP-B2"
+  - "If new module needed: new WS ticket created with scope + estimated effort"
+effort: "S"
+files_involved:
+  - "src/utils/rangeEngine/ (audit)"
+  - ".claude/context/POKER_THEORY.md (read)"
+  - "src/utils/rangeEngine/CLAUDE.md (read)"
+  - "docs/HERO_STATE_DESIGN.md (append gap report)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-142"
+sprint_id: "SPR-024"
+decision_flags: []
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7.5"
+status_note: "RESOLVED 2026-05-03 — audit complete. Verdict: REJECT standalone villainRangePartitioner.js (rangeSegmenter.js already provides comprehensive 5-class strength partitioning + per-bucket equity); ACCEPT thin role-translator at heroState/equityVsRangeParts.js (translates strength→role per villain action+style+polarization). Full audit + verdict + API spec appended to docs/HERO_STATE_DESIGN.md §9. New WS-144 created for the translator. WS-142 deps updated (WS-137 → WS-144). User directive 'most sophisticated but consistent with our engine' satisfied: reuses BUCKETS vocabulary, no GTO assumptions, Bayesian-compatible."
+created_at: "2026-05-02"
+updated_at: "2026-05-03"

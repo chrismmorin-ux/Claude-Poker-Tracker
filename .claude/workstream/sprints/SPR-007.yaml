@@ -1,0 +1,60 @@
+id: "SPR-007"
+title: "ICP-3 exploitEngine audit (highest theoretical-correctness ROI; critical-tier alignment)"
+status: completed
+goal: |
+  The two highest-stakes exploit-engine decision functions — computePreflopAdvice
+  (preflop fold/call/raise + sizing recommendations shipped to the user) and
+  detectWeaknesses (9 situational + 4 preflop weakness rules with severity
+  thresholds) — are pinned by a runnable matrix-fixture using the cross-validate
+  depth posture: spec values from POKER_THEORY.md are asserted where unambiguous;
+  threshold-judgment-call deltas surface as spec_gap for owner triage; SPR-001
+  fixes (FIND-004/005 style+stat double-counting) get regression_pinned rows
+  to lock against future theory regression.
+
+items:
+  - id: "WS-128"
+    title: "ICP-3 exploitEngine audit: computePreflopAdvice + detectWeaknesses (audit-only, NO fixes)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Theory-validation depth: cross-validate (decided)"
+      - "Coverage breadth: scope-refined — estimatePreflopFoldPct + detectWeaknesses, 30 rows; full computePreflopAdvice deferred to follow-on"
+    depends_on: []
+    status: done
+    notes: "30 fixture rows: 21 matches + 1 pinned_bug (BUG-CANDIDATE-PFA-POSITION-VOCAB silent-fallback) + 5 spec_gap (judgment-call thresholds) + 3 regression_pinned (FIND-005 single-source rule). Audit surfaced a real engine bug: granular position labels (BTN/CO/HJ) silently fall through to population because POSITIONAL_FOLD_TO_3BET only has category keys (LATE/MIDDLE/EARLY)."
+    finding_id: null
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "Invariant Coverage Program (ICP-3 of 5)"
+total_effort: "M = ~2 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T20:35:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is audit-only per ICP charter binding decision #4; produces detection infrastructure for highest-stakes engine surfaces; aligns with critical-tier prog-domain-correctness. Audit must respect CLAUDE.md Poker Analysis Guardrail — read POKER_THEORY.md + engine sub-CLAUDE.md before authoring rows. No anti-goal patterns."
+  matches: []
+
+created_at: "2026-05-01T20:35:00Z"
+approved_at: "2026-05-01T20:35:00Z"
+started_at: "2026-05-01T20:35:00Z"
+completed_at: "2026-05-01T21:15:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Sprint 3 of 5 in the Invariant Coverage Program (charter at
+  .claude/projects/invariant-coverage-program.md). Solo-anchor by design —
+  exploitEngine is the densest surface (15+ decision functions; this audit
+  scopes to 2 highest-stakes ones). Effort estimate uses full M-effort budget.
+
+  Two pre-execution decisions settled before plan-mode entry:
+    - Cross-validate depth (vs snapshot) — higher discovery ROI; aligns with
+      the audit's purpose of surfacing theory deltas
+    - Full breadth (both functions, 50-70 rows) — critical-tier program
+      deserves the broader matrix; cherry-picking would leave silent gaps
+
+  Plan-mode design will use 2 Explore agents (one per function) to map
+  inputs/outputs deeply enough to author fixture rows without surprises.
+  Per CLAUDE.md Poker Analysis Guardrail, design pass MUST read POKER_THEORY.md
+  and src/utils/exploitEngine/CLAUDE.md before fixture authoring.

@@ -1,0 +1,64 @@
+id: "WS-143"
+title: "HSP-W1 — Wire HeroState to HandReplay review (first consumer surface)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T07:15:00Z"
+completed_at: "2026-05-03T08:30:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "design"
+description: |
+  Wire HeroState into HandReplay review as the first consumer surface. Lowest-risk
+  surface (post-hand only, no live perf concerns, full visibility into template
+  rendering quality).
+
+  Per design-program guardrail: this is a UX-touching change. Gate 1 (Entry) and
+  Gate 4 (Design) required before implementation:
+    - Gate 1: scope classification, personas (Chris live-player as primary),
+      JTBD identification, gap analysis (GREEN/YELLOW/RED)
+    - Gate 4: surface artifact at docs/design/surfaces/hero-state-handreplay.md
+
+  Implementation: render HeroState narrative (headline + body + branchSummary) in
+  HandReplayView ReviewPanel — likely a new collapsible "Frame" section above
+  VillainAnalysisSection. Side-by-side with hero's actual action so the user can
+  see canonical-vs-actual.
+
+  This wiring also serves as the SCF baseline (workstream D in master plan) —
+  once HeroState is rendered post-hand, SCF can compare hero's actual play
+  against plan.primary to surface leak candidates.
+accept_criteria:
+  - "Gate 1 audit complete (RED/YELLOW/GREEN verdict)"
+  - "Gate 4 surface spec at docs/design/surfaces/hero-state-handreplay.md"
+  - "ReviewPanel renders HeroState narrative inline"
+  - "Canonical-vs-actual comparison visible (hero played X; canonical was Y)"
+  - "Hand replay across 5+ test hands renders sensible narratives"
+  - "No regression in existing ReviewPanel sections"
+effort: "M"
+files_involved:
+  - "src/components/views/HandReplayView/ReviewPanel.jsx"
+  - "src/components/views/HandReplayView/ReviewObservations.jsx"
+  - "src/utils/heroState/buildHeroState.js (consumer)"
+  - "docs/design/surfaces/hero-state-handreplay.md (NEW — Gate 4)"
+blocked_by: []
+blocked_by_resolved:
+  - "WS-138 (done SPR-026 2026-05-03)"
+  - "WS-139 (done SPR-026 2026-05-03)"
+  - "WS-142 (done SPR-027 2026-05-03)"
+blocked_by_legacy: []
+enables:
+  - "SCF (master plan workstream D)"
+sprint_id: "SPR-029"
+decision_flags:
+  - "Render placement (above VillainAnalysisSection vs new top-level section)"
+  - "Canonical-vs-actual comparison style (side-by-side vs annotated)"
+  - "Persistence — does HeroState get cached on HandReplay record, or rederived per view?"
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §6 + §8"
+status_note: "First consumer; design-program Gates 1+4 required before implementation"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

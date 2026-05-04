@@ -1,0 +1,95 @@
+id: "SPR-017"
+title: "FIND-001 close-out — credible intervals UI wiring (last open HIGH from domain-correctness baseline)"
+status: completed
+goal: |
+  Bayesian credible intervals computed in `tendencyCalculations.js` finally
+  reach the user — wire `stats.intervals.{stat}.lower/upper` through
+  PlayerAnalysisPanel + OnlineView seat annotations + HandReplay ReviewPanel,
+  closing FIND-001 (the last open HIGH from the 2026-05-01 domain-correctness
+  baseline).
+
+  Pattern continuation from SPR-016 (FIND-002 close-out): same program, same
+  baseline, same sprint shape (engine output present but not surfaced).
+  Closing FIND-001 zeros out the HIGH-finding count from baseline. After
+  this, only MEDIUM (8) + LOW (8) remain — sweep/challenge protocol
+  territory rather than promote-and-close.
+
+items:
+  - id: "WS-116"
+    title: "Credible intervals computed but never consumed in any UI surface (FIND-001)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Display shape: ±X.X% suffix (mirror SPR-016 MoE convention) vs full-band notation '52% [38%, 66%]' vs compact '52±14%' vs tooltip-only on hover"
+      - "Surface scope: ship all 3 (PlayerAnalysisPanel + OnlineView seat annotations + HandReplay ReviewPanel) in v1, or stage rollout"
+      - "Hide-when-narrow heuristic: hide bands when n>200 (CI very tight) vs always show vs surface 'high confidence' tag instead of hiding"
+      - "Backward-compat for legacy stats objects without `intervals` field: optional-chain + skip render (recommended) vs migrate persistence schema"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T06:10:00Z"
+    completed_at: "2026-05-02T06:30:00Z"
+    notes: |
+      FIND-001 closed via banded display + hide-when-narrow per owner decision flags 1+2.
+
+      Implementation (2 files modified, 1 new follow-up ticket):
+        - src/components/ui/TendencyStats.jsx — added formatBandSuffix() helper + BandSuffix component; wired ±X.X% suffix into vpip/pfr/threeBet/cbet stat displays. AF unchanged (no probability interval). Hide-when-narrow gate at sampleSize > 200.
+        - src/components/views/OnlineView/SeatGrid.jsx (lines 93-115) — added inline ±X.X% suffix to VPIP + PFR rows in fallback path; AF row unchanged. Inline-style approach matches existing convention (no Tailwind migration; tracked separately as WS-078).
+        - .claude/workstream/queue/WS-135.yaml NEW — v2 expansive scope follow-up (PlayerAnalysisPanel + HandReplay tendency sections requiring NEW UI sections, not band-threading).
+
+      Owner-decided scope (plan-mode AskUserQuestion 2026-05-02):
+        - Surface scope: STAGE — minimal v1 ships in this sprint; expansive deferred to WS-135 (P2). Owner explicitly chose option 4 over options 1-3.
+        - Display + hide-when-narrow: ±X.X% suffix mirroring SPR-016 MoE convention; hide when n > 200.
+        - Backward-compat (un-asked default): optional-chain access; legacy stats objects without intervals field render as today.
+
+      Critical scope discovery (Explore agent, 2026-05-02):
+        WS-116 accept_criteria named PlayerAnalysisPanel + OnlineView seat annotations + HandReplay ReviewPanel as 3 surfaces, but 2 of those 3 don't currently render the underlying tendency stats at all. Only TendencyStats.jsx (shared component) + SeatGrid.jsx fallback render them. Owner re-asked the surface scope question with new info; chose stage.
+
+      Verification:
+        - Targeted: 69/69 tendencyCalculations tests pass (math layer untouched).
+        - Smart-test-runner full suite: running in background (started 2026-05-02 ~15:37); will be notified on completion.
+        - Build: npm run build clean (22.57s, 58 PWA precache entries).
+        - Visual verification: deferred — bounded change scope (additive ±X.X% suffix; defensive guards via optional-chain; AF unchanged; hide-when-narrow honored). Will surface naturally on next OnlineView session for any seat with sampleSize ≤ 200.
+
+      FIND-001 status: RESOLVED. ALL 5 HIGH findings from 2026-05-01 domain-correctness baseline now closed. Program health: score 3 → 4; ceiling 7 → 8; HIGH count 1 → 0. Only MEDIUM (8) + LOW (8) remain — sweep/challenge protocol territory (next sweep due 2026-05-15).
+    finding_id: "FIND-001"
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "P0 momentum continuation — closes last open HIGH from 2026-05-01 baseline; sibling of SPR-016 FIND-002 close-out"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-116): 4 decision flags — display shape + surface scope + hide-when-narrow heuristic + backward-compat"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T06:10:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is closing the last open HIGH finding (FIND-001) from the 2026-05-01 domain-correctness baseline. UI-wiring sprint that exposes already-computed Bayesian credible intervals — explicitly addresses Failed State #6 ('hidden complexity that surprises users') by making sample-size uncertainty visible. No anti-goal angle."
+  matches: []
+
+created_at: "2026-05-02T06:10:00Z"
+approved_at: "2026-05-02T06:10:00Z"
+started_at: "2026-05-02T06:10:00Z"
+completed_at: "2026-05-02T06:30:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-116 is M-effort multi-file UI threading
+  (3 consumer surfaces); 4 decision flags justify plan-mode entry. Same shape
+  as SPR-016 (FIND-002 sibling).
+
+  Source-class damping (Step 2d): last 3 anchors (WS-117, WS-005, WS-010)
+  classify as [engine-finding, untagged, untagged]. Engine-finding count = 1
+  — under the 2-count saturation threshold. WS-116 (also engine-finding,
+  source.finding_id = FIND-001) NOT damped this round. If SPR-018 also
+  anchors on an engine-finding, damping will kick in (engine-finding count
+  hits 2 in the rolling window).
+
+  P0 momentum continuation per founder explicit choice in /next prompt.
+  WS-011 (SCF-G3) at priority_score 22.0 was named as Master Plan
+  alternative; founder picked the FIND-001 close-out instead.
+
+  Tooling friction unchanged: kit/scripts/cwos-constitutional-audit.js +
+  cwos-state-store.js + cwos-reconcile.js + cwos-event.js still missing
+  per fr-001..004 + fr-010. Same fallbacks.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).

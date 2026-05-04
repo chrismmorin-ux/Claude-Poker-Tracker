@@ -1,7 +1,19 @@
 id: "FIND-001"
 title: "Credible intervals computed but never consumed in any UI surface"
 severity: HIGH
-status: open
+status: resolved
+resolved_at: "2026-05-02T06:30:00Z"
+resolved_by: "WS-116"
+resolution: |
+  Credible intervals now consumed in 2 UI surfaces (minimal v1 per owner-staged scope decision in SPR-017):
+  - src/components/ui/TendencyStats.jsx — ±X.X% suffix on vpip/pfr/threeBet/cbet stats; AF unchanged (no probability interval); hide-when-narrow at sampleSize > 200
+  - src/components/views/OnlineView/SeatGrid.jsx fallback path — ±X.X% suffix on VPIP + PFR rows; AF unchanged
+
+  Display convention: ±W.W% where W = (interval.upper - interval.lower) / 2 * 100. Mirrors SPR-016 MoE convention. Backward-compat preserved via optional-chain; legacy stats objects without intervals field render as today.
+
+  Expansive scope (PlayerAnalysisPanel + HandReplay ReviewPanel new "Tendency Summary" sections) staged to v2 ticket WS-135. Those surfaces don't currently render any tendency stats — requires new sections, not band-threading. Owner ratified the staged-scope split in /next plan-mode AskUserQuestion.
+
+  Verification: 69/69 tendencyCalculations tests pass (math layer untouched); npm run build clean; visual verification deferred (bounded change scope; defensive guards). Will surface naturally on next OnlineView session.
 category: "bayesian-confidence"
 program: "domain-correctness"
 problem_class: "Bayesian confidence representation"
@@ -24,5 +36,5 @@ agent_corroboration:
   - "range-equity-audit (F1)"
 dedup_key: "eng-engine-domain-correctness-credible-intervals-computed-but-never-consumed-in-any-ui-sur"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-02"
 promoted_to: "WS-116"

@@ -2,10 +2,11 @@ id: "WS-007"
 title: "Gate 4 — Design surfaces"
 legacy_id: "PIO-G4"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T09:35:00Z"
+started_at: "2026-05-02T09:35:00Z"
+completed_at: "2026-05-02T11:00:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "player-identification-v2"
@@ -22,9 +23,19 @@ blocked_by:
 blocked_by_legacy:
   - "PIO-G3"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by PIO-G3"
+sprint_id: "SPR-021"
+decision_flags:
+  - "Player Profile / Sighting History (PIO-G4-S1) information architecture: dedicated route vs PlayerEditor tab vs PlayersView drill-in; per-attribute stability rendering (4-tier always/sometimes/today-only/insufficient with MoE)"
+  - "Camera Capture Modal (PIO-G4-S2) UX: capture button placement, react-easy-crop vs canvas-API for 1:1 crop step, retake/preview affordance, atomic-txn binding"
+  - "Recognition Disambiguation flow (PIO-G4-DISAMB) surface: where it triggers, candidate-card layout, AP-PIO-04 neutral-copy compliance"
+  - "PlayerEditor extensions (PIO-G4-PEX): new attribute sections (age decade radio + wardrobe + jewelry + logo + ethnicity tag list); 'other' free-text rendering; PEO 60/30/10 stress-test compliance"
+  - "PlayerPicker extensions (PIO-G4-PVA): recognition-mode toggle + 8-dim ranking display + recognition-confidence rendering"
+  - "PlayersView rebuild scope: ground-up vs incremental; multi-resolution scaling validation"
+  - "Settings photo-toggle (PIO-G4-SET): location + copy framing + Phase 2+ deferral"
+  - "IDB v22 multi-store migration write-paths (PIO-G4-MIG)"
+  - "Wardrobe / jewelry / logo asset palette initial values (PIO-G3-PALETTE)"
+  - "Cultural-sensitivity binding (per memory feedback_pio_identification_utility_first.md): identification utility binds, not cultural-sensitivity veto"
+status_note: "RESOLVED 2026-05-02 — Gate 4 Design audit shipped at docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md (~700 lines). 4 owner-decided + 6 inline-handled decisions ratified. FOUNDATIONAL ARCHITECTURAL BINDING from owner clarification: Master Plan §A surface list pre-dated Table-Build supersession by 4 days; owner ratified extending Table-Build (long-term home) over PlayerPicker (archiving). PIO-G4-PVA → CandidateColumn ext; PIO-G4-DISAMB → PossibleMatchesPanel ext; PIO-G4-PEX → surviving PlayerEditor edit-mode; PIO-G4-MIG → unified v22. CULTURAL-SENSITIVITY BINDING per memory: identification utility binds; cultural-sensitivity is reviewing voice. 5 PIO-G3-* carry-forwards (SLOG/STAB/PHOTO/PALETTE/MIG) ALL bound. Deliverables: 2 new surfaces (player-profile + camera-capture-modal) + 4 surface extensions (table-build PIO-G4-PVA + DISAMB; player-editor PEX; players-view PV; settings-view SET) + 3 project docs (asset-palettes + idb-v22-migration-spec + anti-patterns) + 3 companion updates (CATALOG / ATLAS / player-management JTBD). AP × CD × 9-red-lines walkthroughs all clear. Zero src/ diff. PIO Gate 5 unblocked. Master Plan rhythm: A/D Phase-4 alternation COMPLETE."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)"

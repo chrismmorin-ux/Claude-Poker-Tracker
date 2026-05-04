@@ -1,0 +1,57 @@
+id: "WS-138"
+title: "HSP-A1 — Author 8 preflop archetype narrative templates (PF_OPEN_RFI through PF_LIMP_NAV)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T04:00:00Z"
+completed_at: "2026-05-03T04:30:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Author the 8 preflop archetype templates from docs/HERO_STATE_DESIGN.md §4.2:
+    1. PF_OPEN_RFI         — Hero opens unopened pot
+    2. PF_VS_OPEN_BB       — Hero in BB facing single open
+    3. PF_VS_OPEN_SB       — Hero in SB facing single open
+    4. PF_VS_OPEN_IP       — Hero IP cold-call vs single open
+    5. PF_3BET             — Hero 3bets a single open
+    6. PF_SQUEEZE          — Hero 3bets open + caller(s)
+    7. PF_VS_3BET          — Hero opened, faces 3bet
+    8. PF_LIMP_NAV         — Hero acts after 1+ limpers
+
+  Each template is a parametric narrative with slots that interpolate values from
+  HeroState.equity, plan.primary, plan.branches, adjustments at render time.
+  Voice: first-person plural ("we"), pedagogical, concise. Match §5 examples
+  (especially 5.1 AJo HJ and 5.3 SB vs CO).
+
+  Output location: docs/design/hero-state-templates/preflop/*.md (one file per
+  archetype) — separate from HERO_STATE_DESIGN.md to keep the design doc focused.
+
+  Authorship convention: §8 of HERO_STATE_DESIGN.md (no hardcoded numbers,
+  interpolate from equity.* and plan.*.ev).
+accept_criteria:
+  - "8 markdown files in docs/design/hero-state-templates/preflop/"
+  - "Each file: archetypeId + headline template + body template + branchSummary template"
+  - "All numeric references are slot placeholders, not hardcoded"
+  - "Voice and structure match §5 worked examples"
+  - "Authorship convention from §8 of HERO_STATE_DESIGN.md observed"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (read)"
+  - "docs/design/hero-state-templates/preflop/ (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-142"
+  - "WS-143"
+sprint_id: "SPR-026"
+decision_flags: []
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §4.2"
+status_note: "Authoring only; no code; can run in parallel with HSP-A2 + HSP-T1 + HSP-G1"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

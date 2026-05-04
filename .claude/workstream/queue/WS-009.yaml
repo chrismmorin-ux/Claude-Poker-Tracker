@@ -2,10 +2,10 @@ id: "WS-009"
 title: "Gate 1 — Entry"
 legacy_id: "SCF-G1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-02T01:45:00Z"
+completed_at: "2026-05-02T02:30:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "self-coach-foundation"
@@ -25,11 +25,17 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+sprint_id: "SPR-012"
+decision_flags:
+  - "Skill ladder tier names (6 tiers suggested: novice / live-rec / studied-amateur / part-time-grinder / serious-grinder / pro)"
+  - "Per-tier teachable-concept map"
+  - "Persona scope (chris-the-improver — single tier or full ladder?)"
+  - "JTBDs to prioritize (see-leak-without-being-graded / learn-next-concept-im-ready-for / validate-im-improving)"
+  - "R/Y/G gap analysis"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)"
   source_line: 68
+status_note: "RESOLVED 2026-05-02 — Gate 1 audit shipped at docs/design/audits/2026-05-02-entry-self-coach-foundation.md (332 lines). Persona extension on chris-live-player.md (Skill-ladder positioning + Goals when self-coaching). 4 new JTBDs CO-54..57 authored under coaching.md self-coach-mode sub-section. ATLAS updated. Verdict: RED (6 RED dimensions, 4 YELLOW, 3 GREEN). Triggers Gate 2 (Blind-Spot Roundtable) + likely Gate 3 (Research). 8 open questions for owner. CO-56 reconciliation flagged vs DS-58. WS-010 (SCF-G2) is natural next-sprint anchor."
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-02"

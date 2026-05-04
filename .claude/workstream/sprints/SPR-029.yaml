@@ -1,0 +1,162 @@
+id: "SPR-029"
+title: "HSP-W1 — Wire HeroState to HandReplay review (first consumer surface)"
+status: completed
+goal: |
+  HeroState renders post-hand in HandReplay review — hero can see canonical
+  reasoning frame side-by-side with their actual decision. Closes the HSP
+  build-out (Master Plan §D Phase 5 unblock) and ships the first HSP
+  consumer surface.
+
+  WS-143 is a cross-program ticket: domain-correctness (HSP origin) +
+  design (UX-touching change requires Gate 1+4 per docs/design/LIFECYCLE.md
+  guardrail). The 3 deliverables are all in this single ticket per the
+  founder-set scope:
+    1. Gate 1 audit (RED/YELLOW/GREEN verdict) — entry, persona alignment,
+       JTBD identification, gap analysis
+    2. Gate 4 surface spec (docs/design/surfaces/hero-state-handreplay.md)
+       — interaction model, visual hierarchy, state coverage
+    3. Implementation — wire buildHeroState() output into HandReplayView's
+       ReviewPanel; render headline/body/branchSummary; canonical-vs-actual
+       comparison
+
+  Master Plan rhythm:
+    SPR-024..SPR-027: HSP build (4 sprints, all foundation+primitives+orchestrator)
+    SPR-028: queue hygiene (1 sprint variety — WS-115 stale P0 closure)
+    SPR-029: WS-143 — HSP first-consumer wire (this sprint)
+    SPR-030+: WS-013 (SCF Gate 5 leak-rule wiring) — Master Plan §D Phase 5
+
+  Cap status: M = ~1.5 sessions tagged. First non-over-cap sprint in 4.
+  Founder-flagged in SPR-027 retro that 3 consecutive over-cap sprints
+  warranted re-baselining; SPR-029 returns to standard ceremony.
+
+items:
+  - id: "WS-143"
+    title: "HSP-W1 — Wire HeroState to HandReplay review (first consumer surface)"
+    mode: plan-first
+    effort: M
+    status: done
+    finding_id: null
+    decision_flags:
+      - "RESOLVED #1 (render placement): inline between HeroCoachingCard + VillainAnalysisSection, collapsible, default expanded for hero actions."
+      - "RESOLVED #2 (comparison style): side-by-side neutral panels (red line #5 — no graded copy). Picked over annotated single panel."
+      - "RESOLVED #3 (persistence): rederive on each view (no IDB schema change for v1; aligns with HSP-DESIGN.md §10.2)."
+      - "RESOLVED #4 (Gate 1 verdict): GREEN — all personas + JTBDs covered, surface-bound fix, no cross-product reach. Gate 2 NOT required."
+      - "RESOLVED #5 (Gate 4 surface spec): updated existing docs/design/surfaces/hand-replay-view.md (§HeroStateSection + JTBDs + change log) — no separate audit needed since Gate 1 had no severity-2+ findings."
+    depends_on: []
+    started_at: "2026-05-03T07:15:00Z"
+    completed_at: "2026-05-03T08:30:00Z"
+    completion_notes: |
+      3-deliverable cross-program ticket SHIPPED in single sprint:
+
+      Phase A — Gate 1 audit (NEW):
+        docs/design/audits/2026-05-03-entry-hero-state-narrative.md
+        Verdict: GREEN. Scope: surface-bound fix. All personas (Chris +
+        Post-session Chris) + JTBDs (CO-54, CO-55, CO-56, SR-28, SR-29)
+        already exist. Gate 2 not required.
+
+      Phase B — Gate 4 surface spec update:
+        docs/design/surfaces/hand-replay-view.md
+        - Last reviewed: 2026-05-03
+        - Anatomy: HeroStateSection added between HeroCoachingCard +
+          VillainAnalysisSection
+        - JTBDs served list grew (+5)
+        - New §HeroStateSection (visual treatment, distinction from
+          hero-leak inline annotation, state, autonomy compliance,
+          interactions)
+        - Change log entry
+
+      Phase C — Implementation (NEW + MODIFIED):
+        NEW: src/components/views/HandReplayView/HeroStateSection.jsx
+             (~200 LoC component + side-by-side panels)
+        NEW: src/components/views/HandReplayView/heroStateReplayUtils.js
+             (~150 LoC: reconstructGameStateAt + detectAlignment helpers)
+        MODIFIED: src/components/views/HandReplayView/ReviewPanel.jsx
+             (+1 import + 1 destructure + 14-line render block between
+              HeroCoachingCard and VillainAnalysisSection)
+
+      Phase D — Tests (NEW):
+        src/components/views/HandReplayView/__tests__/HeroStateSection.test.jsx
+        21 tests covering: isHeroAction gating, async lifecycle (loading/
+        resolved/error), collapsible toggle, soft-degrade with null villain,
+        re-render on currentActionEntry change, autonomy red line #5
+        (forbidden-copy lint test), detectAlignment helper (4 kinds + no
+        graded copy across all kinds), reconstructGameStateAt helper.
+
+      Doc update: HERO_STATE_DESIGN.md §11 documents render placement,
+      comparison style, rederive policy, surface impact, helper modules,
+      downstream WS-013 unblock.
+
+      Verification:
+        - 21/21 HeroStateSection tests + 106/106 HandReplayView/__tests__/
+          green
+        - Build clean (npm run build → 6.80s)
+        - Full smart-test-runner: 9620 passed, 30 skipped, 0 regressions
+          (376 test files; +21 vs pre-WS-143 baseline of 9599)
+        - First-principles guard test: alignment label uses neutral
+          editor's-note tone (no wrong/missed/score/streak/grade copy)
+
+      WS-013 (SCF Gate 5 leak-rule wiring) FULLY UNBLOCKED. Compares
+      hero's actual action against HeroState.plan.primary from the
+      rendered HeroStateSection. Master Plan §D Phase 5 entry now ready.
+    notes: ""
+
+composed_by: auto
+program_focus: "domain-correctness + design (cross-program)"
+program_initiative: "Hero State Primitive workstream (HSP first-consumer wire; closes HSP-to-SCF chain — Master Plan §D Phase 5 unblock)"
+total_effort: "M = ~1.5 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-143): Render placement (inline collapsible vs new top-level Frame section)."
+  - "Item #1 (WS-143): Canonical-vs-actual style (side-by-side vs annotated)."
+  - "Item #1 (WS-143): Persistence (cache vs rederive)."
+  - "Item #1 (WS-143): Gate 1 audit verdict."
+  - "Item #1 (WS-143): Gate 4 surface spec sign-off."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T07:15:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-028). Manual review: scope is wiring HSP narrative into existing HandReplay review surface. No engagement-pressure / mastery-score / cross-surface-contamination angles. The narrative comes from founder-authored templates + computed HeroState — first-principles guard already enforced upstream in classifyArchetype + buildHeroState. Design Gate 1+4 audits are explicitly in scope to apply the design-program discipline (this is the program's exact use case)."
+  matches: []
+
+created_at: "2026-05-03T07:15:00Z"
+approved_at: "2026-05-03T07:15:00Z"
+started_at: "2026-05-03T07:15:00Z"
+completed_at: "2026-05-03T08:30:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection (Step 3a):
+    - WS-143 is the natural HSP continuation now that all build-phase
+      tickets shipped (SPR-024..SPR-027) and SPR-028 cleared the SR-6
+      stale P0. blocked_by_resolved: WS-138/WS-139/WS-142.
+    - First UX-touching ticket in 5 sprints — appropriate variety after
+      orchestrator/primitive build + queue-hygiene cleanup.
+    - Cross-program: design Gate 1+4 audits explicitly in scope per
+      docs/design/LIFECYCLE.md guardrail.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-138 (untagged), WS-142 (untagged), WS-115
+      (untagged/migrated). No class saturated.
+    - WS-143 source: founder-promotion-2026-05-02 → untagged → NOT damped.
+
+  Soft-block check (Step 2-prereq): WS-143 has no blocked_by_note.
+  blocked_by cleared in SPR-027 (all 3 deps shipped).
+
+  Fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): no programs with block_sprint:true are stale.
+
+  Auto-replenishment (Step 1e): not run — kit scripts missing in adopter repo.
+
+  Mode classification per Step 3d:
+    - WS-143: M effort + improvement type + UX category + 5 decision flags
+      → plan-first (clearly).
+
+  Tooling friction unchanged from SPR-022..SPR-028: 4 missing
+  kit/scripts/cwos-* scripts. Manual fallbacks used.
+
+  Note for SPR-030+ planning: After WS-143 ships, WS-013 (SCF Gate 5
+  leak-rule wiring, M, design) is the load-bearing next step — Master
+  Plan §D Phase 5. WS-143 produces the canonical baseline that SCF G5
+  needs for leak detection.

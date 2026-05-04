@@ -1,0 +1,69 @@
+id: "WS-122"
+title: "ICP-1 seed audit: gameReducer UNDO_BATCH + UNDO_LAST_ACTION + cross-coupling (audit-only)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T17:30:00Z"
+completed_at: "2026-05-01T18:15:00Z"
+priority_score: 26.0
+priority_label: "P1"
+category: "invariant-coverage-program"
+capability: "core"
+program: "engineering"
+description: |
+  Author a matrix-fixture audit for gameReducer UNDO actions, including cross-coupling
+  rows that pin independence from playerReducer.seatPlayers and uiReducer.selectedPlayers.
+  Validates that the WS-121 pattern transfers off the UI surface (origin) into reducer
+  surfaces. AUDIT-ONLY — zero production code changes.
+accept_criteria:
+  - "Fixture at `src/reducers/__tests__/gameReducer.undoInvariants.fixture.js` with ≥20 rows"
+  - "Runner at `src/reducers/__tests__/gameReducer.undoInvariants.test.js` consumes the WS-121 shared runner"
+  - "Cross-coupling rows assert UNDO does NOT mutate playerReducer.seatPlayers or uiReducer.selectedPlayers"
+  - "≥1 spec_gap row surfacing a structural finding (UNDO across NEXT_HAND boundary; potOverride independence; absentSeats-actionSequence drift)"
+  - "≥1 pinned_bug row surfacing a candidate bug (BUG-CANDIDATE-UNDO-STREET-DESYNC: undo erases street's actions but currentStreet stays)"
+  - "Existing 627-line gameReducer.test.js stays green (additive, not replacement)"
+  - "Audit-only discipline: `git diff src/reducers/` shows zero production changes"
+effort: "S"
+files_involved:
+  - "src/reducers/__tests__/gameReducer.undoInvariants.fixture.js"
+  - "src/reducers/__tests__/gameReducer.undoInvariants.test.js"
+blocked_by: ["WS-121"]
+enables: []
+sprint_id: "SPR-003"
+decision_flags: []
+notes: |
+  22 fixture rows: 17 matches + 1 pinned_bug (BUG-CANDIDATE-UNDO-STREET-DESYNC) +
+  3 spec_gap (UNDO across NEXT_HAND; absentSeats-actionSequence drift; potOverride independence)
+  + 1 regression_pinned (state-ref identity for rejected UNDO).
+
+  Headline finding: **gameReducer UNDO is a single-slice operation by design** — pin rows
+  confirm playerReducer.seatPlayers and uiReducer.selectedPlayers are independent and not
+  cascaded by UNDO_BATCH or UNDO_LAST_ACTION. This is correct spec but was previously
+  undocumented; the matrix now asserts it as an invariant.
+
+  1 candidate bug for fix-wave triage: BUG-CANDIDATE-UNDO-STREET-DESYNC — when UNDO_BATCH
+  removes ALL actions for the current street, currentStreet stays at the empty street
+  (e.g., 'flop' with no flop entries left). Subsequent button rendering and next-action
+  computation operate against an inconsistent state. Owner triage: should UNDO that erases
+  a street auto-rewind currentStreet?
+
+  3 structural gaps for follow-on tickets:
+    1. No "undo NEXT_HAND" — accidental hand advance is unrecoverable
+    2. absentSeats and actionSequence can drift; UNDO does not validate consistency
+    3. potOverride independent of actionSequence; undo of bet-bearing actions does not
+       clear a manually-set pot
+
+  Pattern transferred cleanly off UI surface. The shared runner at src/test/invariantMatrix.js
+  handled standard rows; cross-coupling rows used dedicated test blocks (custom assertions
+  beyond what the generic runner can express). The same-ref regression pin (UNDO-R-001)
+  used a third dedicated block (toBe, not toEqual). This 3-block structure is now the
+  template for any future audit that needs cross-slice or identity assertions.
+
+  Verification: 22 passed + 4 skipped (the 3 spec_gap rows + 1 meta-test counted as skipped
+  by Vitest's skip semantics on the spec_gap describe). Existing reducer tests pass.
+  git diff src/reducers/ src/components/ shows zero production code changes.
+source:
+  origin: "ICP charter 2026-05-01"
+  initiative: "Invariant Coverage Program"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

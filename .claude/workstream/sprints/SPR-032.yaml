@@ -1,0 +1,108 @@
+id: "SPR-032"
+title: "SCF G5 child 3 — lesson authoring framework + 1-2 reference lessons"
+status: completed
+goal: |
+  Lesson authoring framework lands. The "Drill this" affordance currently
+  logs a stub; after this sprint, tapping Drill on a fired leak navigates
+  to a real lesson. Mirrors the HSP narrative-template pattern (SPR-026):
+  CONVENTIONS doc + registry loader + per-lesson markdown files with
+  frontmatter binding to leak rule IDs.
+
+  Ships 1-2 reference lessons (cbet-defense + bb-defense matching the
+  shipped leak rules) so the wire is end-to-end functional. Full lesson
+  content (≥10 lessons across ≥3 tiers per accept_criteria) is WS-149.
+
+  Master Plan rhythm:
+    SPR-030: WS-145 — SCF framework + catalog + first leak rule
+    SPR-031: WS-158 + WS-146 first claim — chain activation + 2nd rule
+    SPR-032: WS-147 — lesson framework + reference lessons (this sprint)
+    SPR-033+: WS-148 (curriculum scaffolding) + WS-149 (≥10 lessons) +
+              WS-146 ongoing (more catalog rules)
+
+items:
+  - id: "WS-147"
+    title: "SCF G5 child 3 — lesson authoring framework + 1-2 reference lessons"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags:
+      - "Lesson directory location (docs/design/lessons/ vs src/lessonContent/ vs hybrid)"
+      - "Frontmatter schema (mirror HSP CONVENTIONS.md or extend with SCF-specific fields: leakTagIds, tier, test_substrate, successCriteria per SCF G4 spec)"
+      - "Body conventions: CD-1/CD-2/CD-3 lint patterns (same as HSP narrative templates)"
+      - "Ship reference lessons in same sprint? (yes for end-to-end Drill-this; no defers content to WS-149)"
+      - "Drill-this navigation target (minimal LessonDetailView stub vs full SelfCoachView Curriculum section)"
+    depends_on: []
+    started_at: "2026-05-03T13:30:00Z"
+    completed_at: "2026-05-03T15:30:00Z"
+    notes: |
+      SHIPPED end-to-end:
+        - docs/projects/self-coach-foundation/lessons/001-cbet-defense.md (binds hero-ip-cbet-overfold)
+        - docs/projects/self-coach-foundation/lessons/002-bb-defense.md (binds hero-bb-defense-width)
+        - src/utils/skillAssessment/lessonRegistry.js (import.meta.glob loader; getLesson/listLoadedLessons/listLessonsForCurriculum)
+        - src/utils/skillAssessment/__tests__/lessonRegistry.test.js (8 cases incl. cross-reference: every shipped leak rule's relatedConceptId resolves)
+        - src/components/views/LessonDetailView.jsx (Exposition + Worked Example + Success Criteria; back nav via closeLessonDetail)
+        - src/components/views/__tests__/LessonDetailView.test.jsx (8 cases incl. CD-1/CD-2/CD-3 shell-copy lint)
+        - src/constants/uiConstants.js (SCREEN.LESSON_DETAIL added)
+        - src/reducers/uiReducer.js (UI_ACTIONS.SET_LESSON_DETAIL + lessonConceptId/lessonReturnScreen state)
+        - src/contexts/UIContext.jsx (openLessonDetail / closeLessonDetail)
+        - src/PokerTracker.jsx (LessonDetailView lazy import + route)
+        - src/components/views/HandReplayView/ReviewPanel.jsx (onDrillLeak: console.log → openLessonDetail(leak.relatedConceptId))
+
+      Tests: 16/16 new (8 lessonRegistry + 8 LessonDetailView). Full smart-test-runner: 9724 passed / 30 skipped / 0 failed (+16 vs baseline 9708). Build clean.
+
+      End-to-end SCF chain now LIVE: hand → accumulator → detector → IDB → useHeroLeaks → badge in HeroCoachingCard → tap Drill → openLessonDetail → LessonDetailView renders cbet-defense or bb-defense lesson.
+
+      Decisions resolved:
+        Q1 lesson dir → docs/projects/self-coach-foundation/lessons/ (matched SCF G4 spec)
+        Q2 frontmatter schema → reuse SCF G4 lesson-authoring-template.md verbatim (no extension)
+        Q3 body conventions → 3 required sections (Exposition / Worked example / Success criteria); CD-1/CD-2/CD-3 lint via shell test
+        Q4 ship references → YES (2 lessons matching shipped leak rules, makes Drill-this functional)
+        Q5 Drill-this target → minimal LessonDetailView with back-nav; full SelfCoachView Curriculum section is WS-148/WS-149
+
+      Out of scope (per plan): WS-148 SelfCoachView Curriculum + WS-149 ≥10 lessons + frameworkIds cross-validation + Test-myself-on-this-concept button + lesson amendment lifecycle + lesson search/filter.
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — lesson authoring framework + Drill-this end-to-end (Master Plan §D Phase 5)"
+total_effort: "M = ~1.5 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-147): Lesson directory location."
+  - "Item #1 (WS-147): Frontmatter schema scope."
+  - "Item #1 (WS-147): Body conventions (CD-1/CD-2/CD-3 lint patterns)."
+  - "Item #1 (WS-147): Whether to ship reference lessons in same sprint."
+  - "Item #1 (WS-147): Drill-this navigation target."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T13:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-031). Manual review: scope is lesson authoring infrastructure mirroring HSP narrative-template pattern (already audited + shipped via SPR-026). CD-1/CD-2/CD-3 enforcement preserves autonomy red lines #5+#7 (no shame, editor's-note tone)."
+  matches: []
+
+created_at: "2026-05-03T13:30:00Z"
+approved_at: "2026-05-03T13:30:00Z"
+started_at: "2026-05-03T13:30:00Z"
+completed_at: "2026-05-03T15:30:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection: WS-147 chosen over WS-146 second claim (more leak
+  rules) because the user-visible gap is "Drill this" stub. Adding more
+  leak rules grows coverage but doesn't unlock new functionality;
+  shipping the lesson framework + 1-2 reference lessons makes the
+  affordance end-to-end functional.
+
+  Source-class damping (Step 2d): last 3 anchors WS-115 (untagged/migrated),
+  WS-145 (spr-followup), WS-158 (spr-followup). spr-followup is
+  founder-driven — never damped. WS-147 source: ws-013-decomposition
+  → spr-followup → NOT damped.
+
+  Mode classification: M effort + improvement type + 5 decision flags
+  → plan-first (clearly).
+
+  Note for SPR-033+ planning: After WS-147 ships, remaining SCF G5 work:
+    - WS-146 ongoing (more leak rules — 17 PLANNED + 6 FUTURE-RESEARCH remain)
+    - WS-148 curriculum scaffolding (6-tier ladder + composite signal)
+    - WS-149 ≥10 reference lessons across ≥3 tiers (content-heavy)

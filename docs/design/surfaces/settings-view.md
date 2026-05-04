@@ -142,3 +142,41 @@ Wrapped in `ScaledContainer` with `LAYOUT.TABLE_WIDTH/HEIGHT`.
 
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
 - 2026-04-22 — DCOMP-W4-A4 audit appended. Verdict YELLOW — no P0. 12 findings (4 P1, 5 P2, 3 P3).
+- 2026-05-02 — PIO Gate 4 SET subsection appended (SPR-021 / WS-007). New "Privacy" section with master "Photo capture enabled" toggle. Implementation deferred to PIO Gate 5 multi-PR.
+
+---
+
+## PIO-G4-SET — Photo-capture master toggle (PIO Gate 4 extension, 2026-05-02)
+
+**Added by:** PIO Gate 4 (WS-007 / SPR-021). See `audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-SET for the full spec.
+
+**What this adds.** A new "Privacy" section in SettingsView with a master toggle for photo capture availability app-wide. Owner-controlled; default ON. When OFF, all Camera Capture Modal entry buttons (PlayerEditor "Add photo", PlayerProfile camera affordance) are HIDDEN. The toggle is the load-bearing AP-PIO-03 (auto-photo-capture refusal) gate.
+
+**Anatomy:**
+
+```
+SettingsView body
+…
+┌─ Privacy ────────────────────────────────────────┐
+│  Photo capture                                   │
+│   [ ◉ ON  ◯ OFF ]                                │
+│   When enabled, Add Photo buttons appear in      │
+│   Player Editor and Player Profile.              │
+│   Disable for venues that prohibit photography.  │
+└──────────────────────────────────────────────────┘
+…
+```
+
+- Section header: "Privacy" (new section). Gate 5 implementation may decide to host under existing "General" section if Privacy section feels over-scoped for one toggle (acceptable per `feedback_long_term_over_transition.md` — owner is sole user; downplay transition complexity).
+- Toggle: master `[ ◉ ON / ◯ OFF ]` radio-style. Default ON.
+- Helper copy: factual; non-judgmental ("disable for venues that prohibit photography" frames the use case without shame on disabled state).
+
+**Persistence.**
+
+Toggle state in `userSettings.photoCaptureEnabled` (boolean). Default `true`. Read by `PlayerEditorView` (controls `[ 📷 Add photo ]` button visibility in PEX subsection) and `PlayerProfileView` (controls camera affordance — Phase 2+ photo replace).
+
+**Per-venue casino-policy blacklist deferred to Phase 2+.**
+
+Per Gate 2 §C ratification, v1 ships master toggle only. Per-venue granularity (e.g., "photos disabled at Bellagio; enabled at Aria") is Phase 2+ feature with venue-tagged toggle state. v1 owner manually flips master toggle per session in restrictive venues.
+
+**Anti-pattern compliance:** AP-PIO-03 binding — toggle is the master gate that operationalizes the auto-photo-capture refusal. When OFF, photo capture is impossible app-wide regardless of any other code path. AP-PIO-04 — helper copy is factual, non-judgmental (no shame on disabled state).

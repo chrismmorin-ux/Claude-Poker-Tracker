@@ -1,0 +1,71 @@
+id: "WS-133"
+title: "Same-ms tie in drill-storage sort comparator (preflopDrills + postflopDrills)"
+type: bug
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-02T00:00:00Z"
+completed_at: "2026-05-02T00:30:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "test-health"
+capability: "core"
+program: "engineering"
+description: |
+  `loadPreflopDrills` and `loadPostflopDrills` sorted attempts by
+  `b.timestamp - a.timestamp` only. `timestamp = Date.now()` (millisecond
+  granularity). When two saves landed in the same JS millisecond, the
+  comparator returned 0; stable sort preserved IDB insertion order
+  (drillId ascending = oldest-first), breaking the documented "newest first"
+  contract.
+
+  Surfaced during post-WS-126 verification: the 1-of-3 full-unit-project
+  failure was `preflopDrillsStorage > saves and loads drill attempts for a user`,
+  asserting `drills[0].drillType === 'framework'` (the second/newer save). On
+  same-ms saves, drills[0] was the older 'estimate' instead.
+
+  This is **orthogonal to WS-126** (cross-test IDB pollution). WS-126's
+  closure note claimed "deterministic GREEN" but the same-ms-tie was a
+  separate gap with the same surface symptom (intermittent failure of a
+  drill-storage test in full-suite runs). The defensive `closeDB()` added
+  by WS-126 slowed test setup just enough that consecutive saves usually
+  crossed an ms boundary, masking this gap most of the time.
+
+  postflopDrillsStorage carried the same comparator pattern as latent gap;
+  fixed in the same diff to prevent the symmetric flake from surfacing.
+accept_criteria:
+  - "loadPreflopDrills sort is deterministic on same-ms saves (drillId tiebreak)"
+  - "loadPostflopDrills sort is deterministic on same-ms saves (drillId tiebreak)"
+  - "Targeted 3-run verification of both files passes 3/3"
+  - "Full-unit-project triple run shows zero drill-storage failures (other failure classes may persist; out of scope)"
+effort: "S"
+files_involved:
+  - "src/utils/persistence/preflopDrillsStorage.js"
+  - "src/utils/persistence/postflopDrillsStorage.js"
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+notes: |
+  Fix shape (1 line each, both files):
+    sort((a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId)
+
+  Verification:
+    - Targeted run x3: 13/13 pass for both files
+    - Full-suite run x3: 0 drill-storage failures across 3 runs (down from
+      1-of-3 pre-fix). 3 unrelated MC equity flakes surfaced in Runs 2-3 —
+      tracked separately under WS-134.
+
+  Provenance: triage during /next on 2026-05-02, after the user's
+  by6ph6wg3 monitor surfaced "Run 1 failed (219/220), Runs 2-3 passed".
+  Without that visibility the gap would have stayed latent — WS-126's
+  closure assumption was that the closeDB fix wave was sufficient.
+
+  Source contract debt now closed: both store loaders honor their
+  documented "newest first" semantics deterministically.
+status_note: "RESOLVED 2026-05-02 — drillId tiebreak in both drill-storage sort comparators"
+source:
+  origin: "triage-during-next-2026-05-02"
+  parent_ws: "WS-126"
+  conversation: "post-WS-126 vital-sign verification, 2026-05-02"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

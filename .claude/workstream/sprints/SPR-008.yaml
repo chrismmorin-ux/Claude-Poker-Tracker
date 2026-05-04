@@ -1,0 +1,53 @@
+id: "SPR-008"
+title: "FW-1 Sprint A — TableView fix wave + WS-126 flake (vital sign clearance)"
+status: completed
+goal: |
+  Close 4 TableView audit pinned_bug rows (SHOWDOWN-BUTTONS, SB-COMPLETING,
+  FOLDED-SEAT-ACTS, HAND-OVER-BUTTONS) AND resolve WS-126 postflopDrillsStorage
+  flake. After this sprint, TableView audit fixture has 4 fewer pinned_bug rows
+  and Tests vital sign returns to deterministic GREEN — unblocking confidence
+  in test signal before Sprint B's higher-risk engine + reducer changes.
+
+items:
+  - id: "WS-129"
+    title: "FW-1 TableView 4-bug fix wave"
+    mode: execute
+    effort: M
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "4 production fixes shipped (actionUtils + CommandStrip). 4 fixture rows flipped to matches. Audit suite: 35 passed + 6 skipped."
+    finding_id: null
+  - id: "WS-126"
+    title: "Triage postflopDrillsStorage flake (cross-test IDB pollution)"
+    mode: execute
+    effort: M
+    decision_flags: []
+    depends_on: []
+    status: done
+    notes: "Root cause: 8 storage test files skipped closeDB() in afterEach; stale event handlers raced with subsequent tests' IDBFactory swap. Fixed by adding closeDB() to afterEach in all 8 files + defensive enhancement to resetDBPool() in database.js."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Fix Wave 1 (FW-1 Sprint A of 2)"
+total_effort: "M+M = ~2 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T21:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is closure of audit-surfaced pinned_bug rows (matches the spec the audits pinned) + test-isolation fix that returns vital sign to GREEN. No anti-goal patterns; aligned with founder's stated goal of addressing all open items."
+  matches: []
+
+created_at: "2026-05-01T21:30:00Z"
+approved_at: "2026-05-01T21:30:00Z"
+started_at: "2026-05-01T21:30:00Z"
+completed_at: "2026-05-01T22:15:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Sprint A of 2 in Fix Wave 1 (FW-1). TableView fixes bundled because they
+  share the actionUtils + CommandStrip cohesive surface. WS-126 fits remaining
+  budget; sequenced first to clear vital sign before Sprint B's higher-risk
+  changes.

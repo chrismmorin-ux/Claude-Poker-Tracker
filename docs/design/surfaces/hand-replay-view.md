@@ -18,7 +18,7 @@
 
 **Product line:** Main app
 **Tier placement:** Plus+ (replay with analysis). Decision-tree visualization (F-W5 orphaned) would belong adjacent but is not currently routed.
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-05-03 (HSP HandReplay wire — see §"HeroStateSection" + Change log)
 
 ---
 
@@ -32,6 +32,11 @@ Primary:
 - `JTBD-SR-23` highlight worst-EV spots — via step-through with EV annotations
 - `JTBD-SR-25` replay at own pace with range overlay
 - `JTBD-SR-26` (partial) flag disagreement — would land here if wired (not yet)
+- `JTBD-SR-28` deep-review hand against theoretical ground-truth — via HeroStateSection canonical narrative (added 2026-05-03 by HSP HandReplay wire)
+- `JTBD-SR-29` know if theoretical analog exists — HeroStateSection renders or degrades-with-message when no analog (e.g., MULTIWAY archetypes throw upstream)
+- `JTBD-CO-54` see own leak without being graded — HeroStateSection canonical-vs-actual side-by-side panels with neutral alignment labels (red line #5)
+- `JTBD-CO-55` learn next concept — HeroStateSection narrative body explains canonical reasoning frame
+- `JTBD-CO-56` validate prior coaching translates to play improvement — comparing canonical vs actual across replay sessions surfaces improvement trajectories
 - (Apprentice) learn from a specific hand with coaching copy
 
 Secondary:
@@ -67,6 +72,11 @@ Secondary:
 │  ReviewPanel — current decision analysis           │
 │   ┌────────────────────────────┐                   │
 │   │ HeroCoachingCard (if hero) │                   │
+│   │ HeroStateSection (if hero) │                   │
+│   │   side-by-side panels:     │                   │
+│   │   canonical narrative │    │                   │
+│   │   hero's actual action     │                   │
+│   │   (collapsible; new 5/3)   │                   │
 │   │ VillainAnalysisSection     │                   │
 │   │   per villain: decision +  │                   │
 │   │   EV + equity + bluff/value│                   │
@@ -114,6 +124,92 @@ Secondary:
 - **Analysis is async** — `isComputing` on `useHandReplayAnalysis`; UI should guard for partial state.
 - **`SCREEN.HISTORY` is the back target** — implies a hand-history list surface; today that is the analysis Hand Review tab or the session hand-list; ambiguity is a candidate audit finding.
 
+---
+
+## HeroStateSection (HSP HandReplay wire, 2026-05-03)
+
+**Added by:** WS-143 / SPR-029. See `audits/2026-05-03-entry-hero-state-narrative.md` for the Gate 1 GREEN verdict + scope analysis.
+
+**What this adds.** A new `HeroStateSection` renders in the ReviewPanel between `HeroCoachingCard` (line 191) and `VillainAnalysisSection` (line 194). Active only when the current step is a hero action (`currentActionEntry.seat === heroSeat`). When active, it renders the canonical reasoning frame produced by `src/utils/heroState/buildHeroState.js` (shipped WS-142, SPR-027) side-by-side with hero's actual action.
+
+**Visual treatment.**
+
+```
++------------------+ +------------------+
+| Reasoning Frame  | | Your action      |
+| BET 2.5bb        | | BET 2.5bb        |
+| Standard open;   | | (aligned)        |
+| range advantage; | |                  |
+| dominate BTN     | | sizing rationale |
+| flatting range   | | matches canon    |
+| …narrative…      | |                  |
++------------------+ +------------------+
+```
+
+The HeroStateSection wraps both panels in a single `bg-indigo-900/30` border-rounded container with a `Reasoning Frame` header (collapsible chevron). Default expanded for hero actions.
+
+**Distinct from hero-leak inline annotation (§"Hero-leak inline annotation").** Hero-leak annotation fires only when a leak rule matches (n≥30 + severity threshold) and renders inside `HeroCoachingCard`. HSP narrative renders for every hero decision point as the always-present canonical baseline. SCF Gate 5 leak-rule wiring (WS-013) will use the rendered HeroState as its canonical baseline — they coexist; HSP narrative does NOT replace hero-leak annotation.
+
+**State.**
+- HSP rederives via `buildHeroState()` per decision-point view (no IDB cache for v1 per HSP-DESIGN.md §10.2 caching deferral).
+- Async with loading state; renders "Computing…" while pending.
+- Soft-degrades when villain data unavailable: panel renders with available fields + "No reasoning frame available" message if everything degrades. Caller (ReviewPanel) does not need to gate on villain data.
+
+**Anti-pattern + autonomy compliance:**
+- Red line #5 (no shame / engagement-pressure): alignment labels are neutral editor's-note tone ("aligned", "deviation"). No "wrong" / "missed" / score / streak / engagement-pressure copy ships in default rendered output. Lint-style test enforces.
+- Red line #8 (no cross-surface contamination): HSP narrative renders ONLY inside `src/components/views/HandReplayView/`. Live-table surfaces (`OnlineView`, `TableView`, sidebar HUD, `TournamentView`, `ShowdownView`) are out of scope for WS-143.
+
+**Key interactions:**
+- Section is collapsible; toggle persists for current replay session (not across sessions).
+- Re-renders when `currentActionEntry` changes (different decision point).
+- Renders nothing on villain-action steps.
+
+---
+
+## Hero-leak inline annotation (SCF Gate 4 extension, 2026-05-02)
+
+**Added by:** SCF Gate 4 (WS-012 / SPR-020). See `audits/2026-05-02-gate4-design-self-coach-foundation.md` §SCF-G4-S2 for the full spec.
+
+**What this adds.** When the current step's hero action matches a fired hero-leak detector rule (n≥30 sample size on the situation key + severity threshold met), `HeroCoachingCard` renders an additional ⚑ badge under the action label. Tap toggles inline expansion to a full CD-5 claim card with `Drill this` / `Dismiss` / `Snooze` affordances.
+
+This is NOT a new ReviewPanel section. Annotations weave inline into the action timeline within the existing `HeroCoachingCard` (per Decision 2: "Inline badge under action label, tap expands inline" — chosen for lowest visual weight + mirroring the existing action-tag pattern).
+
+**Visual treatment.**
+
+```
+Street: Flop  Pot: $42  K72r
+
+  Hero (BTN): cbet 60% pot
+     ⚑ leak: IP cbet defense overfold pattern   ▶ tap
+
+  ▼ EXPANDED:
+  ┌──────────────────────────────────────────┐
+  │ Hero IP cbet defense — fold-to-cbet rate │
+  │ 52% [38%, 66%] over 30 hands              │
+  │ Solver baseline: 38%                      │
+  │ Sample threshold: 30 hands                │
+  │ Related drill: cbet-defense               │
+  │ [ Drill this ]   [ Dismiss ]   [ Snooze ] │
+  └──────────────────────────────────────────┘
+
+  Villain (CO): call
+```
+
+**Per-action gating logic.** Badge fires when ALL of: (a) hero action at this timeline step matches a hero-leak detector rule's situation key; (b) sample size ≥ 30 (per AP-SCF-04 floor); (c) severity exceeds rule-defined threshold (Gate 5 implementation detail; default proposal: severity > 0.3 + CI-lower deviation > 5pp from solver baseline).
+
+Multiple leak rules may fire on the same action — render each as a separate badge under the action label.
+
+**Affordance behaviors:**
+- `Drill this` — navigates to SelfCoachView Curriculum section, scrolls to + highlights the lesson card matching the leak's `relatedConceptId`.
+- `Dismiss` — collapses badge for current HRV session only; does NOT suppress future hand-replay reviews on the same situation key.
+- `Snooze` — suppresses leak annotations for the situation key for 7 days from `snoozedAt`. Persisted in `heroLeaks[situationKey].snoozedUntil`. Owner can clear in SelfCoachView Hero leaks section.
+
+**Source-util-policy whitelist.** HRV review-mode reads `heroLeaks` IDB store. CI-grep enforcement at Gate 5 (SCF-G4-SUP). Live `OnlineView`, sidebar HUD, `TableView`, `TournamentView`, `ShowdownView` blacklisted (per AP-SCF-02).
+
+**Anti-pattern + copy-discipline + 9 red lines compliance:** see Gate 4 audit doc §SCF-G4-S2 walkthroughs. All cells: compliant.
+
+---
+
 ## Known issues
 
 - **DCOMP-W2-A1 audit shipped 2026-04-22 (verdict YELLOW).** 12 findings: 0 P0, 3 P1 (F1 Back context-aware routing + ≥44×44, F2 significance badge, F3 flag+annotate SR-26/CO-49), 5 P2 + 4 P3. Back-target routing resolved: always `SCREEN.HISTORY` → `<AnalysisView initialTab="review" />`, but hardcoded regardless of entry (Sessions-entry users disoriented). `DecisionTreeView.jsx` orphan status rediscovered (points to existing `2026-04-21-decision-tree-fate` discovery). VillainAnalysisSection 386 LOC density flagged for decomposition. Full audit: `../audits/2026-04-22-blindspot-hand-replay-view.md`.
@@ -142,6 +238,8 @@ Secondary:
 - `table-view` — source of the recorded hand (via ShowdownView commit).
 - `showdown-view` — the record-committing surface whose output this replays.
 - `hand-replay-observation-capture` — Section G inline capture widget (EAL Phase 5). Adds Tier 0 observation-tagging affordance to `ReviewPanel.jsx` below `VillainAnalysisSection`.
+- `leak-distillation` — pipeline UI (SCF Phase 5). HRV inline hero-leak annotation is one of the two surface presentations of the leak-distillation pipeline (the other is SelfCoachView Hero leaks section).
+- `self-coach-view` — `Drill this` affordance on expanded leak claim card deep-links to SelfCoachView Curriculum section.
 
 ---
 
@@ -150,3 +248,6 @@ Secondary:
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-04-22 — DCOMP-W2-A1 combined Gate-2 + Gate-4 audit appended. Verdict YELLOW. 12 findings.
 - 2026-04-24 — Anatomy diagram updated + Related surfaces list gained `hand-replay-observation-capture` (EAL Gate 4 S3). Section G is a new inline widget inside `ReviewPanel.jsx` below `VillainAnalysisSection`; implementation in Phase 5 of exploit-anchor-library.
+- 2026-05-02 — SCF Gate 4 extension appended. Hero-leak inline annotation in `HeroCoachingCard`: per-action ⚑ badge with inline expansion to full CD-5 claim card + `Drill this` / `Dismiss` / `Snooze` affordances. NOT a new ReviewPanel section — woven into existing HeroCoachingCard. Source-util-policy whitelist enforced. Implementation deferred to SCF Gate 5 multi-PR.
+- 2026-05-03 — HSP HandReplay wire (WS-143 / SPR-029). New `HeroStateSection` between `HeroCoachingCard` and `VillainAnalysisSection`. Renders side-by-side canonical-vs-actual panels per hero decision point; collapsible; HSP rederives per view (no IDB cache v1). Gate 1 GREEN verdict (`audits/2026-05-03-entry-hero-state-narrative.md`); Gate 2 not required. JTBDs served list grew: added CO-54, CO-55, CO-56, SR-28, SR-29. Closes the HSP build (SPR-024..SPR-027) and unblocks WS-013 (SCF G5 leak-rule wiring) which uses HSP narrative as canonical baseline.
+- 2026-05-03 — SCF G5 Drill-this end-to-end (WS-147 / SPR-032). `ReviewPanel.onDrillLeak` upgraded from `console.log` stub to `openLessonDetail(leak.relatedConceptId)` via UIContext, navigating to new `LessonDetailView` (`SCREEN.LESSON_DETAIL`). Closes the HeroCoachingCard hero-leak badge wiring shipped in SPR-031: tap on ⚑ badge → expand CD-5 claim card → tap Drill this → lesson opens with Exposition + Worked Example + Success Criteria. v1 ships 2 reference lessons (`001-cbet-defense.md` for `hero-ip-cbet-overfold`; `002-bb-defense.md` for `hero-bb-defense-width`); future leak rules add lessons under `docs/projects/self-coach-foundation/lessons/`. Lesson framework details in `lesson-authoring-template.md` (SPR-020); lesson registry at `src/utils/skillAssessment/lessonRegistry.js`.

@@ -2,10 +2,11 @@ id: "WS-011"
 title: "Gate 3 — Research"
 legacy_id: "SCF-G3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T06:35:00Z"
+started_at: "2026-05-02T06:35:00Z"
+completed_at: "2026-05-02T07:25:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "self-coach-foundation"
@@ -23,9 +24,15 @@ blocked_by:
 blocked_by_legacy:
   - "SCF-G2"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by SCF-G2"
+sprint_id: "SPR-018"
+decision_flags:
+  - "Skill-assessment shape (test-based / observed / declared)"
+  - "Lesson surface placement (inline replay / dedicated SelfCoachView / both)"
+  - "Leak-firing frequency (every leak / aggregated post-session / owner-triggered)"
+  - "Per-tier teachable-concept map walkthrough (SCF-G1 draft amendments)"
+  - "Curriculum-spine format (DAG / observed-leak-frequency / hybrid)"
+  - "Hero-leak detector schema (Beta-Binomial CI + n>=30 floor + IDB v22)"
+status_note: "RESOLVED 2026-05-02 — Gate 3 audit shipped at docs/design/audits/2026-05-02-gate3-research-self-coach-foundation.md (~360 lines). 5 SCF-G3-* carry-forwards from Gate 2 specified (DETECTOR/TIERMAP/SPINE/CO/SCHEMA). 4 owner-decided + 2 inline-handled decision flags. CRITICAL AP-SCF-01 nuance amendment: system-imposed grading refused; owner-volunteered tests permitted (opt-in gate is load-bearing autonomy contract). Memory entry: feedback_owner_volunteered_grading.md. Companion files updated: coaching.md (CO-54/55/56 Active; CO-56 wording amendment; CO-57 stays Proposed deferred to Gate 4 v2), copy-discipline.md (CD-2 nuance), anti-patterns.md (AP-SCF-01 re-statement). Gate 4 unblocked."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)"

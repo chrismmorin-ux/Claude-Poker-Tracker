@@ -1,0 +1,58 @@
+id: "WS-148"
+title: "SCF G5 child 4 — curriculum scaffolding (6-tier ladder + composite signal)"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T15:45:00Z"
+completed_at: "2026-05-04T09:30:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  Curriculum scaffolding per SCF G4 audit §SCF-G4-MOD + SCF-G3-SPINE. Authors
+  the per-tier concept map (6-tier ladder: novice / live-rec / studied-amateur
+  / part-time-grinder / serious-grinder / pro) and the composite signal
+  formula (W_leak/W_drill/W_test/W_recent = 0.5/0.3/0.15/0.05) that picks
+  the next teachable concept for the user.
+
+  Scope:
+    - src/utils/skillAssessment/conceptMastery.js (per-concept mastery state
+      from drill + test + leak data)
+    - src/utils/skillAssessment/composite.js (3-signal composite formula)
+    - Tier-to-concept mapping data file
+    - Tests
+
+  This is the "skill ladder" infrastructure that overall-tier persistence
+  needs. Per-domain mastery attribute on chris-live-player.md is separate
+  (SCF Gate 1 Discovery 1).
+accept_criteria:
+  - "conceptMastery.js exports per-concept mastery state computation"
+  - "composite.js exports next-teachable-concept selector with weighted signal formula"
+  - "Tier-to-concept mapping ratified (6 tiers × ~3-5 concepts each)"
+  - "Tests for composite formula + tier mapping + per-concept mastery"
+effort: "M"
+files_involved:
+  - "src/utils/skillAssessment/conceptMastery.js (NEW)"
+  - "src/utils/skillAssessment/composite.js (NEW)"
+  - "src/utils/skillAssessment/tierConceptMap.js (NEW data file)"
+blocked_by:
+  - "WS-145"
+  - "WS-147"
+blocked_by_legacy: []
+enables:
+  - "WS-149"
+sprint_id: "SPR-033"
+decision_flags: []
+decisions_locked:
+  - "Concept granularity = HIGH (per feedback_scf_high_granularity.md). cbet-defense → ip/oop split (texture-conditioned where divergent); bb-defense → split per-opener-position. Floor: one concept per coherent solver-baseline region in situation-key space."
+  - "Tier model = learning-state descriptor, not user-facing rank (per feedback_scf_learning_state_not_tier_rank.md). Per-concept mastery is truth. 6-tier ladder = authoring metadata only. New module learningStateDescriber.js. Signal weights configurable via settings."
+  - "Surface scope = infrastructure-only this sprint. SelfCoachView Curriculum surface = WS-159 follow-up (needs Gate 1 audit since it's a new surface)."
+  - "Migration = WS-148 includes renaming 2 lessons from SPR-031/SPR-032 (cbet-defense.md, bb-defense.md) to fine-grained IDs + re-pointing 2 leak rules' relatedConceptId fields."
+source:
+  origin: "ws-013-decomposition-spr-030-2026-05-03"
+  parent_ws: "WS-013"
+status_note: "Skill-assessment infrastructure; needs WS-145 framework + WS-147 lesson registry"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

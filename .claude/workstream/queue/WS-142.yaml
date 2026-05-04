@@ -1,0 +1,73 @@
+id: "WS-142"
+title: "HSP-B2 — Implement buildHeroState() orchestrator (wires rangeEngine + gameTree + villainProfile)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T05:00:00Z"
+completed_at: "2026-05-03T06:30:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Implement src/utils/heroState/buildHeroState.js — orchestrator that composes
+  existing primitives into a full HeroState object.
+
+  Inputs: gameState, heroHand, villainModel, sessionStats (for tendency adjustments).
+  Output: HeroState per src/utils/heroState/types.js.
+
+  Steps:
+    1. Call classifyArchetype() → archetypeId
+    2. Derive situation (street, actionContext, positionClass, sprZone, pot, effStack, rake)
+    3. Derive handContext (handClass, handStrength, rangeAdvantage, nutAdvantage, boardTexture)
+    4. Compute equity:
+       - overall via rangeEngine
+       - vsRangeParts via heroState/equityVsRangeParts.js (WS-144) — role-translator
+         that composes rangeSegmenter + villainProfile + polarization signal
+       - realization via existing realization logic (potCalculator + texture-aware adj)
+    5. Compute plan via gameTreeEvaluator depth-2/3 — primary action + branches
+    6. Generate adjustments from villainProfile (style/tendency posterior)
+    7. Render narrative by interpolating archetype template (loaded from
+       docs/design/hero-state-templates/) with computed values
+
+  First-principles guard: plans come from gameTreeEvaluator, not from archetypeId
+  lookup. Templates only render — they don't decide.
+
+  Caching: per §7.6 open question — likely cache by decision-key hash. If perf
+  measurements during dev show recompute is fine, skip caching.
+accept_criteria:
+  - "src/utils/heroState/buildHeroState.js exports buildHeroState()"
+  - "Returns full HeroState object passing type validation"
+  - "Plan tree comes from gameTreeEvaluator, not from archetype lookup"
+  - "Narrative interpolates parametric template (no hardcoded copy in builder)"
+  - "Unit tests on all 18 archetype paths with synthetic inputs"
+  - "Cache strategy decided + documented (or explicitly deferred with rationale)"
+effort: "L"
+files_involved:
+  - "src/utils/heroState/buildHeroState.js (NEW)"
+  - "src/utils/heroState/types.js (depends on)"
+  - "src/utils/heroState/classifyArchetype.js (depends on)"
+  - "src/utils/rangeEngine/* (consumer)"
+  - "src/utils/gameTreeEvaluator.js (consumer)"
+  - "src/utils/villainProfileBuilder.js (consumer)"
+  - "src/utils/heroState/__tests__/buildHeroState.test.js (NEW)"
+blocked_by:
+  - "WS-138"
+  - "WS-139"
+  - "WS-140"
+  - "WS-141"
+  - "WS-144"
+blocked_by_legacy: []
+enables:
+  - "WS-143"
+sprint_id: "SPR-027"
+decision_flags:
+  - "Caching strategy (re-derive vs cache by decision-key hash) — open question §7.6"
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §3 + §6 + §7"
+status_note: "Orchestrator. WS-137 dep replaced by WS-144 (role-translator) per audit verdict 2026-05-03; villainRangePartitioner.js rejected, equityVsRangeParts.js role-translator accepted instead."
+created_at: "2026-05-02"
+updated_at: "2026-05-03"

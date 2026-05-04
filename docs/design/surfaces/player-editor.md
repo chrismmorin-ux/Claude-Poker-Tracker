@@ -159,3 +159,72 @@ Root: `min-h-screen bg-gray-100 flex flex-col` with `transform: scale(scale)`, `
 
 - 2026-04-21 — Created Session 2.
 - 2026-04-26 — Marked partially superseded by Table-Build (Gate 4 ratified). Create-from-query path absorbed; edit-existing path survives.
+- 2026-05-02 — PIO Gate 4 PEX subsection appended (SPR-021 / WS-007). New attribute sections added to surviving edit-mode body: AgeDecadeSection / EthnicitySection / WardrobeSection / JewelrySection / LogoSection. Camera capture entry button. Hat shape envelope upgrade. Implementation deferred to PIO Gate 5 multi-PR.
+
+---
+
+## PIO-G4-PEX — PlayerEditor edit-mode extensions (PIO Gate 4 extension, 2026-05-02)
+
+**Added by:** PIO Gate 4 (WS-007 / SPR-021). See `audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-PEX for the full spec.
+
+**Scope.** Targets the SURVIVING edit-mode path only. Create-from-query path is absorbed by Table-Build per existing 2026-04-26 supersession. Edit-mode body gains 5 new attribute sections + camera capture entry button. Hat section schema upgrades via migrate-on-read getter shim. PEO 60/30/10 stress-test scaling carries through (no rebuild required).
+
+**New body sections (added after AvatarFeatureBuilder, before PhysicalSection):**
+
+```
+┌─ AgeDecadeSection ───────────────────────────────┐
+│  AGE: [◯ 20s] [◯ 30s] [◯ 40s] [● 50s] [◯ 60+]    │
+└──────────────────────────────────────────────────┘
+┌─ EthnicitySection ───────────────────────────────┐
+│  ETHNICITY: [Irish ×] [Polish ×]  [+ Add ▼]      │
+│   curated-autocomplete + free-text fallback      │
+│   (reuses Table-Build's EthnicityTagInput pattern)│
+└──────────────────────────────────────────────────┘
+┌─ WardrobeSection ────────────────────────────────┐
+│  WARDROBE: [polo *] [vest] [jacket] [other ▾]    │
+│   palette chips multi-select; 'other' →           │
+│   free-text input → otherText capture             │
+└──────────────────────────────────────────────────┘
+┌─ JewelrySection ─────────────────────────────────┐
+│  JEWELRY: [watch] [ring] [other ▾]               │
+└──────────────────────────────────────────────────┘
+┌─ LogoSection ────────────────────────────────────┐
+│  LOGOS: [no-logo] [sports-team] [other ▾]        │
+└──────────────────────────────────────────────────┘
+```
+
+**Section semantics.**
+
+| Section | Type | Schema field | Notes |
+|---|---|---|---|
+| AgeDecadeSection | Radio (5 options) | `ageDecade: '20s' \| '30s' \| '40s' \| '50s' \| '60+'` | Default unset; owner explicit pick. Closed enum per Gate 3 ratification. |
+| EthnicitySection | Multi-tag chip + autocomplete | `ethnicityTags: string[]` | Reuses Table-Build's EthnicityTagInput (~120-entry curated list + free-text fallback). |
+| WardrobeSection | Palette chips multi-select + 'other' free-text | `wardrobe: { palette: string[], otherText: string }` | Initial palette in `asset-palettes.md`. |
+| JewelrySection | Same as Wardrobe | `jewelry: { palette: string[], otherText: string }` | |
+| LogoSection | Same as Wardrobe | `logo: { palette: string[], otherText: string }` | |
+
+**Hat section schema upgrade.**
+
+Existing `hat: 'hat.cap-team'` flat-string field upgrades to envelope shape `{ palette: 'cap-team', otherText: '' }` per PIO-G3-PALETTE Hat migration nuance. Migrate-on-read pattern: legacy reads adapt via getter shim; persisted-on-next-write. Avoids forcing a v22 mutation on existing records (additive-only IDB v22 invariant).
+
+UI: AvatarFeatureBuilder's existing Hat row continues to show palette mini-avatar swatches. Envelope shape is invisible to the user; getter shim handles the bridge.
+
+**Camera capture entry button.**
+
+Add `[ 📷 Add photo ]` button at top of form (alongside avatar preview, near NameSection):
+
+```
+┌─ Photo (NEW) ────────────────────────────────────┐
+│  [Avatar 80px or photo thumbnail]                 │
+│  [ 📷 Add photo ]   or   [ Replace ] [ Remove ]   │
+└──────────────────────────────────────────────────┘
+```
+
+- When no photo exists: `[ 📷 Add photo ]` button. Tap → Camera Capture Modal (PIO-G4-S2).
+- When photo exists: thumbnail + `[ Replace ]` + `[ Remove ]` affordances.
+- Button HIDDEN when `userSettings.photoCaptureEnabled` is `false` (Settings master toggle, PIO-G4-SET).
+- AP-PIO-03 binding: button is user-initiated entry only; modal NEVER auto-launches.
+
+**PEO scaling compliance.** Existing PEO 60/30/10 stress-test scaling validated at 1600x720 with prior section count. New PEX sections (~5 sections) fit within scaling envelope. No rebuild required.
+
+**Anti-pattern compliance:** see audit doc §PIO-G4-PEX walkthrough. AP-PIO-03 (camera button user-tap only) + AP-PIO-04 (factual labels) + AP-PIO-05 (capture for identification utility, no recommendations) all clear. Cultural-sensitivity binding affirmed: ethnicity + age decade captured for identification, never for recommendation.

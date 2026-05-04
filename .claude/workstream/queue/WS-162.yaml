@@ -1,0 +1,64 @@
+id: "WS-162"
+title: "PIO G5 child C — Player Profile View (S1)"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T11:30:00Z"
+completed_at: "2026-05-04T14:40:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  New fullscreen surface displaying per-player sighting history +
+  per-attribute stability rendering + manual-add-sighting modal.
+
+  Per PIO Gate 4 audit §PIO-G4-S1 (player-profile.md surface spec to be
+  authored as part of this child or referenced from existing audit).
+
+  Renders for each attribute: current value + stability label
+  ('always'/'sometimes'/'today-only') + posterior + 95% MoE (CD-5
+  inspectability). Sighting history shows oldest→newest with attribute
+  diffs.
+
+  Adds new SCREEN.PLAYER_PROFILE route + uiReducer state +
+  PlayersView row-tap routes here (replaces v1 row-tap → PlayerEditor).
+accept_criteria:
+  - "PlayerProfileView.jsx renders sighting history + per-attribute stability"
+  - "computeStability() (from WS-160) called per attribute"
+  - "Manual-add-sighting modal: tap to record current attribute snapshot"
+  - "SCREEN.PLAYER_PROFILE route + UIContext openPlayerProfile/closePlayerProfile"
+  - "Edit button = one tap to PlayerEditor"
+  - "AP-PIO-04 binding: factual labels, no shame copy"
+  - "Tests covering stability rendering + manual-add flow"
+  - "Settings tier-set radio: source of truth = ownerTier (per AP-SCF-03)"
+  - "Optional: SIGHTING_FEATURE_PRIORS tuning (corpus-based) — defer if needed"
+effort: "M"
+files_involved:
+  - "src/components/views/PlayerProfileView/PlayerProfileView.jsx (NEW)"
+  - "src/components/views/PlayerProfileView/SightingHistoryList.jsx (NEW)"
+  - "src/components/views/PlayerProfileView/AttributeStabilityRow.jsx (NEW)"
+  - "src/components/views/PlayerProfileView/AddSightingModal.jsx (NEW)"
+  - "src/components/views/PlayerProfileView/__tests__/ (NEW)"
+  - "src/constants/uiConstants.js (SCREEN.PLAYER_PROFILE constant)"
+  - "src/reducers/uiReducer.js (new screen + state)"
+  - "src/contexts/UIContext.jsx (open/close handlers)"
+  - "src/PokerTracker.jsx (route)"
+  - "docs/design/surfaces/player-profile.md (NEW or expand existing audit reference)"
+blocked_by:
+  - "WS-160"
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-035"
+decision_flags:
+  - "Surface authoring: piggyback on PIO-G4 audit OR author standalone surface spec"
+  - "Manual-add modal: include all attributes in one form vs per-attribute taps"
+  - "Sighting history pagination: top-N vs full scroll"
+  - "PriorTuning: include SIGHTING_FEATURE_PRIORS tuning here OR defer"
+status_note: "CLAIMED SPR-035. Paired with WS-163 (shares row-tap routing seam). Execute first (builds destination surface that WS-163 routes into)."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

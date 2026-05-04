@@ -1,0 +1,84 @@
+id: "WS-159"
+title: "SCF G5 — SelfCoachView Curriculum surface (Gate 1 audit + Gate 4 design + implementation)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 18.0
+priority_label: "P2"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  Author the SelfCoachView Curriculum surface — the user-facing entry
+  point for browsing concepts, viewing per-concept mastery, toggling
+  signal sources, and exploring the next-teachable-concept recommendation.
+
+  The infrastructure landed in WS-148 / SPR-033:
+    - tierConceptMap.js (concept registry, 3-kind architecture)
+    - conceptMastery.js (per-concept signals)
+    - composite.js (next-teachable selector with configurable weights)
+    - learningStateDescriber.js (general/specific descriptor with composition transparency)
+    - settings.selfCoach.{signalToggles,signalWeights,ownerTier} (state only; UI = this ticket)
+
+  This ticket adds the SURFACE that consumes the infrastructure. Per the
+  design framework guardrail (CLAUDE.md §Design Program Guardrail):
+  this is a NEW surface, so it MUST start with Gate 1 (Entry audit) +
+  Gate 4 (surface spec).
+
+  Scope:
+    - Gate 1 entry audit (docs/design/audits/YYYY-MM-DD-entry-self-coach-view.md)
+    - Gate 2 (Blind-Spot Roundtable) only if Gate 1 yields YELLOW or RED
+    - Gate 4 surface spec (docs/design/surfaces/self-coach-view.md)
+    - Implementation: SelfCoachView.jsx + curriculum tab + composition-inspect panel + signal-toggle UI + signal-weight sliders + owner-tier radio (per AP-SCF-03 owner-set only)
+    - Tests + Playwright visual verification (mobile + desktop layouts)
+
+  Per `feedback_scf_learning_state_not_tier_rank.md`:
+    - NEVER renders ownerTier / inferred tier as a single-word rank label
+    - Renders learning-state DESCRIPTOR with click-to-inspect composition (CD-5)
+    - Tier names ('novice'..'pro') only appear in the owner-set radio UI
+
+  Per `chris-live-player.md` autonomy red lines:
+    - #5: no shame copy, no engagement-pressure (no streak counters, no level-up notifications)
+    - #8: source-util-policy whitelist already includes SelfCoachView; no live-table contamination
+
+accept_criteria:
+  - "Gate 1 entry audit completed with VERDICT (GREEN/YELLOW/RED)"
+  - "Gate 4 surface spec authored at docs/design/surfaces/self-coach-view.md"
+  - "SelfCoachView.jsx renders Curriculum tab listing concepts grouped by tier"
+  - "Each concept entry shows mastery signals (leak/drill/test) + composite score with click-to-inspect breakdown"
+  - "Signal-toggle UI dispatches SET_SELF_COACH_SIGNAL_TOGGLE actions"
+  - "Signal-weight sliders dispatch SET_SELF_COACH_SIGNAL_WEIGHT actions (clamped 0-1)"
+  - "Owner-tier radio dispatches SET_SELF_COACH_OWNER_TIER (6 options + null)"
+  - "Forbidden-rank-label lint test on rendered DOM (no 'novice/...'/'pro' as standalone descriptor copy)"
+  - "Playwright visual regression baselines (mobile 1600x720 + desktop)"
+effort: "L"
+files_involved:
+  - "docs/design/audits/YYYY-MM-DD-entry-self-coach-view.md (NEW)"
+  - "docs/design/surfaces/self-coach-view.md (NEW)"
+  - "src/components/views/SelfCoachView/SelfCoachView.jsx (NEW)"
+  - "src/components/views/SelfCoachView/CurriculumTab.jsx (NEW)"
+  - "src/components/views/SelfCoachView/SignalToggleControls.jsx (NEW)"
+  - "src/components/views/SelfCoachView/CompositionInspector.jsx (NEW)"
+  - "src/components/views/SelfCoachView/__tests__/ (NEW)"
+  - "src/PokerTracker.jsx (route wire-in)"
+  - "src/constants/uiConstants.js (SCREEN.SELF_COACH constant)"
+  - "src/reducers/uiReducer.js (route handling)"
+blocked_by:
+  - "WS-148"
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Curriculum tab layout: list grouped by tier vs flat sortable table vs tree (umbrella → sub-concepts)"
+  - "Composition inspector: inline expand-on-click vs separate panel/modal"
+  - "Signal weight sliders: discrete steps (0.0/0.1/0.2/...) or continuous"
+  - "Concepts with no lesson file (sub-concepts pending WS-149): hide, show greyed, or show with 'Lesson coming' label"
+  - "ownerTier radio location: Curriculum tab vs separate Settings tab"
+source:
+  origin: "ws-148-followup-spr-033-2026-05-04"
+  parent_ws: "WS-148"
+status_note: "Infrastructure ready (SPR-033); needs Gate 1 audit + Gate 4 surface spec before implementation per design framework guardrail. Cannot ship without Gate 1 due to it being a new surface."
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

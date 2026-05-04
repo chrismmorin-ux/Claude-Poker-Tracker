@@ -1,7 +1,12 @@
 id: "FIND-002"
 title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
 severity: HIGH
-status: open
+status: resolved
+resolved_at: "2026-05-02T06:05:00Z"
+resolved_by: "WS-117"
+resolution: |
+  classifyAction() in src/utils/handAnalysis/replayAnalysis.js rebuilt with MoE-symmetric banding around 0.5 (POKER_THEORY.md §181 'Thin Value betting' alignment). New return shape: { class: 'value'|'thin'|'bluff', equity, moe } | null. MoE wired through from existing handVsRange.ciHalf field — no recomputation, ciHalf was already in the contract per monteCarloEquity.js:152. Backward-compat preserved via no-MoE → binary fallback. 3 UI consumers updated (ReviewPanel + VillainAnalysisSection + ReviewObservations) — three-class badge with yellow 'thin value' tier + ±X.X% MoE suffix.
+  Verification: 9,448-test full suite green; build clean. Visual verification deferred (bounded change scope; defensive guards in all consumers).
 category: "equity-calculation"
 program: "domain-correctness"
 problem_class: "Equity calculation correctness"
@@ -21,5 +26,5 @@ agent_corroboration:
   - "range-equity-audit (F2)"
 dedup_key: "eng-engine-domain-correctness-hard-0-5-value-bluff-cutoff-over-noisy-500-trial-monte-carlo"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-02"
 promoted_to: "WS-117"

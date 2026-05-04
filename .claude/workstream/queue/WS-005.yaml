@@ -2,10 +2,11 @@ id: "WS-005"
 title: "Gate 2 — Blind-Spot Roundtable"
 legacy_id: "PIO-G2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T04:30:00Z"
+started_at: "2026-05-02T04:30:00Z"
+completed_at: "2026-05-02T05:25:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "player-identification-v2"
@@ -25,9 +26,13 @@ blocked_by:
 blocked_by_legacy:
   - "PIO-G1"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by PIO-G1"
+sprint_id: "SPR-015"
+decision_flags:
+  - "Voice composition (confirm 4 voices UX/Failure/Data-modeling/Cultural-sensitivity per WS-005, or add 5th e.g. Market/External lens mirroring SPR-014)"
+  - "AP-PIO graded-work / demographic-attribute refusal lock strictness (audit-doc-only / CI-grep enforcer / IDB-validation write-time barrier)"
+  - "PEO-reuse boundary validation scope (stress-test PIO-G1 inventory in Stage D, OR accept and Gate 3 ratifies)"
+  - "Phone-camera-capture lifecycle red-line scope (capture-only-no-storage / encrypted-storage / explicit-purge / defer to Gate 3)"
+status_note: "RESOLVED 2026-05-02 — Gate 2 audit shipped (YELLOW verdict; 4 voices integrative; sighting-log parallel-store ratified; capture-with-explicit-purge photo lifecycle; AP-PIO audit-doc-only tier with AP-PIO-01..05 inline; Bayesian-Beta stability formula recommended; PEO 60/30/10 stress-test confirmed); 5 Gate 3 + 7 Gate 4 carry-forwards enumerated. Owner stance captured to memory: identification utility binds, cultural-sensitivity reviewing only."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)"

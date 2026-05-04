@@ -1,0 +1,231 @@
+id: "SPR-024"
+title: "HSP foundation — HeroState type schema + range-engine partitioning audit"
+status: completed
+goal: |
+  Hero State Primitive (HSP) foundation lands. The HeroState type schema is
+  written as JSDoc typedefs in src/utils/heroState/types.js (no runtime
+  logic), and the range-engine partitioning audit answers whether a separate
+  villainRangePartitioner.js module is needed before HSP-B2 (buildHeroState
+  orchestrator) can be built. Together these two items unblock the rest of
+  the HSP workstream (B1 classifyArchetype, B2 orchestrator, W1 first-consumer
+  wire) and clear the load-bearing dep that SCF Gate 5's leak-rule wiring
+  has been pointing at without naming.
+
+  Master Plan rhythm:
+    SPR-020: WS-012 (design — SCF Gate 4)         ← D-line Phase-4 close
+    SPR-021: WS-007 (design — PIO Gate 4)         ← A-line Phase-4 close
+    SPR-022: WS-076 (engineering — P0 break)      ← rhythm interruption
+    SPR-023: WS-077 (engineering — P0 sibling)    ← rhythm continued while hot
+    SPR-024: WS-140 + WS-137 (HSP foundation)     ← THIS — newly-recorded SCF dep
+    SPR-025+: WS-141/142/138/139 (HSP build + authoring) → SCF/PIO Gate 5
+
+  HSP was promoted into the queue 2026-05-02 (eight items WS-136..WS-143)
+  AFTER my original sprint composition for SCF G5 was drafted. The queue-index
+  comment explicitly tags HSP as "Foundational dep for SCF" and
+  docs/HERO_STATE_DESIGN.md §1+§2 names the SCF leak detector as a primary
+  downstream consumer. SCF Gate 5 (WS-013) deferred one sprint until HSP
+  reaches at least v1 — without it, "1-2 leak rules wired end-to-end"
+  (WS-013 accept criterion) has no canonical reference to anchor against.
+
+  Source-class damping (Step 2d): last 3 anchors WS-077, WS-076, WS-007
+  ALL untagged (backlog-md-migration). No class saturated. WS-140 + WS-137
+  source-class is `untagged` (founder-promotion-2026-05-02) — formally an
+  uncategorized class outside the engine-finding/auto-rec damping rules,
+  treated as founder-driven → NOT damped.
+
+items:
+  - id: "WS-140"
+    title: "HSP-T1 — Define HeroState type schema (JSDoc typedefs in src/utils/heroState/types.js)"
+    mode: execute
+    effort: S
+    status: done
+    completion_notes: |
+      Shipped src/utils/heroState/types.js with:
+        - Full JSDoc typedefs: HeroState (top-level), Situation, HandContext,
+          EquityVsRangeParts, Equity, PlanPrimary, PlanBranch, RangeConfigEntry,
+          RangeConfig, Plan, AdjustmentDelta, Adjustment, Narrative, ArchetypeId
+        - 11 const-array enum exports: ARCHETYPE_FAMILIES (11 families covering
+          §4.2 preflop + §4.3 flop catalogs), ACTION_CONTEXTS (15 entries),
+          POSITION_CLASSES (EP→BB), STREETS, HAND_CLASSES, HAND_STRENGTHS,
+          BOARD_TEXTURES, ADVANTAGE_VALUES, PLAN_ACTIONS
+        - SPR_ZONES + getSPRZone re-exported from
+          src/utils/exploitEngine/gameTreeConstants.js (NOT potCalculator —
+          ticket text said potCalculator but the canonical export is
+          actually in exploitEngine/gameTreeConstants; documented this
+          correction in WS-140 completion note for downstream reference)
+        - First-principles guard documented in file header per
+          POKER_THEORY.md §7 + exploitEngine/CLAUDE.md anti-pattern:
+          archetypeId is an OUTPUT of classification, never an INPUT to
+          plan computation
+
+      Tests: src/utils/heroState/__tests__/types.test.js — 11 vitest cases
+      verifying SPR_ZONES re-export identity (toBe), getSPRZone behavior on
+      MICRO/DEEP/null inputs, all 11 enum exports present + canonical values
+      (positions in dealing order, streets in chronological order, advantage
+      triple correct, plan actions complete).
+
+      Verification:
+        - 11/11 tests green via `npx vitest run src/utils/heroState/__tests__/types.test.js`
+        - Build clean (`npm run build` → 6.48s, dist generated)
+        - `node --check src/utils/heroState/types.js` syntax-clean
+
+      No runtime logic shipped — types only. Unblocks WS-141 (HSP-B1
+      classifyArchetype) and WS-142 (HSP-B2 buildHeroState orchestrator).
+    finding_id: null
+    decision_flags: []
+    depends_on: []
+    started_at: "2026-05-03T00:05:00Z"
+    completed_at: "2026-05-03T00:15:00Z"
+    notes: ""
+
+  - id: "WS-137"
+    title: "HSP-G1 — Range-engine partitioning audit (does villainRangePartitioner.js need to be built?)"
+    mode: plan-first
+    effort: S
+    status: done
+    completion_notes: |
+      Decision flag resolved via AskUserQuestion at start: founder picked
+      "most sophisticated but consistent with our engine" (preview options
+      were verdict-only / verdict+full-API-spec / verdict+1-paragraph-sketch;
+      founder text answer pushed scope to verdict + full API spec, with the
+      consistency constraint that the spec reuse rangeEngine + exploitEngine
+      patterns rather than introduce parallel vocabulary).
+
+      Mandatory pre-audit reads completed per CLAUDE.md poker analysis
+      guardrail:
+        - .claude/context/POKER_THEORY.md (re-confirmed 9 anti-patterns)
+        - src/utils/rangeEngine/CLAUDE.md (Bayesian-not-frequentist; mixing-real;
+          per-scenario normalization; two independent decision trees;
+          showdown-evidence-sacred)
+        - src/utils/exploitEngine/CLAUDE.md (consequence-weighted confidence;
+          fold-equity != fold-frequency; range-segmentation-not-strength;
+          DO-NOT-stack-style-with-stats; range-shape-not-deterministic-of-sizing)
+
+      Audit findings (4 questions answered):
+        Q1: rangeSegmenter.js (exploitEngine) ALREADY exposes:
+            - segmentRange(range, board, deadCards, boardTexture) → 5-bucket
+              strategic partition (nuts/strong/marginal/draw/air) + 24-entry
+              hand-type display taxonomy
+            - segmentToRanges(segResult) → per-bucket Float64Array(169) sub-ranges
+            - enrichWithEquity(segResult, heroCards, options) → hero equity vs
+              each non-empty bucket (Monte Carlo, 500 trials/bucket default)
+            - The 5-bucket vocabulary is the strategic vocabulary throughout
+              the game tree (gameTreeConstants.BUCKET_NAMES,
+              villainRangeShapeSizing, gameTreeDepth2)
+        Q2: Gap is role-conditioning, not partitioning. HSP wants 4-class
+            (vsValue/vsBluff/vsDraw/vsAir) which depends on villain action
+            (aggressor vs defender) + style (polarized vs linear). The
+            existing partition is strength-only. Mapping requires a thin
+            translator on top — NOT a parallel partitioning algorithm.
+        Q3: Partition boundaries fully computable from existing primitives:
+            rangeSegmenter (strength) + villainProfileBuilder.getStyle +
+            gameTreeEquity.computePolarization. No new infrastructure.
+        Q4: Per-street class availability:
+            - Preflop: short-circuit (no draws, no role-distinguishable bluffs);
+              HeroState equity reduces to {overall} preflop
+            - Flop: full 4 classes
+            - Turn: full 4 classes (vsDraw shrinks)
+            - River: 3 classes (vsDraw becomes null per existing typedef)
+
+      Verdict: REJECT building a standalone villainRangePartitioner.js
+      (would duplicate rangeSegmenter.js and bifurcate the strategic
+      vocabulary). ACCEPT building a thin role-translator at
+      src/utils/heroState/equityVsRangeParts.js (~80 LoC + tests; lives
+      in heroState/ not rangeEngine/exploitEngine/ because role-conditioning
+      depends on action+style which is downstream of both engines).
+
+      Deliverables:
+        - docs/HERO_STATE_DESIGN.md §7.5 marked RESOLVED with summary verdict
+        - docs/HERO_STATE_DESIGN.md §9 (NEW) — full audit findings + verdict
+          + API spec for computeEquityVsRangeParts + translateStrengthToRole
+          + decision table for strength→role mapping + test surface
+        - WS-144 created (HSP-B0 — equityVsRangeParts role-translator
+          implementation), priority_score=15 P2, S effort, blocked_by=[]
+        - WS-142 (HSP-B2 buildHeroState) blocked_by updated:
+          [WS-137, WS-138, WS-139, WS-140, WS-141] →
+          [WS-138, WS-139, WS-140, WS-141, WS-144]
+        - WS-142 description updated: vsRangeParts now points at WS-144
+          translator instead of imagined villainRangePartitioner
+        - WS-142 decision_flags reduced (villainRangePartitioner.js scope
+          decision removed — settled by audit)
+
+      Verification:
+        - Zero src/ diff (audit-only ticket)
+        - Zero test changes (audit-only ticket)
+        - HSP design doc updated (§7.5 + §9 + lineage to WS-144)
+        - Queue-index.yaml: 142 → 143 items (WS-144 added); WS-137 done;
+          WS-142 deps revised
+    finding_id: null
+    decision_flags:
+      - "Audit verdict scope: RESOLVED via AskUserQuestion — founder picked 'most sophisticated but consistent with our engine'. Scope expanded to verdict + full API spec (option 2-equivalent), with consistency constraint that the spec reuse rangeEngine + exploitEngine vocabulary rather than introduce parallel terms."
+    depends_on: []
+    started_at: "2026-05-03T00:30:00Z"
+    completed_at: "2026-05-03T00:45:00Z"
+    notes: ""
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "Hero State Primitive workstream (HSP foundation; load-bearing dep for SCF Gate 5 leak-rule wiring; promoted by founder 2026-05-02 from docs/HERO_STATE_DESIGN.md)"
+total_effort: "S+S = ~1 session (WS-140 type-doc transcription; WS-137 audit + verdict)"
+decisions_needed:
+  - "Item #2 (WS-137): Audit verdict scope — verdict only, or verdict + draft API spec? Single decision, 1-round AskUserQuestion expected at audit-start (or pre-execution if owner wants to pre-commit)."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T00:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; same as SPR-022/023). Manual review: scope is foundational primitive type-doc + range-engine audit; both items appear in queue as founder-promoted (origin: founder-promotion-2026-05-02), promoted from a design doc the founder authored 2026-05-02. No engagement-pressure / mastery-score / cross-surface-contamination angles. Aligned with the broader founder direction toward a leak-to-lesson loop (SCF) which HSP unblocks. Type-only work has zero behavior-change risk."
+  matches: []
+
+created_at: "2026-05-03T00:00:00Z"
+approved_at: "2026-05-03T00:00:00Z"
+started_at: "2026-05-03T00:05:00Z"
+completed_at: "2026-05-03T00:45:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Two-item small sprint. S+S = ~1 session. Both items unblocked
+  (blocked_by=[]). Both prerequisite for downstream HSP work:
+    WS-140 → enables WS-141 (B1 classifyArchetype) + WS-142 (B2 orchestrator)
+    WS-137 → enables WS-142 (B2 orchestrator)
+
+  Anchor selection rationale (Step 3a + Step 3b clustering):
+    - Original draft anchored WS-013 (SCF Gate 5). Rolled back when queue
+      grew 134→142 mid-flight; WS-136..WS-143 (HSP workstream) added by
+      founder 2026-05-02 with explicit "Foundational dep for SCF" tag in
+      the queue-index header comment.
+    - HSP promoted from docs/HERO_STATE_DESIGN.md (founder-authored design
+      doc); §1 motivation names the SCF leak detector as one of three
+      consumers; §2 architecture diagram has SCF as a downstream branch.
+    - WS-013's accept criterion "1-2 leak rules wired end-to-end" requires
+      a canonical baseline that HSP provides. Composing SCF G5 first would
+      force every plan-mode decision through "depends on HSP existing first."
+    - Re-anchored on the smallest unblocking pair: WS-140 + WS-137.
+      Both S-effort, both unblocked, both have zero downstream coupling
+      conflicts. Together they unblock B1 + B2 + W1 (the rest of HSP's
+      blockers).
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-077, WS-076, WS-007 (all untagged from
+      backlog-md-migration-2026-05-01). No saturation.
+    - WS-140 + WS-137 source: founder-promotion-2026-05-02 — uncategorized
+      under the source-class map (§Step 2d). Treated as founder-driven /
+      untagged → NOT damped.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): domain-correctness baseline 2026-05-01,
+  cadence 14d → not stale. launch program never run; treated as
+  not-yet-established (consistent with prior sprints).
+
+  Auto-replenishment (Step 1e): no new auto-recommendations triggered.
+  domain-correctness health 4/8 at ceiling 8 — not below target.
+
+  Tooling friction unchanged from SPR-022/023: 4 missing kit/scripts/cwos-*
+  scripts. Manual fallbacks used.
+
+  Note for SPR-025+ planning: HSP follow-up sprint candidates are
+  WS-141 (B1 classifyArchetype, M, blocked-by-WS-140), WS-138 (A1
+  preflop archetypes, M, no blocker, parallel-friendly), and WS-139
+  (A2 flop archetypes, M, no blocker, parallel-friendly). WS-142 (B2
+  orchestrator) needs WS-141 + WS-137 + WS-138 + WS-139 + WS-140 all done
+  first; reachable in SPR-026 if sequencing is tight.

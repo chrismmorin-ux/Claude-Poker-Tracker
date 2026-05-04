@@ -1,0 +1,87 @@
+id: "WS-150"
+title: "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM"
+type: feature
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 14.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Master ticket for HSP v2. v1 (WS-136 + 7 children) shipped 2026-05-03 with
+  preflop + flop archetypes, classifier, builder, role-translator, HandReplay
+  wire. v2 captures the deferred work so it isn't lost.
+
+  Design spec: docs/HERO_STATE_DESIGN.md (§7 open questions; §11 implementation
+  policy from v1).
+
+  Children (7 work items):
+    - WS-151 (HSP-A3) — Turn archetype taxonomy + templates
+    - WS-152 (HSP-A4) — River archetype taxonomy + templates
+    - WS-153 (HSP-B3) — Extend classifyArchetype() to turn + river
+                        (currently throws NotImplementedError per v1 scope)
+    - WS-154 (HSP-M1) — Full multiway model (replaces FLOP_MULTIWAY v1 stub;
+                        sequential-decision modeling)
+    - WS-155 (HSP-X1) — Adjustment composition rule (§7.2 — precedence vs
+                        multiply vs sum when multiple tendencies fire)
+    - WS-156 (HSP-X2) — Caching strategy (§7.6 — only if perf measurements
+                        from production HSP usage demand it; event-driven)
+    - WS-157 (HSP-X3) — LLM-augmented narrative authorship for long tail
+                        (§7.3 — research/spike, NOT v1-catalog replacement)
+
+  Hard guards inherited from v1 (binding for all v2 work):
+    1. Archetype IDs are OUTPUTS of classification, never INPUTS to plan
+       computation. Plans come from gameTreeEvaluator. Templates render strings;
+       they don't decide. Per POKER_THEORY.md §7 + exploitEngine/CLAUDE.md
+       anti-patterns.
+    2. Don't simplify equity.vsRangeParts into a single equity number — the
+       4-class decomposition is load-bearing for narrative quality and SCF
+       baseline accuracy.
+    3. Templates are presentation only — no numeric hardcoding inside templates;
+       interpolate from equity.* and plan.*.ev slots.
+    4. Mustache {{path.to.field}} slot syntax + YAML frontmatter per
+       docs/design/hero-state-templates/CONVENTIONS.md.
+
+  Sequencing notes:
+    - WS-151 + WS-152 + WS-154 + WS-155 + WS-157 are independent and can run
+      in parallel.
+    - WS-153 depends on WS-151 + WS-152 (taxonomies must exist before classifier
+      extends to handle them).
+    - WS-156 (caching) is event-driven — only claim once production HSP usage
+      surfaces a perf issue.
+
+  v2 is NOT a sprint commitment — these tickets exist so the deferred work
+  isn't lost. Schedule against /next when SCF Gate 5 (WS-013 children
+  WS-145..WS-149) surfaces a need (most likely WS-153 turn/river first to
+  let SCF leak rules cover later streets, then WS-155 composition rule when
+  multiple tendencies stack on a hero decision).
+accept_criteria:
+  - "All 7 child work items closed (WS-151 through WS-157), or explicitly
+    re-deferred via status update with rationale"
+  - "docs/HERO_STATE_DESIGN.md §7 open-questions section updated as items
+    resolve (sections 7.2 + 7.3 + 7.4 + 7.6)"
+  - "src/utils/heroState/ extended for turn/river + multiway support"
+  - "First-principles guard preserved across all v2 additions"
+effort: "L"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md"
+  - "src/utils/heroState/ (extension)"
+  - "docs/design/hero-state-templates/{turn,river}/ (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "v2 sequencing — claim turn/river first vs composition rule first depends on SCF Gate 5 needs"
+  - "WS-156 caching — only claim if production HSP usage surfaces a perf issue (event-driven)"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7 + project_hero_state_primitive.md v2 backlog"
+  conversation_session: "session-2026-05-03-design-hsp-v2"
+  parent_ws: "WS-136"
+status_note: "v2 master; deferred from WS-136 v1 closing 2026-05-03; schedule against /next when SCF surfaces a turn/river need"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

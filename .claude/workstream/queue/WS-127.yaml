@@ -1,0 +1,104 @@
+id: "WS-127"
+title: "ICP-2 OnlineView audit (audit-only, NO fixes) — DOM-mount harness, all 8 decision points"
+type: improvement
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T19:50:00Z"
+completed_at: "2026-05-01T20:30:00Z"
+priority_score: 26.0
+priority_label: "P1"
+category: "invariant-coverage-program"
+capability: "core"
+program: "engineering"
+description: |
+  Sprint 2 of 5 in the Invariant Coverage Program. Authors a matrix-fixture
+  audit for OnlineView.jsx — the highest-blast-radius UI surface per
+  reconnaissance (zero tests, owns sidebar visibility gates per CLAUDE.md;
+  failure library names sidebar bugs as the cause of 4 doctrine programs).
+
+  All 8 decision points scoped:
+    1. Connection-status indicator (isExtensionConnected → green dot + label)
+    2. Version-mismatch banner (versionMismatch → render OR null)
+    3. Sync-error banner (syncError → render OR null)
+    4. Session selector (onlineSessions.length > 1 → render OR null)
+    5. Empty-state branching (handCount === 0 && !isLoading → render with isExtensionConnected deciding copy + CTA)
+    6. Main-content gate (handCount > 0 → render SeatGrid + maybe SeatDetailPanel)
+    7. Detail-panel visibility (selectedSeatData → render panel)
+    8. Importing state (isImporting → disabled button + "Importing…" copy)
+
+  AUDIT-ONLY: zero production code changes. Bug fixes happen in follow-up sprints.
+accept_criteria:
+  - "Fixture at src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js with ≥30 rows covering all 8 decision points"
+  - "Runner at src/components/views/OnlineView/__tests__/OnlineView.invariants.test.jsx using DOM-mount harness (RTL render + vi.mock for 4 contexts)"
+  - "All 4 status partitions exercised (matches / pinned_bug / spec_gap / regression_pinned) where applicable; runner consumes shared src/test/invariantMatrix.js"
+  - "Headline finding documented: row breakdown by status, list of BUG-CANDIDATE-* IDs, list of spec_gap structural findings"
+  - "Audit-only discipline: git diff src/components/views/OnlineView/ (production .jsx files) shows zero changes"
+  - "Component test suite stays green (no regression in adjacent OnlineView sub-component tests if any exist)"
+effort: "M"
+files_involved:
+  - "src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js"
+  - "src/components/views/OnlineView/__tests__/OnlineView.invariants.test.jsx"
+blocked_by: ["WS-121"]
+enables: []
+sprint_id: "SPR-006"
+decision_flags:
+  - "Harness strategy: DOM-mount (decided — RTL render + 4 vi.mock contexts; trades drift risk for assertion legibility)"
+  - "Decision-function scope: all 8 (decided — coverage breadth IS the audit's value)"
+  - "Cross-coupling reach: clean OnlineView scope (decided — context-cross-coupling is ICP-4 STATE_FIELD_SCOPES territory)"
+notes: |
+  **DOM-mount audit fixture authored at:**
+    - src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js (29 rows)
+    - src/components/views/OnlineView/__tests__/OnlineView.invariants.test.jsx (runner)
+
+  **29 fixture rows, status breakdown:**
+    - 22 matches (spec === actual)
+    - 1 pinned_bug (BUG-CANDIDATE-PLURAL-HANDS — "1 hands analyzed" should be "1 hand analyzed")
+    - 6 spec_gap (3 detail-panel rows requiring SeatDetailPanel testid; 1 mid-import async; 2 cross-context informational)
+    - 0 regression_pinned
+
+  **Headline finding:** Before this audit, OnlineView (the highest-blast-radius UI surface
+  per CLAUDE.md, owns sidebar visibility gates) had ZERO tests. The matrix establishes
+  detection infrastructure for all 8 decision points: connection-status, version-mismatch
+  banner, sync-error banner, session selector, empty-state branching, main-content gate,
+  detail-panel visibility, importing-state. Cross-cutting scenarios (all-banners-stacked,
+  multi-session + empty data) confirmed independent gate semantics.
+
+  **1 candidate bug for WS-NNN fix-wave:**
+    - BUG-CANDIDATE-PLURAL-HANDS (cosmetic): handCount=1 renders "1 hands analyzed" instead
+      of "1 hand analyzed". OnlineView.jsx:159 does naive string template without pluralization.
+
+  **6 structural gaps for follow-on tickets:**
+    1. Detail-panel container has no testid → assertions require boundary-mocking
+       SeatDetailPanel (3 rows: OV-DP-001/002/003). Easy fix: add data-testid to panel root.
+    2. isImporting state has no test seam → mid-import branch (disabled button + "Importing…"
+       copy) cannot be deterministically driven (1 row: OV-IS-003). Resolution requires
+       extracting handleFileImport into a callable surface OR using synthetic File events.
+    3. liveHandState is sidebar-only — OnlineView is independent (1 row: OV-G-001). Pin
+       confirms boundary; no action.
+    4. Cross-context state-change behavior is ICP-4 STATE_FIELD_SCOPES territory (1 row:
+       OV-G-002). Out of scope per "clean OnlineView scope" decision.
+
+  **Pattern reuse:** Followed AnchorLibraryView.test.jsx mutable-mock-state pattern.
+  Mocked 4 contexts (useSyncBridge, useOnlineSession, useAnalysisContext, useToast),
+  mocked 3 sub-components at boundary (SeatGrid, SeatDetailPanel, VillainProfileModal,
+  ScaledContainer) to isolate OnlineView's render decisions. Used shared
+  src/test/invariantMatrix.js status-partition pattern (matches/pinned_bug/spec_gap/
+  regression_pinned) — though runner has its own assertDom inline because the DOM
+  comparator is OnlineView-specific.
+
+  **Verification:**
+    - Audit suite alone: 26/32 pass + 6 spec_gap skip in 190ms (1 prior fail fixed by
+      correcting OV-MC-002 status-classification: spec must differ from actual_today)
+    - Full component project: 1627/1627 pass + 12 skipped (6 new spec_gap + 6 from
+      TableView WS-001) — no regressions
+    - Audit-only discipline: git diff src/components/views/OnlineView excluding __tests__
+      shows ZERO changes; production source untouched
+
+  **ICP-3 readiness:** Pattern proven on the highest-blast-radius UI surface. ICP-3
+  (exploitEngine: detectWeaknesses + computePreflopAdvice) is the natural next sprint —
+  largest theoretical-correctness ROI, aligns with prog-domain-correctness critical tier.
+source:
+  origin: "ICP charter sprint 2 of 5 (Invariant Coverage Program 2026-05-01)"
+  initiative: "Invariant Coverage Program"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

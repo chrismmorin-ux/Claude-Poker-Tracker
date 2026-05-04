@@ -2,10 +2,11 @@ id: "WS-116"
 title: "Credible intervals computed but never consumed in any UI surface"
 legacy_id: "FIND-001"
 type: finding
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T06:10:00Z"
+started_at: "2026-05-02T06:10:00Z"
+completed_at: "2026-05-02T06:30:00Z"
 priority_score: 30.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -24,8 +25,12 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+sprint_id: "SPR-017"
+decision_flags:
+  - "Display shape (±X.X% / full-band / compact / tooltip-only)"
+  - "Surface scope (3 in v1 vs staged)"
+  - "Hide-when-narrow heuristic (n>200 hide / always show / 'high confidence' tag)"
+  - "Backward-compat for legacy stats objects without intervals field"
 source:
   engine: "eng-engine"
   finding_id: "FIND-001"
@@ -33,4 +38,5 @@ source:
   origin: "auto-promoted-from-finding"
 auto_expires: false
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-02"
+status_note: "RESOLVED 2026-05-02 — credible-interval ±X.X% suffix wired into TendencyStats.jsx (4 stats: vpip/pfr/threeBet/cbet) + SeatGrid.jsx fallback (vpip/pfr); hide-when-narrow at sampleSize > 200; backward-compat via optional-chain; AF unchanged (no interval field). Staged scope per owner: minimal v1 shipped here; expansive v2 (PlayerAnalysisPanel + HandReplay new sections) deferred to WS-135."

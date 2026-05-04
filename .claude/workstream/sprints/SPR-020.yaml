@@ -1,0 +1,143 @@
+id: "SPR-020"
+title: "SCF Gate 4 — Self-Coach Foundation Design surfaces (D-line Master Plan Phase 4 entry)"
+status: completed
+goal: |
+  Self-Coach Foundation passes Gate 4 (Design) — 4 surface specs authored
+  (study-curriculum, lesson-card, skill-assessment, leak-distillation),
+  src/utils/skillAssessment/ module shape locked in, lesson authoring
+  template drafted with 5-10 example lessons across tiers, and the 5
+  SCF-G3-* carry-forwards (DETECTOR / TIERMAP / SPINE / CO / SCHEMA)
+  bound into implementable surface contracts — unblocking SCF Gate 5
+  (multi-PR Implementation + ongoing authoring).
+
+  Master Plan rhythm:
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2)
+    SPR-015: PIO-G2 (A-line, Gate 2)
+    SPR-016: FIND-002 close (P0 break)
+    SPR-017: FIND-001 close (P0 break)
+    SPR-018: SCF-G3 (D-line, Gate 3)
+    SPR-019: PIO-G3 (A-line, Gate 3) — A/D Phase-3 alternation COMPLETE
+    SPR-020: SCF-G4 (D-line, Gate 4) ← this sprint, D-line Phase-4 entry
+  Next natural anchor after SPR-020: PIO-G4 (WS-007, A-line Phase-4)
+  per alternation cadence.
+
+  Source-class damping (Step 2d): last 3 anchors had source-classes
+  [untagged, untagged, untagged] (WS-116 was last engine-finding anchor,
+  now 2 sprints back). No class saturated. WS-012 source-class
+  `untagged` (backlog-md-migration); NOT damped.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged) + WS-115
+  (P0 30.0 untagged) above WS-012 (P1 22.0). Master Plan rhythm chosen
+  per established practice (SPR-012 onwards); founder confirms or
+  redirects via approval menu options 2/3.
+
+items:
+  - id: "WS-012"
+    title: "SCF Gate 4 — Design (4 surfaces + skillAssessment module + lesson authoring template; binds 5 SCF-G3-* carry-forwards into implementable contracts)"
+    mode: plan-first
+    effort: M
+    status: done
+    decision_flags:
+      - "SelfCoachView information architecture (tab structure: curriculum / leak history / study queue / settings; landing pane; navigation pattern)"
+      - "Inline leak annotation in HandReplayView (badge style + position + expand affordance + AP-SCF-01-compliant copy)"
+      - "Lesson card schema (required vs optional fields: tier, leak-tag, exposition, drill linkage, citation, owner-volunteered-test toggle, success criteria, version/lineage; CD-2 nuance compliance)"
+      - "Skill-assessment surface (3-mode UI: observed primary read-only / opt-in owner-volunteered tests / declared-in-Settings; AP-SCF-01 nuance wiring per feedback_owner_volunteered_grading.md)"
+      - "Leak-distillation pipeline UI (leak → tier resolution → lesson recommendation; immediate-firing affordance per Gate 3; dismiss/snooze/drill-now pattern)"
+      - "Curriculum-spine UI render (3-signal composite from SCF-G3-SPINE: DAG view + mastery view + leak-frequency view + nextConcept visualization; default view; switching pattern)"
+      - "src/utils/skillAssessment/ module shape (shared core + per-leak adapters per memory feedback_skill_assessment_core_competency.md; integration contracts with weaknessDetector.js + decisionAccumulator.js + drillScheduler)"
+      - "Settings tier-set + N05 confirm pattern (owner declares tier; CO-57 v2 disposition: in-scope this gate or stays deferred)"
+      - "HERO_LEAK_PRIORS initial values + composite-signal weights lock-in (W_leak/W_drill/W_test/W_recent baseline 0.5/0.3/0.15/0.05 per Gate 3 — confirm or tune)"
+      - "Initial 5-10 example lessons authoring (tier coverage map; leak targets; authoring template draft; mandatory-fields walkthrough)"
+    depends_on: []
+    started_at: "2026-05-02T08:20:00Z"
+    completed_at: "2026-05-02T09:30:00Z"
+    notes: |
+      Gate 4 Design audit shipped at docs/design/audits/2026-05-02-gate4-design-self-coach-foundation.md (~700 lines).
+
+      4 owner-ratified decisions (plan-mode AskUserQuestion 2026-05-02):
+        1. SelfCoachView IA: 2-tab Study/Settings; Study has 3 sections (Hero leaks / Curriculum / Tests history & browse).
+        2. HRV inline hero-leak annotation: ⚑ badge under hero action label, tap expands inline to full CD-5 claim card.
+        3. Skill-assessment opt-in test entry: per-concept Test myself button on lesson card + dedicated Tests section in Study tab (reconciled with Decision 1 — Tests is a Study-tab section, not a separate top-level tab).
+        4. CO-57 stays deferred to Gate 4 v2 per Gate 3 ratification.
+
+      6 inline-handled decisions (lesson card schema, leak distillation pipeline, curriculum-spine UI render, skillAssessment module shape, Settings tier-set + N05 confirm, HERO_LEAK_PRIORS + composite weights v1 baseline lock).
+
+      TWO BINDING ARCHITECTURAL CONSTRAINTS from owner clarification 2026-05-02 plan-mode:
+        1. Drills + tests share substrate (no parallel prediction engine). "Test myself" is opt-in-test MODE of existing drill engine; 3 deltas (entry path / result framing / persistence tag). src/utils/skillAssessment/ is thin aggregation layer.
+        2. Drill coverage may NOT be encompassing. Coverage audit (SCF-G4-COVERAGE) names 5 of 19 SCF-G3-TIERMAP concepts (26%) DRILL-BACKED, 4 (21%) PARTIAL, 10 (53%) PENDING. Gap concepts get test_substrate: 'pending' on lesson card; right test shape for gap concepts is Gate 4 v2 / Gate 5 research.
+
+      5 SCF-G3-* carry-forwards (DETECTOR / TIERMAP / SPINE / CO / SCHEMA) ALL bound by Gate 4 deliverables. SCF-G4-CARRY-FWD section in audit doc verifies each.
+
+      Deliverables shipped (zero src/ diff):
+        - docs/design/audits/2026-05-02-gate4-design-self-coach-foundation.md (~700 lines; source of truth)
+        - 4 new surface specs: surfaces/{self-coach-view, lesson-card, skill-assessment-test, leak-distillation}.md
+        - 1 surface extension: surfaces/hand-replay-view.md (Hero-leak inline annotation in HeroCoachingCard subsection appended; existing sections preserved)
+        - 2 light surface extensions: surfaces/postflop-drills.md + preflop-drills.md (opt-in test mode subsections appended)
+        - 1 module spec: docs/projects/self-coach-foundation/skill-assessment-module.md
+        - 1 lesson authoring template: docs/projects/self-coach-foundation/lesson-authoring-template.md
+        - 5 reference lessons: docs/projects/self-coach-foundation/lessons/{001-pot-odds, 002-range-vs-range-thinking, 003-board-texture, 004-blocker-effects-preflop, 005-capped-vs-uncapped-ranges}.md
+        - 4 companion file updates: jtbd/domains/coaching.md (CO-54..56 surface placement); surfaces/CATALOG.md (4 new entries); copy-discipline.md (cd5_exempt manifest flag wiring); anti-patterns.md (AP-SCF-01 nuance scope clarification + AP-SCF-03 Settings binding).
+
+      Anti-pattern × surface walkthrough: 6 SCF-specific + 9 EAL-inherited APs × 5 surfaces = 75 cells. All compliant, N/A, or nuance-applies-with-binding-rule. No violations.
+      Copy-discipline × surface walkthrough: CD-1..5 × 5 surfaces = 25 cells. All compliant or N/A.
+      9 autonomy red lines × surface walkthrough: 9 RLs × 5 surfaces = 45 cells. All compliant, N/A, or deferred-with-tracking.
+
+      10 open questions deferred to Gate 4 v2 / Gate 5: CO-57 surface; gap-concept test shapes; HERO_LEAK_PRIORS tuning; composite weights tuning; W_drill/W_test aggregation rule final answer; incognito test mode; snooze duration owner-configurability; IDB v22 migration script; skillAssessment/ implementation; lessons 006-019 ongoing authoring.
+
+      Verification: zero src/ diff confirmed (audit-only; all edits in docs/). Gate 5 multi-PR unblocked.
+
+      Master Plan rhythm: SCF (D-line) Phase 4 entry COMPLETE. Next natural anchor in A/D alternation: WS-007 (PIO-G4 Design surfaces, A-line first Phase-4 Design gate).
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF Gate 4 of 5; Master Plan §D; D-line first Phase-4 Design gate; A/D stagger continues — PIO-G4 next per alternation)"
+total_effort: "M+ (decision-dense; ~2 sessions per Master Plan §D Gate 4 estimate)"
+decisions_needed:
+  - "Item #1 (WS-012): 10 decision flags spanning SelfCoachView IA + inline leak annotation + lesson-card schema + skill-assessment surface + leak-distillation pipeline + curriculum-spine UI + skillAssessment/ module shape + Settings tier-set/N05/CO-57 + HERO_LEAK_PRIORS + composite weights + 5-10 example lessons. Multi-round AskUserQuestion expected, grouped by surface."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T08:20:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is design-program Gate 4 Design per docs/design/LIFECYCLE.md — explicitly mandated by SCF Gate 3 (5 SCF-G3-* carry-forwards named as BLOCKING Gate 4) + Master Plan §D Gate 4 deliverables. AP-SCF-01..06 from SCF Gates 2-3 + AP-SCF-01 nuance amendment (owner-volunteered tests permitted on opt-in surfaces, system-imposed grading refused) + 9 autonomy red lines from chris-live-player.md inherited and binding. CD-2 copy discipline (with owner-volunteered-test exemption) binding. No anti-goal angle: scope is surface authoring within established constitutional envelope, not feature scope expansion."
+  matches: []
+
+created_at: "2026-05-02T08:20:00Z"
+approved_at: "2026-05-02T08:20:00Z"
+started_at: "2026-05-02T08:20:00Z"
+completed_at: "2026-05-02T09:30:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-012 is M-effort but actually
+  decision-dense (10 decision flags spanning 4 surfaces + module shape +
+  authoring template + Settings + priors/weights). Gate 4 audit will use
+  multi-round AskUserQuestion grouped by surface (likely 3-4 rounds).
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-006 (untagged), WS-011 (untagged), WS-116 (engine-finding 2 sprints back).
+    - No class at saturation threshold (≥2 in last 3).
+    - WS-012 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+    - Damping does not bind here.
+
+  Master Plan rhythm: A/D Phase-3 alternation completed at SPR-019.
+  D-line Phase-4 entry begins here; PIO-G4 (WS-007) next in alternation.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged "Version-mismatch
+  reload diagnostic + confirm") + WS-115 (P0 30.0 untagged "SR-6 incremental
+  rebuild behind sidebarRebuild flag") above WS-012 (P1 22.0). Both have
+  been P0 since 2026-05-01 backlog-md-migration without anchoring;
+  established practice prefers Master Plan rhythm. Founder may pivot via
+  approval option 2 (tighten plan) or option 3 (adjust manually).
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* per fr-001..004
+  + fr-010. Same fallbacks (manual anti-goal scan; YAML-direct queue
+  reads; manual index lockstep edits; shadow-event skip).
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Carry-forward binding: This sprint's audit MUST land contracts for the 5
+  SCF-G3-* carry-forwards (DETECTOR / TIERMAP / SPINE / CO / SCHEMA) into
+  surface-spec form. They are BLOCKING Gate 5 entry per SPR-018 close-out.

@@ -1,0 +1,113 @@
+id: "SPR-036"
+title: "PIO G5 children E+F — Settings photo-toggle + Camera Capture Modal"
+status: completed
+goal: |
+  Photo-capture flow lands end-to-end. After this sprint: Settings has a
+  privacy toggle (`photoCaptureEnabled`, default OFF per AP-PIO-03); when ON,
+  PlayerEditor renders an "Add photo" button; tapping opens native camera
+  (1:1 capture → preview → save); photo persists to IDB with atomic
+  Player.photoBlobId update.
+
+  Master Plan rhythm:
+    SPR-034: PIO G5 child A (WS-160) — IDB v23 + computeStability scaffold — DONE
+    SPR-035: PIO G5 children B+C (WS-162 + WS-163) — Profile + PV/PEX — DONE
+    SPR-036: PIO G5 children E+F (WS-165 + WS-161) — Settings toggle + Camera (this sprint)
+    SPR-037: PIO G5 child D (WS-164) — multi-attribute ranking (re-scoped standalone)
+             — closes PIO G5 chain end-to-end
+
+items:
+  - id: "WS-165"
+    title: "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)"
+    mode: execute
+    effort: S
+    status: completed
+    finding_id: null
+    decision_flags: []
+    depends_on: []
+    started_at: "2026-05-04T14:50:00Z"
+    completed_at: "2026-05-04T15:30:00Z"
+    notes: |
+      SHIPPED:
+        - DEFAULT_SETTINGS.privacy.photoCaptureEnabled: false (AP-PIO-03 privacy-first default)
+        - SETTINGS_ACTIONS.SET_PRIVACY_PHOTO_CAPTURE_ENABLED reducer action + 3 new reducer tests
+        - PrivacySection.jsx in SettingsView (Enabled/Disabled toggle with explanatory copy + aria-pressed) + 5 component tests
+        - SettingsView wired with PrivacySection (rendered between RefresherSettings + ErrorLogPanel)
+        - sourceUtilPolicy.test.js (CI-grep enforcement) — scans 4 blacklisted surface roots (OnlineView/TableView/TournamentView/ShowdownView) for forbidden PIO/SCF imports; 14 forbidden import substrings + 5 tests
+      Tests: 10 new (3 settings reducer + 5 PrivacySection + 5 source-util-policy enforcement) + reducer tests now 33/33.
+  - id: "WS-161"
+    title: "PIO G5 child B — Camera Capture Modal (S2)"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags: []
+    decisions_locked:
+      - "Crop dimensions = 256×256 @ 0.85 JPEG quality (~15-25 KB per blob)"
+      - "Camera button placement = inline near NameSection (between NameSection and AvatarFeatureBuilder)"
+      - "Photo display in Profile View = replace Header avatar slot (single visual identity; falls back to initial-letter)"
+    depends_on:
+      - "WS-165"
+    started_at: "2026-05-04T15:35:00Z"
+    completed_at: "2026-05-04T16:25:00Z"
+    notes: |
+      SHIPPED:
+        - src/utils/playerMatching/cropToSquare.js (createImageBitmap + OffscreenCanvas with HTMLCanvasElement fallback; 256×256 default; 0.85 JPEG quality)
+        - src/utils/persistence/savePhotoAtomically.js (single transaction over playerPhotos + players; aborts cleanly when player missing)
+        - src/components/views/PlayerEditorView/CameraCaptureModal.jsx (2-stage: hidden <input capture> on mount → cropToSquare → preview with Retake/Accept)
+        - src/components/views/PlayerEditorView/CameraButton.jsx (gated by settings.privacy.photoCaptureEnabled + playerId)
+        - src/components/ui/PlayerPhotoAvatar.jsx (shared component; URL.createObjectURL with cleanup; initial-letter fallback)
+        - PlayerEditorView wired with CameraButton between NameSection and AvatarFeatureBuilder
+        - usePlayerEditor.DEFAULT_FIELDS extended with photoBlobId; updateField wires onPhotoSaved
+        - PlayerProfileView Header replaced with PlayerPhotoAvatar
+        - PlayerEditorView.test.jsx mock added for SettingsContext (CameraButton renders inside)
+
+      Tests: 30 new (9 cropToSquare + 7 savePhotoAtomically + 7 CameraButton + 8 CameraCaptureModal + 6 PlayerPhotoAvatar; minus 1 internal duplicate count = ~30 net).
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO) Gate 5 — Settings toggle + Camera (Master Plan §A Phase 5)"
+total_effort: "S + M ≈ 2 sessions tagged"
+decisions_needed:
+  - "Item #2 (WS-161): Crop dimensions"
+  - "Item #2 (WS-161): Camera button placement"
+  - "Item #2 (WS-161): Photo display in Profile View"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-04T14:50:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-035). Manual review: WS-165's CI-grep enforces the existing source-util-policy whitelist already documented in src/utils/skillAssessment/CLAUDE.md (no new policy). WS-161's camera flow requires explicit owner toggle per AP-PIO-03 privacy-first (default OFF; user must opt in). Per `feedback_pio_identification_utility_first.md`: identification utility binds; cultural-sensitivity is reviewing voice. No autonomy-violation or shame-copy risk."
+  matches: []
+
+created_at: "2026-05-04T14:50:00Z"
+approved_at: "2026-05-04T14:50:00Z"
+started_at: "2026-05-04T14:50:00Z"
+completed_at: "2026-05-04T16:30:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Two-item sprint: S (execute) + M (plan-first) ≈ 2 sessions. Within standard
+  2-session cap.
+
+  Pairing rationale: WS-165 builds the toggle that WS-161's camera button
+  reads to decide visibility. Shipping separately means SPR-036 ships a
+  camera button that's never visible (toggle defaults OFF) OR the toggle
+  ships without anything reading it. Pairing keeps the privacy-first default
+  intact end-to-end.
+
+  Sequence: WS-165 first (S, no UI ambiguity — settings field + reducer +
+  minimal UI in SettingsView), WS-161 second (M, plan-mode for crop +
+  placement + display decisions).
+
+  Source-class damping (Step 2d): last 3 anchors WS-148, WS-008 (decomposition),
+  WS-162 — all spr-followup (founder-driven, never damped). WS-165 + WS-161
+  source: ws-008-decomposition → spr-followup → not damped.
+
+  Note for SPR-037+ planning: 1 PIO G5 child remaining:
+    - WS-164 (Multi-attribute ranking + scoring) — re-scoped to standalone
+      in PlayersView per SPR-035 plan-mode. Table-Build G5 dependency reframed
+      as soft (not hard blocker). Closes the PIO G5 chain.
+
+  After PIO G5 closes (post-SPR-037), Master Plan §A is at "Phase 5 done."
+  Master Plan rhythm rotates back to D (SCF) follow-ups (WS-159 SelfCoachView
+  surface, WS-149 sub-concept lessons, WS-146 ongoing leak rules) OR pivots
+  to a new arc (MPMF commerce, RT regression cluster, etc.).

@@ -1,0 +1,68 @@
+id: "WS-155"
+title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Resolve docs/HERO_STATE_DESIGN.md §7.2 open question: how do tendency-adjusted
+  deltas compose when multiple tendencies fire on the same decision?
+
+  Example: villain is BOTH "calling station" (sizingMultiplier 1.3, polarize,
+  bluffFreq 0.3) AND "short-stacked" (different sizing/bluff implications).
+  Current v1 builder applies adjustments serially; rule for combining them
+  isn't specified.
+
+  Three candidate rules to evaluate:
+    1. PRECEDENCE-BY-MAGNITUDE — keep the largest delta per axis; discard
+       smaller. Simple, deterministic, but may underweight cumulative effects.
+    2. MULTIPLY — for multiplicative deltas (sizingMultiplier, bluffFreq),
+       compose by multiplication; for additive flags (polarize), OR them.
+       Captures cumulative effects but can over-shoot on stacking.
+    3. SUM — average or weighted-sum the deltas. Conservative middle ground;
+       loses the "extreme tendency dominates" intuition.
+
+  Likely answer: HYBRID — different composition rules per axis. Sizing
+  multipliers compose multiplicatively but with a clamp; boolean flags OR;
+  bluff-freq sets to MIN (any bluff-discouraging tendency wins). Author
+  composeAdjustments(adjustments[]) → finalDelta with explicit per-axis rules.
+
+  Per first-principles guard: composition rules must derive from the underlying
+  poker-theory rationale, not be picked for code convenience. Document the
+  derivation per axis in HERO_STATE_DESIGN.md §7.2 resolution.
+
+  Tests: unit tests with synthetic adjustment combinations + assertion on
+  expected composition. Include adversarial cases (calling station + nit
+  stacking, contradicting deltas, all-firing edge case).
+accept_criteria:
+  - "docs/HERO_STATE_DESIGN.md §7.2 resolved with explicit per-axis composition rules"
+  - "src/utils/heroState/composeAdjustments.js (or equivalent in buildHeroState) implemented"
+  - "Per-axis rule rationale documented (poker-theory derivation, not code convenience)"
+  - "Unit tests cover stacking / contradicting / all-firing cases"
+  - "buildHeroState integrates composer; existing v1 tests still green"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (resolve §7.2)"
+  - "src/utils/heroState/buildHeroState.js (integrate composer)"
+  - "src/utils/heroState/composeAdjustments.js (NEW or inline)"
+  - "src/utils/heroState/__tests__/composeAdjustments.test.js (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Hybrid per-axis vs uniform rule — likely hybrid; finalize during design"
+  - "Whether to clamp multiplicative composition (avoid runaway sizing inflation)"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7.2"
+status_note: "v2 composition rule; resolves HSP §7.2 open question"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

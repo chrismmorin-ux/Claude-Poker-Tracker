@@ -1,0 +1,58 @@
+id: "WS-140"
+title: "HSP-T1 — Define HeroState type schema (src/utils/heroState/types.js)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T00:00:00Z"
+completed_at: "2026-05-03T00:15:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Define the HeroState type schema in src/utils/heroState/types.js as JSDoc
+  typedefs (the codebase is JS, not TS).
+
+  Schema per docs/HERO_STATE_DESIGN.md §3 (strawman):
+    - HeroState (top-level)
+    - Situation (coarse axes)
+    - HandContext (fine axes)
+    - Equity (overall + vsRangeParts + realization)
+    - Plan (primary + branches + rangeConfig)
+    - Adjustment (condition + delta + rationale)
+    - Narrative (headline + body + branchSummary)
+
+  Plus enums for:
+    - archetypeFamily (PREFLOP_OPEN | PREFLOP_VS_OPEN | FLOP_HU_CBET | ...)
+    - actionContext (OPEN | VS_OPEN | 3BET | VS_3BET | SQUEEZE | CBET | VS_CBET | ...)
+    - positionClass (EP | MP | HJ | CO | BTN | SB | BB)
+    - sprZone (MICRO | LOW | MEDIUM | HIGH | DEEP — already in potCalculator; reuse)
+    - handClass / handStrength / boardTexture / rangeAdvantage / nutAdvantage
+
+  No runtime yet — just type definitions. Validates the data shape before
+  implementing classifier/builder.
+accept_criteria:
+  - "src/utils/heroState/types.js exists with full JSDoc typedefs for all entities"
+  - "Enum values exported as const arrays (not just JSDoc)"
+  - "Reuse SPR_ZONE constant from potCalculator (don't duplicate)"
+  - "JSDoc lints clean (no broken references)"
+effort: "S"
+files_involved:
+  - "src/utils/heroState/types.js (NEW)"
+  - "src/utils/potCalculator.js (read — SPR_ZONE reuse)"
+  - "docs/HERO_STATE_DESIGN.md (read — schema spec)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-141"
+  - "WS-142"
+sprint_id: "SPR-024"
+decision_flags: []
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §3"
+status_note: "RESOLVED 2026-05-03 — src/utils/heroState/types.js shipped (JSDoc typedefs for HeroState/Situation/HandContext/Equity/Plan/PlanPrimary/PlanBranch/RangeConfig/Adjustment/Narrative + 11 const-array enums: ARCHETYPE_FAMILIES, ACTION_CONTEXTS, POSITION_CLASSES, STREETS, HAND_CLASSES, HAND_STRENGTHS, BOARD_TEXTURES, ADVANTAGE_VALUES, PLAN_ACTIONS); SPR_ZONES + getSPRZone re-exported from exploitEngine/gameTreeConstants (note: ticket said potCalculator but actual canonical location is gameTreeConstants); 11/11 vitest pass + 6.48s clean build; parent_ws: WS-136"
+created_at: "2026-05-02"
+updated_at: "2026-05-03"

@@ -1,0 +1,158 @@
+id: "SPR-021"
+title: "PIO Gate 4 — Player Identification v2 Design surfaces (A-line Master Plan Phase 4 entry)"
+status: completed
+goal: |
+  Player Identification v2 passes Gate 4 (Design) — 7 PIO-G4-* surface specs
+  authored (Player Profile / Sighting History; Camera Capture Modal;
+  Recognition Disambiguation; PlayerEditor extensions; PlayerPicker
+  extensions; PlayersView rebuild; Settings photo-toggle), 5 PIO-G3-*
+  carry-forwards (SLOG / STAB / PHOTO / PALETTE / MIG) bound into surface
+  contracts, and IDB v22 multi-store migration spec wiring confirmed —
+  unblocking PIO Gate 5 (multi-PR Implementation, ~6-8 sessions).
+
+  Master Plan rhythm:
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2)
+    SPR-015: PIO-G2 (A-line, Gate 2)
+    SPR-016: FIND-002 close (P0 break)
+    SPR-017: FIND-001 close (P0 break)
+    SPR-018: SCF-G3 (D-line, Gate 3)
+    SPR-019: PIO-G3 (A-line, Gate 3)
+    SPR-020: SCF-G4 (D-line, Gate 4)
+    SPR-021: PIO-G4 (A-line, Gate 4) ← this sprint, A-line first Phase-4 Design gate; A/D Phase-4 alternation matches Phase-3 cadence
+  Next natural anchor after SPR-021: SCF-G5 (WS-013, D-line first
+  Phase-5 Implementation gate) OR PIO-G5 (WS-008, A-line equivalent) OR
+  P0 break (WS-076 / WS-115) — Phase 5 multi-PR work is implementation,
+  may warrant different sequencing than Gates 1-4.
+
+  Source-class damping (Step 2d): last 3 anchors WS-012, WS-006, WS-011
+  ALL untagged (backlog-md-migration). No class saturated. WS-007
+  source-class `untagged` → NOT damped.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged "Version-mismatch
+  reload") + WS-115 (P0 30.0 untagged "SR-6 incremental rebuild") above
+  WS-007 (P1 22.0). Both have been P0 since 2026-05-01 backlog-md-migration
+  without anchoring; established practice prefers Master Plan rhythm.
+
+items:
+  - id: "WS-007"
+    title: "PIO Gate 4 — Design surfaces (3 new surfaces + 3 surface extensions + 1 Settings extension; binds 5 PIO-G3-* carry-forwards SLOG/STAB/PHOTO/PALETTE/MIG into surface-spec form per 7 PIO-G4-* enumeration from Gate 3)"
+    mode: plan-first
+    effort: M
+    status: done
+    decision_flags:
+      - "Player Profile / Sighting History (PIO-G4-S1) information architecture: dedicated route vs PlayerEditor tab vs PlayersView drill-in; per-attribute stability rendering shape (4-tier 'always/sometimes/today-only/insufficient' with MoE)"
+      - "Camera Capture Modal (PIO-G4-S2) UX: capture button placement, react-easy-crop vs canvas-API for 1:1 crop step, retake/preview affordance, atomic-txn binding to Player record"
+      - "Recognition Disambiguation flow (PIO-G4-DISAMB) surface: where it triggers (table-build entry / PlayerPicker / PlayerEditor on-save), candidate-card layout (top-N with confidence display + 'Create new' fallback), AP-PIO-04 neutral-copy compliance"
+      - "PlayerEditor extensions (PIO-G4-PEX): new attribute sections (age decade radio, wardrobe palette, jewelry palette, logo palette, ethnicity tag list); 'other' free-text slot rendering; PEO 60/30/10 stress-test compliance"
+      - "PlayerPicker extensions (PIO-G4-PVA): recognition-mode toggle alongside name-search; 8-dimension ranking display; recognition-confidence per-result rendering; ResultCard layout"
+      - "PlayersView rebuild scope (Master Plan §A absorbs scaling + persistence + PhysicalSection rework into PIO): new layout ground-up vs incremental rebuild against existing PlayersView; 1600x720 / 1280x720 / 1920x1080 multi-resolution scaling validation"
+      - "Settings photo-toggle (PIO-G4-SET): location in SettingsView (general toggles section vs new Privacy section); copy framing (default ON; disable hides all photo capture buttons app-wide); Phase 2+ per-venue blacklist deferral"
+      - "IDB v22 multi-store migration write-paths (PIO-G3-MIG → PIO-G4-MIG binding): sightingLogs store + playerPhotos store creation; hat shape migrate-on-read pattern; ethnicity getter shim; v21→v22 dynamic-version pattern per database.js"
+      - "Wardrobe / jewelry / logo asset palette initial values (PIO-G3-PALETTE): closed-enum entries authored per category; 'other' free-text fallback wiring; recognition-search ranking math binding (deterministic feature comparison)"
+      - "Cultural-sensitivity binding (per persona memory feedback_pio_identification_utility_first.md): identification utility binds, not cultural-sensitivity veto. Confirm AP-PIO-01..05 refusal scope stays narrow (demographic-targeted recommendations / tone-deaf framing / auto-photo-capture / cross-surface contamination — NOT demographic categories themselves)."
+    depends_on: []
+    started_at: "2026-05-02T09:35:00Z"
+    completed_at: "2026-05-02T11:00:00Z"
+    notes: |
+      Gate 4 Design audit shipped at docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md (~700 lines).
+
+      4 owner-ratified decisions (plan-mode AskUserQuestion 2026-05-02; 2 rounds — Q1 standalone + Q2-Q4 batched):
+        1. Surface coordination: EXTEND TABLE-BUILD (long-term home). Master Plan §A list pre-dates Table-Build supersession; PIO-G4-PVA → CandidateColumn ext; PIO-G4-DISAMB → PossibleMatchesPanel ext; PIO-G4-PEX → surviving PlayerEditor edit-mode only; PIO-G4-MIG → unified v22.
+        2. PIO-G4-S1 placement: Dedicated fullscreen route SCREEN.PLAYER_PROFILE. Per-attribute stability + sighting log sections.
+        3. PIO-G4-S2 camera UX: 2-stage flow (capture → accept with auto-crop center 1:1). No manual crop in v1.
+        4. PIO-G4-DISAMB visual: Confidence bar + verbal label (strong / partial / weak). Thresholds ≥0.7 / 0.4-0.7 / <0.4.
+
+      6 inline-handled (recommended-with-rationale): PIO-G3-PALETTE values (wardrobe 12 / jewelry 7 / logo 7 / hat ext); PIO-G4-PEX scope (5 attribute sections + camera entry); PIO-G4-PV PlayersView scope-limit (database-browser only; row-tap routes to Profile); PIO-G4-SET (Privacy section master toggle); PIO-G4-MIG unified v22 coordination contract; AP-PIO refusal scope (memory binding affirmation).
+
+      FOUNDATIONAL ARCHITECTURAL BINDING from owner clarification 2026-05-02 plan-mode (transcribed in audit doc Foundational §): Master Plan §A pre-dates Table-Build supersession by 4 days. Owner ratified PIO Gate 4 surfaces extend Table-Build (long-term home), not archiving PlayerPicker. Per feedback_long_term_over_transition.md memory binding.
+
+      CULTURAL-SENSITIVITY BINDING from memory feedback_pio_identification_utility_first.md: identification utility binds; cultural-sensitivity is a reviewing voice, not a load-bearing veto. AP-PIO-01..05 stay narrow; no new red lines blocking demographic data; no encrypted-at-rest / IDB-validation barriers proposed. Stance is PIO-specific (does NOT extend to SCF).
+
+      5 PIO-G3-* carry-forwards (SLOG / STAB / PHOTO / PALETTE / MIG) ALL bound by Gate 4 deliverables.
+
+      Deliverables shipped (zero src/ diff):
+        - docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md (~700 lines; source of truth)
+        - 2 NEW surface specs: surfaces/{player-profile, camera-capture-modal}.md
+        - 4 surface extensions: surfaces/{table-build (PIO-G4-PVA + DISAMB), player-editor (PEX), players-view (PV), settings-view (SET)}.md (subsections appended; existing sections preserved)
+        - 3 NEW project docs: docs/projects/player-identification-v2/{asset-palettes, idb-v22-migration-spec, anti-patterns}.md
+        - 3 companion file updates: surfaces/CATALOG.md (2 new + extension list); jtbd/ATLAS.md (PM-13/14/15 surface placement); jtbd/domains/player-management.md (PM-13/14/15 surface placement)
+
+      Anti-pattern × surface walkthrough: 5 AP-PIO × 7 PIO-G4-* surfaces = 35 cells, all compliant/N/A.
+      9 autonomy red lines × surface walkthrough: 9 RL × 7 surfaces = 63 cells, all compliant/N/A/Phase-2+-deferred.
+
+      10 open questions deferred to Gate 5: Table-Build Gate 5 sequencing; per-venue casino-policy blacklist; photo retention TTL; recognition-confidence → villain modeling handoff (Master Plan §A C-handoff); stability-flag inference dataflow; 'other' free-text governance; composite-confidence threshold tuning; manual crop framing; per-row sighting edit/delete affordance; ethnicity tag taxonomy expansion.
+
+      Verification: zero src/ diff confirmed (audit-only; all 13 deliverable files in docs/). PIO Gate 5 multi-PR unblocked (sequenced with Table-Build Gate 5 per coordination contract).
+
+      Master Plan rhythm: A-line Phase 4 entry COMPLETE. Both A-line and D-line at Phase 4 complete; Phase 5 (Implementation, multi-PR) sequencing is owner-decided.
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO Gate 4 of 5; Master Plan §A; A-line first Phase-4 Design gate; A/D Phase-4 alternation matches Phase-3 cadence)"
+total_effort: "M+ (decision-dense; ~2 sessions per Master Plan §A Gate 4 estimate; mirrors SPR-020 SCF-G4 cadence)"
+decisions_needed:
+  - "Item #1 (WS-007): 10 decision flags spanning PIO-G4-S1 (Profile/Sighting History) IA + PIO-G4-S2 (camera) UX + PIO-G4-DISAMB flow + PIO-G4-PEX (PlayerEditor) extensions + PIO-G4-PVA (PlayerPicker) extensions + PlayersView rebuild scope + PIO-G4-SET (Settings photo-toggle) + PIO-G4-MIG (IDB v22) write-paths + PIO-G3-PALETTE initial values + cultural-sensitivity binding. Multi-round AskUserQuestion expected, grouped by surface."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T09:35:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is design-program Gate 4 Design per docs/design/LIFECYCLE.md — explicitly mandated by PIO Gate 3 (5 PIO-G3-* carry-forwards SLOG/STAB/PHOTO/PALETTE/MIG named as BLOCKING Gate 4) + Master Plan §A Gate 4 deliverables. AP-PIO-01..05 from PIO Gates 2-3 binding (refusal scope: demographic-targeted recommendations / tone-deaf framing / auto-photo-capture / cross-surface contamination — NOT demographic categories themselves per memory feedback_pio_identification_utility_first.md). 9 autonomy red lines from chris-live-player.md inherited. No anti-goal angle: scope is surface authoring within established constitutional envelope; identification utility binds per owner ratification. Cultural-sensitivity is reviewing voice, not load-bearing veto."
+  matches: []
+
+created_at: "2026-05-02T09:35:00Z"
+approved_at: "2026-05-02T09:35:00Z"
+started_at: "2026-05-02T09:35:00Z"
+completed_at: "2026-05-02T11:00:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint mirrors SPR-020 (SCF-G4) cadence. WS-007
+  is M-effort but actually decision-dense (10 decision flags spanning 3
+  new surfaces + 3 extensions + 1 Settings extension + 1 migration spec
+  + 1 palette authoring + 1 binding clarification). Gate 4 audit will use
+  multi-round AskUserQuestion grouped by surface (likely 3-4 rounds).
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-012 (untagged), WS-006 (untagged), WS-011 (untagged).
+    - No class at saturation threshold (≥2 in last 3 of `auto-rec` / `engine-finding`).
+    - WS-007 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+    - Damping does not bind here.
+
+  Master Plan rhythm: A/D Phase-4 alternation. SPR-020 shipped D-line
+  Gate 4; SPR-021 ships A-line Gate 4 — restoring alternation symmetry.
+  After SPR-021 both lines at Phase 4 complete; Phase 5 (Implementation,
+  multi-PR) sequencing is owner-decided — may warrant P0 break or other
+  reordering before resuming the gate cadence.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged "Version-mismatch
+  reload diagnostic + confirm") + WS-115 (P0 30.0 untagged "SR-6 incremental
+  rebuild behind sidebarRebuild flag") above WS-007 (P1 22.0). Both have
+  been P0 since 2026-05-01 backlog-md-migration without anchoring;
+  established practice prefers Master Plan rhythm. Founder may pivot via
+  approval option 2 (tighten plan) or option 3 (adjust manually).
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* per fr-001..004
+  + fr-010. Same fallbacks (manual anti-goal scan; YAML-direct queue
+  reads; manual index lockstep edits; shadow-event skip).
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Carry-forward binding: This sprint's audit MUST land contracts for the
+  5 PIO-G3-* carry-forwards (SLOG / STAB / PHOTO / PALETTE / MIG) into
+  surface-spec form. They are BLOCKING Gate 5 entry per SPR-019 close-out
+  (which named them BLOCKING Gate 4).
+
+  Cultural-sensitivity binding (from persona memory):
+  feedback_pio_identification_utility_first.md establishes that owner
+  stance is "cultural sensitivity is secondary to identification" and
+  "if labeling ethnicity or features within an ethnicity assists with
+  identifying the player, then we are going to use it." This binds Gate 4
+  audit decisions: identification utility leads; cultural-sensitivity is
+  a reviewing voice, not a load-bearing veto. AP-PIO-01..05 refusals
+  stay narrow (recommendations / tone-deaf framing / auto-photo-capture /
+  cross-surface contamination — NOT demographic categories themselves).
+  Do NOT propose new red lines blocking demographic data; do NOT propose
+  encrypted-at-rest / IDB-validation barriers unless owner asks.

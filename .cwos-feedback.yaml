@@ -22,7 +22,89 @@ user_feedback: []
 
 # Section B: Automatic friction log
 # Captured silently at session end by reviewing the session for issues
-friction_log: []
+friction_log:
+  - id: fr-001
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: "kit/scripts/cwos-constitutional-audit.js not present in this repo. Anti-goal cross-check (Step 4a of /next) couldn't run; used manual scope-scan as fallback for SPR-010, SPR-011, SPR-012. Each sprint's anti_goal_check field marked status=passed with reason naming the script absence and the manual review."
+    component: cwos-constitutional-audit.js
+    workaround: "Manual anti-goal scan against the constitutional clauses in CLAUDE.md preamble. Recorded in each sprint's anti_goal_check.reason field."
+  - id: fr-002
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: medium
+    detail: "kit/scripts/cwos-reconcile.js not present. /next Step 6 (after-sprint reconciliation) and /session-end Step 5.7 (mandatory reconcile + GC) couldn't run. Index integrity maintained by hand-editing queue-index.yaml + sprint-index.yaml in lockstep with the queue/WS-*.yaml + sprints/SPR-*.yaml writes during each sprint close-out."
+    component: cwos-reconcile.js
+    workaround: "Hand-edited queue-index, sprint-index, and config.yaml counters at each sprint close-out. Cross-reference integrity preserved by editing all three in the same flow."
+  - id: fr-003
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: "kit/scripts/cwos-state-store.js not present. ADR-020 step 2 typed-API state-store reads (queue by-status / envelope recent / envelope active) couldn't run. Fell back to direct YAML reads of queue-index.yaml + sprint-index.yaml (the documented fallback path in /next Step 2)."
+    component: cwos-state-store.js
+    workaround: "Direct YAML reads of queue-index.yaml + sprint-index.yaml. Slightly less deterministic than typed-API but sufficient for the small candidate sets (~10 items at top of priority)."
+  - id: fr-004
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: "kit/scripts/cwos-event.js not present. Shadow-event envelope appends at end of /next (T10:compose-sprint) and /session-end (T15:session-end) couldn't run. Per ADR-018 step 1 these are non-fatal and don't gate output."
+    component: cwos-event.js
+    workaround: "Skipped silently per ADR-018 'CLI is non-fatal — do not gate any output on it.'"
+  - id: fr-005
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: manual_fix
+    severity: medium
+    detail: ".claude/workstream/sessions/ directory missing at /session-end. Auto-scaffolded silently per CLAUDE.md graceful-degradation rule (BLOCKING severity → auto-scaffold + proceed). Session file written at .claude/workstream/sessions/session-2026-05-01-next.yaml."
+    component: session-tracking
+    workaround: "mkdir -p .claude/workstream/sessions then write session file. Subsequent /session-start should find the dir + most-recent session file as expected."
+  - id: fr-006
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: ".claude/workstream/.current-session pointer file missing. Session ID had to be derived from the session-2026-05-01-next.yaml filename pattern used in prior /next claims (carried forward from earlier work). Pointer was never created during /session-start (which itself wasn't run as a discrete step at session start — session began with /clear + /next chain)."
+    component: session-tracking
+    workaround: "Used 'session-2026-05-01-next' as the canonical session ID throughout (consistent with prior queue claims). Wrote that ID into the session YAML."
+  - id: fr-007
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: "/session-end Step 5.5 'Update Usage Telemetry' couldn't run because .claude/workstream/usage.yaml does not exist. Skipped per graceful-degradation OPTIONAL severity (skip silently)."
+    component: usage-telemetry
+    workaround: "Skipped silently."
+  - id: fr-008
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: file_not_found
+    severity: low
+    detail: "/session-end Step 5.6 'Regenerate System Summary' couldn't run because .claude/workstream/system-summary.yaml doesn't exist (and no template found). Skipped silently."
+    component: system-summary
+    workaround: "Skipped silently. Future Standard Mode sessions will fall back to reading state.md directly per CLAUDE.md Standard Mode protocol."
+  - id: fr-009
+    timestamp: "2026-05-02T02:45:00Z"
+    session_id: "session-2026-05-01-next"
+    category: workaround
+    severity: low
+    detail: "Per /session-end Step 5.6a 'Reconcile Findings & Health Scores', scanned queue-index.yaml + findings/FIND-*.yaml manually. FIND-003/004/005 already resolved (SPR-001 outcome). FIND-001/002 still open (corresponding WS-116/117 still backlog). No drift to reconcile. Step is idempotent and found nothing to do — expected."
+    component: findings-reconciliation
+    workaround: "Manual scan of findings/ + cross-reference with queue-index. No-op confirmed."
+  - id: fr-010
+    timestamp: "2026-05-02T04:25:00Z"
+    session_id: "session-2026-05-02-next"
+    category: file_not_found
+    severity: low
+    detail: "Re-encounter of fr-001 + fr-002 + fr-003 in SPR-014 (SCF Gate 2). Same 4 missing kit/scripts/cwos-* scripts (constitutional-audit, reconcile, state-store, event). Identical fallback behavior: manual anti-goal review (recorded in SPR-014 anti_goal_check.reason as status=skipped + reason); direct YAML reads of queue-index + sprint-index; manual lockstep edits of indexes during sprint close-out; shadow-event append skipped silently. No new friction surface; pattern is stable. Single recurrence entry rather than 4 to avoid bloat."
+    component: cwos-scripts-suite
+    workaround: "All 4 fallbacks identical to fr-001..fr-004. Worth re-stating: fleet-level kit-installation gap remains the load-bearing fix (single /adopt re-run or kit-version bump installs all 4). No per-session friction beyond the documentation overhead."
+
+# Pre-existing entry (kept for context):
 # Entry format:
 #   - id: fr-001
 #     timestamp: "2026-04-07T18:05:00Z"
@@ -35,14 +117,31 @@ friction_log: []
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 0
+  total_friction_events: 10
   total_user_feedback: 0
   unresolved_feedback: 0
   by_severity:
     high: 0
-    medium: 0
-    low: 0
-  by_category: {}
-  by_component: {}
-  most_recent_friction: null
+    medium: 2
+    low: 8
+  by_category:
+    file_not_found: 8
+    manual_fix: 1
+    workaround: 1
+  by_component:
+    cwos-constitutional-audit.js: 1
+    cwos-reconcile.js: 1
+    cwos-state-store.js: 1
+    cwos-event.js: 1
+    cwos-scripts-suite: 1
+    session-tracking: 2
+    usage-telemetry: 1
+    system-summary: 1
+    findings-reconciliation: 1
+  most_recent_friction: "fr-010 — 2026-05-02T04:25:00Z — recurrence of cwos-scripts-suite missing in SPR-014"
   most_recent_feedback: null
+
+# Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
+# /adopt run or kit-version bump should install the script suite. Operational
+# impact this session was low (manual fallbacks worked) but worth tracking
+# as a kit-installation gap for fleet aggregation.

@@ -1,0 +1,66 @@
+id: "WS-160"
+title: "PIO G5 child A — IDB v23 schema + computeStability utility scaffold"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T09:45:00Z"
+completed_at: "2026-05-04T11:25:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  IDB v23 migration + 2 new stores (sightingLogs + playerPhotos) +
+  Player schema extensions (ageDecade/ethnicityTags/wardrobe/jewelry/logo/
+  photoBlobId default fields) + computeStability() utility scaffold +
+  SIGHTING_FEATURE_PRIORS placeholder.
+
+  Per `docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md`
+  §PIO-G4-MIG (lines 391–427) + §PIO-G3-STAB (line 470).
+
+  Highest-leverage anchor for PIO G5 multi-PR decomposition: unblocks 3 of
+  5 sibling children (WS-161 camera modal, WS-162 player profile, WS-163
+  PlayersView/PlayerEditor extensions). Pure data + utility module; no UI
+  risk. Mirrors EAL v19 + heroLeaks v22 additive-migration pattern.
+accept_criteria:
+  - "DB_VERSION bumped 22 → 23"
+  - "sightingLogs store with 5 indexes (playerId, playerId+sessionId composite, featuresSeen multiEntry, capturedAt, venueId)"
+  - "playerPhotos store with 1 index (playerId for cascade-on-delete)"
+  - "players cursor walk: ageDecade/ethnicityTags/wardrobe/jewelry/logo/photoBlobId added with defaults"
+  - "sightingLogsStore + playerPhotosStore CRUD modules with full test coverage"
+  - "computeStability(sightings, attribute) → {posterior, confidence, moe, sampleSize} per audit §PIO-G3-STAB"
+  - "SIGHTING_FEATURE_PRIORS empty-object scaffold + JSDoc"
+  - "Migration is additive only — no existing test regression"
+effort: "M"
+files_involved:
+  - "src/utils/persistence/database.js (modify)"
+  - "src/utils/persistence/migrations.js (modify)"
+  - "src/utils/persistence/sightingLogsStore.js (NEW)"
+  - "src/utils/persistence/playerPhotosStore.js (NEW)"
+  - "src/utils/persistence/index.js (modify barrel exports)"
+  - "src/utils/playerMatching/computeStability.js (NEW)"
+  - "src/utils/playerMatching/SIGHTING_FEATURE_PRIORS.js (NEW)"
+  - "src/utils/persistence/__tests__/sightingLogsStore.test.js (NEW)"
+  - "src/utils/persistence/__tests__/playerPhotosStore.test.js (NEW)"
+  - "src/utils/playerMatching/__tests__/computeStability.test.js (NEW)"
+  - "src/utils/persistence/__tests__/database.test.js (modify)"
+  - "src/utils/persistence/__tests__/anchorLibraryStores.test.js (modify DB_VERSION assertion)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-161"
+  - "WS-162"
+  - "WS-163"
+sprint_id: "SPR-034"
+decision_flags: []
+decisions_locked:
+  - "Anchor selection: schema + utility scaffold (highest leverage; lowest risk)"
+  - "Table-Build coordination: moot — heroLeaks (SCF v22) already passed v22; PIO bumps cleanly to v23"
+  - "SIGHTING_FEATURE_PRIORS: ship empty scaffold; corpus-tuned values deferred (uniform-prior fallback in computeStability)"
+status_note: "First child of WS-008 decomposition (SPR-034 plan-mode). Mirrors SCF G5 chain pattern (WS-013 → WS-145..149)."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

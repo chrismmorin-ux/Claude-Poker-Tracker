@@ -1,0 +1,69 @@
+id: "WS-163"
+title: "PIO G5 child D — PlayersView + PlayerEditor extensions (PV + PEX)"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T11:30:00Z"
+completed_at: "2026-05-04T14:40:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  Two surface extensions per `docs/design/surfaces/players-view.md`
+  §PIO-G4-PV (lines 169–216) + `player-editor.md` §PIO-G4-PEX:
+
+  **PlayerEditor extensions:**
+  - AgeDecade radio (5-bin: <20s, 20s, 30s, 40s, 50s+)
+  - Ethnicity tag input (reuses Table-Build EthnicityTagInput)
+  - Wardrobe palette chips (multi-select)
+  - Jewelry palette chips (multi-select)
+  - Logo palette chips (multi-select)
+  - Camera entry button (gated by Settings photoCaptureEnabled from WS-165 — opens camera modal from WS-161)
+
+  **PlayersView extensions:**
+  - New filter chips: AgeDecade, Wardrobe, Jewelry, Logo
+  - Row-tap routing change: row tap → PlayerProfileView (was PlayerEditor)
+  - Edit button on row stays available (one-tap-to-edit alternative)
+
+  Note: PlayersView seat-grid is NOT touched (Table-Build owns it post-Gate 4
+  supersession). Only the database-browser portion is extended.
+accept_criteria:
+  - "5 new attribute sections in PlayerEditor body"
+  - "Camera button visible iff Settings.photoCaptureEnabled === true"
+  - "4 new filter chips in PlayersView (AgeDecade + Wardrobe + Jewelry + Logo)"
+  - "Row-tap → PlayerProfileView (breaking change documented + opt-in via setting OR direct switch)"
+  - "Edit button available on every row"
+  - "Existing PEO avatar system untouched (PIO sections are distinct from avatar)"
+  - "Hat-field flat-string → envelope read-shim (deferred or implemented; binding TBD)"
+  - "Tests + Playwright visual regression"
+effort: "M"
+files_involved:
+  - "src/components/views/PlayerEditorView/AgeDecadeRadio.jsx (NEW)"
+  - "src/components/views/PlayerEditorView/PaletteChipsInput.jsx (NEW; reused by Wardrobe/Jewelry/Logo)"
+  - "src/components/views/PlayerEditorView/PlayerEditorView.jsx (modify — add 5 sections)"
+  - "src/components/views/PlayersView.jsx (modify — 4 new filters + row-tap routing)"
+  - "src/components/views/PlayerFilters.jsx (extend chip definitions)"
+  - "src/utils/playerMatching/wardrobePalette.js (NEW palette data)"
+  - "src/utils/playerMatching/jewelryPalette.js (NEW palette data)"
+  - "src/utils/playerMatching/logoPalette.js (NEW palette data)"
+  - "Tests in __tests__/"
+blocked_by:
+  - "WS-160"
+blocked_by_legacy: []
+enables:
+  - "WS-164"
+  - "WS-165"
+sprint_id: "SPR-035"
+decision_flags:
+  - "Palette content authoring: small starter sets (~7-12 each) vs comprehensive seed"
+  - "Row-tap routing: hard switch vs opt-in via setting"
+  - "Hat-field envelope migration: handle here vs Table-Build vs defer"
+  - "PaletteChipsInput: shared component vs 3 specialized variants"
+status_note: "CLAIMED SPR-035. Paired with WS-162 (executes 2nd to avoid file-conflict on PlayersView/PlayerEditor; WS-162's PlayerProfileView is the row-tap destination this child wires into)."
+source:
+  origin: "ws-008-decomposition-spr-034-2026-05-04"
+  parent_ws: "WS-008"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

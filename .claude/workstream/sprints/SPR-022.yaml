@@ -1,0 +1,139 @@
+id: "SPR-022"
+title: "Version-mismatch reload diagnostic + confirm (P0 break after Master Plan Phase-4 alternation complete)"
+status: completed
+goal: |
+  App's silent version-mismatch reload becomes a diagnostic users can see and
+  confirm before it fires — no more uncontrolled `window.location.reload()`
+  wiping in-progress Online state. Post-reload sessionStorage flag verifies
+  the new versions actually align (failure-path stays visible instead of
+  re-loop-reloading).
+
+  Master Plan rhythm:
+    SPR-018: SCF-G3 (D-line Phase-3)
+    SPR-019: PIO-G3 (A-line Phase-3)
+    SPR-020: SCF-G4 (D-line Phase-4)
+    SPR-021: PIO-G4 (A-line Phase-4)  — A/D Phase-4 alternation COMPLETE
+    SPR-022: WS-076 P0 break (engineering)  ← this sprint
+  Phase 5 (Implementation, multi-PR) for both A-line and D-line
+  intentionally deferred — P0 deferred 5 sprints; Phase-5 entries
+  (WS-013 SCF-G5 + WS-008 PIO-G5) are too large for a 2-session sprint
+  cap and warrant dedicated multi-sprint composition.
+
+  Source-class damping (Step 2d): last 3 anchors WS-007, WS-012, WS-006
+  ALL untagged (backlog-md-migration). No class saturated. WS-076
+  source-class `untagged` → NOT damped.
+
+  Strict-score-order: WS-076 (P0 30.0) is highest unclaimed item; tied with
+  WS-115 (P0 30.0 SR-6 incremental rebuild). WS-076 chosen over WS-115
+  because WS-115 is documented as "16 PRs, dependency-ordered" — a
+  multi-sprint program, not a single-sprint anchor. WS-076 is bounded
+  to one app file (OnlineView.jsx:79) plus an extension handshake
+  contract — fits the 2-session cap.
+
+items:
+  - id: "WS-076"
+    title: "Version-mismatch reload: diagnostic + confirm (DCOMP-W4-A3-F4) — replace silent window.location.reload() at OnlineView.jsx:86 with diagnostic surface + user confirm + post-reload sessionStorage verify flag"
+    mode: plan-first
+    effort: M
+    status: done
+    completion_notes: |
+      Plan-mode design captured 3 owner decisions (plan-mode AskUserQuestion 2026-05-02): (1) ConfirmDeleteModal-pattern modal for diagnostic; (2) version-only v1 (contract fingerprint deferred — PROTOCOL_VERSION already increments on contract change, fingerprint duplicates the signal); (3) thread extension manifest version through STATUS message for legible "0.9.0 vs 0.9.0" rather than "v2 vs v3".
+
+      Implementation across 8 files (4 app + 2 extension + 2 test files):
+        EXTENSION:
+          - shared/wire-schemas.js — buildStatus() accepts optional extensionVersion field (additive, validateStatus unchanged)
+          - content/app-bridge.js — passes EXTENSION_VERSION (already imported via shared/constants.js) into both STATUS-relay sites (case 'status' + push_connection_state)
+        APP:
+          - src/utils/versionMismatchStorage.js NEW — writeReloadFlag/readReloadFlag/clearReloadFlag with JSON-encoded payload, 60s TTL (matches HEARTBEAT_INTERVAL), try/catch swallow per UpdateBanner.jsx convention
+          - src/hooks/useSyncBridge.js — captures both versions in state, exposes them + appProtocolVersion + postReloadStatus + clearPostReloadStatus on bridge return; resolves post-reload flag on first STATUS comparison ('recovered' / 'still-mismatched' / null)
+          - src/contexts/SyncBridgeContext.jsx — adds new fields to useMemo dep array
+          - src/components/ui/VersionMismatchModal.jsx NEW — ConfirmDeleteModal-pattern (Tailwind, AlertTriangle icon, click-backdrop-to-cancel); version table rendering both protocolVersion + extensionVersion; conditional 'still-mismatched' warning copy
+          - src/components/views/OnlineView/OnlineView.jsx — banner button now opens modal instead of silent reload; mounts VersionMismatchModal; useEffect on postReloadStatus → success toast on 'recovered' or auto-open modal on 'still-mismatched'; Continue Anyway path preserved for WS-077 follow-up
+        TESTS:
+          - src/utils/__tests__/versionMismatchStorage.test.js NEW — 10 tests (round-trip, TTL expiration, malformed JSON, swallowed sessionStorage failures)
+          - src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js — defaultSyncBridge extended with new fields; 2 new fixture rows OV-VM-004/005 covering still-mismatched auto-open + version-rendering
+          - src/components/views/OnlineView/__tests__/OnlineView.invariants.test.jsx — 3 new interaction tests (Reload Page click → modal opens; postReloadStatus='recovered' → toast + clear; cancel auto-opened modal → clear status); imports fireEvent for React 18 act() flush
+          - ignition-poker-tracker/shared/__tests__/wire-schemas.test.js — 2 new buildStatus tests (extensionVersion threaded; omitted-when-undefined backward compat)
+
+      Verification:
+        - 10/10 storage util tests
+        - 31/31 OnlineView invariants (37 total minus 6 pre-existing skipped gap rows)
+        - 80/80 wire-schemas (extension)
+        - 20/20 integration-pipeline (extension)
+        - 2251/2251 full extension test suite (single-fork)
+        - 7/7 SyncBridgeContext consumer tests (SyncBridgeContext + OnlineAnalysisContext + OnlineSessionContext + TournamentBridge)
+        - 7587/7587 app smart-test-runner (24 pre-existing skipped) — note: 106 "failed test files" reported by parallel runner are Windows worker-spawn errors (errno -4094 UNKNOWN spawn), not test failures; targeted re-runs confirm 0 actual test failures
+        - npm run build clean (7.25s)
+
+      Out of scope:
+        - Contract fingerprint (PROTOCOL_VERSION already conveys the same signal; would duplicate)
+        - WS-077 graceful degradation (sibling P1 ticket; modal preserves the existing dismissVersionMismatch hook point)
+        - Older app build compatibility (extensionVersion is additive, optional; older builds ignore it)
+        - Visual regression Playwright shot (deferred to a routine sweep; not blocking)
+    finding_id: null
+    decision_flags:
+      - "Diagnostic surface shape (where + what): modal vs banner vs inline panel in OnlineView; what data renders before reload — extension version, app version, contract delta in plain English, session-at-risk warning, link to release notes"
+      - "Extension handshake protocol: how does the extension carry version + contract fingerprint into the app — new chrome.runtime port message field, sidebar manifest version field (mv3 manifest_version is already the schema version), or sessionStorage handoff on connect; also where the contract fingerprint is computed (extension-side hash of the message-shape contract vs app-side computed reference)"
+      - "Post-reload verify flag: sessionStorage schema (key name, payload shape — `{ reason, fromExtVersion, toExtVersion, fromAppVersion, toAppVersion, ts }`); TTL (clear on next clean handshake or after N seconds); failure path if post-reload versions still mismatch (surface persistent banner? fall back to disconnect?); whether the flag is observable in dev-tools for debugging"
+      - "Failure-mode coverage: what happens if user dismisses diagnostic (reload anyway? leave at-risk? Continue Anyway path coordinated with WS-077?); what happens if extension is force-killed mid-handshake; what happens if app and extension versions match but contract fingerprint diverges (stricter check)"
+      - "Verification surface: how do we visually confirm the change works in dev — script the version mismatch via DevTools, test extension reload triggers diagnostic not silent reload; what counts as 'fixed' for a future regression test"
+    depends_on: []
+    started_at: null
+    completed_at: null
+    notes: ""
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "P0 break after Master Plan A/D Phase-4 alternation (deferred 5 sprints since SPR-018; engineering program watch-tier first attention since FW-1 SPR-008/SPR-009)"
+total_effort: "M (~1.5 sessions; bounded to OnlineView.jsx:79 site + extension manifest contract surface)"
+decisions_needed:
+  - "Item #1 (WS-076): 5 decision flags spanning diagnostic surface shape + extension handshake protocol + post-reload sessionStorage verify flag schema + failure-mode coverage (incl. WS-077 Continue Anyway coordination point) + verification approach. Multi-round AskUserQuestion expected, likely grouped by app-side vs extension-side."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T11:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; same as SPR-021 anti-goal-check status). Manual review: scope is a defensive UX guardrail — replace silent reload with user-visible diagnostic + confirm. No engagement-pressure / mastery-score / cross-surface-contamination angles. Aligned with founder's repo_goal of trustworthy in-the-moment poker decisions (silent reload mid-Online-session is a user-trust failure mode). No constitutional clauses or anti-goal patterns matched."
+  matches: []
+
+created_at: "2026-05-02T11:00:00Z"
+approved_at: "2026-05-02T11:00:00Z"
+started_at: "2026-05-02T11:05:00Z"
+completed_at: "2026-05-02T13:00:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-076 is M-effort but design-dense (5
+  decision flags spanning app-side diagnostic UI + extension-side handshake
+  contract + post-reload verify flag + failure modes + verification approach).
+  Multi-round AskUserQuestion expected.
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-007 (untagged), WS-012 (untagged), WS-006 (untagged).
+    - No class at saturation threshold (>=2 in last 3 of `auto-rec` / `engine-finding`).
+    - WS-076 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+
+  Tied-priority tiebreak: WS-076 chosen over WS-115 (both P0 30.0)
+  because WS-115 is "16 PRs, dependency-ordered" — multi-sprint program
+  scope. WS-076 fits one sprint (single app file + extension contract).
+
+  Master Plan rhythm: A/D Phase-4 alternation COMPLETE on SPR-021.
+  Phase-5 entries (WS-013 SCF-G5 + WS-008 PIO-G5) deferred to dedicated
+  multi-sprint compositions — both have 5+ accept criteria including
+  "≥10 lessons across ≥3 tiers" (SCF-G5) and "PlayersView rebuild + IDB
+  v22 multi-store migration" (PIO-G5; sequenced with Table-Build Gate 5
+  per coordination contract). Single-sprint cap (max 2 sessions) cannot
+  hold either.
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* per fr-001..004
+  + fr-010. Same fallbacks (manual anti-goal scan; YAML-direct queue
+  reads; manual index lockstep edits; shadow-event skip).
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Coordination point: WS-077 (Continue Anyway graceful degradation, P1 22.0,
+  sibling DCOMP-W4-A3-F5) is the natural follow-up. WS-076 should leave
+  WS-077's "Continue Anyway" path well-defined — even if WS-077 isn't
+  shipped this sprint, the diagnostic surface should expose a "Continue
+  Anyway" affordance that WS-077 can flesh out later (persistent amber
+  pip + suppress-mismatched-fields).

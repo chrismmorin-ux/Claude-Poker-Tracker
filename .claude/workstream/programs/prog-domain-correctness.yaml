@@ -151,9 +151,11 @@ scope:
     - "src/utils/anchorLibrary/**"
     - "src/utils/skillAssessment/**"
     - "src/utils/refresher/**"
+    - "src/utils/heroState/**"
     - "src/__dev__/**"
     - ".claude/context/POKER_THEORY.md"
     - "docs/RANGE_ENGINE_DESIGN.md"
+    - "docs/HERO_STATE_DESIGN.md"
   invariants:
     - "POKER_THEORY.md is read before any commit touching exploitEngine/, rangeEngine/, pokerCore/, or handAnalysis/"
     - "Sub-directory CLAUDE.md anti-patterns checked before commits in their domain"
@@ -284,12 +286,12 @@ last_run_by_protocol:
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
 
-health_score: 2
-health_updated_at: "2026-05-01T15:42:57Z"
-health_ceiling: 6
-health_ceiling_reason: "Baseline run completed 2026-05-01. SPR-001 closed 3 of 5 HIGH findings same session (FIND-003/004/005). Score 2/6 unchanged (capped by remaining 2 HIGH + 8 MEDIUM); cap pressure reduced (3+ HIGH cap no longer fires). Sweep raises ceiling to 7."
-findings_open: 18
-work_items_open: 2
+health_score: 4
+health_updated_at: "2026-05-02T06:30:00Z"
+health_ceiling: 8
+health_ceiling_reason: "Baseline run completed 2026-05-01; SPR-001 closed FIND-003/004/005 (2026-05-01); SPR-016 closed FIND-002 (2026-05-02) via MoE-banded classifier; SPR-017 closed FIND-001 (2026-05-02) via credible-interval UI wiring. **All 5 HIGH findings from baseline now resolved.** 8 MEDIUM + 8 LOW remain — sweep/challenge protocol territory rather than promote-and-close. Score 4/8: HIGH cap pressure removed entirely; ceiling raised reflecting clean HIGH state. Next ceiling raise via sweep protocol (cadence 14 days; due 2026-05-15)."
+findings_open: 16
+work_items_open: 1
 
 evidence:
   last_audit_report: null
@@ -309,6 +311,21 @@ evidence:
       work_items_completed: ["WS-118", "WS-119", "WS-120"]
       result: "POKER_THEORY.md freshness header added; preflopAdvisor.js + postflopNarrower.js single-source gates added; 2350/2350 exploitEngine tests pass"
       health_score: 2
+    - date: "2026-05-02"
+      sprint_id: "SPR-016"
+      action: "closed-findings"
+      findings_resolved: ["FIND-002"]
+      work_items_completed: ["WS-117"]
+      result: "MoE-banded value/thin/bluff classifier (POKER_THEORY.md §181 alignment); MoE wired through 3 UI consumers; 9,448-test suite green; HIGH count 2 → 1"
+      health_score: 3
+    - date: "2026-05-02"
+      sprint_id: "SPR-017"
+      action: "closed-findings"
+      findings_resolved: ["FIND-001"]
+      work_items_completed: ["WS-116"]
+      work_items_created: ["WS-135 (v2 expansive scope deferred per owner-staged decision)"]
+      result: "Credible-interval ±X.X% suffix wired into TendencyStats + SeatGrid fallback; minimal v1 closes finding; v2 PlayerAnalysisPanel + HandReplay sections deferred to WS-135. ALL 5 HIGH findings from baseline now resolved. HIGH count 1 → 0."
+      health_score: 4
   retention_days: 365
   evidence_dir: ".claude/workstream/evidence/domain-correctness/"
 
@@ -319,7 +336,7 @@ maturity:
     level_2: "All problem classes checked. Sub-directory CLAUDE.md anti-patterns enforced. Bayesian confidence threaded through inference paths."
     level_3: "Challenge protocol active. Theory-vs-code drift report green. Anti-patterns at zero count for 3+ sweeps."
     level_4: "Blind-spot protocol active. POKER_THEORY.md updates traced to research. Zero domain errors in production sustained."
-  current_gaps: "SPR-001 (2026-05-01) closed FIND-003/004/005. 2 HIGH findings remaining (FIND-001 credible-interval UI wiring, FIND-002 MC trial reframing) — both flagged plan-first; bundle in Plan-mode sprint. 8 MEDIUM and 8 LOW findings open for sweep/challenge cycles."
+  current_gaps: "All 5 HIGH findings from 2026-05-01 baseline now resolved. SPR-001 closed FIND-003/004/005 (2026-05-01). SPR-016 closed FIND-002 (2026-05-02). SPR-017 closed FIND-001 (2026-05-02). 8 MEDIUM and 8 LOW findings remain open for sweep/challenge cycles (next sweep cadence: 14 days, due 2026-05-15). v2 follow-up WS-135 (P2) tracks expansive credible-interval surface scope (PlayerAnalysisPanel + HandReplay tendency sections) deferred per owner staged-scope decision."
 
 created_at: "2026-05-01"
 updated_at: "2026-05-01"

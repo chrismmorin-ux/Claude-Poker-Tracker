@@ -2,10 +2,11 @@ id: "WS-117"
 title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
 legacy_id: "FIND-002"
 type: finding
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T05:30:00Z"
+started_at: "2026-05-02T05:30:00Z"
+completed_at: "2026-05-02T06:05:00Z"
 priority_score: 30.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -21,8 +22,11 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+sprint_id: "SPR-016"
+decision_flags:
+  - "Approach choice (trials-bump / banded-classification / hybrid)"
+  - "Banding thresholds (symmetric vs asymmetric)"
+  - "Downstream consumer scope (MoE plumbing reach)"
 source:
   engine: "eng-engine"
   finding_id: "FIND-002"
@@ -30,4 +34,5 @@ source:
   origin: "auto-promoted-from-finding"
 auto_expires: false
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-02"
+status_note: "RESOLVED 2026-05-02 — classifyAction() now returns { class: 'value'|'thin'|'bluff', equity, moe } with MoE-symmetric banding around 0.5 (POKER_THEORY.md §181 Thin Value alignment); MoE wired through from existing handVsRange.ciHalf field; 3 UI consumers (ReviewPanel + VillainAnalysisSection + ReviewObservations) updated to render banded badge with ±X.X% MoE suffix; 11 classifier tests + full 9,448-test suite green; build clean. Backward-compat preserved (no MoE → binary fallback)."

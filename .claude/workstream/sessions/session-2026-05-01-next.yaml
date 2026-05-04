@@ -1,0 +1,224 @@
+id: "session-2026-05-01-next"
+status: completed
+started_at: "2026-05-01T15:42:57Z"
+ended_at: "2026-05-02T03:45:00Z"
+mode: standard
+ceremony: standard
+session_end_count: 2  # Re-ended after SPR-013 close-out; first session-end was at 02:45Z
+
+claimed_items:
+  # All claimed during this multi-sprint session; all closed before /session-end
+  - { id: "WS-001", sprint: "SPR-002", status: done, completed_at: "2026-05-01T16:45:00Z" }
+  - { id: "WS-118", sprint: "SPR-001", status: done, completed_at: "2026-05-01T15:42:57Z" }
+  - { id: "WS-119", sprint: "SPR-001", status: done, completed_at: "2026-05-01T15:42:57Z" }
+  - { id: "WS-120", sprint: "SPR-001", status: done, completed_at: "2026-05-01T15:42:57Z" }
+  - { id: "WS-121", sprint: "SPR-003", status: done, completed_at: "2026-05-01T18:15:00Z" }
+  - { id: "WS-122", sprint: "SPR-003", status: done, completed_at: "2026-05-01T18:15:00Z" }
+  - { id: "WS-124", sprint: "SPR-004", status: done, completed_at: "2026-05-01T18:55:00Z" }
+  - { id: "WS-125", sprint: "SPR-005", status: done, completed_at: "2026-05-01T19:30:00Z" }
+  - { id: "WS-126", sprint: "SPR-008", status: done, completed_at: "2026-05-01T22:15:00Z" }
+  - { id: "WS-127", sprint: "SPR-006", status: done, completed_at: "2026-05-01T20:30:00Z" }
+  - { id: "WS-128", sprint: "SPR-007", status: done, completed_at: "2026-05-01T21:15:00Z" }
+  - { id: "WS-129", sprint: "SPR-008", status: done, completed_at: "2026-05-01T22:15:00Z" }
+  - { id: "WS-130", sprint: "SPR-009", status: done, completed_at: "2026-05-01T22:40:00Z" }
+  - { id: "WS-131", sprint: "SPR-009", status: done, completed_at: "2026-05-01T22:40:00Z" }
+  - { id: "WS-132", sprint: "SPR-009", status: done, completed_at: "2026-05-01T22:40:00Z" }
+  - { id: "WS-002", sprint: "SPR-010", status: done, completed_at: "2026-05-02T01:05:00Z" }
+  - { id: "WS-003", sprint: "SPR-011", status: done, completed_at: "2026-05-02T01:25:00Z" }
+  - { id: "WS-009", sprint: "SPR-012", status: done, completed_at: "2026-05-02T02:30:00Z" }
+  - { id: "WS-133", sprint: null, status: done, completed_at: "2026-05-02T00:30:00Z", note: "Triage-during-/next item; opened + closed in same flow" }
+  - { id: "WS-134", sprint: "SPR-011", status: done, completed_at: "2026-05-02T01:35:00Z" }
+  - { id: "WS-004", sprint: "SPR-013", status: done, completed_at: "2026-05-02T03:30:00Z" }
+
+sprints_completed:
+  - { id: "SPR-001", title: "Close 3 small HIGH findings from /pulse run domain-correctness baseline", items: 3 }
+  - { id: "SPR-002", title: "TableView Invariant Audit — matrix authoring (Phase 1 of Master Plan TIA)", items: 1 }
+  - { id: "SPR-003", title: "ICP-1 — pattern codification + first non-UI seed audit (gameReducer UNDO)", items: 2 }
+  - { id: "SPR-004", title: "Triage migrationV21 telemetryConsentStore CRUD failures (vital-sign YELLOW)", items: 1 }
+  - { id: "SPR-005", title: "Close remaining unit-project failures (post-WS-124): TelemetryConsentContext test + 2 baseEquity drifts", items: 1 }
+  - { id: "SPR-006", title: "ICP-2 OnlineView audit (highest-blast-radius UI surface)", items: 1 }
+  - { id: "SPR-007", title: "ICP-3 exploitEngine audit (highest theoretical-correctness ROI; critical-tier alignment)", items: 1 }
+  - { id: "SPR-008", title: "FW-1 Sprint A — TableView fix wave + WS-126 flake (vital sign clearance)", items: 2 }
+  - { id: "SPR-009", title: "FW-1 Sprint B — gameReducer UNDO + preflopAdvisor position-vocab + OnlineView pluralization", items: 3 }
+  - { id: "SPR-010", title: "TIA Phase 2 — Straddle scope decision + matrix extension (Master Plan B+E close-out)", items: 1 }
+  - { id: "SPR-011", title: "Housekeeping close-out — TIA admin close + Tests vital sign restoration", items: 2 }
+  - { id: "SPR-012", title: "SCF Gate 1 — Self-Coach Foundation Entry (Master Plan Phase 2 starter)", items: 1 }
+  - { id: "SPR-013", title: "PIO Gate 1 — Player Identification v2 Entry (Master Plan A-line, Phase 2 stagger)", items: 1 }
+
+decisions_recorded:
+  - { id: "DEC-005", title: "Straddle scope — UTG + BTN only, UTG > BTN precedence, no re-straddle", weight: heavy }
+  - { id: "DEC-006", title: "SCF persona — extend chris-live-player, no new chris-the-improver", weight: heavy }
+  - { id: "DEC-007", title: "SCF skill ladder — 6 tiers (novice / live-rec / studied-amateur / part-time-grinder / serious-grinder / pro)", weight: heavy }
+  - { id: "DEC-008", title: "SCF JTBD placement — extend coaching.md self-coach-mode sub-section, no new domain", weight: heavy }
+  - { id: "DEC-009", title: "Drill-storage sort tiebreak — fix production loader, not the test", weight: medium }
+  - { id: "DEC-010", title: "MC equity remediation — per-test fix, not seeded RNG, not uniform-bump", weight: medium }
+  - { id: "DEC-011", title: "PIO recognition-uncertainty scope — across-session at same venue (cross-venue deferred)", weight: heavy }
+  - { id: "DEC-012", title: "PM-10/11/12 reframed as sub-jobs of PIO umbrella JTBDs (PM-13/14/15)", weight: medium }
+  - { id: "DEC-013", title: "Phone-camera-capture in PIO Gate 4 v1; photo via blobId in separate store", weight: medium }
+
+handoff_notes: |
+  ## Session arc
+
+  Marathon session: **13 sprints completed** (SPR-001 through SPR-013),
+  21 work items closed, 9 decisions formalized to system/decisions.md,
+  Master Plan Phase 1 (TIA) shipped end-to-end, **Master Plan Phase 2
+  Gate 1 stagger COMPLETE** (both A-line PIO-G1 and D-line SCF-G1 audits
+  shipped).
+
+  ## Master Plan progress
+
+  - **Phase 1 (B+E TableView Invariant Audit + Straddle): SHIPPED.**
+    Matrix authored (SPR-002), 7 audit-surfaced bugs closed by FW-1
+    Sprints A+B (SPR-008, SPR-009), straddle wired (SPR-010), admin
+    close + failure file (SPR-011). 47-row matrix: 30 matches + 0
+    pinned_bug + 14 spec_gap + 3 regression_pinned. Production code
+    fixes shipped across 4 surfaces (CommandStrip, gameReducer,
+    preflopAdvisor, OnlineView).
+  - **Phase 2 (PIO + SCF + EAL/C continuation): A/D Gate 1 stagger COMPLETE.**
+    SCF Gate 1 audit shipped (SPR-012, D-line). PIO Gate 1 audit shipped
+    (SPR-013, A-line). Master Plan §3 binding ratification #6 (A and D
+    Gates 1→5 staggered) achieved at the Gate 1 entry. Both audits hit
+    RED verdict — Gate 2 mandatory for both. 16 open questions across
+    the two audits awaiting owner decisions during Gate 2 (Blind-Spot
+    Roundtable) sprints.
+    EAL streams continue.
+
+  ## Items completed (this session, 21 total)
+
+  Domain-correctness baseline: WS-118, WS-119, WS-120 (FIND-003/004/005 fixes)
+  ICP-1 / TIA: WS-001 (matrix authoring), WS-121 (pattern codification),
+    WS-122 (gameReducer UNDO audit)
+  ICP-2 / OnlineView: WS-127 (29-row DOM-mount audit)
+  ICP-3 / exploitEngine: WS-128 (30-row audit)
+  Test-health triage: WS-124 (migrationV21), WS-125 (TelemetryConsentContext +
+    baseEquity drifts), WS-126 (postflopDrillsStorage flake — closeDB fix
+    wave + defensive resetDBPool)
+  FW-1: WS-129 (TableView 4-bug fix wave), WS-130 (gameReducer UNDO street-
+    rewind), WS-131 (preflopAdvisor position-vocab), WS-132 (OnlineView
+    pluralization)
+  TIA Phase 2 close: WS-002 (straddle wired), WS-003 (admin close + failure
+    file)
+  Discovered + closed in-session: WS-133 (drill-storage same-ms tie),
+    WS-134 (MC equity flakes — per-test remediation)
+  Master Plan Phase 2 D-line: WS-009 (SCF Gate 1 audit)
+  Master Plan Phase 2 A-line: WS-004 (PIO Gate 1 audit)
+
+  ## Items remaining (none in-progress; clean handoff)
+
+  All claimed items closed. No unfinished work. Sprint queue is clean.
+
+  ## Tests vital sign
+
+  GREEN. WS-133 closed the post-WS-126 drill-storage same-ms tie flake
+  (3-of-3 clean across drill-storage tests). WS-134 closed the 3 MC equity
+  flakes (advisorAccuracy AKs trials 500→3000, gameTreeEvaluator no-mix
+  trials 100→500, rangeVsBoard AA-vs-KK skip-with-named-precedent). Final
+  background full-suite triple-run completed exit 0 during SPR-012 mid-flow.
+
+  ## Open questions for next session (16 total across 2 audits)
+
+  **From SCF Gate 1 audit** (`docs/design/audits/2026-05-02-entry-self-coach-foundation.md`):
+    Q1 Per-tier teachable-concept map ratification — walk the draft 6×N
+       table; amend cells in Gate 3 (Research)
+    Q2 CO-54..57 vs new self-coaching.md domain — confirm DEC-008
+    Q3 CO-57 (self-rate confidence) ship timing — Gate 4 v1 vs deferred
+    Q4 SCF surface location — own dedicated view (recommended) vs modal
+    Q5 Curriculum-spine format — DAG vs leak-frequency vs hybrid
+    Q6 Tier inference vs explicit set — explicit-in-v1 recommended
+    Q7 DS-58 / CO-56 reconciliation pre-vote — distinct outcome or collapse
+    Q8 Tier persistence location — user-settings recommended
+
+  **From PIO Gate 1 audit** (`docs/design/audits/2026-05-02-entry-player-identification-v2.md`):
+    Q1 Stability formula — simple frequency / EWMA / Bayesian-Beta
+    Q2 Ethnicity migration approach — silent vs prompt
+    Q3 Photo storage — dataUrl vs blobId (recommend blobId, captured DEC-013)
+    Q4 Gate 4 surface count — distinct surfaces or one with two modes
+    Q5 Anti-bias check — demographic data framing review
+    Q6 Tournament players — face-as-identity sufficient? tournament-mode toggle?
+    Q7 Privacy/autonomy — per-record opt-in vs enrollment-level
+    Q8 Cold-read-chris persona ratification — ratify vs amend in Gate 2
+
+  ## Next recommended action
+
+  Run `/next` for the next sprint. Three natural anchor candidates:
+
+  1. **WS-005 (PIO-G2 Blind-Spot Roundtable)** — covers the broader umbrella
+     concerns NOT addressed by table-build's already-shipped Gate 2:
+     sighting-log schema, stability formula, photo lifecycle, demographic-
+     data ethics, cross-venue future-proofing. M-effort plan-first.
+  2. **WS-010 (SCF-G2 Blind-Spot Roundtable)** — resolves CO-56 vs DS-58
+     reconciliation; pre-checks 9 autonomy red lines against SCF surfaces.
+     M-effort plan-first.
+  3. **Continue A/D stagger** — alternate, run PIO-G2 next then SCF-G2 after.
+
+  Or — clear a P0 if the design-program needs a break:
+    - WS-117 (single-file engine fix per FIND-002, recommended bump trial
+      count per WS-134 precedent) — smallest deferred P0.
+    - WS-116 (credible intervals UI plumbing across 3 surfaces) — larger.
+    - WS-076 (Version-mismatch reload) — UI surface, requires Design Gate 1.
+
+  ## Domain-correctness P0 backlog (deferred)
+
+  Two P0=30 domain-correctness findings remain open and unclaimed:
+  - WS-116 (FIND-001) — Credible intervals computed but never consumed in
+    any UI surface (3-surface plumbing, M-effort)
+  - WS-117 (FIND-002) — Hard 0.5 value/bluff cutoff over noisy 500-trial
+    Monte Carlo (engine fix, M-effort)
+
+  These were postponed in favor of Master Plan Phase 2 strategic pivot.
+  Worth their own sprints once Phase 2 has 1-2 sprints of momentum.
+
+  ## Autopilot eligible
+
+  Zero items currently match (S-effort + bug/finding + no decision_flags).
+  Most remaining backlog is M-effort design-program gates.
+
+context_notes: |
+  ## Architecture / state notes for next session
+
+  - Tests vital sign GREEN (clean), pending no new flakes
+  - 9 of 13 sprints in this session were engineering-program; 4 design-
+    program (SPR-006, SPR-007, SPR-012, SPR-013). Master Plan Phase 2
+    momentum favors design-program continuation.
+  - The 9 autonomy red lines on chris-live-player are now load-bearing for
+    SCF AND PIO. Any SCF/PIO surface concept must pass red-line pre-check
+    in its Blind-Spot Roundtable.
+  - chris-live-player.md's per-domain Skill-state attribute (3-5 ordinal)
+    and SCF's overall-tier (6 ordinal) are TWO DISTINCT concepts. Don't
+    conflate them — see DEC-007 + persona file §Skill-ladder positioning.
+  - PIO inherits cold-read-chris from table-build (Proto, Gate-2-validated)
+    — PIO Gate 2 should NOT re-litigate that persona.
+  - PIO's broader umbrella (sighting log, wardrobe/jewelry/age/logo, dynamic
+    recognition search, camera) is distinct from table-build's session-start
+    entry surface scope. See PIO Gate 1 audit Discovery 1.
+  - PM-10/11/12 are now sub-jobs of PM-13/14/15 (DEC-012). Future JTBD reads
+    should follow the umbrella → sub-job links in player-management.md.
+  - ATLAS by-domain table for PM had a stale gap (PM-10/11/12 authored
+    2026-04-26 were never added to the by-domain table). Backfilled this
+    session as part of PIO-G1 ATLAS update.
+  - WS-126's "Tests vital sign returns to deterministic GREEN" claim was
+    over-confident (caught by triage during this session — see WS-133 / DEC-009).
+    Future close-out claims should be more measured if not yet verified by
+    a triple full-suite run.
+  - kit/scripts/cwos-* infrastructure is largely absent in this repo.
+    Manual index updates and YAML edits substitute. Several /next and
+    /session-end protocol steps that depend on those scripts had to be
+    adapted (logged in friction events).
+
+  ## Reading priority for next session
+
+  If next anchor is **WS-005 (PIO-G2 Blind-Spot Roundtable)**: read
+    PIO Gate 1 audit + cold-read-chris persona + table-build Gate 1+2
+    audits (for the prior-art portion already covered) + EAL
+    anchorObservationsStore.js (for sighting-log precedent) + Master
+    Plan §A + this session file.
+
+  If next anchor is **WS-010 (SCF-G2 Blind-Spot Roundtable)**: read SCF
+    Gate 1 audit + chris-live-player.md §Autonomy constraint +
+    docs/design/ROUNDTABLES.md + DS-58 (drills-and-study.md) for the
+    CO-56 reconciliation context + this session file.
+
+  If next anchor is **WS-117 (engine MC fix)**: read FIND-002 +
+    src/utils/handAnalysis/replayAnalysis.js (lines 24-30) + WS-134
+    precedent for trial-count-bump pattern + the engine CLAUDE.md
+    guardrails (mandatory before editing exploitEngine/).

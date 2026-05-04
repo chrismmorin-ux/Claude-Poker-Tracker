@@ -2,10 +2,11 @@ id: "WS-010"
 title: "Gate 2 — Blind-Spot Roundtable"
 legacy_id: "SCF-G2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T03:35:00Z"
+started_at: "2026-05-02T03:35:00Z"
+completed_at: "2026-05-02T04:25:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "self-coach-foundation"
@@ -26,9 +27,13 @@ blocked_by:
 blocked_by_legacy:
   - "SCF-G1"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by SCF-G1"
+sprint_id: "SPR-014"
+decision_flags:
+  - "Roundtable composition (confirm 4 voices Pedagogy/Autonomy-Failure/Privacy/Engineering, or add 5th e.g. Cultural-sensitivity mirroring PIO-G2)"
+  - "AP-06 graded-work-framing refusal lock strictness (audit-doc-only / CI-grep forbidden-strings enforcer / IDB-validation write-time barrier)"
+  - "CO-56 ↔ DS-58 reconciliation scope (resolve in Gate 2 Stage B per SCF-G1 deferral, or punt to Gate 3 with research grounding)"
+  - "Small-sample false-leak threshold (set hand-count floor in Gate 2 e.g. n>=30 before any leak claim shown, or defer threshold-setting to Gate 3 + research)"
+status_note: "RESOLVED 2026-05-02 — Gate 2 audit shipped (YELLOW verdict; CO-56 KEEP SEPARATE; AP-06 lock CI-grep tier; n>=30 floor; 5 voices integrative pattern); 5 Gate 3 + 7 Gate 4 carry-forwards enumerated; companion anti-patterns.md + copy-discipline.md authored"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Self-Coach Foundation (SCF, project: `.claude/projects/master-plan-2026-04-30.md` §D)"

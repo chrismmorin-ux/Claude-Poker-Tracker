@@ -1,0 +1,120 @@
+id: "SPR-035"
+title: "PIO G5 children B+C — Player Profile View + PlayersView/PlayerEditor extensions"
+status: completed
+goal: |
+  PlayersView becomes fully testable for the new PIO attribute model:
+  tap a player row to see their sighting history + per-attribute stability
+  descriptors; edit any player to set 5 new attribute fields (AgeDecade /
+  Ethnicity tags / Wardrobe / Jewelry / Logo); filter the player list by
+  those fields.
+
+  Two children of WS-008 ship together because they share the row-tap
+  routing seam — WS-163 changes row-tap to point at PlayerProfileView, but
+  PlayerProfileView is built by WS-162. Pairing avoids stub work.
+
+  Master Plan rhythm:
+    SPR-034: PIO G5 child A (WS-160) — IDB v23 + computeStability scaffold — DONE
+    SPR-035: PIO G5 children B+C (WS-162 + WS-163) — Profile View + PV/PEX extensions (this sprint)
+    SPR-036+: PIO G5 children remaining: WS-161 (camera) + WS-165 (settings toggle) +
+              WS-164 standalone-ranking (rescoped from Table-Build dependency)
+
+items:
+  - id: "WS-162"
+    title: "PIO G5 child C — Player Profile View (S1)"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags:
+      - "Surface spec: piggyback PIO-G4 audit OR author standalone surfaces/player-profile.md"
+      - "Manual-add-sighting modal: single form with all attributes vs per-attribute mini-modals"
+      - "Sighting history pagination: top-N + expand vs full scroll"
+      - "SIGHTING_FEATURE_PRIORS corpus tuning: now vs defer to follow-up (defer is locked default)"
+    depends_on: []
+    started_at: "2026-05-04T11:30:00Z"
+    completed_at: "2026-05-04T13:05:00Z"
+    notes: |
+      SHIPPED:
+        - SCREEN.PLAYER_PROFILE constant + UI_ACTIONS.SET_PLAYER_PROFILE + uiReducer state + UIContext openPlayerProfile/closePlayerProfile + PokerTracker lazy import + ViewRouter case
+        - src/components/views/PlayerProfileView/PlayerProfileView.jsx (header / sighting history / attribute stability / actions; reads sightings via getSightingsForPlayer + computes stability for 5 PIO attributes)
+        - src/components/views/PlayerProfileView/SightingHistorySection.jsx (top-10 + expand-to-all; empty state)
+        - src/components/views/PlayerProfileView/AttributeStabilityRow.jsx (per-attribute row: posterior% + confidence band + sample size + MoE; AP-PIO-04 factual labels)
+        - src/components/views/PlayerProfileView/AddSightingModal.jsx (single-form modal; snapshots current Player attributes; writes to sightingLogsStore.appendSighting)
+        - 11 PlayerProfileView component tests (missing/full render + back nav + edit button + 5 attribute rows + sighting empty/populated + add-sighting modal opening + autonomy red line #5 lint)
+
+      Skipped per execution decision: dedicated unit tests for SightingHistorySection + AddSightingModal (covered via PlayerProfileView integration tests).
+    finding_id: null
+    decision_flags:
+      - "Palette content size: small starter sets (~7-12) vs comprehensive (~25+) per palette"
+      - "Row-tap routing: hard switch (row-tap → Profile) vs opt-in via setting"
+      - "PaletteChipsInput: shared component vs 3 specialized variants"
+      - "Hat-field flat-string → envelope upgrade: inline in this sprint vs defer (defer is locked default)"
+    depends_on:
+      - "WS-162"
+    started_at: null
+    completed_at: "2026-05-04T14:40:00Z"
+    notes: |
+      SHIPPED:
+        - src/components/views/PlayerEditorView/AgeDecadeSection.jsx (radio group; 6 buckets <20/20s/30s/40s/50s/60s+; null = "not set")
+        - src/components/views/PlayerEditorView/EthnicityTagsSection.jsx (multi-select chip-input + free-form add via Enter or Add button + backward-compat shim auto-populating tags from legacy ethnicity on first edit)
+        - src/components/views/PlayerEditorView/PaletteChipsInput.jsx (shared component for wardrobe/jewelry/logo)
+        - src/components/views/PlayerEditorView/WardrobeSection.jsx + JewelrySection.jsx + LogoSection.jsx (thin wrappers)
+        - src/utils/playerMatching/wardrobePalette.js (10 entries) + jewelryPalette.js (7) + logoPalette.js (7)
+        - PlayerEditorView render-order: 5 new sections inserted between PhysicalSection and NotesSection
+        - PhysicalSection: legacy ethnicity dropdown UI hidden (field stays in record for backward-compat)
+        - usePlayerEditor: DEFAULT_FIELDS + EDITOR_FIELD_KEYS extended with 5 new keys
+        - usePlayerFiltering: 4 new filter axes (filterAgeDecade, filterWardrobe, filterJewelry, filterLogo) + clearFilters + hasActiveFilters extended
+        - PlayersView: 4 new filter dropdowns wired into PlayerFilters; row-tap routing changed (selectedSeat → handlePlayerClick; otherwise → handleOpenProfile)
+        - PlayerFilters: 4 new dropdowns rendered in 2nd grid row (4-col)
+        - PlayerRow: cursor-pointer always (row tap navigates); getDescriptionSummary extended for new attributes (ethnicityTags > legacy ethnicity; ageDecade; wardrobe top-2; jewelry top-2; logo top-1)
+        - 21 new component tests (5 AgeDecade + 10 EthnicityTags + 6 PaletteChipsInput) + 1 PlayerRow test rewrite (cursor-pointer always)
+        - 103 PlayerEditor tests + 54 usePlayerFiltering tests all green
+program_focus: design
+program_initiative: "Player Identification v2 (PIO) Gate 5 — Profile View + PV/PEX extensions (Master Plan §A Phase 5)"
+total_effort: "M+M ≈ 3 sessions tagged (founder-override on standard 2-session cap)"
+decisions_needed:
+  - "Item #1 (WS-162): Surface spec — piggyback audit OR author standalone"
+  - "Item #1 (WS-162): Manual-add-sighting modal shape"
+  - "Item #1 (WS-162): Sighting history pagination"
+  - "Item #1 (WS-162): SIGHTING_FEATURE_PRIORS corpus tuning timing"
+  - "Item #2 (WS-163): Palette content size"
+  - "Item #2 (WS-163): Row-tap routing (hard switch vs opt-in)"
+  - "Item #2 (WS-163): PaletteChipsInput shared vs specialized"
+  - "Item #2 (WS-163): Hat-field envelope upgrade timing"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-04T11:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-034). Manual review: both children execute the PIO Gate 4 audit which already passed Gate 1/2/3/4 review (per docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md). Per `feedback_pio_identification_utility_first.md`: identification utility binds; cultural-sensitivity reviewing voice. Per AP-PIO-04: factual labels, no shame copy. Per AP-PIO-02: source-util-policy whitelist. No autonomy-violation risk."
+  matches: []
+
+created_at: "2026-05-04T11:30:00Z"
+approved_at: "2026-05-04T11:30:00Z"
+started_at: "2026-05-04T11:30:00Z"
+completed_at: "2026-05-04T14:40:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Two-item M+M sprint. Founder-override on standard 2-session cap. Justification:
+  the items share the row-tap routing seam — WS-163 changes row-tap to point at
+  PlayerProfileView, but PlayerProfileView is built by WS-162. Shipping
+  separately means SPR-035 leaves row-tap pointing at a non-existent route OR
+  ships a stub. Pairing avoids stub work.
+
+  Anchor selection: WS-162 first (builds destination surface), then WS-163
+  (changes routing + adds editor/filter UI). Sequential to avoid PlayersView.jsx
+  + PlayerEditorView.jsx file-conflict risk.
+
+  Source-class damping (Step 2d): last 3 anchors WS-147 (spr-followup),
+  WS-148 (spr-followup), WS-008 (spr-followup) — all founder-driven, never
+  damped. WS-162 + WS-163 source: ws-008-decomposition → spr-followup → not
+  damped.
+
+  Mode classification: M effort + improvement type + multiple decision flags
+  → plan-first for both. Single combined plan-mode session covering all 8
+  decisions, then execute both back-to-back.
+
+  Note for SPR-036+ planning: 3 PIO G5 children remaining:
+    - WS-161 (camera modal) + WS-165 (settings photo-toggle) — pair-eligible
+    - WS-164 (multi-attribute ranking) — re-scoped to standalone in PlayersView
+      (Table-Build G5 dependency reframed as soft, can ship without)

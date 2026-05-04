@@ -1,0 +1,79 @@
+id: "SPR-012"
+title: "SCF Gate 1 — Self-Coach Foundation Entry (Master Plan Phase 2 starter)"
+status: completed
+goal: |
+  Self-Coach Foundation kicks off — skill-ladder tier names ratified,
+  personas + JTBDs scoped, R/Y/G classification done. Master Plan Phase 2
+  begins; the longest-overdue ratified gate (SCF-G1, originally to run
+  parallel with B per Master Plan §3) ships.
+
+items:
+  - id: "WS-009"
+    title: "SCF Gate 1 — Entry (skill ladder + personas + JTBDs + R/Y/G)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Skill ladder tier names (6 tiers suggested: novice / live-rec / studied-amateur / part-time-grinder / serious-grinder / pro)"
+      - "Per-tier teachable-concept map: what each tier already understands + next concept to learn"
+      - "Persona scope (chris-the-improver — single tier or full ladder?)"
+      - "JTBDs to prioritize (see-leak-without-being-graded / learn-next-concept-im-ready-for / validate-im-improving)"
+      - "R/Y/G gap analysis: what existing infra covers vs net new"
+    depends_on: []
+    status: done
+    notes: |
+      Gate 1 audit shipped at docs/design/audits/2026-05-02-entry-self-coach-foundation.md (332 lines, 24 markdown headings, 5 Critical scope-shifting discoveries, 4 outputs, 5 open questions section, links + change log).
+
+      Owner-decided scope (plan-mode AskUserQuestion):
+        - Persona: extend chris-live-player (no new persona)
+        - Skill ladder: 6 tiers (novice / live-rec / studied-amateur / part-time-grinder / serious-grinder / pro)
+        - JTBDs: all 4 (see-leak-without-being-graded + learn-next-concept-im-ready-for + validate-im-improving + self-rate-confidence-on-a-line — owner picked the 4th from the offered alternatives)
+
+      Critical findings surfaced beyond Master Plan note:
+        - chris-live-player.md ALREADY has a sophisticated per-domain Skill-state attribute (3-5 ordinal mastery; from Poker Shape Language Gate 3 R1). SCF's 6-tier overall ladder is a NEW concept that COEXISTS, not replaces. Both encoded distinctly in the persona file.
+        - coaching.md JTBD domain ALREADY exists but is framed for third-party-coach-as-tutor. Recommended path A (extend with self-coach-mode sub-section CO-54..57) over creating new self-coaching.md domain. Owner can amend in Open Q2.
+        - 4 SCF JTBDs include 2 net-new (CO-54 see-leak / CO-57 self-rate-confidence), 1 net-new-but-adjacent (CO-55 learn-next-concept), and 1 reconciliation-pending (CO-56 validate-improving has material overlap with DS-58 / DS-56). Gate 2 Stage B resolves CO-56 vs DS-58.
+        - Master Plan estimate "~70% detection infra exists" is accurate for VILLAIN side; HERO side is ~20%. Audit revises sizing honestly.
+        - 9 autonomy red lines bind every SCF feature; especially #1 #5 #6 #7 #8.
+
+      Verdict: RED (6 RED + 4 YELLOW + 3 GREEN). Gate 2 (Blind-Spot Roundtable) mandatory; Gate 3 (Research) highly likely required. 8 open questions for owner.
+
+      Verification: zero production code changes (audit-only per Gate 1 contract). 4 design docs touched (1 new audit + 3 modified). All deliverables conform to existing template (mirrored 2026-04-26-entry-table-build.md structure).
+
+      Next-sprint candidate: WS-010 (SCF-G2 Blind-Spot Roundtable). Alternative: rotate to WS-004 (PIO-G1) for A/D stagger pattern per Master Plan §3.
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF Gate 1 of 5; Master Plan §D)"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-009): skill ladder tier names + per-tier teachable map + persona scope + JTBD priorities + R/Y/G classification"
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-02T01:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is design-program Gate 1 audit per docs/design/LIFECYCLE.md — this IS the framework explicitly mandated by CLAUDE.md Design Program Guardrail. No anti-goal patterns: explicit anti-pattern the program prevents (skipping Gate 1) is being adhered to, not violated."
+  matches: []
+
+created_at: "2026-05-02T01:45:00Z"
+approved_at: "2026-05-02T01:45:00Z"
+started_at: "2026-05-02T01:50:00Z"
+completed_at: "2026-05-02T02:30:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Single-item plan-first sprint by design. WS-009 is M-effort and the
+  remaining design-program items (WS-010..013 SCF-G2..G5; WS-004..008
+  PIO-G1..G5) are sequenced after their respective Gate 1.
+
+  Master Plan §3 ratified SCF-G1 to run parallel with Phase 1 (TIA) but it
+  slipped. SPR-012 brings the longest-overdue ratified gate to ship.
+
+  Anchor selection rationale:
+    - SCF-G1 (WS-009) ranks ahead of PIO-G1 (WS-004) due to "D Gate 1
+      parallel with B" explicit ratification
+    - P0 items (WS-076, WS-115, WS-116, WS-117) postponed because they
+      either need Design Gate 1 themselves (WS-076) or are best as their
+      own sprints after Phase 2 is underway
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).

@@ -1,0 +1,108 @@
+id: "SPR-014"
+title: "SCF Gate 2 — Self-Coach Foundation Blind-Spot Roundtable (Master Plan D-line, Phase 2 stagger continuation)"
+status: completed
+goal: |
+  Self-Coach Foundation passes Gate 2 (Blind-Spot Roundtable) — paternalism,
+  AP-06 graded-work framing, small-sample false-leak, and privacy risks named
+  with binding mitigations, unblocking SCF Gate 3 (Research).
+
+  Stage A: 4-voice roundtable (Pedagogy, Autonomy/Failure, Privacy, Engineering
+  — confirm composition or amend) producing structural-risk inventory + anti-
+  pattern catalog.
+
+  Stage B: CO-56 ↔ DS-58 reconciliation deferred from SCF-G1 (validate-improving
+  vs validate-confidence-matches-experience). Decide whether to resolve here or
+  punt to Gate 3 with research grounding.
+
+  AP-06 lock: graded-work-framing refusal locked at the strictness tier the
+  owner picks (audit-doc-only / CI-grep / IDB-validation barrier).
+
+items:
+  - id: "WS-010"
+    title: "SCF Gate 2 — Blind-Spot Roundtable (4 voices: Pedagogy, Autonomy/Failure, Privacy, Engineering)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Roundtable composition (confirm 4 voices Pedagogy/Autonomy-Failure/Privacy/Engineering, or add 5th e.g. Cultural-sensitivity mirroring PIO-G2)"
+      - "AP-06 graded-work-framing refusal lock strictness (audit-doc-only / CI-grep forbidden-strings enforcer / IDB-validation write-time barrier)"
+      - "CO-56 ↔ DS-58 reconciliation scope (resolve in Gate 2 Stage B per SCF-G1 deferral, or punt to Gate 3 with research grounding)"
+      - "Small-sample false-leak threshold (set hand-count floor in Gate 2 e.g. n>=30 before any leak claim shown, or defer threshold-setting to Gate 3 + research)"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T03:35:00Z"
+    completed_at: "2026-05-02T04:25:00Z"
+    notes: |
+      Gate 2 audit shipped at docs/design/audits/2026-05-02-blindspot-self-coach-foundation.md (~290 lines).
+
+      Owner-decided scope (plan-mode AskUserQuestion 2026-05-02):
+        - Voices: 5 (added Market/External lens to the named 4)
+        - AP-06 lock: CI-grep tier (companion copy-discipline.md authored)
+        - CO-56 reconciliation: resolve in Stage B (3-scenario walk → KEEP SEPARATE)
+        - Sample floor: n>=30 hard floor for hero-leak claims (mirrors weaknessDetector.js)
+
+      Verdict: YELLOW (5-stage integrative pattern; per-stage table at end). 3 named structural risks (AP-06 endemic; hero-leak detector ~80% net-new; cross-surface contamination binding). All tractable in Gate 3/4.
+
+      Companion deliverables shipped this sprint:
+        - docs/projects/self-coach-foundation/anti-patterns.md (AP-SCF-01..06 + EAL-inherited AP-01..09 transitive)
+        - docs/projects/self-coach-foundation/copy-discipline.md (CD-1..5 + CI-lint forbidden-string regexes; CO-57 confidence-elicitation explicit exception)
+
+      Stage B reconciliation outcome: CO-56 ↔ DS-58 KEEP SEPARATE. Three scenarios (leak fixed / leak persists / leak fixed-then-regressed) surfaced shape-similar but referent-distinct mental models. Infrastructure reuse is high (~70% via parameterized `heroLeakCalibrationStore.js` sibling of anchorCalibrationStore.js); JTBD separation is clean.
+
+      Stage E AP-06 lock: CI-grep tier. AP-SCF-01 (graded-work refusal) is the program's anchor; AP-SCF-02..06 enumerate cross-surface-contamination, silent tier inference, n<30 small-sample claim, mastery-score, streak/engagement-pressure refusals. CD-1..5 + CI-lint regexes catch the language-layer regressions AP-SCF cannot.
+
+      n>=30 floor rationale (Stage C): binomial 95% MoE at p=0.5 is ±18% at n=30. Floor is below-threshold "no claim rendered, factual placeholder only" — NOT high-confidence threshold. Above floor, claim renders WITH credible interval visible inline, never as point estimate alone. Below-floor placeholder copy: "Insufficient sample (need {30 - n} more hands)" — non-graded.
+
+      5 Gate 3 + 7 Gate 4 carry-forwards enumerated. WS-005 (PIO-G2 Blind-Spot Roundtable) is the next natural anchor in Master Plan A/D Phase 2 stagger alternation.
+
+      Verification: zero src/ diff; only 3 new doc files in docs/design/audits/ + docs/projects/self-coach-foundation/. CI-lint regexes node-parse-clean. Vital signs untouched.
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF Gate 2 of 5; Master Plan §D; A/D stagger alternation continuation)"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-010): 4 decision flags — roundtable composition + AP-06 lock strictness + CO-56/DS-58 reconciliation scope + small-sample false-leak threshold"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T03:35:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules). Manual review: scope is design-program Gate 2 Blind-Spot Roundtable per docs/design/LIFECYCLE.md — explicitly mandated by CLAUDE.md Design Program Guardrail (Gate 2 is mandatory when Gate 1 verdict is RED, which SCF-G1 was). This IS the framework the program prevents skipping. No paternalism / graded-work / privacy-overreach patterns at the audit level — Gate 2 surfaces and binds those exact risks for downstream gates. Logged to .cwos-feedback.yaml."
+  matches: []
+
+created_at: "2026-05-02T03:35:00Z"
+approved_at: "2026-05-02T03:35:00Z"
+started_at: "2026-05-02T03:35:00Z"
+completed_at: "2026-05-02T04:25:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-010 is M-effort + 4 decision flags + must
+  reconcile a Gate-1-deferred overlap (CO-56 ↔ DS-58), so it earns its own
+  sprint without companions.
+
+  Master Plan §3 binding ratification #6 (A and D Gates 1→5 staggered):
+  Stagger pattern this far —
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2) ← this sprint, alternation continues
+  Next natural anchor after SPR-014: PIO-G2 (WS-005, A-line Gate 2).
+
+  P0 backlog deferred per ratified founder intent: WS-076, WS-115, WS-116,
+  WS-117 all carry priority_score 30.0 vs WS-010's 22.0. Recent sprints
+  (SPR-012 / SPR-013) followed Master Plan sequencing over raw queue scores;
+  SPR-014 continues that pattern. Founder explicitly approved on /next prompt.
+
+  Tooling friction logged:
+    - kit/scripts/cwos-constitutional-audit.js MISSING — Step 4a anti-goal
+      cross-check skipped, manual review substituted.
+    - kit/scripts/cwos-state-store.js MISSING — Step 2 typed-API path fell
+      back to direct YAML reads. Both will be logged to .cwos-feedback.yaml
+      friction_log at session-end.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Source-class damping (Step 2d): last 3 anchors (WS-004, WS-009, WS-003) all
+  classify as `untagged` (source.origin = backlog-md-migration-2026-05-01,
+  no auto-rec/engine-finding/pre-mortem/parent_ws/plan/conversation match).
+  No saturated class; no damping applied.

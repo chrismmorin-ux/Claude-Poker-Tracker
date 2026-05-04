@@ -1,0 +1,135 @@
+id: "SPR-031"
+title: "SCF G5 chain activation — detection trigger + 2nd catalog rule"
+status: completed
+goal: |
+  Activate the SCF leak-detection pipeline end-to-end (closes SPR-030's
+  deferred consumer wire) AND add the second catalog rule (BB defense width
+  per leak-catalog.md "Strong v2 candidate" notes). After this sprint,
+  badges actually appear in the running app + the catalog-driven authoring
+  pattern is validated by adding a second rule with no framework changes.
+
+  Master Plan rhythm:
+    SPR-024..SPR-027: HSP build (4 sprints)
+    SPR-028: queue hygiene (WS-115 stale P0 closure)
+    SPR-029: WS-143 — HSP HandReplay first-consumer wire
+    SPR-030: WS-145 — SCF framework + catalog + first leak rule (deferred trigger wire)
+    SPR-031: WS-158 + WS-146 first claim — activation + 2nd rule (this sprint)
+    SPR-032+: WS-146 ongoing (more catalog rules) + WS-147..WS-149
+
+items:
+  - id: "WS-158"
+    title: "SCF G5 followup — wire hero-leak detection trigger + ReviewPanel consumer"
+    mode: plan-first
+    effort: M
+    status: done
+    finding_id: null
+    decision_flags:
+      - "RESOLVED Q1 (trigger): HandReplayView mount — simplest, scoped per replay open."
+      - "RESOLVED Q2 (history scope): all hands; count-cache skip mirrors usePlayerTendencies."
+      - "RESOLVED Q3 (situation key): extracted to deriveSituationKey.js shared helper."
+      - "RESOLVED Q4 (caching): count-cache skip in useHeroLeakDetection hook."
+      - "RESOLVED Q5 (onDrill v1): logged stub; navigation deferred to WS-147/WS-149."
+    depends_on: []
+    started_at: "2026-05-03T12:15:00Z"
+    completed_at: "2026-05-03T13:00:00Z"
+    completion_notes: |
+      Activates SCF leak-detection pipeline end-to-end. Phase A: extracted
+      deriveSituationKey.js (~210 LoC) from accumulator — now shared by
+      accumulator + ReviewPanel. Phase B: heroLeakDetectionPipeline.js
+      orchestrator (loads hands → accumulates → detects → persists;
+      mostCommonHeroSeat picker for v1; +9 tests). Phase C:
+      useHeroLeakDetection hook with count-cache skip (mirrors
+      usePlayerTendencies; +6 tests). Phase D: HandReplayView mount-trigger
+      with GUEST_USER_ID. Phase E: ReviewPanel derives situationKey + calls
+      useHeroLeaks + passes leak/snooze/dismiss/onDrillLeak (stub) into
+      HeroCoachingCard. End-to-end SCF chain LIVE.
+
+      Verification: 6 skillAssessment test files / 69 tests + 6 hook tests
+      green. Build clean (5.87s). Full smart-test-runner 9708/9738 (30
+      skipped, 0 regressions; +28 net tests vs pre-SPR-031 baseline of 9680).
+
+      Visual verification deferred — needs synthetic ≥30 IP cbet defense
+      history. Documented as future small ticket if blocking.
+    notes: ""
+
+  - id: "WS-146"
+    title: "WS-146 first claim — add hero-bb-defense-width leak rule"
+    mode: plan-first
+    effort: S
+    status: done
+    finding_id: null
+    decision_flags:
+      - "RESOLVED: solver baseline 0.45 single key (per-opener-position split deferred to v2)"
+      - "RESOLVED: shipped after WS-158 — framework + activation both available"
+    depends_on: ["WS-158"]
+    started_at: "2026-05-03T13:00:00Z"
+    completed_at: "2026-05-03T13:15:00Z"
+    completion_notes: |
+      Catalog-driven authoring proof: shipped 2nd SCF leak rule using ONLY
+      the framework — no detector code changes.
+
+      NEW: leakRules/heroBbDefenseWidth.js (~85 LoC mirror of
+      heroIpCbetOverfold.js with BB-specific situation-key matching).
+      MODIFIED: solverBaselines.js — added 1 entry
+      'preflop:none:BIG_BLIND:def:oop:raise:vsopen' = 0.45.
+      NEW: __tests__/heroBbDefenseWidth.test.js — 13 tests.
+      MODIFIED: leak-catalog.md — status PLANNED → SHIPPED v1; coverage
+      progress 1/25 → 2/25; preflop-fold-equity 0/4 → 1/4.
+
+      Future expansion (per catalog v2/v3 notes): per-opener-position split
+      (vs BTN ~55%; vs CO ~45%; vs MP ~32%; vs EP ~22%); v3 opener-sizing axis.
+
+      WS-146 itself remains in_progress (ongoing-authoring ticket); future
+      sprint claims add more catalog entries.
+    notes: ""
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — chain activation + catalog-driven authoring proof (Master Plan §D Phase 5)"
+total_effort: "M+S = ~2 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-158): Trigger location."
+  - "Item #1 (WS-158): Hand history scope."
+  - "Item #1 (WS-158): Situation key derivation in consumer."
+  - "Item #2 (WS-146): Solver baseline values for BB defense width."
+  - "Item #2 (WS-146): Sequencing vs WS-158."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T11:15:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-030). Manual review: scope is activation of pipeline that already passed audit (SCF G4 + SPR-030 plan-mode) + adding 2nd rule per catalog-driven authoring pattern. Autonomy red lines #5 + #8 already enforced upstream + tested in WS-145."
+  matches: []
+
+created_at: "2026-05-03T11:15:00Z"
+approved_at: "2026-05-03T11:15:00Z"
+started_at: "2026-05-03T12:15:00Z"
+completed_at: "2026-05-03T13:15:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Two-item sprint within standard 2-session cap. Direct continuation of SPR-030.
+
+  Anchor selection (Step 3a):
+    - WS-158 (new ticket created from SPR-030 deferred scope) — closes the
+      activation gap. Without it, the framework + first rule + badge slot
+      shipped in SPR-030 don't actually surface anything in the app.
+    - WS-146 (first claim of the ongoing-authoring ticket) — proves the
+      catalog-driven authoring pattern by adding a 2nd rule using only the
+      framework + new solver baseline entries. No detector code changes.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-115 (untagged/migrated), WS-143 (untagged/founder),
+      WS-145 (spr-followup). No class saturated.
+    - WS-158 source: spr-030-deferred → spr-followup → NOT damped.
+    - WS-146 source: ws-013-decomposition → spr-followup → NOT damped.
+
+  Soft-block check: WS-158 has no blocked_by; WS-146 depends_on WS-158 (ship
+  trigger wire first so the new rule has somewhere to fire).
+
+  Mode classification: both M/S effort + improvement type → plan-first.
+
+  Note for SPR-032+ planning: After this sprint, remaining SCF G5 work:
+    - WS-146 ongoing claims (more catalog rules — 17 PLANNED + 6 FUTURE-RESEARCH remain)
+    - WS-147 lesson authoring framework
+    - WS-148 curriculum scaffolding
+    - WS-149 ≥10 reference lessons

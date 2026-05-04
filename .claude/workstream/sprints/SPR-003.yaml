@@ -1,0 +1,62 @@
+id: "SPR-003"
+title: "ICP-1 — pattern codification + first non-UI seed audit (gameReducer UNDO)"
+status: completed
+goal: |
+  The matrix-fixture pattern is codified as a reusable repo-local artifact (pattern doc +
+  shared runner), and one new non-UI audit (gameReducer UNDO) is shipped using it. After
+  this sprint, every future ICP audit starts from the doc instead of re-inventing.
+
+items:
+  - id: "WS-121"
+    title: "ICP-1 pattern codification: pattern doc + shared invariant-matrix runner"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "File layout: .claude/context/INVARIANT_MATRIX_PATTERN.md + src/test/invariantMatrix.js (decided — adopted-repo-conventional, not kit/templates which is HomeBase-only)"
+      - "Status semantics fixed at 4 values: matches / pinned_bug / spec_gap / regression_pinned (decided — binding decision #3 in ICP charter)"
+    depends_on: []
+    status: done
+    notes: "Pattern doc + shared runner shipped. References both canonical fixtures (TableView WS-001 + gameReducer WS-122). Validated by WS-122 successfully consuming the runner."
+    finding_id: null
+
+  - id: "WS-122"
+    title: "ICP-1 seed audit: gameReducer UNDO_BATCH + UNDO_LAST_ACTION + cross-coupling"
+    mode: execute
+    effort: S
+    decision_flags: []
+    depends_on: ["WS-121"]
+    status: done
+    notes: "22 fixture rows: 17 matches + 1 pinned_bug (BUG-CANDIDATE-UNDO-STREET-DESYNC) + 3 spec_gap + 1 regression_pinned. Cross-coupling pin established as new pattern element."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Invariant Coverage Program (ICP-1 of 5)"
+total_effort: "M+S = ~2 sessions"
+decisions_needed: []
+
+anti_goal_check:
+  status: unavailable
+  reviewed_at: "2026-05-01T17:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo (HomeBase-only path). Manual review: sprint goal codifies + extends the SPR-002 audit-only pattern with explicit no-fix discipline (matches ICP charter binding decision #4 'audits are AUDIT-ONLY'). Produces reusable infrastructure that strengthens long-term engineering health. No anti-goal patterns detected."
+  matches: []
+
+created_at: "2026-05-01T17:00:00Z"
+approved_at: "2026-05-01T17:00:00Z"
+started_at: "2026-05-01T17:00:00Z"
+completed_at: "2026-05-01T18:15:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Sprint 1 of the 5-sprint Invariant Coverage Program (charter at
+  .claude/projects/invariant-coverage-program.md). Two items by design — codification
+  pairs with one seed audit so the template is validated by use before sprints ICP-2..ICP-5
+  rely on it. WS-121 is plan-first (architecture-flavored M-effort). WS-122 is execute
+  (S-effort, follows established WS-001 fixture pattern).
+
+  Total effort 2 sessions = ~ standard-ceremony 2-session cap. No additional items
+  fit. Future ICP sprints (ICP-2..ICP-5) will compose separately as the next /next
+  invocations.
+
+  ICP charter ratified at sprint start. 5 binding decisions captured there; this sprint
+  did not need to change any.

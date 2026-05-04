@@ -2,10 +2,12 @@ id: "WS-076"
 title: "Version-mismatch reload: diagnostic + confirm"
 legacy_id: "DCOMP-W4-A3-F4"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T11:00:00Z"
+started_at: "2026-05-02T11:05:00Z"
+completed_at: "2026-05-02T13:00:00Z"
+status_note: "RESOLVED 2026-05-02 — silent reload at OnlineView.jsx:86 replaced with ConfirmDeleteModal-pattern VersionMismatchModal (ext + app versions, session-at-risk warning, plain-English copy). Post-reload sessionStorage flag with 60s TTL via new src/utils/versionMismatchStorage.js → recovers→success-toast or still-mismatched→auto-open modal. Extension manifest version now threaded through STATUS message (additive, optional extensionVersion field on buildStatus). 100% backward-compatible (older builds ignore the new field). Tests: 10/10 storage util + 31/31 OnlineView invariants (3 new WS-076 tests + 2 new fixture rows OV-VM-004/005) + 80/80 wire-schemas (2 new) + 20/20 integration-pipeline + 2251/2251 full extension suite + 7587/7587 app smart-test-runner + npm run build clean. Continue Anyway path preserved for WS-077 follow-up. Contract fingerprint deferred per scope decision."
 priority_score: 30.0
 priority_label: "P0"
 category: "ready-to-start"
@@ -20,8 +22,13 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+sprint_id: "SPR-022"
+decision_flags:
+  - "Diagnostic surface shape (modal/banner/inline; what data renders)"
+  - "Extension handshake protocol (port message field / manifest field / contract-fingerprint computation site)"
+  - "Post-reload sessionStorage verify flag schema (key, payload, TTL, failure path)"
+  - "Failure-mode coverage (dismiss / force-kill / contract-fingerprint mismatch with version match; coordinate with WS-077)"
+  - "Verification surface (DevTools script for testing; future regression-test shape)"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

@@ -1,0 +1,56 @@
+id: "WS-139"
+title: "HSP-A2 — Author 10 flop archetype narrative templates (FLOP_SRP_HU_IP_CBET through FLOP_VS_DONK)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T04:00:00Z"
+completed_at: "2026-05-03T04:50:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Author the 10 flop archetype templates from docs/HERO_STATE_DESIGN.md §4.3:
+     1. FLOP_SRP_HU_IP_CBET     — SRP HU IP cbet
+     2. FLOP_SRP_HU_OOP_CBET    — SRP HU OOP cbet
+     3. FLOP_SRP_HU_IP_VS_CBET  — SRP HU IP facing cbet
+     4. FLOP_SRP_HU_OOP_VS_CBET — SRP HU OOP facing cbet
+     5. FLOP_3BP_HU_IP_CBET     — 3bet pot HU IP cbet
+     6. FLOP_3BP_HU_OOP_CBET    — 3bet pot HU OOP cbet
+     7. FLOP_3BP_VS_CBET_IP     — 3bet pot facing cbet IP
+     8. FLOP_3BP_VS_CBET_OOP    — 3bet pot facing cbet OOP
+     9. FLOP_MULTIWAY           — 3+ players to flop (v1 stub; full multiway in v2)
+    10. FLOP_VS_DONK            — Hero faces a donk lead
+
+  Each template: parametric narrative with equity-decomposition slots, plan-tree
+  slots, sizing-rationale slot, branch-trigger slots. Match §5 example 5.2
+  (99 on 782r) for voice/structure.
+
+  Output location: docs/design/hero-state-templates/flop/*.md.
+
+  Authorship convention: §8 of HERO_STATE_DESIGN.md.
+accept_criteria:
+  - "10 markdown files in docs/design/hero-state-templates/flop/"
+  - "FLOP_MULTIWAY may be a v1 stub with note 'expand in v2'"
+  - "Each non-stub file: archetypeId + headline + body + branchSummary templates"
+  - "All numeric references are slot placeholders, not hardcoded"
+  - "Voice and structure match §5 worked examples"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (read)"
+  - "docs/design/hero-state-templates/flop/ (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-142"
+  - "WS-143"
+sprint_id: "SPR-026"
+decision_flags: []
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §4.3"
+status_note: "Authoring only; can run in parallel with HSP-A1 + HSP-T1 + HSP-G1"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

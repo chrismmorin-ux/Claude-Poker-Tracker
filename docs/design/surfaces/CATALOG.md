@@ -31,6 +31,8 @@ Index of every UX surface in the app that has (or should have) a surface artifac
 | telemetry-consent-panel | Telemetry Consent Panel | `src/components/views/FirstLaunchTelemetryPanel.jsx` + `SettingsView/TelemetrySection.jsx` (Phase 5) | ● (MPMF Gate 4 B2 — spec; not yet implemented; first-launch panel + settings mirror; Q8=B opt-out with transparency) |
 | pricing-page | Pricing Page | `src/components/views/PricingView/` (Phase 5) — TierCard×4 + FeatureComparisonTable + FoundingMemberSection + FAQ | ● (MPMF Gate 4 B4 — spec; not yet implemented; 4 tiers Free/Plus/Pro/Founding-Lifetime cap-50; pricing-tentative pending Stream D telemetry) |
 | billing-settings | Billing Settings | `src/components/views/SettingsView/BillingSettings/` (Phase 5) — section card with PlanCard + PaymentMethodCard + NextBillCard + Actions | ● (MPMF Gate 4 B5 — spec; not yet implemented; SettingsView extension; 4 tier-state variants; entry point for cancellation J3 + plan-change J4 journeys; LOAD-BEARING red lines #2 + #10) |
+| self-coach-view | Self-Coach View | `src/components/views/SelfCoachView/` (Phase 5) — 2-tab Study/Settings; Study has 3 sections (Hero leaks / Curriculum / Tests history & browse) | ● (SCF Gate 4 S1 — spec; not yet implemented; CO-54 + CO-55 surface; review-mode-only; sourceUtilPolicy whitelisted) |
+| player-profile | Player Profile / Sighting History | `src/components/views/PlayerProfileView/` (Phase 5) — fullscreen route `SCREEN.PLAYER_PROFILE`; per-attribute stability section + sighting log section | ● (PIO Gate 4 S1 — spec; not yet implemented; PM-13/14/15 surface; review-mode-only; sourceUtilPolicy whitelisted; n≥5 sighting floor) |
 
 ## Menus and overlays
 
@@ -69,6 +71,16 @@ The Ignition extension sidebar is its own surface system with dedicated doctrine
 | upgrade-prompt-inline | Upgrade Prompt Inline | `src/components/ui/UpgradePromptInline.jsx` (Phase 5) — embedded across 5 host contexts | ● (MPMF Gate 4 B4 — spec; not yet implemented; compact + expanded variants; sub-shape tailoring; H-N07 cooldown + presession suppression) |
 | trial-state-indicator | Trial State Indicator | `src/components/ui/TrialStateIndicator.jsx` (Phase 5) — chip in main-nav region | ● (MPMF Gate 4 B5 — spec; not yet implemented; persistent chip across all views; ≤150ms glanceable per H-PLT01; ≤2-tap to BillingSettings per H-SC02 LOAD-BEARING; mid-hand 60% opacity + deferred routing per H-SC01) |
 | printable-refresher-card-templates | Printable Refresher Card Templates (4 class-specific layouts) | `src/components/views/PrintableRefresherView/CardTemplates/` (Phase 5) — Preflop / Math / Equity / Exceptions + shared LineageFooter + CardCornerStamp + CardTitle | ● (PRF Gate 4 S2 — spec; not yet implemented; rendered within CardDetail + PrintPreview + printed output) |
+| lesson-card | Lesson Card | `src/components/views/SelfCoachView/CurriculumSection/LessonCardItem.jsx` + `LessonCardDetail.jsx` (Phase 5) — schema instantiation; YAML front-matter + Markdown body authored at `docs/projects/self-coach-foundation/lessons/` | ● (SCF Gate 4 S3 — spec; not yet implemented; building block of Curriculum section; `Test myself` button gated by `test_substrate: 'drill' \| 'pending'`) |
+| skill-assessment-test | Skill-Assessment Test (opt-in-test mode of drill engine) | thin surface — delegates to `postflop-drills` / `preflop-drills` with 3 deltas (entry path / result framing / persistence tag) | ● (SCF Gate 4 S4 — spec; not yet implemented; cd5_exempt: 'owner-volunteered-test' manifest flag on result-display surface; AP-SCF-01 nuance binding) |
+| leak-distillation | Leak-Distillation Pipeline | `src/utils/exploitEngine/heroLeakDetector.js` + `heroDecisionAccumulator.js` + `heroLeaks` IDB store (Phase 5) — cross-surface pipeline; HRV inline annotation + SelfCoachView Hero leaks section as the two surface presentations | ● (SCF Gate 4 S5 — spec; not yet implemented; sourceUtilPolicy whitelist; Drill this / Dismiss / Snooze affordances on expanded card; immediate-firing per Gate 3) |
+| camera-capture-modal | Camera Capture Modal | `src/components/views/CameraCaptureModal/` (Phase 5) — 2-stage modal: capture → accept; auto-crop center 1:1; atomic-txn binding to Player record per PIO-G3-PHOTO | ● (PIO Gate 4 S2 — spec; not yet implemented; Settings master toggle gates entry button availability app-wide; AP-PIO-03 binding load-bearing; never auto-launches) |
+
+PIO Gate 4 surface extensions (existing surfaces gain new subsections per `audits/2026-05-02-gate4-design-player-identification-v2.md`):
+- `table-build` — PIO-G4-PVA (CandidateColumn ranking math) + PIO-G4-DISAMB (PossibleMatchesPanel confidence bar)
+- `player-editor` — PIO-G4-PEX (5 new attribute sections + camera entry button; surviving edit-mode only)
+- `players-view` — PIO-G4-PV (new attribute filters; row-tap routes to player-profile)
+- `settings-view` — PIO-G4-SET (Privacy section: photo-capture master toggle)
 
 Add as audits surface them.
 

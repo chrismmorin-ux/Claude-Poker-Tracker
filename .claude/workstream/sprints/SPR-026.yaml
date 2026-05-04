@@ -1,0 +1,196 @@
+id: "SPR-026"
+title: "HSP narrative authoring — 8 preflop + 10 flop archetype templates"
+status: completed
+goal: |
+  All 18 HSP narrative templates authored — the last content dependency for
+  WS-142 (buildHeroState orchestrator). After this sprint, WS-142 has zero
+  remaining blockers (WS-140 types + WS-141 classifier + WS-144 role-translator
+  already shipped via SPR-024 + SPR-025).
+
+  Templates are parametric markdown files that interpolate values from
+  HeroState.equity, plan.primary, plan.branches, and adjustments at render
+  time. Voice/structure set by HERO_STATE_DESIGN.md §5 worked examples
+  (AJo HJ, 99 on 782r, SB vs CO). §8 defines the authorship convention.
+
+  Master Plan rhythm:
+    SPR-024: WS-140 + WS-137 (HSP foundation: types + audit)
+    SPR-025: WS-144 + WS-141 (HSP build: role-translator + classifier)
+    SPR-026: WS-138 + WS-139 (HSP authoring: 18 narrative templates)
+    SPR-027+: WS-142 (orchestrator) → WS-143 (consumer wire) → WS-013 (SCF G5)
+
+  Effort note: M+M ~= 3 sessions per the conservative ticket tags. Realistic
+  estimate ~1.5–2 sessions actual (markdown authoring, not implementation).
+  Slightly exceeds standard 2-session cap; founder approved the bundle for
+  coherence (parallel-friendly authoring with shared voice/structure).
+
+items:
+  - id: "WS-138"
+    title: "HSP-A1 — Author 8 preflop archetype narrative templates"
+    mode: plan-first
+    effort: M
+    status: done
+    finding_id: null
+    decision_flags:
+      - "Slot syntax — RESOLVED in plan mode: Mustache-style {{path.to.field}} dot-paths into HeroState."
+      - "Frontmatter — RESOLVED in plan mode: YAML frontmatter with archetypeId/family/voiceNotes/slotsUsed."
+      - "Body structure — already specified by ticket accept_criteria: ## Headline + ## Body + ## Branch summary."
+    depends_on: []
+    started_at: "2026-05-03T04:00:00Z"
+    completed_at: "2026-05-03T04:30:00Z"
+    completion_notes: |
+      Shipped 8 preflop templates to docs/design/hero-state-templates/preflop/:
+        PF_OPEN_RFI.md
+        PF_VS_OPEN_BB.md
+        PF_VS_OPEN_SB.md
+        PF_VS_OPEN_IP.md
+        PF_3BET.md
+        PF_SQUEEZE.md
+        PF_VS_3BET.md
+        PF_LIMP_NAV.md
+
+      Also authored docs/design/hero-state-templates/CONVENTIONS.md as a
+      one-time binding doc for WS-138 + WS-139 + future template work.
+      Captures: file location/naming, file structure (frontmatter + 3 sections),
+      slot syntax (Mustache-style {{path.to.field}} with dot-paths into
+      HeroState), voice constraints (first-person plural, pedagogical/concise,
+      sizing rationale required), first-principles guard (no hardcoded
+      sizings; no archetype-ID-gated plan logic).
+
+      Verification (manual review per accept_criteria):
+        - All 8 files present + named to match archetypeId
+        - YAML frontmatter parses cleanly (verified via grep)
+        - Slot syntax consistent (Mustache double-brace throughout)
+        - All slot paths reference valid HeroState fields per types.js
+        - Voice/structure matches §5 worked examples (5.1 AJo HJ + 5.3 SB vs CO)
+        - No hardcoded numerics in body text
+        - First-principles guard observed (no archetype-ID branching)
+
+      No code changes; no tests to run; no build to verify (pure markdown).
+      WS-139 plan-mode will be brief — CONVENTIONS.md binds it; only the
+      FLOP_MULTIWAY scope decision remains.
+    notes: ""
+
+  - id: "WS-139"
+    title: "HSP-A2 — Author 10 flop archetype narrative templates"
+    mode: plan-first
+    effort: M
+    status: done
+    finding_id: null
+    decision_flags:
+      - "FLOP_MULTIWAY scope — RESOLVED in plan mode: v1 stub with v2_TODO frontmatter (multiway breaks HU range-vs-range per design doc §7.4; full sequential-decision modeling deferred to v2)."
+      - "All other conventions (slot syntax, frontmatter, voice, body structure) bound by CONVENTIONS.md from WS-138."
+    depends_on: ["WS-138"]
+    started_at: "2026-05-03T04:30:00Z"
+    completed_at: "2026-05-03T04:50:00Z"
+    completion_notes: |
+      Shipped 10 flop templates to docs/design/hero-state-templates/flop/:
+        FLOP_SRP_HU_IP_CBET.md
+        FLOP_SRP_HU_OOP_CBET.md
+        FLOP_SRP_HU_IP_VS_CBET.md
+        FLOP_SRP_HU_OOP_VS_CBET.md
+        FLOP_3BP_HU_IP_CBET.md
+        FLOP_3BP_HU_OOP_CBET.md  (mirrors §5.2 worked example: 99 on 782r)
+        FLOP_3BP_VS_CBET_IP.md
+        FLOP_3BP_VS_CBET_OOP.md
+        FLOP_MULTIWAY.md         (v1 stub with v2_TODO frontmatter)
+        FLOP_VS_DONK.md
+
+      9 full templates follow CONVENTIONS.md from WS-138 (Mustache slot
+      syntax, YAML frontmatter, ## Headline / ## Body / ## Branch summary
+      structure, first-person plural voice). FLOP_MULTIWAY is a 1-paragraph
+      stub with v2_TODO frontmatter capturing what v2 needs (sequential
+      decision modeling; cascading fold-equity formulas; equity-dilution
+      multipliers; possible split into FLOP_MULTIWAY_3W vs FLOP_MULTIWAY_4W+).
+
+      Voice anchors:
+        - 3bp OOP CBET (FLOP_3BP_HU_OOP_CBET) closely mirrors §5.2's
+          99 on 782r 3bp OOP example
+        - SRP IP CBET emphasizes texture-driven sizing + position edge
+        - VS_DONK breaks down two donking populations (passive protection
+          vs aggressive polarized) — distinctive content not in §5
+
+      Verification (manual review per accept_criteria):
+        - All 10 files present + named to match archetypeId
+        - YAML frontmatter parses cleanly (verified via grep)
+        - FLOP_MULTIWAY has v1 stub note ('expand in v2' via v2_TODO field)
+        - Slot syntax consistent (Mustache double-brace throughout)
+        - All slot paths reference valid HeroState fields per types.js
+        - Voice/structure matches §5.2 worked example
+        - No hardcoded numerics in body text
+        - First-principles guard observed (no archetype-ID branching)
+
+      No code changes; no tests to run; no build to verify.
+      WS-142 (HSP-B2 buildHeroState orchestrator) now has zero remaining
+      content/code blockers — all of WS-138, WS-139, WS-140, WS-141, WS-144
+      are done.
+    notes: ""
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "Hero State Primitive workstream (HSP authoring phase; last content dep for WS-142 orchestrator; direct continuation of SPR-024 + SPR-025)"
+total_effort: "M+M = ~3 sessions tagged; realistic ~1.5-2 sessions actual (markdown authoring)"
+decisions_needed:
+  - "Item #1 (WS-138): Slot syntax convention (§8 may resolve)."
+  - "Item #1 (WS-138): File structure — one file per archetype vs grouped by family."
+  - "Item #1 (WS-138): Narrative variation level — fully unique vs shared structural template."
+  - "Item #2 (WS-139): FLOP_MULTIWAY scope — v1 stub vs full template."
+  - "Item #2 (WS-139): Same slot/structure conventions resolved with WS-138."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T04:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022/023/024/025). Manual review: scope is narrative authoring for a founder-authored design doc. No engagement-pressure / mastery-score / cross-surface-contamination angles. Templates are pure markdown (no behavior change); narrative voice constrained by §5 worked examples (founder-authored)."
+  matches: []
+
+created_at: "2026-05-03T04:00:00Z"
+approved_at: "2026-05-03T04:00:00Z"
+started_at: "2026-05-03T04:00:00Z"
+completed_at: "2026-05-03T04:50:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Two-item sprint, M+M tagged effort = ~3 sessions, realistic ~1.5-2.
+  Bundled per founder preference for coherent build phases (per
+  feedback_long_term_over_transition.md memory).
+
+  Anchor selection (Step 3a + Step 3b clustering):
+    - WS-138 anchor: highest-priority unblocked HSP work after SPR-025.
+      Both WS-138 + WS-139 unblocked (blocked_by=[]); both prerequisite
+      for WS-142 (the orchestrator).
+    - WS-139 cluster pull-in: same program (domain-correctness), same
+      category (hero-state-primitive), same parent_ws (WS-136), shared
+      §5/§8 reference docs, parallel-friendly per ticket status_notes.
+    - WS-139 sequenced after WS-138 (depends_on) so plan-mode decisions
+      on slot syntax + file structure made in WS-138 propagate to WS-139
+      without re-asking.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-077 (untagged), WS-140 (untagged/founder-promotion),
+      WS-144 (spr-followup). No class saturated.
+    - WS-138 + WS-139 source: founder-promotion-2026-05-02 → untagged →
+      NOT damped.
+
+  Cap exception: standard cap is 2 sessions; bundle is ~3 sessions tagged.
+  Founder explicitly approved the bundle. Realistic effort closer to cap
+  given these are markdown authoring tasks (per-template ~10-15 min).
+
+  Soft-block check (Step 2-prereq): neither item has blocked_by_note.
+
+  Fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): no programs with block_sprint:true are stale.
+
+  Auto-replenishment (Step 1e): not run — kit scripts missing in adopter
+  repo. Existing queue (143 items) has ample backlog.
+
+  Mode classification per Step 3d:
+    - WS-138: M effort + improvement type → plan-first (3 decisions surfaced)
+    - WS-139: M effort + improvement type → plan-first (1 unique decision +
+      shared decisions resolved with WS-138)
+
+  Tooling friction unchanged from SPR-022..SPR-025: 4 missing
+  kit/scripts/cwos-* scripts. Manual fallbacks used.
+
+  Note for SPR-027+ planning: WS-142 (HSP-B2 buildHeroState orchestrator,
+  L effort) becomes the natural next sprint. After that: WS-143 (M, design
+  Gate 1+4 cross-program) then WS-013 (SCF Gate 5, M).

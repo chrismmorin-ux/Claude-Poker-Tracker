@@ -486,3 +486,109 @@ Specified in detail at [`docs/projects/table-build/schema-delta.md`](../../proje
 ## Change log
 
 - 2026-04-26 — Created. Gate 4 Design deliverable. All design constraints (C1–C12) accumulated through Gates 1, 2, 3 are inline. Pre-implementation; no Known-issues yet. Pending: schema-delta finalization (background agent in flight) + owner authorization of DCOMP-W4-A1 backlog re-scope before any Phase 0 work begins.
+- 2026-05-02 — PIO Gate 4 extensions appended (SPR-021 / WS-007). Two subsections added (PIO-G4-PVA + PIO-G4-DISAMB) below; existing Table-Build anatomy preserved. Implementation deferred to PIO Gate 5 multi-PR (sequenced with or after Table-Build Gate 5 per `idb-v22-migration-spec.md` coordination contract).
+
+---
+
+## PIO-G4-PVA — Recognition-search assists in CandidateColumn (PIO Gate 4 extension, 2026-05-02)
+
+**Added by:** PIO Gate 4 (WS-007 / SPR-021). See `audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-PVA for the full spec.
+
+**What this adds.** The existing CandidateColumn (live-narrowing candidate list with `scorePlayerMatch` ranking) is extended with the PIO 8-dim weighted ranking + stability-aware scoring per PIO-G3-STAB. FeatureColumn entries become inputs to the ranking math. The replacement is contained in `src/utils/playerMatching/scorePlayerMatch.js` (Gate 5 implementation); existing CandidateColumn UI is preserved.
+
+**Ranking math (replaces existing `scorePlayerMatch`):**
+
+```
+score(player, query) =
+  W_name     * matchScore(player.name+nickname, query.text)         // 0.35
+  + W_age      * matchScore(player.ageDecade, query.ageDecade)        // 0.10
+  + W_skin     * matchScore(player.skin, query.skin)                  // 0.10
+  + W_ethnic   * matchScore(player.ethnicity, query.ethnicity)        // 0.10
+  + W_hair     * matchScore(player.hair, query.hair)                  // 0.10
+  + W_jewelry  * matchScore(player.jewelry, query.jewelry)            // 0.05
+  + W_wardrobe * matchScore(player.wardrobe, query.wardrobe)          // 0.05
+  + W_hat      * matchScore(player.hat, query.hat)                    // 0.05
+  + W_logo     * matchScore(player.logo, query.logo)                  // 0.05
+                                                                       // Σ = 1.00
+```
+
+**Stability-aware scoring (per PIO-G3-STAB).**
+
+Each per-dim contribution is scaled by `stabilityWeights[f]` (0..1; from `computeStability(playerId, attribute).mean`):
+
+```
+contribution_f = W_f * matchScore(player[f], query[f]) * stabilityWeights[f]
+```
+
+Effect: a new beard does NOT displace partial-name + stable-feature matches (the Gate 2 §B critical scenario from Table-Build). The `beard` weight downscales when the player's beard history shows variance.
+
+**FeatureColumn → query mapping.**
+
+Existing FeatureColumn captures owner-selected swatches. PIO-G4-PVA wires:
+
+| FeatureColumn entry | query field |
+|---|---|
+| Skin | `query.skin` |
+| Build | (existing — feeds physical match) |
+| Hair / Color | `query.hair` |
+| Beard / Color | (existing — feeds physical) |
+| Eye / Color | (existing — feeds physical) |
+| Glasses | (existing — feeds physical) |
+| **Wardrobe palette (NEW)** | `query.wardrobe` |
+| **Jewelry palette (NEW)** | `query.jewelry` |
+| **Logo palette (NEW)** | `query.logo` |
+| **Age decade radio (NEW)** | `query.ageDecade` |
+| **Ethnicity tags (existing EthnicityTagInput)** | `query.ethnicity` |
+| **Hat (envelope shape)** | `query.hat` |
+
+**Live re-rank trigger.** Every FeatureColumn change OR name-fragment change re-runs the ranking. Performance budget: ≤50ms for 200 players (Gate 5 implementation verifies; vanilla JS array map+sort fits well within budget at this scale).
+
+**Anti-pattern compliance:** see audit doc §PIO-G4-PVA walkthrough. AP-PIO-05 binding affirmed: ranking math is identification utility (gets the right candidate to the top); never a recommendation generator.
+
+---
+
+## PIO-G4-DISAMB — Confidence-bar visual in PossibleMatchesPanel (PIO Gate 4 extension, 2026-05-02)
+
+**Added by:** PIO Gate 4 (WS-007 / SPR-021). See `audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-DISAMB for the full spec.
+
+**What this adds.** The existing PossibleMatchesPanel (Table-Build's dedupe-before-save panel) is extended with a confidence-bar visual + verbal label per candidate. AP-PIO-04 neutral-copy enforced.
+
+**Visual treatment (replaces / augments existing PossibleMatchesPanel candidate-card layout):**
+
+```
+Possible matches (table-build, before save):
+┌────────────────────────────────────────┐
+│ 🧑 Mike R. (Irish)                     │
+│    █████████○  strong match            │
+│    medium · heavy · brown              │
+│    seen 6d ago · 47 hands              │
+└────────────────────────────────────────┘
+┌────────────────────────────────────────┐
+│ 🧑 Michael S. (Polish)                 │
+│    ██████○○○○  partial match           │
+│    medium · medium · brown             │
+│    seen 14d ago · 12 hands             │
+└────────────────────────────────────────┘
+[ + Create new: "<query>" ]
+```
+
+**Confidence bar:**
+- 10-segment bar (`██████████` filled; `○○○○○○○○○○` unfilled).
+- Filled fraction = aggregate match score from PIO-G4-PVA ranking math (clamped [0, 1], rendered as `Math.round(score * 10)` segments).
+
+**Verbal label:**
+- `'strong match'` — score ≥ 0.7
+- `'partial match'` — 0.4 ≤ score < 0.7
+- `'weak match'` — score < 0.4
+
+**Threshold tuning.** v1 thresholds are starter values authored against synthetic data (Gate 4). Gate 5 implementation tunes against owner's actual hand corpus. Threshold values amendable per-tier as corpus grows.
+
+**AP-PIO-04 neutral-copy enforcement.**
+- ✓ Allowed: `'strong match'`, `'partial match'`, `'weak match'`, `'87% match'` (factual numeric).
+- ✗ Forbidden: `'are you sure?'`, `'double-check'`, `'did you mean...'`, `'verify carefully'`, `'don't get this wrong'`. CI-grep enforcement at Gate 5 (analog of EAL F6).
+
+**Sub-threshold behavior.**
+- Candidates with score < 0.4 ("weak match") are still displayed (transparency on demand — red line #2). Owner can see weak matches but the confidence bar makes the weakness visible.
+- "Create new" CTA is always sticky-bottom; never gated by score (red line #6 flat access).
+
+**Anti-pattern compliance:** see audit doc §PIO-G4-DISAMB walkthrough. AP-PIO-04 binding affirmed.

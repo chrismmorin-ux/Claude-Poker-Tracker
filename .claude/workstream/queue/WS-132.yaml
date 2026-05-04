@@ -1,0 +1,38 @@
+id: "WS-132"
+title: "FW-1 OnlineView pluralization (BUG-CANDIDATE-PLURAL-HANDS)"
+type: bug
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T22:35:00Z"
+completed_at: "2026-05-01T22:40:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "fix-wave"
+capability: "core"
+program: "engineering"
+description: |
+  Sprint B3 of FW-1. Closes BUG-CANDIDATE-PLURAL-HANDS from OnlineView audit
+  fixture (WS-127 / SPR-006). Cosmetic UX polish: handCount=1 rendered as
+  "1 hands analyzed" instead of "1 hand analyzed".
+accept_criteria:
+  - "OnlineView.jsx:159 uses pluralization-aware ternary"
+  - "OV-MC-002 in OnlineView.invariants.fixture.js flips to status: matches"
+  - "Component test suite stays green"
+effort: "S"
+files_involved:
+  - "src/components/views/OnlineView/OnlineView.jsx (line 159)"
+  - "src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js (OV-MC-002 flipped)"
+blocked_by: []
+enables: []
+sprint_id: "SPR-009"
+decision_flags: []
+notes: |
+  Production fix at OnlineView.jsx:159: changed `{handCount} hands analyzed`
+  to `{handCount === 1 ? '1 hand analyzed' : `${handCount} hands analyzed`}`.
+  Trivial cosmetic fix; zero risk.
+status_note: "RESOLVED 2026-05-01 — FW-1 Sprint B3"
+source:
+  origin: "FW-1 Fix Wave (closes audit pinned_bug from SPR-006)"
+  initiative: "Fix Wave 1"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

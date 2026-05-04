@@ -1,0 +1,59 @@
+id: "WS-147"
+title: "SCF G5 child 3 — lesson authoring framework"
+type: improvement
+status: completed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T13:30:00Z"
+completed_at: "2026-05-03T15:30:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  Lesson authoring framework per SCF G4 audit §SCF-G4-LESSONS spec. Authors
+  the structural infrastructure for SCF lessons: directory layout, frontmatter
+  schema, body conventions (CD-1 / CD-2 / CD-3), test_substrate field
+  semantics, lesson-to-leakRule binding via leakTagIds, version lineage tracking.
+
+  Scope: NOT the lesson content (that's WS-149). This ticket ships the
+  framework that lessons author into.
+
+  Output:
+    - docs/design/lessons/CONVENTIONS.md (template + frontmatter spec + body
+      conventions; mirrors hero-state-templates/CONVENTIONS.md from WS-138)
+    - src/utils/skillAssessment/lessonRegistry.js (loader via
+      import.meta.glob; mirrors loadTemplates.js from WS-142)
+    - src/utils/skillAssessment/lessonAuthoring/ (helper utilities for
+      lesson-to-leakRule binding, drill substrate lookup)
+    - Tests
+accept_criteria:
+  - "CONVENTIONS.md authored with frontmatter schema + body conventions"
+  - "lessonRegistry.js loads all lessons via import.meta.glob; auto-binds to leakTagIds"
+  - "Test surface for registry + binding"
+  - "Cross-reference test: every leakRule has at least one lesson available (or test gates that)"
+effort: "M"
+files_involved:
+  - "docs/design/lessons/CONVENTIONS.md (NEW)"
+  - "src/utils/skillAssessment/lessonRegistry.js (NEW)"
+  - "src/utils/skillAssessment/lessonAuthoring/ (NEW dir)"
+blocked_by:
+  - "WS-145"
+blocked_by_legacy: []
+enables:
+  - "WS-149"
+sprint_id: "SPR-032"
+decision_flags:
+  - "Lesson directory location (docs/design/lessons/ vs src/lessonContent/ vs other)"
+  - "Mustache slot syntax conventions (likely reuse {{path}} from hero-state-templates per WS-138)"
+source:
+  origin: "ws-013-decomposition-spr-030-2026-05-03"
+  parent_ws: "WS-013"
+status_note: |
+  SHIPPED SPR-032. Framework + 2 reference lessons (cbet-defense + bb-defense matching
+  shipped leak rules). Drill-this affordance now navigates to LessonDetailView (was
+  console.log stub). Lesson directory landed at docs/projects/self-coach-foundation/lessons/
+  (matched SCF G4 spec, not docs/design/lessons/). Lesson content beyond the 2 references
+  is WS-149.
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

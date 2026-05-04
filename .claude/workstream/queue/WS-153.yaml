@@ -1,0 +1,66 @@
+id: "WS-153"
+title: "HSP-B3 — Extend classifyArchetype() to turn + river (remove NotImplementedError)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Extend src/utils/heroState/classifyArchetype.js to handle turn + river streets.
+  Currently throws NotImplementedError per v1 scope (WS-141 done 2026-05-03).
+
+  Decision tree extension:
+    street == turn  → ~8 turn archetypes (gated on actionContext + position +
+                       prior-street action history)
+    street == river → ~8 river archetypes (gated on actionContext + position +
+                       prior-street action history)
+
+  Turn/river archetypes need PRIOR-STREET CONTEXT (e.g. TURN_DOUBLE_BARREL
+  requires that hero bet flop AND bets turn). Classifier must inspect action
+  history, not just current decision node. Action-history vocabulary likely
+  exists already in decisionAccumulator.js — audit before duplicating.
+
+  Tests: extend src/utils/heroState/__tests__/classifyArchetype.test.js with
+  per-archetype synthetic states. Boundary cases: street transitions, action-
+  history reconstruction, IP/OOP determination after closing-action ambiguity.
+
+  Update HERO_STATE_DESIGN.md §4.4 + §4.5 if any taxonomy revisions surface
+  during implementation.
+
+  First-principles guard: archetype IDs remain OUTPUTS only. Classifier maps
+  game state → archetypeId; nothing in this ticket should make archetypeId
+  influence plan computation downstream.
+accept_criteria:
+  - "classifyArchetype() returns valid archetypeId for any turn state"
+  - "classifyArchetype() returns valid archetypeId for any river state"
+  - "NotImplementedError removed from turn/river paths"
+  - "Action-history reconstruction reuses decisionAccumulator vocab if compatible"
+  - "Unit tests cover all turn/river archetypes + boundary cases"
+  - "No archetype-ID-as-decision-input introduced anywhere"
+  - "HERO_STATE_DESIGN.md updated if taxonomy adjustments surface during build"
+effort: "M"
+files_involved:
+  - "src/utils/heroState/classifyArchetype.js"
+  - "src/utils/heroState/types.js (extend ARCHETYPE_IDS const)"
+  - "src/utils/heroState/__tests__/classifyArchetype.test.js"
+  - "src/utils/decisionAccumulator.js (read — action-history vocab reuse audit)"
+blocked_by:
+  - "WS-151"
+  - "WS-152"
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Action-history vocab reuse vs heroState-local vocab (audit decisionAccumulator first)"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §4.4 + §4.5"
+status_note: "v2 classifier extension; blocked by turn + river taxonomies"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

@@ -1,0 +1,113 @@
+id: "SPR-015"
+title: "PIO Gate 2 — Player Identification v2 Blind-Spot Roundtable (Master Plan A-line, Phase 2 stagger alternation)"
+status: completed
+goal: |
+  Player Identification v2 passes Gate 2 (Blind-Spot Roundtable) — UX,
+  Failure, Data-modeling, and Cultural-sensitivity risks named with
+  binding mitigations; PEO-reuse boundaries validated; phone-camera-
+  capture lifecycle gated by red lines; AP-PIO refusal catalog ratified —
+  unblocking PIO Gate 3 (Research).
+
+  Master Plan §3 binding ratification #6 (A and D Gates 1→5 staggered):
+  Stagger pattern this far —
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2)
+    SPR-015: PIO-G2 (A-line, Gate 2) ← this sprint, alternation continues
+  Next natural anchor after SPR-015: SCF-G3 (WS-011, D-line Gate 3 — first
+  Phase-2 Research gate).
+
+  Cultural-sensitivity is uniquely load-bearing for PIO vs SCF: ethnicity
+  tags, wardrobe/jewelry/age/logo entities, and recognition-search are
+  structurally riskier than SCF's hero-leak inference. Gate 2 is the only
+  mechanism to surface tone-deaf-implementation risks before Gate 3 schema
+  work locks them in.
+
+items:
+  - id: "WS-005"
+    title: "PIO Gate 2 — Blind-Spot Roundtable (4 voices: UX / Failure / Data-modeling / Cultural-sensitivity)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Voice composition (confirm 4 voices UX/Failure/Data-modeling/Cultural-sensitivity per WS-005, or add 5th e.g. Market/External lens mirroring SPR-014; Cultural-sensitivity cannot be dropped — structurally critical for ethnicity/wardrobe/age)"
+      - "AP-PIO graded-work / demographic-attribute refusal lock strictness (audit-doc-only / CI-grep enforcer with companion copy-discipline + anti-patterns files / IDB-validation write-time barrier on demographic fields)"
+      - "PEO-reuse boundary validation scope (stress-test PIO-G1's ~60% as-is + ~30% extend + ~10% net-new inventory in Stage D, OR accept Gate 1 inventory and Gate 3 ratifies via research)"
+      - "Phone-camera-capture lifecycle red-line scope (capture-only-no-storage / capture-with-encrypted-storage / capture-with-explicit-purge / defer to Gate 3 with privacy-research grounding) — PIO-G1 deferred photo lifecycle to red lines #1+#4"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T04:30:00Z"
+    completed_at: "2026-05-02T05:25:00Z"
+    notes: |
+      Gate 2 audit shipped at docs/design/audits/2026-05-02-blindspot-player-identification-v2.md (~310 lines, 4-voice integrative pattern).
+
+      Owner-decided scope (plan-mode AskUserQuestion 2026-05-02):
+        - Voices: 4 (UX/Failure/Data-modeling/Cultural-sensitivity) with Cultural-sensitivity demoted to REVIEWING-ONLY per binding owner stance
+        - AP-PIO lock: AUDIT-DOC-ONLY tier (lighter than SCF-G2's CI-grep)
+        - PEO-reuse: stress-test in Stage D (entry-by-entry walk of 12 inventory rows)
+        - Photo lifecycle: capture-with-explicit-purge (blobId in playerPhotos store; per-record delete; no encryption baseline)
+
+      CRITICAL owner stance captured (binding for future PIO + identification-feature work):
+        "Cultural sensitivity is secondary to identification. If labeling ethnicity or features within an ethnicity assists with identifying the player, then we are going to use it."
+        Memory entry written: feedback_pio_identification_utility_first.md
+        MEMORY.md index updated.
+
+      Verdict: YELLOW (5-stage table at end). 3 named structural risks (sighting-log schema parallel-store ratification; photo lifecycle Gate 4 surface design; PEO-reuse boundaries with 4 net-new categories).
+
+      Stage A + B verdict ✅ — inherited from PIO-G1 + table-build Gate 2; no new authoring.
+      Stage C verdict ⚠️ — capture-with-explicit-purge ratified; per-context affordance + casino-policy variation Gate 4 carry-forwards.
+      Stage D verdict ⚠️ — PEO 60/30/10 stress-test confirmed (7 as-is + 5 extends + 3 net-new); sighting-log parallel-store ratified; ethnicity migration Gate 4 carry-forward; cross-venue deferred; 9-red-lines walk passes on all 5 surfaces.
+      Stage E verdict ⚠️ — AP-PIO-01..05 enumerated inline (audit-doc-only tier — narrower than SCF-G2 per binding stance); Bayesian-Beta stability formula recommended (alternatives carried); ML06 + N05 + photo-delete-confirm Gate 4 carry-forwards.
+
+      AP-PIO catalog (5 inline refusals): AP-PIO-01 demographic-data-fed-to-engine refusal; AP-PIO-02 cross-surface contamination of sighting-log into live surfaces refusal; AP-PIO-03 auto-photo-capture without user initiation refusal; AP-PIO-04 shame-on-misidentification framing refusal; AP-PIO-05 demographic-targeted recommendations refusal. EAL-inherited AP-01..09 listed transitively.
+
+      5 Gate 3 + 7 Gate 4 carry-forwards enumerated (PIO-G3-SLOG/STAB/PHOTO/PALETTE/MIG + PIO-G4-S1/S2/PEX/PVA/DISAMB/SET/MIG).
+
+      Verification: zero src/ diff; 1 new doc file in docs/design/audits/; no docs/projects/player-identification-v2/ directory created (audit-doc-only AP-PIO tier honored).
+
+      Next natural anchor: SCF-G3 (WS-011) — first Phase-2 Research gate, D-line continuation; OR PIO-G3 follow-up if owner prefers A-line stagger continuation.
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO Gate 2 of 5; Master Plan §A; A/D stagger alternation continuation)"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-005): 4 decision flags — voice composition + AP-PIO lock strictness + PEO-reuse boundary validation scope + phone-camera-capture lifecycle red-line scope"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T04:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is design-program Gate 2 Blind-Spot Roundtable per docs/design/LIFECYCLE.md — explicitly mandated by CLAUDE.md Design Program Guardrail (Gate 2 is mandatory when Gate 1 verdict is RED, which PIO-G1 was). Cultural-sensitivity voice is structurally REQUIRED to surface ethnicity/wardrobe/age tone-deaf risks BEFORE Gate 3 schema authoring — Gate 2 is the ONLY framework gate where these get pre-ratified. No paternalism / graded-work / privacy-overreach patterns at the audit level — Gate 2 surfaces and binds those exact risks for downstream gates."
+  matches: []
+
+created_at: "2026-05-02T04:30:00Z"
+approved_at: "2026-05-02T04:30:00Z"
+started_at: "2026-05-02T04:30:00Z"
+completed_at: "2026-05-02T05:25:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-005 is M-effort + 4 decision flags +
+  must reconcile a Gate-1-deferred lifecycle decision (phone-camera-
+  capture per PIO-G1 §Q-photo-lifecycle), so it earns its own sprint
+  without companions. Same shape as SPR-014 (SCF-G2) which preceded it.
+
+  Master Plan §3 binding ratification #6: stagger alternation continues
+  (D→A→D→A pattern). Breaking the stagger now would leave A-line one full
+  gate behind D-line going into Phase 3.
+
+  P0 backlog deferred per ratified founder intent (4th sprint in a row):
+  WS-076, WS-115, WS-116, WS-117 all carry priority_score 30.0 vs WS-005's
+  22.0. Recent sprints (SPR-012/013/014) followed Master Plan sequencing
+  over raw queue scores; SPR-015 continues. Founder explicitly approved on
+  /next prompt.
+
+  Tooling friction unchanged: kit/scripts/cwos-constitutional-audit.js +
+  cwos-state-store.js + cwos-reconcile.js + cwos-event.js still missing
+  per fr-001..004 + fr-010. Graceful degradation continues; same fallbacks.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Source-class damping (Step 2d): last 3 anchors (WS-010, WS-004, WS-009)
+  all classify as `untagged` (source.origin = backlog-md-migration-2026-05-01).
+  No saturated class; no damping applied.

@@ -123,12 +123,52 @@ Any feature amendment that requires weakening one of these triggers **persona-le
 
 ---
 
+## Skill-ladder positioning  *(SCF Gate 1, 2026-05-02)*
+
+This is **distinct from** the per-domain Skill-state attribute above. Skill-state is per-descriptor / per-chart / per-decision-rule (3–5 ordinal mastery values). This section is **overall player tier** — one tier across the whole user. Both coexist. Curriculum sequencing reads tier ("at studied-amateur, learn polarization next"); drill scheduling reads per-domain mastery ("you've mastered race framework but not flush contention"). Authored by SCF Gate 1 audit at `docs/design/audits/2026-05-02-entry-self-coach-foundation.md`.
+
+**Tier ladder (6 tiers, ratified 2026-05-02):**
+
+| Tier | ID | Description |
+|------|-----|------------|
+| 1 | novice | Just learning rules, hand rankings, basic position vocabulary |
+| 2 | live-rec | Plays live for fun, no theory study |
+| 3 | studied-amateur | Reads / drills, plays casually, theory-conscious |
+| 4 | part-time-grinder | Regular sessions, edge-aware, range-thinking |
+| 5 | serious-grinder | Volume + study, profitable, exploitative-deviation aware |
+| 6 | pro | Full-time income from poker; full-stack theory + GTO awareness |
+
+**Default current tier:** *(owner-set in SCF Gate 4 surface)* — likely `studied-amateur`.
+**Default target tier:** *(owner-set in SCF Gate 4 surface)* — likely `serious-grinder`.
+
+**Persistence location:** TBD Gate 4 (Open Question §Q8 in SCF Gate 1 audit). Recommended: user-settings / preferences store (cleanest domain separation; tier is preference-shaped, not player-record-shaped).
+
+**Autonomy compliance:** tier metadata is owner-set or owner-confirmed-from-inference, never silent (red line #1). Tier sequencing CAN suggest "next concept" but CANNOT hide concepts (red line #6).
+
+---
+
+## Goals when self-coaching  *(SCF Gate 1, 2026-05-02)*
+
+Chris in self-coach mode has four additional goals beyond his core goals listed above:
+
+- **See own leaks surfaced** in normal review flow without it feeling like grading or a verdict — patches without ego cost.
+- **Get pointed at the next concept I'm ready to learn** given current tier + per-domain mastery — not a generic study queue.
+- **Validate that previously-flagged leaks are actually getting fixed in real play** — predicted improvement vs observed improvement gap as its own signal.
+- **Rate my own confidence on a line before seeing the verdict** — turn the gap between predicted confidence and observed correctness into a coaching signal.
+
+These goals correspond 1:1 to JTBDs CO-54 / CO-55 / CO-56 / CO-57 (see Related JTBD).
+
+**Load-bearing constraint:** all four goals are gated by the 9-red-lines autonomy constraint above. Especially #1 (opt-in), #5 (no shame / engagement-pressure), #7 (editor's-note tone), and #8 (no cross-surface contamination — hero-leak inference does NOT render on live surfaces).
+
+---
+
 ## Related JTBD
 
 - See [JTBD Atlas](../../jtbd/ATLAS.md) for the full list.
 - Most relevant this session: `player-management` domain jobs.
 - Adaptive-learning JTBDs that apply (2026-04-23): `DS-52` retention, `DS-53` edge-case probe, `DS-54` exploration override, `DS-55` resumption, `DS-56` calibration, `ON-87` cold-start descriptor seeding.
 - Exploit Anchor Library JTBDs that apply (2026-04-24): `DS-57` capture-the-insight (Tier 0 observation capture), `DS-58` validate-confidence-matches-experience (Calibration Dashboard), `DS-59` retire-advice-that-stopped-working (lifecycle override).
+- Self-Coach Foundation JTBDs that apply (2026-05-02): `CO-54` see-leak-without-being-graded, `CO-55` learn-next-concept-im-ready-for, `CO-56` validate-im-improving (reconciliation pending vs DS-58), `CO-57` self-rate-confidence-on-a-line.
 
 ## Related situational sub-personas
 
@@ -159,3 +199,4 @@ Any A1–A6 that turns out false should flag re-review of Frustrations + Constra
 - 2026-04-21 — Created in Session 1 of design-framework project. Proto-status; awaiting owner confirmation of assumptions.
 - 2026-04-23 — Added **Skill-state attribute** + **Autonomy constraint** sections. Output of Gate 3 for Poker Shape Language adaptive-seeding project. Skill-state attribute shape mirrors `assumptionEngine/` posterior conventions (Bayesian, on-read decay, signal separation). Autonomy constraint promotes 8 Gate 2 red lines to persona-level invariants. See `docs/projects/poker-shape-language/gate3-decision-memo.md`.
 - 2026-04-24 — Added **Observation-capture attribute** section. Autonomy constraint red lines expanded from 8 → 9 (added #9 incognito observation mode). DS-57/58/59 added to Related JTBD list. Output of Gate 3 for Exploit Anchor Library project. Capture framing (note-taking, never self-evaluation) and per-observation incognito toggle are the load-bearing autonomy-enforcement patterns. See `docs/projects/exploit-anchor-library/gate3-owner-interview.md`.
+- 2026-05-02 — Added **Skill-ladder positioning** + **Goals when self-coaching** sections. Output of SCF Gate 1 (Self-Coach Foundation Entry, SPR-012 / WS-009). Per owner decision in plan-mode AskUserQuestion: extend chris-live-player rather than author new "chris-the-improver" persona — SCF is the same person in self-coach mode. 6-tier overall ladder (novice / live-rec / studied-amateur / part-time-grinder / serious-grinder / pro) is **distinct from** the per-domain Skill-state attribute (3–5 ordinal mastery per descriptor); both coexist. CO-54..57 added to Related JTBD list. See `docs/design/audits/2026-05-02-entry-self-coach-foundation.md`.

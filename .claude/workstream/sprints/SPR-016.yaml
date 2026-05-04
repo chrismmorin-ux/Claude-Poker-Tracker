@@ -1,0 +1,97 @@
+id: "SPR-016"
+title: "FIND-002 close-out — MoE-banded value/bluff classifier (domain-correctness P0 deferral pivot)"
+status: completed
+goal: |
+  The hand-replay value/bluff classifier stops flipping verdicts on
+  Monte-Carlo noise — `replayAnalysis.js`'s borderline-equity handling
+  becomes sample-size-aware, closing FIND-002 (priority_score 30.0,
+  open since 2026-05-01 baseline).
+
+  P0 deferral pivot: WS-117 has waited through SPR-012/013/014/015
+  while Master Plan stagger ran. Five sprints of P0 deferral is the
+  natural break point. SPR-015 closure row explicitly named "break
+  alternation for a P0" as the alternative path; this sprint takes
+  that path.
+
+  Critical-tier program advancement: FIND-002 is one of two remaining
+  HIGH findings from the 2026-05-01 domain-correctness baseline.
+  Closing it ticks domain-correctness health from 2/6 toward target.
+
+items:
+  - id: "WS-117"
+    title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo (FIND-002)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Approach choice: trials-bump (raise handVsRange trial count 500 -> >=3000) vs banded-classification ('value'/'thin'/'bluff' centered on 0.5 +/- MoE) vs hybrid"
+      - "Banding thresholds (if option b): symmetric (0.5 +/- MoE) vs asymmetric (e.g., value at >0.55, bluff at <0.45, thin in between regardless of MoE)"
+      - "Downstream consumer scope (if MoE plumbing): does MoE field surface in HandWalkthrough / ReviewObservations / PlayerAnalysisPanel, or stay on classifier output for follow-up?"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T05:30:00Z"
+    completed_at: "2026-05-02T06:05:00Z"
+    notes: |
+      FIND-002 closed via banded-classifier-with-MoE-display per owner decision flag #1.
+
+      Implementation:
+        - src/utils/handAnalysis/replayAnalysis.js — classifyAction() signature change: (handEquity, action, opts={moe?}) => { class, equity, moe } | null. MoE-symmetric banding: 'value' if equity > 0.5+moe, 'bluff' if < 0.5-moe, 'thin' otherwise. Backward-compat: no MoE → binary fallback. Call site (line 489) passes sdResult.ciHalf as moe (no recomputation; ciHalf already in handVsRange return).
+        - src/components/views/HandReplayView/ReviewPanel.jsx — three-class badge with yellow 'thin value' tier + ±X.X% MoE suffix.
+        - src/components/views/HandReplayView/VillainAnalysisSection.jsx — same shape change.
+        - src/components/views/AnalysisView/ReviewObservations.jsx — ActionClassBadge component updated; preserves existing purple-bluff color choice; introduces yellow for thin.
+        - src/utils/handAnalysis/__tests__/replayAnalysis.test.js — 6 existing classifyAction tests updated for object-return shape; 5 new banded tests covering thin/value/bluff cases at moe=0.044 (500 trials) and moe=0.018 (3000 trials).
+
+      Verification:
+        - Targeted: 45/45 replayAnalysis tests pass.
+        - Slice: 148/148 handAnalysis tests pass + 85/85 HandReplayView/AnalysisView surrounding tests pass.
+        - Full suite via smart-test-runner: 9,448 passed + 30 skipped (367 test files, 0 fails, 370s runtime).
+        - Build: npm run build clean (6.08s, no TS/ESLint errors).
+        - Visual verification: deferred — bounded change scope (defensive guards in all 3 consumers; existing behavior preserved when MoE absent). Owner will see banded badges + MoE suffix on next HandReplay-with-showdown session.
+
+      POKER_THEORY.md alignment: 'Thin Value' label matches §181 vocabulary verbatim ("Betting a hand that barely clears the >50% threshold"). No new poker-theory term introduced; the banding operationalizes existing theory.
+
+      FIND-002 status: RESOLVED. domain-correctness program health pressure reduced (one of two remaining HIGH findings closed; FIND-001 credible-interval UI wiring still open as WS-116).
+    finding_id: "FIND-002"
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "P0 deferral pivot — first domain-correctness program work since SPR-007 (8 sprints)"
+total_effort: "M typed (actual S — single file)"
+decisions_needed:
+  - "Item #1 (WS-117): 3 decision flags — approach choice + banding thresholds (conditional) + downstream consumer scope (conditional)"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T05:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries). Manual review: scope is closing an auto-promoted finding from the 2026-05-01 domain-correctness baseline (FIND-002). The fix is single-file engine correctness — hard to construct an anti-goal angle. The P0 deferral pivot itself addresses Failed State #3 ('compliance over value') concerns from SPR-012-015 sequence where Master Plan compliance over P0 value was the implicit pattern."
+  matches: []
+
+created_at: "2026-05-02T05:30:00Z"
+approved_at: "2026-05-02T05:30:00Z"
+started_at: "2026-05-02T05:30:00Z"
+completed_at: "2026-05-02T06:05:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint. WS-117 is M-typed but actual single-file
+  edit (replayAnalysis.js); 3 decision flags justify plan-mode entry.
+
+  Source-class damping (Step 2d): last 3 anchors (WS-005, WS-010, WS-004)
+  all classify as `untagged` (source.origin = backlog-md-migration-2026-05-01).
+  No saturated class for damping. WS-117 source is `engine-finding`
+  (source.engine = eng-engine; source.finding_id = FIND-002), which is NOT
+  saturated this 3-sprint window — score not damped.
+
+  Master Plan continuation alternative deferred per founder explicit choice
+  in /next prompt: WS-011 (SCF-G3) at priority_score 22.0 was named as the
+  alternation continuation; founder picked the P0 break instead.
+
+  Other P0 candidates not selected:
+    - WS-076 (version-mismatch reload): needs extension handshake + cross-component (app + extension) — larger
+    - WS-115 (sidebar Stage 6 rebuild): large; behind feature flag
+    - WS-116 (credible intervals UI wiring): multi-file across PlayerAnalysisPanel + OnlineView + HandReplay; M-effort actual; would bundle naturally with WS-117 in a 2-item sprint (both domain-correctness; both about exposing engine internals to UI). Founder option 1 = WS-117 alone; bundling deferred to next sprint if owner wants the domain-correctness focus to continue.
+
+  Tooling friction unchanged: kit/scripts/cwos-constitutional-audit.js +
+  cwos-state-store.js + cwos-reconcile.js + cwos-event.js still missing
+  per fr-001..004 + fr-010. Same fallbacks.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).

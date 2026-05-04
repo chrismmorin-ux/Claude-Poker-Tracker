@@ -1,0 +1,60 @@
+id: "WS-129"
+title: "FW-1 TableView 4-bug fix wave (SHOWDOWN-BUTTONS + SB-COMPLETING + FOLDED-SEAT-ACTS + HAND-OVER-BUTTONS)"
+type: bug
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T21:30:00Z"
+completed_at: "2026-05-01T22:00:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "fix-wave"
+capability: "core"
+program: "engineering"
+description: |
+  Sprint A1 of Fix Wave 1 (FW-1). Closes 4 BUG-CANDIDATE-* rows the SPR-002
+  TableView matrix audit surfaced as pinned_bug:
+
+    1. BUG-CANDIDATE-SHOWDOWN-BUTTONS — getValidActions('showdown', ...) fell
+       through to default branch returning [CHECK, BET, FOLD]. Defense-in-depth.
+    2. BUG-CANDIDATE-SB-COMPLETING — SB facing only limpers showed CALL not
+       CHECK; isBBOption transform only fired for BB.
+    3. BUG-CANDIDATE-FOLDED-SEAT-ACTS — re-selecting an already-folded seat
+       rendered action buttons (could double-record).
+    4. BUG-CANDIDATE-HAND-OVER-BUTTONS — when only 1 seat remained after folds,
+       code still rendered preflop buttons.
+accept_criteria:
+  - "All 4 pinned_bug rows in actionInvariants.fixture.js flip to status: matches"
+  - "actionInvariants.invariants.test.js: 35 passed + 6 skipped (was 31 + 4 pinned_bug)"
+  - "Component test suite (1601+ tests) stays green"
+  - "Audit-only discipline preserved for fixture (only pinned_bug rows updated; no other rows touched)"
+effort: "M"
+files_involved:
+  - "src/utils/actionUtils.js (showdown branch added)"
+  - "src/components/views/TableView/CommandStrip.jsx (isSBCompleting + 2 guards)"
+  - "src/components/views/TableView/__tests__/actionInvariants.fixture.js (4 rows flipped)"
+  - "src/components/views/TableView/__tests__/actionInvariants.invariants.test.js (harness updated to mirror new CommandStrip)"
+blocked_by: []
+enables: []
+sprint_id: "SPR-008"
+decision_flags: []
+notes: |
+  4 production fixes shipped:
+    - actionUtils.js: prepended `if (street === 'showdown') return [];`
+    - CommandStrip.jsx: extended isBBOption logic with parallel isSBCompleting
+      (same CALL→CHECK transform when SB faces only limps with no raise)
+    - CommandStrip.jsx: added selectedSeatHasFolded guard via hasSeatFolded
+      from sequenceUtils — folded seats render no buttons
+    - CommandStrip.jsx: added handIsDecided guard via activeSeatCount <= 1
+      from useSeatUtils — when only 1 hand-level survivor remains, no buttons
+  Harness updated to mirror new CommandStrip logic (added hasSeatFolded import,
+  smallBlindSeat extraction, activeSeatCount computation, isSBCompleting check).
+  2 fixture rows had inputs adjusted to match the bug semantics correctly:
+    - INV-P-012 added smallBlindSeat: 9 (required for SB-completing transform)
+    - INV-E-003 added 8th fold (seat 2) to actually represent "one survivor remains"
+  Audit suite: 35 passed + 6 skipped.
+status_note: "RESOLVED 2026-05-01 — FW-1 Sprint A1"
+source:
+  origin: "FW-1 Fix Wave (closes audit pinned_bug rows from SPR-002)"
+  initiative: "Fix Wave 1"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

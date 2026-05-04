@@ -1,0 +1,118 @@
+id: "SPR-023"
+title: "Continue Anyway graceful degradation (WS-077 — sibling P1 follow-up to WS-076)"
+status: completed
+goal: |
+  Dismissing the version-mismatch banner becomes a clearly-degraded state
+  instead of a silent suppress. The user always knows when the app is
+  operating with stale extension data, and advice that depends on mismatched
+  fields is suppressed rather than rendered confidently. Direct continuation
+  of WS-076 (SPR-022) — the just-shipped sprint preserved the
+  `dismissVersionMismatch` hook point and "Continue Anyway" button
+  explicitly so WS-077 could pick up here.
+
+  Master Plan rhythm:
+    SPR-022: WS-076 (engineering P0 — version-mismatch diagnostic + confirm)
+    SPR-023: WS-077 (engineering P1 — Continue Anyway graceful degradation)  ← this sprint
+  Engineering program kept in rotation while context is hot. Phase-5 Master
+  Plan entries (WS-013 SCF-G5 + WS-008 PIO-G5) deferred — too large for a
+  2-session sprint cap; warrant dedicated multi-sprint compositions.
+
+  Source-class damping (Step 2d): last 3 anchors WS-076, WS-007, WS-012
+  ALL untagged (backlog-md-migration). No class saturated. WS-077
+  source-class `untagged` → NOT damped.
+
+items:
+  - id: "WS-077"
+    title: "Continue Anyway graceful degradation (DCOMP-W4-A3-F5) — sibling to WS-076; persistent amber pip + suppress mismatched-field advice + log for later review"
+    mode: plan-first
+    effort: M
+    status: done
+    completion_notes: |
+      Plan-mode captured 3 owner decisions (AskUserQuestion 2026-05-02):
+        1. Semantic split: decouple dismissedDespiteMismatch from versionMismatch (vs keeping current full-resume behavior or stricter all-extension-data suppression)
+        2. UX: separate amber AlertTriangle icon next to green dot (vs 3-state dot or sticky banner)
+        3. Persistence: sessionStorage-backed (vs in-memory only)
+
+      Implementation across 6 files:
+        - src/utils/versionMismatchStorage.js — appended writeDismissedFlag/readDismissedFlag/clearDismissedFlag (DISMISS_KEY='versionMismatchDismissed', no TTL — session lifetime)
+        - src/hooks/useSyncBridge.js — new dismissedDespiteMismatch state (init from sessionStorage), STATUS handler reads dismiss flag from sessionStorage to gate hand-imports (mismatched + dismissed = un-gated; mismatched + !dismissed = gated), auto-clears on version reconvergence; dismissVersionMismatch sets dismissedDespiteMismatch=true + writeDismissedFlag + ref=false (un-gates imports per user choice) — no longer flips versionMismatch=false
+        - src/contexts/SyncBridgeContext.jsx — added dismissedDespiteMismatch to useMemo deps
+        - src/contexts/OnlineAnalysisContext.jsx — passes versionMismatch ? null : liveHandState to useLiveActionAdvisor (suppresses live advice regardless of dismiss state — liveHandState is the most version-sensitive surface)
+        - src/components/views/OnlineView/OnlineView.jsx — destructured dismissedDespiteMismatch; banner gate now versionMismatch && !dismissedDespiteMismatch; new inline AlertTriangle pip (lucide-react size=14, amber #fbbf24, click → setShowReloadConfirm(true), title + aria-label tooltip) shown when versionMismatch && dismissedDespiteMismatch
+        - 4 test files updated:
+          - src/utils/__tests__/versionMismatchStorage.test.js — added 7 dismiss-flag tests including independent-key cross-talk verification
+          - src/contexts/__tests__/OnlineAnalysisContext.test.jsx — converted module mock to mutable mockSyncBridge + spied liveActionAdvisor; added 2 WS-077 tests verifying liveHandState passes through when versions match and null passes through when mismatched
+          - src/components/views/OnlineView/__tests__/OnlineView.invariants.fixture.js — added dismissedDespiteMismatch:false default + 2 fixture rows OV-VM-006 (banner-visible-pip-absent pre-dismiss) + OV-VM-007 (pip-visible-banner-hidden post-dismiss)
+          - src/components/views/OnlineView/__tests__/OnlineView.invariants.test.jsx — added WS-077 describe block: 3 interaction tests (pip click reopens modal; pip absent when no mismatch; pip absent when mismatch but not dismissed)
+
+      Verification:
+        - 17/17 versionMismatchStorage (10 reload + 7 dismiss; cross-talk verified)
+        - 4/4 OnlineAnalysisContext
+        - 42/48 OnlineView invariants (6 pre-existing gap skips; 2 new fixture rows + 3 new WS-077 interaction tests all green)
+        - 5/5 SyncBridge sibling consumers (SyncBridgeContext + OnlineSessionContext + TournamentBridge — confirmed dismissedDespiteMismatch addition didn't regress)
+        - 9477/9507 full app smart-test-runner (30 pre-existing skipped); 368/368 test files (zero spawn errors this run, unlike SPR-022 verification)
+        - npm run build clean (5.41s)
+
+      Out of scope:
+        - pushExploits/pushTournament suppression (extension validates incoming wire-schema; defended on extension side)
+        - Per-field allowlist for advice suppression (no contract fingerprint to scope by; all-or-nothing on liveHandState is the right v1 grain)
+        - Telemetry channel (existing logger.warn sufficient)
+        - Localized re-prompt mechanism (sessionStorage handles boundary naturally)
+
+      Backward-compat with WS-076 confirmed:
+        - Banner-button → modal flow unchanged (banner now gated on !dismissedDespiteMismatch, but pre-dismiss the gate is naturally true)
+        - postReloadStatus=='still-mismatched' auto-open path preserved
+        - postReloadStatus=='recovered' success-toast path preserved
+        - Both flags use independent sessionStorage keys (verified by cross-talk test)
+    finding_id: null
+    decision_flags:
+      - "Persistent indicator location + shape: extend the existing connection-indicator dot at OnlineView.jsx:67-74 to a 3-state (gray=disconnected / green=connected / amber=connected-but-mismatch-dismissed)? Separate icon? Slim sticky header banner? Click target = re-open the WS-076 modal?"
+      - "Mismatched-fields definition: without contract fingerprint (deferred per WS-076), all extension-derived advice is potentially version-sensitive. Choose between (a) suppress all extension-derived advice when dismissed, (b) suppress only specific advice surfaces, (c) curated allowlist of fields safe across version boundaries"
+      - "Logging surface: logger.warn already fires on mismatch detection. Does 'log for later review' need a dedicated telemetry channel, or is the existing logger.warn sufficient?"
+      - "Dismissed-state persistence: today dismissVersionMismatch is in-memory only; refresh resets. Should it survive refresh via sessionStorage (like WS-076's verify flag) so user isn't re-prompted on every reload while mismatch persists?"
+      - "Backward compatibility with WS-076: ensure WS-077 changes don't break the post-reload flow (sessionStorage flag clear path, recovered toast, still-mismatched auto-open modal). The dismissed-state and post-reload-status state interact — if user dismissed pre-reload, then reloads, what's the expected post-reload behavior?"
+    depends_on: []
+    started_at: null
+    completed_at: null
+    notes: ""
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Direct WS-076 continuation (DCOMP-W4-A3-F5 sibling to F4); engineering program continuity while context is hot"
+total_effort: "M (~1.5 sessions; multi-component — connection indicator UX + advice suppression layer + dismissed-state persistence + backward-compat with WS-076)"
+decisions_needed:
+  - "Item #1 (WS-077): 5 decision flags spanning persistent-indicator UX + mismatched-fields suppression scope + logging surface + dismissed-state persistence + WS-076 backward compatibility. Multi-round AskUserQuestion expected, likely grouped by surface."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T13:05:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; same as SPR-022). Manual review: scope is a defensive UX guardrail clarifying degraded state. No engagement-pressure / mastery-score / cross-surface-contamination angles. Aligned with founder's repo_goal of trustworthy in-the-moment poker decisions (silent stale data is a user-trust failure mode)."
+  matches: []
+
+created_at: "2026-05-02T13:05:00Z"
+approved_at: "2026-05-02T13:05:00Z"
+started_at: "2026-05-02T13:10:00Z"
+completed_at: "2026-05-02T14:30:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint; M-effort design-dense (5 decision flags
+  across 4 surfaces). Multi-round AskUserQuestion expected.
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-076 (untagged), WS-007 (untagged), WS-012 (untagged).
+    - No class at saturation threshold.
+    - WS-077 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* scripts.
+  Same fallbacks as SPR-022.
+
+  Continuation context (HOT from SPR-022):
+    - VersionMismatchModal exists at src/components/ui/VersionMismatchModal.jsx
+    - useSyncBridge already returns extProtocolVersion + extManifestVersion + appProtocolVersion + postReloadStatus + clearPostReloadStatus + dismissVersionMismatch (in-memory)
+    - versionMismatchStorage util exists for sessionStorage flag pattern
+    - OnlineView already has the modal mounted + the useEffect on postReloadStatus
+    - The "Continue Anyway" button's dismissVersionMismatch handler is the hook point WS-077 builds on

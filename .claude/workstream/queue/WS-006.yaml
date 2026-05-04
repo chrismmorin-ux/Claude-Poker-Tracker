@@ -2,10 +2,10 @@ id: "WS-006"
 title: "Gate 3 — Research"
 legacy_id: "PIO-G3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T07:30:00Z"
+completed_at: "2026-05-02T08:15:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "player-identification-v2"
@@ -23,9 +23,19 @@ blocked_by:
 blocked_by_legacy:
   - "PIO-G2"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by PIO-G2"
+sprint_id: "SPR-019"
+decision_flags:
+  - "Age-bucket spans (3-bucket young/mid/older vs 5-bucket decade-resolution vs continuous-year)"
+  - "Wardrobe/jewelry/logo granularity (closed enum vs free-text-with-suggestions vs hybrid)"
+  - "Sighting-log temporal model (append-only events vs latest-state snapshot vs hybrid)"
+  - "Recognition-search ranking weights (relative weighting across name/age/skin/hair/wardrobe/jewelry/logo/venue-recency)"
+  - "Phone-camera-capture UX expectations (`<input capture>` only vs explicit modal vs ambient capture; per-record purge UX)"
+  - "PIO-G3-SLOG: sighting-log parallel-store schema (record shape + indexes + retention)"
+  - "PIO-G3-STAB: stability formula (Bayesian-Beta vs alternatives carried in Gate 2)"
+  - "PIO-G3-PHOTO: photo lifecycle (blobId in playerPhotos store; per-record delete; encryption baseline)"
+  - "PIO-G3-PALETTE: attribute palette structure (closed-enum vs free-text per attribute; ethnicity inclusion per identification-utility-first stance)"
+  - "PIO-G3-MIG: IDB v21 migration shape (additive-only; multi-store bumps in single version)"
+status_note: "RESOLVED 2026-05-02 — Gate 3 audit shipped at docs/design/audits/2026-05-02-gate3-research-player-identification-v2.md; 5 PIO-G3-* carry-forwards specified (SLOG / STAB / PHOTO / PALETTE / MIG); 5 owner decisions ratified (decade ranges + hybrid palette + Bayesian-Beta + per-event grain with read-side rollups + capture+1:1-crop); PM-13/14/15 detail-out shipped (state Proposed → Active); Master Plan A/D Gate 3 stagger COMPLETE; PIO Gate 4 unblocked"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)"

@@ -1,0 +1,56 @@
+id: "WS-130"
+title: "FW-1 gameReducer UNDO street-rewind (BUG-CANDIDATE-UNDO-STREET-DESYNC)"
+type: bug
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T22:15:00Z"
+completed_at: "2026-05-01T22:25:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "fix-wave"
+capability: "core"
+program: "engineering"
+description: |
+  Sprint B1 of FW-1. Closes BUG-CANDIDATE-UNDO-STREET-DESYNC from gameReducer
+  audit fixture (WS-122 / SPR-003). When UNDO_BATCH erases all actions for
+  currentStreet, currentStreet should rewind to the last surviving entry's
+  street; previously stayed at the now-empty street, leaving the state
+  inconsistent (button rendering + next-action computation operated against
+  a flop state with no flop history).
+accept_criteria:
+  - "UNDO_BATCH derives lastStreet from newSequence (or 'preflop' if empty) and updates currentStreet"
+  - "UNDO-B-010 in gameReducer.undoInvariants.fixture.js flips to status: matches"
+  - "UNDO-B-020 (showdown removal) updated to expect rewind to 'preflop' (the new behavior)"
+  - "Existing 627-line gameReducer.test.js stays green (no regression)"
+effort: "M"
+files_involved:
+  - "src/reducers/gameReducer.js (lines 163-181 UNDO_BATCH)"
+  - "src/reducers/__tests__/gameReducer.undoInvariants.fixture.js (UNDO-B-010 + UNDO-B-020 updates)"
+blocked_by: []
+enables: []
+sprint_id: "SPR-009"
+decision_flags: []
+notes: |
+  Production fix at gameReducer.js:163-181: after slicing actionSequence, derive
+  lastStreet from newSequence's last entry (default 'preflop' if empty); update
+  currentStreet accordingly.
+
+  Audit fixtures updated:
+    - UNDO-B-010 (the original pinned_bug row): flipped to matches
+    - UNDO-B-020 (showdown action removal): updated expected currentStreet from
+      'showdown' to 'preflop' to reflect new rewind behavior
+
+  Risk-checked: useGameHandlers.js:89 is the only production caller of
+  UNDO_BATCH. Existing 46 gameReducer.test.js tests stay green (none asserted
+  on currentStreet invariance after UNDO_BATCH). Manual smoke recommended:
+  open dev server, simulate UNDO across street boundary in TableView, confirm
+  street display rewinds correctly.
+
+  UNDO_LAST_ACTION (sister method) NOT changed — it's per-seat per-street and
+  a single removal never erases an entire street's history.
+status_note: "RESOLVED 2026-05-01 — FW-1 Sprint B1"
+source:
+  origin: "FW-1 Fix Wave (closes audit pinned_bug from SPR-003)"
+  initiative: "Fix Wave 1"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

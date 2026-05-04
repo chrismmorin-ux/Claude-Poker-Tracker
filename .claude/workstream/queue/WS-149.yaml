@@ -1,0 +1,56 @@
+id: "WS-149"
+title: "SCF G5 child 5 — ≥10 reference lessons across ≥3 tiers"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "self-coach-foundation"
+capability: "core"
+program: "design"
+description: |
+  Author ≥10 reference lessons across ≥3 tiers per SCF G4 audit §SCF-G4-COVERAGE.
+  Per the audit, 5 reference lessons are pre-named:
+
+    1. 001-pot-odds.md (Tier 1; drill: pot-odds; framework: decomposition)
+    2. 002-range-vs-range-thinking.md (Tier 3; drill: range-decomposition)
+    3. 003-board-texture.md (Tier 3; drill: board-tilt + capped-ranges)
+    4. 004-blocker-effects-preflop.md (Tier 4; drill: straight-coverage +
+       flush-contention + broadway)
+    5. 005-capped-vs-uncapped-ranges.md (Tier 5; drill: capped-ranges)
+
+  Author the 5 named lessons + author 5+ more across remaining tiers (likely
+  Tier 2 + Tier 6 to ensure ≥3 tiers covered).
+
+  Each lesson follows the framework from WS-147 (CONVENTIONS.md). Each
+  binds to leakTagIds matching shipped leak rules (WS-145 + WS-146 outputs).
+
+  Ongoing authoring beyond the initial 10 — lessons accumulate as new
+  concepts are introduced.
+accept_criteria:
+  - "5 named lessons authored per SCF G4 spec"
+  - "5+ additional lessons covering Tier 2 + Tier 6 (or other gaps)"
+  - "Each lesson has frontmatter per WS-147 CONVENTIONS.md"
+  - "leakTagIds bind to actual shipped leak rule IDs (cross-reference test)"
+  - "Lesson registry (WS-147) loads all without errors"
+effort: "M"
+files_involved:
+  - "docs/design/lessons/preflop/ (NEW)"
+  - "docs/design/lessons/postflop/ (NEW)"
+  - "docs/design/lessons/strategic-thinking/ (NEW)"
+blocked_by:
+  - "WS-147"
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Lesson voice (mirror hero-state narrative voice? educational explainer? both?)"
+  - "Drill substrate gaps (some lessons may need new drills authored — out of scope or recursive?)"
+source:
+  origin: "ws-013-decomposition-spr-030-2026-05-03"
+  parent_ws: "WS-013"
+status_note: "Content-heavy authoring; needs WS-147 framework"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

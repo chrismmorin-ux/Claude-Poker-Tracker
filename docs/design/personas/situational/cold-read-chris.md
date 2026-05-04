@@ -138,3 +138,4 @@ Search ranking weights `always` features highest, `today` features lowest, with 
 ## Change log
 
 - 2026-04-26 — Created. Authored as Gate 1 input for the table-build surface entry doc (`audits/2026-04-26-entry-table-build.md`). Proto-status; awaiting owner confirmation of stability-flag defaults and clothing-promotion rule.
+- 2026-05-02 — Cross-referenced by PIO Gate 3 Research (`audits/2026-05-02-gate3-research-player-identification-v2.md`, SPR-019 / WS-006). Persona stability-flag defaults table (lines 70-89) is authoritative for PIO-G3-STAB SIGHTING_FEATURE_PRIORS alignment — all 13 priors map directly to the table's `'always' / 'today' / unknown` defaults. Persona stays Proto-status (no amendments this session); PIO-G2 Stage A re-confirmed ratify-as-authored per inherited table-build Gate 2 closure.

@@ -1,0 +1,57 @@
+id: "WS-141"
+title: "HSP-B1 — Implement classifyArchetype(gameState, heroHand, villainModel) → archetypeId"
+type: improvement
+status: done
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-03T01:00:00Z"
+completed_at: "2026-05-03T03:55:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Implement src/utils/heroState/classifyArchetype.js — pure function mapping
+  game state + hero hand + villain model to one of the 18 archetype IDs from
+  HERO_STATE_DESIGN.md §4.
+
+  First-principles guard: classifier outputs the archetype ID; the BUILDER uses
+  the ID to select a narrative template, NOT to compute the plan. Plans derive
+  from equity / SPR / pot odds / players remaining. Per POKER_THEORY.md §7 and
+  exploitEngine/CLAUDE.md anti-patterns.
+
+  Decision tree:
+    street == preflop → 8 preflop archetypes (gated on actionContext + position)
+    street == flop    → 10 flop archetypes (gated on actionContext + position +
+                         pot-type SRP/3BP + multiway)
+    street == turn/river → throw NotImplementedError (v2)
+
+  Tests: unit tests for each archetype with synthetic game states. Verify
+  classifier returns the right archetypeId for boundary cases (multiway threshold,
+  SRP-vs-3BP threshold, position class boundaries).
+accept_criteria:
+  - "src/utils/heroState/classifyArchetype.js exports classifyArchetype()"
+  - "Returns a valid archetypeId for any preflop state"
+  - "Returns a valid archetypeId for any flop state"
+  - "Throws NotImplementedError for turn/river (v2 deferred)"
+  - "Unit tests cover boundary cases (each pot type / each position / multiway)"
+  - "No archetype-ID used as a plan-computation input anywhere in HSP code"
+effort: "M"
+files_involved:
+  - "src/utils/heroState/classifyArchetype.js (NEW)"
+  - "src/utils/heroState/types.js (depends on)"
+  - "src/utils/heroState/__tests__/classifyArchetype.test.js (NEW)"
+blocked_by:
+  - "WS-140"
+blocked_by_legacy: []
+enables:
+  - "WS-142"
+sprint_id: "SPR-025"
+decision_flags: []
+source:
+  origin: "founder-promotion-2026-05-02"
+  parent_ws: "WS-136"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §4 + §3"
+status_note: "Pure function; depends on HSP-T1 type schema"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

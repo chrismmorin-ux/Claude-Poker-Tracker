@@ -1,0 +1,43 @@
+id: "WS-121"
+title: "ICP-1 pattern codification: pattern doc + shared invariant-matrix runner"
+type: improvement
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-01T17:00:00Z"
+completed_at: "2026-05-01T17:30:00Z"
+priority_score: 26.0
+priority_label: "P1"
+category: "invariant-coverage-program"
+capability: "core"
+program: "engineering"
+description: |
+  Codify the matrix-fixture pattern originated in SPR-002 / WS-001 as a reusable
+  repo-local artifact. Output: pattern doc + shared runner. Sets up Sprints ICP-2
+  through ICP-5 to start fast from the doc instead of re-inventing.
+accept_criteria:
+  - "`.claude/context/INVARIANT_MATRIX_PATTERN.md` exists and explains schema, statuses, runner, harness-mirroring risk, when-to-use vs when-not"
+  - "`src/test/invariantMatrix.js` exports `runInvariantMatrix(fixtures, computeActual, options)` and `countByStatus(fixtures)`"
+  - "Both files are referenced from the program charter at `.claude/projects/invariant-coverage-program.md`"
+  - "Audit-only discipline: zero production source changes"
+effort: "M"
+files_involved:
+  - ".claude/context/INVARIANT_MATRIX_PATTERN.md"
+  - "src/test/invariantMatrix.js"
+  - ".claude/projects/invariant-coverage-program.md"
+blocked_by: []
+enables: ["WS-122"]
+sprint_id: "SPR-003"
+decision_flags:
+  - "File layout: chose .claude/context/ + src/test/ over kit/templates/ because adopted repo has no kit/ directory; matches existing repo conventions (POKER_THEORY.md, src/test/utils.js)"
+  - "Status set fixed at 4 values per ICP charter binding decision #3 — adding a 5th requires re-charter"
+notes: |
+  Pattern doc lives at .claude/context/INVARIANT_MATRIX_PATTERN.md (joins POKER_THEORY,
+  SYSTEM_MODEL, STATE_SCHEMA as architectural reference). Runner lives at src/test/invariantMatrix.js
+  (joins setup.js, utils.js). Program charter ratifies file layout as binding decisions #1 + #2.
+  Pattern doc references both canonical fixtures (TableView WS-001 + gameReducer WS-122 from
+  this sprint). Validated by WS-122 successfully consuming the runner.
+source:
+  origin: "ICP charter 2026-05-01"
+  initiative: "Invariant Coverage Program"
+created_at: "2026-05-01"
+updated_at: "2026-05-01"

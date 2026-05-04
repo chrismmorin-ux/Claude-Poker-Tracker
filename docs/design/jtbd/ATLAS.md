@@ -20,7 +20,7 @@ Expanded Session 1b (2026-04-21) from engine run — ~90 JTBDs across 14 domains
 
 | ID prefix | Domain | File | Entries |
 |-----------|--------|------|---------|
-| PM | Player management | [domains/player-management.md](./domains/player-management.md) | PM-01..09 |
+| PM | Player management (incl. PIO umbrella JTBDs) | [domains/player-management.md](./domains/player-management.md) | PM-01..15 |
 | MH | Mid-hand decision | [domains/mid-hand-decision.md](./domains/mid-hand-decision.md) | MH-01..13 |
 | HE | Hand entry | [domains/hand-entry.md](./domains/hand-entry.md) | HE-11..17 |
 | SM | Session management | [domains/session-management.md](./domains/session-management.md) | SM-17..22 |
@@ -28,7 +28,7 @@ Expanded Session 1b (2026-04-21) from engine run — ~90 JTBDs across 14 domains
 | SE | Session entry | [domains/session-entry.md](./domains/session-entry.md) | SE-01..04 |
 | TS | Tournament-specific | [domains/tournament-specific.md](./domains/tournament-specific.md) | TS-35..44 |
 | DS | Drills and study | [domains/drills-and-study.md](./domains/drills-and-study.md) | DS-43..61 |
-| CO | Coaching | [domains/coaching.md](./domains/coaching.md) | CO-48..53 |
+| CO | Coaching (formal-coach + self-coach modes) | [domains/coaching.md](./domains/coaching.md) | CO-48..57 |
 | SG | Social / group | [domains/social-group.md](./domains/social-group.md) | SG-54..59 |
 | MT | Multi-device / sync | [domains/multi-device-sync.md](./domains/multi-device-sync.md) | MT-60..63 |
 | SA | Subscription / account / access | [domains/subscription-account.md](./domains/subscription-account.md) | SA-64..75 |
@@ -43,7 +43,9 @@ Missing-feature JTBDs (87–90) are distributed across their domains, prefixed i
 
 ## By domain
 
-### Player management (PM-01..09)
+### Player management (PM-01..15)
+
+PM-01..09 are core capability (PEO-shipped). PM-10..12 are table-build sub-surface JTBDs (authored 2026-04-26). PM-13..15 are PIO umbrella JTBDs (authored 2026-05-02 by PIO Gate 1); PM-10/11/12 are sub-jobs of PM-13/14.
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -56,6 +58,12 @@ Missing-feature JTBDs (87–90) are distributed across their domains, prefixed i
 | PM-07 | Edit an existing player's record | ● | Active |
 | PM-08 | Resume an in-progress player draft | ● | Active |
 | PM-09 | Find a player by visual features (not name) | ● | Active |
+| PM-10 | Cold-read mixed match-or-create at session start | ● | Proposed |
+| PM-11 | Duplicate-detection + manual merge on save | ● | Proposed |
+| PM-12 | Today-only observations as per-seat-per-session records | ● | Proposed |
+| PM-13 | Describe someone into existence (PIO umbrella; PM-10/11 are sub-jobs) | ● | Active (PIO Gate 3, 2026-05-02; Surfaces ratified PIO Gate 4 2026-05-02) — **Surfaces:** `table-build` (entry; capture flow), `player-editor` PEX subsection (post-create edit), `player-profile` (post-create review) |
+| PM-14 | Build temporal attribute history (PIO umbrella; PM-12 is sub-job) | ● | Active (PIO Gate 3, 2026-05-02; Surfaces ratified PIO Gate 4 2026-05-02) — **Surfaces:** `player-profile` (per-attribute stability section + sighting log section); `sightingLogs` IDB store + manual-add affordance |
+| PM-15 | Convert uncertain sighting to known player (PIO umbrella) | ● | Active (PIO Gate 3, 2026-05-02; Surfaces ratified PIO Gate 4 2026-05-02) — **Surfaces:** `table-build` PossibleMatchesPanel (PIO-G4-DISAMB confidence bar + verbal label); `player-profile` (post-disambiguation verification destination) |
 
 ### Mid-hand decision (MH-01..10)
 
@@ -168,7 +176,10 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | DS-60 | Carry-the-reference-offline (physical laminated study artifact) | ◐ | Active (PRF, pending Gate 4) |
 | DS-61 | Export-the-personal-codex (owner-authored content into printable form) | ◐ | Active (PRF Phase 2+, pending Gate 4) |
 
-### Coaching (CO-48..53)
+### Coaching (CO-48..57)
+
+**Formal-coach mode** (third-party tutor reviewing student): CO-48..53 (authored 2026-04-21).
+**Self-coach mode** (user coaches self): CO-54..57 (authored 2026-05-02 by SCF Gate 1).
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -178,6 +189,10 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | CO-51 | Assign drills from library or custom | ◐ | Proposed |
 | CO-52 | Week-over-week mastery trends | ◐ | Proposed |
 | CO-53 | Skill-baseline assessment for new student | ◐ | Proposed |
+| CO-54 | See own leak surfaced without being graded | ● | Proposed |
+| CO-55 | Learn the next concept I'm ready for given current tier | ● | Proposed |
+| CO-56 | Validate that prior coaching is translating into play improvement | ● | Proposed |
+| CO-57 | Self-rate confidence on a line before seeing the verdict | ● | Proposed |
 
 ### Social / group (SG-54..59, 90)
 

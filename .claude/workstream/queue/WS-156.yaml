@@ -1,0 +1,66 @@
+id: "WS-156"
+title: "HSP-X2 — Caching strategy (event-driven; only claim if production HSP usage surfaces a perf issue)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "hero-state-primitive"
+capability: "core"
+program: "engineering"
+description: |
+  Resolve docs/HERO_STATE_DESIGN.md §7.6 open question: caching strategy for
+  HeroState beyond the current "re-derive on demand" v1 default.
+
+  THIS TICKET IS EVENT-DRIVEN — do NOT claim proactively. Only claim once
+  production HSP usage surfaces a perf issue. Premature optimization here
+  violates working principle "premature optimization of code that runs once
+  a day" (per .claude/rules/performance-baseline.md).
+
+  Trigger conditions for claiming:
+    - HandReplay review render measurably slow (>100ms for HeroStateSection)
+    - Live advisor (when wired in v2 consumer ticket) needs sub-frame HeroState
+    - Batch-mode SCF leak detector traverses many hands and recompute dominates
+    - Memory pressure from naïve caching (counter-trigger — bound the cache)
+
+  Likely strategy when trigger fires:
+    1. Decision-key hash cache — cache by (gameStateHash + heroHandHash +
+       villainModelHash). LRU bounded.
+    2. Per-archetype memoization for narrative interpolation only (cheaper
+       than caching full HeroState).
+    3. Streaming derivation — if SCF batch hits this, build incrementally
+       across streets rather than recomputing from scratch each street.
+
+  Per first-principles guard: caching never changes the semantic output. Any
+  cached HeroState must be byte-equivalent to the re-derived value. Cache
+  invalidation tied to inputs only.
+
+  Output: docs/HERO_STATE_DESIGN.md §7.6 resolution + benchmark report
+  documenting the trigger + chosen strategy + measured improvement.
+accept_criteria:
+  - "Trigger condition documented (which surface measured what slowdown)"
+  - "Chosen caching strategy implemented with bounded memory footprint"
+  - "Cache returns byte-equivalent HeroState to re-derived value (correctness invariant)"
+  - "Benchmark before/after recorded in HERO_STATE_DESIGN.md §7.6"
+  - "Existing tests green"
+effort: "M"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (resolve §7.6)"
+  - "src/utils/heroState/buildHeroState.js (potentially)"
+  - "src/utils/heroState/heroStateCache.js (NEW, possibly)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "DO NOT CLAIM until trigger condition documented (event-driven)"
+  - "Whether to cache full HeroState vs cache only template-rendered narrative"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7.6"
+status_note: "v2 caching; EVENT-DRIVEN — claim only if production perf surfaces a need; deliberately P3"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

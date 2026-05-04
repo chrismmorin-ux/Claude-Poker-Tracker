@@ -1,0 +1,64 @@
+id: "WS-135"
+title: "Credible intervals — expansive surface scope (PlayerAnalysisPanel + HandReplay tendency sections)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  v2 follow-up to WS-116 (FIND-001 close, SPR-017). Owner explicitly staged
+  surface scope: minimal-v1 ships in SPR-017 (TendencyStats + SeatGrid
+  fallback), expansive-v2 deferred to this ticket.
+
+  Add NEW tendency-stats sections (each rendering vpip/pfr/threeBet/cbet/
+  foldToCbet/foldTo3Bet with credible intervals) on:
+    - src/components/views/AnalysisView/PlayerAnalysisPanel.jsx — currently
+      does NOT render these stats; only feeds them to game-tree advisor at
+      lines 90-100. Likely placement: new "Tendency Summary" card below
+      VillainProfileModal section.
+    - src/components/views/HandReplayView/ReviewPanel.jsx (or
+      VillainAnalysisSection) — currently renders ranges/equity/segmentation
+      but no aggregate tendency stats. Likely placement: new "Villain Tendency"
+      card in VillainAnalysisSection above range-grid section.
+
+  Display convention inherited from SPR-017: ±X.X% suffix when sampleSize
+  <= 200; hidden when > 200. AF unchanged (no interval). Same hide-when-narrow
+  rationale (band becomes tight at large n; surface noise instead of signal).
+
+  Reuse opportunity: TendencyStats.jsx component (modified in SPR-017 to
+  render bands) can be embedded directly in both new sections for free
+  consistency. Or extract a more complete TendencyStatsCard component that
+  includes header + footer + interval bands. Implementation choice at Gate.
+accept_criteria:
+  - "New stats section in PlayerAnalysisPanel rendering vpip/pfr/threeBet/cbet/foldToCbet/foldTo3Bet with intervals using +/-X.X% convention from SPR-017"
+  - "New 'Villain Tendency' section in HandReplay (placement TBD: ReviewPanel vs VillainAnalysisSection)"
+  - "Reuses TendencyStats.jsx if convenient; otherwise authors per-surface display matching same convention"
+  - "Hide-when-narrow heuristic (n > 200) preserved for parity with SPR-017"
+  - "Existing tendencyCalculations math layer untouched"
+effort: "M"
+files_involved:
+  - "src/components/views/AnalysisView/PlayerAnalysisPanel.jsx"
+  - "src/components/views/HandReplayView/ReviewPanel.jsx"
+  - "src/components/views/HandReplayView/VillainAnalysisSection.jsx"
+  - "src/components/ui/TendencyStats.jsx (read; reuse candidate)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "PlayerAnalysisPanel section placement (below VillainProfileModal vs above VillainProfileModal vs collapsed-by-default card)"
+  - "HandReplay section host (ReviewPanel main card vs VillainAnalysisSection sub-section)"
+  - "Component reuse (embed TendencyStats verbatim vs extract TendencyStatsCard with header/footer)"
+source:
+  parent_ws: "WS-116"
+  origin: "deferred-from-SPR-017-staged-scope"
+  staged_by: "session-2026-05-02-next"
+  staged_at: "2026-05-02T06:30:00Z"
+status_note: "v2 follow-up ticket from SPR-017 staged scope decision; minimal v1 shipped in WS-116"
+created_at: "2026-05-02"
+updated_at: "2026-05-02"

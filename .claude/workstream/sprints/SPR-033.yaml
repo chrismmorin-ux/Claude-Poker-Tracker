@@ -1,0 +1,130 @@
+id: "SPR-033"
+title: "SCF G5 child 4 — curriculum infrastructure (mastery + composite + descriptor + tier map)"
+status: completed
+goal: |
+  The SCF curriculum spine lands as INFRASTRUCTURE ONLY: per-concept mastery
+  + composite signal + learning-state descriptor + tier authoring map +
+  signal-source toggle settings. The Drill-this path continues to validate
+  the chain end-to-end. The SelfCoachView surface splits to a focused
+  follow-up sprint (WS-159 to be authored at SPR-033 close-out) with its
+  own Gate 1/4 audit.
+
+  Three pre-execution decisions baked in (no further pause):
+    1. Concept granularity: HIGH — one concept per coherent solver-baseline
+       region in situation-key space. cbet-defense → ip-cbet-defense +
+       oop-cbet-defense (texture-conditioned where divergent). bb-defense
+       → split per-opener-position. WS-148 includes migration of the 2
+       lessons + 2 leak rules shipped in SPR-031/SPR-032 to fine-grained IDs.
+    2. Learning-state descriptor (not tier rank): per-concept mastery is
+       the truth; user-facing label is a derived descriptor with transparent
+       composition + user-toggleable signal sources (W_leak/W_drill/W_test/
+       W_recent become configurable). 6-tier ladder survives as authoring
+       metadata only.
+    3. Surface scope: infrastructure-only this sprint. SelfCoachView
+       Curriculum surface follows up under WS-159 (authored at WS-148
+       close-out).
+
+  Master Plan rhythm:
+    SPR-030: WS-145 — SCF framework + catalog + first leak rule
+    SPR-031: WS-158 + WS-146 first claim — chain activation + 2nd rule
+    SPR-032: WS-147 — lesson framework + 2 reference lessons + Drill-this nav
+    SPR-033: WS-148 — curriculum infrastructure (this sprint)
+    SPR-034+: WS-159 (SelfCoachView Curriculum surface, with Gate 1 audit)
+              + WS-149 (≥10 reference lessons) + WS-146 ongoing
+
+items:
+  - id: "WS-148"
+    title: "SCF G5 child 4 — curriculum infrastructure (mastery + composite + descriptor + tier map)"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags: []
+    decisions_locked:
+      - "Concept granularity = HIGH (per feedback_scf_high_granularity.md)"
+      - "Tier model = learning-state descriptor, not rank (per feedback_scf_learning_state_not_tier_rank.md)"
+      - "Surface scope = infrastructure-only; WS-159 follow-up for SelfCoachView Curriculum surface"
+      - "Plan-mode: Umbrella concept layer (rule binds to single umbrella; lesson body lists sub-concepts)"
+      - "Plan-mode: 6-way cbet-defense split by texture × position"
+      - "Plan-mode: Drop numeric prefixes globally; lesson files = {conceptId}.md"
+    depends_on: []
+    started_at: "2026-05-03T15:45:00Z"
+    completed_at: "2026-05-04T09:30:00Z"
+    notes: |
+      SHIPPED end-to-end:
+        - src/utils/skillAssessment/tierConceptMap.js (concept registry: 18 concepts; 5 general-skill + 2 umbrellas + 11 sub-concepts; 3-kind architecture; SITUATION_KEY_TO_CONCEPT lookup; 7 helper getters)
+        - src/utils/skillAssessment/conceptMastery.js (computeConceptMastery routes by kind; reads heroLeaks store + drill scheduler + lesson frameworkIds)
+        - src/utils/skillAssessment/composite.js (DEFAULT_WEIGHTS + DEFAULT_TOGGLES + computeComposites + pickNextTeachableConcept; SCF G4 §SPINE formula)
+        - src/utils/skillAssessment/learningStateDescriber.js (general/specific rollup; FORBIDDEN_RANK_LABELS lint; CD-5 composition transparency)
+        - src/utils/skillAssessment/__tests__/{tierConceptMap,conceptMastery,composite,learningStateDescriber,migration}.test.js (62 new tests)
+        - docs/projects/self-coach-foundation/lessons/cbet-defense-cluster.md (replaces 001-cbet-defense.md as umbrella; 6-way sub-concept enumeration in body)
+        - docs/projects/self-coach-foundation/lessons/bb-defense-cluster.md (replaces 002-bb-defense.md as umbrella; 5-way sub-concept enumeration in body)
+        - Renamed 5 G4 reference lessons (dropped 001/002/003/004/005 numeric prefixes)
+        - Re-pointed leak rules: hero-ip-cbet-overfold → cbet-defense-cluster; hero-bb-defense-width → bb-defense-cluster
+        - Updated 3 leak-rule tests + lessonRegistry test + HeroCoachingCard.leak test for new umbrella IDs
+        - src/constants/settingsConstants.js: added selfCoach state (signalToggles + signalWeights + ownerTier) + 3 new SETTINGS_ACTIONS
+        - src/reducers/settingsReducer.js: 3 new reducer cases (SET_SELF_COACH_SIGNAL_TOGGLE/WEIGHT/OWNER_TIER) + 7 new tests
+        - src/utils/skillAssessment/CLAUDE.md: §Concept-kind architecture + updated §Adding a new leak rule checklist (now includes registry + filename guidance)
+        - docs/projects/self-coach-foundation/lesson-authoring-template.md: change-log row + concept-kind authoring guidance
+        - docs/projects/self-coach-foundation/leak-catalog.md: 2 shipped rules' Related concept fields updated to cluster names + v1 milestone summary updated
+        - .claude/workstream/queue/WS-159.yaml: NEW — SelfCoachView Curriculum surface follow-up (Gate 1 audit + Gate 4 spec + implementation)
+
+      Tests: 9793 passed / 30 skipped / 0 failed (391 test files; +69 net vs SPR-032 baseline of 9724). Build clean (6.23s).
+
+      Memory updates: 2 new feedback memories written during plan-mode (feedback_scf_high_granularity.md + feedback_scf_learning_state_not_tier_rank.md), MEMORY.md index entries added.
+
+      Decisions resolved (all 6):
+        Q1 granularity → HIGH for rule-anchored; general-skill stays coarse
+        Q2 tier model → learning-state descriptor (not rank); 6-tier ladder = authoring metadata only
+        Q3 surface scope → infrastructure-only this sprint; WS-159 follow-up
+        Q4 (plan-mode) rule→concept binding → umbrella concept layer
+        Q5 (plan-mode) cbet-defense split → 6-way (texture × position)
+        Q6 (plan-mode) filenames → drop numeric prefixes; {conceptId}.md
+
+      Out of scope (per plan): SelfCoachView UI (WS-159) + Settings UI for toggles (WS-159) + Sub-concept lesson files (WS-149) + Per-cell leak rule splits (WS-146 ongoing) + Markdown rendering inside LessonDetailView (deferred).
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — curriculum infrastructure spine (Master Plan §D Phase 5)"
+total_effort: "M = ~1.5 sessions tagged"
+decisions_needed: []
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T15:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-032). Manual review: composite signal + descriptor are inspection surfaces, not engagement surfaces; user-toggleable signals reinforces autonomy; tier-as-authoring-metadata-only forecloses gamification substrate (autonomy red line #5). Reframings codified in 2 new feedback memories (high-granularity + learning-state-not-rank) before composition."
+  matches: []
+
+created_at: "2026-05-03T15:45:00Z"
+approved_at: "2026-05-03T15:45:00Z"
+started_at: "2026-05-03T15:45:00Z"
+completed_at: "2026-05-04T09:30:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection: WS-148 (curriculum scaffolding) chosen — it is the
+  natural infrastructure-spine continuation of the SCF G5 chain shipped
+  in SPR-030/SPR-031/SPR-032. Both blocking deps (WS-145, WS-147) shipped
+  yesterday/today.
+
+  Source-class damping (Step 2d): last 3 anchors WS-145 (spr-followup),
+  WS-158 (spr-followup), WS-147 (spr-followup). All founder-driven —
+  never damped. WS-148 source: ws-013-decomposition → spr-followup → not
+  damped.
+
+  Mode classification: M effort + improvement type + originally 3 decision
+  flags (resolved pre-approval) → plan-first. Plan-mode used for module
+  design + lesson/leak-rule migration plan, not for re-asking the 3
+  resolved decisions.
+
+  Two new feedback memories written during plan-mode pre-approval:
+    - feedback_scf_high_granularity.md
+    - feedback_scf_learning_state_not_tier_rank.md
+  Both bind WS-148 + future SCF authoring (WS-149 + WS-159 + ongoing WS-146).
+
+  Note for SPR-034+ planning: After WS-148 ships:
+    - WS-159 — SelfCoachView Curriculum surface (NEW; needs Gate 1 audit)
+    - WS-149 — ≥10 reference lessons across ≥3 tiers (content-heavy)
+    - WS-146 ongoing — additional catalog leak rules

@@ -2,10 +2,33 @@ id: "WS-001"
 title: "Invariant matrix authoring (audit-only, NO fixes)"
 legacy_id: "TIA-1.1"
 type: improvement
-status: claimed
+status: done
 claimed_by: "session-2026-05-01-next"
 claimed_at: "2026-05-01T16:19:57Z"
-completed_at: null
+completed_at: "2026-05-01T16:45:00Z"
+notes: |
+  Audit-only matrix authored at src/components/views/TableView/__tests__/actionInvariants.fixture.js
+  + invariants runner at actionInvariants.invariants.test.js. 41 fixture rows total:
+    - 28 matches (spec === actual)
+    - 5 pinned_bug (owner-predicted "more examples" candidates: SB-completing,
+      mucked seat post-showdown, folded seat re-selected, all-seats-folded,
+      multi-seat mixed action state — last reclassified as spec_gap during runner debug)
+    - 6 spec_gap (all-in detection MISSING + dead-money blinds + straddle x2 +
+      multi-seat per-seat-applicability + hero short-stack push-fold)
+    - 3 regression_pinned (BUG-OWNER-1 multi-seat illegal CHECK [fixed dd9b266];
+      BUG-OWNER-2 post-fold next-to-act-seat-bet [no specific commit, asserts not regressed];
+      RT-c52318b BB CHECK option [fixed c52318b])
+  Headline finding: the codebase had ZERO action-availability invariant tests before
+  this matrix. 2 owner-reported bugs shipped silently and required user discovery.
+  Five candidate currently-broken scenarios surfaced (BUG-CANDIDATE-* in fixture)
+  that the owner has not previously flagged — feed these into WS-003 triage.
+  Five structural spec_gaps named (no all-in detection, no straddle representation,
+  no dead-money distinction, no per-seat selection guards, no SHOVE primitive)
+  — these are infrastructure-shaped findings, not single-line fixes; may require
+  follow-on tickets beyond WS-002/WS-003 scope.
+  Component test suite: 1601 passed, 6 skipped (the spec_gap rows). No production
+  code modified. Audit-discipline preserved: git diff src/utils/ + TableView/*.jsx
+  shows zero changes.
 priority_score: 30.0
 priority_label: "P0"
 category: "tableview-invariant-audit"

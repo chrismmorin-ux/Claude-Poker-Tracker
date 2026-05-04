@@ -162,3 +162,54 @@ Wrapped in `ScaledContainer`.
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
 - 2026-04-22 — DCOMP-W4-A1 audit appended; Known-issues updated with 13 findings (4 P0, 4 P1, 2 P2, 3 P3/deferred).
 - 2026-04-26 — Marked partially superseded by Table-Build (Gate 4 ratified). Seat-assignment grid absorbed; database browser + bulk operations survive. DCOMP-W4-A1 F1/F3/F6/F7 paused; F2/F5/F8 ship independent; F13 Phase 0 prerequisite.
+- 2026-05-02 — PIO Gate 4 PV subsection appended (SPR-021 / WS-007). Scope-limited rebuild: surviving database-browser portion only; new PIO attribute filters; row-tap routes to SCREEN.PLAYER_PROFILE (Profile is new default; Edit is one-tap-from-Profile). Implementation deferred to PIO Gate 5 multi-PR.
+
+---
+
+## PIO-G4-PV — PlayersView database-browser extensions (PIO Gate 4 extension, 2026-05-02)
+
+**Added by:** PIO Gate 4 (WS-007 / SPR-021). See `audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-PV (inline-handled item §7) for the full spec.
+
+**Scope-limited rebuild rationale.** Master Plan §A originally called for a full PlayersView rebuild (replacing the 509-line single-file view). Gate 4 ratification (Decision 1: extend Table-Build) shrinks the scope: seat-grid is absorbed by Table-Build per existing 2026-04-26 supersession marker; only the surviving database-browser portion (PlayerRow list, PlayerFilters, sort, search, range-detail overlay, edit/delete) gets PIO extensions.
+
+**New PIO attribute filters in PlayerFilters.**
+
+Existing PlayerFilters surface name search + style tags + gender + build + ethnicity + facial hair + hat + sunglasses chips. PIO-G4-PV adds:
+
+| Filter | Source | Notes |
+|---|---|---|
+| AgeDecade chip | `player.ageDecade` | Closed enum 5-bin (20s/30s/40s/50s/60+); single-select. |
+| Wardrobe palette chip | `player.wardrobe.palette[]` | Multi-select; matches against the closed-enum palette. 'other' free-text excluded from filtering. |
+| Jewelry palette chip | `player.jewelry.palette[]` | Same shape. |
+| Logo palette chip | `player.logo.palette[]` | Same shape. |
+
+Existing chips (Skin / Hair / Beard / Glasses / Hat / Ethnicity) carry through unchanged. Hat chip gains envelope-shape adapter (legacy flat-string and envelope shape both filter correctly via getter shim).
+
+**Multi-resolution scaling validation.**
+
+| Resolution | Target | Validation |
+|---|---|---|
+| 1600x720 | Primary (Galaxy A22 landscape) | All 10+ filter chips fit horizontal density; row tap target ≥44×44 |
+| 1280x720 | Secondary (older Android landscape) | Filter chips wrap to 2 rows if needed; row content stays legible |
+| 1920x1080 | Aspirational (tablet/desktop) | More breathing room; layout adapts via existing CSS |
+
+Existing scaling carries through; new attribute filter chips must fit horizontal density on primary 1600x720 target.
+
+**Row-tap routing change (BREAKING for v2 consumers).**
+
+In v1, PlayersView row tap → `openPlayerEditor({ mode: 'edit', playerId })` directly. PIO-G4-PV changes default destination:
+
+| State | v1 (existing) | PIO-G4-PV (post-Gate-5) |
+|---|---|---|
+| Row tap | → PlayerEditor edit-mode | → SCREEN.PLAYER_PROFILE |
+| Edit affordance | (implicit; default) | Profile has explicit `[ Edit player → ]` button (one-tap-from-Profile) |
+
+Rationale: Profile is the new default review destination; Edit is downstream. Per `cold-read-chris` JTBD ratification — owner reviews profile first, edits if needed.
+
+Backwards-compat: Phase 5 implementation may surface a Settings opt-out toggle to revert to direct-edit if owner prefers (Phase 2+ feature; not in v1).
+
+**Seat-grid scope: NONE.**
+
+Per existing 2026-04-26 supersession marker, seat-grid is absorbed by Table-Build. PIO-G4-PV does NOT touch seat-grid code paths. Table-Build is the seat-grid surface post-Gate-5.
+
+**Anti-pattern compliance:** see audit doc §AP-PIO walkthrough. PIO-G4-PV is a database-browser extension; AP-PIO-01..05 inherited from existing PlayersView review-mode posture. Cultural-sensitivity binding affirmed: AgeDecade + Ethnicity filters captured for identification utility (find regulars across sessions); never propose recommendations keyed on demographics.

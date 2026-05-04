@@ -1,0 +1,76 @@
+id: "WS-154"
+title: "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Replace the v1 FLOP_MULTIWAY stub with a full multiway model. Multiway
+  invalidates HU range-vs-range reasoning — needs its own template family
+  with sequential-decision modeling.
+
+  Per docs/HERO_STATE_DESIGN.md §7.4:
+    - Multiway breaks HU range/nut-advantage reasoning (which range "owns" the
+      flop is ill-defined when 3+ ranges intersect)
+    - Sequential decisions cascade — caller(s) condition villains' subsequent
+      decisions; treating decisions as independent is wrong
+    - Pot-odds dilution — multiway pots inflate calling-range value; bluff
+      frequency must drop sharply
+    - Capped ranges — caller(s) on flop are typically capped (would have raised
+      with the strongest hands preflop), creating asymmetric range advantages
+
+  Likely scope:
+    1. Multiway-specific archetype family (replaces single FLOP_MULTIWAY entry):
+       - MULTIWAY_SRP_VS_PFR_AND_CALLER  — hero is PFR, both blinds called
+       - MULTIWAY_SRP_AS_CALLER_PFR_BEHIND — hero called preflop, PFR yet to act
+       - MULTIWAY_SRP_AS_CALLER_PFR_ACTED — hero called, PFR has cbet/checked
+       - MULTIWAY_3BP_FLOP                — 3+ players to flop in 3-bet pot (rare)
+       - MULTIWAY_LIMP_FLOP               — 3+ players to flop in limped pot
+    2. Sequential-decision modeling in equityVsRangeParts — when villain1 acts
+       before villain2, villain2's range-given-call conditions on villain1's
+       prior action
+    3. Bluff-frequency adjustment in plan computation — multiway pot collapses
+       bluff EV; templates should reflect this without hardcoding it
+
+  Per first-principles guard: bluff-frequency adjustment should derive from
+  equity decomposition + pot odds + players remaining, NOT from a "multiway
+  multiplier" hardcoded as a function of player count.
+
+  Update HERO_STATE_DESIGN.md §7.4 with the resolved model design before
+  implementing. May spawn additional implementation tickets if scope grows.
+accept_criteria:
+  - "docs/HERO_STATE_DESIGN.md §7.4 multiway model design ratified"
+  - "Multiway archetype family enumerated + templates authored at docs/design/hero-state-templates/multiway/"
+  - "FLOP_MULTIWAY v1 stub deprecated (or replaced inline) with link to new family"
+  - "equityVsRangeParts handles sequential-decision conditioning when villain count >2"
+  - "Plan computation reflects multiway bluff-frequency reduction without hardcoded multipliers"
+  - "Unit tests cover ≥3-way flop scenarios end-to-end"
+effort: "L"
+files_involved:
+  - "docs/HERO_STATE_DESIGN.md (rewrite §7.4)"
+  - "docs/design/hero-state-templates/multiway/ (NEW)"
+  - "src/utils/heroState/classifyArchetype.js (extend)"
+  - "src/utils/heroState/equityVsRangeParts.js (extend for sequential decisions)"
+  - "src/utils/heroState/buildHeroState.js (extend)"
+  - "src/utils/heroState/types.js (extend ARCHETYPE_IDS + add multiway-specific fields if needed)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Whether multiway gets its own archetype family or stays under flop family"
+  - "Sequential-decision modeling depth (just pairwise vs full ordering)"
+  - "Whether to spawn additional tickets if scope balloons during design"
+source:
+  origin: "founder-promotion-2026-05-03"
+  parent_ws: "WS-150"
+  parent_doc: "docs/HERO_STATE_DESIGN.md §7.4"
+status_note: "v2 multiway model; complex — may spawn child tickets during design"
+created_at: "2026-05-03"
+updated_at: "2026-05-03"

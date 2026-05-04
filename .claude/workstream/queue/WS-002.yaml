@@ -2,10 +2,10 @@ id: "WS-002"
 title: "Straddle wired into matrix"
 legacy_id: "TIA-1.2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-01-next"
+claimed_at: "2026-05-02T00:45:00Z"
+completed_at: "2026-05-02T01:05:00Z"
 priority_score: 30.0
 priority_label: "P0"
 category: "tableview-invariant-audit"
@@ -22,9 +22,10 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED on owner straddle-scope answer"
+decision_flags:
+  - "Straddle scope: live-only / Mississippi / UTG-only / re-straddle allowed?"
+sprint_id: "SPR-010"
+status_note: "RESOLVED 2026-05-02 — owner scope decided (UTG+BTN only, UTG>BTN precedence, no re-straddle). Matrix extended: STRADDLE COVERAGE section added with 7 new spec_gap rows (INV-S-010..017); existing INV-S-007/S-008 comments updated with closure pointer. Audit-only — zero production code change. WS-003 (TIA-1.3 Fix wave) blocked_by satisfied; ready for next sprint."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — TableView Invariant Audit + Straddle (TIA, project: `.claude/projects/master-plan-2026-04-30.md` §B+E)"

@@ -1,0 +1,166 @@
+id: "SPR-027"
+title: "HSP-B2 buildHeroState() orchestrator"
+status: completed
+goal: |
+  HSP-B2 buildHeroState() orchestrator ships — composes the 4 HSP primitives
+  (types, classifier, role-translator, templates) plus the 3 existing engines
+  (rangeEngine, gameTreeEvaluator, villainProfileBuilder) into a complete
+  HeroState object per src/utils/heroState/types.js.
+
+  After this sprint, WS-143 (HandReplay first-consumer wire) is unblocked.
+  WS-143 in turn unblocks WS-013 (SCF Gate 5 leak-rule wiring), the deferred
+  Master Plan §D Phase 5 entry. The HSP-to-SCF chain is the load-bearing
+  feature dependency the founder named when promoting HSP into the queue
+  (per project_master_plan_2026_04_30 + project_hero_state_primitive memories).
+
+  Master Plan rhythm:
+    SPR-024: WS-140 + WS-137 (HSP foundation: types + audit)
+    SPR-025: WS-144 + WS-141 (HSP build: role-translator + classifier)
+    SPR-026: WS-138 + WS-139 (HSP authoring: 18 narrative templates)
+    SPR-027: WS-142 (HSP orchestrator)
+    SPR-028+: WS-143 (HandReplay consumer wire) → WS-013 (SCF G5 leak rules)
+
+  Cap exception: L = ~3 sessions tagged exceeds standard 2-session cap.
+  Founder-approved over-cap for the second consecutive sprint (after SPR-026's
+  M+M=3 bundle). Pragmatic: L items don't fit standard ceremony unless we
+  break them into smaller tickets.
+
+  First-principles guard binds the orchestrator: plans come from
+  gameTreeEvaluator using equity / SPR / pot odds / players remaining —
+  never from archetypeId lookup. Templates only render; they don't decide.
+
+items:
+  - id: "WS-142"
+    title: "HSP-B2 — Implement buildHeroState() orchestrator"
+    mode: plan-first
+    effort: L
+    status: done
+    finding_id: null
+    decision_flags:
+      - "Q1 RESOLVED in plan mode: failure mode = two-tier (gameState/heroHand required, villain inputs optional with soft-degrade)."
+      - "Q2 RESOLVED in plan mode: YAML parsing = hand-roll minimal frontmatter parser (no js-yaml dep)."
+      - "Caching DEFERRED per accept_criteria allowance: no cache for v1; documented in module header."
+      - "Composition order = parallel (evaluateGameTree + computeEquityVsRangeParts via Promise.all) where data permits; preflop short-circuits computeEquityVsRangeParts."
+      - "Template loading = Vite import.meta.glob (matches existing printableRefresher/cardRegistry pattern)."
+    depends_on: []
+    started_at: "2026-05-03T05:00:00Z"
+    completed_at: "2026-05-03T06:30:00Z"
+    completion_notes: |
+      Shipped 4 source files + 4 test files in src/utils/heroState/:
+        - buildHeroState.js (~280 LoC) — main orchestrator with two-tier
+          failure mode + parallel composition + 7-step pipeline
+        - parseFrontmatter.js (~80 LoC) — minimal YAML parser for our
+          bounded frontmatter shape (key:value, |literal blocks, -item
+          arrays); no new deps
+        - loadTemplates.js (~80 LoC) — Vite import.meta.glob loader for
+          all 18 templates + section parser (## Headline / ## Body /
+          ## Branch summary); matches existing printableRefresher pattern
+        - interpolateTemplate.js (~80 LoC) — Mustache-style {{path.to.field}}
+          substitution + {{list[*].x}} array iteration + {{list[N].x}}
+          indexed access; unresolved slots stay as-is for visibility
+
+      Tests: 62 new tests (parseFrontmatter:12 + interpolateTemplate:18 +
+      loadTemplates:8 + buildHeroState:24); all 122/122 heroState tests
+      green; full smart-test-runner 9599/9629 passed (30 skipped, 0 failures);
+      build clean (6.66s).
+
+      Decision tree for buildHeroState (plan-mode resolved):
+        - Step 0: validate gameState + heroHand (throw if missing)
+        - Step 1: derive Situation (street/actionContext/positionClass/
+                  inPosition/playersRemaining/sprZone/pot/effStack/rake/potType)
+        - Step 2: derive HandContext (hand/handClass/handStrength/range
+                  Advantage/nutAdvantage/boardTexture)
+        - Step 3: classifyArchetype(axes) → archetypeId + archetypeFamily
+        - Step 4: PARALLEL Promise.all([evaluateGameTree, computeEquityVsRangeParts])
+                  - both branches no-op when villain data missing (soft-degrade)
+                  - computeEquityVsRangeParts skipped preflop + on MULTIWAY
+        - Step 5: map planResult.recommendations[0] → Plan typedef
+        - Step 6: assemble equity (overall + vsRangeParts + realization +
+                  realizedEquity) — null where degraded
+        - Step 7: build adjustments from villainProfile.vulnerabilities
+                  (top 3, v1; composition rule deferred to consumer per §7.2)
+        - Step 8: render narrative via loadTemplate(archetypeId) +
+                  interpolateTemplate(section, partial-HeroState)
+        - Step 9: assemble + return
+
+      Doc update: appended HERO_STATE_DESIGN.md §10 documenting the
+      orchestrator's failure-mode policy, caching decision, composition
+      order, helper modules + their swap-out triggers, and downstream
+      impact (WS-143 unblocked).
+
+      First-principles guard regression test added: verifies plan.primary.action
+      comes from evaluateGameTree output (mocked CHECK) NOT from archetypeId
+      lookup (FLOP_SRP_HU_IP_CBET says "CBET" in name — orchestrator does
+      not override).
+
+      Soft-degrade integration verified: villainProfile=null + villainRange=null
+      returns valid HeroState shape with null fields where appropriate; templates
+      still render (unresolved slots remain as `{{path}}` placeholders for
+      author visibility).
+
+      WS-143 (HandReplay first-consumer wire) UNBLOCKED. Cross-program
+      (design Gate 1+4 required since it's a UX change). After WS-143:
+      WS-013 (SCF Gate 5 leak-rule wiring) — Master Plan §D Phase 5.
+    notes: ""
+
+composed_by: auto
+program_focus: domain-correctness
+program_initiative: "Hero State Primitive workstream (HSP orchestrator phase; unblocks WS-143 → WS-013 SCF Gate 5; direct continuation of SPR-024 + SPR-025 + SPR-026)"
+total_effort: "L = ~3 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-142): Caching strategy — re-derive vs decision-key-hash cache (open question §7.6)."
+  - "Item #1 (WS-142): Composition order — sequential vs parallel-where-possible (equity + plan are both async)."
+  - "Item #1 (WS-142): Failure-mode policy — graceful degradation strategy for null villainProfile / null villainRange / etc."
+  - "Item #1 (WS-142): Template loading — Vite import.meta.glob vs pre-parse vs runtime fetch."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T05:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-026). Manual review: scope is pure-function orchestrator wiring existing primitives + first-principles guard explicitly written into the ticket (plans from gameTreeEvaluator, templates render only). No engagement-pressure / mastery-score / cross-surface-contamination angles."
+  matches: []
+
+created_at: "2026-05-03T05:00:00Z"
+approved_at: "2026-05-03T05:00:00Z"
+started_at: "2026-05-03T05:00:00Z"
+completed_at: "2026-05-03T06:30:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item L-effort sprint. Cap exception (L = ~3 sessions; standard cap
+  is 2). Founder explicitly approved over-cap to keep HSP build coherent.
+
+  Anchor selection (Step 3a):
+    - WS-142: highest-priority unblocked HSP work after SPR-024..SPR-026.
+      All blockers (WS-138, WS-139, WS-140, WS-141, WS-144) shipped.
+    - No companion item: WS-143 (next downstream) is blocked_by WS-142,
+      so it can't bundle in the same sprint. WS-142 is large enough that
+      it stands alone.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-138 (untagged/founder), WS-144 (spr-followup),
+      WS-140 (untagged/founder). No class saturated.
+    - WS-142 source: founder-promotion-2026-05-02 → untagged → NOT damped.
+
+  Soft-block check (Step 2-prereq): WS-142 has no blocked_by_note.
+
+  Fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): no programs with block_sprint:true are stale.
+
+  Auto-replenishment (Step 1e): not run — kit scripts missing in adopter repo.
+
+  Mode classification per Step 3d:
+    - WS-142: L effort + improvement type → plan-first (4 decisions surfaced).
+
+  Tooling friction unchanged from SPR-022..SPR-026: 4 missing
+  kit/scripts/cwos-* scripts. Manual fallbacks used.
+
+  Note for SPR-028+ planning: WS-143 (HandReplay first-consumer wire, M,
+  design Gate 1+4 cross-program — requires design audit because it's a
+  user-visible UX change). After WS-143: WS-013 (SCF Gate 5 leak-rule
+  wiring, M, design program).
+
+  Cap exception trend: SPR-026 was M+M=3, SPR-027 is L=3. Two consecutive
+  over-cap sprints. If SPR-028 also exceeds cap, recommend bumping ceremony
+  to strategic in .cwos-config.yaml or revisiting effort estimates (HSP
+  authoring tickets ran ~50 min actual vs M tag).

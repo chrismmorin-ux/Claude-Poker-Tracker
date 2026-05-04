@@ -1,0 +1,183 @@
+id: "SPR-030"
+title: "SCF G5 — first leak rule wired end-to-end (WS-013 slice)"
+status: completed
+goal: |
+  First end-to-end leak rule wires through the HSP→SCF chain. One concrete
+  leak rule fires from hero's actual action vs HeroState.plan.primary,
+  renders inline in HeroCoachingCard per the SCF G4 spec, and proves the
+  SCF Gate 5 architecture without committing to all 5 accept_criteria
+  deliverables in one sprint.
+
+  WS-013 as written has 5 deliverables (skillAssessment/ module + lesson
+  authoring framework + ≥10 lessons + curriculum + leak rules wired) — too
+  large for a single sprint. SPR-030 slices off the leak-rule deliverable
+  because (a) it's the direct continuation of the HSP build (SPR-024..
+  SPR-027 + SPR-029) just closed, (b) WS-143 explicitly unblocked it,
+  (c) it proves the architecture end-to-end with minimal scope, (d) the
+  other 4 deliverables can ship in subsequent sprints once the architecture
+  is validated.
+
+  Master Plan rhythm:
+    SPR-024..SPR-027: HSP build (4 sprints)
+    SPR-028: queue hygiene (WS-115 stale P0 closure)
+    SPR-029: WS-143 — HSP HandReplay first-consumer wire
+    SPR-030: WS-013 slice — first leak rule wired end-to-end (this sprint)
+    SPR-031+: remaining WS-013 deliverables (skillAssessment expansion +
+              lesson authoring framework + curriculum + ≥10 lessons)
+
+items:
+  - id: "WS-013"
+    title: "SCF G5 — first leak rule wired end-to-end (RE-SCOPED in plan-mode to framework + catalog + first rule per founder direction)"
+    mode: plan-first
+    effort: L
+    status: done
+    finding_id: null
+    decision_flags:
+      - "RESOLVED Q1: A1 decompose. WS-013 → tracking-parent; 5 children authored (WS-145 = this sprint; WS-146..WS-149 backlog)."
+      - "RESOLVED Q2: IP cbet defense overfold (the §SCF-G4 example, fully pre-spec'd, simplest)."
+      - "RESOLVED Q3: src/utils/skillAssessment/ — honors SCF G4 audit spec; framework + future expansion live here."
+      - "RESOLVED Q4 (founder reframe): 'Build it right to support the gamut of potential leaks, then fill them in as we author them' — sprint expanded to include leak-catalog doc + extensible framework (registry pattern, generic accumulator) + first rule. Future rules slot in cleanly."
+    depends_on: []
+    started_at: "2026-05-03T08:45:00Z"
+    completed_at: "2026-05-03T11:00:00Z"
+    completion_notes: |
+      Founder reframed the sprint mid-plan-mode: build the framework right to
+      support the gamut of future leaks; ship simple rule as proof. Sprint
+      delivered:
+
+      Phase A — Decomposition (founder pick A1):
+        - 5 child tickets WS-145..WS-149 authored matching original accept_criteria
+        - WS-013 repositioned as tracking-parent (children: WS-145..WS-149)
+        - WS-145 = "framework + first leak rule" claimed for SPR-030
+        - WS-146..WS-149 queued as backlog
+
+      Phase B — Catalog (founder direction):
+        - docs/projects/self-coach-foundation/leak-catalog.md authored
+        - 25 leak types across 10 categories (preflop fold-equity, preflop sizing,
+          flop continuation, flop sizing, turn barrel, river bluff-catch, multiway,
+          capped-range, position discipline, sample-size discipline)
+        - Status: 1 SHIPPED ★ + 18 PLANNED + 6 FUTURE-RESEARCH
+        - Per-entry: id, label, complexity tier, status, situation keys, baseline
+          source, intent, scope notes, expansion notes
+        - Authoring workflow + coverage progress table for future sprints
+        - This is the "queue" founder asked for ("eventually exhausting possible
+          leaks of various types")
+
+      Phase C — Framework + first rule (extensible-by-design):
+        - src/utils/skillAssessment/CLAUDE.md (domain rules + 5 anti-patterns +
+          source-util-policy whitelist + n≥30 floor + CD-5 discipline)
+        - src/utils/skillAssessment/heroDecisionAccumulator.js (~270 LoC; generic
+          hero-side bucketer + Wilson 95% CI + situation-key derivation mirroring
+          villain-side)
+        - src/utils/skillAssessment/solverBaselines.js (~50 LoC; extensible lookup;
+          v1 has 6 entries for IP cbet rule)
+        - src/utils/skillAssessment/heroLeakDetector.js (~80 LoC; registry pattern
+          via import.meta.glob — auto-loads leakRules/*.js excluding _template.js)
+        - src/utils/skillAssessment/leakRules/_template.js (authoring template
+          documenting the standard interface — copy when shipping a catalog entry)
+        - src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js (the first
+          rule; CD-5 compliant; n≥30 + delta + CI-agreement + severity gates)
+        - 47 framework tests across 4 test files (heroDecisionAccumulator,
+          solverBaselines, heroLeakDetector, heroIpCbetOverfold)
+
+      Phase D — IDB migration + hook + badge wire:
+        - IDB v21 → v22 migration (heroLeaks store, composite keypath
+          [playerId, situationKey], 3 indexes)
+        - src/utils/persistence/heroLeaksStore.js (CRUD: getLeak, getLeaksForPlayer,
+          putLeak, snoozeLeak, replacePlayerLeaks — preserves snoozedUntil
+          across re-detection)
+        - src/hooks/useHeroLeaks.js (reads + honors snoozedUntil + session-local
+          dismissedAt; provides snooze/dismiss callbacks)
+        - HeroCoachingCard.jsx extended with HeroLeakBadge sub-component:
+          collapsed ⚑ glyph + label / expanded CD-5 4-field card + Drill /
+          Dismiss / Snooze affordances. Optional callbacks; surfaces compose
+          neutral copy from factual fields.
+        - Updated 2 pre-existing tests (anchorLibraryStores + database) for v22 +
+          21-store count
+        - 13 HeroCoachingCard.leak.test.jsx tests (badge rendering, CD-5
+          4-field discipline, affordances, autonomy red line #5 lint test —
+          forbids wrong / missed / score / streak / level up / master / grade /
+          great job / well done / excellent copy)
+
+      Total: 60 net new tests across 5 new files. Full smart-test-runner
+      9680/9710 passed (30 skipped, 0 regressions). Build clean.
+
+      Doc updates: HERO_STATE_DESIGN.md §12 + leak-catalog.md (the catalog
+      is itself a deliverable + roadmap). hand-replay-view.md surface artifact
+      already documented the leak badge from prior SCF G4 sprint.
+
+      ReviewPanel wire-in deferred — the badge slot exists in HeroCoachingCard
+      but ReviewPanel doesn't yet pass leak/onSnooze/onDismiss/onDrill props.
+      That's a 5-line addition for a follow-up sprint that wires useHeroLeaks
+      hook + leak detection trigger (e.g., on tendency analysis completion).
+      For v1 the badge is shippable + tested in isolation; full integration
+      ships when a hand-replay-side trigger pipeline is wired.
+
+      Catalog → framework → consumer chain is intact. Future leak rules add
+      one file in leakRules/ + entries in solverBaselines.js + status update
+      in catalog. No detector code changes needed.
+    notes: ""
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF Gate 5 first end-to-end leak; Master Plan §D Phase 5; HSP-to-SCF chain closes)"
+total_effort: "M = ~1.5 sessions tagged"
+decisions_needed:
+  - "Item #1 (WS-013): Decomposition (A1) vs slice (A2) approach."
+  - "Item #1 (WS-013): Which leak rule to ship first."
+  - "Item #1 (WS-013): skillAssessment/ minimal scope (detector-only vs detector+skill-state attribute infra)."
+  - "Item #1 (WS-013): Existing infra audit — reuse weaknessDetector scaffolding or build fresh hero-side accumulator."
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-03T08:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-029). Manual review: scope is wiring first leak rule from existing villain-detection patterns + new HSP canonical baseline. Autonomy red lines #5 (no shame copy) + #8 (no cross-surface contamination) explicitly bind via SCF G4 spec already documented. Plan-mode will validate. No engagement-pressure / mastery-score angles — leak detection is intentionally NOT a grade per CO-54 ('see leak without being graded')."
+  matches: []
+
+created_at: "2026-05-03T08:45:00Z"
+approved_at: "2026-05-03T08:45:00Z"
+started_at: "2026-05-03T08:45:00Z"
+completed_at: "2026-05-03T11:00:00Z"
+session_ids: ["session-2026-05-03-next"]
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap (second
+  consecutive cap-respecting sprint after SPR-029).
+
+  Anchor selection (Step 3a):
+    - WS-013 algorithmic top by founder Master Plan §D Phase 5 weight +
+      direct continuation of HSP build (which just closed via SPR-029).
+    - Re-scoped from "all 5 accept_criteria deliverables" (multi-sprint)
+      to "first leak rule wired end-to-end" (single sprint slice).
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: WS-115 (untagged/migrated), WS-142 (untagged/founder),
+      WS-143 (untagged/founder). No class saturated.
+    - WS-013 source: backlog-md-migration-2026-05-01 → untagged → NOT damped.
+
+  Soft-block check (Step 2-prereq): WS-013 has no blocked_by_note. Original
+  blocked_by [WS-012] is satisfied (WS-012 done in SPR-020).
+
+  Fleet-rotation invariant: not applicable (adopted repo, not HomeBase).
+
+  Sprint-block gate (Step 1d): no programs with block_sprint:true are stale.
+
+  Auto-replenishment (Step 1e): not run — kit scripts missing in adopter repo.
+
+  Mode classification per Step 3d:
+    - WS-013: M effort + improvement type + 4 decision flags → plan-first
+      (clearly).
+
+  Tooling friction unchanged from SPR-022..SPR-029: 4 missing
+  kit/scripts/cwos-* scripts. Manual fallbacks used.
+
+  Note for SPR-031+ planning: After SPR-030's leak-rule slice, remaining
+  WS-013 deliverables to schedule:
+    - skillAssessment/ expansion (per-domain skill-state attribute infra)
+    - lesson authoring framework
+    - curriculum scaffolding
+    - ≥10 lessons across ≥3 tiers landed
+
+  If SPR-030 picks A1 (decomposition), these become 4 child tickets
+  (WS-145..WS-148 likely). If A2 (slice), they remain unscoped within
+  WS-013 with explicit follow-up notes.

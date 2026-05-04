@@ -1,0 +1,144 @@
+id: "SPR-019"
+title: "PIO Gate 3 — Player Identification v2 Research (A-line Master Plan Phase 3 entry)"
+status: completed
+goal: |
+  Player Identification v2 passes Gate 3 (Research) — 5 PIO-G3-* carry-forwards
+  from Gate 2 are specified (sighting-log schema, stability formula, photo
+  lifecycle, attribute palette, IDB v21 migration), unblocking PIO Gate 4
+  (Design surfaces).
+
+  Master Plan rhythm:
+    SPR-012: SCF-G1 (D-line, Gate 1)
+    SPR-013: PIO-G1 (A-line, Gate 1)
+    SPR-014: SCF-G2 (D-line, Gate 2)
+    SPR-015: PIO-G2 (A-line, Gate 2)
+    SPR-016: FIND-002 close (P0 break)
+    SPR-017: FIND-001 close (P0 break)
+    SPR-018: SCF-G3 (D-line, Gate 3)
+    SPR-019: PIO-G3 (A-line, Gate 3) ← this sprint, A-line first Phase-3 Research gate
+  Next natural anchor after SPR-019: SCF-G4 (WS-012, D-line Phase-4 Design)
+  per alternation cadence.
+
+  Source-class damping (Step 2d): last 3 anchors had source-classes
+  [untagged (WS-011), engine-finding (WS-116), engine-finding (WS-117)].
+  Engine-finding count = 2 → SATURATED. WS-006 source-class is `untagged`
+  (backlog-md-migration-2026-05-01); NOT damped.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged) + WS-115 (P0 30.0
+  untagged) above WS-006 (P1 22.0). Founder explicitly chose Master Plan
+  rhythm in /next prompt; both P0s remain available for SPR-020 or later.
+
+items:
+  - id: "WS-006"
+    title: "PIO Gate 3 — Research (5-area owner interview + 5 PIO-G3-* carry-forwards from Gate 2)"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Age-bucket spans (3-bucket young/mid/older vs 5-bucket decade-resolution vs continuous-year)"
+      - "Wardrobe/jewelry/logo granularity (closed enum vs free-text-with-suggestions vs hybrid)"
+      - "Sighting-log temporal model (append-only events vs latest-state snapshot vs hybrid; PEO precedent of Player schema vs sightings parallel store)"
+      - "Recognition-search ranking weights (relative weighting of name/nickname / age / skin / hair / wardrobe / jewelry / logo / venue-recency)"
+      - "Phone-camera-capture UX expectations (`<input capture>` only vs explicit modal vs ambient capture; per-record purge UX)"
+      - "PIO-G3-SLOG: sighting-log parallel-store schema (record shape + indexes + retention)"
+      - "PIO-G3-STAB: stability formula (Bayesian-Beta vs alternatives carried in Gate 2)"
+      - "PIO-G3-PHOTO: photo lifecycle (blobId in playerPhotos store; per-record delete; encryption baseline; capture-with-explicit-purge ratified Gate 2)"
+      - "PIO-G3-PALETTE: attribute palette structure (closed-enum vs free-text per attribute; ethnicity inclusion per identification-utility-first stance)"
+      - "PIO-G3-MIG: IDB v21 migration shape (additive-only; multi-store bumps in single version per gate4-p3-decisions.md §2 pattern)"
+    depends_on: []
+    status: done
+    started_at: "2026-05-02T07:30:00Z"
+    completed_at: "2026-05-02T08:15:00Z"
+    notes: |
+      Gate 3 audit shipped at docs/design/audits/2026-05-02-gate3-research-player-identification-v2.md (~470 lines).
+
+      Owner-decided scope (5 of 10 decision flags via plan-mode AskUserQuestion 2026-05-02 round 1 + round 2):
+        - Age representation: Decade ranges (20s/30s/40s/50s/60+) — closed enum, 5 bins, single string
+        - Attribute palette: Hybrid per category (closed-enum primary + 'other' free-text) for wardrobe/jewelry/logo/extended-hat
+        - Stability formula: Bayesian-Beta posterior with n>=5 floor + ±X.X% MoE rendering (matches FIND-001/FIND-002 close-out convention)
+        - Sighting-log grain: Both — per-event append-only persistence + computed per-session rollups on read
+        - Camera flow: Capture + 1:1 crop step (react-easy-crop or canvas-API; owner amends in Gate 4)
+
+      Inline-handled (recommended-with-rationale; owner amends in Gate 4 surface review):
+        - PIO-G3-SLOG schema: full record shape + 5 indexes + write paths + retention TTL (18mo default) + read API
+        - PIO-G3-PHOTO schema: blobId scheme 'sighting:<playerId>:<timestamp>' + cascade-on-delete + atomic-txn pattern
+        - PIO-G3-MIG: IDB v22 multi-store migrateV22 (sightingLogs + playerPhotos); silent ethnicity-tag migration via getter shim; hat shape migrate-on-read
+        - SIGHTING_FEATURE_PRIORS table: 13 per-attribute α/β defaults aligned with cold-read-chris stability-flag defaults
+        - Recognition-search ranking: 8-dimension weighted scoring (name+nickname=0.35; ageRange/skin/ethnicity/hair/jewelry as next tier; wardrobe/hat/logo weakest); owner tunes empirically
+
+      All 5 PIO-G3-* carry-forwards specified (BLOCKING Gate 4):
+        - PIO-G3-SLOG: parallel-store schema mirroring EAL anchorObservations precedent
+        - PIO-G3-STAB: Bayesian-Beta computeStability() spec + n>=5 floor + per-feature priors + scorePlayerMatch integration
+        - PIO-G3-PHOTO: playerPhotos store + atomic-txn pattern + Settings master toggle reservation
+        - PIO-G3-PALETTE: 4 net-new avatarFeatures categories + hat shape upgrade (migrate-on-read) + hybrid storage
+        - PIO-G3-MIG: IDB v22 additive multi-store migration + delete cascade across 3 stores
+
+      Companion files updated this sprint (3):
+        - docs/design/jtbd/domains/player-management.md — PM-13/14/15 detail-out (state Proposed → Active; per-umbrella success criterion + load-bearing constraint refs + 2-3 failure modes)
+        - docs/design/jtbd/ATLAS.md — by-domain table state changes for PM-13/14/15
+        - docs/design/personas/situational/cold-read-chris.md — cross-ref annotation (stability-flag defaults table is authoritative for SIGHTING_FEATURE_PRIORS alignment); persona stays Proto-status
+
+      PM-13/14/15 detail-out shipped (state Proposed → Active per Gate 2 §B carry-forward). 6-scenario walkthrough Appendix A. AP-PIO-01..05 catalog re-stated inline (audit-doc-only tier per Gate 2). Stage table verdict: GREEN overall (4 GREEN + 1 YELLOW for ranking-weights starter values).
+
+      Verification: zero src/ diff (audit-only); 5 doc/JTBD edits + 1 persona annotation + 1 ATLAS state change; cross-references resolve; AP-PIO-01..05 transitively reference EAL AP-01..09; 9 autonomy red lines walked against all 5 proposed PIO surfaces in Gate 2 inherited.
+
+      Open questions deferred to Gate 4 (8): per-feature priors tuning; ranking weights tuning; photo-replacement vs photo-history (Phase 2 / v2); hat shape getter-vs-write decision; react-easy-crop vs canvas-API library choice; ethnicity tag set initial values; cross-venue scope amendment; tournament-mode toggle.
+
+      Master Plan rhythm: A-line Phase-3 Research entry COMPLETE. Both A and D-lines now at Gate 3. Next natural anchor in alternation: WS-012 (SCF-G4 Design — D-line Phase-4 Design entry).
+    finding_id: null
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO Gate 3 of 5; Master Plan §A; A-line first Phase-3 Research gate; A/D stagger alternation continuation)"
+total_effort: "M+ (decision-dense; ~1.5-2 sessions)"
+decisions_needed:
+  - "Item #1 (WS-006): 10 decision flags — 5 owner-interview areas + 5 PIO-G3-* carry-forwards from Gate 2 (SLOG/STAB/PHOTO/PALETTE/MIG)"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-02T07:30:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this kit (graceful degradation per CWOS rules; matches fr-001 + fr-010 friction log entries; same pattern as SPR-018). Manual review: scope is design-program Gate 3 Research per docs/design/LIFECYCLE.md — explicitly mandated by PIO Gate 2 (5 PIO-G3-* carry-forwards named in SPR-015 audit). 10 decision flags are owner-interview shape per WS-006 accept_criteria + Gate 2 carry-forward extensions. AP-PIO-01..05 from PIO Gate 2 + identification-utility-first owner stance (feedback_pio_identification_utility_first.md) inherited and binding. EAL-inherited AP-01..09 transitive. No anti-goal angle."
+  matches: []
+
+created_at: "2026-05-02T07:30:00Z"
+approved_at: "2026-05-02T07:30:00Z"
+started_at: "2026-05-02T07:30:00Z"
+completed_at: "2026-05-02T08:15:00Z"
+session_ids: ["session-2026-05-02-next"]
+
+composition_notes: |
+  Single-item plan-first sprint mirroring SPR-018 (SCF-G3) shape. WS-006 is
+  M-effort but actually decision-dense (10 decision flags spanning 5 owner-
+  interview areas + 5 PIO-G3-* carry-forwards from Gate 2). Gate 3 audit will
+  use multi-round AskUserQuestion to gather decisions, then ship audit doc
+  + companion file updates (zero src/ diff per LIFECYCLE Gate 3 contract).
+
+  Source-class damping (Step 2d) summary:
+    - Last 3 anchors: WS-011 (untagged), WS-116 (engine-finding), WS-117 (engine-finding).
+    - Engine-finding count = 2 → SATURATED for next sprint.
+    - WS-006 source-class is `untagged` (backlog-md-migration-2026-05-01) → NOT damped.
+    - Damping does not bind here.
+
+  Master Plan A/D stagger restored after 2-sprint P0 break (SPR-016 + SPR-017
+  closed FIND-002 + FIND-001, all 5 baseline HIGHs now resolved). SPR-018
+  shipped D-line Phase-3 entry (SCF-G3); SPR-019 ships A-line Phase-3 entry
+  (PIO-G3); SCF-G4 (WS-012) is natural next anchor.
+
+  Strict-score-order alternative: WS-076 (P0 30.0 untagged) + WS-115 (P0 30.0
+  untagged) above WS-006 (P1 22.0). Founder explicitly chose Master Plan
+  rhythm in /next prompt (option 1); both P0s deferred to SPR-020 or later.
+
+  Owner stance binding for this sprint (per memory entry):
+    - feedback_pio_identification_utility_first.md (2026-05-02): "Cultural
+      sensitivity is secondary to identification. If labeling ethnicity or
+      features within an ethnicity assists with identifying the player, then
+      we are going to use it." Cultural-sensitivity is reviewing voice only;
+      do NOT propose new red lines blocking demographic data; AP-PIO refusals
+      stay narrow (demographic-targeted recommendations / tone-deaf framing /
+      auto-photo-capture / cross-surface contamination — NOT demographic
+      categories themselves).
+
+  Tooling friction unchanged: 4 missing kit/scripts/cwos-* per fr-001..004
+  + fr-010. Same fallbacks (manual anti-goal scan; YAML-direct queue
+  reads; manual index lockstep edits; shadow-event skip).
+
+  fleet-rotation invariant: not applicable (adopted repo, not HomeBase).

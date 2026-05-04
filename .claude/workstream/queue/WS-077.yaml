@@ -2,10 +2,12 @@ id: "WS-077"
 title: "Continue Anyway graceful degradation"
 legacy_id: "DCOMP-W4-A3-F5"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-02-next"
+claimed_at: "2026-05-02T13:05:00Z"
+started_at: "2026-05-02T13:10:00Z"
+completed_at: "2026-05-02T14:30:00Z"
+status_note: "RESOLVED 2026-05-02 — 'Continue Anyway' decoupled from objective versionMismatch signal: new dismissedDespiteMismatch state in useSyncBridge (persisted to sessionStorage via versionMismatchDismissed key, no TTL, session lifetime). Imports resume on dismiss (versionMismatchRef.current=false), but versionMismatch stays true so OnlineAnalysisContext suppresses live advice (passes null to useLiveActionAdvisor). Amber AlertTriangle pip in OnlineView header shows when versionMismatch && dismissedDespiteMismatch; click reopens WS-076 modal. Banner gate now versionMismatch && !dismissedDespiteMismatch (hidden post-dismiss). Versions reconverging auto-clears both state + sessionStorage flag. Owner-decided scope (3-question AskUserQuestion 2026-05-02): decouple model + separate amber icon (NOT 3-state dot) + sessionStorage persistence. Tests: 17/17 storage util + 4/4 OnlineAnalysisContext + 42/48 OnlineView invariants (6 pre-existing gap skips) + 5/5 SyncBridge sibling consumers + 9477/9507 full smart-test-runner (30 pre-existing skipped); npm run build clean (5.41s). pushExploits unchanged (tendencyMap-derived, version-stable). Out of scope: pushExploits/pushTournament suppression (extension validates incoming wire); per-field allowlist (no contract fingerprint); telemetry channel (existing logger.warn sufficient)."
 priority_score: 22.0
 priority_label: "P1"
 category: "ready-to-start"
@@ -20,8 +22,13 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+sprint_id: "SPR-023"
+decision_flags:
+  - "Persistent indicator UX shape (3-state dot vs separate icon vs sticky banner)"
+  - "Mismatched-fields suppression scope (all advice / specific surfaces / allowlist)"
+  - "Logging surface (existing logger.warn vs new telemetry channel)"
+  - "Dismissed-state persistence (in-memory vs sessionStorage)"
+  - "Backward-compat interaction with WS-076 post-reload flow"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

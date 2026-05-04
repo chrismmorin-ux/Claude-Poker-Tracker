@@ -137,6 +137,28 @@ Secondary:
 - `preflop-drills` — sibling; mirrors tab structure with preflop-native modes.
 - `analysis-view` — source of weaknesses the drills *could* target if F-P13 ships.
 - `hand-replay-view` — candidate source of "study this line" deep-links.
+- `skill-assessment-test` — opt-in-test mode of this drill engine (SCF Phase 5; see Opt-in-test mode subsection below).
+- `lesson-card` — entry path for opt-in-test mode (`Test myself on this concept` button on lesson card invokes this engine scoped to the lesson's `frameworkIds[]`).
+
+---
+
+## Opt-in-test mode (SCF Gate 4 extension, 2026-05-02)
+
+**Added by:** SCF Gate 4 (WS-012 / SPR-020). See `audits/2026-05-02-gate4-design-self-coach-foundation.md` §SCF-G4-S4 + `surfaces/skill-assessment-test.md` for the full spec.
+
+This drill view gains an opt-in-test MODE for SCF self-coach use. Per the owner's architectural binding ("drills + tests overlap; don't maintain two parallel learning environments"), opt-in-test is a MODE of this engine, not a new engine. Three deltas vs default scheduler-driven flow:
+
+| Delta | Default flow | Opt-in-test mode |
+|---|---|---|
+| **Entry path** | Library browse + scheduler-driven `pickNextMatchup` | `Test myself on this concept` button on lesson card (in SelfCoachView Curriculum section) |
+| **Result framing** | CD-2 default — observed/non-graded vocabulary | CD-2 nuance permitted — factual grading vocabulary ("3 of 5 correct") via `cd5_exempt: 'owner-volunteered-test'` manifest flag on result-display surface |
+| **Persistence tag** | `scheduler.frameworkAccuracy[id]` (behavioral signal) | ALSO writes `userSettings.perDomainMastery[conceptId].testResults[]` (subset signal) |
+
+**Drill scheduler scoping in opt-in-test mode.** Filters scenario library to entries whose `frameworkId` is in the lesson's `frameworkIds[]`. Within filtered subset, picks 5 with recency penalty so retakes don't repeat the prior attempt's questions.
+
+**Result-display surface (NEW UI element for opt-in-test mode).** After 5-question quiz completes, renders factual count: "{N} of {M} correct". Optional per-question correct/incorrect breakdown. 2 affordances: `Close` (returns to lesson card) + `Take again` (relaunches in opt-in-test mode for same concept). Surface manifest declares `cd5_exempt: 'owner-volunteered-test'`; CI-lint allows the grading-vocabulary subset on this surface only.
+
+Coverage in v1: 4 of 5 SCF v1 reference lessons map to postflop drill substrate (range-vs-range-thinking, board-texture, capped-vs-uncapped-ranges, partial blocker-effects). Implementation deferred to SCF Gate 5.
 
 ---
 
@@ -144,3 +166,4 @@ Secondary:
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-04-22 — JTBD list updated post-LSW-J1: DS-48/49 added as Active (served by `bucket-ev-panel-v2`); DS-50/51 promoted from "implicit" to explicit atlas references.
+- 2026-05-02 — SCF Gate 4 extension: opt-in-test mode subsection added. 3-delta description; entry from lesson card `Test myself` button; result-display surface with cd5_exempt manifest. Implementation deferred to SCF Gate 5 multi-PR.

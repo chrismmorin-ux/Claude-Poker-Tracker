@@ -2,10 +2,10 @@ id: "WS-008"
 title: "Gate 5 — Implementation (multi-PR)"
 legacy_id: "PIO-G5"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: decomposed
+claimed_by: "session-2026-05-03-next"
+claimed_at: "2026-05-04T09:45:00Z"
+completed_at: "2026-05-04T11:00:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "player-identification-v2"
@@ -27,9 +27,23 @@ blocked_by:
 blocked_by_legacy:
   - "PIO-G4"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-034"
 decision_flags: []
-status_note: "BLOCKED by PIO-G4"
+decisions_locked:
+  - "Decomposition: 6 children (A-F) mapped 1:1 to Gate 4 design surface IDs"
+  - "First-child: WS-160 (IDB v23 + computeStability scaffold) — highest leverage, lowest risk"
+  - "Sequencing: A blocks B/C/D; B/C/D parallel; E waits for D + Table-Build G5; F waits for D"
+  - "Plan-mode: Table-Build coordination moot — heroLeaks already passed v22, PIO bumps cleanly to v23"
+status_note: |
+  DECOMPOSED SPR-034 (2026-05-04). Per WS-008 multi-PR umbrella decomposition
+  in plan-mode, split into 6 children:
+    - WS-160 (Child A): IDB v23 + computeStability scaffold — SHIPPED SPR-034
+    - WS-161 (Child B): Camera Capture Modal — backlog (blocked by WS-160 done)
+    - WS-162 (Child C): Player Profile View — backlog (blocked by WS-160 done)
+    - WS-163 (Child D): PlayersView + PlayerEditor extensions — backlog (blocked by WS-160 done)
+    - WS-164 (Child E): Multi-attribute ranking + scoring — backlog (blocked by WS-163 + Table-Build G5 soft-block)
+    - WS-165 (Child F): Settings photo-toggle + CI-grep — backlog (blocked by WS-163)
+  Mirrors SCF G5 chain pattern (WS-013 → WS-145..149).
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Player Identification v2 (PIO, project: `.claude/projects/master-plan-2026-04-30.md` §A)"

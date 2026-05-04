@@ -1,0 +1,54 @@
+id: "SPR-010"
+title: "TIA Phase 2 — Straddle scope decision + matrix extension (Master Plan B+E close-out)"
+status: completed
+goal: |
+  TableView Invariant Audit Phase 1 fully closes — straddle scope is decided
+  by the owner, matrix is extended to cover straddle action order, blind
+  posting, and pot odds, and TIA Phase 1 of the Master Plan is shipped.
+  Unblocks WS-003 (TIA-1.3 Fix wave) for the next sprint.
+
+items:
+  - id: "WS-002"
+    title: "Straddle wired into matrix"
+    mode: plan-first
+    effort: M
+    decision_flags:
+      - "Straddle scope: live-only / Mississippi / UTG-only / re-straddle allowed?"
+    depends_on: []
+    status: done
+    notes: "Owner scope decided 2026-05-02: UTG + BTN only (narrowed Mississippi), permanent + optional both supported, UTG > BTN precedence, no re-straddle. Matrix extended with STRADDLE COVERAGE section + 7 new spec_gap rows (INV-S-010 BTN-facing-UTG-straddle / S-011 SB-facing-UTG-straddle / S-012 UTG-straddler-option / S-013 UTG-straddler-facing-3bet / S-014 UTG-open-with-BTN-straddle / S-015 BB-facing-BTN-straddle / S-016 BTN-straddler-option / S-017 precedence-pin). Existing INV-S-007/S-008 comments updated with scope-decided closure pointer. INV-S-015 documents BTN-scope mirror of INV-S-008's isBBOption-fires-incorrectly bug class. Verification: 49/49 matrix harness tests pass (35 + 14 spec_gap skipped); 121/121 TableView component tests green. Audit-only — zero production code change."
+    finding_id: null
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "TableView Invariant Audit Phase 2 (Master Plan B+E close-out)"
+total_effort: "M = ~1.5 sessions"
+decisions_needed:
+  - "Item #1 (WS-002): Straddle scope rules — live straddle only? Mississippi? UTG-only? Re-straddle allowed?"
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-02T00:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not present in adopted repo. Manual review: scope is owner-decision-driven matrix extension (audit authoring), explicitly mandated by ratified Master Plan §B+E. No anti-goal patterns: not premature optimization, not scope creep (single-item sprint), not detection evasion, not engine theory change."
+  matches: []
+
+created_at: "2026-05-02T00:45:00Z"
+approved_at: "2026-05-02T00:45:00Z"
+started_at: "2026-05-02T00:50:00Z"
+completed_at: "2026-05-02T01:05:00Z"
+session_ids: ["session-2026-05-01-next"]
+
+composition_notes: |
+  Single-item sprint by design. WS-002 is M-effort (1.5 sessions) and the
+  standard ceremony cap is 2 sessions; no S-effort companion items exist
+  in the queue. WS-003 (TIA-1.3 Fix wave) is blocked_by: WS-002 and queues
+  for the following sprint.
+
+  fleet-rotation invariant: not applicable — this is an adopted repo, not
+  the CWOS HomeBase. All anchors here are inherently "internal-infra" by
+  the rotation classifier; no fleet/repo-goal candidates exist.
+
+  Plan-first mode: the straddle-scope decision MUST be answered before the
+  matrix can be authored. /plan-mode entry will explore existing TableView
+  fixtures, present the 4 rule options with trade-offs, and request owner
+  decision before any matrix-extension work begins.
