@@ -195,11 +195,25 @@ export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) =>
   try {
     const db = await getDB();
 
-    // Check for duplicate name at DB level if name is being updated
+    // Check for duplicate name at DB level only when name is actually changing.
+    // Without the change-check, pre-existing duplicates in the DB would block
+    // edits to other fields — and `index.get([userId, name])` returns a single
+    // record (lowest key first), so editing the higher-id duplicate would
+    // mis-detect the lower-id record as "another player with this name."
     if (updates.name) {
-      const existingPlayer = await getPlayerByNameInternal(db, updates.name, userId);
-      if (existingPlayer && existingPlayer.playerId !== playerId) {
-        throw new Error(`Player with name "${updates.name}" already exists`);
+      const currentRecord = await new Promise((resolve, reject) => {
+        const tx = db.transaction([PLAYERS_STORE_NAME], 'readonly');
+        const req = tx.objectStore(PLAYERS_STORE_NAME).get(playerId);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+      const currentName = (currentRecord?.name ?? '').toString().trim().toLowerCase();
+      const newName = updates.name.toString().trim().toLowerCase();
+      if (currentName !== newName) {
+        const existingPlayer = await getPlayerByNameInternal(db, updates.name, userId);
+        if (existingPlayer && existingPlayer.playerId !== playerId) {
+          throw new Error(`Player with name "${updates.name}" already exists`);
+        }
       }
     }
 

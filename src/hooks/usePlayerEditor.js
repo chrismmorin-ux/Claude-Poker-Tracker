@@ -187,9 +187,19 @@ export const usePlayerEditor = ({
   }, [discardStored, nameSeed]);
 
   // ---- Duplicate-name detection (non-blocking warning, D5) -------------
+  // In edit mode, suppress the warning if the typed name is unchanged from
+  // the loaded record. Pre-existing duplicates with the same name are not
+  // being created by this save — `updatePlayer` is an in-place update, not
+  // a new insert. Warning only fires when the user is actively renaming to
+  // a name that conflicts with another record.
   const duplicate = (() => {
     const typed = (fields.name ?? '').toString().trim().toLowerCase();
     if (!typed) return null;
+    if (mode === 'edit' && typeof editingPlayerId === 'number') {
+      const original = (allPlayers.find(p => p.playerId === editingPlayerId)?.name ?? '')
+        .toString().trim().toLowerCase();
+      if (typed === original) return null;
+    }
     const other = allPlayers.find(p => {
       if (!p?.name) return false;
       if (mode === 'edit' && p.playerId === editingPlayerId) return false;
