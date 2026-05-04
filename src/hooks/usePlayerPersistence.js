@@ -21,6 +21,7 @@ import {
   GUEST_USER_ID,
   createPersistenceLogger,
 } from '../utils/persistence/index';
+import { appendSighting } from '../utils/persistence/sightingLogsStore';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
 import { AppError, ERROR_CODES } from '../utils/errorHandler';
 
@@ -192,19 +193,47 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
   // ==========================================================================
 
   /**
-   * Assign a player to a seat
+   * Assign a player to a seat. Fires sighting + lastSeenAt persistence as
+   * a side effect — seat assignment IS a sighting per PIO design (a player
+   * the user recognizes well enough to seat is a player they observed).
+   *
    * @param {number} seat - Seat number (1-9)
    * @param {number} playerId - Player ID to assign
+   * @param {Object} [opts] - Optional { sessionId, source }
+   * @param {number|string|null} [opts.sessionId] - Session this sighting belongs to
+   * @param {string} [opts.source] - 'seat-assignment' | 'picker' | 'undo' (default: 'seat-assignment')
    * @returns {void}
    */
-  const assignPlayerToSeat = useCallback((seat, playerId) => {
+  const assignPlayerToSeat = useCallback((seat, playerId, opts = {}) => {
     log(`Assigning player ${playerId} to seat ${seat}`);
 
     dispatchPlayer({
       type: PLAYER_ACTIONS.SET_SEAT_PLAYER,
       payload: { seat, playerId }
     });
-  }, [dispatchPlayer]);
+
+    if (playerId == null) return;
+    const sessionId = opts.sessionId ?? null;
+    const source = opts.source || 'seat-assignment';
+    const now = Date.now();
+
+    // Fire-and-forget — the dispatch above is the user-visible effect; the
+    // sighting/lastSeenAt writes are bookkeeping that shouldn't block UI
+    // or fail loudly. Errors are logged but not surfaced.
+    appendSighting({
+      playerId,
+      sessionId,
+      capturedAt: now,
+      venueId: null,
+      featuresSeen: [],
+      attributes: {},
+      source,
+      seat,
+    }).catch((err) => logError('Failed to append sighting on seat assignment:', err));
+
+    updatePlayer(playerId, { lastSeenAt: now }, userId)
+      .catch((err) => logError('Failed to bump lastSeenAt on seat assignment:', err));
+  }, [dispatchPlayer, userId]);
 
   /**
    * Get all players sorted by lastSeenAt (most recent first)

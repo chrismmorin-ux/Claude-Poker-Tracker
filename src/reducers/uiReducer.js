@@ -117,7 +117,11 @@ export const UI_STATE_SCHEMA = {
   lessonConceptId: { type: 'string', required: false },
   lessonReturnScreen: { type: 'string', required: false },
   // PIO G5 child C (WS-162)
-  profilePlayerId: { type: 'string', required: false },
+  // Note: PIO G4 audit specified string playerIds for cross-venue stability,
+  // but the players store has used autoIncrement integer keys since v5. Schema
+  // declared as 'number' to match the implementation. A future PIO v2 pass can
+  // migrate to stable string IDs if cross-venue identity is added.
+  profilePlayerId: { type: 'number', required: false },
   profileReturnScreen: { type: 'string', required: false },
 };
 

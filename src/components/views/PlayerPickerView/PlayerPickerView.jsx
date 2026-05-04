@@ -92,7 +92,7 @@ export const PlayerPickerView = ({ scale = 1 }) => {
     }
 
     try {
-      await assignPlayerToSeat(currentSeat, player.playerId);
+      await assignPlayerToSeat(currentSeat, player.playerId, { sessionId, source: 'picker' });
     } catch (err) {
       addToast(`Could not assign player: ${err.message}`, { variant: 'error' });
       return;

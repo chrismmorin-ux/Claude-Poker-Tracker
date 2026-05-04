@@ -70,7 +70,10 @@ export const PlayerEditorView = ({ scale = 1 }) => {
 
     if (mode === 'create' && seatContext?.seat && playerId) {
       try {
-        await assignPlayerToSeat(seatContext.seat, playerId);
+        await assignPlayerToSeat(seatContext.seat, playerId, {
+          sessionId: seatContext.sessionId ?? null,
+          source: 'editor-create-then-assign',
+        });
       } catch (err) {
         // Non-fatal — the player record is saved. Surface the failure but
         // continue closing.

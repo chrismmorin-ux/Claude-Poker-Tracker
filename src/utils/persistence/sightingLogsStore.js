@@ -32,12 +32,21 @@ import {
  * @param {object} sighting - { playerId, sessionId, capturedAt, venueId, featuresSeen, attributes }
  * @returns {Promise<number>} - generated sightingId
  */
+// playerId can be a number (the players store uses autoIncrement integer
+// keys) or a string (for future cross-venue stable IDs). Both shapes index
+// fine — accept either.
+const isValidPlayerId = (id) => {
+  if (typeof id === 'number') return Number.isFinite(id);
+  if (typeof id === 'string') return id.length > 0;
+  return false;
+};
+
 export const appendSighting = async (sighting) => {
   if (!sighting || typeof sighting !== 'object') {
     throw new Error('appendSighting requires a sighting object');
   }
-  if (typeof sighting.playerId !== 'string' || sighting.playerId.length === 0) {
-    throw new Error('appendSighting requires sighting.playerId (non-empty string)');
+  if (!isValidPlayerId(sighting.playerId)) {
+    throw new Error('appendSighting requires sighting.playerId (number or non-empty string)');
   }
   try {
     const db = await getDB();
@@ -68,8 +77,8 @@ export const appendSighting = async (sighting) => {
  * @returns {Promise<Array>}
  */
 export const getSightingsForPlayer = async (playerId) => {
-  if (typeof playerId !== 'string' || playerId.length === 0) {
-    throw new Error('getSightingsForPlayer requires a non-empty string playerId');
+  if (!isValidPlayerId(playerId)) {
+    throw new Error('getSightingsForPlayer requires a non-empty playerId (number or string)');
   }
   try {
     const db = await getDB();
@@ -152,8 +161,8 @@ export const getSightingsByFeature = async (feature) => {
  * @returns {Promise<number>} - count deleted
  */
 export const deleteSightingsForPlayer = async (playerId) => {
-  if (typeof playerId !== 'string' || playerId.length === 0) {
-    throw new Error('deleteSightingsForPlayer requires a non-empty string playerId');
+  if (!isValidPlayerId(playerId)) {
+    throw new Error('deleteSightingsForPlayer requires a non-empty playerId (number or string)');
   }
   try {
     const db = await getDB();

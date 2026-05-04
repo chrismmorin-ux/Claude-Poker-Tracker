@@ -361,7 +361,8 @@ export const TableView = ({ scale }) => {
   };
 
   const handleAssignPlayer = (seat, playerId) => {
-    assignPlayerToSeat(seat, playerId);
+    const sessionId = currentSession?.sessionId ?? null;
+    assignPlayerToSeat(seat, playerId, { sessionId, source: 'table-context-menu' });
     setContextMenu(null);
     showSuccess(`Player assigned to seat ${seat}`);
   };
@@ -377,12 +378,13 @@ export const TableView = ({ scale }) => {
     setContextMenu(null);
 
     if (priorPlayerId) {
+      const sessionId = currentSession?.sessionId ?? null;
       addToast(`Cleared ${priorName} from seat ${seat}`, {
         variant: 'info',
         duration: 6000,
         action: {
           label: 'Undo',
-          onClick: () => assignPlayerToSeat(seat, priorPlayerId),
+          onClick: () => assignPlayerToSeat(seat, priorPlayerId, { sessionId, source: 'undo' }),
         },
       });
     }

@@ -163,7 +163,8 @@ export const PlayersView = ({ scale = 1 }) => {
       clearSeatAssignment(currentSeat);
     }
 
-    assignPlayerToSeat(selectedSeat, playerId);
+    const sessionId = currentSession?.sessionId ?? null;
+    assignPlayerToSeat(selectedSeat, playerId, { sessionId, source: 'players-view-tap' });
 
     // Auto-advance to next empty seat
     const nextSeat = findNextEmptySeat(selectedSeat + 1);
@@ -197,7 +198,8 @@ export const PlayersView = ({ scale = 1 }) => {
       if (currentSeat) {
         clearSeatAssignment(currentSeat);
       }
-      assignPlayerToSeat(seat, draggedPlayerId);
+      const sessionId = currentSession?.sessionId ?? null;
+      assignPlayerToSeat(seat, draggedPlayerId, { sessionId, source: 'players-view-drop' });
     }
 
     setDraggedPlayerId(null);
@@ -226,7 +228,8 @@ export const PlayersView = ({ scale = 1 }) => {
 
       // Clear target seat and assign new player
       clearSeatAssignment(targetSeat);
-      assignPlayerToSeat(targetSeat, playerId);
+      const sessionId = currentSession?.sessionId ?? null;
+      assignPlayerToSeat(targetSeat, playerId, { sessionId, source: 'players-view-replace' });
 
       setShowReplacePrompt(false);
       setReplacePromptData(null);
@@ -270,7 +273,8 @@ export const PlayersView = ({ scale = 1 }) => {
       action: {
         label: 'Undo',
         onClick: () => {
-          assignPlayerToSeat(seat, playerId);
+          const sessionId = currentSession?.sessionId ?? null;
+          assignPlayerToSeat(seat, playerId, { sessionId, source: 'undo' });
           showSuccess(`${playerName} restored to seat ${seat}`);
         },
       },
