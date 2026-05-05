@@ -178,7 +178,12 @@ describe('SeatComponent', () => {
 
     it('renders player name badge with correct styling', () => {
       render(<SeatComponent {...defaultProps} playerName="Test Player" />);
-      const badge = screen.getByText('Test Player');
+      // Phase 2 — name lives inside a <span> inside a flex badge div that
+      // also (optionally) contains the IdentityAvatar. The badge styling
+      // lives on the parent.
+      const nameSpan = screen.getByText('Test Player');
+      const badge = nameSpan.closest('div.bg-blue-600');
+      expect(badge).not.toBeNull();
       expect(badge).toHaveClass('bg-blue-600', 'text-white');
     });
 

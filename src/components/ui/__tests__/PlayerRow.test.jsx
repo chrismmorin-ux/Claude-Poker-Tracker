@@ -47,7 +47,12 @@ describe('PlayerRow', () => {
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      // Phase 2: IdentityAvatar also includes a <title> with the player name
+      // for accessibility, so getByText would match multiple elements. Match
+      // the visible name via the .font-semibold container instead.
+      const nameEls = screen.getAllByText('John Doe');
+      const visibleName = nameEls.find((el) => el.classList.contains('font-semibold'));
+      expect(visibleName).toBeTruthy();
     });
 
     it('renders player nickname in quotes', () => {
@@ -98,31 +103,35 @@ describe('PlayerRow', () => {
     });
   });
 
-  describe('avatar display', () => {
-    it('shows avatar image when player has avatar', () => {
-      const playerWithAvatar = createMockPlayer({
-        ...mockPlayer,
-        avatar: 'data:image/png;base64,abc123',
-      });
-
-      render(
-        <table><tbody>
-          <PlayerRow {...defaultProps} player={playerWithAvatar} />
-        </tbody></table>
-      );
-
-      const img = screen.getByAltText('John Doe');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', 'data:image/png;base64,abc123');
-    });
-
-    it('shows initial letter when no avatar', () => {
-      render(
+  describe('avatar display (Phase 2 — IdentityAvatar)', () => {
+    it('renders IdentityAvatar SVG for any player record', () => {
+      const { container } = render(
         <table><tbody>
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      expect(screen.getByText('J')).toBeInTheDocument();
+      // IdentityAvatar always renders an SVG with role=img and an aria-label
+      // derived from player.name. Replaces the prior monogram letter and
+      // legacy avatar <img>.
+      const svg = container.querySelector('svg[role="img"]');
+      expect(svg).not.toBeNull();
+      expect(svg.getAttribute('aria-label')).toBe('John Doe');
+    });
+
+    it('IdentityAvatar reflects identification fields (silhouette layer present)', () => {
+      const playerMale = createMockPlayer({
+        ...mockPlayer,
+        sex: 'male',
+        build: 'muscular',
+        ethnicityTags: ['caucasian'],
+      });
+      const { container } = render(
+        <table><tbody>
+          <PlayerRow {...defaultProps} player={playerMale} />
+        </tbody></table>
+      );
+      const skinLayer = container.querySelector('g[data-layer="skin"]');
+      expect(skinLayer.getAttribute('data-feature-id')).toBe('silhouette.male-muscular');
     });
   });
 

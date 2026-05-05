@@ -4,6 +4,7 @@ import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { ExploitBadges } from '../../ui/ExploitBadges';
+import IdentityAvatar from '../../ui/IdentityAvatar';
 import { LAYOUT } from '../../../constants/gameConstants';
 
 /**
@@ -19,6 +20,7 @@ const SeatComponentInner = ({
   isBigBlind,
   isMySeat,
   playerName,
+  player, // Phase 2: full player record for IdentityAvatar render
   exploitSummary,
   exploits,
   sampleSize,
@@ -169,20 +171,27 @@ const SeatComponentInner = ({
         </div>
       )}
 
-      {/* Player Name Badge */}
+      {/* Player Name Badge — Phase 2: now includes IdentityAvatar to the left
+          of the name for at-a-glance recognition (audit §10 most important
+          new render). */}
       {playerName && (
         <div
           className="absolute top-full left-1/2 transform -translate-x-1/2"
           style={{ marginTop: playerNameMarginTop }}
         >
           <div
-            className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap cursor-pointer hover:bg-blue-700"
+            className="bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-semibold whitespace-nowrap cursor-pointer hover:bg-blue-700 flex items-center gap-1.5"
             onClick={(e) => {
               e.stopPropagation();
               if (onOpenRangeDetail) onOpenRangeDetail(seat);
             }}
           >
-            {playerName}
+            {player ? (
+              <div className="rounded-full overflow-hidden bg-white/20 shrink-0">
+                <IdentityAvatar player={player} size={20} />
+              </div>
+            ) : null}
+            <span>{playerName}</span>
           </div>
           {/* Exploit category badges */}
           {exploitSummary && (

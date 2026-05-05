@@ -16,7 +16,7 @@
  */
 
 import React from 'react';
-import PlayerAvatar from '../../ui/PlayerAvatar';
+import IdentityAvatar from '../../ui/IdentityAvatar';
 import { getFeatureById } from '../../../assets/avatarFeatures';
 import { SKIN_TONES } from '../../../constants/avatarFeatureConstants';
 
@@ -109,7 +109,7 @@ export const ResultCard = ({ player, score, onSelect, hasActiveFilters, assigned
       data-testid={`result-card-${player.playerId}`}
     >
       <div className="shrink-0 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
-        <PlayerAvatar player={player} size={48} />
+        <IdentityAvatar player={player} size={48} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 min-w-0">

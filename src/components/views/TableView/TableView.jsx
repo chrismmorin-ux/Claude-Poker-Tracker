@@ -541,6 +541,7 @@ export const TableView = ({ scale }) => {
                   isMySeat={seat === mySeat}
                   isPFR={pfrSeat === seat}
                   playerName={getSeatPlayerName(seat)}
+                  player={getSeatPlayer(seat)}
                   exploitSummary={seatExploitData[seat]?.summary || null}
                   exploits={seatExploitData[seat]?.exploits || []}
                   sampleSize={seatExploitData[seat]?.sampleSize || 0}

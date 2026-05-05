@@ -25,8 +25,9 @@ import { computeStability } from '../../../utils/playerMatching/computeStability
 import { SightingHistorySection } from './SightingHistorySection';
 import { AttributeStabilityRow } from './AttributeStabilityRow';
 import { AddSightingModal } from './AddSightingModal';
-// PIO G5 child B (WS-161 / SPR-036, 2026-05-04) — photo avatar in Header.
-import { PlayerPhotoAvatar } from '../../ui/PlayerPhotoAvatar';
+// Phase 2 (PIO G4 v2): IdentityAvatar primary, PlayerPhotoAvatar retained
+// only as fallback signal — IdentityAvatar handles photo overlay natively.
+import IdentityAvatar from '../../ui/IdentityAvatar';
 
 const STABILITY_ATTRIBUTES = [
   { key: 'ageDecade', label: 'Age decade' },
@@ -99,12 +100,19 @@ export const PlayerProfileView = ({ scale: _scale }) => {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-start gap-3">
-          {/* Photo avatar (or initial-letter fallback) — replaces prior avatar slot per WS-161 */}
-          <PlayerPhotoAvatar
-            player={player}
-            size={64}
-            className="shrink-0 mt-7"
-          />
+          {/* Phase 2: IdentityAvatar derived from identification fields — large
+              header rendition. Photo (if captured) is rendered as a
+              bottom-right overlay badge; the SVG avatar remains the primary
+              recognition surface (audit §A5). */}
+          <div className="shrink-0 mt-7">
+            <IdentityAvatar
+              player={player}
+              size={96}
+              photoOverlay={!!player?.photoBlobId}
+              photoUrl={null /* TODO Phase 2.1: hydrate from playerPhotosStore */}
+              testId="player-profile-avatar"
+            />
+          </div>
           <div>
             <button
               type="button"

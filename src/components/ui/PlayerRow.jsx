@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { Layers, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { TendencyStats } from './TendencyStats';
 import { ExploitList } from './ExploitList';
+import IdentityAvatar from './IdentityAvatar';
 import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
 
 /**
@@ -137,18 +138,10 @@ export const PlayerRow = ({
               {assignedSeat}
             </div>
           )}
-          {/* Avatar */}
-          {player.avatar ? (
-            <img
-              src={player.avatar}
-              alt={player.name}
-              className="w-10 h-10 rounded-full object-cover border border-gray-300 flex-shrink-0"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-gray-300 font-semibold flex-shrink-0">
-              {player.name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          {/* Avatar — IdentityAvatar derived from identification fields (Phase 2). */}
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0 flex items-center justify-center">
+            <IdentityAvatar player={player} size={40} />
+          </div>
           {/* Name */}
           <div>
             <div className="font-semibold text-gray-200">{player.name}</div>
