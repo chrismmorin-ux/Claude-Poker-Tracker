@@ -28,6 +28,50 @@ import {
 } from '../../constants/avatarFeatureConstants';
 
 // =============================================================================
+// SEX + BUILD → SILHOUETTE
+// =============================================================================
+
+/**
+ * Map sex to its silhouette base. Unknown/null defaults to 'other' (androgynous).
+ */
+const SEX_NORMALIZED = {
+  male: 'male',
+  m: 'male',
+  female: 'female',
+  f: 'female',
+  other: 'other',
+  'non-binary': 'other',
+  nonbinary: 'other',
+};
+
+/**
+ * Map build to its shoulder shape. Unknown defaults to 'average'.
+ */
+const BUILD_NORMALIZED = {
+  slim: 'slim',
+  thin: 'slim',
+  average: 'average',
+  medium: 'average',
+  heavy: 'heavy',
+  large: 'heavy',
+  muscular: 'muscular',
+  athletic: 'muscular',
+};
+
+/**
+ * Derive the silhouette feature id from sex + build.
+ *
+ * @param {string} sex - 'male' | 'female' | 'other' | null
+ * @param {string} build - 'slim' | 'average' | 'heavy' | 'muscular' | null
+ * @returns {string} silhouette feature id (e.g., 'silhouette.male-average')
+ */
+export const silhouetteFromIdentity = (sex, build) => {
+  const sexKey = SEX_NORMALIZED[(sex || '').toLowerCase()] || 'other';
+  const buildKey = BUILD_NORMALIZED[(build || '').toLowerCase()] || 'average';
+  return `silhouette.${sexKey}-${buildKey}`;
+};
+
+// =============================================================================
 // ETHNICITY → SKIN TONE
 // =============================================================================
 
@@ -344,6 +388,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
     hairLength,
     hairTexture,
     facialHair,
+    build,
     eyewear,
     sunglasses, // legacy bool — used only if eyewear is absent
   } = player;
@@ -351,6 +396,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
   const headwearInput = opts.headwearOverride ?? player.headwear ?? null;
 
   return {
+    silhouette: silhouetteFromIdentity(sex, build),
     skin: skinFromEthnicity(ethnicityTags, ethnicity),
     hair: hairShapeFromLength(hairLength, hairTexture),
     hairColor: hairColorFromIdentity(hairColor, ageDecade),

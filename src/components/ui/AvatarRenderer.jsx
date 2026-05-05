@@ -45,13 +45,21 @@ const CATEGORY_FALLBACK_ID = {
 /**
  * Resolve the feature for a category from the avatarFeatures object.
  *
- * - `skin` is always the singleton face shape; avatarFeatures.skin stores a
- *   tone color id (consumed by buildColorVars), not a feature id.
+ * - `skin` is the silhouette layer. As of Phase 1.6, prefers the per-sex/build
+ *   variant indicated by `avatarFeatures.silhouette` (e.g., 'silhouette.male-
+ *   muscular'). Falls back to the legacy 'skin.shape' singleton when silhouette
+ *   is absent (older records). avatarFeatures.skin stores the TONE color id
+ *   (consumed by buildColorVars) — orthogonal to the silhouette shape.
  * - Other categories resolve their feature id from avatarFeatures[category],
  *   falling through to CATEGORY_FALLBACK_ID on missing/unknown.
  */
 const resolveCategoryFeature = (category, avatarFeatures) => {
   if (category === 'skin') {
+    const silhouetteId = avatarFeatures?.silhouette;
+    if (silhouetteId) {
+      const feature = getFeatureById(silhouetteId);
+      if (feature) return feature;
+    }
     return getFeatureById('skin.shape') || { id: 'skin.shape', paths: [] };
   }
   const requestedId = avatarFeatures?.[category];

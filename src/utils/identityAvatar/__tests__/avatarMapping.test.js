@@ -19,9 +19,42 @@ import {
   glassesFromEyewear,
   hatFromHeadwear,
   eyeShapeFromEthnicity,
+  silhouetteFromIdentity,
   mapIdentityToAvatarFeatures,
 } from '../avatarMapping';
 import { DEFAULT_AVATAR_FEATURES } from '../../../constants/avatarFeatureConstants';
+
+describe('silhouetteFromIdentity (sex × build)', () => {
+  it('returns silhouette.{sex}-{build} for known inputs', () => {
+    expect(silhouetteFromIdentity('male', 'average')).toBe('silhouette.male-average');
+    expect(silhouetteFromIdentity('female', 'slim')).toBe('silhouette.female-slim');
+    expect(silhouetteFromIdentity('other', 'heavy')).toBe('silhouette.other-heavy');
+    expect(silhouetteFromIdentity('male', 'muscular')).toBe('silhouette.male-muscular');
+  });
+
+  it('normalizes case and aliases', () => {
+    expect(silhouetteFromIdentity('Male', 'Average')).toBe('silhouette.male-average');
+    expect(silhouetteFromIdentity('M', 'medium')).toBe('silhouette.male-average');
+    expect(silhouetteFromIdentity('Female', 'thin')).toBe('silhouette.female-slim');
+    expect(silhouetteFromIdentity('non-binary', 'athletic')).toBe('silhouette.other-muscular');
+  });
+
+  it('defaults sex to other when missing/unknown', () => {
+    expect(silhouetteFromIdentity(null, 'average')).toBe('silhouette.other-average');
+    expect(silhouetteFromIdentity('', 'slim')).toBe('silhouette.other-slim');
+    expect(silhouetteFromIdentity('alien', 'heavy')).toBe('silhouette.other-heavy');
+  });
+
+  it('defaults build to average when missing/unknown', () => {
+    expect(silhouetteFromIdentity('male', null)).toBe('silhouette.male-average');
+    expect(silhouetteFromIdentity('male', '')).toBe('silhouette.male-average');
+    expect(silhouetteFromIdentity('male', 'jumbo')).toBe('silhouette.male-average');
+  });
+
+  it('null+null falls to other-average', () => {
+    expect(silhouetteFromIdentity(null, null)).toBe('silhouette.other-average');
+  });
+});
 
 describe('skinFromEthnicity', () => {
   it('maps Caucasian/white tags to very-light skin', () => {
@@ -414,6 +447,22 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
     });
     expect(result.hair).toBe('hair.curly');
     expect(result.beard).toBe('beard.full');
+  });
+
+  it('mapIdentityToAvatarFeatures includes silhouette key derived from sex+build', () => {
+    const result = mapIdentityToAvatarFeatures({
+      sex: 'male',
+      build: 'muscular',
+      ethnicityTags: ['caucasian'],
+    });
+    expect(result.silhouette).toBe('silhouette.male-muscular');
+  });
+
+  it('mapIdentityToAvatarFeatures silhouette defaults to other-average', () => {
+    const result = mapIdentityToAvatarFeatures({
+      ethnicityTags: ['caucasian'],
+    });
+    expect(result.silhouette).toBe('silhouette.other-average');
   });
 
   it('SYNTH-17 (Black 50s salt-pepper) explicit salt-pepper preserved', () => {

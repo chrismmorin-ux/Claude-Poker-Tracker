@@ -39,7 +39,7 @@ describe('AvatarRenderer', () => {
         .toBe(CATEGORY_FALLBACK_ID.eyes);
     });
 
-    it('skin layer always renders skin.shape regardless of avatarFeatures.skin value', () => {
+    it('skin layer falls back to skin.shape when no silhouette is set', () => {
       // avatarFeatures.skin is a tone ID (color), not a feature ID.
       const { container: c1 } = render(
         <AvatarRenderer avatarFeatures={{ skin: 'skin.medium' }} />,
@@ -51,14 +51,43 @@ describe('AvatarRenderer', () => {
       expect(c2.querySelector('g[data-layer="skin"]').getAttribute('data-feature-id'))
         .toBe('skin.shape');
     });
+
+    it('skin layer renders the silhouette variant when avatarFeatures.silhouette is set (Phase 1.6)', () => {
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{ silhouette: 'silhouette.male-muscular' }} />,
+      );
+      expect(container.querySelector('g[data-layer="skin"]').getAttribute('data-feature-id'))
+        .toBe('silhouette.male-muscular');
+    });
+
+    it('skin layer falls back to skin.shape when silhouette id is unknown', () => {
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{ silhouette: 'silhouette.bogus-unknown' }} />,
+      );
+      expect(container.querySelector('g[data-layer="skin"]').getAttribute('data-feature-id'))
+        .toBe('skin.shape');
+    });
   });
 
   describe('every authored feature id renders without throwing', () => {
     for (const [category, features] of Object.entries(AVATAR_FEATURES)) {
       for (const feature of features) {
         it(`${category}: "${feature.id}" renders`, () => {
+          // Skin category is special: silhouette.* features are selected via
+          // avatarFeatures.silhouette (Phase 1.6), not avatarFeatures.skin (which
+          // stores the TONE color id). For skin.shape (the legacy singleton)
+          // the renderer always falls back to it when no silhouette is set, so
+          // we render with empty avatarFeatures and expect skin.shape.
+          let avatarFeatures;
+          if (category === 'skin') {
+            avatarFeatures = feature.id === 'skin.shape'
+              ? {}
+              : { silhouette: feature.id };
+          } else {
+            avatarFeatures = { [category]: feature.id };
+          }
           const { container } = render(
-            <AvatarRenderer avatarFeatures={{ [category]: feature.id }} size={48} />,
+            <AvatarRenderer avatarFeatures={avatarFeatures} size={48} />,
           );
           const g = container.querySelector(`g[data-layer="${category}"]`);
           expect(g).toBeTruthy();
