@@ -26,6 +26,7 @@ import { scorePlayerMatch } from './usePlayerFiltering';
 import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
 import { skinKeyForFilter } from '../utils/identityAvatar/avatarMapping';
 import { findMatchingAccessories } from '../utils/accessoryInventory';
+import { matchesInRange, RANGE_NEIGHBORS_BY_AXIS } from '../utils/playerFilterRange';
 
 const EMPTY_FEATURE_FILTERS = {};
 const NUM_SEATS = 9;
@@ -177,12 +178,21 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
 
     // Walk all scalar filter axes — null filter or null effective attr passes
     // (truly-unknown players aren't excluded — uncertain ≠ negative match).
+    // Range axes (skinTone, ageDecade, hairColor, beardColor, hairLength,
+    // build) match adjacent values too — easy-to-confuse ladder neighbors
+    // shouldn't accidentally exclude a candidate. Strict axes (sex,
+    // hairTexture, facialHair, eyewear, eyewearColor, headwear) require
+    // exact match.
     for (const filterKey of Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD)) {
       const filterValue = quickFilter[filterKey];
       if (!filterValue) continue;
       const playerValue = (effective[filterKey] || '').toString().toLowerCase();
       if (!playerValue) continue; // permissive: no effective signal
-      if (playerValue !== filterValue.toString().toLowerCase()) return false;
+      if (RANGE_NEIGHBORS_BY_AXIS[filterKey]) {
+        if (!matchesInRange(filterKey, filterValue, playerValue)) return false;
+      } else if (playerValue !== filterValue.toString().toLowerCase()) {
+        return false;
+      }
     }
 
     // Ethnicity (array filter, OR within tags, permissive on empty player tags).
