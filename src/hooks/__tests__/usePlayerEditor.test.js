@@ -65,20 +65,21 @@ describe('usePlayerEditor — create mode, no existing draft', () => {
     expect(stored?.draft?.name).toBe('Mike');
   });
 
-  it('updateAvatarFeature merges into avatarFeatures sub-object', async () => {
+  // Phase 7: updateAvatarFeature removed. Avatar is derived from
+  // identification fields. The equivalent test is now: updateField on
+  // identification keys flows through to fields shape.
+  it('updateField on identification keys updates fields directly', async () => {
     const { result } = renderHook(() =>
       usePlayerEditor({ editorContext: { mode: 'create' } }),
     );
     await waitFor(() => expect(result.current.isDraftLoading).toBe(false));
 
     act(() => {
-      result.current.updateAvatarFeature('hair', 'hair.buzz');
-      result.current.updateAvatarFeature('beard', 'beard.goatee');
+      result.current.updateField('hairLength', 'short');
+      result.current.updateField('facialHair', 'goatee');
     });
-    expect(result.current.fields.avatarFeatures).toEqual({
-      hair: 'hair.buzz',
-      beard: 'beard.goatee',
-    });
+    expect(result.current.fields.hairLength).toBe('short');
+    expect(result.current.fields.facialHair).toBe('goatee');
   });
 });
 
@@ -94,9 +95,11 @@ describe('usePlayerEditor — create mode with existing draft', () => {
   });
 
   it('resumeDraft populates fields from stored draft and dismisses banner', async () => {
+    // Phase 7: avatarFeatures removed; use a Phase-3 identification field
+    // (hairLength) to verify draft-resume round-trip.
     await putDraft('guest', {
       name: 'Mike',
-      avatarFeatures: { hair: 'hair.buzz' },
+      hairLength: 'short',
     }, null);
     const { result } = renderHook(() =>
       usePlayerEditor({ editorContext: { mode: 'create' } }),
@@ -105,7 +108,7 @@ describe('usePlayerEditor — create mode with existing draft', () => {
 
     await act(async () => { await result.current.resumeDraft(); });
     expect(result.current.fields.name).toBe('Mike');
-    expect(result.current.fields.avatarFeatures).toEqual({ hair: 'hair.buzz' });
+    expect(result.current.fields.hairLength).toBe('short');
     expect(result.current.draftBanner).toBe('dismissed');
   });
 
@@ -170,7 +173,8 @@ describe('usePlayerEditor — save in create mode', () => {
     );
     await waitFor(() => expect(result.current.isDraftLoading).toBe(false));
 
-    act(() => { result.current.updateAvatarFeature('beard', 'beard.goatee'); });
+    // Phase 7: facialHair is now a top-level field (was avatarFeatures.beard).
+    act(() => { result.current.updateField('facialHair', 'goatee'); });
     await new Promise(r => setTimeout(r, 600));
 
     let newId;
@@ -180,7 +184,8 @@ describe('usePlayerEditor — save in create mode', () => {
     expect(player.nameSource).toBe('auto');
   });
 
-  it('persists avatarFeatures + nameSource on create', async () => {
+  it('persists Phase-3 identification fields + nameSource on create', async () => {
+    // Phase 7: avatarFeatures dropped; identification fields are top-level.
     const { result } = renderHook(() =>
       usePlayerEditor({ editorContext: { mode: 'create' } }),
     );
@@ -188,40 +193,18 @@ describe('usePlayerEditor — save in create mode', () => {
 
     act(() => {
       result.current.updateField('name', 'Mike');
-      result.current.updateAvatarFeature('hair', 'hair.short-wavy');
-      result.current.updateAvatarFeature('hairColor', 'color.black');
+      result.current.updateField('hairLength', 'short');
+      result.current.updateField('hairColor', 'black');
+      result.current.updateField('sex', 'male');
     });
 
     let newId;
     await act(async () => { newId = await result.current.save(); });
     const player = await getPlayerById(newId);
-    expect(player.avatarFeatures).toEqual({
-      hair: 'hair.short-wavy',
-      hairColor: 'color.black',
-    });
-  });
-
-  it('sets saveError on failure, does not throw', async () => {
-    // Force failure via commitDraft: create a player first, then attempt to
-    // create another with the same name — but commitDraft doesn't pre-check
-    // unique name (see draftsStorage tests). Trigger via validation instead:
-    // passing a non-string avatarFeatures.hair.
-    const { result } = renderHook(() =>
-      usePlayerEditor({ editorContext: { mode: 'create' } }),
-    );
-    await waitFor(() => expect(result.current.isDraftLoading).toBe(false));
-
-    act(() => {
-      result.current.updateField('name', 'Mike');
-      // Inject non-string value via direct state write — bypassing
-      // updateAvatarFeature's type assumptions; the validation layer rejects.
-      result.current.updateAvatarFeature('hair', 42);
-    });
-
-    let returned;
-    await act(async () => { returned = await result.current.save(); });
-    expect(returned).toBeNull();
-    expect(result.current.saveError).toBeInstanceOf(Error);
+    expect(player.hairLength).toBe('short');
+    expect(player.hairColor).toBe('black');
+    expect(player.sex).toBe('male');
+    expect(player.nameSource).toBe('user');
   });
 });
 
@@ -281,6 +264,9 @@ describe('usePlayerEditor — duplicate detection', () => {
 
 describe('usePlayerEditor — edit mode', () => {
   it('hydrates fields from existing player', async () => {
+    // Phase 7: avatarFeatures dropped from DEFAULT_FIELDS. Legacy
+    // avatarFeatures.hair on the input record is consumed by the
+    // migration shim (derives hairLength) — verifying that path.
     const allPlayers = [{
       playerId: 7,
       name: 'Mike',
@@ -297,7 +283,8 @@ describe('usePlayerEditor — edit mode', () => {
     await waitFor(() => expect(result.current.fields.name).toBe('Mike'));
     expect(result.current.fields.nickname).toBe('Big Mike');
     expect(result.current.fields.notes).toBe('plays too many hands');
-    expect(result.current.fields.avatarFeatures).toEqual({ hair: 'hair.buzz' });
+    // Migration shim derived hairLength='shaved' from avatarFeatures.hair='hair.buzz'
+    expect(result.current.fields.hairLength).toBe('shaved');
   });
 
   it('save in edit mode updates player record in place', async () => {

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { deriveAutoName, pickDistinctiveFeature } from '../playerAutoName';
 
+// Phase 7 (PIO G4 v2 §11): pickDistinctiveFeature now reads Phase-3
+// identification fields directly (facialHair / headwear / eyewear /
+// hairLength) instead of the legacy avatarFeatures sub-object.
+
 describe('pickDistinctiveFeature', () => {
   it('returns null for null/undefined/empty input', () => {
     expect(pickDistinctiveFeature(null)).toBeNull();
@@ -8,53 +12,74 @@ describe('pickDistinctiveFeature', () => {
     expect(pickDistinctiveFeature({})).toBeNull();
   });
 
-  it('prefers beard over hat over glasses', () => {
+  it('prefers facialHair over headwear over eyewear', () => {
     expect(pickDistinctiveFeature({
-      beard: 'beard.goatee',
-      hat: 'hat.cowboy',
-      glasses: 'glasses.shades',
+      facialHair: 'goatee',
+      headwear: 'cowboy',
+      eyewear: 'sunglasses',
     })).toBe('Goatee');
   });
 
-  it('falls through beard.none to hat', () => {
+  it('falls through clean facialHair to headwear', () => {
     expect(pickDistinctiveFeature({
-      beard: 'beard.none',
-      hat: 'hat.cap',
-    })).toBe('Baseball Cap');
+      facialHair: 'clean',
+      headwear: 'cap',
+    })).toBe('Cap');
   });
 
-  it('falls through to hair when no beard/hat/glasses', () => {
+  it('falls through to hairLength when no facialHair / headwear / eyewear', () => {
     expect(pickDistinctiveFeature({
-      beard: 'beard.none',
-      hat: 'hat.none',
-      hair: 'hair.long',
-    })).toBe('Long');
+      facialHair: 'clean',
+      headwear: 'none',
+      hairLength: 'long',
+    })).toBe('Long Hair');
   });
 
-  it('skips "None" / "Clean Shaven" / ".none" entries', () => {
+  it('skips "none" / "clean" entries', () => {
     expect(pickDistinctiveFeature({
-      beard: 'beard.none',  // Clean Shaven
-      hat: 'hat.none',       // None
-      glasses: 'glasses.none',
-      hair: 'hair.none',
-      eyes: 'eyes.round',
-    })).toBe('Round');
-  });
-
-  it('returns null when every category is "none"', () => {
-    expect(pickDistinctiveFeature({
-      beard: 'beard.none',
-      hat: 'hat.none',
-      glasses: 'glasses.none',
-      hair: 'hair.none',
+      facialHair: 'clean',
+      headwear: 'none',
+      eyewear: 'none',
+      hairLength: 'short',  // "Short" not in distinctive labels
     })).toBeNull();
   });
 
-  it('ignores unknown feature ids (treats as absent)', () => {
+  it('returns null when every category is none/missing', () => {
     expect(pickDistinctiveFeature({
-      beard: 'beard.imaginary',
-      hat: 'hat.cowboy',
+      facialHair: 'clean',
+      headwear: 'none',
+      eyewear: 'none',
+    })).toBeNull();
+  });
+
+  it('ignores unknown values (treats as absent)', () => {
+    expect(pickDistinctiveFeature({
+      facialHair: 'imaginary',
+      headwear: 'cowboy',
     })).toBe('Cowboy Hat');
+  });
+
+  it('maps each Phase-3 facialHair value', () => {
+    expect(pickDistinctiveFeature({ facialHair: 'stubble' })).toBe('Stubble');
+    expect(pickDistinctiveFeature({ facialHair: 'mustache' })).toBe('Mustache');
+    expect(pickDistinctiveFeature({ facialHair: 'goatee' })).toBe('Goatee');
+    expect(pickDistinctiveFeature({ facialHair: 'full' })).toBe('Full Beard');
+    expect(pickDistinctiveFeature({ facialHair: 'soul-patch' })).toBe('Soul Patch');
+  });
+
+  it('maps each Phase-3 headwear value', () => {
+    expect(pickDistinctiveFeature({ headwear: 'cap' })).toBe('Cap');
+    expect(pickDistinctiveFeature({ headwear: 'beanie' })).toBe('Beanie');
+    expect(pickDistinctiveFeature({ headwear: 'visor' })).toBe('Visor');
+    expect(pickDistinctiveFeature({ headwear: 'fedora' })).toBe('Fedora');
+    expect(pickDistinctiveFeature({ headwear: 'cowboy' })).toBe('Cowboy Hat');
+  });
+
+  it('maps each Phase-3 eyewear value', () => {
+    expect(pickDistinctiveFeature({ eyewear: 'clear' })).toBe('Glasses');
+    expect(pickDistinctiveFeature({ eyewear: 'sunglasses' })).toBe('Sunglasses');
+    expect(pickDistinctiveFeature({ eyewear: 'readers' })).toBe('Readers');
+    expect(pickDistinctiveFeature({ eyewear: 'aviators' })).toBe('Aviators');
   });
 });
 
@@ -81,7 +106,7 @@ describe('deriveAutoName — user-typed wins', () => {
 describe('deriveAutoName — seatContext fallback', () => {
   it('uses "Seat N — feature" when distinctive feature present', () => {
     const result = deriveAutoName(
-      { name: '', avatarFeatures: { beard: 'beard.goatee' } },
+      { name: '', facialHair: 'goatee' },
       { seat: 3 },
     );
     expect(result).toEqual({ name: 'Seat 3 — Goatee', nameSource: 'auto' });
@@ -89,7 +114,7 @@ describe('deriveAutoName — seatContext fallback', () => {
 
   it('uses "Seat N" when no distinctive features picked', () => {
     expect(deriveAutoName(
-      { name: '', avatarFeatures: { beard: 'beard.none', hat: 'hat.none' } },
+      { name: '', facialHair: 'clean', headwear: 'none' },
       { seat: 5 },
     )).toEqual({ name: 'Seat 5', nameSource: 'auto' });
   });
@@ -103,9 +128,9 @@ describe('deriveAutoName — seatContext fallback', () => {
 
   it('handles seatContext with extra fields (sessionId etc.)', () => {
     expect(deriveAutoName(
-      { avatarFeatures: { hat: 'hat.cap' } },
+      { headwear: 'cap' },
       { seat: 7, sessionId: 42 },
-    )).toEqual({ name: 'Seat 7 — Baseball Cap', nameSource: 'auto' });
+    )).toEqual({ name: 'Seat 7 — Cap', nameSource: 'auto' });
   });
 
   it('requires numeric seat (skips to timestamp fallback if seat is invalid)', () => {

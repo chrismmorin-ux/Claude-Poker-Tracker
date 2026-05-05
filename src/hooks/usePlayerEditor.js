@@ -21,13 +21,16 @@
  *     draftBanner,             // null | 'visible' | 'dismissed'
  *     resumeDraft, discardDraft,
  *     updateField(key, value),
- *     updateAvatarFeature(category, featureId),
  *     duplicate,               // null | { playerId, name } if name matches another
  *     isSaving,                // true while commit is in flight
  *     saveError,               // null | Error
  *     save,                    // async () => finalPlayerId | null
  *     flushPendingDraft,       // explicit flush for Back-to-Table
  *   }
+ *
+ * Phase 7: updateAvatarFeature removed. Avatar is fully derived from
+ * identification fields via mapIdentityToAvatarFeatures — no manual
+ * picker UI exists anymore.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -43,26 +46,30 @@ import { deriveAutoName } from '../utils/playerAutoName';
 // derived values; saving the player back persists the migration.
 import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
 
+// Phase 7 cleanup: dropped legacy fields from DEFAULT_FIELDS:
+//   ethnicity (string), gender, hat (bool), sunglasses (bool), avatar
+//   (legacy image upload), avatarFeatures (PEO-1 manual SVG picker).
+// Migration shim (`migratePlayerLegacyFields`) still derives these on read
+// for pre-Phase-3 records. Fields kept in DEFAULT_FIELDS:
+//   - wardrobe / jewelry / logo arrays — still rendered as filter axes in
+//     PlayerFilters.jsx (PlayersView's filter row). Slated for removal in
+//     WS-166 (the visual-redesign backlog). Phase 6 captures them into the
+//     sighting record so they're preserved per-session.
+//   - styleTags — drives ExploitBadges, unrelated to identity model.
+//   - notes — free-text, retained.
 const DEFAULT_FIELDS = {
   name: '',
   nickname: '',
-  // Legacy fields retained for read-back of pre-Phase-3 records (deleted in Phase 7)
-  ethnicity: '',
-  gender: '',
-  hat: false,
-  sunglasses: false,
+  styleTags: [],
+  notes: '',
+  // Per-sighting / legacy-filter fields (kept until WS-166 PlayersView refactor)
   wardrobe: [],
   jewelry: [],
   logo: [],
-  styleTags: [],
-  notes: '',
-  avatar: '',           // legacy image upload
-  avatarFeatures: null, // PEO-1 feature sub-object (kills in Phase 7)
-  // Phase 3 (PIO G4 v2) — canonical identification fields, all drive
-  // IdentityAvatar via avatarMapping.
+  // Phase 3 canonical identification fields — drive IdentityAvatar
   sex: null,                  // 'male' | 'female' | 'other' | null
   ageDecade: null,            // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null
-  ethnicityTags: [],          // multi-select; replaces legacy `ethnicity` string
+  ethnicityTags: [],          // multi-select
   build: null,                // 'slim' | 'average' | 'heavy' | 'muscular' | null
   hairColor: null,            // 'black' | 'dark-brown' | 'brown' | 'light-brown' | 'blonde' | 'red' | 'gray' | 'white' | null
   hairLength: null,           // 'bald' | 'shaved' | 'short' | 'medium' | 'long' | null
@@ -71,9 +78,9 @@ const DEFAULT_FIELDS = {
   facialHair: null,           // 'clean' | 'stubble' | 'mustache' | 'goatee' | 'full' | 'soul-patch' | null
   eyewear: null,              // 'none' | 'clear' | 'sunglasses' | 'readers' | null
   eyewearColor: null,         // 'black' | 'brown' | 'tortoiseshell' | 'gold' | 'silver' | 'red' | 'blue' | null
-  headwear: null,             // 'cap' | 'beanie' | 'visor' | 'fedora' | 'cowboy' | null  (per-sighting; moves to Sighting in Phase 6)
+  headwear: null,             // 'cap' | 'beanie' | 'visor' | 'fedora' | 'cowboy' | null
   distinguishingMarks: [],    // [{ type, location, description }]
-  photoBlobId: null,          // PIO G5 child B (WS-161) — captured photo blob
+  photoBlobId: null,          // captured photo blob (PIO G5 child B / WS-161)
 };
 
 // Fields we accept from a loaded player or draft. Anything outside this set
@@ -194,15 +201,6 @@ export const usePlayerEditor = ({
     });
   }, [mode, saveDraft, seatContext]);
 
-  const updateAvatarFeature = useCallback((category, featureId) => {
-    setFields(prev => {
-      const nextFeatures = { ...(prev.avatarFeatures || {}), [category]: featureId };
-      const next = { ...prev, avatarFeatures: nextFeatures };
-      if (mode === 'create') saveDraft(next, seatContext);
-      return next;
-    });
-  }, [mode, saveDraft, seatContext]);
-
   // ---- Draft resume / discard ------------------------------------------
   const resumeDraft = useCallback(async () => {
     const payload = await resumeStored();
@@ -292,7 +290,6 @@ export const usePlayerEditor = ({
     resumeDraft,
     discardDraft,
     updateField,
-    updateAvatarFeature,
     duplicate,
     isSaving,
     saveError,

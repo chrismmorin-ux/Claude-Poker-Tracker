@@ -16,39 +16,63 @@
  * on subsequent edits (user === canonical, auto === may be reprinted).
  */
 
-import { getFeatureById } from '../assets/avatarFeatures';
+// Phase 7: pickDistinctiveFeature now reads Phase-3 identification fields
+// directly (avatarFeatures was dropped). Order remains most-distinctive
+// first — facial hair / headwear / eyewear are the strongest single
+// identifiers at a glance in live poker.
 
-// Ordered most-distinctive → least-distinctive. Picked first non-"none" wins.
-// Beards and hats are the strongest single identifiers at a glance in live
-// poker; style labels ("Goatee", "Cowboy") are already human-readable.
-const DISTINCTIVE_CATEGORY_ORDER = [
-  'beard',
-  'hat',
-  'glasses',
-  'hair',
-  'eyes',
-];
+const FACIAL_HAIR_LABELS = {
+  stubble: 'Stubble',
+  mustache: 'Mustache',
+  goatee: 'Goatee',
+  full: 'Full Beard',
+  'soul-patch': 'Soul Patch',
+};
+
+const HEADWEAR_LABELS = {
+  cap: 'Cap',
+  beanie: 'Beanie',
+  visor: 'Visor',
+  fedora: 'Fedora',
+  cowboy: 'Cowboy Hat',
+};
+
+const EYEWEAR_LABELS = {
+  clear: 'Glasses',
+  sunglasses: 'Sunglasses',
+  readers: 'Readers',
+  aviators: 'Aviators',
+};
+
+const HAIR_LENGTH_LABELS = {
+  bald: 'Bald',
+  shaved: 'Buzz Cut',
+  long: 'Long Hair',
+};
 
 /**
- * Pick the most distinctive feature label from an avatarFeatures object.
- * Returns the label string (e.g. "Goatee") or null if nothing picked.
+ * Pick the most distinctive identification-derived label.
+ * Returns a human-readable string (e.g. "Goatee") or null if nothing picked.
  *
- * @param {object | null | undefined} avatarFeatures
+ * @param {object | null | undefined} fields  Player fields (Phase 3 shape)
  * @returns {string | null}
  */
-export const pickDistinctiveFeature = (avatarFeatures) => {
-  if (!avatarFeatures || typeof avatarFeatures !== 'object') return null;
+export const pickDistinctiveFeature = (fields) => {
+  if (!fields || typeof fields !== 'object') return null;
 
-  for (const category of DISTINCTIVE_CATEGORY_ORDER) {
-    const id = avatarFeatures[category];
-    if (!id || typeof id !== 'string') continue;
-    // Skip the canonical "<category>.none" entries — those are not distinctive.
-    if (id.endsWith('.none')) continue;
-    const feature = getFeatureById(id);
-    if (feature?.label && feature.label !== 'None' && feature.label !== 'Clean Shaven') {
-      return feature.label;
-    }
-  }
+  // Order: facial hair → headwear → eyewear → hair length (only if distinctive)
+  const fh = fields.facialHair;
+  if (fh && fh !== 'clean' && FACIAL_HAIR_LABELS[fh]) return FACIAL_HAIR_LABELS[fh];
+
+  const hw = fields.headwear;
+  if (hw && hw !== 'none' && HEADWEAR_LABELS[hw]) return HEADWEAR_LABELS[hw];
+
+  const ew = fields.eyewear;
+  if (ew && ew !== 'none' && EYEWEAR_LABELS[ew]) return EYEWEAR_LABELS[ew];
+
+  const hl = fields.hairLength;
+  if (hl && HAIR_LENGTH_LABELS[hl]) return HAIR_LENGTH_LABELS[hl];
+
   return null;
 };
 
@@ -70,7 +94,7 @@ export const deriveAutoName = (fields, seatContext, nowFn = () => new Date()) =>
 
   // 2. Seat-anchored fallback
   if (seatContext && typeof seatContext.seat === 'number') {
-    const distinctive = pickDistinctiveFeature(fields?.avatarFeatures);
+    const distinctive = pickDistinctiveFeature(fields);
     const name = distinctive
       ? `Seat ${seatContext.seat} — ${distinctive}`
       : `Seat ${seatContext.seat}`;
