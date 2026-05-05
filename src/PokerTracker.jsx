@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, lazy, Suspense } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
+import { useScreenOrientationLock } from './hooks/useScreenOrientationLock';
 import { useAppState } from './hooks/useAppState';
 import { AppProviders } from './AppProviders';
 import { parseBlinds } from './utils/potCalculator';
@@ -59,11 +60,28 @@ const HASH_TO_SCREEN = {
   '#anchorLibrary': 'anchorLibrary',
 };
 
+// Per-view orientation policy (owner: 2026-05-05).
+// Player-identification surfaces lock portrait so forms/lists are legible
+// on a phone. Everything else inherits the default 'landscape' since the
+// app's other views are 1600×720 ScaledContainer designs. The PWA manifest
+// is `orientation: 'any'` so this hook is the single place orientation
+// is asserted at runtime.
+const VIEW_TO_ORIENTATION = {
+  [SCREEN.PLAYER_EDITOR]: 'portrait',
+  [SCREEN.PLAYER_PICKER]: 'portrait',
+  [SCREEN.PLAYER_PROFILE]: 'portrait',
+};
+const orientationFor = (currentView, isShowdownOpen) => {
+  if (isShowdownOpen) return 'landscape';
+  return VIEW_TO_ORIENTATION[currentView] ?? 'landscape';
+};
+
 const ViewRouter = () => {
   const scale = useScale();
   const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
   useBackButton();
+  useScreenOrientationLock(orientationFor(currentView, isShowdownViewOpen));
 
   // Deep-link support: navigate to view from URL hash on mount
   useEffect(() => {
