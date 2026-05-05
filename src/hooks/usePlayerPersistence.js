@@ -217,6 +217,47 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
     const source = opts.source || 'seat-assignment';
     const now = Date.now();
 
+    // Phase 6 (PIO G4 v2 §11 / §10): snapshot the player's volatile
+    // attributes into the sighting record. Volatile = "what they're
+    // wearing today" (headwear, top color, jewelry visible). These move
+    // OFF the canonical Player record's identity surface and onto the
+    // sighting record where they belong (per-session, not per-identity).
+    const playerSnapshot = playerState.allPlayers.find((p) => p.playerId === playerId);
+    const attributes = {};
+    const featuresSeen = [];
+    if (playerSnapshot) {
+      // Stable identity attributes (also captured for the stability
+      // calculation in PlayerProfileView). These come from the player
+      // record at sighting time but won't change between sightings unless
+      // the user edits them.
+      if (playerSnapshot.ageDecade) {
+        attributes.ageDecade = playerSnapshot.ageDecade;
+        featuresSeen.push('ageDecade');
+      }
+      if (Array.isArray(playerSnapshot.ethnicityTags) && playerSnapshot.ethnicityTags.length > 0) {
+        attributes.ethnicityTags = [...playerSnapshot.ethnicityTags];
+        featuresSeen.push('ethnicity');
+      }
+      // Volatile per-session attributes (Phase 6 — captured here, displayed
+      // in SightingHistorySection per-row).
+      if (playerSnapshot.headwear) {
+        attributes.headwear = playerSnapshot.headwear;
+        featuresSeen.push('headwear');
+      }
+      if (Array.isArray(playerSnapshot.wardrobe) && playerSnapshot.wardrobe.length > 0) {
+        attributes.wardrobe = [...playerSnapshot.wardrobe];
+        featuresSeen.push('wardrobe');
+      }
+      if (Array.isArray(playerSnapshot.jewelry) && playerSnapshot.jewelry.length > 0) {
+        attributes.jewelry = [...playerSnapshot.jewelry];
+        featuresSeen.push('jewelry');
+      }
+      if (Array.isArray(playerSnapshot.logo) && playerSnapshot.logo.length > 0) {
+        attributes.logo = [...playerSnapshot.logo];
+        featuresSeen.push('logo');
+      }
+    }
+
     // Fire-and-forget — the dispatch above is the user-visible effect; the
     // sighting/lastSeenAt writes are bookkeeping that shouldn't block UI
     // or fail loudly. Errors are logged but not surfaced.
@@ -225,15 +266,15 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
       sessionId,
       capturedAt: now,
       venueId: null,
-      featuresSeen: [],
-      attributes: {},
+      featuresSeen,
+      attributes,
       source,
       seat,
     }).catch((err) => logError('Failed to append sighting on seat assignment:', err));
 
     updatePlayer(playerId, { lastSeenAt: now }, userId)
       .catch((err) => logError('Failed to bump lastSeenAt on seat assignment:', err));
-  }, [dispatchPlayer, userId]);
+  }, [dispatchPlayer, playerState.allPlayers, userId]);
 
   /**
    * Get all players sorted by lastSeenAt (most recent first)
