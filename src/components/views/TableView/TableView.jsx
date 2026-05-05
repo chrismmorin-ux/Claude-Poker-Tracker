@@ -339,13 +339,13 @@ export const TableView = ({ scale }) => {
   };
 
   const handleCreateNewPlayer = (seat) => {
-    // PEO-3: route to fullscreen editor instead of PlayersView modal.
+    // Phase 4 (PIO G4 v2 §8.3 / §A6): seat-menu "Create New" routes through
+    // the Picker for the same search-first reason as PlayersView's "+ New
+    // Player". Seat context is retained — if the user creates from inside
+    // the picker, the editor's commitDraft + assignPlayerToSeat fire
+    // exactly as before.
     setContextMenu(null);
-    const sessionId = currentSession?.sessionId ?? null;
-    openPlayerEditor({
-      mode: 'create',
-      seatContext: { seat, sessionId },
-    });
+    openPlayerPicker({ seat });
   };
 
   const handleFindPlayer = (seat) => {

@@ -26,6 +26,7 @@ export const PlayersView = ({ scale = 1 }) => {
     setCurrentScreen,
     SCREEN,
     openPlayerEditor,
+    openPlayerPicker,
     openPlayerProfile,
   } = useUI();
   const {
@@ -110,13 +111,17 @@ export const PlayersView = ({ scale = 1 }) => {
     loadAllPlayers();
   }, [loadAllPlayers]);
 
-  // PEO-4: open the fullscreen editor. When a seat is pre-selected in the grid,
-  // thread it as seatContext so the editor auto-assigns on save.
+  // Phase 4 (PIO G4 v2 §8.3 / §A6): "+ New Player" routes through the
+  // Picker instead of opening the editor directly. The Picker is the
+  // canonical creation entry point — search-first UX eliminates the
+  // duplicate-Michael class of bug at the source. If the user truly has
+  // no match they tap "+ Create new" inside the picker and the editor
+  // opens with whatever quick-filter attributes they already chose
+  // pre-seeded.
   const handleOpenCreate = () => {
-    const seatContext = selectedSeat
-      ? { seat: selectedSeat, sessionId: currentSession?.sessionId ?? null }
-      : null;
-    openPlayerEditor({ mode: 'create', seatContext });
+    openPlayerPicker({
+      seat: selectedSeat ?? null,
+    });
   };
 
   const handleOpenEdit = (player) => {

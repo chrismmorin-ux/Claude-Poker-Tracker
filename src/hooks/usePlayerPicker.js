@@ -27,9 +27,16 @@ const NUM_SEATS = 9;
 
 const EMPTY_BATCH_MODE = { active: false, assignedSeats: [] };
 
+// Phase 4 (PIO G4 v2 §8.3): identification-based quick-filter state.
+// Three discriminator-ranked must-have axes — sex × ethnicity × age decade.
+// Carries the same shape as the player record's identification fields so
+// they can flow directly into the editor as create-from-query seeds.
+const EMPTY_QUICK_FILTER = { sex: null, ethnicity: [], ageDecade: null };
+
 export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBatchMode = EMPTY_BATCH_MODE } = {}) => {
   const [nameQuery, setNameQuery] = useState('');
   const [featureFilters, setFeatureFilters] = useState(EMPTY_FEATURE_FILTERS);
+  const [quickFilter, setQuickFilter] = useState(EMPTY_QUICK_FILTER);
   const [currentSeat, setCurrentSeat] = useState(initialSeat);
   const [batchMode, setBatchMode] = useState(initialBatchMode);
 
@@ -52,6 +59,26 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
   const clearAll = useCallback(() => {
     setNameQuery('');
     setFeatureFilters(EMPTY_FEATURE_FILTERS);
+    setQuickFilter(EMPTY_QUICK_FILTER);
+  }, []);
+
+  // ---- Phase 4 quick-filter (identification axes) ----------------------
+  const setQuickFilterSex = useCallback((sex) => {
+    setQuickFilter((prev) => ({ ...prev, sex }));
+  }, []);
+  const toggleQuickFilterEthnicity = useCallback((tag) => {
+    setQuickFilter((prev) => {
+      const next = prev.ethnicity.includes(tag)
+        ? prev.ethnicity.filter((t) => t !== tag)
+        : [...prev.ethnicity, tag];
+      return { ...prev, ethnicity: next };
+    });
+  }, []);
+  const setQuickFilterAge = useCallback((ageDecade) => {
+    setQuickFilter((prev) => ({ ...prev, ageDecade }));
+  }, []);
+  const clearQuickFilter = useCallback(() => {
+    setQuickFilter(EMPTY_QUICK_FILTER);
   }, []);
 
   // ---- filtered + scored results ---------------------------------------
@@ -60,9 +87,34 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     [nameQuery, featureFilters],
   );
 
+  // Phase 4: quick-filter applies an additional pre-pass on identification
+  // fields. A player must match ALL set quick-filter axes (AND semantics
+  // across sex/ethnicity/age) AND pass scorePlayerMatch's name+feature
+  // gate. Unset quick-filter axes don't constrain.
+  const matchesQuickFilter = useCallback((player) => {
+    if (quickFilter.sex && (player.sex || '').toLowerCase() !== quickFilter.sex) {
+      return false;
+    }
+    if (quickFilter.ageDecade && player.ageDecade !== quickFilter.ageDecade) {
+      return false;
+    }
+    if (quickFilter.ethnicity.length > 0) {
+      const tags = Array.isArray(player.ethnicityTags) ? player.ethnicityTags : [];
+      // OR semantics within ethnicity — player matches if ANY of their tags
+      // is in the selected set (lets the user say "show me players matching
+      // any of these ethnicities").
+      const hasMatch = quickFilter.ethnicity.some((sel) =>
+        tags.map((t) => (t || '').toLowerCase()).includes(sel),
+      );
+      if (!hasMatch) return false;
+    }
+    return true;
+  }, [quickFilter]);
+
   const results = useMemo(() => {
     const scored = [];
     for (const player of allPlayers) {
+      if (!matchesQuickFilter(player)) continue;
       const score = scorePlayerMatch(player, query);
       if (score.passesFilters) {
         scored.push({ player, score });
@@ -78,9 +130,13 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
       return na.localeCompare(nb);
     });
     return scored;
-  }, [allPlayers, query]);
+  }, [allPlayers, query, matchesQuickFilter]);
 
-  const hasActiveFilters = nameQuery.length > 0 || Object.keys(featureFilters).length > 0;
+  const hasActiveFilters = nameQuery.length > 0
+    || Object.keys(featureFilters).length > 0
+    || !!quickFilter.sex
+    || quickFilter.ethnicity.length > 0
+    || !!quickFilter.ageDecade;
 
   // ---- batch mode -------------------------------------------------------
   const enterBatchMode = useCallback(() => {
@@ -138,6 +194,7 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     // Clear query for the next seat so the user starts fresh.
     setNameQuery('');
     setFeatureFilters(EMPTY_FEATURE_FILTERS);
+    setQuickFilter(EMPTY_QUICK_FILTER);
     setCurrentSeat(next);
     return { nextSeat: next, batchDone: false };
   }, [batchMode.active, markSeatAssigned, nextUnassignedSeat]);
@@ -149,6 +206,12 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     featureFilters,
     setFeatureFilter,
     clearAllFeatureFilters,
+    // Phase 4 quick-filter (identification axes)
+    quickFilter,
+    setQuickFilterSex,
+    toggleQuickFilterEthnicity,
+    setQuickFilterAge,
+    clearQuickFilter,
     clearAll,
     hasActiveFilters,
 

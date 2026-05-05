@@ -20,7 +20,7 @@ import { usePlayerPicker } from '../../../hooks/usePlayerPicker';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import NameSearchInput from './NameSearchInput';
-import FilterChips from './FilterChips';
+import QuickFilterChips from './QuickFilterChips';
 import ResultCard from './ResultCard';
 import CreateFromQueryCTA from './CreateFromQueryCTA';
 import BatchSeatRibbon from './BatchSeatRibbon';
@@ -54,7 +54,12 @@ export const PlayerPickerView = ({ scale = 1 }) => {
 
   const {
     nameQuery, setNameQuery,
-    featureFilters, setFeatureFilter, clearAll, hasActiveFilters,
+    quickFilter,
+    setQuickFilterSex,
+    toggleQuickFilterEthnicity,
+    setQuickFilterAge,
+    clearQuickFilter,
+    clearAll, hasActiveFilters,
     results,
     currentSeat, setCurrentSeat,
     batchMode, enterBatchMode, exitBatchMode, onAssignmentComplete,
@@ -142,14 +147,25 @@ export const PlayerPickerView = ({ scale = 1 }) => {
     addToast,
   ]);
 
-  // --- Create a new player pre-filled from the query --------------------
+  // --- Create a new player pre-filled from query + quick-filter (Phase 4) --
+  // Per audit §8.3: Picker becomes the only creation entry point. The
+  // "+ Create new" CTA pre-fills the editor with the name AND any quick-
+  // filter attributes the user already set (sex / ethnicity / age) — so
+  // the user doesn't re-enter what they've already selected. This kills
+  // the duplicate-Michael class of bug at the source: the user always
+  // searches first, only creates if no match.
   const handleCreateFromQuery = useCallback(() => {
+    const fieldSeeds = {};
+    if (quickFilter.sex) fieldSeeds.sex = quickFilter.sex;
+    if (quickFilter.ageDecade) fieldSeeds.ageDecade = quickFilter.ageDecade;
+    if (quickFilter.ethnicity.length > 0) fieldSeeds.ethnicityTags = [...quickFilter.ethnicity];
     openPlayerEditor({
       mode: 'create',
       nameSeed: nameQuery,
+      fieldSeeds,
       seatContext: currentSeat ? { seat: currentSeat, sessionId } : null,
     });
-  }, [openPlayerEditor, nameQuery, currentSeat, sessionId]);
+  }, [openPlayerEditor, nameQuery, quickFilter, currentSeat, sessionId]);
 
   const handleBack = useCallback(() => {
     closePlayerPicker();
@@ -209,7 +225,7 @@ export const PlayerPickerView = ({ scale = 1 }) => {
         />
       ) : null}
 
-      {/* Search + filters */}
+      {/* Search + Phase 4 quick-filter chips (sex × ethnicity × age) */}
       <div className="px-3 py-3 bg-white border-b border-gray-200 space-y-2">
         <NameSearchInput
           value={nameQuery}
@@ -217,10 +233,14 @@ export const PlayerPickerView = ({ scale = 1 }) => {
           inputRef={searchInputRef}
           autoFocus={true}
         />
-        <FilterChips
-          featureFilters={featureFilters}
-          onFilterChange={setFeatureFilter}
-          onClearAll={clearAll}
+        <QuickFilterChips
+          sex={quickFilter.sex}
+          ethnicity={quickFilter.ethnicity}
+          ageDecade={quickFilter.ageDecade}
+          onSexChange={setQuickFilterSex}
+          onEthnicityToggle={toggleQuickFilterEthnicity}
+          onAgeChange={setQuickFilterAge}
+          onClearAll={clearQuickFilter}
         />
       </div>
 

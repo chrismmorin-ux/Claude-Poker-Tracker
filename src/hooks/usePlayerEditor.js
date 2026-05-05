@@ -97,6 +97,10 @@ export const usePlayerEditor = ({
   const editingPlayerId = editorContext?.playerId ?? null;
   const seatContext = editorContext?.seatContext || null;
   const nameSeed = editorContext?.nameSeed || '';
+  // Phase 4 (PIO G4 v2 §8.3): when arriving from the Picker's "+ Create new"
+  // CTA, the picker passes the quick-filter values (sex/ethnicity/age) so
+  // the user doesn't re-enter what they already selected.
+  const fieldSeeds = editorContext?.fieldSeeds || null;
 
   // Draft lifecycle (autosave + resume + discard) from PEO-1 hook.
   const {
@@ -143,18 +147,32 @@ export const usePlayerEditor = ({
       // Wait until draft load settles to avoid flashing seed → draft resume.
       if (isDraftLoading) return;
 
+      // Compose initial create-mode state from DEFAULT_FIELDS + nameSeed +
+      // fieldSeeds (Phase 4 — picker forwards quick-filter values).
+      const buildInitial = () => {
+        const base = { ...DEFAULT_FIELDS };
+        if (nameSeed) base.name = nameSeed;
+        if (fieldSeeds && typeof fieldSeeds === 'object') {
+          for (const [key, value] of Object.entries(fieldSeeds)) {
+            if (value === undefined) continue;
+            if (key in DEFAULT_FIELDS) base[key] = value;
+          }
+        }
+        return base;
+      };
+
       if (draft?.draft && !hydratedRef.current.key) {
         // Existing draft found — show banner; hold form in seed-or-empty state
         // until user chooses.
-        setFields(nameSeed ? { ...DEFAULT_FIELDS, name: nameSeed } : DEFAULT_FIELDS);
+        setFields(buildInitial());
         setDraftBanner('visible');
       } else {
-        setFields(nameSeed ? { ...DEFAULT_FIELDS, name: nameSeed } : DEFAULT_FIELDS);
+        setFields(buildInitial());
         setDraftBanner(null);
       }
       hydratedRef.current.key = key;
     }
-  }, [mode, editingPlayerId, allPlayers, draft, isDraftLoading, nameSeed, buildHydrationKey]);
+  }, [mode, editingPlayerId, allPlayers, draft, isDraftLoading, nameSeed, fieldSeeds, buildHydrationKey]);
 
   // ---- Field update handlers ------------------------------------------
   const updateField = useCallback((key, value) => {

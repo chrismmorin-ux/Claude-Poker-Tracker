@@ -86,8 +86,10 @@ const mockPlayerContext = {
 
 const mockUIContext = {
   setCurrentScreen: vi.fn(),
-  SCREEN: { TABLE: 'table', PLAYERS: 'players', PLAYER_EDITOR: 'playerEditor' },
+  SCREEN: { TABLE: 'table', PLAYERS: 'players', PLAYER_EDITOR: 'playerEditor', PLAYER_PICKER: 'playerPicker', PLAYER_PROFILE: 'playerProfile' },
   openPlayerEditor: vi.fn(),
+  openPlayerPicker: vi.fn(),
+  openPlayerProfile: vi.fn(),
 };
 
 const mockSessionContext = {
@@ -238,32 +240,31 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('player creation (PEO-4: routes to fullscreen editor)', () => {
-    it('opens PlayerEditor in create mode when button clicked', () => {
+  describe('player creation (Phase 4: routes through Picker first)', () => {
+    // Per audit §8.3 / §A6: Picker is the canonical creation entry point.
+    // Clicking "+ New Player" opens the Picker (search-first), NOT the
+    // editor directly. User can confirm no match exists before creating.
+    it('opens PlayerPicker (no seat) when button clicked with no seat selected', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
-        mode: 'create',
-      }));
+      expect(mockUIContext.openPlayerPicker).toHaveBeenCalledWith({
+        seat: null,
+      });
     });
 
-    it('threads selected seat into editorContext.seatContext', () => {
+    it('passes selected seat to Picker when one is selected', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByTestId('seat-5'));
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
-        mode: 'create',
-        seatContext: expect.objectContaining({ seat: 5, sessionId: 42 }),
-      }));
+      expect(mockUIContext.openPlayerPicker).toHaveBeenCalledWith({
+        seat: 5,
+      });
     });
 
-    it('uses null seatContext when no seat is selected', () => {
+    it('does NOT open the editor directly from the + New Player button', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith(expect.objectContaining({
-        mode: 'create',
-        seatContext: null,
-      }));
+      expect(mockUIContext.openPlayerEditor).not.toHaveBeenCalled();
     });
   });
 
@@ -288,7 +289,12 @@ describe('PlayersView', () => {
       fireEvent.click(selectButtons[0]);
 
       await waitFor(() => {
-        expect(mockPlayerContext.assignPlayerToSeat).toHaveBeenCalledWith(5, 1);
+        // Phase 2 (sighting fix): assignPlayerToSeat now takes 3rd opts arg
+        expect(mockPlayerContext.assignPlayerToSeat).toHaveBeenCalledWith(
+          5,
+          1,
+          expect.objectContaining({ sessionId: 42 }),
+        );
       });
     });
   });
