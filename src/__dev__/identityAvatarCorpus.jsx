@@ -16,6 +16,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import IdentityAvatar from '../components/ui/IdentityAvatar';
+import AvatarRenderer from '../components/ui/AvatarRenderer';
+import {
+  SKIN_TONES,
+  HAIR_COLORS,
+  EYEWEAR_COLORS,
+} from '../constants/avatarFeatureConstants';
+import { AVATAR_FEATURES } from '../assets/avatarFeatures';
 
 // =============================================================================
 // CORPUS — mirrors §4 of the audit report
@@ -263,6 +270,187 @@ const ProfileCard = ({ profile }) => {
   );
 };
 
+// =============================================================================
+// FEATURE CATALOG — every option of every category visible at least once
+// =============================================================================
+
+// Render a single feature variant: a small AvatarRenderer with that specific
+// feature ID set, and a name label below.
+const FeatureSwatch = ({ category, featureId, label, baseFeatures = {} }) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: 6,
+      background: '#fff',
+      border: '1px solid #ddd',
+      borderRadius: 6,
+      minWidth: 88,
+    }}
+  >
+    <AvatarRenderer
+      avatarFeatures={{
+        // For skin we set silhouette key not skin (Phase 1.6 contract)
+        ...(category === 'skin' ? { silhouette: featureId } : { [category]: featureId }),
+        ...baseFeatures,
+      }}
+      size={72}
+    />
+    <div style={{ fontSize: 10, marginTop: 4, fontFamily: 'monospace', color: '#333' }}>
+      {featureId}
+    </div>
+    {label && label !== featureId ? (
+      <div style={{ fontSize: 10, color: '#888' }}>{label}</div>
+    ) : null}
+  </div>
+);
+
+// Render a swatch for a hair color or skin tone (just a colored circle)
+const ColorSwatch = ({ id, label, hex, cssVar = '--hair' }) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: 6,
+      background: '#fff',
+      border: '1px solid #ddd',
+      borderRadius: 6,
+      minWidth: 88,
+    }}
+  >
+    <AvatarRenderer
+      avatarFeatures={
+        cssVar === '--hair'
+          ? { hair: 'hair.short-wavy', hairColor: id, beard: 'beard.full', beardColor: id }
+          : cssVar === '--skin'
+            ? { skin: id }
+            : cssVar === '--frame'
+              ? { glasses: 'glasses.round', eyewearColor: id }
+              : {}
+      }
+      size={72}
+    />
+    <div
+      style={{
+        width: 56,
+        height: 12,
+        background: hex,
+        borderRadius: 3,
+        marginTop: 4,
+        border: '1px solid #999',
+      }}
+    />
+    <div style={{ fontSize: 10, marginTop: 4, fontFamily: 'monospace', color: '#333' }}>
+      {id}
+    </div>
+  </div>
+);
+
+const FeatureCatalog = () => {
+  // Group hair / beard / glasses / hat — every authored feature variant.
+  const hairFeatures = AVATAR_FEATURES.hair;
+  const beardFeatures = AVATAR_FEATURES.beard;
+  const glassesFeatures = AVATAR_FEATURES.glasses;
+  const hatFeatures = AVATAR_FEATURES.hat;
+  // Skin (silhouette) variants — exclude legacy 'skin.shape' singleton
+  const silhouetteFeatures = AVATAR_FEATURES.skin.filter((f) => f.id.startsWith('silhouette.'));
+
+  // For hair-color swatches, render with a face that has both hair and beard
+  // so the color is visible on both surfaces.
+
+  const Section = ({ title, children }) => (
+    <div style={{ marginBottom: 24 }}>
+      <h2 style={{ fontSize: 14, margin: '0 0 8px 0' }}>{title}</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{children}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 24, padding: 16, background: '#fffefa', border: '1px solid #ddd', borderRadius: 6 }}>
+      <h1 style={{ margin: '0 0 12px 0', fontSize: 18 }}>Feature Catalog — every option visible at least once</h1>
+      <p style={{ fontSize: 12, color: '#555', maxWidth: 900 }}>
+        Each section below shows every authored variant of one feature category. Use this to spot variants that don&apos;t read clearly at the standard 72 px display size, and reference them by the feature ID shown beneath each swatch.
+      </p>
+
+      <Section title={`Hair (${hairFeatures.length})`}>
+        {hairFeatures.map((f) => (
+          <FeatureSwatch key={f.id} category="hair" featureId={f.id} label={f.label} />
+        ))}
+      </Section>
+
+      <Section title={`Beard / Facial hair (${beardFeatures.length})`}>
+        {beardFeatures.map((f) => (
+          <FeatureSwatch
+            key={f.id}
+            category="beard"
+            featureId={f.id}
+            label={f.label}
+          />
+        ))}
+      </Section>
+
+      <Section title={`Glasses / Eyewear (${glassesFeatures.length})`}>
+        {glassesFeatures.map((f) => (
+          <FeatureSwatch key={f.id} category="glasses" featureId={f.id} label={f.label} />
+        ))}
+      </Section>
+
+      <Section title={`Hats / Headwear (${hatFeatures.length})`}>
+        {hatFeatures.map((f) => (
+          <FeatureSwatch key={f.id} category="hat" featureId={f.id} label={f.label} />
+        ))}
+      </Section>
+
+      <Section title={`Silhouette — sex × build (${silhouetteFeatures.length})`}>
+        {silhouetteFeatures.map((f) => (
+          <FeatureSwatch key={f.id} category="skin" featureId={f.id} label={f.label} />
+        ))}
+      </Section>
+
+      <Section title={`Skin tones (${SKIN_TONES.length})`}>
+        {SKIN_TONES.map((c) => (
+          <ColorSwatch key={c.id} id={c.id} label={c.label} hex={c.hex} cssVar="--skin" />
+        ))}
+      </Section>
+
+      <Section title={`Hair colors (${HAIR_COLORS.length}) — same swatch shows beard color`}>
+        {HAIR_COLORS.map((c) => (
+          <ColorSwatch key={c.id} id={c.id} label={c.label} hex={c.hex} cssVar="--hair" />
+        ))}
+      </Section>
+
+      <Section title={`Eyewear colors / frames (${EYEWEAR_COLORS.length})`}>
+        {EYEWEAR_COLORS.map((c) => (
+          <ColorSwatch key={c.id} id={c.id} label={c.label} hex={c.hex} cssVar="--frame" />
+        ))}
+      </Section>
+
+      <Section title="Salt-pepper treatment (overlay on top of primary color)">
+        <FeatureSwatch
+          category="hair"
+          featureId="hair.short-wavy"
+          label="black + salt-pepper overlay"
+          baseFeatures={{ hairColor: 'color.black', hairTreatment: 'salt-pepper', beard: 'beard.full', beardColor: 'color.black' }}
+        />
+        <FeatureSwatch
+          category="hair"
+          featureId="hair.medium"
+          label="brown + salt-pepper overlay"
+          baseFeatures={{ hairColor: 'color.brown', hairTreatment: 'salt-pepper', beard: 'beard.goatee', beardColor: 'color.brown' }}
+        />
+        <FeatureSwatch
+          category="hair"
+          featureId="hair.short-wavy"
+          label="dark-brown + salt-pepper"
+          baseFeatures={{ hairColor: 'color.dark-brown', hairTreatment: 'salt-pepper', beard: 'beard.stubble', beardColor: 'color.dark-brown' }}
+        />
+      </Section>
+    </div>
+  );
+};
+
 const CorpusOverlay = ({ onClose }) => {
   const anchors = CORPUS.filter((p) => p.id.startsWith('ANCHOR'));
   const synth = CORPUS.filter((p) => p.id.startsWith('SYNTH'));
@@ -280,7 +468,7 @@ const CorpusOverlay = ({ onClose }) => {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h1 style={{ margin: 0, fontSize: 20 }}>
-          Identity Avatar Corpus — N=25 (Phase 1.6)
+          Identity Avatar Corpus — N=25 (Phase 1.8)
         </h1>
         <button
           onClick={onClose}
@@ -290,9 +478,12 @@ const CorpusOverlay = ({ onClose }) => {
         </button>
       </div>
       <p style={{ fontSize: 12, color: '#555', maxWidth: 900 }}>
-        Each card shows one identity rendered at 24 / 48 / 96 px (the three sizes the app uses: TableView seat / PlayersView row / profile-header). The avatar is fully derived from the identification fields shown below — no manual override. To give feedback, note the profile ID (ANCHOR-N or SYNTH-N) and what doesn&apos;t read right (e.g., &quot;SYNTH-1: muscular shoulders aren&apos;t visible enough&quot; or &quot;ANCHOR-3: hair color too light&quot;).
+        Each card shows one identity rendered at 24 / 48 / 96 px (the three sizes the app uses: TableView seat / PlayersView row / profile-header). The avatar is fully derived from the identification fields shown below — no manual override. To give feedback, note the profile ID (ANCHOR-N or SYNTH-N) and what doesn&apos;t read right.
       </p>
-      <h2 style={{ fontSize: 14, marginTop: 16 }}>Real anchors ({anchors.length})</h2>
+
+      <FeatureCatalog />
+
+      <h2 style={{ fontSize: 14, marginTop: 24 }}>Real anchors ({anchors.length})</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
         {anchors.map((p) => <ProfileCard key={p.id} profile={p} />)}
       </div>

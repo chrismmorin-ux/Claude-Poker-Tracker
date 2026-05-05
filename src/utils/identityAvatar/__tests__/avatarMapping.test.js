@@ -156,26 +156,30 @@ describe('hairColorFromIdentity (age-modulated graying)', () => {
     expect(hairColorFromIdentity('blonde', '30s')).toBe('color.blonde');
   });
 
-  it('shifts dark colors to salt-pepper for 40s (more realistic than direct gray)', () => {
-    expect(hairColorFromIdentity('black', '40s')).toBe('color.salt-pepper');
-    expect(hairColorFromIdentity('brown', '40s')).toBe('color.salt-pepper');
-    expect(hairColorFromIdentity('dark-brown', '40s')).toBe('color.salt-pepper');
+  it('preserves base color at 40s — graying carried by salt-pepper TREATMENT overlay (Phase 1.8)', () => {
+    // Phase 1.8 architecture change: salt-pepper is a treatment overlay (white
+    // streaks on top of primary color), not a destination color. So at 40s
+    // the base color is preserved; the salt-pepper visual is added via
+    // hairTreatmentFromIdentity() returning 'salt-pepper'.
+    expect(hairColorFromIdentity('black', '40s')).toBe('color.black');
+    expect(hairColorFromIdentity('brown', '40s')).toBe('color.brown');
+    expect(hairColorFromIdentity('dark-brown', '40s')).toBe('color.dark-brown');
   });
 
   it('preserves blonde at 40s (blondes don\'t typically gray that early)', () => {
     expect(hairColorFromIdentity('blonde', '40s')).toBe('color.blonde');
   });
 
-  it('shifts dark colors to gray for 50s', () => {
-    expect(hairColorFromIdentity('black', '50s')).toBe('color.gray');
-    expect(hairColorFromIdentity('brown', '50s')).toBe('color.gray');
+  it('preserves base color at 50s as well — salt-pepper treatment is the visual (Phase 1.8)', () => {
+    expect(hairColorFromIdentity('black', '50s')).toBe('color.black');
+    expect(hairColorFromIdentity('brown', '50s')).toBe('color.brown');
   });
 
-  it('drives toward gray/white for 60s+', () => {
+  it('drives toward gray/white only at 60s+ (post-salt-pepper)', () => {
     expect(hairColorFromIdentity('black', '60s+')).toBe('color.gray');
     expect(hairColorFromIdentity('brown', '60s+')).toBe('color.gray');
     expect(hairColorFromIdentity('blonde', '60s+')).toBe('color.white');
-    expect(hairColorFromIdentity('red', '60s+')).toBe('color.gray');
+    expect(hairColorFromIdentity('red', '60s+')).toBe('color.white');
   });
 
   it('handles already-gray hair gracefully', () => {
@@ -183,14 +187,12 @@ describe('hairColorFromIdentity (age-modulated graying)', () => {
     expect(hairColorFromIdentity('white', '60s+')).toBe('color.white');
   });
 
-  it('accepts salt-pepper as an explicit input color', () => {
-    expect(hairColorFromIdentity('salt-pepper', '40s')).toBe('color.salt-pepper');
+  it('accepts salt-pepper as an explicit input color (legacy / backward compat)', () => {
+    // Salt-pepper as a base color still maps; the OVERLAY is now driven by
+    // hairTreatment, but the base value passes through.
+    expect(hairColorFromIdentity('salt-pepper', '20s')).toBe('color.salt-pepper');
     expect(hairColorFromIdentity('salt and pepper', '50s')).toBe('color.gray');
     expect(hairColorFromIdentity('salt-and-pepper', '60s+')).toBe('color.white');
-  });
-
-  it('explicit salt-pepper at 30s preserves the input (no shift)', () => {
-    expect(hairColorFromIdentity('salt-pepper', '30s')).toBe('color.salt-pepper');
   });
 
   it('defaults to default hair color for unknown input', () => {
@@ -396,7 +398,9 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
     expect(result.hair).toBe('hair.buzz');
     expect(result.beard).toBe('beard.goatee');
     expect(result.glasses).toBe('glasses.shades');
-    expect(result.hairColor).toBe('color.salt-pepper'); // 1-step nudge → salt-pepper for 40s
+    // Phase 1.8: base color preserved; salt-pepper carried by treatment
+    expect(result.hairColor).toBe('color.black');
+    expect(result.hairTreatment).toBe('salt-pepper');
   });
 
   it('legacy ethnicity string still works (no ethnicityTags array)', () => {
@@ -504,7 +508,7 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
     expect(result.glasses).toBe('glasses.round');
   });
 
-  it('SYNTH-17 (Black 50s salt-pepper) explicit salt-pepper preserved', () => {
+  it('SYNTH-17 (Black 50s with explicit salt-pepper) routes through treatment overlay', () => {
     const result = mapIdentityToAvatarFeatures({
       sex: 'male',
       ethnicityTags: ['black'],
@@ -513,9 +517,35 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
       hairLength: 'short',
       facialHair: 'full',
     });
-    // 50s shifts salt-pepper → gray per the table; covered above. Confirm beard
-    // matches hair color (both salt-pepper-shifted to gray).
+    // Salt-pepper as base shifts to gray at 50s. Treatment is set so the
+    // overlay renders the white-streaks pattern on top.
     expect(result.hairColor).toBe('color.gray');
     expect(result.beardColor).toBe('color.gray');
+    expect(result.hairTreatment).toBe('salt-pepper');
+  });
+
+  it('hairTreatment auto-derives for 40s+ with dark base color', () => {
+    expect(mapIdentityToAvatarFeatures({ hairColor: 'black', ageDecade: '30s' }).hairTreatment).toBeNull();
+    expect(mapIdentityToAvatarFeatures({ hairColor: 'black', ageDecade: '40s' }).hairTreatment).toBe('salt-pepper');
+    expect(mapIdentityToAvatarFeatures({ hairColor: 'brown', ageDecade: '50s' }).hairTreatment).toBe('salt-pepper');
+    expect(mapIdentityToAvatarFeatures({ hairColor: 'blonde', ageDecade: '50s' }).hairTreatment).toBeNull();
+  });
+
+  it('explicit hairSaltPepper=true forces treatment regardless of age', () => {
+    const result = mapIdentityToAvatarFeatures({
+      hairColor: 'brown',
+      ageDecade: '20s',
+      hairSaltPepper: true,
+    });
+    expect(result.hairTreatment).toBe('salt-pepper');
+  });
+
+  it('explicit hairSaltPepper=false suppresses treatment even at 50s with dark hair', () => {
+    const result = mapIdentityToAvatarFeatures({
+      hairColor: 'black',
+      ageDecade: '50s',
+      hairSaltPepper: false,
+    });
+    expect(result.hairTreatment).toBeNull();
   });
 });

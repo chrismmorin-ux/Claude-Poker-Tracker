@@ -103,6 +103,7 @@ const FeaturePaths = ({ feature }) => {
       d={p.d}
       fill={p.fill ?? 'currentColor'}
       fillOpacity={p.fillOpacity ?? undefined}
+      fillRule={p.fillRule ?? undefined}
       stroke={p.stroke ?? undefined}
       strokeWidth={p.strokeWidth ?? undefined}
       strokeLinecap={p.strokeLinecap ?? undefined}
@@ -116,10 +117,34 @@ const FeaturePaths = ({ feature }) => {
 // Use y=38 so all hats fully cover the crown — strictest clip line.
 const HAIR_CLIP_Y_WHEN_HATTED = 38;
 
+// Salt-pepper treatment overlay — white streak pattern rendered ON TOP of
+// the hair (or beard) shape, clipped to the underlying shape so streaks
+// don't spill onto skin. Mimics the natural "white hairs scattered through
+// the primary color" appearance. Uses small dots and short streaks
+// distributed across the head area.
+const SALT_PEPPER_HAIR_PATHS = [
+  // Scattered short streaks across the crown
+  { d: 'M 28 24 l 2 1.5 M 35 18 l 2.5 1 M 42 14 l 2 1.5 M 50 12 l 2.5 1.5 M 58 14 l 2 1 M 65 18 l 2.5 1.5 M 72 24 l 2 1', stroke: '#fff', strokeWidth: 1.2, strokeLinecap: 'round', fill: 'none' },
+  // Mid-crown streaks
+  { d: 'M 30 30 l 2 1 M 38 24 l 2 1.5 M 46 20 l 2 1 M 54 20 l 2 1 M 62 24 l 2 1.5 M 70 30 l 2 1', stroke: '#fff', strokeWidth: 1, strokeLinecap: 'round', fill: 'none' },
+  // Lower scattered dots (sideburn / ear-line area for longer hair)
+  { d: 'M 26 38 l 1.5 0.8 M 32 36 l 1.5 0.8 M 68 36 l 1.5 0.8 M 74 38 l 1.5 0.8', stroke: '#fff', strokeWidth: 0.9, strokeLinecap: 'round', fill: 'none' },
+];
+
+const SALT_PEPPER_BEARD_PATHS = [
+  // Streaks across beard area (jaw + chin + sideburns at y=56-78)
+  { d: 'M 32 60 l 1.5 0.8 M 40 58 l 1.5 0.8 M 48 60 l 1.5 0.8 M 56 58 l 1.5 0.8 M 64 60 l 1.5 0.8', stroke: '#fff', strokeWidth: 1, strokeLinecap: 'round', fill: 'none' },
+  { d: 'M 36 66 l 1.5 0.8 M 44 68 l 1.5 0.8 M 52 68 l 1.5 0.8 M 60 66 l 1.5 0.8', stroke: '#fff', strokeWidth: 1, strokeLinecap: 'round', fill: 'none' },
+  { d: 'M 42 74 l 1.5 0.8 M 50 76 l 1.5 0.8 M 58 74 l 1.5 0.8', stroke: '#fff', strokeWidth: 0.9, strokeLinecap: 'round', fill: 'none' },
+];
+
 const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) => {
   const colorStyle = useMemo(() => buildColorVars(avatarFeatures), [avatarFeatures]);
   const uniqueId = useId();
-  const hairClipId = `hair-clip-${uniqueId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const safeId = uniqueId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const hairClipId = `hair-clip-${safeId}`;
+  const hairShapeClipId = `hair-shape-${safeId}`;
+  const beardShapeClipId = `beard-shape-${safeId}`;
 
   const layers = useMemo(
     () => LAYER_ORDER.map((category) => ({
@@ -136,6 +161,17 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
   const hatLayer = layers.find((l) => l.category === 'hat');
   const hasHat = !!hatLayer?.feature?.paths?.length;
 
+  // Salt-pepper treatment overlays — render white streak pattern clipped
+  // to the underlying hair / beard shape.
+  const hairTreatment = avatarFeatures?.hairTreatment;
+  const beardTreatment = avatarFeatures?.beardTreatment ?? hairTreatment; // beard mirrors hair by default
+  const hairLayer = layers.find((l) => l.category === 'hair');
+  const beardLayer = layers.find((l) => l.category === 'beard');
+  const hasHair = !!hairLayer?.feature?.paths?.length;
+  const hasBeard = !!beardLayer?.feature?.paths?.length;
+  const showHairSaltPepper = hairTreatment === 'salt-pepper' && hasHair;
+  const showBeardSaltPepper = beardTreatment === 'salt-pepper' && hasBeard;
+
   return (
     <svg
       viewBox={AVATAR_VIEWBOX}
@@ -147,20 +183,37 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
       style={colorStyle}
     >
       {title ? <title>{title}</title> : null}
-      {hasHat ? (
+      {(hasHat || showHairSaltPepper || showBeardSaltPepper) ? (
         <defs>
-          <clipPath id={hairClipId}>
-            <rect
-              x={0}
-              y={HAIR_CLIP_Y_WHEN_HATTED}
-              width={AVATAR_VIEWBOX_SIZE}
-              height={AVATAR_VIEWBOX_SIZE - HAIR_CLIP_Y_WHEN_HATTED}
-            />
-          </clipPath>
+          {hasHat ? (
+            <clipPath id={hairClipId}>
+              <rect
+                x={0}
+                y={HAIR_CLIP_Y_WHEN_HATTED}
+                width={AVATAR_VIEWBOX_SIZE}
+                height={AVATAR_VIEWBOX_SIZE - HAIR_CLIP_Y_WHEN_HATTED}
+              />
+            </clipPath>
+          ) : null}
+          {showHairSaltPepper ? (
+            <clipPath id={hairShapeClipId}>
+              {hairLayer.feature.paths.map((p, i) => (
+                <path key={i} d={p.d} />
+              ))}
+            </clipPath>
+          ) : null}
+          {showBeardSaltPepper ? (
+            <clipPath id={beardShapeClipId}>
+              {beardLayer.feature.paths.map((p, i) => (
+                <path key={i} d={p.d} />
+              ))}
+            </clipPath>
+          ) : null}
         </defs>
       ) : null}
       {layers.map(({ category, feature }) => {
         const isHair = category === 'hair';
+        const isBeard = category === 'beard';
         const groupProps = {
           'data-layer': category,
           'data-feature-id': feature.id,
@@ -169,11 +222,50 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
           groupProps.clipPath = `url(#${hairClipId})`;
           groupProps['data-hair-clipped'] = 'true';
         }
-        return (
+        const layerNode = (
           <g key={category} {...groupProps}>
             <FeaturePaths feature={feature} />
           </g>
         );
+        // After the hair layer, optionally render the salt-pepper overlay
+        // group clipped to the hair shape. Same after the beard.
+        if (isHair && showHairSaltPepper) {
+          return (
+            <React.Fragment key={category}>
+              {layerNode}
+              <g
+                data-layer="hair-treatment"
+                data-treatment="salt-pepper"
+                clipPath={`url(#${hairShapeClipId})`}
+              >
+                {SALT_PEPPER_HAIR_PATHS.map((p, i) => (
+                  <path key={i} d={p.d} fill={p.fill ?? 'none'}
+                    stroke={p.stroke} strokeWidth={p.strokeWidth}
+                    strokeLinecap={p.strokeLinecap} />
+                ))}
+              </g>
+            </React.Fragment>
+          );
+        }
+        if (isBeard && showBeardSaltPepper) {
+          return (
+            <React.Fragment key={category}>
+              {layerNode}
+              <g
+                data-layer="beard-treatment"
+                data-treatment="salt-pepper"
+                clipPath={`url(#${beardShapeClipId})`}
+              >
+                {SALT_PEPPER_BEARD_PATHS.map((p, i) => (
+                  <path key={i} d={p.d} fill={p.fill ?? 'none'}
+                    stroke={p.stroke} strokeWidth={p.strokeWidth}
+                    strokeLinecap={p.strokeLinecap} />
+                ))}
+              </g>
+            </React.Fragment>
+          );
+        }
+        return layerNode;
       })}
     </svg>
   );

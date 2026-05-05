@@ -25,27 +25,25 @@ export default [
     id: 'hat.cap',
     label: 'Baseball Cap',
     paths: [
-      // Crown — taller at the front, slopes down toward the back. Sits on
-      // the head from y=14 (front peak) to y=36 (cap base around the head).
+      // Crown — single closed shape (no inner negative curve). Goes from
+      // base-left (22, 38) up over the crown to base-right (78, 38), then
+      // closes straight across the bottom. No internal seam visible.
       {
         d: `
           M 22 38
           C 22 22, 30 14, 50 14
           C 66 14, 76 20, 78 38
-          C 70 36, 60 35, 50 35
-          C 40 35, 30 36, 22 38
           Z
         `,
         fill: '#264a7a',
       },
-      // Brim — extends FORWARD from the cap with a curved underside (looks
-      // like a baseball cap brim viewed slightly from the front).
+      // Brim — extends from below the crown forward, with curved underside.
+      // Brim base is at y=38 (matches crown bottom) so they connect cleanly.
       {
         d: `
-          M 18 38
-          C 18 38, 50 38, 56 38
-          L 56 42
-          C 54 44, 30 44, 18 42
+          M 16 38
+          L 60 38
+          C 60 41, 50 44, 16 42
           Z
         `,
         fill: '#1e3a60',
@@ -61,29 +59,29 @@ export default [
     id: 'hat.beanie',
     label: 'Beanie',
     paths: [
-      // Smooth single-color beanie — covers ears (extends down to y=50 on
-      // the sides) with a rounded crown. No cuff line, no two-tone, no flaps.
-      // Slightly wider than head at temples to *sit on* properly.
+      // Smooth single-color beanie with a U-shaped bottom edge — pulled DOWN
+      // over the ears (sides at y=54) but RAISED at the forehead (y=42 above
+      // the eye line at y=48-58) so eyes are not covered. No cuff/flaps.
       {
         d: `
-          M 20 32
-          C 20 14, 34 8, 50 8
-          C 66 8, 80 14, 80 32
-          C 80 42, 78 48, 76 50
-          C 72 52, 64 52, 58 52
-          L 42 52
-          C 36 52, 28 52, 24 50
-          C 22 48, 20 42, 20 32
+          M 18 32
+          C 18 12, 32 6, 50 6
+          C 68 6, 82 12, 82 32
+          L 82 44
+          C 82 52, 78 54, 74 54
+          C 70 54, 68 50, 66 46
+          C 60 42, 40 42, 34 46
+          C 32 50, 30 54, 26 54
+          C 22 54, 18 52, 18 44
           Z
         `,
         fill: '#7a2c2c',
       },
-      // Subtle ribbed knit lines (low-opacity) — gives texture without
-      // breaking the single-color rule
+      // Subtle ribbed knit lines (low-opacity)
       {
         d: `
-          M 28 24 L 30 50 M 36 18 L 36 52 M 44 14 L 44 52
-          M 52 14 L 52 52 M 60 18 L 60 52 M 68 24 L 68 50
+          M 26 22 L 28 52 M 34 14 L 34 46 M 42 10 L 42 44
+          M 50 8 L 50 44 M 58 10 L 58 44 M 66 14 L 66 46 M 74 22 L 72 52
         `,
         stroke: 'rgba(0,0,0,0.18)',
         strokeWidth: '0.7',

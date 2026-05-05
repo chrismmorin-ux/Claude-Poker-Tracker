@@ -216,25 +216,29 @@ const AGE_DECADE_GRAY_SHIFT = {
 
 /**
  * Per-base-color age progression table.
- * Index 0 = no shift (20s/30s)
- * Index 1 = 40s — adds salt-pepper for darker colors (more realistic than
- *           jumping straight to gray)
- * Index 2 = 50s — toward gray
- * Index 3 = 60s+ — toward white
  *
- * salt-pepper is a destination color but never a base — once a player has
- * salt-pepper hair, age doesn't darken it (graying is monotonic).
+ * Salt-pepper is now a TREATMENT OVERLAY (white streaks on top of the
+ * primary color), NOT a destination color. So 40s no longer shifts
+ * dark hair to a "salt-pepper hex" — instead the BASE color is preserved
+ * and the salt-pepper treatment is signaled separately (see
+ * hairTreatmentFromIdentity below). At 60s+ the base color shifts to
+ * gray/white as the treatment is no longer enough.
+ *
+ * Index 0 = no shift (20s/30s)
+ * Index 1 = 40s — base color preserved (treatment carries the graying)
+ * Index 2 = 50s — base color preserved (treatment carries the graying)
+ * Index 3 = 60s+ — direct shift to gray/white
  */
 const GRAY_SHIFT_TABLE = {
-  'color.black':        ['color.black',       'color.salt-pepper', 'color.gray',  'color.gray'],
-  'color.dark-brown':   ['color.dark-brown',  'color.salt-pepper', 'color.gray',  'color.gray'],
-  'color.brown':        ['color.brown',       'color.salt-pepper', 'color.gray',  'color.gray'],
-  'color.light-brown':  ['color.light-brown', 'color.salt-pepper', 'color.gray',  'color.gray'],
-  'color.blonde':       ['color.blonde',      'color.blonde',      'color.white', 'color.white'],
-  'color.red':          ['color.red',         'color.red',         'color.salt-pepper', 'color.gray'],
-  'color.salt-pepper':  ['color.salt-pepper', 'color.salt-pepper', 'color.gray',  'color.white'],
-  'color.gray':         ['color.gray',        'color.gray',        'color.gray',  'color.white'],
-  'color.white':        ['color.white',       'color.white',       'color.white', 'color.white'],
+  'color.black':        ['color.black',       'color.black',       'color.black',     'color.gray'],
+  'color.dark-brown':   ['color.dark-brown',  'color.dark-brown',  'color.dark-brown', 'color.gray'],
+  'color.brown':        ['color.brown',       'color.brown',       'color.brown',     'color.gray'],
+  'color.light-brown':  ['color.light-brown', 'color.light-brown', 'color.light-brown', 'color.gray'],
+  'color.blonde':       ['color.blonde',      'color.blonde',      'color.blonde',    'color.white'],
+  'color.red':          ['color.red',         'color.red',         'color.red',       'color.white'],
+  'color.salt-pepper':  ['color.salt-pepper', 'color.salt-pepper', 'color.gray',      'color.white'],
+  'color.gray':         ['color.gray',        'color.gray',        'color.gray',      'color.white'],
+  'color.white':        ['color.white',       'color.white',       'color.white',     'color.white'],
 };
 
 export const hairColorFromIdentity = (hairColor, ageDecade) => {
@@ -243,6 +247,52 @@ export const hairColorFromIdentity = (hairColor, ageDecade) => {
   const shift = AGE_DECADE_GRAY_SHIFT[ageDecade] ?? 0;
   const ladder = GRAY_SHIFT_TABLE[baseId] || [baseId, baseId, baseId, baseId];
   return ladder[Math.min(shift, ladder.length - 1)];
+};
+
+/**
+ * Salt-pepper treatment derivation.
+ *
+ * Salt-pepper is now a TREATMENT (white streaks overlay) on top of the
+ * primary hair color, rather than a destination color. Returns
+ * 'salt-pepper' when the player should render the white-streaks overlay,
+ * otherwise null.
+ *
+ * Signals (in order):
+ *   1. Explicit hairSaltPepper boolean (user-toggled) — wins
+ *   2. Explicit hairColor='salt-pepper' input — backward compat
+ *   3. Auto: 40s-50s with dark base color (black/dark-brown/brown/red) —
+ *      salt-pepper is the realistic visual at those ages before going gray
+ *   4. Otherwise null (no treatment overlay)
+ *
+ * @param {Object} player - Player record (reads hairColor, ageDecade,
+ *   hairSaltPepper, hairTreatment)
+ * @returns {string|null} 'salt-pepper' | null
+ */
+export const hairTreatmentFromIdentity = (player) => {
+  if (!player) return null;
+  // Explicit overrides win
+  if (player.hairSaltPepper === true) return 'salt-pepper';
+  if (player.hairSaltPepper === false) return null;
+  if (player.hairTreatment === 'salt-pepper') return 'salt-pepper';
+  if (player.hairTreatment === 'none' || player.hairTreatment === null) return null;
+  // Backward compat: hairColor='salt-pepper' interpreted as treatment intent
+  const hairColorInput = (player.hairColor || '').toString().toLowerCase();
+  if (hairColorInput === 'salt-pepper'
+      || hairColorInput === 'salt and pepper'
+      || hairColorInput === 'salt-and-pepper'
+      || hairColorInput === 'saltpepper') {
+    return 'salt-pepper';
+  }
+  // Auto-derivation for 40s-50s with dark base
+  const baseColorId = HAIR_COLOR_NORMALIZED[hairColorInput] || null;
+  const isDarkBase = baseColorId === 'color.black'
+    || baseColorId === 'color.dark-brown'
+    || baseColorId === 'color.brown'
+    || baseColorId === 'color.red';
+  if (isDarkBase && (player.ageDecade === '40s' || player.ageDecade === '50s')) {
+    return 'salt-pepper';
+  }
+  return null;
 };
 
 // =============================================================================
@@ -423,6 +473,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
     skin: skinFromEthnicity(ethnicityTags, ethnicity),
     hair: hairShapeFromLength(hairLength, hairTexture),
     hairColor: hairColorFromIdentity(hairColor, ageDecade),
+    hairTreatment: hairTreatmentFromIdentity(player),
     beard: beardFromIdentity(facialHair, sex),
     beardColor: hairColorFromIdentity(hairColor, ageDecade), // beard matches hair
     eyes: eyeShapeFromEthnicity(ethnicityTags, ethnicity),

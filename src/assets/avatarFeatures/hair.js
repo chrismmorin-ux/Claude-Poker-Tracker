@@ -15,17 +15,66 @@ export default [
     id: 'hair.buzz',
     label: 'Buzz Cut',
     paths: [
-      // Thin cap hugging the crown
+      // Buzz cut = very short hair, mostly skin showing through. Renders as
+      // a SHADOW shape over the crown (thin, low-opacity fill of the hair
+      // color) PLUS a dot pattern simulating individual hair stubs — same
+      // technique as beard.stubble.
       {
         d: `
           M 28 40
           C 28 24, 38 18, 50 18
           C 62 18, 72 24, 72 40
-          C 68 34, 60 32, 50 32
-          C 40 32, 32 34, 28 40
+          C 68 38, 60 36, 50 36
+          C 40 36, 32 38, 28 40
           Z
         `,
         fill: 'var(--hair)',
+        fillOpacity: 0.35,
+      },
+      // Dot stubble pattern across the crown — low-density hair stubs.
+      {
+        d: `
+          M 32 24 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 36 22 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 40 20 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 44 19 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 48 18 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 52 18 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 56 19 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 60 20 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 64 22 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 68 24 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 30 28 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 34 26 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 38 24 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 42 23 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 46 22 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 50 22 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 54 22 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 58 23 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 62 24 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 66 26 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 70 28 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 32 32 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 36 30 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 40 28 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 44 27 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 48 26 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 52 26 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 56 27 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 60 28 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 64 30 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 68 32 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 34 36 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 40 34 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 46 32 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 52 32 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 58 32 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 64 34 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+          M 70 36 m -0.6 0 a 0.6 0.6 0 1 0 1.2 0 a 0.6 0.6 0 1 0 -1.2 0
+        `,
+        fill: 'var(--hair)',
+        fillOpacity: 0.85,
       },
     ],
   },
@@ -75,23 +124,26 @@ export default [
     id: 'hair.medium',
     label: 'Medium Length',
     paths: [
-      // Reaches past the jaw — distinct from short (above ear) and long (past
-      // shoulders). Side panels extend to y=72 (chin level). Top of hair at
-      // y=14; inner front edge at y=42 (above eyes y=48-58).
+      // Medium hair as an annulus: covers crown, side panels reach jaw level.
+      // Inner cutout is full face region (matches long-hair cutout) so eyes
+      // are clearly visible.
       {
         d: `
           M 22 44
           C 22 20, 34 14, 50 14
           C 66 14, 78 20, 78 44
           L 78 72
-          C 76 68, 72 66, 70 66
-          L 70 42
-          C 60 38, 40 38, 30 42
-          L 30 66
-          C 28 66, 24 68, 22 72
+          C 76 74, 72 74, 70 74
+          L 30 74
+          C 28 74, 24 74, 22 72
+          Z
+          M 28 42
+          C 30 58, 36 76, 50 80
+          C 64 76, 70 58, 72 42
           Z
         `,
         fill: 'var(--hair)',
+        fillRule: 'evenodd',
       },
     ],
   },
@@ -99,9 +151,10 @@ export default [
     id: 'hair.long',
     label: 'Long',
     paths: [
-      // Extends past shoulders on both sides. Top of hair sits at y=12;
-      // outer side panels descend to y=100 (shoulder level). Inner front
-      // edge stays at y=44 to avoid covering eyes (eyes at y~48-58).
+      // Long hair as an annulus: outer envelope covers crown (y=12) and falls
+      // past shoulders (y=100). EVEN-ODD inner cutout is the FULL FACE region
+      // (x=28-72 wide at brow, narrowing to chin at y=82). Eyes, nose, mouth
+      // all clearly inside the cutout.
       {
         d: `
           M 22 44
@@ -109,15 +162,16 @@ export default [
           C 66 12, 78 18, 78 44
           L 78 82
           C 78 92, 74 96, 72 100
-          L 66 100
-          L 66 58
-          C 60 50, 40 50, 34 58
-          L 34 100
           L 28 100
           C 26 96, 22 92, 22 82
           Z
+          M 28 42
+          C 30 60, 36 78, 50 84
+          C 64 78, 70 60, 72 42
+          Z
         `,
         fill: 'var(--hair)',
+        fillRule: 'evenodd',
       },
     ],
   },
@@ -171,27 +225,133 @@ export default [
         `,
         fill: 'var(--hair)',
       },
-      // Layered curl-spiral overlays — small filled circles on top of the
-      // halo to suggest individual curls. Slightly darker via fillOpacity
-      // for shading. Five spirals across the crown.
+      // Layered curl-spiral overlays — DENSE pattern of small filled circles
+      // distributed across the crown to read as "tightly curled hair". Two
+      // overlapping layers (darker shading + lighter highlights) give the
+      // characteristic textured curl appearance.
+      {
+        // Darker shading curls
+        d: `
+          M 26 30 a 3 2.5 0 1 0 0.1 0
+          M 32 22 a 3 2.5 0 1 0 0.1 0
+          M 38 18 a 3 2.5 0 1 0 0.1 0
+          M 44 16 a 3 2.5 0 1 0 0.1 0
+          M 50 16 a 3 2.5 0 1 0 0.1 0
+          M 56 16 a 3 2.5 0 1 0 0.1 0
+          M 62 18 a 3 2.5 0 1 0 0.1 0
+          M 68 22 a 3 2.5 0 1 0 0.1 0
+          M 74 30 a 3 2.5 0 1 0 0.1 0
+          M 28 38 a 3 2.5 0 1 0 0.1 0
+          M 36 32 a 3 2.5 0 1 0 0.1 0
+          M 42 26 a 3 2.5 0 1 0 0.1 0
+          M 50 24 a 3 2.5 0 1 0 0.1 0
+          M 58 26 a 3 2.5 0 1 0 0.1 0
+          M 64 32 a 3 2.5 0 1 0 0.1 0
+          M 72 38 a 3 2.5 0 1 0 0.1 0
+          M 32 42 a 2.5 2 0 1 0 0.1 0
+          M 40 36 a 2.5 2 0 1 0 0.1 0
+          M 50 32 a 2.5 2 0 1 0 0.1 0
+          M 60 36 a 2.5 2 0 1 0 0.1 0
+          M 68 42 a 2.5 2 0 1 0 0.1 0
+        `,
+        fill: 'rgba(0,0,0,0.22)',
+      },
+      // Lighter highlight curls — small dots offset from the darker ones
+      // for the "two-tone curl pattern" depth
       {
         d: `
-          M 30 28
-          a 4 3.5 0 1 0 0.1 0
-          M 42 22
-          a 4 3.5 0 1 0 0.1 0
-          M 54 22
-          a 4 3.5 0 1 0 0.1 0
-          M 66 24
-          a 4 3.5 0 1 0 0.1 0
-          M 36 36
-          a 3.5 3 0 1 0 0.1 0
-          M 50 30
-          a 3.5 3 0 1 0 0.1 0
-          M 64 36
-          a 3.5 3 0 1 0 0.1 0
+          M 30 26 a 1.5 1.5 0 1 0 0.1 0
+          M 36 20 a 1.5 1.5 0 1 0 0.1 0
+          M 42 18 a 1.5 1.5 0 1 0 0.1 0
+          M 50 18 a 1.5 1.5 0 1 0 0.1 0
+          M 58 18 a 1.5 1.5 0 1 0 0.1 0
+          M 64 20 a 1.5 1.5 0 1 0 0.1 0
+          M 70 26 a 1.5 1.5 0 1 0 0.1 0
+          M 34 30 a 1.5 1.5 0 1 0 0.1 0
+          M 42 24 a 1.5 1.5 0 1 0 0.1 0
+          M 50 22 a 1.5 1.5 0 1 0 0.1 0
+          M 58 24 a 1.5 1.5 0 1 0 0.1 0
+          M 66 30 a 1.5 1.5 0 1 0 0.1 0
         `,
-        fill: 'rgba(0,0,0,0.18)',
+        fill: 'rgba(255,255,255,0.18)',
+      },
+    ],
+  },
+  {
+    id: 'hair.slick-back',
+    label: 'Slick-Back',
+    paths: [
+      // Slick-back: hair combed straight back, low-volume, defined
+      // backward direction. Outer envelope is short on top (no front
+      // fringe — receded back from forehead) with white highlight lines
+      // showing the comb-back direction.
+      {
+        d: `
+          M 28 36
+          C 28 22, 38 16, 50 16
+          C 62 16, 72 22, 72 36
+          L 70 42
+          C 64 38, 36 38, 30 42
+          Z
+        `,
+        fill: 'var(--hair)',
+      },
+      // Slick-back direction lines — parallel curves running front-to-back
+      // across the top, suggesting hair pulled backward.
+      {
+        d: `
+          M 32 22 C 38 24, 56 24, 68 26
+          M 30 26 C 38 28, 58 28, 70 30
+          M 30 30 C 38 32, 60 32, 70 34
+          M 32 34 C 40 36, 60 36, 68 38
+        `,
+        stroke: 'rgba(255,255,255,0.35)',
+        strokeWidth: '0.7',
+        strokeLinecap: 'round',
+        fill: 'none',
+      },
+    ],
+  },
+  {
+    id: 'hair.combover',
+    label: 'Combover',
+    paths: [
+      // Combover: thin layer of hair across a thinning crown, asymmetric
+      // direction (combed sideways across the top). Outer shape is thin
+      // (close to scalp) with strong sideways direction lines.
+      {
+        d: `
+          M 28 36
+          C 28 22, 38 18, 50 18
+          C 62 18, 72 22, 72 36
+          L 70 40
+          C 66 36, 32 36, 30 40
+          Z
+        `,
+        fill: 'var(--hair)',
+      },
+      // Combover direction lines — DIAGONAL across the top (left-to-right),
+      // suggesting hair combed across the head to cover thinning area.
+      {
+        d: `
+          M 30 24 L 64 28
+          M 28 28 L 66 32
+          M 30 32 L 68 34
+          M 32 36 L 68 36
+        `,
+        stroke: 'rgba(255,255,255,0.45)',
+        strokeWidth: '0.9',
+        strokeLinecap: 'round',
+        fill: 'none',
+      },
+      // Subtle "thinning" hint — small gaps in the hair color near the
+      // crown to suggest hair sparseness underneath the combover
+      {
+        d: `
+          M 50 22 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0
+          M 56 24 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0
+        `,
+        fill: 'rgba(255,220,180,0.4)', // skin-tone-ish gap dots
       },
     ],
   },
@@ -203,20 +363,21 @@ export default [
       // by the parallel "braid line" overlays. Outer envelope mirrors hair.long.
       {
         d: `
-          M 22 48
-          C 22 20, 34 12, 50 12
-          C 66 12, 78 20, 78 48
+          M 22 44
+          C 22 18, 34 12, 50 12
+          C 66 12, 78 18, 78 44
           L 78 86
           C 78 94, 74 98, 72 100
-          L 66 100
-          L 66 58
-          C 60 48, 40 48, 34 58
-          L 34 100
           L 28 100
           C 26 98, 22 94, 22 86
           Z
+          M 28 42
+          C 30 60, 36 78, 50 84
+          C 64 78, 70 60, 72 42
+          Z
         `,
         fill: 'var(--hair)',
+        fillRule: 'evenodd',
       },
       // Braid sectional dividers — uses white-with-low-opacity so the lines
       // read on both dark and light hair colors. The braids are the
