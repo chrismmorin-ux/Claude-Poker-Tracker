@@ -260,7 +260,7 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
           </div>
         ) : (
           <div className="space-y-2">
-            {results.map(({ player, score }) => {
+            {results.map(({ player, score, matchedAccessories }) => {
               // F6: pass the other-seat assignment (if any) so the card can
               // render an "at seat N" badge. Badge is only shown when the
               // player is assigned to a seat *different* from currentSeat —
@@ -277,6 +277,7 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
                   onSelect={handlePickPlayer}
                   hasActiveFilters={hasActiveFilters}
                   assignedToSeat={showSeat}
+                  matchedAccessories={matchedAccessories || []}
                 />
               );
             })}

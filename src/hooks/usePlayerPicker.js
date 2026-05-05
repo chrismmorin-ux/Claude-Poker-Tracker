@@ -24,6 +24,7 @@ import { scorePlayerMatch } from './usePlayerFiltering';
 // Apply legacy gender→sex / ethnicity→ethnicityTags derivation before
 // matching, so unmigrated player records still respond to the chip filters.
 import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
+import { findMatchingAccessories } from '../utils/accessoryInventory';
 
 const EMPTY_FEATURE_FILTERS = {};
 const NUM_SEATS = 9;
@@ -51,6 +52,11 @@ const EMPTY_QUICK_FILTER = {
   eyewear: null,
   eyewearColor: null,
   headwear: null,
+  // Accessory filter — POSITIVE BOOST ONLY, never excludes a player.
+  // See feedback_accessory_inventory_model.md. Filter shape:
+  // { kind, color }. Setting either narrows the boost; both null = inactive.
+  accessoryKind: null,
+  accessoryColor: null,
 };
 
 // Map quickFilter scalar key → player record field name. Most match 1:1;
@@ -69,6 +75,9 @@ const SCALAR_FILTER_TO_PLAYER_FIELD = {
   eyewear: 'eyewear',
   eyewearColor: 'eyewearColor',
   headwear: 'headwear',
+  // Accessory filter axes are NOT scalar identification fields — they're
+  // handled separately by accessory-inventory matching. Listed here so
+  // they're explicitly excluded from the scalar walk.
 };
 
 export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBatchMode = EMPTY_BATCH_MODE } = {}) => {
@@ -102,11 +111,17 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
 
   // ---- Phase 4 quick-filter (identification axes) ----------------------
   // Single setter for any scalar field; arg=null clears.
+  const KNOWN_SCALAR_KEYS = new Set([
+    ...Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD),
+    'accessoryKind',
+    'accessoryColor',
+  ]);
   const setQuickFilterField = useCallback((key, value) => {
-    if (!Object.prototype.hasOwnProperty.call(SCALAR_FILTER_TO_PLAYER_FIELD, key)) {
-      return; // ignore unknown scalar keys (defensive — ethnicity has its own setter)
+    if (!KNOWN_SCALAR_KEYS.has(key)) {
+      return; // ignore unknown keys (defensive — ethnicity has its own setter)
     }
     setQuickFilter((prev) => ({ ...prev, [key]: value }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const toggleQuickFilterEthnicity = useCallback((tag) => {
     setQuickFilter((prev) => {
@@ -165,16 +180,30 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
   }, [quickFilter]);
 
   const results = useMemo(() => {
+    const accessoryFilterActive = !!quickFilter.accessoryKind || !!quickFilter.accessoryColor;
+    const accessoryFilter = accessoryFilterActive
+      ? { kind: quickFilter.accessoryKind, color: quickFilter.accessoryColor }
+      : null;
+
     const scored = [];
     for (const player of allPlayers) {
       if (!matchesQuickFilter(player)) continue;
       const score = scorePlayerMatch(player, query);
-      if (score.passesFilters) {
-        scored.push({ player, score });
-      }
+      if (!score.passesFilters) continue;
+      // Accessory match attached for display — positive boost only, never excludes.
+      const matchedAccessories = accessoryFilter
+        ? findMatchingAccessories(player.accessoryInventory, accessoryFilter)
+        : [];
+      scored.push({ player, score, matchedAccessories });
     }
-    // Sort: last-seen desc; tie-break on name asc for stability.
+    // Sort: when accessory filter is active, accessory-matchers float to top.
+    // Then last-seen desc; tie-break on name asc.
     scored.sort((a, b) => {
+      if (accessoryFilterActive) {
+        const ah = a.matchedAccessories.length > 0 ? 1 : 0;
+        const bh = b.matchedAccessories.length > 0 ? 1 : 0;
+        if (ah !== bh) return bh - ah;
+      }
       const la = a.player.lastSeenAt || 0;
       const lb = b.player.lastSeenAt || 0;
       if (lb !== la) return lb - la;
@@ -183,12 +212,14 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
       return na.localeCompare(nb);
     });
     return scored;
-  }, [allPlayers, query, matchesQuickFilter]);
+  }, [allPlayers, query, matchesQuickFilter, quickFilter.accessoryKind, quickFilter.accessoryColor]);
 
   const hasActiveFilters = nameQuery.length > 0
     || Object.keys(featureFilters).length > 0
     || quickFilter.ethnicity.length > 0
-    || Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD).some((k) => !!quickFilter[k]);
+    || Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD).some((k) => !!quickFilter[k])
+    || !!quickFilter.accessoryKind
+    || !!quickFilter.accessoryColor;
 
   // ---- batch mode -------------------------------------------------------
   const enterBatchMode = useCallback(() => {

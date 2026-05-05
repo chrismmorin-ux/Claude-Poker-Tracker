@@ -66,6 +66,9 @@ const DEFAULT_FIELDS = {
   wardrobe: [],
   jewelry: [],
   logo: [],
+  // Phase C accessory inventory: persistent per-player list of accessories
+  // accumulated across sightings. See feedback_accessory_inventory_model.md.
+  accessoryInventory: [],
   // Phase 3 canonical identification fields — drive IdentityAvatar
   sex: null,                  // 'male' | 'female' | 'other' | null
   ageDecade: null,            // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null

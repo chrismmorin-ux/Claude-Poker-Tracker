@@ -20,6 +20,7 @@ import {
   SKIN_TONES,
   HAIR_COLORS,
   EYEWEAR_COLORS,
+  CLOTHING_COLORS,
 } from '../../../constants/avatarFeatureConstants';
 import {
   HAIR_COLOR_INPUT_OPTIONS,
@@ -54,6 +55,14 @@ const HAIR_HEX_BY_KEY = Object.fromEntries(
 const FRAME_HEX_BY_KEY = Object.fromEntries(
   EYEWEAR_COLORS.map((c) => [c.id.replace(/^frame\./, ''), c.hex]),
 );
+// Accessory kind options (must match AccessoryInventorySection.ACCESSORY_KINDS).
+export const ACCESSORY_KIND_OPTIONS = [
+  { value: 'hat',     label: 'Hat' },
+  { value: 'top',     label: 'Top' },
+  { value: 'bottom',  label: 'Bottom' },
+  { value: 'jewelry', label: 'Jewelry' },
+];
+
 const FRAME_COLOR_OPTIONS = [
   { value: 'black',         label: 'Black' },
   { value: 'brown',         label: 'Brown' },
@@ -147,12 +156,15 @@ export const QuickFilterChips = ({
   const eyewear = (quickFilter.eyewear || '').toLowerCase();
   const eyewearColor = (quickFilter.eyewearColor || '').toLowerCase();
   const headwear = (quickFilter.headwear || '').toLowerCase();
+  const accessoryKind = (quickFilter.accessoryKind || '').toLowerCase();
+  const accessoryColor = (quickFilter.accessoryColor || '').toLowerCase();
 
   const hasAny =
     !!sex || ethArr.length > 0 || !!age ||
     !!skin || !!hairColor || !!hairLength || !!hairTexture ||
     !!facialHair || !!beardColor || !!build ||
-    !!eyewear || !!eyewearColor || !!headwear;
+    !!eyewear || !!eyewearColor || !!headwear ||
+    !!accessoryKind || !!accessoryColor;
 
   // Toggle helper: if the value is already selected, clearing returns null.
   const toggleScalar = (key, current, value) => {
@@ -226,6 +238,41 @@ export const QuickFilterChips = ({
           className="mt-2 pt-2 border-t border-gray-200 max-h-[40vh] overflow-y-auto"
           data-testid="quick-filter-more"
         >
+          {/* Accessory filter — POSITIVE BOOST ONLY. Matching players float
+              to top, non-matchers still appear (could just not be wearing
+              that accessory today). Users can filter on kind, color, or both. */}
+          <div className="bg-amber-50/40 border border-amber-200/60 rounded-md p-2 mb-3">
+            <div className="text-amber-800 text-[11px] font-semibold uppercase tracking-wide mb-1">
+              Accessory (boost match — never excludes)
+            </div>
+            <SubRow label="Kind">
+              {ACCESSORY_KIND_OPTIONS.map((opt) => (
+                <PlainChip
+                  key={opt.value}
+                  label={opt.label}
+                  active={accessoryKind === opt.value}
+                  onClick={() => toggleScalar('accessoryKind', accessoryKind, opt.value)}
+                  testId={`quick-filter-accessory-kind-${opt.value}`}
+                />
+              ))}
+            </SubRow>
+            <SubRow label="Color">
+              {CLOTHING_COLORS.map((c) => {
+                const key = c.id.replace(/^cloth\./, '');
+                return (
+                  <SwatchChip
+                    key={c.id}
+                    label={c.label}
+                    hex={c.hex}
+                    active={accessoryColor === key}
+                    onClick={() => toggleScalar('accessoryColor', accessoryColor, key)}
+                    testId={`quick-filter-accessory-color-${key}`}
+                  />
+                );
+              })}
+            </SubRow>
+          </div>
+
           <SubRow label="Skin tone">
             {SKIN_TONES.map((t) => {
               const key = t.id.replace(/^skin\./, '');

@@ -87,7 +87,7 @@ const visibleFeatureLabels = (avatarFeatures) => {
   return out;
 };
 
-export const ResultCard = ({ player, score, onSelect, hasActiveFilters, assignedToSeat }) => {
+export const ResultCard = ({ player, score, onSelect, hasActiveFilters, assignedToSeat, matchedAccessories = [] }) => {
   const features = visibleFeatureLabels(player.avatarFeatures);
   const matched = score?.matchedFeatures ?? new Set();
   const showAccent = !!score?.allFiltersMatch && hasActiveFilters;
@@ -143,6 +143,28 @@ export const ResultCard = ({ player, score, onSelect, hasActiveFilters, assigned
                 hasActiveFilters={hasActiveFilters}
               />
             ))}
+          </div>
+        ) : null}
+        {/* Accessory match — when the picker filter matched this player's
+            inventory, render the matching items inline with their note so
+            the owner can confirm "yes, this is the player I'm looking for". */}
+        {matchedAccessories.length > 0 ? (
+          <div
+            className="mt-1 flex flex-wrap gap-1"
+            data-testid={`result-card-${player.playerId}-accessory-matches`}
+          >
+            {matchedAccessories.map((entry) => {
+              const head = [entry.color, entry.subtype].filter(Boolean).join(' ') || entry.kind;
+              return (
+                <span
+                  key={entry.accessoryId}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900"
+                >
+                  {head}
+                  {entry.note ? <span className="ml-1 italic">({entry.note})</span> : null}
+                </span>
+              );
+            })}
           </div>
         ) : null}
       </div>

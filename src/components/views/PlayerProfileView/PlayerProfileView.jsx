@@ -25,6 +25,7 @@ import { computeStability } from '../../../utils/playerMatching/computeStability
 import { SightingHistorySection } from './SightingHistorySection';
 import { AttributeStabilityRow } from './AttributeStabilityRow';
 import { AddSightingModal } from './AddSightingModal';
+import { AccessoryInventoryDisplay } from './AccessoryInventoryDisplay';
 // Phase 2 (PIO G4 v2): IdentityAvatar primary, PlayerPhotoAvatar retained
 // only as fallback signal — IdentityAvatar handles photo overlay natively.
 import IdentityAvatar from '../../ui/IdentityAvatar';
@@ -145,6 +146,9 @@ export const PlayerProfileView = ({ scale: _scale }) => {
           Edit
         </button>
       </div>
+
+      {/* Accessory Inventory — what this player has worn over time. */}
+      <AccessoryInventoryDisplay inventory={player.accessoryInventory} />
 
       {/* Sighting History */}
       <SightingHistorySection sightings={sightings} />

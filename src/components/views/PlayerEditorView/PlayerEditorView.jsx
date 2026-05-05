@@ -42,6 +42,7 @@ import { BuildSection } from './BuildSection';
 import { EyewearSection } from './EyewearSection';
 import { DistinguishingMarksSection } from './DistinguishingMarksSection';
 import { HeadwearSection } from './HeadwearSection';
+import { AccessoryInventorySection } from './AccessoryInventorySection';
 // Camera capture (PIO G5 child B / WS-161)
 import { CameraButton } from './CameraButton';
 
@@ -274,6 +275,13 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
                 <DistinguishingMarksSection
                   value={fields.distinguishingMarks}
                   onChange={(v) => updateField('distinguishingMarks', v)}
+                />
+              </SectionGroup>
+
+              <SectionGroup title="Accessories">
+                <AccessoryInventorySection
+                  inventory={fields.accessoryInventory}
+                  onChange={(v) => updateField('accessoryInventory', v)}
                 />
               </SectionGroup>
 
