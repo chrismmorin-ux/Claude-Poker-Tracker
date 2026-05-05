@@ -75,14 +75,14 @@ export default [
     id: 'hair.medium',
     label: 'Medium Length',
     paths: [
-      // Reaches past the jaw — clearly between short (above ear) and long (past
-      // shoulders). Side panels extend to ~y=72 (chin level) so the difference
-      // from short is visible at 24px size.
+      // Reaches past the jaw — distinct from short (above ear) and long (past
+      // shoulders). Side panels extend to y=72 (chin level). Top of hair at
+      // y=14; inner front edge at y=42 (above eyes y=48-58).
       {
         d: `
-          M 22 46
-          C 22 22, 34 14, 50 14
-          C 66 14, 78 22, 78 46
+          M 22 44
+          C 22 20, 34 14, 50 14
+          C 66 14, 78 20, 78 44
           L 78 72
           C 76 68, 72 66, 70 66
           L 70 42
@@ -99,17 +99,19 @@ export default [
     id: 'hair.long',
     label: 'Long',
     paths: [
-      // Extends down past shoulders on both sides
+      // Extends past shoulders on both sides. Top of hair sits at y=12;
+      // outer side panels descend to y=100 (shoulder level). Inner front
+      // edge stays at y=44 to avoid covering eyes (eyes at y~48-58).
       {
         d: `
-          M 22 48
-          C 22 20, 34 12, 50 12
-          C 66 12, 78 20, 78 48
+          M 22 44
+          C 22 18, 34 12, 50 12
+          C 66 12, 78 18, 78 44
           L 78 82
           C 78 92, 74 96, 72 100
           L 66 100
           L 66 58
-          C 60 48, 40 48, 34 58
+          C 60 50, 40 50, 34 58
           L 34 100
           L 28 100
           C 26 96, 22 92, 22 82
@@ -144,26 +146,52 @@ export default [
     id: 'hair.curly',
     label: 'Curly',
     paths: [
-      // Voluminous bumpy halo — distinct from straight short by the bumpy
-      // outline (overall envelope wider, with circular lobes around the perimeter).
+      // Voluminous bumpy halo — wider than straight hair, with bumpy outline.
+      // Stops at y=44 (above eyes at y=48-58).
       {
         d: `
-          M 22 46
-          C 22 24, 36 14, 50 14
-          C 64 14, 78 24, 78 46
-          C 78 50, 74 52, 72 50
-          C 73 54, 69 56, 66 53
-          C 67 56, 63 58, 60 55
-          C 61 57, 57 58, 55 56
-          C 55 58, 51 58, 50 56
-          C 49 58, 45 58, 45 56
-          C 43 58, 39 57, 40 55
-          C 37 58, 33 56, 34 53
-          C 31 56, 27 54, 28 50
-          C 26 52, 22 50, 22 46
+          M 18 44
+          C 18 22, 32 12, 50 12
+          C 68 12, 82 22, 82 44
+          C 82 46, 80 47, 78 46
+          C 80 49, 75 50, 73 47
+          C 75 50, 70 51, 68 48
+          C 70 51, 65 52, 63 49
+          C 65 51, 60 52, 58 50
+          C 60 52, 55 52, 53 50
+          C 55 52, 50 52, 50 50
+          C 50 52, 45 52, 47 50
+          C 45 52, 40 52, 42 50
+          C 40 52, 35 51, 37 49
+          C 35 52, 30 51, 32 48
+          C 30 51, 25 50, 27 47
+          C 25 50, 20 49, 22 46
+          C 20 47, 18 46, 18 44
           Z
         `,
         fill: 'var(--hair)',
+      },
+      // Layered curl-spiral overlays — small filled circles on top of the
+      // halo to suggest individual curls. Slightly darker via fillOpacity
+      // for shading. Five spirals across the crown.
+      {
+        d: `
+          M 30 28
+          a 4 3.5 0 1 0 0.1 0
+          M 42 22
+          a 4 3.5 0 1 0 0.1 0
+          M 54 22
+          a 4 3.5 0 1 0 0.1 0
+          M 66 24
+          a 4 3.5 0 1 0 0.1 0
+          M 36 36
+          a 3.5 3 0 1 0 0.1 0
+          M 50 30
+          a 3.5 3 0 1 0 0.1 0
+          M 64 36
+          a 3.5 3 0 1 0 0.1 0
+        `,
+        fill: 'rgba(0,0,0,0.18)',
       },
     ],
   },

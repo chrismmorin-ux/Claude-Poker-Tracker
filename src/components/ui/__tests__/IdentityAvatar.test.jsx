@@ -127,6 +127,51 @@ describe('IdentityAvatar', () => {
     expect(container.querySelector('svg').getAttribute('aria-label')).toBe('Override Label');
   });
 
+  it('hat present applies clip-path to hair group (Phase 1.7)', () => {
+    const { container } = render(
+      <IdentityAvatar
+        player={{ ethnicityTags: ['caucasian'], hairLength: 'long' }}
+        headwearOverride="cap"
+      />,
+    );
+    const hairGroup = container.querySelector('g[data-layer="hair"]');
+    expect(hairGroup.getAttribute('data-hair-clipped')).toBe('true');
+    // React lowercases the SVG attribute on output as 'clip-path'
+    const clipAttr = hairGroup.getAttribute('clip-path') || hairGroup.getAttribute('clipPath');
+    expect(clipAttr).toMatch(/^url\(#hair-clip-/);
+  });
+
+  it('no hat: hair group has no clip-path', () => {
+    const { container } = render(
+      <IdentityAvatar
+        player={{ ethnicityTags: ['caucasian'], hairLength: 'long' }}
+      />,
+    );
+    const hairGroup = container.querySelector('g[data-layer="hair"]');
+    expect(hairGroup.getAttribute('data-hair-clipped')).toBeNull();
+    const clipAttr = hairGroup.getAttribute('clip-path') || hairGroup.getAttribute('clipPath');
+    expect(clipAttr).toBeNull();
+  });
+
+  it('eyewearColor=gold sets the --frame CSS var to gold hex', () => {
+    const { container } = render(
+      <IdentityAvatar
+        player={{ eyewear: 'clear', eyewearColor: 'gold' }}
+      />,
+    );
+    const svg = container.querySelector('svg');
+    expect(svg.style.getPropertyValue('--frame')).toBe('#b8893a');
+  });
+
+  it('eyewearColor=red applied to glasses frame', () => {
+    const { container } = render(
+      <IdentityAvatar
+        player={{ eyewear: 'clear', eyewearColor: 'red' }}
+      />,
+    );
+    expect(container.querySelector('svg').style.getPropertyValue('--frame')).toBe('#9c2828');
+  });
+
   it('two renders of the same player produce identical avatar feature layers', () => {
     const player = {
       sex: 'male',

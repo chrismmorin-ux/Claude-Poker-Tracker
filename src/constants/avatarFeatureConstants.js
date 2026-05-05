@@ -50,6 +50,17 @@ export const EYE_COLORS = [
   { id: 'eye-color.gray',   label: 'Gray',   hex: '#6b7076' },
 ];
 
+// Eyewear (glasses) frame colors — selectable like other accessories
+export const EYEWEAR_COLORS = [
+  { id: 'frame.black',          label: 'Black',          hex: '#1b1714' },
+  { id: 'frame.brown',          label: 'Brown',          hex: '#3b2416' },
+  { id: 'frame.tortoiseshell',  label: 'Tortoiseshell',  hex: '#7a4a1f' },
+  { id: 'frame.gold',           label: 'Gold',           hex: '#b8893a' },
+  { id: 'frame.silver',         label: 'Silver',         hex: '#a8acb0' },
+  { id: 'frame.red',            label: 'Red',            hex: '#9c2828' },
+  { id: 'frame.blue',           label: 'Blue',           hex: '#2a4a7a' },
+];
+
 // =============================================================================
 // LAYER ORDER
 // =============================================================================
@@ -66,15 +77,15 @@ export const LAYER_ORDER = [
 ];
 
 // CSS custom property each category's paths should reference for color.
-// "shape" layers (hair, beard) read from their own color var; "style" layers
-// that have fixed palette (glasses, hat) use their own constants.
+// "shape" layers (hair, beard, glasses) read from their own color var.
+// "style" layers with fixed palettes (hat) use their own per-style constants.
 export const LAYER_TO_COLOR_VAR = {
   skin: '--skin',
   beard: '--beard',
   hair: '--hair',
   eyes: '--eye',
-  glasses: null, // frames use fixed color
-  hat: null,     // hats use per-style fixed colors
+  glasses: '--frame',
+  hat: null, // hats use per-style fixed colors
 };
 
 // =============================================================================
@@ -122,6 +133,7 @@ export const DEFAULT_AVATAR_FEATURES = {
   eyes: 'eyes.round',
   eyeColor: 'eye-color.brown',
   glasses: 'glasses.none',
+  eyewearColor: 'frame.black',
   hat: 'hat.none',
 };
 
@@ -132,10 +144,12 @@ export const DEFAULT_AVATAR_FEATURES = {
 const SKIN_BY_ID = Object.fromEntries(SKIN_TONES.map(t => [t.id, t]));
 const HAIR_COLOR_BY_ID = Object.fromEntries(HAIR_COLORS.map(c => [c.id, c]));
 const EYE_COLOR_BY_ID = Object.fromEntries(EYE_COLORS.map(c => [c.id, c]));
+const EYEWEAR_COLOR_BY_ID = Object.fromEntries(EYEWEAR_COLORS.map(c => [c.id, c]));
 
 export const getSkinTone = (id) => SKIN_BY_ID[id] || SKIN_BY_ID[DEFAULT_AVATAR_FEATURES.skin];
 export const getHairColor = (id) => HAIR_COLOR_BY_ID[id] || HAIR_COLOR_BY_ID[DEFAULT_AVATAR_FEATURES.hairColor];
 export const getEyeColor = (id) => EYE_COLOR_BY_ID[id] || EYE_COLOR_BY_ID[DEFAULT_AVATAR_FEATURES.eyeColor];
+export const getEyewearColor = (id) => EYEWEAR_COLOR_BY_ID[id] || EYEWEAR_COLOR_BY_ID[DEFAULT_AVATAR_FEATURES.eyewearColor];
 
 // =============================================================================
 // VIEWBOX — shared by all feature SVG paths

@@ -79,24 +79,37 @@ export default [
     id: 'beard.full',
     label: 'Full Beard',
     paths: [
-      // Covers chin, jaw, mustache area
+      // Covers entire lower face: cheekbones to chin tip, ear-to-ear at jaw.
+      // Connects to mustache area with no gap. Uses face silhouette extents
+      // (x ~26-74, y ~56-82) so it visibly *covers* the chin rather than sit
+      // on top of it.
       {
         d: `
-          M 30 56
-          C 32 68, 36 78, 50 82
-          C 64 78, 68 68, 70 56
-          C 66 60, 60 62, 50 62
-          C 40 62, 34 60, 30 56
+          M 26 54
+          C 28 56, 30 58, 32 60
+          C 28 70, 32 78, 40 82
+          C 44 84, 50 84, 50 84
+          C 50 84, 56 84, 60 82
+          C 68 78, 72 70, 68 60
+          C 70 58, 72 56, 74 54
+          C 70 60, 64 64, 60 64
+          L 60 64
+          C 54 66, 46 66, 40 64
+          L 40 64
+          C 36 64, 30 60, 26 54
           Z
         `,
         fill: 'var(--beard)',
       },
+      // Mustache band (connects beard above the lip)
       {
         d: `
-          M 38 60
-          C 44 58, 56 58, 62 60
-          L 62 64
-          C 56 62, 44 62, 38 64
+          M 36 60
+          C 42 58, 46 58, 50 60
+          C 54 58, 58 58, 64 60
+          L 64 64
+          C 58 62, 54 64, 50 64
+          C 46 64, 42 62, 36 64
           Z
         `,
         fill: 'var(--beard)',

@@ -237,10 +237,11 @@ describe('buildColorVars', () => {
     expect(vars['--hair']).toBeTruthy();
     expect(vars['--beard']).toBeTruthy();
     expect(vars['--eye']).toBeTruthy();
+    expect(vars['--frame']).toBeTruthy();
   });
 
   it('handles null input', () => {
     const vars = buildColorVars(null);
-    expect(Object.keys(vars)).toEqual(['--skin', '--hair', '--beard', '--eye']);
+    expect(Object.keys(vars)).toEqual(['--skin', '--hair', '--beard', '--eye', '--frame']);
   });
 });

@@ -17,15 +17,17 @@
  *     its feature's paths, which may be an empty array.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useId } from 'react';
 import {
   LAYER_ORDER,
   LAYER_TO_COLOR_VAR,
   DEFAULT_AVATAR_FEATURES,
   AVATAR_VIEWBOX,
+  AVATAR_VIEWBOX_SIZE,
   getSkinTone,
   getHairColor,
   getEyeColor,
+  getEyewearColor,
 } from '../../constants/avatarFeatureConstants';
 import { getFeatureById } from '../../assets/avatarFeatures';
 
@@ -80,11 +82,13 @@ const buildColorVars = (avatarFeatures) => {
   const hairColorId = avatarFeatures?.hairColor || DEFAULT_AVATAR_FEATURES.hairColor;
   const beardColorId = avatarFeatures?.beardColor || DEFAULT_AVATAR_FEATURES.beardColor;
   const eyeColorId = avatarFeatures?.eyeColor || DEFAULT_AVATAR_FEATURES.eyeColor;
+  const frameColorId = avatarFeatures?.eyewearColor || DEFAULT_AVATAR_FEATURES.eyewearColor;
   return {
     '--skin': getSkinTone(skinId).hex,
     '--hair': getHairColor(hairColorId).hex,
     '--beard': getHairColor(beardColorId).hex,
     '--eye': getEyeColor(eyeColorId).hex,
+    '--frame': getEyewearColor(frameColorId).hex,
   };
 };
 
@@ -107,8 +111,15 @@ const FeaturePaths = ({ feature }) => {
   ));
 };
 
+// Y-coordinate below which hair is allowed to render when a hat is present.
+// Hat brim line varies from y=32 (beanie/cowboy/fedora) to y=38 (cap/visor).
+// Use y=38 so all hats fully cover the crown — strictest clip line.
+const HAIR_CLIP_Y_WHEN_HATTED = 38;
+
 const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) => {
   const colorStyle = useMemo(() => buildColorVars(avatarFeatures), [avatarFeatures]);
+  const uniqueId = useId();
+  const hairClipId = `hair-clip-${uniqueId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const layers = useMemo(
     () => LAYER_ORDER.map((category) => ({
@@ -117,6 +128,13 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
     })),
     [avatarFeatures],
   );
+
+  // Detect whether a hat is being rendered (any non-empty hat layer). When
+  // present, the hair group is clipped so hair below the hat brim line
+  // remains visible (sideburns, ear-line) but hair above is hidden — hair
+  // can't poke through the hat.
+  const hatLayer = layers.find((l) => l.category === 'hat');
+  const hasHat = !!hatLayer?.feature?.paths?.length;
 
   return (
     <svg
@@ -129,11 +147,34 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
       style={colorStyle}
     >
       {title ? <title>{title}</title> : null}
-      {layers.map(({ category, feature }) => (
-        <g key={category} data-layer={category} data-feature-id={feature.id}>
-          <FeaturePaths feature={feature} />
-        </g>
-      ))}
+      {hasHat ? (
+        <defs>
+          <clipPath id={hairClipId}>
+            <rect
+              x={0}
+              y={HAIR_CLIP_Y_WHEN_HATTED}
+              width={AVATAR_VIEWBOX_SIZE}
+              height={AVATAR_VIEWBOX_SIZE - HAIR_CLIP_Y_WHEN_HATTED}
+            />
+          </clipPath>
+        </defs>
+      ) : null}
+      {layers.map(({ category, feature }) => {
+        const isHair = category === 'hair';
+        const groupProps = {
+          'data-layer': category,
+          'data-feature-id': feature.id,
+        };
+        if (isHair && hasHat) {
+          groupProps.clipPath = `url(#${hairClipId})`;
+          groupProps['data-hair-clipped'] = 'true';
+        }
+        return (
+          <g key={category} {...groupProps}>
+            <FeaturePaths feature={feature} />
+          </g>
+        );
+      })}
     </svg>
   );
 };

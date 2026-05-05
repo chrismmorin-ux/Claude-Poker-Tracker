@@ -20,6 +20,7 @@ import {
   hatFromHeadwear,
   eyeShapeFromEthnicity,
   silhouetteFromIdentity,
+  eyewearColorFromIdentity,
   mapIdentityToAvatarFeatures,
 } from '../avatarMapping';
 import { DEFAULT_AVATAR_FEATURES } from '../../../constants/avatarFeatureConstants';
@@ -237,6 +238,30 @@ describe('glassesFromEyewear', () => {
   it('defaults to glasses.none for unknown', () => {
     expect(glassesFromEyewear(null)).toBe('glasses.none');
     expect(glassesFromEyewear('monocle')).toBe('glasses.none');
+  });
+});
+
+describe('eyewearColorFromIdentity', () => {
+  it('maps known frame colors', () => {
+    expect(eyewearColorFromIdentity('black')).toBe('frame.black');
+    expect(eyewearColorFromIdentity('brown')).toBe('frame.brown');
+    expect(eyewearColorFromIdentity('tortoiseshell')).toBe('frame.tortoiseshell');
+    expect(eyewearColorFromIdentity('tortoise')).toBe('frame.tortoiseshell');
+    expect(eyewearColorFromIdentity('gold')).toBe('frame.gold');
+    expect(eyewearColorFromIdentity('silver')).toBe('frame.silver');
+    expect(eyewearColorFromIdentity('red')).toBe('frame.red');
+    expect(eyewearColorFromIdentity('blue')).toBe('frame.blue');
+  });
+
+  it('case-insensitive', () => {
+    expect(eyewearColorFromIdentity('Black')).toBe('frame.black');
+    expect(eyewearColorFromIdentity('GOLD')).toBe('frame.gold');
+  });
+
+  it('defaults to frame.black for unknown / null', () => {
+    expect(eyewearColorFromIdentity(null)).toBe('frame.black');
+    expect(eyewearColorFromIdentity('')).toBe('frame.black');
+    expect(eyewearColorFromIdentity('chartreuse')).toBe('frame.black');
   });
 });
 
@@ -463,6 +488,20 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
       ethnicityTags: ['caucasian'],
     });
     expect(result.silhouette).toBe('silhouette.other-average');
+  });
+
+  it('mapIdentityToAvatarFeatures includes eyewearColor key (default frame.black)', () => {
+    const result = mapIdentityToAvatarFeatures({ eyewear: 'clear' });
+    expect(result.eyewearColor).toBe('frame.black');
+  });
+
+  it('mapIdentityToAvatarFeatures honors explicit eyewearColor', () => {
+    const result = mapIdentityToAvatarFeatures({
+      eyewear: 'clear',
+      eyewearColor: 'gold',
+    });
+    expect(result.eyewearColor).toBe('frame.gold');
+    expect(result.glasses).toBe('glasses.round');
   });
 
   it('SYNTH-17 (Black 50s salt-pepper) explicit salt-pepper preserved', () => {

@@ -89,44 +89,51 @@ const HEAD_ANDROGYNOUS_RIGHT = `
 // SHOULDER SHAPES (4 — by build)
 // =============================================================================
 //
-// Each starts at the right-jaw side (we pick up at x=60, y=78), descends down
-// the right neck, sweeps out to right shoulder, across to left shoulder, up
-// the left neck, and closes back to the left-jaw start point (x=40, y=78).
+// IMPORTANT: shoulders subpath starts after `M 40 78` (left jaw). Geometry:
+//   1. L 40 84  — straight DOWN the left neck (avoid diagonal cut!)
+//   2. Curve out to left shoulder, across the bottom edge, up to right shoulder
+//   3. L 60 84  — up the right neck base
+//   4. L 60 78  — back up to right jaw (closes neckline)
+//   5. Z        — closes back to (40, 78) start
 //
-// Width of shoulders varies. Heavy adds a slight outward curve (rounded);
-// muscular adds an inward indent at the neckline (defined traps).
+// Width of shoulders + slope varies by build. Heavy adds a rounded curve;
+// muscular adds inward neckline indents for trap definition.
 
 const SHOULDERS_SLIM = `
-  L 60 84
-  C 65 87, 70 90, 72 100
-  L 28 100
-  C 30 90, 35 87, 40 84
+  L 40 84
+  C 35 87, 30 90, 28 100
+  L 72 100
+  C 70 90, 65 87, 60 84
+  L 60 78
   Z
 `;
 
 const SHOULDERS_AVERAGE = `
-  L 60 84
-  C 66 87, 72 92, 76 100
-  L 24 100
-  C 28 92, 34 87, 40 84
+  L 40 84
+  C 34 87, 28 92, 24 100
+  L 76 100
+  C 72 92, 66 87, 60 84
+  L 60 78
   Z
 `;
 
 const SHOULDERS_HEAVY = `
-  L 62 84
-  C 70 87, 80 93, 84 100
-  L 16 100
-  C 20 93, 30 87, 38 84
+  L 38 84
+  C 30 87, 20 93, 16 100
+  L 84 100
+  C 80 93, 70 87, 62 84
+  L 60 78
   Z
 `;
 
 const SHOULDERS_MUSCULAR = `
-  L 60 84
-  C 64 86, 68 88, 72 88
-  C 78 90, 84 95, 86 100
-  L 14 100
-  C 16 95, 22 90, 28 88
-  C 32 88, 36 86, 40 84
+  L 40 84
+  C 36 86, 32 88, 28 88
+  C 22 90, 16 95, 14 100
+  L 86 100
+  C 84 95, 78 90, 72 88
+  C 68 88, 64 86, 60 84
+  L 60 78
   Z
 `;
 

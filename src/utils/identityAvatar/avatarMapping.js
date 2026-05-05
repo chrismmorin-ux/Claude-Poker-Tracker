@@ -301,6 +301,28 @@ export const glassesFromLegacyBools = (sunglasses) =>
   sunglasses ? 'glasses.shades' : 'glasses.none';
 
 // =============================================================================
+// EYEWEAR COLOR (frame)
+// =============================================================================
+//
+// Maps an eyewearColor input string to one of the EYEWEAR_COLORS palette ids.
+// Defaults to frame.black so glasses always render with a frame color.
+
+const EYEWEAR_COLOR_NORMALIZED = {
+  black: 'frame.black',
+  brown: 'frame.brown',
+  tortoiseshell: 'frame.tortoiseshell',
+  tortoise: 'frame.tortoiseshell',
+  gold: 'frame.gold',
+  silver: 'frame.silver',
+  red: 'frame.red',
+  blue: 'frame.blue',
+};
+
+export const eyewearColorFromIdentity = (eyewearColor) =>
+  EYEWEAR_COLOR_NORMALIZED[(eyewearColor || '').toString().toLowerCase()]
+    || 'frame.black';
+
+// =============================================================================
 // HEADWEAR
 // =============================================================================
 
@@ -390,6 +412,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
     facialHair,
     build,
     eyewear,
+    eyewearColor, // optional — defaults to black frames
     sunglasses, // legacy bool — used only if eyewear is absent
   } = player;
 
@@ -407,6 +430,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
     glasses: eyewear !== undefined && eyewear !== null
       ? glassesFromEyewear(eyewear)
       : glassesFromLegacyBools(sunglasses),
+    eyewearColor: eyewearColorFromIdentity(eyewearColor),
     hat: hatFromHeadwear(headwearInput),
   };
 };
