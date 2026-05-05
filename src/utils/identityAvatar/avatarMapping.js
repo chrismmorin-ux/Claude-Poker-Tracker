@@ -124,6 +124,35 @@ export const skinFromEthnicity = (ethnicityTags, legacyEthnicity) => {
   return DEFAULT_AVATAR_FEATURES.skin;
 };
 
+/**
+ * Normalize a user-selected skinTone value to a SKIN_TONES palette id.
+ * Accepts either the bare key ('ruddy') or the full id ('skin.ruddy').
+ * Returns null when no match — caller falls back to ethnicity-derived.
+ */
+const SKIN_TONE_NORMALIZED = {
+  'very-light': 'skin.very-light',
+  'skin.very-light': 'skin.very-light',
+  light: 'skin.light',
+  'skin.light': 'skin.light',
+  ruddy: 'skin.ruddy',
+  flushed: 'skin.ruddy',
+  'skin.ruddy': 'skin.ruddy',
+  medium: 'skin.medium',
+  'skin.medium': 'skin.medium',
+  tan: 'skin.tan',
+  'skin.tan': 'skin.tan',
+  brown: 'skin.brown',
+  'skin.brown': 'skin.brown',
+  dark: 'skin.dark',
+  'skin.dark': 'skin.dark',
+};
+
+export const skinFromIdentity = (player) => {
+  const explicit = SKIN_TONE_NORMALIZED[(player?.skinTone || '').toString().toLowerCase()];
+  if (explicit) return explicit;
+  return skinFromEthnicity(player?.ethnicityTags, player?.ethnicity);
+};
+
 // =============================================================================
 // HAIR LENGTH + TEXTURE → HAIR SHAPE
 // =============================================================================
@@ -475,14 +504,21 @@ export const mapIdentityToAvatarFeatures = (rawPlayer, opts = {}) => {
 
   const headwearInput = opts.headwearOverride ?? player.headwear ?? null;
 
+  // Explicit beardColor wins over auto-inherit from hair. Same age-aware
+  // graying treatment is applied so a player who explicitly sets blonde
+  // beard at 60s+ still goes white, matching the hair behavior.
+  const beardColorInput = player.beardColor != null && player.beardColor !== ''
+    ? player.beardColor
+    : hairColor;
+
   return {
     silhouette: silhouetteFromIdentity(sex, build),
-    skin: skinFromEthnicity(ethnicityTags, ethnicity),
+    skin: skinFromIdentity(player),
     hair: hairShapeFromLength(hairLength, hairTexture),
     hairColor: hairColorFromIdentity(hairColor, ageDecade),
     hairTreatment: hairTreatmentFromIdentity(player),
     beard: beardFromIdentity(facialHair, sex),
-    beardColor: hairColorFromIdentity(hairColor, ageDecade), // beard matches hair
+    beardColor: hairColorFromIdentity(beardColorInput, ageDecade),
     eyes: eyeShapeFromEthnicity(ethnicityTags, ethnicity),
     eyeColor: 'eye-color.brown',
     glasses: eyewear !== undefined && eyewear !== null

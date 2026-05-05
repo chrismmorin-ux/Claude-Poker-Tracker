@@ -36,6 +36,7 @@ import { AgeDecadeSection } from './AgeDecadeSection';
 import { EthnicityTagsSection } from './EthnicityTagsSection';
 import { HairSection } from './HairSection';
 import { FacialHairSection } from './FacialHairSection';
+import { SkinToneSection } from './SkinToneSection';
 import { BuildSection } from './BuildSection';
 import { EyewearSection } from './EyewearSection';
 import { DistinguishingMarksSection } from './DistinguishingMarksSection';
@@ -230,6 +231,13 @@ export const PlayerEditorView = ({ scale = 1 }) => {
               </SectionGroup>
 
               <SectionGroup title="Helpful">
+                <SkinToneSection
+                  value={fields.skinTone}
+                  onChange={(v) => updateField('skinTone', v)}
+                  ethnicityHint={
+                    Array.isArray(fields.ethnicityTags) && fields.ethnicityTags.length > 0
+                  }
+                />
                 <HairSection
                   hairColor={fields.hairColor}
                   hairLength={fields.hairLength}
@@ -244,6 +252,8 @@ export const PlayerEditorView = ({ scale = 1 }) => {
                   value={fields.facialHair}
                   onChange={(v) => updateField('facialHair', v)}
                   sex={fields.sex}
+                  beardColor={fields.beardColor}
+                  onBeardColorChange={(v) => updateField('beardColor', v)}
                 />
                 <BuildSection
                   value={fields.build}

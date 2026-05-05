@@ -71,11 +71,16 @@ const DEFAULT_FIELDS = {
   ageDecade: null,            // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null
   ethnicityTags: [],          // multi-select
   build: null,                // 'slim' | 'average' | 'heavy' | 'muscular' | null
+  // Distinguishing-feature colors — independent of ethnicity per
+  // feedback_color_independent_of_ethnicity.md. When null, IdentityAvatar
+  // falls back to ethnicity-derived (skin) or hair-color-derived (beard).
+  skinTone: null,             // 'very-light' | 'light' | 'ruddy' | 'medium' | 'tan' | 'brown' | 'dark' | null
   hairColor: null,            // 'black' | 'dark-brown' | 'brown' | 'light-brown' | 'blonde' | 'red' | 'gray' | 'white' | null
   hairLength: null,           // 'bald' | 'shaved' | 'short' | 'medium' | 'long' | null
   hairTexture: null,          // 'straight' | 'curly' | 'braided' | 'receding' | null
   hairSaltPepper: null,       // boolean | null  (null = auto via age)
   facialHair: null,           // 'clean' | 'stubble' | 'mustache' | 'goatee' | 'full' | 'soul-patch' | null
+  beardColor: null,           // same palette as hairColor; null = inherit from hairColor
   eyewear: null,              // 'none' | 'clear' | 'sunglasses' | 'readers' | null
   eyewearColor: null,         // 'black' | 'brown' | 'tortoiseshell' | 'gold' | 'silver' | 'red' | 'blue' | null
   headwear: null,             // 'cap' | 'beanie' | 'visor' | 'fedora' | 'cowboy' | null

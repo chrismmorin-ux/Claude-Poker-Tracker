@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { HAIR_COLORS } from '../../../constants/avatarFeatureConstants';
+import ColorChip from './ColorChip';
 
 export const HAIR_COLOR_INPUT_OPTIONS = [
   { value: 'black', label: 'Black' },
@@ -31,6 +32,8 @@ export const HAIR_COLOR_INPUT_OPTIONS = [
 const HEX_BY_INPUT = Object.fromEntries(
   HAIR_COLORS.map((c) => [c.id.replace(/^color\./, ''), c.hex]),
 );
+
+export { HEX_BY_INPUT as HAIR_HEX_BY_INPUT };
 
 export const HAIR_LENGTH_OPTIONS = [
   { value: 'bald', label: 'Bald' },
@@ -95,11 +98,11 @@ export const HairSection = ({
         <div className="text-gray-500 text-[10px] uppercase tracking-wide mb-1">Color</div>
         <div className="flex flex-wrap gap-1.5">
           {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-            <Chip
+            <ColorChip
               key={opt.value}
               active={colorSel === opt.value}
               label={opt.label}
-              swatch={HEX_BY_INPUT[opt.value]}
+              hex={HEX_BY_INPUT[opt.value]}
               onClick={() => toggleColor(opt.value)}
               testId={`player-editor-hair-color-${opt.value}`}
             />
