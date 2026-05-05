@@ -18,14 +18,15 @@ import { useSession } from '../../../contexts/SessionContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { usePlayerPicker } from '../../../hooks/usePlayerPicker';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
-import { ScaledContainer } from '../../ui/ScaledContainer';
+// Phase C (2026-05-05): picker renders portrait-native — no ScaledContainer,
+// no fixed 1600×720 frame. See feedback_portrait_mode_player_screens.md.
 import NameSearchInput from './NameSearchInput';
 import QuickFilterChips from './QuickFilterChips';
 import ResultCard from './ResultCard';
 import CreateFromQueryCTA from './CreateFromQueryCTA';
 import BatchSeatRibbon from './BatchSeatRibbon';
 
-export const PlayerPickerView = ({ scale = 1 }) => {
+export const PlayerPickerView = ({ scale: _scale = 1 }) => {
   const { pickerContext, closePlayerPicker, openPlayerEditor } = useUI();
   const {
     allPlayers,
@@ -183,13 +184,11 @@ export const PlayerPickerView = ({ scale = 1 }) => {
     : (currentSeat ? `Pick for Seat ${currentSeat}` : 'Pick Player');
 
   return (
-    <ScaledContainer scale={scale}>
-      <div
-        ref={rootRef}
-        className="bg-gray-100 flex flex-col overflow-hidden"
-        style={{ width: 1600, height: 720 }}
-        data-testid="player-picker-view"
-      >
+    <div
+      ref={rootRef}
+      className="bg-gray-100 min-h-dvh w-full flex flex-col"
+      data-testid="player-picker-view"
+    >
       {/* Top bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between bg-gray-900 text-white px-3 py-3 border-b border-gray-700">
         <button
@@ -285,8 +284,7 @@ export const PlayerPickerView = ({ scale = 1 }) => {
         nameQuery={nameQuery}
         onClick={handleCreateFromQuery}
       />
-      </div>
-    </ScaledContainer>
+    </div>
   );
 };
 

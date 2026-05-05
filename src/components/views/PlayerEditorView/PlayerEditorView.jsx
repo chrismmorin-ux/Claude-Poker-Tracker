@@ -24,7 +24,8 @@ import { usePlayer } from '../../../contexts/PlayerContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { usePlayerEditor } from '../../../hooks/usePlayerEditor';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
-import { ScaledContainer } from '../../ui/ScaledContainer';
+// Phase C (2026-05-05): editor renders portrait-native — no ScaledContainer,
+// no fixed 1600×720 frame. See feedback_portrait_mode_player_screens.md.
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import BackToTableBar from './BackToTableBar';
 import DraftResumeBanner from './DraftResumeBanner';
@@ -55,7 +56,7 @@ const SectionGroup = ({ title, children }) => (
   </div>
 );
 
-export const PlayerEditorView = ({ scale = 1 }) => {
+export const PlayerEditorView = ({ scale: _scale = 1 }) => {
   const { editorContext, closePlayerEditor } = useUI();
   const {
     allPlayers,
@@ -147,64 +148,65 @@ export const PlayerEditorView = ({ scale = 1 }) => {
     : (editorContext?.mode === 'edit' ? 'Edit Player' : 'New Player');
 
   return (
-    <ScaledContainer scale={scale}>
-      <div
-        ref={rootRef}
-        className="bg-gray-100 flex flex-col overflow-hidden"
-        style={{ width: 1600, height: 720 }}
-        data-testid="player-editor-view"
-      >
-        <BackToTableBar
-          onBack={handleBack}
-          onSave={handleSave}
-          title={title}
-          isSaving={isSaving}
+    <div
+      ref={rootRef}
+      className="bg-gray-100 min-h-dvh w-full flex flex-col"
+      data-testid="player-editor-view"
+    >
+      <BackToTableBar
+        onBack={handleBack}
+        onSave={handleSave}
+        title={title}
+        isSaving={isSaving}
+      />
+
+      {draftBanner === 'visible' ? (
+        <DraftResumeBanner
+          draftSnippet={null}
+          onResume={resumeDraft}
+          onDiscard={discardDraft}
         />
+      ) : null}
 
-        {draftBanner === 'visible' ? (
-          <DraftResumeBanner
-            draftSnippet={null}
-            onResume={resumeDraft}
-            onDiscard={discardDraft}
-          />
-        ) : null}
+      {isDraftLoading ? (
+        <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
+          Loading…
+        </div>
+      ) : (
+        // Portrait: avatar sticks to top, sections scroll below. md+:
+        // 2-column with avatar pinned on the left.
+        <div className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 md:grid md:grid-cols-[180px_1fr] md:gap-6">
 
-        {isDraftLoading ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
-            Loading…
-          </div>
-        ) : (
-          <div className="flex-1 overflow-auto px-4 py-4 grid grid-cols-[180px_1fr] gap-6">
-
-            {/* LEFT: Live IdentityAvatar — sticky so it stays visible while
-                user scrolls through fields. Updates on every keystroke. */}
-            <div className="sticky top-0">
-              <div
-                className="bg-white border border-gray-300 rounded-lg p-3 flex flex-col items-center"
-                data-testid="player-editor-live-avatar"
-              >
-                <div className="w-[160px] h-[160px] rounded-full overflow-hidden bg-gray-100 border border-gray-200 mb-2">
-                  <IdentityAvatar
-                    player={fields}
-                    size={160}
-                    headwearOverride={fields.headwear}
-                  />
-                </div>
-                <div className="text-center text-xs font-semibold text-gray-700 truncate w-full">
+          {/* Live IdentityAvatar — sticky-top on phone, sticky-side on md+. */}
+          <div className="sticky top-0 z-10 mb-3 md:mb-0 bg-gray-100 pb-2 md:pb-0">
+            <div
+              className="bg-white border border-gray-300 rounded-lg p-2 md:p-3 flex md:flex-col items-center gap-3 md:gap-0"
+              data-testid="player-editor-live-avatar"
+            >
+              <div className="w-[88px] h-[88px] md:w-[160px] md:h-[160px] rounded-full overflow-hidden bg-gray-100 border border-gray-200 md:mb-2 shrink-0">
+                <IdentityAvatar
+                  player={fields}
+                  size={160}
+                  headwearOverride={fields.headwear}
+                />
+              </div>
+              <div className="flex-1 min-w-0 md:text-center">
+                <div className="text-xs font-semibold text-gray-700 truncate">
                   {fields.name || (
                     <span className="text-gray-400 italic">No name yet</span>
                   )}
                 </div>
                 {fields.nickname ? (
-                  <div className="text-center text-[11px] text-gray-500 truncate w-full">
+                  <div className="text-[11px] text-gray-500 truncate">
                     "{fields.nickname}"
                   </div>
                 ) : null}
               </div>
             </div>
+          </div>
 
-            {/* RIGHT: 4 sections — must-haves → helpful → distinguishing → optional */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+          {/* Sections — must-haves → helpful → distinguishing → optional */}
+          <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4">
               <NameSection
                 name={fields.name}
                 nickname={fields.nickname}
@@ -290,20 +292,19 @@ export const PlayerEditorView = ({ scale = 1 }) => {
                 />
               </SectionGroup>
 
-              {saveError ? (
-                <div
-                  className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2 mt-3"
-                  role="alert"
-                  data-testid="save-error"
-                >
-                  Save failed: {saveError.message}
-                </div>
-              ) : null}
-            </div>
+            {saveError ? (
+              <div
+                className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2 mt-3"
+                role="alert"
+                data-testid="save-error"
+              >
+                Save failed: {saveError.message}
+              </div>
+            ) : null}
           </div>
-        )}
-      </div>
-    </ScaledContainer>
+        </div>
+      )}
+    </div>
   );
 };
 
