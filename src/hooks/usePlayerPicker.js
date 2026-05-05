@@ -30,11 +30,46 @@ const NUM_SEATS = 9;
 
 const EMPTY_BATCH_MODE = { active: false, assignedSeats: [] };
 
-// Phase 4 (PIO G4 v2 §8.3): identification-based quick-filter state.
-// Three discriminator-ranked must-have axes — sex × ethnicity × age decade.
-// Carries the same shape as the player record's identification fields so
-// they can flow directly into the editor as create-from-query seeds.
-const EMPTY_QUICK_FILTER = { sex: null, ethnicity: [], ageDecade: null };
+// Phase 4 (PIO G4 v2 §8.3) — extended 2026-05-05 to full editor parity per
+// `feedback_picker_editor_field_parity.md`. Every editor identification
+// axis has a corresponding picker filter slot. Scalar slots are null when
+// unset; arrays are []. Matching is permissive: a player with NULL on the
+// filtered axis still passes (uncertain ≠ negative match).
+const EMPTY_QUICK_FILTER = {
+  // Always-visible axes
+  sex: null,
+  ethnicity: [],
+  ageDecade: null,
+  // "More filters" axes (mirrors editor sections)
+  skinTone: null,
+  hairColor: null,
+  hairLength: null,
+  hairTexture: null,
+  facialHair: null,
+  beardColor: null,
+  build: null,
+  eyewear: null,
+  eyewearColor: null,
+  headwear: null,
+};
+
+// Map quickFilter scalar key → player record field name. Most match 1:1;
+// only ethnicity is renamed (filter says `ethnicity`, record says
+// `ethnicityTags`). The scalar-key list is what matchesQuickFilter walks.
+const SCALAR_FILTER_TO_PLAYER_FIELD = {
+  sex: 'sex',
+  ageDecade: 'ageDecade',
+  skinTone: 'skinTone',
+  hairColor: 'hairColor',
+  hairLength: 'hairLength',
+  hairTexture: 'hairTexture',
+  facialHair: 'facialHair',
+  beardColor: 'beardColor',
+  build: 'build',
+  eyewear: 'eyewear',
+  eyewearColor: 'eyewearColor',
+  headwear: 'headwear',
+};
 
 export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBatchMode = EMPTY_BATCH_MODE } = {}) => {
   const [nameQuery, setNameQuery] = useState('');
@@ -66,8 +101,12 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
   }, []);
 
   // ---- Phase 4 quick-filter (identification axes) ----------------------
-  const setQuickFilterSex = useCallback((sex) => {
-    setQuickFilter((prev) => ({ ...prev, sex }));
+  // Single setter for any scalar field; arg=null clears.
+  const setQuickFilterField = useCallback((key, value) => {
+    if (!Object.prototype.hasOwnProperty.call(SCALAR_FILTER_TO_PLAYER_FIELD, key)) {
+      return; // ignore unknown scalar keys (defensive — ethnicity has its own setter)
+    }
+    setQuickFilter((prev) => ({ ...prev, [key]: value }));
   }, []);
   const toggleQuickFilterEthnicity = useCallback((tag) => {
     setQuickFilter((prev) => {
@@ -77,12 +116,14 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
       return { ...prev, ethnicity: next };
     });
   }, []);
-  const setQuickFilterAge = useCallback((ageDecade) => {
-    setQuickFilter((prev) => ({ ...prev, ageDecade }));
-  }, []);
   const clearQuickFilter = useCallback(() => {
     setQuickFilter(EMPTY_QUICK_FILTER);
   }, []);
+
+  // Backward-compat shims: the prior API exposed dedicated setters. These
+  // keep ad-hoc callers working while new code uses setQuickFilterField.
+  const setQuickFilterSex = useCallback((sex) => setQuickFilterField('sex', sex), [setQuickFilterField]);
+  const setQuickFilterAge = useCallback((ageDecade) => setQuickFilterField('ageDecade', ageDecade), [setQuickFilterField]);
 
   // ---- filtered + scored results ---------------------------------------
   const query = useMemo(
@@ -90,31 +131,36 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     [nameQuery, featureFilters],
   );
 
-  // Phase 4 quick-filter: AND across axes (sex × ethnicity × age) +
-  // permissive on UNSET attributes (a player with no recorded sex still
-  // shows up under the "Male" chip — uncertain ≠ negative match). Legacy
-  // records (`gender`, single `ethnicity` string) are read-side migrated so
-  // they respond to the chip filters without needing a re-save.
+  // Phase 4 quick-filter, extended to full editor parity 2026-05-05.
+  // AND across all set axes; permissive on player NULLs (uncertain ≠
+  // negative match) — see feedback_color_independent_of_ethnicity.md.
+  // Legacy records (gender, single ethnicity string) are read-side
+  // migrated so they respond without needing a re-save.
   const matchesQuickFilter = useCallback((rawPlayer) => {
     const player = migratePlayerLegacyFields(rawPlayer);
-    const playerSex = (player.sex || '').toLowerCase();
-    const playerAge = player.ageDecade || null;
-    const playerTags = Array.isArray(player.ethnicityTags) ? player.ethnicityTags : [];
 
-    if (quickFilter.sex && playerSex && playerSex !== quickFilter.sex) {
-      return false;
+    // Walk all scalar filter axes — null filter or null player attr passes.
+    for (const filterKey of Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD)) {
+      const filterValue = quickFilter[filterKey];
+      if (!filterValue) continue;
+      const playerField = SCALAR_FILTER_TO_PLAYER_FIELD[filterKey];
+      const playerValue = (player[playerField] || '').toString().toLowerCase();
+      if (!playerValue) continue; // permissive: unset player attr passes
+      if (playerValue !== filterValue.toString().toLowerCase()) return false;
     }
-    if (quickFilter.ageDecade && playerAge && playerAge !== quickFilter.ageDecade) {
-      return false;
+
+    // Ethnicity (array filter, OR within tags, permissive on empty player tags).
+    if (quickFilter.ethnicity.length > 0) {
+      const playerTags = Array.isArray(player.ethnicityTags) ? player.ethnicityTags : [];
+      if (playerTags.length > 0) {
+        const hasMatch = quickFilter.ethnicity.some((sel) =>
+          playerTags.map((t) => (t || '').toLowerCase()).includes(sel),
+        );
+        if (!hasMatch) return false;
+      }
+      // playerTags empty → permissive, fall through.
     }
-    if (quickFilter.ethnicity.length > 0 && playerTags.length > 0) {
-      // OR semantics within ethnicity — match if ANY player tag is in the
-      // selected set. Unset tags pass through (permissive).
-      const hasMatch = quickFilter.ethnicity.some((sel) =>
-        playerTags.map((t) => (t || '').toLowerCase()).includes(sel),
-      );
-      if (!hasMatch) return false;
-    }
+
     return true;
   }, [quickFilter]);
 
@@ -141,9 +187,8 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
 
   const hasActiveFilters = nameQuery.length > 0
     || Object.keys(featureFilters).length > 0
-    || !!quickFilter.sex
     || quickFilter.ethnicity.length > 0
-    || !!quickFilter.ageDecade;
+    || Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD).some((k) => !!quickFilter[k]);
 
   // ---- batch mode -------------------------------------------------------
   const enterBatchMode = useCallback(() => {
@@ -213,11 +258,12 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     featureFilters,
     setFeatureFilter,
     clearAllFeatureFilters,
-    // Phase 4 quick-filter (identification axes)
+    // Phase 4 quick-filter (identification axes — full editor parity)
     quickFilter,
-    setQuickFilterSex,
+    setQuickFilterField,         // (key, value) — primary scalar setter
+    setQuickFilterSex,           // backward-compat shim
+    setQuickFilterAge,           // backward-compat shim
     toggleQuickFilterEthnicity,
-    setQuickFilterAge,
     clearQuickFilter,
     clearAll,
     hasActiveFilters,

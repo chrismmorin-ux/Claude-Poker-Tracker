@@ -56,9 +56,8 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
   const {
     nameQuery, setNameQuery,
     quickFilter,
-    setQuickFilterSex,
+    setQuickFilterField,
     toggleQuickFilterEthnicity,
-    setQuickFilterAge,
     clearQuickFilter,
     clearAll, hasActiveFilters,
     results,
@@ -157,9 +156,17 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
   // searches first, only creates if no match.
   const handleCreateFromQuery = useCallback(() => {
     const fieldSeeds = {};
-    if (quickFilter.sex) fieldSeeds.sex = quickFilter.sex;
-    if (quickFilter.ageDecade) fieldSeeds.ageDecade = quickFilter.ageDecade;
+    // Scalar axes — only seed if filter has a value. Same key on player record.
+    const SCALAR_SEED_KEYS = [
+      'sex', 'ageDecade', 'skinTone', 'hairColor', 'hairLength', 'hairTexture',
+      'facialHair', 'beardColor', 'build', 'eyewear', 'eyewearColor', 'headwear',
+    ];
+    for (const k of SCALAR_SEED_KEYS) {
+      if (quickFilter[k]) fieldSeeds[k] = quickFilter[k];
+    }
+    // Ethnicity: filter key 'ethnicity' → record key 'ethnicityTags'.
     if (quickFilter.ethnicity.length > 0) fieldSeeds.ethnicityTags = [...quickFilter.ethnicity];
+
     openPlayerEditor({
       mode: 'create',
       nameSeed: nameQuery,
@@ -233,12 +240,9 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
           autoFocus={true}
         />
         <QuickFilterChips
-          sex={quickFilter.sex}
-          ethnicity={quickFilter.ethnicity}
-          ageDecade={quickFilter.ageDecade}
-          onSexChange={setQuickFilterSex}
+          quickFilter={quickFilter}
+          onSet={setQuickFilterField}
           onEthnicityToggle={toggleQuickFilterEthnicity}
-          onAgeChange={setQuickFilterAge}
           onClearAll={clearQuickFilter}
         />
       </div>
