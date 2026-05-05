@@ -3,12 +3,14 @@ import React from 'react';
 /**
  * SeatContextMenu - Right-click menu for seat assignment and configuration.
  *
- * Menu ordering is state-aware (H-PLT07): when a seat is occupied, Clear
- * Player is promoted to the top — the owner-reported most-common intent on
- * an occupied-seat open. Clear is rendered with a divider below + visible
- * margin above the Recent list to prevent miss-tap adjacency.
+ * Menu ordering (owner-revised 2026-05-05): seat-config rows (Make My Seat /
+ * Make Dealer) ALWAYS first, then ALL player-related operations grouped
+ * together below — Clear Player + Swap Player + Find or Add Player + Recent.
+ * Supersedes the prior H-PLT07 "promote Clear to top" rule; owner prefers
+ * one continuous "player ops" cluster over fastest-action promotion.
  *
- * Audit refs: AUDIT-2026-04-21-player-selection F1 + F3 + F11.
+ * "+ Create New Player" was removed — it duplicated "Find or Add Player…"
+ * (both opened the picker) per Phase 4 search-first creation.
  */
 
 // AUDIT-2026-04-21-TV F8: single source of truth for menu-row touch height.
@@ -40,7 +42,7 @@ const FindPlayerButton = ({ onClick }) => (
     className={`${MENU_ROW_CLASS} text-blue-600`}
     data-testid="menu-find-player"
   >
-    🔍 Find Player…
+    🔍 Find or Add Player…
   </button>
 );
 
@@ -51,16 +53,6 @@ const SwapPlayerButton = ({ onClick }) => (
     data-testid="menu-swap-player"
   >
     ⇄ Swap Player…
-  </button>
-);
-
-const CreateNewPlayerButton = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    className={`${MENU_ROW_CLASS} text-blue-600`}
-    data-testid="menu-create-new-player"
-  >
-    + Create New Player
   </button>
 );
 
@@ -123,11 +115,9 @@ const RecentPlayersSection = ({ recentPlayers, seat, onAssignPlayer }) => {
   );
 };
 
-const AssignSection = ({ seat, onFindPlayer, onCreateNewPlayer, onAssignPlayer, recentPlayers }) => (
+const AssignSection = ({ seat, onFindPlayer, onAssignPlayer, recentPlayers }) => (
   <>
-    <div className={SECTION_LABEL_CLASS}>Assign Player</div>
     {onFindPlayer ? <FindPlayerButton onClick={() => onFindPlayer(seat)} /> : null}
-    <CreateNewPlayerButton onClick={() => onCreateNewPlayer(seat)} />
     <RecentPlayersSection
       recentPlayers={recentPlayers}
       seat={seat}
@@ -147,7 +137,6 @@ export const SeatContextMenu = ({
   contextMenu,
   onMakeMySeat,
   onMakeDealer,
-  onCreateNewPlayer,
   onFindPlayer,
   onSwapPlayer,
   onAssignPlayer,
@@ -168,42 +157,27 @@ export const SeatContextMenu = ({
       data-testid="seat-context-menu"
       data-seat-occupied={isOccupied ? 'true' : 'false'}
     >
+      {/* Seat config — always first, regardless of occupancy. */}
+      <SeatConfigSection
+        seat={seat}
+        onMakeMySeat={onMakeMySeat}
+        onMakeDealer={onMakeDealer}
+      />
+      <Divider />
+      {/* Player ops — grouped together: clear/swap (if occupied), then
+          find-or-add, then recent. */}
       {isOccupied ? (
         <>
           <ClearPlayerButton onClick={() => onClearPlayer(seat)} />
           {onSwapPlayer ? <SwapPlayerButton onClick={() => onSwapPlayer(seat)} /> : null}
-          <Divider />
-          <SeatConfigSection
-            seat={seat}
-            onMakeMySeat={onMakeMySeat}
-            onMakeDealer={onMakeDealer}
-          />
-          <Divider />
-          <AssignSection
-            seat={seat}
-            onFindPlayer={onFindPlayer}
-            onCreateNewPlayer={onCreateNewPlayer}
-            onAssignPlayer={onAssignPlayer}
-            recentPlayers={recentPlayers}
-          />
         </>
-      ) : (
-        <>
-          <SeatConfigSection
-            seat={seat}
-            onMakeMySeat={onMakeMySeat}
-            onMakeDealer={onMakeDealer}
-          />
-          <Divider />
-          <AssignSection
-            seat={seat}
-            onFindPlayer={onFindPlayer}
-            onCreateNewPlayer={onCreateNewPlayer}
-            onAssignPlayer={onAssignPlayer}
-            recentPlayers={recentPlayers}
-          />
-        </>
-      )}
+      ) : null}
+      <AssignSection
+        seat={seat}
+        onFindPlayer={onFindPlayer}
+        onAssignPlayer={onAssignPlayer}
+        recentPlayers={recentPlayers}
+      />
     </div>
   );
 };

@@ -173,31 +173,32 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
           Loading…
         </div>
       ) : (
-        // Portrait: avatar sticks to top, sections scroll below. md+:
-        // 2-column with avatar pinned on the left.
-        <div className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 md:grid md:grid-cols-[180px_1fr] md:gap-6">
+        // Always single-column (portrait-style stack), regardless of viewport
+        // width. Owner uses the phone in landscape for TableView; the editor
+        // body should still stack vertically. See feedback_portrait_mode_player_screens.md.
+        <div className="flex-1 overflow-y-auto px-3 py-3">
 
-          {/* Live IdentityAvatar — sticky-top on phone, sticky-side on md+. */}
-          <div className="sticky top-0 z-10 mb-3 md:mb-0 bg-gray-100 pb-2 md:pb-0">
+          {/* Live IdentityAvatar — sticky-top, scrolls with the form. */}
+          <div className="sticky top-0 z-10 mb-3 bg-gray-100 pb-2">
             <div
-              className="bg-white border border-gray-300 rounded-lg p-2 md:p-3 flex md:flex-col items-center gap-3 md:gap-0"
+              className="bg-white border border-gray-300 rounded-lg p-2 flex items-center gap-3"
               data-testid="player-editor-live-avatar"
             >
-              <div className="w-[88px] h-[88px] md:w-[160px] md:h-[160px] rounded-full overflow-hidden bg-gray-100 border border-gray-200 md:mb-2 shrink-0">
+              <div className="w-[96px] h-[96px] rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                 <IdentityAvatar
                   player={fields}
-                  size={160}
+                  size={96}
                   headwearOverride={fields.headwear}
                 />
               </div>
-              <div className="flex-1 min-w-0 md:text-center">
-                <div className="text-xs font-semibold text-gray-700 truncate">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-gray-700 truncate">
                   {fields.name || (
                     <span className="text-gray-400 italic">No name yet</span>
                   )}
                 </div>
                 {fields.nickname ? (
-                  <div className="text-[11px] text-gray-500 truncate">
+                  <div className="text-xs text-gray-500 truncate">
                     "{fields.nickname}"
                   </div>
                 ) : null}
@@ -206,7 +207,7 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
           </div>
 
           {/* Sections — must-haves → helpful → distinguishing → optional */}
-          <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-3">
               <NameSection
                 name={fields.name}
                 nickname={fields.nickname}

@@ -21,6 +21,9 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { scorePlayerMatch } from './usePlayerFiltering';
+// Apply legacy gender→sex / ethnicity→ethnicityTags derivation before
+// matching, so unmigrated player records still respond to the chip filters.
+import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
 
 const EMPTY_FEATURE_FILTERS = {};
 const NUM_SEATS = 9;
@@ -87,24 +90,28 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
     [nameQuery, featureFilters],
   );
 
-  // Phase 4: quick-filter applies an additional pre-pass on identification
-  // fields. A player must match ALL set quick-filter axes (AND semantics
-  // across sex/ethnicity/age) AND pass scorePlayerMatch's name+feature
-  // gate. Unset quick-filter axes don't constrain.
-  const matchesQuickFilter = useCallback((player) => {
-    if (quickFilter.sex && (player.sex || '').toLowerCase() !== quickFilter.sex) {
+  // Phase 4 quick-filter: AND across axes (sex × ethnicity × age) +
+  // permissive on UNSET attributes (a player with no recorded sex still
+  // shows up under the "Male" chip — uncertain ≠ negative match). Legacy
+  // records (`gender`, single `ethnicity` string) are read-side migrated so
+  // they respond to the chip filters without needing a re-save.
+  const matchesQuickFilter = useCallback((rawPlayer) => {
+    const player = migratePlayerLegacyFields(rawPlayer);
+    const playerSex = (player.sex || '').toLowerCase();
+    const playerAge = player.ageDecade || null;
+    const playerTags = Array.isArray(player.ethnicityTags) ? player.ethnicityTags : [];
+
+    if (quickFilter.sex && playerSex && playerSex !== quickFilter.sex) {
       return false;
     }
-    if (quickFilter.ageDecade && player.ageDecade !== quickFilter.ageDecade) {
+    if (quickFilter.ageDecade && playerAge && playerAge !== quickFilter.ageDecade) {
       return false;
     }
-    if (quickFilter.ethnicity.length > 0) {
-      const tags = Array.isArray(player.ethnicityTags) ? player.ethnicityTags : [];
-      // OR semantics within ethnicity — player matches if ANY of their tags
-      // is in the selected set (lets the user say "show me players matching
-      // any of these ethnicities").
+    if (quickFilter.ethnicity.length > 0 && playerTags.length > 0) {
+      // OR semantics within ethnicity — match if ANY player tag is in the
+      // selected set. Unset tags pass through (permissive).
       const hasMatch = quickFilter.ethnicity.some((sel) =>
-        tags.map((t) => (t || '').toLowerCase()).includes(sel),
+        playerTags.map((t) => (t || '').toLowerCase()).includes(sel),
       );
       if (!hasMatch) return false;
     }

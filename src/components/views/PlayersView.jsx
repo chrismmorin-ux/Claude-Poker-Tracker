@@ -424,7 +424,7 @@ export const PlayersView = ({ scale = 1 }) => {
   return (
     <ScaledContainer scale={scale}>
     <div className="bg-gray-900 overflow-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
-      {/* Header */}
+      {/* Title bar — slim header with back/title/new-player. */}
       <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -445,8 +445,24 @@ export const PlayersView = ({ scale = 1 }) => {
             + New Player
           </button>
         </div>
+      </div>
 
-        {/* Search, Sort, and Filters */}
+      {/* Seat assignments moved above filters per owner request 2026-05-05:
+          live seat state is the highest-frequency thing the user is looking
+          at on this screen, so it belongs above name/filter UI. */}
+      <SeatAssignmentGrid
+        selectedSeat={selectedSeat}
+        getSeatPlayerName={getSeatPlayerName}
+        onSeatClick={handleSeatClick}
+        onClearSeat={handleClearSeat}
+        onClearAllSeats={handleClearAllSeats}
+        onSeatDragStart={handleSeatDragStart}
+        onSeatDragEnd={handleSeatDragEnd}
+        onDrop={handleDrop}
+      />
+
+      {/* Search + filters block — under seat cards. */}
+      <div className="bg-gray-800 border-b border-gray-700 p-4">
         <PlayerFilters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -482,18 +498,6 @@ export const PlayersView = ({ scale = 1 }) => {
           Showing {filteredPlayers.length} of {playerState.allPlayers.length} players
         </div>
       </div>
-
-      {/* Seat Management Section */}
-      <SeatAssignmentGrid
-        selectedSeat={selectedSeat}
-        getSeatPlayerName={getSeatPlayerName}
-        onSeatClick={handleSeatClick}
-        onClearSeat={handleClearSeat}
-        onClearAllSeats={handleClearAllSeats}
-        onSeatDragStart={handleSeatDragStart}
-        onSeatDragEnd={handleSeatDragEnd}
-        onDrop={handleDrop}
-      />
 
       {/* Player List */}
       <div className="p-4">

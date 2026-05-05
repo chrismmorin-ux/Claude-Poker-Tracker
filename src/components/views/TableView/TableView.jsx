@@ -338,16 +338,6 @@ export const TableView = ({ scale }) => {
     setContextMenu(null);
   };
 
-  const handleCreateNewPlayer = (seat) => {
-    // Phase 4 (PIO G4 v2 §8.3 / §A6): seat-menu "Create New" routes through
-    // the Picker for the same search-first reason as PlayersView's "+ New
-    // Player". Seat context is retained — if the user creates from inside
-    // the picker, the editor's commitDraft + assignPlayerToSeat fire
-    // exactly as before.
-    setContextMenu(null);
-    openPlayerPicker({ seat });
-  };
-
   const handleFindPlayer = (seat) => {
     // PEO-3: fullscreen picker scoped to this seat.
     setContextMenu(null);
@@ -584,7 +574,6 @@ export const TableView = ({ scale }) => {
               contextMenu={contextMenu}
               onMakeMySeat={handleSetMySeat}
               onMakeDealer={handleMakeDealer}
-              onCreateNewPlayer={handleCreateNewPlayer}
               onFindPlayer={handleFindPlayer}
               onSwapPlayer={handleSwapPlayer}
               onAssignPlayer={handleAssignPlayer}

@@ -18,7 +18,7 @@ describe('SeatContextMenu', () => {
     contextMenu: { x: 100, y: 200, seat: 5 },
     onMakeMySeat: vi.fn(),
     onMakeDealer: vi.fn(),
-    onCreateNewPlayer: vi.fn(),
+    onFindPlayer: vi.fn(),
     onAssignPlayer: vi.fn(),
     onClearPlayer: vi.fn(),
     recentPlayers: mockRecentPlayers,
@@ -52,14 +52,9 @@ describe('SeatContextMenu', () => {
       expect(screen.getByText('Make Dealer')).toBeInTheDocument();
     });
 
-    it('renders Create New Player button', () => {
+    it('renders Find or Add Player button', () => {
       render(<SeatContextMenu {...defaultProps} />);
-      expect(screen.getByText('+ Create New Player')).toBeInTheDocument();
-    });
-
-    it('renders Assign Player section header', () => {
-      render(<SeatContextMenu {...defaultProps} />);
-      expect(screen.getByText('Assign Player')).toBeInTheDocument();
+      expect(screen.getByText('🔍 Find or Add Player…')).toBeInTheDocument();
     });
 
     it('renders all recent players', () => {
@@ -117,10 +112,10 @@ describe('SeatContextMenu', () => {
       expect(defaultProps.onMakeDealer).toHaveBeenCalledWith(5);
     });
 
-    it('calls onCreateNewPlayer with seat number when clicked', () => {
+    it('calls onFindPlayer with seat number when clicked', () => {
       render(<SeatContextMenu {...defaultProps} />);
-      fireEvent.click(screen.getByText('+ Create New Player'));
-      expect(defaultProps.onCreateNewPlayer).toHaveBeenCalledWith(5);
+      fireEvent.click(screen.getByText('🔍 Find or Add Player…'));
+      expect(defaultProps.onFindPlayer).toHaveBeenCalledWith(5);
     });
 
     it('calls onAssignPlayer with seat and playerId when player clicked', () => {
@@ -161,10 +156,10 @@ describe('SeatContextMenu', () => {
   });
 
   describe('styling', () => {
-    it('Create New Player button has blue text', () => {
+    it('Find or Add Player button has blue text', () => {
       render(<SeatContextMenu {...defaultProps} />);
-      const createButton = screen.getByText('+ Create New Player');
-      expect(createButton).toHaveClass('text-blue-600');
+      const findButton = screen.getByText('🔍 Find or Add Player…');
+      expect(findButton).toHaveClass('text-blue-600');
     });
 
     it('Clear Player button has red text when shown', () => {
@@ -190,36 +185,33 @@ describe('SeatContextMenu', () => {
     });
   });
 
-  describe('state-aware ordering (F1 + F3 + F11)', () => {
-    it('promotes Clear Player to first item when seat is occupied', () => {
-      const props = {
+  describe('ordering (owner-revised 2026-05-05)', () => {
+    it('puts Make My Seat first regardless of occupancy', () => {
+      const { container: emp } = render(<SeatContextMenu {...defaultProps} />);
+      expect(emp.querySelectorAll('button')[0]).toHaveTextContent('Make My Seat');
+
+      const occupiedProps = {
         ...defaultProps,
         getSeatPlayerName: vi.fn(() => 'Assigned Player'),
       };
-      const { container } = render(<SeatContextMenu {...props} />);
-      const buttons = container.querySelectorAll('button');
-      expect(buttons[0]).toHaveTextContent('Clear Player');
+      const { container: occ } = render(<SeatContextMenu {...occupiedProps} />);
+      expect(occ.querySelectorAll('button')[0]).toHaveTextContent('Make My Seat');
     });
 
-    it('keeps Make My Seat first when seat is empty', () => {
-      const { container } = render(<SeatContextMenu {...defaultProps} />);
-      const buttons = container.querySelectorAll('button');
-      expect(buttons[0]).toHaveTextContent('Make My Seat');
-    });
-
-    it('separates Clear from Recent list via a divider when seat is occupied', () => {
+    it('groups player ops together below seat config (occupied seat)', () => {
       const props = {
         ...defaultProps,
+        onSwapPlayer: vi.fn(),
         getSeatPlayerName: vi.fn(() => 'Assigned Player'),
       };
       const { container } = render(<SeatContextMenu {...props} />);
-      // Recent section must come AFTER Clear + SeatConfig + AssignSection header,
-      // so they aren't tap-adjacent.
-      const clearBtn = screen.getByTestId('menu-clear-player');
-      const firstRecent = screen.getByText('John Doe');
-      const clearRect = Array.from(container.querySelectorAll('*')).indexOf(clearBtn);
-      const recentRect = Array.from(container.querySelectorAll('*')).indexOf(firstRecent);
-      expect(recentRect).toBeGreaterThan(clearRect + 4);
+      const labels = Array.from(container.querySelectorAll('button')).map((b) => b.textContent);
+      // Make My Seat / Make Dealer first, then Clear / Swap / Find / recents
+      expect(labels[0]).toBe('Make My Seat');
+      expect(labels[1]).toBe('Make Dealer');
+      expect(labels[2]).toBe('Clear Player');
+      expect(labels[3]).toBe('⇄ Swap Player…');
+      expect(labels[4]).toBe('🔍 Find or Add Player…');
     });
 
     it('renders Swap Player button only when seat is occupied and handler provided', () => {
