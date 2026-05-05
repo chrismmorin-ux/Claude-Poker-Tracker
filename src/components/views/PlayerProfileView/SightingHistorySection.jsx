@@ -22,25 +22,62 @@ const formatDate = (ts) => {
   });
 };
 
-// Phase 6 (PIO G4 v2 §11): render the per-sighting volatile attributes
-// captured by assignPlayerToSeat. Headwear / wardrobe / jewelry / logo
-// are session-snapshots — what the player was wearing THAT day. They
-// don't define long-term identity but help reconstruct context later.
-const SIGHTING_ATTRIBUTE_LABELS = [
+const KIND_PREFIX = {
+  hat: 'hat:',
+  top: 'wearing:',
+  bottom: 'bottom:',
+  jewelry: 'jewelry:',
+  other: 'note:',
+};
+
+// Render a single outfit item like:
+//   hat: blue cap (KC Royals)
+//   wearing: black hoodie
+//   bottom: jeans
+//   note: Lakers gym bag
+const formatOutfitItem = (item) => {
+  if (!item) return '';
+  const prefix = KIND_PREFIX[item.kind] || `${item.kind}:`;
+  const parts = [];
+  if (item.color) parts.push(item.color);
+  if (item.subtype) parts.push(item.subtype);
+  const head = parts.join(' ');
+  const note = item.note ? `(${item.note})` : '';
+  return [prefix, head, note].filter(Boolean).join(' ').trim();
+};
+
+const renderOutfitChip = (item, idx) => {
+  const text = formatOutfitItem(item);
+  if (!text) return null;
+  return (
+    <span
+      key={`outfit-${item.kind}-${idx}`}
+      className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-gray-700 text-gray-300 border border-gray-600 mr-1 mb-1"
+      data-testid={`sighting-outfit-${item.kind}`}
+    >
+      {text}
+    </span>
+  );
+};
+
+// Backward-compat: pre-Phase-B sightings stored attributes flat as
+// headwear / wardrobe / jewelry / logo arrays. Render those too so
+// historical records aren't silently lost.
+const LEGACY_SIGHTING_LABELS = [
   { key: 'headwear', prefix: 'hat:' },
   { key: 'wardrobe', prefix: 'wearing:' },
   { key: 'jewelry', prefix: 'jewelry:' },
   { key: 'logo', prefix: 'logo:' },
 ];
 
-const renderAttributeChip = (key, prefix, value) => {
+const renderLegacyAttributeChip = (key, prefix, value) => {
   if (!value) return null;
   if (Array.isArray(value)) {
     if (value.length === 0) return null;
     return (
       <span
         key={key}
-        className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-gray-700 text-gray-300 border border-gray-600 mr-1"
+        className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-gray-700 text-gray-300 border border-gray-600 mr-1 mb-1"
         data-testid={`sighting-attr-${key}`}
       >
         <span className="text-gray-500 mr-1">{prefix}</span>
@@ -52,7 +89,7 @@ const renderAttributeChip = (key, prefix, value) => {
   return (
     <span
       key={key}
-      className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-gray-700 text-gray-300 border border-gray-600 mr-1"
+      className="inline-flex items-center px-1.5 py-0.5 text-[10px] rounded bg-gray-700 text-gray-300 border border-gray-600 mr-1 mb-1"
       data-testid={`sighting-attr-${key}`}
     >
       <span className="text-gray-500 mr-1">{prefix}</span>
@@ -97,9 +134,16 @@ export const SightingHistorySection = ({ sightings }) => {
       <div className="bg-gray-800/40 rounded divide-y divide-gray-700">
         {visible.map((s) => {
           const attrs = s.attributes || {};
-          const attrChips = SIGHTING_ATTRIBUTE_LABELS
-            .map(({ key, prefix }) => renderAttributeChip(key, prefix, attrs[key]))
+          // Phase B (2026-05-05): outfit array is the canonical shape.
+          // Pre-Phase-B records still use flat headwear/wardrobe/jewelry/logo
+          // arrays — render both, outfit first.
+          const outfitChips = Array.isArray(attrs.outfit)
+            ? attrs.outfit.map((item, idx) => renderOutfitChip(item, idx)).filter(Boolean)
+            : [];
+          const legacyChips = LEGACY_SIGHTING_LABELS
+            .map(({ key, prefix }) => renderLegacyAttributeChip(key, prefix, attrs[key]))
             .filter(Boolean);
+          const attrChips = [...outfitChips, ...legacyChips];
           // Render seat + source if present (helps the user reconstruct
           // "I sat them at seat 3 in this session via the picker" later).
           const sourceLabel = s.source ? s.source.replace(/-/g, ' ') : null;

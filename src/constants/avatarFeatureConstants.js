@@ -54,6 +54,24 @@ export const EYE_COLORS = [
   { id: 'eye-color.gray',   label: 'Gray',   hex: '#6b7076' },
 ];
 
+// Clothing colors — used by per-sighting outfit capture (hat/top/bottom/
+// jewelry/other). Distinct namespace from skin/hair so they don't collide
+// in lookup tables. 12 perceptually-distinct hues + black/white/gray.
+export const CLOTHING_COLORS = [
+  { id: 'cloth.black',    label: 'Black',  hex: '#1f1f1f' },
+  { id: 'cloth.white',    label: 'White',  hex: '#f5f5f5' },
+  { id: 'cloth.gray',     label: 'Gray',   hex: '#7c8189' },
+  { id: 'cloth.red',      label: 'Red',    hex: '#c8302c' },
+  { id: 'cloth.orange',   label: 'Orange', hex: '#e87a1f' },
+  { id: 'cloth.yellow',   label: 'Yellow', hex: '#f1c233' },
+  { id: 'cloth.green',    label: 'Green',  hex: '#2f7a3a' },
+  { id: 'cloth.blue',     label: 'Blue',   hex: '#2a78c2' },
+  { id: 'cloth.navy',     label: 'Navy',   hex: '#1c2c52' },
+  { id: 'cloth.purple',   label: 'Purple', hex: '#6a3aa1' },
+  { id: 'cloth.pink',     label: 'Pink',   hex: '#e07ca0' },
+  { id: 'cloth.brown',    label: 'Brown',  hex: '#6a4426' },
+];
+
 // Eyewear (glasses) frame colors — selectable like other accessories
 export const EYEWEAR_COLORS = [
   { id: 'frame.black',          label: 'Black',          hex: '#1b1714' },
