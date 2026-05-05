@@ -20,7 +20,11 @@ export default defineConfig({
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'standalone',
-        orientation: 'landscape',
+        // 'any' so player editor / picker / profile / sighting modal can
+        // render in portrait when the phone is held portrait. TableView is
+        // still designed at 1600×720 landscape but the manifest no longer
+        // forces orientation. Owner: 2026-05-05.
+        orientation: 'any',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
