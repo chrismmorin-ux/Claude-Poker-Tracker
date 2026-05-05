@@ -15,6 +15,9 @@ if (import.meta.env.DEV) {
   import('./__dev__/handSimulator')
   import('./__dev__/seedDrillAssumptions')
   import('./__dev__/runDrillBacktest')
+  // PIO G4 v2 Phase 1 — corpus sample renderer:
+  // window.__showIdentityAvatarCorpus() / window.__hideIdentityAvatarCorpus()
+  import('./__dev__/identityAvatarCorpus.jsx')
 }
 
 // PWA update listener — reload when new service worker activates
