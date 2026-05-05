@@ -78,8 +78,24 @@ export const skinFromEthnicity = (ethnicityTags, legacyEthnicity) => {
 };
 
 // =============================================================================
-// HAIR LENGTH → HAIR SHAPE
+// HAIR LENGTH + TEXTURE → HAIR SHAPE
 // =============================================================================
+
+/**
+ * Texture is a SHAPE override — when present, it wins over length because
+ * curly/braided/receding are visually dominant features. "straight" defers
+ * to length (default texture).
+ *
+ * Existing primitives wired:
+ *   - hair.curly (existing asset)
+ *   - hair.braided (new — added to assets/avatarFeatures/hair.js)
+ *   - hair.receding (existing asset)
+ */
+const HAIR_TEXTURE_TO_SHAPE = {
+  curly: 'hair.curly',
+  braided: 'hair.braided',
+  receding: 'hair.receding',
+};
 
 /**
  * Map hairLength to existing hair shape feature ids. Defaults to short-wavy
@@ -94,9 +110,24 @@ const HAIR_LENGTH_TO_SHAPE = {
   long: 'hair.long',
 };
 
-export const hairShapeFromLength = (hairLength) => {
-  const id = HAIR_LENGTH_TO_SHAPE[(hairLength || '').toLowerCase()];
-  return id || 'hair.short-wavy';
+/**
+ * Resolve hair shape from texture (priority) and length (fallback).
+ *
+ * Bald/shaved are length-driven and win over texture (no point texturing
+ * absent hair). Otherwise texture overrides length when present.
+ */
+export const hairShapeFromLength = (hairLength, hairTexture) => {
+  const lengthKey = (hairLength || '').toLowerCase();
+  // Length-priority cases: bald or shaved scalp leaves no surface for texture
+  if (lengthKey === 'bald') return 'hair.none';
+  if (lengthKey === 'shaved') return 'hair.buzz';
+
+  const textureKey = (hairTexture || '').toLowerCase();
+  if (textureKey && HAIR_TEXTURE_TO_SHAPE[textureKey]) {
+    return HAIR_TEXTURE_TO_SHAPE[textureKey];
+  }
+
+  return HAIR_LENGTH_TO_SHAPE[lengthKey] || 'hair.short-wavy';
 };
 
 // =============================================================================
@@ -121,6 +152,10 @@ const HAIR_COLOR_NORMALIZED = {
   'light-brown': 'color.light-brown',
   blonde: 'color.blonde',
   red: 'color.red',
+  'salt-pepper': 'color.salt-pepper',
+  'salt and pepper': 'color.salt-pepper',
+  saltpepper: 'color.salt-pepper',
+  'salt-and-pepper': 'color.salt-pepper',
   gray: 'color.gray',
   white: 'color.white',
   bald: 'color.black', // hair-color irrelevant when bald
@@ -130,21 +165,32 @@ const AGE_DECADE_GRAY_SHIFT = {
   '<20': 0,
   '20s': 0,
   '30s': 0,
-  '40s': 1,  // 1-step gray nudge
-  '50s': 2,  // 2-step gray nudge
+  '40s': 1,  // 1-step nudge → typically into salt-pepper for dark colors
+  '50s': 2,  // 2-step nudge → toward gray
   '60s+': 3, // dominant gray-to-white
 };
 
+/**
+ * Per-base-color age progression table.
+ * Index 0 = no shift (20s/30s)
+ * Index 1 = 40s — adds salt-pepper for darker colors (more realistic than
+ *           jumping straight to gray)
+ * Index 2 = 50s — toward gray
+ * Index 3 = 60s+ — toward white
+ *
+ * salt-pepper is a destination color but never a base — once a player has
+ * salt-pepper hair, age doesn't darken it (graying is monotonic).
+ */
 const GRAY_SHIFT_TABLE = {
-  // baseColor → progressive gray shift index map
-  'color.black':       ['color.black',       'color.dark-brown', 'color.gray',  'color.gray'],
-  'color.dark-brown':  ['color.dark-brown',  'color.brown',      'color.gray',  'color.gray'],
-  'color.brown':       ['color.brown',       'color.light-brown','color.gray',  'color.gray'],
-  'color.light-brown': ['color.light-brown', 'color.gray',       'color.gray',  'color.white'],
-  'color.blonde':      ['color.blonde',      'color.blonde',     'color.white', 'color.white'],
-  'color.red':         ['color.red',         'color.red',        'color.gray',  'color.white'],
-  'color.gray':        ['color.gray',        'color.gray',       'color.gray',  'color.white'],
-  'color.white':       ['color.white',       'color.white',      'color.white', 'color.white'],
+  'color.black':        ['color.black',       'color.salt-pepper', 'color.gray',  'color.gray'],
+  'color.dark-brown':   ['color.dark-brown',  'color.salt-pepper', 'color.gray',  'color.gray'],
+  'color.brown':        ['color.brown',       'color.salt-pepper', 'color.gray',  'color.gray'],
+  'color.light-brown':  ['color.light-brown', 'color.salt-pepper', 'color.gray',  'color.gray'],
+  'color.blonde':       ['color.blonde',      'color.blonde',      'color.white', 'color.white'],
+  'color.red':          ['color.red',         'color.red',         'color.salt-pepper', 'color.gray'],
+  'color.salt-pepper':  ['color.salt-pepper', 'color.salt-pepper', 'color.gray',  'color.white'],
+  'color.gray':         ['color.gray',        'color.gray',        'color.gray',  'color.white'],
+  'color.white':        ['color.white',       'color.white',       'color.white', 'color.white'],
 };
 
 export const hairColorFromIdentity = (hairColor, ageDecade) => {
@@ -277,7 +323,7 @@ export const eyeShapeFromEthnicity = (ethnicityTags, legacyEthnicity) => {
  *
  * @param {Object} player - Player record. May contain any subset of:
  *   sex, ethnicityTags, ethnicity (legacy), ageDecade,
- *   hairColor, hairLength, facialHair, build, eyewear,
+ *   hairColor, hairLength, hairTexture, facialHair, build, eyewear,
  *   hat (legacy bool), sunglasses (legacy bool),
  *   distinguishingMarks (array), photoBlobId
  * @param {Object} [opts]
@@ -296,6 +342,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
     ageDecade,
     hairColor,
     hairLength,
+    hairTexture,
     facialHair,
     eyewear,
     sunglasses, // legacy bool — used only if eyewear is absent
@@ -305,7 +352,7 @@ export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
 
   return {
     skin: skinFromEthnicity(ethnicityTags, ethnicity),
-    hair: hairShapeFromLength(hairLength),
+    hair: hairShapeFromLength(hairLength, hairTexture),
     hairColor: hairColorFromIdentity(hairColor, ageDecade),
     beard: beardFromIdentity(facialHair, sex),
     beardColor: hairColorFromIdentity(hairColor, ageDecade), // beard matches hair

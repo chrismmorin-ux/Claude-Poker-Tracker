@@ -87,7 +87,7 @@ const CORPUS = [
     id: 'SYNTH-2',
     _meta: { name: 'Caucasian 60s+ heavy, balding, bifocals' },
     sex: 'male', ethnicityTags: ['caucasian'], ageDecade: '60s+',
-    hairColor: 'white', hairLength: 'shaved', facialHair: 'clean',
+    hairColor: 'white', hairLength: 'shaved', hairTexture: 'receding', facialHair: 'clean',
     build: 'heavy', eyewear: 'readers', headwear: null,
   },
   {
@@ -136,7 +136,7 @@ const CORPUS = [
     id: 'SYNTH-9',
     _meta: { name: 'Black 30s braided long' },
     sex: 'female', ethnicityTags: ['black'], ageDecade: '30s',
-    hairColor: 'black', hairLength: 'long', facialHair: null,
+    hairColor: 'black', hairLength: 'long', hairTexture: 'braided', facialHair: null,
     build: 'average', eyewear: 'none', headwear: null,
   },
   {
@@ -171,7 +171,7 @@ const CORPUS = [
     id: 'SYNTH-14',
     _meta: { name: 'Middle Eastern 30s curly, full beard' },
     sex: 'male', ethnicityTags: ['middle-eastern'], ageDecade: '30s',
-    hairColor: 'black', hairLength: 'medium', facialHair: 'full',
+    hairColor: 'black', hairLength: 'medium', hairTexture: 'curly', facialHair: 'full',
     build: 'average', eyewear: 'none', headwear: null,
   },
   {
@@ -192,7 +192,7 @@ const CORPUS = [
     id: 'SYNTH-17',
     _meta: { name: 'Black 50s salt-and-pepper, military cap' },
     sex: 'male', ethnicityTags: ['black'], ageDecade: '50s',
-    hairColor: 'gray', hairLength: 'short', facialHair: 'full',
+    hairColor: 'salt-pepper', hairLength: 'short', facialHair: 'full',
     build: 'heavy', eyewear: 'none', headwear: 'cap',
   },
   {

@@ -69,8 +69,8 @@ describe('skinFromEthnicity', () => {
   });
 });
 
-describe('hairShapeFromLength', () => {
-  it('maps each length to its shape feature', () => {
+describe('hairShapeFromLength (with texture override)', () => {
+  it('maps each length to its shape feature when texture is straight', () => {
     expect(hairShapeFromLength('bald')).toBe('hair.none');
     expect(hairShapeFromLength('shaved')).toBe('hair.buzz');
     expect(hairShapeFromLength('short')).toBe('hair.short-wavy');
@@ -83,6 +83,36 @@ describe('hairShapeFromLength', () => {
     expect(hairShapeFromLength('')).toBe('hair.short-wavy');
     expect(hairShapeFromLength('whatever-unknown')).toBe('hair.short-wavy');
   });
+
+  it('texture=curly overrides any length (visually dominant)', () => {
+    expect(hairShapeFromLength('short', 'curly')).toBe('hair.curly');
+    expect(hairShapeFromLength('medium', 'curly')).toBe('hair.curly');
+    expect(hairShapeFromLength('long', 'curly')).toBe('hair.curly');
+  });
+
+  it('texture=braided overrides any length', () => {
+    expect(hairShapeFromLength('long', 'braided')).toBe('hair.braided');
+    expect(hairShapeFromLength('medium', 'braided')).toBe('hair.braided');
+  });
+
+  it('texture=receding overrides length', () => {
+    expect(hairShapeFromLength('short', 'receding')).toBe('hair.receding');
+  });
+
+  it('bald/shaved win over texture (no scalp surface to texture)', () => {
+    expect(hairShapeFromLength('bald', 'curly')).toBe('hair.none');
+    expect(hairShapeFromLength('shaved', 'curly')).toBe('hair.buzz');
+    expect(hairShapeFromLength('shaved', 'braided')).toBe('hair.buzz');
+  });
+
+  it('texture=straight defers to length (no override)', () => {
+    expect(hairShapeFromLength('long', 'straight')).toBe('hair.long');
+    expect(hairShapeFromLength('medium', 'straight')).toBe('hair.medium');
+  });
+
+  it('unknown texture defers to length', () => {
+    expect(hairShapeFromLength('long', 'unknown-texture')).toBe('hair.long');
+  });
 });
 
 describe('hairColorFromIdentity (age-modulated graying)', () => {
@@ -92,9 +122,14 @@ describe('hairColorFromIdentity (age-modulated graying)', () => {
     expect(hairColorFromIdentity('blonde', '30s')).toBe('color.blonde');
   });
 
-  it('nudges color slightly for 40s', () => {
-    expect(hairColorFromIdentity('black', '40s')).toBe('color.dark-brown');
-    expect(hairColorFromIdentity('brown', '40s')).toBe('color.light-brown');
+  it('shifts dark colors to salt-pepper for 40s (more realistic than direct gray)', () => {
+    expect(hairColorFromIdentity('black', '40s')).toBe('color.salt-pepper');
+    expect(hairColorFromIdentity('brown', '40s')).toBe('color.salt-pepper');
+    expect(hairColorFromIdentity('dark-brown', '40s')).toBe('color.salt-pepper');
+  });
+
+  it('preserves blonde at 40s (blondes don\'t typically gray that early)', () => {
+    expect(hairColorFromIdentity('blonde', '40s')).toBe('color.blonde');
   });
 
   it('shifts dark colors to gray for 50s', () => {
@@ -102,15 +137,26 @@ describe('hairColorFromIdentity (age-modulated graying)', () => {
     expect(hairColorFromIdentity('brown', '50s')).toBe('color.gray');
   });
 
-  it('drives toward white for 60s+', () => {
+  it('drives toward gray/white for 60s+', () => {
     expect(hairColorFromIdentity('black', '60s+')).toBe('color.gray');
+    expect(hairColorFromIdentity('brown', '60s+')).toBe('color.gray');
     expect(hairColorFromIdentity('blonde', '60s+')).toBe('color.white');
-    expect(hairColorFromIdentity('red', '60s+')).toBe('color.white');
+    expect(hairColorFromIdentity('red', '60s+')).toBe('color.gray');
   });
 
   it('handles already-gray hair gracefully', () => {
     expect(hairColorFromIdentity('gray', '60s+')).toBe('color.white');
     expect(hairColorFromIdentity('white', '60s+')).toBe('color.white');
+  });
+
+  it('accepts salt-pepper as an explicit input color', () => {
+    expect(hairColorFromIdentity('salt-pepper', '40s')).toBe('color.salt-pepper');
+    expect(hairColorFromIdentity('salt and pepper', '50s')).toBe('color.gray');
+    expect(hairColorFromIdentity('salt-and-pepper', '60s+')).toBe('color.white');
+  });
+
+  it('explicit salt-pepper at 30s preserves the input (no shift)', () => {
+    expect(hairColorFromIdentity('salt-pepper', '30s')).toBe('color.salt-pepper');
   });
 
   it('defaults to default hair color for unknown input', () => {
@@ -292,7 +338,7 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
     expect(result.hair).toBe('hair.buzz');
     expect(result.beard).toBe('beard.goatee');
     expect(result.glasses).toBe('glasses.shades');
-    expect(result.hairColor).toBe('color.dark-brown'); // 1-step gray nudge for 40s
+    expect(result.hairColor).toBe('color.salt-pepper'); // 1-step nudge → salt-pepper for 40s
   });
 
   it('legacy ethnicity string still works (no ethnicityTags array)', () => {
@@ -318,5 +364,70 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
       sunglasses: true, // ignored — eyewear wins
     });
     expect(result.glasses).toBe('glasses.none');
+  });
+
+  it('hairTexture=curly maps to hair.curly regardless of length', () => {
+    const result = mapIdentityToAvatarFeatures({
+      ethnicityTags: ['middle-eastern'],
+      hairColor: 'black',
+      hairLength: 'medium',
+      hairTexture: 'curly',
+    });
+    expect(result.hair).toBe('hair.curly');
+  });
+
+  it('hairTexture=braided maps to hair.braided', () => {
+    const result = mapIdentityToAvatarFeatures({
+      sex: 'female',
+      ethnicityTags: ['black'],
+      hairColor: 'black',
+      hairLength: 'long',
+      hairTexture: 'braided',
+    });
+    expect(result.hair).toBe('hair.braided');
+  });
+
+  it('SYNTH-9 (Black female 30s, braided long) renders braided shape', () => {
+    const result = mapIdentityToAvatarFeatures({
+      sex: 'female',
+      ethnicityTags: ['black'],
+      ageDecade: '30s',
+      hairColor: 'black',
+      hairLength: 'long',
+      hairTexture: 'braided',
+      facialHair: null,
+    });
+    expect(result.hair).toBe('hair.braided');
+    expect(result.beard).toBe('beard.none');
+    expect(result.skin).toBe('skin.brown');
+  });
+
+  it('SYNTH-14 (Middle Eastern 30s curly, full beard) renders curly hair', () => {
+    const result = mapIdentityToAvatarFeatures({
+      sex: 'male',
+      ethnicityTags: ['middle-eastern'],
+      ageDecade: '30s',
+      hairColor: 'black',
+      hairLength: 'medium',
+      hairTexture: 'curly',
+      facialHair: 'full',
+    });
+    expect(result.hair).toBe('hair.curly');
+    expect(result.beard).toBe('beard.full');
+  });
+
+  it('SYNTH-17 (Black 50s salt-pepper) explicit salt-pepper preserved', () => {
+    const result = mapIdentityToAvatarFeatures({
+      sex: 'male',
+      ethnicityTags: ['black'],
+      ageDecade: '50s',
+      hairColor: 'salt-pepper',
+      hairLength: 'short',
+      facialHair: 'full',
+    });
+    // 50s shifts salt-pepper → gray per the table; covered above. Confirm beard
+    // matches hair color (both salt-pepper-shifted to gray).
+    expect(result.hairColor).toBe('color.gray');
+    expect(result.beardColor).toBe('color.gray');
   });
 });

@@ -26,15 +26,19 @@ export const SKIN_TONES = [
 ];
 
 // Hair colors — shared by scalp hair and beard
+// `salt-pepper` is a perceptual mix between dark and gray, common at 40s-60s.
+// Hex chosen as midpoint between dark-brown (#3b2416) and gray (#8a8a8a) with a
+// slight desaturation toward neutral; reads as "graying brown" at small sizes.
 export const HAIR_COLORS = [
-  { id: 'color.black',       label: 'Black',       hex: '#1b1714' },
-  { id: 'color.dark-brown',  label: 'Dark Brown',  hex: '#3b2416' },
-  { id: 'color.brown',       label: 'Brown',       hex: '#5b3a1f' },
-  { id: 'color.light-brown', label: 'Light Brown', hex: '#8a5a34' },
-  { id: 'color.blonde',      label: 'Blonde',      hex: '#c9a060' },
-  { id: 'color.red',         label: 'Red',         hex: '#a24219' },
-  { id: 'color.gray',        label: 'Gray',        hex: '#8a8a8a' },
-  { id: 'color.white',       label: 'White',       hex: '#e8e4de' },
+  { id: 'color.black',        label: 'Black',         hex: '#1b1714' },
+  { id: 'color.dark-brown',   label: 'Dark Brown',    hex: '#3b2416' },
+  { id: 'color.brown',        label: 'Brown',         hex: '#5b3a1f' },
+  { id: 'color.light-brown',  label: 'Light Brown',   hex: '#8a5a34' },
+  { id: 'color.blonde',       label: 'Blonde',        hex: '#c9a060' },
+  { id: 'color.red',          label: 'Red',           hex: '#a24219' },
+  { id: 'color.salt-pepper',  label: 'Salt & Pepper', hex: '#605449' },
+  { id: 'color.gray',         label: 'Gray',          hex: '#8a8a8a' },
+  { id: 'color.white',        label: 'White',         hex: '#e8e4de' },
 ];
 
 // Eye colors — use-if-rendered
