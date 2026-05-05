@@ -94,9 +94,10 @@ export const PlayerProfileView = ({ scale: _scale }) => {
 
   return (
     <div
-      className="p-4 max-w-3xl mx-auto text-gray-200"
+      className="h-dvh w-full overflow-y-auto"
       data-testid="player-profile-view"
     >
+    <div className="p-4 max-w-3xl mx-auto text-gray-200">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-start gap-3">
@@ -186,6 +187,7 @@ export const PlayerProfileView = ({ scale: _scale }) => {
           onSaved={onSightingSaved}
         />
       ) : null}
+    </div>
     </div>
   );
 };

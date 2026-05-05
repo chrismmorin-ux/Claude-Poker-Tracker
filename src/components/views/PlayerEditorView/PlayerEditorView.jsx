@@ -150,7 +150,7 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
   return (
     <div
       ref={rootRef}
-      className="bg-gray-100 min-h-dvh w-full flex flex-col"
+      className="bg-gray-100 h-dvh w-full flex flex-col overflow-hidden"
       data-testid="player-editor-view"
     >
       <BackToTableBar
