@@ -152,7 +152,14 @@ describe('<PlayerEditorView /> — save lifecycle regression guards', () => {
     const { getByTestId } = render(<PlayerEditorView />);
     fireEvent.click(getByTestId('save-player-btn'));
     await waitFor(() => {
-      expect(mockPlayer.assignPlayerToSeat).toHaveBeenCalledWith(3, 42);
+      // Phase 2 (sighting fix): assignPlayerToSeat now takes a 3rd opts arg
+      // with sessionId + source. Verify the seat + playerId positional args
+      // and that the opts include sessionId.
+      expect(mockPlayer.assignPlayerToSeat).toHaveBeenCalledWith(
+        3,
+        42,
+        expect.objectContaining({ sessionId: 42 }),
+      );
       expect(mockPlayer.linkPlayerToPriorHandsInSession).toHaveBeenCalledWith(3, 42, 42);
     });
   });

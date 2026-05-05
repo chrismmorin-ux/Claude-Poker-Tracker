@@ -42,28 +42,34 @@ import { deriveAutoName } from '../utils/playerAutoName';
 const DEFAULT_FIELDS = {
   name: '',
   nickname: '',
+  // Legacy fields retained for read-back of pre-Phase-3 records (deleted in Phase 7)
   ethnicity: '',
-  build: '',
   gender: '',
-  facialHair: '',
   hat: false,
   sunglasses: false,
+  wardrobe: [],
+  jewelry: [],
+  logo: [],
   styleTags: [],
   notes: '',
   avatar: '',           // legacy image upload
-  avatarFeatures: null, // PEO-1 feature sub-object
-  // PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — new identification attributes.
-  // Per docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md §PIO-G4-PEX.
-  ageDecade: null,        // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null
-  ethnicityTags: [],      // multi-select replaces legacy `ethnicity` (read-only kept)
-  wardrobe: [],           // palette IDs from wardrobePalette.js
-  jewelry: [],            // palette IDs from jewelryPalette.js
-  logo: [],               // palette IDs from logoPalette.js
-  // PIO G5 child B (WS-161 / SPR-036, 2026-05-04) — camera-captured photo blob.
-  // Set via savePhotoAtomically (atomic 2-store IDB write); not edited inline.
-  // The form field is hydrated from the loaded Player record + updated when the
-  // CameraButton's onPhotoSaved callback fires.
-  photoBlobId: null,
+  avatarFeatures: null, // PEO-1 feature sub-object (kills in Phase 7)
+  // Phase 3 (PIO G4 v2) — canonical identification fields, all drive
+  // IdentityAvatar via avatarMapping.
+  sex: null,                  // 'male' | 'female' | 'other' | null
+  ageDecade: null,            // '<20' | '20s' | '30s' | '40s' | '50s' | '60s+' | null
+  ethnicityTags: [],          // multi-select; replaces legacy `ethnicity` string
+  build: null,                // 'slim' | 'average' | 'heavy' | 'muscular' | null
+  hairColor: null,            // 'black' | 'dark-brown' | 'brown' | 'light-brown' | 'blonde' | 'red' | 'gray' | 'white' | null
+  hairLength: null,           // 'bald' | 'shaved' | 'short' | 'medium' | 'long' | null
+  hairTexture: null,          // 'straight' | 'curly' | 'braided' | 'receding' | null
+  hairSaltPepper: null,       // boolean | null  (null = auto via age)
+  facialHair: null,           // 'clean' | 'stubble' | 'mustache' | 'goatee' | 'full' | 'soul-patch' | null
+  eyewear: null,              // 'none' | 'clear' | 'sunglasses' | 'readers' | null
+  eyewearColor: null,         // 'black' | 'brown' | 'tortoiseshell' | 'gold' | 'silver' | 'red' | 'blue' | null
+  headwear: null,             // 'cap' | 'beanie' | 'visor' | 'fedora' | 'cowboy' | null  (per-sighting; moves to Sighting in Phase 6)
+  distinguishingMarks: [],    // [{ type, location, description }]
+  photoBlobId: null,          // PIO G5 child B (WS-161) — captured photo blob
 };
 
 // Fields we accept from a loaded player or draft. Anything outside this set

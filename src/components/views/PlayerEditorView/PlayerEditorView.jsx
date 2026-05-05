@@ -1,19 +1,21 @@
 /**
- * PlayerEditorView.jsx — Fullscreen player create/edit screen (PEO-2)
+ * PlayerEditorView.jsx — Fullscreen player create/edit screen (Phase 3 rewrite)
  *
  * Route: SCREEN.PLAYER_EDITOR. Driven by uiState.editorContext.
+ *
+ * Phase 3 IA per audit §8.2: 4 sections (Must-haves / Helpful /
+ * Distinguishing / Optional) with live IdentityAvatar at the top that
+ * updates on every keystroke. AvatarFeatureBuilder removed (avatar is
+ * fully derived from identification fields). Wardrobe/Jewelry/Logo
+ * removed (over-specific palettes — see audit §A4).
  *
  * Flow:
  *   1. Mount → `usePlayerEditor` hydrates from allPlayers (edit) or offers
  *      draft resume (create).
- *   2. User edits; draft autosaves in background (create mode).
+ *   2. User edits; live avatar reflects every change immediately.
  *   3. Save: derive final name, atomic commit, trigger seat assignment +
  *      retroactive link if seatContext present.
  *   4. Back: flush pending draft, dispatch closePlayerEditor → prevScreen.
- *
- * The editor is fully autonomous: it reads editorContext via UIContext and
- * calls `closePlayerEditor()` to dismiss itself. Parent passes no props
- * beyond the implicit `scale` prop used by other views.
  */
 
 import React, { useRef, useCallback } from 'react';
@@ -23,23 +25,34 @@ import { useToast } from '../../../contexts/ToastContext';
 import { usePlayerEditor } from '../../../hooks/usePlayerEditor';
 import { useScreenFocusManagement } from '../../../hooks/useScreenFocusManagement';
 import { ScaledContainer } from '../../ui/ScaledContainer';
+import IdentityAvatar from '../../ui/IdentityAvatar';
 import BackToTableBar from './BackToTableBar';
 import DraftResumeBanner from './DraftResumeBanner';
 import NameSection from './NameSection';
-import AvatarFeatureBuilder from './AvatarFeatureBuilder';
-import PhysicalSection from './PhysicalSection';
 import NotesSection from './NotesSection';
-import ImageUploadSection from './ImageUploadSection';
-// PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — new identification attribute sections.
+// Phase 3 sections (must-haves → optional)
+import { SexSection } from './SexSection';
 import { AgeDecadeSection } from './AgeDecadeSection';
 import { EthnicityTagsSection } from './EthnicityTagsSection';
-import { WardrobeSection } from './WardrobeSection';
-import { JewelrySection } from './JewelrySection';
-import { LogoSection } from './LogoSection';
-// PIO G5 child B (WS-161 / SPR-036, 2026-05-04) — camera capture button.
+import { HairSection } from './HairSection';
+import { FacialHairSection } from './FacialHairSection';
+import { BuildSection } from './BuildSection';
+import { EyewearSection } from './EyewearSection';
+import { DistinguishingMarksSection } from './DistinguishingMarksSection';
+import { HeadwearSection } from './HeadwearSection';
+// Camera capture (PIO G5 child B / WS-161)
 import { CameraButton } from './CameraButton';
 
 const SEATING_TITLE = (seat) => `Assign to Seat ${seat}`;
+
+const SectionGroup = ({ title, children }) => (
+  <div className="mb-5 pb-3 border-b border-gray-300/40 last:border-b-0 last:pb-0">
+    <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">
+      {title}
+    </div>
+    {children}
+  </div>
+);
 
 export const PlayerEditorView = ({ scale = 1 }) => {
   const { editorContext, closePlayerEditor } = useUI();
@@ -56,12 +69,9 @@ export const PlayerEditorView = ({ scale = 1 }) => {
   const nameInputRef = useRef(null);
   useScreenFocusManagement(rootRef, nameInputRef);
 
-  // onSaveComplete fires AFTER the atomic commit — we wire seat assignment
-  // and the retroactive-link toast here so the editor hook stays concerned
-  // with just the record-level lifecycle.
+  // onSaveComplete fires AFTER the atomic commit — wires seat assignment +
+  // retroactive-link toast. Editor hook stays focused on record lifecycle.
   const onSaveComplete = useCallback(async ({ mode, playerId, seatContext }) => {
-    // commitDraft / updatePlayer wrote straight to IDB; refresh the in-memory
-    // allPlayers list so the picker + PlayersView reflect the new record.
     try {
       await loadAllPlayers();
     } catch {
@@ -75,8 +85,6 @@ export const PlayerEditorView = ({ scale = 1 }) => {
           source: 'editor-create-then-assign',
         });
       } catch (err) {
-        // Non-fatal — the player record is saved. Surface the failure but
-        // continue closing.
         addToast(`Saved player but could not assign to seat: ${err.message}`, { variant: 'warning' });
       }
 
@@ -113,7 +121,6 @@ export const PlayerEditorView = ({ scale = 1 }) => {
     resumeDraft,
     discardDraft,
     updateField,
-    updateAvatarFeature,
     duplicate,
     isSaving,
     saveError,
@@ -146,112 +153,145 @@ export const PlayerEditorView = ({ scale = 1 }) => {
         style={{ width: 1600, height: 720 }}
         data-testid="player-editor-view"
       >
-      <BackToTableBar
-        onBack={handleBack}
-        onSave={handleSave}
-        title={title}
-        isSaving={isSaving}
-      />
-
-      {draftBanner === 'visible' ? (
-        <DraftResumeBanner
-          draftSnippet={null}
-          onResume={resumeDraft}
-          onDiscard={discardDraft}
+        <BackToTableBar
+          onBack={handleBack}
+          onSave={handleSave}
+          title={title}
+          isSaving={isSaving}
         />
-      ) : null}
 
-      {isDraftLoading ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
-          Loading…
-        </div>
-      ) : (
-        <div className="flex-1 overflow-auto px-3 py-3 space-y-3">
-          <NameSection
-            name={fields.name}
-            nickname={fields.nickname}
-            onNameChange={(v) => updateField('name', v)}
-            onNicknameChange={(v) => updateField('nickname', v)}
-            duplicate={duplicate}
-            nameInputRef={nameInputRef}
+        {draftBanner === 'visible' ? (
+          <DraftResumeBanner
+            draftSnippet={null}
+            onResume={resumeDraft}
+            onDiscard={discardDraft}
           />
+        ) : null}
 
-          {/* PIO G5 child B (WS-161 / SPR-036) — camera capture (gated by Settings privacy toggle). */}
-          <CameraButton
-            playerId={editorContext?.playerId ?? null}
-            photoBlobId={fields.photoBlobId}
-            onPhotoSaved={(blobId) => updateField('photoBlobId', blobId)}
-          />
+        {isDraftLoading ? (
+          <div className="flex-1 flex items-center justify-center text-sm text-gray-500">
+            Loading…
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto px-4 py-4 grid grid-cols-[180px_1fr] gap-6">
 
-          <AvatarFeatureBuilder
-            avatarFeatures={fields.avatarFeatures}
-            onFeatureChange={updateAvatarFeature}
-            previewName={fields.name}
-          />
-
-          <PhysicalSection
-            ethnicity={fields.ethnicity}
-            onEthnicityChange={(v) => updateField('ethnicity', v)}
-            build={fields.build}
-            onBuildChange={(v) => updateField('build', v)}
-            gender={fields.gender}
-            onGenderChange={(v) => updateField('gender', v)}
-            facialHair={fields.facialHair}
-            onFacialHairChange={(v) => updateField('facialHair', v)}
-            hat={fields.hat}
-            onHatChange={(v) => updateField('hat', v)}
-            sunglasses={fields.sunglasses}
-            onSunglassesChange={(v) => updateField('sunglasses', v)}
-          />
-
-          {/* PIO G5 child D (WS-163 / SPR-035) — 5 new identification attribute sections. */}
-          <AgeDecadeSection
-            value={fields.ageDecade}
-            onChange={(v) => updateField('ageDecade', v)}
-          />
-
-          <EthnicityTagsSection
-            value={fields.ethnicityTags}
-            legacyEthnicity={fields.ethnicity}
-            onChange={(v) => updateField('ethnicityTags', v)}
-          />
-
-          <WardrobeSection
-            value={fields.wardrobe}
-            onChange={(v) => updateField('wardrobe', v)}
-          />
-
-          <JewelrySection
-            value={fields.jewelry}
-            onChange={(v) => updateField('jewelry', v)}
-          />
-
-          <LogoSection
-            value={fields.logo}
-            onChange={(v) => updateField('logo', v)}
-          />
-
-          <NotesSection
-            notes={fields.notes}
-            onNotesChange={(v) => updateField('notes', v)}
-          />
-
-          <ImageUploadSection
-            avatar={fields.avatar}
-            onAvatarChange={(v) => updateField('avatar', v)}
-          />
-
-          {saveError ? (
-            <div
-              className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2"
-              role="alert"
-              data-testid="save-error"
-            >
-              Save failed: {saveError.message}
+            {/* LEFT: Live IdentityAvatar — sticky so it stays visible while
+                user scrolls through fields. Updates on every keystroke. */}
+            <div className="sticky top-0">
+              <div
+                className="bg-white border border-gray-300 rounded-lg p-3 flex flex-col items-center"
+                data-testid="player-editor-live-avatar"
+              >
+                <div className="w-[160px] h-[160px] rounded-full overflow-hidden bg-gray-100 border border-gray-200 mb-2">
+                  <IdentityAvatar
+                    player={fields}
+                    size={160}
+                    headwearOverride={fields.headwear}
+                  />
+                </div>
+                <div className="text-center text-xs font-semibold text-gray-700 truncate w-full">
+                  {fields.name || (
+                    <span className="text-gray-400 italic">No name yet</span>
+                  )}
+                </div>
+                {fields.nickname ? (
+                  <div className="text-center text-[11px] text-gray-500 truncate w-full">
+                    "{fields.nickname}"
+                  </div>
+                ) : null}
+              </div>
             </div>
-          ) : null}
-        </div>
-      )}
+
+            {/* RIGHT: 4 sections — must-haves → helpful → distinguishing → optional */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <NameSection
+                name={fields.name}
+                nickname={fields.nickname}
+                onNameChange={(v) => updateField('name', v)}
+                onNicknameChange={(v) => updateField('nickname', v)}
+                duplicate={duplicate}
+                nameInputRef={nameInputRef}
+              />
+
+              <SectionGroup title="Must-haves">
+                <SexSection
+                  value={fields.sex}
+                  onChange={(v) => updateField('sex', v)}
+                />
+                <AgeDecadeSection
+                  value={fields.ageDecade}
+                  onChange={(v) => updateField('ageDecade', v)}
+                />
+                <EthnicityTagsSection
+                  value={fields.ethnicityTags}
+                  legacyEthnicity={fields.ethnicity}
+                  onChange={(v) => updateField('ethnicityTags', v)}
+                />
+              </SectionGroup>
+
+              <SectionGroup title="Helpful">
+                <HairSection
+                  hairColor={fields.hairColor}
+                  hairLength={fields.hairLength}
+                  hairTexture={fields.hairTexture}
+                  hairSaltPepper={fields.hairSaltPepper}
+                  onColorChange={(v) => updateField('hairColor', v)}
+                  onLengthChange={(v) => updateField('hairLength', v)}
+                  onTextureChange={(v) => updateField('hairTexture', v)}
+                  onSaltPepperChange={(v) => updateField('hairSaltPepper', v)}
+                />
+                <FacialHairSection
+                  value={fields.facialHair}
+                  onChange={(v) => updateField('facialHair', v)}
+                  sex={fields.sex}
+                />
+                <BuildSection
+                  value={fields.build}
+                  onChange={(v) => updateField('build', v)}
+                />
+                <EyewearSection
+                  value={fields.eyewear}
+                  color={fields.eyewearColor}
+                  onChange={(v) => updateField('eyewear', v)}
+                  onColorChange={(v) => updateField('eyewearColor', v)}
+                />
+              </SectionGroup>
+
+              <SectionGroup title="Distinguishing marks">
+                <DistinguishingMarksSection
+                  value={fields.distinguishingMarks}
+                  onChange={(v) => updateField('distinguishingMarks', v)}
+                />
+              </SectionGroup>
+
+              <SectionGroup title="Optional">
+                <HeadwearSection
+                  value={fields.headwear}
+                  onChange={(v) => updateField('headwear', v)}
+                />
+                <CameraButton
+                  playerId={editorContext?.playerId ?? null}
+                  photoBlobId={fields.photoBlobId}
+                  onPhotoSaved={(blobId) => updateField('photoBlobId', blobId)}
+                />
+                <NotesSection
+                  notes={fields.notes}
+                  onNotesChange={(v) => updateField('notes', v)}
+                />
+              </SectionGroup>
+
+              {saveError ? (
+                <div
+                  className="bg-red-50 border border-red-200 text-red-700 text-xs rounded px-3 py-2 mt-3"
+                  role="alert"
+                  data-testid="save-error"
+                >
+                  Save failed: {saveError.message}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
     </ScaledContainer>
   );
