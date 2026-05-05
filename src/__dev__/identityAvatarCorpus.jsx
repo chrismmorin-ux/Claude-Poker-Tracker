@@ -280,17 +280,17 @@ const CorpusOverlay = ({ onClose }) => {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h1 style={{ margin: 0, fontSize: 20 }}>
-          Identity Avatar Corpus — N=25 (Phase 1 sample)
+          Identity Avatar Corpus — N=25 (Phase 1.6)
         </h1>
         <button
           onClick={onClose}
           style={{ padding: '6px 12px', background: '#333', color: '#fff', border: 0, borderRadius: 4, cursor: 'pointer' }}
         >
-          Close (or window.__hideIdentityAvatarCorpus())
+          Close
         </button>
       </div>
-      <p style={{ fontSize: 12, color: '#555', maxWidth: 800 }}>
-        Each card shows the same player rendered at 24px / 48px / 96px (TableView seat / PlayersView row / profile-header sizes). The avatar is fully derived from the identification fields shown below — no manual override exists. Sanity-check whether the rendered avatars are recognizable enough to support the §13 Phase 2 adoption.
+      <p style={{ fontSize: 12, color: '#555', maxWidth: 900 }}>
+        Each card shows one identity rendered at 24 / 48 / 96 px (the three sizes the app uses: TableView seat / PlayersView row / profile-header). The avatar is fully derived from the identification fields shown below — no manual override. To give feedback, note the profile ID (ANCHOR-N or SYNTH-N) and what doesn&apos;t read right (e.g., &quot;SYNTH-1: muscular shoulders aren&apos;t visible enough&quot; or &quot;ANCHOR-3: hair color too light&quot;).
       </p>
       <h2 style={{ fontSize: 14, marginTop: 16 }}>Real anchors ({anchors.length})</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
@@ -333,6 +333,20 @@ const hideCorpus = () => {
 if (typeof window !== 'undefined') {
   window.__showIdentityAvatarCorpus = showCorpus;
   window.__hideIdentityAvatarCorpus = hideCorpus;
+
+  // Auto-open the corpus when the URL hash is #avatar-corpus.
+  // Visit http://localhost:5173/#avatar-corpus — no console required.
+  // Removing the hash (or navigating away) auto-closes.
+  const checkHash = () => {
+    if (window.location.hash === '#avatar-corpus') {
+      showCorpus();
+    } else if (rootEl) {
+      hideCorpus();
+    }
+  };
+  // Run once on load (defer to next tick so app shell mounts first)
+  setTimeout(checkHash, 0);
+  window.addEventListener('hashchange', checkHash);
 }
 
 export { CORPUS, CorpusOverlay };
