@@ -24,6 +24,7 @@ import { scorePlayerMatch } from './usePlayerFiltering';
 // Apply legacy gender→sex / ethnicity→ethnicityTags derivation before
 // matching, so unmigrated player records still respond to the chip filters.
 import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
+import { skinKeyForFilter } from '../utils/identityAvatar/avatarMapping';
 import { findMatchingAccessories } from '../utils/accessoryInventory';
 
 const EMPTY_FEATURE_FILTERS = {};
@@ -154,13 +155,33 @@ export const usePlayerPicker = ({ allPlayers = [], initialSeat = null, initialBa
   const matchesQuickFilter = useCallback((rawPlayer) => {
     const player = migratePlayerLegacyFields(rawPlayer);
 
-    // Walk all scalar filter axes — null filter or null player attr passes.
+    // Effective player attributes — derived where the avatar render derives,
+    // so filters match what the user can SEE on the avatar.
+    //   - skinTone: explicit OR derived from ethnicity (returns null only
+    //     when truly no signal — that case stays permissive).
+    //   - beardColor: explicit OR fall back to hairColor (matches avatar).
+    const effective = {
+      sex: player.sex,
+      ageDecade: player.ageDecade,
+      skinTone: skinKeyForFilter(player),
+      hairColor: player.hairColor,
+      hairLength: player.hairLength,
+      hairTexture: player.hairTexture,
+      facialHair: player.facialHair,
+      beardColor: player.beardColor || player.hairColor || null,
+      build: player.build,
+      eyewear: player.eyewear,
+      eyewearColor: player.eyewearColor,
+      headwear: player.headwear,
+    };
+
+    // Walk all scalar filter axes — null filter or null effective attr passes
+    // (truly-unknown players aren't excluded — uncertain ≠ negative match).
     for (const filterKey of Object.keys(SCALAR_FILTER_TO_PLAYER_FIELD)) {
       const filterValue = quickFilter[filterKey];
       if (!filterValue) continue;
-      const playerField = SCALAR_FILTER_TO_PLAYER_FIELD[filterKey];
-      const playerValue = (player[playerField] || '').toString().toLowerCase();
-      if (!playerValue) continue; // permissive: unset player attr passes
+      const playerValue = (effective[filterKey] || '').toString().toLowerCase();
+      if (!playerValue) continue; // permissive: no effective signal
       if (playerValue !== filterValue.toString().toLowerCase()) return false;
     }
 

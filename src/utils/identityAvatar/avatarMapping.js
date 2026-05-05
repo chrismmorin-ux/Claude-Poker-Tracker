@@ -153,6 +153,33 @@ export const skinFromIdentity = (player) => {
   return skinFromEthnicity(player?.ethnicityTags, player?.ethnicity);
 };
 
+/**
+ * Resolve the player's effective skin tone for FILTERING. Returns the bare
+ * palette key (e.g., 'dark', 'brown', 'ruddy') when there's a signal, OR
+ * null when the player has no skinTone AND no usable ethnicity. The picker
+ * uses null as the "no signal — permissive" marker so it doesn't exclude
+ * truly-unknown players, while DOES filter out players whose derivable
+ * tone doesn't match.
+ *
+ * Differs from skinFromIdentity (avatar render path) which always falls
+ * back to a default — that's correct for rendering (always show *some*
+ * face), but wrong for filtering (we need to distinguish "no signal" from
+ * "default-medium").
+ */
+export const skinKeyForFilter = (player) => {
+  const explicit = SKIN_TONE_NORMALIZED[(player?.skinTone || '').toString().toLowerCase()];
+  if (explicit) return explicit.replace(/^skin\./, '');
+  const tags = Array.isArray(player?.ethnicityTags) && player.ethnicityTags.length > 0
+    ? player.ethnicityTags
+    : (player?.ethnicity ? [player.ethnicity] : []);
+  if (tags.length === 0) return null;
+  for (const raw of tags) {
+    const tone = ETHNICITY_TO_SKIN[normalizeEthnicityTag(raw)];
+    if (tone) return tone.replace(/^skin\./, '');
+  }
+  return null;
+};
+
 // =============================================================================
 // HAIR LENGTH + TEXTURE → HAIR SHAPE
 // =============================================================================
