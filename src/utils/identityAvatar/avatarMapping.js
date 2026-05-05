@@ -26,6 +26,9 @@
 import {
   DEFAULT_AVATAR_FEATURES,
 } from '../../constants/avatarFeatureConstants';
+// Phase 5: render path applies the same legacy-field migration as the editor
+// so display stays consistent with what the editor would derive on hydrate.
+import { migratePlayerLegacyFields } from './migratePlayerLegacyFields';
 
 // =============================================================================
 // SEX + BUILD → SILHOUETTE
@@ -447,10 +450,14 @@ export const eyeShapeFromEthnicity = (ethnicityTags, legacyEthnicity) => {
  *   (e.g., the player wore a beanie today). Defaults to no overlay.
  * @returns {Object} avatarFeatures shape consumed by AvatarRenderer
  */
-export const mapIdentityToAvatarFeatures = (player, opts = {}) => {
-  if (!player || typeof player !== 'object') {
+export const mapIdentityToAvatarFeatures = (rawPlayer, opts = {}) => {
+  if (!rawPlayer || typeof rawPlayer !== 'object') {
     return { ...DEFAULT_AVATAR_FEATURES };
   }
+  // Phase 5: apply legacy-field migration before reading fields. This makes
+  // pre-Phase-3 records render identical to post-migration records without
+  // requiring a database write — render-time derivation only.
+  const player = migratePlayerLegacyFields(rawPlayer);
   const {
     sex,
     ethnicityTags,

@@ -38,6 +38,10 @@ import {
   GUEST_USER_ID,
 } from '../utils/persistence';
 import { deriveAutoName } from '../utils/playerAutoName';
+// Phase 5 (PIO G4 v2 §11): read-side migration of legacy fields → new
+// identification fields. Applied during hydration so the editor sees
+// derived values; saving the player back persists the migration.
+import { migratePlayerLegacyFields } from '../utils/identityAvatar/migratePlayerLegacyFields';
 
 const DEFAULT_FIELDS = {
   name: '',
@@ -137,7 +141,11 @@ export const usePlayerEditor = ({
     if (mode === 'edit' && typeof editingPlayerId === 'number') {
       const existing = allPlayers.find(p => p.playerId === editingPlayerId);
       if (existing) {
-        setFields(normalizeFields(existing));
+        // Phase 5: derive Phase-3 fields from legacy fields before hydrating
+        // the form. The migration is non-destructive — only fills unset
+        // fields. Saving the player will persist the derived values.
+        const migrated = migratePlayerLegacyFields(existing);
+        setFields(normalizeFields(migrated));
         hydratedRef.current.key = key;
       }
       return;
