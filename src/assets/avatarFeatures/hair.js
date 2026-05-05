@@ -124,9 +124,12 @@ export default [
     id: 'hair.medium',
     label: 'Medium Length',
     paths: [
-      // Medium hair as an annulus: covers crown, side panels reach jaw level.
-      // Inner cutout is full face region (matches long-hair cutout) so eyes
-      // are clearly visible.
+      // Medium-length hair as a single C-shaped path (NOT an annulus).
+      // Outline: covers crown + falls down both side panels to jaw level
+      // (y=74) without crossing the chin. The "face cutout" is drawn into
+      // the same path via the inside-out perimeter — eliminates the
+      // evenodd artifact where the inner cutout used to dip past the
+      // outer envelope and fill a goatee-shaped strip below the jaw.
       {
         d: `
           M 22 44
@@ -134,16 +137,16 @@ export default [
           C 66 14, 78 20, 78 44
           L 78 72
           C 76 74, 72 74, 70 74
+          L 66 74
+          L 66 44
+          C 66 42, 60 40, 50 40
+          C 40 40, 34 42, 34 44
+          L 34 74
           L 30 74
           C 28 74, 24 74, 22 72
           Z
-          M 28 42
-          C 30 58, 36 76, 50 80
-          C 64 76, 70 58, 72 42
-          Z
         `,
         fill: 'var(--hair)',
-        fillRule: 'evenodd',
       },
     ],
   },
