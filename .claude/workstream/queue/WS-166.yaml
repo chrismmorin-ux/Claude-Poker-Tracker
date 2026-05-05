@@ -1,0 +1,116 @@
+id: "WS-166"
+title: "IdentityAvatar v2 — proper visual-design pass + mobile optimization"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 18.0
+priority_label: "P2"
+category: "player-identification-v2"
+capability: "core"
+program: "design"
+description: |
+  Owner-flagged backlog (2026-05-04, end of Phase 1.8 review):
+
+  > "This looks acceptable. Drop an item in the backlog to revisit this
+  > entire thing with the aesthetics and more attention to creating a
+  > better visual set of images optimizing for mobile view. This really
+  > didn't get a proper treatment for being such a huge visual element
+  > relied upon because of its usefulness as a feature."
+
+  Phases 1 → 1.8 (commits d600bdb, fddae54, e790f60, dbcd65d, 8f1d526)
+  shipped a *functional* IdentityAvatar primitive — sex × build silhouettes,
+  ethnicity-derived skin tones, age-modulated hair colors, salt-pepper
+  treatment overlay, hair texture (curly/braided/receding/slick-back/
+  combover), 7 beard styles, 6 hat styles, 6 glasses with frame color,
+  hair-through-hat clipping. 152 tests green; corpus + feature catalog
+  visible at `http://localhost:5173/#avatar-corpus`.
+
+  But the visuals were authored *under iteration pressure* — every SVG
+  shape was hand-coded by an engineer using bezier/line primitives. The
+  art is recognizable but not polished. For a feature that the entire
+  recognition workflow depends on (PIO Gate 4 v2 audit §0 / §14), the
+  aesthetic deserves the rigor we'd bring to any other distinctive UI
+  surface.
+
+  This v2 ticket is the *proper aesthetic pass*:
+
+  **Goals**
+  - Visual quality on par with shipped avatar libraries (DiceBear, Boring
+    Avatars, etc.) — not engineer art
+  - Mobile-optimized at the 24px and 48px sizes (currently primary
+    fidelity is at 96px; small sizes lose detail)
+  - Coherent design language across all categories (current shapes use
+    inconsistent stroke weights, colors, and visual styles)
+  - Style guide that future feature additions can follow without
+    re-deriving from scratch
+
+  **Scope**
+
+  1. Hire / commission proper SVG illustration OR adopt a higher-quality
+     existing avatar library and adapt it to our identification model:
+     - DiceBear (https://www.dicebear.com) — 30+ styles, MIT license,
+       SVG-API and standalone library options. Worth evaluating "lorelei"
+       or "personas" styles which look closest to our intent.
+     - Boring Avatars — geometric / abstract; less identification-utility,
+       skip.
+     - Custom commission via Figma + designer — most coherent but expensive.
+
+  2. Mobile-first redesign:
+     - Author all shapes at 24px native size first (current is 100px native
+       scaled down). At 24px many of our small-stroke details disappear.
+     - Use heavier outlines, simpler shapes, fewer overlay layers.
+     - Test recognition on 24px corpus at first-glance time.
+
+  3. Coherent design system:
+     - Stroke weight standard (currently varies 0.7-2.2)
+     - Color palette consistency (currently per-feature ad-hoc)
+     - Layer composition rules (currently mostly fill-only, some stroke-only)
+     - Documented in `docs/design/identity-avatar-style-guide.md`
+
+  4. Distinguishing-mark badges (deferred from Phase 1):
+     - Tattoo overlay, hearing-aid icon, bindi, scar, prosthetic
+     - Each as a small icon overlay on the silhouette, library-quality
+
+  5. Post-redesign corpus regression:
+     - Re-run recognition scoring per PIO G4 v2 audit §3
+     - Re-run same-name disambiguation test
+     - Confirm v2 maintains or beats v1 fidelity at every size
+
+accept_criteria:
+  - "Decision recorded: build-on-DiceBear vs commission-custom vs continue-in-house"
+  - "If continuing in-house: style guide doc authored at docs/design/identity-avatar-style-guide.md with stroke/color/composition rules"
+  - "All 11 hair / 7 beard / 6 hat / 6 glasses shapes redrawn to the chosen aesthetic at 24px native fidelity"
+  - "Distinguishing-mark badges (tattoo/hearing-aid/bindi/scar/prosthetic) added per audit §9"
+  - "Mobile recognition test: corpus profiles at 24px tested for first-glance recognition (≥80% accuracy)"
+  - "PIO G4 v2 audit §3 scoring re-run; v2 ≥ v1 on all axes"
+  - "Visual regression snapshots locked in (Playwright)"
+  - "Existing 152 unit tests still pass (mapping logic unchanged)"
+  - "Backward compat: identification field shape unchanged — only the SVG render improves"
+effort: "L"
+files_involved:
+  - "src/assets/avatarFeatures/*.js (rewrite all)"
+  - "src/components/ui/AvatarRenderer.jsx (possibly adopt DiceBear adapter)"
+  - "docs/design/identity-avatar-style-guide.md (NEW)"
+  - "src/__dev__/identityAvatarCorpus.jsx (re-run scoring)"
+  - "Possibly: package.json (DiceBear dependency if adopted)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Build-on-DiceBear (fastest, may not match identification model exactly) vs commission-custom (best quality, owner cost) vs continue-in-house (slowest, no external dep)"
+  - "Distinguishing-mark badges: structured array per PIO G4 v2 audit §A7, or simpler enum"
+  - "Mobile-first vs desktop-first authoring — current is desktop-first scaled down"
+status_note: |
+  Backlog. Originating context: PIO Gate 4 v2 audit shipped 2026-05-04
+  (commit 5035b12); IdentityAvatar primitive shipped Phases 1-1.8
+  (commits d600bdb..8f1d526). Owner accepted current state as functional
+  but called for proper visual treatment in a dedicated future pass.
+source:
+  origin: "phase-1.8-review-feedback-2026-05-04"
+  parent_ws: "WS-008"
+  audit_ref: "docs/design/audits/2026-05-04-gate4v2-design-player-identification-v2.md"
+created_at: "2026-05-04"
+updated_at: "2026-05-04"

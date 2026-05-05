@@ -6,8 +6,8 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-03T13:30:00Z"
-item_count: 157
+last_updated: "2026-05-04T21:35:00Z"
+item_count: 158
 # 2026-05-03: WS-150..WS-157 added — HSP v2 backlog (turn/river archetypes + multiway model +
 # adjustment composition + caching + LLM augmentation). 1 master + 7 work items. Deferred from
 # WS-136 v1 closing; not a sprint commitment — claim against /next when SCF surfaces a need.
@@ -363,6 +363,19 @@ items:
     sprint_id: "SPR-036"
     completed_at: "2026-05-04T15:30:00Z"
     status_note: "SHIPPED SPR-036. settings.privacy.photoCaptureEnabled (default false, AP-PIO-03). PrivacySection in SettingsView. CI-grep test sourceUtilPolicy.test.js enforcing PIO/SCF imports forbidden in 4 blacklisted live-table surfaces. 13 new tests."
+  - id: "WS-166"
+    title: "IdentityAvatar v2 — proper visual-design pass + mobile optimization"
+    status: backlog
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "player-identification-v2"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "L"
+    claimed_by: ""
+    sprint_id: ""
+    status_note: "Owner-flagged 2026-05-04 end of Phase 1.8 review: 'didn't get a proper treatment for being such a huge visual element'. Phase 1-1.8 shipped functional IdentityAvatar (commits d600bdb..8f1d526). v2 = aesthetic redesign + mobile-first + DiceBear-eval + style guide + distinguishing-mark badges + recognition-test re-run."
   - id: "WS-014"
     title: "Stream E"
     legacy_id: "EAL-Stream-E"
