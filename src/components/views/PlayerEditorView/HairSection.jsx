@@ -18,15 +18,17 @@ import React from 'react';
 import { HAIR_COLORS } from '../../../constants/avatarFeatureConstants';
 import ColorChip from './ColorChip';
 
-// Ordered light → dark per the COLOR-GRADIENT INVARIANT (avatarFeatureConstants.js).
-// Salt-pepper is a treatment overlay (toggle on the hair section) — not a
-// base color choice — so it doesn't appear here.
+// Order revised 2026-05-06 per owner: white → gray → red → blonde →
+// light-brown → brown → dark-brown → black. Red sits as a warm-medium
+// outlier between gray and the warm browns; the brown family stays
+// internally light → dark. Salt-pepper is a treatment overlay (toggle on
+// the hair section), not a base color choice — not in this array.
 export const HAIR_COLOR_INPUT_OPTIONS = [
   { value: 'white', label: 'White' },
-  { value: 'blonde', label: 'Blonde' },
   { value: 'gray', label: 'Gray' },
-  { value: 'light-brown', label: 'Light brown' },
   { value: 'red', label: 'Red' },
+  { value: 'blonde', label: 'Blonde' },
+  { value: 'light-brown', label: 'Light brown' },
   { value: 'brown', label: 'Brown' },
   { value: 'dark-brown', label: 'Dark brown' },
   { value: 'black', label: 'Black' },

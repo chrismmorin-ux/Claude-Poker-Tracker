@@ -37,18 +37,19 @@ export const SKIN_TONES = [
 // Hair colors — shared by scalp hair and beard.
 // `salt-pepper` is a perceptual mix between dark and gray, common at 40s-60s.
 //
-// COLOR-GRADIENT INVARIANT (owner-confirmed 2026-05-06):
-// All palettes display LIGHT → DARK. Skin already followed this; hair was
-// dark-first (`black` → `white`) and clashed with skin chip orientation.
-// Palette order is now consistently lightest → darkest. Red sits as a
-// warm-medium-tone outlier between light-brown and the cooler dark-browns.
+// Order revised 2026-05-06 per owner: white → gray → salt-pepper → red →
+// blonde → light-brown → brown → dark-brown → black. Salt-pepper sits next
+// to gray (its luminance neighbor); red sits as a warm-medium outlier
+// before the brown-family ladder. The COLOR-GRADIENT light→dark spirit
+// still holds within the brown family; red and salt-pepper are the
+// non-ladder outliers placed by perceptual category, not strict luminance.
 export const HAIR_COLORS = [
   { id: 'color.white',        label: 'White',         hex: '#e8e4de' },
-  { id: 'color.blonde',       label: 'Blonde',        hex: '#c9a060' },
   { id: 'color.gray',         label: 'Gray',          hex: '#8a8a8a' },
   { id: 'color.salt-pepper',  label: 'Salt & Pepper', hex: '#605449' },
-  { id: 'color.light-brown',  label: 'Light Brown',   hex: '#8a5a34' },
   { id: 'color.red',          label: 'Red',           hex: '#a24219' },
+  { id: 'color.blonde',       label: 'Blonde',        hex: '#c9a060' },
+  { id: 'color.light-brown',  label: 'Light Brown',   hex: '#8a5a34' },
   { id: 'color.brown',        label: 'Brown',         hex: '#5b3a1f' },
   { id: 'color.dark-brown',   label: 'Dark Brown',    hex: '#3b2416' },
   { id: 'color.black',        label: 'Black',         hex: '#1b1714' },

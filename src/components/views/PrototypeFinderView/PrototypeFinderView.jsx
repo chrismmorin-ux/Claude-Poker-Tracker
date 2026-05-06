@@ -239,14 +239,18 @@ const ChipRow = ({ children, className = '' }) => (
 );
 
 // ===========================================================================
-// SwatchPalette — color-only selector, single row when palette fits
+// SwatchPalette — color-only selector with prominent active highlight
 // ===========================================================================
 //
-// Replaces chip-with-label colors. Each option renders as a 32px circle of
-// pure color. Selected swatch gets an amber ring + slight scale. The selected
-// option's name shows below the row as "Selected: Color Name". Compact
-// enough to keep palettes on a single row when possible (skin 7, hair 8);
-// larger palettes (clothing 14) wrap to two rows.
+// Each option renders as a circle of pure color. The selected swatch gets
+// THREE coordinated visual cues so the active state reads from any angle:
+//   1. White checkmark icon centered inside the swatch (works on light
+//      and dark colors via a dark drop-shadow + white-on-dark stroke)
+//   2. 4px amber ring around the swatch with a 2px slate-800 offset gap
+//   3. ~13% scale-up
+// Owner 2026-05-06: "When selecting a color, it should highlight which
+// color is selected. some sort of clearly visible highlighting method to
+// the color of the circle will do."
 //
 // Input shape — array of { value, label, hex }. Caller normalizes from
 // SKIN_TONES / HAIR_COLORS / CLOTHING_COLORS / HAIR_COLOR_INPUT_OPTIONS.
@@ -254,7 +258,7 @@ const SwatchPalette = ({ value, onChange, options, hideLabel = false }) => {
   const selected = options.find((o) => o.value === value);
   return (
     <div className="mb-2">
-      <div className="flex flex-wrap gap-2 mb-1">
+      <div className="flex flex-wrap gap-2.5 mb-1.5 pt-1">
         {options.map((opt) => {
           const isActive = opt.value === value;
           return (
@@ -265,18 +269,31 @@ const SwatchPalette = ({ value, onChange, options, hideLabel = false }) => {
               title={opt.label}
               aria-label={opt.label}
               aria-pressed={isActive}
-              className={`shrink-0 rounded-full transition-all ${
+              className={`relative shrink-0 rounded-full transition-all ${
                 isActive
-                  ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-800/60 scale-105'
+                  ? 'ring-4 ring-amber-500 ring-offset-2 ring-offset-slate-800/60 scale-[1.13]'
                   : 'ring-1 ring-slate-600 hover:ring-slate-500'
               }`}
               style={{
                 width: 32,
                 height: 32,
                 background: opt.hex,
-                boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.25), inset 0 0 0 3px rgba(0,0,0,0.4)',
+                boxShadow: isActive
+                  ? 'inset 0 0 0 2px rgba(255,255,255,0.4), 0 2px 8px rgba(245, 158, 11, 0.5)'
+                  : 'inset 0 0 0 2px rgba(255,255,255,0.25), inset 0 0 0 3px rgba(0,0,0,0.4)',
               }}
-            />
+            >
+              {isActive ? (
+                <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Check
+                    size={18}
+                    strokeWidth={3.5}
+                    className="text-white"
+                    style={{ filter: 'drop-shadow(0 0 1.5px rgba(0,0,0,0.85))' }}
+                  />
+                </span>
+              ) : null}
+            </button>
           );
         })}
       </div>
@@ -955,7 +972,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v9
+            🧪 Prototype v10
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
