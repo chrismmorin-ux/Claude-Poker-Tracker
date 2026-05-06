@@ -269,4 +269,64 @@ describe('SeatContextMenu', () => {
       expect(defaultProps.onMakeDealer).toHaveBeenCalledWith(9);
     });
   });
+
+  // WS-002 Sprint A2 amendment: straddle entry as a context-menu row
+  describe('Straddle row', () => {
+    it('does not render when onStraddle is undefined (seat ineligible)', () => {
+      render(<SeatContextMenu {...defaultProps} />);
+      expect(screen.queryByText('🎲 Straddle…')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('menu-straddle')).not.toBeInTheDocument();
+    });
+
+    it('renders when onStraddle is provided', () => {
+      const onStraddle = vi.fn();
+      render(<SeatContextMenu {...defaultProps} onStraddle={onStraddle} />);
+      expect(screen.getByText('🎲 Straddle…')).toBeInTheDocument();
+      expect(screen.getByTestId('menu-straddle')).toBeInTheDocument();
+    });
+
+    it('calls onStraddle with the active seat number when clicked', () => {
+      const onStraddle = vi.fn();
+      const props = {
+        ...defaultProps,
+        contextMenu: { x: 50, y: 60, seat: 3 },
+        onStraddle,
+      };
+      render(<SeatContextMenu {...props} />);
+      fireEvent.click(screen.getByTestId('menu-straddle'));
+      expect(onStraddle).toHaveBeenCalledWith(3);
+      expect(onStraddle).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders inside the seat-config section (above the divider)', () => {
+      const onStraddle = vi.fn();
+      const { container } = render(
+        <SeatContextMenu {...defaultProps} onStraddle={onStraddle} />
+      );
+      // The seat-config section (Make My Seat / Make Dealer / Straddle) lives
+      // BEFORE the first divider in the menu DOM order. Confirm by index.
+      const menu = container.firstChild;
+      const rows = Array.from(menu.children);
+      const firstDividerIdx = rows.findIndex((el) =>
+        el.classList.contains('border-t')
+      );
+      const straddleIdx = rows.findIndex(
+        (el) => el.dataset?.testid === 'menu-straddle'
+      );
+      expect(straddleIdx).toBeGreaterThanOrEqual(0);
+      expect(straddleIdx).toBeLessThan(firstDividerIdx);
+    });
+
+    it('coexists with Clear Player (occupied seat) without conflict', () => {
+      const onStraddle = vi.fn();
+      const props = {
+        ...defaultProps,
+        getSeatPlayerName: vi.fn(() => 'Michael'),
+        onStraddle,
+      };
+      render(<SeatContextMenu {...props} />);
+      expect(screen.getByText('🎲 Straddle…')).toBeInTheDocument();
+      expect(screen.getByText('Clear Player')).toBeInTheDocument();
+    });
+  });
 });
