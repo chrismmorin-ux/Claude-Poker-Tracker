@@ -24,7 +24,8 @@
     "lucide-react": "^0.263.1",
     "posthog-js": "^1.372.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-easy-crop": "^5.5.7"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.2",

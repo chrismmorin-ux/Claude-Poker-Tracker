@@ -1,89 +1,113 @@
 /**
- * @file CameraCaptureModal — 2-stage native capture → crop preview → save.
+ * @file CameraCaptureModal — capture or upload a photo, manually crop, save.
  *
- * Stage 1: hidden <input type="file" capture="environment"> programmatically
- * clicked on mount. The browser handles native camera/gallery picker.
+ * Three stages:
+ *   1. SOURCE       — user picks Camera (capture=environment) or Upload
+ *                     (no capture attribute, gallery + files).
+ *   2. CROP         — react-easy-crop renders the chosen image with
+ *                     pinch-to-zoom + drag-to-pan + zoom slider. User
+ *                     positions the square crop window over the desired
+ *                     face. Auto-detection isn't reliable across
+ *                     orientation / lighting / multi-face shots, so manual
+ *                     positioning is the load-bearing path.
+ *   3. SAVE         — generateCroppedBlob renders the user's crop region
+ *                     into a 512×512 JPEG. Either:
+ *                       - savePhotoAtomically (production path, atomic
+ *                         player + photo IDB write), OR
+ *                       - onAcceptOverride(blob, previewUrl) when provided
+ *                         (prototype: stash for live-builder avatar without
+ *                          IDB writes).
  *
- * Stage 2: cropToSquare(file) → JPEG Blob → preview. Retake re-fires input;
- * Accept atomically writes via savePhotoAtomically.
- *
- * Per `docs/design/surfaces/camera-capture-modal.md` §Atomic-txn binding +
- * AP-PIO-03 (master toggle gates visibility upstream — modal only opens
- * when CameraButton is rendered).
- *
- * SPR-036 / WS-161 (2026-05-04).
+ * Owner ask 2026-05-06: "We should have the modal, after taking the
+ * picture, able to support the user zooming with a pinch or expand finger
+ * motion, and draggable centering. … support uploading a photo, that the
+ * user can then crop in the same way."
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import { cropToSquare } from '../../../utils/playerMatching/cropToSquare';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import { Camera, Upload, X } from 'lucide-react';
+import { generateCroppedBlob } from '../../../utils/playerMatching/generateCroppedBlob';
 import { savePhotoAtomically } from '../../../utils/persistence/savePhotoAtomically';
 
-// `onAcceptOverride(blob, previewUrl)` — optional. When provided, the
-// modal calls this instead of savePhotoAtomically + onSaved. Used by the
-// prototype to demo the capture flow without writing to IDB. If absent,
-// the production save path runs.
 export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverride }) => {
-  const inputRef = useRef(null);
-  const [stage, setStage] = useState('capture'); // 'capture' | 'preview'
-  const [previewBlob, setPreviewBlob] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const cameraInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+
+  // Stages: 'source' (pick camera/upload), 'crop' (manual position), 'saving'.
+  const [stage, setStage] = useState('source');
+  const [imageUrl, setImageUrl] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Stage 1: open native camera picker on mount.
-  useEffect(() => {
-    inputRef.current?.click();
-  }, []);
-
-  // Cleanup blob URL on unmount or replacement.
+  // Revoke any object URL we created on unmount or replacement.
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
     };
-  }, [previewUrl]);
+  }, [imageUrl]);
 
-  const onFileSelected = async (e) => {
+  const onCropComplete = useCallback((_area, areaPixels) => {
+    setCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const onSourceFileSelected = (e) => {
     const file = e.target.files?.[0];
     if (!file) {
-      // User dismissed the picker — close the modal.
-      onClose?.();
+      // User dismissed picker without selecting — stay on source stage.
       return;
     }
     setError(null);
-    try {
-      const cropped = await cropToSquare(file);
-      const url = URL.createObjectURL(cropped);
-      setPreviewBlob(cropped);
-      setPreviewUrl(url);
-      setStage('preview');
-    } catch (err) {
-      setError(err?.message || 'Could not process image');
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+    // Reset crop state for the new image.
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setStage('crop');
+  };
+
+  const startCamera = () => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+      cameraInputRef.current.click();
+    }
+  };
+  const startUpload = () => {
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = '';
+      uploadInputRef.current.click();
     }
   };
 
   const onRetake = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewBlob(null);
-    setPreviewUrl(null);
-    setStage('capture');
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    setImageUrl(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setStage('source');
     setError(null);
-    // Re-fire the input.
-    if (inputRef.current) {
-      inputRef.current.value = '';
-      inputRef.current.click();
-    }
   };
 
   const onAccept = async () => {
-    if (!previewBlob) return;
+    if (!imageUrl || !croppedAreaPixels) return;
     setIsSaving(true);
     setError(null);
     try {
+      const blob = await generateCroppedBlob(imageUrl, croppedAreaPixels);
       if (onAcceptOverride) {
-        await onAcceptOverride(previewBlob, previewUrl);
+        // Prototype path — caller handles the blob (no IDB write).
+        const previewUrl = URL.createObjectURL(blob);
+        await onAcceptOverride(blob, previewUrl);
         onClose?.();
       } else {
-        const { blobId } = await savePhotoAtomically(playerId, previewBlob);
+        // Production path — atomic save + emit blobId.
+        const { blobId } = await savePhotoAtomically(playerId, blob);
         onSaved?.(blobId);
       }
     } catch (err) {
@@ -94,86 +118,143 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3"
       data-testid="camera-capture-modal"
     >
-      {/* Hidden native input — Stage 1 entry point */}
+      {/* Hidden inputs — fired programmatically. Camera input has
+          capture='environment' (back camera on phones); upload input has
+          no capture attribute so the OS shows the gallery / files picker. */}
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={onFileSelected}
+        onChange={onSourceFileSelected}
         style={{ display: 'none' }}
         data-testid="camera-capture-input"
       />
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        onChange={onSourceFileSelected}
+        style={{ display: 'none' }}
+        data-testid="camera-upload-input"
+      />
 
-      <div className="bg-gray-900 rounded-lg max-w-md w-full p-4 text-gray-200">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white text-lg font-semibold">
-            {stage === 'capture' ? 'Capture photo' : 'Preview'}
+      <div className="bg-slate-900 rounded-lg max-w-md w-full text-gray-200 flex flex-col" style={{ maxHeight: '90vh' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+          <h3 className="text-white text-base font-semibold">
+            {stage === 'source' ? 'Add photo' : 'Position the crop'}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-white"
+            disabled={isSaving}
+            className="text-gray-400 hover:text-white disabled:opacity-50 p-1"
+            aria-label="Close"
             data-testid="camera-capture-close"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
-        {stage === 'capture' ? (
-          <div className="py-6 text-center" data-testid="camera-capture-stage-1">
-            <div className="text-gray-400 text-sm mb-3">
-              Opening camera…
-            </div>
-            {/* Explicit fallback button. Some browsers (notably iOS Safari)
-                block programmatic .click() on hidden file inputs that fire
-                from useEffect — the user-gesture chain is broken between
-                the modal-opening tap and the auto-click. This button gives
-                the user a direct gesture path. Owner reported 2026-05-06:
-                "the camera modal doesn't open. it requests to open, but
-                upon approval nothing happens." */}
+        {/* Body */}
+        {stage === 'source' ? (
+          <div className="px-4 py-6 flex flex-col gap-3" data-testid="camera-capture-stage-source">
+            <p className="text-sm text-gray-400 mb-1">
+              Take a new photo or upload one from your gallery. You'll be
+              able to drag and pinch-zoom to position the crop after.
+            </p>
             <button
               type="button"
-              onClick={() => inputRef.current?.click()}
-              className="bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-semibold px-4 py-2 rounded"
-              data-testid="camera-capture-open-button"
+              onClick={startCamera}
+              className="flex items-center justify-center gap-2 bg-cyan-700 hover:bg-cyan-600 text-white font-semibold rounded-lg py-3 min-h-[48px]"
+              data-testid="camera-capture-take"
             >
-              Tap to open camera
+              <Camera size={18} />
+              Take photo
             </button>
-            <div className="text-gray-500 text-[11px] mt-3">
-              If your camera doesn't open automatically, tap the button above.
+            <button
+              type="button"
+              onClick={startUpload}
+              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-gray-100 font-semibold rounded-lg py-3 min-h-[48px]"
+              data-testid="camera-upload"
+            >
+              <Upload size={18} />
+              Upload from gallery
+            </button>
+          </div>
+        ) : null}
+
+        {stage === 'crop' && imageUrl ? (
+          <div className="flex flex-col" data-testid="camera-capture-stage-crop">
+            {/* Crop surface — fixed-aspect square via aspect ratio 1; the
+                crop area is fixed in viewport, image moves under it via
+                pinch+drag. */}
+            <div className="relative w-full bg-black" style={{ height: 'min(70vh, 360px)' }}>
+              <Cropper
+                image={imageUrl}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                minZoom={1}
+                maxZoom={5}
+              />
+            </div>
+            {/* Zoom slider — alternative to pinch-to-zoom for desktop +
+                accessibility. Pinch on the crop surface above always works. */}
+            <div className="px-4 py-3 border-t border-slate-700">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold w-10 shrink-0">
+                  Zoom
+                </span>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="flex-1 accent-amber-500"
+                  data-testid="camera-capture-zoom-slider"
+                  aria-label="Zoom"
+                />
+                <span className="text-[11px] text-gray-400 w-10 text-right tabular-nums">
+                  {zoom.toFixed(2)}×
+                </span>
+              </div>
+              <div className="text-[11px] text-gray-500 mt-2 text-center">
+                Drag to position · pinch to zoom
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="space-y-3" data-testid="camera-capture-stage-2">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Captured photo preview"
-                className="w-full h-auto rounded border border-gray-700"
-                data-testid="camera-capture-preview"
-              />
-            ) : null}
-          </div>
-        )}
+        ) : null}
 
         {error ? (
-          <div className="text-red-400 text-xs mt-2" data-testid="camera-capture-error">
+          <div
+            className="text-red-400 text-xs mx-4 my-2 px-3 py-2 bg-red-900/30 border border-red-700/50 rounded"
+            data-testid="camera-capture-error"
+          >
             {error}
           </div>
         ) : null}
 
-        <div className="flex gap-2 justify-end mt-4">
-          {stage === 'preview' ? (
+        {/* Footer actions */}
+        <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-700">
+          {stage === 'crop' ? (
             <>
               <button
                 type="button"
                 onClick={onRetake}
                 disabled={isSaving}
-                className="bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 text-sm px-3 py-1.5 rounded"
+                className="bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-gray-300 text-sm font-semibold px-4 py-2 rounded-md min-h-[44px]"
                 data-testid="camera-capture-retake"
               >
                 Retake
@@ -181,8 +262,8 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
               <button
                 type="button"
                 onClick={onAccept}
-                disabled={isSaving}
-                className="bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white text-sm px-3 py-1.5 rounded"
+                disabled={isSaving || !croppedAreaPixels}
+                className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-900 text-sm font-semibold px-4 py-2 rounded-md min-h-[44px]"
                 data-testid="camera-capture-accept"
               >
                 {isSaving ? 'Saving…' : 'Accept'}
@@ -192,7 +273,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-3 py-1.5 rounded"
+              className="bg-slate-800 hover:bg-slate-700 text-gray-300 text-sm font-semibold px-4 py-2 rounded-md min-h-[44px]"
               data-testid="camera-capture-cancel"
             >
               Cancel

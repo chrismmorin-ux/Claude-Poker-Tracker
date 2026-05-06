@@ -977,7 +977,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v11
+            🧪 Prototype v12
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
