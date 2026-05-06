@@ -13,6 +13,9 @@ import { ErrorLogPanel } from './ErrorLogPanel';
 import { RefresherSettings } from './RefresherSettings';
 // PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
 import { PrivacySection } from './PrivacySection';
+// Owner-only sandbox tab (2026-05-05) — gated by email; renders nothing
+// for non-owner accounts. Houses prototypes + dev affordances.
+import { AdminSection } from './AdminSection';
 
 export const SettingsView = ({ scale }) => {
   const { showSuccess, showError, showWarning, addToast } = useToast();
@@ -138,6 +141,9 @@ export const SettingsView = ({ scale }) => {
           />
 
           <ErrorLogPanel showSuccess={showSuccess} />
+
+          {/* Owner-only — renders nothing for non-owner accounts. */}
+          <AdminSection />
         </div>
       </div>
     </ScaledContainer>
