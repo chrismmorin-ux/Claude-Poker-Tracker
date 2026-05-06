@@ -254,6 +254,9 @@ export const MOCK_PLAYERS = [
     handCount: 92,
     lastSeenAt: ts(3),
   },
+  // Note: `height` is a sidecar map below — keeps the schema diff small for
+  // the production migration. In production it'll be a top-level field on
+  // the player record.
   {
     playerId: 1012,
     // Player with NO name — only physical features. Owner needs to find
@@ -278,3 +281,24 @@ export const MOCK_PLAYERS = [
     lastSeenAt: ts(2),
   },
 ];
+
+// Height sidecar (prototype-only). In production this becomes a top-level
+// `height` field on the player record (short / medium / tall — no avatar
+// changes; identification axis only). Range matching applies (short ↔
+// medium ↔ tall ladder; ±1 neighbor). A few players intentionally have
+// no height set so the permissive-on-null path stays exercised.
+export const MOCK_HEIGHTS = {
+  1001: 'medium', // Michael Park
+  1002: 'tall',   // Diego Alvarez (Cowboy)
+  1003: 'short',  // James OBrien (older, heavier, shorter)
+  1004: 'short',  // Aisha Patel (slim)
+  1005: 'tall',   // Marcus Thompson (Hammer, muscular)
+  1006: 'medium', // Hiroshi Tanaka
+  1007: 'medium', // Brenda Whitfield
+  1008: 'tall',   // Tyler Mitchell
+  1009: 'medium', // Robert King (Bobby)
+  1010: 'medium', // Carlos Mendez
+  // 1011 Naomi: no height set — tests permissive matching
+  1012: 'medium', // unnamed player
+};
+

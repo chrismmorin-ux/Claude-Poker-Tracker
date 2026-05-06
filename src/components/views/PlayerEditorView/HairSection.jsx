@@ -18,15 +18,18 @@ import React from 'react';
 import { HAIR_COLORS } from '../../../constants/avatarFeatureConstants';
 import ColorChip from './ColorChip';
 
+// Ordered light → dark per the COLOR-GRADIENT INVARIANT (avatarFeatureConstants.js).
+// Salt-pepper is a treatment overlay (toggle on the hair section) — not a
+// base color choice — so it doesn't appear here.
 export const HAIR_COLOR_INPUT_OPTIONS = [
-  { value: 'black', label: 'Black' },
-  { value: 'dark-brown', label: 'Dark brown' },
-  { value: 'brown', label: 'Brown' },
-  { value: 'light-brown', label: 'Light brown' },
-  { value: 'blonde', label: 'Blonde' },
-  { value: 'red', label: 'Red' },
-  { value: 'gray', label: 'Gray' },
   { value: 'white', label: 'White' },
+  { value: 'blonde', label: 'Blonde' },
+  { value: 'gray', label: 'Gray' },
+  { value: 'light-brown', label: 'Light brown' },
+  { value: 'red', label: 'Red' },
+  { value: 'brown', label: 'Brown' },
+  { value: 'dark-brown', label: 'Dark brown' },
+  { value: 'black', label: 'Black' },
 ];
 
 const HEX_BY_INPUT = Object.fromEntries(

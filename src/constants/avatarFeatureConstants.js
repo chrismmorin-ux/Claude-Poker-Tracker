@@ -29,20 +29,24 @@ export const SKIN_TONES = [
   { id: 'skin.dark',       label: 'Dark',       hex: '#4c2c18' },
 ];
 
-// Hair colors — shared by scalp hair and beard
+// Hair colors — shared by scalp hair and beard.
 // `salt-pepper` is a perceptual mix between dark and gray, common at 40s-60s.
-// Hex chosen as midpoint between dark-brown (#3b2416) and gray (#8a8a8a) with a
-// slight desaturation toward neutral; reads as "graying brown" at small sizes.
+//
+// COLOR-GRADIENT INVARIANT (owner-confirmed 2026-05-06):
+// All palettes display LIGHT → DARK. Skin already followed this; hair was
+// dark-first (`black` → `white`) and clashed with skin chip orientation.
+// Palette order is now consistently lightest → darkest. Red sits as a
+// warm-medium-tone outlier between light-brown and the cooler dark-browns.
 export const HAIR_COLORS = [
-  { id: 'color.black',        label: 'Black',         hex: '#1b1714' },
-  { id: 'color.dark-brown',   label: 'Dark Brown',    hex: '#3b2416' },
-  { id: 'color.brown',        label: 'Brown',         hex: '#5b3a1f' },
-  { id: 'color.light-brown',  label: 'Light Brown',   hex: '#8a5a34' },
-  { id: 'color.blonde',       label: 'Blonde',        hex: '#c9a060' },
-  { id: 'color.red',          label: 'Red',           hex: '#a24219' },
-  { id: 'color.salt-pepper',  label: 'Salt & Pepper', hex: '#605449' },
-  { id: 'color.gray',         label: 'Gray',          hex: '#8a8a8a' },
   { id: 'color.white',        label: 'White',         hex: '#e8e4de' },
+  { id: 'color.blonde',       label: 'Blonde',        hex: '#c9a060' },
+  { id: 'color.gray',         label: 'Gray',          hex: '#8a8a8a' },
+  { id: 'color.salt-pepper',  label: 'Salt & Pepper', hex: '#605449' },
+  { id: 'color.light-brown',  label: 'Light Brown',   hex: '#8a5a34' },
+  { id: 'color.red',          label: 'Red',           hex: '#a24219' },
+  { id: 'color.brown',        label: 'Brown',         hex: '#5b3a1f' },
+  { id: 'color.dark-brown',   label: 'Dark Brown',    hex: '#3b2416' },
+  { id: 'color.black',        label: 'Black',         hex: '#1b1714' },
 ];
 
 // Eye colors — use-if-rendered
@@ -55,21 +59,29 @@ export const EYE_COLORS = [
 ];
 
 // Clothing colors — used by per-sighting outfit capture (hat/top/bottom/
-// jewelry/other). Distinct namespace from skin/hair so they don't collide
-// in lookup tables. 12 perceptually-distinct hues + black/white/gray.
+// jewelry/other/glasses). Distinct namespace from skin/hair so they don't
+// collide in lookup tables. Ordered: neutrals (light → dark) → warm hues
+// → cool hues → metallics. Owner-confirmed 2026-05-06: gold + silver as
+// metallic options for jewelry / framework / hardware capture.
 export const CLOTHING_COLORS = [
-  { id: 'cloth.black',    label: 'Black',  hex: '#1f1f1f' },
+  // Neutrals (light → dark)
   { id: 'cloth.white',    label: 'White',  hex: '#f5f5f5' },
   { id: 'cloth.gray',     label: 'Gray',   hex: '#7c8189' },
-  { id: 'cloth.red',      label: 'Red',    hex: '#c8302c' },
-  { id: 'cloth.orange',   label: 'Orange', hex: '#e87a1f' },
+  { id: 'cloth.black',    label: 'Black',  hex: '#1f1f1f' },
+  // Warm hues
   { id: 'cloth.yellow',   label: 'Yellow', hex: '#f1c233' },
+  { id: 'cloth.orange',   label: 'Orange', hex: '#e87a1f' },
+  { id: 'cloth.red',      label: 'Red',    hex: '#c8302c' },
+  { id: 'cloth.pink',     label: 'Pink',   hex: '#e07ca0' },
+  { id: 'cloth.brown',    label: 'Brown',  hex: '#6a4426' },
+  // Cool hues
   { id: 'cloth.green',    label: 'Green',  hex: '#2f7a3a' },
   { id: 'cloth.blue',     label: 'Blue',   hex: '#2a78c2' },
   { id: 'cloth.navy',     label: 'Navy',   hex: '#1c2c52' },
   { id: 'cloth.purple',   label: 'Purple', hex: '#6a3aa1' },
-  { id: 'cloth.pink',     label: 'Pink',   hex: '#e07ca0' },
-  { id: 'cloth.brown',    label: 'Brown',  hex: '#6a4426' },
+  // Metallics — common on jewelry, frames, watches, belt buckles
+  { id: 'cloth.gold',     label: 'Gold',   hex: '#d4a847' },
+  { id: 'cloth.silver',   label: 'Silver', hex: '#a8acb0' },
 ];
 
 // Eyewear (glasses) frame colors — selectable like other accessories
