@@ -18,7 +18,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { cropToSquare } from '../../../utils/playerMatching/cropToSquare';
 import { savePhotoAtomically } from '../../../utils/persistence/savePhotoAtomically';
 
-export const CameraCaptureModal = ({ playerId, onClose, onSaved }) => {
+// `onAcceptOverride(blob, previewUrl)` — optional. When provided, the
+// modal calls this instead of savePhotoAtomically + onSaved. Used by the
+// prototype to demo the capture flow without writing to IDB. If absent,
+// the production save path runs.
+export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverride }) => {
   const inputRef = useRef(null);
   const [stage, setStage] = useState('capture'); // 'capture' | 'preview'
   const [previewBlob, setPreviewBlob] = useState(null);
@@ -75,8 +79,13 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved }) => {
     setIsSaving(true);
     setError(null);
     try {
-      const { blobId } = await savePhotoAtomically(playerId, previewBlob);
-      onSaved?.(blobId);
+      if (onAcceptOverride) {
+        await onAcceptOverride(previewBlob, previewUrl);
+        onClose?.();
+      } else {
+        const { blobId } = await savePhotoAtomically(playerId, previewBlob);
+        onSaved?.(blobId);
+      }
     } catch (err) {
       setError(err?.message || 'Save failed');
       setIsSaving(false);
@@ -115,8 +124,28 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved }) => {
         </div>
 
         {stage === 'capture' ? (
-          <div className="text-gray-400 text-sm py-8 text-center" data-testid="camera-capture-stage-1">
-            Opening camera…
+          <div className="py-6 text-center" data-testid="camera-capture-stage-1">
+            <div className="text-gray-400 text-sm mb-3">
+              Opening camera…
+            </div>
+            {/* Explicit fallback button. Some browsers (notably iOS Safari)
+                block programmatic .click() on hidden file inputs that fire
+                from useEffect — the user-gesture chain is broken between
+                the modal-opening tap and the auto-click. This button gives
+                the user a direct gesture path. Owner reported 2026-05-06:
+                "the camera modal doesn't open. it requests to open, but
+                upon approval nothing happens." */}
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-semibold px-4 py-2 rounded"
+              data-testid="camera-capture-open-button"
+            >
+              Tap to open camera
+            </button>
+            <div className="text-gray-500 text-[11px] mt-3">
+              If your camera doesn't open automatically, tap the button above.
+            </div>
           </div>
         ) : (
           <div className="space-y-3" data-testid="camera-capture-stage-2">

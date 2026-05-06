@@ -53,6 +53,7 @@ import {
   RANGE_NEIGHBORS_BY_AXIS,
 } from '../../../utils/playerFilterRange';
 import { findMatchingAccessories } from '../../../utils/accessoryInventory';
+import { CameraCaptureModal } from '../PlayerEditorView/CameraCaptureModal';
 import { MOCK_PLAYERS, MOCK_HEIGHTS } from './mockPlayers';
 
 // ===========================================================================
@@ -765,6 +766,10 @@ export const PrototypeFinderView = () => {
   const [activeRecord, setActiveRecord] = useState(null);
   const [decisions, setDecisions] = useState({});
   const [buildInfo, setBuildInfo] = useState({ sha: '?', built: '?' });
+  // Camera modal — uses the production CameraCaptureModal but with an
+  // onAcceptOverride that doesn't write to IDB (mock-data prototype).
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [capturedPreviewUrl, setCapturedPreviewUrl] = useState(null);
 
   const seat = 3;
 
@@ -972,7 +977,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v10
+            🧪 Prototype v11
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
@@ -993,11 +998,16 @@ export const PrototypeFinderView = () => {
               }`}
               style={{ width: 56, height: 56 }}
             >
-              <IdentityAvatar player={livePlayer} size={56} />
+              <IdentityAvatar
+                player={livePlayer}
+                size={56}
+                photoOverlay={!!capturedPreviewUrl}
+                photoUrl={capturedPreviewUrl}
+              />
             </div>
             <button
               type="button"
-              onClick={() => alert('[prototype] Would open camera capture modal — multi-face crop, save photoBlobId atomically with the player record on assign.')}
+              onClick={() => setCameraOpen(true)}
               aria-label="Add photo"
               className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-400 text-gray-900 flex items-center justify-center shadow-md ring-2 ring-slate-900"
             >
@@ -1319,6 +1329,31 @@ export const PrototypeFinderView = () => {
           </button>
         ) : null}
       </div>
+
+      {/* Camera capture modal — full real flow (file picker + cropToSquare
+          + preview). Override the save path so we don't write to IDB; we
+          alert the would-save instead and stash the preview URL on the
+          builder avatar so the captured photo shows in the corner. */}
+      {cameraOpen ? (
+        <CameraCaptureModal
+          playerId={activeRecord?.playerId ?? 'live-builder'}
+          onClose={() => setCameraOpen(false)}
+          onAcceptOverride={async (blob, previewUrl) => {
+            // Hold onto the URL so the avatar shows the photo overlay.
+            // No IDB write — prototype only.
+            setCapturedPreviewUrl((prev) => {
+              // Revoke the prior URL to prevent leaks.
+              if (prev) URL.revokeObjectURL(prev);
+              return previewUrl;
+            });
+            // The modal revokes its own previewUrl on close; we need our
+            // own copy. Clone via a fresh object URL from the blob so our
+            // copy survives modal unmount.
+            const ourUrl = URL.createObjectURL(blob);
+            setCapturedPreviewUrl(ourUrl);
+          }}
+        />
+      ) : null}
     </div>
   );
 };
