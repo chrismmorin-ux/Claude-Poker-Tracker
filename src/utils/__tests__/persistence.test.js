@@ -346,7 +346,9 @@ describe('persistence', () => {
           ethnicity: 'caucasian',
           build: 'average',
           gender: 'female',
-          facialHair: 'none',
+          // 'none' rejected by VALID_FACIAL_HAIR enum (introduced by upstream
+          // commit 229efe2 phase A). 'clean' is the cleanshaven enum value.
+          facialHair: 'clean',
           styleTags: ['tight', 'aggressive'],
           notes: 'Regular player',
         });
