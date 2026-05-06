@@ -1,26 +1,24 @@
 /**
  * @file PrototypeFinderView.jsx — interactive prototype of the unified PlayerFinder.
  *
- * v2 (2026-05-06) per owner feedback:
- *  - Filters all live ABOVE results. No collapsibles. Adding a filter
- *    never shifts the position of another filter under the user's finger.
- *  - Glasses and headwear absorbed into the accessory model — kind/subtype/
- *    color/note + attached on the spot. No more separate Eyewear / Headwear
- *    rows.
- *  - Height field (short/medium/tall) added as a stable identification axis.
- *  - Salt-pepper hair treatment toggle exposed.
- *  - Color palette ordering follows the LIGHT → DARK invariant
- *    (`feedback_color_gradient_invariant.md`).
- *  - Tap-to-load triggers a congruency check: the diff between current
- *    filters and the player's stored values is surfaced for accept / apply /
- *    add-to-inventory before final assign.
+ * v4 (2026-05-06) per owner feedback on v3:
+ *  - Visual density rationalized. Always-visible primary axes (small
+ *    chip count) get a clean stacked layout. Chip-heavy axes (Skin,
+ *    Hair, Beard, Accessory) live in a SEGMENTED TAB control — only
+ *    one tab's content visible at a time. Switching tabs is instant
+ *    and never shifts result-list position (tab strip stays put; tab
+ *    content sits in a fixed slot below; results live below that).
+ *  - Per-axis congruency. When a result is tapped, each diff row gets
+ *    two pill buttons (filter value vs player value); user picks
+ *    per-axis. Defaults: mismatches → player value (profile is
+ *    canonical); additions → add (new info worth attaching).
  *
- * Reachable in production via Settings → Admin / Sandbox → "Prototype:
- * Unified PlayerFinder", or directly at #prototype-finder. Mock data only.
+ * Reachable via Settings → Admin / Sandbox → "Prototype: Unified
+ * PlayerFinder", or directly at #prototype-finder. Mock data only.
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X, AlertTriangle, Plus, Check, RefreshCw } from 'lucide-react';
+import { ChevronLeft, X, AlertTriangle, Plus, Check, RefreshCw } from 'lucide-react';
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import { useUI } from '../../../contexts/UIContext';
 import { SCREEN } from '../../../constants/uiConstants';
@@ -55,22 +53,19 @@ const SEX_OPTIONS = [
 ];
 const AGE_OPTIONS = ['<20', '20s', '30s', '40s', '50s', '60s+'];
 const ETHNICITY_OPTIONS = [
-  { value: 'caucasian', label: 'White/Caucasian' },
+  { value: 'caucasian', label: 'White' },
   { value: 'hispanic', label: 'Hispanic' },
   { value: 'east-asian', label: 'East Asian' },
   { value: 'south-asian', label: 'South Asian' },
   { value: 'black', label: 'Black' },
-  { value: 'middle-eastern', label: 'Middle Eastern' },
+  { value: 'middle-eastern', label: 'Middle East' },
 ];
-// Height — stable identification axis; range-match short ↔ medium ↔ tall.
 const HEIGHT_OPTIONS = [
   { value: 'short', label: 'Short' },
   { value: 'medium', label: 'Medium' },
   { value: 'tall', label: 'Tall' },
 ];
 
-// Glasses + headwear are now accessory KINDS, not separate fields.
-// `glasses` is added; subtype options for each kind are below.
 const ACCESSORY_KINDS = [
   { kind: 'hat',     label: 'Hat',     subtypes: ['cap', 'beanie', 'visor', 'cowboy', 'fedora'] },
   { kind: 'glasses', label: 'Glasses', subtypes: ['clear', 'sunglasses', 'readers', 'aviators'] },
@@ -84,25 +79,22 @@ const HAIR_HEX = Object.fromEntries(HAIR_COLORS.map((c) => [c.id.replace(/^color
 
 const SCALAR_KEYS = [
   'sex', 'ageDecade', 'skinTone', 'hairColor', 'hairLength', 'hairTexture',
-  'hairTreatment',
-  'facialHair', 'beardColor', 'build', 'height',
+  'hairTreatment', 'facialHair', 'beardColor', 'build', 'height',
 ];
 
 const EMPTY_FILTERS = {
   sex: null,
   ageDecade: null,
   ethnicity: [],
+  build: null,
+  height: null,
   skinTone: null,
   hairColor: null,
   hairLength: null,
   hairTexture: null,
-  hairTreatment: null, // 'salt-pepper' | null
+  hairTreatment: null,
   facialHair: null,
   beardColor: null,
-  build: null,
-  height: null,
-  // Accessory boost — kind+color, with optional subtype + free-text note for
-  // capture-style filtering ("blue cap KC Royals").
   accessory: { kind: null, subtype: null, color: null, note: '' },
 };
 
@@ -115,20 +107,36 @@ const RANGE_NEIGHBORS_INCLUDING_HEIGHT = {
   },
 };
 
+const FIELD_LABEL = {
+  sex: 'Sex',
+  ageDecade: 'Age',
+  ethnicity: 'Ethnicity',
+  skinTone: 'Skin tone',
+  hairColor: 'Hair color',
+  hairLength: 'Hair length',
+  hairTexture: 'Hair texture',
+  hairTreatment: 'Hair treatment',
+  facialHair: 'Facial hair',
+  beardColor: 'Beard color',
+  build: 'Build',
+  height: 'Height',
+  accessory: 'Accessory',
+};
+
 // ===========================================================================
 // PRIMITIVES
 // ===========================================================================
 
 const PlainChip = ({ active, label, onClick, size = 'md' }) => {
-  const sz = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs';
+  const sz = size === 'sm' ? 'px-2 py-0.5 text-[11px] min-h-[28px]' : 'px-3 py-1.5 text-xs min-h-[34px]';
   return (
     <button
       type="button"
       onClick={onClick}
       className={`${sz} rounded-full transition-colors border ${
         active
-          ? 'bg-amber-500 text-gray-900 border-amber-600 font-semibold shadow-sm'
-          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+          ? 'bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm'
+          : 'bg-slate-800 text-gray-200 border-slate-600 hover:bg-slate-700 hover:border-slate-500'
       }`}
       aria-pressed={active}
     >
@@ -141,10 +149,10 @@ const SwatchChip = ({ active, label, hex, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs transition-colors border ${
+    className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs transition-colors border min-h-[34px] ${
       active
-        ? 'bg-amber-500 text-gray-900 border-amber-600 font-semibold shadow-sm'
-        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        ? 'bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm'
+        : 'bg-slate-800 text-gray-200 border-slate-600 hover:bg-slate-700 hover:border-slate-500'
     }`}
     aria-pressed={active}
   >
@@ -152,26 +160,28 @@ const SwatchChip = ({ active, label, hex, onClick }) => (
       className="rounded-full inline-block shrink-0"
       style={{
         background: hex,
-        width: 18,
-        height: 18,
-        boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.85), 0 0 0 1px rgba(0,0,0,0.25)',
+        width: 20,
+        height: 20,
+        boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.85), 0 0 0 1px rgba(0,0,0,0.4)',
       }}
     />
     <span className="whitespace-nowrap">{label}</span>
   </button>
 );
 
-const FieldRow = ({ label, children }) => (
-  <div className="flex items-start gap-2 mb-1.5">
-    <div className="text-[10px] uppercase tracking-wide text-gray-400 w-16 shrink-0 pt-1.5 font-semibold">
-      {label}
-    </div>
-    <div className="flex flex-wrap gap-1 items-center">{children}</div>
+const SubLabel = ({ children }) => (
+  <div className="text-[10px] uppercase tracking-wider text-amber-300/70 font-bold mb-1.5">
+    {children}
   </div>
 );
 
-const SectionLabel = ({ children }) => (
-  <div className="text-[10px] uppercase tracking-wide text-amber-300/90 font-semibold mt-3 mb-1.5 px-1 border-l-2 border-amber-500/40 pl-2">
+const ChipRow = ({ children, className = '' }) => (
+  <div className={`flex flex-wrap gap-1.5 mb-3 ${className}`}>{children}</div>
+);
+
+// Section header for the always-visible primary block.
+const PrimaryHeader = ({ children }) => (
+  <div className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1.5 mt-3 first:mt-0 px-1">
     {children}
   </div>
 );
@@ -194,15 +204,6 @@ const playerEffective = (player) => ({
   height: MOCK_HEIGHTS[player.playerId] || null,
 });
 
-const matchesScalar = (axis, filterValue, playerValue) => {
-  if (!filterValue) return true;
-  if (!playerValue) return true; // permissive on null
-  if (RANGE_NEIGHBORS_INCLUDING_HEIGHT[axis]) {
-    return matchesInRangeLocal(axis, filterValue, playerValue);
-  }
-  return playerValue.toString().toLowerCase() === filterValue.toString().toLowerCase();
-};
-
 const matchesInRangeLocal = (axis, filterValue, playerValue) => {
   const map = RANGE_NEIGHBORS_INCLUDING_HEIGHT[axis];
   if (!map) return matchesInRange(axis, filterValue, playerValue);
@@ -211,90 +212,63 @@ const matchesInRangeLocal = (axis, filterValue, playerValue) => {
   return neighbors.includes(playerValue.toString().toLowerCase());
 };
 
-const FIELD_LABEL = {
-  sex: 'Sex',
-  ageDecade: 'Age',
-  ethnicity: 'Ethnicity',
-  skinTone: 'Skin tone',
-  hairColor: 'Hair color',
-  hairLength: 'Hair length',
-  hairTexture: 'Hair texture',
-  hairTreatment: 'Hair treatment',
-  facialHair: 'Facial hair',
-  beardColor: 'Beard color',
-  build: 'Build',
-  height: 'Height',
+const matchesScalar = (axis, filterValue, playerValue) => {
+  if (!filterValue) return true;
+  if (!playerValue) return true;
+  if (RANGE_NEIGHBORS_INCLUDING_HEIGHT[axis]) {
+    return matchesInRangeLocal(axis, filterValue, playerValue);
+  }
+  return playerValue.toString().toLowerCase() === filterValue.toString().toLowerCase();
 };
 
+// Per-tab active filter count.
+const countActiveInGroup = (filters, keys) =>
+  keys.filter((k) => !!filters[k]).length;
+
+const ACCESSORY_FILTER_ACTIVE_COUNT = (filters) =>
+  (filters.accessory.kind ? 1 : 0)
+  + (filters.accessory.subtype ? 1 : 0)
+  + (filters.accessory.color ? 1 : 0)
+  + ((filters.accessory.note || '').trim() ? 1 : 0);
+
 // ===========================================================================
-// CONGRUENCY-CHECK COMPUTATION
+// CONGRUENCY DIFF + PER-AXIS DECISIONS
 // ===========================================================================
 
-/**
- * Compare current filters to a player's effective values. Returns three
- * categorized lists:
- *   - mismatches: filter set + player has different value (true conflict)
- *   - additions:  filter set + player has no value (new info to attach)
- *   - matches:    filter set + player has matching value (silent — not shown)
- *
- * Range axes count as a "match" if filter and player values are adjacent,
- * even if not identical. The mismatch is only surfaced for STRICT-non-match
- * cases (e.g., filter says 30s, player says 60s+ — beyond ladder range).
- */
 const computeCongruency = (filters, player) => {
   const eff = playerEffective(player);
-  const mismatches = [];
-  const additions = [];
+  const items = []; // { axis, kind: 'mismatch' | 'addition', filterValue, playerValue }
 
-  // Scalar axes
   for (const axis of SCALAR_KEYS) {
     const fv = filters[axis];
     if (!fv) continue;
     const pv = eff[axis];
     if (!pv) {
-      additions.push({ axis, filterValue: fv, playerValue: null });
-    } else if (!matchesInRangeLocal
-      // Range matchers are tolerant; we surface only when the values are
-      // truly different (not adjacent).
-      ? false
-      : !matchesInRangeLocal(axis, fv, pv)
-    ) {
-      mismatches.push({ axis, filterValue: fv, playerValue: pv });
-    } else if (fv.toString().toLowerCase() !== pv.toString().toLowerCase()) {
-      // Adjacent on ladder — soft mismatch worth surfacing in case owner
-      // wants to update the player to the more-specific filter value.
-      mismatches.push({ axis, filterValue: fv, playerValue: pv, soft: true });
+      items.push({ axis, kind: 'addition', filterValue: fv, playerValue: null });
+      continue;
+    }
+    // Range axes: tolerant — only flag if STRICTLY different (any difference,
+    // even adjacent, surfaces so owner can pick more-specific value).
+    if (fv.toString().toLowerCase() !== pv.toString().toLowerCase()) {
+      items.push({ axis, kind: 'mismatch', filterValue: fv, playerValue: pv });
     }
   }
 
-  // Ethnicity (multi-tag)
   if (filters.ethnicity.length > 0) {
     const playerTags = (player.ethnicityTags || []).map((t) => t.toLowerCase());
-    const newTags = filters.ethnicity.filter((t) => !playerTags.includes(t.toLowerCase()));
-    if (newTags.length > 0) {
-      // Player either has no ethnicity or has a different/missing one.
+    const filterTags = filters.ethnicity.map((t) => t.toLowerCase());
+    const allMatch = filterTags.every((t) => playerTags.includes(t));
+    if (!allMatch) {
       if (playerTags.length === 0) {
-        additions.push({ axis: 'ethnicity', filterValue: filters.ethnicity, playerValue: null });
+        items.push({ axis: 'ethnicity', kind: 'addition', filterValue: filters.ethnicity, playerValue: null });
       } else {
-        // Some overlap or different overlap — surface as soft mismatch.
-        const filterSet = filters.ethnicity.map((t) => t.toLowerCase());
-        const allMatch = filterSet.every((t) => playerTags.includes(t));
-        if (!allMatch) {
-          mismatches.push({
-            axis: 'ethnicity',
-            filterValue: filters.ethnicity,
-            playerValue: player.ethnicityTags,
-            soft: true,
-          });
-        }
+        items.push({ axis: 'ethnicity', kind: 'mismatch', filterValue: filters.ethnicity, playerValue: player.ethnicityTags });
       }
     }
   }
 
-  // Accessory — if filter set with a kind/color/subtype/note, check player's
-  // inventory for a matching item.
   const acc = filters.accessory;
-  const accFilterActive = acc.kind || acc.subtype || acc.color || (acc.note && acc.note.trim());
+  const accFilterActive = !!(acc.kind || acc.subtype || acc.color || (acc.note && acc.note.trim()));
   if (accFilterActive) {
     const inv = Array.isArray(player.accessoryInventory) ? player.accessoryInventory : [];
     const matchKind = acc.kind ? (e) => e.kind === acc.kind : () => true;
@@ -305,15 +279,134 @@ const computeCongruency = (filters, player) => {
       : () => true;
     const found = inv.find((e) => matchKind(e) && matchSub(e) && matchColor(e) && matchNote(e));
     if (!found) {
-      additions.push({
-        axis: 'accessory',
-        filterValue: acc,
-        playerValue: null,
-      });
+      items.push({ axis: 'accessory', kind: 'addition', filterValue: acc, playerValue: null });
     }
   }
 
-  return { mismatches, additions };
+  return items;
+};
+
+const formatValue = (axis, value) => {
+  if (Array.isArray(value)) return value.join(', ');
+  if (axis === 'accessory' && typeof value === 'object' && value) {
+    const parts = [];
+    if (value.color) parts.push(value.color);
+    if (value.subtype) parts.push(value.subtype);
+    if (value.kind) parts.unshift(value.kind);
+    const head = parts.join(' ');
+    return head + (value.note ? ` (${value.note})` : '');
+  }
+  return String(value || '—');
+};
+
+// ===========================================================================
+// CONGRUENCY PANEL — per-axis decisions
+// ===========================================================================
+
+const DecisionRow = ({ item, decision, onPick }) => {
+  const left = item.kind === 'mismatch'
+    ? { id: 'filter', label: formatValue(item.axis, item.filterValue) }
+    : { id: 'add',    label: formatValue(item.axis, item.filterValue) };
+  const right = item.kind === 'mismatch'
+    ? { id: 'player', label: formatValue(item.axis, item.playerValue) }
+    : { id: 'skip',   label: 'Skip' };
+
+  const Pill = ({ side, label }) => (
+    <button
+      type="button"
+      onClick={() => onPick(side.id)}
+      className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-semibold border transition-colors text-center truncate ${
+        decision === side.id
+          ? 'bg-amber-500 text-gray-900 border-amber-500'
+          : 'bg-slate-800 text-gray-300 border-slate-600 hover:bg-slate-700'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="mb-2">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold w-20 shrink-0">
+          {FIELD_LABEL[item.axis] || item.axis}
+        </span>
+        {item.kind === 'addition' ? (
+          <span className="text-[9px] text-emerald-300 px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 font-semibold">+ NEW</span>
+        ) : (
+          <span className="text-[9px] text-amber-300 px-1 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 font-semibold">DIFF</span>
+        )}
+      </div>
+      <div className="flex gap-1.5 ml-1">
+        <Pill side={left} label={`${item.kind === 'addition' ? 'Add' : 'Filter'}: ${left.label}`} />
+        <Pill side={right} label={item.kind === 'addition' ? 'Skip' : `Keep: ${right.label}`} />
+      </div>
+    </div>
+  );
+};
+
+const CongruencyPanel = ({ player, items, decisions, onDecide, onCancel, onAssign, seat }) => {
+  if (items.length === 0) {
+    return (
+      <div className="bg-emerald-900/30 border border-emerald-600/40 rounded-lg p-3 mb-3">
+        <div className="flex items-center gap-2 mb-2 text-emerald-200 text-sm font-semibold">
+          <Check size={16} />
+          Player matches all filters — ready to assign
+        </div>
+        <button
+          type="button"
+          onClick={() => onAssign(0)}
+          className="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold rounded-lg py-2.5 text-sm shadow-sm"
+        >
+          Assign {player.name || 'player'} → Seat {seat}
+        </button>
+      </div>
+    );
+  }
+
+  // Count how many decisions resolve to "apply" (filter or add).
+  const applyCount = items.reduce((n, item) => {
+    const d = decisions[`${item.axis}-${item.kind}`];
+    return n + ((d === 'filter' || d === 'add') ? 1 : 0);
+  }, 0);
+
+  return (
+    <div className="bg-slate-800 border border-amber-500/40 rounded-lg p-3 mb-3">
+      <div className="flex items-center gap-2 mb-3 text-amber-200 text-sm font-semibold">
+        <AlertTriangle size={16} />
+        {items.length} difference{items.length === 1 ? '' : 's'} — pick per axis
+      </div>
+      <div className="space-y-1">
+        {items.map((item) => {
+          const key = `${item.axis}-${item.kind}`;
+          return (
+            <DecisionRow
+              key={key}
+              item={item}
+              decision={decisions[key]}
+              onPick={(side) => onDecide(key, side)}
+            />
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-700">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold rounded-lg py-2.5"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => onAssign(applyCount)}
+          className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-xs font-semibold rounded-lg py-2.5"
+        >
+          Assign · apply {applyCount}
+        </button>
+      </div>
+    </div>
+  );
 };
 
 // ===========================================================================
@@ -327,7 +420,7 @@ const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoad
     player.sex,
     player.ageDecade,
     eff.height,
-    (player.ethnicityTags || []).slice(0, 2).join(' · '),
+    (player.ethnicityTags || []).slice(0, 1).join(' · '),
   ].filter(Boolean).join(' · ');
   return (
     <button
@@ -375,108 +468,9 @@ const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoad
 };
 
 // ===========================================================================
-// CONGRUENCY PANEL
+// FORCE-FRESH (cache bust)
 // ===========================================================================
 
-const formatValue = (axis, value) => {
-  if (Array.isArray(value)) return value.join(', ');
-  if (axis === 'accessory' && typeof value === 'object') {
-    const parts = [];
-    if (value.kind) parts.push(value.kind);
-    if (value.color) parts.push(value.color);
-    if (value.subtype) parts.push(value.subtype);
-    const head = parts.join(' ');
-    return head + (value.note ? ` (${value.note})` : '');
-  }
-  return value || '—';
-};
-
-const CongruencyPanel = ({ player, mismatches, additions, onAccept, onApply, onCancel, seat }) => {
-  const noDiff = mismatches.length === 0 && additions.length === 0;
-
-  if (noDiff) {
-    return (
-      <div className="bg-emerald-900/30 border border-emerald-600/50 rounded-lg p-3 mb-2">
-        <div className="flex items-center gap-2 mb-2 text-emerald-300 text-sm font-semibold">
-          <Check size={16} />
-          Everything matches — ready to assign
-        </div>
-        <button
-          type="button"
-          onClick={onAccept}
-          className="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold rounded-lg py-2.5 text-sm shadow-sm"
-        >
-          Assign {player.name || 'player'} → Seat {seat}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-slate-800 border border-amber-600/50 rounded-lg p-3 mb-2">
-      <div className="flex items-center gap-2 mb-2 text-amber-200 text-sm font-semibold">
-        <AlertTriangle size={16} />
-        Differences detected — review before assigning
-      </div>
-      <div className="space-y-1.5 mb-3">
-        {mismatches.map((m, i) => (
-          <div key={`m-${i}`} className="flex items-center gap-2 text-xs">
-            <span className="text-[10px] uppercase tracking-wide text-gray-500 w-16 shrink-0 font-semibold">
-              {FIELD_LABEL[m.axis] || m.axis}
-            </span>
-            <span className="text-amber-300 shrink-0">filter: {formatValue(m.axis, m.filterValue)}</span>
-            <span className="text-gray-500 shrink-0">·</span>
-            <span className="text-gray-200 shrink-0">player: {formatValue(m.axis, m.playerValue)}</span>
-          </div>
-        ))}
-        {additions.map((a, i) => (
-          <div key={`a-${i}`} className="flex items-center gap-2 text-xs">
-            <Plus size={12} className="text-emerald-400 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wide text-gray-500 w-12 shrink-0 font-semibold">
-              {FIELD_LABEL[a.axis] || a.axis}
-            </span>
-            <span className="text-emerald-300">new: {formatValue(a.axis, a.filterValue)}</span>
-            <span className="text-gray-500 text-[11px] italic ml-auto">(player has none)</span>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold rounded-lg py-2"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={onAccept}
-          className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold rounded-lg py-2"
-          title="Keep player's stored values; assign without changes"
-        >
-          Keep player as-is
-        </button>
-        <button
-          type="button"
-          onClick={onApply}
-          className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-xs font-semibold rounded-lg py-2"
-          title="Apply your filter values to the player record before assigning"
-        >
-          Apply changes
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ===========================================================================
-// MAIN VIEW
-// ===========================================================================
-
-// Force-fresh helper — unregisters every SW, drops every cache, and
-// reloads. Last-resort cache-bust without leaving the app. Used by the
-// in-app refresh button so the owner doesn't have to navigate to Chrome
-// settings to clear stuck assets.
 const forceFresh = async () => {
   try {
     if ('serviceWorker' in navigator) {
@@ -487,21 +481,32 @@ const forceFresh = async () => {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     }
-  } catch {
-    // best-effort
-  }
+  } catch {}
   window.location.reload(true);
 };
+
+// ===========================================================================
+// MAIN VIEW
+// ===========================================================================
+
+const TABS = [
+  { id: 'skin',      label: 'Skin' },
+  { id: 'hair',      label: 'Hair' },
+  { id: 'beard',     label: 'Beard' },
+  { id: 'accessory', label: 'Accessory' },
+];
 
 export const PrototypeFinderView = () => {
   const { setCurrentScreen } = useUI();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [nameQuery, setNameQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('skin');
   const [activeRecord, setActiveRecord] = useState(null);
+  const [decisions, setDecisions] = useState({}); // { 'axis-kind': 'filter'|'player'|'add'|'skip' }
   const [buildInfo, setBuildInfo] = useState({ sha: '?', built: '?' });
 
-  // Read the deployed bundle SHA so the owner can verify which version
-  // they're actually loading. Bypasses any SW cache via no-store.
+  const seat = 3;
+
   useEffect(() => {
     fetch('/version.json', { cache: 'no-store' })
       .then((r) => r.json())
@@ -513,9 +518,7 @@ export const PrototypeFinderView = () => {
       .catch(() => setBuildInfo({ sha: 'unknown', built: 'unknown' }));
   }, []);
 
-  const seat = 3; // mock
-
-  // ----- Filtering -----
+  // ---- Filtering ----
   const accFilterActive = !!(filters.accessory.kind || filters.accessory.color);
 
   const matchesFilters = (player) => {
@@ -523,8 +526,7 @@ export const PrototypeFinderView = () => {
     for (const axis of SCALAR_KEYS) {
       const fv = filters[axis];
       if (!fv) continue;
-      const pv = eff[axis];
-      if (!matchesScalar(axis, fv, pv)) return false;
+      if (!matchesScalar(axis, fv, eff[axis])) return false;
     }
     if (filters.ethnicity.length > 0) {
       const tags = (player.ethnicityTags || []).map((t) => t.toLowerCase());
@@ -572,7 +574,15 @@ export const PrototypeFinderView = () => {
     || accFilterActive
     || (filters.accessory.note && filters.accessory.note.trim());
 
-  // ----- Handlers -----
+  // ---- Tab badges ----
+  const tabBadges = {
+    skin: filters.skinTone ? 1 : 0,
+    hair: countActiveInGroup(filters, ['hairColor', 'hairLength', 'hairTexture', 'hairTreatment']),
+    beard: countActiveInGroup(filters, ['facialHair', 'beardColor']),
+    accessory: ACCESSORY_FILTER_ACTIVE_COUNT(filters),
+  };
+
+  // ---- Handlers ----
   const setScalar = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: prev[key] === value ? null : value }));
   };
@@ -593,33 +603,44 @@ export const PrototypeFinderView = () => {
   };
 
   const onTapResult = (player) => {
-    // Owner-confirmed §5 decision: PRESERVE filters on tap so the
-    // congruency check has both sides of the comparison available.
     setActiveRecord(player);
-  };
-  const cancelLoaded = () => setActiveRecord(null);
-
-  // ----- Congruency computation for the active record -----
-  const congruency = activeRecord ? computeCongruency(filters, activeRecord) : null;
-
-  // Apply the filter values to the player and assign (mock).
-  const onApply = () => {
-    if (!activeRecord) return;
-    const summary = [];
-    for (const m of congruency.mismatches) {
-      summary.push(`${FIELD_LABEL[m.axis] || m.axis}: ${formatValue(m.axis, m.playerValue)} → ${formatValue(m.axis, m.filterValue)}`);
+    // Compute initial per-axis decisions: mismatches default to "player",
+    // additions default to "add" (new info usually worth keeping).
+    const items = computeCongruency(filters, player);
+    const initial = {};
+    for (const item of items) {
+      const key = `${item.axis}-${item.kind}`;
+      initial[key] = item.kind === 'mismatch' ? 'player' : 'add';
     }
-    for (const a of congruency.additions) {
-      summary.push(`+ ${FIELD_LABEL[a.axis] || a.axis}: ${formatValue(a.axis, a.filterValue)}`);
-    }
-    alert(`[prototype] Would update ${activeRecord.name || 'player'}:\n${summary.join('\n')}\n\nThen assign to seat ${seat}.`);
-    setActiveRecord(null);
+    setDecisions(initial);
   };
-  const onAccept = () => {
+  const cancelLoaded = () => {
+    setActiveRecord(null);
+    setDecisions({});
+  };
+  const onDecide = (key, side) => {
+    setDecisions((prev) => ({ ...prev, [key]: side }));
+  };
+  const onAssign = (applyCount) => {
     if (!activeRecord) return;
-    alert(`[prototype] Would assign ${activeRecord.name || 'player'} to seat ${seat} as-is.`);
+    const items = computeCongruency(filters, activeRecord);
+    const applied = [];
+    for (const item of items) {
+      const key = `${item.axis}-${item.kind}`;
+      const d = decisions[key];
+      if (d === 'filter' || d === 'add') {
+        applied.push(`${FIELD_LABEL[item.axis] || item.axis}: ${formatValue(item.axis, item.filterValue)}`);
+      }
+    }
+    const summary = applied.length > 0
+      ? `Apply to ${activeRecord.name || 'player'}:\n  ${applied.join('\n  ')}\n\nThen assign to seat ${seat}.`
+      : `Assign ${activeRecord.name || 'player'} to seat ${seat} as-is (no changes applied).`;
+    alert(`[prototype]\n${summary}`);
     setActiveRecord(null);
+    setDecisions({});
   };
+
+  const congruencyItems = activeRecord ? computeCongruency(filters, activeRecord) : [];
 
   // ===========================================================================
   // RENDER
@@ -627,9 +648,8 @@ export const PrototypeFinderView = () => {
 
   return (
     <div className="h-dvh w-full flex flex-col bg-slate-900 text-gray-100 overflow-hidden">
-      {/* TOP BAR with prominent build stamp + force-fresh button so the
-          owner can verify the loaded bundle and self-cache-bust. */}
-      <div className="sticky top-0 z-20 bg-slate-950 border-b border-slate-700">
+      {/* TOP BAR */}
+      <div className="sticky top-0 z-30 bg-slate-950 border-b border-slate-700">
         <div className="flex items-center justify-between px-3 py-2">
           <button
             type="button"
@@ -654,7 +674,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/15 border-t border-amber-500/30 text-amber-200 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v3
+            🧪 Prototype v4
           </span>
           <span className="text-[9px] font-mono text-amber-100/70">
             build {buildInfo.sha} · {buildInfo.built}
@@ -662,149 +682,209 @@ export const PrototypeFinderView = () => {
         </div>
       </div>
 
-      {/* SCROLLABLE COLUMN — filters above, results below. Filter changes
-          never shift results-position, results changes never shift filters
-          (they're DOM-above results).  */}
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      {/* SCROLL COLUMN */}
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
         {/* Name search */}
-        <input
-          type="text"
-          value={nameQuery}
-          onChange={(e) => setNameQuery(e.target.value)}
-          placeholder="Name or nickname"
-          className="w-full bg-slate-800 text-gray-100 text-sm placeholder:text-gray-500 rounded-lg border border-slate-700 px-3 py-2.5 mb-2 focus:border-amber-500 focus:outline-none"
-        />
-
-        {/* IDENTIFICATION FILTERS — always visible, no collapsibles. */}
-        <SectionLabel>Identity</SectionLabel>
-        <FieldRow label="Sex">
-          {SEX_OPTIONS.map((o) => (
-            <PlainChip key={o.value} label={o.label} active={filters.sex === o.value} onClick={() => setScalar('sex', o.value)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Age">
-          {AGE_OPTIONS.map((o) => (
-            <PlainChip key={o} label={o} active={filters.ageDecade === o} onClick={() => setScalar('ageDecade', o)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Ethnicity">
-          {ETHNICITY_OPTIONS.map((o) => (
-            <PlainChip key={o.value} label={o.label} active={filters.ethnicity.includes(o.value)} onClick={() => toggleEthnicity(o.value)} />
-          ))}
-        </FieldRow>
-
-        <SectionLabel>Body</SectionLabel>
-        <FieldRow label="Build">
-          {BUILD_OPTIONS.map((opt) => (
-            <PlainChip key={opt} label={opt} active={filters.build === opt} onClick={() => setScalar('build', opt)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Height">
-          {HEIGHT_OPTIONS.map((opt) => (
-            <PlainChip key={opt.value} label={opt.label} active={filters.height === opt.value} onClick={() => setScalar('height', opt.value)} />
-          ))}
-        </FieldRow>
-
-        <SectionLabel>Skin</SectionLabel>
-        <FieldRow label="Tone">
-          {SKIN_TONES.map((t) => {
-            const key = t.id.replace(/^skin\./, '');
-            return <SwatchChip key={t.id} label={t.label} hex={t.hex} active={filters.skinTone === key} onClick={() => setScalar('skinTone', key)} />;
-          })}
-        </FieldRow>
-
-        <SectionLabel>Hair</SectionLabel>
-        <FieldRow label="Color">
-          {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-            <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.hairColor === opt.value} onClick={() => setScalar('hairColor', opt.value)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Length">
-          {HAIR_LENGTH_OPTIONS.map((opt) => (
-            <PlainChip key={opt.value} label={opt.label} active={filters.hairLength === opt.value} onClick={() => setScalar('hairLength', opt.value)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Texture">
-          {HAIR_TEXTURE_OPTIONS.map((opt) => (
-            <PlainChip key={opt.value} label={opt.label} active={filters.hairTexture === opt.value} onClick={() => setScalar('hairTexture', opt.value)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Treatment">
-          <PlainChip
-            label="Salt & pepper"
-            active={filters.hairTreatment === 'salt-pepper'}
-            onClick={() => setScalar('hairTreatment', 'salt-pepper')}
+        <div className="pt-3 pb-2">
+          <input
+            type="text"
+            value={nameQuery}
+            onChange={(e) => setNameQuery(e.target.value)}
+            placeholder="Name or nickname"
+            className="w-full bg-slate-800 text-gray-100 text-sm placeholder:text-gray-500 rounded-lg border border-slate-700 px-3 py-2.5 focus:border-amber-500 focus:outline-none"
           />
-        </FieldRow>
+        </div>
 
-        <SectionLabel>Facial hair</SectionLabel>
-        <FieldRow label="Style">
-          {FACIAL_HAIR_OPTIONS.map((opt) => (
-            <PlainChip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
-          ))}
-        </FieldRow>
-        <FieldRow label="Color">
-          {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-            <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.beardColor === opt.value} onClick={() => setScalar('beardColor', opt.value)} />
-          ))}
-        </FieldRow>
-
-        {/* ACCESSORY — kind + subtype + color + free-text note. Glasses and
-            headwear live HERE now; no more separate Eyewear/Headwear axes. */}
-        <SectionLabel>Accessory <span className="text-amber-200/70 normal-case font-normal">· boost only · also lets you attach new gear to the player</span></SectionLabel>
-        <FieldRow label="Kind">
-          {ACCESSORY_KINDS.map((k) => (
-            <PlainChip
-              key={k.kind}
-              label={k.label}
-              active={filters.accessory.kind === k.kind}
-              onClick={() => setAccessory({
-                kind: filters.accessory.kind === k.kind ? null : k.kind,
-                subtype: null, // reset subtype when kind changes
-              })}
-            />
-          ))}
-        </FieldRow>
-        {filters.accessory.kind && ACCESSORY_KINDS.find((k) => k.kind === filters.accessory.kind)?.subtypes.length > 0 ? (
-          <FieldRow label="Subtype">
-            {ACCESSORY_KINDS.find((k) => k.kind === filters.accessory.kind).subtypes.map((sub) => (
-              <PlainChip
-                key={sub}
-                label={sub}
-                size="sm"
-                active={filters.accessory.subtype === sub}
-                onClick={() => setAccessory({ subtype: filters.accessory.subtype === sub ? null : sub })}
-              />
+        {/* IDENTITY — always visible, primary axes */}
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
+          <PrimaryHeader>Identity</PrimaryHeader>
+          <SubLabel>Sex</SubLabel>
+          <ChipRow>
+            {SEX_OPTIONS.map((o) => (
+              <PlainChip key={o.value} label={o.label} active={filters.sex === o.value} onClick={() => setScalar('sex', o.value)} />
             ))}
-          </FieldRow>
-        ) : null}
-        {filters.accessory.kind && filters.accessory.kind !== 'other' ? (
-          <FieldRow label="Color">
-            {CLOTHING_COLORS.map((c) => {
-              const key = c.id.replace(/^cloth\./, '');
-              return <SwatchChip key={c.id} label={c.label} hex={c.hex} active={filters.accessory.color === key} onClick={() => setAccessory({ color: filters.accessory.color === key ? null : key })} />;
-            })}
-          </FieldRow>
-        ) : null}
-        {filters.accessory.kind ? (
-          <div className="ml-[72px] mb-2">
-            <input
-              type="text"
-              value={filters.accessory.note}
-              onChange={(e) => setAccessory({ note: e.target.value })}
-              placeholder={
-                filters.accessory.kind === 'other'
-                  ? 'free-text descriptor (e.g. "Lakers gym bag")'
-                  : 'note (e.g., "KC Royals", "WSOP")'
-              }
-              className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded border border-slate-700 px-2 py-1.5 focus:border-amber-500 focus:outline-none"
-            />
-          </div>
-        ) : null}
+          </ChipRow>
+          <SubLabel>Age decade</SubLabel>
+          <ChipRow>
+            {AGE_OPTIONS.map((o) => (
+              <PlainChip key={o} label={o} active={filters.ageDecade === o} onClick={() => setScalar('ageDecade', o)} />
+            ))}
+          </ChipRow>
+          <SubLabel>Ethnicity</SubLabel>
+          <ChipRow className="mb-0">
+            {ETHNICITY_OPTIONS.map((o) => (
+              <PlainChip key={o.value} label={o.label} active={filters.ethnicity.includes(o.value)} onClick={() => toggleEthnicity(o.value)} />
+            ))}
+          </ChipRow>
+        </div>
 
-        {/* ACTIVE-FILTER FOOTER */}
-        <div className="flex items-center justify-between mt-2 mb-3 pt-2 border-t border-slate-800">
-          <div className="text-[10px] text-gray-400">
+        {/* BODY — always visible, small chip count */}
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
+          <PrimaryHeader>Body</PrimaryHeader>
+          <SubLabel>Build</SubLabel>
+          <ChipRow>
+            {BUILD_OPTIONS.map((o) => (
+              <PlainChip key={o} label={o} active={filters.build === o} onClick={() => setScalar('build', o)} />
+            ))}
+          </ChipRow>
+          <SubLabel>Height</SubLabel>
+          <ChipRow className="mb-0">
+            {HEIGHT_OPTIONS.map((o) => (
+              <PlainChip key={o.value} label={o.label} active={filters.height === o.value} onClick={() => setScalar('height', o.value)} />
+            ))}
+          </ChipRow>
+        </div>
+
+        {/* TABBED CHIP-HEAVY AXES */}
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
+          <PrimaryHeader>Features</PrimaryHeader>
+          {/* Segmented tab strip */}
+          <div className="flex gap-1 mb-3 bg-slate-900 p-1 rounded-lg border border-slate-700">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 px-2 py-2 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                  activeTab === t.id
+                    ? 'bg-amber-500 text-gray-900 shadow-sm'
+                    : 'text-gray-300 hover:bg-slate-800'
+                }`}
+              >
+                <span>{t.label}</span>
+                {tabBadges[t.id] > 0 ? (
+                  <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 ${
+                    activeTab === t.id ? 'bg-gray-900 text-amber-300' : 'bg-amber-500 text-gray-900'
+                  }`}>
+                    {tabBadges[t.id]}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+
+          {/* Active tab content */}
+          {activeTab === 'skin' ? (
+            <div>
+              <SubLabel>Skin tone</SubLabel>
+              <ChipRow className="mb-0">
+                {SKIN_TONES.map((t) => {
+                  const key = t.id.replace(/^skin\./, '');
+                  return <SwatchChip key={t.id} label={t.label} hex={t.hex} active={filters.skinTone === key} onClick={() => setScalar('skinTone', key)} />;
+                })}
+              </ChipRow>
+            </div>
+          ) : null}
+
+          {activeTab === 'hair' ? (
+            <div>
+              <SubLabel>Color</SubLabel>
+              <ChipRow>
+                {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
+                  <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.hairColor === opt.value} onClick={() => setScalar('hairColor', opt.value)} />
+                ))}
+              </ChipRow>
+              <SubLabel>Length</SubLabel>
+              <ChipRow>
+                {HAIR_LENGTH_OPTIONS.map((opt) => (
+                  <PlainChip key={opt.value} label={opt.label} active={filters.hairLength === opt.value} onClick={() => setScalar('hairLength', opt.value)} />
+                ))}
+              </ChipRow>
+              <SubLabel>Texture</SubLabel>
+              <ChipRow>
+                {HAIR_TEXTURE_OPTIONS.map((opt) => (
+                  <PlainChip key={opt.value} label={opt.label} active={filters.hairTexture === opt.value} onClick={() => setScalar('hairTexture', opt.value)} />
+                ))}
+              </ChipRow>
+              <SubLabel>Treatment</SubLabel>
+              <ChipRow className="mb-0">
+                <PlainChip label="Salt & pepper" active={filters.hairTreatment === 'salt-pepper'} onClick={() => setScalar('hairTreatment', 'salt-pepper')} />
+              </ChipRow>
+            </div>
+          ) : null}
+
+          {activeTab === 'beard' ? (
+            <div>
+              <SubLabel>Style</SubLabel>
+              <ChipRow>
+                {FACIAL_HAIR_OPTIONS.map((opt) => (
+                  <PlainChip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
+                ))}
+              </ChipRow>
+              <SubLabel>Color</SubLabel>
+              <ChipRow className="mb-0">
+                {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
+                  <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.beardColor === opt.value} onClick={() => setScalar('beardColor', opt.value)} />
+                ))}
+              </ChipRow>
+            </div>
+          ) : null}
+
+          {activeTab === 'accessory' ? (
+            <div>
+              <div className="text-[10px] text-amber-200/70 mb-2 italic">
+                Accessory match boosts results — never excludes. Glasses + headwear live here.
+              </div>
+              <SubLabel>Kind</SubLabel>
+              <ChipRow>
+                {ACCESSORY_KINDS.map((k) => (
+                  <PlainChip
+                    key={k.kind}
+                    label={k.label}
+                    active={filters.accessory.kind === k.kind}
+                    onClick={() => setAccessory({
+                      kind: filters.accessory.kind === k.kind ? null : k.kind,
+                      subtype: null,
+                    })}
+                  />
+                ))}
+              </ChipRow>
+              {filters.accessory.kind && ACCESSORY_KINDS.find((k) => k.kind === filters.accessory.kind)?.subtypes.length > 0 ? (
+                <>
+                  <SubLabel>Subtype</SubLabel>
+                  <ChipRow>
+                    {ACCESSORY_KINDS.find((k) => k.kind === filters.accessory.kind).subtypes.map((sub) => (
+                      <PlainChip
+                        key={sub}
+                        label={sub}
+                        size="sm"
+                        active={filters.accessory.subtype === sub}
+                        onClick={() => setAccessory({ subtype: filters.accessory.subtype === sub ? null : sub })}
+                      />
+                    ))}
+                  </ChipRow>
+                </>
+              ) : null}
+              {filters.accessory.kind && filters.accessory.kind !== 'other' ? (
+                <>
+                  <SubLabel>Color</SubLabel>
+                  <ChipRow>
+                    {CLOTHING_COLORS.map((c) => {
+                      const key = c.id.replace(/^cloth\./, '');
+                      return <SwatchChip key={c.id} label={c.label} hex={c.hex} active={filters.accessory.color === key} onClick={() => setAccessory({ color: filters.accessory.color === key ? null : key })} />;
+                    })}
+                  </ChipRow>
+                </>
+              ) : null}
+              {filters.accessory.kind ? (
+                <>
+                  <SubLabel>Note</SubLabel>
+                  <input
+                    type="text"
+                    value={filters.accessory.note}
+                    onChange={(e) => setAccessory({ note: e.target.value })}
+                    placeholder={filters.accessory.kind === 'other' ? 'free-text descriptor' : 'e.g. "KC Royals", "WSOP"'}
+                    className="w-full bg-slate-900 text-gray-100 text-xs placeholder:text-gray-500 rounded border border-slate-700 px-2 py-2 focus:border-amber-500 focus:outline-none"
+                  />
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {/* ACTIVE-FILTER COUNT BAR */}
+        <div className="flex items-center justify-between px-1 py-2">
+          <div className="text-[11px] text-gray-400">
             {hasActiveFilters ? `${sortedResults.length} match${sortedResults.length === 1 ? '' : 'es'}` : 'No filters · all players'}
           </div>
           {hasActiveFilters ? (
@@ -818,21 +898,21 @@ export const PrototypeFinderView = () => {
           ) : null}
         </div>
 
-        {/* CONGRUENCY PANEL — only when a result is loaded */}
+        {/* CONGRUENCY PANEL */}
         {activeRecord ? (
           <CongruencyPanel
             player={activeRecord}
-            mismatches={congruency.mismatches}
-            additions={congruency.additions}
+            items={congruencyItems}
+            decisions={decisions}
+            onDecide={onDecide}
             onCancel={cancelLoaded}
-            onAccept={onAccept}
-            onApply={onApply}
+            onAssign={onAssign}
             seat={seat}
           />
         ) : null}
 
         {/* RESULTS */}
-        <div className="text-[10px] uppercase tracking-wide text-gray-400 mb-1.5 font-semibold flex items-center justify-between">
+        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold flex items-center justify-between mt-1">
           <span>Results · {sortedResults.length}</span>
           {activeRecord ? (
             <button
@@ -845,7 +925,7 @@ export const PrototypeFinderView = () => {
             </button>
           ) : null}
         </div>
-        <div className="space-y-1.5 mb-3">
+        <div className="space-y-1.5">
           {sortedResults.length === 0 ? (
             <div className="text-center py-6 text-sm text-gray-500 bg-slate-800/50 rounded-lg border border-dashed border-slate-700">
               No matches. Adjust a filter, or save as new player.
@@ -864,19 +944,16 @@ export const PrototypeFinderView = () => {
           )}
         </div>
 
-        {/* CREATE-NEW shortcut when no result is loaded but filters/name are dirty */}
         {!activeRecord && hasActiveFilters ? (
           <button
             type="button"
             onClick={() => alert('[prototype] Would: Save & Assign as new player using current filter values + accessory entry.')}
-            className="w-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-dashed border-amber-500/40 rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+            className="w-full mt-3 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-dashed border-amber-500/40 rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
           >
             <Plus size={16} />
             Save & Assign as NEW player using these values
           </button>
         ) : null}
-
-        <div className="h-4" />
       </div>
     </div>
   );
