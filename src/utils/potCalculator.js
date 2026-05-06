@@ -80,6 +80,7 @@ export const calculatePot = (actionSequence, blinds) => {
         break;
 
       case PRIMITIVE_ACTIONS.RAISE:
+      case PRIMITIVE_ACTIONS.STRADDLE:
         if (entry.amount !== undefined) {
           total += entry.amount;
           currentBet = entry.amount;
@@ -111,7 +112,9 @@ export const getCurrentBet = (actionSequence, street) => {
   for (const entry of actionSequence) {
     if (entry.street !== street) continue;
     if (
-      (entry.action === PRIMITIVE_ACTIONS.BET || entry.action === PRIMITIVE_ACTIONS.RAISE) &&
+      (entry.action === PRIMITIVE_ACTIONS.BET ||
+        entry.action === PRIMITIVE_ACTIONS.RAISE ||
+        entry.action === PRIMITIVE_ACTIONS.STRADDLE) &&
       entry.amount !== undefined
     ) {
       currentBet = entry.amount;
@@ -161,6 +164,7 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
       }
       case PRIMITIVE_ACTIONS.BET:
       case PRIMITIVE_ACTIONS.RAISE:
+      case PRIMITIVE_ACTIONS.STRADDLE:
         if (entry.amount !== undefined) {
           contributions[entry.seat] = (contributions[entry.seat] || 0) + entry.amount;
           currentBet = entry.amount;
@@ -295,7 +299,9 @@ export const getMinRaise = (actionSequence, street, blinds) => {
     for (const entry of actionSequence) {
       if (entry.street !== street) continue;
       if (
-        (entry.action === PRIMITIVE_ACTIONS.BET || entry.action === PRIMITIVE_ACTIONS.RAISE) &&
+        (entry.action === PRIMITIVE_ACTIONS.BET ||
+          entry.action === PRIMITIVE_ACTIONS.RAISE ||
+          entry.action === PRIMITIVE_ACTIONS.STRADDLE) &&
         entry.amount !== undefined
       ) {
         previousBet = currentBet;

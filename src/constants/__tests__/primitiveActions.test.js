@@ -12,16 +12,17 @@ import {
 } from '../primitiveActions';
 
 describe('PRIMITIVE_ACTIONS', () => {
-  it('has exactly 5 primitive actions', () => {
-    expect(Object.keys(PRIMITIVE_ACTIONS)).toHaveLength(5);
+  it('has exactly 6 primitive actions', () => {
+    expect(Object.keys(PRIMITIVE_ACTIONS)).toHaveLength(6);
   });
 
-  it('contains check, bet, call, raise, fold', () => {
+  it('contains check, bet, call, raise, fold, straddle', () => {
     expect(PRIMITIVE_ACTIONS.CHECK).toBe('check');
     expect(PRIMITIVE_ACTIONS.BET).toBe('bet');
     expect(PRIMITIVE_ACTIONS.CALL).toBe('call');
     expect(PRIMITIVE_ACTIONS.RAISE).toBe('raise');
     expect(PRIMITIVE_ACTIONS.FOLD).toBe('fold');
+    expect(PRIMITIVE_ACTIONS.STRADDLE).toBe('straddle');
   });
 
   it('values are all lowercase strings', () => {
@@ -115,9 +116,9 @@ describe('LEGACY_TO_PRIMITIVE', () => {
 });
 
 describe('PRIMITIVE_ACTION_VALUES', () => {
-  it('is an array of 5 values', () => {
+  it('is an array of 6 values', () => {
     expect(Array.isArray(PRIMITIVE_ACTION_VALUES)).toBe(true);
-    expect(PRIMITIVE_ACTION_VALUES).toHaveLength(5);
+    expect(PRIMITIVE_ACTION_VALUES).toHaveLength(6);
   });
 
   it('contains all primitive actions', () => {
@@ -126,6 +127,7 @@ describe('PRIMITIVE_ACTION_VALUES', () => {
     expect(PRIMITIVE_ACTION_VALUES).toContain('call');
     expect(PRIMITIVE_ACTION_VALUES).toContain('raise');
     expect(PRIMITIVE_ACTION_VALUES).toContain('fold');
+    expect(PRIMITIVE_ACTION_VALUES).toContain('straddle');
   });
 });
 
@@ -136,6 +138,7 @@ describe('isPrimitiveAction', () => {
     expect(isPrimitiveAction('call')).toBe(true);
     expect(isPrimitiveAction('raise')).toBe(true);
     expect(isPrimitiveAction('fold')).toBe(true);
+    expect(isPrimitiveAction('straddle')).toBe(true);
   });
 
   it('returns false for legacy actions', () => {

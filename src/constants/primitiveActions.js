@@ -10,15 +10,20 @@
 import { ACTIONS } from './gameConstants';
 
 /**
- * The 5 primitive poker actions - the atomic building blocks of all betting.
+ * The 6 primitive poker actions - the atomic building blocks of all betting.
  * Every poker action can be decomposed into these primitives.
  *
  * @constant {Object} PRIMITIVE_ACTIONS
- * @property {string} CHECK - Pass when no bet to call (cost: 0)
- * @property {string} BET - First chips into pot on a street
- * @property {string} CALL - Match existing bet amount
- * @property {string} RAISE - Increase existing bet amount
- * @property {string} FOLD - Surrender hand, forfeit pot equity
+ * @property {string} CHECK    - Pass when no bet to call (cost: 0)
+ * @property {string} BET      - First chips into pot on a street
+ * @property {string} CALL     - Match existing bet amount
+ * @property {string} RAISE    - Increase existing bet amount
+ * @property {string} FOLD     - Surrender hand, forfeit pot equity
+ * @property {string} STRADDLE - Posted preflop blind by UTG or BTN before
+ *                               any action; functions as effective last raise
+ *                               and the straddler acts last on preflop.
+ *                               Variable amount; represented as preflop
+ *                               entry at order 1.
  */
 export const PRIMITIVE_ACTIONS = {
   CHECK: 'check',
@@ -26,6 +31,7 @@ export const PRIMITIVE_ACTIONS = {
   CALL: 'call',
   RAISE: 'raise',
   FOLD: 'fold',
+  STRADDLE: 'straddle',
 };
 
 /**
@@ -88,11 +94,12 @@ export const PRIMITIVE_ACTION_VALUES = Object.values(PRIMITIVE_ACTIONS);
  * @constant {Object} PRIMITIVE_BUTTON_CONFIG
  */
 export const PRIMITIVE_BUTTON_CONFIG = {
-  [PRIMITIVE_ACTIONS.CHECK]:  { label: 'Check', bg: '#0891b2', hover: '#0e7490' },
-  [PRIMITIVE_ACTIONS.BET]:    { label: 'Bet',   bg: '#16a34a', hover: '#15803d' },
-  [PRIMITIVE_ACTIONS.CALL]:   { label: 'Call',  bg: '#2563eb', hover: '#1d4ed8' },
-  [PRIMITIVE_ACTIONS.RAISE]:  { label: 'Raise', bg: '#ea580c', hover: '#c2410c' },
-  [PRIMITIVE_ACTIONS.FOLD]:   { label: 'Fold',  bg: '#dc2626', hover: '#b91c1c' },
+  [PRIMITIVE_ACTIONS.CHECK]:    { label: 'Check',    bg: '#0891b2', hover: '#0e7490' },
+  [PRIMITIVE_ACTIONS.BET]:      { label: 'Bet',      bg: '#16a34a', hover: '#15803d' },
+  [PRIMITIVE_ACTIONS.CALL]:     { label: 'Call',     bg: '#2563eb', hover: '#1d4ed8' },
+  [PRIMITIVE_ACTIONS.RAISE]:    { label: 'Raise',    bg: '#ea580c', hover: '#c2410c' },
+  [PRIMITIVE_ACTIONS.FOLD]:     { label: 'Fold',     bg: '#dc2626', hover: '#b91c1c' },
+  [PRIMITIVE_ACTIONS.STRADDLE]: { label: 'Straddle', bg: '#a855f7', hover: '#9333ea' },
 };
 
 export const isPrimitiveAction = (action) => PRIMITIVE_ACTION_VALUES.includes(action);

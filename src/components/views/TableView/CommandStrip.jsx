@@ -4,7 +4,7 @@ import { LAYOUT, STREETS, LIMITS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
 import { getActionGradient, BATCH_COLORS } from '../../../constants/designTokens';
 import { getValidActions } from '../../../utils/actionUtils';
-import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet, hasSeatFolded } from '../../../utils/sequenceUtils';
+import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet, hasSeatFolded, getStraddler } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
 import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession } from '../../../contexts';
@@ -336,19 +336,31 @@ export const CommandStrip = ({
   // BB option: when BB faces no raise preflop, they CHECK (not CALL) since blind is already posted.
   // WS-129 SB-COMPLETING: SB completing into limpers is the sister case — same
   // CALL→CHECK transform when SB faces only limps with no raise.
+  // WS-002 STRADDLE: a posted straddle counts as effective last raise — BB/SB
+  // facing only a straddle do NOT get the CHECK transform (they face a real bet).
+  // The straddler themselves gets a parallel option-to-check when action returns
+  // unraised: their own posted blind is the last "raise" so CALL→CHECK applies.
   const noPreflopRaise = !actionSequence.some(e => e.street === 'preflop' && e.action === 'raise');
+  const straddler = getStraddler(actionSequence);
+  const noPreflopAggression = noPreflopRaise && straddler === null;
   const isBBOption = currentStreet === 'preflop'
     && !isMultiSeat
     && selectedPlayers.length === 1
     && selectedPlayers[0] === bigBlindSeat
-    && noPreflopRaise;
+    && noPreflopAggression;
   const isSBCompleting = currentStreet === 'preflop'
     && !isMultiSeat
     && selectedPlayers.length === 1
     && selectedPlayers[0] === smallBlindSeat
+    && noPreflopAggression;
+  const isStraddlerOption = currentStreet === 'preflop'
+    && !isMultiSeat
+    && selectedPlayers.length === 1
+    && straddler !== null
+    && selectedPlayers[0] === straddler
     && noPreflopRaise;
 
-  const validActions = (isBBOption || isSBCompleting)
+  const validActions = (isBBOption || isSBCompleting || isStraddlerOption)
     ? rawValidActions.map(a => a === PRIMITIVE_ACTIONS.CALL ? PRIMITIVE_ACTIONS.CHECK : a)
     : rawValidActions;
 

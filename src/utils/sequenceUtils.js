@@ -207,6 +207,40 @@ export const getPreflopAggressor = (sequence) => {
 };
 
 /**
+ * Find the straddler seat for the current hand.
+ * Owner-decided scope (WS-002 / SPR-010): only one STRADDLE entry per hand
+ * (UTG or BTN; UTG > BTN precedence; no re-straddle).
+ *
+ * @param {Array} sequence - Action sequence
+ * @returns {number|null} Straddler seat, or null if no straddle posted
+ */
+export const getStraddler = (sequence) => {
+  if (!sequence) return null;
+  const entry = sequence.find(e => e.action === PRIMITIVE_ACTIONS.STRADDLE);
+  return entry ? entry.seat : null;
+};
+
+/**
+ * Get the posted straddle amount, or null if no straddle.
+ *
+ * @param {Array} sequence - Action sequence
+ * @returns {number|null} Straddle amount, or null
+ */
+export const getStraddleAmount = (sequence) => {
+  if (!sequence) return null;
+  const entry = sequence.find(e => e.action === PRIMITIVE_ACTIONS.STRADDLE);
+  return entry?.amount ?? null;
+};
+
+/**
+ * Check if a posted straddle exists in the sequence.
+ *
+ * @param {Array} sequence - Action sequence
+ * @returns {boolean}
+ */
+export const hasStraddle = (sequence) => getStraddler(sequence) !== null;
+
+/**
  * Get players still in the hand (haven't folded)
  *
  * @param {Array} sequence - Action sequence

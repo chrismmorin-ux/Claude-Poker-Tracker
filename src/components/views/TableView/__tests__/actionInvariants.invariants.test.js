@@ -20,18 +20,42 @@
 import { describe, it, expect } from 'vitest';
 import { fixtures } from './actionInvariants.fixture.js';
 import { getValidActions } from '../../../../utils/actionUtils';
-import { hasBetOrRaiseOnStreet, hasSeatFolded } from '../../../../utils/sequenceUtils';
+import { hasBetOrRaiseOnStreet, hasSeatFolded, getStraddler } from '../../../../utils/sequenceUtils';
 import { PRIMITIVE_ACTIONS } from '../../../../constants/primitiveActions';
 
 // ---------------------------------------------------------------------------
 // Harness — mirrors CommandStrip.jsx button-decision pipeline.
 // Source of truth: src/components/views/TableView/CommandStrip.jsx (post-WS-129
-// fix wave: SB-completing transform + folded-seat guard + hand-over guard)
-// + src/utils/actionUtils.js (post-WS-129: showdown branch returns []).
+// fix wave: SB-completing transform + folded-seat guard + hand-over guard;
+// post-WS-002 straddle wave: BB/SB option recognizes straddle as last raise +
+// isStraddlerOption guard) + src/utils/actionUtils.js (showdown branch returns []).
 // ---------------------------------------------------------------------------
+
+// WS-002 straddle harness translation — fixture rows mark scenarios with
+// special_state: 'straddle' + straddler_seat: <number>. PRIMITIVE_ACTIONS now
+// has STRADDLE; we synthesize the actionSequence entry the production app would
+// have recorded (preflop, order=1, action='straddle'). All other entries shift
+// their order by +1 to preserve uniqueness.
+function injectStraddleEntry(rawSequence, straddlerSeat) {
+  const straddleEntry = {
+    seat: straddlerSeat,
+    action: PRIMITIVE_ACTIONS.STRADDLE,
+    street: 'preflop',
+    order: 1,
+    amount: 2,
+  };
+  const shifted = (rawSequence || []).map((e) => ({ ...e, order: e.order + 1 }));
+  return [straddleEntry, ...shifted];
+}
+
 function computeRenderedButtons(inputs) {
-  const { currentStreet, selectedPlayers, actionSequence, bigBlindSeat,
-          smallBlindSeat } = inputs;
+  const { currentStreet, selectedPlayers, bigBlindSeat,
+          smallBlindSeat, special_state, straddler_seat } = inputs;
+
+  // Translate special_state='straddle' into a real STRADDLE actionSequence entry.
+  const actionSequence = special_state === 'straddle' && straddler_seat !== undefined
+    ? injectStraddleEntry(inputs.actionSequence, straddler_seat)
+    : inputs.actionSequence;
 
   // Empty selection renders nothing
   if (!selectedPlayers || selectedPlayers.length === 0) return [];
@@ -63,18 +87,26 @@ function computeRenderedButtons(inputs) {
   const rawValidActions = getValidActions(currentStreet, hasBet, isMultiSeat);
 
   // WS-129 SB-COMPLETING: SB completing into limpers gets the same CALL→CHECK
-  // transform as BB option facing no raise. CommandStrip checks both.
+  // transform as BB option facing no raise.
+  // WS-002 STRADDLE: a posted straddle counts as effective last raise — BB/SB
+  // facing only a straddle do NOT get the CHECK transform. The straddler
+  // themselves gets a parallel option when action returns unraised.
   const noPreflopRaise = !actionSequence.some(
     (e) => e.street === 'preflop' && e.action === 'raise'
   );
+  const straddler = getStraddler(actionSequence);
+  const noPreflopAggression = noPreflopRaise && straddler === null;
   const isBBOption =
     currentStreet === 'preflop' && !isMultiSeat &&
-    selectedPlayers[0] === bigBlindSeat && noPreflopRaise;
+    selectedPlayers[0] === bigBlindSeat && noPreflopAggression;
   const isSBCompleting =
     currentStreet === 'preflop' && !isMultiSeat &&
-    selectedPlayers[0] === smallBlindSeat && noPreflopRaise;
+    selectedPlayers[0] === smallBlindSeat && noPreflopAggression;
+  const isStraddlerOption =
+    currentStreet === 'preflop' && !isMultiSeat &&
+    straddler !== null && selectedPlayers[0] === straddler && noPreflopRaise;
 
-  const validActions = (isBBOption || isSBCompleting)
+  const validActions = (isBBOption || isSBCompleting || isStraddlerOption)
     ? rawValidActions.map((a) =>
         a === PRIMITIVE_ACTIONS.CALL ? PRIMITIVE_ACTIONS.CHECK : a
       )

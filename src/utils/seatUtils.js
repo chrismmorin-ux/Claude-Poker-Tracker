@@ -4,7 +4,7 @@
 
 import { STREETS, BETTING_STREETS, SEAT_STATUS, isFoldAction } from '../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
-import { hasSeatFolded, hasShowdownAction as seqHasShowdownAction } from './sequenceUtils';
+import { hasSeatFolded, hasShowdownAction as seqHasShowdownAction, getStraddler } from './sequenceUtils';
 
 /**
  * Checks if a seat is inactive (absent or folded)
@@ -80,12 +80,17 @@ export const getFirstActionSeat = (
   numSeats
 ) => {
   if (currentStreet === 'preflop') {
-    // First to act preflop is after big blind
+    // First to act preflop is after big blind. Skip the straddler — they
+    // posted before any action and act LAST per WS-002 owner scope.
     const sbSeat = getSmallBlindSeat(dealerSeat, absentSeats, numSeats);
     const bbSeat = getNextActiveSeat(sbSeat, absentSeats, numSeats);
+    const straddler = getStraddler(actionSequence);
     let seat = (bbSeat % numSeats) + 1;
     let attempts = 0;
-    while (absentSeats.includes(seat) && attempts < numSeats) {
+    while (attempts < numSeats) {
+      if (!absentSeats.includes(seat) && seat !== straddler) {
+        return seat;
+      }
       seat = (seat % numSeats) + 1;
       attempts++;
     }
