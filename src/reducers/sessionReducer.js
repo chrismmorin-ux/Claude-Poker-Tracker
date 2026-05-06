@@ -27,7 +27,13 @@ export const initialSessionState = {
     reUp: 0,
     goal: null,
     notes: null,
-    handCount: 0
+    handCount: 0,
+    // WS-002 Sprint A2: optional default straddle for this session.
+    // Shape: { seat: 'UTG' | 'BTN', amount: number } | null.
+    // Auto-applied to every hand started in this session; per-hand long-press
+    // override is the alternative entry path. Owner scope: UTG > BTN precedence,
+    // never persistent across sessions (see HE-18 in docs/design/jtbd/domains/hand-entry.md).
+    straddle: null
   },
 
   // All sessions (cached for performance)
@@ -78,7 +84,8 @@ const rawSessionReducer = (state, action) => {
           reUp: action.payload.reUp || 0,
           goal: action.payload.goal || null,
           notes: action.payload.notes || null,
-          handCount: 0
+          handCount: 0,
+          straddle: action.payload.straddle || null
         }
       };
 

@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { getActionsForSeatOnStreet, getPreflopAggressor } from '../../../utils/sequenceUtils';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { getActionsForSeatOnStreet, getPreflopAggressor, getStraddler, getStraddleAmount } from '../../../utils/sequenceUtils';
 import { getSeatContributions } from '../../../utils/potCalculator';
+import { getNextActiveSeat } from '../../../utils/seatUtils';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
 import { buildExploitSummary } from '../../ui/ExploitBadges';
@@ -19,6 +20,7 @@ import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
 import { SeatContextMenu } from './SeatContextMenu';
 import { CommandStrip } from './CommandStrip';
+import { StraddleModal } from './StraddleModal';
 import { RangeDetailPanel } from '../../ui/RangeDetailPanel';
 import { PotDisplay } from '../../ui/PotDisplay';
 import { useLiveEquity } from '../../../hooks/useLiveEquity';
@@ -56,6 +58,7 @@ export const TableView = ({ scale }) => {
     dispatchGame,
     potInfo,
     blinds,
+    recordStraddle,
   } = useGame();
 
   const {
@@ -74,8 +77,7 @@ export const TableView = ({ scale }) => {
     setAutoOpenNewSession,
     startDraggingDealer,
     stopDraggingDealer,
-    openPlayerEditor,
-    openPlayerPicker,
+    openPlayerFinder,
   } = useUI();
 
   const {
@@ -339,15 +341,15 @@ export const TableView = ({ scale }) => {
   };
 
   const handleFindPlayer = (seat) => {
-    // PEO-3: fullscreen picker scoped to this seat.
+    // Phase C: route through unified PlayerFinder.
     setContextMenu(null);
-    openPlayerPicker({ seat });
+    openPlayerFinder({ mode: 'find', seat });
   };
 
   const handleSwapPlayer = (seat) => {
-    // F10: picker in swap-mode — same code path as find, title reflects intent.
+    // F10: finder in swap-mode — same code path as find, title reflects intent.
     setContextMenu(null);
-    openPlayerPicker({ seat, swapMode: true });
+    openPlayerFinder({ mode: 'find', seat, swapMode: true });
   };
 
   const handleAssignPlayer = (seat, playerId) => {
@@ -398,6 +400,83 @@ export const TableView = ({ scale }) => {
 
   // Next-to-act seat for gold glow indicator (HE-2a)
   const nextToActSeat = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
+
+  // ==========================================================================
+  // WS-002 Sprint A2 — straddle UX
+  // ==========================================================================
+  // The straddler seat (if any) drives the SeatComponent badge + TableHeader chip.
+  const straddlerSeat = useMemo(() => getStraddler(actionSequence), [actionSequence]);
+  const straddleAmount = useMemo(() => getStraddleAmount(actionSequence), [actionSequence]);
+
+  // Compute UTG = first active seat after BB. BTN = dealerButtonSeat.
+  const utgSeat = useMemo(
+    () => getNextActiveSeat(bigBlindSeat, absentSeats, numSeats),
+    [bigBlindSeat, absentSeats, numSeats]
+  );
+  const btnSeat = dealerButtonSeat;
+
+  // Long-press eligibility: only UTG / BTN, only on preflop, only before any
+  // action has been recorded, only when no straddle posted yet.
+  const eligibleStraddleSeats = useMemo(() => {
+    if (currentStreet !== 'preflop') return new Set();
+    if (actionSequence.length > 0) return new Set();
+    return new Set([utgSeat, btnSeat]);
+  }, [currentStreet, actionSequence.length, utgSeat, btnSeat]);
+
+  const straddleDefaultAmount = useMemo(() => {
+    const sessionDefault = currentSession?.straddle?.amount;
+    if (typeof sessionDefault === 'number' && sessionDefault > 0) return sessionDefault;
+    return (blinds?.bb || 2) * 2;
+  }, [currentSession?.straddle?.amount, blinds?.bb]);
+
+  const [straddleModal, setStraddleModal] = useState({ open: false, seat: null, position: null });
+
+  const handleSeatLongPress = useCallback((seat) => {
+    if (!eligibleStraddleSeats.has(seat)) return;
+    const position = seat === utgSeat ? 'UTG' : seat === btnSeat ? 'BTN' : null;
+    if (!position) return;
+    setStraddleModal({ open: true, seat, position });
+  }, [eligibleStraddleSeats, utgSeat, btnSeat]);
+
+  const closeStraddleModal = useCallback(() => {
+    setStraddleModal({ open: false, seat: null, position: null });
+  }, []);
+
+  const handlePostStraddle = useCallback((amount) => {
+    if (!straddleModal.seat) return;
+    recordStraddle(straddleModal.seat, amount);
+    closeStraddleModal();
+  }, [recordStraddle, straddleModal.seat, closeStraddleModal]);
+
+  // Auto-apply session-default straddle on every new hand. UTG > BTN precedence
+  // is owner scope; the session config stores either 'UTG' or 'BTN'.
+  const lastAutoStraddleHandRef = useRef(null);
+  useEffect(() => {
+    const sessionStraddle = currentSession?.straddle;
+    if (!sessionStraddle || !sessionStraddle.seat || !sessionStraddle.amount) return;
+    const handKey = currentSession?.handCount ?? 0;
+    if (lastAutoStraddleHandRef.current === handKey) return;
+    if (currentStreet !== 'preflop' || actionSequence.length > 0) return;
+    const targetSeat = sessionStraddle.seat === 'UTG' ? utgSeat : btnSeat;
+    if (!targetSeat) return;
+    recordStraddle(targetSeat, sessionStraddle.amount);
+    lastAutoStraddleHandRef.current = handKey;
+  }, [
+    currentSession?.straddle,
+    currentSession?.handCount,
+    currentStreet,
+    actionSequence.length,
+    utgSeat,
+    btnSeat,
+    recordStraddle,
+  ]);
+
+  // TableHeader chip data — visible only on preflop while a straddle is posted.
+  const headerStraddleInfo = useMemo(() => {
+    if (currentStreet !== 'preflop' || straddlerSeat === null || straddleAmount === null) return null;
+    const position = straddlerSeat === utgSeat ? 'UTG' : straddlerSeat === btnSeat ? 'BTN' : 'Straddler';
+    return { position, amount: straddleAmount };
+  }, [currentStreet, straddlerSeat, straddleAmount, utgSeat, btnSeat]);
 
   return (
     <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
@@ -457,6 +536,7 @@ export const TableView = ({ scale }) => {
             levelDurationMs={isTournament ? tournamentBlinds.durationMinutes * 60 * 1000 : 0}
             icmPressure={icmPressure}
             mRatioGuidance={mRatioGuidance}
+            straddleInfo={headerStraddleInfo}
           />
 
           <div className={`flex-1 relative p-4 transition-all duration-300 ${isSidebarCollapsed ? 'ml-14' : 'ml-36'}`}>
@@ -543,10 +623,12 @@ export const TableView = ({ scale }) => {
                   seatBet={seatContributions[seat] || 0}
                   onSeatClick={togglePlayerSelection}
                   onSeatRightClick={handleSeatRightClick}
+                  onSeatLongPress={eligibleStraddleSeats.has(seat) ? handleSeatLongPress : undefined}
                   onDealerDragStart={handleDealerDragStart}
                   onHoleCardClick={handleHoleCardClick}
                   onToggleVisibility={handleToggleHoleCardsVisibility}
                   onOpenRangeDetail={handleOpenRangeDetail}
+                  isStraddler={seat === straddlerSeat}
                   isNextToAct={seat === nextToActSeat && currentStreet !== 'showdown'}
                 />
               ))}
@@ -599,6 +681,15 @@ export const TableView = ({ scale }) => {
         playerName={rangeDetailSeat ? (getSeatPlayerName(rangeDetailSeat) || `Seat ${rangeDetailSeat}`) : ''}
         onClose={handleCloseRangeDetail}
         isOpen={rangeDetailSeat !== null}
+      />
+
+      {/* WS-002 Sprint A2: straddle confirm modal (long-press UTG/BTN) */}
+      <StraddleModal
+        isOpen={straddleModal.open}
+        positionLabel={straddleModal.position || ''}
+        defaultAmount={straddleDefaultAmount}
+        onPost={handlePostStraddle}
+        onCancel={closeStraddleModal}
       />
 
       {/* AUDIT-2026-04-21-TV F12: reopen-last affordance. Renders only when a seat

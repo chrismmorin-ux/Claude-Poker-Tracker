@@ -210,7 +210,8 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
           rebuyTransactions: sessionData.rebuyTransactions || [],
           reUp: sessionData.reUp || 0,
           goal: sessionData.goal || null,
-          notes: sessionData.notes || null
+          notes: sessionData.notes || null,
+          straddle: sessionData.straddle || null
         }
       });
 

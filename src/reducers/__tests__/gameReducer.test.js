@@ -593,6 +593,100 @@ describe('gameReducer', () => {
     });
   });
 
+  // ===========================================================================
+  // RECORD_STRADDLE — WS-002 Sprint A2
+  // ===========================================================================
+
+  describe('RECORD_STRADDLE', () => {
+    it('adds a STRADDLE entry as the first preflop action', () => {
+      const state = { ...initialGameState, currentStreet: 'preflop' };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 3, amount: 5 },
+      });
+
+      expect(result.actionSequence).toHaveLength(1);
+      expect(result.actionSequence[0]).toMatchObject({
+        seat: 3,
+        action: 'straddle',
+        street: 'preflop',
+        order: 1,
+        amount: 5,
+      });
+    });
+
+    it('rejects invalid seat', () => {
+      const state = { ...initialGameState };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 0, amount: 5 },
+      });
+      expect(result.actionSequence).toHaveLength(0);
+    });
+
+    it('rejects non-positive amount', () => {
+      const state = { ...initialGameState };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 3, amount: 0 },
+      });
+      expect(result.actionSequence).toHaveLength(0);
+    });
+
+    it('rejects non-finite amount', () => {
+      const state = { ...initialGameState };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 3, amount: NaN },
+      });
+      expect(result.actionSequence).toHaveLength(0);
+    });
+
+    it('rejects when a preflop action already exists', () => {
+      const state = {
+        ...initialGameState,
+        actionSequence: [
+          { seat: 4, action: 'fold', street: 'preflop', order: 1 },
+        ],
+      };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 3, amount: 5 },
+      });
+      expect(result.actionSequence).toHaveLength(1);
+      expect(result.actionSequence[0].action).toBe('fold');
+    });
+
+    it('rejects when a STRADDLE entry already exists (single-straddle invariant)', () => {
+      const state = {
+        ...initialGameState,
+        actionSequence: [
+          { seat: 3, action: 'straddle', street: 'preflop', order: 1, amount: 5 },
+        ],
+      };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 8, amount: 10 },
+      });
+      expect(result.actionSequence).toHaveLength(1);
+      expect(result.actionSequence[0].seat).toBe(3);
+      expect(result.actionSequence[0].amount).toBe(5);
+    });
+
+    it('removes seat from absentSeats when posting a straddle', () => {
+      const state = {
+        ...initialGameState,
+        absentSeats: [3],
+      };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_STRADDLE,
+        payload: { seat: 3, amount: 5 },
+      });
+      expect(result.absentSeats).not.toContain(3);
+      expect(result.actionSequence).toHaveLength(1);
+    });
+  });
+
   describe('RESET_HAND clears actionSequence', () => {
     it('clears actionSequence on reset', () => {
       const state = {

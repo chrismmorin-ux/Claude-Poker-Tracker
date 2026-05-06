@@ -27,6 +27,7 @@ export const GAME_ACTIONS = {
   NEXT_HAND: 'NEXT_HAND',
   HYDRATE_STATE: 'HYDRATE_STATE',
   RECORD_PRIMITIVE_ACTION: 'RECORD_PRIMITIVE_ACTION',
+  RECORD_STRADDLE: 'RECORD_STRADDLE',
   SET_POT_OVERRIDE: 'SET_POT_OVERRIDE',
 };
 
@@ -275,6 +276,61 @@ const rawGameReducer = (state, action) => {
         ...state,
         potOverride: action.payload,
       };
+
+    // WS-002 Sprint A2: post a straddle for the current hand. Owner scope —
+    // UTG or BTN seat only, single straddle per hand (UTG > BTN precedence
+    // enforced at the call site, not here), only allowed when no preflop
+    // betting action has been recorded yet.
+    case GAME_ACTIONS.RECORD_STRADDLE: {
+      const { seat, amount } = action.payload;
+
+      if (!isValidSeat(seat, NUM_SEATS)) {
+        if (DEBUG) {
+          logger.warn('gameReducer', `Invalid seat in RECORD_STRADDLE: ${seat}`);
+        }
+        return state;
+      }
+
+      if (typeof amount !== 'number' || !isFinite(amount) || amount <= 0) {
+        if (DEBUG) {
+          logger.warn('gameReducer', `Invalid straddle amount: ${amount}`);
+        }
+        return state;
+      }
+
+      // Reject if any preflop entry already exists (straddle must come first)
+      // OR if a STRADDLE entry already exists (single-straddle invariant).
+      const hasPreflopEntry = state.actionSequence.some(e => e.street === 'preflop');
+      if (hasPreflopEntry) {
+        if (DEBUG) {
+          logger.warn('gameReducer', 'RECORD_STRADDLE rejected: preflop action already in progress');
+        }
+        return state;
+      }
+
+      const straddleEntry = createActionEntry({
+        seat,
+        action: PRIMITIVE_ACTIONS.STRADDLE,
+        street: 'preflop',
+        order: 1,
+        amount,
+      });
+
+      if (!isValidActionEntry(straddleEntry)) {
+        if (DEBUG) {
+          logger.warn('gameReducer', `Invalid straddle entry: ${JSON.stringify(straddleEntry)}`);
+        }
+        return state;
+      }
+
+      const newAbsentSeats = state.absentSeats.filter(s => s !== seat);
+
+      return {
+        ...state,
+        actionSequence: [straddleEntry, ...state.actionSequence],
+        absentSeats: newAbsentSeats,
+      };
+    }
 
     case GAME_ACTIONS.RECORD_PRIMITIVE_ACTION: {
       const { seat, action: primitiveAction, amount } = action.payload;

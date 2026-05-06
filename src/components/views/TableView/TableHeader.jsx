@@ -28,6 +28,8 @@ export const TableHeader = ({
   levelDurationMs,
   icmPressure,
   mRatioGuidance,
+  // WS-002 Sprint A2: straddle indicator (optional)
+  straddleInfo, // { position: 'UTG'|'BTN', amount: number } | null
 }) => {
   const isLowTime = levelTimeRemaining != null && levelTimeRemaining < 120000;
   const levelProgress = levelDurationMs > 0 && levelTimeRemaining != null
@@ -53,6 +55,21 @@ export const TableHeader = ({
       >
         <div className="flex items-center gap-3">
           <div className="font-bold" style={{ color: 'var(--gold)', fontSize: '15px' }}>Hand #{handCount + 1}</div>
+          {/* WS-002 Sprint A2: straddle chip — visible only on the hand a straddle was posted. */}
+          {straddleInfo && (
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded"
+              style={{
+                background: '#a855f7',
+                color: '#ffffff',
+                letterSpacing: '0.3px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
+              }}
+              aria-label={`${straddleInfo.position} straddle posted for $${straddleInfo.amount}`}
+            >
+              Straddle ${straddleInfo.amount} ({straddleInfo.position})
+            </span>
+          )}
           {hasActiveSession ? (
             <>
               <div className="text-sm" style={{ color: '#6dba8a' }}>{sessionTimeDisplay}</div>
@@ -84,7 +101,7 @@ export const TableHeader = ({
           style={{
             background: 'rgba(212,168,71,0.08)',
             borderBottom: '1px solid rgba(212,168,71,0.25)',
-            borderLeft: `3px solid ${GOLD}`,
+            borderLeft: `3px solid ${GOLD.base}`,
           }}
           onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212,168,71,0.14)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212,168,71,0.08)'}
@@ -93,7 +110,7 @@ export const TableHeader = ({
             <div className="flex items-center gap-3">
               {/* Level */}
               <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{
-                color: GOLD,
+                color: GOLD.base,
                 backgroundColor: 'rgba(212,168,71,0.15)',
               }}>
                 Lvl {(currentLevelIndex || 0) + 1}
@@ -164,7 +181,7 @@ export const TableHeader = ({
               className="h-full transition-all"
               style={{
                 width: `${Math.min(100, Math.max(0, levelProgress * 100))}%`,
-                backgroundColor: GOLD,
+                backgroundColor: GOLD.base,
               }}
             />
           </div>

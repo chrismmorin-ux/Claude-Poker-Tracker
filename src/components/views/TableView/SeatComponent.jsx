@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
@@ -6,6 +6,8 @@ import { ActionSequence } from '../../ui/ActionSequence';
 import { ExploitBadges } from '../../ui/ExploitBadges';
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import { LAYOUT } from '../../../constants/gameConstants';
+
+const LONG_PRESS_MS = 500;
 
 /**
  * SeatComponent - Individual seat with action badges, position badges, and hole cards
@@ -31,16 +33,50 @@ const SeatComponentInner = ({
   getSeatColor,
   onSeatClick,
   onSeatRightClick,
+  onSeatLongPress, // WS-002 Sprint A2: optional; fires after 500ms hold
   onDealerDragStart,
   onHoleCardClick,
   onToggleVisibility,
   onOpenRangeDetail,
   seatBet,
   isPFR,
+  isStraddler = false, // WS-002 Sprint A2: render "STR" badge overlay
   isNextToAct = false,
 }) => {
   // Seat color (returns { className, style })
   const seatColor = getSeatColor(seat);
+
+  // WS-002 Sprint A2: long-press timer for the straddle gesture.
+  // Mirror of CommandStrip's sizing-button long-press pattern. Started on
+  // pointerdown, cleared on pointerup / pointerleave / pointercancel.
+  const longPressTimerRef = useRef(null);
+  const longPressFiredRef = useRef(false);
+
+  const startLongPress = useCallback(() => {
+    if (!onSeatLongPress) return;
+    longPressFiredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      onSeatLongPress(seat);
+    }, LONG_PRESS_MS);
+  }, [onSeatLongPress, seat]);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleClick = useCallback(() => {
+    // Suppress click if long-press already fired — otherwise the straddle
+    // modal opens AND the seat gets selected.
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
+    onSeatClick(seat);
+  }, [onSeatClick, seat]);
 
   // Calculate player name offset based on position badges
   const hasOtherBadge = isDealer || isSmallBlind || isBigBlind;
@@ -95,13 +131,39 @@ const SeatComponentInner = ({
       {/* Seat button with expanded hit area */}
       <div className="relative" style={{ width: `${LAYOUT.SEAT_SIZE}px`, height: `${LAYOUT.SEAT_SIZE}px` }}>
         <button
-          onClick={() => onSeatClick(seat)}
+          onClick={handleClick}
           onContextMenu={(e) => onSeatRightClick(e, seat)}
+          onPointerDown={onSeatLongPress ? startLongPress : undefined}
+          onPointerUp={onSeatLongPress ? cancelLongPress : undefined}
+          onPointerLeave={onSeatLongPress ? cancelLongPress : undefined}
+          onPointerCancel={onSeatLongPress ? cancelLongPress : undefined}
           className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${seatColor.className}${isNextToAct ? ' seat-next-to-act' : ''}`}
           style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px`, ...seatColor.style }}
         >
           {seat}
         </button>
+
+        {/* WS-002 Sprint A2: STR badge — visible when this seat posted a straddle. */}
+        {isStraddler && (
+          <div
+            className="absolute pointer-events-none rounded font-extrabold"
+            style={{
+              top: '-6px',
+              right: '-8px',
+              padding: '1px 5px',
+              fontSize: '10px',
+              letterSpacing: '0.4px',
+              background: '#a855f7',
+              color: '#ffffff',
+              border: '1px solid #6b21a8',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              zIndex: 5,
+            }}
+            aria-label={`Seat ${seat} posted the straddle this hand`}
+          >
+            STR
+          </div>
+        )}
       </div>
 
       {/* Dealer button */}
@@ -229,6 +291,8 @@ const arePropsEqual = (prev, next) => {
       }
       continue;
     }
+    // WS-002 Sprint A2: isStraddler / onSeatLongPress are also covered by
+    // the default reference compare below — no special handling needed.
     if (prev[key] !== next[key]) return false;
   }
   return true;

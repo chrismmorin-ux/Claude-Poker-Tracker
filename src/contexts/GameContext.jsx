@@ -2,7 +2,7 @@
  * GameContext.jsx - Game state context provider
  * Provides: currentStreet, dealerButtonSeat, mySeat, absentSeats, actionSequence
  * Plus derived values: smallBlindSeat, bigBlindSeat, potInfo
- * Plus action helpers: recordPrimitiveAction
+ * Plus action helpers: recordPrimitiveAction, recordStraddle
  */
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
@@ -47,6 +47,16 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     });
   }, [dispatchGame]);
 
+  // Action helper: Post a straddle for the current hand (WS-002 Sprint A2).
+  // Reducer enforces no-preflop-action-yet + single-straddle-per-hand;
+  // UTG > BTN precedence is the call site's responsibility.
+  const recordStraddle = useCallback((seat, amount) => {
+    dispatchGame({
+      type: GAME_ACTIONS.RECORD_STRADDLE,
+      payload: { seat, amount },
+    });
+  }, [dispatchGame]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -65,6 +75,7 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     blinds,
     // Action helpers
     recordPrimitiveAction,
+    recordStraddle,
   }), [
     currentStreet,
     dealerButtonSeat,
@@ -77,6 +88,7 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     potInfo,
     blinds,
     recordPrimitiveAction,
+    recordStraddle,
   ]);
 
   return (
