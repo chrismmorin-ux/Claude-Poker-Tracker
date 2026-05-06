@@ -79,6 +79,16 @@ The ICP audit pattern surfaces this gap class explicitly: each row of the matrix
 | regression_pinned | 3 | Owner-named regressions kept under harness; must stay fixed. |
 | **Total** | **47** | |
 
+**Updated matrix shape (post-2026-05-06 straddle build, commits f3cdb89 + 9c37a3b):**
+
+| Status | Count | Meaning |
+|--------|-------|---------|
+| matches | 40 | Spec === actual; +10 from straddle wave (INV-S-007/008/010/011/012/013/014/015/016/017). |
+| pinned_bug | 0 | unchanged. |
+| spec_gap | 4 | Remaining structural gaps: all-in detection (INV-S-003/004), dead-money (INV-S-005), SHOVE primitive (covered by INV-S-004), per-seat selection guards. STRADDLE row removed below. |
+| regression_pinned | 3 | unchanged. |
+| **Total** | **47** | unchanged. |
+
 ## Prevention
 
 **Pattern is now established and documented for repo-wide application:**
@@ -101,7 +111,7 @@ The 14 surviving spec_gap rows document production-code work that requires more 
 
 | Gap | Rows | Production scope |
 |-----|------|-----|
-| Straddle primitive + action order | 9 (INV-S-007, S-008, S-010..S-017) | Add `STRADDLE` to `PRIMITIVE_ACTIONS`; represent posted straddle in `actionSequence`; `getNextSeat` straddler-last rule; `isBBOption` recognition; `potCalculator` extra-blind starting pot; game config `straddleMode` flag; UI surface (TableHeader / SeatComponent). Owner scope: UTG+BTN only, UTG>BTN, no re-straddle. |
+| ~~Straddle primitive + action order~~ | ~~10 (INV-S-007, S-008, S-010..S-017)~~ | **CLOSED 2026-05-06** by commits f3cdb89 (engine plumbing) + 9c37a3b (UX layer). STRADDLE added to PRIMITIVE_ACTIONS; getStraddler / getStraddleAmount / hasStraddle helpers in sequenceUtils; potCalculator handles STRADDLE in calculatePot / getCurrentBet / getSeatContributions / getMinRaise; seatUtils.getFirstActionSeat skips straddler; CommandStrip noPreflopAggression + isStraddlerOption transforms; RECORD_STRADDLE reducer enforces single-straddle invariant; sessionReducer optional straddle field; StraddleModal + long-press + STR badge + TableHeader chip; Gate 1 audit GREEN. **All 10 rows flipped from `spec_gap` to `matches`.** Owner scope (UTG+BTN, UTG>BTN, no re-straddle) preserved end-to-end. |
 | All-in detection | 2 (INV-S-003, S-004) | Stack-aware `getValidActions`; `potCalculator` stack tracking; SHOVE primitive. |
 | Dead-money handling | 1 (INV-S-005) | Schema for "seat absent but blind posted"; `getBigBlindSeat` dead-money branch. |
 | (per-seat selection guards) | 0 explicit rows; surfaced as discussion | Multi-seat selection invariants; not exhaustively row-pinned in initial audit. |

@@ -1,0 +1,235 @@
+id: "session-2026-05-06-straddle"
+status: completed
+started_at: "2026-05-06T22:00:00Z"
+ended_at: "2026-05-06T22:30:00Z"
+mode: standard
+ceremony: standard
+
+# Freelance session — work was not initiated via /next or /workstream claim.
+# Owner asked "what is the UX on straddle" — straddle was discovered to be
+# spec'd-but-not-built; owner approved building it; two sprints (A1 engine
+# plumbing + A2 UX layer) shipped in same session.
+# WS-002 (TIA-1.2 — straddle wired into matrix) and WS-003 (TIA-1.3 fix wave)
+# were already marked done by SPR-010/SPR-011; this session closed the
+# OPEN STRUCTURAL GAP they had documented for future work.
+claimed_items: []
+
+sprints_completed: []
+
+# This session ran in PARALLEL with another session working on SPR-040 leak
+# rules (heroFlopVsDonkMisresponse / heroOopCbetOverfold). Owner explicitly
+# requested parallel execution. No file overlap between the two sessions.
+
+decisions_recorded:
+  - { id: "DEC-014", title: "STRADDLE as a 6th PRIMITIVE_ACTION (not a separate session-only field)", weight: medium }
+
+handoff_notes: |
+  ## Session arc
+
+  Discovery → owner-approved scope → two sprints shipped in one session.
+  User asked about the UX of "recently-built straddle functionality"; audit
+  revealed straddle had been *spec'd* (WS-002/SPR-010 in 2026-05-02) but
+  *never built* — the failure file at `.claude/failures/TABLEVIEW_INVARIANT_GAP.md`
+  line 100+ explicitly listed it as an "Open structural gap" requiring
+  future work. Owner approved building it. This session closed that gap
+  end-to-end + UX layer.
+
+  ## Commits shipped
+
+  - **f3cdb89** — Sprint A1 (engine plumbing). 8 files. STRADDLE primitive +
+    sequenceUtils helpers (getStraddler/getStraddleAmount/hasStraddle) +
+    potCalculator support across calculatePot/getCurrentBet/getSeatContributions/
+    getMinRaise + seatUtils.getFirstActionSeat skips straddler + CommandStrip
+    noPreflopAggression + isStraddlerOption transforms + matrix harness
+    translates `special_state='straddle'` + 10 spec_gap rows flipped to
+    `matches`. **Final matrix shape:** 40 matches + 0 pinned_bug + 4 spec_gap
+    (non-straddle structural gaps remaining: all-in / dead-money / SHOVE /
+    per-seat selection) + 3 regression_pinned = 47 rows.
+  - **9c37a3b** — Sprint A2 (UX layer). 11 files. New RECORD_STRADDLE reducer
+    action enforcing single-straddle invariant + no-preflop-action-yet gate +
+    sessionReducer optional `straddle: { seat, amount } | null` field +
+    GameContext recordStraddle exposure + new StraddleModal.jsx + SeatComponent
+    long-press handler with click-suppression + STR badge overlay + TableHeader
+    chip + TableView orchestration (UTG/BTN eligibility + auto-apply session
+    default keyed off handCount + modal state) + 7 new RECORD_STRADDLE reducer
+    tests + Gate 1 audit at `docs/design/audits/2026-05-06-entry-straddle-ux.md`
+    (GREEN — no Gate 2 needed) + JTBD HE-18 added to hand-entry.md.
+
+  ## Visual smoke (1600×720 via Playwright)
+
+  End-to-end verified: long-press UTG seat (S1 in dev seed) opened the modal;
+  posting $4 produced purple "Straddle $4 (UTG)" header chip + STR badge on
+  seat 1 + pot updated $3 → $7 (SB $1 + BB $2 + Straddle $4) + bet chip $4 on
+  seat 1 + UTG's action panel correctly showed Check + Fold (isStraddlerOption
+  transform firing because hero is straddler with no raise yet) + sizing
+  presets correctly recomputed against straddle ($8 2x / $12 3x / $16 4x /
+  $20 5x) + Min raise $6 (currentBet 4 + max(increment 2, BB 2) = 6) + active
+  seat counter 1/9.
+
+  ## Owner UX scope (locked 2026-05-06 mid-session)
+
+  - Straddle is **session-or-hand-specific, never persistent settings**.
+  - **Long-press UTG or BTN seat** is the gesture (500ms hold).
+  - **Amount configurable** at session creation (default applies to every hand
+    in that session) AND/OR per-hand (long-press modal pre-fills session
+    default or 2× BB).
+  - Owner pre-decided UTG > BTN precedence (WS-002/SPR-010, 2026-05-02).
+  - Owner pre-decided no re-straddle (WS-002/SPR-010, 2026-05-02).
+
+  ## Items completed (this session)
+
+  - Sprint A1 engine plumbing (no WS ticket — closed as part of failure-file
+    "Open structural gap" per the gap catalog). Closes 9 of the 14 surviving
+    spec_gap rows in TABLEVIEW_INVARIANT_GAP.md.
+  - Sprint A2 UX layer (no WS ticket — see above).
+  - HE-18 JTBD authored.
+  - Gate 1 audit shipped GREEN.
+
+  ## Items remaining
+
+  None claimed in this session. Two follow-ups identified but not queued:
+
+  - **Sprint A3** (small): Add session-creation form field for default
+    straddle. `TournamentSetupForm.jsx` is currently being modified by the
+    parallel PIO session; deferred to avoid conflict. Once PIO lands a commit,
+    add a small radio (None / UTG / BTN) + amount input subsection. The
+    reducer + persistence layer already accepts `currentSession.straddle` —
+    just no input control yet.
+  - **v2 follow-up**: Mid-hand straddle amount edit. Currently to change a
+    posted straddle amount you reset the hand and re-post. Long-press on an
+    existing straddler seat could open an edit-mode of the modal. Defer until
+    owner asks.
+
+  ## Pre-existing test failures (NOT introduced by this session)
+
+  Two unrelated regressions already on `main` before this session:
+  - `src/utils/__tests__/persistence.test.js > Players CRUD > createPlayer >
+    creates a player with all fields` — `Invalid player data: facialHair must
+    be one of: clean, stubble, mustache, goatee, full, soul-patch (got "none")`.
+    Verified via `git stash` test on clean HEAD. Caused by upstream commit
+    `229efe2 phase A: validation enums + cascade delete + extract UI primitives`
+    tightening player schema validation; test fixture still uses legacy
+    `facialHair: 'none'`. Owner of player-schema work should fix the fixture.
+  - `src/hooks/__tests__/usePlayerEditor.test.js > usePlayerEditor — edit
+    mode > hydrates fields from existing player` — same root cause.
+
+  ## Pre-existing build failure (NOT introduced by this session)
+
+  `src/components/views/PlayerEditorView/HairSection.jsx` — Could not resolve
+  `./ColorChip`. The parallel PIO session has `ColorChip.jsx` deleted in
+  staged changes (still in-flight refactor). Will resolve when that session
+  commits. Vite dev server tolerates this (PlayerEditorView only loads on
+  route hit) — TableView smoke test ran fine.
+
+  ## Test verification (this session, all green)
+
+  Targeted runs:
+  - matrix invariants: 49 (45 pass + 4 spec_gap skipped)
+  - TableView component tests: 129 (all 5 files)
+  - gameReducer: 53 (46 pre-existing + 7 new RECORD_STRADDLE tests)
+  - potCalculator: 41
+  - sequenceUtils: 32
+  - seatUtils: 74
+  - primitiveActions: 28
+  - actionUtils: 60
+  - SeatComponent: 33
+  - TableHeader: 13
+  - SeatContextMenu: 26
+  - LiveAdviceBar: 12
+
+  Build: pre-existing-broken on parallel PIO session (HairSection.jsx →
+  ./ColorChip deleted). My code itself parses cleanly (vitest parsed all
+  files successfully).
+
+  ## Architectural notes worth carrying forward
+
+  - **STRADDLE is in `PRIMITIVE_ACTIONS`** (DEC-014), NOT a sidecar field on
+    session or game state. The actionSequence is the single source of truth;
+    a STRADDLE entry at `order: 1, street: 'preflop', action: 'straddle',
+    amount: <variable>` is the universal carrier. All downstream code
+    (potCalculator, getMinRaise, getCurrentBet, isBBOption, isStraddlerOption)
+    derives from this single representation.
+  - **`noPreflopAggression`** = `noPreflopRaise && straddler === null`. This
+    is the new gate for `isBBOption` / `isSBCompleting` — straddle counts as
+    aggression. The plain `noPreflopRaise` gate is still used for
+    `isStraddlerOption` (the straddler's own posted blind is the aggression).
+  - **`isStraddlerOption`** keys off "is hero === straddler", not hero
+    position. This was a deliberate uniformity check — it works for both UTG
+    and BTN scopes without per-position branching.
+  - **getFirstActionSeat skips the straddler** so first-to-act lands at UTG+1
+    on UTG straddle. BTN straddle is unaffected (UTG remains first to act,
+    BTN closes after BB). This is the entire action-order rule —
+    `getNextActionSeat` doesn't need straddler-last logic because the natural
+    clockwise order already produces the correct sequence with the straddler
+    as the last unacted seat.
+  - **Single-straddle invariant** enforced at the reducer (`RECORD_STRADDLE`
+    rejects if a STRADDLE entry already exists). UTG > BTN precedence is the
+    call site's responsibility (TableView's eligibleStraddleSeats memo gates
+    long-press to UTG and BTN only when no STRADDLE entry exists; if both are
+    eligible, the user picks via long-press).
+
+  ## Next recommended action
+
+  No claimed work. Three reasonable next moves:
+
+  1. **Wait for parallel PIO session to land**, then ship Sprint A3 (session-
+     creation form field). Small, ~30 min.
+  2. **Resume CWOS-tracked work** via `/next`. Active sprint SPR-040 (SCF G5
+     leak rules) is being worked on by the parallel session; do not touch.
+     Reasonable next anchors per state.md: WS-115 (last engineering P0;
+     16-PR program scope), WS-159 (SCF-G5 SelfCoachView), WS-166 (IdentityAvatar
+     v2 visual redesign), or domain-correctness P1s WS-086 / WS-089 / WS-095.
+  3. **Address the pre-existing player-schema test failures** if the parallel
+     session doesn't catch them in their own session-end.
+
+context_notes: |
+  ## Architecture / state notes for next session
+
+  - **Tests vital sign:** GREEN for all straddle-affected paths. Two pre-
+    existing fail on player schema + one pre-existing build error on HairSection.
+    Both unrelated to this work. Will resolve when parallel PIO session
+    commits.
+  - **No CWOS claim:** This session was freelance — no `/next`, no claimed
+    items. The work was technically out-of-band but well-scoped (closed an
+    explicitly-documented "Open structural gap" from `TABLEVIEW_INVARIANT_GAP.md`
+    line 104). State.md Recent Sessions row records it.
+  - **Failure file update needed:** `TABLEVIEW_INVARIANT_GAP.md` line 100-110
+    "Open structural gaps" table needs the Straddle row removed (or marked
+    closed). Final matrix counts should update from 14 spec_gap → 4 spec_gap.
+    See state.md / failure file edits this session.
+  - **Sprint coordination:** The parallel session is shipping SPR-040 leak
+    rules (`heroFlopVsDonkMisresponse.js`, `heroOopCbetOverfold.js`) +
+    related lesson markdown + skillAssessment infrastructure changes
+    (visible as untracked + modified files in this repo's git status). They
+    have their own session-end ceremony. No file overlap with my changes.
+  - **Sprint A3 blocker:** `TournamentSetupForm.jsx` is in modified state
+    in git (parallel session's PIO work). Adding a straddle field there
+    will conflict if attempted now. Wait until that file is back to clean
+    or the parallel session lands.
+
+  ## Reading priority for next session
+
+  If next anchor is **Sprint A3 (session-creation form field)**: read
+    `docs/design/audits/2026-05-06-entry-straddle-ux.md` Gate 4 inline §
+    "Extension to session-creation form" + `src/components/ui/TournamentSetupForm.jsx`
+    + cash-game session start flow + `src/reducers/sessionReducer.js`
+    (already accepts `straddle` field — just needs UI input).
+
+  If next anchor is **mid-hand amount edit**: read `StraddleModal.jsx` +
+    TableView's `eligibleStraddleSeats` memo + `gameReducer.js` RECORD_STRADDLE
+    case (would need new `EDIT_STRADDLE_AMOUNT` action type, or just allow
+    long-press on existing straddler to re-open modal in edit mode).
+
+  If next anchor is **Sprint A4 (close remaining 4 spec_gap rows)**: those
+    gaps are STRUCTURAL — all-in detection requires stack-tracking on the
+    seat level (currently no stack info in actionSequence); SHOVE primitive
+    is similar; dead-money requires getBigBlindSeat to know about absent-
+    seat blinds. These are larger projects than straddle.
+
+  ## Memory / docs touched this session
+
+  - `docs/design/audits/2026-05-06-entry-straddle-ux.md` — NEW, Gate 1 GREEN
+  - `docs/design/jtbd/domains/hand-entry.md` — appended HE-18
+  - `system/decisions.md` — DEC-014 added (this session)
+  - `.claude/failures/TABLEVIEW_INVARIANT_GAP.md` — should be updated to
+    reflect closed straddle gap (do at next session-end if not done now)
