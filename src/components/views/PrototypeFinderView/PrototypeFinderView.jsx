@@ -19,8 +19,8 @@
  * Unified PlayerFinder", or directly at #prototype-finder. Mock data only.
  */
 
-import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, X, AlertTriangle, Plus, Check } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, X, AlertTriangle, Plus, Check, RefreshCw } from 'lucide-react';
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import { useUI } from '../../../contexts/UIContext';
 import { SCREEN } from '../../../constants/uiConstants';
@@ -473,11 +473,45 @@ const CongruencyPanel = ({ player, mismatches, additions, onAccept, onApply, onC
 // MAIN VIEW
 // ===========================================================================
 
+// Force-fresh helper — unregisters every SW, drops every cache, and
+// reloads. Last-resort cache-bust without leaving the app. Used by the
+// in-app refresh button so the owner doesn't have to navigate to Chrome
+// settings to clear stuck assets.
+const forceFresh = async () => {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (typeof caches !== 'undefined' && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    // best-effort
+  }
+  window.location.reload(true);
+};
+
 export const PrototypeFinderView = () => {
   const { setCurrentScreen } = useUI();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [nameQuery, setNameQuery] = useState('');
   const [activeRecord, setActiveRecord] = useState(null);
+  const [buildInfo, setBuildInfo] = useState({ sha: '?', built: '?' });
+
+  // Read the deployed bundle SHA so the owner can verify which version
+  // they're actually loading. Bypasses any SW cache via no-store.
+  useEffect(() => {
+    fetch('/version.json', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => {
+        const sha = (data.version || '').slice(0, 7);
+        const built = (data.built || '').slice(0, 16).replace('T', ' ');
+        setBuildInfo({ sha, built });
+      })
+      .catch(() => setBuildInfo({ sha: 'unknown', built: 'unknown' }));
+  }, []);
 
   const seat = 3; // mock
 
@@ -593,21 +627,38 @@ export const PrototypeFinderView = () => {
 
   return (
     <div className="h-dvh w-full flex flex-col bg-slate-900 text-gray-100 overflow-hidden">
-      {/* TOP BAR */}
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-slate-950 px-3 py-2 border-b border-slate-700">
-        <button
-          type="button"
-          onClick={() => setCurrentScreen(SCREEN.SETTINGS)}
-          className="flex items-center gap-1 text-sm font-medium hover:bg-slate-800 px-2 py-1 rounded text-gray-200"
-        >
-          <ChevronLeft size={18} />
-          Back
-        </button>
-        <div className="text-sm font-semibold text-gray-100 truncate mx-2">
-          Pick for Seat {seat}
+      {/* TOP BAR with prominent build stamp + force-fresh button so the
+          owner can verify the loaded bundle and self-cache-bust. */}
+      <div className="sticky top-0 z-20 bg-slate-950 border-b border-slate-700">
+        <div className="flex items-center justify-between px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setCurrentScreen(SCREEN.SETTINGS)}
+            className="flex items-center gap-1 text-sm font-medium hover:bg-slate-800 px-2 py-1 rounded text-gray-200"
+          >
+            <ChevronLeft size={18} />
+            Back
+          </button>
+          <div className="text-sm font-semibold text-gray-100 truncate mx-2">
+            Pick for Seat {seat}
+          </div>
+          <button
+            type="button"
+            onClick={forceFresh}
+            className="flex items-center gap-1 text-[10px] text-amber-300 px-2 py-1 rounded border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 shrink-0"
+            title="Unregister SW + clear caches + reload"
+          >
+            <RefreshCw size={10} />
+            Force fresh
+          </button>
         </div>
-        <div className="text-[10px] text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 shrink-0">
-          PROTOTYPE v2
+        <div className="px-3 py-1 bg-amber-500/15 border-t border-amber-500/30 text-amber-200 flex items-center justify-between">
+          <span className="text-[11px] font-bold tracking-wider uppercase">
+            🧪 Prototype v3
+          </span>
+          <span className="text-[9px] font-mono text-amber-100/70">
+            build {buildInfo.sha} · {buildInfo.built}
+          </span>
         </div>
       </div>
 
