@@ -1,10 +1,14 @@
 /**
- * hat.js — Hat / headwear styles (Phase 1.7)
+ * hat.js — Hat / headwear styles.
  *
- * Each hat has a fixed color (or two colors for caps with brims of a
- * different shade). "hat.none" renders empty. Hats draw on top of hair
- * (LAYER_ORDER last) and AvatarRenderer applies a clip-path to the hair
- * group below the hat-line so hair doesn't poke through the crown.
+ * Colors use CSS custom properties so the avatar can recolor hats based
+ * on observed accessory color. AvatarRenderer's buildColorVars() sets:
+ *   --hat       — primary hat color (crown, headband, etc.)
+ *   --hat-trim  — secondary darker shade (brim, band, indent details);
+ *                 derived from --hat via CSS color-mix in buildColorVars
+ *
+ * If avatarFeatures.hatColor is null/unset, the path fallback hex is used
+ * (the original design color) so existing hats render exactly as before.
  *
  * Geometry conventions:
  *   - Head outline runs from x=22-78 at the temples (widest), narrowing
@@ -25,9 +29,7 @@ export default [
     id: 'hat.cap',
     label: 'Baseball Cap',
     paths: [
-      // Crown — single closed shape (no inner negative curve). Goes from
-      // base-left (22, 38) up over the crown to base-right (78, 38), then
-      // closes straight across the bottom. No internal seam visible.
+      // Crown — primary color
       {
         d: `
           M 22 38
@@ -35,10 +37,9 @@ export default [
           C 66 14, 76 20, 78 38
           Z
         `,
-        fill: '#264a7a',
+        fill: 'var(--hat, #264a7a)',
       },
-      // Brim — extends from below the crown forward, with curved underside.
-      // Brim base is at y=38 (matches crown bottom) so they connect cleanly.
+      // Brim — trim color
       {
         d: `
           M 16 38
@@ -46,12 +47,12 @@ export default [
           C 60 41, 50 44, 16 42
           Z
         `,
-        fill: '#1e3a60',
+        fill: 'var(--hat-trim, #1e3a60)',
       },
-      // Button on top of crown
+      // Button on top — trim color
       {
         d: `M 50 14 m -1.5 0 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0`,
-        fill: '#1e3a60',
+        fill: 'var(--hat-trim, #1e3a60)',
       },
     ],
   },
@@ -59,9 +60,7 @@ export default [
     id: 'hat.beanie',
     label: 'Beanie',
     paths: [
-      // Smooth single-color beanie with a U-shaped bottom edge — pulled DOWN
-      // over the ears (sides at y=54) but RAISED at the forehead (y=42 above
-      // the eye line at y=48-58) so eyes are not covered. No cuff/flaps.
+      // Single-color beanie — primary color
       {
         d: `
           M 18 32
@@ -75,9 +74,9 @@ export default [
           C 22 54, 18 52, 18 44
           Z
         `,
-        fill: '#7a2c2c',
+        fill: 'var(--hat, #7a2c2c)',
       },
-      // Subtle ribbed knit lines (low-opacity)
+      // Subtle ribbed knit lines (low-opacity) — stay neutral, not recolored
       {
         d: `
           M 26 22 L 28 52 M 34 14 L 34 46 M 42 10 L 42 44
@@ -94,7 +93,7 @@ export default [
     id: 'hat.fedora',
     label: 'Fedora',
     paths: [
-      // Crown — pinched top, fits the head width
+      // Crown — primary
       {
         d: `
           M 28 24
@@ -103,10 +102,9 @@ export default [
           L 28 36
           Z
         `,
-        fill: '#2c2418',
+        fill: 'var(--hat, #2c2418)',
       },
-      // Wide brim — extends well beyond head sides (fedoras have ~30%
-      // wider brim than the head)
+      // Wide brim — trim
       {
         d: `
           M 12 36
@@ -116,12 +114,12 @@ export default [
           C 20 42, 12 38, 12 36
           Z
         `,
-        fill: '#1f1a10',
+        fill: 'var(--hat-trim, #1f1a10)',
       },
-      // Hat band (small accent at base of crown)
+      // Hat band (small accent at base of crown) — trim, slightly darker
       {
         d: `M 28 32 L 72 32 L 72 35 L 28 35 Z`,
-        fill: '#0e0a06',
+        fill: 'var(--hat-trim, #0e0a06)',
       },
     ],
   },
@@ -129,8 +127,7 @@ export default [
     id: 'hat.cowboy',
     label: 'Cowboy Hat',
     paths: [
-      // Crown — pinched-top cowboy crown, slightly taller than fedora.
-      // Sized to actually sit on the head (crown width matches head temples).
+      // Crown — primary
       {
         d: `
           M 30 22
@@ -141,9 +138,9 @@ export default [
           L 30 36
           Z
         `,
-        fill: '#6a4a2a',
+        fill: 'var(--hat, #6a4a2a)',
       },
-      // Brim — wide and curved upward at the sides (signature cowboy curl)
+      // Brim — trim
       {
         d: `
           M 8 36
@@ -155,12 +152,12 @@ export default [
           Q 12 44, 8 36
           Z
         `,
-        fill: '#5a3e22',
+        fill: 'var(--hat-trim, #5a3e22)',
       },
-      // Crown indent (the pinch on top)
+      // Crown indent (the pinch on top) — trim
       {
         d: `M 42 12 Q 50 18, 58 12 L 58 16 Q 50 22, 42 16 Z`,
-        fill: '#4d3315',
+        fill: 'var(--hat-trim, #4d3315)',
       },
     ],
   },
@@ -168,9 +165,7 @@ export default [
     id: 'hat.visor',
     label: 'Visor',
     paths: [
-      // Open-top visor — just the brim + headband (no crown).
-      // Headband sits on the head; brim extends forward.
-      // Headband
+      // Headband — primary
       {
         d: `
           M 22 36
@@ -180,9 +175,9 @@ export default [
           L 22 38
           Z
         `,
-        fill: '#1f6b3a',
+        fill: 'var(--hat, #1f6b3a)',
       },
-      // Brim — curved outward from the headband
+      // Brim — primary (same color, single-tone visor)
       {
         d: `
           M 14 38
@@ -190,7 +185,7 @@ export default [
           C 76 42, 50 44, 16 42
           Z
         `,
-        fill: '#1f6b3a',
+        fill: 'var(--hat, #1f6b3a)',
       },
     ],
   },

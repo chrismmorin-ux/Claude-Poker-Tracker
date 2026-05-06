@@ -594,5 +594,11 @@ export const mapIdentityToAvatarFeatures = (rawPlayer, opts = {}) => {
       : glassesFromLegacyBools(sunglasses),
     eyewearColor: eyewearColorFromIdentity(eyewearColor),
     hat: hatFromHeadwear(headwearInput),
+    // Hat color — passes through whatever the player record carries on
+    // `hatColor` (a CLOTHING_COLORS key like 'blue' or 'red'). The avatar
+    // renderer's buildColorVars resolves the hex via getClothingColor and
+    // sets `--hat` / `--hat-trim` CSS vars on the SVG root. Null/unset
+    // means the hat asset's default fallback hex is used (existing visual).
+    hatColor: opts.hatColorOverride ?? player.hatColor ?? null,
   };
 };

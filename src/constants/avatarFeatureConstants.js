@@ -191,6 +191,20 @@ export const getHairColor = (id) => HAIR_COLOR_BY_ID[id] || HAIR_COLOR_BY_ID[DEF
 export const getEyeColor = (id) => EYE_COLOR_BY_ID[id] || EYE_COLOR_BY_ID[DEFAULT_AVATAR_FEATURES.eyeColor];
 export const getEyewearColor = (id) => EYEWEAR_COLOR_BY_ID[id] || EYEWEAR_COLOR_BY_ID[DEFAULT_AVATAR_FEATURES.eyewearColor];
 
+// Clothing color lookup — accepts either a bare key ('blue') or a full id
+// ('cloth.blue'). Returns the matching CLOTHING_COLORS entry or null when
+// the input doesn't match. Used by avatarMapping to resolve hat color
+// (the avatar's hat layer recolors via --hat / --hat-trim CSS vars).
+const CLOTHING_BY_KEY = Object.fromEntries(
+  CLOTHING_COLORS.map((c) => [c.id.replace(/^cloth\./, ''), c]),
+);
+const CLOTHING_BY_ID = Object.fromEntries(CLOTHING_COLORS.map((c) => [c.id, c]));
+export const getClothingColor = (input) => {
+  if (!input) return null;
+  const k = input.toString().toLowerCase();
+  return CLOTHING_BY_KEY[k] || CLOTHING_BY_ID[k] || null;
+};
+
 // =============================================================================
 // VIEWBOX — shared by all feature SVG paths
 // =============================================================================

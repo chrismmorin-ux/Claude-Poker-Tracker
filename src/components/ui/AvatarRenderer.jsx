@@ -28,6 +28,7 @@ import {
   getHairColor,
   getEyeColor,
   getEyewearColor,
+  getClothingColor,
 } from '../../constants/avatarFeatureConstants';
 import { getFeatureById } from '../../assets/avatarFeatures';
 
@@ -83,12 +84,25 @@ const buildColorVars = (avatarFeatures) => {
   const beardColorId = avatarFeatures?.beardColor || DEFAULT_AVATAR_FEATURES.beardColor;
   const eyeColorId = avatarFeatures?.eyeColor || DEFAULT_AVATAR_FEATURES.eyeColor;
   const frameColorId = avatarFeatures?.eyewearColor || DEFAULT_AVATAR_FEATURES.eyewearColor;
+  // Hat color — resolved from a CLOTHING_COLORS key. When unset, --hat /
+  // --hat-trim are NOT set so the SVG paths use their fallback hex (the
+  // original design colors), preserving the unrecolored render. When set,
+  // --hat-trim is derived from --hat via CSS color-mix (modern browsers
+  // support this in inline style values).
+  const hatEntry = getClothingColor(avatarFeatures?.hatColor);
+  const hatVars = hatEntry
+    ? {
+        '--hat': hatEntry.hex,
+        '--hat-trim': `color-mix(in srgb, ${hatEntry.hex} 70%, black)`,
+      }
+    : {};
   return {
     '--skin': getSkinTone(skinId).hex,
     '--hair': getHairColor(hairColorId).hex,
     '--beard': getHairColor(beardColorId).hex,
     '--eye': getEyeColor(eyeColorId).hex,
     '--frame': getEyewearColor(frameColorId).hex,
+    ...hatVars,
   };
 };
 

@@ -902,10 +902,11 @@ export const PrototypeFinderView = () => {
     beardSaltPepper: filters.beardTreatment === 'salt-pepper',
     build: filters.build,
     // Headwear / eyewear pull from the accessory filter for the live preview.
-    // Hat color recoloring on the avatar is a follow-up (hat asset paths
-    // currently use hardcoded fills — see hat.js — so changing accessory
-    // color updates the data but not the rendered hat color yet).
+    // Hat color now recolors the avatar via --hat / --hat-trim CSS vars
+    // (hat.js paths reference these vars; AvatarRenderer.buildColorVars
+    // resolves the key via getClothingColor and sets the vars when present).
     headwear: filters.accessory.kind === 'hat' ? filters.accessory.subtype : null,
+    hatColor: filters.accessory.kind === 'hat' ? filters.accessory.color : null,
     eyewear: filters.accessory.kind === 'glasses' ? filters.accessory.subtype : null,
   };
 
@@ -954,7 +955,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v8
+            🧪 Prototype v9
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
