@@ -15,14 +15,16 @@
 // COLOR PALETTES
 // =============================================================================
 
-// Skin tones — Fitzpatrick-inspired range, perceptually spaced
-// `ruddy` is a flushed/pink-cast variant of light — captures naturally
-// red-faced players whose skin is lighter and pinker than 'light' but
-// not as pale as 'very-light'. Distinct from red HAIR/BEARD color.
+// Skin tones — Fitzpatrick-inspired range, perceptually spaced.
+// `ruddy` is a flushed/pink-cast variant — owner-confirmed 2026-05-06:
+// "the reddish hue is often from very pale people who get flushed easily,
+// so it should be next to light skin." Order is now very-light → ruddy →
+// light so the flushed variant sits adjacent to its base luminance class.
+// Distinct from red HAIR/BEARD color.
 export const SKIN_TONES = [
   { id: 'skin.very-light', label: 'Very Light', hex: '#f3d5b5' },
-  { id: 'skin.light',      label: 'Light',      hex: '#e6b89c' },
   { id: 'skin.ruddy',      label: 'Ruddy',      hex: '#e8a890' },
+  { id: 'skin.light',      label: 'Light',      hex: '#e6b89c' },
   { id: 'skin.medium',     label: 'Medium',     hex: '#c68863' },
   { id: 'skin.tan',        label: 'Tan',        hex: '#a16e4a' },
   { id: 'skin.brown',      label: 'Brown',      hex: '#7a4e2c' },

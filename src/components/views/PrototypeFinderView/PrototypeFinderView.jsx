@@ -229,6 +229,145 @@ const ChipRow = ({ children, className = '' }) => (
 );
 
 // ===========================================================================
+// SwatchPalette — color-only selector, single row when palette fits
+// ===========================================================================
+//
+// Replaces chip-with-label colors. Each option renders as a 32px circle of
+// pure color. Selected swatch gets an amber ring + slight scale. The selected
+// option's name shows below the row as "Selected: Color Name". Compact
+// enough to keep palettes on a single row when possible (skin 7, hair 8);
+// larger palettes (clothing 14) wrap to two rows.
+//
+// Input shape — array of { value, label, hex }. Caller normalizes from
+// SKIN_TONES / HAIR_COLORS / CLOTHING_COLORS / HAIR_COLOR_INPUT_OPTIONS.
+const SwatchPalette = ({ value, onChange, options, hideLabel = false }) => {
+  const selected = options.find((o) => o.value === value);
+  return (
+    <div className="mb-2">
+      <div className="flex flex-wrap gap-2 mb-1">
+        {options.map((opt) => {
+          const isActive = opt.value === value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value === value ? null : opt.value)}
+              title={opt.label}
+              aria-label={opt.label}
+              aria-pressed={isActive}
+              className={`shrink-0 rounded-full transition-all ${
+                isActive
+                  ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-slate-800/60 scale-105'
+                  : 'ring-1 ring-slate-600 hover:ring-slate-500'
+              }`}
+              style={{
+                width: 32,
+                height: 32,
+                background: opt.hex,
+                boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.25), inset 0 0 0 3px rgba(0,0,0,0.4)',
+              }}
+            />
+          );
+        })}
+      </div>
+      {!hideLabel ? (
+        <div className="text-[11px] text-amber-300 font-semibold ml-1 min-h-[14px]">
+          {selected ? `Selected: ${selected.label}` : <span className="text-gray-500 font-normal italic">Tap a color</span>}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+// ===========================================================================
+// AgeStepper — discrete-snap slider for age decade
+// ===========================================================================
+//
+// Replaces the chip row for age. Visualizes age as a continuous-feeling
+// stepper: track + dot at each decade + amber active dot + amber-fill on
+// the track up to the active position. Each label is independently tappable.
+const AgeStepper = ({ value, onChange }) => {
+  const idx = value ? AGE_OPTIONS.indexOf(value) : -1;
+  const active = idx >= 0;
+  return (
+    <div className="mt-1 mb-2 px-2">
+      {/* Track + dots */}
+      <div className="relative h-7">
+        {/* Background track */}
+        <div className="absolute top-1/2 left-3 right-3 h-1 -translate-y-1/2 bg-slate-700 rounded-full" />
+        {/* Active fill */}
+        {active ? (
+          <div
+            className="absolute top-1/2 left-3 h-1 -translate-y-1/2 bg-amber-500 rounded-full transition-all"
+            style={{ width: `calc((100% - 24px) * ${idx} / ${AGE_OPTIONS.length - 1})` }}
+          />
+        ) : null}
+        {/* Position dots — each is a tap target */}
+        {AGE_OPTIONS.map((opt, i) => {
+          const isActive = i === idx;
+          const left = `calc(12px + (100% - 24px) * ${i} / ${AGE_OPTIONS.length - 1})`;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt === value ? null : opt)}
+              aria-label={`Age ${opt}`}
+              aria-pressed={isActive}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
+              style={{ left, width: 32, height: 32 }}
+            >
+              <span
+                className={`block rounded-full transition-all ${
+                  isActive
+                    ? 'w-6 h-6 bg-amber-500 ring-2 ring-amber-300 shadow-md'
+                    : 'w-3 h-3 bg-slate-800 ring-2 ring-slate-600'
+                }`}
+              />
+            </button>
+          );
+        })}
+      </div>
+      {/* Labels */}
+      <div className="flex justify-between mt-1 px-3">
+        {AGE_OPTIONS.map((opt, i) => {
+          const isActive = i === idx;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt === value ? null : opt)}
+              className={`text-[11px] font-semibold transition-colors ${
+                isActive ? 'text-amber-300' : 'text-gray-500 hover:text-gray-300'
+              }`}
+              style={{ minWidth: 32 }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Pre-normalized palette inputs for SwatchPalette.
+const SKIN_PALETTE = SKIN_TONES.map((t) => ({
+  value: t.id.replace(/^skin\./, ''),
+  label: t.label,
+  hex: t.hex,
+}));
+const HAIR_PALETTE = HAIR_COLOR_INPUT_OPTIONS.map((o) => ({
+  value: o.value,
+  label: o.label,
+  hex: HAIR_HEX[o.value],
+}));
+const CLOTH_PALETTE = CLOTHING_COLORS.map((c) => ({
+  value: c.id.replace(/^cloth\./, ''),
+  label: c.label,
+  hex: c.hex,
+}));
+
+// ===========================================================================
 // HELPERS
 // ===========================================================================
 
@@ -750,7 +889,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v6
+            🧪 Prototype v7
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
@@ -803,11 +942,7 @@ export const PrototypeFinderView = () => {
             ))}
           </ChipRow>
           <SubLabel>Age decade</SubLabel>
-          <ChipRow>
-            {AGE_OPTIONS.map((o) => (
-              <Chip key={o} label={o} active={filters.ageDecade === o} onClick={() => setScalar('ageDecade', o)} />
-            ))}
-          </ChipRow>
+          <AgeStepper value={filters.ageDecade} onChange={(v) => setFilters((prev) => ({ ...prev, ageDecade: v }))} />
           <SubLabel>Ethnicity</SubLabel>
           <ChipRow className="mb-0">
             {ETHNICITY_OPTIONS.map((o) => (
@@ -869,23 +1004,22 @@ export const PrototypeFinderView = () => {
           {activeTab === 'skin' ? (
             <div>
               <SubLabel>Skin tone</SubLabel>
-              <ChipRow className="mb-0">
-                {SKIN_TONES.map((t) => {
-                  const key = t.id.replace(/^skin\./, '');
-                  return <Chip key={t.id} label={t.label} swatch={t.hex} active={filters.skinTone === key} onClick={() => setScalar('skinTone', key)} />;
-                })}
-              </ChipRow>
+              <SwatchPalette
+                value={filters.skinTone}
+                onChange={(v) => setFilters((prev) => ({ ...prev, skinTone: v }))}
+                options={SKIN_PALETTE}
+              />
             </div>
           ) : null}
 
           {activeTab === 'hair' ? (
             <div>
               <SubLabel>Color</SubLabel>
-              <ChipRow>
-                {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-                  <Chip key={opt.value} label={opt.label} swatch={HAIR_HEX[opt.value]} active={filters.hairColor === opt.value} onClick={() => setScalar('hairColor', opt.value)} />
-                ))}
-              </ChipRow>
+              <SwatchPalette
+                value={filters.hairColor}
+                onChange={(v) => setFilters((prev) => ({ ...prev, hairColor: v }))}
+                options={HAIR_PALETTE}
+              />
               <SubLabel>Length</SubLabel>
               <ChipRow>
                 {HAIR_LENGTH_OPTIONS.map((opt) => (
@@ -905,18 +1039,19 @@ export const PrototypeFinderView = () => {
             </div>
           ) : null}
 
+          {/* Beard tab — Color FIRST (parity with Hair tab), then Style. */}
           {activeTab === 'beard' ? (
             <div>
+              <SubLabel>Color</SubLabel>
+              <SwatchPalette
+                value={filters.beardColor}
+                onChange={(v) => setFilters((prev) => ({ ...prev, beardColor: v }))}
+                options={HAIR_PALETTE}
+              />
               <SubLabel>Style</SubLabel>
-              <ChipRow>
+              <ChipRow className="mb-0">
                 {FACIAL_HAIR_OPTIONS.map((opt) => (
                   <Chip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
-                ))}
-              </ChipRow>
-              <SubLabel>Color</SubLabel>
-              <ChipRow className="mb-0">
-                {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-                  <Chip key={opt.value} label={opt.label} swatch={HAIR_HEX[opt.value]} active={filters.beardColor === opt.value} onClick={() => setScalar('beardColor', opt.value)} />
                 ))}
               </ChipRow>
             </div>
@@ -960,12 +1095,11 @@ export const PrototypeFinderView = () => {
               {filters.accessory.kind && filters.accessory.kind !== 'other' ? (
                 <>
                   <SubLabel>Color</SubLabel>
-                  <ChipRow>
-                    {CLOTHING_COLORS.map((c) => {
-                      const key = c.id.replace(/^cloth\./, '');
-                      return <Chip key={c.id} label={c.label} swatch={c.hex} active={filters.accessory.color === key} onClick={() => setAccessory({ color: filters.accessory.color === key ? null : key })} />;
-                    })}
-                  </ChipRow>
+                  <SwatchPalette
+                    value={filters.accessory.color}
+                    onChange={(v) => setAccessory({ color: v })}
+                    options={CLOTH_PALETTE}
+                  />
                 </>
               ) : null}
               {filters.accessory.kind ? (

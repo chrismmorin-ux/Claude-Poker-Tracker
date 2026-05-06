@@ -38,9 +38,20 @@ const HEX_BY_INPUT = Object.fromEntries(
 
 export { HEX_BY_INPUT as HAIR_HEX_BY_INPUT };
 
+// Hair-length options. Owner-confirmed 2026-05-06: "Shaved" implies the
+// head is shaved CLEAN (no visible hair), distinct from a buzz cut which
+// has visible short stubble. `buzz` is now its own option between shaved
+// and short.
+//   bald   → naturally bald (no hair grows) — visually no hair
+//   shaved → head shaved clean — visually no hair (same render as bald)
+//   buzz   → very short stubble — distinct rendering with stubble pattern
+//   short  → conventional short haircut
+//   medium → shoulder/jaw length
+//   long   → past shoulders
 export const HAIR_LENGTH_OPTIONS = [
   { value: 'bald', label: 'Bald' },
   { value: 'shaved', label: 'Shaved' },
+  { value: 'buzz', label: 'Buzz cut' },
   { value: 'short', label: 'Short' },
   { value: 'medium', label: 'Medium' },
   { value: 'long', label: 'Long' },

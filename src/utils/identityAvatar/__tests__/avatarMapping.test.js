@@ -105,8 +105,12 @@ describe('skinFromEthnicity', () => {
 
 describe('hairShapeFromLength (with texture override)', () => {
   it('maps each length to its shape feature when texture is straight', () => {
+    // Owner-confirmed 2026-05-06: 'shaved' = head shaved clean (hair.none),
+    // 'buzz' = visible stubble (hair.buzz). Previously 'shaved' mapped to
+    // hair.buzz which conflated the two.
     expect(hairShapeFromLength('bald')).toBe('hair.none');
-    expect(hairShapeFromLength('shaved')).toBe('hair.buzz');
+    expect(hairShapeFromLength('shaved')).toBe('hair.none');
+    expect(hairShapeFromLength('buzz')).toBe('hair.buzz');
     expect(hairShapeFromLength('short')).toBe('hair.short-wavy');
     expect(hairShapeFromLength('medium')).toBe('hair.medium');
     expect(hairShapeFromLength('long')).toBe('hair.long');
@@ -133,10 +137,12 @@ describe('hairShapeFromLength (with texture override)', () => {
     expect(hairShapeFromLength('short', 'receding')).toBe('hair.receding');
   });
 
-  it('bald/shaved win over texture (no scalp surface to texture)', () => {
+  it('bald/shaved/buzz win over texture (no scalp surface to texture)', () => {
     expect(hairShapeFromLength('bald', 'curly')).toBe('hair.none');
-    expect(hairShapeFromLength('shaved', 'curly')).toBe('hair.buzz');
-    expect(hairShapeFromLength('shaved', 'braided')).toBe('hair.buzz');
+    expect(hairShapeFromLength('shaved', 'curly')).toBe('hair.none');
+    expect(hairShapeFromLength('shaved', 'braided')).toBe('hair.none');
+    expect(hairShapeFromLength('buzz', 'curly')).toBe('hair.buzz');
+    expect(hairShapeFromLength('buzz', 'braided')).toBe('hair.buzz');
   });
 
   it('texture=straight defers to length (no override)', () => {
@@ -348,7 +354,7 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
       ethnicityTags: ['caucasian'],
       ageDecade: '60s+',
       hairColor: 'white',
-      hairLength: 'shaved', // mostly bald → buzz approximation
+      hairLength: 'buzz', // balding; visible stubble → buzz cut (was 'shaved' pre-2026-05-06)
       facialHair: 'clean',
       eyewear: 'readers',
     });
@@ -390,7 +396,7 @@ describe('mapIdentityToAvatarFeatures (full pipeline)', () => {
       ethnicityTags: ['black'],
       ageDecade: '40s',
       hairColor: 'black',
-      hairLength: 'shaved',
+      hairLength: 'buzz', // visible stubble → buzz cut (was 'shaved' pre-2026-05-06)
       facialHair: 'goatee',
       eyewear: 'sunglasses',
     });

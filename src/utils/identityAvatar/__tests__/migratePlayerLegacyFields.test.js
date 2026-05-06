@@ -87,8 +87,11 @@ describe('ethnicityTags derivation', () => {
 
 describe('hair derivation from avatarFeatures', () => {
   it('derives hairLength from avatarFeatures.hair shape', () => {
+    // 2026-05-06: hair.buzz now migrates to 'buzz' (not 'shaved') — shaved
+    // means "head shaved clean" (no visible hair) while buzz has visible
+    // stubble. The old conflation was an upstream bug.
     expect(migratePlayerLegacyFields({ avatarFeatures: { hair: 'hair.long' } }).hairLength).toBe('long');
-    expect(migratePlayerLegacyFields({ avatarFeatures: { hair: 'hair.buzz' } }).hairLength).toBe('shaved');
+    expect(migratePlayerLegacyFields({ avatarFeatures: { hair: 'hair.buzz' } }).hairLength).toBe('buzz');
     expect(migratePlayerLegacyFields({ avatarFeatures: { hair: 'hair.medium' } }).hairLength).toBe('medium');
     expect(migratePlayerLegacyFields({ avatarFeatures: { hair: 'hair.none' } }).hairLength).toBe('bald');
   });

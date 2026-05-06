@@ -77,9 +77,13 @@ const LEGACY_SKIN_TO_ETHNICITY = {
 
 // avatarFeatures.hair shape ID → new hair length / texture.
 // Some shapes encode length, some encode texture; map both.
+// 2026-05-06: hair.buzz now maps to 'buzz' (the new hairLength option),
+// not 'shaved'. Owner clarified that "Shaved" means head shaved clean
+// (no visible hair) while "Buzz cut" has visible stubble — these are
+// distinct, and the legacy migration was conflating them.
 const AVATAR_HAIR_TO_LENGTH = {
   'hair.none': 'bald',
-  'hair.buzz': 'shaved',
+  'hair.buzz': 'buzz',
   'hair.short-wavy': 'short',
   'hair.side-part': 'short',
   'hair.medium': 'medium',

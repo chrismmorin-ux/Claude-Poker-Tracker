@@ -204,10 +204,17 @@ const HAIR_TEXTURE_TO_SHAPE = {
  * Map hairLength to existing hair shape feature ids. Defaults to short-wavy
  * when unspecified — produces a recognizable head of hair without committing
  * to a particular style.
+ *
+ * Owner-confirmed 2026-05-06: `shaved` means the head is shaved CLEAN (no
+ * visible hair). It used to map to hair.buzz which conflated it with a
+ * buzz cut. `buzz` is now its own value mapping to hair.buzz; `shaved`
+ * maps to hair.none alongside `bald`. They render visually identically
+ * (both no-hair), but are conceptually distinct (genetic vs. choice).
  */
 const HAIR_LENGTH_TO_SHAPE = {
   bald: 'hair.none',
-  shaved: 'hair.buzz',
+  shaved: 'hair.none',
+  buzz: 'hair.buzz',
   short: 'hair.short-wavy',
   medium: 'hair.medium',
   long: 'hair.long',
@@ -216,14 +223,19 @@ const HAIR_LENGTH_TO_SHAPE = {
 /**
  * Resolve hair shape from texture (priority) and length (fallback).
  *
- * Bald/shaved are length-driven and win over texture (no point texturing
- * absent hair). Otherwise texture overrides length when present.
+ * Bald/shaved/buzz are length-driven and win over texture (no point
+ * texturing absent or near-absent hair). Otherwise texture overrides
+ * length when present.
+ *
+ * Owner-confirmed 2026-05-06: shaved now means "head shaved clean"
+ * (hair.none) and buzz means "buzz cut" (hair.buzz). Previously
+ * `shaved` mapped to hair.buzz which conflated the two.
  */
 export const hairShapeFromLength = (hairLength, hairTexture) => {
   const lengthKey = (hairLength || '').toLowerCase();
-  // Length-priority cases: bald or shaved scalp leaves no surface for texture
-  if (lengthKey === 'bald') return 'hair.none';
-  if (lengthKey === 'shaved') return 'hair.buzz';
+  // Length-priority cases: hairless scalps don't get textured.
+  if (lengthKey === 'bald' || lengthKey === 'shaved') return 'hair.none';
+  if (lengthKey === 'buzz') return 'hair.buzz';
 
   const textureKey = (hairTexture || '').toLowerCase();
   if (textureKey && HAIR_TEXTURE_TO_SHAPE[textureKey]) {
