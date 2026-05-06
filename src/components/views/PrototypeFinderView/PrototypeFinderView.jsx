@@ -1,20 +1,33 @@
 /**
  * @file PrototypeFinderView.jsx — interactive prototype of the unified PlayerFinder.
  *
- * v4 (2026-05-06) per owner feedback on v3:
- *  - Visual density rationalized. Always-visible primary axes (small
- *    chip count) get a clean stacked layout. Chip-heavy axes (Skin,
- *    Hair, Beard, Accessory) live in a SEGMENTED TAB control — only
- *    one tab's content visible at a time. Switching tabs is instant
- *    and never shifts result-list position (tab strip stays put; tab
- *    content sits in a fixed slot below; results live below that).
- *  - Per-axis congruency. When a result is tapped, each diff row gets
- *    two pill buttons (filter value vs player value); user picks
- *    per-axis. Defaults: mismatches → player value (profile is
- *    canonical); additions → add (new info worth attaching).
+ * v6 (2026-05-06) — Visual Design System Sweep per the approved plan in
+ * `.claude/plans/floating-questing-conway.md`. Resolves 20 visual
+ * inconsistencies surfaced in the audit. Establishes a small token
+ * system (spacing scale, type scale, color roles, capitalization rule,
+ * icon scale) that carries forward to the production PlayerFinder.
  *
- * Reachable via Settings → Admin / Sandbox → "Prototype: Unified
- * PlayerFinder", or directly at #prototype-finder. Mock data only.
+ * Key changes from v5:
+ *   - PlainChip + SwatchChip + Pill collapsed into ONE `Chip` primitive
+ *     with size + swatch + variant props.
+ *   - Tab strip drops its inner background (was darker than parent card)
+ *     for a clean `border-b` separator.
+ *   - Spacing scale: 4 / 8 / 12 / 16 only.
+ *   - Type scale: 9 / 11 / 12 / 14 / 16 only.
+ *   - Color tokens: amber-500 (active), amber-500/10 (loaded bg),
+ *     /30 (loaded border), /50 (soft action borders). Three opacity
+ *     steps total, no more drift.
+ *   - Tap targets: filter chips ≥44px tall (WCAG 2.5.5).
+ *   - Icon scale: 12 / 16 / 20 / 48-56.
+ *   - Result row: ONE highlight pattern (loaded). Drops the left-bar
+ *     accent for has-filters-not-loaded.
+ *   - CongruencyPanel: invariant slate shell; status communicated via
+ *     icon + title text color only.
+ *   - BUILD_OPTIONS now Title Case via {value, label} shape (fixed at
+ *     source in BuildSection.jsx).
+ *
+ * Reachable via Settings → Admin / Sandbox or directly at
+ * #prototype-finder. Mock data only.
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -43,7 +56,7 @@ import { findMatchingAccessories } from '../../../utils/accessoryInventory';
 import { MOCK_PLAYERS, MOCK_HEIGHTS } from './mockPlayers';
 
 // ===========================================================================
-// CONSTANTS
+// CONSTANTS — option arrays
 // ===========================================================================
 
 const SEX_OPTIONS = [
@@ -76,6 +89,13 @@ const ACCESSORY_KINDS = [
 ];
 
 const HAIR_HEX = Object.fromEntries(HAIR_COLORS.map((c) => [c.id.replace(/^color\./, ''), c.hex]));
+
+// Accessory subtype labels — Title Case the lowercase storage values for display.
+const titleCase = (s) =>
+  String(s || '')
+    .split(/[-\s]+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(' ');
 
 const SCALAR_KEYS = [
   'sex', 'ageDecade', 'skinTone', 'hairColor', 'hairLength', 'hairTexture',
@@ -124,71 +144,88 @@ const FIELD_LABEL = {
 };
 
 // ===========================================================================
-// PRIMITIVES
+// CHIP — single primitive replacing PlainChip + SwatchChip + Pill
 // ===========================================================================
-
-const PlainChip = ({ active, label, onClick, size = 'md' }) => {
-  const sz = size === 'sm' ? 'px-2 py-0.5 text-[11px] min-h-[28px]' : 'px-3 py-1.5 text-xs min-h-[34px]';
+//
+// size:    'md' (filter chips, ≥44px tap target) | 'sm' (compact, ≥36px)
+// shape:   'pill' (rounded-full — selection chips) | 'square' (rounded-md —
+//                                                  decision pills inside
+//                                                  the congruency panel)
+// swatch:  optional hex; renders a 20px color disc inside the chip
+//
+// Active state:   bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm
+// Inactive state: bg-slate-800 text-gray-200 border-slate-600
+//                 hover:bg-slate-700 hover:border-slate-500
+const Chip = ({ active, label, swatch = null, onClick, size = 'md', shape = 'pill', testId }) => {
+  const sizing = size === 'sm'
+    ? 'min-h-[36px] px-3 py-1.5 text-[11px]'
+    : 'min-h-[44px] px-3 py-2 text-xs';
+  const radius = shape === 'square' ? 'rounded-md' : 'rounded-full';
+  const state = active
+    ? 'bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm'
+    : 'bg-slate-800 text-gray-200 border-slate-600 hover:bg-slate-700 hover:border-slate-500';
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`${sz} rounded-full transition-colors border ${
-        active
-          ? 'bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm'
-          : 'bg-slate-800 text-gray-200 border-slate-600 hover:bg-slate-700 hover:border-slate-500'
-      }`}
+      data-testid={testId}
       aria-pressed={active}
+      className={`inline-flex items-center justify-center gap-1.5 ${radius} ${sizing} border transition-colors ${state}`}
     >
-      {label}
+      {swatch ? (
+        <span
+          aria-hidden="true"
+          className="rounded-full inline-block shrink-0"
+          style={{
+            background: swatch,
+            width: 20,
+            height: 20,
+            boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.85), 0 0 0 1px rgba(0,0,0,0.4)',
+          }}
+        />
+      ) : null}
+      <span className="whitespace-nowrap">{label}</span>
     </button>
   );
 };
 
-const SwatchChip = ({ active, label, hex, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs transition-colors border min-h-[34px] ${
-      active
-        ? 'bg-amber-500 text-gray-900 border-amber-500 font-semibold shadow-sm'
-        : 'bg-slate-800 text-gray-200 border-slate-600 hover:bg-slate-700 hover:border-slate-500'
-    }`}
-    aria-pressed={active}
-  >
-    <span
-      className="rounded-full inline-block shrink-0"
-      style={{
-        background: hex,
-        width: 20,
-        height: 20,
-        boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.85), 0 0 0 1px rgba(0,0,0,0.4)',
-      }}
-    />
-    <span className="whitespace-nowrap">{label}</span>
-  </button>
-);
+// ===========================================================================
+// LAYOUT primitives
+// ===========================================================================
 
-const SubLabel = ({ children }) => (
-  <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-1 mt-2 first:mt-0">
+// Card section wrapper. p-3 (12px) and mb-4 (16px) per the spacing scale.
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-slate-800/60 border border-slate-700 rounded-lg p-3 mb-4 ${className}`}>
     {children}
   </div>
 );
 
-const ChipRow = ({ children, className = '' }) => (
-  <div className={`flex flex-wrap gap-1 mb-2 ${className}`}>{children}</div>
-);
-
-// Card label — appears above each grouping card. Quieter than v3.
-const PrimaryHeader = ({ children, count = 0 }) => (
-  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-amber-300/80 font-bold mb-2 px-0.5">
-    <span>{children}</span>
+// Card-level header — the loud label. amber-300 + uppercase + tracking-wider.
+// Optional active-count badge at the right.
+const CardHeader = ({ children, count = 0 }) => (
+  <div className="flex items-center justify-between mb-2">
+    <span className="text-[11px] uppercase tracking-wider text-amber-300 font-bold">
+      {children}
+    </span>
     {count > 0 ? (
-      <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/20 text-amber-200 border border-amber-500/40">
+      <span className="text-[9px] font-bold rounded-full px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-300">
         {count}
       </span>
     ) : null}
   </div>
+);
+
+// Inner sub-row label (e.g. "Sex" / "Age" / "Color"). Quiet — gray-500.
+// Same size as CardHeader (11px); contrast is via color, not size.
+const SubLabel = ({ children }) => (
+  <div className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-1 mt-2 first:mt-0">
+    {children}
+  </div>
+);
+
+// Chip row — gap-2 (8px) per the spacing scale.
+const ChipRow = ({ children, className = '' }) => (
+  <div className={`flex flex-wrap gap-2 mb-2 ${className}`}>{children}</div>
 );
 
 // ===========================================================================
@@ -226,11 +263,10 @@ const matchesScalar = (axis, filterValue, playerValue) => {
   return playerValue.toString().toLowerCase() === filterValue.toString().toLowerCase();
 };
 
-// Per-tab active filter count.
 const countActiveInGroup = (filters, keys) =>
   keys.filter((k) => !!filters[k]).length;
 
-const ACCESSORY_FILTER_ACTIVE_COUNT = (filters) =>
+const accessoryFilterCount = (filters) =>
   (filters.accessory.kind ? 1 : 0)
   + (filters.accessory.subtype ? 1 : 0)
   + (filters.accessory.color ? 1 : 0)
@@ -242,7 +278,7 @@ const ACCESSORY_FILTER_ACTIVE_COUNT = (filters) =>
 
 const computeCongruency = (filters, player) => {
   const eff = playerEffective(player);
-  const items = []; // { axis, kind: 'mismatch' | 'addition', filterValue, playerValue }
+  const items = [];
 
   for (const axis of SCALAR_KEYS) {
     const fv = filters[axis];
@@ -252,8 +288,6 @@ const computeCongruency = (filters, player) => {
       items.push({ axis, kind: 'addition', filterValue: fv, playerValue: null });
       continue;
     }
-    // Range axes: tolerant — only flag if STRICTLY different (any difference,
-    // even adjacent, surfaces so owner can pick more-specific value).
     if (fv.toString().toLowerCase() !== pv.toString().toLowerCase()) {
       items.push({ axis, kind: 'mismatch', filterValue: fv, playerValue: pv });
     }
@@ -305,120 +339,132 @@ const formatValue = (axis, value) => {
 };
 
 // ===========================================================================
-// CONGRUENCY PANEL — per-axis decisions
+// CONGRUENCY PANEL — invariant slate shell, status via icon+title color only
 // ===========================================================================
+
+// Decision badge: +NEW (emerald, additive) vs DIFF (amber, conflict).
+// Same shape, role-bound color. Resolves audit finding 5's badge half.
+const DecisionBadge = ({ kind }) => {
+  const isAddition = kind === 'addition';
+  const palette = isAddition
+    ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30'
+    : 'text-amber-300 bg-amber-500/10 border-amber-500/30';
+  return (
+    <span className={`text-[9px] font-bold rounded px-2 py-0.5 border ${palette}`}>
+      {isAddition ? '+ NEW' : 'DIFF'}
+    </span>
+  );
+};
 
 const DecisionRow = ({ item, decision, onPick }) => {
   const left = item.kind === 'mismatch'
-    ? { id: 'filter', label: formatValue(item.axis, item.filterValue) }
-    : { id: 'add',    label: formatValue(item.axis, item.filterValue) };
+    ? { id: 'filter', label: `Filter: ${formatValue(item.axis, item.filterValue)}` }
+    : { id: 'add',    label: `Add: ${formatValue(item.axis, item.filterValue)}` };
   const right = item.kind === 'mismatch'
-    ? { id: 'player', label: formatValue(item.axis, item.playerValue) }
+    ? { id: 'player', label: `Keep: ${formatValue(item.axis, item.playerValue)}` }
     : { id: 'skip',   label: 'Skip' };
 
-  const Pill = ({ side, label }) => (
-    <button
-      type="button"
-      onClick={() => onPick(side.id)}
-      className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-semibold border transition-colors text-center truncate ${
-        decision === side.id
-          ? 'bg-amber-500 text-gray-900 border-amber-500'
-          : 'bg-slate-800 text-gray-300 border-slate-600 hover:bg-slate-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
-    <div className="mb-2">
+    <div className="mb-2 last:mb-0">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold w-20 shrink-0">
+        <span className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">
           {FIELD_LABEL[item.axis] || item.axis}
         </span>
-        {item.kind === 'addition' ? (
-          <span className="text-[9px] text-emerald-300 px-1 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 font-semibold">+ NEW</span>
-        ) : (
-          <span className="text-[9px] text-amber-300 px-1 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 font-semibold">DIFF</span>
-        )}
+        <DecisionBadge kind={item.kind} />
       </div>
-      <div className="flex gap-1.5 ml-1">
-        <Pill side={left} label={`${item.kind === 'addition' ? 'Add' : 'Filter'}: ${left.label}`} />
-        <Pill side={right} label={item.kind === 'addition' ? 'Skip' : `Keep: ${right.label}`} />
+      <div className="flex gap-2">
+        <Chip
+          shape="square"
+          size="sm"
+          active={decision === left.id}
+          label={left.label}
+          onClick={() => onPick(left.id)}
+        />
+        <Chip
+          shape="square"
+          size="sm"
+          active={decision === right.id}
+          label={right.label}
+          onClick={() => onPick(right.id)}
+        />
       </div>
     </div>
   );
 };
 
 const CongruencyPanel = ({ player, items, decisions, onDecide, onCancel, onAssign, seat }) => {
-  if (items.length === 0) {
-    return (
-      <div className="bg-emerald-900/30 border border-emerald-600/40 rounded-lg p-3 mb-3">
-        <div className="flex items-center gap-2 mb-2 text-emerald-200 text-sm font-semibold">
-          <Check size={16} />
-          Player matches all filters — ready to assign
-        </div>
-        <button
-          type="button"
-          onClick={() => onAssign(0)}
-          className="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold rounded-lg py-2.5 text-sm shadow-sm"
-        >
-          Assign {player.name || 'player'} → Seat {seat}
-        </button>
-      </div>
-    );
-  }
+  const allMatch = items.length === 0;
 
-  // Count how many decisions resolve to "apply" (filter or add).
   const applyCount = items.reduce((n, item) => {
     const d = decisions[`${item.axis}-${item.kind}`];
     return n + ((d === 'filter' || d === 'add') ? 1 : 0);
   }, 0);
 
   return (
-    <div className="bg-slate-800 border border-amber-500/40 rounded-lg p-3 mb-3">
-      <div className="flex items-center gap-2 mb-3 text-amber-200 text-sm font-semibold">
-        <AlertTriangle size={16} />
-        {items.length} difference{items.length === 1 ? '' : 's'} — pick per axis
+    <Card className="border-amber-500/50">
+      <div className="flex items-center gap-2 mb-3">
+        {allMatch ? (
+          <>
+            <Check size={16} className="text-emerald-300 shrink-0" />
+            <span className="text-sm font-semibold text-emerald-300">
+              Player matches all filters
+            </span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle size={16} className="text-amber-300 shrink-0" />
+            <span className="text-sm font-semibold text-amber-300">
+              {items.length} difference{items.length === 1 ? '' : 's'} — pick per axis
+            </span>
+          </>
+        )}
       </div>
-      <div className="space-y-1">
-        {items.map((item) => {
-          const key = `${item.axis}-${item.kind}`;
-          return (
-            <DecisionRow
-              key={key}
-              item={item}
-              decision={decisions[key]}
-              onPick={(side) => onDecide(key, side)}
-            />
-          );
-        })}
-      </div>
-      <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-700">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-xs font-semibold rounded-lg py-2.5"
-        >
-          Cancel
-        </button>
+
+      {!allMatch ? (
+        <div className="mb-3">
+          {items.map((item) => {
+            const key = `${item.axis}-${item.kind}`;
+            return (
+              <DecisionRow
+                key={key}
+                item={item}
+                decision={decisions[key]}
+                onPick={(side) => onDecide(key, side)}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className={`grid ${allMatch ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+        {!allMatch ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="bg-slate-700 hover:bg-slate-600 text-gray-200 text-sm font-semibold rounded-md min-h-[44px] px-3"
+          >
+            Cancel
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => onAssign(applyCount)}
-          className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-xs font-semibold rounded-lg py-2.5"
+          className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-semibold rounded-md min-h-[44px] px-3 shadow-sm"
         >
-          Assign · apply {applyCount}
+          {allMatch
+            ? `Assign ${player.name || 'player'} → Seat ${seat}`
+            : `Assign · apply ${applyCount}`}
         </button>
       </div>
-    </div>
+    </Card>
   );
 };
 
 // ===========================================================================
-// RESULT ROW
+// RESULT ROW — single highlight pattern
 // ===========================================================================
 
-const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoaded }) => {
+const ResultRow = ({ player, onTap, matchedAccessories, isLoaded }) => {
   const head = player.name || <span className="italic text-gray-500">(unnamed)</span>;
   const eff = playerEffective(player);
   const subtitle = [
@@ -431,12 +477,10 @@ const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoad
     <button
       type="button"
       onClick={() => onTap(player)}
-      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
+      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors min-h-[64px] ${
         isLoaded
-          ? 'bg-amber-500/15 border-amber-500'
-          : hasActiveFilters
-            ? 'bg-slate-800 border-l-4 border-l-amber-500 border-slate-700'
-            : 'bg-slate-800 border-slate-700 hover:bg-slate-700/60'
+          ? 'bg-amber-500/10 border-2 border-amber-500'
+          : 'bg-slate-800 border border-slate-700 hover:bg-slate-700/60'
       }`}
     >
       <div className="shrink-0 rounded-full overflow-hidden bg-slate-900 border border-slate-600">
@@ -445,17 +489,17 @@ const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoad
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-gray-100 truncate">
           {head}
-          {player.nickname ? <span className="ml-1.5 text-gray-400 text-xs">"{player.nickname}"</span> : null}
+          {player.nickname ? <span className="ml-2 text-gray-400 text-xs">"{player.nickname}"</span> : null}
         </div>
-        <div className="text-[11px] text-gray-400 capitalize truncate">{subtitle}</div>
+        <div className="text-[11px] text-gray-300 capitalize truncate">{subtitle}</div>
         {matchedAccessories.length > 0 ? (
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="mt-1 flex flex-wrap gap-2">
             {matchedAccessories.map((acc) => {
               const headline = [acc.color, acc.subtype].filter(Boolean).join(' ') || acc.kind;
               return (
                 <span
                   key={acc.accessoryId}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900"
+                  className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300"
                 >
                   {headline}
                   {acc.note ? <span className="ml-1 italic">({acc.note})</span> : null}
@@ -465,7 +509,7 @@ const ResultRow = ({ player, onTap, hasActiveFilters, matchedAccessories, isLoad
           </div>
         ) : null}
       </div>
-      <div className="shrink-0 text-right text-[10px] text-gray-500 leading-tight">
+      <div className="shrink-0 text-right text-[11px] text-gray-500 leading-tight">
         <div>{player.handCount || 0} hands</div>
       </div>
     </button>
@@ -507,7 +551,7 @@ export const PrototypeFinderView = () => {
   const [nameQuery, setNameQuery] = useState('');
   const [activeTab, setActiveTab] = useState('skin');
   const [activeRecord, setActiveRecord] = useState(null);
-  const [decisions, setDecisions] = useState({}); // { 'axis-kind': 'filter'|'player'|'add'|'skip' }
+  const [decisions, setDecisions] = useState({});
   const [buildInfo, setBuildInfo] = useState({ sha: '?', built: '?' });
 
   const seat = 3;
@@ -579,12 +623,11 @@ export const PrototypeFinderView = () => {
     || accFilterActive
     || (filters.accessory.note && filters.accessory.note.trim());
 
-  // ---- Tab badges ----
   const tabBadges = {
     skin: filters.skinTone ? 1 : 0,
     hair: countActiveInGroup(filters, ['hairColor', 'hairLength', 'hairTexture', 'hairTreatment']),
     beard: countActiveInGroup(filters, ['facialHair', 'beardColor']),
-    accessory: ACCESSORY_FILTER_ACTIVE_COUNT(filters),
+    accessory: accessoryFilterCount(filters),
   };
 
   // ---- Handlers ----
@@ -609,8 +652,6 @@ export const PrototypeFinderView = () => {
 
   const onTapResult = (player) => {
     setActiveRecord(player);
-    // Compute initial per-axis decisions: mismatches default to "player",
-    // additions default to "add" (new info usually worth keeping).
     const items = computeCongruency(filters, player);
     const initial = {};
     for (const item of items) {
@@ -626,7 +667,7 @@ export const PrototypeFinderView = () => {
   const onDecide = (key, side) => {
     setDecisions((prev) => ({ ...prev, [key]: side }));
   };
-  const onAssign = (applyCount) => {
+  const onAssign = () => {
     if (!activeRecord) return;
     const items = computeCongruency(filters, activeRecord);
     const applied = [];
@@ -647,11 +688,8 @@ export const PrototypeFinderView = () => {
 
   const congruencyItems = activeRecord ? computeCongruency(filters, activeRecord) : [];
 
-  // Live avatar source — when an existing player is loaded, show their record
-  // straight; when composing new, build a synthetic player from current
-  // filter values so every chip tap updates the avatar in real time.
-  // Accessory.kind === 'hat' / 'glasses' feed the legacy headwear/eyewear
-  // avatar slots so the preview shows what the player would look like.
+  // Live builder avatar — synthetic player from filters when composing new;
+  // the loaded record otherwise.
   const livePlayer = activeRecord || {
     playerId: 'live-builder',
     sex: filters.sex,
@@ -665,22 +703,20 @@ export const PrototypeFinderView = () => {
     facialHair: filters.facialHair,
     beardColor: filters.beardColor,
     build: filters.build,
-    // Accessory → avatar slot mapping (preview only).
     headwear: filters.accessory.kind === 'hat' ? filters.accessory.subtype : null,
     eyewear: filters.accessory.kind === 'glasses' ? filters.accessory.subtype : null,
   };
 
-  // Active-axis count for the status line under the avatar.
   const totalActiveCount =
     SCALAR_KEYS.filter((k) => !!filters[k]).length
     + filters.ethnicity.length
-    + ACCESSORY_FILTER_ACTIVE_COUNT(filters);
+    + accessoryFilterCount(filters);
 
   const builderStatus = activeRecord
     ? { line1: 'Viewing', line2: activeRecord.name || '(unnamed player)' }
     : totalActiveCount === 0
       ? { line1: 'Building', line2: 'pick features below' }
-      : { line1: 'Building player', line2: `${totalActiveCount} feature${totalActiveCount === 1 ? '' : 's'} set` };
+      : { line1: 'Building', line2: `${totalActiveCount} feature${totalActiveCount === 1 ? '' : 's'} set` };
 
   // ===========================================================================
   // RENDER
@@ -689,137 +725,139 @@ export const PrototypeFinderView = () => {
   return (
     <div className="h-dvh w-full flex flex-col bg-slate-900 text-gray-100 overflow-hidden">
       {/* TOP BAR */}
-      <div className="sticky top-0 z-30 bg-slate-950 border-b border-slate-700">
+      <div className="bg-slate-950 border-b border-slate-700 shrink-0">
         <div className="flex items-center justify-between px-3 py-2">
           <button
             type="button"
             onClick={() => setCurrentScreen(SCREEN.SETTINGS)}
-            className="flex items-center gap-1 text-sm font-medium hover:bg-slate-800 px-2 py-1 rounded text-gray-200"
+            className="flex items-center gap-2 text-sm font-semibold hover:bg-slate-800 px-2 py-1 rounded text-gray-200 min-h-[44px]"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
             Back
           </button>
-          <div className="text-sm font-semibold text-gray-100 truncate mx-2">
+          <div className="text-base font-semibold text-gray-100 truncate mx-2">
             Pick for Seat {seat}
           </div>
           <button
             type="button"
             onClick={forceFresh}
-            className="flex items-center gap-1 text-[10px] text-amber-300 px-2 py-1 rounded border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 shrink-0"
+            className="flex items-center gap-2 text-xs font-semibold text-amber-300 px-3 py-1 rounded-md border border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 shrink-0 min-h-[44px]"
             title="Unregister SW + clear caches + reload"
           >
-            <RefreshCw size={10} />
+            <RefreshCw size={16} />
             Force fresh
           </button>
         </div>
-        <div className="px-3 py-1 bg-amber-500/15 border-t border-amber-500/30 text-amber-200 flex items-center justify-between">
+        <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v5
+            🧪 Prototype v6
           </span>
-          <span className="text-[9px] font-mono text-amber-100/70">
+          <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
           </span>
         </div>
       </div>
 
-      {/* BUILDER HEADER — outside the scroll region so the live avatar is
-          always visible as the user fills in features. The avatar IS the
-          "what am I building" anchor. Synthetic player derived from filters
-          (composing-new) or the loaded record (viewing-existing). */}
-      <div className="bg-slate-900 border-b border-slate-700 px-3 py-2 shrink-0">
+      {/* BUILDER HEADER — outside scroll, always visible */}
+      <div className="bg-slate-900 border-b border-slate-700 px-3 py-3 shrink-0">
         <div className="flex items-center gap-3">
-          <div className={`shrink-0 rounded-full overflow-hidden border-2 transition-colors ${
-            activeRecord ? 'border-amber-500' : (totalActiveCount > 0 ? 'border-amber-500/40' : 'border-slate-700')
-          }`} style={{ width: 56, height: 56 }}>
+          <div
+            className={`shrink-0 rounded-full overflow-hidden border-2 transition-colors ${
+              activeRecord ? 'border-amber-500' : (totalActiveCount > 0 ? 'border-amber-500/50' : 'border-slate-700')
+            }`}
+            style={{ width: 56, height: 56 }}
+          >
             <IdentityAvatar player={livePlayer} size={56} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-1.5 leading-none mb-1">
-              <span className="text-[10px] uppercase tracking-wider text-amber-300/80 font-bold">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-[11px] uppercase tracking-wider text-amber-300 font-bold">
                 {builderStatus.line1}
               </span>
-              <span className="text-sm font-semibold text-gray-100 truncate">{builderStatus.line2}</span>
+              <span className="text-sm font-semibold text-gray-100 truncate">
+                {builderStatus.line2}
+              </span>
             </div>
             <input
               type="text"
               value={nameQuery}
               onChange={(e) => setNameQuery(e.target.value)}
               placeholder="Name or nickname"
-              className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded border border-slate-700 px-2 py-1.5 focus:border-amber-500 focus:outline-none"
+              className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded-md border border-slate-700 px-3 py-2 focus:border-amber-500 focus:outline-none min-h-[44px]"
             />
           </div>
         </div>
       </div>
 
       {/* SCROLL COLUMN */}
-      <div className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
-
-        {/* IDENTITY — always visible, primary axes */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
-          <PrimaryHeader count={(filters.sex ? 1 : 0) + (filters.ageDecade ? 1 : 0) + filters.ethnicity.length}>
+      <div className="flex-1 overflow-y-auto px-3 pt-3 pb-4">
+        {/* IDENTITY card — always visible primary axes */}
+        <Card>
+          <CardHeader count={(filters.sex ? 1 : 0) + (filters.ageDecade ? 1 : 0) + filters.ethnicity.length}>
             Identity
-          </PrimaryHeader>
+          </CardHeader>
           <SubLabel>Sex</SubLabel>
           <ChipRow>
             {SEX_OPTIONS.map((o) => (
-              <PlainChip key={o.value} label={o.label} active={filters.sex === o.value} onClick={() => setScalar('sex', o.value)} />
+              <Chip key={o.value} label={o.label} active={filters.sex === o.value} onClick={() => setScalar('sex', o.value)} />
             ))}
           </ChipRow>
           <SubLabel>Age decade</SubLabel>
           <ChipRow>
             {AGE_OPTIONS.map((o) => (
-              <PlainChip key={o} label={o} active={filters.ageDecade === o} onClick={() => setScalar('ageDecade', o)} />
+              <Chip key={o} label={o} active={filters.ageDecade === o} onClick={() => setScalar('ageDecade', o)} />
             ))}
           </ChipRow>
           <SubLabel>Ethnicity</SubLabel>
           <ChipRow className="mb-0">
             {ETHNICITY_OPTIONS.map((o) => (
-              <PlainChip key={o.value} label={o.label} active={filters.ethnicity.includes(o.value)} onClick={() => toggleEthnicity(o.value)} />
+              <Chip key={o.value} label={o.label} active={filters.ethnicity.includes(o.value)} onClick={() => toggleEthnicity(o.value)} />
             ))}
           </ChipRow>
-        </div>
+        </Card>
 
-        {/* BODY — always visible, small chip count */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
-          <PrimaryHeader count={(filters.build ? 1 : 0) + (filters.height ? 1 : 0)}>
+        {/* BODY card */}
+        <Card>
+          <CardHeader count={(filters.build ? 1 : 0) + (filters.height ? 1 : 0)}>
             Body
-          </PrimaryHeader>
+          </CardHeader>
           <SubLabel>Build</SubLabel>
           <ChipRow>
             {BUILD_OPTIONS.map((o) => (
-              <PlainChip key={o} label={o} active={filters.build === o} onClick={() => setScalar('build', o)} />
+              <Chip key={o.value} label={o.label} active={filters.build === o.value} onClick={() => setScalar('build', o.value)} />
             ))}
           </ChipRow>
           <SubLabel>Height</SubLabel>
           <ChipRow className="mb-0">
             {HEIGHT_OPTIONS.map((o) => (
-              <PlainChip key={o.value} label={o.label} active={filters.height === o.value} onClick={() => setScalar('height', o.value)} />
+              <Chip key={o.value} label={o.label} active={filters.height === o.value} onClick={() => setScalar('height', o.value)} />
             ))}
           </ChipRow>
-        </div>
+        </Card>
 
-        {/* TABBED CHIP-HEAVY AXES */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
-          <PrimaryHeader count={tabBadges.skin + tabBadges.hair + tabBadges.beard + tabBadges.accessory}>
+        {/* FEATURES card with tab strip */}
+        <Card>
+          <CardHeader count={tabBadges.skin + tabBadges.hair + tabBadges.beard + tabBadges.accessory}>
             Features
-          </PrimaryHeader>
-          {/* Segmented tab strip */}
-          <div className="flex gap-1 mb-3 bg-slate-900 p-1 rounded-lg border border-slate-700">
+          </CardHeader>
+          {/* Tab strip — no inner background; sits on the card with a
+              border-b separator. Tabs read as nav, not nested container. */}
+          <div className="flex gap-1 mb-3 border-b border-slate-700 -mx-1 px-1 pb-2">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setActiveTab(t.id)}
-                className={`flex-1 px-2 py-2 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                className={`flex-1 inline-flex items-center justify-center gap-2 px-3 rounded-md text-sm font-semibold transition-colors min-h-[44px] ${
                   activeTab === t.id
                     ? 'bg-amber-500 text-gray-900 shadow-sm'
-                    : 'text-gray-300 hover:bg-slate-800'
+                    : 'text-gray-300 hover:bg-slate-800 hover:text-gray-100'
                 }`}
               >
                 <span>{t.label}</span>
                 {tabBadges[t.id] > 0 ? (
-                  <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 ${
-                    activeTab === t.id ? 'bg-gray-900 text-amber-300' : 'bg-amber-500 text-gray-900'
+                  <span className={`text-[9px] font-bold rounded-full px-2 py-0.5 ${
+                    activeTab === t.id ? 'bg-gray-900 text-amber-300' : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
                   }`}>
                     {tabBadges[t.id]}
                   </span>
@@ -828,14 +866,13 @@ export const PrototypeFinderView = () => {
             ))}
           </div>
 
-          {/* Active tab content */}
           {activeTab === 'skin' ? (
             <div>
               <SubLabel>Skin tone</SubLabel>
               <ChipRow className="mb-0">
                 {SKIN_TONES.map((t) => {
                   const key = t.id.replace(/^skin\./, '');
-                  return <SwatchChip key={t.id} label={t.label} hex={t.hex} active={filters.skinTone === key} onClick={() => setScalar('skinTone', key)} />;
+                  return <Chip key={t.id} label={t.label} swatch={t.hex} active={filters.skinTone === key} onClick={() => setScalar('skinTone', key)} />;
                 })}
               </ChipRow>
             </div>
@@ -846,24 +883,24 @@ export const PrototypeFinderView = () => {
               <SubLabel>Color</SubLabel>
               <ChipRow>
                 {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-                  <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.hairColor === opt.value} onClick={() => setScalar('hairColor', opt.value)} />
+                  <Chip key={opt.value} label={opt.label} swatch={HAIR_HEX[opt.value]} active={filters.hairColor === opt.value} onClick={() => setScalar('hairColor', opt.value)} />
                 ))}
               </ChipRow>
               <SubLabel>Length</SubLabel>
               <ChipRow>
                 {HAIR_LENGTH_OPTIONS.map((opt) => (
-                  <PlainChip key={opt.value} label={opt.label} active={filters.hairLength === opt.value} onClick={() => setScalar('hairLength', opt.value)} />
+                  <Chip key={opt.value} label={opt.label} active={filters.hairLength === opt.value} onClick={() => setScalar('hairLength', opt.value)} />
                 ))}
               </ChipRow>
               <SubLabel>Texture</SubLabel>
               <ChipRow>
                 {HAIR_TEXTURE_OPTIONS.map((opt) => (
-                  <PlainChip key={opt.value} label={opt.label} active={filters.hairTexture === opt.value} onClick={() => setScalar('hairTexture', opt.value)} />
+                  <Chip key={opt.value} label={opt.label} active={filters.hairTexture === opt.value} onClick={() => setScalar('hairTexture', opt.value)} />
                 ))}
               </ChipRow>
               <SubLabel>Treatment</SubLabel>
               <ChipRow className="mb-0">
-                <PlainChip label="Salt & pepper" active={filters.hairTreatment === 'salt-pepper'} onClick={() => setScalar('hairTreatment', 'salt-pepper')} />
+                <Chip label="Salt & pepper" active={filters.hairTreatment === 'salt-pepper'} onClick={() => setScalar('hairTreatment', 'salt-pepper')} />
               </ChipRow>
             </div>
           ) : null}
@@ -873,13 +910,13 @@ export const PrototypeFinderView = () => {
               <SubLabel>Style</SubLabel>
               <ChipRow>
                 {FACIAL_HAIR_OPTIONS.map((opt) => (
-                  <PlainChip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
+                  <Chip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
                 ))}
               </ChipRow>
               <SubLabel>Color</SubLabel>
               <ChipRow className="mb-0">
                 {HAIR_COLOR_INPUT_OPTIONS.map((opt) => (
-                  <SwatchChip key={opt.value} label={opt.label} hex={HAIR_HEX[opt.value]} active={filters.beardColor === opt.value} onClick={() => setScalar('beardColor', opt.value)} />
+                  <Chip key={opt.value} label={opt.label} swatch={HAIR_HEX[opt.value]} active={filters.beardColor === opt.value} onClick={() => setScalar('beardColor', opt.value)} />
                 ))}
               </ChipRow>
             </div>
@@ -887,13 +924,13 @@ export const PrototypeFinderView = () => {
 
           {activeTab === 'accessory' ? (
             <div>
-              <div className="text-[10px] text-amber-200/70 mb-2 italic">
+              <div className="text-[11px] text-amber-300/80 italic mb-2">
                 Accessory match boosts results — never excludes. Glasses + headwear live here.
               </div>
               <SubLabel>Kind</SubLabel>
               <ChipRow>
                 {ACCESSORY_KINDS.map((k) => (
-                  <PlainChip
+                  <Chip
                     key={k.kind}
                     label={k.label}
                     active={filters.accessory.kind === k.kind}
@@ -909,9 +946,9 @@ export const PrototypeFinderView = () => {
                   <SubLabel>Subtype</SubLabel>
                   <ChipRow>
                     {ACCESSORY_KINDS.find((k) => k.kind === filters.accessory.kind).subtypes.map((sub) => (
-                      <PlainChip
+                      <Chip
                         key={sub}
-                        label={sub}
+                        label={titleCase(sub)}
                         size="sm"
                         active={filters.accessory.subtype === sub}
                         onClick={() => setAccessory({ subtype: filters.accessory.subtype === sub ? null : sub })}
@@ -926,7 +963,7 @@ export const PrototypeFinderView = () => {
                   <ChipRow>
                     {CLOTHING_COLORS.map((c) => {
                       const key = c.id.replace(/^cloth\./, '');
-                      return <SwatchChip key={c.id} label={c.label} hex={c.hex} active={filters.accessory.color === key} onClick={() => setAccessory({ color: filters.accessory.color === key ? null : key })} />;
+                      return <Chip key={c.id} label={c.label} swatch={c.hex} active={filters.accessory.color === key} onClick={() => setAccessory({ color: filters.accessory.color === key ? null : key })} />;
                     })}
                   </ChipRow>
                 </>
@@ -939,17 +976,17 @@ export const PrototypeFinderView = () => {
                     value={filters.accessory.note}
                     onChange={(e) => setAccessory({ note: e.target.value })}
                     placeholder={filters.accessory.kind === 'other' ? 'free-text descriptor' : 'e.g. "KC Royals", "WSOP"'}
-                    className="w-full bg-slate-900 text-gray-100 text-xs placeholder:text-gray-500 rounded border border-slate-700 px-2 py-2 focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded-md border border-slate-700 px-3 py-2 focus:border-amber-500 focus:outline-none min-h-[44px]"
                   />
                 </>
               ) : null}
             </div>
           ) : null}
-        </div>
+        </Card>
 
         {/* ACTIVE-FILTER COUNT BAR */}
-        <div className="flex items-center justify-between px-1 py-2">
-          <div className="text-[11px] text-gray-400">
+        <div className="flex items-center justify-between px-1 mb-2">
+          <div className="text-[11px] text-gray-300">
             {hasActiveFilters ? `${sortedResults.length} match${sortedResults.length === 1 ? '' : 'es'}` : 'No filters · all players'}
           </div>
           {hasActiveFilters ? (
@@ -977,22 +1014,24 @@ export const PrototypeFinderView = () => {
         ) : null}
 
         {/* RESULTS */}
-        <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold flex items-center justify-between mt-1">
-          <span>Results · {sortedResults.length}</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">
+            Results · {sortedResults.length}
+          </span>
           {activeRecord ? (
             <button
               type="button"
               onClick={cancelLoaded}
-              className="flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200"
+              className="flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 font-semibold"
             >
               <X size={12} />
               Clear loaded
             </button>
           ) : null}
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {sortedResults.length === 0 ? (
-            <div className="text-center py-6 text-sm text-gray-500 bg-slate-800/50 rounded-lg border border-dashed border-slate-700">
+            <div className="bg-slate-800/60 border border-dashed border-slate-700 rounded-lg p-3 text-center text-sm text-gray-500">
               No matches. Adjust a filter, or save as new player.
             </div>
           ) : (
@@ -1000,7 +1039,6 @@ export const PrototypeFinderView = () => {
               <ResultRow
                 key={player.playerId}
                 player={player}
-                hasActiveFilters={hasActiveFilters}
                 matchedAccessories={matchedAccessories}
                 isLoaded={activeRecord?.playerId === player.playerId}
                 onTap={onTapResult}
@@ -1013,7 +1051,7 @@ export const PrototypeFinderView = () => {
           <button
             type="button"
             onClick={() => alert('[prototype] Would: Save & Assign as new player using current filter values + accessory entry.')}
-            className="w-full mt-3 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-dashed border-amber-500/40 rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+            className="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-dashed border-amber-500/50 rounded-lg py-3 text-sm font-semibold flex items-center justify-center gap-2 min-h-[44px]"
           >
             <Plus size={16} />
             Save & Assign as NEW player using these values
