@@ -27,12 +27,9 @@ const PasswordResetView = lazy(() => import('./components/views/PasswordResetVie
 const TournamentView = lazy(() => import('./components/views/TournamentView').then(m => ({ default: m.TournamentView })));
 const OnlineView = lazy(() => import('./components/views/OnlineView').then(m => ({ default: m.OnlineView })));
 const ExtensionPanel = lazy(() => import('./components/views/OnlineView/ExtensionPanel').then(m => ({ default: m.ExtensionPanel })));
-// Phase B (2026-05-06, plan floating-questing-conway): unified PlayerFinder
-// replaces PlayerEditorView + PlayerPickerView. The legacy lazy imports
-// remain stub references because the SCREEN.PLAYER_EDITOR / PLAYER_PICKER
-// constants now alias to PLAYER_FINDER (same string value) — the
-// `case SCREEN.PLAYER_*` arms below all resolve to the new view. Phase D
-// will delete the legacy directories once Phase C rewires the callers.
+// Unified PlayerFinder — single fullscreen surface for player find / edit /
+// create. Replaced the legacy PlayerEditorView + PlayerPickerView pair via
+// plan floating-questing-conway (Phases A → D, 2026-05-06).
 const PlayerFinderView = lazy(() => import('./components/views/PlayerFinderView/PlayerFinderView').then(m => ({ default: m.PlayerFinderView })));
 const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsView/PreflopDrillsView').then(m => ({ default: m.PreflopDrillsView })));
 const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
@@ -78,8 +75,6 @@ const HASH_TO_SCREEN = {
 // is `orientation: 'any'` so this hook is the single place orientation
 // is asserted at runtime.
 const VIEW_TO_ORIENTATION = {
-  // Phase B: PLAYER_EDITOR + PLAYER_PICKER alias to PLAYER_FINDER, so a
-  // single key covers all three at the value level.
   [SCREEN.PLAYER_FINDER]: 'portrait',
   [SCREEN.PLAYER_PROFILE]: 'portrait',
   [SCREEN.PROTOTYPE_FINDER]: 'portrait',
@@ -144,8 +139,6 @@ const ViewRouter = () => {
           case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
           case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
           case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-          // Phase B: PLAYER_EDITOR + PLAYER_PICKER both alias to
-          // PLAYER_FINDER (same string value). One case arm covers all three.
           case SCREEN.PLAYER_FINDER: return <VEB viewName="Player Finder" onReturnToTable={onReturnToTable}><PlayerFinderView scale={scale} /></VEB>;
           case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
           case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
@@ -158,7 +151,7 @@ const ViewRouter = () => {
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)
-            // could land here via `uiState.editorContext.prevScreen` or a
+            // could land here via `uiState.finderContext.prevScreen` or a
             // history ref. INV-15 requires this observable fallback. RT-102.
             if (import.meta.env.DEV) {
               // eslint-disable-next-line no-console

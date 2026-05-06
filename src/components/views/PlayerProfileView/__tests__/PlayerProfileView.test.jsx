@@ -15,7 +15,7 @@ const mockUI = vi.hoisted(() => ({
   current: {
     profilePlayerId: null,
     closePlayerProfile: vi.fn(),
-    openPlayerEditor: vi.fn(),
+    openPlayerFinder: vi.fn(),
   },
 }));
 
@@ -41,7 +41,7 @@ vi.mock('../../../../utils/persistence/sightingLogsStore', () => ({
 beforeEach(() => {
   mockUI.current.profilePlayerId = null;
   mockUI.current.closePlayerProfile = vi.fn();
-  mockUI.current.openPlayerEditor = vi.fn();
+  mockUI.current.openPlayerFinder = vi.fn();
   mockPlayer.current.getPlayerById = vi.fn();
   mockSightings.records = [];
 });
@@ -104,11 +104,11 @@ describe('PlayerProfileView — full render', () => {
     expect(mockUI.current.closePlayerProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('edit button calls openPlayerEditor with mode=edit + playerId', async () => {
+  it('edit button calls openPlayerFinder with mode=edit + playerId', async () => {
     render(<PlayerProfileView />);
     await waitFor(() => screen.getByTestId('player-profile-edit-button'));
     fireEvent.click(screen.getByTestId('player-profile-edit-button'));
-    expect(mockUI.current.openPlayerEditor).toHaveBeenCalledWith({ mode: 'edit', playerId: 'p1' });
+    expect(mockUI.current.openPlayerFinder).toHaveBeenCalledWith({ mode: 'edit', playerId: 'p1' });
   });
 
   it('renders attribute stability rows for the 5 PIO attributes', async () => {

@@ -19,16 +19,9 @@ export const SCREEN = {
   POSTFLOP_DRILLS: 'postflopDrills',
   // Exploit Deviation project — Presession Drill (feature-flagged, default off)
   PRESESSION_DRILL: 'presessionDrill',
-  // Player Entry Overhaul (PEO) screens — S1 ships constants; S2/S3 wire views
-  // Phase B (2026-05-06, plan floating-questing-conway): PLAYER_EDITOR and
-  // PLAYER_PICKER now alias to PLAYER_FINDER. The legacy keys are kept so
-  // any persisted nav state from prior sessions still resolves to a real
-  // screen, and so any caller that hasn't migrated yet still functions via
-  // the openPlayerFinder redirects in UIContext. Phase D drops these.
-  PLAYER_EDITOR: 'playerFinder',
-  PLAYER_PICKER: 'playerFinder',
-  // Unified PlayerFinder — replaces PlayerEditorView + PlayerPickerView.
-  // See `.claude/plans/floating-questing-conway.md`.
+  // Unified PlayerFinder — single fullscreen surface for player find /
+  // edit / create. Replaced the legacy PlayerEditorView + PlayerPickerView
+  // pair via plan floating-questing-conway (Phases A → D, 2026-05-06).
   PLAYER_FINDER: 'playerFinder',
   // Printable Refresher (PRF) — Phase 5 UI; first explicit Reference-mode surface.
   // Dispatched at mount via currentIntent: 'Reference' per surfaces/printable-refresher.md.

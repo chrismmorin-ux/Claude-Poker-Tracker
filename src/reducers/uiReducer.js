@@ -33,12 +33,7 @@ export const UI_ACTIONS = {
   SET_AUTO_OPEN_NEW_SESSION: 'SET_AUTO_OPEN_NEW_SESSION',
   SET_REPLAY_HAND: 'SET_REPLAY_HAND',
   SET_SHOWDOWN_MODE: 'SET_SHOWDOWN_MODE',
-  // PEO-1: fullscreen player-entry routes
-  SET_EDITOR_CONTEXT: 'SET_EDITOR_CONTEXT',
-  SET_PICKER_CONTEXT: 'SET_PICKER_CONTEXT',
-  // Phase B (2026-05-06, plan floating-questing-conway) — unified
-  // PlayerFinder context. Replaces editor + picker contexts going forward;
-  // they remain as aliases until Phase D drops them.
+  // Unified PlayerFinder context.
   SET_FINDER_CONTEXT: 'SET_FINDER_CONTEXT',
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail nav state.
   SET_LESSON_DETAIL: 'SET_LESSON_DETAIL',
@@ -70,16 +65,10 @@ export const initialUiState = {
   // opt-in via the header toggle.
   showdownMode: 'full',
   // Cross-view navigation state
-  // (PEO-4: pendingSeatForPlayerAssignment removed — generalized to editorContext/pickerContext.)
   autoOpenNewSession: false,
   replayHandId: null,
   replayHand: null,
-  // PEO-1: fullscreen player-entry route contexts
-  // editorContext: null | { mode: 'create' | 'edit', playerId?, seatContext?, prevScreen, nameSeed? }
-  // pickerContext: null | { seat, batchMode, assignedSeats, prevScreen }
-  editorContext: null,
-  pickerContext: null,
-  // Phase B (2026-05-06): unified PlayerFinder context.
+  // Unified PlayerFinder context.
   // finderContext: null | { mode: 'find' | 'edit' | 'create', seat?, playerId?,
   //   swapMode?, fieldSeeds?, prevScreen, nameSeed? }
   finderContext: null,
@@ -122,10 +111,7 @@ export const UI_STATE_SCHEMA = {
   autoOpenNewSession: { type: 'boolean' },
   replayHandId: { type: 'number', required: false }, // Can be null
   replayHand: { type: 'object', required: false }, // Can be null
-  // PEO-1 contexts (nullable objects)
-  editorContext: { type: 'object', required: false },
-  pickerContext: { type: 'object', required: false },
-  // Phase B unified finder context
+  // Unified finder context (nullable object)
   finderContext: { type: 'object', required: false },
   // SCF G5 child 3 (WS-147)
   lessonConceptId: { type: 'string', required: false },
@@ -343,21 +329,9 @@ const rawUiReducer = (state, action) => {
         profileReturnScreen: action.payload?.profileReturnScreen ?? null,
       };
 
-    // PEO-1: open/close fullscreen player-entry routes. Payload is either
-    // the context object (open) or null (close). Caller is expected to
-    // dispatch SET_SCREEN separately to route to the matching view.
-    case UI_ACTIONS.SET_EDITOR_CONTEXT:
-      return {
-        ...state,
-        editorContext: action.payload,
-      };
-
-    case UI_ACTIONS.SET_PICKER_CONTEXT:
-      return {
-        ...state,
-        pickerContext: action.payload,
-      };
-
+    // Open/close the unified PlayerFinder. Payload is either the finder
+    // context object (open) or null (close). Caller dispatches SET_SCREEN
+    // separately to route into / out of PlayerFinderView.
     case UI_ACTIONS.SET_FINDER_CONTEXT:
       return {
         ...state,

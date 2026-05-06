@@ -70,8 +70,9 @@ describe('PlayerRow', () => {
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      // Should show ethnicity, gender, build, hat
-      expect(screen.getByText(/Caucasian/)).toBeInTheDocument();
+      // Phase C: legacy 'Caucasian' migrates to ethnicityTags=['caucasian']
+      // and renders as 'White' via the friendly label map.
+      expect(screen.getByText(/White/)).toBeInTheDocument();
     });
 
     it('renders hand count', () => {
@@ -397,16 +398,19 @@ describe('PlayerRow', () => {
       expect(screen.getByText('No description')).toBeInTheDocument();
     });
 
-    it('includes Hat in description when hat is true', () => {
+    it('includes the migrated headwear value when legacy hat is true', () => {
+      // Phase C: legacy hat=true migrates to headwear='cap' (generic-cap fallback).
+      // The description renders the actual headwear value rather than the generic
+      // word "Hat" — owner sees more specific info.
       render(
         <table><tbody>
           <PlayerRow {...defaultProps} />
         </tbody></table>
       );
-      expect(screen.getByText(/Hat/)).toBeInTheDocument();
+      expect(screen.getByText(/Cap/)).toBeInTheDocument();
     });
 
-    it('includes Sunglasses when sunglasses is true', () => {
+    it('includes Sunglasses when legacy sunglasses flag is true', () => {
       const playerWithSunglasses = createMockPlayer({
         ...mockPlayer,
         sunglasses: true,
@@ -417,6 +421,8 @@ describe('PlayerRow', () => {
           <PlayerRow {...defaultProps} player={playerWithSunglasses} />
         </tbody></table>
       );
+      // Phase C: legacy sunglasses=true migrates to eyewear='sunglasses' which
+      // renders as title-cased 'Sunglasses'.
       expect(screen.getByText(/Sunglasses/)).toBeInTheDocument();
     });
 

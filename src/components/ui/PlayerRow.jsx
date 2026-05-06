@@ -10,26 +10,53 @@ import { TendencyStats } from './TendencyStats';
 import { ExploitList } from './ExploitList';
 import IdentityAvatar from './IdentityAvatar';
 import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
+import { migratePlayerLegacyFields } from '../../utils/identityAvatar/migratePlayerLegacyFields';
+
+// Phase C: human-friendly labels for the new modern enums in the row summary.
+// Display only — kept here (not in playerConstants) since they're only used to
+// render the description string on this row.
+const SEX_LABEL = { male: 'Male', female: 'Female', other: 'Other' };
+const ETHNICITY_TAG_LABEL = {
+  caucasian: 'White',
+  black: 'Black',
+  hispanic: 'Hispanic',
+  'east-asian': 'East Asian',
+  'south-asian': 'South Asian',
+  'middle-eastern': 'Middle Eastern',
+  'native-american': 'Native American',
+  'pacific-islander': 'Pacific Islander',
+  mixed: 'Mixed',
+};
+
+// Capitalize hyphenated enum values for display: 'cap' → 'Cap', 'soul-patch' → 'Soul Patch'.
+const titleCase = (s) =>
+  String(s || '')
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 
 /**
  * Get description summary from player data
  * @param {Object} player - Player object
  * @returns {string} Description summary
  */
-const getDescriptionSummary = (player) => {
+const getDescriptionSummary = (rawPlayer) => {
+  // Phase C: read modern fields. Migration is non-destructive — pre-Phase-3
+  // records still render their legacy values via the derived modern fields.
+  const player = migratePlayerLegacyFields(rawPlayer);
   const parts = [];
-  // PIO G5 child D (WS-163 / SPR-035) — prefer ethnicityTags over legacy ethnicity.
+
   if (Array.isArray(player.ethnicityTags) && player.ethnicityTags.length > 0) {
-    parts.push(player.ethnicityTags.join('/'));
-  } else if (player.ethnicity) {
-    parts.push(player.ethnicity);
+    parts.push(player.ethnicityTags.map(t => ETHNICITY_TAG_LABEL[t] || t).join('/'));
   }
   if (player.ageDecade) parts.push(player.ageDecade);
-  if (player.gender) parts.push(player.gender);
+  if (player.sex) parts.push(SEX_LABEL[player.sex] || player.sex);
   if (player.build) parts.push(player.build);
-  if (player.facialHair && player.facialHair !== 'Clean-shaven') parts.push(player.facialHair);
-  if (player.hat) parts.push('Hat');
-  if (player.sunglasses) parts.push('Sunglasses');
+  if (player.facialHair && player.facialHair !== 'clean' && player.facialHair !== 'Clean-shaven') {
+    parts.push(titleCase(player.facialHair));
+  }
+  if (player.headwear) parts.push(titleCase(player.headwear));
+  if (player.eyewear && player.eyewear !== 'none') parts.push(titleCase(player.eyewear));
   if (Array.isArray(player.wardrobe) && player.wardrobe.length > 0) {
     parts.push(player.wardrobe.slice(0, 2).join('/'));
   }

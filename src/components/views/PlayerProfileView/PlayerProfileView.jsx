@@ -39,7 +39,7 @@ const STABILITY_ATTRIBUTES = [
 ];
 
 export const PlayerProfileView = ({ scale: _scale }) => {
-  const { profilePlayerId, closePlayerProfile, openPlayerEditor } = useUI();
+  const { profilePlayerId, closePlayerProfile, openPlayerFinder } = useUI();
   const { getPlayerById } = usePlayer();
   const [sightings, setSightings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -85,7 +85,7 @@ export const PlayerProfileView = ({ scale: _scale }) => {
   }
 
   const onEdit = () => {
-    openPlayerEditor({ mode: 'edit', playerId: player.playerId });
+    openPlayerFinder({ mode: 'edit', playerId: player.playerId });
   };
 
   const onSightingSaved = () => {

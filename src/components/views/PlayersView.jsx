@@ -25,8 +25,7 @@ export const PlayersView = ({ scale = 1 }) => {
   const {
     setCurrentScreen,
     SCREEN,
-    openPlayerEditor,
-    openPlayerPicker,
+    openPlayerFinder,
     openPlayerProfile,
   } = useUI();
   const {
@@ -114,21 +113,16 @@ export const PlayersView = ({ scale = 1 }) => {
     loadAllPlayers();
   }, [loadAllPlayers]);
 
-  // Phase 4 (PIO G4 v2 §8.3 / §A6): "+ New Player" routes through the
-  // Picker instead of opening the editor directly. The Picker is the
-  // canonical creation entry point — search-first UX eliminates the
-  // duplicate-Michael class of bug at the source. If the user truly has
-  // no match they tap "+ Create new" inside the picker and the editor
-  // opens with whatever quick-filter attributes they already chose
-  // pre-seeded.
+  // "+ New Player" routes into the unified PlayerFinder in find mode — the
+  // search-first surface. If the owner has no match, they tap "+ Create new"
+  // inside the finder and it transitions to compose mode with whatever
+  // quick-filter attributes they already chose pre-seeded.
   const handleOpenCreate = () => {
-    openPlayerPicker({
-      seat: selectedSeat ?? null,
-    });
+    openPlayerFinder({ mode: 'find', seat: selectedSeat ?? null });
   };
 
   const handleOpenEdit = (player) => {
-    openPlayerEditor({ mode: 'edit', playerId: player.playerId });
+    openPlayerFinder({ mode: 'edit', playerId: player.playerId });
   };
 
   // PIO G5 child D (WS-163 / SPR-035, 2026-05-04) — row-tap routes to Profile View.

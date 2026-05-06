@@ -33,8 +33,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     replayHandId,
     replayHand,
     showdownMode,
-    editorContext,
-    pickerContext,
     finderContext,
     lessonConceptId,
     lessonReturnScreen,
@@ -141,21 +139,9 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_REPLAY_HAND, payload: { handId, hand } });
   }, [dispatchUi]);
 
-  // PEO-1: Handlers for fullscreen player-entry route contexts.
-  // Callers set context + route screen separately so back-navigation can
-  // restore the right previous view (stored in context.prevScreen).
-  const setEditorContext = useCallback((ctx) => {
-    dispatchUi({ type: UI_ACTIONS.SET_EDITOR_CONTEXT, payload: ctx });
-  }, [dispatchUi]);
-
-  const setPickerContext = useCallback((ctx) => {
-    dispatchUi({ type: UI_ACTIONS.SET_PICKER_CONTEXT, payload: ctx });
-  }, [dispatchUi]);
-
-  // Phase B (2026-05-06, plan floating-questing-conway): unified
-  // PlayerFinder is the single open path. openPlayerEditor and
-  // openPlayerPicker are kept as aliases so callers that haven't migrated
-  // still work; they redirect to openPlayerFinder with mode pre-set.
+  // Unified PlayerFinder: single open path for find / edit / create modes.
+  // Caller threads screen transition + context set together; prevScreen is
+  // captured here so the view doesn't rediscover it.
   const openPlayerFinder = useCallback((ctx = {}) => {
     dispatchUi({
       type: UI_ACTIONS.SET_FINDER_CONTEXT,
@@ -169,41 +155,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_FINDER_CONTEXT, payload: null });
     dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
   }, [dispatchUi, finderContext]);
-
-  // Open/close convenience wrappers — thread screen transition + context set
-  // together. prevScreen is captured here so views don't each rediscover it.
-  // Aliases redirect to the unified finder. Mode defaults preserve the prior
-  // visual intent: editor → 'edit' or 'create' (mode passes through), picker
-  // → 'find' with seat context.
-  const openPlayerEditor = useCallback((ctx = {}) => {
-    const finderCtx = {
-      mode: ctx.mode || 'create',
-      playerId: ctx.playerId,
-      seat: ctx.seatContext?.seat ?? null,
-      fieldSeeds: ctx.fieldSeeds || null,
-      nameSeed: ctx.nameSeed || '',
-      ...ctx,
-    };
-    openPlayerFinder(finderCtx);
-  }, [openPlayerFinder]);
-
-  const closePlayerEditor = useCallback(() => {
-    closePlayerFinder();
-  }, [closePlayerFinder]);
-
-  const openPlayerPicker = useCallback((ctx = {}) => {
-    const finderCtx = {
-      mode: 'find',
-      seat: ctx.seat ?? null,
-      swapMode: !!ctx.swapMode,
-      ...ctx,
-    };
-    openPlayerFinder(finderCtx);
-  }, [openPlayerFinder]);
-
-  const closePlayerPicker = useCallback(() => {
-    closePlayerFinder();
-  }, [closePlayerFinder]);
 
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — open lesson detail surface
   // from a Drill-this affordance. Captures return screen so back-nav routes
@@ -262,8 +213,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     replayHandId,
     replayHand,
     showdownMode,
-    editorContext,
-    pickerContext,
     finderContext,
     lessonConceptId,
     lessonReturnScreen,
@@ -291,14 +240,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     stopDraggingDealer,
     setReplayHand,
     setShowdownMode,
-    // PEO-1 handlers
-    setEditorContext,
-    setPickerContext,
-    openPlayerEditor,
-    closePlayerEditor,
-    openPlayerPicker,
-    closePlayerPicker,
-    // Phase B unified PlayerFinder handlers
+    // Unified PlayerFinder handlers
     openPlayerFinder,
     closePlayerFinder,
     // SCF G5 child 3 — lesson detail navigation
@@ -323,8 +265,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     replayHandId,
     replayHand,
     showdownMode,
-    editorContext,
-    pickerContext,
     finderContext,
     lessonConceptId,
     lessonReturnScreen,
@@ -349,12 +289,6 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     stopDraggingDealer,
     setReplayHand,
     setShowdownMode,
-    setEditorContext,
-    setPickerContext,
-    openPlayerEditor,
-    closePlayerEditor,
-    openPlayerPicker,
-    closePlayerPicker,
     openPlayerFinder,
     closePlayerFinder,
     openLessonDetail,

@@ -43,12 +43,8 @@ const FORBIDDEN_IMPORTS = [
   'utils/playerMatching/',
   // PIO surfaces
   'PlayerProfileView',
+  'PlayerFinderView',
   'PlayerEditorView/AgeDecadeSection',
-  'PlayerEditorView/EthnicityTagsSection',
-  'PlayerEditorView/PaletteChipsInput',
-  'PlayerEditorView/WardrobeSection',
-  'PlayerEditorView/JewelrySection',
-  'PlayerEditorView/LogoSection',
   // SCF data layer + utilities (already documented in skillAssessment/CLAUDE.md)
   'persistence/heroLeaksStore',
   'utils/skillAssessment/',

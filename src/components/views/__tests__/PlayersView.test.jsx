@@ -20,7 +20,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock child components.
-// (PEO-4: PlayerForm directory deleted — editor moved to SCREEN.PLAYER_EDITOR.)
+// (Phase D: SCREEN.PLAYER_EDITOR + PLAYER_PICKER aliases dropped; SCREEN.PLAYER_FINDER is the surface.)
 
 vi.mock('../../ui/PlayerFilters', () => ({
   PlayerFilters: ({ searchTerm, setSearchTerm }) => (
@@ -86,9 +86,8 @@ const mockPlayerContext = {
 
 const mockUIContext = {
   setCurrentScreen: vi.fn(),
-  SCREEN: { TABLE: 'table', PLAYERS: 'players', PLAYER_EDITOR: 'playerEditor', PLAYER_PICKER: 'playerPicker', PLAYER_PROFILE: 'playerProfile' },
-  openPlayerEditor: vi.fn(),
-  openPlayerPicker: vi.fn(),
+  SCREEN: { TABLE: 'table', PLAYERS: 'players', PLAYER_FINDER: 'playerFinder', PLAYER_PROFILE: 'playerProfile' },
+  openPlayerFinder: vi.fn(),
   openPlayerProfile: vi.fn(),
 };
 
@@ -241,31 +240,39 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('player creation (Phase 4: routes through Picker first)', () => {
-    // Per audit §8.3 / §A6: Picker is the canonical creation entry point.
-    // Clicking "+ New Player" opens the Picker (search-first), NOT the
-    // editor directly. User can confirm no match exists before creating.
-    it('opens PlayerPicker (no seat) when button clicked with no seat selected', () => {
+  describe('player creation (Phase C: unified PlayerFinder, find-mode entry)', () => {
+    // The PlayerFinder in find-mode is the canonical creation entry point.
+    // "+ New Player" opens it search-first; the user confirms no match
+    // exists before transitioning to compose mode inside the finder.
+    it('opens PlayerFinder in find mode (no seat) when button clicked with no seat selected', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerPicker).toHaveBeenCalledWith({
+      expect(mockUIContext.openPlayerFinder).toHaveBeenCalledWith({
+        mode: 'find',
         seat: null,
       });
     });
 
-    it('passes selected seat to Picker when one is selected', () => {
+    it('passes selected seat to PlayerFinder when one is selected', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByTestId('seat-5'));
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerPicker).toHaveBeenCalledWith({
+      expect(mockUIContext.openPlayerFinder).toHaveBeenCalledWith({
+        mode: 'find',
         seat: 5,
       });
     });
 
-    it('does NOT open the editor directly from the + New Player button', () => {
+    it('does NOT open the finder in compose mode directly from the + New Player button', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       fireEvent.click(screen.getByText('+ New Player'));
-      expect(mockUIContext.openPlayerEditor).not.toHaveBeenCalled();
+      // Find-mode only — compose mode requires explicit "+ Create new" tap inside the finder.
+      expect(mockUIContext.openPlayerFinder).not.toHaveBeenCalledWith(
+        expect.objectContaining({ mode: 'create' })
+      );
+      expect(mockUIContext.openPlayerFinder).not.toHaveBeenCalledWith(
+        expect.objectContaining({ mode: 'edit' })
+      );
     });
   });
 
@@ -349,12 +356,12 @@ describe('PlayersView', () => {
     });
   });
 
-  describe('edit functionality (PEO-4: routes to fullscreen editor)', () => {
-    it('opens PlayerEditor in edit mode when edit clicked', () => {
+  describe('edit functionality (Phase C: routes to unified PlayerFinder in edit mode)', () => {
+    it('opens PlayerFinder in edit mode when edit clicked', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       const editButtons = screen.getAllByText('Edit');
       fireEvent.click(editButtons[0]);
-      expect(mockUIContext.openPlayerEditor).toHaveBeenCalledWith({
+      expect(mockUIContext.openPlayerFinder).toHaveBeenCalledWith({
         mode: 'edit',
         playerId: 1,
       });

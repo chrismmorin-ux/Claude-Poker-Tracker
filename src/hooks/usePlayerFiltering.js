@@ -10,6 +10,17 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import {
+  migratePlayerLegacyFields,
+  LEGACY_GENDER_TO_SEX,
+  LEGACY_ETHNICITY_TO_TAG,
+} from '../utils/identityAvatar/migratePlayerLegacyFields';
+
+// Phase C (plan floating-questing-conway, 2026-05-06): the hook reads modern
+// identification fields (sex / ethnicityTags / eyewear / headwear). PlayerFilters
+// dropdowns still emit legacy-shape values ('Male', 'White/Caucasian', 'yes'/'no')
+// because the legacy filter dropdown UI is owned by Phase D. Translation lives here.
+const norm = (s) => (s || '').toString().trim().toLowerCase();
 
 // W4-A1-F8 Phase 1: persist PlayerFilters state to localStorage so the
 // 10 selects + search + sort survive a reload. Mirrors the SV-F7 pattern
@@ -152,7 +163,10 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
 
   // Filtered and sorted players
   const filteredPlayers = useMemo(() => {
-    let result = [...allPlayers];
+    // Phase C: migrate each record once at the top so the predicates below
+    // can read modern fields. migratePlayerLegacyFields is non-destructive on
+    // already-migrated records, so this is idempotent + safe to apply broadly.
+    let result = allPlayers.map(p => migratePlayerLegacyFields(p));
 
     // Filter by search term (name or nickname)
     if (searchTerm) {
@@ -170,9 +184,11 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       );
     }
 
-    // Filter by gender
+    // Filter by gender → sex (modern). Translate legacy dropdown value
+    // ('Male' / 'female') through the migration map to the canonical sex enum.
     if (filterGender) {
-      result = result.filter(p => p.gender === filterGender);
+      const target = LEGACY_GENDER_TO_SEX[norm(filterGender)] || norm(filterGender);
+      result = result.filter(p => p.sex === target);
     }
 
     // Filter by build
@@ -180,9 +196,14 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       result = result.filter(p => p.build === filterBuild);
     }
 
-    // Filter by ethnicity
+    // Filter by ethnicity → ethnicityTags (modern). Translate legacy display
+    // string ('White/Caucasian') to canonical tag ('caucasian') via the
+    // migration map, then array-contains match.
     if (filterEthnicity) {
-      result = result.filter(p => p.ethnicity === filterEthnicity);
+      const target = LEGACY_ETHNICITY_TO_TAG[norm(filterEthnicity)] || norm(filterEthnicity);
+      result = result.filter(p =>
+        Array.isArray(p.ethnicityTags) && p.ethnicityTags.includes(target)
+      );
     }
 
     // Filter by facial hair
@@ -190,18 +211,20 @@ export const usePlayerFiltering = (allPlayers = [], tendencyMap = {}) => {
       result = result.filter(p => p.facialHair === filterFacialHair);
     }
 
-    // Filter by hat
+    // Filter by hat → headwear (modern). 'yes' = wears any headwear, 'no' = none.
     if (filterHat === 'yes') {
-      result = result.filter(p => p.hat === true);
+      result = result.filter(p => !!p.headwear);
     } else if (filterHat === 'no') {
-      result = result.filter(p => !p.hat);
+      result = result.filter(p => !p.headwear);
     }
 
-    // Filter by sunglasses
+    // Filter by sunglasses → eyewear (modern). Strict: 'yes' matches sunglasses
+    // ONLY (not clear/aviators/readers); 'no' excludes sunglasses (clear/readers
+    // pass through, since the dropdown is binary "Wears Sunglasses").
     if (filterSunglasses === 'yes') {
-      result = result.filter(p => p.sunglasses === true);
+      result = result.filter(p => p.eyewear === 'sunglasses');
     } else if (filterSunglasses === 'no') {
-      result = result.filter(p => !p.sunglasses);
+      result = result.filter(p => p.eyewear !== 'sunglasses');
     }
 
     // PIO G5 child D (WS-163 / SPR-035) — new filter axes.
