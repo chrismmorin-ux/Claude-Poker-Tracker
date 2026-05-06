@@ -79,6 +79,16 @@ export const BUILD_NEIGHBORS = {
   'muscular':  ['average', 'heavy', 'muscular'],
 };
 
+// Height — 3-step ladder, ±1 (added 2026-05-06 from prototype). Adjacent
+// heights are easy to confuse at a glance — short next to medium, medium
+// next to tall — so include the neighbors so a "medium" filter still
+// surfaces a player tagged "short" or "tall".
+export const HEIGHT_NEIGHBORS = {
+  'short':  ['short', 'medium'],
+  'medium': ['short', 'medium', 'tall'],
+  'tall':   ['medium', 'tall'],
+};
+
 // Lookup of filterKey → neighbors map. The picker walks this to decide
 // whether an axis uses range matching.
 export const RANGE_NEIGHBORS_BY_AXIS = {
@@ -88,6 +98,7 @@ export const RANGE_NEIGHBORS_BY_AXIS = {
   beardColor:  BEARD_COLOR_NEIGHBORS,
   hairLength:  HAIR_LENGTH_NEIGHBORS,
   build:       BUILD_NEIGHBORS,
+  height:      HEIGHT_NEIGHBORS,
 };
 
 /**

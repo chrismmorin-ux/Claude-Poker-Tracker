@@ -35,6 +35,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    finderContext,
     lessonConceptId,
     lessonReturnScreen,
     profilePlayerId,
@@ -151,35 +152,58 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_PICKER_CONTEXT, payload: ctx });
   }, [dispatchUi]);
 
+  // Phase B (2026-05-06, plan floating-questing-conway): unified
+  // PlayerFinder is the single open path. openPlayerEditor and
+  // openPlayerPicker are kept as aliases so callers that haven't migrated
+  // still work; they redirect to openPlayerFinder with mode pre-set.
+  const openPlayerFinder = useCallback((ctx = {}) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_FINDER_CONTEXT,
+      payload: { prevScreen: currentView, ...ctx },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_FINDER });
+  }, [dispatchUi, currentView]);
+
+  const closePlayerFinder = useCallback(() => {
+    const prev = finderContext?.prevScreen || SCREEN.TABLE;
+    dispatchUi({ type: UI_ACTIONS.SET_FINDER_CONTEXT, payload: null });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, finderContext]);
+
   // Open/close convenience wrappers — thread screen transition + context set
   // together. prevScreen is captured here so views don't each rediscover it.
+  // Aliases redirect to the unified finder. Mode defaults preserve the prior
+  // visual intent: editor → 'edit' or 'create' (mode passes through), picker
+  // → 'find' with seat context.
   const openPlayerEditor = useCallback((ctx = {}) => {
-    dispatchUi({
-      type: UI_ACTIONS.SET_EDITOR_CONTEXT,
-      payload: { prevScreen: currentView, ...ctx },
-    });
-    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_EDITOR });
-  }, [dispatchUi, currentView]);
+    const finderCtx = {
+      mode: ctx.mode || 'create',
+      playerId: ctx.playerId,
+      seat: ctx.seatContext?.seat ?? null,
+      fieldSeeds: ctx.fieldSeeds || null,
+      nameSeed: ctx.nameSeed || '',
+      ...ctx,
+    };
+    openPlayerFinder(finderCtx);
+  }, [openPlayerFinder]);
 
   const closePlayerEditor = useCallback(() => {
-    const prev = editorContext?.prevScreen || SCREEN.TABLE;
-    dispatchUi({ type: UI_ACTIONS.SET_EDITOR_CONTEXT, payload: null });
-    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
-  }, [dispatchUi, editorContext]);
+    closePlayerFinder();
+  }, [closePlayerFinder]);
 
   const openPlayerPicker = useCallback((ctx = {}) => {
-    dispatchUi({
-      type: UI_ACTIONS.SET_PICKER_CONTEXT,
-      payload: { prevScreen: currentView, ...ctx },
-    });
-    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.PLAYER_PICKER });
-  }, [dispatchUi, currentView]);
+    const finderCtx = {
+      mode: 'find',
+      seat: ctx.seat ?? null,
+      swapMode: !!ctx.swapMode,
+      ...ctx,
+    };
+    openPlayerFinder(finderCtx);
+  }, [openPlayerFinder]);
 
   const closePlayerPicker = useCallback(() => {
-    const prev = pickerContext?.prevScreen || SCREEN.TABLE;
-    dispatchUi({ type: UI_ACTIONS.SET_PICKER_CONTEXT, payload: null });
-    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
-  }, [dispatchUi, pickerContext]);
+    closePlayerFinder();
+  }, [closePlayerFinder]);
 
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — open lesson detail surface
   // from a Drill-this affordance. Captures return screen so back-nav routes
@@ -240,6 +264,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    finderContext,
     lessonConceptId,
     lessonReturnScreen,
     profilePlayerId,
@@ -273,6 +298,9 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerEditor,
     openPlayerPicker,
     closePlayerPicker,
+    // Phase B unified PlayerFinder handlers
+    openPlayerFinder,
+    closePlayerFinder,
     // SCF G5 child 3 — lesson detail navigation
     openLessonDetail,
     closeLessonDetail,
@@ -297,6 +325,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     showdownMode,
     editorContext,
     pickerContext,
+    finderContext,
     lessonConceptId,
     lessonReturnScreen,
     profilePlayerId,
@@ -326,6 +355,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerEditor,
     openPlayerPicker,
     closePlayerPicker,
+    openPlayerFinder,
+    closePlayerFinder,
     openLessonDetail,
     closeLessonDetail,
     openPlayerProfile,

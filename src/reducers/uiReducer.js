@@ -36,6 +36,10 @@ export const UI_ACTIONS = {
   // PEO-1: fullscreen player-entry routes
   SET_EDITOR_CONTEXT: 'SET_EDITOR_CONTEXT',
   SET_PICKER_CONTEXT: 'SET_PICKER_CONTEXT',
+  // Phase B (2026-05-06, plan floating-questing-conway) — unified
+  // PlayerFinder context. Replaces editor + picker contexts going forward;
+  // they remain as aliases until Phase D drops them.
+  SET_FINDER_CONTEXT: 'SET_FINDER_CONTEXT',
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail nav state.
   SET_LESSON_DETAIL: 'SET_LESSON_DETAIL',
   // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile nav state.
@@ -75,6 +79,10 @@ export const initialUiState = {
   // pickerContext: null | { seat, batchMode, assignedSeats, prevScreen }
   editorContext: null,
   pickerContext: null,
+  // Phase B (2026-05-06): unified PlayerFinder context.
+  // finderContext: null | { mode: 'find' | 'edit' | 'create', seat?, playerId?,
+  //   swapMode?, fieldSeeds?, prevScreen, nameSeed? }
+  finderContext: null,
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail nav state.
   // lessonConceptId: which lesson the LessonDetailView should show.
   // lessonReturnScreen: where back-nav should return to (typically HAND_REPLAY).
@@ -117,6 +125,8 @@ export const UI_STATE_SCHEMA = {
   // PEO-1 contexts (nullable objects)
   editorContext: { type: 'object', required: false },
   pickerContext: { type: 'object', required: false },
+  // Phase B unified finder context
+  finderContext: { type: 'object', required: false },
   // SCF G5 child 3 (WS-147)
   lessonConceptId: { type: 'string', required: false },
   lessonReturnScreen: { type: 'string', required: false },
@@ -346,6 +356,12 @@ const rawUiReducer = (state, action) => {
       return {
         ...state,
         pickerContext: action.payload,
+      };
+
+    case UI_ACTIONS.SET_FINDER_CONTEXT:
+      return {
+        ...state,
+        finderContext: action.payload,
       };
 
     default:

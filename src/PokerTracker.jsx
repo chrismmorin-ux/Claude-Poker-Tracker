@@ -27,8 +27,13 @@ const PasswordResetView = lazy(() => import('./components/views/PasswordResetVie
 const TournamentView = lazy(() => import('./components/views/TournamentView').then(m => ({ default: m.TournamentView })));
 const OnlineView = lazy(() => import('./components/views/OnlineView').then(m => ({ default: m.OnlineView })));
 const ExtensionPanel = lazy(() => import('./components/views/OnlineView/ExtensionPanel').then(m => ({ default: m.ExtensionPanel })));
-const PlayerEditorView = lazy(() => import('./components/views/PlayerEditorView/PlayerEditorView').then(m => ({ default: m.PlayerEditorView })));
-const PlayerPickerView = lazy(() => import('./components/views/PlayerPickerView/PlayerPickerView').then(m => ({ default: m.PlayerPickerView })));
+// Phase B (2026-05-06, plan floating-questing-conway): unified PlayerFinder
+// replaces PlayerEditorView + PlayerPickerView. The legacy lazy imports
+// remain stub references because the SCREEN.PLAYER_EDITOR / PLAYER_PICKER
+// constants now alias to PLAYER_FINDER (same string value) — the
+// `case SCREEN.PLAYER_*` arms below all resolve to the new view. Phase D
+// will delete the legacy directories once Phase C rewires the callers.
+const PlayerFinderView = lazy(() => import('./components/views/PlayerFinderView/PlayerFinderView').then(m => ({ default: m.PlayerFinderView })));
 const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsView/PreflopDrillsView').then(m => ({ default: m.PreflopDrillsView })));
 const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
 const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
@@ -61,6 +66,9 @@ const HASH_TO_SCREEN = {
   '#printableRefresher': 'printableRefresher',
   '#anchorLibrary': 'anchorLibrary',
   '#prototype-finder': 'prototypeFinder',
+  // Phase B (2026-05-06): direct entry to the unified PlayerFinder for
+  // owner manual validation against the prototype. Removed in Phase C.
+  '#player-finder': 'playerFinder',
 };
 
 // Per-view orientation policy (owner: 2026-05-05).
@@ -70,8 +78,9 @@ const HASH_TO_SCREEN = {
 // is `orientation: 'any'` so this hook is the single place orientation
 // is asserted at runtime.
 const VIEW_TO_ORIENTATION = {
-  [SCREEN.PLAYER_EDITOR]: 'portrait',
-  [SCREEN.PLAYER_PICKER]: 'portrait',
+  // Phase B: PLAYER_EDITOR + PLAYER_PICKER alias to PLAYER_FINDER, so a
+  // single key covers all three at the value level.
+  [SCREEN.PLAYER_FINDER]: 'portrait',
   [SCREEN.PLAYER_PROFILE]: 'portrait',
   [SCREEN.PROTOTYPE_FINDER]: 'portrait',
 };
@@ -135,8 +144,9 @@ const ViewRouter = () => {
           case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
           case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
           case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-          case SCREEN.PLAYER_EDITOR: return <VEB viewName="Player Editor" onReturnToTable={onReturnToTable}><PlayerEditorView scale={scale} /></VEB>;
-          case SCREEN.PLAYER_PICKER: return <VEB viewName="Player Picker" onReturnToTable={onReturnToTable}><PlayerPickerView scale={scale} /></VEB>;
+          // Phase B: PLAYER_EDITOR + PLAYER_PICKER both alias to
+          // PLAYER_FINDER (same string value). One case arm covers all three.
+          case SCREEN.PLAYER_FINDER: return <VEB viewName="Player Finder" onReturnToTable={onReturnToTable}><PlayerFinderView scale={scale} /></VEB>;
           case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
           case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
           case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
