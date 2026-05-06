@@ -143,7 +143,9 @@ describe('<PlayerEditorView /> — save lifecycle regression guards', () => {
     });
   });
 
-  it('with seatContext present, calls assignPlayerToSeat + linkPlayerToPriorHandsInSession', async () => {
+  it('with seatContext present, calls assignPlayerToSeat (no auto retroactive link)', async () => {
+    // Owner-revised 2026-05-05: NO auto retroactive linking after a
+    // create-then-assign flow. Newly-created players start at zero hands.
     mockUI.editorContext = {
       mode: 'create',
       seatContext: { seat: 3, sessionId: 42 },
@@ -152,16 +154,14 @@ describe('<PlayerEditorView /> — save lifecycle regression guards', () => {
     const { getByTestId } = render(<PlayerEditorView />);
     fireEvent.click(getByTestId('save-player-btn'));
     await waitFor(() => {
-      // Phase 2 (sighting fix): assignPlayerToSeat now takes a 3rd opts arg
-      // with sessionId + source. Verify the seat + playerId positional args
-      // and that the opts include sessionId.
       expect(mockPlayer.assignPlayerToSeat).toHaveBeenCalledWith(
         3,
         42,
         expect.objectContaining({ sessionId: 42 }),
       );
-      expect(mockPlayer.linkPlayerToPriorHandsInSession).toHaveBeenCalledWith(3, 42, 42);
     });
+    // Auto-link must NOT have been called.
+    expect(mockPlayer.linkPlayerToPriorHandsInSession).not.toHaveBeenCalled();
   });
 
   it('does not call assignPlayerToSeat when no seatContext (PlayersView create path)', async () => {

@@ -27,8 +27,13 @@ import {
  * @returns {Promise<{ blobId: number, photoBlobId: number }>}
  */
 export const savePhotoAtomically = async (playerId, blob) => {
-  if (typeof playerId !== 'string' || playerId.length === 0) {
-    throw new Error('savePhotoAtomically requires a non-empty string playerId');
+  // Players use autoincrement integer keys; older code path expected strings.
+  // Accept either; the function already coerces to numeric for the IDB key.
+  const isValidId =
+    (typeof playerId === 'number' && Number.isFinite(playerId))
+    || (typeof playerId === 'string' && playerId.length > 0);
+  if (!isValidId) {
+    throw new Error('savePhotoAtomically requires a non-empty playerId (number or string)');
   }
   if (!blob) {
     throw new Error('savePhotoAtomically requires a Blob');

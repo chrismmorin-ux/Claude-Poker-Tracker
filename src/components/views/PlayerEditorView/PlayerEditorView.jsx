@@ -62,8 +62,6 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
   const {
     allPlayers,
     assignPlayerToSeat,
-    linkPlayerToPriorHandsInSession,
-    undoRetroactiveLink,
     loadAllPlayers,
   } = usePlayer();
   const { addToast } = useToast();
@@ -91,31 +89,13 @@ export const PlayerEditorView = ({ scale: _scale = 1 }) => {
         addToast(`Saved player but could not assign to seat: ${err.message}`, { variant: 'warning' });
       }
 
-      if (seatContext.sessionId) {
-        try {
-          const linkResult = await linkPlayerToPriorHandsInSession(
-            seatContext.seat, playerId, seatContext.sessionId,
-          );
-          if (linkResult?.handIds?.length > 0) {
-            addToast(
-              `Linked ${linkResult.handIds.length} prior hand${linkResult.handIds.length === 1 ? '' : 's'} to this player`,
-              {
-                variant: 'success',
-                duration: 8000,
-                action: {
-                  label: 'Undo',
-                  onClick: () => undoRetroactiveLink(linkResult),
-                },
-              },
-            );
-          }
-        } catch (err) {
-          addToast(`Could not backfill prior hands: ${err.message}`, { variant: 'warning' });
-        }
-      }
+      // Owner-revised 2026-05-05: NO auto retroactive linking after a
+      // create-then-assign flow. Newly-created players start at zero hands;
+      // they only attribute hands going forward. Past behavior surprised the
+      // owner with phantom hand counts after table-clears + new sessions.
     }
     closePlayerEditor();
-  }, [loadAllPlayers, assignPlayerToSeat, linkPlayerToPriorHandsInSession, undoRetroactiveLink, addToast, closePlayerEditor]);
+  }, [loadAllPlayers, assignPlayerToSeat, addToast, closePlayerEditor]);
 
   const {
     fields,

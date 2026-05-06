@@ -59,8 +59,12 @@ export const initialUiState = {
   isShowdownViewOpen: false,
   highlightedSeat: 1,
   highlightedHoleSlot: 0,
-  // Showdown mode ('quick' skips card assignment, 'full' is traditional)
-  showdownMode: 'quick',
+  // Showdown mode ('quick' skips card assignment, 'full' is traditional).
+  // Owner-revised 2026-05-05: default to 'full' so showdown opens with the
+  // card-entry grid + action history visible. Quick mode hides the data-
+  // capture surface ("nowhere to enter the showdown cards") and is now an
+  // opt-in via the header toggle.
+  showdownMode: 'full',
   // Cross-view navigation state
   // (PEO-4: pendingSeatForPlayerAssignment removed — generalized to editorContext/pickerContext.)
   autoOpenNewSession: false,
@@ -229,7 +233,7 @@ const rawUiReducer = (state, action) => {
         isShowdownViewOpen: true,
         highlightedSeat: 1,
         highlightedHoleSlot: 0,
-        showdownMode: 'quick',
+        showdownMode: 'full', // owner: default to data-capture mode
       };
 
     case UI_ACTIONS.CLOSE_SHOWDOWN_VIEW:

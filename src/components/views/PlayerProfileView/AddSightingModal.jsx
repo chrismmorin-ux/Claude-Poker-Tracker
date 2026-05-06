@@ -327,7 +327,11 @@ export const AddSightingModal = ({ player, onClose, onSaved }) => {
         playerId: player.playerId,
         sessionId: activeSessionId ?? null,
         capturedAt: ts,
-        venueId: null,
+        // Pull venue from the active session — a sighting recorded during
+        // session play inherits the session's venue. Falls back to null
+        // when there's no active session (e.g., adding a sighting to a
+        // historical player record outside of game flow).
+        venueId: currentSession?.venue ?? null,
         featuresSeen: buildFeaturesSeen(attributes),
         attributes,
         notes: notes || null,

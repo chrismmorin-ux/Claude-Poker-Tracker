@@ -11,6 +11,8 @@ import React from 'react';
  *
  * @param {Object} props
  * @param {number|null} props.selectedSeat - Currently selected seat number
+ * @param {number|null} props.mySeat - The user's own seat — gets a "Me"
+ *   gold badge so PlayersView shows table-relative position.
  * @param {Function} props.getSeatPlayerName - Get player name for a seat
  * @param {Function} props.onSeatClick - Handle seat click
  * @param {Function} props.onClearSeat - Clear a single seat assignment
@@ -21,6 +23,7 @@ import React from 'react';
  */
 export const SeatAssignmentGrid = ({
   selectedSeat,
+  mySeat = null,
   getSeatPlayerName,
   onSeatClick,
   onClearSeat,
@@ -44,12 +47,15 @@ export const SeatAssignmentGrid = ({
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(seat => {
           const playerName = getSeatPlayerName(seat);
           const isSelected = selectedSeat === seat;
+          const isMine = mySeat === seat;
           return (
             <div
               key={seat}
-              className={`border-2 rounded-lg p-3 text-center transition-all cursor-pointer ${
+              className={`relative border-2 rounded-lg p-3 text-center transition-all cursor-pointer ${
                 isSelected
                   ? 'border-yellow-400 bg-yellow-900/30 ring-4 ring-yellow-400 scale-110'
+                  : isMine
+                  ? 'border-amber-500 bg-amber-900/20 hover:bg-amber-900/30 ring-2 ring-amber-500/50'
                   : playerName
                   ? 'border-blue-500 bg-blue-900/20 hover:bg-blue-900/30'
                   : 'border-gray-600 bg-gray-700 hover:bg-gray-600'
@@ -64,6 +70,15 @@ export const SeatAssignmentGrid = ({
                 onDrop(seat);
               }}
             >
+              {isMine ? (
+                <span
+                  className="absolute top-0.5 right-0.5 text-[9px] font-bold uppercase tracking-wide bg-amber-500 text-gray-900 px-1 rounded"
+                  data-testid={`seat-me-badge-${seat}`}
+                  title="Your seat"
+                >
+                  Me
+                </span>
+              ) : null}
               <div className="text-xs font-semibold text-gray-400 mb-1">
                 Seat {seat}
               </div>

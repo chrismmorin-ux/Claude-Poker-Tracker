@@ -34,8 +34,6 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
     clearSeatAssignment,
     getPlayerSeat,
     getSeatPlayer,
-    linkPlayerToPriorHandsInSession,
-    undoRetroactiveLink,
   } = usePlayer();
   const { currentSession } = useSession();
   const { addToast } = useToast();
@@ -110,25 +108,12 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
       );
     }
 
-    if (sessionId) {
-      try {
-        const linkResult = await linkPlayerToPriorHandsInSession(
-          currentSeat, player.playerId, sessionId,
-        );
-        if (linkResult?.handIds?.length > 0) {
-          addToast(
-            `Linked ${linkResult.handIds.length} prior hand${linkResult.handIds.length === 1 ? '' : 's'} to ${player.name}`,
-            {
-              variant: 'success',
-              duration: 8000,
-              action: { label: 'Undo', onClick: () => undoRetroactiveLink(linkResult) },
-            },
-          );
-        }
-      } catch (err) {
-        addToast(`Could not backfill prior hands: ${err.message}`, { variant: 'warning' });
-      }
-    }
+    // Owner-revised 2026-05-05: NO auto retroactive linking. A newly-
+    // assigned player only attributes hands going forward — assigning Bob
+    // to seat 1 does NOT inherit hands played at seat 1 before the
+    // assignment, even within the same session. Past behavior was
+    // "Linked N prior hands to Bob" toast; that surprised the owner with
+    // phantom hand counts after table-clears + new sessions.
 
     const { batchDone } = onAssignmentComplete(currentSeat);
     if (batchDone) {
@@ -139,8 +124,6 @@ export const PlayerPickerView = ({ scale: _scale = 1 }) => {
     assignPlayerToSeat,
     clearSeatAssignment,
     getPlayerSeat,
-    linkPlayerToPriorHandsInSession,
-    undoRetroactiveLink,
     sessionId,
     onAssignmentComplete,
     closePlayerPicker,

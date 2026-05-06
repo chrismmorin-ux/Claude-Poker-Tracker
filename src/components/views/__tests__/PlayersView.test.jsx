@@ -101,6 +101,7 @@ vi.mock('../../../contexts', () => ({
   useUI: () => mockUIContext,
   useSession: () => mockSessionContext,
   useTendency: () => ({ tendencyMap: {}, isLoading: false, refresh: vi.fn(), patchTendency: vi.fn() }),
+  useGame: () => ({ mySeat: null }),
 }));
 
 // Mock persistence to suppress IndexedDB not supported warnings

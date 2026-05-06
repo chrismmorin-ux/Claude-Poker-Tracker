@@ -14,7 +14,7 @@ import { ScaledContainer } from '../ui/ScaledContainer';
 import { LIMITS, LAYOUT } from '../../constants/gameConstants';
 import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
 import { useToast } from '../../contexts/ToastContext';
-import { usePlayer, useUI, useTendency, useSession } from '../../contexts';
+import { usePlayer, useUI, useTendency, useSession, useGame } from '../../contexts';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
 const UNDO_TOAST_DURATION_MS = 12000;
@@ -44,6 +44,9 @@ export const PlayersView = ({ scale = 1 }) => {
     hydrateSeatPlayers,
   } = usePlayer();
   const { currentSession } = useSession();
+  // mySeat surfaces the user's own seat in the SeatAssignmentGrid so the
+  // PlayersView shows table-relative position (parity with TableView).
+  const { mySeat } = useGame();
 
   // Build a playerState-like object for compatibility with hooks that expect it
   const playerState = { allPlayers, seatPlayers };
@@ -452,6 +455,7 @@ export const PlayersView = ({ scale = 1 }) => {
           at on this screen, so it belongs above name/filter UI. */}
       <SeatAssignmentGrid
         selectedSeat={selectedSeat}
+        mySeat={mySeat}
         getSeatPlayerName={getSeatPlayerName}
         onSeatClick={handleSeatClick}
         onClearSeat={handleClearSeat}
