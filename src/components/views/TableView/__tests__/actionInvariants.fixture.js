@@ -766,9 +766,17 @@ export const fixtures = [
   //   - UTG > BTN precedence: if both seats want to straddle, only UTG posts
   //   - Re-straddle NOT in scope
   //
-  // Action-order rule: straddler acts LAST preflop (after BB). Straddler
-  // has an option-to-raise analogous to BB option, on a 2× BB pot where
-  // their own posted blind is the effective last "raise".
+  // Action-order rule (Mississippi, owner-clarified 2026-05-06):
+  //   - First to act preflop = next active seat CLOCKWISE FROM THE STRADDLER
+  //     (i.e., the straddle takes the place of the BB for action-order
+  //     purposes; first action is "left of the straddler"). For UTG straddle
+  //     in 9-handed with standard seating this lands at UTG+1; for BTN
+  //     straddle it lands at SB.
+  //   - Straddler acts LAST preflop (after BB), with an option-to-raise
+  //     analogous to BB option (their own posted blind is the effective
+  //     last "raise").
+  //   - Postflop is unaffected: first to act = first non-folded seat
+  //     clockwise from the dealer, as usual.
   //
   // All rows below status='spec_gap' because PRIMITIVE_ACTIONS has no
   // STRADDLE constant and actionSequence has no representation of a posted
@@ -780,7 +788,10 @@ export const fixtures = [
   //     constant
   //   - actionSequence: represent posted straddle as preflop entry order 0,
   //     seat = UTG-or-BTN, action = STRADDLE
-  //   - sequenceUtils.getNextSeat: straddler acts last preflop after BB
+  //   - seatUtils.getFirstActionSeat: first action = next active clockwise
+  //     from the straddler (Mississippi rule)
+  //   - sequenceUtils.getNextSeat: natural clockwise order after first action
+  //     produces straddler-acts-last automatically (no special logic needed)
   //   - actionUtils.getValidActions / CommandStrip.isBBOption: BB facing
   //     straddle must see [CALL, RAISE, FOLD], NOT [CHECK, RAISE, FOLD]
   //   - potCalculator: starting pot includes 2× BB straddle posted blind
@@ -901,7 +912,7 @@ export const fixtures = [
     status: 'matches',
     bug_id: null,
     fixed_in: 'WS-002',
-    comment: 'BTN straddle, UTG (hero seat 3) opens — first to act preflop. CALL = limp into the BTN straddle. The action-order tail (BTN straddler closes after BB) is enforced upstream in getFirstActionSeat / getNextActionSeat — the button shape itself is unchanged.',
+    comment: 'BTN straddle, UTG (hero seat 3) is the active seat with no action yet. Button-shape question is independent of action-order: CALL = limp into the BTN straddle, RAISE = open over the straddle, FOLD. **Action-order note (Mississippi rule, owner-clarified 2026-05-06):** when BTN posts a straddle, first to act is actually SB (next active clockwise from the straddler), NOT UTG. UTG-as-active-seat here is a hypothetical the matrix can express because the harness asserts button shape per `selectedPlayers`, not flow position; the realized first-action seat is enforced by getFirstActionSeat (covered by `seatUtils.test.js`).',
   },
   {
     id: 'INV-S-015',

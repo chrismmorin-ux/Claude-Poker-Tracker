@@ -80,17 +80,21 @@ export const getFirstActionSeat = (
   numSeats
 ) => {
   if (currentStreet === 'preflop') {
-    // First to act preflop is after big blind. Skip the straddler — they
-    // posted before any action and act LAST per WS-002 owner scope.
+    // WS-002 Sprint A2 (revised 2026-05-06): when a straddle is in play, the
+    // straddle takes the place of the BB for action-order purposes — first to
+    // act is the next active seat clockwise from the straddler (Mississippi
+    // rule). Without a straddle, first to act is BB+1.
+    // Postflop is unaffected: first to act = first non-folded clockwise from
+    // dealer, regardless of straddle.
+    const straddler = getStraddler(actionSequence);
+    if (straddler !== null) {
+      return getNextActiveSeat(straddler, absentSeats, numSeats);
+    }
     const sbSeat = getSmallBlindSeat(dealerSeat, absentSeats, numSeats);
     const bbSeat = getNextActiveSeat(sbSeat, absentSeats, numSeats);
-    const straddler = getStraddler(actionSequence);
     let seat = (bbSeat % numSeats) + 1;
     let attempts = 0;
-    while (attempts < numSeats) {
-      if (!absentSeats.includes(seat) && seat !== straddler) {
-        return seat;
-      }
+    while (absentSeats.includes(seat) && attempts < numSeats) {
       seat = (seat % numSeats) + 1;
       attempts++;
     }

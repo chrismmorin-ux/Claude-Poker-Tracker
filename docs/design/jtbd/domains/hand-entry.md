@@ -53,6 +53,7 @@ Jobs that capture what happened in a hand — either live (manual taps) or onlin
 - State: **Active** — Sprint A2 of WS-002 ships the surface in this session; engine plumbing landed in commit `f3cdb89` (Sprint A1). Surface mechanic revised 2026-05-06 from long-press to context-menu row (long-press collided with the existing right-click / long-press menu trigger; see [`seat-context-menu.md`](../../surfaces/seat-context-menu.md)).
 - Primary persona: [Between-hands Chris](../../personas/situational/between-hands-chris.md) (the operating mode); secondary: [Chris (live player)](../../personas/core/chris-live-player.md), [Ringmaster](../../personas/core/ringmaster-home-host.md) (home games run straddles often).
 - Owner scope (WS-002 / SPR-010, ratified 2026-05-02): UTG + BTN positions only; UTG > BTN precedence; no re-straddle.
+- Action-order rule (Mississippi, owner-clarified 2026-05-06): when a straddle is in play, first to act preflop = next active seat clockwise from the straddler (the straddle "takes the place of the BB" for action-order). UTG straddle → first action UTG+1; BTN straddle → first action SB. Postflop unaffected.
 - Success criteria:
   - Right-click / long-press UTG or BTN seat → SeatContextMenu shows a `🎲 Straddle…` row when seat is eligible (no preflop action recorded yet, no existing straddle posted). Tap row → StraddleModal opens.
   - Modal pre-fills amount with session default (if set) or `2 × bb`; user-editable; "Post" / "Cancel."

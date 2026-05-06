@@ -201,6 +201,53 @@ describe('getFirstActionSeat', () => {
       const result = getFirstActionSeat('preflop', 1, [], seq, 9);
       expect(result).toBe(4);
     });
+
+    // WS-002 Sprint A2: Mississippi straddle action-order rule —
+    // first to act preflop = next active clockwise from the straddler.
+    describe('with straddle (Mississippi rule — action starts left of straddler)', () => {
+      const straddle = (seat, amount = 4) => ({
+        seat,
+        action: 'straddle',
+        street: 'preflop',
+        order: 1,
+        amount,
+      });
+
+      it('UTG straddle: first action is UTG+1', () => {
+        // dealerSeat=9 → SB=1, BB=2, standard UTG=3. UTG straddle posted at 3.
+        const seq = [straddle(3)];
+        const result = getFirstActionSeat('preflop', 9, [], seq, 9);
+        expect(result).toBe(4);
+      });
+
+      it('BTN straddle: first action is SB (clockwise from BTN)', () => {
+        // dealerSeat=8 → SB=9, BB=1. BTN straddle posted at 8.
+        // Action starts left of BTN = SB(9), NOT UTG.
+        const seq = [straddle(8)];
+        const result = getFirstActionSeat('preflop', 8, [], seq, 9);
+        expect(result).toBe(9);
+      });
+
+      it('UTG straddle wraps clockwise correctly', () => {
+        // dealerSeat=7 → SB=8, BB=9, UTG=1. UTG straddle posted at 1.
+        const seq = [straddle(1)];
+        const result = getFirstActionSeat('preflop', 7, [], seq, 9);
+        expect(result).toBe(2);
+      });
+
+      it('BTN straddle skips absent seat next to straddler', () => {
+        // dealerSeat=8, BTN straddle, SB=9 absent → first action = BB(1).
+        const seq = [straddle(8)];
+        const result = getFirstActionSeat('preflop', 8, [9], seq, 9);
+        expect(result).toBe(1);
+      });
+
+      it('postflop is unaffected by straddle (still first non-folded after dealer)', () => {
+        const seq = [straddle(8)];
+        const result = getFirstActionSeat('flop', 8, [], seq, 9);
+        expect(result).toBe(9);
+      });
+    });
   });
 
   describe('postflop (flop, turn, river)', () => {
