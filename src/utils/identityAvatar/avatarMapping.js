@@ -85,6 +85,9 @@ export const silhouetteFromIdentity = (sex, build) => {
  *
  * Tones defined in src/constants/avatarFeatureConstants.js SKIN_TONES.
  */
+// 2026-05-06: skin.medium removed from the palette. Ethnicities that
+// previously seeded skin.medium (south-asian, middle-eastern, mixed)
+// now seed skin.tan — the next available step on the ladder.
 const ETHNICITY_TO_SKIN = {
   caucasian: 'skin.very-light',
   white: 'skin.very-light',
@@ -93,17 +96,17 @@ const ETHNICITY_TO_SKIN = {
   'hispanic/latino': 'skin.tan',
   'east-asian': 'skin.light',
   asian: 'skin.light',
-  'south-asian': 'skin.medium',
-  'south asian': 'skin.medium',
+  'south-asian': 'skin.tan',
+  'south asian': 'skin.tan',
   black: 'skin.brown',
   'black/african american': 'skin.brown',
   'african-american': 'skin.brown',
-  'middle-eastern': 'skin.medium',
-  'middle eastern': 'skin.medium',
+  'middle-eastern': 'skin.tan',
+  'middle eastern': 'skin.tan',
   'native-american': 'skin.tan',
   'pacific-islander': 'skin.tan',
-  mixed: 'skin.medium',
-  'mixed/other': 'skin.medium',
+  mixed: 'skin.tan',
+  'mixed/other': 'skin.tan',
 };
 
 const normalizeEthnicityTag = (tag) =>
@@ -129,6 +132,10 @@ export const skinFromEthnicity = (ethnicityTags, legacyEthnicity) => {
  * Accepts either the bare key ('ruddy') or the full id ('skin.ruddy').
  * Returns null when no match — caller falls back to ethnicity-derived.
  */
+// 2026-05-06: skin.medium removed. Legacy records with skinTone='medium'
+// (or 'skin.medium') migrate to 'skin.tan' on read — no IDB write needed,
+// pure render-side. Owner-confirmed direction: "let it jump straight from
+// light to tan."
 const SKIN_TONE_NORMALIZED = {
   'very-light': 'skin.very-light',
   'skin.very-light': 'skin.very-light',
@@ -137,8 +144,8 @@ const SKIN_TONE_NORMALIZED = {
   ruddy: 'skin.ruddy',
   flushed: 'skin.ruddy',
   'skin.ruddy': 'skin.ruddy',
-  medium: 'skin.medium',
-  'skin.medium': 'skin.medium',
+  medium: 'skin.tan',                  // legacy → migrate to tan
+  'skin.medium': 'skin.tan',           // legacy → migrate to tan
   tan: 'skin.tan',
   'skin.tan': 'skin.tan',
   brown: 'skin.brown',
@@ -366,6 +373,25 @@ export const hairTreatmentFromIdentity = (player) => {
   return null;
 };
 
+/**
+ * Beard salt-pepper treatment — owner-confirmed 2026-05-06: "Salt and
+ * pepper needs to be individual to beard and hair." The renderer
+ * (AvatarRenderer.jsx:167) defaults beardTreatment to hairTreatment
+ * when not provided, which produces the symptom owner observed (toggle
+ * on hair causes beard to go salt-pepper too). Returning beardTreatment
+ * explicitly here breaks the fallback.
+ *
+ * Explicit-only — no age-based auto-derivation. The owner sets the beard
+ * treatment when they observe it; we don't infer.
+ */
+export const beardTreatmentFromIdentity = (player) => {
+  if (!player) return null;
+  if (player.beardSaltPepper === true) return 'salt-pepper';
+  if (player.beardSaltPepper === false) return null;
+  if (player.beardTreatment === 'salt-pepper') return 'salt-pepper';
+  return null;
+};
+
 // =============================================================================
 // FACIAL HAIR
 // =============================================================================
@@ -558,6 +584,9 @@ export const mapIdentityToAvatarFeatures = (rawPlayer, opts = {}) => {
     hairTreatment: hairTreatmentFromIdentity(player),
     beard: beardFromIdentity(facialHair, sex),
     beardColor: hairColorFromIdentity(beardColorInput, ageDecade),
+    // Explicit beardTreatment breaks the renderer's hair-fallback default
+    // (AvatarRenderer.jsx:167) so beard salt-pepper is independent of hair.
+    beardTreatment: beardTreatmentFromIdentity(player),
     eyes: eyeShapeFromEthnicity(ethnicityTags, ethnicity),
     eyeColor: 'eye-color.brown',
     glasses: eyewear !== undefined && eyewear !== null

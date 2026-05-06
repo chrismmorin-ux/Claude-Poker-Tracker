@@ -31,7 +31,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, X, AlertTriangle, Plus, Check, RefreshCw } from 'lucide-react';
+import { ChevronLeft, X, AlertTriangle, Plus, Check, RefreshCw, Camera } from 'lucide-react';
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import { useUI } from '../../../contexts/UIContext';
 import { SCREEN } from '../../../constants/uiConstants';
@@ -97,15 +97,22 @@ const titleCase = (s) =>
     .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
     .join(' ');
 
+// Ethnicity is now SINGLE-select (owner-confirmed 2026-05-06) — was an
+// array. Free-form `ethnicityNote` captures sub-categories that don't
+// change appearance: "Italian", "Romanian", "British", "Irish" etc.
+// `beardTreatment` is now SEPARATE from `hairTreatment` — owner: "Salt
+// and pepper needs to be individual to beard and hair."
 const SCALAR_KEYS = [
-  'sex', 'ageDecade', 'skinTone', 'hairColor', 'hairLength', 'hairTexture',
-  'hairTreatment', 'facialHair', 'beardColor', 'build', 'height',
+  'sex', 'ageDecade', 'ethnicity', 'skinTone', 'hairColor', 'hairLength',
+  'hairTexture', 'hairTreatment', 'facialHair', 'beardColor',
+  'beardTreatment', 'build', 'height',
 ];
 
 const EMPTY_FILTERS = {
   sex: null,
   ageDecade: null,
-  ethnicity: [],
+  ethnicity: null,           // single-select string (was array)
+  ethnicityNote: '',         // free-form sub-ethnicity ("Italian", "Romanian", etc.)
   build: null,
   height: null,
   skinTone: null,
@@ -115,6 +122,7 @@ const EMPTY_FILTERS = {
   hairTreatment: null,
   facialHair: null,
   beardColor: null,
+  beardTreatment: null,      // independent of hair (owner 2026-05-06)
   accessory: { kind: null, subtype: null, color: null, note: '' },
 };
 
@@ -131,6 +139,7 @@ const FIELD_LABEL = {
   sex: 'Sex',
   ageDecade: 'Age',
   ethnicity: 'Ethnicity',
+  ethnicityNote: 'Heritage',
   skinTone: 'Skin tone',
   hairColor: 'Hair color',
   hairLength: 'Hair length',
@@ -138,6 +147,7 @@ const FIELD_LABEL = {
   hairTreatment: 'Hair treatment',
   facialHair: 'Facial hair',
   beardColor: 'Beard color',
+  beardTreatment: 'Beard treatment',
   build: 'Build',
   height: 'Height',
   accessory: 'Accessory',
@@ -280,41 +290,77 @@ const SwatchPalette = ({ value, onChange, options, hideLabel = false }) => {
 };
 
 // ===========================================================================
-// AgeStepper — discrete-snap slider for age decade
+// AgeStepper — discrete-snap slider for age decade, drag-or-tap
 // ===========================================================================
 //
-// Replaces the chip row for age. Visualizes age as a continuous-feeling
-// stepper: track + dot at each decade + amber active dot + amber-fill on
-// the track up to the active position. Each label is independently tappable.
+// Replaces the chip row for age. Click any position OR drag the thumb
+// across the track — both gestures snap to the nearest decade. Owner
+// observation 2026-05-06: "an intuitive thing someone might do is drag
+// on the age slider."
 const AgeStepper = ({ value, onChange }) => {
+  const trackRef = React.useRef(null);
   const idx = value ? AGE_OPTIONS.indexOf(value) : -1;
   const active = idx >= 0;
+
+  // Snap clientX to the nearest age bucket and emit it.
+  const snapAndEmit = (clientX) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const snapped = Math.round(ratio * (AGE_OPTIONS.length - 1));
+    const next = AGE_OPTIONS[snapped];
+    if (next !== value) onChange(next);
+  };
+
+  // Pointer events — works for both mouse and touch on modern browsers.
+  // setPointerCapture lets us keep receiving move events even if the
+  // pointer leaves the track during a drag.
+  const onPointerDown = (e) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    snapAndEmit(e.clientX);
+  };
+  const onPointerMove = (e) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    snapAndEmit(e.clientX);
+  };
+  const onPointerUp = (e) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
   return (
     <div className="mt-1 mb-2 px-2">
-      {/* Track + dots */}
-      <div className="relative h-7">
+      {/* Track + dots — pointer events on the wrapper enable drag-to-set. */}
+      <div
+        ref={trackRef}
+        className="relative h-9 cursor-pointer touch-none select-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
         {/* Background track */}
-        <div className="absolute top-1/2 left-3 right-3 h-1 -translate-y-1/2 bg-slate-700 rounded-full" />
+        <div className="absolute top-1/2 left-3 right-3 h-1.5 -translate-y-1/2 bg-slate-700 rounded-full pointer-events-none" />
         {/* Active fill */}
         {active ? (
           <div
-            className="absolute top-1/2 left-3 h-1 -translate-y-1/2 bg-amber-500 rounded-full transition-all"
+            className="absolute top-1/2 left-3 h-1.5 -translate-y-1/2 bg-amber-500 rounded-full transition-all pointer-events-none"
             style={{ width: `calc((100% - 24px) * ${idx} / ${AGE_OPTIONS.length - 1})` }}
           />
         ) : null}
-        {/* Position dots — each is a tap target */}
+        {/* Position dots — visual only, the wrapper handles taps */}
         {AGE_OPTIONS.map((opt, i) => {
           const isActive = i === idx;
           const left = `calc(12px + (100% - 24px) * ${i} / ${AGE_OPTIONS.length - 1})`;
           return (
-            <button
+            <span
               key={opt}
-              type="button"
-              onClick={() => onChange(opt === value ? null : opt)}
               aria-label={`Age ${opt}`}
               aria-pressed={isActive}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
-              style={{ left, width: 32, height: 32 }}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none"
+              style={{ left }}
             >
               <span
                 className={`block rounded-full transition-all ${
@@ -323,11 +369,11 @@ const AgeStepper = ({ value, onChange }) => {
                     : 'w-3 h-3 bg-slate-800 ring-2 ring-slate-600'
                 }`}
               />
-            </button>
+            </span>
           );
         })}
       </div>
-      {/* Labels */}
+      {/* Labels — also tappable */}
       <div className="flex justify-between mt-1 px-3">
         {AGE_OPTIONS.map((opt, i) => {
           const isActive = i === idx;
@@ -374,6 +420,13 @@ const CLOTH_PALETTE = CLOTHING_COLORS.map((c) => ({
 const playerEffective = (player) => ({
   sex: player.sex,
   ageDecade: player.ageDecade,
+  // Ethnicity now scalar — pull first tag from the array shape stored on
+  // the player record. Existing players store ethnicityTags as array;
+  // we expose the first element as the canonical effective value.
+  ethnicity: Array.isArray(player.ethnicityTags) && player.ethnicityTags.length > 0
+    ? player.ethnicityTags[0]
+    : null,
+  ethnicityNote: player.ethnicityNote || '',
   skinTone: skinKeyForFilter(player),
   hairColor: player.hairColor,
   hairLength: player.hairLength,
@@ -381,6 +434,7 @@ const playerEffective = (player) => ({
   hairTreatment: player.hairSaltPepper === true ? 'salt-pepper' : (player.hairTreatment || null),
   facialHair: player.facialHair,
   beardColor: player.beardColor || player.hairColor || null,
+  beardTreatment: player.beardSaltPepper === true ? 'salt-pepper' : (player.beardTreatment || null),
   build: player.build,
   height: MOCK_HEIGHTS[player.playerId] || null,
 });
@@ -419,6 +473,8 @@ const computeCongruency = (filters, player) => {
   const eff = playerEffective(player);
   const items = [];
 
+  // SCALAR_KEYS now includes 'ethnicity' (single-select) — handled by the
+  // unified scalar loop, no special-case branch needed anymore.
   for (const axis of SCALAR_KEYS) {
     const fv = filters[axis];
     if (!fv) continue;
@@ -432,16 +488,16 @@ const computeCongruency = (filters, player) => {
     }
   }
 
-  if (filters.ethnicity.length > 0) {
-    const playerTags = (player.ethnicityTags || []).map((t) => t.toLowerCase());
-    const filterTags = filters.ethnicity.map((t) => t.toLowerCase());
-    const allMatch = filterTags.every((t) => playerTags.includes(t));
-    if (!allMatch) {
-      if (playerTags.length === 0) {
-        items.push({ axis: 'ethnicity', kind: 'addition', filterValue: filters.ethnicity, playerValue: null });
-      } else {
-        items.push({ axis: 'ethnicity', kind: 'mismatch', filterValue: filters.ethnicity, playerValue: player.ethnicityTags });
-      }
+  // ethnicityNote — free-form heritage (Italian / Romanian / etc).
+  // Surface as a diff so the owner can choose: keep player's existing note,
+  // OR overwrite with their typed value, OR add when player has none.
+  const noteFilter = (filters.ethnicityNote || '').trim();
+  const notePlayer = (eff.ethnicityNote || '').trim();
+  if (noteFilter && noteFilter.toLowerCase() !== notePlayer.toLowerCase()) {
+    if (!notePlayer) {
+      items.push({ axis: 'ethnicityNote', kind: 'addition', filterValue: noteFilter, playerValue: null });
+    } else {
+      items.push({ axis: 'ethnicityNote', kind: 'mismatch', filterValue: noteFilter, playerValue: notePlayer });
     }
   }
 
@@ -716,13 +772,6 @@ export const PrototypeFinderView = () => {
       if (!fv) continue;
       if (!matchesScalar(axis, fv, eff[axis])) return false;
     }
-    if (filters.ethnicity.length > 0) {
-      const tags = (player.ethnicityTags || []).map((t) => t.toLowerCase());
-      if (tags.length > 0) {
-        const ok = filters.ethnicity.some((sel) => tags.includes(sel.toLowerCase()));
-        if (!ok) return false;
-      }
-    }
     if (nameQuery.trim().length > 0) {
       const q = nameQuery.toLowerCase().trim();
       const haystack = `${player.name || ''} ${player.nickname || ''}`.toLowerCase();
@@ -757,15 +806,15 @@ export const PrototypeFinderView = () => {
 
   const hasActiveFilters =
     !!nameQuery
-    || filters.ethnicity.length > 0
     || SCALAR_KEYS.some((k) => !!filters[k])
+    || (filters.ethnicityNote && filters.ethnicityNote.trim())
     || accFilterActive
     || (filters.accessory.note && filters.accessory.note.trim());
 
   const tabBadges = {
     skin: filters.skinTone ? 1 : 0,
     hair: countActiveInGroup(filters, ['hairColor', 'hairLength', 'hairTexture', 'hairTreatment']),
-    beard: countActiveInGroup(filters, ['facialHair', 'beardColor']),
+    beard: countActiveInGroup(filters, ['facialHair', 'beardColor', 'beardTreatment']),
     accessory: accessoryFilterCount(filters),
   };
 
@@ -773,13 +822,18 @@ export const PrototypeFinderView = () => {
   const setScalar = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: prev[key] === value ? null : value }));
   };
-  const toggleEthnicity = (tag) => {
+  // Single-select ethnicity. Tap an active chip to clear; tap a different
+  // chip to switch. Was multi-select; owner-confirmed 2026-05-06 the visual
+  // categories are mutually exclusive at the chip level (sub-ethnicities
+  // like "Italian" / "Romanian" go in the free-text note below).
+  const setEthnicity = (tag) => {
     setFilters((prev) => ({
       ...prev,
-      ethnicity: prev.ethnicity.includes(tag)
-        ? prev.ethnicity.filter((t) => t !== tag)
-        : [...prev.ethnicity, tag],
+      ethnicity: prev.ethnicity === tag ? null : tag,
     }));
+  };
+  const setEthnicityNote = (note) => {
+    setFilters((prev) => ({ ...prev, ethnicityNote: note }));
   };
   const setAccessory = (patch) => {
     setFilters((prev) => ({ ...prev, accessory: { ...prev.accessory, ...patch } }));
@@ -828,12 +882,14 @@ export const PrototypeFinderView = () => {
   const congruencyItems = activeRecord ? computeCongruency(filters, activeRecord) : [];
 
   // Live builder avatar — synthetic player from filters when composing new;
-  // the loaded record otherwise.
+  // the loaded record otherwise. Ethnicity is now single-select; pack it
+  // into the array shape the avatar mapping expects.
   const livePlayer = activeRecord || {
     playerId: 'live-builder',
     sex: filters.sex,
     ageDecade: filters.ageDecade,
-    ethnicityTags: filters.ethnicity,
+    ethnicityTags: filters.ethnicity ? [filters.ethnicity] : [],
+    ethnicityNote: filters.ethnicityNote,
     skinTone: filters.skinTone,
     hairColor: filters.hairColor,
     hairLength: filters.hairLength,
@@ -841,14 +897,23 @@ export const PrototypeFinderView = () => {
     hairSaltPepper: filters.hairTreatment === 'salt-pepper',
     facialHair: filters.facialHair,
     beardColor: filters.beardColor,
+    // Beard treatment now independent of hair (owner 2026-05-06).
+    // beardSaltPepper hands directly to AvatarRenderer's beardTreatment slot.
+    beardSaltPepper: filters.beardTreatment === 'salt-pepper',
     build: filters.build,
+    // Headwear / eyewear pull from the accessory filter for the live preview.
+    // Hat color recoloring on the avatar is a follow-up (hat asset paths
+    // currently use hardcoded fills — see hat.js — so changing accessory
+    // color updates the data but not the rendered hat color yet).
     headwear: filters.accessory.kind === 'hat' ? filters.accessory.subtype : null,
     eyewear: filters.accessory.kind === 'glasses' ? filters.accessory.subtype : null,
   };
 
+  // SCALAR_KEYS already counts every filter axis including ethnicity —
+  // no double-count needed.
   const totalActiveCount =
     SCALAR_KEYS.filter((k) => !!filters[k]).length
-    + filters.ethnicity.length
+    + (filters.ethnicityNote && filters.ethnicityNote.trim() ? 1 : 0)
     + accessoryFilterCount(filters);
 
   const builderStatus = activeRecord
@@ -889,7 +954,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/10 border-t border-amber-500/30 text-amber-300 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v7
+            🧪 Prototype v8
           </span>
           <span className="text-[9px] font-mono text-amber-300/80">
             build {buildInfo.sha} · {buildInfo.built}
@@ -897,16 +962,29 @@ export const PrototypeFinderView = () => {
         </div>
       </div>
 
-      {/* BUILDER HEADER — outside scroll, always visible */}
+      {/* BUILDER HEADER — outside scroll, always visible. Camera button
+          overlaps the avatar (bottom-right) per the production
+          PlayerProfileView photo-overlay convention. Owner 2026-05-06:
+          "I don't see the camera option we used to have either." */}
       <div className="bg-slate-900 border-b border-slate-700 px-3 py-3 shrink-0">
         <div className="flex items-center gap-3">
-          <div
-            className={`shrink-0 rounded-full overflow-hidden border-2 transition-colors ${
-              activeRecord ? 'border-amber-500' : (totalActiveCount > 0 ? 'border-amber-500/50' : 'border-slate-700')
-            }`}
-            style={{ width: 56, height: 56 }}
-          >
-            <IdentityAvatar player={livePlayer} size={56} />
+          <div className="relative shrink-0" style={{ width: 56, height: 56 }}>
+            <div
+              className={`rounded-full overflow-hidden border-2 transition-colors ${
+                activeRecord ? 'border-amber-500' : (totalActiveCount > 0 ? 'border-amber-500/50' : 'border-slate-700')
+              }`}
+              style={{ width: 56, height: 56 }}
+            >
+              <IdentityAvatar player={livePlayer} size={56} />
+            </div>
+            <button
+              type="button"
+              onClick={() => alert('[prototype] Would open camera capture modal — multi-face crop, save photoBlobId atomically with the player record on assign.')}
+              aria-label="Add photo"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-400 text-gray-900 flex items-center justify-center shadow-md ring-2 ring-slate-900"
+            >
+              <Camera size={12} />
+            </button>
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2 mb-1">
@@ -932,7 +1010,12 @@ export const PrototypeFinderView = () => {
       <div className="flex-1 overflow-y-auto px-3 pt-3 pb-4">
         {/* IDENTITY card — always visible primary axes */}
         <Card>
-          <CardHeader count={(filters.sex ? 1 : 0) + (filters.ageDecade ? 1 : 0) + filters.ethnicity.length}>
+          <CardHeader count={
+            (filters.sex ? 1 : 0)
+            + (filters.ageDecade ? 1 : 0)
+            + (filters.ethnicity ? 1 : 0)
+            + (filters.ethnicityNote && filters.ethnicityNote.trim() ? 1 : 0)
+          }>
             Identity
           </CardHeader>
           <SubLabel>Sex</SubLabel>
@@ -944,11 +1027,27 @@ export const PrototypeFinderView = () => {
           <SubLabel>Age decade</SubLabel>
           <AgeStepper value={filters.ageDecade} onChange={(v) => setFilters((prev) => ({ ...prev, ageDecade: v }))} />
           <SubLabel>Ethnicity</SubLabel>
-          <ChipRow className="mb-0">
+          <ChipRow>
             {ETHNICITY_OPTIONS.map((o) => (
-              <Chip key={o.value} label={o.label} active={filters.ethnicity.includes(o.value)} onClick={() => toggleEthnicity(o.value)} />
+              <Chip
+                key={o.value}
+                label={o.label}
+                active={filters.ethnicity === o.value}
+                onClick={() => setEthnicity(o.value)}
+              />
             ))}
           </ChipRow>
+          {/* Free-form sub-ethnicity note. Captures Italian / Romanian /
+              British / Irish — heritage labels that don't change appearance
+              but help identification context. Not used for filter matching;
+              just attached to the player on assign. */}
+          <input
+            type="text"
+            value={filters.ethnicityNote}
+            onChange={(e) => setEthnicityNote(e.target.value)}
+            placeholder='Heritage note (e.g., "Italian", "Romanian", "Irish")'
+            className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded-md border border-slate-700 px-3 py-2 focus:border-amber-500 focus:outline-none min-h-[44px] mb-0"
+          />
         </Card>
 
         {/* BODY card */}
@@ -1039,7 +1138,9 @@ export const PrototypeFinderView = () => {
             </div>
           ) : null}
 
-          {/* Beard tab — Color FIRST (parity with Hair tab), then Style. */}
+          {/* Beard tab — Color FIRST (parity with Hair tab), then Style,
+              then independent Treatment (salt-pepper). Owner 2026-05-06:
+              "Salt and pepper needs to be individual to beard and hair." */}
           {activeTab === 'beard' ? (
             <div>
               <SubLabel>Color</SubLabel>
@@ -1049,10 +1150,18 @@ export const PrototypeFinderView = () => {
                 options={HAIR_PALETTE}
               />
               <SubLabel>Style</SubLabel>
-              <ChipRow className="mb-0">
+              <ChipRow>
                 {FACIAL_HAIR_OPTIONS.map((opt) => (
                   <Chip key={opt.value} label={opt.label} active={filters.facialHair === opt.value} onClick={() => setScalar('facialHair', opt.value)} />
                 ))}
+              </ChipRow>
+              <SubLabel>Treatment</SubLabel>
+              <ChipRow className="mb-0">
+                <Chip
+                  label="Salt & pepper"
+                  active={filters.beardTreatment === 'salt-pepper'}
+                  onClick={() => setScalar('beardTreatment', 'salt-pepper')}
+                />
               </ChipRow>
             </div>
           ) : null}

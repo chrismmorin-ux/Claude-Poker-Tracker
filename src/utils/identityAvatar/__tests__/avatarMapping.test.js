@@ -79,8 +79,11 @@ describe('skinFromEthnicity', () => {
     expect(skinFromEthnicity(['Black/African American'])).toBe('skin.brown');
   });
 
-  it('maps Middle Eastern to medium', () => {
-    expect(skinFromEthnicity(['middle-eastern'])).toBe('skin.medium');
+  it('maps Middle Eastern to tan', () => {
+    // 2026-05-06: skin.medium removed; ethnicities that previously mapped
+    // to skin.medium (middle-eastern, south-asian, mixed) now map to
+    // skin.tan — the next available step on the simplified ladder.
+    expect(skinFromEthnicity(['middle-eastern'])).toBe('skin.tan');
   });
 
   it('multi-tag picks the first matching tag (primary identity)', () => {

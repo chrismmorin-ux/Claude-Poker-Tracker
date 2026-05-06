@@ -22,14 +22,14 @@
  * returns true when the player's value is in the filter's neighbor set.
  */
 
-// Skin tone — light/medium/dark ladder, with `ruddy` treated as a
-// pink-cast variant of light (NOT on the darkness ladder past medium).
+// Skin tone — light/dark ladder, with `ruddy` treated as a flushed
+// pink-cast variant of very-light (owner: "next to light skin"). The
+// `medium` step was removed 2026-05-06; light is now adjacent to tan.
 export const SKIN_TONE_NEIGHBORS = {
-  'very-light': ['very-light', 'light', 'ruddy'],
-  'light':      ['very-light', 'light', 'ruddy', 'medium'],
-  'ruddy':      ['very-light', 'light', 'ruddy'],
-  'medium':     ['light', 'medium', 'tan'],
-  'tan':        ['medium', 'tan', 'brown'],
+  'very-light': ['very-light', 'ruddy', 'light'],
+  'ruddy':      ['very-light', 'ruddy', 'light'],
+  'light':      ['very-light', 'ruddy', 'light', 'tan'],
+  'tan':        ['light', 'tan', 'brown'],
   'brown':      ['tan', 'brown', 'dark'],
   'dark':       ['brown', 'dark'],
 };
