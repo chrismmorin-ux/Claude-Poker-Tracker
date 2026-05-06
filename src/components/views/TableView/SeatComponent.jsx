@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React from 'react';
 import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
@@ -6,8 +6,6 @@ import { ActionSequence } from '../../ui/ActionSequence';
 import { ExploitBadges } from '../../ui/ExploitBadges';
 import IdentityAvatar from '../../ui/IdentityAvatar';
 import { LAYOUT } from '../../../constants/gameConstants';
-
-const LONG_PRESS_MS = 500;
 
 /**
  * SeatComponent - Individual seat with action badges, position badges, and hole cards
@@ -33,7 +31,6 @@ const SeatComponentInner = ({
   getSeatColor,
   onSeatClick,
   onSeatRightClick,
-  onSeatLongPress, // WS-002 Sprint A2: optional; fires after 500ms hold
   onDealerDragStart,
   onHoleCardClick,
   onToggleVisibility,
@@ -45,38 +42,6 @@ const SeatComponentInner = ({
 }) => {
   // Seat color (returns { className, style })
   const seatColor = getSeatColor(seat);
-
-  // WS-002 Sprint A2: long-press timer for the straddle gesture.
-  // Mirror of CommandStrip's sizing-button long-press pattern. Started on
-  // pointerdown, cleared on pointerup / pointerleave / pointercancel.
-  const longPressTimerRef = useRef(null);
-  const longPressFiredRef = useRef(false);
-
-  const startLongPress = useCallback(() => {
-    if (!onSeatLongPress) return;
-    longPressFiredRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressFiredRef.current = true;
-      onSeatLongPress(seat);
-    }, LONG_PRESS_MS);
-  }, [onSeatLongPress, seat]);
-
-  const cancelLongPress = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
-  const handleClick = useCallback(() => {
-    // Suppress click if long-press already fired — otherwise the straddle
-    // modal opens AND the seat gets selected.
-    if (longPressFiredRef.current) {
-      longPressFiredRef.current = false;
-      return;
-    }
-    onSeatClick(seat);
-  }, [onSeatClick, seat]);
 
   // Calculate player name offset based on position badges
   const hasOtherBadge = isDealer || isSmallBlind || isBigBlind;
@@ -131,12 +96,8 @@ const SeatComponentInner = ({
       {/* Seat button with expanded hit area */}
       <div className="relative" style={{ width: `${LAYOUT.SEAT_SIZE}px`, height: `${LAYOUT.SEAT_SIZE}px` }}>
         <button
-          onClick={handleClick}
+          onClick={() => onSeatClick(seat)}
           onContextMenu={(e) => onSeatRightClick(e, seat)}
-          onPointerDown={onSeatLongPress ? startLongPress : undefined}
-          onPointerUp={onSeatLongPress ? cancelLongPress : undefined}
-          onPointerLeave={onSeatLongPress ? cancelLongPress : undefined}
-          onPointerCancel={onSeatLongPress ? cancelLongPress : undefined}
           className={`absolute inset-0 rounded-lg shadow-lg transition-all font-bold text-lg ${seatColor.className}${isNextToAct ? ' seat-next-to-act' : ''}`}
           style={{ margin: '-4px', width: `${LAYOUT.SEAT_SIZE + 8}px`, height: `${LAYOUT.SEAT_SIZE + 8}px`, ...seatColor.style }}
         >
@@ -291,8 +252,8 @@ const arePropsEqual = (prev, next) => {
       }
       continue;
     }
-    // WS-002 Sprint A2: isStraddler / onSeatLongPress are also covered by
-    // the default reference compare below — no special handling needed.
+    // WS-002 Sprint A2: isStraddler is covered by the default reference
+    // compare below — no special handling needed.
     if (prev[key] !== next[key]) return false;
   }
   return true;

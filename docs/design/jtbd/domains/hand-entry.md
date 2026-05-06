@@ -50,22 +50,22 @@ Jobs that capture what happened in a hand — either live (manual taps) or onlin
 
 > When a player at my table posts a straddle (UTG or BTN), I want to record it on the current hand before action begins, so the action order, pot, and recommendation engine treat the straddle as the effective last raise. If my table runs a permanent straddle rule, I want to set it once at session start so I don't have to mark every hand.
 
-- State: **Active** — Sprint A2 of WS-002 ships the surface in this session; engine plumbing landed in commit `f3cdb89` (Sprint A1).
+- State: **Active** — Sprint A2 of WS-002 ships the surface in this session; engine plumbing landed in commit `f3cdb89` (Sprint A1). Surface mechanic revised 2026-05-06 from long-press to context-menu row (long-press collided with the existing right-click / long-press menu trigger; see [`seat-context-menu.md`](../../surfaces/seat-context-menu.md)).
 - Primary persona: [Between-hands Chris](../../personas/situational/between-hands-chris.md) (the operating mode); secondary: [Chris (live player)](../../personas/core/chris-live-player.md), [Ringmaster](../../personas/core/ringmaster-home-host.md) (home games run straddles often).
 - Owner scope (WS-002 / SPR-010, ratified 2026-05-02): UTG + BTN positions only; UTG > BTN precedence; no re-straddle.
 - Success criteria:
-  - Long-press (500ms) UTG or BTN seat with no preflop action yet → StraddleModal opens.
+  - Right-click / long-press UTG or BTN seat → SeatContextMenu shows a `🎲 Straddle…` row when seat is eligible (no preflop action recorded yet, no existing straddle posted). Tap row → StraddleModal opens.
   - Modal pre-fills amount with session default (if set) or `2 × bb`; user-editable; "Post" / "Cancel."
-  - Session-default straddle auto-applies to every hand; per-hand long-press is the override.
-  - UTG > BTN precedence: STRADDLE entry already on this hand → long-press on the other position is a no-op.
+  - Session-default straddle auto-applies to every hand; per-hand menu row is the override.
+  - UTG > BTN precedence: STRADDLE entry already on this hand → row hidden on the other position's menu.
   - Posted straddle is visible in TableHeader (chip with position + amount) and on the straddler's seat ("STR" badge).
   - Undo via existing reset-hand / clear-seat path.
 - Failure modes:
-  - Modal opens during normal seat-tap recording → mitigated by 500ms hold gesture + `actionSequence.length === 0` gate.
+  - Row shown after action begins → mitigated by `actionSequence.length === 0` gate in TableView; row not rendered.
+  - Row shown on non-eligible seats → mitigated by UTG / BTN-only computation; only those two seats receive the `onStraddle` callback.
   - Both UTG and BTN as session defaults → mitigated by single-radio config UI.
-  - Modal interrupt mid-hand → gesture is a no-op once any seat has acted preflop.
 - Distinguished from [HE-11](#he-11--one-tap-seat-action-entry) — straddle is a posted blind before action begins, not a betting decision; from [HE-12](#he-12--undo--repair-a-miskeyed-action) — straddle removal uses the existing undo path.
-- Primary surface: `TableView` (long-press, modal, header chip, seat badge); session-creation form (optional default).
+- Primary surface: `TableView` (context-menu row, modal, header chip, seat badge); session-creation form (optional default).
 
 ---
 

@@ -415,8 +415,11 @@ export const TableView = ({ scale }) => {
   );
   const btnSeat = dealerButtonSeat;
 
-  // Long-press eligibility: only UTG / BTN, only on preflop, only before any
-  // action has been recorded, only when no straddle posted yet.
+  // Straddle eligibility: only UTG / BTN, only on preflop, only before any
+  // action has been recorded, only when no straddle posted yet. Surfaced as
+  // an opt-in `🎲 Straddle…` row in the SeatContextMenu (revised 2026-05-06
+  // from the prior long-press gesture, which conflicted with the menu's own
+  // long-press / right-click trigger).
   const eligibleStraddleSeats = useMemo(() => {
     if (currentStreet !== 'preflop') return new Set();
     if (actionSequence.length > 0) return new Set();
@@ -431,12 +434,13 @@ export const TableView = ({ scale }) => {
 
   const [straddleModal, setStraddleModal] = useState({ open: false, seat: null, position: null });
 
-  const handleSeatLongPress = useCallback((seat) => {
+  const handleSeatStraddle = useCallback((seat) => {
     if (!eligibleStraddleSeats.has(seat)) return;
     const position = seat === utgSeat ? 'UTG' : seat === btnSeat ? 'BTN' : null;
     if (!position) return;
+    setContextMenu(null); // close the menu when the modal opens
     setStraddleModal({ open: true, seat, position });
-  }, [eligibleStraddleSeats, utgSeat, btnSeat]);
+  }, [eligibleStraddleSeats, utgSeat, btnSeat, setContextMenu]);
 
   const closeStraddleModal = useCallback(() => {
     setStraddleModal({ open: false, seat: null, position: null });
@@ -623,7 +627,6 @@ export const TableView = ({ scale }) => {
                   seatBet={seatContributions[seat] || 0}
                   onSeatClick={togglePlayerSelection}
                   onSeatRightClick={handleSeatRightClick}
-                  onSeatLongPress={eligibleStraddleSeats.has(seat) ? handleSeatLongPress : undefined}
                   onDealerDragStart={handleDealerDragStart}
                   onHoleCardClick={handleHoleCardClick}
                   onToggleVisibility={handleToggleHoleCardsVisibility}
@@ -656,6 +659,7 @@ export const TableView = ({ scale }) => {
               contextMenu={contextMenu}
               onMakeMySeat={handleSetMySeat}
               onMakeDealer={handleMakeDealer}
+              onStraddle={contextMenu && eligibleStraddleSeats.has(contextMenu.seat) ? handleSeatStraddle : undefined}
               onFindPlayer={handleFindPlayer}
               onSwapPlayer={handleSwapPlayer}
               onAssignPlayer={handleAssignPlayer}

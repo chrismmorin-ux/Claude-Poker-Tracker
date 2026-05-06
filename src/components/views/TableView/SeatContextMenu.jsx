@@ -36,6 +36,21 @@ const MakeDealerButton = ({ onClick }) => (
   </button>
 );
 
+// WS-002 Sprint A2 (revised 2026-05-06): straddle entry moved from long-press
+// gesture (conflicted with the right-click / long-press menu itself) to a
+// menu row. Only rendered when the seat is UTG or BTN, no preflop action has
+// been recorded, and no existing straddle is posted — gating handled by the
+// caller via the optional onStraddle prop (undefined ⇒ row hidden).
+const StraddleButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className={`${MENU_ROW_CLASS} text-purple-600`}
+    data-testid="menu-straddle"
+  >
+    🎲 Straddle…
+  </button>
+);
+
 const FindPlayerButton = ({ onClick }) => (
   <button
     onClick={onClick}
@@ -126,10 +141,11 @@ const AssignSection = ({ seat, onFindPlayer, onAssignPlayer, recentPlayers }) =>
   </>
 );
 
-const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer }) => (
+const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer, onStraddle }) => (
   <>
     <MakeMySeatButton onClick={() => onMakeMySeat(seat)} />
     <MakeDealerButton onClick={() => onMakeDealer(seat)} />
+    {onStraddle ? <StraddleButton onClick={() => onStraddle(seat)} /> : null}
   </>
 );
 
@@ -137,6 +153,7 @@ export const SeatContextMenu = ({
   contextMenu,
   onMakeMySeat,
   onMakeDealer,
+  onStraddle,
   onFindPlayer,
   onSwapPlayer,
   onAssignPlayer,
@@ -162,6 +179,7 @@ export const SeatContextMenu = ({
         seat={seat}
         onMakeMySeat={onMakeMySeat}
         onMakeDealer={onMakeDealer}
+        onStraddle={onStraddle}
       />
       <Divider />
       {/* Player ops — grouped together: clear/swap (if occupied), then
