@@ -38,6 +38,8 @@ const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryVie
 const LessonDetailView = lazy(() => import('./components/views/LessonDetailView').then(m => ({ default: m.LessonDetailView })));
 // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface (sighting history + stability).
 const PlayerProfileView = lazy(() => import('./components/views/PlayerProfileView/PlayerProfileView').then(m => ({ default: m.PlayerProfileView })));
+// Prototype: unified PlayerFinder (#prototype-finder) — design preview.
+const PrototypeFinderView = lazy(() => import('./components/views/PrototypeFinderView/PrototypeFinderView').then(m => ({ default: m.PrototypeFinderView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -58,6 +60,7 @@ const HASH_TO_SCREEN = {
   '#settings': 'settings',
   '#printableRefresher': 'printableRefresher',
   '#anchorLibrary': 'anchorLibrary',
+  '#prototype-finder': 'prototypeFinder',
 };
 
 // Per-view orientation policy (owner: 2026-05-05).
@@ -70,6 +73,7 @@ const VIEW_TO_ORIENTATION = {
   [SCREEN.PLAYER_EDITOR]: 'portrait',
   [SCREEN.PLAYER_PICKER]: 'portrait',
   [SCREEN.PLAYER_PROFILE]: 'portrait',
+  [SCREEN.PROTOTYPE_FINDER]: 'portrait',
 };
 const orientationFor = (currentView, isShowdownOpen) => {
   if (isShowdownOpen) return 'landscape';
@@ -140,6 +144,7 @@ const ViewRouter = () => {
           case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
           case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
           case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
+          case SCREEN.PROTOTYPE_FINDER: return <VEB viewName="Prototype Finder" onReturnToTable={onReturnToTable}><PrototypeFinderView /></VEB>;
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)
