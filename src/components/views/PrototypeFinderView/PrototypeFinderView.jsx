@@ -170,19 +170,24 @@ const SwatchChip = ({ active, label, hex, onClick }) => (
 );
 
 const SubLabel = ({ children }) => (
-  <div className="text-[10px] uppercase tracking-wider text-amber-300/70 font-bold mb-1.5">
+  <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-1 mt-2 first:mt-0">
     {children}
   </div>
 );
 
 const ChipRow = ({ children, className = '' }) => (
-  <div className={`flex flex-wrap gap-1.5 mb-3 ${className}`}>{children}</div>
+  <div className={`flex flex-wrap gap-1 mb-2 ${className}`}>{children}</div>
 );
 
-// Section header for the always-visible primary block.
-const PrimaryHeader = ({ children }) => (
-  <div className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-bold mb-1.5 mt-3 first:mt-0 px-1">
-    {children}
+// Card label — appears above each grouping card. Quieter than v3.
+const PrimaryHeader = ({ children, count = 0 }) => (
+  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-amber-300/80 font-bold mb-2 px-0.5">
+    <span>{children}</span>
+    {count > 0 ? (
+      <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-amber-500/20 text-amber-200 border border-amber-500/40">
+        {count}
+      </span>
+    ) : null}
   </div>
 );
 
@@ -642,6 +647,41 @@ export const PrototypeFinderView = () => {
 
   const congruencyItems = activeRecord ? computeCongruency(filters, activeRecord) : [];
 
+  // Live avatar source — when an existing player is loaded, show their record
+  // straight; when composing new, build a synthetic player from current
+  // filter values so every chip tap updates the avatar in real time.
+  // Accessory.kind === 'hat' / 'glasses' feed the legacy headwear/eyewear
+  // avatar slots so the preview shows what the player would look like.
+  const livePlayer = activeRecord || {
+    playerId: 'live-builder',
+    sex: filters.sex,
+    ageDecade: filters.ageDecade,
+    ethnicityTags: filters.ethnicity,
+    skinTone: filters.skinTone,
+    hairColor: filters.hairColor,
+    hairLength: filters.hairLength,
+    hairTexture: filters.hairTexture,
+    hairSaltPepper: filters.hairTreatment === 'salt-pepper',
+    facialHair: filters.facialHair,
+    beardColor: filters.beardColor,
+    build: filters.build,
+    // Accessory → avatar slot mapping (preview only).
+    headwear: filters.accessory.kind === 'hat' ? filters.accessory.subtype : null,
+    eyewear: filters.accessory.kind === 'glasses' ? filters.accessory.subtype : null,
+  };
+
+  // Active-axis count for the status line under the avatar.
+  const totalActiveCount =
+    SCALAR_KEYS.filter((k) => !!filters[k]).length
+    + filters.ethnicity.length
+    + ACCESSORY_FILTER_ACTIVE_COUNT(filters);
+
+  const builderStatus = activeRecord
+    ? { line1: 'Viewing', line2: activeRecord.name || '(unnamed player)' }
+    : totalActiveCount === 0
+      ? { line1: 'Building', line2: 'pick features below' }
+      : { line1: 'Building player', line2: `${totalActiveCount} feature${totalActiveCount === 1 ? '' : 's'} set` };
+
   // ===========================================================================
   // RENDER
   // ===========================================================================
@@ -674,7 +714,7 @@ export const PrototypeFinderView = () => {
         </div>
         <div className="px-3 py-1 bg-amber-500/15 border-t border-amber-500/30 text-amber-200 flex items-center justify-between">
           <span className="text-[11px] font-bold tracking-wider uppercase">
-            🧪 Prototype v4
+            🧪 Prototype v5
           </span>
           <span className="text-[9px] font-mono text-amber-100/70">
             build {buildInfo.sha} · {buildInfo.built}
@@ -682,22 +722,43 @@ export const PrototypeFinderView = () => {
         </div>
       </div>
 
-      {/* SCROLL COLUMN */}
-      <div className="flex-1 overflow-y-auto px-3 pb-4">
-        {/* Name search */}
-        <div className="pt-3 pb-2">
-          <input
-            type="text"
-            value={nameQuery}
-            onChange={(e) => setNameQuery(e.target.value)}
-            placeholder="Name or nickname"
-            className="w-full bg-slate-800 text-gray-100 text-sm placeholder:text-gray-500 rounded-lg border border-slate-700 px-3 py-2.5 focus:border-amber-500 focus:outline-none"
-          />
+      {/* BUILDER HEADER — outside the scroll region so the live avatar is
+          always visible as the user fills in features. The avatar IS the
+          "what am I building" anchor. Synthetic player derived from filters
+          (composing-new) or the loaded record (viewing-existing). */}
+      <div className="bg-slate-900 border-b border-slate-700 px-3 py-2 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className={`shrink-0 rounded-full overflow-hidden border-2 transition-colors ${
+            activeRecord ? 'border-amber-500' : (totalActiveCount > 0 ? 'border-amber-500/40' : 'border-slate-700')
+          }`} style={{ width: 56, height: 56 }}>
+            <IdentityAvatar player={livePlayer} size={56} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-1.5 leading-none mb-1">
+              <span className="text-[10px] uppercase tracking-wider text-amber-300/80 font-bold">
+                {builderStatus.line1}
+              </span>
+              <span className="text-sm font-semibold text-gray-100 truncate">{builderStatus.line2}</span>
+            </div>
+            <input
+              type="text"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.target.value)}
+              placeholder="Name or nickname"
+              className="w-full bg-slate-800 text-gray-100 text-xs placeholder:text-gray-500 rounded border border-slate-700 px-2 py-1.5 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* SCROLL COLUMN */}
+      <div className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
 
         {/* IDENTITY — always visible, primary axes */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
-          <PrimaryHeader>Identity</PrimaryHeader>
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
+          <PrimaryHeader count={(filters.sex ? 1 : 0) + (filters.ageDecade ? 1 : 0) + filters.ethnicity.length}>
+            Identity
+          </PrimaryHeader>
           <SubLabel>Sex</SubLabel>
           <ChipRow>
             {SEX_OPTIONS.map((o) => (
@@ -719,8 +780,10 @@ export const PrototypeFinderView = () => {
         </div>
 
         {/* BODY — always visible, small chip count */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
-          <PrimaryHeader>Body</PrimaryHeader>
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
+          <PrimaryHeader count={(filters.build ? 1 : 0) + (filters.height ? 1 : 0)}>
+            Body
+          </PrimaryHeader>
           <SubLabel>Build</SubLabel>
           <ChipRow>
             {BUILD_OPTIONS.map((o) => (
@@ -736,8 +799,10 @@ export const PrototypeFinderView = () => {
         </div>
 
         {/* TABBED CHIP-HEAVY AXES */}
-        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-3 mb-2">
-          <PrimaryHeader>Features</PrimaryHeader>
+        <div className="bg-slate-800/40 border border-slate-700 rounded-lg p-2.5 mb-2">
+          <PrimaryHeader count={tabBadges.skin + tabBadges.hair + tabBadges.beard + tabBadges.accessory}>
+            Features
+          </PrimaryHeader>
           {/* Segmented tab strip */}
           <div className="flex gap-1 mb-3 bg-slate-900 p-1 rounded-lg border border-slate-700">
             {TABS.map((t) => (
