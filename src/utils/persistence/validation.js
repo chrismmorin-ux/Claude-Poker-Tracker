@@ -150,6 +150,81 @@ export const validateSessionRecord = (sessionRecord) => {
 // =============================================================================
 // PLAYER RECORD VALIDATION
 // =============================================================================
+//
+// Modern Phase 3+ canonical identification field enums. Records that fail
+// these validators are rejected before they reach IndexedDB. Updated
+// 2026-05-06 as part of the unified PlayerFinder migration — previously
+// the entire Phase 3+ field set was unvalidated and could accept any
+// type without complaint, risking silent corruption.
+
+const VALID_SEX = ['male', 'female', 'other'];
+const VALID_AGE_DECADES = ['<20', '20s', '30s', '40s', '50s', '60s+'];
+const VALID_BUILD = ['slim', 'average', 'heavy', 'muscular'];
+const VALID_HEIGHT = ['short', 'medium', 'tall'];
+const VALID_SKIN_TONE = ['very-light', 'ruddy', 'light', 'tan', 'brown', 'dark'];
+const VALID_HAIR_COLOR = ['white', 'gray', 'salt-pepper', 'red', 'blonde', 'light-brown', 'brown', 'dark-brown', 'black'];
+const VALID_HAIR_LENGTH = ['bald', 'shaved', 'buzz', 'short', 'medium', 'long'];
+const VALID_HAIR_TEXTURE = ['straight', 'curly', 'braided', 'receding'];
+const VALID_FACIAL_HAIR = ['clean', 'stubble', 'mustache', 'goatee', 'full', 'soul-patch'];
+const VALID_EYEWEAR = ['none', 'clear', 'sunglasses', 'readers', 'aviators'];
+const VALID_EYEWEAR_COLOR = ['black', 'brown', 'tortoiseshell', 'gold', 'silver', 'red', 'blue'];
+const VALID_HEADWEAR = ['cap', 'beanie', 'visor', 'fedora', 'cowboy'];
+const VALID_TREATMENT = ['salt-pepper'];
+// Hat color uses the CLOTHING_COLORS palette keys; same set as accessory colors.
+const VALID_CLOTHING_COLOR = ['white', 'gray', 'black', 'yellow', 'orange', 'red', 'pink', 'brown', 'green', 'blue', 'navy', 'purple', 'gold', 'silver'];
+const VALID_ACCESSORY_KIND = ['hat', 'glasses', 'top', 'bottom', 'jewelry', 'other'];
+
+// Pair of (field, allowed values). Each entry validated as: undefined/null
+// passes (the field is optional); otherwise must be a string IN the enum.
+const ENUM_FIELDS = [
+  ['sex', VALID_SEX],
+  ['ageDecade', VALID_AGE_DECADES],
+  ['build', VALID_BUILD],
+  ['height', VALID_HEIGHT],
+  ['skinTone', VALID_SKIN_TONE],
+  ['hairColor', VALID_HAIR_COLOR],
+  ['hairLength', VALID_HAIR_LENGTH],
+  ['hairTexture', VALID_HAIR_TEXTURE],
+  ['hairTreatment', VALID_TREATMENT],
+  ['facialHair', VALID_FACIAL_HAIR],
+  ['beardColor', VALID_HAIR_COLOR],
+  ['beardTreatment', VALID_TREATMENT],
+  ['eyewear', VALID_EYEWEAR],
+  ['eyewearColor', VALID_EYEWEAR_COLOR],
+  ['headwear', VALID_HEADWEAR],
+  ['hatColor', VALID_CLOTHING_COLOR],
+];
+
+const validateAccessoryInventoryItem = (item, idx, errors) => {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    errors.push(`accessoryInventory[${idx}] must be an object`);
+    return;
+  }
+  if (typeof item.accessoryId !== 'string' || item.accessoryId.length === 0) {
+    errors.push(`accessoryInventory[${idx}].accessoryId must be a non-empty string`);
+  }
+  if (!VALID_ACCESSORY_KIND.includes(item.kind)) {
+    errors.push(`accessoryInventory[${idx}].kind must be one of: ${VALID_ACCESSORY_KIND.join(', ')}`);
+  }
+  if (item.subtype !== null && item.subtype !== undefined && typeof item.subtype !== 'string') {
+    errors.push(`accessoryInventory[${idx}].subtype must be string or null`);
+  }
+  if (item.color !== null && item.color !== undefined && typeof item.color !== 'string') {
+    errors.push(`accessoryInventory[${idx}].color must be string or null`);
+  }
+  if (item.note !== undefined && item.note !== null && typeof item.note !== 'string') {
+    errors.push(`accessoryInventory[${idx}].note must be string or null`);
+  }
+  if (typeof item.firstSeenAt !== 'number' || !Number.isFinite(item.firstSeenAt)) {
+    errors.push(`accessoryInventory[${idx}].firstSeenAt must be a number (ms timestamp)`);
+  }
+  if (typeof item.lastSeenAt !== 'number' || !Number.isFinite(item.lastSeenAt)) {
+    errors.push(`accessoryInventory[${idx}].lastSeenAt must be a number (ms timestamp)`);
+  }
+  if (typeof item.timesSeen !== 'number' || item.timesSeen < 1 || !Number.isInteger(item.timesSeen)) {
+    errors.push(`accessoryInventory[${idx}].timesSeen must be a positive integer`);
+  }
+};
 
 /**
  * Validates a player record before saving
@@ -170,12 +245,75 @@ export const validatePlayerRecord = (playerRecord) => {
     errors.push('name cannot be empty');
   }
 
-  // Optional string fields
-  const optionalStringFields = ['nickname', 'ethnicity', 'build', 'gender', 'facialHair', 'notes', 'avatar'];
+  // Optional string fields (legacy + free-form). Includes:
+  //   - legacy fields kept for back-compat read-shim (gender, ethnicity, hat
+  //     and sunglasses bools — booleans are validated separately below)
+  //   - new free-form: ethnicityNote (heritage label like "Italian")
+  const optionalStringFields = ['nickname', 'ethnicity', 'gender', 'notes', 'avatar', 'ethnicityNote'];
   optionalStringFields.forEach(field => {
     if (playerRecord[field] !== undefined && playerRecord[field] !== null) {
       if (typeof playerRecord[field] !== 'string') {
         errors.push(`${field} must be a string`);
+      }
+    }
+  });
+
+  // Phase 3+ canonical enum fields. undefined/null pass; any other value
+  // must be in the enum or it's a corruption-risk write.
+  ENUM_FIELDS.forEach(([field, allowed]) => {
+    const value = playerRecord[field];
+    if (value === undefined || value === null) return;
+    if (typeof value !== 'string' || !allowed.includes(value)) {
+      errors.push(`${field} must be one of: ${allowed.join(', ')} (got ${JSON.stringify(value)})`);
+    }
+  });
+
+  // ethnicityTags — modern multi-tag field (single-select UI persists
+  // as an array of length 0 or 1). Each tag must be a string.
+  if (playerRecord.ethnicityTags !== undefined && playerRecord.ethnicityTags !== null) {
+    if (!Array.isArray(playerRecord.ethnicityTags)) {
+      errors.push('ethnicityTags must be an array');
+    } else if (!playerRecord.ethnicityTags.every(tag => typeof tag === 'string')) {
+      errors.push('ethnicityTags must contain only strings');
+    }
+  }
+
+  // distinguishingMarks — array of objects (free-form for now; future
+  // phases may add stricter shape enforcement).
+  if (playerRecord.distinguishingMarks !== undefined && playerRecord.distinguishingMarks !== null) {
+    if (!Array.isArray(playerRecord.distinguishingMarks)) {
+      errors.push('distinguishingMarks must be an array');
+    }
+  }
+
+  // accessoryInventory — Phase C persistent per-player accessory list.
+  // Each entry must satisfy the schema documented in
+  // src/utils/accessoryInventory.js + feedback_accessory_inventory_model.md.
+  if (playerRecord.accessoryInventory !== undefined && playerRecord.accessoryInventory !== null) {
+    if (!Array.isArray(playerRecord.accessoryInventory)) {
+      errors.push('accessoryInventory must be an array');
+    } else {
+      playerRecord.accessoryInventory.forEach((item, idx) => {
+        validateAccessoryInventoryItem(item, idx, errors);
+      });
+    }
+  }
+
+  // photoBlobId — FK into playerPhotos store (autoincrement number key).
+  if (playerRecord.photoBlobId !== undefined && playerRecord.photoBlobId !== null) {
+    if (typeof playerRecord.photoBlobId !== 'number' || !Number.isFinite(playerRecord.photoBlobId)) {
+      errors.push('photoBlobId must be a number (FK to playerPhotos.blobId) or null');
+    }
+  }
+
+  // Legacy-bool flags `hairSaltPepper` / `beardSaltPepper`. Phase 7 of the
+  // identity-avatar work renamed these to hairTreatment/beardTreatment as
+  // string enums (validated above). The legacy booleans are still accepted
+  // for back-compat with pre-Phase-7 records.
+  ['hairSaltPepper', 'beardSaltPepper'].forEach(field => {
+    if (playerRecord[field] !== undefined && playerRecord[field] !== null) {
+      if (typeof playerRecord[field] !== 'boolean') {
+        errors.push(`${field} must be a boolean (legacy field)`);
       }
     }
   });
@@ -187,7 +325,9 @@ export const validatePlayerRecord = (playerRecord) => {
     }
   }
 
-  // avatarFeatures (PEO-1): optional nullable sub-object with string values
+  // avatarFeatures (PEO-1): legacy nullable sub-object with string values.
+  // Modern records derive avatar features from identification fields via
+  // mapIdentityToAvatarFeatures; this field is accepted for back-compat.
   if (playerRecord.avatarFeatures !== undefined && playerRecord.avatarFeatures !== null) {
     if (typeof playerRecord.avatarFeatures !== 'object' || Array.isArray(playerRecord.avatarFeatures)) {
       errors.push('avatarFeatures must be an object');
@@ -200,7 +340,8 @@ export const validatePlayerRecord = (playerRecord) => {
     }
   }
 
-  // Boolean fields
+  // Legacy boolean fields kept for back-compat (read-shim derives modern
+  // headwear/eyewear from these on render).
   const booleanFields = ['hat', 'sunglasses'];
   booleanFields.forEach(field => {
     if (playerRecord[field] !== undefined && playerRecord[field] !== null) {

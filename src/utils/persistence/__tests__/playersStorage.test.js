@@ -341,7 +341,65 @@ describe('deletePlayer', () => {
 
   it('does not throw when deleting a non-existent playerId', async () => {
     await initDB();
-    await expect(deletePlayer(99999)).resolves.toBeUndefined();
+    // 2026-05-06: deletePlayer cascade returns the per-store delete
+    // counts. Non-existent playerId still resolves (no throw); counts
+    // are zero across the board. playerDeleted is true because IDB's
+    // delete() with a non-existent key resolves successfully (no-op).
+    const result = await deletePlayer(99999);
+    expect(result).toBeDefined();
+    expect(result.sightingsDeleted).toBe(0);
+    expect(result.photosDeleted).toBe(0);
+  });
+
+  // ========================================================================
+  // 2026-05-06 cascade-delete coverage. Player deletion now removes
+  // associated sightings + photos + drafts in one atomic transaction.
+  // Without cascade these accumulated as orphans (the audit found them).
+  // ========================================================================
+
+  it('cascades to sightingLogs — sightings for the deleted player are removed', async () => {
+    const { appendSighting, getSightingsForPlayer } = await import('../sightingLogsStore');
+    await initDB();
+    const aliceId = await createPlayer({ name: 'Alice' }, 'testUser');
+
+    await appendSighting({ playerId: aliceId, sessionId: 1, attributes: { ageDecade: '30s' } });
+    await appendSighting({ playerId: aliceId, sessionId: 2, attributes: { ageDecade: '30s' } });
+
+    expect((await getSightingsForPlayer(aliceId)).length).toBe(2);
+
+    const result = await deletePlayer(aliceId, 'testUser');
+    expect(result.sightingsDeleted).toBe(2);
+    expect((await getSightingsForPlayer(aliceId)).length).toBe(0);
+  });
+
+  it('cascades to playerPhotos — photos for the deleted player are removed', async () => {
+    // playerPhotosStore exports savePhoto + deletePhotosForPlayer; there's
+    // no public read-by-player. Verify cascade via the count returned
+    // from deletePlayer (the cursor inside the cascade transaction
+    // returns the deleted count).
+    const { savePhoto } = await import('../playerPhotosStore');
+    await initDB();
+    const aliceId = await createPlayer({ name: 'Alice' }, 'testUser');
+
+    const blob = new Blob(['x'], { type: 'image/jpeg' });
+    // savePhoto requires a string playerId (per its signature). The
+    // cascade is type-tolerant — String() coercion lets the int int
+    // playersStore key match the string-keyed photos.
+    await savePhoto(String(aliceId), blob);
+    await savePhoto(String(aliceId), blob);
+
+    const result = await deletePlayer(aliceId, 'testUser');
+    expect(result.photosDeleted).toBe(2);
+  });
+
+  it('cascade with no sightings/photos still deletes the player', async () => {
+    await initDB();
+    const aliceId = await createPlayer({ name: 'Alice' }, 'testUser');
+
+    const result = await deletePlayer(aliceId, 'testUser');
+    expect(result.playerDeleted).toBe(true);
+    expect(result.sightingsDeleted).toBe(0);
+    expect(result.photosDeleted).toBe(0);
   });
 });
 

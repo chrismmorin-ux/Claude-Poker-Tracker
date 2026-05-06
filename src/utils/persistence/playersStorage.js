@@ -8,6 +8,9 @@
 import {
   getDB,
   PLAYERS_STORE_NAME,
+  SIGHTING_LOGS_STORE_NAME,
+  PLAYER_PHOTOS_STORE_NAME,
+  PLAYER_DRAFTS_STORE_NAME,
   GUEST_USER_ID,
   log,
   logError,
@@ -263,30 +266,94 @@ export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) =>
 };
 
 /**
- * Delete a specific player by ID
+ * Delete a specific player by ID, cascading to sightings + photos + draft.
+ *
+ * Cascade fix 2026-05-06 (unified PlayerFinder migration): the previous
+ * implementation only removed the player record, leaving orphaned
+ * sighting logs and photo blobs. IndexedDB has no FK enforcement, so the
+ * cascade has to be explicit here. All four deletes happen in a SINGLE
+ * read-write transaction so a partial failure can't leave dangling
+ * orphans.
+ *
  * @param {number} playerId - The player ID to delete
- * @returns {Promise<void>}
+ * @param {string} [userId] - The user ID (for draft cleanup; defaults to GUEST_USER_ID)
+ * @returns {Promise<{playerDeleted: boolean, sightingsDeleted: number, photosDeleted: number, draftDeleted: boolean}>}
  */
-export const deletePlayer = async (playerId) => {
+export const deletePlayer = async (playerId, userId = GUEST_USER_ID) => {
   try {
     const db = await getDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const request = objectStore.delete(playerId);
+      const stores = [
+        PLAYERS_STORE_NAME,
+        SIGHTING_LOGS_STORE_NAME,
+        PLAYER_PHOTOS_STORE_NAME,
+        PLAYER_DRAFTS_STORE_NAME,
+      ];
+      const tx = db.transaction(stores, 'readwrite');
 
-      request.onsuccess = () => {
-        log(`Player ${playerId} deleted successfully`);
-        resolve();
+      let sightingsDeleted = 0;
+      let photosDeleted = 0;
+      let playerDeleted = false;
+      let draftDeleted = false;
+
+      tx.oncomplete = () => {
+        log(`Player ${playerId} cascade-deleted: sightings=${sightingsDeleted} photos=${photosDeleted} draft=${draftDeleted}`);
+        resolve({ playerDeleted, sightingsDeleted, photosDeleted, draftDeleted });
+      };
+      tx.onerror = () => {
+        logError(`Cascade delete failed for player ${playerId}:`, tx.error);
+        reject(tx.error || new Error('Cascade delete tx error'));
+      };
+      tx.onabort = () => reject(tx.error || new Error('Cascade delete aborted'));
+
+      // 1. Delete the player record itself.
+      const playerStore = tx.objectStore(PLAYERS_STORE_NAME);
+      const playerReq = playerStore.delete(playerId);
+      playerReq.onsuccess = () => { playerDeleted = true; };
+
+      // 2-3. Cursor over sightings + photos indexed by playerId, deleting
+      // each match. Type-tolerant comparison: `playerId` is the integer
+      // autoincrement key on the players store, but related stores may
+      // have it persisted as a string (savePhoto / appendSighting accept
+      // either type). Walking the full index and comparing via String()
+      // avoids the type-mismatch issue an IDBKeyRange.only would have.
+      const targetKey = String(playerId);
+
+      const sightingStore = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
+      const sightingIdx = sightingStore.index('by_playerId');
+      const sightingCursorReq = sightingIdx.openCursor();
+      sightingCursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (String(cursor.value.playerId) === targetKey) {
+            cursor.delete();
+            sightingsDeleted += 1;
+          }
+          cursor.continue();
+        }
       };
 
-      request.onerror = (event) => {
-        logError(`Failed to delete player ${playerId}:`, event.target.error);
-        reject(event.target.error);
+      const photoStore = tx.objectStore(PLAYER_PHOTOS_STORE_NAME);
+      const photoIdx = photoStore.index('by_playerId');
+      const photoCursorReq = photoIdx.openCursor();
+      photoCursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (String(cursor.value.playerId) === targetKey) {
+            cursor.delete();
+            photosDeleted += 1;
+          }
+          cursor.continue();
+        }
       };
 
-
+      // 4. Delete the in-progress draft for this user if one exists.
+      // Drafts are keyed by userId, not playerId — there's at most one
+      // per user. We delete unconditionally; absence is not an error.
+      const draftStore = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
+      const draftReq = draftStore.delete(userId);
+      draftReq.onsuccess = () => { draftDeleted = true; };
     });
   } catch (error) {
     logError('Error in deletePlayer:', error);

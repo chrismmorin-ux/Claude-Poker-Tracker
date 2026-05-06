@@ -514,9 +514,12 @@ describe('validatePlayerRecord', () => {
         name: 'Bob',
         nickname: 'Shark',
         ethnicity: 'unknown',
+        // 'build' is now an enum — 'heavy' is valid.
         build: 'heavy',
         gender: 'male',
-        facialHair: 'beard',
+        // 'facialHair' is now an enum; the legacy string 'beard' isn't
+        // a valid enum value. Use 'full' for full-beard.
+        facialHair: 'full',
         notes: 'Calls too wide',
         avatar: 'img.png',
         hat: true,
@@ -584,7 +587,9 @@ describe('validatePlayerRecord', () => {
   });
 
   describe('optional string fields', () => {
-    const optionalStringFields = ['nickname', 'ethnicity', 'build', 'gender', 'facialHair', 'notes', 'avatar'];
+    // 2026-05-06 Phase A: 'build' and 'facialHair' moved from string-only
+    // validation to enum validation (see ENUM_FIELDS coverage below).
+    const optionalStringFields = ['nickname', 'ethnicity', 'gender', 'notes', 'avatar'];
 
     optionalStringFields.forEach(field => {
       it(`returns error when ${field} is a number`, () => {
@@ -857,6 +862,152 @@ describe('validatePlayerRecord — PEO-1 additions', () => {
       });
       expect(r.valid).toBe(true);
     });
+  });
+});
+
+// =============================================================================
+// validatePlayerRecord — Phase 3+ canonical identification fields (2026-05-06)
+// =============================================================================
+//
+// Coverage for the enum + array + photoBlobId validators added during the
+// unified PlayerFinder migration. Records that fail these validators are
+// rejected before reaching IndexedDB.
+
+describe('validatePlayerRecord — Phase 3+ enum fields', () => {
+  const base = { name: 'Bob' };
+
+  // Each entry: [field, validValue, invalidValue]
+  const enumCases = [
+    ['sex', 'male', 'unknown-sex'],
+    ['ageDecade', '30s', '25'],
+    ['build', 'heavy', 'huge'],
+    ['height', 'tall', 'extra-tall'],
+    ['skinTone', 'tan', 'medium'], // 'medium' was removed in the palette cleanup
+    ['hairColor', 'red', 'magenta'],
+    ['hairLength', 'buzz', 'mullet'],
+    ['hairTexture', 'curly', 'frizzy'],
+    ['hairTreatment', 'salt-pepper', 'gray-streaks'],
+    ['facialHair', 'goatee', 'sideburns'],
+    ['beardColor', 'black', 'orange'],
+    ['beardTreatment', 'salt-pepper', 'partial-gray'],
+    ['eyewear', 'sunglasses', 'goggles'],
+    ['eyewearColor', 'gold', 'rainbow'],
+    ['headwear', 'cap', 'turban'],
+    ['hatColor', 'blue', 'mauve'],
+  ];
+
+  enumCases.forEach(([field, valid, invalid]) => {
+    it(`accepts ${field}='${valid}' (valid enum value)`, () => {
+      const r = validatePlayerRecord({ ...base, [field]: valid });
+      expect(r.valid).toBe(true);
+      expect(r.errors).toEqual([]);
+    });
+
+    it(`rejects ${field}='${invalid}' (not in enum)`, () => {
+      const r = validatePlayerRecord({ ...base, [field]: invalid });
+      expect(r.valid).toBe(false);
+      expect(r.errors.some((e) => e.startsWith(`${field} must be one of`))).toBe(true);
+    });
+
+    it(`accepts ${field}=null`, () => {
+      const r = validatePlayerRecord({ ...base, [field]: null });
+      expect(r.valid).toBe(true);
+    });
+
+    it(`accepts ${field} omitted`, () => {
+      const r = validatePlayerRecord(base);
+      expect(r.valid).toBe(true);
+    });
+  });
+});
+
+describe('validatePlayerRecord — ethnicityTags array', () => {
+  const base = { name: 'Bob' };
+
+  it('accepts an array of strings', () => {
+    expect(validatePlayerRecord({ ...base, ethnicityTags: ['caucasian'] }).valid).toBe(true);
+    expect(validatePlayerRecord({ ...base, ethnicityTags: ['caucasian', 'east-asian'] }).valid).toBe(true);
+    expect(validatePlayerRecord({ ...base, ethnicityTags: [] }).valid).toBe(true);
+  });
+
+  it('rejects non-array', () => {
+    const r = validatePlayerRecord({ ...base, ethnicityTags: 'caucasian' });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('ethnicityTags must be an array');
+  });
+
+  it('rejects array with non-string elements', () => {
+    const r = validatePlayerRecord({ ...base, ethnicityTags: ['caucasian', 42] });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('ethnicityTags must contain only strings');
+  });
+});
+
+describe('validatePlayerRecord — accessoryInventory array of objects', () => {
+  const base = { name: 'Bob' };
+  const validItem = {
+    accessoryId: 'a1',
+    kind: 'hat',
+    subtype: 'cap',
+    color: 'blue',
+    note: 'KC Royals',
+    firstSeenAt: 1_000_000,
+    lastSeenAt: 2_000_000,
+    timesSeen: 4,
+  };
+
+  it('accepts a valid inventory of one item', () => {
+    const r = validatePlayerRecord({ ...base, accessoryInventory: [validItem] });
+    expect(r.valid).toBe(true);
+  });
+
+  it('accepts an empty inventory', () => {
+    expect(validatePlayerRecord({ ...base, accessoryInventory: [] }).valid).toBe(true);
+  });
+
+  it('rejects non-array', () => {
+    const r = validatePlayerRecord({ ...base, accessoryInventory: { kind: 'hat' } });
+    expect(r.valid).toBe(false);
+    expect(r.errors).toContain('accessoryInventory must be an array');
+  });
+
+  it('rejects an item with an unknown kind', () => {
+    const item = { ...validItem, kind: 'cape' };
+    const r = validatePlayerRecord({ ...base, accessoryInventory: [item] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.includes('accessoryInventory[0].kind'))).toBe(true);
+  });
+
+  it('rejects an item with non-numeric timestamps', () => {
+    const item = { ...validItem, firstSeenAt: 'yesterday' };
+    const r = validatePlayerRecord({ ...base, accessoryInventory: [item] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.includes('firstSeenAt'))).toBe(true);
+  });
+
+  it('rejects an item with timesSeen < 1', () => {
+    const item = { ...validItem, timesSeen: 0 };
+    const r = validatePlayerRecord({ ...base, accessoryInventory: [item] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.includes('timesSeen'))).toBe(true);
+  });
+});
+
+describe('validatePlayerRecord — photoBlobId', () => {
+  const base = { name: 'Bob' };
+
+  it('accepts a positive integer', () => {
+    expect(validatePlayerRecord({ ...base, photoBlobId: 7 }).valid).toBe(true);
+  });
+
+  it('accepts null', () => {
+    expect(validatePlayerRecord({ ...base, photoBlobId: null }).valid).toBe(true);
+  });
+
+  it('rejects a string', () => {
+    const r = validatePlayerRecord({ ...base, photoBlobId: 'photo-7' });
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.includes('photoBlobId'))).toBe(true);
   });
 });
 
