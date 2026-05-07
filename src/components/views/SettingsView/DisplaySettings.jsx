@@ -4,7 +4,7 @@ import { GOLD } from '../../../constants/designTokens';
 
 export const DisplaySettings = ({ settings, updateSetting }) => (
   <div className="bg-gray-800 rounded-lg p-5">
-    <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>Display</h3>
+    <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Display</h3>
 
     {/* Theme (placeholder - not functional yet) */}
     <div className="mb-4">

@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from './panelTokens';
+import { SURFACE, TEXT, GOLD } from '../../../constants/designTokens';
 
 const BRANCH_COLORS = {
   ifCall:          '#2563eb',
@@ -29,21 +29,20 @@ const BRANCH_LABELS = {
 const RunoutBar = ({ favorable, total, scaryCards }) => {
   if (!total || total === 0) return null;
   const pct = Math.round((favorable / total) * 100);
-  const barColor = pct >= 60 ? COLOR.green : pct >= 40 ? COLOR.yellow : COLOR.red;
+  const barColor = pct >= 60 ? '#22c55e' : pct >= 40 ? '#eab308' : '#ef4444'; // green/yellow/red-500
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-      <div style={{
-        width: 50, height: 4, borderRadius: 2, overflow: 'hidden',
-        background: SURFACE.inset,
-      }}>
-        <div style={{
-          width: `${pct}%`, height: '100%', borderRadius: 2,
-          background: barColor,
-          transition: 'width 0.5s ease',
-        }} />
+    <div className="flex items-center gap-1 mt-0.5">
+      <div
+        className="w-[50px] h-1 rounded-sm overflow-hidden"
+        style={{ background: SURFACE.inset }}
+      >
+        <div
+          className="h-full rounded-sm transition-[width] duration-500 ease-in"
+          style={{ width: `${pct}%`, background: barColor }}
+        />
       </div>
-      <span style={{ fontFamily: FONT.mono, fontSize: 8, color: TEXT.faint }}>
+      <span className="font-mono text-[8px]" style={{ color: TEXT.faint }}>
         {favorable}/{total} favorable
         {scaryCards > 0 && ` · ${scaryCards} scary`}
       </span>
@@ -82,39 +81,35 @@ export const HandPlanTree = ({ handPlan, street }) => {
   if (branches.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{
-        fontSize: 9, color: TEXT.faint, marginBottom: 4,
-        textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600,
-      }}>
+    <div className="mb-2">
+      <div
+        className="text-[9px] mb-1 uppercase tracking-[0.5px] font-semibold"
+        style={{ color: TEXT.faint }}
+      >
         Hand Plan
       </div>
 
-      {branches.map((b, i) => (
-        <div key={b.key} style={{
-          display: 'flex', alignItems: 'flex-start', gap: 6,
-          padding: '4px 0 4px 8px',
-          borderLeft: `2px solid ${b.color}`,
-          marginBottom: 2,
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {branches.map((b) => (
+        <div
+          key={b.key}
+          className="flex items-start gap-1.5 py-1 pl-2 mb-0.5 border-l-2"
+          style={{ borderLeftColor: b.color }}
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-1">
               {/* Branch dot */}
-              <div style={{
-                width: 5, height: 5, borderRadius: '50%',
-                background: b.color, flexShrink: 0,
-                boxShadow: `0 0 3px ${b.color}60`,
-              }} />
+              <div
+                className="w-[5px] h-[5px] rounded-full shrink-0"
+                style={{ background: b.color, boxShadow: `0 0 3px ${b.color}60` }}
+              />
               {/* Label */}
-              <span style={{
-                fontSize: 10, fontWeight: 700, color: b.color,
-              }}>
+              <span className="text-[10px] font-bold" style={{ color: b.color }}>
                 {b.label}
               </span>
               {/* Separator */}
-              <span style={{ fontSize: 10, color: TEXT.faint }}>→</span>
+              <span className="text-[10px]" style={{ color: TEXT.faint }}>→</span>
               {/* Note */}
-              <span style={{ fontSize: 10, color: TEXT.secondary, flex: 1 }}>
+              <span className="text-[10px] flex-1" style={{ color: TEXT.secondary }}>
                 {b.note}
               </span>
             </div>

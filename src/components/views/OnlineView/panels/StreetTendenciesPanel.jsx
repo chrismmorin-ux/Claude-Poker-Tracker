@@ -6,14 +6,21 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, GOLD, COLOR, R } from '../panelTokens';
+import { BORDER, TEXT, GOLD } from '../../../../constants/designTokens';
 
 const STREETS = ['preflop', 'flop', 'turn', 'river'];
 const STREET_SHORT = { preflop: 'Pre', flop: 'Flop', turn: 'Turn', river: 'River' };
 
+const GREEN = '#22c55e';   // green-500 — was COLOR.green
+const YELLOW = '#eab308';  // yellow-500 — was COLOR.yellow
+const RED = '#ef4444';     // red-500 — was RED
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
+const sectionHeaderStyle = { color: TEXT.muted, borderBottomColor: BORDER.default };
+
 const confDotColor = (conf) => {
-  if (conf >= 0.6) return COLOR.green;
-  if (conf >= 0.3) return COLOR.yellow;
+  if (conf >= 0.6) return GREEN;
+  if (conf >= 0.3) return YELLOW;
   return TEXT.faint;
 };
 
@@ -23,8 +30,8 @@ export const StreetTendenciesPanel = ({ villainProfile, currentStreet }) => {
   if (!streets) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Villain Street Tendencies</div>
+    <div className="mb-2.5">
+      <div className={SECTION_HEADER_CLASSES} style={sectionHeaderStyle}>Villain Street Tendencies</div>
 
       {STREETS.map(s => {
         const st = streets[s];
@@ -32,52 +39,48 @@ export const StreetTendenciesPanel = ({ villainProfile, currentStreet }) => {
         const isCurrent = s === currentStreet;
 
         return (
-          <div key={s} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '3px 0',
-            opacity: isCurrent ? 1 : 0.7,
-          }}>
+          <div
+            key={s}
+            className={`flex items-center gap-1.5 py-[3px] ${isCurrent ? 'opacity-100' : 'opacity-70'}`}
+          >
             {/* Confidence dot */}
-            <div style={{
-              width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-              background: confDotColor(st.confidence),
-            }} />
+            <div
+              className="w-[5px] h-[5px] rounded-full shrink-0"
+              style={{ background: confDotColor(st.confidence) }}
+            />
 
             {/* Street label */}
-            <span style={{
-              fontFamily: FONT.mono, fontSize: 9, fontWeight: 600,
-              color: isCurrent ? GOLD.base : TEXT.muted,
-              width: 32, flexShrink: 0,
-            }}>
+            <span
+              className="font-mono text-[9px] font-semibold w-8 shrink-0"
+              style={{ color: isCurrent ? GOLD.base : TEXT.muted }}
+            >
               {STREET_SHORT[s]}
             </span>
 
             {/* Tendency text */}
-            <span style={{
-              fontSize: 10, color: isCurrent ? TEXT.primary : TEXT.secondary,
-              fontWeight: isCurrent ? 600 : 400,
-              flex: 1,
-            }}>
+            <span
+              className={`text-[10px] flex-1 ${isCurrent ? 'font-semibold' : 'font-normal'}`}
+              style={{ color: isCurrent ? TEXT.primary : TEXT.secondary }}
+            >
               {st.tendency}
             </span>
 
             {/* Deviation arrow */}
             {st.deviation && st.deviation.direction !== 'neutral' && (
-              <span style={{
-                fontFamily: FONT.mono, fontSize: 9, fontWeight: 700,
-                color: st.deviation.direction === 'aggressive' ? COLOR.red : '#3b82f6',
-                flexShrink: 0,
-              }}>
-                {st.deviation.direction === 'aggressive' ? '\u25B2' : '\u25BC'}
+              <span
+                className="font-mono text-[9px] font-bold shrink-0"
+                style={{ color: st.deviation.direction === 'aggressive' ? RED : '#3b82f6' }}
+              >
+                {st.deviation.direction === 'aggressive' ? '▲' : '▼'}
                 {Math.abs(Math.round(st.deviation.vsPopulation * 100))}%
               </span>
             )}
 
             {/* Confidence % */}
-            <span style={{
-              fontFamily: FONT.mono, fontSize: 7, color: TEXT.faint,
-              width: 24, textAlign: 'right', flexShrink: 0,
-            }}>
+            <span
+              className="font-mono text-[7px] w-6 text-right shrink-0"
+              style={{ color: TEXT.faint }}
+            >
               {Math.round((st.confidence || 0) * 100)}%
             </span>
           </div>
@@ -86,13 +89,13 @@ export const StreetTendenciesPanel = ({ villainProfile, currentStreet }) => {
 
       {/* Aggression response */}
       {aggressionResponse && (
-        <div style={{
-          marginTop: 6, paddingTop: 5, borderTop: `1px solid ${BORDER.default}`,
-          display: 'flex', gap: 14, fontSize: 9, color: TEXT.muted,
-        }}>
+        <div
+          className="mt-1.5 pt-[5px] border-t flex gap-3.5 text-[9px]"
+          style={{ borderTopColor: BORDER.default, color: TEXT.muted }}
+        >
           <div>
             <span style={{ color: TEXT.faint }}>Facing bet: </span>
-            <span style={{ color: TEXT.primary, fontWeight: 600 }}>
+            <span className="font-semibold" style={{ color: TEXT.primary }}>
               {aggressionResponse.facingBet?.summary}
             </span>
             {aggressionResponse.facingBet?.foldPct != null && (
@@ -103,7 +106,7 @@ export const StreetTendenciesPanel = ({ villainProfile, currentStreet }) => {
           </div>
           <div>
             <span style={{ color: TEXT.faint }}>Facing raise: </span>
-            <span style={{ color: TEXT.primary, fontWeight: 600 }}>
+            <span className="font-semibold" style={{ color: TEXT.primary }}>
               {aggressionResponse.facingRaise?.summary}
             </span>
             {aggressionResponse.facingRaise?.foldPct != null && (
@@ -116,11 +119,4 @@ export const StreetTendenciesPanel = ({ villainProfile, currentStreet }) => {
       )}
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

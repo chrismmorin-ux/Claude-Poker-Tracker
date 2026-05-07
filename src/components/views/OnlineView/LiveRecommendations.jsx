@@ -30,50 +30,40 @@ export const LiveRecommendations = ({
   })();
 
   return (
-    <div style={{ marginBottom: 10 }}>
+    <div className="mb-2.5">
       {/* Collapsible header with quality dots */}
       <div
         onClick={() => hasProfile && setRecsExpanded(!recsExpanded)}
-        style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: isCollapsed ? 0 : 6,
-          cursor: hasProfile ? 'pointer' : 'default',
-          userSelect: 'none',
-        }}
+        className={`flex justify-between items-center select-none ${isCollapsed ? 'mb-0' : 'mb-1.5'} ${hasProfile ? 'cursor-pointer' : 'cursor-default'}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <h4 style={{ fontSize: 11, color: '#d4a847', margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <div className="flex items-center gap-1.5">
+          <h4 className="text-[11px] m-0 uppercase tracking-[0.5px] text-[#d4a847]">
             {hasProfile && (
-              <span style={{ marginRight: 4, fontSize: 9 }}>{isCollapsed ? '\u25BC' : '\u25B2'}</span>
+              <span className="mr-1 text-[9px]">{isCollapsed ? '▼' : '▲'}</span>
             )}
             Live Recommendations
           </h4>
           {/* Data quality dots + progress hint */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ display: 'flex', gap: 2 }}>
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
               {qualityDots.map((c, i) => (
-                <div key={i} style={{ width: 6, height: 6, borderRadius: 3, background: c }} />
+                <div key={i} className="w-1.5 h-1.5 rounded-[3px]" style={{ background: c }} />
               ))}
             </div>
             {advice.treeMetadata?.depthReached > 1 && (
-              <span style={{
-                fontSize: 8, fontWeight: 700, padding: '0px 4px', borderRadius: 2,
-                background: '#1e3a5f', color: '#60a5fa',
-              }}>
+              <span className="text-[8px] font-bold px-1 py-0 rounded-[2px] bg-[#1e3a5f] text-blue-400">
                 D{advice.treeMetadata.depthReached}
               </span>
             )}
             {advice.modelQuality?.overallSource && (
-              <span style={{
-                fontSize: 8, fontWeight: 700, padding: '0px 4px', borderRadius: 2,
-                background: advice.modelQuality.overallSource === 'population' ? '#374151' : '#14532d',
-                color: advice.modelQuality.overallSource === 'population' ? '#6b7280' : '#4ade80',
-              }}>
+              <span
+                className={`text-[8px] font-bold px-1 py-0 rounded-[2px] ${advice.modelQuality.overallSource === 'population' ? 'bg-gray-700 text-gray-500' : 'bg-green-900 text-green-400'}`}
+              >
                 {advice.modelQuality.overallSource === 'population' ? 'pop.' : 'model'}
               </span>
             )}
             {advice.dataQuality?.confidenceNote && (
-              <span style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic' }}>
+              <span className="text-[9px] italic text-gray-600">
                 {advice.dataQuality.confidenceNote}
               </span>
             )}
@@ -81,15 +71,16 @@ export const LiveRecommendations = ({
         </div>
         {/* Collapsed summary: top rec action + EV */}
         {isCollapsed && topRec && (
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>
-            Best: <span style={{
-              fontWeight: 800, textTransform: 'uppercase',
-              color: ACTION_COLORS[topRec.action.toLowerCase()]?.base || '#e0e0e0',
-            }}>{topRec.action}</span>
-            <span style={{
-              marginLeft: 4, fontWeight: 700,
-              color: topRec.ev > 0 ? '#22c55e' : topRec.ev === 0 ? '#6b7280' : '#ef4444',
-            }}>
+          <span className="text-[11px] text-gray-400">
+            Best: <span
+              className="font-extrabold uppercase"
+              style={{ color: ACTION_COLORS[topRec.action.toLowerCase()]?.base || '#e0e0e0' }}
+            >
+              {topRec.action}
+            </span>
+            <span
+              className={`ml-1 font-bold ${topRec.ev > 0 ? 'text-green-500' : topRec.ev === 0 ? 'text-gray-500' : 'text-red-500'}`}
+            >
               {topRec.ev >= 0 ? '+' : ''}{topRec.ev.toFixed(1)} EV
             </span>
           </span>
@@ -100,28 +91,24 @@ export const LiveRecommendations = ({
       {!isCollapsed && (
         <>
           {/* Situation + Hero Equity row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: 12, color: '#9ca3af' }}>
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs text-gray-400">
               {advice.situationLabel || advice.situation}
               {advice.heroAlreadyActed && (
-                <span style={{
-                  fontSize: 9, color: '#6b7280', marginLeft: 6,
-                  padding: '1px 5px', borderRadius: 3, background: '#1f2937',
-                }}>review</span>
+                <span className="text-[9px] text-gray-500 ml-1.5 px-[5px] py-px rounded-[3px] bg-gray-800">review</span>
               )}
             </span>
-            <span style={{
-              fontSize: 15, fontWeight: 700,
-              color: advice.heroEquity >= 0.5 ? '#22c55e' : '#ef4444',
-            }}>
+            <span
+              className={`text-[15px] font-bold ${advice.heroEquity >= 0.5 ? 'text-green-500' : 'text-red-500'}`}
+            >
               {Math.round(advice.heroEquity * 100)}%
-              <span style={{ fontSize: 10, fontWeight: 400, color: '#6b7280', marginLeft: 2 }}>eq</span>
+              <span className="text-[10px] font-normal text-gray-500 ml-0.5">eq</span>
             </span>
           </div>
 
           {/* Board texture pills */}
           {advice.boardTexture && (
-            <div style={{ display: 'flex', gap: 4, marginBottom: 4, flexWrap: 'wrap' }}>
+            <div className="flex gap-1 mb-1 flex-wrap">
               {[
                 { key: 'texture', show: true, label: advice.boardTexture.texture },
                 { key: 'paired', show: advice.boardTexture.isPaired, label: 'paired' },
@@ -130,10 +117,11 @@ export const LiveRecommendations = ({
               ].filter(p => p.show).map(p => {
                 const pill = TEXTURE_PILLS[p.key] || TEXTURE_PILLS.medium;
                 return (
-                  <span key={p.key} style={{
-                    fontSize: 9, padding: '1px 6px', borderRadius: 3, fontWeight: 'bold',
-                    background: pill.bg, color: pill.color,
-                  }}>
+                  <span
+                    key={p.key}
+                    className="text-[9px] px-1.5 py-px rounded-[3px] font-bold"
+                    style={{ background: pill.bg, color: pill.color }}
+                  >
                     {p.label}
                   </span>
                 );
@@ -152,7 +140,7 @@ export const LiveRecommendations = ({
           )}
           {/* Fallback to bucket bar if hand types not available */}
           {!advice.segmentation?.handTypes && advice.segmentation?.buckets && (
-            <div style={{ marginBottom: 6 }}>
+            <div className="mb-1.5">
               <SegmentationBar buckets={advice.segmentation.buckets} size="sm" />
             </div>
           )}
@@ -168,7 +156,7 @@ export const LiveRecommendations = ({
 
           {/* Alternative recommendations — compact single lines */}
           {altRecs.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div className="flex flex-col gap-0.5">
               {altRecs.map((rec, i) => (
                 <AltRecItem
                   key={rec.action + (i + 1)}
@@ -201,90 +189,81 @@ const HeroCard = ({ topRec, advice, expandedRec, setExpandedRec, observations })
   return (
     <div
       onClick={() => setExpandedRec(isDetailExpanded ? null : 0)}
+      className="px-2.5 py-2 mb-1 rounded-md bg-[#0d1117] cursor-pointer"
       style={{
-        padding: '8px 10px', marginBottom: 4, borderRadius: 6,
-        background: '#0d1117',
         borderLeft: `4px solid ${actionColor}`,
         boxShadow: `inset 0 1px 0 0 ${actionColor}33`,
-        cursor: 'pointer',
       }}
     >
       {/* Row 1: Action + Sizing + EV pill */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{
-            fontSize: 18, fontWeight: 800, textTransform: 'uppercase',
-            color: actionColor, letterSpacing: 0.5,
-          }}>
-            {'\u2605 '}{topRec.action}
+      <div className="flex justify-between items-center mb-1">
+        <div className="flex items-baseline gap-2">
+          <span
+            className="text-lg font-extrabold uppercase tracking-[0.5px]"
+            style={{ color: actionColor }}
+          >
+            {'★ '}{topRec.action}
           </span>
           {topRec.mixFrequency && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
-              background: '#92400e', color: '#fbbf24',
-            }}>
+            <span className="text-[9px] font-bold px-[5px] py-px rounded-[3px] bg-amber-800 text-amber-400">
               MIX {Math.round(topRec.mixFrequency * 100)}%
             </span>
           )}
           {topRec.blockerBluff && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
-              background: '#581c87', color: '#c084fc',
-            }}>
+            <span className="text-[9px] font-bold px-[5px] py-px rounded-[3px] bg-purple-900 text-purple-400">
               BLOCKER
             </span>
           )}
           {topRec.sizing && (
-            <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>
+            <span className="text-[13px] text-gray-400 font-semibold">
               {Math.round(topRec.sizing.betFraction * 100)}% pot
-              <span style={{ color: '#6b7280', fontWeight: 400 }}> (${topRec.sizing.betSize.toFixed(0)})</span>
+              <span className="text-gray-500 font-normal"> (${topRec.sizing.betSize.toFixed(0)})</span>
             </span>
           )}
         </div>
         {/* EV pill badge */}
-        <span style={{
-          fontSize: 13, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-          background: evBg, color: evColor === '#6b7280' ? '#9ca3af' : evColor,
-        }}>
+        <span
+          className="text-[13px] font-bold px-2 py-0.5 rounded"
+          style={{
+            background: evBg,
+            color: evColor === '#6b7280' ? '#9ca3af' : evColor,
+          }}
+        >
           {topRec.ev >= 0 ? '+' : ''}{topRec.ev.toFixed(1)}
         </span>
       </div>
 
       {/* Row 2: Equity bar + Villain response */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
-          <div style={{
-            flex: '0 0 120px', height: 8, borderRadius: 4,
-            background: '#374151', overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${Math.round(advice.heroEquity * 100)}%`,
-              height: '100%', borderRadius: 4,
-              background: advice.heroEquity >= 0.5 ? '#22c55e' : '#ef4444',
-            }} />
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1 flex-1">
+          <div className="flex-[0_0_120px] h-2 rounded bg-gray-700 overflow-hidden">
+            <div
+              className={`h-full rounded ${advice.heroEquity >= 0.5 ? 'bg-green-500' : 'bg-red-500'}`}
+              style={{ width: `${Math.round(advice.heroEquity * 100)}%` }}
+            />
           </div>
         </div>
         {vr && (
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <div className="flex gap-1.5 shrink-0">
             {vr.fold && (
               <>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
+                <span className="text-xs font-bold text-red-600">
                   F:{Math.round(vr.fold.pct * 100)}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>
+                <span className="text-xs font-bold text-blue-600">
                   C:{Math.round(vr.call.pct * 100)}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#ea580c' }}>
+                <span className="text-xs font-bold text-orange-600">
                   R:{Math.round(vr.raise.pct * 100)}
                 </span>
               </>
             )}
             {vr.check && !vr.fold && (
               <>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#0891b2' }}>
+                <span className="text-xs font-bold text-cyan-600">
                   Ck:{Math.round(vr.check.pct * 100)}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>
+                <span className="text-xs font-bold text-green-600">
                   Bt:{Math.round(vr.bet.pct * 100)}
                 </span>
               </>
@@ -297,10 +276,9 @@ const HeroCard = ({ topRec, advice, expandedRec, setExpandedRec, observations })
       <FoldSourceBadge sizing={topRec.sizing} prediction={topRec.villainPrediction} />
 
       {/* Row 3: Reasoning (1-line, clipped) */}
-      <div style={{
-        fontSize: 11, color: '#6b7280', fontStyle: 'italic', marginTop: 4,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isDetailExpanded ? 'normal' : 'nowrap',
-      }}>
+      <div
+        className={`text-[11px] text-gray-500 italic mt-1 overflow-hidden text-ellipsis ${isDetailExpanded ? 'whitespace-normal' : 'whitespace-nowrap'}`}
+      >
         {topRec.reasoning}
       </div>
 
@@ -311,7 +289,7 @@ const HeroCard = ({ topRec, advice, expandedRec, setExpandedRec, observations })
 
       {/* Expanded detail: fold adjustments + supporting observations */}
       {isDetailExpanded && (
-        <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px solid #1f2937' }}>
+        <div className="mt-1 pt-1 border-t border-t-gray-800">
           <FoldAdjustments sizing={topRec.sizing} />
           <SupportingObservations
             observations={observations}
@@ -336,54 +314,44 @@ const AltRecItem = ({ rec, idx, expandedRec, setExpandedRec }) => {
       {/* Compact line */}
       <div
         onClick={() => setExpandedRec(isExpanded ? null : idx)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '6px 8px', borderRadius: 4, background: '#0d1117',
-          cursor: 'pointer', minHeight: 32,
-        }}
+        className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#0d1117] cursor-pointer min-h-8"
       >
-        <div style={{
-          width: 8, height: 8, borderRadius: 4,
-          background: actionColor, flexShrink: 0,
-        }} />
-        <span style={{
-          fontSize: 12, fontWeight: 700, textTransform: 'uppercase',
-          color: '#e0e0e0',
-        }}>
+        <div
+          className="w-2 h-2 rounded shrink-0"
+          style={{ background: actionColor }}
+        />
+        <span className="text-xs font-bold uppercase text-[#e0e0e0]">
           {rec.action}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: evColor }}>
+        <span className="text-xs font-bold" style={{ color: evColor }}>
           {rec.ev >= 0 ? '+' : ''}{rec.ev.toFixed(1)}
         </span>
         {rec.sizing && (
-          <span style={{ fontSize: 10, color: '#6b7280' }}>
+          <span className="text-[10px] text-gray-500">
             {Math.round(rec.sizing.betFraction * 100)}% pot
           </span>
         )}
-        <span style={{ fontSize: 9, color: '#4b8bbf', marginLeft: 'auto' }}>
-          {isExpanded ? '\u25B2' : '\u25BC'}
+        <span className="text-[9px] text-[#4b8bbf] ml-auto">
+          {isExpanded ? '▲' : '▼'}
         </span>
       </div>
       {/* Expanded detail */}
       {isExpanded && (
-        <div style={{
-          padding: '4px 8px 6px 24px', background: '#0d1117',
-          borderRadius: '0 0 4px 4px', marginTop: -2,
-        }}>
+        <div className="px-2 pb-1.5 pt-1 pl-6 bg-[#0d1117] rounded-b -mt-0.5">
           {rec.villainResponse?.fold && (
-            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+            <div className="text-[10px] text-[#4b8bbf] mb-0.5">
               V: folds {Math.round(rec.villainResponse.fold.pct * 100)}%
-              {' \u00B7 '}calls {Math.round(rec.villainResponse.call.pct * 100)}%
-              {' \u00B7 '}raises {Math.round(rec.villainResponse.raise.pct * 100)}%
+              {' · '}calls {Math.round(rec.villainResponse.call.pct * 100)}%
+              {' · '}raises {Math.round(rec.villainResponse.raise.pct * 100)}%
             </div>
           )}
           {rec.villainResponse?.check && !rec.villainResponse?.fold && (
-            <div style={{ fontSize: 10, color: '#4b8bbf', marginBottom: 2 }}>
+            <div className="text-[10px] text-[#4b8bbf] mb-0.5">
               V: checks {Math.round(rec.villainResponse.check.pct * 100)}%
-              {' \u00B7 '}bets {Math.round(rec.villainResponse.bet.pct * 100)}%
+              {' · '}bets {Math.round(rec.villainResponse.bet.pct * 100)}%
             </div>
           )}
-          <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+          <div className="text-[10px] text-gray-500 italic">
             {rec.reasoning}
           </div>
         </div>
@@ -404,22 +372,22 @@ const FoldSourceBadge = ({ sizing, prediction }) => {
     : null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
+    <div className="flex items-center gap-1.5 mt-[3px] flex-wrap">
       {sizing?.foldPct != null && (
-        <span style={{ fontSize: 10, color: '#9ca3af' }}>
-          Fold: <span style={{ fontWeight: 700, color: '#e0e0e0' }}>{Math.round(sizing.foldPct * 100)}%</span>
+        <span className="text-[10px] text-gray-400">
+          Fold: <span className="font-bold text-[#e0e0e0]">{Math.round(sizing.foldPct * 100)}%</span>
           {srcCfg && (
-            <span style={{
-              marginLeft: 4, fontSize: 9, padding: '1px 5px', borderRadius: 3,
-              background: srcCfg.bg, color: srcCfg.color, fontWeight: 600,
-            }}>
+            <span
+              className="ml-1 text-[9px] px-[5px] py-px rounded-[3px] font-semibold"
+              style={{ background: srcCfg.bg, color: srcCfg.color }}
+            >
               {srcCfg.label}{meta?.observedN > 0 ? ` n=${meta.observedN}` : ''}
             </span>
           )}
         </span>
       )}
       {predLabel && (
-        <span style={{ fontSize: 9, color: '#4b5563' }}>
+        <span className="text-[9px] text-gray-600">
           model: {predLabel}
         </span>
       )}
@@ -434,7 +402,7 @@ const FoldAdjustments = ({ sizing }) => {
   if (!meta) {
     if (sizing?.foldPct != null) {
       return (
-        <div style={{ fontSize: 10, color: '#6b7280' }}>
+        <div className="text-[10px] text-gray-500">
           Fold equity: {Math.round(sizing.foldPct * 100)}%
         </div>
       );
@@ -445,26 +413,23 @@ const FoldAdjustments = ({ sizing }) => {
   const significantAdj = (meta.adjustments || []).filter(a => Math.abs(a.multiplier - 1) >= 0.02);
   return (
     <div>
-      <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>
+      <div className="text-[10px] text-gray-500 mb-0.5">
         Base fold: {Math.round(meta.baseEstimate * 100)}%
         {meta.totalShiftPct !== 0 && (
-          <span style={{
-            marginLeft: 4,
-            color: meta.totalShiftPct > 0 ? '#22c55e' : '#ef4444',
-          }}>
+          <span className={`ml-1 ${meta.totalShiftPct > 0 ? 'text-green-500' : 'text-red-500'}`}>
             {meta.totalShiftPct > 0 ? '+' : ''}{meta.totalShiftPct}% adjusted
           </span>
         )}
       </div>
       {significantAdj.length > 0 && (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
+        <div className="flex gap-1 flex-wrap mt-0.5">
           {significantAdj.map(a => {
             const pct = Math.round((a.multiplier - 1) * 100);
             return (
-              <span key={a.factor} style={{
-                fontSize: 9, padding: '1px 4px', borderRadius: 3,
-                background: '#1f2937', color: pct > 0 ? '#4ade80' : '#f87171',
-              }}>
+              <span
+                key={a.factor}
+                className={`text-[9px] px-1 py-px rounded-[3px] bg-gray-800 ${pct > 0 ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {FOLD_ADJ_LABEL[a.factor] || a.factor}: {pct > 0 ? '+' : ''}{pct}%
               </span>
             );
@@ -491,16 +456,13 @@ const SupportingObservations = ({ observations, currentStreet }) => {
   if (matching.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 4 }}>
-      <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2 }}>Supporting reads:</div>
+    <div className="mt-1">
+      <div className="text-[9px] text-gray-600 mb-0.5">Supporting reads:</div>
       {matching.map((obs, i) => (
-        <div key={i} style={{
-          fontSize: 10, color: '#9ca3af', paddingLeft: 8,
-          borderLeft: '2px solid #374151', marginBottom: 2,
-        }}>
+        <div key={i} className="text-[10px] text-gray-400 pl-2 border-l-2 border-l-gray-700 mb-0.5">
           {obs.signal}
           {obs.evidence && (
-            <span style={{ color: '#4b5563', marginLeft: 4 }}>
+            <span className="text-gray-600 ml-1">
               ({obs.evidence})
             </span>
           )}
@@ -527,7 +489,7 @@ const HandPlanTree = ({ handPlan, street }) => {
       color: '#2563eb',
       note: p.note,
       detail: !isRiver && p.totalRunouts > 0
-        ? `${p.favorableRunouts}/${p.totalRunouts} runouts favor ${p.plan}${p.scaryCards > 0 ? ` \u00B7 ${p.scaryCards} scary` : ''}`
+        ? `${p.favorableRunouts}/${p.totalRunouts} runouts favor ${p.plan}${p.scaryCards > 0 ? ` · ${p.scaryCards} scary` : ''}`
         : null,
     });
   }
@@ -566,7 +528,7 @@ const HandPlanTree = ({ handPlan, street }) => {
       color: '#d4a847',
       note: p.note,
       detail: p.totalRunouts > 0
-        ? `${p.favorableRunouts}/${p.totalRunouts} runouts favor ${p.plan}${p.scaryCards > 0 ? ` \u00B7 ${p.scaryCards} scary` : ''}`
+        ? `${p.favorableRunouts}/${p.totalRunouts} runouts favor ${p.plan}${p.scaryCards > 0 ? ` · ${p.scaryCards} scary` : ''}`
         : null,
     });
   }
@@ -574,20 +536,21 @@ const HandPlanTree = ({ handPlan, street }) => {
   if (branches.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 4 }}>
-      <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>Hand plan</div>
+    <div className="mt-1">
+      <div className="text-[9px] text-gray-600 mb-0.5 uppercase tracking-[0.5px]">Hand plan</div>
       {branches.map((b, i) => (
-        <div key={i} style={{
-          display: 'flex', alignItems: 'flex-start', gap: 6,
-          padding: '3px 0', borderLeft: `2px solid ${b.color}`, paddingLeft: 8, marginBottom: 2,
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: b.color }}>{b.label}</span>
-              <span style={{ fontSize: 10, color: '#9ca3af' }}>{b.note}</span>
+        <div
+          key={i}
+          className="flex items-start gap-1.5 py-[3px] pl-2 border-l-2 mb-0.5"
+          style={{ borderLeftColor: b.color }}
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold" style={{ color: b.color }}>{b.label}</span>
+              <span className="text-[10px] text-gray-400">{b.note}</span>
             </div>
             {b.detail && (
-              <div style={{ fontSize: 9, color: '#4b5563', marginTop: 1 }}>{b.detail}</div>
+              <div className="text-[9px] text-gray-600 mt-px">{b.detail}</div>
             )}
           </div>
         </div>
@@ -615,28 +578,30 @@ const BucketEquityBar = ({ bucketEquities, segmentation }) => {
   if (buckets.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 4 }}>
-      <div style={{ fontSize: 9, color: '#4b5563', marginBottom: 2 }}>Hero equity vs range</div>
-      <div style={{ display: 'flex', height: 18, borderRadius: 3, overflow: 'hidden', background: '#1f2937' }}>
+    <div className="mb-1">
+      <div className="text-[9px] text-gray-600 mb-0.5">Hero equity vs range</div>
+      <div className="flex h-[18px] rounded-[3px] overflow-hidden bg-gray-800">
         {buckets.map(b => (
-          <div key={b.name} style={{
-            flex: `${b.pct} 0 0`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: BUCKET_COLORS[b.name] + '30',
-            borderRight: '1px solid #0d1117',
-          }}>
-            <span style={{
-              fontSize: 8, fontWeight: 700, letterSpacing: -0.3,
-              color: b.equity >= 0.5 ? '#4ade80' : '#f87171',
-            }}>
+          <div
+            key={b.name}
+            className="flex items-center justify-center border-r border-r-[#0d1117]"
+            style={{
+              flex: `${b.pct} 0 0`,
+              background: BUCKET_COLORS[b.name] + '30',
+            }}
+          >
+            <span
+              className={`text-[8px] font-bold tracking-[-0.3px] ${b.equity >= 0.5 ? 'text-green-400' : 'text-red-400'}`}
+            >
               {Math.round(b.equity * 100)}%
             </span>
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', height: 10 }}>
+      <div className="flex h-2.5">
         {buckets.map(b => (
-          <div key={b.name} style={{ flex: `${b.pct} 0 0`, textAlign: 'center' }}>
-            <span style={{ fontSize: 7, color: '#4b5563' }}>{b.name}</span>
+          <div key={b.name} className="text-center" style={{ flex: `${b.pct} 0 0` }}>
+            <span className="text-[7px] text-gray-600">{b.name}</span>
           </div>
         ))}
       </div>

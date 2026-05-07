@@ -1,0 +1,196 @@
+id: "SPR-045"
+title: "Sidebar Recurrence boundary hardening — synchronous timer registration + betweenHandsFsm symmetry (WS-104 + WS-102)"
+status: completed
+approved_at: "2026-05-07T03:35:00Z"
+completed_at: "2026-05-07T08:35:00Z"
+goal: |
+  Two more sidebar-recurrence boundary-hardening fixes shipped:
+    1. WS-104 — register `staleContext` + `adviceAgeBadge` timers
+       synchronously in the side-panel IIFE so RT-60 coverage doesn't
+       miss them via microtask deferral.
+    2. WS-102 — debounce `betweenHandsFsm` `inactive→active` and add the
+       missing `modeAExpired→active` return on repeated
+       `betweenHandsOrIdle=true`, so a transient malformed payload
+       doesn't flash the banner.
+
+  Three-of-five and four-of-five completion against the sidebar-recurrence
+  boundary-hardening cluster. Both items are surgical defect fixes with
+  named line numbers + owner-verification criteria. Evidence-based
+  S-actual estimate from the WS-105 + WS-103 sibling pattern (both
+  shipped ~10–20 min despite M tag).
+
+items:
+  - id: "WS-104"
+    title: "Microtask-deferred timer registration leak"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-05-07T08:25:00Z"
+    accept_criteria:
+      - "side-panel.js:527, 1084 — register timers synchronously"
+      - "close RT-60 coverage gap. Owner verifies: registry contains staleContext + adviceAgeBadge immediately after IIFE"
+    progress_notes: |
+      Stale legacy line numbers (527, 1084) — actual sites were lines
+      606 + 1242 in the current file. Both were `queueMicrotask(() =>
+      coordinator.scheduleTimer('<key>', () => {...}, ms, 'interval'))`.
+      The microtask defer existed because `coordinator` is declared at
+      line 2176 — synchronous scheduling at the legacy location would
+      have thrown TDZ.
+
+      Implementation:
+        - side-panel/side-panel.js — at original sites, hoisted timer
+          bodies into named closures (`_staleContextTick` at the existing
+          line ~606, `_adviceAgeBadgeTick` at ~1242). Local feature-context
+          comments stayed attached to the body declarations.
+        - side-panel/side-panel.js — added two synchronous registration
+          calls right after the FSM-registration block (after line 2189):
+            coordinator.scheduleTimer('staleContext',   _staleContextTick,   10_000, 'interval');
+            coordinator.scheduleTimer('adviceAgeBadge', _adviceAgeBadgeTick, 1_000,  'interval');
+          Comment ties the pair: "registry contains both keys immediately
+          after this IIFE returns" — matches owner verification.
+        - side-panel/__tests__/z2-decision.test.js — the existing
+          PR-14 R-2.3 regression guard had a regex that matched the
+          queueMicrotask wrapper (`'interval'\)\);` — two close parens).
+          Updated to assert the body via `_adviceAgeBadgeTick` named
+          closure (R-2.3 invariant unchanged: timer body must call
+          `coordinator.tickAdviceAge()` and not `updateStaleAdviceBadge`
+          / `computeAdviceStaleness`) AND added a separate assertion
+          that the registration call binds the named tick fn AND has
+          no `queueMicrotask` wrapper.
+
+      Verification:
+        - npx vitest run side-panel/__tests__/z2-decision.test.js → 15/15
+        - npm test (full extension) → 2263/2263 (matches SPR-044 baseline;
+          0 net regressions)
+        - npm run build → clean
+
+  - id: "WS-102"
+    title: "betweenHandsFsm debounce + modeAExpired symmetry"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-05-07T08:30:00Z"
+    accept_criteria:
+      - "fsms/between-hands.fsm.js:27 — debounce inactive→active"
+      - "add modeAExpired→active return on repeated betweenHandsOrIdle=true. Owner verifies: transient malformed payload doesn't flash banner"
+    progress_notes: |
+      FSM-pure debounce (no timers in the FSM itself, since `defineFsm`
+      is stateless and ctx-less). Implemented as a 4th state.
+
+      Implementation:
+        - side-panel/fsms/between-hands.fsm.js — added `pendingActive`
+          state. New transition table:
+            inactive: liveContextArrived(true)  → 'pendingActive' (was: 'active')
+            pendingActive:
+              liveContextArrived(true)  → 'active'    (debounce confirmed)
+              liveContextArrived(false) → 'inactive'  (transient caught — banner never shown)
+              handNew                    → 'inactive'
+              adviceArrived              → 'inactive'
+              tableSwitch                → 'inactive'
+            modeAExpired: + liveContextArrived(true) → 'active' (NEW symmetry)
+          Top-level doc comment expanded to describe the new state's
+          purpose + the WS-102 modeAExpired symmetry rationale.
+
+        - side-panel/side-panel.js renderBetweenHands:1389 — claimSlot
+          rewritten from `panelState !== 'inactive' || mode !== null` to
+          enumerate banner-visible states explicitly:
+            const fsmClaimsSlot = panelState === 'active' || panelState === 'modeAExpired';
+            const claimSlot = fsmClaimsSlot || mode !== null;
+          This is load-bearing: pendingActive must NOT claim the slot,
+          otherwise the debounce would leak a one-frame banner flash on
+          a transient malformed payload (defeating the purpose).
+
+        - side-panel/__tests__/fsm.test.js — betweenHandsFsm describe
+          block grew from 8 → 12 tests:
+            * Split "inactive → active on first push" into two tests:
+              "inactive → pendingActive (debounce)" + "pendingActive →
+              active (confirmed)".
+            * NEW "WS-102 transient malformed payload" test exercising
+              the inactive → pendingActive → inactive sequence (owner
+              verification).
+            * NEW "WS-102 symmetry: liveContextArrived(true) on
+              modeAExpired → active" + "liveContextArrived(false) on
+              modeAExpired → inactive" tests.
+            * Existing handNew/adviceArrived/tableSwitch tests extended
+              to cover pendingActive too (parity with active/modeAExpired).
+
+        - side-panel/__tests__/zx-overrides.test.js — coordinator-
+          integration tests updated for the 2-push debounce contract.
+          Added 1 new test "WS-102 transient malformed payload caught
+          in pendingActive (banner never shows)" that exercises the
+          full coordinator dispatch path. Existing
+          "active → inactive" / "tableSwitch cancels active" /
+          "adviceArrived clears banner from active" tests now dispatch
+          two consecutive betweenHandsOrIdle=true pushes to reach
+          'active' before the negative path.
+
+      Verification:
+        - npx vitest run side-panel/__tests__/fsm.test.js
+                          side-panel/__tests__/zx-overrides.test.js
+          → 62/62 (fsm 48 + zx-overrides 14)
+        - npm test (full extension) → 2268/2268 (+5 net tests vs the
+          2263 SPR-044 baseline; 0 regressions)
+        - npm run build → clean
+
+      Cluster siblings remaining (sidebar-recurrence boundary cluster,
+      4 of 5): WS-101 (replay corpus sequence extension — different
+      shape from these surgical fixes; deferred to its own sprint).
+
+program_focus: engineering
+program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (3+4 of 5; sibling WS-101 remains)"
+composed_by: auto
+created_at: "2026-05-07T03:35:00Z"
+
+composition_notes: |
+  Anchor selection rationale:
+    - SPR-044 explicitly named WS-104 as "the most natural next sibling —
+      same file scope (side-panel.js timer registry), same surgical-bug-fix
+      shape; WS-102 is similarly scoped to a single FSM module"
+    - Hot context from SPR-043 + SPR-044: side-panel.js + service-worker.js
+      surface is fresh; sidebar boundary mental model is loaded
+    - Engineering program continuity for the 3rd sprint in a row; no new
+      program switch cost
+    - Co-located cluster sweep — load-bearing 5-fix pattern called out in
+      .claude/failures/SIDEBAR_REBUILD_PROGRAM.md
+
+  Sprint shape:
+    - 2 items vs 1 — both items are well-scoped surgical fixes with named
+      line numbers; SPR-043/SPR-044 single-anchor pattern was a deliberate
+      choice when each was a new file/site, but the ergonomic win of
+      grouping two same-program same-surface defects is real
+    - WS-101 deferred to its own sprint: it's test-corpus authoring (extend
+      SR-1 with 6 named race sequences), structurally different from these
+      surgical fixes; wants its own context window
+
+  Effort calibration:
+    - WS-105 + WS-103 both M-tagged, both shipped ~10–20 min actual
+    - Both items here classified `execute` despite M tag: type=improvement
+      is surgical-as-bug-fix, no decision_flags, named line numbers, single
+      directory each, sibling evidence supports S-actual
+    - Combined effort estimate: ~30–45 min actual
+
+  Item ordering:
+    - WS-104 first — closes RT-60 coverage gap (foundational; affects
+      observability of the registry)
+    - WS-102 second — FSM correctness fix (independent surface; can run
+      after #1 lands)
+
+  Anti-goal cross-check: SKIPPED (kit/scripts/cwos-constitutional-audit.js
+  not present in repo; graceful degradation per CLAUDE.md). Manual judgment:
+  pure boundary-hardening work; no UX/grading/autonomy surface touched.
+
+  Source-class damping check (Step 2d):
+    - SPR-042 anchor (WS-159 — backlog-md-migration origin) → untagged
+    - SPR-043 anchor (WS-105 — backlog-md-migration origin) → untagged
+    - SPR-044 anchor (WS-103 — backlog-md-migration origin) → untagged
+    - All untagged (founder-driven legacy backlog migration); never damped
+    - Both candidates here also untagged → no damping applied
+
+  Fleet-rotation invariant:
+    - Not applicable: this is the poker-tracker product repo, not a
+      HomeBase fleet repo; "repo_goal" is the product itself
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-07T03:35:00Z"
+  notes: "Manual review; audit script not present in repo. Pure boundary-hardening defect fixes; no UX/grading/autonomy surface."

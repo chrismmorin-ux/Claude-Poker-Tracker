@@ -91,8 +91,88 @@ export const CONCEPT_REGISTRY = {
   'ip-cbet-defense-wet-LATE':      { kind: 'rule-anchored-specific', tier: 3, parent: 'cbet-defense-cluster', children: [] },
   'ip-cbet-defense-wet-BUTTON':    { kind: 'rule-anchored-specific', tier: 3, parent: 'cbet-defense-cluster', children: [] },
 
+  // ─── Tier 3 (cont.) — OOP cbet defense umbrella (SPR-040 / WS-146 second claim) ────
+  'oop-cbet-defense-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 3,
+    parent: null,
+    children: [
+      'oop-cbet-defense-dry-SB',
+      'oop-cbet-defense-dry-BB',
+      'oop-cbet-defense-medium-SB',
+      'oop-cbet-defense-medium-BB',
+      'oop-cbet-defense-wet-SB',
+      'oop-cbet-defense-wet-BB',
+    ],
+  },
+  'oop-cbet-defense-dry-SB':    { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+  'oop-cbet-defense-dry-BB':    { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+  'oop-cbet-defense-medium-SB': { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+  'oop-cbet-defense-medium-BB': { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+  'oop-cbet-defense-wet-SB':    { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+  'oop-cbet-defense-wet-BB':    { kind: 'rule-anchored-specific', tier: 3, parent: 'oop-cbet-defense-cluster', children: [] },
+
   // ─── Tier 4 — preflop blocker effects ─────────────────────────────────
   'blocker-effects-preflop': { kind: 'general-skill', tier: 4, parent: null, children: [] },
+
+  // ─── Tier 4 (cont.) — flop-vs-donk defense umbrella (SPR-040 / WS-146 second claim) ────
+  // Tier 4 because donk-response requires range/donker-style read on top of
+  // cbet-defense fundamentals. Single baseline per (texture × position) for v1.
+  'flop-vs-donk-defense-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 4,
+    parent: null,
+    children: [
+      'flop-vs-donk-defense-dry-LATE',
+      'flop-vs-donk-defense-dry-BUTTON',
+      'flop-vs-donk-defense-medium-LATE',
+      'flop-vs-donk-defense-medium-BUTTON',
+      'flop-vs-donk-defense-wet-LATE',
+      'flop-vs-donk-defense-wet-BUTTON',
+    ],
+  },
+  'flop-vs-donk-defense-dry-LATE':      { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+  'flop-vs-donk-defense-dry-BUTTON':    { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+  'flop-vs-donk-defense-medium-LATE':   { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+  'flop-vs-donk-defense-medium-BUTTON': { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+  'flop-vs-donk-defense-wet-LATE':      { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+  'flop-vs-donk-defense-wet-BUTTON':    { kind: 'rule-anchored-specific', tier: 4, parent: 'flop-vs-donk-defense-cluster', children: [] },
+
+  // ─── Tier 4 (cont.) — preflop 3bet defense umbrellas (SPR-046 / WS-146 third claim) ────
+  // hero-pf-3bet-overfold: hero opens preflop, faces 3bet, over-folds.
+  // 4 sub-concepts (one per opener position). Both isIP variants resolve to
+  // the same sub-concept since the v1 baseline is position-only (the rule's
+  // solverBaselineKey normalizes isIP for lookup).
+  'pf-3bet-defense-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 4,
+    parent: null,
+    children: [
+      'pf-3bet-defense-EARLY',
+      'pf-3bet-defense-MIDDLE',
+      'pf-3bet-defense-LATE',
+      'pf-3bet-defense-BUTTON',
+    ],
+  },
+  'pf-3bet-defense-EARLY':  { kind: 'rule-anchored-specific', tier: 4, parent: 'pf-3bet-defense-cluster', children: [] },
+  'pf-3bet-defense-MIDDLE': { kind: 'rule-anchored-specific', tier: 4, parent: 'pf-3bet-defense-cluster', children: [] },
+  'pf-3bet-defense-LATE':   { kind: 'rule-anchored-specific', tier: 4, parent: 'pf-3bet-defense-cluster', children: [] },
+  'pf-3bet-defense-BUTTON': { kind: 'rule-anchored-specific', tier: 4, parent: 'pf-3bet-defense-cluster', children: [] },
+
+  // hero-oop-3bet-underfold: hero in SB/BB called open, faces 3bet, under-folds.
+  // First UNDER-fold rule in the catalog; mirror direction of all over-fold
+  // rules. 2 sub-concepts (SB + BB).
+  'oop-3bet-defense-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 4,
+    parent: null,
+    children: [
+      'oop-3bet-defense-SB',
+      'oop-3bet-defense-BB',
+    ],
+  },
+  'oop-3bet-defense-SB': { kind: 'rule-anchored-specific', tier: 4, parent: 'oop-3bet-defense-cluster', children: [] },
+  'oop-3bet-defense-BB': { kind: 'rule-anchored-specific', tier: 4, parent: 'oop-3bet-defense-cluster', children: [] },
 
   // ─── Tier 5 — capped vs uncapped range awareness ──────────────────────
   'capped-vs-uncapped-ranges': { kind: 'general-skill', tier: 5, parent: null, children: [] },
@@ -112,16 +192,54 @@ export const CONCEPT_REGISTRY = {
  */
 export const SITUATION_KEY_TO_CONCEPT = {
   // hero-ip-cbet-overfold rule (6 keys, fully resolved)
-  'flop:dry:LATE:def:ip:bet:cbet':       'ip-cbet-defense-dry-LATE',
-  'flop:dry:BUTTON:def:ip:bet:cbet':     'ip-cbet-defense-dry-BUTTON',
-  'flop:medium:LATE:def:ip:bet:cbet':    'ip-cbet-defense-medium-LATE',
-  'flop:medium:BUTTON:def:ip:bet:cbet':  'ip-cbet-defense-medium-BUTTON',
-  'flop:wet:LATE:def:ip:bet:cbet':       'ip-cbet-defense-wet-LATE',
-  'flop:wet:BUTTON:def:ip:bet:cbet':     'ip-cbet-defense-wet-BUTTON',
+  // SPR-040: keys migrated to 8-axis format with `:vsBet:pfc` (was `:bet:cbet`,
+  // which was a stale bug — rule emits `:bet:vsBet`, not `:bet:cbet`).
+  // 8th axis `:pfc` matches the rule's narrowed scope (hero called preflop).
+  'flop:dry:LATE:def:ip:bet:vsBet:pfc':       'ip-cbet-defense-dry-LATE',
+  'flop:dry:BUTTON:def:ip:bet:vsBet:pfc':     'ip-cbet-defense-dry-BUTTON',
+  'flop:medium:LATE:def:ip:bet:vsBet:pfc':    'ip-cbet-defense-medium-LATE',
+  'flop:medium:BUTTON:def:ip:bet:vsBet:pfc':  'ip-cbet-defense-medium-BUTTON',
+  'flop:wet:LATE:def:ip:bet:vsBet:pfc':       'ip-cbet-defense-wet-LATE',
+  'flop:wet:BUTTON:def:ip:bet:vsBet:pfc':     'ip-cbet-defense-wet-BUTTON',
+
+  // hero-oop-cbet-overfold rule (6 keys, fully resolved; SPR-040 / WS-146 second claim)
+  'flop:dry:SMALL_BLIND:def:oop:bet:vsBet:pfc':       'oop-cbet-defense-dry-SB',
+  'flop:medium:SMALL_BLIND:def:oop:bet:vsBet:pfc':    'oop-cbet-defense-medium-SB',
+  'flop:wet:SMALL_BLIND:def:oop:bet:vsBet:pfc':       'oop-cbet-defense-wet-SB',
+  'flop:dry:BIG_BLIND:def:oop:bet:vsBet:pfc':         'oop-cbet-defense-dry-BB',
+  'flop:medium:BIG_BLIND:def:oop:bet:vsBet:pfc':      'oop-cbet-defense-medium-BB',
+  'flop:wet:BIG_BLIND:def:oop:bet:vsBet:pfc':         'oop-cbet-defense-wet-BB',
+
+  // hero-flop-vs-donk-misresponse rule (6 keys, fully resolved; SPR-040 / WS-146 second claim)
+  // The 8th axis `:pfa` distinguishes from the IP cbet-defense bucket above.
+  'flop:dry:LATE:def:ip:bet:vsBet:pfa':       'flop-vs-donk-defense-dry-LATE',
+  'flop:medium:LATE:def:ip:bet:vsBet:pfa':    'flop-vs-donk-defense-medium-LATE',
+  'flop:wet:LATE:def:ip:bet:vsBet:pfa':       'flop-vs-donk-defense-wet-LATE',
+  'flop:dry:BUTTON:def:ip:bet:vsBet:pfa':     'flop-vs-donk-defense-dry-BUTTON',
+  'flop:medium:BUTTON:def:ip:bet:vsBet:pfa':  'flop-vs-donk-defense-medium-BUTTON',
+  'flop:wet:BUTTON:def:ip:bet:vsBet:pfa':     'flop-vs-donk-defense-wet-BUTTON',
 
   // hero-bb-defense-width rule (single aggregated key today; per-opener split = WS-146 v2)
   // No sub-concept resolution yet — leak fires on the umbrella until rule splits.
-  // 'preflop:none:BIG_BLIND:def:oop:raise:vsopen' intentionally absent.
+  // 'preflop:none:BIG_BLIND:def:oop:raise:vsopen:na' intentionally absent.
+
+  // hero-pf-3bet-overfold rule (SPR-046 / WS-146 third claim)
+  // 8 entries (4 positions × 2 isIP variants); both isIP variants per position
+  // resolve to the same sub-concept since v1 baselines don't split on isIP.
+  // Per-isIP sub-concept split is a v2 expansion candidate.
+  'preflop:none:EARLY:agg:ip:raise:vs3bet:na':   'pf-3bet-defense-EARLY',
+  'preflop:none:EARLY:agg:oop:raise:vs3bet:na':  'pf-3bet-defense-EARLY',
+  'preflop:none:MIDDLE:agg:ip:raise:vs3bet:na':  'pf-3bet-defense-MIDDLE',
+  'preflop:none:MIDDLE:agg:oop:raise:vs3bet:na': 'pf-3bet-defense-MIDDLE',
+  'preflop:none:LATE:agg:ip:raise:vs3bet:na':    'pf-3bet-defense-LATE',
+  'preflop:none:LATE:agg:oop:raise:vs3bet:na':   'pf-3bet-defense-LATE',
+  'preflop:none:BUTTON:agg:ip:raise:vs3bet:na':  'pf-3bet-defense-BUTTON',
+  'preflop:none:BUTTON:agg:oop:raise:vs3bet:na': 'pf-3bet-defense-BUTTON',
+
+  // hero-oop-3bet-underfold rule (SPR-046 / WS-146 third claim)
+  // 2 entries (SB + BB).
+  'preflop:none:SMALL_BLIND:def:oop:raise:vs3bet:na': 'oop-3bet-defense-SB',
+  'preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na':   'oop-3bet-defense-BB',
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────

@@ -89,6 +89,10 @@ const CORPUS = [
     sex: 'male', ethnicityTags: ['hispanic'], ageDecade: '30s',
     hairColor: 'black', hairLength: 'short', facialHair: 'full',
     build: 'muscular', eyewear: 'none', headwear: 'cap',
+    // SPR-041 Phase 4 — demo distinguishingMarks rendering
+    distinguishingMarks: [
+      { type: 'tattoo', location: 'arm', description: 'sleeve' },
+    ],
   },
   {
     id: 'SYNTH-2',
@@ -103,6 +107,24 @@ const CORPUS = [
     sex: 'female', ethnicityTags: ['east-asian'], ageDecade: '20s',
     hairColor: 'black', hairLength: 'long', facialHair: null,
     build: 'slim', eyewear: 'none', headwear: null,
+    // SPR-041 Phase 4 — demo distinguishingMarks rendering
+    distinguishingMarks: [
+      { type: 'bindi', location: 'face', description: '' },
+    ],
+  },
+  {
+    id: 'SYNTH-3b',
+    _meta: { name: 'Demo profile — all 5 distinguishing-mark badges (SPR-041 Phase 4)' },
+    sex: 'male', ethnicityTags: ['caucasian'], ageDecade: '40s',
+    hairColor: 'brown', hairLength: 'short', facialHair: 'stubble',
+    build: 'average', eyewear: 'none', headwear: null,
+    distinguishingMarks: [
+      { type: 'tattoo', location: 'arm', description: 'sleeve' },
+      { type: 'hearing-aid', location: 'ear', description: 'right ear' },
+      { type: 'scar', location: 'face', description: 'cheek' },
+      { type: 'prosthetic', location: 'hand', description: 'left hand' },
+      // intentionally NOT bindi here — bindi has its own demo on SYNTH-3
+    ],
   },
   {
     id: 'SYNTH-4',

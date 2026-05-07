@@ -80,7 +80,7 @@ export const ErrorLogPanel = ({ showSuccess }) => {
         onClick={() => setErrorLogExpanded(!errorLogExpanded)}
         className="w-full flex items-center justify-between text-left"
       >
-        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: GOLD }}>
+        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: GOLD.base }}>
           <AlertTriangle className="w-5 h-5" />
           Error Log
           {errorCount > 0 && (

@@ -174,6 +174,13 @@ const VALID_TREATMENT = ['salt-pepper'];
 const VALID_CLOTHING_COLOR = ['white', 'gray', 'black', 'yellow', 'orange', 'red', 'pink', 'brown', 'green', 'blue', 'navy', 'purple', 'gold', 'silver'];
 const VALID_ACCESSORY_KIND = ['hat', 'glasses', 'top', 'bottom', 'jewelry', 'other'];
 
+// SPR-041 Phase 4: distinguishingMarks per-item schema (PIO Gate 4 v2 audit §A7).
+// Mirror the type / location enums from `src/assets/distinguishingMarks/index.js`.
+// When extending the mark catalog, update BOTH the registry AND these enums
+// (the style guide §8.2 is the authoritative cross-reference).
+const VALID_MARK_TYPE = ['tattoo', 'hearing-aid', 'bindi', 'scar', 'prosthetic'];
+const VALID_MARK_LOCATION = ['face', 'arm', 'ear', 'neck', 'hand', 'other'];
+
 // Pair of (field, allowed values). Each entry validated as: undefined/null
 // passes (the field is optional); otherwise must be a string IN the enum.
 const ENUM_FIELDS = [
@@ -194,6 +201,39 @@ const ENUM_FIELDS = [
   ['headwear', VALID_HEADWEAR],
   ['hatColor', VALID_CLOTHING_COLOR],
 ];
+
+const validateDistinguishingMarkItem = (mark, idx, errors) => {
+  if (!mark || typeof mark !== 'object' || Array.isArray(mark)) {
+    errors.push(`distinguishingMarks[${idx}] must be an object`);
+    return;
+  }
+  if (!VALID_MARK_TYPE.includes(mark.type)) {
+    errors.push(`distinguishingMarks[${idx}].type must be one of: ${VALID_MARK_TYPE.join(', ')} (got ${JSON.stringify(mark.type)})`);
+  }
+  // location is optional — renderer falls back to spec.defaultLocation when
+  // missing. But if SET, must be a known anchor.
+  if (mark.location !== undefined && mark.location !== null) {
+    if (!VALID_MARK_LOCATION.includes(mark.location)) {
+      errors.push(`distinguishingMarks[${idx}].location must be one of: ${VALID_MARK_LOCATION.join(', ')} (got ${JSON.stringify(mark.location)})`);
+    }
+  }
+  // description is optional free-text; only the type is structurally required.
+  if (mark.description !== undefined && mark.description !== null && typeof mark.description !== 'string') {
+    errors.push(`distinguishingMarks[${idx}].description must be string or null`);
+  }
+  // Timestamps are optional on read-side migrations from older records but
+  // should be numbers when present.
+  if (mark.firstSeenAt !== undefined && mark.firstSeenAt !== null) {
+    if (typeof mark.firstSeenAt !== 'number' || !Number.isFinite(mark.firstSeenAt)) {
+      errors.push(`distinguishingMarks[${idx}].firstSeenAt must be a number (ms timestamp)`);
+    }
+  }
+  if (mark.lastSeenAt !== undefined && mark.lastSeenAt !== null) {
+    if (typeof mark.lastSeenAt !== 'number' || !Number.isFinite(mark.lastSeenAt)) {
+      errors.push(`distinguishingMarks[${idx}].lastSeenAt must be a number (ms timestamp)`);
+    }
+  }
+};
 
 const validateAccessoryInventoryItem = (item, idx, errors) => {
   if (!item || typeof item !== 'object' || Array.isArray(item)) {
@@ -278,11 +318,16 @@ export const validatePlayerRecord = (playerRecord) => {
     }
   }
 
-  // distinguishingMarks — array of objects (free-form for now; future
-  // phases may add stricter shape enforcement).
+  // distinguishingMarks — array of structured marks per audit §A7 + SPR-041
+  // Phase 4. Each entry must satisfy the schema enforced by the mark
+  // registry at `src/assets/distinguishingMarks/index.js`.
   if (playerRecord.distinguishingMarks !== undefined && playerRecord.distinguishingMarks !== null) {
     if (!Array.isArray(playerRecord.distinguishingMarks)) {
       errors.push('distinguishingMarks must be an array');
+    } else {
+      playerRecord.distinguishingMarks.forEach((mark, idx) => {
+        validateDistinguishingMarkItem(mark, idx, errors);
+      });
     }
   }
 

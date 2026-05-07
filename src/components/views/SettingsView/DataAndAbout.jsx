@@ -144,7 +144,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
 
   return (
     <div className="bg-gray-800 rounded-lg p-5">
-      <h3 className="text-lg font-bold mb-4" style={{ color: '#d4a847' }}>Data & About</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Data & About</h3>
 
       {/* Backup Settings — W4-A4-F5: compressed from 3 disabled buttons to a
           single info line. Backup infra is tracked under F-P18; until it lands,
@@ -240,7 +240,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
             <div className="space-y-3">
               {/* Hand Simulator */}
               <div>
-                <h4 className="text-sm font-bold mb-2" style={{ color: '#d4a847' }}>Hand Simulator</h4>
+                <h4 className="text-sm font-bold mb-2" style={{ color: GOLD.base }}>Hand Simulator</h4>
                 <p className="text-gray-400 text-xs mb-2">
                   Simulate realistic hands with 6 archetype players. Range-based preflop, equity-driven postflop.
                 </p>

@@ -13,7 +13,7 @@ This module is the SCF (Self-Coach Foundation) skill-assessment framework. It de
 | File | Purpose |
 |------|---------|
 | `heroDecisionAccumulator.js` | Generic hero-side situation-key bucketer. Mirrors `exploitEngine/decisionAccumulator.js` but groups HERO actions instead of villain. Rule-agnostic. |
-| `deriveSituationKey.js` | Pure helper that turns `{hand, actionEntry, heroSeat, buttonSeat}` into the 7-axis situation key string. Shared by accumulator + tests. |
+| `deriveSituationKey.js` | Pure helper that turns `{hand, actionEntry, heroSeat, buttonSeat}` into the 8-axis situation key string. Shared by accumulator + tests. Format: `street:texture:posCategory:isAgg:isIP:facingAction:contextAction:preflopAggressor`. The 8th axis (`pfa`/`pfc`/`na`) was added in WS-146 SPR-040 to distinguish hero's preflop role on postflop streets. |
 | `heroLeakDetector.js` | Registry-pattern detector. Auto-loads all rules from `leakRules/` via `import.meta.glob`. Iterates rules against accumulator buckets, returns fired leaks. |
 | `heroLeakDetectionPipeline.js` | Async orchestrator: loads hands → accumulates → detects → persists via `replacePlayerLeaks()`. |
 | `solverBaselines.js` | Extensible lookup table from situation key → solver baseline rate. v1 hardcoded; future rules add entries. |

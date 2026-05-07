@@ -1,0 +1,171 @@
+id: "SPR-040"
+title: "SCF G5 child 2 — ship 2 more leak rules from catalog gaps (D-line momentum) + 8-axis situation-key extension"
+status: completed
+goal: |
+  Two more SCF leak rules ship from the leak-catalog. Founder picked
+  Cluster B (flop-continuation gap closure) in plan-mode: hero-oop-cbet-
+  overfold + hero-flop-vs-donk-misresponse. Closes flop-continuation 3/3.
+
+  Mid-sprint discovery: donk rule has structural blocker (situation key
+  can't distinguish donk from cbet). Founder picked "tackle key-extension
+  now" via mid-execution AskUserQuestion. Sprint scope expanded M → L.
+
+  Architectural sidecar shipped: situation key extended from 7 to 8 axes.
+  New axis: preflopAggressor (pfa = hero raised preflop / pfc = hero
+  called preflop / na = preflop street). Distinguishes donk-defense
+  (pfa) from cbet-defense (pfc) on postflop streets.
+
+items:
+  - id: "WS-146"
+    title: "SCF G5 child 2 — additional leak rules (catalog-driven, ongoing)"
+    mode: plan-first
+    effort: L
+    status: completed
+    finding_id: null
+    decision_flags:
+      - "Catalog picks: A / B / C (founder picked B — flop-continuation closure)"
+      - "Donk rule structural blocker: pivot to A / pivot to oop-3bet-underfold / ship rule 1 only / tackle key-extension (founder picked key-extension)"
+    decisions_locked:
+      - "D1 (catalog cluster): Cluster B — close flop-continuation 3/3 = hero-oop-cbet-overfold + hero-flop-vs-donk-misresponse"
+      - "D2 (donk-rule architecture): Tackle 8-axis situation-key extension now (founder ratified scope expansion M → L). Rationale: donk vs cbet bucket can't be distinguished on the 7-axis key; either we extend the key, defer the donk rule, or pick a different second rule. Founder chose the architectural fix to keep flop-continuation closing 3/3 + create reusable axis for future rules."
+      - "D2-impl: 8th axis values pfa / pfc / na. preflop streets emit 'na'. existing rules narrowed to :pfc (cbet-defense canonical case). solverBaselines + tierConceptMap.SITUATION_KEY_TO_CONCEPT all migrated. tierConceptMap had a pre-existing bug (7th axis was 'cbet' but rule emitted 'vsBet' — entries were dead code) — fixed in passing."
+    depends_on: []
+    started_at: "2026-05-06T00:00:00Z"
+    completed_at: "2026-05-06T08:00:00Z"
+    notes: |
+      SHIPPED — 2 leak rules + 8-axis situation-key migration end-to-end.
+
+      Phase A (plan-mode): founder picks cluster B via AskUserQuestion.
+      Phase B (key extension + existing-rule migration):
+        - deriveSituationKey.js: added DERIVE_PREFLOP_AGGRESSOR helper +
+          buildHeroSituationKey emits 8th axis + deriveSituationKey threads
+          the new axis through. Default 'na' for preflop, 'pfc' for postflop
+          when preflopAggressor not specified (backward-compat for tests).
+        - heroIpCbetOverfold.js: matchesBucket narrowed to :pfc; doc reflects
+          that donk-response (pfa) cases now route to the new donk rule.
+        - heroBbDefenseWidth.js: matchesBucket extended to expect 8 axes;
+          preflop emits :na.
+        - solverBaselines.js: 7 keys migrated to 8-axis (6 ip-cbet → :pfc,
+          1 bb-defense → :na). Added 6 oop-cbet :pfc keys + 6 donk :pfa keys.
+          Total 19 keys (was 7).
+        - tierConceptMap.js:
+          * Added 2 new umbrellas: oop-cbet-defense-cluster (Tier 3) +
+            flop-vs-donk-defense-cluster (Tier 4)
+          * Added 12 new sub-concepts (6 per umbrella)
+          * Migrated SITUATION_KEY_TO_CONCEPT: 6 ip-cbet entries
+            corrected from `:bet:cbet` (stale bug) to `:bet:vsBet:pfc`;
+            added 6 oop-cbet `:vsBet:pfc` entries + 6 donk `:vsBet:pfa`
+            entries. Total: 18 reverse-map entries.
+        - _template.js: doc updated for 8-axis format.
+        - CLAUDE.md: doc updated.
+      Phase C (new rules):
+        - heroOopCbetOverfold.js (~95 LoC): mirror of v1 IP rule with
+          OOP filter; SMALL_BLIND/BIG_BLIND positions; baselines 0.45-0.55.
+        - heroFlopVsDonkMisresponse.js (~110 LoC): IP filter (LATE/BUTTON)
+          with :pfa axis; baselines 0.43-0.50; confidence 0.75 (hedge for
+          unobserved donker-style mixture).
+      Phase C2 (test migration + new rule tests):
+        - heroDecisionAccumulator.test.js: 7-axis assertions → 8-axis;
+          added 2 new tests for default-axis behavior + explicit pfa.
+        - heroIpCbetOverfold.test.js: 7-axis literals → :pfc 8-axis;
+          added :pfa-NOT-match assertion (donk-rule disjointness).
+        - heroBbDefenseWidth.test.js: 7-axis literals → :na 8-axis.
+        - heroLeakDetector.test.js: bulk-replaced 7-axis literals.
+        - heroLeakDetectionPipeline.test.js: comment updated.
+        - conceptMastery.test.js: stale-bug `:cbet` → corrected `:vsBet:pfc`;
+          added new umbrella IDs to listAllConceptMastery cardinality
+          assertion (was 18, now 32).
+        - solverBaselines.test.js: rewrote IP-cbet assertions to 8-axis;
+          added OOP-cbet + donk coverage tests; added IP-vs-OOP equity-
+          realization sanity check (OOP > IP fold rate at same texture).
+        - tierConceptMap.test.js: updated resolveSituationKeyToConcept
+          coverage tests for 8-axis; added 7-axis-no-longer-matches test
+          (migration completeness).
+        - heroOopCbetOverfold.test.js (NEW, ~150 LoC): 18 tests covering
+          signature, matchesBucket positive/negative across 6 cells,
+          gating logic, fires-when-real, CD-5 4 fields, confidence default.
+        - heroFlopVsDonkMisresponse.test.js (NEW, ~170 LoC): 18 tests
+          including disjointness from cbet-defense (:pfc cases NOT match,
+          :pfa cases match), 7-axis-no-longer-matches, gating, fires.
+      Phase C3 (lessons):
+        - oop-cbet-defense-cluster.md (NEW): umbrella lesson + 6 sub-cells.
+        - flop-vs-donk-defense-cluster.md (NEW): umbrella lesson + 6 sub-cells.
+        - migration.test.js cross-reference test confirms every umbrella
+          has a loaded lesson — both new lessons correctly bound.
+
+      Verification:
+        - npm run build: clean
+        - npx vitest run src/utils/skillAssessment/__tests__/: 14 files /
+          182 tests pass (was 139 pre-SPR-040 = +43 net tests)
+        - bash scripts/smart-test-runner.sh: 10098 passed / 20 skipped /
+          3 failed. The 3 failures are pre-existing — introduced by commit
+          229efe2 (player avatar validation enums + cascade delete) which
+          landed AFTER SPR-039 closed. Failures are in usePlayerEditor.test
+          + persistence.test (Players CRUD) + gameTreeDepth2.test.js — none
+          touch skillAssessment or OnlineView. Verified by running gameTreeDepth2
+          in isolation (passed — flaky MC-equity test). The other 2 are
+          deterministic failures from the new validation enum (e.g.,
+          'facialHair must be one of clean/stubble/... got "none"') —
+          stale test fixture not updated when validation enum landed.
+          Out of scope for SPR-040. Should be fixed in a follow-up sprint.
+
+      Catalog: 2/25 → 4/25 shipped. Flop-continuation closed 3/3.
+      Architectural reusability: pre-existing tier-concept-map bug fixed
+      in passing (7th axis was `:cbet` but rule emitted `:vsBet`; sub-
+      concept resolution was dead code pre-SPR-040; now actually resolves).
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — leak-rule catalog continuation + 8-axis situation-key architecture. D-line returns after 2-sprint engineering streak (SPR-038 + SPR-039). Mid-sprint structural blocker on donk rule led to scope expansion (M → L) ratified by founder."
+total_effort: "L (founder D2 ratified scope expansion mid-sprint M → L). Plan-first because of catalog-pick decision; second decision (architectural pivot for donk rule) surfaced via AskUserQuestion mid-execution."
+decisions_needed:
+  - "Item #1 (WS-146): Catalog picks — A / B / C? (founder picked B)"
+  - "Item #1 (WS-146): Donk rule structural blocker — pivot to A / oop-3bet-underfold / ship-rule-1-only / tackle-key-extension? (founder picked tackle-key-extension)"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-06T00:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-039). Manual review: WS-146 ships poker-theory-grounded leak rules with Bayesian floors (n>=30) + opt-in test surfaces per memory feedback_owner_volunteered_grading.md. No AP-SCF-01 / AP-06 violations; no autonomy-pressure substrate; no engagement-streaks; no system-imposed grading. Owner-volunteered tests only."
+  matches: []
+
+created_at: "2026-05-06T00:00:00Z"
+approved_at: "2026-05-06T00:00:00Z"
+started_at: "2026-05-06T00:00:00Z"
+completed_at: "2026-05-06T08:00:00Z"
+session_ids: ["session-2026-05-06-next"]
+
+composition_notes: |
+  Anchor selection: WS-146 (P=18.0, M tagged → L actual). Per WS-146
+  description: "pull 2-3 catalog entries per sprint" — re-claim pattern
+  established by SPR-031.
+
+  Source-class damping check (FAIL-009 / FAIL-011): last 3 anchors
+  (SPR-037 WS-149, SPR-038 WS-167, SPR-039 WS-078) all `untagged` /
+  founder-driven. WS-146's source = `parent_ws: WS-013` (founder-driven
+  decomposition class). No damping.
+
+  Soft-block damping check: WS-146 had no blocked_by_note. Full priority.
+
+  Capability boost: capability=core → no boost.
+  Context boost: system/context.md empty → no boost.
+
+  Mode classification: plan-first. Effort=M tagged, type=improvement,
+  decision_flags populated (catalog-pick). Per Step 3d: any of effort=M,
+  type=improvement, populated decision_flags → plan-first. All trigger.
+
+  Mid-sprint scope expansion: 7 → 8 axis migration was NOT in original
+  plan (the plan assumed donk rule could use a `solverBaselineKey()`
+  function returning a variant key based on bucket.villainProfile.donkStyle).
+  Discovery during execution: bucket doesn't carry villainProfile data;
+  situation-key lacks preflop-aggressor axis; the 7-axis bucket
+  collapses cbet-defense and donk-response. AskUserQuestion surfaced
+  4 options; founder picked the architectural fix.
+
+  Pre-existing bug fixed in passing: tierConceptMap.SITUATION_KEY_TO_CONCEPT
+  had `:bet:cbet` 7th-axis entries that didn't match the rule's emitted
+  `:bet:vsBet`. The reverse-map was dead code pre-SPR-040 (always
+  returned null for fired leaks; sub-concept resolution silently fell
+  back to umbrella). Migrated to correct 8-axis `:vsBet:pfc` keys —
+  now actually resolves. Documented in SITUATION_KEY_TO_CONCEPT comment.
+
+  Single-item sprint by design (1 ongoing-authoring ticket).

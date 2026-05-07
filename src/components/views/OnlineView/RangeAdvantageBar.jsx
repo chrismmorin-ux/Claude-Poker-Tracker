@@ -6,7 +6,10 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from './panelTokens';
+import { SURFACE, BORDER, TEXT } from '../../../constants/designTokens';
+
+const GREEN = '#22c55e'; // green-500 — was COLOR.green
+const RED = '#ef4444';   // red-500 — was COLOR.red
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -30,53 +33,49 @@ export const RangeAdvantageBar = ({ advantage }) => {
     : null;
 
   return (
-    <div style={{
-      marginBottom: 6,
-      padding: '6px 8px',
-      background: SURFACE.card,
-      borderRadius: R.md,
-      border: `1px solid ${BORDER.default}`,
-    }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 4,
-      }}>
-        <span style={{ fontSize: 8, fontWeight: 600, color: TEXT.faint, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+    <div
+      className="mb-1.5 px-2 py-1.5 rounded-[5px] border"
+      style={{
+        background: SURFACE.card,
+        borderColor: BORDER.default,
+      }}
+    >
+      <div className="flex justify-between items-center mb-1">
+        <span
+          className="text-[8px] font-semibold uppercase tracking-[0.5px]"
+          style={{ color: TEXT.faint }}
+        >
           Range Advantage
         </span>
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 9, fontWeight: 600,
-          color: rangeAdvantage > 0.1 ? COLOR.green : rangeAdvantage < -0.1 ? COLOR.red : TEXT.muted,
-        }}>
+        <span
+          className="font-mono text-[9px] font-semibold"
+          style={{
+            color: rangeAdvantage > 0.1 ? GREEN : rangeAdvantage < -0.1 ? RED : TEXT.muted,
+          }}
+        >
           {rangeAdvantage > 0 ? '+' : ''}{Math.round(rangeAdvantage * 100)}%
         </span>
       </div>
 
       {/* Range advantage bar */}
-      <div style={{
-        height: 6, borderRadius: 3, overflow: 'hidden',
-        background: `linear-gradient(90deg, ${COLOR.red}33 0%, ${BORDER.default} 50%, ${COLOR.green}33 100%)`,
-        position: 'relative',
-        marginBottom: 4,
-      }}>
-        <div style={{
-          position: 'absolute',
-          left: `${rangePos}%`,
-          top: 0,
-          width: 3,
-          height: 6,
-          background: rangeAdvantage >= 0 ? COLOR.green : COLOR.red,
-          borderRadius: 1,
-          transform: 'translateX(-50%)',
-          boxShadow: `0 0 4px ${rangeAdvantage >= 0 ? COLOR.green : COLOR.red}80`,
-        }} />
+      <div
+        className="h-1.5 rounded-[3px] overflow-hidden relative mb-1"
+        style={{
+          background: `linear-gradient(90deg, ${RED}33 0%, ${BORDER.default} 50%, ${GREEN}33 100%)`,
+        }}
+      >
+        <div
+          className="absolute top-0 w-[3px] h-1.5 rounded-[1px] -translate-x-1/2"
+          style={{
+            left: `${rangePos}%`,
+            background: rangeAdvantage >= 0 ? GREEN : RED,
+            boxShadow: `0 0 4px ${rangeAdvantage >= 0 ? GREEN : RED}80`,
+          }}
+        />
       </div>
 
       {/* Labels */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between',
-        fontSize: 7, color: TEXT.faint,
-      }}>
+      <div className="flex justify-between text-[7px]" style={{ color: TEXT.faint }}>
         <span>Villain</span>
         <span>{rangeLabel}</span>
         <span>Hero</span>
@@ -84,13 +83,10 @@ export const RangeAdvantageBar = ({ advantage }) => {
 
       {/* Nut advantage (if significant) */}
       {nutLabel && (
-        <div style={{
-          marginTop: 4,
-          fontSize: 8,
-          fontFamily: FONT.mono,
-          color: nutAdvantage > 0 ? COLOR.green : COLOR.red,
-          opacity: 0.8,
-        }}>
+        <div
+          className="mt-1 text-[8px] font-mono opacity-80"
+          style={{ color: nutAdvantage > 0 ? GREEN : RED }}
+        >
           {nutLabel} ({nutAdvantage > 0 ? '+' : ''}{Math.round(nutAdvantage * 100)}%)
         </div>
       )}

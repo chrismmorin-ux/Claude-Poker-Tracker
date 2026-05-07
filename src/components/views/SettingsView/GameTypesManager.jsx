@@ -32,7 +32,7 @@ export const GameTypesManager = ({ settings, addCustomGameType, removeCustomGame
 
   return (
     <div className="bg-gray-800 rounded-lg p-5">
-      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>Custom Game Types</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Custom Game Types</h3>
 
       {/* Add new game type */}
       <div className="mb-4">

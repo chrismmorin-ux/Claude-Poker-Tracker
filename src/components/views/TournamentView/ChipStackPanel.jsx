@@ -198,7 +198,7 @@ export const ChipStackPanel = ({
     }}>
       {/* Players Remaining Stepper — prominent at top */}
       <div className="pb-3" style={{ borderBottom: '1px solid rgba(212,168,71,0.2)' }}>
-        <h3 className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: GOLD }}>
+        <h3 className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: GOLD.base }}>
           Players Remaining
         </h3>
         <div className="flex items-center justify-center gap-3">
@@ -238,7 +238,7 @@ export const ChipStackPanel = ({
       {heroStack != null && (
         <div className="rounded-lg p-3 relative overflow-hidden" style={{
           background: 'rgba(212,168,71,0.05)',
-          borderLeft: `4px solid ${GOLD}`,
+          borderLeft: `4px solid ${GOLD.base}`,
           boxShadow: `0 0 12px rgba(212,168,71,0.15), inset 0 1px 0 rgba(212,168,71,0.1)`,
         }}>
           <div className="flex items-center justify-between">
@@ -293,7 +293,7 @@ export const ChipStackPanel = ({
       )}
 
       {/* Stack List Header */}
-      <h3 className="text-xs font-medium uppercase tracking-wide" style={{ color: GOLD }}>
+      <h3 className="text-xs font-medium uppercase tracking-wide" style={{ color: GOLD.base }}>
         Chip Stacks
       </h3>
 
@@ -326,7 +326,7 @@ export const ChipStackPanel = ({
               style={{
                 backgroundColor: '#374151',
                 border: `1px solid rgba(212,168,71,0.3)`,
-                color: GOLD,
+                color: GOLD.base,
               }}
             >
               + Seat {seat}

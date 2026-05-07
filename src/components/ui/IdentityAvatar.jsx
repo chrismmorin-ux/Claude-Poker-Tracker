@@ -51,6 +51,13 @@ const IdentityAvatar = ({
   // Photo-overlay badge sized at ~30% of avatar, anchored bottom-right.
   const badgeSize = Math.max(16, Math.round(size * 0.3));
 
+  // distinguishingMarks pass-through: AvatarRenderer overlays badge SVGs
+  // on top of the avatar at per-mark location anchors. Null when player
+  // has no marks (e.g., legacy records pre-v24 migration default to []).
+  const marks = Array.isArray(player?.distinguishingMarks)
+    ? player.distinguishingMarks
+    : null;
+
   if (photoOverlay && photoUrl) {
     return (
       <div
@@ -62,6 +69,7 @@ const IdentityAvatar = ({
           avatarFeatures={avatarFeatures}
           size={size}
           title={label}
+          distinguishingMarks={marks}
         />
         <img
           src={photoUrl}
@@ -85,6 +93,7 @@ const IdentityAvatar = ({
       size={size}
       className={className}
       title={label}
+      distinguishingMarks={marks}
     />
   );
 };

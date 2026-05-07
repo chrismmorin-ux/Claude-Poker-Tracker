@@ -7,22 +7,27 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, BUCKET, R } from '../panelTokens';
+import { SURFACE, BORDER, TEXT, BUCKET_COLORS } from '../../../../constants/designTokens';
 
 const BUCKET_META = [
-  { key: 'nuts',     label: 'Nuts',     color: BUCKET.nuts },
-  { key: 'strong',   label: 'Strong',   color: BUCKET.strong },
-  { key: 'marginal', label: 'Marginal', color: BUCKET.marginal },
-  { key: 'draw',     label: 'Draw',     color: BUCKET.draw },
-  { key: 'air',      label: 'Air',      color: BUCKET.air },
+  { key: 'nuts',     label: 'Nuts',     color: BUCKET_COLORS.nuts },
+  { key: 'strong',   label: 'Strong',   color: BUCKET_COLORS.strong },
+  { key: 'marginal', label: 'Marginal', color: BUCKET_COLORS.marginal },
+  { key: 'draw',     label: 'Draw',     color: BUCKET_COLORS.draw },
+  { key: 'air',      label: 'Air',      color: BUCKET_COLORS.air },
 ];
 
 export const BucketEquityPanel = ({ bucketEquities, segmentation }) => {
   if (!bucketEquities) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Bucket Equity vs Villain Range</div>
+    <div className="mb-2.5">
+      <div
+        className="text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b"
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        Bucket Equity vs Villain Range
+      </div>
 
       {BUCKET_META.map(({ key, label, color }) => {
         const eq = bucketEquities[key];
@@ -31,42 +36,44 @@ export const BucketEquityPanel = ({ bucketEquities, segmentation }) => {
         const rangePct = segmentation?.buckets?.[key]?.pct;
 
         return (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          <div key={key} className="flex items-center gap-1.5 mb-1">
             {/* Label */}
-            <span style={{
-              fontFamily: FONT.mono, fontSize: 9, color: TEXT.secondary,
-              width: 52, textAlign: 'right', flexShrink: 0,
-            }}>
+            <span
+              className="font-mono text-[9px] w-[52px] text-right shrink-0"
+              style={{ color: TEXT.secondary }}
+            >
               {label}
               {rangePct != null && (
-                <span style={{ color: TEXT.faint, fontSize: 7 }}> {Math.round(rangePct)}%</span>
+                <span className="text-[7px]" style={{ color: TEXT.faint }}> {Math.round(rangePct)}%</span>
               )}
             </span>
 
             {/* Bar */}
-            <div style={{
-              flex: 1, height: 10, borderRadius: 3, overflow: 'hidden',
-              background: SURFACE.inset, position: 'relative',
-            }}>
+            <div
+              className="flex-1 h-2.5 rounded-[3px] overflow-hidden relative"
+              style={{ background: SURFACE.inset }}
+            >
               {/* Fill */}
-              <div style={{
-                width: `${pct}%`, height: '100%', borderRadius: 3,
-                background: `linear-gradient(90deg, ${color}99, ${color})`,
-                transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-              }} />
+              <div
+                className="h-full rounded-[3px]"
+                style={{
+                  width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${color}99, ${color})`,
+                  transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                }}
+              />
               {/* 50% midline */}
-              <div style={{
-                position: 'absolute', left: '50%', top: 0, width: 1, height: '100%',
-                background: TEXT.faint, opacity: 0.3,
-              }} />
+              <div
+                className="absolute left-1/2 top-0 w-px h-full opacity-30"
+                style={{ background: TEXT.faint }}
+              />
             </div>
 
             {/* Percentage */}
-            <span style={{
-              fontFamily: FONT.mono, fontSize: 10, fontWeight: 600,
-              color: pct >= 50 ? '#4ade80' : '#f87171',
-              width: 32, textAlign: 'right', flexShrink: 0,
-            }}>
+            <span
+              className="font-mono text-[10px] font-semibold w-8 text-right shrink-0"
+              style={{ color: pct >= 50 ? '#4ade80' : '#f87171' }}
+            >
               {pct}%
             </span>
           </div>
@@ -74,11 +81,4 @@ export const BucketEquityPanel = ({ bucketEquities, segmentation }) => {
       })}
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

@@ -6,7 +6,12 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from '../panelTokens';
+import { SURFACE, BORDER, TEXT, GOLD } from '../../../../constants/designTokens';
+
+const GREEN = '#22c55e';   // green-500 — was GREEN
+const YELLOW = '#eab308';  // yellow-500 — was YELLOW
+const CYAN = '#22d3ee';    // cyan-400 — was CYAN
+const FONT_MONO = "'IBM Plex Mono', 'Consolas', monospace"; // was FONT_MONO — used in SVG fontFamily attribute
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -60,22 +65,24 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
   const observedN = foldMeta?.bet?.observedN;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{
-        ...sectionHeader,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
+    <div className="mb-2.5">
+      <div
+        className="text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b flex justify-between items-center"
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
         <span>Fold Curve · Sizing Response</span>
-        <span style={{
-          fontWeight: 400, textTransform: 'none', fontSize: 8,
-          color: curveSource === 'personalized' ? COLOR.green
-            : curveSource === 'style' ? COLOR.yellow : TEXT.faint,
-        }}>
+        <span
+          className="font-normal normal-case text-[8px]"
+          style={{
+            color: curveSource === 'personalized' ? GREEN
+              : curveSource === 'style' ? YELLOW : TEXT.faint,
+          }}
+        >
           {curveSource}{observedN ? ` (n=${observedN})` : ''}
         </span>
       </div>
 
-      <svg width={W} height={H} style={{ display: 'block' }}>
+      <svg width={W} height={H} className="block">
         {/* Grid lines */}
         {[0.20, 0.40, 0.60, 0.80].map(v => (
           <line key={v} x1={PAD_L} y1={toY(v)} x2={W - PAD_R} y2={toY(v)}
@@ -85,7 +92,7 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
         {/* Y-axis labels */}
         {[0.20, 0.40, 0.60, 0.80].map(v => (
           <text key={v} x={PAD_L - 3} y={toY(v) + 3} textAnchor="end"
-            fill={TEXT.faint} fontSize={7} fontFamily={FONT.mono}>
+            fill={TEXT.faint} fontSize={7} fontFamily={FONT_MONO}>
             {Math.round(v * 100)}%
           </text>
         ))}
@@ -96,7 +103,7 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
           [1.0, '1×'], [1.5, '1½×'], [2.0, '2×'],
         ].map(([f, label]) => (
           <text key={f} x={toX(f)} y={H - 2} textAnchor="middle"
-            fill={TEXT.faint} fontSize={7} fontFamily={FONT.mono}>
+            fill={TEXT.faint} fontSize={7} fontFamily={FONT_MONO}>
             {label}
           </text>
         ))}
@@ -111,7 +118,7 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
 
         {/* Personalized logistic curve (solid green — when no data curve) */}
         {!dataPath && personalPath && (
-          <path d={personalPath} fill="none" stroke={COLOR.green} strokeWidth={1.5} />
+          <path d={personalPath} fill="none" stroke={GREEN} strokeWidth={1.5} />
         )}
 
         {/* Current bet size marker */}
@@ -120,7 +127,7 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
             <line
               x1={toX(currentBetFraction)} y1={PAD_T}
               x2={toX(currentBetFraction)} y2={H - PAD_B}
-              stroke={COLOR.cyan} strokeWidth={1} strokeDasharray="2,2" opacity={0.6}
+              stroke={CYAN} strokeWidth={1} strokeDasharray="2,2" opacity={0.6}
             />
             <circle
               cx={toX(currentBetFraction)}
@@ -128,35 +135,31 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
                 ? (foldMeta.bet.curve.find(p => Math.abs(p.sizing - currentBetFraction) < 0.1)?.foldPct ?? baseFold)
                 : baseFold
               )}
-              r={3} fill={COLOR.cyan} stroke={SURFACE.inset} strokeWidth={1}
+              r={3} fill={CYAN} stroke={SURFACE.inset} strokeWidth={1}
             />
           </>
         )}
       </svg>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 12, fontSize: 7, color: TEXT.faint, marginTop: 2 }}>
+      <div
+        className="flex gap-3 text-[7px] mt-0.5"
+        style={{ color: TEXT.faint }}
+      >
         <span>
           <span style={{ color: TEXT.faint }}>---</span> Population
         </span>
         {(dataPath || personalPath) && (
           <span>
-            <span style={{ color: dataPath ? GOLD.base : COLOR.green }}>——</span> {curveSource}
+            <span style={{ color: dataPath ? GOLD.base : GREEN }}>——</span> {curveSource}
           </span>
         )}
         {currentBetFraction != null && (
           <span>
-            <span style={{ color: COLOR.cyan }}>|</span> Current sizing
+            <span style={{ color: CYAN }}>|</span> Current sizing
           </span>
         )}
       </div>
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

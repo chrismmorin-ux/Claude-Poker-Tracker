@@ -28,7 +28,7 @@ const buildHand = ({ heroAction, street = 'flop', communityCards = [20, 13, 3], 
 // ─── buildHeroSituationKey ───────────────────────────────────────────────
 
 describe('buildHeroSituationKey', () => {
-  it('returns a 7-segment key in canonical order', () => {
+  it('returns an 8-segment key in canonical order', () => {
     const key = buildHeroSituationKey({
       street: 'flop',
       texture: 'dry',
@@ -37,9 +37,48 @@ describe('buildHeroSituationKey', () => {
       isIP: 'ip',
       facingAction: 'bet',
       contextAction: 'vsBet',
+      preflopAggressor: 'pfc',
     });
-    expect(key).toBe('flop:dry:BUTTON:def:ip:bet:vsBet');
-    expect(key.split(':').length).toBe(7);
+    expect(key).toBe('flop:dry:BUTTON:def:ip:bet:vsBet:pfc');
+    expect(key.split(':').length).toBe(8);
+  });
+
+  it('defaults preflopAggressor to "na" on preflop and "pfc" on postflop when omitted', () => {
+    const preflopKey = buildHeroSituationKey({
+      street: 'preflop',
+      texture: 'none',
+      posCategory: 'BIG_BLIND',
+      isAgg: 'def',
+      isIP: 'oop',
+      facingAction: 'raise',
+      contextAction: 'vsopen',
+    });
+    expect(preflopKey).toBe('preflop:none:BIG_BLIND:def:oop:raise:vsopen:na');
+
+    const flopKey = buildHeroSituationKey({
+      street: 'flop',
+      texture: 'dry',
+      posCategory: 'BUTTON',
+      isAgg: 'def',
+      isIP: 'ip',
+      facingAction: 'bet',
+      contextAction: 'vsBet',
+    });
+    expect(flopKey).toBe('flop:dry:BUTTON:def:ip:bet:vsBet:pfc');
+  });
+
+  it('emits explicit "pfa" when caller passes it', () => {
+    const key = buildHeroSituationKey({
+      street: 'flop',
+      texture: 'medium',
+      posCategory: 'LATE',
+      isAgg: 'def',
+      isIP: 'ip',
+      facingAction: 'bet',
+      contextAction: 'vsBet',
+      preflopAggressor: 'pfa',
+    });
+    expect(key).toBe('flop:medium:LATE:def:ip:bet:vsBet:pfa');
   });
 });
 

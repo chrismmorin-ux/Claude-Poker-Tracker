@@ -5,14 +5,38 @@ status: in_progress
 claimed_by: ""
 claimed_at: null
 completed_at: null
-last_claim_completed_at: "2026-05-03T13:00:00Z"
-last_claim_sprint: "SPR-031"
+last_claim_completed_at: "2026-05-07T09:35:00Z"
+last_claim_sprint: "SPR-046"
 last_claim_notes: |
-  SPR-031 first claim (2026-05-03): shipped hero-bb-defense-width rule
-  (catalog 'Strong v2 candidate'). Single rule + solver baseline + 13 tests.
-  Catalog status: SHIPPED v1. Coverage: 2/25 leak types shipped.
-  Next claim should target preflop-fold-equity gap (3/4 remaining) or
-  other category zeros.
+  SPR-046 third claim (2026-05-07): pivot from original (hero-pf-open-overfold
+  + hero-oop-3bet-underfold) → (hero-pf-3bet-overfold + hero-oop-3bet-underfold)
+  after mid-sprint discovery that hero-pf-open-overfold is structurally
+  blocked on the current accumulator design (RFI fold + RFI open bucket
+  to different keys; foldRate over the RFI decision space can't be
+  computed from a single bucket). Founder ratified pivot 2026-05-07.
+
+  Shipped:
+    - hero-pf-3bet-overfold: hero opens, faces 3bet, over-folds. 4
+      position-keyed baselines (EARLY/MIDDLE/LATE/BUTTON) with isIP
+      normalized via solverBaselineKey(). 17 tests.
+    - hero-oop-3bet-underfold: hero in SB/BB called open, faces 3bet,
+      under-folds. **First UNDER-fold rule in the catalog** —
+      establishes the mirror detection pattern. 2 baselines (SB/BB),
+      18 tests.
+    - 6 baseline entries + 2 umbrella concepts + 6 sub-concepts +
+      10 SITUATION_KEY_TO_CONCEPT entries + 2 umbrella lessons.
+
+  Catalog progress: 4/25 → 6/25 shipped. Preflop fold-equity 1/4 → 3/4
+  (one entry now DEFERRED with documented resolution path).
+  Pre-existing tests adjusted for new totals (conceptMastery 32 → 40;
+  solverBaselines 19 → 25). 217/217 skillAssessment tests; full
+  smart-test-runner 10196/10216 (20 skipped, 0 failed; +35 net vs
+  10161 SPR-045 baseline). Build clean.
+
+  Next claim could target: preflop-sizing (0 shipped, 3 planned),
+  position-discipline (0 shipped, 2 planned), sample-size-discipline
+  (0 shipped, 2 planned), or the deferred hero-pf-open-overfold once
+  the accumulator decision-class-bucket path is added.
 priority_score: 18.0
 priority_label: "P2"
 category: "self-coach-foundation"
@@ -46,7 +70,7 @@ blocked_by:
   - "WS-145"
 blocked_by_legacy: []
 enables: []
-sprint_id: "SPR-031"
+sprint_id: ""
 decision_flags:
   - "Per-sprint: which catalog entries to ship next (by coverage gap + complexity tier)"
 source:

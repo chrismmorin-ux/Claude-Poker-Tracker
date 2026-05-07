@@ -85,7 +85,7 @@ export const TournamentSetupForm = ({ config, onChange }) => {
                   ? 'text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
-              style={config.format === key.toLowerCase() ? { backgroundColor: GOLD } : undefined}
+              style={config.format === key.toLowerCase() ? { backgroundColor: GOLD.base } : undefined}
             >
               {TOURNAMENT_FORMATS[key].label}
             </button>
@@ -173,7 +173,7 @@ export const TournamentSetupForm = ({ config, onChange }) => {
                   ? 'text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
-              style={scheduleKey === key && !showCustomEditor ? { backgroundColor: GOLD } : undefined}
+              style={scheduleKey === key && !showCustomEditor ? { backgroundColor: GOLD.base } : undefined}
             >
               {BLIND_SCHEDULE_LABELS[key]}
             </button>
@@ -186,7 +186,7 @@ export const TournamentSetupForm = ({ config, onChange }) => {
                 ? 'text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
-            style={showCustomEditor ? { backgroundColor: GOLD } : undefined}
+            style={showCustomEditor ? { backgroundColor: GOLD.base } : undefined}
           >
             Custom
           </button>

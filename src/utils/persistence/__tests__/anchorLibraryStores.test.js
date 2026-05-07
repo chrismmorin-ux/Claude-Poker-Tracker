@@ -58,8 +58,10 @@ afterEach(async () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('DB_VERSION', () => {
-  it('is at v23 (after PIO G5 / WS-160 sightingLogs + playerPhotos bumped 22→23)', () => {
-    expect(DB_VERSION).toBe(23);
+  it('is at v23 or later (PIO G5 / WS-160 sightingLogs + playerPhotos shipped at v23)', () => {
+    // Hard-pinned versions break every subsequent migration bump. Check
+    // for the floor (this store landed in v23) and let later versions pass.
+    expect(DB_VERSION).toBeGreaterThanOrEqual(23);
   });
 });
 

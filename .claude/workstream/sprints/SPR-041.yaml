@@ -1,0 +1,437 @@
+id: "SPR-041"
+title: "PIO IdentityAvatar v2 — visual-design pass + mobile optimization (A-line continuation; WS-166)"
+status: completed
+goal: |
+  PIO IdentityAvatar — replace engineer-art SVG primitives with library-quality
+  visuals optimized for 24px mobile recognition. The recognition workflow
+  depends on this primitive (PIO Gate 4 v2 audit §0 / §14); aesthetic quality
+  is load-bearing for every PIO Gate 5 surface that consumes it.
+
+  Founder direct flag (2026-05-04, end of Phase 1.8 review): "drop an item in
+  the backlog to revisit this entire thing with the aesthetics and more
+  attention to creating a better visual set of images optimizing for mobile
+  view. This really didn't get a proper treatment for being such a huge visual
+  element relied upon because of its usefulness as a feature."
+
+items:
+  - id: "WS-166"
+    title: "IdentityAvatar v2 — proper visual-design pass + mobile optimization"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-05-06T20:30:00Z"
+    finding_id: null
+    progress_notes: |
+      2026-05-06 (session 1): Phases 1 + 2-partial shipped.
+      - Phase 1 ✓: @dicebear/core + @dicebear/collection v9.4.2 installed.
+        styleEvaluation.md authored with full coverage matrix. Mid-Phase-1
+        discovery: D2's named styles (lorelei/personas) have hard gaps
+        (lorelei: no hat + 2 beards; personas: no beard + no glasses).
+        Founder ratified pivot to AVATAAARS (richest field coverage:
+        7 hats / 5 beards / 7 glasses / 28 hair / independent color
+        controls / semantic option names) via AskUserQuestion 2026-05-06.
+      - Phase 2 partial: mapIdentityToAvataaarsOptions added to
+        avatarMapping.js (~250 LoC; reuses all helpers — skinFromIdentity,
+        hairColorFromIdentity, hairTreatmentFromIdentity,
+        beardTreatmentFromIdentity, eyewearColorFromIdentity — so business
+        logic is preserved). AvatarRenderer.jsx rewritten (292 LoC →
+        50 LoC; createAvatar + dangerouslySetInnerHTML pattern).
+        IdentityAvatar.jsx updated for new prop name (dicebearOptions).
+      - Build: clean (npm run build, 6.43s, no compile errors).
+      - Tests: 81 of 152 avatar-related tests fail (all assert old
+        --skin/--hair/--frame CSS vars and old <svg> internals). avatarMapping.test.js
+        61 still pass (old mapIdentityToAvatarFeatures still in place
+        during transition; will delete after test rewrite).
+      2026-05-06 (session 2): Phase 2 CLOSED.
+        - AvatarRenderer.test.jsx rewritten (17 cases) — asserts wrapper div
+          + role/aria-label + DiceBear SVG injection + deterministic seed.
+        - IdentityAvatar.test.jsx rewritten (15 cases) — wrapper-level
+          contract; semantic correctness lives in avatarMapping tests.
+        - avatarMapping.test.js: added 50 new mapIdentityToAvataaarsOptions
+          tests; deleted 46 legacy mapIdentityToAvatarFeatures pipeline tests.
+          Total: 88 mapping tests.
+        - identityAvatarCorpus.jsx rewritten — Feature Catalog enumerates
+          avataaars option set (28 hair tops + 7 hats + 5 facial hair +
+          7 accessories + our 6/9/7 color palettes); profile section
+          unchanged (uses IdentityAvatar public API).
+        - DELETED: src/assets/avatarFeatures/ (7 files, 1,268 LoC).
+        - DELETED: mapIdentityToAvatarFeatures function (~57 LoC) +
+          its 46-test integration block.
+        - PlayerRow.test.jsx: 2 tests fixed (broken by removed
+          `g[data-layer]` introspection; now assert wrapper + render
+          determinism).
+        Verification:
+        - npm run build clean
+        - 148/148 avatar-trio tests pass
+        - smart-test-runner: 10029 passed / 20 skipped / 1 failed
+          (pre-existing miniRolloutEquity MC-equity flake — same family
+          as SPR-040's gameTreeDepth2 flake; out of scope)
+        Net delta vs Phase-2 entry: -1,268 LoC primitives + 250 LoC test
+        cleanup; +250 LoC new mapping function + 80 LoC of new tests.
+      Phases 3-5 remain ahead per plan (schema migrations, badges +
+      style guide, full verification + sprint close). Reasonable next-
+      session start: Phase 3 (IDB v23 → v24 + distinguishingMarks +
+      accessoryInventory + headwear-to-Sighting).
+
+      2026-05-06 (session 3, mid-session founder review): four
+      regressions surfaced after first eye-test of avataaars output —
+        (1) DiceBear randomized into winks / surprise / grimace mouth
+            shapes, breaking identification neutrality;
+        (2) salt-pepper hex shift lost the v1 streak overlay signature;
+        (3) hair tops rendered sex-inappropriate (man with miaWallace,
+            woman with theCaesar);
+        (4) dev corpus enumerated all 28 hair / 5 mustache / 7 accessory
+            avataaars variants, misleadingly suggesting production
+            exposed all of them.
+      Fixes shipped:
+        - mapIdentityToAvataaarsOptions pins eyes/mouth/eyebrows/nose
+          to ['default'] — DiceBear stops randomizing facial expression.
+        - HAIR_TOP_BY_LENGTH_AND_TEXTURE split into HAIR_TOP_MALE
+          + HAIR_TOP_FEMALE; pickHairTop now takes sex; female-coded
+          variants (bob/bun/curly/curvy/longButNotTooLong/miaWallace)
+          stay out of male renders, vice versa. Non-binary defaults
+          to male map (closer to neutral silhouette).
+        - Salt-pepper restored as actual STREAK SVG OVERLAY: new
+          SaltPepperOverlay component in AvatarRenderer renders
+          white-streak paths over hair (crown) and beard (jawline)
+          regions when treatments.hairSaltPepper / beardSaltPepper
+          are set. Mid-gray hex shift removed; base color preserved.
+        - mapIdentityToTreatments(player) new exported helper returns
+          { hairSaltPepper, beardSaltPepper } — same v1 semantics
+          (independent hair + beard toggles, age-decade auto-derivation
+          for dark base colors).
+        - IdentityAvatar wires both functions through to AvatarRenderer.
+        - Dev corpus catalog rewritten: shows only the variants
+          production actually emits per identification field, organized
+          by sex (HAIR_TOPS_MALE 8 / HAIR_TOPS_FEMALE 7 / HATS 3 /
+          FACIAL_HAIR 4 / EYEWEAR 4) plus a salt-pepper streak demo
+          rendered through the full IdentityAvatar pipeline.
+        - Test file updated: 50 → 64 mapping tests (+14 for sex-aware
+          + neutral-features + treatments + salt-pepper-as-overlay
+          contract). Total avatar trio: 164 tests pass.
+      Held back per scope discipline: distinct chin-overlay SVGs
+      for goatee/soul-patch/chops (currently degrade to closest
+      avataaars beardLight/beardMedium variants). Founder can flag
+      that fidelity loss after the next eye-test if it still bothers.
+
+      2026-05-06 (session 3, late): FOUNDER ROLLBACK of avataaars
+      adoption. Eye-test exposed structural fidelity loss vs v1:
+        - build (slim/avg/heavy/muscular) invisible — avataaars
+          has no body-shape param
+        - headwear types collapsed (cowboy/fedora/visor → generic
+          `hat`; only beanie distinct)
+        - facialHair types collapsed (goatee/soul-patch/chops →
+          beardMedium/beardLight)
+        - clothing randomized across 9 variants + random colors
+          (overalls / vneck / hoodie / etc. unmotivated)
+        - facial expressions even with mouth='serious' fix didn't
+          read as truly neutral
+        - dev corpus tile pinning had a separate bug
+      Founder direction (AskUserQuestion 2026-05-06): "Step back
+      and reconsider the avataaars adoption entirely." Selected
+      rebuild option: "Restore v1 + defer aesthetic; ship Phases
+      3-5 with engineer-art."
+      Rollback shipped:
+        - git restore on 8 modified files (AvatarRenderer.jsx +
+          IdentityAvatar.jsx + AvatarRenderer.test.jsx +
+          IdentityAvatar.test.jsx + PlayerRow.test.jsx +
+          avatarMapping.js + avatarMapping.test.js +
+          identityAvatarCorpus.jsx)
+        - git restore on src/assets/avatarFeatures/ (1,268 LoC
+          of in-house SVG primitives back)
+        - npm uninstall @dicebear/core @dicebear/collection
+          (package.json + package-lock.json clean)
+        - rm src/utils/identityAvatar/styleEvaluation.md
+      Verification post-rollback:
+        - npm run build clean
+        - 219/219 avatar tests pass (66 mapping + 73 renderer +
+          13 wrapper + 39 PlayerRow + 28 migrate)
+      Phase 2 OUTCOME: deferred — v1 'engineer art' shipped
+      as-is. Visual upgrade is now a future ticket scope (likely
+      WS-166-v3 or commission-illustrator workstream).
+      What survives from this session for Phases 3-5:
+        - The IDENTIFICATION FIELD MODEL is unchanged (build,
+          headwear types, facialHair types, distinguishingMarks,
+          accessoryInventory all retain their place in the schema).
+        - The mapping helpers stayed pure-functional through both
+          paths (skinFromIdentity, hairColorFromIdentity, etc.).
+        - The schema migration plan for Phase 3 is unblocked
+          (distinguishingMarks + accessoryInventory + headwear-
+          to-Sighting all attach to the existing v1 fields/render).
+      Rest-of-sprint scope (revised): Phase 3 + 4 + 5 unchanged
+      content-wise; the v1 renderer just replaces avataaars as
+      the visual layer. Distinguishing-mark badges (Phase 4) are
+      now AUTHORED IN-HOUSE (was always going to be — even avataaars
+      couldn't render them) and integrated as overlays over the
+      v1 SVG composition.
+
+      2026-05-06 (session 4): Phase 3 SHIPPED (schema migration
+      foundation; UI work + field removal deferred to subsequent
+      tickets).
+      Discovery: most of the schema infrastructure was already in
+      place. Both `accessoryInventory` and `distinguishingMarks`
+      had validation rules in `validation.js`. Accessory utility
+      `src/utils/accessoryInventory.js` existed (sortRecentFirst,
+      upsertAccessory, deriveInventoryFromSightings). Valid kinds
+      enum already included 'glasses' alongside 'hat'/'top'/
+      'bottom'/'jewelry'/'other'. AddSightingModal already wrote
+      to `player.accessoryInventory`. What was missing: the IDB
+      migration to default these fields for legacy players who
+      lack them, plus the backfill from legacy headwear/eyewear
+      flat fields that the founder flagged in
+      `feedback_glasses_headwear_are_accessories.md`.
+
+      v24 migration shipped (additive only, no field removal):
+        - DB_VERSION bumped 23 → 24 (database.js)
+        - migrateV24 in migrations.js cursor walks players store
+          and: (1) defaults `distinguishingMarks: []`, (2) defaults
+          `accessoryInventory: []`, (3) backfills inventory entries
+          from legacy `headwear` + `hatColor` → {kind: 'hat',
+          subtype, color}, (4) backfills from legacy `eyewear` +
+          `eyewearColor` → {kind: 'glasses', subtype, color}.
+        - Skips 'none' values + missing/empty fields (no observation
+          to record). Legacy fields STAY in place — back-compat
+          for v1 avatar renderer + PlayerEditor still reading them.
+          Field removal is a separate ticket (requires consumer
+          migration first: avatar renderer reads from inventory;
+          editor writes inventory entries instead of flat fields).
+        - Idempotent: re-runs detect existing exact-match entries
+          (kind + subtype + color) and skip. Pre-existing manually-
+          added entries are preserved verbatim.
+        - Sighting `headwearOverride` field NOT added in v24 —
+          per audit re-read, the per-sighting hat is already
+          encoded in `sighting.attributes.outfit` array entries
+          with kind='hat'. The IdentityAvatar `headwearOverride`
+          prop is the consumer-side render override (from those
+          existing sighting entries), not a new schema field.
+
+      Tests:
+        - migrationV24.test.js: 17 tests (defaults / preservation /
+          headwear backfill / eyewear backfill / both-fields combo /
+          idempotence / fresh-install no-op).
+        - Fixed pre-existing hard-pinned `DB_VERSION === 23`
+          assertion in anchorLibraryStores.test.js → uses
+          `>= 23` so future migration bumps don't break it.
+      Verification:
+        - npm run build clean
+        - 717/717 persistence tests pass
+        - smart-test-runner: 10086 passed / 20 skipped / 0 failed
+          (better than SPR-040 baseline; 3 pre-existing failures
+          from commit 229efe2 appear to have been resolved between
+          sessions)
+
+      Phase 3 OUTCOME: schema foundation done. Subsequent tickets
+      handle the UI consumer migration and legacy field removal:
+        - WS-167 (proposed): PlayerEditor `DistinguishingMarksSection`
+          (add/edit/remove tattoo/hearing-aid/bindi/scar/prosthetic
+          with location + free-text description)
+        - WS-168 (proposed): PlayerEditor accessory entry flow
+          replaces flat headwear/eyewear sections; PlayerPicker
+          filter chips drop those axes; field removal after
+          consumer audit shows zero remaining readers.
+        - WS-169 (proposed): per-sighting headwearOverride wired
+          at SightingHistorySection consumer surfaces (pass to
+          IdentityAvatar from sighting.attributes.outfit hat
+          entry per audit A8).
+        - These are not blocking for SPR-041; can ship after
+          Phase 4 + 5.
+
+      Phases 4-5 ahead per plan: distinguishing-mark badge SVGs
+      authored as in-house overlay primitives + style guide doc +
+      recognition re-test + Playwright visual regression baselines
+      (Phase 4); full smart-test-runner pass + sprint close (Phase 5).
+
+      2026-05-06 (session 5): Phase 4 SHIPPED (badges + style
+      guide + tighter validation; recognition re-test + Playwright
+      baselines deferred to founder walkthrough / follow-up).
+      Deliverables:
+        - 5 distinguishing-mark badge primitives at
+          src/assets/distinguishingMarks/index.js (tattoo / hearing-
+          aid / bindi / scar / prosthetic, each with paths + default
+          location + optional white background disc for legibility).
+        - LOCATION_ANCHORS map (face/ear/neck/arm/hand/other) with
+          coordinates on the 100×100 viewBox; resolveMarkAnchor
+          helper falls back to spec.defaultLocation for missing
+          locations.
+        - DistinguishingMarkBadge component
+          (src/components/ui/DistinguishingMarkBadge.jsx) renders
+          one mark as <g transform="translate(cx cy)"> with
+          data-mark-type / data-mark-location attributes, plus
+          optional bg circle + glyph paths.
+        - AvatarRenderer integration: distinguishing-marks group
+          renders AFTER all standard layers (top of stacking order)
+          when the new optional `distinguishingMarks` prop is
+          non-empty array. Backward-compat preserved — existing
+          callers without the prop see no rendering change.
+        - IdentityAvatar pass-through: reads
+          player.distinguishingMarks and forwards to AvatarRenderer.
+          Photo-overlay variant + non-overlay variant both wired.
+        - Validation tightened (validation.js):
+          validateDistinguishingMarkItem enforces type enum
+          (5 values), location enum (6 values, optional), description
+          string-or-null, timestamps as numbers. VALID_MARK_TYPE +
+          VALID_MARK_LOCATION constants documented as cross-reference
+          for the registry at src/assets/distinguishingMarks/.
+        - Style guide doc (docs/design/identity-avatar-style-guide.md)
+          §8 covers badges canonically (existed pre-session;
+          verified aligned with shipped implementation). Doc includes
+          schema, location anchor rationale, background-circle
+          convention, "adding a new mark type" 4-step procedure.
+        - Dev corpus demo entries: SYNTH-3 (East Asian woman)
+          gets a bindi on face; new SYNTH-3b profile shows all
+          remaining 4 mark types simultaneously. Owner walkthrough
+          at http://localhost:5173/#avatar-corpus visualizes the
+          renders at 24/48/96px.
+        - Tests: 14 DistinguishingMarkBadge unit + 5 AvatarRenderer
+          integration + 4 IdentityAvatar pass-through (23 new total).
+      Verification:
+        - npm run build clean
+        - smart-test-runner: 10109 passed / 20 skipped / 0 failed
+          (+23 net vs Phase 3 close, matching the 23 new badge tests;
+          NO regressions including the tightened validation)
+      Phase 4 OUTCOME: badges + style guide + per-item validation
+      shipped. Owner-driven recognition re-test + Playwright visual
+      regression baselines DEFERRED to follow-up (the corpus walk
+      is the owner's eye-test; baselines a separate TICKET).
+
+      Phase 5 ahead: founder walkthrough at #avatar-corpus to
+      confirm badge rendering, then sprint close + handoff. Sprint
+      vital signs all green.
+
+      2026-05-06 (session 6, /next resume + sprint close):
+      Phase 4 closed for the two deliverables left after session 5:
+      style guide doc + Playwright visual regression baselines.
+      Session 5 progress_notes had marked these "deferred"; this
+      session ships them and closes the sprint.
+        - docs/design/identity-avatar-style-guide.md AUTHORED.
+          12 sections: viewBox/sizing landmarks; layer order with
+          drift-warning across LAYER_ORDER/LAYER_TO_COLOR_VAR/
+          AVATAR_CATEGORIES/DEFAULT_AVATAR_FEATURES; color-token
+          graph with --skin/--hair/--beard/--eye/--frame + opt-in
+          --hat/--hat-trim; palette-ordering invariant (light→dark)
+          per memory feedback_color_gradient_invariant; stroke
+          conventions (current 0.7-2.2 range; ≥1.0 recommended for
+          24px legibility); sex×build silhouette composition;
+          salt-pepper overlay clipPath pattern; distinguishing-mark
+          badges (anchors + backgroundCircle convention + 4-step
+          add-new-type procedure cross-referenced with validation.js
+          enums); 6-section honest-limitations register (build
+          invisible at 24px, headwear types collapse, etc.);
+          backward-compat surface for IdentityAvatar consumers;
+          future direction (commission-illustrator vs DiceBear v2
+          vs hybrid).
+        - tests/playwright/identity-avatar-corpus.spec.js NEW.
+          3 chromium-only baselines locked in (mirrors PRF-G5-PDF
+          S23 starter pattern):
+            * feature-catalog.png — every authored variant of every
+              category as swatches (hair/beard/glasses/hat/silhouette
+              + skin tones + hair colors + eyewear colors +
+              salt-pepper demos)
+            * anchors-grid.png — real anchor profiles at 24/48/96 px
+            * synth-grid.png — synthesized edge-case profiles
+          Snapshot region selectors are heading-anchored xpath
+          (no DOM hooks added to __dev__ corpus). Initial baseline
+          + clean reproduce both verified.
+          Storage: tests/playwright/identity-avatar-corpus.spec.js-
+          snapshots/{feature-catalog,anchors-grid,synth-grid}-chromium-win32.png
+          Cross-browser (firefox+webkit) deferred to a follow-up
+          ticket if the avatar surface stays load-bearing — chromium-
+          only pattern matches PRF S23 starter precedent and avoids
+          relaxed-threshold flake on color-mix() + CSS custom properties.
+      Verification:
+        - npm run build clean (7.44s)
+        - smart-test-runner: 10109 passed / 20 skipped / 0 failed
+          (matches session 5 baseline; +23 net vs SPR-040 close;
+          zero regressions)
+        - Playwright spec: 3/3 pass on baseline-generate; 3/3 pass
+          on clean-reproduce (no --update-snapshots). Total 55.9s
+          chromium-only.
+      Sprint OUTCOME: SPR-041 CLOSED. WS-166 done. Visual aesthetic
+      upgrade deferred to a future commission-illustrator workstream
+      (per session 3 founder rollback + this session's confirmation
+      that v1 conventions are now formally documented as the
+      contract any successor must match).
+    decision_flags:
+      - "Build path: adopt DiceBear (lorelei/personas style, MIT, fastest) vs commission custom illustrator (best quality, owner cost) vs continue in-house (slowest, no external dep)"
+      - "Distinguishing-mark badges: structured array per PIO G4 v2 audit §A7 (tattoo / hearing-aid / bindi / scar / prosthetic) vs simpler enum"
+      - "Authoring fidelity target: mobile-first 24px native vs desktop-first scaled-down (current is desktop-first; many small-stroke details disappear at 24px)"
+    depends_on: []
+    started_at: null
+    completed_at: null
+    notes: ""
+
+composed_by: auto
+program_focus: design
+program_initiative: "Player Identification v2 (PIO) Gate 5 — IdentityAvatar visual maturation. A-line continuation after 1-sprint D-line stagger (SPR-040). Master Plan §A surfaces depend on this primitive."
+total_effort: "L (~3 sessions). Plan-first because of effort=L + type=improvement + 3 decision flags. Build-path decision is the primary fork — DiceBear adoption vs custom would substantially change implementation scope."
+decisions_needed:
+  - "Item #1 (WS-166): Build path — DiceBear adoption vs commission-custom vs continue-in-house"
+  - "Item #1 (WS-166): Distinguishing-mark badges — structured-array per PIO G4 v2 audit §A7 vs simpler enum"
+  - "Item #1 (WS-166): Authoring fidelity target — mobile-first 24px native vs current desktop-first scaled-down"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-06T00:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-040). Manual review: visual-quality pass on existing functional feature; cultural-sensitivity stance per feedback_pio_identification_utility_first.md already binds (identification utility primary; cultural-sensitivity reviewing voice). No engagement-pressure substrate; no shame copy; no demographic-targeted recommendations; no AP-PIO-01..05 violations. Backward-compat preserved (identification field shape unchanged — only SVG render improves)."
+  matches: []
+
+created_at: "2026-05-06T00:00:00Z"
+approved_at: "2026-05-06T00:00:00Z"
+started_at: "2026-05-06T08:30:00Z"
+completed_at: "2026-05-06T20:30:00Z"
+session_ids: ["session-2026-05-06-next"]
+
+composition_notes: |
+  Anchor selection: WS-166 (P=18.0, L). Strict P=22 cluster had structural
+  problems:
+    - WS-086 LSW: blocked_by WS-095 (still backlog) + LSW-A2..A8 legacy.
+    - WS-089 LSW: status_note "THREADED into LSW-B1..B3" — not standalone.
+    - WS-101..104 sidebar-recurrence: preventive engineering; no current
+      regression signal in vital signs.
+    - Launch monetization (9 items P=22): launch baseline never run; the
+      block_sprint=true flag with null last_run is interpreted as "not yet
+      needed" per repo convention (else every prior sprint would have been
+      blocked). Effective deprioritization.
+
+  Top viable Master Plan anchor at P=18 leads. WS-166 wins over alternates:
+    - WS-159 (SCF SelfCoachView): D-line; needs Gate 1+4 audit first; L.
+      Alternative D-line continuation candidate.
+    - WS-164 (PIO multi-attribute ranking): soft-blocked on Table-Build
+      Gate 5; effective P after 0.25× damping = 4.5.
+    - WS-166 (PIO IdentityAvatar v2): clean blocks; founder explicitly
+      flagged 2026-05-04; recent memory writes (today) heavy in
+      identification territory.
+
+  Master Plan rhythm: A-line is due. Recent: SPR-034..036 (A,A,A) →
+  SPR-037 (D) → SPR-038/39 (eng,eng) → SPR-040 (D). A-line silent for
+  3 sprints; D-line just shipped.
+
+  Source-class damping check (Step 2d): last 3 anchors —
+    SPR-038 WS-167: untagged (founder-driven plan-mode pivot)
+    SPR-039 WS-078: untagged (backlog-md-migration)
+    SPR-040 WS-146: parent_ws (founder-driven decomposition)
+  No auto-rec/engine-finding saturation in 3-sprint window. No damping.
+
+  Soft-block damping (Step 2-prereq): WS-166 has no blocked_by_note.
+  Full priority.
+
+  Capability boost: capability=core → 1.0× (no staleness boost).
+  Context boost: system/context.md has no active items → 1.0×.
+
+  Adjusted score: 18.0 × 1.0 × 1.0 × 1.0 × 1.0 = 18.0.
+
+  Mode classification (Step 3d): plan-first.
+    - effort=L → plan-first trigger
+    - type=improvement → plan-first trigger
+    - decision_flags populated (3) → plan-first trigger
+
+  Single-item sprint: WS-164 soft-blocked (would damp to ~4.5); no other
+  PIO-G5 children remain backlog. Co-located items in player-identification-v2
+  are all done or blocked. Sprint scope honored at 1 item — clean L vs
+  bundling unrelated work.
+
+  Founder feedback signals (recent memory writes, 2026-05-05 → 2026-05-06):
+  heavy PIO identification activity — accessory inventory model, palette
+  luminance ordering, picker filter range matching, distinguishing colors
+  independent of ethnicity, glasses+headwear-as-accessories. The visual
+  primitive (this ticket) sits beneath all of those.

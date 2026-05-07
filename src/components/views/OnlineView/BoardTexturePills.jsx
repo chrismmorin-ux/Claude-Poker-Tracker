@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import { R } from './panelTokens';
 
 const PILL_STYLES = {
   wet:       { bg: '#1e3a5f', color: '#60a5fa' },
@@ -29,15 +28,15 @@ export const BoardTexturePills = ({ boardTexture }) => {
   if (pills.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+    <div className="flex gap-1 mb-1.5 flex-wrap">
       {pills.map(p => {
         const style = PILL_STYLES[p.key] || PILL_STYLES.medium;
         return (
-          <span key={p.key} style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: R.sm, fontWeight: 700,
-            background: style.bg, color: style.color,
-            letterSpacing: 0.3,
-          }}>
+          <span
+            key={p.key}
+            className="text-[9px] px-1.5 py-0.5 rounded-[3px] font-bold tracking-[0.3px]"
+            style={{ background: style.bg, color: style.color }}
+          >
             {p.label}
           </span>
         );

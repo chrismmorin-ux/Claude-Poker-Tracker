@@ -21,7 +21,7 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
 
   return (
     <div className="bg-gray-800 rounded-lg p-5">
-      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>Custom Venues</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Custom Venues</h3>
 
       {/* Add new venue */}
       <div className="mb-4">

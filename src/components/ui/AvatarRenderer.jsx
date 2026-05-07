@@ -31,6 +31,7 @@ import {
   getClothingColor,
 } from '../../constants/avatarFeatureConstants';
 import { getFeatureById } from '../../assets/avatarFeatures';
+import DistinguishingMarkBadge from './DistinguishingMarkBadge';
 
 // Per-category fallback feature IDs when avatarFeatures[category] is missing or
 // points to a non-registered id. Skin is always the face shape (tone is a color
@@ -152,7 +153,13 @@ const SALT_PEPPER_BEARD_PATHS = [
   { d: 'M 42 74 l 1.5 0.8 M 50 76 l 1.5 0.8 M 58 74 l 1.5 0.8', stroke: '#fff', strokeWidth: 0.9, strokeLinecap: 'round', fill: 'none' },
 ];
 
-const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) => {
+const AvatarRenderer = ({
+  avatarFeatures,
+  size = 48,
+  className = '',
+  title,
+  distinguishingMarks = null,
+}) => {
   const colorStyle = useMemo(() => buildColorVars(avatarFeatures), [avatarFeatures]);
   const uniqueId = useId();
   const safeId = uniqueId.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -281,6 +288,13 @@ const AvatarRenderer = ({ avatarFeatures, size = 48, className = '', title }) =>
         }
         return layerNode;
       })}
+      {Array.isArray(distinguishingMarks) && distinguishingMarks.length > 0 ? (
+        <g data-layer="distinguishing-marks">
+          {distinguishingMarks.map((mark, i) => (
+            <DistinguishingMarkBadge key={i} mark={mark} />
+          ))}
+        </g>
+      ) : null}
     </svg>
   );
 };

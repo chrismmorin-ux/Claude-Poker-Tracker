@@ -599,11 +599,10 @@ injectTokens();
   // Phase 1 keeps last content visible with a subtle badge so the user can still read it.
   // Phase 2 fully clears to between-hands (true session end / table close).
   // RT-60: registered so clearForTableSwitch cancels it on lifecycle events.
-  // SR-1 / SR-6.3: `coordinator` is declared later in this IIFE (~line 1701),
-  // so scheduling synchronously here would throw TDZ. Defer via microtask and
-  // use scheduleTimer so the handle is coordinator-owned from the moment it
-  // exists (no raw setInterval escape hatch in this module).
-  queueMicrotask(() => coordinator.scheduleTimer('staleContext', () => {
+  // WS-104: tick body declared here as a closure over `coordinator` + `scheduleRender`;
+  // the synchronous scheduleTimer call sits next to FSM registration so the
+  // registry contains 'staleContext' immediately after IIFE (closes RT-60 gap).
+  const _staleContextTick = () => {
     const ctx = coordinator.get('currentLiveContext');
     if (ctx?._receivedAt) {
       const age = Date.now() - ctx._receivedAt;
@@ -617,7 +616,7 @@ injectTokens();
         scheduleRender('stale_indicator');
       }
     }
-  }, 10_000, 'interval'));
+  };
 
   // =========================================================================
   // TOURNAMENT PANEL
@@ -1228,8 +1227,7 @@ injectTokens();
 
   // Refresh the badge text each second by routing the tick through the
   // standard render path. Registered under the coordinator so the table-
-  // switch lifecycle cancels it (RT-60 contract). SR-1 / SR-6.3: deferred
-  // via microtask because `coordinator` is declared later in this IIFE.
+  // switch lifecycle cancels it (RT-60 contract).
   //
   // V-3 §II.9 co-shipping #2 (Gate 5 PR-14): closes the R-2.3 violation
   // flagged by §II.10 forbidden #8. Pre-PR-14 the timer body called
@@ -1239,9 +1237,13 @@ injectTokens();
   // updateStaleAdviceBadge call (line ~2092) handles the badge inside
   // the render frame. INV-FRESH-4 single-writer-per-slot stays intact;
   // INV-FRESH-3 same-frame-commit is now actually enforced.
-  queueMicrotask(() => coordinator.scheduleTimer('adviceAgeBadge', () => {
+  //
+  // WS-104: tick body declared here; synchronous scheduleTimer call sits
+  // next to FSM registration so the registry contains 'adviceAgeBadge'
+  // immediately after IIFE.
+  const _adviceAgeBadgeTick = () => {
     coordinator.tickAdviceAge();
-  }, 1000, 'interval'));
+  };
 
   const renderActionBar = (advice, liveCtx, snap) => {
     const el = $('action-bar');
@@ -1372,8 +1374,15 @@ injectTokens();
     // and the IDLE/COMPLETE banner path (FSM 'active'). Observing-mode
     // mid-hand (hero folded into an active street) is a second entry path
     // that the FSM does not model — the content classifier still decides
-    // that case. Slot ownership is claimed when EITHER the FSM is non-
-    // inactive OR the classifier returns a non-null mode.
+    // that case. Slot ownership is claimed when the FSM is in a banner-
+    // visible state OR the classifier returns a non-null mode.
+    //
+    // WS-102 — banner-visible states are enumerated explicitly (was
+    // `panelState !== 'inactive'`). The new `pendingActive` debounce state
+    // must NOT claim the slot: it represents a single still-unconfirmed
+    // betweenHandsOrIdle=true signal whose confirmation is pending. If
+    // we let pendingActive claim the slot, a transient malformed payload
+    // would still flash the banner for one render frame.
     const panelState = snap.panels?.betweenHands ?? 'inactive';
     const heroSeat = snap.currentLiveContext?.heroSeat
       || snap.currentTableState?.heroSeat;
@@ -1384,7 +1393,8 @@ injectTokens();
       panelState === 'modeAExpired'
     );
 
-    const claimSlot = panelState !== 'inactive' || mode !== null;
+    const fsmClaimsSlot = panelState === 'active' || panelState === 'modeAExpired';
+    const claimSlot = fsmClaimsSlot || mode !== null;
 
     if (!claimSlot) {
       hideEl(betweenEl);
@@ -2187,6 +2197,19 @@ injectTokens();
   coordinator.registerFsm(modelAuditFsm);
   coordinator.registerFsm(betweenHandsFsm);
   coordinator.registerFsm(streetCardFsm);
+
+  // WS-104 / RT-60: register the two interval timers synchronously now that
+  // `coordinator` exists. Pre-WS-104 these were wrapped in queueMicrotask
+  // (because the registration sites sit before line 2176 where `coordinator`
+  // is declared) — that left a one-microtask window in which the registry
+  // did not contain 'staleContext' or 'adviceAgeBadge', so a clearForTableSwitch
+  // firing in that window would miss them and leak the previous table's
+  // intervals. Tick bodies are declared at their original sites as closures
+  // (_staleContextTick / _adviceAgeBadgeTick) so the local feature-context
+  // comments stay attached to the logic. Owner verifies: registry contains
+  // both keys immediately after this IIFE returns.
+  coordinator.scheduleTimer('staleContext', _staleContextTick, 10_000, 'interval');
+  coordinator.scheduleTimer('adviceAgeBadge', _adviceAgeBadgeTick, 1000, 'interval');
 
   // RT-73: reset refreshHandStats in-flight flags on table switch so a
   // storage read that was awaiting at the moment of the switch doesn't

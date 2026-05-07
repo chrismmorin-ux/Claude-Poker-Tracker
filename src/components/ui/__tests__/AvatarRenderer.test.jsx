@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import AvatarRenderer, { resolveCategoryFeature, buildColorVars, CATEGORY_FALLBACK_ID } from '../AvatarRenderer';
 import { AVATAR_FEATURES, getFeatureById } from '../../../assets/avatarFeatures';
@@ -184,6 +184,60 @@ describe('AvatarRenderer', () => {
     it('renders <title> element when title prop provided', () => {
       const { container } = render(<AvatarRenderer avatarFeatures={{}} title="Mike" />);
       expect(container.querySelector('title')?.textContent).toBe('Mike');
+    });
+  });
+
+  describe('distinguishingMarks (SPR-041 Phase 4)', () => {
+    it('renders no marks group when distinguishingMarks is null', () => {
+      const { container } = render(<AvatarRenderer avatarFeatures={{}} />);
+      expect(container.querySelector('g[data-layer="distinguishing-marks"]')).toBeNull();
+    });
+
+    it('renders no marks group when distinguishingMarks is empty array', () => {
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{}} distinguishingMarks={[]} />,
+      );
+      expect(container.querySelector('g[data-layer="distinguishing-marks"]')).toBeNull();
+    });
+
+    it('renders one badge per mark (children of distinguishing-marks group)', () => {
+      const marks = [
+        { type: 'tattoo', location: 'arm' },
+        { type: 'bindi', location: 'face' },
+      ];
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{}} distinguishingMarks={marks} />,
+      );
+      const group = container.querySelector('g[data-layer="distinguishing-marks"]');
+      expect(group).not.toBeNull();
+      expect(group.querySelector('g[data-mark-type="tattoo"]')).not.toBeNull();
+      expect(group.querySelector('g[data-mark-type="bindi"]')).not.toBeNull();
+    });
+
+    it('renders badges AFTER all standard layers (top of stacking order)', () => {
+      const marks = [{ type: 'scar', location: 'face' }];
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{}} distinguishingMarks={marks} />,
+      );
+      const groups = container.querySelectorAll('svg > g');
+      const last = groups[groups.length - 1];
+      expect(last.getAttribute('data-layer')).toBe('distinguishing-marks');
+    });
+
+    it('skips unknown mark types without crashing', () => {
+      const marks = [
+        { type: 'imaginary', location: 'arm' },
+        { type: 'tattoo', location: 'arm' },
+      ];
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { container } = render(
+        <AvatarRenderer avatarFeatures={{}} distinguishingMarks={marks} />,
+      );
+      const group = container.querySelector('g[data-layer="distinguishing-marks"]');
+      // Only the known one renders
+      expect(group.querySelectorAll('g[data-mark-type]').length).toBe(1);
+      expect(group.querySelector('g[data-mark-type="tattoo"]')).not.toBeNull();
+      warn.mockRestore();
     });
   });
 });

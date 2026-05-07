@@ -823,6 +823,114 @@ const migrateV23 = (db, transaction) => {
   };
 };
 
+/**
+ * v24: SPR-041 Phase 3 — distinguishingMarks default + accessoryInventory
+ * default + backfill inventory from legacy headwear/eyewear fields.
+ *
+ * Per `feedback_glasses_headwear_are_accessories.md` (memory 2026-05-06):
+ *   "DROP `player.headwear` / `player.eyewear` / `player.eyewearColor` as
+ *   identification fields. Add `kind: 'glasses'` to accessory inventory."
+ *
+ * Per PIO Gate 4 v2 audit §A7: distinguishingMarks is a structured array
+ *   `[{ type, location, description, firstSeenAt, lastSeenAt }]`.
+ *
+ * SCOPE OF THIS MIGRATION (additive only — no field removal):
+ *   1. Default `distinguishingMarks: []` for legacy players who lack the field
+ *   2. Default `accessoryInventory: []` for legacy players who lack the field
+ *   3. Backfill `accessoryInventory` entries from legacy `headwear`/`hatColor`
+ *      and `eyewear`/`eyewearColor` so future consumers (badges + editor) have
+ *      data to render. Backfill is IDEMPOTENT — re-running on already-backfilled
+ *      records produces no duplicates.
+ *   4. Legacy fields STAY in place. Avatar renderer + PlayerEditor still read
+ *      them. Field removal is a separate ticket (requires consumer migration:
+ *      avatar renderer reads from inventory; editor writes inventory entries).
+ *
+ * Pattern follows v23 cursor walk + idempotence checks.
+ */
+const migrateV24 = (db, transaction) => {
+  log('Upgrading to v24: distinguishingMarks + accessoryInventory defaults + legacy backfill (SPR-041 Phase 3)');
+
+  // Skip on fresh install (no players store yet — v0 → v24 path).
+  if (!db.objectStoreNames.contains(PLAYERS_STORE_NAME)) return;
+
+  const playersStore = transaction.objectStore(PLAYERS_STORE_NAME);
+  const cursor = playersStore.openCursor();
+
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (!c) {
+      log('v24 migration: player schema extension complete');
+      return;
+    }
+    const player = c.value;
+    let changed = false;
+
+    // 1. Default distinguishingMarks
+    if (player.distinguishingMarks === undefined) {
+      player.distinguishingMarks = [];
+      changed = true;
+    }
+
+    // 2. Default accessoryInventory
+    if (!Array.isArray(player.accessoryInventory)) {
+      player.accessoryInventory = [];
+      changed = true;
+    }
+
+    // 3. Backfill legacy headwear → inventory entry (kind=hat)
+    if (player.headwear && typeof player.headwear === 'string' && player.headwear !== 'none') {
+      const subtype = player.headwear;
+      const color = (typeof player.hatColor === 'string' && player.hatColor) || null;
+      // Idempotence: skip if an exact-match entry already exists.
+      const exists = player.accessoryInventory.some(
+        (e) => e && e.kind === 'hat' && e.subtype === subtype && (e.color || null) === color,
+      );
+      if (!exists) {
+        player.accessoryInventory.push({
+          accessoryId: `backfill-hat-${c.primaryKey}-${Date.now()}`,
+          kind: 'hat',
+          subtype,
+          color,
+          note: '',
+          firstSeenAt: Date.now(),
+          lastSeenAt: Date.now(),
+          timesSeen: 1,
+        });
+        changed = true;
+      }
+    }
+
+    // 3b. Backfill legacy eyewear → inventory entry (kind=glasses)
+    if (player.eyewear && typeof player.eyewear === 'string' && player.eyewear !== 'none') {
+      const subtype = player.eyewear;
+      const color = (typeof player.eyewearColor === 'string' && player.eyewearColor) || null;
+      const exists = player.accessoryInventory.some(
+        (e) => e && e.kind === 'glasses' && e.subtype === subtype && (e.color || null) === color,
+      );
+      if (!exists) {
+        player.accessoryInventory.push({
+          accessoryId: `backfill-glasses-${c.primaryKey}-${Date.now()}`,
+          kind: 'glasses',
+          subtype,
+          color,
+          note: '',
+          firstSeenAt: Date.now(),
+          lastSeenAt: Date.now(),
+          timesSeen: 1,
+        });
+        changed = true;
+      }
+    }
+
+    if (changed) c.update(player);
+    c.continue();
+  };
+
+  cursor.onerror = (e) => {
+    logError('v24 player cursor failed:', e.target.error);
+  };
+};
+
 const migrateV21 = (db, transaction) => {
   log('Upgrading to v21: telemetryConsent store + guest seed');
 
@@ -981,4 +1089,8 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // v23: PIO Gate 5 child A — sightingLogs + playerPhotos stores +
   // player schema extensions (additive; PIO-G4-MIG / SPR-034 / WS-160).
   if (oldVersion < 23) migrateV23(db, transaction);
+
+  // v24: SPR-041 Phase 3 — distinguishingMarks default + accessoryInventory
+  // default + backfill from legacy headwear/eyewear (additive, no field removal).
+  if (oldVersion < 24) migrateV24(db, transaction);
 };

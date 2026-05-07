@@ -66,7 +66,7 @@ export const BlindTimerBar = ({
         <div className="flex items-center gap-4">
           <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
             backgroundColor: 'rgba(212,168,71,0.2)',
-            color: GOLD,
+            color: GOLD.base,
           }}>
             Lvl {currentLevelIndex + 1}
           </span>
@@ -144,7 +144,7 @@ export const BlindTimerBar = ({
           className="h-full rounded-full transition-all"
           style={{
             width: `${Math.min(100, Math.max(0, levelProgress * 100))}%`,
-            backgroundColor: GOLD,
+            backgroundColor: GOLD.base,
           }}
         />
       </div>

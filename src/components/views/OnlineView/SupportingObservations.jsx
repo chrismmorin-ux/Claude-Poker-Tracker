@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, R } from './panelTokens';
+import { BORDER, TEXT } from '../../../constants/designTokens';
 
 const STREET_PREFIX = {
   preflop: 'preflop',
@@ -16,9 +16,9 @@ const STREET_PREFIX = {
 };
 
 const TIER_COLORS = {
-  solid: COLOR.green,
-  developing: COLOR.yellow,
-  early: COLOR.orange,
+  solid: '#22c55e',       // green-500 — was COLOR.green
+  developing: '#eab308',  // yellow-500 — was COLOR.yellow
+  early: '#f97316',       // orange-500 — was COLOR.orange
   none: TEXT.faint,
 };
 
@@ -36,11 +36,11 @@ export const SupportingObservations = ({ observations, currentStreet, maxShow = 
   if (matching.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{
-        fontSize: 9, color: TEXT.faint, marginBottom: 4,
-        textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600,
-      }}>
+    <div className="mb-2">
+      <div
+        className="text-[9px] mb-1 uppercase tracking-[0.5px] font-semibold"
+        style={{ color: TEXT.faint }}
+      >
         Supporting Reads
       </div>
 
@@ -48,30 +48,26 @@ export const SupportingObservations = ({ observations, currentStreet, maxShow = 
         const tierColor = TIER_COLORS[obs.tier] || TIER_COLORS.none;
 
         return (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'flex-start', gap: 5,
-            padding: '3px 0 3px 8px',
-            borderLeft: `2px solid ${BORDER.subtle}`,
-            marginBottom: 2,
-          }}>
+          <div
+            key={i}
+            className="flex items-start gap-[5px] py-[3px] pl-2 mb-0.5 border-l-2"
+            style={{ borderLeftColor: BORDER.subtle }}
+          >
             {/* Tier dot */}
-            <div style={{
-              width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-              background: tierColor, marginTop: 3,
-            }} />
+            <div
+              className="w-[5px] h-[5px] rounded-full shrink-0 mt-[3px]"
+              style={{ background: tierColor }}
+            />
 
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               {/* Signal */}
-              <span style={{ fontSize: 10, color: TEXT.secondary, lineHeight: 1.3 }}>
+              <span className="text-[10px] leading-snug" style={{ color: TEXT.secondary }}>
                 {obs.signal}
               </span>
 
               {/* Evidence */}
               {obs.evidence && (
-                <span style={{
-                  fontSize: 8, fontFamily: FONT.mono, color: TEXT.faint,
-                  marginLeft: 4,
-                }}>
+                <span className="text-[8px] font-mono ml-1" style={{ color: TEXT.faint }}>
                   ({obs.evidence})
                 </span>
               )}

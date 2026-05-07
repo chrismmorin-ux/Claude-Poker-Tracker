@@ -6,7 +6,12 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from '../panelTokens';
+import { BORDER, TEXT, GOLD } from '../../../../constants/designTokens';
+
+const GREEN = '#22c55e'; // green-500 — was COLOR.green
+const RED = '#ef4444';   // red-500 — was COLOR.red
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
 
 export const AwarenessPanel = ({ villainProfile }) => {
   if (!villainProfile) return null;
@@ -14,25 +19,27 @@ export const AwarenessPanel = ({ villainProfile }) => {
   if (!awareness && !showdownAnchors?.length && !decisionModelDescription) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Awareness & Calibration</div>
+    <div className="mb-2.5">
+      <div
+        className={SECTION_HEADER_CLASSES}
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        Awareness & Calibration
+      </div>
 
       {/* Decision model description */}
       {decisionModelDescription && (
-        <div style={{
-          fontSize: 10, color: TEXT.muted, fontStyle: 'italic',
-          marginBottom: 6, lineHeight: 1.35,
-        }}>
+        <div
+          className="text-[10px] italic mb-1.5 leading-[1.35]"
+          style={{ color: TEXT.muted }}
+        >
           {decisionModelDescription}
         </div>
       )}
 
       {/* Awareness checkmarks */}
       {awareness && (
-        <div style={{
-          display: 'flex', gap: 12, marginBottom: 8, fontSize: 10,
-          flexWrap: 'wrap',
-        }}>
+        <div className="flex gap-3 mb-2 text-[10px] flex-wrap">
           {[
             { key: 'positionAware', label: 'Position aware' },
             { key: 'boardTextureAware', label: 'Board texture' },
@@ -41,26 +48,28 @@ export const AwarenessPanel = ({ villainProfile }) => {
             const a = awareness[key];
             const detected = a?.detected;
             return (
-              <div key={key} style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '2px 6px', borderRadius: R.sm,
-                background: detected ? 'rgba(34,197,94,0.08)' : 'rgba(75,85,99,0.1)',
-                border: `1px solid ${detected ? 'rgba(34,197,94,0.2)' : 'rgba(75,85,99,0.15)'}`,
-              }}>
-                <span style={{
-                  fontSize: 11, color: detected ? COLOR.green : TEXT.faint,
-                  fontWeight: 700,
-                }}>
+              <div
+                key={key}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-[3px]"
+                style={{
+                  background: detected ? 'rgba(34,197,94,0.08)' : 'rgba(75,85,99,0.1)',
+                  border: `1px solid ${detected ? 'rgba(34,197,94,0.2)' : 'rgba(75,85,99,0.15)'}`,
+                }}
+              >
+                <span
+                  className="text-[11px] font-bold"
+                  style={{ color: detected ? GREEN : TEXT.faint }}
+                >
                   {detected ? '\u2713' : '\u2717'}
                 </span>
-                <span style={{
-                  color: detected ? TEXT.secondary : TEXT.faint,
-                  fontSize: 9,
-                }}>
+                <span
+                  className="text-[9px]"
+                  style={{ color: detected ? TEXT.secondary : TEXT.faint }}
+                >
                   {label}
                 </span>
                 {a?.detail && (
-                  <span style={{ fontSize: 7, color: TEXT.faint, fontFamily: FONT.mono }}>
+                  <span className="text-[7px] font-mono" style={{ color: TEXT.faint }}>
                     {a.detail}
                   </span>
                 )}
@@ -73,35 +82,36 @@ export const AwarenessPanel = ({ villainProfile }) => {
       {/* Showdown anchors */}
       {showdownAnchors?.length > 0 && (
         <div>
-          <div style={{
-            fontSize: 8, color: TEXT.faint, textTransform: 'uppercase',
-            letterSpacing: 0.5, marginBottom: 3, fontWeight: 600,
-          }}>
+          <div
+            className="text-[8px] uppercase tracking-[0.5px] mb-[3px] font-semibold"
+            style={{ color: TEXT.faint }}
+          >
             Showdowns
           </div>
           {showdownAnchors.slice(0, 5).map((s, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 10, color: TEXT.muted, marginBottom: 2,
-            }}>
-              <span style={{ color: GOLD.base, fontWeight: 600 }}>
+            <div
+              key={i}
+              className="flex items-center gap-1 text-[10px] mb-0.5"
+              style={{ color: TEXT.muted }}
+            >
+              <span className="font-semibold" style={{ color: GOLD.base }}>
                 {s.handDescription}
               </span>
               {s.position && (
-                <span style={{ fontSize: 8, color: TEXT.faint }}>
+                <span className="text-[8px]" style={{ color: TEXT.faint }}>
                   {s.position}
                 </span>
               )}
               {s.line && (
-                <span style={{ fontSize: 8, color: TEXT.faint }}>
+                <span className="text-[8px]" style={{ color: TEXT.faint }}>
                   {s.line}
                 </span>
               )}
               {s.outcome && (
-                <span style={{
-                  fontSize: 8, fontWeight: 600,
-                  color: s.outcome === 'won' ? COLOR.green : COLOR.red,
-                }}>
+                <span
+                  className="text-[8px] font-semibold"
+                  style={{ color: s.outcome === 'won' ? GREEN : RED }}
+                >
                   {s.outcome}
                 </span>
               )}
@@ -113,9 +123,3 @@ export const AwarenessPanel = ({ villainProfile }) => {
   );
 };
 
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
-};

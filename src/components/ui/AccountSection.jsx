@@ -192,7 +192,7 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
 
     return (
       <div className="bg-gray-800 rounded-lg p-5">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD }}>
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD.base }}>
           <User className="w-5 h-5" />
           Account
         </h3>
@@ -236,7 +236,7 @@ export const AccountSection = ({ onNavigateToLogin, onNavigateToSignup, onShowTo
   // AUTHENTICATED VIEW: Show profile and account management
   return (
     <div className="bg-gray-800 rounded-lg p-5">
-      <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD }}>
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: GOLD.base }}>
         <User className="w-5 h-5" />
         Account
       </h3>

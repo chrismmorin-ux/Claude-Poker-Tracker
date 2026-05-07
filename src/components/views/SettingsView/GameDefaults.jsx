@@ -4,7 +4,7 @@ import { GOLD } from '../../../constants/designTokens';
 
 export const GameDefaults = ({ settings, updateSetting, allVenues, allGameTypes, allGameTypeKeys }) => (
   <div className="bg-gray-800 rounded-lg p-5">
-    <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>Game Defaults</h3>
+    <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Game Defaults</h3>
 
     {/* Default Venue */}
     <div className="mb-4">

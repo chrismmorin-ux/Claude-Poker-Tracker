@@ -34,6 +34,12 @@ export const SCREEN = {
   // src/utils/skillAssessment/CLAUDE.md source-util-policy whitelist (read-allowed
   // from HandReplayView via Drill-this affordance + future SelfCoachView Curriculum).
   LESSON_DETAIL: 'lessonDetail',
+  // SCF G5 Phase-5a (WS-159 / SPR-042, 2026-05-06) — Self-Coach curriculum surface.
+  // 2-tab IA (Curriculum / Settings); consumes tierConceptMap + conceptMastery +
+  // composite + learningStateDescriber + lessonRegistry. Per
+  // docs/design/surfaces/self-coach-view.md +
+  // docs/design/audits/2026-05-06-entry-self-coach-view.md (verdict GREEN).
+  SELF_COACH: 'selfCoach',
   // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface.
   // Sighting history + per-attribute stability descriptors + manual-add-sighting modal.
   // Row-tap from PlayersView opens this (was PlayerEditor pre-WS-163).

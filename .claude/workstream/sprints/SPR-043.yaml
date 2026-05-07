@@ -1,0 +1,85 @@
+id: "SPR-043"
+title: "Sidebar Recurrence boundary hardening — SW→side-panel validateMessage parity (WS-105)"
+status: completed
+completed_at: "2026-05-07T02:58:15Z"
+goal: |
+  The service-worker → side-panel message boundary rejects malformed payloads,
+  closing one of five sidebar-recurrence P1s sitting since 2026-05-01.
+
+  Engineering re-anchor after a 3-sprint A/D streak (SPR-040 D / SPR-041 A /
+  SPR-042 D). The Sidebar Recurrence Program exists because this surface is
+  the deepest-failure-history area of the repo (per .claude/failures/
+  SIDEBAR_REBUILD_PROGRAM.md and the SR/SHC programs in memory). Five P1s
+  aging in this area is exactly the recurrence pattern the program is meant
+  to prevent.
+
+  WS-105 anchors cleanly: no blocked_by, no decision_flags, accept criteria
+  pinpoints service-worker.js:267–283, mirrors the validation pattern
+  already in use on the capture + app-bridge ports.
+
+items:
+  - id: "WS-105"
+    title: "SW→side-panel port missing validateMessage"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-05-07T02:58:15Z"
+    progress_notes: |
+      Single-file SW handler change (~5 LoC) + 2 schema validators
+      (~4 LoC) + 3 new tests. Actual effort ~10 min (well under typed
+      M=1.5 sessions; matches "likely S actual" prediction).
+
+      Implementation:
+        - service-worker.js:286-291 — validateMessage() gate added at
+          side-panel port handler entry, mirroring capture (line 155-159)
+          and app-bridge (line 313-317) patterns. Error report scope
+          { port: 'side-panel' } parallels existing convention.
+        - message-schemas.js — added request_full_state + reload_ignition_tabs
+          validators so legitimate side-panel→SW messages pass the gate
+          (without these, validateMessage would return 'unknown message
+          type' and drop everything from side-panel).
+        - message-schemas.test.js — new "WS-105" describe block: validates
+          both message types accept; asserts unknown side-panel-shaped
+          messages get rejected (proving the gate has bite).
+
+      Verification:
+        - npx vitest run shared/__tests__/message-schemas.test.js → 16/16
+          pass (was 13; +3 new)
+        - npx vitest run (full extension) → 67 files / 2254 tests pass
+          (was 2251 baseline per SPR-022 dist-test history; +3 net,
+          0 regressions)
+        - npm run build → clean
+
+      Cluster siblings remaining (sidebar-recurrence boundary cluster):
+        WS-101 (replay corpus), WS-102 (betweenHandsFsm debounce),
+        WS-103 (freeze live_context at SW), WS-104 (microtask timer leak).
+        WS-103 is the most natural next sibling — same file
+        (service-worker.js), adjacent hardening pass.
+
+program_focus: engineering
+program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (1 of 5; siblings WS-101/102/103/104 remain)"
+composed_by: auto
+created_at: "2026-05-07T02:48:43Z"
+approved_at: "2026-05-07T02:48:43Z"
+
+composition_notes: |
+  Anchor selection rationale:
+    - 5 sidebar-recurrence P1=22 items aging since 2026-05-01 (5 days)
+    - Engineering program (watch tier) under-served: only 1 direct fix
+      sprint in last 13 (SPR-022 P0 break, SPR-038/039 token attack)
+    - WS-105 has crispest scope (single SW message-port handler + test)
+    - Co-located siblings (WS-101..104) chain naturally for follow-up sprints
+
+  A/D-line check:
+    - A-line WS-164 soft-blocked on Table-Build G5 (separate unticketed
+      workstream); natural pause
+    - D-line WS-146 catalog continuation viable but deferred for engineering
+      rebalancing per founder approval
+
+  Index drift noted (NOT acted on this sprint):
+    queue-index.yaml shows WS-078/149/159/166 as backlog; per-file YAML
+    correctly marks them done. No cwos-reconcile.js in repo. Sprint
+    composed from authoritative per-file YAML scan.
+
+  Anti-goal cross-check: SKIPPED (kit/scripts/cwos-constitutional-audit.js
+  not present in repo; graceful degradation per CLAUDE.md).

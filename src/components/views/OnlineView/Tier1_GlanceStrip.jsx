@@ -6,12 +6,17 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, ACTION, EV, COLOR, GOLD, R, CONF_COLOR } from './panelTokens';
+import { SURFACE, BORDER, TEXT, GOLD, ACTION_PILL_COLORS, EV_COLORS } from '../../../constants/designTokens';
 import { MiniCard } from './MiniCard';
+
+const GREEN = '#22c55e';   // green-500 — was COLOR.green
+const YELLOW = '#eab308';  // yellow-500 — was COLOR.yellow
+const CYAN = '#22d3ee';    // cyan-400 — was COLOR.cyan
+const PURPLE = '#a78bfa';  // violet-400 — was COLOR.purple
 
 // ─── Action accent gradient ─────────────────────────────────────────────────
 const accentGradient = (action) => {
-  const a = ACTION[action] || ACTION.check;
+  const a = ACTION_PILL_COLORS[action] || ACTION_PILL_COLORS.check;
   return `linear-gradient(90deg, ${a.text}, ${a.bg})`;
 };
 
@@ -24,10 +29,14 @@ const formatEV = (ev) => {
 
 // ─── Confidence tier → dot color ────────────────────────────────────────────
 const confDotColor = (tier) => {
-  if (tier === 'high' || tier === 'confirmed') return COLOR.green;
-  if (tier === 'developing' || tier === 'supported') return COLOR.yellow;
+  if (tier === 'high' || tier === 'confirmed') return GREEN;
+  if (tier === 'developing' || tier === 'supported') return YELLOW;
   return TEXT.faint;
 };
+
+// ─── Shared classes ─────────────────────────────────────────────────────────
+const PILL_CLASSES = "font-mono inline-flex items-center gap-[3px] text-[9px] font-semibold px-1.5 py-0.5 rounded-[10px] tracking-[0.3px] leading-none whitespace-nowrap";
+const GROUP_LABEL_CLASSES = "text-[8px] font-semibold uppercase tracking-[0.8px] self-center mr-0.5";
 
 export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
   const topRec = advice?.recommendations?.[0];
@@ -51,107 +60,92 @@ export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
   const pot = advice?.potSize || liveHandState?.pot;
 
   return (
-    <div style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 20,
-      background: SURFACE.inset,
-      borderBottom: `1px solid ${BORDER.default}`,
-      flexShrink: 0,
-    }}>
+    <div
+      className="sticky top-0 z-20 border-b shrink-0"
+      style={{
+        background: SURFACE.inset,
+        borderBottomColor: BORDER.default,
+      }}
+    >
       {/* Animated accent bar */}
-      <div style={{
-        height: 3,
-        background: accentGradient(action),
-        animation: 'panelAccentPulse 3s ease-in-out infinite',
-      }} />
+      <div
+        className="h-[3px]"
+        style={{
+          background: accentGradient(action),
+          animation: 'panelAccentPulse 3s ease-in-out infinite',
+        }}
+      />
 
       {/* Main row: action badge + EV + meta pills */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '10px 14px',
-        gap: 10,
-      }}>
+      <div className="flex items-center px-3.5 py-2.5 gap-2.5">
         {/* Action badge */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 5,
-          padding: '5px 12px',
-          borderRadius: R.md,
-          fontFamily: FONT.mono,
-          fontWeight: 700,
-          letterSpacing: 0.5,
-          textTransform: 'uppercase',
-          fontSize: 15,
-          lineHeight: 1,
-          whiteSpace: 'nowrap',
-          background: ACTION[action]?.bg || ACTION.check.bg,
-          color: ACTION[action]?.text || ACTION.check.text,
-        }}>
+        <div
+          className="font-mono flex items-baseline gap-[5px] px-3 py-[5px] rounded-[5px] font-bold tracking-[0.5px] uppercase text-[15px] leading-none whitespace-nowrap"
+          style={{
+            background: ACTION_PILL_COLORS[action]?.bg || ACTION_PILL_COLORS.check.bg,
+            color: ACTION_PILL_COLORS[action]?.text || ACTION_PILL_COLORS.check.text,
+          }}
+        >
           {action}
           {sizingLabel && (
-            <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.8 }}>
+            <span className="text-[11px] font-medium opacity-80">
               {sizingLabel}
             </span>
           )}
         </div>
 
         {/* EV display */}
-        <div style={{
-          fontFamily: FONT.mono,
-          fontWeight: 700,
-          fontSize: 18,
-          letterSpacing: -0.5,
-          lineHeight: 1,
-          color: evInfo.positive ? EV.pos : EV.neg,
-        }}>
+        <div
+          className="font-mono font-bold text-lg tracking-[-0.5px] leading-none"
+          style={{
+            color: evInfo.positive ? EV_COLORS['+EV'].text : EV_COLORS['-EV'].text,
+          }}
+        >
           {evInfo.text}
-          <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.6, marginLeft: 1 }}>bb</span>
+          <span className="text-[11px] font-normal opacity-60 ml-px">bb</span>
         </div>
 
         {/* Meta pills (right side) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: 3,
-          marginLeft: 'auto',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="flex flex-col items-end gap-[3px] ml-auto shrink-0">
+          <div className="flex items-center gap-1">
             {depth != null && depth > 1 && (
-              <span style={{
-                ...pillStyle,
-                background: 'rgba(162, 139, 250, 0.15)',
-                color: COLOR.purple,
-                border: '1px solid rgba(162, 139, 250, 0.25)',
-              }}>D{depth}</span>
+              <span
+                className={PILL_CLASSES}
+                style={{
+                  background: 'rgba(162, 139, 250, 0.15)',
+                  color: PURPLE,
+                  border: '1px solid rgba(162, 139, 250, 0.25)',
+                }}
+              >
+                D{depth}
+              </span>
             )}
             {spr != null && (
-              <span style={{
-                ...pillStyle,
-                background: 'rgba(34, 211, 238, 0.1)',
-                color: COLOR.cyan,
-                border: '1px solid rgba(34, 211, 238, 0.2)',
-              }}>SPR {spr.toFixed(1)}</span>
+              <span
+                className={PILL_CLASSES}
+                style={{
+                  background: 'rgba(34, 211, 238, 0.1)',
+                  color: CYAN,
+                  border: '1px solid rgba(34, 211, 238, 0.2)',
+                }}
+              >
+                SPR {spr.toFixed(1)}
+              </span>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-              background: confDotColor(tier),
-              boxShadow: tier === 'high' ? `0 0 4px rgba(34,197,94,0.4)` : 'none',
-            }} />
+          <div className="flex items-center gap-1">
+            <div
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{
+                background: confDotColor(tier),
+                boxShadow: tier === 'high' ? `0 0 4px rgba(34,197,94,0.4)` : 'none',
+              }}
+            />
             {sampleSize != null && (
-              <span style={{
-                fontFamily: FONT.mono,
-                fontSize: 8,
-                color: TEXT.faint,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-              }}>n={sampleSize}</span>
+              <span
+                className="font-mono text-[8px] uppercase tracking-[0.5px]"
+                style={{ color: TEXT.faint }}
+              >n={sampleSize}</span>
             )}
           </div>
         </div>
@@ -159,17 +153,12 @@ export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
 
       {/* Board + hero cards + pot */}
       {(boardCards.length > 0 || heroCards.length > 0) && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '0 14px 8px',
-        }}>
+        <div className="flex items-center gap-2 px-3.5 pb-2">
           {/* Board */}
           {boardCards.length > 0 && (
             <>
-              <span style={groupLabel}>Board</span>
-              <div style={{ display: 'flex', gap: 3 }}>
+              <span className={GROUP_LABEL_CLASSES} style={{ color: TEXT.faint }}>Board</span>
+              <div className="flex gap-[3px]">
                 {boardCards.map((c, i) => <MiniCard key={i} card={c} />)}
               </div>
             </>
@@ -177,14 +166,14 @@ export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
 
           {/* Separator */}
           {boardCards.length > 0 && heroCards.length > 0 && (
-            <div style={{ width: 1, height: 20, background: BORDER.default }} />
+            <div className="w-px h-5" style={{ background: BORDER.default }} />
           )}
 
           {/* Hero */}
           {heroCards.length > 0 && (
             <>
-              <span style={groupLabel}>Hero</span>
-              <div style={{ display: 'flex', gap: 3 }}>
+              <span className={GROUP_LABEL_CLASSES} style={{ color: TEXT.faint }}>Hero</span>
+              <div className="flex gap-[3px]">
                 {heroCards.map((c, i) => <MiniCard key={i} card={c} isHero />)}
               </div>
             </>
@@ -192,13 +181,10 @@ export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
 
           {/* Pot */}
           {pot != null && (
-            <div style={{
-              marginLeft: 'auto',
-              fontFamily: FONT.mono,
-              fontSize: 11,
-              fontWeight: 600,
-              color: GOLD.base,
-            }}>
+            <div
+              className="font-mono ml-auto text-[11px] font-semibold"
+              style={{ color: GOLD.base }}
+            >
               ${typeof pot === 'number' ? pot.toFixed(0) : pot}
             </div>
           )}
@@ -206,29 +192,4 @@ export const Tier1_GlanceStrip = ({ advice, liveHandState }) => {
       )}
     </div>
   );
-};
-
-// ─── Shared styles ──────────────────────────────────────────────────────────
-const pillStyle = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 3,
-  fontFamily: FONT.mono,
-  fontSize: 9,
-  fontWeight: 600,
-  padding: '2px 6px',
-  borderRadius: 10,
-  letterSpacing: 0.3,
-  lineHeight: 1,
-  whiteSpace: 'nowrap',
-};
-
-const groupLabel = {
-  fontSize: 8,
-  fontWeight: 600,
-  color: TEXT.faint,
-  textTransform: 'uppercase',
-  letterSpacing: 0.8,
-  alignSelf: 'center',
-  marginRight: 2,
 };

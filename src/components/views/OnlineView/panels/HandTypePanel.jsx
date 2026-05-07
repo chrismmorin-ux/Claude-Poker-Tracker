@@ -8,14 +8,19 @@
 
 import React from 'react';
 import { HandTypeBreakdown } from '../../../ui/HandTypeBreakdown';
-import { BORDER, TEXT } from '../panelTokens';
+import { BORDER, TEXT } from '../../../../constants/designTokens';
 
 export const HandTypePanel = ({ segmentation, bucketEquities }) => {
   if (!segmentation?.handTypes) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Villain Range Composition</div>
+    <div className="mb-2.5">
+      <div
+        className="text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b"
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        Villain Range Composition
+      </div>
       <HandTypeBreakdown
         handTypes={segmentation.handTypes}
         totalCombos={segmentation.totalCombos || 0}
@@ -24,11 +29,4 @@ export const HandTypePanel = ({ segmentation, bucketEquities }) => {
       />
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

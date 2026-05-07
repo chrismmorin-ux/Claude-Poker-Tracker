@@ -2,10 +2,23 @@ id: "WS-105"
 title: "SW→side-panel port missing validateMessage"
 legacy_id: "RT-80"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T02:48:43Z"
+started_at: "2026-05-07T02:48:43Z"
+completed_at: "2026-05-07T02:58:15Z"
+status_note: |
+  RESOLVED 2026-05-07 SPR-043. Side-panel port now mirrors capture +
+  app-bridge port pattern: validateMessage() gate at handler entry,
+  errors.report('validation', ...) on reject, drop before dispatch.
+  Two new schema validators added (request_full_state, reload_ignition_tabs)
+  so legitimate side-panel→SW messages still pass. 3 new tests
+  (message-schemas.test.js WS-105 block); full extension suite 2254/2254
+  pass (was 2251 baseline pre-SPR-022; +3 net); npm run build clean.
+  Files: ignition-poker-tracker/background/service-worker.js (+5 lines),
+  ignition-poker-tracker/shared/message-schemas.js (+4 lines),
+  ignition-poker-tracker/shared/__tests__/message-schemas.test.js
+  (+18 lines).
 priority_score: 22.0
 priority_label: "P1"
 category: "sidebar-recurrence"
@@ -20,7 +33,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-043"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

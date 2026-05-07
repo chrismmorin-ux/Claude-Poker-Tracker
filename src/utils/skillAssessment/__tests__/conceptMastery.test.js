@@ -106,7 +106,7 @@ describe('conceptMastery — rule-anchored-specific kind', () => {
     mockHeroLeaks.records = [
       {
         playerId: 'user1',
-        situationKey: 'flop:dry:LATE:def:ip:bet:cbet',
+        situationKey: 'flop:dry:LATE:def:ip:bet:vsBet:pfc',
         relatedConceptId: 'cbet-defense-cluster',
         severity: 0.6,
         sampleSize: 42,
@@ -124,7 +124,7 @@ describe('conceptMastery — rule-anchored-specific kind', () => {
     mockHeroLeaks.records = [
       {
         playerId: 'user1',
-        situationKey: 'flop:wet:BUTTON:def:ip:bet:cbet', // → ip-cbet-defense-wet-BUTTON
+        situationKey: 'flop:wet:BUTTON:def:ip:bet:vsBet:pfc', // -> ip-cbet-defense-wet-BUTTON
         relatedConceptId: 'cbet-defense-cluster',
         severity: 0.5,
         sampleSize: 35,
@@ -141,7 +141,7 @@ describe('conceptMastery — rule-anchored-umbrella kind', () => {
     mockHeroLeaks.records = [
       {
         playerId: 'user1',
-        situationKey: 'flop:dry:LATE:def:ip:bet:cbet',
+        situationKey: 'flop:dry:LATE:def:ip:bet:vsBet:pfc',
         relatedConceptId: 'cbet-defense-cluster',
         severity: 0.4,
         sampleSize: 30,
@@ -149,7 +149,7 @@ describe('conceptMastery — rule-anchored-umbrella kind', () => {
       },
       {
         playerId: 'user1',
-        situationKey: 'flop:wet:BUTTON:def:ip:bet:cbet',
+        situationKey: 'flop:wet:BUTTON:def:ip:bet:vsBet:pfc',
         relatedConceptId: 'cbet-defense-cluster',
         severity: 0.7,
         sampleSize: 35,
@@ -168,7 +168,7 @@ describe('conceptMastery — rule-anchored-umbrella kind', () => {
     mockHeroLeaks.records = [
       {
         playerId: 'user1',
-        situationKey: 'preflop:none:BIG_BLIND:def:oop:raise:vsopen',
+        situationKey: 'preflop:none:BIG_BLIND:def:oop:raise:vsopen:na',
         relatedConceptId: 'bb-defense-cluster',
         severity: 0.55,
         sampleSize: 80,
@@ -191,20 +191,30 @@ describe('conceptMastery — rule-anchored-umbrella kind', () => {
 describe('conceptMastery — listAllConceptMastery', () => {
   it('returns one record per registered concept', async () => {
     const all = await listAllConceptMastery('user1');
-    // 18 concepts in the registry: 5 general-skill + 2 umbrellas + 11 sub-concepts.
-    expect(all.length).toBe(18);
+    // Post-SPR-046: 40 concepts = 5 general-skill + 6 umbrellas + 29 sub-concepts.
+    // (pre-SPR-046 was 32 = 5 + 4 + 23; added pf-3bet-defense (4 sub) +
+    // oop-3bet-defense (2 sub) umbrellas = +8 net concepts)
+    expect(all.length).toBe(40);
     const ids = all.map((r) => r.conceptId);
     expect(ids).toContain('pot-odds');
     expect(ids).toContain('cbet-defense-cluster');
     expect(ids).toContain('ip-cbet-defense-dry-LATE');
     expect(ids).toContain('bb-defense-cluster');
+    expect(ids).toContain('oop-cbet-defense-cluster');
+    expect(ids).toContain('flop-vs-donk-defense-cluster');
+    expect(ids).toContain('oop-cbet-defense-dry-SB');
+    expect(ids).toContain('flop-vs-donk-defense-dry-LATE');
+    expect(ids).toContain('pf-3bet-defense-cluster');
+    expect(ids).toContain('pf-3bet-defense-EARLY');
+    expect(ids).toContain('oop-3bet-defense-cluster');
+    expect(ids).toContain('oop-3bet-defense-BB');
   });
 
   it('isolates per-user data', async () => {
     mockHeroLeaks.records = [
       {
         playerId: 'user2',
-        situationKey: 'flop:dry:LATE:def:ip:bet:cbet',
+        situationKey: 'flop:dry:LATE:def:ip:bet:vsBet:pfc',
         relatedConceptId: 'cbet-defense-cluster',
         severity: 0.5,
         sampleSize: 30,

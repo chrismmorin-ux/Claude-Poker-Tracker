@@ -2,10 +2,11 @@ id: "WS-104"
 title: "Microtask-deferred timer registration leak"
 legacy_id: "RT-79"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T03:35:00Z"
+completed_at: "2026-05-07T08:25:00Z"
+status_note: "RESOLVED 2026-05-07 SPR-045. Hoisted timer bodies into named closures (_staleContextTick + _adviceAgeBadgeTick) at original sites; registered both synchronously (coordinator.scheduleTimer) right after FSM registrations. queueMicrotask wrappers gone — registry contains both keys immediately after IIFE. z2-decision regression guard updated to match the named-closure pattern. 2263/2263 extension suite (matches SPR-044 baseline; 0 regressions); build clean."
 priority_score: 22.0
 priority_label: "P1"
 category: "sidebar-recurrence"
@@ -21,7 +22,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-045"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

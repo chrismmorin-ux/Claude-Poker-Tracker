@@ -190,4 +190,52 @@ describe('IdentityAvatar', () => {
       .map((l) => `${l.getAttribute('data-layer')}:${l.getAttribute('data-feature-id')}`);
     expect(layers1).toEqual(layers2);
   });
+
+  describe('distinguishingMarks pass-through (SPR-041 Phase 4)', () => {
+    it('passes player.distinguishingMarks to AvatarRenderer', () => {
+      const player = {
+        name: 'Tina',
+        sex: 'female',
+        distinguishingMarks: [
+          { type: 'tattoo', location: 'arm', description: 'sleeve' },
+          { type: 'bindi', location: 'face', description: '' },
+        ],
+      };
+      const { container } = render(<IdentityAvatar player={player} />);
+      const group = container.querySelector('g[data-layer="distinguishing-marks"]');
+      expect(group).not.toBeNull();
+      expect(group.querySelector('g[data-mark-type="tattoo"]')).not.toBeNull();
+      expect(group.querySelector('g[data-mark-type="bindi"]')).not.toBeNull();
+    });
+
+    it('omits the marks group when player has no distinguishingMarks', () => {
+      const player = { name: 'Una', sex: 'female' };
+      const { container } = render(<IdentityAvatar player={player} />);
+      expect(container.querySelector('g[data-layer="distinguishing-marks"]')).toBeNull();
+    });
+
+    it('omits the marks group when player.distinguishingMarks is empty array', () => {
+      const player = { name: 'Vera', sex: 'female', distinguishingMarks: [] };
+      const { container } = render(<IdentityAvatar player={player} />);
+      expect(container.querySelector('g[data-layer="distinguishing-marks"]')).toBeNull();
+    });
+
+    it('passes through marks to photoOverlay variant too', () => {
+      const player = {
+        name: 'Wendy',
+        sex: 'female',
+        distinguishingMarks: [{ type: 'scar', location: 'face' }],
+      };
+      const { container } = render(
+        <IdentityAvatar
+          player={player}
+          photoOverlay
+          photoUrl="data:image/png;base64,X"
+        />,
+      );
+      const group = container.querySelector('g[data-layer="distinguishing-marks"]');
+      expect(group).not.toBeNull();
+      expect(group.querySelector('g[data-mark-type="scar"]')).not.toBeNull();
+    });
+  });
 });

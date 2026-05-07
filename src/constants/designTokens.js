@@ -80,6 +80,7 @@ export const NAV_COLORS = {
   extension:  { base: '#059669', hover: '#047857' },  // emerald-600/700
   online:     { base: '#0284c7', hover: '#0369a1' },  // sky-600/700
   printableRefresher: { base: '#c05621', hover: '#9c4318' },  // burnt-orange (math card accent)
+  selfCoach: { base: '#7c3aed', hover: '#6d28d9' },  // violet-600/700 (study/coach distinct from history-purple)
   settings:   { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
 };
 
@@ -158,10 +159,90 @@ export const TOURNAMENT_M_RATIO = {
 };
 
 // =============================================================================
-// GOLD ACCENT — section headers, highlights
+// SURFACES — background tier hierarchy (consolidated from panelTokens 2026-05-05 SPR-038/WS-167)
 // =============================================================================
 
-export const GOLD = '#d4a847';
+export const SURFACE = {
+  body:     '#1a1a2e',
+  card:     '#16213e',
+  inset:    '#0d1117',
+  elevated: '#1e2642',
+  glass:    'rgba(22, 33, 62, 0.85)',
+};
+
+// =============================================================================
+// BORDERS — divider weights (consolidated from panelTokens 2026-05-05 SPR-038/WS-167)
+// =============================================================================
+
+export const BORDER = {
+  default: '#2a2a4a',
+  subtle:  '#374151',
+};
+
+// =============================================================================
+// TEXT — body text color tiers (consolidated from panelTokens 2026-05-05 SPR-038/WS-167)
+// =============================================================================
+
+export const TEXT = {
+  primary:   '#e0e0e0',
+  secondary: '#9ca3af',
+  muted:     '#6b7280',
+  faint:     '#4b5563',
+};
+
+// =============================================================================
+// GOLD ACCENT — section headers, highlights
+// (RECONCILED 2026-05-05 SPR-038/WS-167: was scalar; now object form to merge with
+// panelTokens.GOLD shape. Consumers using `color: GOLD` updated to `GOLD.base`.)
+// =============================================================================
+
+export const GOLD = {
+  base:   '#d4a847',
+  glow:   'rgba(212, 168, 71, 0.15)',
+  dim:    '#b8922e',
+  bright: '#e8c462',
+};
+
+// =============================================================================
+// ACTION PILL COLORS — panel-pill bg+text (consolidated from panelTokens.ACTION
+// 2026-05-05 SPR-038/WS-167; renamed from ACTION to disambiguate from
+// ACTION_COLORS button-gradient palette)
+// =============================================================================
+
+export const ACTION_PILL_COLORS = {
+  fold:  { bg: '#7f1d1d', text: '#fca5a5' },
+  check: { bg: '#1e3a5f', text: '#93c5fd' },
+  call:  { bg: '#1e3a8a', text: '#93c5fd' },
+  bet:   { bg: '#14532d', text: '#86efac' },
+  raise: { bg: '#7c2d12', text: '#fdba74' },
+};
+
+// =============================================================================
+// BUCKET COLORS — hand-strength bucket palette (consolidated from panelTokens.BUCKET
+// 2026-05-05 SPR-038/WS-167; renamed from BUCKET for naming consistency)
+// =============================================================================
+
+export const BUCKET_COLORS = {
+  nuts:     '#ef4444',
+  strong:   '#f97316',
+  marginal: '#eab308',
+  draw:     '#22d3ee',
+  air:      '#6b7280',
+};
+
+// =============================================================================
+// CLAIM CONFIDENCE COLORS — statistical-confidence-tier palette (consolidated from
+// panelTokens.CONF_COLOR 2026-05-05 SPR-038/WS-167; renamed CONF_COLOR →
+// CLAIM_CONFIDENCE_COLOR to disambiguate from QUALITY_CONFIG which is a different
+// concept — sample-size data quality, not statistical claim confidence)
+// =============================================================================
+
+export const CLAIM_CONFIDENCE_COLOR = {
+  high:       '#22c55e',  // green
+  developing: '#eab308',  // yellow
+  low:        '#f97316',  // orange
+  none:       '#4b5563',  // gray (TEXT.faint)
+};
 
 // =============================================================================
 // DATA QUALITY — tier classification and display config

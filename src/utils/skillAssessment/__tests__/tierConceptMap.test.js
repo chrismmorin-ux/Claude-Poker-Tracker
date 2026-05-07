@@ -148,14 +148,22 @@ describe('tierConceptMap — getters', () => {
     const umbrellas = getAllUmbrellaIds();
     expect(umbrellas).toContain('cbet-defense-cluster');
     expect(umbrellas).toContain('bb-defense-cluster');
+    expect(umbrellas).toContain('oop-cbet-defense-cluster');
+    expect(umbrellas).toContain('flop-vs-donk-defense-cluster');
     expect(umbrellas).not.toContain('pot-odds');
     expect(umbrellas).not.toContain('ip-cbet-defense-dry-LATE');
   });
 
-  it('resolveSituationKeyToConcept maps known keys + returns null otherwise', () => {
-    expect(resolveSituationKeyToConcept('flop:dry:LATE:def:ip:bet:cbet')).toBe('ip-cbet-defense-dry-LATE');
-    expect(resolveSituationKeyToConcept('flop:wet:BUTTON:def:ip:bet:cbet')).toBe('ip-cbet-defense-wet-BUTTON');
-    expect(resolveSituationKeyToConcept('preflop:none:BIG_BLIND:def:oop:raise:vsopen')).toBeNull();
+  it('resolveSituationKeyToConcept maps known keys + returns null otherwise (8-axis post-SPR-040)', () => {
+    expect(resolveSituationKeyToConcept('flop:dry:LATE:def:ip:bet:vsBet:pfc')).toBe('ip-cbet-defense-dry-LATE');
+    expect(resolveSituationKeyToConcept('flop:wet:BUTTON:def:ip:bet:vsBet:pfc')).toBe('ip-cbet-defense-wet-BUTTON');
+    expect(resolveSituationKeyToConcept('flop:dry:SMALL_BLIND:def:oop:bet:vsBet:pfc')).toBe('oop-cbet-defense-dry-SB');
+    expect(resolveSituationKeyToConcept('flop:wet:BIG_BLIND:def:oop:bet:vsBet:pfc')).toBe('oop-cbet-defense-wet-BB');
+    expect(resolveSituationKeyToConcept('flop:medium:LATE:def:ip:bet:vsBet:pfa')).toBe('flop-vs-donk-defense-medium-LATE');
+    expect(resolveSituationKeyToConcept('flop:dry:BUTTON:def:ip:bet:vsBet:pfa')).toBe('flop-vs-donk-defense-dry-BUTTON');
+    expect(resolveSituationKeyToConcept('preflop:none:BIG_BLIND:def:oop:raise:vsopen:na')).toBeNull();
     expect(resolveSituationKeyToConcept('garbage:key:format')).toBeNull();
+    // Pre-SPR-040 7-axis keys no longer match (migration completeness)
+    expect(resolveSituationKeyToConcept('flop:dry:LATE:def:ip:bet:cbet')).toBeNull();
   });
 });

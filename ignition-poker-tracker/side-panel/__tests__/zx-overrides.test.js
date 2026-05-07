@@ -57,10 +57,27 @@ describe('SR-6.15 Zx §X.1 — betweenHands FSM end-to-end (coordinator)', () =>
   });
 
   it('COMPLETE state dispatches active (banner mounts between hands)', () => {
+    // WS-102 debounce: 'active' is reached on the SECOND consecutive
+    // betweenHandsOrIdle=true push. The first parks in pendingActive
+    // so a transient malformed payload can't flash the banner.
     const coord = createCoordinator();
     coord.registerFsm(betweenHandsFsm);
     coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
+    expect(coord.getPanelState('betweenHands')).toBe('pendingActive');
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
     expect(coord.getPanelState('betweenHands')).toBe('active');
+  });
+
+  it('WS-102 transient malformed payload caught in pendingActive (banner never shows)', () => {
+    // Owner verification path: a single bad payload followed immediately
+    // by a corrected one leaves us inactive — the banner-visible states
+    // ('active' and 'modeAExpired') are never entered.
+    const coord = createCoordinator();
+    coord.registerFsm(betweenHandsFsm);
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
+    expect(coord.getPanelState('betweenHands')).toBe('pendingActive');
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: false });
+    expect(coord.getPanelState('betweenHands')).toBe('inactive');
   });
 
   it('PREFLOP state keeps FSM inactive (no mid-hand banner)', () => {
@@ -74,6 +91,7 @@ describe('SR-6.15 Zx §X.1 — betweenHands FSM end-to-end (coordinator)', () =>
     const coord = createCoordinator();
     coord.registerFsm(betweenHandsFsm);
     coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
     expect(coord.getPanelState('betweenHands')).toBe('active');
     coord.dispatch('betweenHands', 'adviceArrived');
     expect(coord.getPanelState('betweenHands')).toBe('inactive');
@@ -83,6 +101,7 @@ describe('SR-6.15 Zx §X.1 — betweenHands FSM end-to-end (coordinator)', () =>
     const coord = createCoordinator();
     coord.registerFsm(betweenHandsFsm);
     coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
     coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: false });
     expect(coord.getPanelState('betweenHands')).toBe('inactive');
   });
@@ -90,6 +109,7 @@ describe('SR-6.15 Zx §X.1 — betweenHands FSM end-to-end (coordinator)', () =>
   it('tableSwitch cancels active banner', () => {
     const coord = createCoordinator();
     coord.registerFsm(betweenHandsFsm);
+    coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
     coord.dispatch('betweenHands', 'liveContextArrived', { betweenHandsOrIdle: true });
     coord.clearForTableSwitch();
     expect(coord.getPanelState('betweenHands')).toBe('inactive');

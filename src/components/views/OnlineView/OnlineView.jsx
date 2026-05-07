@@ -91,19 +91,18 @@ export const OnlineView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div style={{ padding: '12px', maxWidth: 1600, color: '#e0e0e0' }}>
+      <div className="p-3 max-w-[1600px] text-[#e0e0e0]">
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 'bold', color: '#d4a847', margin: 0 }}>
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-lg font-bold m-0 text-[#d4a847]">
             Online Play
           </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                backgroundColor: isExtensionConnected ? '#22c55e' : '#6b7280',
-              }} />
-              <span style={{ color: '#9ca3af' }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs">
+              <div
+                className={`w-2 h-2 rounded-full ${isExtensionConnected ? 'bg-green-500' : 'bg-gray-500'}`}
+              />
+              <span className="text-gray-400">
                 {isExtensionConnected ? 'Extension connected' : 'Extension not detected'}
               </span>
               {versionMismatch && dismissedDespiteMismatch && (
@@ -111,36 +110,35 @@ export const OnlineView = ({ scale }) => {
                   onClick={() => setShowReloadConfirm(true)}
                   title="Extension version mismatch — advice suppressed. Click to review."
                   data-testid="version-mismatch-pip"
-                  style={{
-                    background: 'transparent', border: 'none', padding: 0, marginLeft: 2,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    color: '#fbbf24',
-                  }}
+                  className="bg-transparent border-none p-0 ml-0.5 cursor-pointer flex items-center text-amber-400"
                   aria-label="Extension version mismatch — advice suppressed. Click to review."
                 >
                   <AlertTriangle size={14} />
                 </button>
               )}
             </div>
-            <span style={{ color: '#d4a847', fontWeight: 'bold', fontSize: 14 }}>
+            <span className="text-[#d4a847] font-bold text-sm">
               {importedCount} hands
             </span>
           </div>
         </div>
 
         {versionMismatch && !dismissedDespiteMismatch && (
-          <div style={{ background: '#78350f', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} data-testid="version-mismatch-banner">
+          <div
+            className="bg-amber-900 px-2.5 py-1.5 rounded-md text-xs mb-2 text-amber-400 flex items-center justify-between"
+            data-testid="version-mismatch-banner"
+          >
             <span>Extension version mismatch — update the extension or reload the page</span>
-            <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0 }}>
+            <div className="flex gap-1.5 ml-3 shrink-0">
               <button
                 onClick={() => setShowReloadConfirm(true)}
-                style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer' }}
+                className="bg-amber-600 text-white border-none rounded px-2 py-0.5 text-[11px] cursor-pointer"
               >
                 Reload Page
               </button>
               <button
                 onClick={dismissVersionMismatch}
-                style={{ background: 'transparent', color: '#fbbf24', border: '1px solid #fbbf24', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer' }}
+                className="bg-transparent text-amber-400 border border-amber-400 rounded px-2 py-0.5 text-[11px] cursor-pointer"
               >
                 Continue Anyway
               </button>
@@ -159,24 +157,19 @@ export const OnlineView = ({ scale }) => {
         />
 
         {syncError && (
-          <div style={{ background: '#7f1d1d', padding: '6px 10px', borderRadius: 6, fontSize: 12, marginBottom: 8, color: '#fca5a5' }}>
+          <div className="bg-red-900 px-2.5 py-1.5 rounded-md text-xs mb-2 text-red-300">
             Sync error: {syncError}
           </div>
         )}
 
         {/* Session selector */}
         {onlineSessions.length > 1 && (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div className="flex gap-1.5 mb-2.5 flex-wrap">
             {onlineSessions.map(s => (
               <button
                 key={s.sessionId}
                 onClick={() => { setSelectedSessionId(s.sessionId); setSelectedSeat(null); }}
-                style={{
-                  padding: '4px 10px', borderRadius: 4, border: 'none', cursor: 'pointer',
-                  fontSize: 11, fontWeight: s.sessionId === selectedSessionId ? 'bold' : 'normal',
-                  background: s.sessionId === selectedSessionId ? '#d4a847' : '#374151',
-                  color: s.sessionId === selectedSessionId ? '#1a1a2e' : '#9ca3af',
-                }}
+                className={`px-2.5 py-1 rounded border-none cursor-pointer text-[11px] ${s.sessionId === selectedSessionId ? 'font-bold bg-[#d4a847] text-[#1a1a2e]' : 'font-normal bg-gray-700 text-gray-400'}`}
               >
                 Table {s.tableId?.slice(-6) || s.sessionId} ({s.handCount || 0}h)
               </button>
@@ -186,11 +179,11 @@ export const OnlineView = ({ scale }) => {
 
         {/* Empty state */}
         {handCount === 0 && !isLoading && (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
-            <div style={{ fontSize: 16, marginBottom: 8 }}>
+          <div className="text-center px-5 py-10 text-gray-500">
+            <div className="text-base mb-2">
               {isExtensionConnected ? 'Waiting for hands...' : 'No online data yet'}
             </div>
-            <div style={{ fontSize: 12, marginBottom: 16 }}>
+            <div className="text-xs mb-4">
               {isExtensionConnected
                 ? 'Play hands on Ignition and they will appear here automatically.'
                 : 'Install the Poker Session Notes extension and play on Ignition, or import a hand file below.'
@@ -199,23 +192,18 @@ export const OnlineView = ({ scale }) => {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              style={{
-                background: '#374151', color: '#d4a847', border: '1px solid #4b5563',
-                padding: '8px 16px', borderRadius: 6, cursor: isImporting ? 'wait' : 'pointer', fontSize: 13,
-                opacity: isImporting ? 0.6 : 1,
-                minHeight: 44,
-              }}
+              className={`bg-gray-700 text-[#d4a847] border border-gray-600 px-4 py-2 rounded-md text-[13px] min-h-11 ${isImporting ? 'cursor-wait opacity-60' : 'cursor-pointer opacity-100'}`}
             >
               {isImporting ? 'Importing…' : 'Import from File'}
             </button>
-            <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
+            <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
           </div>
         )}
 
         {/* Main content */}
         {handCount > 0 && (
           <>
-            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>
+            <div className="text-xs text-gray-500 mb-1.5">
               {handCount === 1 ? '1 hand analyzed' : `${handCount} hands analyzed`} {isLoading && '(updating...)'}
             </div>
 
@@ -239,21 +227,16 @@ export const OnlineView = ({ scale }) => {
               />
             )}
 
-            {/* Import button (even with data) */}
-            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            {/* Import button (even with data) — F9: size unified with empty-state button (px-4 py-2 text-[13px] rounded-md) */}
+            <div className="mt-3 flex gap-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                style={{
-                  background: '#374151', color: '#9ca3af', border: '1px solid #4b5563',
-                  padding: '6px 12px', borderRadius: 4, cursor: isImporting ? 'wait' : 'pointer', fontSize: 11,
-                  opacity: isImporting ? 0.6 : 1,
-                  minHeight: 44,
-                }}
+                className={`bg-gray-700 text-gray-400 border border-gray-600 px-4 py-2 rounded-md text-[13px] min-h-11 ${isImporting ? 'cursor-wait opacity-60' : 'cursor-pointer opacity-100'}`}
               >
                 {isImporting ? 'Importing…' : 'Import from File'}
               </button>
-              <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
+              <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
             </div>
           </>
         )}

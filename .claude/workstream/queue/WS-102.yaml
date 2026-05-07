@@ -2,10 +2,11 @@ id: "WS-102"
 title: "betweenHandsFsm debounce + modeAExpired symmetry"
 legacy_id: "RT-75"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T03:35:00Z"
+completed_at: "2026-05-07T08:30:00Z"
+status_note: "RESOLVED 2026-05-07 SPR-045. New 'pendingActive' state debounces inactive→active (single transient malformed payload routes inactive→pendingActive, contradicted by next push back to inactive — banner never enters a visible state). modeAExpired's liveContextArrived(true) symmetrically returns to active (defensive recovery if handNew never fired). renderBetweenHands now enumerates banner-visible states explicitly (panelState === 'active' || panelState === 'modeAExpired') so pendingActive doesn't claim the slot. 2268/2268 extension suite (+5 net tests vs 2263 baseline; 0 regressions); build clean. fsm + zx-overrides tests updated for new contract."
 priority_score: 22.0
 priority_label: "P1"
 category: "sidebar-recurrence"
@@ -21,7 +22,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-045"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

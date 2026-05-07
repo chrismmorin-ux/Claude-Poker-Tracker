@@ -11,11 +11,27 @@ import { defineFsm } from '../fsm.js';
  * to `inactive`, even from `active`.
  *
  * inactive       ← initial; no banner.
- * active         ← between hands, before Mode A timer expires.
+ * pendingActive  ← saw one liveContextArrived with betweenHandsOrIdle=true;
+ *                  awaiting confirmation. WS-102 debounce: a transient
+ *                  malformed payload that briefly says betweenHandsOrIdle=true
+ *                  must be retracted by the next push (which will return us
+ *                  to inactive) — so the banner doesn't flash on a single
+ *                  bad payload. Slot ownership stays with the previous owner
+ *                  during pendingActive (renderer treats pendingActive like
+ *                  inactive for visibility purposes).
+ * active         ← confirmed between hands (two consecutive
+ *                  betweenHandsOrIdle=true signals or the resumption path
+ *                  from modeAExpired). Banner visible.
  * modeAExpired   ← Mode A timer fired; banner collapses to chevron-only
  *                  affordance (spec: SR-4 Zx X.1 / Z0 pipeline handoff).
  *
  * handNew resets to inactive (hero has cards = we're mid-hand again).
+ *
+ * WS-102 modeAExpired symmetry: a fresh liveContextArrived with
+ * betweenHandsOrIdle=true while in modeAExpired returns to active. Defensive
+ * recovery for flows where handNew failed to fire between two between-hands
+ * cycles — modeAExpired must not be a sticky terminal that swallows further
+ * between-hands signals.
  */
 export const betweenHandsFsm = defineFsm({
   id: 'betweenHands',
@@ -24,9 +40,21 @@ export const betweenHandsFsm = defineFsm({
     inactive: {
       on: {
         liveContextArrived: (payload) => {
-          if (payload && payload.betweenHandsOrIdle) return 'active';
+          if (payload && payload.betweenHandsOrIdle) return 'pendingActive';
           return null;
         },
+      },
+    },
+    pendingActive: {
+      on: {
+        liveContextArrived: (payload) => {
+          if (payload && payload.betweenHandsOrIdle === false) return 'inactive';
+          if (payload && payload.betweenHandsOrIdle === true) return 'active';
+          return null;
+        },
+        handNew:        () => 'inactive',
+        adviceArrived:  () => 'inactive',
+        tableSwitch:    () => 'inactive',
       },
     },
     active: {
@@ -47,6 +75,7 @@ export const betweenHandsFsm = defineFsm({
         adviceArrived: () => 'inactive',
         liveContextArrived: (payload) => {
           if (payload && payload.betweenHandsOrIdle === false) return 'inactive';
+          if (payload && payload.betweenHandsOrIdle === true) return 'active';
           return null;
         },
         tableSwitch: () => 'inactive',

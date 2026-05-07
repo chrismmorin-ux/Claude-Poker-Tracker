@@ -105,14 +105,14 @@ export const PredictionsPanel = ({
     if (node.type === 'lockout') return '#f59e0b'; // amber
     if (node.type === 'blind_out') return '#ef4444'; // red
     if (node.bubbleHighlight) return '#ef4444'; // red for bubble pressure
-    if (idx === nextMilestoneIdx) return GOLD;
+    if (idx === nextMilestoneIdx) return GOLD.base;
     return '#9ca3af'; // gray-400
   };
 
   return (
     <div className="bg-gray-800 border rounded-lg p-4 space-y-4" style={{ borderColor: 'rgba(212,168,71,0.3)' }}>
       {/* Event Projections Header */}
-      <h3 className="text-sm font-medium uppercase tracking-wide" style={{ color: GOLD }}>
+      <h3 className="text-sm font-medium uppercase tracking-wide" style={{ color: GOLD.base }}>
         Event Timeline
       </h3>
 
@@ -207,7 +207,7 @@ export const PredictionsPanel = ({
             ? '1px solid rgba(239,68,68,0.2)'
             : 'none',
         }}>
-          <h3 className="text-sm font-medium uppercase tracking-wide mb-2" style={{ color: GOLD }}>
+          <h3 className="text-sm font-medium uppercase tracking-wide mb-2" style={{ color: GOLD.base }}>
             Your Blind-Out
           </h3>
           <div className="space-y-1 text-sm">
@@ -239,7 +239,7 @@ export const PredictionsPanel = ({
           <div className="relative w-full bg-gray-700 rounded-full h-2.5">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${Math.min(100, progress)}%`, backgroundColor: GOLD }}
+              style={{ width: `${Math.min(100, progress)}%`, backgroundColor: GOLD.base }}
             />
             {progress > 20 && (
               <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-gray-900">

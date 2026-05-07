@@ -50,7 +50,7 @@ export const RefresherSettings = () => {
 
   return (
     <div className="bg-gray-800 rounded-lg p-5" data-testid="refresher-settings-section">
-      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>
+      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>
         Printable Refresher
       </h3>
 

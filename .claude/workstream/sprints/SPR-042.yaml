@@ -1,0 +1,223 @@
+id: "SPR-042"
+title: "SCF G5 close-out — SelfCoachView Curriculum surface ships (D-line continuation)"
+status: completed
+goal: |
+  Self-Coach becomes visible to the user — Curriculum view ships so the
+  concepts, mastery signals, and learning-state composition that the SCF G5
+  infrastructure has been building toward are inspectable for the first time.
+
+  Master Plan rhythm: A-line shipped SPR-041 (PIO IdentityAvatar v2). D-line
+  is up by alternation. SCF G5 has 4 leak rules live + 11 lessons authored +
+  conceptMastery + composite + descriptor + tierConceptMap modules — but
+  zero user surface. WS-159 closes that gap.
+
+  Bound by:
+    - feedback_scf_learning_state_not_tier_rank.md (descriptor not rank;
+      composition transparency; tier names only as authoring metadata + in
+      owner-set radio UI)
+    - feedback_owner_volunteered_grading.md (opt-in only; no engagement
+      pressure)
+    - chris-live-player.md autonomy red lines #5 (no shame copy / streaks /
+      level-ups) and #8 (source-util-policy keeps SelfCoachView off live
+      table surfaces)
+
+items:
+  - id: "WS-159"
+    title: "SCF G5 — SelfCoachView Curriculum surface (Gate 1 audit + Gate 4 design + implementation)"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-05-06T22:30:00Z"
+    progress_notes: |
+      5-phase delivery, ~1.5 sessions actual (under L=3-session estimate;
+      narrowed Phase-5a slice held).
+
+      Phase 1 — design framework. Surface-specific Gate 1 entry audit
+      authored at docs/design/audits/2026-05-06-entry-self-coach-view.md
+      (verdict GREEN; Gate 2 not required — persona-blindspot risk managed
+      at program-level Gate 2 2026-05-02). Existing Gate 4 surface spec at
+      docs/design/surfaces/self-coach-view.md updated with Phase-5a slice
+      callout + tree-IA mockup + signal-toggle/weight controls + state
+      section rewrite + test-coverage section split (Phase-5a vs deferred).
+
+      Phase 2 — route + tab shell. SCREEN.SELF_COACH constant added at
+      src/constants/uiConstants.js:38; lazy-loaded ViewRouter case at
+      src/PokerTracker.jsx; sidebar nav entry (Brain icon, violet hue)
+      added to CollapsibleSidebar; NAV_COLORS extended with violet
+      (#7c3aed) for selfCoach; HASH_TO_SCREEN deep-link added for
+      #selfCoach. View shell with TabBar (Curriculum/Settings, aria-pressed
+      pattern from PrivacySection.jsx).
+
+      Phase 3 — Curriculum tab. New useSelfCoachMastery hook (reads
+      listAllConceptMastery once + recomputes composites + descriptor
+      reactively on settings changes). CurriculumTab renders descriptor
+      header (sentence form, never rank labels) + next-teachable badge
+      with [Why ▾] expand. ConceptTreeNode (recursive umbrella → child
+      structure). ConceptRow (kind glyph + signal indicators + composite
+      badge + Lesson-coming tag + Drill button; muted styling for
+      empty-lesson concepts). CompositionInspector (inline expand-on-click
+      mirroring HeroCoachingCard CD-5 pattern; 4 fields: Concept / Signals
+      contributing / Sample basis / Methodology).
+
+      Phase 4 — Settings tab. OwnerTierRadio (7 options: unset + 6 tier
+      values from FORBIDDEN_RANK_LABELS; this is the ONLY place rank labels
+      render). SignalToggleControls (4 toggle button-pairs). SignalWeightSliders
+      (4 discrete-step sliders, step=0.1 min=0 max=1 with snap-to-step + clamp).
+      Reducer wiring already in place from WS-148 / SPR-033 — no reducer
+      changes needed.
+
+      Phase 5 — tests + verification. 5 test files / 51 tests pass:
+        - SelfCoachView.test.jsx (6 tests) — shell + tab switching + back nav.
+        - CurriculumTab.test.jsx (16 tests) — descriptor + tier tree +
+          umbrella expand/collapse + empty-lesson rendering + Drill nav +
+          inspector reveal.
+        - CompositionInspector.test.jsx (9 tests) — 4 CD-5 fields + math +
+          disabled-signal struck-through + autonomy red line #5 lint +
+          null/loading guards.
+        - SettingsTab.test.jsx (15 tests) — radio dispatch + toggle
+          dispatch + slider snap-to-step + clamp + value display.
+        - SelfCoachView.copy-discipline.test.jsx (5 tests) — forbidden-
+          rank-labels OUTSIDE owner-tier radio + tier-as-rank lint
+          (numeric "Tier N" only) + autonomy red line #5 engagement-
+          pressure copy lint on both tabs.
+      Smart-test-runner: 10161 passed / 20 skipped / 0 failed (+52 net vs
+      SPR-041 baseline 10109; zero regressions).
+      Build clean (npm run build 6.01s).
+      Playwright visual regression: 4 chromium-only baselines locked
+        - curriculum-tab-collapsed.png
+        - curriculum-tab-cbet-expanded.png
+        - composition-inspector-open.png
+        - settings-tab.png
+      All 4 reproduce clean on no-update run; eye-test confirms tier
+      headers numeric ("TIER 1/2/3/4"), descriptor as sentence ("currently
+      focused on pot odds"), umbrella expansion reveals children with
+      greyed "Lesson coming" tags + disabled Drill on empty-lesson rows,
+      inspector shows all 4 CD-5 fields with formula math, owner-tier
+      radio as the ONLY surface where rank labels render.
+
+      Phase-5b+ deferred (called out in Gate 4 surface spec):
+        - Hero-leaks aggregation section (HeroCoachingCard already shows
+          inline in HandReplay).
+        - Tests-history-and-browse section (blocked on test_substrate
+          authoring — all lessons currently `pending`).
+        - Cadence-reminder controls (per surface-specific Gate 1: nudging
+          would violate spirit of autonomy red line #5).
+        - Cross-browser Playwright baselines (chromium-only matches
+          SPR-041 IdentityAvatar / PRF S23 starter precedent).
+    decision_flags:
+      - "Curriculum tab layout: list grouped by tier vs flat sortable table vs tree (umbrella → sub-concepts)"
+      - "Composition inspector: inline expand-on-click vs separate panel/modal"
+      - "Signal weight sliders: discrete steps (0.0/0.1/0.2/...) vs continuous"
+      - "Concepts with no lesson file (sub-concepts pending WS-149-style follow-ups): hide vs show greyed vs show with 'Lesson coming' label"
+      - "ownerTier radio location: inside Curriculum tab vs separate Settings tab"
+    decisions_made:
+      - "Curriculum tab layout: TREE (umbrella → expand → children) — registry-shaped IA"
+      - "Composition inspector: INLINE expand-on-click — matches shipped HeroCoachingCard CD-5 pattern; mobile-friendly; no modal layer"
+      - "Signal weight sliders: DISCRETE 0.1 steps — touch-friendly; defaults already round-friendly"
+      - "Empty-lesson concepts: GREYED with 'Lesson coming' tag + Drill disabled — preserves structural picture, flags authoring debt"
+      - "ownerTier radio location: SEPARATE Settings tab inside SelfCoachView (matches Gate 4 surface spec 2-tab IA)"
+    finding_id: null
+    decision_flags:
+      - "Curriculum tab layout: list grouped by tier vs flat sortable table vs tree (umbrella → sub-concepts)"
+      - "Composition inspector: inline expand-on-click vs separate panel/modal"
+      - "Signal weight sliders: discrete steps (0.0/0.1/0.2/...) vs continuous"
+      - "Concepts with no lesson file (sub-concepts pending WS-149-style follow-ups): hide vs show greyed vs show with 'Lesson coming' label"
+      - "ownerTier radio location: inside Curriculum tab vs separate Settings tab"
+    depends_on: []
+    started_at: null
+    completed_at: null
+    notes: ""
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation (SCF) Gate 5 — user-facing curriculum surface (Master Plan §D close-out). All infrastructure shipped across SPR-030..033, 037, 040; this sprint ships the user surface that consumes it. D-line continuation after 1-sprint A-line stagger (SPR-041)."
+total_effort: "L (~3 sessions). Plan-first because of effort=L + type=improvement + 5 decision_flags + new design surface (Gate 1 audit + Gate 4 spec required before implementation per CLAUDE.md §Design Program Guardrail)."
+decisions_needed:
+  - "Item #1 (WS-159): Curriculum tab layout — list grouped by tier vs flat sortable table vs tree (umbrella → sub-concepts)"
+  - "Item #1 (WS-159): Composition inspector — inline expand-on-click vs separate panel/modal"
+  - "Item #1 (WS-159): Signal weight sliders — discrete steps vs continuous"
+  - "Item #1 (WS-159): Empty-lesson concepts — hide vs grey vs 'Lesson coming' label"
+  - "Item #1 (WS-159): ownerTier radio location — Curriculum tab vs separate Settings tab"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-06T20:45:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same pattern as SPR-022..SPR-041). Manual review: WS-159 description explicitly encodes the constraints — no rank labels (descriptor with click-to-inspect composition per feedback_scf_learning_state_not_tier_rank.md), no engagement-pressure substrate (autonomy red line #5), opt-in grading only (feedback_owner_volunteered_grading.md), source-util-policy keeps surface off live-table consumers (red line #8). Forbidden-rank-label lint test on rendered DOM is in accept_criteria. Anti-goal surface clean."
+  matches: []
+
+created_at: "2026-05-06T20:45:00Z"
+approved_at: "2026-05-06T20:45:00Z"
+started_at: "2026-05-06T20:50:00Z"
+completed_at: "2026-05-06T22:30:00Z"
+session_ids: ["session-2026-05-06-next"]
+
+composition_notes: |
+  Anchor selection: WS-159 (P=18.0, L). Strict P=22 cluster credibly stale or
+  blocked:
+    - WS-101..110 sidebar-recurrence: SR Rebuild Program RESOLVED 2026-04-15
+      per .claude/failures/SIDEBAR_REBUILD_PROGRAM.md (also SW_REANIMATION_REPLAY.md).
+      Items migrated from pre-CWOS backlog 2026-05-01 without staleness
+      cross-check. SPR-028 retro finding flagged this exact pattern; /audit
+      pass still owed. Skipped as anchor candidates.
+    - WS-095 / WS-089 / WS-086 LSW: domain-correctness, credible work but
+      dormant (no LSW activity since 2026-04-27 per memory project_line_study_slice_widening).
+      Not the active master-plan thread.
+    - WS-027..036 launch monetization: blocked on Q7 legal-scoping +
+      MPMF-G4/G5 gates not yet authored. Effective deprioritization.
+
+  Top viable Master Plan anchor at P=18 leads. WS-159 vs alternates:
+    - WS-164 PIO multi-attribute ranking: soft-blocked on Table-Build Gate 5
+      (unticketed external dep); 0.25× damping → effective P=4.5.
+    - WS-146 SCF catalog widening: in_progress / ongoing — re-claim model.
+      Better to ship surface first (WS-159) then re-claim WS-146 on warm
+      context next sprint.
+    - WS-159 SCF SelfCoachView: clean blocks; WS-148 (only blocker) done
+      SPR-033; A/D stagger says D-line is up; closes the SCF G5
+      user-facing gap that has accumulated 6 sprints of infrastructure.
+
+  Master Plan A/D rhythm: SPR-037 (D) → SPR-038/39 (eng) → SPR-040 (D) →
+  SPR-041 (A). A-line just shipped; D-line returns. The SCF chain has been
+  building since SPR-012 (Gate 1, 2026-05-02) — 11 sprints in — and WS-159
+  is its natural close-out.
+
+  Source-class damping check (Step 2d): last 3 anchors —
+    SPR-039 WS-078: untagged (founder-driven plan-mode pivot from SPR-038)
+    SPR-040 WS-146: parent_ws (founder-driven decomposition; spr-followup)
+    SPR-041 WS-166: untagged (founder direct flag 2026-05-04)
+  No auto-rec/engine-finding saturation in 3-sprint window. No damping.
+
+  Soft-block damping (Step 2-prereq): WS-159 has no blocked_by_note. Full
+  priority. WS-164 demoted to ~4.5 as noted above.
+
+  Capability boost: capability=core → 1.0× (no staleness boost).
+  Context boost: system/context.md has no active items → 1.0×.
+
+  Adjusted score: 18.0 × 1.0 × 1.0 × 1.0 × 1.0 = 18.0.
+
+  Mode classification (Step 3d): plan-first.
+    - effort=L → plan-first trigger
+    - type=improvement → plan-first trigger
+    - decision_flags populated (5) → plan-first trigger
+    - new design surface → Gate 1 + Gate 4 mandatory before implementation
+      per CLAUDE.md §Design Program Guardrail
+
+  Single-item sprint: L (3 sessions) fills the standard cap on its own;
+  bundling WS-146 catalog widening would risk oversize given 5 decision
+  flags + plan-mode design ceremony likely to expand mid-sprint. WS-146
+  re-claims next sprint.
+
+  Tooling notes: kit/scripts/cwos-state-store.js + cwos-reconcile.js not
+  present (adopter repo without HomeBase tooling). Direct YAML reads.
+  Queue-index has stale completion entries for WS-160..167 — not blocking
+  for sprint composition (read source-of-truth WS-NNN.yaml for status).
+
+  Stale-item carry-forward (SPR-028 retro): the WS-101..110 staleness
+  observation should be acted on — recommend founder authorize an /audit
+  pass to cross-check the sidebar-recurrence migrated items against the
+  resolved program post-mortems and either delete or de-prioritize. Not
+  blocking SPR-042; flagged for next planning cycle.
+
+  Founder feedback signals: 2026-05-06 evening — sprint approval after
+  SPR-041 close-out + memory writes confirming long-term-over-transition
+  preference. SCF surface ships the visible payoff for the multi-sprint
+  infrastructure investment.

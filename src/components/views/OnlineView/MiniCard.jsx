@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, GOLD, FONT } from './panelTokens';
+import { SURFACE, BORDER, TEXT, GOLD } from '../../../constants/designTokens';
 
 const SUIT_SYMBOLS = { '♠': '♠', '♥': '♥', '♦': '♦', '♣': '♣', s: '♠', h: '♥', d: '♦', c: '♣' };
 const SUIT_COLORS = { '♠': TEXT.primary, '♥': '#ef4444', '♦': '#ef4444', '♣': TEXT.primary };
@@ -28,28 +28,18 @@ export const MiniCard = ({ card, isHero = false }) => {
   const isRed = parsed.suit === '♥' || parsed.suit === '♦';
 
   return (
-    <div style={{
-      display: 'inline-flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 26,
-      height: 34,
-      background: isHero
-        ? `linear-gradient(180deg, ${SURFACE.card}, #1f1a10)`
-        : SURFACE.card,
-      border: `1px solid ${isHero ? GOLD.dim : BORDER.subtle}`,
-      borderRadius: 3,
-      fontFamily: FONT.mono,
-      fontSize: 11,
-      fontWeight: 600,
-      color,
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)',
-      lineHeight: 1,
-      gap: 0,
-    }}>
-      <span style={{ fontSize: 12, lineHeight: 1 }}>{parsed.rank}</span>
-      <span style={{ fontSize: 9, lineHeight: 1, marginTop: -1 }}>{parsed.suit}</span>
+    <div
+      className="inline-flex flex-col items-center justify-center w-[26px] h-[34px] rounded-[3px] font-mono text-[11px] font-semibold leading-none gap-0 border shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
+      style={{
+        background: isHero
+          ? `linear-gradient(180deg, ${SURFACE.card}, #1f1a10)`
+          : SURFACE.card,
+        borderColor: isHero ? GOLD.dim : BORDER.subtle,
+        color,
+      }}
+    >
+      <span className="text-xs leading-none">{parsed.rank}</span>
+      <span className="text-[9px] leading-none -mt-px">{parsed.suit}</span>
     </div>
   );
 };

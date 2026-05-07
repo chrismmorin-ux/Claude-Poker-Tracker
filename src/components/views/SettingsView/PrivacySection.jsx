@@ -29,7 +29,7 @@ export const PrivacySection = ({ settings, dispatchSettings }) => {
 
   return (
     <div className="bg-gray-800 rounded-lg p-5" data-testid="settings-privacy-section">
-      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD }}>Privacy</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Privacy</h3>
 
       <div className="mb-2">
         <label className="block text-gray-300 text-sm font-medium mb-2">

@@ -6,7 +6,6 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, R } from './panelTokens';
 
 const SUIT_SYMBOLS = ['♠', '♥', '♦', '♣'];
 const RANK_CHARS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
@@ -66,26 +65,11 @@ export const BlockerInsightStrip = ({ blockerEffects, heroCards }) => {
   const overallPct = Math.round((totalRemoved / totalBaseline) * 100);
 
   return (
-    <div style={{
-      padding: '6px 8px',
-      background: 'rgba(34,211,238,0.06)',
-      border: `1px solid rgba(34,211,238,0.15)`,
-      borderRadius: R.md,
-      marginBottom: 6,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-    }}>
-      <div style={{
-        width: 4, height: 4, borderRadius: '50%',
-        background: COLOR.cyan, flexShrink: 0,
-      }} />
-      <span style={{
-        fontFamily: FONT.mono,
-        fontSize: 9,
-        color: COLOR.cyan,
-        lineHeight: 1.3,
-      }}>
+    <div
+      className="px-2 py-1.5 rounded-[5px] mb-1.5 flex items-center gap-1.5 border bg-[rgba(34,211,238,0.06)] border-[rgba(34,211,238,0.15)]"
+    >
+      <div className="w-1 h-1 rounded-full bg-cyan-400 shrink-0" />
+      <span className="font-mono text-[9px] text-cyan-400 leading-snug">
         {heroCards?.length === 2
           ? `${formatCard(heroCards[0])} ${formatCard(heroCards[1])} block`
           : 'Hero blocks'}

@@ -1,0 +1,112 @@
+id: "WS-167"
+title: "Token system consolidation — merge panelTokens.js into designTokens.js"
+type: improvement
+status: done
+claimed_by: "session-2026-05-05-next"
+claimed_at: "2026-05-05T01:50:00Z"
+started_at: "2026-05-05T02:00:00Z"
+completed_at: "2026-05-05T03:30:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  Consolidate the two token systems into one canonical source.
+
+  Discovered during WS-078 (OnlineView Tailwind migration) plan-mode
+  exploration: `src/components/views/OnlineView/panelTokens.js` is a
+  pre-existing token module that 11 panel files + several non-panel
+  components import from. It coexists with the app-wide token module
+  `src/constants/designTokens.js`. Both serve the same `src/` runtime;
+  the panelTokens "panel" naming is misleading (the file is in the
+  main app, not the Chrome extension).
+
+  Per founder direction 2026-05-05: "If there are two systems, they
+  should all become one unless there is a compelling reason to keep
+  them separate. We should be aggressively attacking potential sources
+  of canonical error."
+
+  Per `feedback_long_term_over_transition.md`: optimize for long-term
+  repo + app evolution, not transition cost.
+
+  This ticket is the token consolidation. WS-078 (Tailwind migration)
+  is a downstream consumer that becomes simpler + safer once the token
+  system is unified.
+
+  ## Audit (overlap shape)
+
+  | Concept | designTokens.js | panelTokens.js | Verdict |
+  |---------|------------------|------------------|---------|
+  | Action button (gradient) | ACTION_COLORS (8 keys, base+dark) | — | Stays in designTokens |
+  | Action panel pill (bg+text) | — | ACTION (5 keys, bg+text) | Move to designTokens; rename for clarity |
+  | EV verdict | EV_COLORS (3 entries, {bg,text}) | EV (4 flat fields) | Reconcile to single canonical shape |
+  | Gold accent | GOLD = '#d4a847' (scalar) | GOLD object {base, glow, dim, bright} | Expand to object; scalar consumers reference .base |
+  | Quality / confidence tier | QUALITY_CONFIG (4 levels w/ labels) | CONF_COLOR (4 levels mapping to COLOR) | Reconcile; same domain |
+  | Surface (bg) | absent | SURFACE (5 entries: body/card/inset/elevated/glass) | Move to designTokens |
+  | Border | absent | BORDER (default/subtle) | Move to designTokens |
+  | Text colors | absent | TEXT (primary/secondary/muted/faint) | Move to designTokens |
+  | Spacing scale | absent | SP {1: 4, 2: 8, 3: 12, 4: 16} | Move to designTokens (note: most consumers can switch to Tailwind) |
+  | Radius scale | absent | R {sm: 3, md: 5, lg: 8, xl: 12} | Move to designTokens (note: most consumers can switch to Tailwind) |
+  | Font families | absent | FONT (display/mono) | Move to designTokens (or tailwind.config) |
+  | Bucket colors | absent | BUCKET (5 hand-strength colors) | Move to designTokens |
+  | Generic palette | absent | COLOR (green/yellow/orange/red/cyan/purple) | Move to designTokens (note: prefer Tailwind for these) |
+
+  ## Approach
+
+  1. **Audit + reconciliation design** — confirm the audit table above
+     against actual consumers; design the merged designTokens.js export
+     surface; identify near-duplicate-but-different cases (ACTION_COLORS
+     vs ACTION; GOLD scalar vs object; EV vs EV_COLORS; QUALITY_CONFIG
+     vs CONF_COLOR).
+  2. **Additive merge** — add panelTokens exports into designTokens.js
+     under reconciled names, preserving all existing exports. Add a
+     temporary re-export shim in panelTokens.js that re-exports from
+     designTokens (so all current imports continue working).
+  3. **Verify** — run smart-test-runner + build. All green expected
+     (re-export shim is transparent).
+  4. **Migrate imports** — update each consumer file (find via
+     `grep panelTokens src/`). Each file's imports change:
+     `from './panelTokens'` → `from '@/constants/designTokens'` (or
+     relative path equivalent). Verify per-file with vitest.
+  5. **Delete panelTokens.js** — confirm zero remaining imports;
+     delete file.
+  6. **Final verify** — full smart-test-runner + build.
+
+  ## Out of scope
+
+  - The actual Tailwind migration of OnlineView inline styles. That is
+    WS-078 — UNBLOCKED by this ticket; can be claimed in a follow-up
+    sprint once consolidation ships.
+  - Any architectural changes to how tokens are consumed (e.g., moving
+    to CSS custom properties or refactoring helpers). Pure rename + move.
+  - Splitting designTokens.js into a barrel module (e.g., `designTokens/`
+    directory with sub-files). Could be a follow-up if file gets unwieldy
+    after merge, but not required.
+accept_criteria:
+  - "panelTokens.js deleted; zero remaining imports"
+  - "designTokens.js exports merged surface (action/ev/gold/surface/border/text/spacing/radius/font/bucket/color/etc.)"
+  - "Reconciled near-duplicates: GOLD is now object form; EV/EV_COLORS reduced to one; QUALITY_CONFIG/CONF_COLOR reduced to one"
+  - "All existing tests pass without code changes other than imports"
+  - "smart-test-runner green; npm run build clean"
+  - "No regression in visual appearance (colors/spacing identical pre- vs post-merge)"
+effort: "M"
+files_involved:
+  - "src/constants/designTokens.js (additions)"
+  - "src/components/views/OnlineView/panelTokens.js (DELETE after import migration)"
+  - "All consumers of panelTokens (~15-25 files based on initial grep)"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-078"]
+sprint_id: "SPR-038"
+decision_flags:
+  - "Reconciled naming for ACTION_COLORS (button gradient) vs ACTION (panel pill) — keep both with renamed exports?"
+  - "Reconciled shape for EV_COLORS vs EV — pick one canonical shape?"
+  - "Where do FONT families live — designTokens or tailwind.config theme?"
+  - "Are SP / R / COLOR worth preserving as token exports, or do consumers switch to Tailwind utilities directly?"
+source:
+  origin: "ws-078-plan-mode-exploration-spr-038-2026-05-05"
+  parent_ws: "WS-078"
+  rationale: "Founder direction 2026-05-05 — collapse two token systems into one; aggressively attack canonical error sources. Long-term-aggressive per feedback_long_term_over_transition.md."
+created_at: "2026-05-05"
+updated_at: "2026-05-05"

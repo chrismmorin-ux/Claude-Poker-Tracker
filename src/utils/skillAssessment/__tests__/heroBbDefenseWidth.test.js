@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from '../leakRules/heroBbDefenseWidth.js';
 
-const BB_DEFENSE_KEY = 'preflop:none:BIG_BLIND:def:oop:raise:vsopen';
+const BB_DEFENSE_KEY = 'preflop:none:BIG_BLIND:def:oop:raise:vsopen:na';
 const baseline45 = { baseline: 0.45, source: 'hardcoded', confidence: 0.80, lastValidatedAt: '2026-05-03' };
 
 const buildBucket = (overrides = {}) => ({
@@ -31,30 +31,31 @@ describe('hero-bb-defense-width rule signature', () => {
 });
 
 describe('matchesBucket', () => {
-  it('matches BB defending vs preflop open', () => {
-    expect(rule.matchesBucket('preflop:none:BIG_BLIND:def:oop:raise:vsopen')).toBe(true);
+  it('matches BB defending vs preflop open (na axis)', () => {
+    expect(rule.matchesBucket('preflop:none:BIG_BLIND:def:oop:raise:vsopen:na')).toBe(true);
   });
 
   it('does NOT match SB or other positions', () => {
-    expect(rule.matchesBucket('preflop:none:SMALL_BLIND:def:oop:raise:vsopen')).toBe(false);
-    expect(rule.matchesBucket('preflop:none:LATE:def:oop:raise:vsopen')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:SMALL_BLIND:def:oop:raise:vsopen:na')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:LATE:def:oop:raise:vsopen:na')).toBe(false);
   });
 
   it('does NOT match postflop streets', () => {
-    expect(rule.matchesBucket('flop:medium:BIG_BLIND:def:oop:bet:vsBet')).toBe(false);
+    expect(rule.matchesBucket('flop:medium:BIG_BLIND:def:oop:bet:vsBet:pfc')).toBe(false);
   });
 
   it('does NOT match aggressor situations', () => {
-    expect(rule.matchesBucket('preflop:none:BIG_BLIND:agg:oop:none:open')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:BIG_BLIND:agg:oop:none:open:na')).toBe(false);
   });
 
   it('does NOT match VS_3BET / VS_SQUEEZE contexts', () => {
-    expect(rule.matchesBucket('preflop:none:BIG_BLIND:def:oop:raise:vs3bet')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na')).toBe(false);
   });
 
   it('returns false for malformed keys', () => {
     expect(rule.matchesBucket(null)).toBe(false);
     expect(rule.matchesBucket('preflop:none')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:BIG_BLIND:def:oop:raise:vsopen')).toBe(false); // 7 axes (pre-SPR-040)
   });
 });
 

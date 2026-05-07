@@ -6,24 +6,31 @@
  */
 
 import React, { useState } from 'react';
-import { SURFACE, BORDER, TEXT, FONT, ACTION, EV, R } from '../panelTokens';
+import { SURFACE, BORDER, TEXT, ACTION_PILL_COLORS, EV_COLORS } from '../../../../constants/designTokens';
 
-const actionStyle = (action) => ACTION[action?.toLowerCase()] || ACTION.check;
+const actionStyle = (action) => ACTION_PILL_COLORS[action?.toLowerCase()] || ACTION_PILL_COLORS.check;
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
 
 export const AllRecommendationsPanel = ({ recommendations, heroEquity }) => {
   const [expandedIdx, setExpandedIdx] = useState(null);
   if (!recommendations || recommendations.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>All Recommendations</div>
+    <div className="mb-2.5">
+      <div
+        className={SECTION_HEADER_CLASSES}
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        All Recommendations
+      </div>
 
       {recommendations.map((rec, i) => {
         const aStyle = actionStyle(rec.action);
         const isTop = i === 0;
         const isPositive = rec.ev > 0;
-        const evColor = isPositive ? EV.pos : rec.ev === 0 ? TEXT.muted : EV.neg;
-        const evBg = isPositive ? EV.posBg : rec.ev === 0 ? '#374151' : EV.negBg;
+        const evColor = isPositive ? EV_COLORS['+EV'].text : rec.ev === 0 ? TEXT.muted : EV_COLORS['-EV'].text;
+        const evBg = isPositive ? EV_COLORS['+EV'].bg : rec.ev === 0 ? '#374151' : EV_COLORS['-EV'].bg;
         const isExpanded = expandedIdx === i;
         const vr = rec.villainResponse;
 
@@ -31,39 +38,33 @@ export const AllRecommendationsPanel = ({ recommendations, heroEquity }) => {
           <div
             key={i}
             onClick={() => setExpandedIdx(isExpanded ? null : i)}
+            className="px-2 py-1.5 mb-[3px] rounded-[5px] cursor-pointer transition-[background] duration-150"
             style={{
-              padding: '6px 8px',
-              marginBottom: 3,
-              borderRadius: R.md,
               background: isTop ? SURFACE.inset : 'transparent',
               borderLeft: `3px solid ${aStyle.bg}`,
-              cursor: 'pointer',
-              transition: 'background 0.15s',
             }}
           >
             {/* Main row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="flex items-center gap-1.5">
               {/* Rank */}
-              <span style={{
-                fontFamily: FONT.mono, fontSize: 9, fontWeight: 700,
-                color: isTop ? '#d4a847' : TEXT.faint, width: 12, flexShrink: 0,
-              }}>
+              <span
+                className="font-mono text-[9px] font-bold w-3 shrink-0"
+                style={{ color: isTop ? '#d4a847' : TEXT.faint }}
+              >
                 #{i + 1}
               </span>
 
               {/* Action badge */}
-              <span style={{
-                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                padding: '2px 6px', borderRadius: 3,
-                background: aStyle.bg, color: aStyle.text,
-                letterSpacing: 0.3,
-              }}>
+              <span
+                className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[3px] tracking-[0.3px]"
+                style={{ background: aStyle.bg, color: aStyle.text }}
+              >
                 {rec.action}
               </span>
 
               {/* Sizing */}
               {rec.sizing && (
-                <span style={{ fontFamily: FONT.mono, fontSize: 9, color: TEXT.secondary }}>
+                <span className="font-mono text-[9px]" style={{ color: TEXT.secondary }}>
                   {Math.round(rec.sizing.betFraction * 100)}%
                   <span style={{ color: TEXT.faint }}> ${rec.sizing.betSize?.toFixed(0)}</span>
                 </span>
@@ -71,41 +72,43 @@ export const AllRecommendationsPanel = ({ recommendations, heroEquity }) => {
 
               {/* Fold% */}
               {rec.sizing?.foldPct != null && (
-                <span style={{ fontFamily: FONT.mono, fontSize: 8, color: TEXT.faint }}>
+                <span className="font-mono text-[8px]" style={{ color: TEXT.faint }}>
                   F:{Math.round(rec.sizing.foldPct * 100)}%
                 </span>
               )}
 
               {/* Mix badge */}
               {rec.mixFrequency && (
-                <span style={{
-                  fontSize: 7, fontWeight: 700, padding: '1px 4px', borderRadius: 2,
-                  background: '#92400e', color: '#fbbf24',
-                }}>MIX {Math.round(rec.mixFrequency * 100)}%</span>
+                <span
+                  className="text-[7px] font-bold px-1 py-px rounded-sm"
+                  style={{ background: '#92400e', color: '#fbbf24' }}
+                >MIX {Math.round(rec.mixFrequency * 100)}%</span>
               )}
 
               {/* Spacer */}
-              <div style={{ flex: 1 }} />
+              <div className="flex-1" />
 
               {/* EV */}
-              <span style={{
-                fontFamily: FONT.mono, fontSize: 11, fontWeight: 700,
-                padding: '1px 6px', borderRadius: 3,
-                background: evBg, color: evColor,
-              }}>
+              <span
+                className="font-mono text-[11px] font-bold px-1.5 py-px rounded-[3px]"
+                style={{ background: evBg, color: evColor }}
+              >
                 {rec.ev >= 0 ? '+' : ''}{rec.ev.toFixed(1)}
               </span>
             </div>
 
             {/* Expanded detail */}
             {isExpanded && (
-              <div style={{ marginTop: 5, paddingTop: 4, borderTop: `1px solid ${BORDER.default}` }}>
+              <div
+                className="mt-[5px] pt-1"
+                style={{ borderTop: `1px solid ${BORDER.default}` }}
+              >
                 {/* Villain response */}
                 {vr && (
-                  <div style={{
-                    fontFamily: FONT.mono, fontSize: 8, color: TEXT.muted,
-                    marginBottom: 3, display: 'flex', gap: 8,
-                  }}>
+                  <div
+                    className="font-mono text-[8px] mb-[3px] flex gap-2"
+                    style={{ color: TEXT.muted }}
+                  >
                     {vr.foldPct != null && <span>Fold: {Math.round(vr.foldPct * 100)}%</span>}
                     {vr.callPct != null && <span>Call: {Math.round(vr.callPct * 100)}%</span>}
                     {vr.raisePct != null && <span>Raise: {Math.round(vr.raisePct * 100)}%</span>}
@@ -113,10 +116,10 @@ export const AllRecommendationsPanel = ({ recommendations, heroEquity }) => {
                 )}
                 {/* Reasoning */}
                 {rec.reasoning && (
-                  <div style={{
-                    fontSize: 9, fontStyle: 'italic', color: TEXT.muted,
-                    lineHeight: 1.35,
-                  }}>
+                  <div
+                    className="text-[9px] italic leading-snug"
+                    style={{ color: TEXT.muted }}
+                  >
                     {rec.reasoning}
                   </div>
                 )}
@@ -129,9 +132,3 @@ export const AllRecommendationsPanel = ({ recommendations, heroEquity }) => {
   );
 };
 
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
-};

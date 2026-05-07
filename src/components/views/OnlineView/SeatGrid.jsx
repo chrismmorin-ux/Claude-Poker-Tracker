@@ -13,12 +13,7 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
   if (handCount === 0) return null;
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: 6,
-      marginBottom: 12,
-    }}>
+    <div className="grid grid-cols-3 gap-1.5 mb-3">
       {SEAT_ARRAY.map(seat => {
         const seatStr = String(seat);
         const data = tendencyMap[seatStr];
@@ -29,27 +24,21 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
           <div
             key={seat}
             onClick={() => hasData && onSelectSeat(isSelected ? null : seatStr)}
-            style={{
-              background: '#16213e',
-              border: `1px solid ${isSelected ? '#d4a847' : '#2a2a4a'}`,
-              borderRadius: 6,
-              padding: '8px',
-              cursor: hasData ? 'pointer' : 'default',
-              opacity: hasData ? 1 : 0.35,
-              transition: 'border-color 0.2s',
-            }}
+            className={`bg-[#16213e] border rounded-md p-2 transition-[border-color] duration-200 ${isSelected ? 'border-[#d4a847]' : 'border-[#2a2a4a]'} ${hasData ? 'cursor-pointer opacity-100' : 'cursor-default opacity-[0.35]'}`}
           >
             {/* Seat header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 'bold', color: '#9ca3af' }}>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[11px] font-bold text-gray-400">
                 Seat {seat}
               </span>
               {data?.style && (
-                <span style={{
-                  fontSize: 9, fontWeight: 'bold', padding: '1px 5px', borderRadius: 3,
-                  backgroundColor: STYLE_COLORS[data.style]?.bg || '#374151',
-                  color: STYLE_COLORS[data.style]?.text || '#9ca3af',
-                }}>
+                <span
+                  className="text-[9px] font-bold px-[5px] py-px rounded-[3px]"
+                  style={{
+                    backgroundColor: STYLE_COLORS[data.style]?.bg || '#374151',
+                    color: STYLE_COLORS[data.style]?.text || '#9ca3af',
+                  }}
+                >
                   {data.style}
                 </span>
               )}
@@ -61,26 +50,30 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
                 {data.villainProfile && data.villainProfile.maturity !== 'unknown' ? (
                   <>
                     {/* Headline-based display */}
-                    <div style={{
-                      fontSize: 10, color: '#e0e0e0', lineHeight: 1.3,
-                      overflow: 'hidden', display: '-webkit-box',
-                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      minHeight: 26,
-                    }}>
+                    <div
+                      className="text-[10px] text-[#e0e0e0] leading-[1.3] overflow-hidden min-h-[26px]"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
                       {data.villainProfile.headline}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
-                      <span style={{
-                        fontSize: 8, padding: '1px 4px', borderRadius: 2, fontWeight: 'bold',
-                        background: MATURITY_COLORS[data.villainProfile.maturity]?.bg || '#374151',
-                        color: MATURITY_COLORS[data.villainProfile.maturity]?.text || '#9ca3af',
-                      }}>
+                    <div className="flex justify-between items-center mt-[3px]">
+                      <span
+                        className="text-[8px] px-1 py-px rounded-[2px] font-bold"
+                        style={{
+                          background: MATURITY_COLORS[data.villainProfile.maturity]?.bg || '#374151',
+                          color: MATURITY_COLORS[data.villainProfile.maturity]?.text || '#9ca3af',
+                        }}
+                      >
                         {data.villainProfile.maturityLabel}
                       </span>
-                      <span style={{ fontSize: 9, color: '#4b5563' }}>
+                      <span className="text-[9px] text-gray-600">
                         {data.sampleSize}h
                         {data.exploits?.length > 0 && (
-                          <span style={{ color: '#6b7280', marginLeft: 3 }}>
+                          <span className="text-gray-500 ml-[3px]">
                             {data.exploits.length}e
                           </span>
                         )}
@@ -90,38 +83,40 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
                 ) : (
                   <>
                     {/* Fallback: VPIP/PFR/AF stats — credible-interval suffix per FIND-001 / SPR-017 */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#6b7280' }}>VPIP</span>
-                      <span style={{ fontWeight: 'bold', color: data.vpip > 40 ? '#ef4444' : data.vpip < 15 ? '#22c55e' : '#e0e0e0' }}>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-gray-500">VPIP</span>
+                      <span
+                        className={`font-bold ${data.vpip > 40 ? 'text-red-500' : data.vpip < 15 ? 'text-green-500' : 'text-[#e0e0e0]'}`}
+                      >
                         {data.vpip}%
                         {data.intervals?.vpip && data.sampleSize <= 200 && (
-                          <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 4, fontWeight: 'normal' }}>
+                          <span className="text-[9px] text-gray-400 ml-1 font-normal">
                             ±{(((data.intervals.vpip.upper - data.intervals.vpip.lower) / 2) * 100).toFixed(1)}%
                           </span>
                         )}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#6b7280' }}>PFR</span>
-                      <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-gray-500">PFR</span>
+                      <span className="font-bold text-[#e0e0e0]">
                         {data.pfr}%
                         {data.intervals?.pfr && data.sampleSize <= 200 && (
-                          <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 4, fontWeight: 'normal' }}>
+                          <span className="text-[9px] text-gray-400 ml-1 font-normal">
                             ±{(((data.intervals.pfr.upper - data.intervals.pfr.lower) / 2) * 100).toFixed(1)}%
                           </span>
                         )}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#6b7280' }}>AF</span>
-                      <span style={{ fontWeight: 'bold', color: '#e0e0e0' }}>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-gray-500">AF</span>
+                      <span className="font-bold text-[#e0e0e0]">
                         {data.af === null ? '—' : data.af === Infinity ? '∞' : data.af?.toFixed(1)}
                       </span>
                     </div>
-                    <div style={{ fontSize: 9, color: '#4b5563', textAlign: 'right', marginTop: 2 }}>
+                    <div className="text-[9px] text-gray-600 text-right mt-0.5">
                       {data.sampleSize}h
                       {data.exploits?.length > 0 && (
-                        <span style={{ color: '#d4a847', marginLeft: 4 }}>
+                        <span className="text-[#d4a847] ml-1">
                           {data.exploits.length} exploit{data.exploits.length !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -130,7 +125,7 @@ export const SeatGrid = ({ tendencyMap, selectedSeat, onSelectSeat, handCount })
                 )}
               </>
             ) : (
-              <div style={{ fontSize: 11, color: '#4b5563', textAlign: 'center', paddingTop: 8 }}>—</div>
+              <div className="text-[11px] text-gray-600 text-center pt-2">—</div>
             )}
           </div>
         );

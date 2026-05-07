@@ -2,10 +2,43 @@ id: "WS-103"
 title: "Freeze incoming live_context at SW boundary"
 legacy_id: "RT-78"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T03:05:00Z"
+started_at: "2026-05-07T03:05:00Z"
+completed_at: "2026-05-07T03:25:00Z"
+status_note: |
+  RESOLVED 2026-05-07 SPR-044. SW capture-port `live_context` handler
+  deepFreeze()s `msg.context` immediately after the validateMessage
+  gate, before any consumer (writeLiveContext, pushToAppBridge,
+  throttle queue, side-panel push) sees the reference. Pairs with
+  WS-105: validate → freeze → forward.
+
+  Files:
+    - shared/freeze-utils.js (NEW; 31 LoC) — `deepFreeze(value)`
+      recursive freezer; idempotent; no-op on null/primitives;
+      returns same reference.
+    - background/service-worker.js — import deepFreeze (+1 line)
+      and call deepFreeze(msg.context) at line 199 (+6 incl. block
+      comment) inside the `live_context` case.
+    - shared/__tests__/freeze-utils.test.js (NEW; 9 tests):
+      asserts top-level + nested + array mutation throws in strict
+      mode; idempotence; null/primitive no-op; structured-clone
+      survival (postMessage / chrome.storage compat — proves the
+      receiver gets a mutable copy so writeLiveContext's spread
+      `{ ...ctx, _persistedAt: Date.now() }` keeps working);
+      live_context-shaped graph fully immutable end-to-end.
+
+  Verification:
+    - npx vitest run shared/__tests__/freeze-utils.test.js → 9/9
+    - npx vitest run (full extension) → 68 files / 2263 tests pass
+      (was 2254 SPR-043 baseline; +9 net, 0 regressions)
+    - npm run build → clean
+
+  Cluster siblings remaining (sidebar-recurrence boundary cluster):
+    WS-101 (replay corpus extension), WS-102 (betweenHandsFsm
+    debounce + modeAExpired symmetry), WS-104 (microtask-deferred
+    timer registration leak). 3 of 5 remain.
 priority_score: 22.0
 priority_label: "P1"
 category: "sidebar-recurrence"
@@ -20,7 +53,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-044"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

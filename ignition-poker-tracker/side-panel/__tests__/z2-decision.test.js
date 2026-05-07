@@ -155,11 +155,22 @@ describe('SR-6.12 §2.10 — stale-advice consolidation (source pin)', () => {
     // updateStaleAdviceBadge directly. Bumps tickCount + scheduleRender
     // via coordinator.tickAdviceAge; renderAll's existing call site
     // updates the badge inside the render frame.
-    const timerBlock = js.match(/scheduleTimer\('adviceAgeBadge'[\s\S]*?'interval'\)\);/)?.[0] || '';
-    expect(timerBlock).toMatch(/coordinator\.tickAdviceAge\(\)/);
+    //
+    // WS-104: timer body now lives in the named closure `_adviceAgeBadgeTick`
+    // (declared at its original site so the local feature-context comments
+    // stay attached) and is registered synchronously after FSM registration.
+    // The R-2.3 invariant applies to the body wherever it lives.
+    const tickBody = js.match(/const _adviceAgeBadgeTick = [\s\S]*?\n {2}\};/)?.[0] || '';
+    expect(tickBody).toMatch(/coordinator\.tickAdviceAge\(\)/);
     // Legacy-direct-call pattern must not regress.
-    expect(timerBlock).not.toMatch(/updateStaleAdviceBadge\(/);
-    expect(timerBlock).not.toMatch(/computeAdviceStaleness\(/);
+    expect(tickBody).not.toMatch(/updateStaleAdviceBadge\(/);
+    expect(tickBody).not.toMatch(/computeAdviceStaleness\(/);
+    // WS-104: registration is synchronous (no queueMicrotask wrapper) and
+    // binds the named tick fn — registry contains the timer immediately
+    // after IIFE returns.
+    const reg = js.match(/coordinator\.scheduleTimer\('adviceAgeBadge'[\s\S]*?'interval'\);/)?.[0] || '';
+    expect(reg).toMatch(/_adviceAgeBadgeTick/);
+    expect(reg).not.toMatch(/queueMicrotask/);
   });
 
   it('helper body delegates to classifyFreshness + maps tier → legacy reason', () => {

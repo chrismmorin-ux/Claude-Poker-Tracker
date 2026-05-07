@@ -15,21 +15,23 @@ This catalog **is** that mechanism.
 
 ## Coverage progress
 
-| Category | Total entries | Shipped | Spec'd | Planned | Future-research |
-|---|---:|---:|---:|---:|---:|
-| Preflop fold-equity | 4 | **1** ★ | 0 | 3 | 0 |
-| Preflop sizing | 3 | 0 | 0 | 3 | 0 |
-| Flop continuation | 3 | **1** ★ | 0 | 2 | 0 |
-| Flop sizing | 2 | 0 | 0 | 2 | 0 |
-| Turn barrel | 3 | 0 | 0 | 1 | 2 |
-| River bluff-catch | 2 | 0 | 0 | 0 | 2 |
-| Multiway adjustment | 2 | 0 | 0 | 1 | 1 |
-| Capped-range misread | 2 | 0 | 0 | 1 | 1 |
-| Position discipline | 2 | 0 | 0 | 2 | 0 |
-| Sample-size discipline | 2 | 0 | 0 | 2 | 0 |
-| **Total** | **25** | **2** | 0 | 17 | 6 |
+| Category | Total entries | Shipped | Spec'd | Planned | Future-research | Deferred |
+|---|---:|---:|---:|---:|---:|---:|
+| Preflop fold-equity | 4 | **3** ★★★ | 0 | 0 | 0 | 1 |
+| Preflop sizing | 3 | 0 | 0 | 3 | 0 | 0 |
+| Flop continuation | 3 | **3** ★★★ | 0 | 0 | 0 | 0 |
+| Flop sizing | 2 | 0 | 0 | 2 | 0 | 0 |
+| Turn barrel | 3 | 0 | 0 | 1 | 2 | 0 |
+| River bluff-catch | 2 | 0 | 0 | 0 | 2 | 0 |
+| Multiway adjustment | 2 | 0 | 0 | 1 | 1 | 0 |
+| Capped-range misread | 2 | 0 | 0 | 1 | 1 | 0 |
+| Position discipline | 2 | 0 | 0 | 2 | 0 | 0 |
+| Sample-size discipline | 2 | 0 | 0 | 2 | 0 | 0 |
+| **Total** | **25** | **6** | 0 | 12 | 6 | 1 |
 
-**v1 milestone:** 2/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031)). Both shipped rules now bind to **cluster umbrella concepts** (SPR-033 / WS-148): `cbet-defense-cluster` + `bb-defense-cluster`. Per the granularity floor (`feedback_scf_high_granularity.md`), 11 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
+**v1 milestone:** 6/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031); ★ OOP cbet defense overfold (SPR-040); ★ Flop vs donk misresponse (SPR-040); ★ PF 3bet overfold (SPR-046); ★ OOP 3bet underfold (SPR-046)). Flop-continuation category **closed 3/3**; preflop fold-equity **3/4 shipped** (1 deferred — `hero-pf-open-overfold` blocked on accumulator design). Shipped rules bind to **cluster umbrella concepts** (SPR-033 / WS-148 + SPR-040 + SPR-046): `cbet-defense-cluster` + `bb-defense-cluster` + `oop-cbet-defense-cluster` + `flop-vs-donk-defense-cluster` + `pf-3bet-defense-cluster` + `oop-3bet-defense-cluster`. SPR-046 also shipped the **first UNDER-fold direction** in the catalog (`hero-oop-3bet-underfold`) — establishes the mirror detection pattern for future under-fold rules. Per the granularity floor (`feedback_scf_high_granularity.md`), 29 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
+
+**SPR-040 architectural note:** Situation key extended from 7 to 8 axes (added `preflopAggressor` — `pfa`/`pfc`/`na`). This was necessary for the donk rule to distinguish "hero raised preflop, faces villain donk" from "hero called preflop, faces villain cbet" — both situations had collapsed to the same bucket under the 7-axis key. The IP cbet rule narrowed to `pfc` post-migration (donk-response cases now route to the new donk rule). All existing baselines + tests + sub-concept resolution migrated.
 
 **Status legend:**
 - **SHIPPED** — Rule live in `src/utils/skillAssessment/leakRules/`; IDB writes happening; badge can render.
@@ -54,27 +56,41 @@ This catalog **is** that mechanism.
 - **Scope notes:** Inverse leak (folding too much when should open) is detectable; overopening (raising too wide) is its own rule (`hero-pf-open-too-wide`, also planned). Rules diverge in remediation (tighten range vs widen).
 - **Expansion notes:** v2 split by table dynamic (passive vs active table — open ranges shift); v3 split by stack depth (short-stack vs deep).
 
-#### `hero-pf-3bet-overfold`
+#### `hero-pf-3bet-overfold` ★ v1 (SPR-046)
 - **Label:** Folding to 3bets too often (post-open)
 - **Category:** preflop-fold-equity
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `preflop:none:{EARLY|MIDDLE|LATE}:agg:ip:raise:vs3bet` + `preflop:none:{LATE|BUTTON}:agg:oop:raise:vs3bet`
-- **Solver baseline source:** Hardcoded by position + opener-vs-3bettor combo
+- **Status:** **SHIPPED v1 (SPR-046 / WS-146 third claim)** — Drill-this opens `pf-3bet-defense-cluster.md`
+- **Situation keys:** `preflop:none:{EARLY|MIDDLE|LATE|BUTTON}:agg:{ip|oop}:raise:vs3bet:na` (8 bucket configurations matched; 4 distinct baselines via isIP normalization in `solverBaselineKey`)
+- **Solver baseline source:** Hardcoded per opener position (~50% EARLY → ~55% LATE/BUTTON)
+- **Ship sprint:** SPR-046
+- **Related concept:** `pf-3bet-defense-cluster` (umbrella) — lesson at `lessons/pf-3bet-defense-cluster.md`. Sub-concepts: `pf-3bet-defense-{EARLY|MIDDLE|LATE|BUTTON}` registered in `tierConceptMap.js` (lessons WS-149).
 - **Intent:** Hero opens then over-folds to 3bets, allowing 3bettor to print money against the open.
-- **Scope notes:** Opposite of `hero-oop-3bet-underfold` (which is about the 3bet caller). This rule is about the original raiser.
-- **Expansion notes:** v2 split by 3bettor stack-off propensity (TAGs underbluff 3bets, fish overbluff).
+- **Scope notes:** Opposite of `hero-oop-3bet-underfold` (which is about the 3bet caller). This rule is about the original raiser. v1 normalizes isIP axis to a single per-position baseline (per-isIP and per-3bettor-position splits are v2 expansions).
+- **Expansion notes:** v2 split by 3bettor stack-off propensity (TAGs underbluff 3bets, fish overbluff); v3 split by 3bet sizing.
 
-#### `hero-oop-3bet-underfold`
-- **Label:** OOP 3bet defense width (calling too wide)
+#### `hero-pf-open-overfold` (DEFERRED)
+- **Label:** Preflop open-fold rate (RFI)
 - **Category:** preflop-fold-equity
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `preflop:none:SB:def:oop:raise:vs3bet`, `preflop:none:BB:def:oop:raise:vs3bet`, `preflop:none:CO:def:oop:raise:vs3bet` (positions where hero called open then faces 3bet)
-- **Solver baseline source:** Hardcoded (~25% call rate vs typical 3bet sizing)
-- **Intent:** Hero defends OOP too wide vs 3bets, then bleeds chips post-flop OOP without initiative.
-- **Scope notes:** Excludes positions that wouldn't typically be in this spot (hero in early position rarely faces 3bet from blinds). Excludes squeeze responses (separate dynamic).
-- **Expansion notes:** v2 split by 3bet sizing (smaller 3bets justify wider defense).
+- **Status:** **DEFERRED 2026-05-07 (SPR-046 mid-sprint discovery)** — structurally blocked by current accumulator design.
+- **Discovery:** `deriveSituationKey:DERIVE_CONTEXT_ACTION` buckets RFI fold (`limp` contextAction; verb='fold' falls through the open/limp branch) and RFI open (`open` contextAction; verb='raise') under different keys. The accumulator can't compute fold-rate over the RFI decision space from a single bucket. Other shipped rules avoid this because vs-bet defense buckets all actions (fold/call/raise) under the same `contextAction`.
+- **Resolution path:** either (a) refactor `DERIVE_CONTEXT_ACTION` so RFI fold + RFI open share `contextAction='rfi'` (breaking change to existing situation keys; requires migration of all shipped rules + tests), or (b) add an additive "decision-class bucket" path to the accumulator that aggregates across action-taken (preserves existing keys, adds a parallel bucket type).
+- **Re-targeted situation keys (post-resolution):** `preflop:none:{EARLY|MIDDLE|LATE|BUTTON}:agg:none:none:rfi:na` (using `:rfi:` if option a) OR a new accumulator output with shared bucket key per (street × position × pre-action-state) regardless of action verb.
+- **Sprint pivot:** SPR-046 swapped this rule for `hero-pf-3bet-overfold` after the discovery (founder-ratified 2026-05-07). The pivot keeps the same sprint goal (close preflop fold-equity gap +2 → 3/4) without dragging an accumulator refactor into a leak-rule sprint.
+
+#### `hero-oop-3bet-underfold` ★ v1 (SPR-046) — first UNDER-fold rule in catalog
+- **Label:** OOP 3bet defense width (calling too wide post-flat)
+- **Category:** preflop-fold-equity
+- **Complexity tier:** Medium
+- **Status:** **SHIPPED v1 (SPR-046 / WS-146 third claim)** — Drill-this opens `oop-3bet-defense-cluster.md`
+- **Situation keys:** `preflop:none:SMALL_BLIND:def:oop:raise:vs3bet:na`, `preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na` (2 keys; SB + BB only for v1)
+- **Solver baseline source:** Hardcoded (~72% SB / ~75% BB target fold rate post-flat)
+- **Ship sprint:** SPR-046
+- **Related concept:** `oop-3bet-defense-cluster` (umbrella) — lesson at `lessons/oop-3bet-defense-cluster.md`. Sub-concepts: `oop-3bet-defense-{SB|BB}` registered in `tierConceptMap.js` (lessons WS-149).
+- **Intent:** Hero called an open from SB/BB, then faces a 3bet (squeeze or re-isolation). Calling too wide bleeds chips post-flop OOP without initiative at high SPR. First UNDER-fold rule in the catalog — mirror direction of all over-fold rules.
+- **Scope notes:** v1 covers SB + BB only. CO defending OOP after flat-call is a documented catalog scenario but the position categorizer emits 'MIDDLE' (9max) or 'LATE' (6max) for CO seats, not 'CO' literal — adding requires either a position-categorizer change or matching MIDDLE/LATE here (which broadens scope beyond squeeze-defense). Deferred to v2.
+- **Expansion notes:** v2 add CO post-flat (with position-categorizer extension); v3 split by 3bet sizing (smaller 3bets justify wider defense); v4 add squeezer-style adjustment (passive squeeze → wider continue; aggressive squeeze → tighter).
 
 #### `hero-bb-defense-width` ★ v2 (SPR-031)
 - **Label:** BB defense width — fold rate vs single open
@@ -139,27 +155,28 @@ This catalog **is** that mechanism.
 - **Scope notes:** v1 covers BTN/CO defending IP. Excludes blind defense (different dynamic — see `hero-bb-cbet-defense`). Single solver baseline (38%) per situation key; texture-precision deferred.
 - **Expansion notes:** v2 split by villain style (Fish overfold less; TAG overfold more); v3 incorporate board-class precision (dry boards justify wider defense than wet).
 
-#### `hero-oop-cbet-overfold`
+#### `hero-oop-cbet-overfold` ★ v1 (SPR-040)
 - **Label:** OOP cbet defense — fold-to-cbet rate (blind defense)
 - **Category:** flop-continuation
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `flop:{dry|medium|wet}:{SB|BB}:def:oop:bet:cbet`
-- **Solver baseline source:** Hardcoded (~45-55% fold OOP — wider acceptance because OOP equity realization is worse)
-- **Intent:** Mirror of v1 rule but for blind defense; harder to define because OOP defense ranges are tighter to begin with.
-- **Scope notes:** Distinct from v1 because OOP fold rate is structurally higher; baseline + threshold differ.
-- **Expansion notes:** v2 split by SRP vs 3BP (3BP OOP cbet defense is even tighter).
+- **Status:** **SHIPPED v1 (SPR-040 / WS-146 second claim)** — Drill-this opens `oop-cbet-defense-cluster.md` umbrella; per-cell sub-concept resolution via `tierConceptMap.SITUATION_KEY_TO_CONCEPT` (6 sub-concepts: `oop-cbet-defense-{dry,medium,wet}-{SB,BB}`)
+- **Situation keys:** `flop:{dry|medium|wet}:{SMALL_BLIND|BIG_BLIND}:def:oop:bet:vsBet:pfc` (8-axis post-SPR-040; `:pfc` filter excludes donk-response cases)
+- **Solver baseline source:** Hardcoded ~45-55% fold OOP per (texture, position) — 6 baseline keys in `solverBaselines.js`. Confidence 0.80. BB baselines slightly looser than SB (BB caps wider preflop → folds more on dry).
+- **Intent:** Mirror of `hero-ip-cbet-overfold` for blind defense. OOP fold rate ~10pp higher than IP because of equity-realization penalty; over-folding beyond that still gives villain auto-profit on bluffs.
+- **Scope notes:** v1 single baseline per (texture, position); no SRP-vs-3BP split (deferred). Distinguished from `hero-ip-cbet-overfold` by `isIP=oop` + position axis.
+- **Expansion notes:** v2 split by SRP vs 3BP (3BP OOP cbet defense is even tighter); v3 villain-style precision.
 
-#### `hero-flop-vs-donk-misresponse`
-- **Label:** Hero response to donk leads (overcall vs overraise)
+#### `hero-flop-vs-donk-misresponse` ★ v1 (SPR-040)
+- **Label:** Flop vs donk lead — fold-to-donk rate
 - **Category:** flop-continuation
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `flop:*:*:def:ip:bet:vsdonk` + `flop:*:*:def:oop:bet:vsdonk`
-- **Solver baseline source:** Hardcoded by donker style (passive donker = mostly call/fold; aggressive donker = mostly raise/fold)
-- **Intent:** Donks signal opponent type; mismatched response (raising into nits, calling into bluffers) bleeds.
-- **Scope notes:** Donker-style detection requires villain profile data — soft-degrade if villainProfile null.
-- **Expansion notes:** v2 builds on villain-style integration once that's mature.
+- **Status:** **SHIPPED v1 (SPR-040 / WS-146 second claim)** — Drill-this opens `flop-vs-donk-defense-cluster.md` umbrella; per-cell sub-concept resolution via `tierConceptMap.SITUATION_KEY_TO_CONCEPT` (6 sub-concepts: `flop-vs-donk-defense-{dry,medium,wet}-{LATE,BUTTON}`)
+- **Situation keys:** `flop:{dry|medium|wet}:{LATE|BUTTON}:def:ip:bet:vsBet:pfa` (8-axis post-SPR-040; `:pfa` filter requires hero was preflop aggressor — disjoint from cbet-defense `:pfc`)
+- **Solver baseline source:** Hardcoded ~43-50% fold per (texture, position) — 6 baseline keys in `solverBaselines.js`. Confidence 0.75 (lower than cbet baselines because the donker-style mixture is unobserved at the bucket level in v1).
+- **Architectural note:** This rule motivated the SPR-040 situation-key extension from 7 to 8 axes. Pre-SPR-040, donk-response cases collapsed into the `hero-ip-cbet-overfold` bucket because the 7-axis key couldn't distinguish hero-as-preflop-aggressor from hero-as-preflop-caller on postflop streets. The 8th `preflopAggressor` axis (`pfa`/`pfc`/`na`) makes the rules disjoint.
+- **Intent:** Donks signal a polarized villain range; hero's fold rate should track villain's bluff frequency, not default-fold the way many recreationals do.
+- **Scope notes:** v1 covers IP positions only (LATE + BUTTON); single baseline averaged across donker styles. Soft-degrade not needed because v1 doesn't require villainProfile data — averaged baseline absorbs the style mixture.
+- **Expansion notes:** v2 split by `villainProfile.donkStyle` (passive vs aggressive) once that classification is wired into the bucket. v3 extend to OOP positions (donk leads from BTN-vs-SB or CO-vs-BB-3bp scenarios).
 
 ### Flop sizing leaks
 

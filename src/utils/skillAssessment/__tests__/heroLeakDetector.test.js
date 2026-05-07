@@ -45,8 +45,8 @@ describe('detectHeroLeaks', () => {
   it('does NOT fire for buckets where no rule matches', () => {
     const accumulator = {
       buckets: {
-        'preflop:none:EARLY:agg:none:none:open': {
-          situationKey: 'preflop:none:EARLY:agg:none:none:open',
+        'preflop:none:EARLY:agg:none:none:open:na': {
+          situationKey: 'preflop:none:EARLY:agg:none:none:open:na',
           sampleSize: 100,
           foldCount: 0,
           foldRate: 0,
@@ -60,8 +60,8 @@ describe('detectHeroLeaks', () => {
   it('does NOT fire below sample size floor (n<30)', () => {
     const accumulator = {
       buckets: {
-        'flop:medium:LATE:def:ip:bet:vsBet': {
-          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet',
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
           sampleSize: 20,
           foldCount: 18,
           foldRate: 0.9,
@@ -75,8 +75,8 @@ describe('detectHeroLeaks', () => {
   it('fires the IP cbet overfold rule when bucket meets criteria', () => {
     const accumulator = {
       buckets: {
-        'flop:medium:LATE:def:ip:bet:vsBet': {
-          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet',
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
           sampleSize: 50,
           foldCount: 35,
           foldRate: 0.70,
@@ -92,8 +92,8 @@ describe('detectHeroLeaks', () => {
   it('honors injected baselineLookup override (test injection)', () => {
     const accumulator = {
       buckets: {
-        'flop:medium:LATE:def:ip:bet:vsBet': {
-          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet',
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
           sampleSize: 50,
           foldCount: 35,
           foldRate: 0.70,
@@ -111,8 +111,8 @@ describe('detectHeroLeaks', () => {
   it('skips buckets where baseline lookup returns null', () => {
     const accumulator = {
       buckets: {
-        'flop:medium:LATE:def:ip:bet:vsBet': {
-          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet',
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
           sampleSize: 50,
           foldCount: 35,
           foldRate: 0.70,
@@ -129,16 +129,16 @@ describe('detectHeroLeaks', () => {
     const accumulator = {
       buckets: {
         // This one fires
-        'flop:medium:LATE:def:ip:bet:vsBet': {
-          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet',
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
           sampleSize: 50,
           foldCount: 35,
           foldRate: 0.70,
           foldRateCI: { lower: 0.56, upper: 0.84, mean: 0.70 },
         },
         // This one doesn't (below threshold)
-        'flop:dry:BUTTON:def:ip:bet:vsBet': {
-          situationKey: 'flop:dry:BUTTON:def:ip:bet:vsBet',
+        'flop:dry:BUTTON:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:dry:BUTTON:def:ip:bet:vsBet:pfc',
           sampleSize: 50,
           foldCount: 18,
           foldRate: 0.36,
@@ -148,6 +148,6 @@ describe('detectHeroLeaks', () => {
     };
     const fired = detectHeroLeaks(accumulator);
     expect(fired.length).toBe(1);
-    expect(fired[0].situationKey).toBe('flop:medium:LATE:def:ip:bet:vsBet');
+    expect(fired[0].situationKey).toBe('flop:medium:LATE:def:ip:bet:vsBet:pfc');
   });
 });

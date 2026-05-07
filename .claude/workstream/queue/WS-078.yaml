@@ -2,10 +2,12 @@ id: "WS-078"
 title: "OnlineView inline-styles → Tailwind migration"
 legacy_id: "DCOMP-W4-A3-F8"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-05-next"
+claimed_at: "2026-05-05T03:35:00Z"
+started_at: "2026-05-05T03:35:00Z"
+completed_at: "2026-05-05T05:30:00Z"
+status_note: "RESOLVED 2026-05-05 SPR-039 — 26 OnlineView files migrated; 345 inline-styles → 180 (48% reduction). All remaining 180 are dynamic colors / designTokens.js refs / runtime-computed values, kept inline per founder D2 decision (designTokens.js single source of truth). F9 Import-button size unified between empty + populated states (px-4 py-2 text-[13px] min-h-11 in both). F7 deferred to separate UX-program sprint per founder D1. Build clean (7.31s); 36/36 OnlineView invariants pass; 9980/30/0 full smart-test-runner (zero regressions vs SPR-038 baseline)."
 priority_score: 22.0
 priority_label: "P1"
 category: "ready-to-start"
@@ -20,7 +22,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-039"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

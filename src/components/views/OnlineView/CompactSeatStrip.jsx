@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { SEAT_ARRAY } from '../../../constants/gameConstants';
-import { SURFACE, BORDER, TEXT, GOLD, FONT, COLOR, R } from './panelTokens';
+import { SURFACE, BORDER, TEXT, GOLD } from '../../../constants/designTokens';
 
 const STYLE_DOTS = {
   Fish: '#dc2626', LAG: '#ea580c', TAG: '#2563eb',
@@ -18,13 +18,13 @@ const STYLE_DOTS = {
 };
 
 export const CompactSeatStrip = ({ tendencyMap, selectedSeat, onSelectSeat, pinnedSeat, advisorSeat }) => (
-  <div style={{
-    display: 'flex',
-    gap: 3,
-    padding: '6px 10px',
-    background: SURFACE.inset,
-    borderBottom: `1px solid ${BORDER.default}`,
-  }}>
+  <div
+    className="flex gap-[3px] px-2.5 py-1.5 border-b"
+    style={{
+      background: SURFACE.inset,
+      borderBottomColor: BORDER.default,
+    }}
+  >
     {SEAT_ARRAY.map(seat => {
       const data = tendencyMap?.[String(seat)];
       const style = data?.style || 'Unknown';
@@ -37,52 +37,37 @@ export const CompactSeatStrip = ({ tendencyMap, selectedSeat, onSelectSeat, pinn
         <button
           key={seat}
           onClick={() => onSelectSeat(seat)}
+          className={`flex-1 flex flex-col items-center gap-0.5 px-0.5 py-1 rounded-[5px] cursor-pointer outline-none transition-all duration-150 relative border ${hasSample ? 'opacity-100' : 'opacity-[0.35]'}`}
           style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
-            padding: '4px 2px',
             background: isSelected ? SURFACE.elevated : 'transparent',
-            border: isSelected
-              ? `1px solid ${GOLD.base}`
+            borderColor: isSelected
+              ? GOLD.base
               : isAdvisorTarget
-                ? `1px solid rgba(34,197,94,0.3)`
-                : '1px solid transparent',
-            borderRadius: R.md,
-            cursor: 'pointer',
-            outline: 'none',
-            transition: 'all 0.15s',
-            opacity: hasSample ? 1 : 0.35,
-            position: 'relative',
+                ? 'rgba(34,197,94,0.3)'
+                : 'transparent',
           }}
         >
           {/* Style dot */}
-          <div style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: STYLE_DOTS[style] || STYLE_DOTS.Unknown,
-            boxShadow: isSelected ? `0 0 4px ${STYLE_DOTS[style]}` : 'none',
-          }} />
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              background: STYLE_DOTS[style] || STYLE_DOTS.Unknown,
+              boxShadow: isSelected ? `0 0 4px ${STYLE_DOTS[style]}` : 'none',
+            }}
+          />
           {/* Seat number */}
-          <span style={{
-            fontFamily: FONT.mono,
-            fontSize: 9,
-            fontWeight: isSelected ? 700 : 500,
-            color: isSelected ? GOLD.base : TEXT.muted,
-            lineHeight: 1,
-          }}>
+          <span
+            className={`font-mono text-[9px] leading-none ${isSelected ? 'font-bold' : 'font-medium'}`}
+            style={{ color: isSelected ? GOLD.base : TEXT.muted }}
+          >
             {seat}
           </span>
           {/* Pin indicator */}
           {isPinnedSeat && (
-            <div style={{
-              position: 'absolute', top: 1, right: 2,
-              fontSize: 6, lineHeight: 1,
-              color: GOLD.base,
-            }}>&#x1F4CC;</div>
+            <div
+              className="absolute top-px right-0.5 text-[6px] leading-none"
+              style={{ color: GOLD.base }}
+            >&#x1F4CC;</div>
           )}
         </button>
       );

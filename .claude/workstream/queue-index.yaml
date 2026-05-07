@@ -6,8 +6,8 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-04T21:35:00Z"
-item_count: 158
+last_updated: "2026-05-07T09:35:00Z"
+item_count: 159
 # 2026-05-03: WS-150..WS-157 added — HSP v2 backlog (turn/river archetypes + multiway model +
 # adjustment composition + caching + LLM augmentation). 1 master + 7 work items. Deferred from
 # WS-136 v1 closing; not a sprint commitment — claim against /next when SCF surfaces a need.
@@ -224,7 +224,7 @@ items:
     effort: "M"
     claimed_by: ""
     sprint_id: ""
-    status_note: "First claim DONE 2026-05-03 (SPR-031): hero-bb-defense-width rule + 13 tests. Catalog: 2/25 shipped. Ongoing — re-claim per sprint with explicit rules picked from catalog gaps."
+    status_note: "3rd claim shipped 2026-05-07 SPR-046 (catalog 4/25 → 6/25): hero-pf-3bet-overfold + hero-oop-3bet-underfold (first UNDER-fold rule). Mid-sprint pivot from original hero-pf-open-overfold pair after discovery of accumulator structural blocker (RFI fold + open bucket to different keys); pf-open-overfold deferred with documented resolution path. Prior claims: SPR-031 (1 rule), SPR-040 (2 rules), SPR-046 (2 rules)."
   - id: "WS-147"
     title: "SCF G5 child 3 — lesson authoring framework"
     status: done
@@ -255,7 +255,7 @@ items:
     status_note: "SHIPPED SPR-033. 4 modules (tierConceptMap + conceptMastery + composite + learningStateDescriber) + 62 new tests + 2 cluster lessons + lesson rename migration + leak rule re-pointing + settingsReducer selfCoach state + 3 doc updates (CLAUDE.md + lesson-authoring-template + leak-catalog) + WS-159 backlog for surface follow-up. End-to-end SCF G5 infrastructure spine closed."
   - id: "WS-149"
     title: "SCF G5 child 5 — ≥10 reference lessons across ≥3 tiers"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "self-coach-foundation"
@@ -263,9 +263,10 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "Content-heavy authoring; needs WS-147 framework. Per WS-148 / SPR-033: 11 sub-concept lesson files (under cbet-defense-cluster + bb-defense-cluster umbrellas) are first batch; granularity floor = one lesson per baseline-distinct situation-key region."
+    claimed_by: "session-2026-05-05-next"
+    sprint_id: "SPR-037"
+    completed_at: "2026-05-05T01:30:00Z"
+    status_note: "RESOLVED 2026-05-05 SPR-037 — 4 sub-concept lessons authored (bb-defense-vs-EARLY + ip-cbet-defense-{dry,medium,wet}-LATE). Total catalog now 11 lessons / 5 tiers (T1=1, T2=2, T3=5, T4=1, T5=1). All schema-compliant (lessonRegistry 8/8 + migration 6/6 + skillAssessment 139/139); smart-test-runner 9982/9982 (30 skipped, 0 regressions); build clean. Note: WS-149 framed as 'ongoing authoring beyond initial 10' — 7 sub-concept lessons remain (4 BB-defense + 3 IP-cbet BUTTON variants); to be claimed in future sprints when WS-146 v2 splits leak rules per opener-position / per-texture-and-position."
   - id: "WS-159"
     title: "SCF G5 — SelfCoachView Curriculum surface (Gate 1 audit + Gate 4 design + implementation)"
     status: backlog
@@ -365,7 +366,7 @@ items:
     status_note: "SHIPPED SPR-036. settings.privacy.photoCaptureEnabled (default false, AP-PIO-03). PrivacySection in SettingsView. CI-grep test sourceUtilPolicy.test.js enforcing PIO/SCF imports forbidden in 4 blacklisted live-table surfaces. 13 new tests."
   - id: "WS-166"
     title: "IdentityAvatar v2 — proper visual-design pass + mobile optimization"
-    status: backlog
+    status: done
     priority_score: 18.0
     priority_label: "P2"
     category: "player-identification-v2"
@@ -373,9 +374,25 @@ items:
     program: "design"
     type: improvement
     effort: "L"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "Owner-flagged 2026-05-04 end of Phase 1.8 review: 'didn't get a proper treatment for being such a huge visual element'. Phase 1-1.8 shipped functional IdentityAvatar (commits d600bdb..8f1d526). v2 = aesthetic redesign + mobile-first + DiceBear-eval + style guide + distinguishing-mark badges + recognition-test re-run."
+    claimed_by: "session-2026-05-06-next"
+    sprint_id: "SPR-041"
+    completed_at: "2026-05-06T20:30:00Z"
+    status_note: "SHIPPED SPR-041 — re-scoped mid-sprint after avataaars rollback. Final form: v1 in-house renderer kept (engineer-art aesthetic accepted; visual-quality upgrade deferred to follow-up); IDB v24 migration backfills accessoryInventory + defaults distinguishingMarks; 5 distinguishing-mark badge primitives shipped (tattoo/hearing-aid/bindi/scar/prosthetic with location anchors); AvatarRenderer + IdentityAvatar wire badges through; per-item validation tightened; style guide doc complete. 10109/20/0 full smart-test-runner; build clean."
+  - id: "WS-167"
+    title: "Token system consolidation — merge panelTokens.js into designTokens.js"
+    status: done
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "ready-to-start"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-05-next"
+    sprint_id: "SPR-038"
+    completed_at: "2026-05-05T03:30:00Z"
+    enables: ["WS-078"]
+    status_note: "RESOLVED 2026-05-05 SPR-038 — panelTokens.js DELETED. designTokens.js absorbs SURFACE/BORDER/TEXT/BUCKET_COLORS/ACTION_PILL_COLORS/CLAIM_CONFIDENCE_COLOR. GOLD reconciled scalar→object (14 designTokens scalar consumers updated). 22 panelTokens consumers re-pointed to designTokens. SP/R/COLOR/FONT exports DROPPED — references migrated to Tailwind classes (font-display + font-mono added to tailwind.config) or inline literals. EV reconciled to verdict-keyed shape. ACTION (panel pill) renamed ACTION_PILL_COLORS. CONF_COLOR renamed CLAIM_CONFIDENCE_COLOR (different concept from QUALITY_CONFIG). Build clean (5.88s); 9980 tests passing / 30 skipped / 0 failures; OnlineView 36/36 invariants green. WS-078 UNBLOCKED."
   - id: "WS-014"
     title: "Stream E"
     legacy_id: "EAL-Stream-E"
@@ -1213,7 +1230,7 @@ items:
   - id: "WS-078"
     title: "OnlineView inline-styles → Tailwind migration"
     legacy_id: "DCOMP-W4-A3-F8"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "ready-to-start"
@@ -1221,8 +1238,9 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-05-next"
+    sprint_id: "SPR-039"
+    status_note: "RESOLVED 2026-05-05 SPR-039 — 26 OnlineView files migrated; 345 inline-styles → 180 (48% reduction). Remaining 180 are dynamic colors / designTokens refs (kept inline per D2). F9 unified; F7 deferred per D1. Build clean; 9980/30/0; 36/36 OnlineView invariants."
   - id: "WS-079"
     title: "contracts/sidebar-to-online-view.md"
     legacy_id: "DCOMP-W4-A3-F10"
@@ -1525,7 +1543,7 @@ items:
   - id: "WS-102"
     title: "betweenHandsFsm debounce + modeAExpired symmetry"
     legacy_id: "RT-75"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "sidebar-recurrence"
@@ -1533,12 +1551,14 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-045"
+    completed_at: "2026-05-07T08:30:00Z"
+    status_note: "RESOLVED 2026-05-07 SPR-045 — pendingActive debounce state + modeAExpired symmetry; +5 net tests; 0 regressions"
   - id: "WS-103"
     title: "Freeze incoming live_context at SW boundary"
     legacy_id: "RT-78"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "sidebar-recurrence"
@@ -1546,12 +1566,13 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-044"
+    status_note: "RESOLVED 2026-05-07 SPR-044 — shared/freeze-utils.js (deepFreeze, 31 LoC) + service-worker.js wire (+7 lines) + 9 freeze-utils tests; 68 files / 2263 tests / 0 regressions; build clean. Cluster siblings WS-101/102/104 remain (3 of 5)."
   - id: "WS-104"
     title: "Microtask-deferred timer registration leak"
     legacy_id: "RT-79"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "sidebar-recurrence"
@@ -1559,8 +1580,10 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-045"
+    completed_at: "2026-05-07T08:25:00Z"
+    status_note: "RESOLVED 2026-05-07 SPR-045 — synchronous timer registration; named-closure pattern; registry contains both keys immediately after IIFE; 0 regressions"
   - id: "WS-105"
     title: "SW→side-panel port missing validateMessage"
     legacy_id: "RT-80"

@@ -1,0 +1,193 @@
+id: "SPR-046"
+title: "SCF G5 catalog continuation — close preflop fold-equity gap with hero-pf-3bet-overfold + hero-oop-3bet-underfold (WS-146 3rd claim; pivot from pf-open-overfold)"
+status: completed
+approved_at: "2026-05-07T08:40:00Z"
+completed_at: "2026-05-07T09:40:00Z"
+goal: |
+  Two more SCF leak rules ship from the catalog — closing the preflop
+  fold-equity gap (0/4 → 2/4) so the coaching surface starts flagging
+  hero leaks in the most volume-heavy decision class (preflop facing
+  bets). Each rule is a single file in src/utils/skillAssessment/leakRules/
+  following the _template.js pattern; auto-registered via the existing
+  import.meta.glob detector.
+
+  D-line return after a 3-engineering-sprint streak (SPR-043/044/045
+  boundary-hardening cluster). Catalog progress 4/25 → 6/25.
+
+items:
+  - id: "WS-146"
+    title: "SCF G5 catalog claim 3 — hero-pf-3bet-overfold + hero-oop-3bet-underfold (pivot from pf-open-overfold mid-sprint)"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-05-07T09:35:00Z"
+    accept_criteria:
+      - "leakRules/heroPf3betOverfold.js + leakRules/heroOop3betUnderfold.js authored following _template.js pattern"
+      - "Companion test files for both rules (mirror heroIpCbetOverfold + heroOopCbetOverfold test shape)"
+      - "solverBaselines.js extended with 8-axis situation keys for preflop fold-equity decisions"
+      - "tierConceptMap registers the 2 new umbrellas + 6 sub-concepts; SITUATION_KEY_TO_CONCEPT extended"
+      - "Both umbrella lessons authored (migration test requires every umbrella has a loaded lesson)"
+      - "leak-catalog.md updates both shipped entries to SHIPPED ★ status; documents pf-open-overfold deferral with resolution path"
+      - "Targeted vitest skillAssessment suite green; full smart-test-runner green; npm run build clean"
+    progress_notes: |
+      Mid-sprint pivot ratified by founder 2026-05-07: original anchor
+      pair (hero-pf-open-overfold + hero-oop-3bet-underfold) replaced with
+      (hero-pf-3bet-overfold + hero-oop-3bet-underfold) after structural
+      discovery during execution.
+
+      Discovery: deriveSituationKey:DERIVE_CONTEXT_ACTION buckets RFI fold
+      and RFI open under different keys. For hero RFI fold (verb='fold',
+      raisesBefore=0), contextAction returns 'limp' (the raisesBefore===0
+      branch returns 'open' for raise/bet, else 'limp'). For RFI open
+      (verb='raise'), contextAction returns 'open'. The accumulator buckets
+      each hero action by its own derived contextAction → fold + open land
+      under different situation keys. Computing fold-rate over the RFI
+      decision space requires a single bucket containing both → can't be
+      done with the current accumulator design.
+
+      Why this didn't surface earlier: all 4 prior shipped rules
+      (hero-ip-cbet-overfold, hero-bb-defense-width, hero-oop-cbet-overfold,
+      hero-flop-vs-donk-misresponse) bucket vs-bet defense decisions where
+      fold + call + raise all share contextAction (vsBet / vsopen / vs3bet).
+      RFI is the first decision class where the action verb itself drives
+      the contextAction bucketing.
+
+      Pivot rationale: hero-pf-3bet-overfold is structurally clean (vs3bet
+      bucket holds folds + calls; 4bets land in :4bet:na bucket; foldRate
+      is well-defined). Same category (preflop-fold-equity), same sprint
+      goal in spirit (catalog +2 rules; gap closure 1/4 → 3/4; 25 → 25
+      total catalog + 1 entry status changed PLANNED → DEFERRED).
+
+      Implementation:
+        - src/utils/skillAssessment/leakRules/heroPf3betOverfold.js (~120 LoC)
+          • Matches preflop:none:{EARLY|MIDDLE|LATE|BUTTON}:agg:{ip|oop}:raise:vs3bet:na
+          • solverBaselineKey() normalizes isIP axis to 'ip' (single
+            per-position baseline serves both ip + oop bucket configs)
+          • Detect: over-fold direction (delta > 5pp + ci.lower > baseline)
+          • relatedConceptId: pf-3bet-defense-cluster
+        - src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js (~120 LoC)
+          • Matches preflop:none:{SMALL_BLIND|BIG_BLIND}:def:oop:raise:vs3bet:na
+          • Detect: UNDER-fold direction (mirror — delta = baseline - observed
+            > 5pp + ci.upper < baseline). First under-fold rule in catalog;
+            establishes the mirror detection pattern for future under-fold rules.
+          • relatedConceptId: oop-3bet-defense-cluster
+        - src/utils/skillAssessment/solverBaselines.js — +6 baselines
+          (4 pf-3bet position-keyed + 2 oop-3bet SB/BB)
+        - src/utils/skillAssessment/tierConceptMap.js — 2 new umbrellas
+          (Tier 4) + 6 sub-concepts + 10 SITUATION_KEY_TO_CONCEPT entries
+          (8 pf-3bet covering both isIP variants per position + 2 oop-3bet)
+        - docs/projects/self-coach-foundation/lessons/pf-3bet-defense-cluster.md
+          (~70 lines: exposition + worked example + success criteria)
+        - docs/projects/self-coach-foundation/lessons/oop-3bet-defense-cluster.md
+          (~85 lines: first under-fold lesson; explains why over-defense
+          OOP after flat-call is structurally bad)
+        - docs/projects/self-coach-foundation/leak-catalog.md
+          • hero-pf-3bet-overfold: PLANNED → SHIPPED ★ v1
+          • hero-oop-3bet-underfold: PLANNED → SHIPPED ★ v1 (first under-fold)
+          • hero-pf-open-overfold: PLANNED → DEFERRED (with resolution path)
+          • Coverage table: preflop-fold-equity 1/4 → 3/4; total 4/25 → 6/25;
+            new "Deferred" column added
+        - 2 new test files (heroPf3betOverfold.test.js: 17 tests;
+          heroOop3betUnderfold.test.js: 18 tests covering matchesBucket
+          parity, solverBaselineKey normalization, gating, and the under-fold
+          direction)
+        - 2 hardcoded count tests adjusted (conceptMastery 32 → 40;
+          solverBaselines 19 → 25)
+
+      Verification:
+        - npx vitest run src/utils/skillAssessment/ → 217/217
+          (was 182 pre-SPR-046; +35 net = 17 + 18 new rule tests)
+        - migration tests: every umbrella has a loaded lesson; every
+          SITUATION_KEY_TO_CONCEPT value resolves to a registered specific
+          concept under an umbrella (clean)
+        - bash scripts/smart-test-runner.sh → 10196 / 20 skipped / 0 failed
+          (was 10161 SPR-045 baseline; +35 net = the 35 new skillAssessment
+          tests; 0 regressions)
+        - npm run build → clean (8.31s)
+
+      Catalog status post-sprint:
+        - 6/25 shipped (was 4/25)
+        - preflop-fold-equity: 3/4 shipped, 1 deferred (was 1/4 shipped, 3 planned)
+        - flop-continuation: 3/3 closed (unchanged from SPR-040)
+        - First under-fold direction in catalog (mirror pattern established
+          for future under-fold rules: detect logic inverts ci-bound check
+          and delta direction)
+
+      Sibling ticket queue (next claim candidates per WS-146 description):
+        - preflop-sizing category (0 shipped, 3 planned): pf-open-undersizing,
+          3bet-undersizing-oop, squeeze-undersizing
+        - position-discipline (0/2 planned)
+        - sample-size-discipline (0/2 planned)
+        - Resolution-then-revisit: hero-pf-open-overfold (after accumulator
+          decision-class-bucket path or DERIVE_CONTEXT_ACTION refactor)
+
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — leak-catalog continuation; preflop fold-equity gap closure (WS-146 3rd claim; SPR-031 + SPR-040 prior)"
+composed_by: auto
+created_at: "2026-05-07T08:40:00Z"
+
+composition_notes: |
+  Anchor selection rationale:
+    - Master Plan rhythm: 3 engineering sprints in a row (SPR-043/044/045
+      sidebar-recurrence boundary-hardening cluster); product alternation
+      due. SPR-042 was D-line (curriculum surface), SPR-041 was A-line
+      (IdentityAvatar v2 with rollback). D-line continuation matches the
+      SPR-040 exit note's explicit pointer at preflop-fold-equity gap
+      closure.
+    - Cluster status 4/5 done. WS-101 (replay corpus extension) is the
+      remaining sibling but is a structurally different shape (test-corpus
+      authoring, ~1.5 sessions actual vs surgical-fix shape of WS-103/104/
+      105/102) — better as its own focused sprint than trailing this
+      cluster.
+    - WS-146 has known velocity from SPR-031 (1 rule) + SPR-040 (2 rules);
+      M-tagged, ~1 session actual per claim. Pure framework-driven
+      authoring within established skillAssessment/ structure — no new
+      architectural work.
+    - Highest-coverage gap. Preflop fold-equity is a 0-shipped category
+      in a high-volume decision class (every preflop-facing-bet hand).
+      Closing 2 of 4 here gives the coaching surface its first preflop
+      coverage; flop-continuation closed 3/3 in SPR-040.
+    - A-line tickets named in SPR-041 close-out (DistinguishingMarksSection,
+      accessory entry flow, headwearOverride) don't have queue YAMLs yet
+      — would need ticket-authoring overhead before any sprint. WS-146 is
+      immediately ready.
+
+  Rule selection (SPR-040 close-out explicitly suggested these two):
+    1. hero-pf-open-overfold — hero faces a preflop open-raise and folds
+       too often (defense from blinds and IP cold-call positions vs
+       opens). Fold-equity miscalibration; villain over-rewarded for
+       open-raises.
+    2. hero-oop-3bet-underfold — hero faces a 3bet OOP and continues
+       too often (calls/4bets) vs villain's 3bet range. Mirror direction
+       to #1 — under-folding rather than over-folding.
+
+  These give us symmetric coverage on the two most common preflop facing-
+  bet shapes (open vs 3bet) and exercise both directions of the
+  fold-equity miscalibration axis (over-fold + under-fold).
+
+  Source-class damping check (Step 2d):
+    - SPR-043 anchor (WS-105) → untagged (backlog-md-migration origin)
+    - SPR-044 anchor (WS-103) → untagged
+    - SPR-045 anchor (WS-104) → untagged
+    - SPR-046 candidate WS-146 → spr-followup (parent_ws: WS-013)
+    - Different source-class than the recent saturated cluster; no damping
+    - The 3-sprint engineering streak doesn't trigger damping for design
+      anchors
+
+  Anti-goal cross-check: SKIPPED (audit script not present in repo).
+  Manual review:
+    - AP-SCF-01 (system-imposed grading): refused. Both rules use the
+      existing system-detected leak-firing path — owner-volunteered
+      grading scope unchanged.
+    - AP-06 (forbidden copy): bound by CI-grep on leak-firing copy. No
+      shame language, no engagement-pressure copy proposed.
+    - Autonomy red lines #5 (no shame), #8 (cross-surface contamination):
+      both honored by framework defaults; no surface changes in this
+      sprint.
+
+  Anti-goal check: clean.
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-07T08:40:00Z"
+  notes: "Manual review; audit script not present in repo. Pure leak-rule authoring within established skillAssessment/ framework; AP-SCF-01 + AP-06 unchanged."

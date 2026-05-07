@@ -130,6 +130,10 @@ const validators = {
     const v = validateErrorReport(msg.report);
     return v.valid ? null : v.errors.join('; ');
   },
+
+  // Side panel → SW
+  request_full_state: (_msg) => null,
+  reload_ignition_tabs: (_msg) => null,
 };
 
 /**

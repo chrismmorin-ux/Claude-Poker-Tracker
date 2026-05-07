@@ -20,32 +20,29 @@ export const SeatDetailPanel = ({
   const hasProfile = selectedSeatData.villainProfile && selectedSeatData.villainProfile.maturity !== 'unknown';
 
   return (
-    <div style={{
-      background: '#16213e',
-      border: '1px solid #d4a847',
-      borderRadius: 8,
-      padding: 12,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 'bold', color: '#d4a847', margin: 0 }}>
+    <div className="bg-[#16213e] border border-[#d4a847] rounded-lg p-3">
+      <div className="flex justify-between items-center mb-1">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-bold text-[#d4a847] m-0">
             Seat {selectedSeat}
           </h3>
           {selectedSeatData.style && (
-            <span style={{
-              fontSize: 10, fontWeight: 'bold', padding: '2px 6px', borderRadius: 3,
-              backgroundColor: STYLE_COLORS[selectedSeatData.style]?.bg || '#374151',
-              color: STYLE_COLORS[selectedSeatData.style]?.text || '#9ca3af',
-            }}>
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-[3px]"
+              style={{
+                backgroundColor: STYLE_COLORS[selectedSeatData.style]?.bg || '#374151',
+                color: STYLE_COLORS[selectedSeatData.style]?.text || '#9ca3af',
+              }}
+            >
               {selectedSeatData.style}
             </span>
           )}
         </div>
-        <span style={{ fontSize: 11, color: '#6b7280' }}>
+        <span className="text-[11px] text-gray-500">
           {selectedSeatData.sampleSize} hands
           {(() => {
             const q = QUALITY_CONFIG[getQualityTier(selectedSeatData.sampleSize || 0)];
-            return q ? <span style={{ fontSize: 10, marginLeft: 4, color: q.color }}>({q.label})</span> : null;
+            return q ? <span className="text-[10px] ml-1" style={{ color: q.color }}>({q.label})</span> : null;
           })()}
         </span>
       </div>
@@ -55,7 +52,7 @@ export const SeatDetailPanel = ({
         const tier = getQualityTier(selectedSeatData.sampleSize || 0);
         const detail = QUALITY_DETAIL[tier];
         return detail ? (
-          <div style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic', marginBottom: 6 }}>
+          <div className="text-[10px] text-gray-500 italic mb-1.5">
             {detail}
           </div>
         ) : null;
@@ -93,21 +90,22 @@ export const SeatDetailPanel = ({
 
       {/* Legacy exploits (shown when no observations or as supplement) */}
       {(!selectedSeatData.observations?.length) && selectedSeatData.exploits?.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Exploits</h4>
+        <div className="mb-2">
+          <h4 className="text-[11px] text-gray-400 mb-1 uppercase">Exploits</h4>
           {selectedSeatData.exploits.slice(0, 8).map((exploit, i) => {
             const dotColor = TIER_DOT[exploit.tier] || TIER_DOT.speculative;
             const opacity = Math.max(0.5, Math.min(1, (exploit.scoring?.worthiness || 0.5) * 1.5));
             return (
-              <div key={i} style={{
-                fontSize: 12, padding: '4px 8px', marginBottom: 3,
-                background: '#0d1117', borderRadius: 4, borderLeft: '2px solid #d4a847',
-                display: 'flex', alignItems: 'center', gap: 6, opacity,
-              }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                  backgroundColor: dotColor,
-                }} title={exploit.tier || 'speculative'} />
+              <div
+                key={i}
+                className="text-xs px-2 py-1 mb-[3px] bg-[#0d1117] rounded border-l-2 border-l-[#d4a847] flex items-center gap-1.5"
+                style={{ opacity }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: dotColor }}
+                  title={exploit.tier || 'speculative'}
+                />
                 <span>{exploit.label || exploit.description || 'Exploit detected'}</span>
               </div>
             );
@@ -117,13 +115,13 @@ export const SeatDetailPanel = ({
 
       {/* Legacy weaknesses (shown when no observations) */}
       {(!selectedSeatData.observations?.length) && selectedSeatData.weaknesses?.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Weaknesses</h4>
+        <div className="mb-2">
+          <h4 className="text-[11px] text-gray-400 mb-1 uppercase">Weaknesses</h4>
           {selectedSeatData.weaknesses.slice(0, 5).map((w, i) => (
-            <div key={i} style={{
-              fontSize: 12, padding: '4px 8px', marginBottom: 3,
-              background: '#0d1117', borderRadius: 4, borderLeft: '2px solid #ef4444',
-            }}>
+            <div
+              key={i}
+              className="text-xs px-2 py-1 mb-[3px] bg-[#0d1117] rounded border-l-2 border-l-red-500"
+            >
               {w.label || w.description || 'Weakness detected'}
             </div>
           ))}
@@ -133,14 +131,12 @@ export const SeatDetailPanel = ({
       {/* Briefings (always shown as supplement) */}
       {selectedSeatData.briefings?.length > 0 && (
         <div>
-          <h4 style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase' }}>Briefings</h4>
+          <h4 className="text-[11px] text-gray-400 mb-1 uppercase">Briefings</h4>
           {selectedSeatData.briefings.slice(0, 3).map((b, i) => (
-            <div key={i} style={{
-              fontSize: 12, padding: '6px 8px', marginBottom: 4,
-              background: '#0d1117', borderRadius: 4,
-              borderLeft: '2px solid #22c55e',
-              lineHeight: 1.4,
-            }}>
+            <div
+              key={i}
+              className="text-xs px-2 py-1.5 mb-1 bg-[#0d1117] rounded border-l-2 border-l-green-500 leading-[1.4]"
+            >
               {b.briefing || b.label || 'Briefing available'}
             </div>
           ))}
@@ -148,7 +144,7 @@ export const SeatDetailPanel = ({
       )}
 
       {selectedSeatData.exploits?.length === 0 && selectedSeatData.weaknesses?.length === 0 && (
-        <div style={{ fontSize: 12, color: '#6b7280', textAlign: 'center', padding: 8 }}>
+        <div className="text-xs text-gray-500 text-center p-2">
           {selectedSeatData.sampleSize < 20
             ? `Need ${20 - selectedSeatData.sampleSize} more hands for exploit detection`
             : 'No exploits detected — player appears balanced'

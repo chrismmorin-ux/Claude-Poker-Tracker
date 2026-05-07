@@ -1,10 +1,10 @@
 id: "WS-166"
 title: "IdentityAvatar v2 — proper visual-design pass + mobile optimization"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-06-next"
+claimed_at: "2026-05-06T08:30:00Z"
+completed_at: "2026-05-06T20:30:00Z"
 priority_score: 18.0
 priority_label: "P2"
 category: "player-identification-v2"
@@ -98,16 +98,43 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-041"
 decision_flags:
   - "Build-on-DiceBear (fastest, may not match identification model exactly) vs commission-custom (best quality, owner cost) vs continue-in-house (slowest, no external dep)"
   - "Distinguishing-mark badges: structured array per PIO G4 v2 audit §A7, or simpler enum"
   - "Mobile-first vs desktop-first authoring — current is desktop-first scaled down"
 status_note: |
-  Backlog. Originating context: PIO Gate 4 v2 audit shipped 2026-05-04
-  (commit 5035b12); IdentityAvatar primitive shipped Phases 1-1.8
-  (commits d600bdb..8f1d526). Owner accepted current state as functional
-  but called for proper visual treatment in a dedicated future pass.
+  DONE 2026-05-06. SPR-041 closed across 4 sessions.
+  Outcome: avataaars adoption attempted then ROLLED BACK after eye-test
+  exposed structural fidelity loss (build invisible, headwear/facialHair
+  collapsed, randomized clothing, expressions not neutral). Founder
+  ratified rollback to v1 'engineer-art' renderer; aesthetic upgrade
+  deferred to a future commission-illustrator workstream.
+  Phases shipped:
+    - Phase 1: DiceBear styleEvaluation (now removed post-rollback)
+    - Phase 2: avataaars adoption + rollback (zero net diff to renderer)
+    - Phase 3: IDB v23→v24 migration — defaults distinguishingMarks: []
+      + accessoryInventory: []; backfills legacy headwear/eyewear flat
+      fields into accessory-inventory entries (17 migration tests)
+    - Phase 4: distinguishing-mark badge primitives shipped (5 types:
+      tattoo/hearing-aid/bindi/scar/prosthetic) with 6-location anchor
+      system + AvatarRenderer wire-in + DistinguishingMarkBadge component
+      + 10 component tests; style guide doc authored at
+      docs/design/identity-avatar-style-guide.md (12 sections covering
+      viewBox/sizing/layer-order/color-tokens/palette-ordering/strokes/
+      silhouette-composition/salt-pepper/badges/limitations/back-compat/
+      future-direction); Playwright visual regression baselines locked
+      in (3 chromium snapshots: feature-catalog + anchors-grid + synth-grid)
+    - Phase 5: smart-test-runner 10109/20 skipped/0 failures (vs 10086
+      SPR-040 baseline; +23 net); npm run build clean (7.44s)
+  Backward-compat preserved: identification field shape unchanged.
+  Follow-up tickets proposed (not yet created):
+    - WS-167-style: PlayerEditor DistinguishingMarksSection
+    - WS-168-style: PlayerEditor accessory entry flow replaces flat
+      headwear/eyewear sections (per memory feedback_glasses_headwear_are_accessories)
+    - WS-169-style: per-sighting headwearOverride wired at SightingHistorySection
+    - Future visual-quality workstream: commission illustrator OR DiceBear v2
+      OR hybrid (keep v1 silhouettes + replace hair/beard/hat layers)
 source:
   origin: "phase-1.8-review-feedback-2026-05-04"
   parent_ws: "WS-008"

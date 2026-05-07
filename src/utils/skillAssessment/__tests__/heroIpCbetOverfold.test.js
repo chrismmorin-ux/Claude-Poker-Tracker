@@ -5,8 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from '../leakRules/heroIpCbetOverfold.js';
 
-const LATE_CBET_KEY = 'flop:medium:LATE:def:ip:bet:vsBet';
-const NO_MATCH_KEY = 'turn:wet:EARLY:agg:oop:none:cbet';
+const LATE_CBET_KEY = 'flop:medium:LATE:def:ip:bet:vsBet:pfc';
+const NO_MATCH_KEY = 'turn:wet:EARLY:agg:oop:none:cbet:pfa';
 
 const baseline38 = { baseline: 0.38, source: 'hardcoded', confidence: 0.85, lastValidatedAt: '2026-05-03' };
 
@@ -39,47 +39,53 @@ describe('hero-ip-cbet-overfold rule signature', () => {
 // ─── matchesBucket ───────────────────────────────────────────────────────
 
 describe('matchesBucket', () => {
-  it('matches LATE position IP defending vs flop bet', () => {
-    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet')).toBe(true);
+  it('matches LATE position IP defending vs flop bet (pfc)', () => {
+    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet:pfc')).toBe(true);
   });
 
-  it('matches BUTTON position IP defending vs flop bet', () => {
-    expect(rule.matchesBucket('flop:dry:BUTTON:def:ip:bet:vsBet')).toBe(true);
+  it('matches BUTTON position IP defending vs flop bet (pfc)', () => {
+    expect(rule.matchesBucket('flop:dry:BUTTON:def:ip:bet:vsBet:pfc')).toBe(true);
   });
 
   it('matches across all texture variants', () => {
-    expect(rule.matchesBucket('flop:dry:LATE:def:ip:bet:vsBet')).toBe(true);
-    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet')).toBe(true);
-    expect(rule.matchesBucket('flop:wet:LATE:def:ip:bet:vsBet')).toBe(true);
+    expect(rule.matchesBucket('flop:dry:LATE:def:ip:bet:vsBet:pfc')).toBe(true);
+    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet:pfc')).toBe(true);
+    expect(rule.matchesBucket('flop:wet:LATE:def:ip:bet:vsBet:pfc')).toBe(true);
   });
 
   it('does NOT match preflop', () => {
-    expect(rule.matchesBucket('preflop:none:LATE:def:ip:bet:vsBet')).toBe(false);
+    expect(rule.matchesBucket('preflop:none:LATE:def:ip:bet:vsBet:na')).toBe(false);
   });
 
   it('does NOT match turn or river', () => {
-    expect(rule.matchesBucket('turn:medium:LATE:def:ip:bet:vsBet')).toBe(false);
-    expect(rule.matchesBucket('river:medium:LATE:def:ip:bet:vsBet')).toBe(false);
+    expect(rule.matchesBucket('turn:medium:LATE:def:ip:bet:vsBet:pfc')).toBe(false);
+    expect(rule.matchesBucket('river:medium:LATE:def:ip:bet:vsBet:pfc')).toBe(false);
   });
 
-  it('does NOT match OOP positions (SB/BB/EARLY/MIDDLE)', () => {
-    expect(rule.matchesBucket('flop:medium:SB:def:ip:bet:vsBet')).toBe(false);
-    expect(rule.matchesBucket('flop:medium:BB:def:ip:bet:vsBet')).toBe(false);
-    expect(rule.matchesBucket('flop:medium:EARLY:def:ip:bet:vsBet')).toBe(false);
+  it('does NOT match OOP positions (SMALL_BLIND/BIG_BLIND/EARLY/MIDDLE)', () => {
+    expect(rule.matchesBucket('flop:medium:SMALL_BLIND:def:ip:bet:vsBet:pfc')).toBe(false);
+    expect(rule.matchesBucket('flop:medium:BIG_BLIND:def:ip:bet:vsBet:pfc')).toBe(false);
+    expect(rule.matchesBucket('flop:medium:EARLY:def:ip:bet:vsBet:pfc')).toBe(false);
   });
 
   it('does NOT match OOP situations (isIP=oop)', () => {
-    expect(rule.matchesBucket('flop:medium:LATE:def:oop:bet:vsBet')).toBe(false);
+    expect(rule.matchesBucket('flop:medium:LATE:def:oop:bet:vsBet:pfc')).toBe(false);
   });
 
   it('does NOT match aggressor situations', () => {
-    expect(rule.matchesBucket('flop:medium:LATE:agg:ip:none:cbet')).toBe(false);
+    expect(rule.matchesBucket('flop:medium:LATE:agg:ip:none:cbet:pfa')).toBe(false);
+  });
+
+  it('does NOT match donk-response situations (pfa) — those go to hero-flop-vs-donk-misresponse', () => {
+    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet:pfa')).toBe(false);
+    expect(rule.matchesBucket('flop:dry:BUTTON:def:ip:bet:vsBet:pfa')).toBe(false);
   });
 
   it('returns false for malformed keys', () => {
     expect(rule.matchesBucket(null)).toBe(false);
     expect(rule.matchesBucket('')).toBe(false);
     expect(rule.matchesBucket('flop:medium:LATE')).toBe(false); // too few segments
+    expect(rule.matchesBucket('flop:medium:LATE:def:ip:bet:vsBet')).toBe(false); // 7 axes (pre-SPR-040 format)
   });
 });
 

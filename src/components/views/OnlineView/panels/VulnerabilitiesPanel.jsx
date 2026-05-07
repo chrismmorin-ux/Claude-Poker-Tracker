@@ -6,16 +6,22 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, R } from '../panelTokens';
+import { BORDER, TEXT } from '../../../../constants/designTokens';
+
+const RED = '#ef4444';     // red-500 — was COLOR.red
+const ORANGE = '#f97316';  // orange-500 — was COLOR.orange
+const YELLOW = '#eab308';  // yellow-500 — was COLOR.yellow
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
 
 const sevColor = (severity) => {
   if (typeof severity === 'string') {
-    return severity === 'high' ? COLOR.red : severity === 'medium' ? COLOR.orange : COLOR.yellow;
+    return severity === 'high' ? RED : severity === 'medium' ? ORANGE : YELLOW;
   }
   // Numeric 0-1
-  if (severity >= 0.7) return COLOR.red;
-  if (severity >= 0.4) return COLOR.orange;
-  return COLOR.yellow;
+  if (severity >= 0.7) return RED;
+  if (severity >= 0.4) return ORANGE;
+  return YELLOW;
 };
 
 const sevLabel = (severity) => {
@@ -29,13 +35,13 @@ export const VulnerabilitiesPanel = ({ vulnerabilities }) => {
   if (!vulnerabilities || vulnerabilities.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{
-        ...sectionHeader,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
+    <div className="mb-2.5">
+      <div
+        className={`${SECTION_HEADER_CLASSES} flex justify-between items-center`}
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
         <span>Active Vulnerabilities</span>
-        <span style={{ fontFamily: FONT.mono, fontSize: 8, fontWeight: 400, color: TEXT.faint }}>
+        <span className="font-mono text-[8px] font-normal" style={{ color: TEXT.faint }}>
           {vulnerabilities.length} found
         </span>
       </div>
@@ -48,59 +54,57 @@ export const VulnerabilitiesPanel = ({ vulnerabilities }) => {
           : sl === 'high' ? 85 : sl === 'medium' ? 55 : 30;
 
         return (
-          <div key={i} style={{
-            padding: '5px 8px',
-            marginBottom: 3,
-            borderLeft: `3px solid ${sc}`,
-            borderRadius: `0 ${R.sm}px ${R.sm}px 0`,
-            background: `${sc}08`,
-          }}>
+          <div
+            key={i}
+            className="px-2 py-[5px] mb-[3px] border-l-[3px] rounded-r-[3px]"
+            style={{
+              borderLeftColor: sc,
+              background: `${sc}08`,
+            }}
+          >
             {/* Top row: severity bar + label + severity tag */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <div className="flex items-center gap-1.5 mb-0.5">
               {/* Severity bar */}
-              <div style={{
-                width: 30, height: 3, background: '#374151',
-                borderRadius: 2, flexShrink: 0,
-              }}>
-                <div style={{
-                  width: `${barWidth}%`, height: '100%', borderRadius: 2,
-                  background: sc,
-                }} />
+              <div className="w-[30px] h-[3px] bg-gray-700 rounded-sm shrink-0">
+                <div
+                  className="h-full rounded-sm"
+                  style={{
+                    width: `${barWidth}%`,
+                    background: sc,
+                  }}
+                />
               </div>
 
               {/* Label */}
-              <span style={{
-                fontSize: 10, fontWeight: 600, color: TEXT.primary,
-                flex: 1, lineHeight: 1.2,
-              }}>
+              <span
+                className="text-[10px] font-semibold flex-1 leading-[1.2]"
+                style={{ color: TEXT.primary }}
+              >
                 {v.label || v.description || v.id}
               </span>
 
               {/* Severity tag */}
-              <span style={{
-                fontSize: 7, fontWeight: 700, textTransform: 'uppercase',
-                color: sc, flexShrink: 0,
-              }}>
+              <span
+                className="text-[7px] font-bold uppercase shrink-0"
+                style={{ color: sc }}
+              >
                 {sl}
               </span>
             </div>
 
             {/* Exploit hint */}
             {v.exploitHint && (
-              <div style={{
-                fontSize: 9, fontStyle: 'italic', color: '#4b8bbf',
-                lineHeight: 1.3, paddingLeft: 36,
-              }}>
+              <div className="text-[9px] italic text-[#4b8bbf] leading-[1.3] pl-9">
                 {v.exploitHint}
               </div>
             )}
 
             {/* Evidence */}
             {v.evidence && (
-              <div style={{
-                fontSize: 8, fontFamily: FONT.mono, color: TEXT.faint,
-                paddingLeft: 36, marginTop: 1,
-              }}>
+              <div
+                className="font-mono text-[8px] pl-9 mt-px"
+                style={{ color: TEXT.faint }}
+              >
                 {v.evidence}
               </div>
             )}
@@ -109,11 +113,4 @@ export const VulnerabilitiesPanel = ({ vulnerabilities }) => {
       })}
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

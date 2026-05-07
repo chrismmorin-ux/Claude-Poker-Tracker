@@ -6,6 +6,17 @@
  *
  * Extracted from heroDecisionAccumulator in WS-158 / SPR-031 so the
  * derivation logic is shared between offline accumulation and live consumer.
+ *
+ * Format extended from 7 to 8 axes in WS-146 SPR-040 (2026-05-06):
+ *   street:texture:posCategory:isAgg:isIP:facingAction:contextAction:preflopAggressor
+ *
+ * The `preflopAggressor` axis distinguishes "hero called preflop" (`pfc`)
+ * from "hero raised preflop" (`pfa`) on postflop streets. This separates
+ * cbet-defense (hero pfc, faces villain cbet) from donk-defense (hero pfa,
+ * faces villain donk). Without it, both situations collapse to the same
+ * bucket and rules can't distinguish them. On preflop streets the axis
+ * value is `'na'` (not applicable — the action under analysis IS the
+ * preflop decision).
  */
 
 import { analyzeBoardTexture } from '../pokerCore/boardTexture.js';
@@ -117,6 +128,24 @@ const FACING_ACTION = ({ street, actionSequence, currentOrder }) => {
   return NORMALIZE_ACTION(lastAgg.action);
 };
 
+const DERIVE_PREFLOP_AGGRESSOR = ({ street, actionSequence, heroSeat }) => {
+  // On preflop the action under analysis IS the preflop decision; the axis
+  // is irrelevant to bucketing. Emit 'na' so preflop keys stay distinct
+  // from postflop keys at the same axis position.
+  if (street === 'preflop') return 'na';
+  if (!Array.isArray(actionSequence)) return 'pfc';
+  const heroPreflopActions = actionSequence.filter(
+    (a) => a.street === 'preflop' && Number(a.seat) === Number(heroSeat),
+  );
+  // Hero is preflop aggressor if they bet or raised at any point preflop
+  // (3bet / 4bet / open-raise). Calling, checking, or limping → caller.
+  const wasAggressor = heroPreflopActions.some((a) => {
+    const verb = NORMALIZE_ACTION(a.action);
+    return verb === 'bet' || verb === 'raise';
+  });
+  return wasAggressor ? 'pfa' : 'pfc';
+};
+
 const computeActiveOpponentSeats = (actionSequence, heroSeat, currentStreet, currentOrder) => {
   if (!Array.isArray(actionSequence)) return [];
   const folded = new Set();
@@ -132,10 +161,18 @@ const computeActiveOpponentSeats = (actionSequence, heroSeat, currentStreet, cur
 };
 
 /**
- * Build a situation key for a hero decision. Format matches villain-side
- * accumulator so future cross-cutting analysis can join on the key.
+ * Build a situation key for a hero decision.
  *
- * @param {object} parts - All 7 axes pre-derived.
+ * 8-axis format (extended from 7 in WS-146 SPR-040):
+ *   street:texture:posCategory:isAgg:isIP:facingAction:contextAction:preflopAggressor
+ *
+ * `preflopAggressor` defaults to `'na'` for preflop streets (the action under
+ * analysis IS the preflop decision) and `'pfc'` for postflop streets when
+ * unspecified. Callers passing 7-axis args (without preflopAggressor) get a
+ * sensible default; this preserves backward-compat for tests that haven't
+ * been migrated yet.
+ *
+ * @param {object} parts - All 8 axes pre-derived.
  * @returns {string}
  */
 export const buildHeroSituationKey = ({
@@ -146,7 +183,11 @@ export const buildHeroSituationKey = ({
   isIP,
   facingAction,
   contextAction,
-}) => `${street}:${texture}:${posCategory}:${isAgg}:${isIP}:${facingAction}:${contextAction}`;
+  preflopAggressor,
+}) => {
+  const pfa = preflopAggressor ?? (street === 'preflop' ? 'na' : 'pfc');
+  return `${street}:${texture}:${posCategory}:${isAgg}:${isIP}:${facingAction}:${contextAction}:${pfa}`;
+};
 
 /**
  * Derive the situation key for a single hero action in a hand. Returns null
@@ -201,6 +242,8 @@ export const deriveSituationKey = ({ hand, actionEntry, heroSeat, buttonSeat, to
     isAgg,
   });
 
+  const preflopAggressor = DERIVE_PREFLOP_AGGRESSOR({ street, actionSequence, heroSeat });
+
   return buildHeroSituationKey({
     street,
     texture,
@@ -209,6 +252,7 @@ export const deriveSituationKey = ({ hand, actionEntry, heroSeat, buttonSeat, to
     isIP: isIP ? 'ip' : 'oop',
     facingAction,
     contextAction,
+    preflopAggressor,
   });
 };
 
@@ -218,6 +262,7 @@ export const _internals = {
   NORMALIZE_ACTION,
   POS_CATEGORY_FOR_SEAT,
   DERIVE_TEXTURE,
+  DERIVE_PREFLOP_AGGRESSOR,
   getBoardForStreet,
   computeActiveOpponentSeats,
 };

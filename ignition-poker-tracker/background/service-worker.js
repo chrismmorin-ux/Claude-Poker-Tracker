@@ -13,6 +13,7 @@ import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, 
 import * as errors from '../shared/error-reporter.js';
 import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
+import { deepFreeze } from '../shared/freeze-utils.js';
 
 const SW_VERSION = EXTENSION_VERSION;
 
@@ -192,6 +193,12 @@ chrome.runtime.onConnect.addListener((port) => {
 
         case 'live_context':
           if (msg.context) {
+            // WS-103: freeze the validated payload before any consumer
+            // sees it. Pairs with the validateMessage gate (WS-105):
+            // validate → freeze → forward. Prevents post-validation
+            // mutation as the same reference fans out to storage,
+            // app-bridge, the throttle queue, and side-panel.
+            deepFreeze(msg.context);
             // Write to session storage (SW has access)
             writeLiveContext(msg.context);
             // Push to app-bridge (replaces storage.onChanged for content scripts)
@@ -284,6 +291,11 @@ chrome.runtime.onConnect.addListener((port) => {
     try { port.postMessage({ type: '__version_check', version: SW_VERSION }); } catch (e) { console.warn('[SW] Version check failed:', e.message); }
     pushFullStateToSidePanel();
     port.onMessage.addListener((msg) => {
+      const vErr = validateMessage(msg.type, msg);
+      if (vErr) {
+        errors.report('validation', `Blocked ${msg.type}: ${vErr}`, { port: 'side-panel' });
+        return; // Drop invalid messages before handler dispatch
+      }
       if (msg.type === 'request_full_state') {
         pushFullStateToSidePanel();
       }

@@ -15,7 +15,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAnalysisContext } from '../../../contexts/OnlineAnalysisContext';
 import { useSyncBridge } from '../../../contexts/SyncBridgeContext';
-import { SURFACE, BORDER, TEXT, FONT, GOLD, COLOR } from './panelTokens';
+import { SURFACE, BORDER, TEXT } from '../../../constants/designTokens';
 import { CompactSeatStrip } from './CompactSeatStrip';
 import { Tier1_GlanceStrip } from './Tier1_GlanceStrip';
 import { VillainBrief } from './VillainBrief';
@@ -115,30 +115,24 @@ export const ExtensionPanel = () => {
       <link rel="stylesheet" href={FONT_IMPORT} />
       <style dangerouslySetInnerHTML={{ __html: PANEL_ANIMATIONS }} />
 
-      <div style={{
-        width: 400,
-        height: '100vh',
-        background: SURFACE.body,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-        borderLeft: `1px solid ${BORDER.default}`,
-        borderRight: `1px solid ${BORDER.default}`,
-        fontFamily: FONT.display,
-        color: TEXT.primary,
-        WebkitFontSmoothing: 'antialiased',
-      }}>
+      <div
+        className="w-[400px] h-screen flex flex-col relative overflow-hidden font-display antialiased border-l border-r"
+        style={{
+          background: SURFACE.body,
+          borderLeftColor: BORDER.default,
+          borderRightColor: BORDER.default,
+          color: TEXT.primary,
+        }}
+      >
         {/* Noise texture */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-          background: `repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(255,255,255,0.008) 1px,rgba(255,255,255,0.008) 2px)`,
-        }} />
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: `repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(255,255,255,0.008) 1px,rgba(255,255,255,0.008) 2px)`,
+          }}
+        />
 
-        <div style={{
-          position: 'relative', zIndex: 1,
-          display: 'flex', flexDirection: 'column', height: '100%',
-        }}>
+        <div className="relative z-[1] flex flex-col h-full">
           {/* Compact seat strip */}
           <CompactSeatStrip
             tendencyMap={tendencyMap}
@@ -154,11 +148,10 @@ export const ExtensionPanel = () => {
           )}
 
           {/* Scrollable: Tier 2 + Tier 3 */}
-          <div className="ext-panel-scrollable" style={{
-            flex: 1, overflowY: 'auto', overflowX: 'hidden',
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${BORDER.subtle} transparent`,
-          }}>
+          <div
+            className="ext-panel-scrollable flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin]"
+            style={{ scrollbarColor: `${BORDER.subtle} transparent` }}
+          >
             {/* Villain identity bar — always visible when a seat is active */}
             {activeSeat && (
               <VillainBrief
@@ -177,31 +170,31 @@ export const ExtensionPanel = () => {
             {hasAdvice ? (
               <>
                 {/* Tier 2: Quick Context */}
-                <div style={{ padding: '6px 14px 10px' }}>
+                <div className="px-3.5 pt-1.5 pb-2.5">
                   {/* Situation + equity */}
-                  <div style={{
-                    display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-                    marginBottom: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 10, fontWeight: 600, color: TEXT.muted,
-                      textTransform: 'uppercase', letterSpacing: 0.5,
-                    }}>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <div
+                      className="text-[10px] font-semibold uppercase tracking-[0.5px]"
+                      style={{ color: TEXT.muted }}
+                    >
                       {advice.situationLabel || `${currentStreet || 'Waiting'}…`}
                       {advice.heroAlreadyActed && (
-                        <span style={{
-                          marginLeft: 6, fontSize: 8, padding: '1px 5px',
-                          borderRadius: 3, background: 'rgba(234,179,8,0.15)', color: '#eab308',
-                        }}>REVIEW</span>
+                        <span
+                          className="ml-1.5 text-[8px] px-[5px] py-px rounded-[3px]"
+                          style={{ background: 'rgba(234,179,8,0.15)', color: '#eab308' }}
+                        >REVIEW</span>
                       )}
                     </div>
                     {advice.heroEquity != null && (
-                      <div style={{
-                        fontFamily: FONT.mono, fontSize: 16, fontWeight: 700,
-                        color: advice.heroEquity >= 0.50 ? '#4ade80' : '#f87171',
-                      }}>
+                      <div
+                        className="font-mono text-base font-bold"
+                        style={{ color: advice.heroEquity >= 0.50 ? '#4ade80' : '#f87171' }}
+                      >
                         {Math.round(advice.heroEquity * 100)}%
-                        <span style={{ fontSize: 9, fontWeight: 400, color: TEXT.muted, marginLeft: 2 }}>eq</span>
+                        <span
+                          className="text-[9px] font-normal ml-0.5"
+                          style={{ color: TEXT.muted }}
+                        >eq</span>
                       </div>
                     )}
                   </div>
@@ -237,7 +230,7 @@ export const ExtensionPanel = () => {
                 </div>
 
                 {/* Tier 3: Deep Analysis (all panels open) */}
-                <div style={{ padding: '0 14px 60px' }}>
+                <div className="px-3.5 pb-[60px]">
                   <BucketEquityPanel
                     bucketEquities={advice.bucketEquities}
                     segmentation={advice.segmentation}
@@ -291,7 +284,7 @@ export const ExtensionPanel = () => {
               </>
             ) : activeSeat && seatData ? (
               /* Seat selected but no live advice — show villain profile */
-              <div style={{ padding: '10px 14px', color: TEXT.muted, fontSize: 11 }}>
+              <div className="px-3.5 py-2.5 text-[11px]" style={{ color: TEXT.muted }}>
                 {seatData.sampleSize > 0 ? (
                   <span>Waiting for live hand data against Seat {activeSeat}…</span>
                 ) : (
@@ -299,20 +292,19 @@ export const ExtensionPanel = () => {
                 )}
               </div>
             ) : (
-              <div style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexDirection: 'column', gap: 8, color: TEXT.muted, fontSize: 12,
-                padding: 20, textAlign: 'center',
-              }}>
+              <div
+                className="flex-1 flex flex-col items-center justify-center gap-2 text-xs p-5 text-center"
+                style={{ color: TEXT.muted }}
+              >
                 {isComputing ? (
                   <span>Analyzing…</span>
                 ) : handCount > 0 ? (
                   <span>Select a seat or wait for a hand to begin</span>
                 ) : (
                   <>
-                    <span style={{ fontSize: 20 }}>♠</span>
+                    <span className="text-xl">♠</span>
                     <span>No hands imported yet</span>
-                    <span style={{ fontSize: 10, color: TEXT.faint }}>
+                    <span className="text-[10px]" style={{ color: TEXT.faint }}>
                       Hands sync automatically from the extension
                     </span>
                   </>
@@ -322,18 +314,22 @@ export const ExtensionPanel = () => {
           </div>
 
           {/* Status footer */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '6px 14px', background: SURFACE.inset,
-            borderTop: `1px solid ${BORDER.default}`,
-            fontSize: 9, fontFamily: FONT.mono, color: TEXT.faint, flexShrink: 0,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{
-                width: 5, height: 5, borderRadius: '50%',
-                background: hasAdvice ? '#22c55e' : TEXT.faint,
-                animation: hasAdvice ? 'panelLiveDot 2s ease-in-out infinite' : 'none',
-              }} />
+          <div
+            className="flex items-center justify-between px-3.5 py-1.5 font-mono text-[9px] shrink-0 border-t"
+            style={{
+              background: SURFACE.inset,
+              borderTopColor: BORDER.default,
+              color: TEXT.faint,
+            }}
+          >
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-[5px] h-[5px] rounded-full"
+                style={{
+                  background: hasAdvice ? '#22c55e' : TEXT.faint,
+                  animation: hasAdvice ? 'panelLiveDot 2s ease-in-out infinite' : 'none',
+                }}
+              />
               <span>
                 {hasAdvice ? 'LIVE' : 'IDLE'}
                 {currentStreet ? ` · ${currentStreet.toUpperCase()}` : ''}

@@ -10,8 +10,8 @@ import {
 } from '../solverBaselines.js';
 
 describe('getSolverBaseline', () => {
-  it('returns the baseline entry for a known IP cbet defense key', () => {
-    const baseline = getSolverBaseline('flop:medium:LATE:def:ip:bet:vsBet');
+  it('returns the baseline entry for a known IP cbet defense key (8-axis pfc)', () => {
+    const baseline = getSolverBaseline('flop:medium:LATE:def:ip:bet:vsBet:pfc');
     expect(baseline).not.toBeNull();
     expect(baseline.baseline).toBe(0.38);
     expect(baseline.source).toBe('hardcoded');
@@ -19,17 +19,21 @@ describe('getSolverBaseline', () => {
   });
 
   it('returns null for an unknown situation key', () => {
-    expect(getSolverBaseline('turn:wet:EARLY:agg:oop:none:cbet')).toBeNull();
+    expect(getSolverBaseline('turn:wet:EARLY:agg:oop:none:cbet:pfa')).toBeNull();
   });
 
-  it('all 6 v1 IP cbet defense keys are present', () => {
+  it('returns null for a 7-axis (pre-SPR-040) key — migration completeness check', () => {
+    expect(getSolverBaseline('flop:medium:LATE:def:ip:bet:vsBet')).toBeNull();
+  });
+
+  it('all 6 v1 IP cbet defense keys are present (8-axis pfc)', () => {
     const expectedKeys = [
-      'flop:dry:LATE:def:ip:bet:vsBet',
-      'flop:medium:LATE:def:ip:bet:vsBet',
-      'flop:wet:LATE:def:ip:bet:vsBet',
-      'flop:dry:BUTTON:def:ip:bet:vsBet',
-      'flop:medium:BUTTON:def:ip:bet:vsBet',
-      'flop:wet:BUTTON:def:ip:bet:vsBet',
+      'flop:dry:LATE:def:ip:bet:vsBet:pfc',
+      'flop:medium:LATE:def:ip:bet:vsBet:pfc',
+      'flop:wet:LATE:def:ip:bet:vsBet:pfc',
+      'flop:dry:BUTTON:def:ip:bet:vsBet:pfc',
+      'flop:medium:BUTTON:def:ip:bet:vsBet:pfc',
+      'flop:wet:BUTTON:def:ip:bet:vsBet:pfc',
     ];
     for (const key of expectedKeys) {
       const entry = getSolverBaseline(key);
@@ -37,6 +41,45 @@ describe('getSolverBaseline', () => {
       expect(entry.baseline).toBeGreaterThan(0);
       expect(entry.baseline).toBeLessThan(1);
     }
+  });
+
+  it('all 6 OOP cbet defense keys present (SPR-040 / WS-146 second claim)', () => {
+    const expectedKeys = [
+      'flop:dry:SMALL_BLIND:def:oop:bet:vsBet:pfc',
+      'flop:medium:SMALL_BLIND:def:oop:bet:vsBet:pfc',
+      'flop:wet:SMALL_BLIND:def:oop:bet:vsBet:pfc',
+      'flop:dry:BIG_BLIND:def:oop:bet:vsBet:pfc',
+      'flop:medium:BIG_BLIND:def:oop:bet:vsBet:pfc',
+      'flop:wet:BIG_BLIND:def:oop:bet:vsBet:pfc',
+    ];
+    for (const key of expectedKeys) {
+      const entry = getSolverBaseline(key);
+      expect(entry, `missing ${key}`).not.toBeNull();
+      expect(entry.baseline).toBeGreaterThanOrEqual(0.45);
+      expect(entry.baseline).toBeLessThanOrEqual(0.55);
+    }
+  });
+
+  it('all 6 donk-defense keys present (SPR-040 / WS-146 second claim)', () => {
+    const expectedKeys = [
+      'flop:dry:LATE:def:ip:bet:vsBet:pfa',
+      'flop:medium:LATE:def:ip:bet:vsBet:pfa',
+      'flop:wet:LATE:def:ip:bet:vsBet:pfa',
+      'flop:dry:BUTTON:def:ip:bet:vsBet:pfa',
+      'flop:medium:BUTTON:def:ip:bet:vsBet:pfa',
+      'flop:wet:BUTTON:def:ip:bet:vsBet:pfa',
+    ];
+    for (const key of expectedKeys) {
+      const entry = getSolverBaseline(key);
+      expect(entry, `missing ${key}`).not.toBeNull();
+      expect(entry.confidence).toBe(0.75); // donk baselines hedge to 0.75
+    }
+  });
+
+  it('OOP cbet baseline is higher than IP cbet baseline at same texture (equity-realization sanity check)', () => {
+    const ipDry = getSolverBaseline('flop:dry:LATE:def:ip:bet:vsBet:pfc');
+    const oopDryBB = getSolverBaseline('flop:dry:BIG_BLIND:def:oop:bet:vsBet:pfc');
+    expect(oopDryBB.baseline).toBeGreaterThan(ipDry.baseline);
   });
 
   it('all entries have the required schema fields', () => {
@@ -50,8 +93,8 @@ describe('getSolverBaseline', () => {
   });
 
   it('wet boards have higher baseline fold rate than dry (texture-conditioning sanity check)', () => {
-    const dry = getSolverBaseline('flop:dry:LATE:def:ip:bet:vsBet');
-    const wet = getSolverBaseline('flop:wet:LATE:def:ip:bet:vsBet');
+    const dry = getSolverBaseline('flop:dry:LATE:def:ip:bet:vsBet:pfc');
+    const wet = getSolverBaseline('flop:wet:LATE:def:ip:bet:vsBet:pfc');
     expect(wet.baseline).toBeGreaterThan(dry.baseline);
   });
 });
@@ -59,7 +102,9 @@ describe('getSolverBaseline', () => {
 describe('listCoveredSituationKeys', () => {
   it('returns sorted list of all baseline keys', () => {
     const keys = listCoveredSituationKeys();
-    expect(keys.length).toBeGreaterThanOrEqual(6);
+    // 6 IP cbet + 1 BB defense + 6 OOP cbet + 6 donk + 4 PF 3bet (per-position;
+    // isIP normalized) + 2 OOP 3bet underfold = 25 keys post-SPR-046
+    expect(keys.length).toBe(25);
     const sorted = [...keys].sort();
     expect(keys).toEqual(sorted);
   });

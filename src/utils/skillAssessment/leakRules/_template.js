@@ -39,7 +39,10 @@ export const rule = {
    * Returns true if this rule applies to a given situation key.
    * Used by the detector to filter which buckets to evaluate.
    *
-   * @param {string} situationKey - format: street:texture:posCategory:isAgg:isIP:facingAction:contextAction
+   * @param {string} situationKey - 8-axis format (extended SPR-040):
+   *   street:texture:posCategory:isAgg:isIP:facingAction:contextAction:preflopAggressor
+   *   The 8th axis is `pfa` (hero raised preflop), `pfc` (hero called preflop),
+   *   or `na` (preflop streets — the action under analysis IS the preflop decision).
    * @returns {boolean}
    */
   matchesBucket(situationKey) {

@@ -15,8 +15,16 @@
  *
  * v1 scope (per leak-catalog):
  *   - Covers BTN/CO/HJ defending IP (LATE + BUTTON position categories)
- *   - Excludes blind defense (different dynamic — see hero-bb-cbet-defense)
+ *   - Excludes blind defense (different dynamic — see hero-oop-cbet-overfold)
  *   - Single solver baseline per (texture, position) — no villain-style precision
+ *
+ * v1 narrowing (WS-146 SPR-040): situation key gained 8th `preflopAggressor`
+ * axis. This rule now filters to `pfc` (hero called preflop, defends flop).
+ * Donk responses (hero pfa, faces villain donk) split off to the new
+ * `hero-flop-vs-donk-misresponse` rule. Pre-SPR-040 baselines were
+ * calibrated against the mixed (pfa + pfc) bucket — donk cases are rare
+ * relative to cbet-defense cases so the calibration remains broadly valid;
+ * future calibration sweep can refine if needed.
  *
  * v2/v3 expansions (deferred per catalog notes):
  *   - Split by villain style (Fish overfold less; TAG overfold more)
@@ -38,15 +46,17 @@ export const rule = {
   },
 
   /**
-   * Matches flop:*:LATE:def:ip:bet:vsBet + flop:*:BUTTON:def:ip:bet:vsBet.
+   * Matches flop:*:LATE:def:ip:bet:vsBet:pfc + flop:*:BUTTON:def:ip:bet:vsBet:pfc.
    * Hero is in position (BTN/CO/HJ via LATE/BUTTON), defending (def), facing
-   * a bet (facingAction=bet, contextAction=vsBet) on the flop.
+   * a bet (facingAction=bet, contextAction=vsBet) on the flop, AND hero was
+   * a preflop CALLER (pfc — not the preflop aggressor). The pfa case (hero
+   * raised preflop, villain donks) is handled by `hero-flop-vs-donk-misresponse`.
    */
   matchesBucket(situationKey) {
     if (!situationKey) return false;
     const parts = situationKey.split(':');
-    if (parts.length !== 7) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction] = parts;
+    if (parts.length !== 8) return false;
+    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
     return (
       street === 'flop'
       && (posCategory === 'LATE' || posCategory === 'BUTTON')
@@ -54,6 +64,7 @@ export const rule = {
       && isIP === 'ip'
       && facingAction === 'bet'
       && contextAction === 'vsBet'
+      && preflopAggressor === 'pfc'
     );
   },
 

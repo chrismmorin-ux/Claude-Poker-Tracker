@@ -6,7 +6,12 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from '../panelTokens';
+import { BORDER, TEXT } from '../../../../constants/designTokens';
+
+const GREEN = '#22c55e'; // green-500 — was GREEN
+const RED = '#ef4444';   // red-500 — was RED
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
 
 const FACTOR_LABELS = {
   af: 'Aggression',
@@ -37,60 +42,60 @@ export const FoldBreakdownPanel = ({ foldMeta }) => {
   const source = betMeta.source || 'population';
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{
-        ...sectionHeader,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
+    <div className="mb-2.5">
+      <div
+        className={`${SECTION_HEADER_CLASSES} flex justify-between items-center`}
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
         <span>Fold% Breakdown</span>
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 11, fontWeight: 700,
-          color: TEXT.primary,
-        }}>
+        <span
+          className="font-mono text-[11px] font-bold"
+          style={{ color: TEXT.primary }}
+        >
           {finalPct}%
         </span>
       </div>
 
       {/* Base estimate */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        marginBottom: 6, fontSize: 10,
-      }}>
+      <div className="flex items-center gap-1.5 mb-1.5 text-[10px]">
         <span style={{ color: TEXT.muted }}>Base estimate:</span>
-        <span style={{ fontFamily: FONT.mono, fontWeight: 600, color: TEXT.primary }}>
+        <span className="font-mono font-semibold" style={{ color: TEXT.primary }}>
           {basePct}%
         </span>
-        <span style={{
-          fontSize: 7, padding: '1px 4px', borderRadius: 2,
-          background: source.includes('model') ? 'rgba(34,197,94,0.15)' : '#374151',
-          color: source.includes('model') ? COLOR.green : TEXT.faint,
-        }}>
+        <span
+          className="text-[7px] px-1 py-px rounded-sm"
+          style={{
+            background: source.includes('model') ? 'rgba(34,197,94,0.15)' : '#374151',
+            color: source.includes('model') ? GREEN : TEXT.faint,
+          }}
+        >
           {source}
         </span>
       </div>
 
       {/* Adjustment factor pills */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      <div className="flex flex-wrap gap-1">
         {adjustments.map((adj, i) => {
           const delta = factorDelta(adj.multiplier);
           if (delta == null) return null;
           const isPositive = delta > 0;
 
           return (
-            <div key={adj.factor || i} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              padding: '2px 6px', borderRadius: 3,
-              background: isPositive ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-              border: `1px solid ${isPositive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-              fontSize: 8, fontFamily: FONT.mono,
-            }}>
-              <span style={{ color: TEXT.secondary, fontFamily: FONT.display }}>
+            <div
+              key={adj.factor || i}
+              className="font-mono inline-flex items-center gap-[3px] px-1.5 py-0.5 rounded-[3px] text-[8px]"
+              style={{
+                background: isPositive ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                border: `1px solid ${isPositive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+              }}
+            >
+              <span className="font-display" style={{ color: TEXT.secondary }}>
                 {FACTOR_LABELS[adj.factor] || adj.factor}
               </span>
-              <span style={{
-                fontWeight: 700,
-                color: isPositive ? COLOR.green : COLOR.red,
-              }}>
+              <span
+                className="font-bold"
+                style={{ color: isPositive ? GREEN : RED }}
+              >
                 {isPositive ? '+' : ''}{delta}%
               </span>
             </div>
@@ -100,20 +105,13 @@ export const FoldBreakdownPanel = ({ foldMeta }) => {
 
       {/* Total shift */}
       {totalShift != null && Math.abs(totalShift) > 0 && (
-        <div style={{
-          marginTop: 4, fontSize: 8, fontFamily: FONT.mono,
-          color: totalShift > 0 ? COLOR.green : COLOR.red,
-        }}>
+        <div
+          className="mt-1 text-[8px] font-mono"
+          style={{ color: totalShift > 0 ? GREEN : RED }}
+        >
           Net shift: {totalShift > 0 ? '+' : ''}{Math.round(totalShift)}% from base
         </div>
       )}
     </div>
   );
-};
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
 };

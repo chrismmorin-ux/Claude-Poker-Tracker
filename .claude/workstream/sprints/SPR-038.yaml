@@ -1,0 +1,162 @@
+id: "SPR-038"
+title: "Token system consolidation — merge panelTokens.js into designTokens.js (WS-078 prerequisite)"
+status: completed
+goal: |
+  Two token systems become one. `panelTokens.js` (used by 11 OnlineView
+  panel files + several non-panel components) merges into the app-wide
+  `designTokens.js`. Near-duplicates reconciled (GOLD scalar→object;
+  EV/EV_COLORS unified; QUALITY_CONFIG/CONF_COLOR unified). Per founder
+  direction 2026-05-05: aggressively attack canonical-error sources;
+  optimize for long-term repo evolution.
+
+  This sprint is the prerequisite for WS-078 (OnlineView Tailwind
+  migration). Once token consolidation ships, WS-078 becomes a cleaner
+  downstream consumer — single token import path, no architectural
+  decision pending mid-migration.
+
+  Master Plan rhythm:
+    SPR-022/023: engineering DCOMP-W4-A3-F4/F5 — DONE
+    SPR-030..033: D-line SCF G5 build — DONE
+    SPR-034..036: A-line PIO G5 children — DONE
+    SPR-037: D-line SCF G5 lesson catalog extension — DONE
+    SPR-038: engineering — TOKEN CONSOLIDATION (this sprint;
+             scope-pivoted from initial WS-078 anchor after
+             plan-mode exploration revealed dual token systems)
+    SPR-039+: WS-078 OnlineView Tailwind migration (queued)
+
+  After this sprint: single canonical token source-of-truth at
+  `src/constants/designTokens.js`; `panelTokens.js` deleted; all
+  consumers re-pointed; zero visual regression.
+
+items:
+  - id: "WS-167"
+    title: "Token system consolidation — merge panelTokens.js into designTokens.js"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags:
+      - "Reconciled naming for ACTION_COLORS (button gradient) vs ACTION (panel pill) — keep both with renamed exports?"
+      - "Reconciled shape for EV_COLORS vs EV — pick one canonical shape?"
+      - "Where do FONT families live — designTokens or tailwind.config theme?"
+      - "Are SP / R / COLOR worth preserving as token exports, or do consumers switch to Tailwind utilities directly?"
+    decisions_locked:
+      - "GOLD = object form wins; 14 designTokens scalar consumers updated to GOLD.base"
+      - "EV = verdict-keyed shape (EV_COLORS); 2 panel files (Tier1, AllRecs) rewritten to use EV_COLORS['+EV'].text/.bg etc."
+      - "ACTION naming = keep ACTION_COLORS unchanged (button gradient); panel pills renamed ACTION_PILL_COLORS; 2 panel files rewired"
+      - "FONT location = tailwind.config.js theme.fontFamily.{display, mono}; consumers use font-display / font-mono Tailwind classes (added to tailwind.config 2026-05-05)"
+      - "Aggressive cleanup = SP+R+COLOR+FONT EXPORTS DROPPED; references migrated to Tailwind classes (font-mono / font-display / rounded-* / standard color literals) or inline literal hex; panelTokens.js DELETED"
+    depends_on: []
+    started_at: "2026-05-05T02:00:00Z"
+    completed_at: "2026-05-05T03:30:00Z"
+    notes: |
+      SHIPPED — token system consolidation end-to-end.
+
+      File-level changes:
+        - src/constants/designTokens.js: added SURFACE / BORDER / TEXT / BUCKET_COLORS / ACTION_PILL_COLORS / CLAIM_CONFIDENCE_COLOR exports; converted GOLD scalar → object form
+        - tailwind.config.js: added theme.fontFamily.{display, mono} for `font-display` / `font-mono` Tailwind classes
+        - src/components/views/OnlineView/panelTokens.js: DELETED (~90 lines removed)
+        - 14 GOLD scalar consumers (AccountSection + 5 TournamentView/TableView/Setup + 8 SettingsView): `color: GOLD` → `color: GOLD.base`
+        - 22 panelTokens consumers (OnlineView/{ExtensionPanel + Tier1_GlanceStrip + 8 surfaces} + panels/{11 panel files}): import path rewritten to designTokens; SP/R/COLOR/FONT references migrated to Tailwind classes inline OR inline literal hex (closest standard Tailwind color); ACTION → ACTION_PILL_COLORS in 2 files; EV.{posBg/pos/negBg/neg} → EV_COLORS['+EV'/-EV'].{bg/text} in 2 files
+
+      Reconciliation rules ratified via plan-mode AskUserQuestion 2026-05-05 (4 decisions locked above).
+
+      Phase breakdown:
+        - Phase 1: additive merge in designTokens.js (no removals; backward-compat preserved)
+        - Phase 2: 14 GOLD scalar consumers updated to GOLD.base
+        - Phase 3: 22 panelTokens consumers migrated; SP/R/COLOR/FONT references replaced with Tailwind classes / inline literals
+        - Phase 4: panelTokens.js DELETED
+        - Phase 5: full verify
+
+      Verification:
+        - npm run build → clean in 5.88s
+        - npx vitest run src/components/views/OnlineView/__tests__/ → 36/36 invariant tests pass (6 pre-existing skipped)
+        - bash scripts/smart-test-runner.sh → 402 test files passing; 9980 tests passing / 30 skipped / 0 failures (-2 vs SPR-037 baseline 9982; appears to be conditional-skip count fluctuation, no actual regressions)
+
+      Mid-sprint scope clarifications (3 founder check-ins):
+        1. Initial WS-078 anchor → reframed as L-effort migration after 364-instance discovery
+        2. panelTokens.js dual-system discovery → founder direction "collapse two systems into one"
+        3. Sequencing question → "lets do the cleaner sequencing" → split into SPR-038 (consolidation) + future SPR (Tailwind migration of remaining inline-styles)
+        4. Cleanup scope → founder picked "Aggressive: drop SP + R + COLOR + FONT" with Tailwind class migration of those references
+
+      Hybrid execution: Tailwind class migration applied where natural (full-static style objects, SVG attribute fontFamily preserved as inline literal). Other inline styles preserved for downstream WS-078 to handle. Files in mixed Tailwind+inline state — coherent intermediate; WS-078 finishes the comprehensive style→className migration.
+
+      WS-078 UNBLOCKED — can claim in follow-up sprint with single canonical token source-of-truth at designTokens.js.
+
+      Out of scope (handled later):
+        - Comprehensive inline-style → Tailwind className migration for remaining mixed-style components in OnlineView (WS-078)
+        - Cross-app inline-style audit beyond OnlineView (separate workstream)
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Engineering program — token-system canonical-error attack. Spawned from WS-078 plan-mode 2026-05-05 after discovering panelTokens.js dual system."
+total_effort: "M ≈ 1.5-2 sessions tagged. Plan-first because it has 4 reconciliation decisions + ~20 consumer files to update."
+decisions_needed:
+  - "Item #1 (WS-167): ACTION_COLORS vs ACTION naming — keep both with disambiguated names?"
+  - "Item #1 (WS-167): EV_COLORS vs EV — single canonical shape?"
+  - "Item #1 (WS-167): FONT families location (designTokens vs tailwind.config)?"
+  - "Item #1 (WS-167): Tailwind-aliasable tokens (SP/R/COLOR) — preserve or drop?"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-05T01:50:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-037). Manual review: WS-167 is a pure refactor consolidating two same-purpose token modules. No new behavior; no autonomy footprint; no PIO/SCF surface contamination. Founder explicitly directed this consolidation."
+  matches: []
+
+created_at: "2026-05-05T01:35:00Z"
+approved_at: "2026-05-05T01:50:00Z"
+started_at: "2026-05-05T02:00:00Z"
+completed_at: "2026-05-05T03:30:00Z"
+session_ids: ["session-2026-05-05-next"]
+
+composition_notes: |
+  Sprint scope pivoted in plan-mode 2026-05-05.
+
+  Original anchor: WS-078 (OnlineView inline-styles → Tailwind migration,
+  P1=22.0, M tagged). Sprint composed and approved by founder; WS-078
+  claimed and started.
+
+  Plan-mode scope discovery revealed:
+    1. Actual footprint = 364 inline-style instances (not 199 per ticket
+       description) across 26 files.
+    2. ~120 of those instances are inside the panel architecture, where
+       `panelTokens.js` provides a deliberately-authored token system.
+    3. The 11 panel files + several non-panel components import from
+       panelTokens.js — a token module separate from the app-wide
+       designTokens.js. Both serve the same `src/` runtime.
+
+  First scope-clarification AskUserQuestion (founder approved): full
+  L-effort migration. Founder picked "Full migration; cap override".
+
+  Second scope-clarification surfaced after panelTokens.js discovery
+  (founder direction): "If there are two systems, they should all become
+  one unless there is a compelling reason to keep them separate. We
+  should be aggressively attacking potential sources of canonical error."
+
+  Third clarification (founder direction): "Lets do the cleaner
+  sequencing" — split into per-sprint phases:
+    - SPR-038 (this sprint) = token consolidation only
+    - SPR-039+ = WS-078 Tailwind migration (now blocked on WS-167)
+
+  WS-078 released back to backlog with `blocked_by: [WS-167]`.
+
+  WS-167 spawned as new ticket (P1=22, M, engineering, plan-first
+  because of 4 reconciliation decisions). Anchored as SPR-038.
+
+  Source-class damping check: WS-167 source-class = `conversation`
+  (founder-driven, plan-mode-spawned). Founder-driven classes are never
+  damped. No damping applied.
+
+  Soft-block damping check: WS-167 has no blocked_by_note. Full priority.
+
+  Capability boost: capability=core → no boost.
+
+  Context boost: system/context.md empty → no boost.
+
+  Mode classification: plan-first. Effort M, type improvement, decision_flags
+  populated (4 reconciliation decisions). Per Step 3d: M-effort + improvement
+  + decision_flags = plan-first.
+
+  Pause point: between Phase 2 (panelTokens deleted) and any further work,
+  to confirm visual + behavioral parity before unleashing SPR-039 (WS-078
+  Tailwind migration) on the consolidated token system.

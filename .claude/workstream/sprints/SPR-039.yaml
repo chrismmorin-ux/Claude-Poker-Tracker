@@ -1,0 +1,139 @@
+id: "SPR-039"
+title: "OnlineView inline-styles → Tailwind migration (closes engineering token-system attack started in SPR-038)"
+status: completed
+goal: |
+  OnlineView's 199 lines (per ticket description) of `style={{...}}` inline
+  objects collapse to Tailwind classes against the now-canonical
+  `designTokens.js`, finishing the engineering token-system canonical-error
+  attack started by SPR-038's panelTokens consolidation. F7 (≥44×44 touch
+  targets) and F9 (Import-button size consistency empty-vs-populated) bundle
+  in or split out per founder decision in plan-mode.
+
+  Master Plan rhythm:
+    SPR-022/023: engineering DCOMP-W4-A3-F4/F5 — DONE
+    SPR-030..033: D-line SCF G5 build — DONE
+    SPR-034..036: A-line PIO G5 children — DONE
+    SPR-037: D-line SCF G5 lesson catalog extension — DONE
+    SPR-038: engineering — TOKEN CONSOLIDATION — DONE
+    SPR-039: engineering — WS-078 OnlineView Tailwind migration (this sprint;
+             direct continuation while consolidation context hot)
+
+  After this sprint: OnlineView root + sub-components fully migrated from
+  inline-styles to Tailwind utilities + `designTokens.js` consumption;
+  zero visual regression at 1600×720; F7/F9 disposition decided in plan-mode.
+
+items:
+  - id: "WS-078"
+    title: "OnlineView inline-styles → Tailwind migration"
+    mode: plan-first
+    effort: M
+    status: completed
+    finding_id: null
+    decision_flags:
+      - "Scope bundling — migrate inline-styles only, or also bundle F7 (≥44×44 touch targets) and F9 (Import-button size consistency empty-vs-populated)?"
+      - "Token-mapping strategy — 1:1 literal translation onto Tailwind utilities, or consolidate repeated patterns into named designTokens.js entries (semantic compression)?"
+      - "F7 enforcement — visual verification only at 1600×720, or assert min-w-[44px]/min-h-[44px] in invariant tests (locks the regression class)?"
+    decisions_locked:
+      - "D1: F9 only — Import-button padding/fontSize unified to px-4 py-2 text-[13px] min-h-11 in both empty + populated states. F7 deferred to separate UX-program sprint."
+      - "D2: Match repo convention — layout/typography/spacing → Tailwind utilities. Static colors stay inline as style={{ color: TEXT.muted }} from designTokens.js. Dynamic colors stay inline. designTokens.js remains single source of truth."
+      - "D3: N/A — F7 deferred."
+      - "D4: All 26 files this sprint. Effort revised M → L (~3h actual)."
+    depends_on: []
+    started_at: "2026-05-05T03:35:00Z"
+    completed_at: "2026-05-05T05:30:00Z"
+    notes: |
+      SHIPPED — OnlineView inline-styles → Tailwind migration end-to-end.
+
+      File-level changes (26 files in src/components/views/OnlineView/):
+        - Phase 1 (top-3): LiveRecommendations.jsx (84) + OnlineView.jsx (25, includes F9 fix) + SeatGrid.jsx (24)
+        - Phase 2 (mid-tier): ComboDistributionPanel (23) + Tier1_GlanceStrip (19) + ExtensionPanel (18) + SeatDetailPanel (18)
+        - Phase 3 (panels/*): StreetTendenciesPanel + AllRecommendationsPanel + AwarenessPanel + FoldBreakdownPanel + VulnerabilitiesPanel + FoldCurvePanel + ModelAuditPanel + BucketEquityPanel + FlopBreakdownPanel + HandTypePanel
+        - Phase 4 (sub-components): HandPlanTree + VillainBrief + RangeAdvantageBar + VulnerabilityCallout + CompactSeatStrip + SupportingObservations + BlockerInsightStrip + BoardTexturePills + MiniCard
+
+      Inline-style count: 345 → 180 (48% reduction).
+      Remaining 180 are all category 2/3/6 per migration rules — dynamic colors,
+      designTokens.js refs, runtime-computed values, color-bearing borders. All
+      MUST stay inline per D2.
+
+      F9 fix: Both Import buttons (empty-state at lines 199-211 + populated at
+      lines 244-256) unified to `bg-gray-700 border border-gray-600 px-4 py-2
+      rounded-md text-[13px] min-h-11`. Empty-state retains gold text
+      (text-[#d4a847]); populated retains gray text (text-gray-400) — only SIZE
+      unified per F9 spec, colors preserved to minimize visual change.
+
+      Verification:
+        - npm run build → clean in ~7s
+        - npx vitest run src/components/views/OnlineView/__tests__/ → 36/36 invariants pass (6 pre-existing skipped)
+        - bash scripts/smart-test-runner.sh → 9980 passed / 30 skipped / 0 failures (402 test files; ZERO regressions vs SPR-038 baseline)
+
+      Migration rules applied per category (founder D2):
+        - Layout (display/flex/gap/align/justify) → Tailwind utilities
+        - Box (padding/margin/width/height) → Tailwind utilities (4px base = 1 unit; arbitrary [Npx] for non-standard)
+        - Typography (fontSize/fontWeight/lineHeight/letterSpacing) → Tailwind utilities
+        - Static color from designTokens.js → kept inline (TEXT.muted, GOLD.base, BORDER.default, SURFACE.inset, etc.)
+        - Dynamic computed color (x ? GREEN : RED, ACTION_COLORS[k]?.base) → kept inline
+        - Border-color combinations → split: border + Tailwind class, color → inline borderColor/borderLeftColor/etc.
+        - Off-palette literal hex (#0d1117, #16213e, #d4a847, #2a2a4a, etc.) → Tailwind arbitrary value (bg-[#0d1117])
+        - Standard-Tailwind-palette literal hex (#22c55e, #ef4444, #6b7280, etc.) → Tailwind named class (text-green-500, etc.)
+        - sectionHeader spread pattern (8 panels) → SECTION_HEADER_CLASSES const + minimal inline color/borderColor
+
+      Out of scope (deferred):
+        - F7 (≥44×44 touch targets for badges/chips) — design call, separate sprint
+        - New computed-style test infrastructure (would lock F7 via tests if pursued)
+        - Cross-app inline-style audit beyond OnlineView
+
+      Visual verification: NOT performed in this session (terminal-based; dev server
+      walkthrough at 1600×720 left for founder check). Defensive guards: invariant
+      tests assert DOM structure (not className), so 36/36 green confirms no DOM
+      changes. Pixel-level visual regression NOT mechanically verified.
+
+composed_by: auto
+program_focus: engineering
+program_initiative: "Engineering program — token-system canonical-error attack closing wave. Direct continuation of SPR-038 (token consolidation) per its exit note: 'WS-078 UNBLOCKED ... will claim in follow-up sprint.' Master Plan rhythm: engineering re-anchors after 5-sprint A/D-line streak (SPR-034..037)."
+total_effort: "M ≈ 1.5 sessions tagged. Plan-first because effort=M + type=improvement + decision_flags populated (3 scope/strategy decisions) + spans OnlineView root + 10+ sub-component directories."
+decisions_needed:
+  - "Item #1 (WS-078): Scope bundling — inline-styles only, or also F7 + F9?"
+  - "Item #1 (WS-078): Token-mapping strategy — 1:1 literal vs semantic compression via designTokens.js?"
+  - "Item #1 (WS-078): F7 enforcement — visual verification only, or test-asserted min-w/min-h?"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-05T03:35:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-038). Manual review: WS-078 is a pure refactor migrating inline-styles to Tailwind classes against the now-canonical designTokens.js. No new behavior; no autonomy footprint; no PIO/SCF surface contamination. Founder explicitly directed this continuation in SPR-038's exit note."
+  matches: []
+
+created_at: "2026-05-05T03:35:00Z"
+approved_at: "2026-05-05T03:35:00Z"
+started_at: "2026-05-05T03:35:00Z"
+completed_at: "2026-05-05T05:30:00Z"
+session_ids: ["session-2026-05-05-next"]
+
+composition_notes: |
+  Anchor selection: WS-078 (OnlineView inline-styles → Tailwind migration,
+  P1=22.0, M tagged). Highest-priority engineering backlog item now actionable
+  (WS-167 unblocking dependency closed in SPR-038). Other P=22 cluster
+  (WS-027..WS-036, monetization-and-pmf) gated on WS-027 = real-world
+  legal-scoping admin task only founder can drive — not claimable by CWOS.
+
+  Source-class damping check (FAIL-009 / FAIL-011): last 3 anchors
+  (SPR-036 WS-165, SPR-037 WS-149, SPR-038 WS-167) all `untagged` /
+  founder-driven. No auto-rec or engine-finding saturation. WS-078 source
+  origin = backlog-md-migration-2026-05-01 (founder-curated). No damping
+  applied.
+
+  Soft-block damping check: WS-078 had `blocked_by: [WS-167]` which was
+  resolved by SPR-038. blocked_by_note empty. Full priority.
+
+  Capability boost: capability=core → no boost.
+  Context boost: system/context.md empty → no boost.
+
+  Mode classification: plan-first. Effort=M, type=improvement, multi-directory
+  (OnlineView root + 10+ sub-components per ticket description), decision_flags
+  populated (3 scope/strategy questions). Per Step 3d: any one of effort=M,
+  category=ux, files spanning 3+ dirs, or populated decision_flags → plan-first.
+  All four trigger.
+
+  Single-item sprint by design. SPR-038's panelTokens consolidation was the
+  prerequisite arc; this sprint completes the engineering token attack.
+  Bundling additional engineering work (e.g., WS-101..WS-105 sidebar-recurrence)
+  would dilute focus and risk merge conflicts in OnlineView surface area.

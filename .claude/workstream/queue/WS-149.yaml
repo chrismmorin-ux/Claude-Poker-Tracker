@@ -1,10 +1,11 @@
 id: "WS-149"
 title: "SCF G5 child 5 — ≥10 reference lessons across ≥3 tiers"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-05-next"
+claimed_at: "2026-05-05T00:00:00Z"
+started_at: "2026-05-05T00:30:00Z"
+completed_at: "2026-05-05T01:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "self-coach-foundation"
@@ -44,7 +45,7 @@ blocked_by:
   - "WS-147"
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-037"
 decision_flags:
   - "Lesson voice (mirror hero-state narrative voice? educational explainer? both?)"
   - "Drill substrate gaps (some lessons may need new drills authored — out of scope or recursive?)"

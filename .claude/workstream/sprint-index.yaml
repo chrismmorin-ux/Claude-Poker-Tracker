@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-05-03T14:30:00Z"
-sprint_count: 32
+last_updated: "2026-05-07T09:40:00Z"
+sprint_count: 46
 
 sprints:
   - id: "SPR-001"
@@ -434,3 +434,123 @@ sprints:
     created_at: "2026-05-04T14:50:00Z"
     approved_at: "2026-05-04T14:50:00Z"
     completed_at: "2026-05-04T16:30:00Z"
+  - id: "SPR-037"
+    title: "SCF G5 child 5 — extend lesson catalog past 7-lesson starter set to ≥10 across ≥3 tiers"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged (~1h actual — markdown authoring well under typed 1.5-session estimate). 4 sub-concept lessons authored (bb-defense-vs-EARLY + ip-cbet-defense-{dry,medium,wet}-LATE). Catalog 7 → 11 lessons / 5 tiers preserved. All schema-compliant; lessonRegistry 8/8 + migration 6/6 + skillAssessment 139/139 + smart-test-runner 9982/9982 + build clean. Zero src/ diff; markdown-only."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — lesson catalog extension (Master Plan §D Phase 5; D-line return after 3-sprint A-line streak SPR-034..036)"
+    composed_by: auto
+    created_at: "2026-05-05T00:00:00Z"
+    approved_at: "2026-05-05T00:00:00Z"
+    completed_at: "2026-05-05T01:30:00Z"
+  - id: "SPR-038"
+    title: "Token system consolidation — merge panelTokens.js into designTokens.js (WS-078 prerequisite)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged (~3h actual). panelTokens.js DELETED; designTokens.js absorbs SURFACE/BORDER/TEXT/BUCKET_COLORS/ACTION_PILL_COLORS/CLAIM_CONFIDENCE_COLOR; GOLD reconciled scalar→object (14 consumers updated); SP/R/COLOR/FONT exports DROPPED with references migrated to Tailwind classes (font-display/font-mono added to tailwind.config) or inline literals; 22 panelTokens consumers re-pointed; ACTION→ACTION_PILL_COLORS rename; EV→verdict-keyed shape. Build clean (5.88s); 9980/30 skipped/0 failures full smart-test-runner; 36/36 OnlineView invariants. WS-078 UNBLOCKED."
+    program_focus: engineering
+    program_initiative: "Engineering program — token-system canonical-error attack. Sprint scope pivoted in plan-mode from initial WS-078 (Tailwind migration) anchor after dual-token-system discovery; founder direction 'collapse two systems into one' + 'cleaner sequencing'. WS-078 re-released to backlog with blocked_by: [WS-167]; will claim in follow-up sprint."
+    composed_by: auto
+    created_at: "2026-05-05T01:35:00Z"
+    approved_at: "2026-05-05T01:50:00Z"
+    completed_at: "2026-05-05T03:30:00Z"
+  - id: "SPR-039"
+    title: "OnlineView inline-styles → Tailwind migration (closes engineering token-system attack started in SPR-038)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L (founder D4 ratified scope expansion M→L; ~3h actual). 26 OnlineView files migrated; 345 inline-styles → 180 (48% reduction; remaining 180 are all dynamic-color/designTokens-ref per founder D2 — kept inline by design). F9 unified (both Import buttons px-4 py-2 text-[13px] min-h-11). F7 deferred per founder D1. Build clean (7.31s); 36/36 OnlineView invariants pass; 9980/30/0 full smart-test-runner (zero regressions vs SPR-038 baseline)."
+    program_focus: engineering
+    program_initiative: "Engineering program — token-system canonical-error attack closing wave. Direct continuation of SPR-038 per its exit note. Master Plan rhythm: engineering re-anchors after 5-sprint A/D-line streak (SPR-034..037)."
+    composed_by: auto
+    created_at: "2026-05-05T03:35:00Z"
+    approved_at: "2026-05-05T03:35:00Z"
+    completed_at: "2026-05-05T05:30:00Z"
+  - id: "SPR-040"
+    title: "SCF G5 child 2 — ship 2 more leak rules from catalog gaps (D-line momentum) + 8-axis situation-key extension"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L (mid-sprint scope expansion M→L per founder D2 ratification: situation-key architectural extension from 7 to 8 axes added to enable donk rule; donk rule's structural blocker discovered during execution and surfaced via AskUserQuestion; founder picked 'tackle key-extension now'). Shipped: hero-oop-cbet-overfold + hero-flop-vs-donk-misresponse + 8-axis migration of deriveSituationKey + heroIpCbetOverfold + heroBbDefenseWidth + solverBaselines (7 → 19 keys) + tierConceptMap (added 2 umbrellas + 12 sub-concepts; fixed pre-existing 7th-axis bug from cbet→vsBet) + 2 new umbrella lessons + all existing test migrations + tests for 2 new rules. 14 SCF-test files / 182 tests pass (was 139 pre-SPR-040 = +43 net). Build clean. Catalog: 2/25 → 4/25; flop-continuation closed 3/3."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — leak-rule catalog continuation + 8-axis situation-key architecture. D-line returns after 2-sprint engineering streak (SPR-038 + SPR-039)."
+    composed_by: auto
+    created_at: "2026-05-06T00:00:00Z"
+    approved_at: "2026-05-06T00:00:00Z"
+    completed_at: "2026-05-06T08:00:00Z"
+  - id: "SPR-041"
+    title: "PIO IdentityAvatar v2 — visual-design pass + mobile optimization (A-line continuation; WS-166)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L tagged → XL actual (5 sessions). Mid-sprint avataaars adoption + rollback (founder eye-test rejected DiceBear for losing build/headwear/beard/clothing fidelity). Final form ships v1 renderer + IDB v24 schema migration + 5 distinguishing-mark badge primitives + integration + tightened validation + style guide doc. Visual-quality aesthetic upgrade DEFERRED to follow-up ticket."
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO) Gate 5 — IdentityAvatar maturation. A-line continuation after 1-sprint D-line stagger (SPR-040). Founder direct flag 2026-05-04."
+    composed_by: auto
+    created_at: "2026-05-06T08:30:00Z"
+    approved_at: "2026-05-06T08:30:00Z"
+    completed_at: "2026-05-06T20:30:00Z"
+  - id: "SPR-043"
+    title: "Sidebar Recurrence boundary hardening — SW→side-panel validateMessage parity (WS-105)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~10 min actual (single-file SW handler change + 2 schema validators + 3 tests; matched 'likely S actual' prediction); 2254/2254 extension suite + clean build"
+    program_focus: engineering
+    program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (1 of 5; siblings WS-101/102/103/104 remain)"
+    composed_by: auto
+    created_at: "2026-05-07T02:48:43Z"
+    approved_at: "2026-05-07T02:48:43Z"
+    completed_at: "2026-05-07T02:58:15Z"
+  - id: "SPR-044"
+    title: "Sidebar Recurrence boundary hardening — freeze live_context at SW boundary (WS-103)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~20 min actual (matched 'likely S actual' prediction; new shared/freeze-utils.js + 1 SW import + 1 deepFreeze call + 9 tests); 2263/2263 extension suite (+9 net) + clean build"
+    program_focus: engineering
+    program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (2 of 5; siblings WS-101/102/104 remain)"
+    composed_by: auto
+    created_at: "2026-05-07T03:05:00Z"
+    approved_at: "2026-05-07T03:05:00Z"
+    completed_at: "2026-05-07T03:25:00Z"
+  - id: "SPR-045"
+    title: "Sidebar Recurrence boundary hardening — synchronous timer registration + betweenHandsFsm symmetry (WS-104 + WS-102)"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+M tagged → ~50 min actual (matched 'likely S actual' prediction for both; WS-104: hoisted timer bodies into named closures + synchronous registration after FSM init + z2-decision regression guard updated; WS-102: new pendingActive debounce state + modeAExpired symmetry + renderer enumerates banner-visible states explicitly + +5 new tests covering transient-payload owner-verification path); 2268/2268 extension suite (+5 net vs 2263 baseline) + clean build"
+    program_focus: engineering
+    program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (3+4 of 5; sibling WS-101 remains — replay corpus extension)"
+    composed_by: auto
+    created_at: "2026-05-07T03:35:00Z"
+    approved_at: "2026-05-07T03:35:00Z"
+    completed_at: "2026-05-07T08:35:00Z"
+  - id: "SPR-046"
+    title: "SCF G5 catalog continuation — close preflop fold-equity gap with hero-pf-3bet-overfold + hero-oop-3bet-underfold (WS-146 3rd claim)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged (WS-146 ongoing claim ticket); ~1h actual including mid-sprint discovery + pivot. Founder-ratified D1: original (hero-pf-open-overfold + hero-oop-3bet-underfold) → (hero-pf-3bet-overfold + hero-oop-3bet-underfold) after discovery that pf-open-overfold is structurally blocked by current accumulator design (RFI fold + RFI open bucket to different keys; foldRate over RFI decision space can't be computed from a single bucket). Pivot keeps sprint goal (catalog 4/25 → 6/25; preflop fold-equity 1/4 → 3/4). Shipped: 2 leak rules + 6 baselines + 2 umbrellas + 6 sub-concepts + 10 SITUATION_KEY_TO_CONCEPT entries + 2 umbrella lessons + 35 new tests (17 pf-3bet + 18 oop-3bet-underfold). First UNDER-fold direction in catalog (oop-3bet-underfold) establishes mirror detection pattern. Pre-existing count tests adjusted (conceptMastery 32 → 40; solverBaselines 19 → 25). 217/217 skillAssessment-targeted; full smart-test-runner 10196/10216 (20 skipped, 0 failed; +35 net vs 10161 SPR-045 baseline). Build clean. Catalog updated with deferred-status entry for hero-pf-open-overfold including documented resolution path (refactor DERIVE_CONTEXT_ACTION OR add additive decision-class-bucket path)."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — leak-catalog continuation; preflop fold-equity gap closure (WS-146 3rd claim; SPR-031 + SPR-040 prior). D-line return after 3-engineering-sprint streak (SPR-043/044/045 sidebar-recurrence boundary cluster)."
+    composed_by: auto
+    created_at: "2026-05-07T08:40:00Z"
+    approved_at: "2026-05-07T08:40:00Z"
+    completed_at: "2026-05-07T09:40:00Z"
+  - id: "SPR-042"
+    title: "SCF G5 close-out — SelfCoachView Curriculum surface ships (D-line continuation)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L tagged → ~1.5 sessions actual (well under 3-session L estimate; narrowed Phase-5a slice held). Single anchor; plan-first via Gate 1 entry audit (verdict GREEN) + Gate 4 surface spec UPDATE for signal-tuning controls + Phase-5a scope. 5-phase delivery: design docs + route shell + Curriculum tab (tree + inspector + descriptor) + Settings tab (radio + toggles + sliders) + tests/Playwright. 51 component tests + 4 chromium baselines + 10161 smart-test-runner pass (+52 vs SPR-041, 0 regressions). Build clean."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation (SCF) Gate 5 — user-facing curriculum surface (Master Plan §D close-out). All infrastructure shipped across SPR-030..033, 037, 040; this sprint ships the user surface that consumes it. D-line continuation after 1-sprint A-line stagger (SPR-041)."
+    composed_by: auto
+    created_at: "2026-05-06T20:45:00Z"
+    approved_at: "2026-05-06T20:45:00Z"
+    completed_at: "2026-05-06T22:30:00Z"

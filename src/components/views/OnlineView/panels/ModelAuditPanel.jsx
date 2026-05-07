@@ -6,27 +6,31 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, GOLD, R } from '../panelTokens';
+import { SURFACE, BORDER, TEXT } from '../../../../constants/designTokens';
+
+const GREEN = '#22c55e';   // green-500 — was GREEN
+const YELLOW = '#eab308';  // yellow-500 — was YELLOW
+const CYAN = '#22d3ee';    // cyan-400 — was CYAN
+const PURPLE = '#a78bfa';  // violet-400 — was PURPLE
+
+const SECTION_HEADER_CLASSES = "text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b";
 
 const SOURCE_COLORS = {
-  'model+observed': COLOR.green,
-  'observed': COLOR.green,
-  'model': COLOR.yellow,
-  'style': COLOR.yellow,
+  'model+observed': GREEN,
+  'observed': GREEN,
+  'model': YELLOW,
+  'style': YELLOW,
   'population': TEXT.faint,
-  'personalized': COLOR.green,
+  'personalized': GREEN,
 };
 
 const AuditRow = ({ label, value, valueColor }) => (
-  <div style={{
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '2px 0', fontSize: 9,
-  }}>
+  <div className="flex justify-between items-center py-0.5 text-[9px]">
     <span style={{ color: TEXT.muted }}>{label}</span>
-    <span style={{
-      fontFamily: FONT.mono, fontWeight: 600,
-      color: valueColor || TEXT.primary,
-    }}>
+    <span
+      className="font-mono font-semibold"
+      style={{ color: valueColor || TEXT.primary }}
+    >
       {value}
     </span>
   </div>
@@ -41,13 +45,18 @@ export const ModelAuditPanel = ({ treeMetadata, foldMeta, modelQuality, dataQual
   const quality = dataQuality?.tier;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Model Audit</div>
+    <div className="mb-2.5">
+      <div
+        className={SECTION_HEADER_CLASSES}
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        Model Audit
+      </div>
 
-      <div style={{
-        background: SURFACE.inset, borderRadius: R.md, padding: '6px 8px',
-        border: `1px solid ${BORDER.default}`,
-      }}>
+      <div
+        className="rounded-[5px] px-2 py-1.5 border"
+        style={{ background: SURFACE.inset, borderColor: BORDER.default }}
+      >
         <AuditRow label="Data source" value={source} valueColor={sourceColor} />
         {observedN != null && (
           <AuditRow label="Effective N" value={`${observedN} observations`} />
@@ -56,7 +65,7 @@ export const ModelAuditPanel = ({ treeMetadata, foldMeta, modelQuality, dataQual
           <AuditRow
             label="Model quality"
             value={quality.charAt(0).toUpperCase() + quality.slice(1)}
-            valueColor={quality === 'high' ? COLOR.green : quality === 'developing' ? COLOR.yellow : TEXT.muted}
+            valueColor={quality === 'high' ? GREEN : quality === 'developing' ? YELLOW : TEXT.muted}
           />
         )}
         {treeMetadata.depth != null && (
@@ -79,21 +88,21 @@ export const ModelAuditPanel = ({ treeMetadata, foldMeta, modelQuality, dataQual
         )}
 
         {/* Flags row */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, paddingTop: 4,
-          borderTop: `1px solid ${BORDER.default}`,
-        }}>
+        <div
+          className="flex flex-wrap gap-1 mt-1 pt-1 border-t"
+          style={{ borderTopColor: BORDER.default }}
+        >
           {treeMetadata.comboCounted && (
-            <FlagPill label="Combo-counted" color={COLOR.green} />
+            <FlagPill label="Combo-counted" color={GREEN} />
           )}
           {treeMetadata.dynamicAnchors && (
-            <FlagPill label="Dynamic anchors" color={COLOR.green} />
+            <FlagPill label="Dynamic anchors" color={GREEN} />
           )}
           {treeMetadata.rakeActive && (
-            <FlagPill label="Rake adjusted" color={COLOR.cyan} />
+            <FlagPill label="Rake adjusted" color={CYAN} />
           )}
           {treeMetadata.depth3 && (
-            <FlagPill label="Depth-3" color={COLOR.purple} />
+            <FlagPill label="Depth-3" color={PURPLE} />
           )}
           {treeMetadata.callDepth2 && (
             <FlagPill label="Call D2" color={TEXT.muted} />
@@ -105,10 +114,10 @@ export const ModelAuditPanel = ({ treeMetadata, foldMeta, modelQuality, dataQual
 
         {/* Fold curve source */}
         {foldMeta?.bet?.curveSource && (
-          <div style={{
-            marginTop: 4, paddingTop: 4, borderTop: `1px solid ${BORDER.default}`,
-            fontSize: 8, color: TEXT.faint,
-          }}>
+          <div
+            className="mt-1 pt-1 border-t text-[8px]"
+            style={{ borderTopColor: BORDER.default, color: TEXT.faint }}
+          >
             Fold curve: {foldMeta.bet.curveSource}
           </div>
         )}
@@ -118,18 +127,14 @@ export const ModelAuditPanel = ({ treeMetadata, foldMeta, modelQuality, dataQual
 };
 
 const FlagPill = ({ label, color }) => (
-  <span style={{
-    fontSize: 7, fontFamily: FONT.mono, fontWeight: 600,
-    padding: '1px 4px', borderRadius: 2,
-    background: `${color}15`, color, border: `1px solid ${color}30`,
-  }}>
+  <span
+    className="font-mono text-[7px] font-semibold px-1 py-px rounded-sm"
+    style={{
+      background: `${color}15`,
+      color,
+      border: `1px solid ${color}30`,
+    }}
+  >
     {label}
   </span>
 );
-
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
-};

@@ -78,7 +78,8 @@ describe('runHeroLeakDetection', () => {
 
   it('runs accumulator + detector + persists leaks when overfold pattern present', async () => {
     // 50 hands of hero IP-defending vs flop cbet from BTN, folding 35/50 (70% — well above 38% baseline).
-    // Position offset 0 from button = BUTTON. flop:medium:BUTTON:def:ip:bet:vsBet baseline = 36%.
+    // Position offset 0 from button = BUTTON. flop:medium:BUTTON:def:ip:bet:vsBet:pfc baseline = 36%
+    // (8-axis key with :pfc since hero called preflop, then defends flop cbet).
     // 70% > 36% + 5pp threshold AND CI [0.56, 0.84] > 0.36 → rule fires.
     const folds = Array.from({ length: 35 }, () =>
       buildHand({

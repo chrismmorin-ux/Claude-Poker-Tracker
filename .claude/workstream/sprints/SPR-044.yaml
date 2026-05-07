@@ -1,0 +1,100 @@
+id: "SPR-044"
+title: "Sidebar Recurrence boundary hardening — freeze live_context at SW boundary (WS-103)"
+status: completed
+approved_at: "2026-05-07T03:05:00Z"
+completed_at: "2026-05-07T03:25:00Z"
+goal: |
+  After SW boundary validation passes, the live_context payload is immutable
+  before forwarding — closing the post-validation mutation surface that pairs
+  with the validateMessage gate shipped in SPR-043 (WS-105).
+
+  Two-of-five completion against the sidebar-recurrence boundary-hardening
+  cluster. WS-103 anchors cleanly: same file as WS-105 (service-worker.js),
+  no blocked_by, no decision_flags, single Object.freeze + a mutation-throws
+  test. Evidence-based S-actual estimate from WS-105 sibling shipped
+  ~10 minutes despite M tag.
+
+items:
+  - id: "WS-103"
+    title: "Freeze incoming live_context at SW boundary"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-05-07T03:25:00Z"
+    progress_notes: |
+      Single-file SW handler change (1 deepFreeze call + comment) +
+      new shared/freeze-utils.js helper (31 LoC) + 9 unit tests.
+      Actual effort ~20 min (well under typed M=1.5 sessions; matches
+      the WS-105 sibling pattern of S-actual despite M tag).
+
+      Implementation:
+        - shared/freeze-utils.js — `deepFreeze(value)` recursive freezer.
+          Idempotent. No-op on null/primitives. Returns same reference.
+        - background/service-worker.js:16 — import deepFreeze.
+        - background/service-worker.js:199-204 — `deepFreeze(msg.context)`
+          inside the `live_context` capture-port case, immediately after
+          the validateMessage gate (WS-105) passes and before any of
+          the four consumers (writeLiveContext, pushToAppBridge, the
+          throttle queue _pendingLiveCtx, side-panel push) take the
+          reference. Block comment ties the pair: validate → freeze →
+          forward.
+        - shared/__tests__/freeze-utils.test.js — 9 tests covering:
+          top-level Object.isFrozen; strict-mode mutation throws on
+          assignment / new key / delete (top, nested, array, array
+          element); same-reference invariant; idempotence; null /
+          primitive no-op; structured-clone survival (proves the
+          frozen sender object produces a mutable receiver, so
+          writeLiveContext's spread `{ ...ctx, _persistedAt }` and
+          postMessage on the side-panel side keep working); a
+          live_context-shaped graph (tableId / board / seats with
+          hole arrays / meta) where every depth throws on mutation.
+
+      Verification:
+        - npx vitest run shared/__tests__/freeze-utils.test.js → 9/9
+        - npx vitest run (full extension) → 68 files / 2263 tests pass
+          (was 2254 baseline per SPR-043 dist-test history; +9 net,
+          0 regressions)
+        - npm run build → clean
+
+      Cluster siblings remaining (sidebar-recurrence boundary cluster,
+      3 of 5): WS-101 (replay corpus sequence extension), WS-102
+      (betweenHandsFsm debounce + modeAExpired symmetry), WS-104
+      (microtask-deferred timer registration leak). WS-104 is the
+      most natural next sibling — same file scope (side-panel.js
+      timer registry), same surgical-bug-fix shape; WS-102 is
+      similarly scoped to a single FSM module.
+
+program_focus: engineering
+program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster (2 of 5; siblings WS-101/102/104 remain)"
+composed_by: auto
+created_at: "2026-05-07T03:05:00Z"
+
+composition_notes: |
+  Anchor selection rationale:
+    - SPR-043 explicitly named WS-103 as "the most natural next sibling
+      — same file (service-worker.js), adjacent hardening pass"
+    - Hot context: validateMessage gate code from WS-105 is exactly the
+      site where Object.freeze should land (post-validation, pre-forward)
+    - Engineering program continuity from SPR-043; no new program switch cost
+    - Co-located cluster sweep is the load-bearing 5-fix pattern called
+      out in .claude/failures/SIDEBAR_REBUILD_PROGRAM.md
+
+  Effort calibration:
+    - WS-105 was M-tagged but ~10 min actual (same surgical pattern)
+    - Classified `execute` despite M effort because: type=improvement is
+      surgical-as-bug-fix, no decision_flags, single directory, and
+      sibling evidence supports S-actual
+
+  A/D-line deferral:
+    - A-line WS-164 still soft-blocked on Table-Build G5
+    - D-line catalog continuation (WS-146 family) viable but engineering
+      cluster takes priority while context is hot
+
+  Anti-goal cross-check: SKIPPED (kit/scripts/cwos-constitutional-audit.js
+  not present in repo; graceful degradation per CLAUDE.md). Manual judgment:
+  pure boundary-hardening work; no UX/grading/autonomy surface touched.
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-07T03:05:00Z"
+  notes: "Manual review; audit script not present in repo"

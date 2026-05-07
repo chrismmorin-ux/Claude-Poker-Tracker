@@ -38,6 +38,8 @@ const PrintableRefresherView = lazy(() => import('./components/views/PrintableRe
 const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryView').then(m => ({ default: m.AnchorLibraryView })));
 // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface for Drill-this affordance.
 const LessonDetailView = lazy(() => import('./components/views/LessonDetailView').then(m => ({ default: m.LessonDetailView })));
+// SCF G5 Phase-5a (WS-159 / SPR-042, 2026-05-06) — Self-Coach curriculum surface (2-tab IA: Curriculum / Settings).
+const SelfCoachView = lazy(() => import('./components/views/SelfCoachView/SelfCoachView').then(m => ({ default: m.SelfCoachView })));
 // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface (sighting history + stability).
 const PlayerProfileView = lazy(() => import('./components/views/PlayerProfileView/PlayerProfileView').then(m => ({ default: m.PlayerProfileView })));
 // Prototype: unified PlayerFinder (#prototype-finder) — design preview.
@@ -62,6 +64,7 @@ const HASH_TO_SCREEN = {
   '#settings': 'settings',
   '#printableRefresher': 'printableRefresher',
   '#anchorLibrary': 'anchorLibrary',
+  '#selfCoach': 'selfCoach',
   '#prototype-finder': 'prototypeFinder',
   // Phase B (2026-05-06): direct entry to the unified PlayerFinder for
   // owner manual validation against the prototype. Removed in Phase C.
@@ -146,6 +149,7 @@ const ViewRouter = () => {
           case SCREEN.PRINTABLE_REFRESHER: return <VEB viewName="Printable Refresher" onReturnToTable={onReturnToTable}><PrintableRefresherView scale={scale} /></VEB>;
           case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
           case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
+          case SCREEN.SELF_COACH: return <VEB viewName="Self Coach" onReturnToTable={onReturnToTable}><SelfCoachView scale={scale} /></VEB>;
           case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
           case SCREEN.PROTOTYPE_FINDER: return <VEB viewName="Prototype Finder" onReturnToTable={onReturnToTable}><PrototypeFinderView /></VEB>;
           default: {

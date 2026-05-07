@@ -1,0 +1,142 @@
+id: "SPR-037"
+title: "SCF G5 child 5 — extend lesson catalog past 7-lesson starter set to ≥10 across ≥3 tiers"
+status: completed
+goal: |
+  SCF curriculum reaches ≥10 reference lessons spanning ≥3 tiers — Drill-this
+  navigation lands on a real lesson for most teachable concepts beyond the
+  T1/T3 starter set.
+
+  Master Plan rhythm:
+    SPR-030..033: D-line SCF G5 build (framework + first leak rule + chain
+                  activation + 2nd catalog rule + lesson framework + 2 cluster
+                  lessons + curriculum infrastructure spine) — DONE
+    SPR-034..036: A-line PIO G5 children A/B/C/E/F (IDB v23 + Profile + PV/PEX
+                  extensions + Settings toggle + Camera) — DONE
+    SPR-037: D-line return — extend lesson catalog past 7-lesson starter set
+             (this sprint)
+
+  After this sprint: 10+ reference lessons live; tier coverage extends past
+  T1/T3/T5 to include Tier 2 + Tier 6 (or other gap tiers). WS-149 closed.
+  Next D-line anchor is WS-159 (SelfCoachView surface, L effort) or continued
+  WS-146 catalog leak rules.
+
+items:
+  - id: "WS-149"
+    title: "SCF G5 child 5 — ≥10 reference lessons across ≥3 tiers"
+    mode: plan-first
+    effort: M
+    status: in_progress
+    finding_id: null
+    decision_flags:
+      - "Lesson voice (mirror hero-state narrative voice? educational explainer? both?)"
+      - "Drill substrate gaps (some lessons may need new drills authored — out of scope or recursive?)"
+    decisions_locked:
+      - "Distribution = 4 sub-concept lessons (1 BB-defense + 3 IP-cbet-defense)"
+      - "Voice = mirror educational explainer voice (match pot-odds.md / cluster umbrellas)"
+      - "Drill gap policy = placeholder + test_substrate: pending; frameworkIds: []"
+    depends_on: []
+    started_at: "2026-05-05T00:30:00Z"
+    completed_at: "2026-05-05T01:30:00Z"
+    notes: |
+      SHIPPED 4 sub-concept lesson files at docs/projects/self-coach-foundation/lessons/:
+        - bb-defense-vs-EARLY.md (T2; binds hero-bb-defense-width; cites POKER_THEORY §2.1+§1.4+§1.5)
+        - ip-cbet-defense-dry-LATE.md (T3; binds hero-ip-cbet-overfold; cites POKER_THEORY §6.2+§3.1)
+        - ip-cbet-defense-medium-LATE.md (T3; binds hero-ip-cbet-overfold; cites POKER_THEORY §6.2+§3.1)
+        - ip-cbet-defense-wet-LATE.md (T3; binds hero-ip-cbet-overfold; cites POKER_THEORY §6.2+§3.1+§1.4)
+
+      Total catalog: 7 → 11 lessons. Tier coverage unchanged at 5 tiers (T1/T2/T3/T4/T5).
+      All 4 use test_substrate: pending + frameworkIds: [] per drill-gap policy decision.
+      Voice mirrors existing pot-odds.md / cluster umbrella style (formula → table → caveat → worked example).
+
+      CD-1..5 grep clean (no imperative/graded/engagement copy in new files); only false-positive
+      hits on "miss most preflop ranges" + "hits both ranges" (mechanics, not imperative).
+
+      Verification:
+        - npx vitest run src/utils/skillAssessment/__tests__/lessonRegistry.test.js → 8/8 ✓
+        - npx vitest run src/utils/skillAssessment/__tests__/migration.test.js → 6/6 ✓ (umbrella ↔ leak-rule binding unchanged)
+        - npx vitest run src/utils/skillAssessment/ → 139/139 ✓ (all 12 test files)
+        - bash scripts/smart-test-runner.sh → 9982 passed / 30 skipped / 0 failed (402 test files; +74 vs SPR-036 baseline 9908 — interim identity-avatar Phase 4-7 commits added tests; my work added 0 since lessons are markdown only)
+        - npm run build → clean in 5.50s
+
+      Out-of-scope deferred (per plan):
+        - Tier 6 concept seeding (no shipped POKER_THEORY.md anchors yet)
+        - Remaining 7 sub-concept lessons (4 BB-defense MIDDLE/LATE/BUTTON/SMALL_BLIND + 3 IP-cbet BUTTON variants)
+        - Drill substrate authoring (recursive scope rejected)
+        - SelfCoachView Curriculum surface (WS-159, separate L-effort ticket)
+
+composed_by: auto
+program_focus: design
+program_initiative: "Self-Coach Foundation Gate 5 — lesson catalog extension (Master Plan §D Phase 5; D-line return after 3-sprint A-line streak)"
+total_effort: "M ≈ 1.5 sessions (within standard 2-session cap)"
+decisions_needed:
+  - "Item #1 (WS-149): Lesson voice — mirror hero-state narrative voice, educational explainer voice, or both per concept-kind?"
+  - "Item #1 (WS-149): Drill-substrate gaps — when a lesson points at a tier with no shipped drill, is the lesson allowed to ship with placeholder copy ('Drill coming') or must it author a stub drill too (recursive scope)?"
+
+anti_goal_check:
+  status: skipped
+  reviewed_at: "2026-05-05T00:00:00Z"
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this adopter repo (graceful degradation per CWOS rules; same as SPR-022..SPR-036). Manual review: WS-149 is content authoring (markdown lessons in docs/) bound to existing leak rules + WS-148 tier-map. AP-SCF-01 (system-imposed grading refused; owner-volunteered tests permitted) does not apply — lessons are exposition, not grading. CD-1..5 (no shame copy, no engagement-pressure) apply at authoring time and are explicit accept_criteria adjacencies. Per `feedback_owner_volunteered_grading.md` + `feedback_scf_high_granularity.md` + `feedback_scf_learning_state_not_tier_rank.md`: tier names are authoring metadata only, never user-facing rank labels. No autonomy-violation risk."
+  matches: []
+
+created_at: "2026-05-05T00:00:00Z"
+approved_at: "2026-05-05T00:00:00Z"
+started_at: "2026-05-05T00:30:00Z"
+completed_at: "2026-05-05T01:30:00Z"
+session_ids: ["session-2026-05-05-next"]
+
+composition_notes: |
+  Single-item sprint: M (plan-first) ≈ 1.5 sessions. Within standard 2-session cap.
+
+  Anchor selection — Master Plan rhythm overrides raw priority score this sprint:
+
+    Strict-score top tier (P1=22.0):
+      - WS-027..036 (10 MPMF launch items): would deviate from Master Plan
+        A/D rhythm and require launch-program baseline run + commerce scope
+        pivot the founder hasn't asked for.
+      - WS-078 (OnlineView Tailwind, engineering, execute mode): clean
+        execute-mode item but unrelated to Master Plan §D continuation.
+      - WS-086/089/095 (LSW domain-correctness): deferred research from
+        prior Master Plan §C work; not in current rhythm.
+
+    P2=18.0 alternatives in design program:
+      - WS-159 (SelfCoachView surface): L effort, exceeds standard cap.
+        Natural NEXT D-line anchor after WS-149 ships.
+      - WS-164 (PIO G5 child E ranking): blocked_by_note on Table-Build
+        Gate 5 → soft-blocked × 0.25 → adjusted score 4.5. Below WS-149.
+      - WS-166 (IdentityAvatar v2 visual): L effort + needs major
+        DiceBear-vs-custom decision the founder flagged for future pass.
+
+    Selected anchor: WS-149 (P2=15.0)
+      - Master Plan §D continuation; D-line overdue per A/D alternation
+        (last 3 anchors = SPR-034..036 A-line PIO via WS-008 decomposition).
+      - WS-148 (curriculum infrastructure) shipped in SPR-033 — tier-map
+        ready to consume an extended lesson catalog.
+      - 7 lessons currently exist (5 SCF G4-named + 2 SPR-032 cluster).
+        Need ≥3 more to reach the ≥10 / ≥3-tier threshold.
+      - Closes a discrete WS-149 deliverable end-to-end (avoids the trap
+        of leaving WS-149 partially-shipped and re-claiming).
+
+  Source-class damping (Step 2d): last 3 anchors WS-160, WS-162, WS-165
+  (or whichever was first in their sprint) — all source: ws-008-decomposition
+  → spr-followup. Founder-driven, never damped. WS-149 source: parent_ws
+  WS-013, origin ws-013-decomposition-spr-030 → spr-followup. Not damped.
+
+  Soft-block damping (Step 2-prereq): WS-149 has no blocked_by_note. Full
+  priority preserved.
+
+  Capability boost (Step 2a): WS-149 capability=core → no boost.
+
+  Context boost (Step 2b): system/context.md has no active items → no boost.
+
+  Fleet-rotation invariant (Step 3a-rotation): N/A — this is the poker-tracker
+  product repo, not the CWOS HomeBase distribution repo. No fleet/repo-goal
+  surface to rotate against.
+
+  Mode classification: WS-149 = plan-first. Effort M, type improvement,
+  decision_flags populated → all three signals point to plan-first.
+
+  Execution plan: enter plan mode for the 2 decisions (lesson voice +
+  drill-substrate gap policy), inspect existing 7 lessons + WS-148
+  tierConceptMap + WS-145/146 shipped leak rules + lessonRegistry,
+  identify 3+ gap-tier concepts, author lessons, run lessonRegistry tests
+  + cross-reference test, mark WS-149 done.

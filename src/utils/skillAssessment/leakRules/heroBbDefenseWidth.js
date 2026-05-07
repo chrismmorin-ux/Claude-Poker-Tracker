@@ -38,14 +38,16 @@ export const rule = {
   },
 
   /**
-   * Matches preflop:none:BIG_BLIND:def:oop:raise:vsopen.
+   * Matches preflop:none:BIG_BLIND:def:oop:raise:vsopen:na.
    * Hero is BB defending OOP vs a single preflop raise (vsopen context).
+   * The 8th `preflopAggressor` axis is `na` on preflop streets (the action
+   * under analysis IS the preflop decision, so the axis isn't applicable).
    */
   matchesBucket(situationKey) {
     if (!situationKey) return false;
     const parts = situationKey.split(':');
-    if (parts.length !== 7) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction] = parts;
+    if (parts.length !== 8) return false;
+    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
     return (
       street === 'preflop'
       && posCategory === 'BIG_BLIND'
@@ -53,6 +55,7 @@ export const rule = {
       && isIP === 'oop'
       && facingAction === 'raise'
       && contextAction === 'vsopen'
+      && preflopAggressor === 'na'
     );
   },
 

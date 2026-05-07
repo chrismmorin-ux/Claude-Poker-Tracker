@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { SURFACE, BORDER, TEXT, FONT, COLOR, R } from '../panelTokens';
+import { SURFACE, BORDER, TEXT } from '../../../../constants/designTokens';
 
 const ARCHETYPE_LABELS = {
   set: 'Set', overpair: 'Overpair', top_pair: 'Top Pair',
@@ -15,18 +15,26 @@ const ARCHETYPE_LABELS = {
   overcards: 'Overcards', miss: 'Miss',
 };
 
+const GREEN = '#22c55e';   // green-500 — was COLOR.green
+const RED = '#ef4444';     // red-500 — was COLOR.red
+
 const ARCHETYPE_COLORS = {
-  set: COLOR.green, overpair: COLOR.green, top_pair: '#60a5fa',
-  second_pair: COLOR.yellow, flush_draw: COLOR.cyan,
-  overcards: COLOR.orange, miss: COLOR.red,
+  set: GREEN, overpair: GREEN, top_pair: '#60a5fa',
+  second_pair: '#eab308', flush_draw: '#22d3ee',
+  overcards: '#f97316', miss: RED,
 };
 
 export const FlopBreakdownPanel = ({ flopBreakdown }) => {
   if (!flopBreakdown || flopBreakdown.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={sectionHeader}>Flop Archetype Breakdown</div>
+    <div className="mb-2.5">
+      <div
+        className="text-[9px] font-bold uppercase tracking-[0.8px] mb-1.5 pb-[3px] border-b"
+        style={{ color: TEXT.muted, borderBottomColor: BORDER.default }}
+      >
+        Flop Archetype Breakdown
+      </div>
 
       {flopBreakdown.map((arch, i) => {
         const label = ARCHETYPE_LABELS[arch.archetype] || arch.archetype;
@@ -36,44 +44,37 @@ export const FlopBreakdownPanel = ({ flopBreakdown }) => {
         const isPositive = ev != null && ev >= 0;
 
         return (
-          <div key={arch.archetype || i} style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '3px 0',
-          }}>
+          <div key={arch.archetype || i} className="flex items-center gap-1.5 py-[3px]">
             {/* Probability bar */}
-            <div style={{
-              width: 40, height: 6, borderRadius: 3, overflow: 'hidden',
-              background: SURFACE.inset, flexShrink: 0,
-            }}>
-              <div style={{
-                width: `${probPct}%`, height: '100%', borderRadius: 3,
-                background: color,
-                transition: 'width 0.5s ease',
-              }} />
+            <div
+              className="w-10 h-1.5 rounded-[3px] overflow-hidden shrink-0"
+              style={{ background: SURFACE.inset }}
+            >
+              <div
+                className="h-full rounded-[3px]"
+                style={{ width: `${probPct}%`, background: color, transition: 'width 0.5s ease' }}
+              />
             </div>
 
             {/* Probability % */}
-            <span style={{
-              fontFamily: FONT.mono, fontSize: 9, color: TEXT.muted,
-              width: 28, textAlign: 'right', flexShrink: 0,
-            }}>
+            <span
+              className="font-mono text-[9px] w-7 text-right shrink-0"
+              style={{ color: TEXT.muted }}
+            >
               {probPct}%
             </span>
 
             {/* Label */}
-            <span style={{
-              fontSize: 10, color: TEXT.secondary, flex: 1,
-            }}>
+            <span className="text-[10px] flex-1" style={{ color: TEXT.secondary }}>
               {label}
             </span>
 
             {/* EV */}
             {ev != null && (
-              <span style={{
-                fontFamily: FONT.mono, fontSize: 9, fontWeight: 600,
-                color: isPositive ? COLOR.green : COLOR.red,
-                flexShrink: 0,
-              }}>
+              <span
+                className="font-mono text-[9px] font-semibold shrink-0"
+                style={{ color: isPositive ? GREEN : RED }}
+              >
                 {isPositive ? '+' : ''}{ev.toFixed(2)}
               </span>
             )}
@@ -84,9 +85,3 @@ export const FlopBreakdownPanel = ({ flopBreakdown }) => {
   );
 };
 
-const sectionHeader = {
-  fontSize: 9, fontWeight: 700, color: TEXT.muted,
-  textTransform: 'uppercase', letterSpacing: 0.8,
-  marginBottom: 6, paddingBottom: 3,
-  borderBottom: `1px solid ${BORDER.default}`,
-};

@@ -57,3 +57,21 @@ describe('message-schemas — capture-port validators (RT-65)', () => {
     expect(validateMessage('__not_a_type__', {})).toMatch(/unknown/);
   });
 });
+
+describe('message-schemas — side-panel-port validators (WS-105)', () => {
+  describe('request_full_state', () => {
+    it('accepts a well-formed message', () => {
+      expect(validateMessage('request_full_state', { type: 'request_full_state' })).toBeNull();
+    });
+  });
+
+  describe('reload_ignition_tabs', () => {
+    it('accepts a well-formed message', () => {
+      expect(validateMessage('reload_ignition_tabs', { type: 'reload_ignition_tabs' })).toBeNull();
+    });
+  });
+
+  it('rejects unknown side-panel message types so the SW gate drops them', () => {
+    expect(validateMessage('side_panel_evil_payload', { type: 'side_panel_evil_payload' })).toMatch(/unknown/);
+  });
+});

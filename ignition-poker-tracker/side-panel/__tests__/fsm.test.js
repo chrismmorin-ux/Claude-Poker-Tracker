@@ -175,8 +175,25 @@ describe('betweenHandsFsm', () => {
   it('starts inactive', () => {
     expect(betweenHandsFsm.initial).toBe('inactive');
   });
-  it('liveContextArrived with betweenHandsOrIdle=true: inactive → active', () => {
-    expect(betweenHandsFsm.transition('inactive', 'liveContextArrived', { betweenHandsOrIdle: true }).state).toBe('active');
+
+  // WS-102 — debounce: first betweenHandsOrIdle=true signal does NOT go
+  // straight to 'active'; it parks in 'pendingActive' awaiting confirmation
+  // (or contradiction) on the next live-context push. This prevents a
+  // transient malformed payload from flashing the banner.
+  it('liveContextArrived with betweenHandsOrIdle=true: inactive → pendingActive (debounce)', () => {
+    expect(betweenHandsFsm.transition('inactive', 'liveContextArrived', { betweenHandsOrIdle: true }).state).toBe('pendingActive');
+  });
+  it('liveContextArrived with betweenHandsOrIdle=true: pendingActive → active (confirmed)', () => {
+    expect(betweenHandsFsm.transition('pendingActive', 'liveContextArrived', { betweenHandsOrIdle: true }).state).toBe('active');
+  });
+  it('WS-102 transient malformed payload: pendingActive → inactive on contradiction (banner never showed)', () => {
+    // Owner verification: a single bad betweenHandsOrIdle=true followed
+    // immediately by a corrected betweenHandsOrIdle=false leaves us in
+    // 'inactive' with the banner-visible states never having been entered.
+    const t1 = betweenHandsFsm.transition('inactive', 'liveContextArrived', { betweenHandsOrIdle: true });
+    expect(t1.state).toBe('pendingActive');
+    const t2 = betweenHandsFsm.transition(t1.state, 'liveContextArrived', { betweenHandsOrIdle: false });
+    expect(t2.state).toBe('inactive');
   });
   it('liveContextArrived with betweenHandsOrIdle=false stays inactive', () => {
     expect(betweenHandsFsm.transition('inactive', 'liveContextArrived', { betweenHandsOrIdle: false }).changed).toBe(false);
@@ -187,15 +204,30 @@ describe('betweenHandsFsm', () => {
   it('modeATimerFire: active → modeAExpired', () => {
     expect(betweenHandsFsm.transition('active', 'modeATimerFire').state).toBe('modeAExpired');
   });
-  it('handNew resets active/modeAExpired to inactive', () => {
+
+  // WS-102 modeAExpired symmetry: a fresh between-hands signal while in
+  // modeAExpired returns to 'active' (defensive recovery if handNew never
+  // fired between two between-hands cycles). Pre-WS-102 this transition
+  // returned null and the FSM was sticky.
+  it('WS-102 symmetry: liveContextArrived(true) on modeAExpired → active', () => {
+    expect(betweenHandsFsm.transition('modeAExpired', 'liveContextArrived', { betweenHandsOrIdle: true }).state).toBe('active');
+  });
+  it('liveContextArrived(false) on modeAExpired still routes to inactive', () => {
+    expect(betweenHandsFsm.transition('modeAExpired', 'liveContextArrived', { betweenHandsOrIdle: false }).state).toBe('inactive');
+  });
+
+  it('handNew resets pendingActive/active/modeAExpired to inactive', () => {
+    expect(betweenHandsFsm.transition('pendingActive', 'handNew').state).toBe('inactive');
     expect(betweenHandsFsm.transition('active', 'handNew').state).toBe('inactive');
     expect(betweenHandsFsm.transition('modeAExpired', 'handNew').state).toBe('inactive');
   });
-  it('adviceArrived also collapses to inactive', () => {
+  it('adviceArrived also collapses to inactive (incl. pendingActive)', () => {
+    expect(betweenHandsFsm.transition('pendingActive', 'adviceArrived').state).toBe('inactive');
     expect(betweenHandsFsm.transition('active', 'adviceArrived').state).toBe('inactive');
     expect(betweenHandsFsm.transition('modeAExpired', 'adviceArrived').state).toBe('inactive');
   });
-  it('tableSwitch resets from any state', () => {
+  it('tableSwitch resets from any state (incl. pendingActive)', () => {
+    expect(betweenHandsFsm.transition('pendingActive', 'tableSwitch').state).toBe('inactive');
     expect(betweenHandsFsm.transition('active', 'tableSwitch').state).toBe('inactive');
     expect(betweenHandsFsm.transition('modeAExpired', 'tableSwitch').state).toBe('inactive');
   });
