@@ -291,7 +291,7 @@ All 10 commerce red lines:
 - **#4 Reversibility** — dismissal is reversible (user can navigate to pricing-page manually anytime). Test: during cooldown, navigate to Settings → Billing → View plans; assert no gate.
 - **#5 No streaks / shame / engagement-pressure** — no urgency / no countdown / no streaks. Test: CI-grep refused strings in modal copy.
 - **#6 Flat-access** — equal visual weight 2 buttons. **Load-bearing test target.** CSS measurement asserts identical width/height/color/border. Test: MPMF-G5-RL #6 specific assertion suite.
-- **#7 Editor's-note tone** — CI-linted forbidden-string check on `paywallCopy.js` generator output. Test: `scripts/check-commerce-copy.sh`.
+- **#7 Editor's-note tone** — CI-linted forbidden-string check on `paywallCopy.js` generator output. Test: `scripts/check-commerce-copy.cjs`.
 - **#8 No cross-surface contamination** — modal never renders on TableView during active hand. **Load-bearing.** Test: MPMF-G5-SC — mock mid-hand state + trigger paywall; assert no modal renders + neutral toast fires + deferred state set + modal renders post-hand.
 - **#9 Incognito observation mode** — telemetry events respect per-category consent.
 - **#10 No dark-pattern cancellation** — N/A directly (paywall-hit is conversion, not cancel).
@@ -308,7 +308,7 @@ All 10 commerce red lines:
 - **`EntitlementContext`** — provides feature-access check.
 - **`paywallCopy.js`** — CI-linted copy generator; mirrors EAL `retirementCopy.js` pattern.
 - **Toast container (`ToastContext`)** — Variation B mid-hand-deferred state surfaces neutral toast.
-- **CI script `check-commerce-copy.sh`** — enforces forbidden-string list across paywall copy + cancellation + plan-change + upgrade-prompt.
+- **CI script `check-commerce-copy.cjs`** — enforces forbidden-string list across paywall copy + cancellation + plan-change + upgrade-prompt.
 
 ---
 
@@ -382,7 +382,7 @@ Placeholder for future findings:
 4. `src/hooks/usePaywallCooldown.js`
 5. `src/hooks/useDeferredPaywall.js`
 6. `src/utils/entitlement/paywallCopy.js`
-7. `scripts/check-commerce-copy.sh` (consolidated CI-lint script for cancellation + plan-change + paywall + upgrade-prompt)
+7. `scripts/check-commerce-copy.cjs` (consolidated CI-lint script for cancellation + plan-change + paywall + upgrade-prompt)
 
 **Amended files (~3):**
 - `src/reducers/uiReducer.js` — `handEnded` event added if not present; deferred-paywall hook subscribes.

@@ -2,10 +2,10 @@ id: "WS-089"
 title: "Archetype correctness widening"
 legacy_id: "LSW-C"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T18:10:00Z"
+completed_at: "2026-05-07T22:40:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "line-study-slice-widening"
@@ -22,9 +22,9 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-049"
 decision_flags: []
-status_note: "THREADED into LSW-B1..B3"
+status_note: "DONE 2026-05-07 SPR-049. Threaded into WS-086 HU batch as designed. T98 flop_root cbet decision now carries correctByArchetype on 2 of 3 branches: Check { fish:false, reg:true, pro:true } (vs REG/PRO solver-dominant) + Bet 33% { fish:true, reg:false, pro:false } (vs FISH thin-value extraction); Bet 75% stays flat-incorrect across all archetypes per A4 audit. Q72r and K77 had no flop_root archetype splits called by their A2/A3 audits (splits lived on river nodes — B3 territory, out of B1 scope). AK2 had no audit-declared splits (LSW-A8 not yet conducted). Visual verification at 1600×720: branch verdicts flip correctly when toggling Fish/Reg/Pro; CORRECT VS FISH badge surfaces on Bet 33% under Fish, CORRECT VS REG on Check under Reg."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"

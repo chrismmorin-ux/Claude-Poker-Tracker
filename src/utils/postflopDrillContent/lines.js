@@ -1480,6 +1480,17 @@ const LINE_BTN_VS_BB_SB_SRP_MW_J85 = {
       board: ['J♠', '8♥', '5♦'],
       pot: 10.0,
       villainAction: { kind: 'check' },
+      // WS-086 documented MW heroHolding (per LSW-H3 surface audit appendix):
+      // hero pinned to A♦J♣ (TPTK). bucketCandidates focuses the v2 panel's
+      // domination-map pinning on the topPair tier. Authored as part of WS-095
+      // SPR-048 close-out so the new MW BucketEVPanelV2 render path is testable.
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♦J♣'],
+        bucketCandidates: ['topPair'],
+        classLabel: 'top pair, top kicker',
+      },
+      decisionKind: 'standard',
       frameworks: [
         'fold_equity_compression',
         'bluff_frequency_collapse',
@@ -2099,6 +2110,27 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
       board: ['T♠', '9♠', '8♥'],
       pot: 21.0,
       villainAction: null,
+      // SPR-049 (2026-05-07) — LSW-B1 HU close-out. Hero is SB with A♦A♣
+      // (overpair on T98ss), strong-but-vulnerable. Pinned to `overpair`
+      // per LSW-A4 audit (do NOT include topPair / flushDraw / openEnder —
+      // those are infeasible for the pinned combo).
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♦A♣'],
+        bucketCandidates: ['overpair'],
+        classLabel: 'overpair (strong-but-vulnerable)',
+      },
+      villainRangeContext: {
+        // Resolves to { position: 'BTN', action: 'threeBet', vs: 'SB' } via
+        // villainRanges.js → archetypeRanges THREEBET_RANGES['BTN_vs_SB'].
+        // BTN's 3bet range vs SB open: TT+,AJs+,KQs,A5s-A4s,AJo+,KQo.
+        baseRangeId: 'sb_vs_btn_3bp_btn_range',
+      },
+      decisionKind: 'standard',
+      // Solver-dominant Check on disadvantaged low-card flops; mixed bet 33%
+      // acknowledged in rationale. `pure` because Check carries the
+      // overwhelming frequency at this texture/SPR for the OOP caller.
+      decisionStrategy: 'pure',
       // LSW-F4-A3 (2026-04-22): dropped inverted `range_advantage` +
       // `nut_advantage` (BTN has both on T98ss, not hero as SB caller).
       // Replaced with `board_tilt` (T98ss tilts to BTN's 3bet range).
@@ -2125,9 +2157,15 @@ const LINE_SB_VS_BTN_3BP_OOP_WET = {
           // on this texture (~79% of OOP range checks on low-card-tilted
           // wet flops in 3BP), but it's not pure — solver also mixes in
           // ~10% small-polar bets with strong-but-vulnerable overpairs.
-          { label: 'Check (pot control)', nextId: 'turn_after_check', correct: true, rationale: 'Correct. AA has ~60% equity vs BTN\'s range on T98ss — ahead of range but vulnerable to many turn/river cards (any J, Q, 7, 6, or spade). Check lets us realize equity cheaply against the draws and overpairs below us, while avoiding bloating a pot we can\'t bet-fold if BTN check-raises. Bet is also a valid mixed strategy in solver (~10% freq with strong overpairs), but check is the dominant choice at this depth and texture.' },
-          { label: 'Bet 33% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Defensible as a mixed strategy but not the dominant line. A small bet here builds pot on a texture where turn/river cards threaten our equity; the EV loss from bad runouts typically outweighs the protection gained against draws.' },
-          { label: 'Bet 75% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Polar sizing with a non-nut hand on a wet board. BTN calls with draws and sets, raises with straights. AA loses equity realization on a size that folds nothing we beat.' },
+          // SPR-049 / WS-089 (2026-05-07): archetype split threaded per
+          // LSW-A4 audit. vs FISH the small-polar bet 33% is correct
+          // (fish overcalls weaker overpairs/draws — value extracts);
+          // vs REG the solver-dominant Check is correct; vs PRO the
+          // Check is also correct (check-call trap exploits the PRO's
+          // tendency to barrel turns aggressively).
+          { label: 'Check (pot control)', nextId: 'turn_after_check', correct: true, correctByArchetype: { fish: false, reg: true, pro: true }, rationale: 'Correct vs REG/PRO; not vs FISH. AA has ~60% equity vs BTN\'s range on T98ss — ahead of range but vulnerable to many turn/river cards (any J, Q, 7, 6, or spade). Check lets us realize equity cheaply against the draws and overpairs below us, while avoiding bloating a pot we can\'t bet-fold if BTN check-raises. Bet is also a valid mixed strategy in solver (~10% freq with strong overpairs); against FISH we prefer the bet (see below) since their overcall frequency makes thin value the higher-EV line.' },
+          { label: 'Bet 33% pot', nextId: 'terminal_bet_wet_aa', correct: false, correctByArchetype: { fish: true, reg: false, pro: false }, rationale: 'Defensible as a mixed strategy but not dominant vs solver-aligned ranges. A small bet builds pot on a texture where turn/river cards threaten our equity; vs REG/PRO the EV loss from bad runouts outweighs the protection gained. vs FISH this flips: fish overcall with worse overpairs (JJ-QQ) and draws (gutshots, weak pair+BDFD) at frequencies that solver players don\'t — thin value extraction beats pot-control here.' },
+          { label: 'Bet 75% pot', nextId: 'terminal_bet_wet_aa', correct: false, rationale: 'Polar sizing with a non-nut hand on a wet board. BTN calls with draws and sets, raises with straights. AA loses equity realization on a size that folds nothing we beat. (Flat-incorrect across all archetypes — no archetype prefers polar sizing with strong-but-vulnerable here.)' },
         ],
       },
     },
@@ -2205,6 +2243,33 @@ const LINE_UTG_VS_BTN_4BP_DEEP = {
       board: ['A♠', 'K♦', '2♠'],
       pot: 45.0,
       villainAction: { kind: 'check' },
+      // SPR-049 (2026-05-07) — LSW-B1 HU close-out. Hero is UTG with
+      // A♥K♦ (top two pair on A♠K♦2♠). Pinned to `twoPair` per LSW-H3
+      // visual feasibility list. NOTE: LSW-A8 per-line audit has not yet
+      // been conducted; authored here with H3-only confidence per
+      // SPR-049 D1 ratification (precedent: K77 / T98 were authored,
+      // then audited, then patched via LSW-F3/F4). Recovers via follow-up
+      // commit if A8 later revises bucket / combo.
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♥K♦'],
+        bucketCandidates: ['twoPair'],
+        classLabel: 'top two pair',
+      },
+      villainRangeContext: {
+        // Resolves to { position: 'BTN', action: 'call', vs: 'UTG' } via
+        // villainRanges.js → archetypeRanges CALL_RANGES['BTN_vs_UTG'].
+        // BTN's call-of-4bet range vs UTG: QQ-JJ,AKs,AKo (narrow flat
+        // slice — most of BTN's 4bet-call range is exactly these hands;
+        // KK+ shoves, weaker hands fold).
+        baseRangeId: 'utg_vs_btn_4bp_btn_call',
+      },
+      decisionKind: 'standard',
+      // 4BP SPR ~1.7 commit-decision: jam dominates per range concentration.
+      // No archetype split authored — LSW-A8 audit has not run, so no
+      // audit-declared FISH/REG/PRO divergence is in scope (WS-089 threads
+      // only where audits called for it).
+      decisionStrategy: 'pure',
       frameworks: ['range_morphology', 'capped_range_check'],
       sections: [
         { kind: 'prose', heading: 'AK2ss in a 4BP, SPR ~1.7. Villain checks.', body: 'Ranges are extremely narrow: hero UTG 4bet range = QQ+/AK mostly; BTN 4bet-call range = QQ-KK/AK/AKs/AQs. AK2ss massively favors AK and AA/KK (sets). Low SPR (MICRO zone) means decisions are stack-committed.' },
@@ -2252,6 +2317,17 @@ const LINE_CO_VS_BTN_BB_SRP_MW_OOP = {
       board: ['Q♥', '5♠', '3♦'],
       pot: 10.0,
       villainAction: null,
+      // WS-086 documented MW heroHolding (per LSW-H3 surface audit appendix):
+      // hero pinned to A♠Q♣ (TPTK). bucketCandidates focuses the v2 panel's
+      // domination-map pinning on the topPair tier. Authored as part of WS-095
+      // SPR-048 close-out so the new MW BucketEVPanelV2 render path is testable.
+      heroView: {
+        kind: 'single-combo',
+        combos: ['A♠Q♣'],
+        bucketCandidates: ['topPair'],
+        classLabel: 'top pair, top kicker',
+      },
+      decisionKind: 'standard',
       frameworks: ['bluff_frequency_collapse', 'position_with_callers', 'hand_class_shift'],
       sections: [
         { kind: 'prose', heading: '3-way on dry Q53r — hero CO sandwiched between BB and BTN', body: 'BB checks first (OOP, range-wide on this texture). Hero CO acts second. BTN is IP and still to act behind. This is the "sandwiched" configuration: BB has already acted (won\'t act again until next street) and BTN is the live opponent ahead in next-decision. Q53r is dry and high-card; hero has nut advantage over BB and parity with BTN\'s broadway-heavy flat range. Decisions are harder than HU.' },

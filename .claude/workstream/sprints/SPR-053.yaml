@@ -1,0 +1,210 @@
+id: "SPR-053"
+title: "MW-equity solver-alignment validation harness baseline (WS-168)"
+status: completed
+approved_at: "2026-05-08T15:00:00Z"
+completed_at: "2026-05-08T17:00:00Z"
+goal: |
+  The multiway Monte Carlo equity engine (`handVsRangesMW`, shipped WS-095 /
+  SPR-048) gets a solver-alignment baseline measurement. By feeding it into
+  a preflop-range-derivation harness and comparing derived opening ranges to
+  a pinned solver chart reference, divergence magnitude tells us whether MW
+  MC correctness has a real gap (→ promote to P0/P1 fix) or is normal-queue
+  territory. Applies the owner-articulated 2026-05-07 principle: validation
+  as quality signal, not blocking gate.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct close-out of SPR-048 (WS-095 multiway
+  bucket-EV engine). 2nd domain-correctness sprint since the SPR-048/049
+  pair (separated by 3 launch-program sprints SPR-050/051/052). Rotation
+  back to engine work explicitly recommended by SPR-052 close-out notes
+  ("natural rotation back to engine work; MPMF cluster paused until Q7+Q8
+  founder external actions resolve"). Implements `feedback_validation_as_quality_signal.md`
+  memory binding: engine primitive shipped, validation harness as separate
+  follow-up; magnitude of divergence drives priority promotion.
+
+composed_by: auto
+created_at: "2026-05-08T15:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo; graceful degradation. Manual scan: domain-correctness validation work governed by POKER_THEORY.md first-principles invariants, not the constitutional anti-goal corpus (which targets commerce / engagement / autonomy surfaces). No applicable anti-patterns."
+
+decisions_needed:
+  - "Item #1 — Solver chart reference: hand-author from published charts (PIO/Snowie) vs scrape from solver tool vs reuse src/constants/preflopRanges.js if it exists"
+  - "Item #1 — Range-behind model: population priors vs already-collected player-pool data vs theory-hand-tune"
+  - "Item #1 — Position coverage v1: bookends only (UTG + BTN) vs all 9 positions"
+  - "Item #1 — Scope-cap fit: L tag = 3 sessions exceeds standard 2-session cap; recommend bookends-only + population priors to bring actual to ~M (1.5 sessions); all-9-positions queued as follow-up if divergence warrants"
+
+items:
+  - id: "WS-168"
+    title: "MW-equity solver-alignment validation harness (preflop range derivation baseline)"
+    mode: plan-first
+    effort: L
+    program: domain-correctness
+    category: domain-correctness-validation
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-08T15:00:30Z"
+    completed_at: "2026-05-08T17:00:00Z"
+    notes: |
+      SHIPPED in ~2 sessions actual (within standard 2-session cap; far under L=3 tag).
+      Decisions ratified upfront via 4-question AskUserQuestion before plan-mode:
+        D1 (reference data): Founder picked "create our own and compare to GTO chart"
+            — affirms WS-168 validation principle. Inputs from populationPriors.js
+            (canonical Bayesian engine binding), NOT archetypeRanges (pedagogical).
+        D2 (positions): BTN + UTG bookends.
+        D3 (3-bet response): fold/call/4-bet response with population priors
+            (more involved option; founder chose accuracy over scope-cap fit).
+        D4 (path): Follow existing src/__dev__/ convention (deviates from ticket spec).
+
+      Plan-mode pressure-test agent surfaced: independence assumption broken
+      (need joint probability table for SB+BB actions, not marginal product),
+      decision rule (EV(open) > 0) only valid for non-blind, openSize must
+      pin to 2.5 BB to match GTO chart regime, 5-scenario UTG truncation more
+      defensible than 27-scenario aggregate. All addressed in plan + impl.
+
+      Pre-flight verification PASSED: read monteCarloEquity.js:417-428 and
+      confirmed runBatchMW correctly handles villain-vs-villain card collisions
+      via accumulating deadLookup. Engine math is trustworthy.
+
+      Shipped:
+        - src/__dev__/mwEquityValidation/ (8 source files, ~750 LoC)
+        - src/utils/pokerCore/__tests__/mwEquityValidationSmoke.test.js
+          (16 assertions, 167ms — verifies AA/72o/JJ across all BTN+UTG scenarios)
+        - docs/projects/mw-equity-validation/mw-equity-validation.project.md (charter)
+        - docs/projects/mw-equity-validation/baseline-2026-05-08.md (placeholder
+          for founder's first browser run)
+        - src/main.jsx wired with import.meta.env.DEV gate
+        - 1 sentence in CLI deferred to v2 (runtime makes Node a poor fit)
+
+      Verification:
+        - npm run build clean (7.98s)
+        - bash scripts/smart-test-runner.sh: 10246/10266 pass, 0 failed,
+          20 skipped (zero regressions vs SPR-052 baseline of 10220).
+        - 16/16 smoke test assertions green (167ms).
+        - All-fold (1.5 BB), AA-vs-3way (positive), 72o-vs-3way (negative),
+          AA-vs-3bet (4-bets profitably), 72o-vs-3bet (folds, EV=-2.5)
+          invariants verified.
+
+      First baseline run is BROWSER-only — founder runs window.__validateMWEquity('BTN')
+      and ('UTG') to produce divergence numbers and decide priority promotion
+      per feedback_validation_as_quality_signal.md.
+
+    decision_flags:
+      - "Solver chart reference (founder picked: derive from our system, compare to PREFLOP_CHARTS)"
+      - "Range-behind model (founder picked: populationPriors.js — Bayesian-engine-binding)"
+      - "Position coverage v1 (founder picked: BTN + UTG bookends)"
+      - "3-bet response model (founder picked: fold/call/4-bet with population priors)"
+      - "Path location (founder picked: src/__dev__/ — existing convention; deviates from ticket spec)"
+
+composition_notes: |
+  Single-item L-effort sprint, plan-first mode mandatory.
+
+  Anchor selection — SPR-052-recommended rotation:
+    - Initial proposal anchored on WS-031 (PaywallGate); founder approved.
+    - On second pass before claiming, surfaced SPR-052 close-out notes
+      that explicitly flagged WS-031 as Q7-gated (founder external action)
+      AND WS-031.yaml's `blocked_by_legacy: [MPMF-G5-ER]` (entitlement
+      registry) — both missed in initial composition.
+    - Re-presented to founder via AskUserQuestion with 4 options:
+      proceed (Q7+ER resolved), skeleton-with-mocked-ER, rotate to WS-168,
+      rotate to RT-* engineering cluster.
+    - Founder picked WS-168 — exactly the SPR-052-recommended pivot.
+    - WS-168 unblocked (blocked_by: [WS-095]; WS-095 done in SPR-048).
+
+  Scope-cap concern explicitly surfaced and accepted:
+    - WS-168 L tag = 3 sessions; standard ceremony cap = 2 sessions.
+    - Bookends-only + population priors likely yields ~M actual (~1.5
+      sessions); plan-mode will explicitly narrow scope to fit cap, with
+      all-9-positions deferred as follow-up if divergence numbers warrant.
+
+  Source-class damping check: last 3 sprint anchors (SPR-050/051/052,
+  WS-028/035/034) all founder/migration source (untagged class). No
+  saturation. WS-168 source = ws-095-plan-mode-spr-048-2026-05-07
+  (parent_ws: WS-095) → spr-followup class. Founder-driven, not damped.
+
+  Fleet-rotation override skipped: poker-tracker repo has no fleet/
+  or kit/MANIFEST.yaml surfaces.
+
+  Auto-recommendation replenishment skipped: programs in NEW state with
+  null health scores; nothing to compute below-target against. Queue
+  has 96 backlog items (overflowing); replenishment unnecessary.
+
+  Fleet rotation — not applicable: this is the poker-tracker product
+  repo, not a CWOS distribution repo. Internal product/engine work.
+
+  Mode plan-first mandatory: L effort + 4 decision_flags affecting
+  fundamental scope (chart source, range-behind model, position
+  coverage, scope-cap fit) + first-principles validation work that
+  needs founder calibration on what counts as "close enough" to solver
+  charts.
+
+  Memory bindings:
+    - feedback_validation_as_quality_signal.md (2026-05-07): origin
+      of WS-168 itself; non-blocking baseline; magnitude of divergence
+      drives priority.
+    - feedback_first_principles_decisions.md: harness must derive ranges
+      from equity/potOdds/EV computations against modeled ranges-behind,
+      NEVER from position labels directly.
+    - POKER_THEORY.md: solver-chart reference inputs are GTO baselines;
+      population priors model real-pool deviations.
+
+  Strong alternative passed over: WS-031 (PaywallGate, MPMF P1 22.0)
+  was the protocol-pure top of queue but founder-approved-then-redirected
+  on Q7-gating discovery. WS-031 is paused until Q7+Q8 founder external
+  actions resolve.
+
+last_updated: "2026-05-08T17:00:00Z"
+
+completion_notes: |
+  Sprint completed in ~2 hours actual (well under L=3-session tag).
+
+  Pivot in flight: original anchor was WS-031 (PaywallGate) for monetization
+  Gate 5 close-out continuity, but on second pass before claiming, surfaced
+  SPR-052 close-out notes flagging WS-031 as Q7-gated AND blocked_by_legacy.
+  Re-presented to founder via AskUserQuestion; founder picked WS-168 (the
+  SPR-052-recommended pivot back to engine work).
+
+  Founder direction calibration via 4-question AskUserQuestion before
+  plan-mode locked the design — 4 decisions ratified upfront so plan-mode
+  Plan agent could pressure-test the chosen design rather than competing
+  alternatives. Plan agent surfaced 10 high-impact issues (independence
+  assumption, decision rule, openSize regime, UTG truncation strategy,
+  caching boundaries, etc.); all addressed in the plan and shipped impl.
+
+  Confound transparency is the deliberate design value: harness reports
+  divergence and explicitly attributes possible delta sources (population
+  priors vs GTO frame, joint-probability table authoring, 3-bet response
+  coarseness, engine math, 5-bet recursion truncation, chart-regime drift).
+  Founder's framing: "we will need more complicated subsystems before we
+  get to a high degree of solver accuracy. But once we achieve it, we will
+  have achieved it without going through the process the solver goes through
+  (millions of game theory runs, and will be able to better describe it in
+  terms we already use)."
+
+  Master Plan rhythm: SPR-053 is 2nd domain-correctness sprint in two days
+  (after SPR-049 LSW phase B HU close-out 2026-05-07; SPR-048 multiway
+  bucket-EV engine 2026-05-07). 4-sprint sequence on poker-theory
+  integrity in 36 hours: SPR-048 → SPR-049 → 3 launch sprints SPR-050/051/052
+  → SPR-053. SPR-052 explicitly recommended this rotation; founder ratified.
+
+  Downstream:
+    - Founder runs window.__validateMWEquity('BTN') and ('UTG') in browser
+      to produce baseline-2026-05-08.md divergence numbers (~10–15 min each).
+    - If divergence is "close" (Jaccard > 70%): no action required; document
+      anomalies in v2 follow-up tickets.
+    - If divergence is "moderate" (40–70%): triage; promote highest-confound-
+      source improvements (likely population priors recalibration).
+    - If divergence is "significantly off" (< 40%): P0/P1 fix required.
+      Most likely engine math or joint-probability table error per WS-168
+      validation principle.
+    - WS-031 (PaywallGate) remains paused until Q7 + entitlement registry
+      land. Other natural anchors: PIO/SCF P2 children, RT-* engineering
+      cluster, additional domain-correctness LSW work (WS-097 / WS-098 /
+      WS-092 / WS-087).

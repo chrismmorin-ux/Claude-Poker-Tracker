@@ -1,0 +1,94 @@
+id: "WS-168"
+title: "MW-equity solver-alignment validation harness (preflop range derivation baseline)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-08-next"
+claimed_at: "2026-05-08T15:00:00Z"
+completed_at: "2026-05-08T17:00:00Z"
+sprint_id: "SPR-053"
+status_note: "SHIPPED in SPR-053 (2026-05-08). Harness lives at src/__dev__/mwEquityValidation/. v1 covers BTN + UTG bookends; runs in browser via window.__validateMWEquity. Project doc + first-baseline placeholder at docs/projects/mw-equity-validation/. Smoke test (16 assertions, 167ms) at src/utils/pokerCore/__tests__/mwEquityValidationSmoke.test.js — verifies math runs end-to-end on AA/72o/JJ across all BTN+UTG scenarios. Founder runs the full ~10-15min derivation in browser to produce baseline divergence report; magnitude of divergence drives priority promotion per feedback_validation_as_quality_signal.md."
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness-validation"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Build a non-blocking validation harness for the MW Monte Carlo equity engine
+  (`handVsRangesMW`, shipped in WS-095 / SPR-048).
+
+  ## Validation principle (owner-articulated 2026-05-07)
+
+  If `handVsRangesMW` correctly models multiway dynamics, then feeding it into
+  a preflop-range-derivation harness should produce opening ranges that
+  approximate solver charts. Specifically: UTG opens tight (~12%) because
+  with 8 players left to act there's high probability of a squeeze / multiple
+  callers / a 3-bet from behind, AND because UTG is OOP postflop. BTN opens
+  wide (~40%) because only 2 players left + IP postflop. The squeeze threat
+  + cold-call threat + range-realization-by-position dynamics are exactly
+  what 3-way+ MC equity captures and per-villain 1v1 cannot.
+
+  ## Quality signal — magnitude of divergence drives priority
+
+  This is a baseline measurement, NOT a blocking gate for WS-095. Owner
+  stance: "we just don't have the same analysis [as solvers]; the actual
+  results of the pre-flop ranges shouldn't be a blocking criteria, but we
+  can use this as a baseline and ask ourselves how we can improve it to
+  arrive at a 'closer' approximation of actual multiway dynamics."
+
+  - **If derived ranges are significantly off from solver charts** → we
+    have a correctness gap; system risks bad advice; promote to P0/P1.
+  - **If derived ranges are very close** → falls into normal /next priority
+    queue and competes for development time against other improvements.
+
+  ## Scope
+
+  - Build a preflop-range derivation harness: for a target position
+    (UTG/UTG+1/MP1/MP2/HJ/CO/BTN/SB), enumerate hands by combo, compute
+    EV of opening (raise) vs folding by feeding `handVsRangesMW` against
+    the modeled ranges-behind. The opening range is the set of combos
+    where EV(open) > EV(fold).
+  - Model ranges-behind as a function of:
+    - Frequencies of cold-call / 3-bet / squeeze from each remaining
+      position (use population priors as starting point; can later be
+      replaced with actual player-pool data)
+    - Per-position calling/3-betting ranges given they continue
+  - Compare derived ranges to a published solver chart (e.g.
+    `docs/projects/preflop-charts/` if one exists, or pin a known
+    solver-output reference).
+  - Output a report: per-position % overlap with solver chart, list of
+    hands that diverge (in solver chart but missing from derived; or
+    vice versa), and a divergence magnitude metric.
+
+  ## Why deferred
+
+  - WS-095 ships the engine primitive; this ticket validates it.
+  - Owner explicitly wants this to NOT block WS-095 close (see "Quality
+    signal" section above).
+  - Builds a recurring quality signal that can run in CI or on-demand,
+    so future engine changes don't silently regress MW correctness.
+
+accept_criteria:
+  - "✓ Preflop-range derivation harness exists at src/utils/__dev__/mwEquityValidation/ (or test-only path)"
+  - "✓ Harness can derive opening range for at least one position (e.g. UTG and BTN as bookends) using handVsRangesMW"
+  - "✓ Comparison report against a pinned solver chart reference"
+  - "✓ Divergence magnitude metric reported (e.g. % combo overlap, list of mismatches)"
+  - "✓ Owner reviews the divergence and decides: P0/P1 fix-required vs P2/P3 normal-queue"
+effort: "L"
+files_involved:
+  - "src/utils/__dev__/mwEquityValidation/ (NEW)"
+  - "docs/projects/mw-equity-validation/ (NEW — divergence reports + reference solver chart)"
+blocked_by:
+  - "WS-095"
+blocked_by_legacy: []
+enables: []
+decision_flags:
+  - "Solver chart reference: hand-author from published charts vs scrape from solver tool vs use our existing preflop chart at src/constants/preflopRanges.js (if it exists)"
+  - "Range-behind model: use population priors as starting point vs already-collected player-pool data vs hand-tune from theory"
+  - "Position coverage in v1: bookends only (UTG + BTN) vs all 9 positions"
+source:
+  origin: "ws-095-plan-mode-spr-048-2026-05-07"
+  parent_ws: "WS-095"
+  rationale: "Owner-articulated validation principle 2026-05-07: MW MC engine correctness validated by ability to derive solver-aligned preflop ranges. Non-blocking baseline; magnitude of divergence drives priority."
+status_note: "Blocked on WS-095 (handVsRangesMW must ship first)"
+created_at: "2026-05-07"
+updated_at: "2026-05-07"

@@ -1,0 +1,161 @@
+id: "SPR-051"
+title: "Monetization Gate 5 starter — CI-grep enforces anti-patterns forbidden-string list (WS-035)"
+status: completed
+approved_at: "2026-05-08T13:59:41Z"
+completed_at: "2026-05-08T14:10:47Z"
+goal: |
+  Forbidden-string list from `docs/projects/monetization-and-pmf/anti-patterns.md`
+  is enforced by CI/test harness; any future commerce copy that re-introduces
+  a refused pattern fails the build before merge. Establishes the safety
+  net before commerce copy generators (paywallCopy / billingCopy / pricingCopy /
+  upgradePromptCopy / etc.) exist, so Gate 5 implementation cannot drift
+  back into the patterns SPR-050 catalogued.
+
+program_focus: launch
+program_initiative: "Monetization & PMF — Gate 5 starter (CI-grep safety net). Direct continuation of SPR-050 (consumes its 29-refusal forbidden-string list). Second consecutive launch-program sprint; rotation away from 3-sprint engineering/d-correctness streak (SPR-047/048/049) continues."
+
+composed_by: auto
+created_at: "2026-05-08T13:59:41Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo; graceful degradation"
+
+decisions_needed:
+  - "Item #1 — Script form: standalone bash (mirrors EAL `scripts/check-anchor-writers.sh`), Node.js script (parses JSX, heavier), or vitest test file (runs with normal suite, no separate CI step)?"
+  - "Item #1 — Scan scope: dedicated copy generators only (`paywallCopy.js` / `billingCopy.js` / etc.), all `src/components/**` + `src/utils/entitlement/**` (broader, needs allowlist), or all of `src/`?"
+  - "Item #1 — Failure mode for v1: hard-fail CI (strict), warn-only for first 30 days (graceful while generators don't exist), or fail-on-new-only (delta)?"
+
+items:
+  - id: "WS-035"
+    title: "CI-linted forbidden-copy-strings check (`scripts/check-commerce-copy.sh` or equivalent)"
+    mode: plan-first
+    effort: M
+    program: launch
+    category: monetization-and-pmf
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-08T13:59:41Z"
+    completed_at: "2026-05-08T14:10:47Z"
+    notes: |
+      Shipped scripts/check-commerce-copy.cjs (Node.js commonjs, narrow
+      scope, hard-fail v1 — 3 founder decisions all ratified upfront via
+      AskUserQuestion). 63 forbidden patterns encoded from MPMF-AP-01..
+      AP-29 (literal + regex). Structural refusals deferred (AP-05/08/10/
+      11/12/13/14/15/16/18/21/23/24/25/27 — animation, autofocus,
+      scrollIntoView, bg-red-*, ≤2-tap depth, etc.). Verified both paths:
+      clean state passes (12 files scoped, 0 violations, exit 0); 4-
+      violation fixture exits 1 with correct file:line:col + ap_id + why.
+      Cross-reference cleanup: 7 active surface/journey specs renamed
+      `.sh` → `.cjs`; 2 historical files preserved. No production code,
+      no test runs needed.
+    decision_flags:
+      - "Script form (bash / Node.js / vitest test)"
+      - "Scan scope (generators-only / src-narrow / all-src)"
+      - "Failure mode (hard-fail / warn-30d / fail-on-new-only)"
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection — protocol-pure top of queue + close-out continuity:
+    - WS-035 is MPMF P1 (22.0), tied with other MPMF items; ranked first
+      by close-out continuity (consumes SPR-050's 13 net-new refusals'
+      forbidden-string lists from anti-patterns.md Batch 4) and dependency
+      cluster (WS-035's accept_criterion `scripts/check-commerce-copy.sh`
+      was structurally blocked by MPMF-G4-* until SPR-050 shipped).
+    - Smallest defensible Gate 5 starter: CI-grep is script-only — no
+      production code, no surface implementation, no Stripe touch. AI-only
+      achievable without external dependencies. Establishes safety net
+      before any commerce copy generators exist (paywallCopy.js,
+      billingCopy.js, pricingCopy.js, upgradePromptCopy.js, etc. — all
+      pending Gate 5).
+
+  Co-location considered:
+    - WS-034 (commerce red-line tests): related but depends on actual Gate
+      5 surface code being implemented; premature.
+    - WS-031 (PaywallGate component): major surface implementation, big
+      scope; needs separate sprint.
+    - WS-033 (PostHog install): independent telemetry infra; deferred.
+
+  Mode plan-first mandatory: M effort + 3 decision_flags affecting
+  fundamental shape of the artifact (script form, scope, failure mode).
+
+  Source-class damping check: last 3 sprint anchors (WS-028 / WS-086 /
+  WS-095) all founder/migration source; no auto-rec or engine-finding
+  saturation. No damping applied. WS-035 also founder/migration source.
+
+  Fleet-rotation override skipped: poker-tracker repo has no fleet/ or
+  kit/MANIFEST.yaml surfaces; all programs classify as internal-infra.
+
+  Auto-recommendation replenishment skipped: programs in NEW state with
+  null health scores; nothing to compute below-target against.
+
+  Soft-blocked deferred from candidate ranking: WS-164 (PIO G5 child E,
+  18.0 → 4.5 via blocked_by_note Step 2-prereq).
+
+  Index drift flagged for /audit (NOT blocking): queue-index.yaml shows
+  WS-105 as backlog but ticket file says done. Drift since SPR-043.
+
+  Strong alternative anchor passed over (founder may redirect): WS-168
+  (MW-equity solver-alignment validation harness; P2, 15.0, L) — direct
+  close-out from SPR-048. Lower priority score but richer continuity to
+  yesterday's MW engine work.
+
+last_updated: "2026-05-08T14:10:47Z"
+
+completion_notes: |
+  Sprint shipped in ~11 minutes. M-tagged → ~S actual cadence — fourth
+  consecutive doc-discipline sprint matching the M-tagged-but-S-actual
+  pattern (SPR-043/044/045/047/050).
+
+  Founder decisions resolved upfront via AskUserQuestion:
+    D1 (form): Node.js script (.cjs) — departs from EAL/PRF bash precedent
+       per founder pick (more capable for forbidden-pattern enumeration).
+    D2 (scope): Narrow — src/utils/entitlement/** + SettingsView/** +
+       paywall/billing/pricing/trial/upgrade component-name patterns.
+    D3 (fail mode): Hard-fail v1 — refusals are categorical; today's empty
+       scan trivially passes; meaningful-fail begins when Gate 5 ships.
+
+  Authored:
+    - scripts/check-commerce-copy.cjs (~330 lines incl. comments)
+      63 forbidden patterns (literal + regex) encoded from MPMF-AP-01..
+      AP-29 via the Forbidden-strings sections of anti-patterns.md.
+    - 7 active surface/journey specs cross-referenced .sh → .cjs:
+      anti-patterns.md, billing-settings.md, paywall-modal.md,
+      pricing-page.md, upgrade-prompt-inline.md, paywall-hit.md,
+      cancellation.md, plan-change.md.
+    - 2 historical files preserved (.project.md change-log entry from
+      2026-04-25 + audits/2026-04-24-blindspot-...md) — chronological
+      record stays accurate.
+
+  Verification:
+    - Clean state: 12 scoped files, 0 violations, exit 0.
+    - Negative path: deliberate __verifyCheck.js fixture caught 4
+      violations (AP-17 "Maybe later", AP-28 "Thanks for upgrading",
+      AP-29 "Based on your" + "your usage") with file:line:col + ap_id +
+      why-rationale; exit 1; fixture removed.
+
+  Doc + script change; no production code; no tests; no build. Vital
+  signs N/A.
+
+  Downstream:
+    - WS-034 (commerce red-line tests, P1 22.0) — natural next anchor.
+      Now consumes both anti-patterns.md (29 refusals) AND the safety-net
+      script (so red-line tests can assert structural refusals while CI-
+      grep handles string refusals). Clean Gate 5 cluster: WS-028 → WS-035
+      → WS-034.
+    - WS-031 (PaywallGate) / WS-033 (PostHog install) / WS-032
+      (BillingSettings) — Gate 5 surface implementation; each will be
+      gated by the new check-commerce-copy.cjs at PR time.
+    - Structural refusals (AP-05/08/10..14/15/16/18/21/23/24/25/27) still
+      enforced via per-surface tests when surfaces ship.
+
+  Master Plan rhythm: launch program now in 2-sprint cluster (SPR-050 +
+  SPR-051). Both doc-discipline sprints. WS-168 (MW-validation harness)
+  remains a strong alternative anchor; founder may rotate back to engine
+  work or continue MPMF Gate 5 cluster (WS-034 → WS-031).

@@ -11,22 +11,27 @@
 import React, { useState } from 'react';
 
 const CAVEAT_LABELS = {
-  'synthetic-range':    'synthetic range',
-  'v1-simplified-ev':   'simplified EV',
-  'time-budget-soft':   'over time budget',
-  'empty-bucket':       'no combos',
-  'low-sample-bucket':  'low sample',
-  'time-budget-bailout': 'partial result',
+  'synthetic-range':       'synthetic range',
+  'v1-simplified-ev':      'simplified EV',
+  'v1-simplified-mw':      'simplified MW',
+  'time-budget-soft':      'over time budget',
+  'empty-bucket':          'no combos',
+  'low-sample-bucket':     'low sample',
+  'time-budget-bailout':   'partial result',
+  'depth2-cross-validated': 'depth-2 cross-validated',
+  'depth2-divergent':      'depth-2 divergent',
 };
 
 /**
  * Props:
  *   confidence: { mcTrials, populationPriorSource, archetype, caveats: string[] }
+ *   cascadingFoldProbability: number | null  (MW only — null on HU)
  */
-export const ConfidenceDisclosure = ({ confidence }) => {
+export const ConfidenceDisclosure = ({ confidence, cascadingFoldProbability = null }) => {
   const [open, setOpen] = useState(false);
   if (!confidence) return null;
   const { mcTrials, populationPriorSource, archetype, caveats = [] } = confidence;
+  const hasCFP = Number.isFinite(cascadingFoldProbability);
 
   return (
     <div className="rounded border border-gray-800 bg-gray-900/20 text-[10px]">
@@ -74,6 +79,13 @@ export const ConfidenceDisclosure = ({ confidence }) => {
             <span className="text-gray-500">Archetype: </span>
             <span className="text-gray-200">{archetype}</span>
           </div>
+          {hasCFP && (
+            <div>
+              <span className="text-gray-500">Cascading fold P(all fold): </span>
+              <span className="text-gray-200">{(cascadingFoldProbability * 100).toFixed(1)}%</span>
+              <span className="text-gray-500 ml-2">— multiwayFoldPct, independent multiplication per villain</span>
+            </div>
+          )}
           {caveats.length > 0 && (
             <div className="pt-1">
               <div className="text-gray-500 mb-0.5">Caveats:</div>
@@ -89,6 +101,11 @@ export const ConfidenceDisclosure = ({ confidence }) => {
                     {c === 'synthetic-range' && (
                       <span className="text-gray-500 ml-1">
                         — villain range is an archetype stub, not observed data.
+                      </span>
+                    )}
+                    {c === 'v1-simplified-mw' && (
+                      <span className="text-gray-500 ml-1">
+                        — multiway action-EV uses cascading fold + 3-way Monte Carlo equity (no per-villain partial-call branches).
                       </span>
                     )}
                   </li>

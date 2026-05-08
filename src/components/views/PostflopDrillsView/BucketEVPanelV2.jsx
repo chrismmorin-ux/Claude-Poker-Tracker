@@ -22,6 +22,7 @@ import { computeBucketEVsV2 } from '../../../utils/postflopDrillContent/drillMod
 import { computeDepth2Plan } from '../../../utils/postflopDrillContent/computeDepth2Plan';
 import { getOrCompute } from '../../../utils/postflopDrillContent/engineCache';
 import { villainRangeFor } from '../../../utils/postflopDrillContent/villainRanges';
+import { archetypeRangeFor } from '../../../utils/postflopDrillContent/archetypeRanges';
 import { isKnownArchetype } from '../../../utils/postflopDrillContent/archetypeRangeBuilder';
 import { parseBoard, parseAndEncode } from '../../../utils/pokerCore/cardParser';
 import { VARIANT_RECIPES, selectVariant } from './panels/variantRecipes';
@@ -150,18 +151,28 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
   // Derive stable input for the engine call.
   const input = useMemo(() => {
     if (!heroView) return null;
-    // Resolve villain range from villainRangeContext.baseRangeId OR fall
-    // back to line.setup.villains[0] tuple (legacy lines migrating one node
-    // at a time).
-    let villainRange;
+    // Resolve villain range(s). On HU lines (villains.length === 1) one range
+    // is enough — preserves the existing villainRangeContext.baseRangeId path.
+    // On MW lines (WS-095) we resolve a range per villain via archetypeRangeFor.
+    let villainEntries; // [{ position, baseRange }]
     try {
-      if (node?.villainRangeContext?.baseRangeId) {
-        villainRange = villainRangeFor(node.villainRangeContext.baseRangeId);
-      } else if (line?.setup?.villains?.[0]) {
-        // Fallback path — resolve via archetypeRangeFor directly.
-        // eslint-disable-next-line global-require
-        const { archetypeRangeFor } = require('../../../utils/postflopDrillContent/archetypeRanges');
-        villainRange = archetypeRangeFor(line.setup.villains[0]);
+      const lineVillains = line?.setup?.villains;
+      if (Array.isArray(lineVillains) && lineVillains.length > 1) {
+        // MW path: per-villain archetypeRangeFor lookup.
+        villainEntries = lineVillains.map((v) => ({
+          position: v.position,
+          baseRange: archetypeRangeFor(v),
+        }));
+      } else if (node?.villainRangeContext?.baseRangeId) {
+        villainEntries = [{
+          position: lineVillains?.[0]?.position || 'BB',
+          baseRange: villainRangeFor(node.villainRangeContext.baseRangeId),
+        }];
+      } else if (lineVillains?.[0]) {
+        villainEntries = [{
+          position: lineVillains[0].position,
+          baseRange: archetypeRangeFor(lineVillains[0]),
+        }];
       } else {
         return null;
       }
@@ -191,10 +202,7 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
         board,
         pot: Number(node.pot) || 0,
         effStack: line?.setup?.effStack || 100,
-        villains: [{
-          position: line?.setup?.villains?.[0]?.position || 'BB',
-          baseRange: villainRange,
-        }],
+        villains: villainEntries,
         heroView: {
           kind: heroView.kind,
           combos,
@@ -345,13 +353,28 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
     );
   }
 
+  // WS-095 — MW detection. When the engine returns perVillainDecompositions
+  // (length > 1), the panel renders P1+P2 once per villain (stacked, labeled
+  // with the villain's position) instead of the single shared decomposition.
+  // P3-P6b render once per panel (combined recommendation / confidence).
+  const isMW = Array.isArray(result.perVillainDecompositions)
+    && result.perVillainDecompositions.length > 1;
+
   // Build the props bundle for each primitive once. Primitives take only
   // what they need from this bundle — the registry lookup below selects
   // the right component per recipe id.
-  const visibleLabels = collectVisibleLabels({
-    decomposition: result.decomposition,
-    heroView,
-  });
+  // For MW, decomposition-derived label collection unions across all villains
+  // so the GlossaryBlock surfaces every label that appears in any per-villain
+  // decomposition.
+  const visibleLabels = isMW
+    ? collectVisibleLabels({
+        decomposition: result.perVillainDecompositions.flatMap((e) => e.decomposition),
+        heroView,
+      })
+    : collectVisibleLabels({
+        decomposition: result.decomposition,
+        heroView,
+      });
 
   const propsByPrimitive = {
     P1: {
@@ -385,6 +408,9 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
           depth2Plan,
         ),
       },
+      // MW: surface the cascading-fold probability so the math is auditable
+      // without leaving the panel. Null on HU.
+      cascadingFoldProbability: isMW ? result.cascadingFoldProbability : null,
     },
     P6b: {
       labelIds: visibleLabels,
@@ -407,6 +433,46 @@ export const BucketEVPanelV2 = ({ node, line, archetype }) => {
         </div>
       </div>
       {recipe.map((primId, i) => {
+        // WS-095 MW path: render P1+P2 once per villain (stacked, labeled).
+        // We anchor the stack at the FIRST P1 occurrence and skip later P1/P2
+        // in MW mode. Recipes always pair P1 immediately before P2 (see
+        // variantRecipes.js); the assumption is enforced by recipe design.
+        if (isMW && primId === 'P1') {
+          return (
+            <div key={`mw-stack-${i}`} className="space-y-3">
+              {result.perVillainDecompositions.map((entry, vIdx) => {
+                const villainProps = {
+                  decomposition: entry.decomposition,
+                  decisionKind: node.decisionKind || 'standard',
+                  archetype: safeArchetype,
+                };
+                const tableProps = {
+                  decomposition: entry.decomposition,
+                  // MW: WeightedTotalTable's per-group contribution math is
+                  // single-villain — pass empty actionEVs to suppress its
+                  // weighted-total row (per-villain action EV is not split
+                  // by group on MW; the combined recommendation in P4 is
+                  // the single answer).
+                  actionEVs: [],
+                };
+                return (
+                  <div
+                    key={`mw-villain-${vIdx}`}
+                    className="space-y-2 rounded border border-cyan-900/50 bg-cyan-950/10 p-3"
+                  >
+                    <div className="text-[10px] uppercase tracking-wide text-cyan-300/90 border-b border-cyan-800/50 pb-1">
+                      vs {entry.villainPosition}
+                    </div>
+                    <VillainRangeDecomposition {...villainProps} />
+                    <WeightedTotalTable {...tableProps} />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+        if (isMW && primId === 'P2') return null;
+
         const Component = PRIMITIVE_REGISTRY[primId];
         if (!Component) {
           // Unknown primitive id — visible dev warning, non-crashing.

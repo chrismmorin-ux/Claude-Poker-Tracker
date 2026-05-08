@@ -367,7 +367,7 @@ All 10 commerce red lines:
 - **#4 Reversibility** — N/A directly; tier cards link to plan-change (J4) which IS reversible.
 - **#5 No streaks / shame / engagement-pressure** — no "limited time!" / "act now!" / countdown / streak content. Test: CI-grep refused strings.
 - **#6 Flat-access pricing page** — **load-bearing here.** All 4 tiers shown with equal visual weight. NO "Most Popular" / "Recommended" badges. Tier ordering by price (lowest → highest) is factual ordering, not ranked promotion. Test: CSS measurement — all tier cards same width, no color/border boost on any.
-- **#7 Editor's-note tone** — CI-linted forbidden-string check on pricing-page copy. Test: `scripts/check-commerce-copy.sh` on pricingCopy.js generator output. M1 doctrine line in footer is permitted (it's the positioning wedge, not coercion).
+- **#7 Editor's-note tone** — CI-linted forbidden-string check on pricing-page copy. Test: `scripts/check-commerce-copy.cjs` on pricingCopy.js generator output. M1 doctrine line in footer is permitted (it's the positioning wedge, not coercion).
 - **#8 No cross-surface contamination** — pricing-page never embedded in TableView during active hand. H-SC01 binding: navigation to pricing-page during active hand is blocked OR defers (Gate 4 decision: probably allow navigation since user-initiated, but suppress proactive routing).
 - **#9 Incognito observation mode** — pricing-page-view event respects consent gate.
 - **#10 No dark-pattern cancellation** — for cancelled users in cooldown: no proactive re-subscribe nudges. Test: render pricing-page with `cancellationCooldownActive === true` state; assert no "We'd love to have you back!" copy in DOM.

@@ -229,7 +229,11 @@ describe('computeBucketEVsV2 errorState', () => {
     expect(out.actionEVs).toEqual([]);
   });
 
-  it('returns engine-internal on MW villains (LSW-G6 pending)', async () => {
+  it('MW villains produce valid output with perVillainDecompositions populated (WS-095)', async () => {
+    // WS-095 / SPR-048: the prior MW guard is removed. MW input now produces a
+    // valid result populated with perVillainDecompositions (one per villain) +
+    // cascadingFoldProbability + decomposition: null (signals MW path to render
+    // via perVillainDecompositions).
     const out = await computeBucketEVsV2({
       nodeId: 'x', lineId: 'y', street: 'flop',
       board: flop('K♠', '7♥', '2♦'),
@@ -242,8 +246,11 @@ describe('computeBucketEVsV2 errorState', () => {
       heroActions: defaultActions,
       archetype: 'reg',
     });
-    expect(out.errorState?.kind).toBe('engine-internal');
-    expect(out.errorState.userMessage).toMatch(/multiway|MW/i);
+    expect(out.errorState).toBeNull();
+    expect(Array.isArray(out.perVillainDecompositions)).toBe(true);
+    expect(out.perVillainDecompositions).toHaveLength(2);
+    expect(out.decomposition).toBeNull();
+    expect(Number.isFinite(out.cascadingFoldProbability)).toBe(true);
   });
 
   it('returns malformed-hero on non-single-combo heroView (v1 scope)', async () => {
@@ -411,5 +418,121 @@ describe('computeBucketEVsV2 happy path (HU, single-combo, standard)', () => {
   it('errorState is null on happy path (null, not undefined — required for consumers)', async () => {
     const out = await computeBucketEVsV2(baseInput);
     expect(out.errorState).toBeNull();
+  });
+});
+
+// ----- computeBucketEVsV2 — MW happy path (WS-095) ---------------------------
+
+describe('computeBucketEVsV2 happy path (MW, 2-villain, single-combo, standard)', () => {
+  // Mirrors the HU happy-path Suite 5 structure but with a 2-villain MW input.
+  // Same K72r flop; villains = SB + BB both call BTN open; hero pins Q♣Q♦.
+  const board = flop('K♠', '7♥', '2♦');
+  const sbRange = archetypeRangeFor({ position: 'SB', action: 'call', vs: 'BTN' });
+  const bbRange = archetypeRangeFor({ position: 'BB', action: 'call', vs: 'BTN' });
+  const baseMWInput = {
+    nodeId: 'test-node-mw',
+    lineId: 'test-line-mw',
+    street: 'flop',
+    board,
+    pot: 100,
+    effStack: 100,
+    villains: [
+      { position: 'SB', baseRange: sbRange },
+      { position: 'BB', baseRange: bbRange },
+    ],
+    heroView: { kind: 'single-combo', combos: [{ card1: 51, card2: 50 }] },
+    heroActions: defaultActions,
+    archetype: 'reg',
+  };
+
+  it('returns errorState: null on MW happy path', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.errorState).toBeNull();
+  });
+
+  it('decomposition is null on MW (signals "use perVillainDecompositions")', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.decomposition).toBeNull();
+  });
+
+  it('perVillainDecompositions has length === villains.length', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(Array.isArray(out.perVillainDecompositions)).toBe(true);
+    expect(out.perVillainDecompositions).toHaveLength(2);
+  });
+
+  it('each per-villain decomposition has villainPosition + decomposition + dominators', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    for (const entry of out.perVillainDecompositions) {
+      expect(typeof entry.villainPosition).toBe('string');
+      expect(Array.isArray(entry.decomposition)).toBe(true);
+      expect(Array.isArray(entry.dominators)).toBe(true);
+    }
+  });
+
+  it('per-villain decompositions preserve villain positions in input order', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.perVillainDecompositions[0].villainPosition).toBe('SB');
+    expect(out.perVillainDecompositions[1].villainPosition).toBe('BB');
+  });
+
+  it('cascadingFoldProbability is a finite number in [0, 1]', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(Number.isFinite(out.cascadingFoldProbability)).toBe(true);
+    expect(out.cascadingFoldProbability).toBeGreaterThanOrEqual(0);
+    expect(out.cascadingFoldProbability).toBeLessThanOrEqual(1);
+  });
+
+  it('cascadingFoldProbability is below the primary fold rate (multiwayFoldPct cascading)', async () => {
+    // multiwayFoldPct returns primary × per-opponent fold rates × correlation
+    // adjustment. With primary=0.55 and a 'reg' opponent style, allFoldPct must
+    // be strictly less than 0.55 (one extra opponent always reduces all-fold
+    // probability, since the function multiplies fold rates).
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.cascadingFoldProbability).toBeLessThan(0.55);
+  });
+
+  it('actionEVs has one entry per heroAction with totalEV finite', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(Array.isArray(out.actionEVs)).toBe(true);
+    expect(out.actionEVs).toHaveLength(defaultActions.length);
+    for (const a of out.actionEVs) {
+      expect(Number.isFinite(a.totalEV)).toBe(true);
+      expect(a.totalEVCI).toBeDefined();
+    }
+  });
+
+  it('exactly one actionEV is marked isBest (among supported)', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    const bestCount = out.actionEVs.filter((a) => a.isBest).length;
+    expect(bestCount).toBe(1);
+  });
+
+  it('recommendation.actionLabel matches the isBest action', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    const best = out.actionEVs.find((a) => a.isBest);
+    expect(out.recommendation.actionLabel).toBe(best.actionLabel);
+  });
+
+  it('valueBeatRatio is null on MW v1 (deferred to v2)', async () => {
+    const out = await computeBucketEVsV2({ ...baseMWInput, decisionKind: 'bluff-catch' });
+    expect(out.valueBeatRatio).toBeNull();
+  });
+
+  it('confidence.caveats includes v1-simplified-mw on MW path', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.confidence.caveats).toContain('v1-simplified-mw');
+    expect(out.confidence.caveats).toContain('synthetic-range');
+  });
+
+  it('confidence.populationPriorSource names handVsRangesMW + multiwayFoldPct', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.confidence.populationPriorSource).toMatch(/handVsRangesMW/);
+    expect(out.confidence.populationPriorSource).toMatch(/multiwayFoldPct/);
+  });
+
+  it('streetNarrowing is null when actionHistory absent', async () => {
+    const out = await computeBucketEVsV2(baseMWInput);
+    expect(out.streetNarrowing).toBeNull();
   });
 });

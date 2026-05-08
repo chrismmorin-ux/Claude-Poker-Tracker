@@ -1,0 +1,114 @@
+id: "SPR-048"
+title: "Multiway bucket-EV engine — unblock J85 + Q53 MW flop-root widening (WS-095)"
+status: completed
+approved_at: "2026-05-07T17:05:00Z"
+completed_at: "2026-05-07T17:58:00Z"
+goal: |
+  BucketEVPanel renders numerically valid EVs on multiway flop lines (J85, Q53) —
+  unblocking widening of authored hero holdings into multiway flop roots
+  (downstream WS-086 MW batch).
+
+program_focus: domain-correctness
+program_initiative: "Poker Theory Integrity — first domain-correctness sprint since SPR-017 (2026-05-02); LSW H3-F1 finding remediation; multiway equity model"
+
+composed_by: auto
+created_at: "2026-05-07T17:05:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+# Step 4a anti-goal check: skipped silently (kit/scripts/cwos-constitutional-audit.js
+# not installed in this repo). Graceful degradation per /next protocol.
+anti_goal_check:
+  status: not_run
+  reason: "audit script not installed in this repo"
+
+decisions_needed:
+  - "Item #1 — Per-villain equity model: independent per-villain handVsRange + cascading fold model vs combined-range single-shot"
+  - "Item #1 — Cascading fold-equity composition: reuse existing foldEquityCalc MW model vs author dedicated path in computeBucketEV"
+  - "Item #1 — Domination map shape on MW: combined-range single panel vs per-villain stacked disclosures"
+
+items:
+  - id: "WS-095"
+    title: "Multiway bucket-EV engine for BucketEVPanel"
+    mode: plan-first
+    effort: L  # revised M -> L mid-sprint after D1 (3-way MC) + D3 (per-villain stacked) ratified
+    program: domain-correctness
+    category: line-study-slice-widening
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-07T17:05:00Z"
+    completed_at: "2026-05-07T17:58:00Z"
+    decision_flags:
+      - "Per-villain equity model (per-villain + cascading fold vs combined-range)"
+      - "Cascading fold-equity composition (reuse foldEquityCalc vs new path)"
+      - "Domination map shape (combined vs per-villain)"
+    decisions_resolved:
+      - "D1 equity model: True 3-way Monte Carlo equity (handVsRangesMW additive in pokerCore) — owner-ratified plan-mode 2026-05-07 (overrode my per-villain 1v1 recommendation; preserves theoretical correctness for solver-aligned preflop range derivation in WS-168)"
+      - "D2 fold model: Reuse multiwayFoldPct from gameTreeEquity.js — owner-ratified plan-mode 2026-05-07 (single canonical MW fold model in codebase; no theoretical divergence)"
+      - "D3 domination render: Per-villain stacked disclosures with vs SB / vs BB labels — owner-ratified plan-mode 2026-05-07 (overrode my combined-panel recommendation; preserves per-villain structure for owner inspection)"
+    completion_notes: |
+      Engine: handVsRangesMW (true N-way MC) + handVsRange (HU) coexist in pokerCore.
+      Per-trial: deal hero, sample 1 combo per villain, evaluate (1+N) hands at
+      showdown, attribute hero outcome 1.0 win / 1/(1+k) k-tied / 0.0 lose.
+      drillModeEngine.computeBucketEVsV2: MW guard at lines 623-629 replaced
+      with MW branch — calls handVsRangesMW + computeDominationMap once per
+      villain + multiwayFoldPct(0.55, regs..., street, texture, posCategory,
+      0.75) for cascadingFoldProbability. Output adds perVillainDecompositions:
+      [{villainPosition, decomposition, dominators}] + cascadingFoldProbability.
+      computeMWActionEVs: simplified cascading model (all-fold OR all-call
+      branches; v2 will refine partial-call). HU output shape unchanged.
+
+      Render: BucketEVPanelV2 detects isMW (perVillainDecompositions.length > 1),
+      replaces P1+P2 in recipe with N stacked vs-{position} blocks. P3-P6b
+      render once. ConfidenceDisclosure surfaces "Cascading fold P(all fold):
+      X.X%" in methodology drawer + "simplified MW" caveat with explanation.
+
+      Authoring: heroView authored on J85mw + Q53mw flop_root (per LSW-H3 audit
+      values: AdJc/TPTK on J85mw, AsQc/TPTK on Q53mw) so the render path was
+      testable end-to-end. Closes 2 of 6 lines on WS-086's plate.
+
+      Verification: 10220 passed / 20 skipped / 0 failed (+24 net vs SPR-046).
+      Build clean (7.53s). HU drift snapshot byte-identical (zero regression).
+      Playwright 1600x720 walk: J85mw renders VS SB + VS BB stacked
+      decompositions with sensible per-villain equities (TPTK favored vs draws,
+      dominating vs middle/bottom pair); Q53mw VS BB shows dominating equities
+      (86-91% eq for AQ on Q53r dry); HU Q72r unchanged. Cascading fold P(all
+      fold) = 24.8% on J85mw (matches multiwayFoldPct: 0.55 * reg-fold * corr ≈ 0.248).
+
+      Spawned WS-168 (MW-equity solver-alignment validation harness, P2 L,
+      non-blocking quality signal — magnitude of divergence drives priority
+      promotion per owner stance 2026-05-07).
+
+      Files: src/utils/pokerCore/monteCarloEquity.js (+200 LoC handVsRangesMW),
+      src/utils/pokerCore/__tests__/monteCarloEquity.test.js (NEW, 10 tests),
+      src/utils/postflopDrillContent/drillModeEngine.js (MW branch + computeMWActionEVs),
+      src/utils/postflopDrillContent/__tests__/drillModeEngineV2.test.js (Suite
+      4 inversion + Suite 6 +13 tests), src/utils/postflopDrillContent/__tests__/planDerivation.test.js
+      (1 test inverted), src/utils/postflopDrillContent/lines.js (heroView on
+      2 MW flop_root nodes), src/components/views/PostflopDrillsView/BucketEVPanelV2.jsx
+      (MW render branch + archetypeRangeFor static import), src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx
+      (cascadingFoldProbability disclosure + simplified-mw caveat).
+
+      Unblocks WS-086 (HU + MW flop-root widening). Closes LSW-G6 / H3-F1 finding.
+
+composition_notes: |
+  Single P1 anchor selected from state.md "next natural anchors" list — first
+  domain-correctness program attention since SPR-017 (5 days). WS-095 is the
+  highest-priority unblocked item; unblocks WS-086 (HU + MW flop-root widening).
+  Source-class: untagged (BACKLOG.md migration) — never damped.
+  Last-4-sprints anchors: WS-101, WS-146 (parent_ws WS-013 = spr-followup),
+  WS-104+WS-102, WS-103 — no auto-rec or engine-finding saturation.
+  Fleet-rotation override skipped: in this repo all programs classify as
+  internal-infra by the rotation rule's distribution-surface definition.
+  Auto-recommendation replenishment skipped: programs still in NEW state with
+  null health scores; nothing to compute below-target against.
+
+  Plan-first mandatory: M effort + multiway poker math anti-pattern surface
+  (POKER_THEORY.md §MW: don't simplify fold equity, don't assume linear bet-fold,
+  don't conflate calling station with weak range). Decisions surface to owner
+  before any code change.
+
+last_updated: "2026-05-07T17:05:00Z"

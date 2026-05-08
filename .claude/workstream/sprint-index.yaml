@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-05-07T09:40:00Z"
-sprint_count: 46
+last_updated: "2026-05-08T17:00:00Z"
+sprint_count: 53
 
 sprints:
   - id: "SPR-001"
@@ -554,3 +554,87 @@ sprints:
     created_at: "2026-05-06T20:45:00Z"
     approved_at: "2026-05-06T20:45:00Z"
     completed_at: "2026-05-06T22:30:00Z"
+  - id: "SPR-048"
+    title: "Multiway bucket-EV engine — unblock J85 + Q53 MW flop-root widening (WS-095)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → L actual (3-way MC + per-villain stacked render expanded scope mid-sprint per D1+D3 ratification); ~1h actual"
+    program_focus: domain-correctness
+    program_initiative: "Poker Theory Integrity — first domain-correctness sprint since SPR-017 (2026-05-02); LSW H3-F1 finding remediation; multiway equity model"
+    composed_by: auto
+    created_at: "2026-05-07T17:05:00Z"
+    approved_at: "2026-05-07T17:05:00Z"
+    completed_at: "2026-05-07T17:58:00Z"
+  - id: "SPR-049"
+    title: "LSW Phase B HU close-out — 4 HU flop roots authored + archetype splits threaded (WS-086 + WS-089)"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+S tagged → S+S actual (~75min); plan-mode discovered Q72r+K77 already authored, scope collapsed to T98+AK2+range-data authoring. Hidden blocker (deferred villain-range aliases not in archetypeRanges) absorbed in scope. Visual verification at 1600×720 confirmed archetype toggle wires end-to-end."
+    program_focus: domain-correctness
+    program_initiative: "Poker Theory Integrity — direct continuation of SPR-048; 2nd consecutive domain-correctness sprint; WS-086 6-line plate fully closed."
+    composed_by: auto
+    created_at: "2026-05-07T18:10:00Z"
+    approved_at: "2026-05-07T18:10:00Z"
+    completed_at: "2026-05-07T22:40:00Z"
+  - id: "SPR-047"
+    title: "Sidebar-recurrence boundary cluster close-out — replay corpus sequence extension (WS-101)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~30min actual (S range; matched SPR-043/044/045 'M-tagged but S-actual' cadence). 6 race-catching corpora (S14..S19) under ignition-poker-tracker/test/replay/. recorder.js +6 builders + new PIPELINE_STATUS_TABLE_2; signatures.js +6 matchers (S14/S15/S16/S17/S18/S19); 6 new test files. D1 substrate: extend SR-1 in-place (flat S14..S19); D2 transition-trace hash: re-use existing hashReplay() (full event timeline; no new function — owner pick already shipped in replayer.js:196). Determinism pinned via [HASH:Sxx:hex] log per existing convention: S14=58f6dcab, S15=e0148742, S16=142be346, S17=edc656dd, S18=5a11f399, S19=e5050187 (verified across 2 runs). npm run replay 19/19 green. npm test 2274/2274 extension suite (+6 net vs 2268 SPR-045 baseline; zero regressions). npm run build clean. Sidebar-recurrence boundary-hardening cluster CLOSED 5/5 (siblings WS-105 SPR-043, WS-103 SPR-044, WS-104+WS-102 SPR-045). Each new corpus locks specific doctrine rules: S14/S15 R-7.2+R-8.1, S16/S18 R-5.6+RT-60+R-2.3, S17 R-7.2+R-5.6, S19 R-8.1+RT-60."
+    program_focus: engineering
+    program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster close-out (5 of 5; cluster fully closed)"
+    composed_by: auto
+    created_at: "2026-05-07T16:19:32Z"
+    approved_at: "2026-05-07T16:19:32Z"
+    completed_at: "2026-05-07T16:50:00Z"
+  - id: "SPR-050"
+    title: "Monetization Gate 4 close-out — anti-patterns.md expansion (WS-028)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~S actual (~16 min total — ~13min plan-mode + AskUserQuestion + ~3min authoring; matches recent SPR-043/044/045/047 doc-discipline cadence). Catalog 16 → 29 refusals (13 net-new MPMF-AP-17..AP-29) mined from 6 unmined Gate 4 surfaces. anti-patterns.md grew 282 → 513 lines. Doc-only; vital signs N/A. Founder decisions ratified upfront via AskUserQuestion (all 3 recommendations accepted)."
+    program_focus: launch
+    program_initiative: "Monetization & PMF — Gate 4 design discipline close-out (precedes Gate 5: PaywallGate / Stripe / BillingSettings). First sprint attention to launch program since CWOS adoption."
+    composed_by: auto
+    created_at: "2026-05-08T13:38:02Z"
+    approved_at: "2026-05-08T13:38:02Z"
+    completed_at: "2026-05-08T13:53:42Z"
+  - id: "SPR-051"
+    title: "Monetization Gate 5 starter — CI-grep enforces anti-patterns forbidden-string list (WS-035)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~S actual (~11 min total — 4 min plan-mode + AskUserQuestion ratification, 5 min authoring + cross-ref rename, 2 min verify both paths). 63 forbidden patterns encoded across MPMF-AP-01..AP-29; clean+negative paths verified end-to-end. 7 active surface/journey cross-references renamed .sh → .cjs. Doc + script change; no code; vital signs N/A."
+    program_focus: launch
+    program_initiative: "Monetization & PMF — Gate 5 starter (CI-grep safety net). Second consecutive launch-program sprint; direct close-out of SPR-050's 29-refusal corpus."
+    composed_by: auto
+    created_at: "2026-05-08T13:59:41Z"
+    approved_at: "2026-05-08T13:59:41Z"
+    completed_at: "2026-05-08T14:10:47Z"
+  - id: "SPR-052"
+    title: "Commerce red-line test scaffold — closes Gate 5 starter trio (WS-034)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M tagged → ~S actual (~7 min total — 3 min plan-mode + AskUserQuestion ratification, 3 min authoring + first-pass clean run, 1 min negative-path verify + cleanup). 10 tests cover RL #1..#10 in vitest form (1:1 granularity, scan-empty pre-surface). 10/10 pass; negative path verified end-to-end. Gate 5 starter trio CLOSED across 3 launch-program sprints (SPR-050 catalog + SPR-051 string-CI + SPR-052 structural-CI)."
+    program_focus: launch
+    program_initiative: "Monetization & PMF — Gate 5 starter trio close-out. 3rd consecutive launch-program sprint."
+    composed_by: auto
+    created_at: "2026-05-08T14:42:22Z"
+    approved_at: "2026-05-08T14:42:22Z"
+    completed_at: "2026-05-08T14:49:55Z"
+  - id: "SPR-053"
+    title: "MW-equity solver-alignment validation harness baseline (WS-168)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L tagged → ~2 sessions actual (within standard 2-session cap; far under L=3 tag). 4-decision AskUserQuestion + plan-mode pressure-test agent surfaced 10 issues all addressed in impl. Pre-flight runBatchMW collision check PASSED. Shipped src/__dev__/mwEquityValidation/ (8 files ~750 LoC) + 16-assertion smoke test (167ms) at src/utils/pokerCore/__tests__/mwEquityValidationSmoke.test.js + project doc + baseline placeholder. 10246/10266 smart-test-runner pass, 0 regressions vs SPR-052. Founder runs full ~10-15min derivation in browser via window.__validateMWEquity('BTN'|'UTG') to produce divergence numbers."
+    program_focus: domain-correctness
+    program_initiative: "Poker Theory Integrity — close-out of SPR-048 WS-095; SPR-052-recommended rotation. Applies feedback_validation_as_quality_signal.md. Mid-sprint pivot: original WS-031 anchor surfaced as Q7-gated, founder rotated to WS-168."
+    composed_by: auto
+    created_at: "2026-05-08T15:00:00Z"
+    approved_at: "2026-05-08T15:00:00Z"
+    completed_at: "2026-05-08T17:00:00Z"

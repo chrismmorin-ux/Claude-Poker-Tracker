@@ -2,10 +2,12 @@ id: "WS-035"
 title: "CI-linted forbidden-copy-strings check"
 legacy_id: "MPMF-G5-CL"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-08-spr051"
+claimed_at: "2026-05-08T13:59:41Z"
+started_at: "2026-05-08T13:59:41Z"
+completed_at: "2026-05-08T14:10:47Z"
+status_note: "RESOLVED 2026-05-08 SPR-051 — `scripts/check-commerce-copy.cjs` shipped (Node.js form per founder D1; narrow scope src/utils/entitlement + SettingsView + paywall/billing/pricing components per D2; hard-fail v1 per D3). 63 forbidden patterns from MPMF-AP-01..AP-29 encoded; structural refusals (animation, autofocus, scrollIntoView, bg-red-*, ≤2-tap depth) deferred to WS-034 + per-surface tests. Verified end-to-end: clean pass on current state (12 scoped files, 0 violations, exit 0); negative path catches AP-17/28/29 violations with file:line:col + ap_id + why-rationale (exit 1). 7 active surface specs renamed `.sh` → `.cjs` cross-references; 2 historical files (project.md change-log + 2026-04-24 audit) preserved. Doc + script change; no production code; vital signs N/A."
 priority_score: 22.0
 priority_label: "P1"
 category: "monetization-and-pmf"
@@ -21,7 +23,7 @@ blocked_by: []
 blocked_by_legacy:
   - "MPMF-G4-*"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-051"
 decision_flags: []
 status_note: "BLOCKED by MPMF-G4-*"
 source:

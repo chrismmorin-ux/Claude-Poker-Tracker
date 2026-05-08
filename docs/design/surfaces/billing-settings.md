@@ -444,7 +444,7 @@ All 10 commerce red lines:
 - **#4 Reversibility** — Reactivate Pro affordance available during cancellation grace (single-modal symmetric reverse). Cancel pending plan-change is single-action reversal. Test: simulate cancel + grace + reactivate flow restores tier.
 - **#5 No streaks / shame / engagement-pressure** — no "you've been a Pro member for X months — keep it up!" framing. No streak counters. No "save 50% if you stay!" retention offers. Test: CI-grep refused strings in billingCopy.js.
 - **#6 Flat-access** — actions section buttons at equal visual weight (View plans / Export / Cancel all same size + style). Test: CSS measurement confirms equality.
-- **#7 Editor's-note tone** — billingCopy.js CI-linted forbidden-string check. Test: `scripts/check-commerce-copy.sh` on BillingSettings strings.
+- **#7 Editor's-note tone** — billingCopy.js CI-linted forbidden-string check. Test: `scripts/check-commerce-copy.cjs` on BillingSettings strings.
 - **#8 No cross-surface contamination** — billing-settings never renders on TableView / never auto-fires during live play. H-SC01 binding: cancellation modal can't render mid-hand even if Cancel tapped (deferred to hand-end).
 - **#9 Incognito observation mode** — telemetry events respect per-category consent.
 - **#10 No dark-pattern cancellation** — **LOAD-BEARING here.** Cancel button entry point is at equal visual weight, ≤2-tap from anywhere, opens modal directly without interposition. Test target MPMF-G5-RL #10 specific assertion suite — tap count ≤2 from Settings nav, equal-weight button visual parity, no exit-survey-before-confirm in modal.

@@ -53,10 +53,16 @@ export const VILLAIN_RANGE_ALIASES = Object.freeze({
   // correct matchup.
   sb_vs_bb_srp_bb_flat: Object.freeze({ position: 'BB', action: 'call', vs: 'SB' }),
 
-  // Deferred aliases (LSW-B1 tier 2 — ranges not yet authored in archetypeRanges.js):
-  //   sb_vs_btn_3bp_btn_range  — BTN 3bet range vs SB's open (T98 wet line)
-  //   utg_vs_btn_4bp_btn_call  — BTN call-of-4bet range (AK2 deep line)
-  //
+  // sb-vs-btn-3bp-oop-wet-t98 — BTN's 3bet range vs SB open. Authored in
+  // SPR-049 (2026-05-07) with a paired BTN_vs_SB entry in THREEBET_RANGES.
+  sb_vs_btn_3bp_btn_range: Object.freeze({ position: 'BTN', action: 'threeBet', vs: 'SB' }),
+
+  // utg-vs-btn-4bp-deep — BTN's call-of-4bet range vs UTG. Authored in
+  // SPR-049 (2026-05-07) extending the call-of-Nbet reuse pattern from
+  // BTN_vs_BB; archetypeRanges.js CALL_RANGES['BTN_vs_UTG'] is the paired
+  // range string (live-pool intentional approximation, see comments there).
+  utg_vs_btn_4bp_btn_call: Object.freeze({ position: 'BTN', action: 'call', vs: 'UTG' }),
+
   // MW-deferred aliases (LSW-G6 blocked):
   //   btn_vs_bb_sb_srp_sb_flat — J85 MW line
   //   btn_vs_bb_sb_srp_bb_flat — J85 MW line

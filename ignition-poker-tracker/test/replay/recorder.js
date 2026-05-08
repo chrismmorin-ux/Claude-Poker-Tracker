@@ -928,6 +928,665 @@ export function buildS13CheckedFlop() {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SR-cluster boundary-hardening corpus extension (S14–S19)
+// Added 2026-05-07 (SPR-047 / WS-101). Six race-catching corpora that lock the
+// SPR-043/044/045 fixes (WS-105/103/104/102) against regression. Each sequence
+// stages the exact event interleave that produced a failure mode catalogued in
+// .claude/failures/SIDEBAR_REBUILD_PROGRAM.md / SW_REANIMATION_REPLAY.md /
+// STATE_CLEAR_ASYMMETRY.md, then asserts via signature S<NN> that the post-fix
+// observable holds (matched: true means the fix is in place).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * S17 — two push_action_advice arrive before any push_live_context.
+ *
+ * Mechanism: push_action_advice without companion push_live_context cannot be
+ * validated against context.street. Pre-fix, the second advice could surface
+ * plan-panel because the cross-panel pre-dispatch invariant gate (R-7.2) was
+ * post-render. Post-WS-103 / post-WS-105, advice without context is held in
+ * `_pendingAdvice` and does NOT promote until matching context arrives.
+ *
+ * Locks: R-7.2 (pre-dispatch invariant gate) + R-5.6 (FSM-output exclusivity).
+ * Sibling fixes shipped: WS-103 (SPR-044) + WS-105 (SPR-043).
+ *
+ * Post-fix observable (S17 signature): a snapshot exists where `adviceStreet`
+ * is set, `contextStreet` is null, and `planPanelVisible` is false — proving
+ * the invariant holds.
+ */
+export function buildS17TwoAdviceBeforeContext() {
+  const seedHands = [
+    makeSeedHand('table_1', [
+      { seat: 3, action: 'raise', amount: 9 },
+      { seat: 5, action: 'call', amount: 9 },
+    ]),
+  ];
+
+  // Advice A: preflop street, hand 17001
+  const adviceA = {
+    handNumber: 17_001, currentStreet: 'preflop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 12, heroEquity: 0.52, foldPct: { raise: 0.42 },
+    recommendations: [{
+      action: 'call', ev: 1.1, reasoning: 'Preflop call vs tight open',
+      handPlan: { ifCall: { note: 'Reassess on flop texture', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 8.2, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // Advice B: flop street, same hand — second arrival, still no context.
+  const adviceB = {
+    handNumber: 17_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.58, foldPct: { bet: 0.36 },
+    recommendations: [{
+      action: 'call', ev: 1.6, reasoning: 'Flop call with TPGK',
+      handPlan: { ifCall: { note: 'Continue on blank turn', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.0, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // Context arrives after both advice pushes.
+  const flopCtx = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 17_001, heroSeat: 5,
+    communityCards: ['A♠', 'K♥', '7♣', '', ''],
+    holeCards: ['Q♠', 'J♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 9, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  const events = [
+    { t: 0,   type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    // Two consecutive advice pushes — NO live_context yet.
+    { t: 50,  type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+    { t: 100, type: 'inject', message: { type: 'push_action_advice', advice: adviceB } },
+    // Snapshot BEFORE context arrives — plan-panel must be hidden.
+    { t: 250, type: 'snapshot' },
+    // Context finally arrives.
+    { t: 350, type: 'inject', message: { type: 'push_live_context', context: flopCtx } },
+    { t: 500, type: 'snapshot' },
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S17-two-advice-before-context',
+      symptomsTargeted: ['S17'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 1,
+      duration_ms: 500,
+      mechanism: 'two push_action_advice without companion push_live_context — second advice must NOT promote plan-panel pre-context (R-7.2 pre-dispatch invariant gate)',
+      locks: ['WS-103', 'WS-105'],
+    },
+  };
+}
+
+/**
+ * S14 — reconnect-mid-advice / coincidental-street trap (RT-45).
+ *
+ * Mechanism: stale advice (cached by SW for hand N) re-arrives after hand boundary
+ * to hand N+1. If hand N+1's street coincidentally matches the cached advice's
+ * street, pre-fix logic could promote the stale advice. Post-WS-105/WS-103 path
+ * stamps handNumber via the line 524-529 RT-45 stamp + coordinator.handleAdvice
+ * rejects against `_lockedHandNumber`.
+ *
+ * Locks: R-7.2 (pre-dispatch invariant gate) + R-8.1 (state-clear symmetry).
+ * Sibling fixes shipped: WS-105 (SPR-043) + WS-103 (SPR-044).
+ *
+ * Post-fix observable (S14 signature): the FINAL snapshot — taken after the
+ * stale advice replay — has handNumber=14002, contextStreet='flop'
+ * (coincidentally same as the stale advice's street), and planPanelVisible=false.
+ * The cached advice for hand 14001 was correctly rejected by the locked-hand gate.
+ */
+export function buildS14ReconnectMidAdvice() {
+  const seedHands = [
+    makeSeedHand('table_1', [
+      { seat: 3, action: 'raise', amount: 9 },
+      { seat: 5, action: 'call', amount: 9 },
+    ]),
+  ];
+
+  // Hand 14001 — flop in progress, advice valid + visible.
+  const ctxA = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 14_001, heroSeat: 5,
+    communityCards: ['A♠', 'K♥', '7♣', '', ''],
+    holeCards: ['Q♠', 'J♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 9, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  const adviceA = {
+    handNumber: 14_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.58, foldPct: { bet: 0.36 },
+    recommendations: [{
+      action: 'call', ev: 1.6, reasoning: 'Flop call with TPGK',
+      handPlan: { ifCall: { note: 'Continue on blank turn', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.0, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // Hand 14002 — new hand starts at PREFLOP, then advances to FLOP. Coincidentally
+  // same street as the cached advice from hand 14001 — this is the "coincidental
+  // street trap" the bug exploits.
+  const ctxB_preflop = {
+    state: 'PREFLOP', currentStreet: 'preflop', handNumber: 14_002, heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['9♠', '8♠'], pot: 3,
+    activeSeatNumbers: [1, 3, 5], foldedSeats: [], dealerSeat: 3, pfAggressor: null,
+    actionSequence: [],
+  };
+
+  const ctxB_flop = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 14_002, heroSeat: 5,
+    communityCards: ['T♥', '6♠', '2♣', '', ''],   // different board than 14001
+    holeCards: ['9♠', '8♠'], pot: 12,
+    activeSeatNumbers: [3, 5], foldedSeats: [1], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 6, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 6, street: 'preflop', order: 2 },
+    ],
+  };
+
+  const events = [
+    { t: 0,    type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    { t: 50,   type: 'inject', message: { type: 'push_live_context', context: ctxA } },
+    { t: 100,  type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+    { t: 250,  type: 'snapshot' },  // hand 14001 — advice should be visible here
+
+    // Hand boundary: PREFLOP transition clears lastGoodAdvice / re-locks handNumber.
+    { t: 400,  type: 'inject', message: { type: 'push_live_context', context: ctxB_preflop } },
+    // Hand 14002 advances to flop — _lockedHandNumber is now 14002, contextStreet='flop'.
+    { t: 600,  type: 'inject', message: { type: 'push_live_context', context: ctxB_flop } },
+
+    // SW-cache replay simulation: stale advice for hand 14001 re-arrives
+    // (same handNumber, same street). Pre-fix would promote (coincidental
+    // street match). Post-fix RT-45 + handleAdvice gate rejects (locked=14002).
+    { t: 700,  type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+
+    { t: 900,  type: 'snapshot' }, // FINAL — stale advice must NOT be promoted.
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S14-reconnect-mid-advice',
+      symptomsTargeted: ['S14'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 2,
+      duration_ms: 900,
+      mechanism: 'stale advice (handNumber=14001) replayed post-hand-boundary on coincidentally-matching street; RT-45 + locked-hand gate must reject',
+      locks: ['WS-105', 'WS-103'],
+    },
+  };
+}
+
+/**
+ * S15 — SW-reanimate / cross-hand cache replay without companion context.
+ *
+ * Mechanism: Chrome MV3 service-worker is evicted after ~30s idle. On
+ * reanimation, `pushFullStateToSidePanel` replays cached actionAdvice (and
+ * other bundled state) WITHOUT a fresh push_live_context companion. Pre-fix,
+ * cached advice for hand N could buffer in `_pendingAdvice` and surface on
+ * the next live_context arrival for hand N+1. Post-WS-105 (validateMessage
+ * parity at SW boundary), the boundary checker rejects messages that violate
+ * the contract; post-WS-103 (freeze live_context), advice without context
+ * companion stays held; post-RT-45, handNumber stamping rejects across hands.
+ *
+ * Distinguishes from S14 by:
+ *   - 30-second eviction gap (clock advance simulating SW idle eviction);
+ *   - bundled cached-state replay (advice + exploits as SW reanimation would push);
+ *   - NO companion context with the cached advice (context-less replay).
+ *
+ * Locks: R-8.1 (state-clear symmetry) + R-7.2 (pre-dispatch invariant gate).
+ * Sibling fixes shipped: WS-105 (SPR-043) + WS-103 (SPR-044).
+ *
+ * Post-fix observable (S15 signature): the FINAL snapshot, taken after the
+ * SW-reanimate bundle re-injection on hand 15002, shows plan-panel hidden.
+ * The cached advice for hand 15001 was correctly rejected.
+ */
+export function buildS15SwReanimate() {
+  const seedHands = [
+    makeSeedHand('table_1', [
+      { seat: 3, action: 'raise', amount: 9 },
+      { seat: 5, action: 'call', amount: 9 },
+    ]),
+  ];
+
+  // Hand 15001 — flop, advice + exploits valid.
+  const ctxA = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 15_001, heroSeat: 5,
+    communityCards: ['A♠', 'K♥', '7♣', '', ''],
+    holeCards: ['Q♠', 'J♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 9, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  const adviceA = {
+    handNumber: 15_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.55, foldPct: { bet: 0.36 },
+    recommendations: [{
+      action: 'call', ev: 1.4, reasoning: 'Flop call with TPGK',
+      handPlan: { ifCall: { note: 'Continue on blank turn', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.2, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  const exploitsA = {
+    appConnected: true,
+    seats: [
+      { seat: 1, style: 'Fish', sampleSize: 30, exploits: [], weaknesses: [] },
+      { seat: 3, style: 'TAG', sampleSize: 50, exploits: [], weaknesses: [] },
+    ],
+  };
+
+  // Hand 15002 — new hand starting, only PREFLOP context arrives BEFORE the
+  // SW-reanimate bundle replays. No flop context for 15002 is ever pushed —
+  // the cached advice for 15001 must NOT promote into 15002's PREFLOP state.
+  const ctxB_preflop = {
+    state: 'PREFLOP', currentStreet: 'preflop', handNumber: 15_002, heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['T♥', '9♥'], pot: 3,
+    activeSeatNumbers: [1, 3, 5], foldedSeats: [], dealerSeat: 3, pfAggressor: null,
+    actionSequence: [],
+  };
+
+  const events = [
+    { t: 0,      type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    { t: 50,     type: 'inject', message: { type: 'push_live_context', context: ctxA } },
+    { t: 100,    type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+    { t: 150,    type: 'inject', message: { type: 'push_exploits', ...exploitsA } },
+    { t: 300,    type: 'snapshot' },  // hand 15001 — advice + exploits visible
+
+    // Hand boundary at t=400, then 30s of nothing (SW eviction window).
+    { t: 400,    type: 'inject', message: { type: 'push_live_context', context: ctxB_preflop } },
+    { t: 600,    type: 'snapshot' },  // PREFLOP for 15002 — plan-panel hidden (advice cleared on hand boundary)
+
+    // SW eviction window — 30 seconds of no traffic.
+    // SW reanimates and replays the bundled cached state (advice + exploits)
+    // WITHOUT a fresh live_context. This is the pushFullStateToSidePanel
+    // shape per docs/SW_REANIMATION_REPLAY.md.
+    { t: 30_700, type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+    { t: 30_750, type: 'inject', message: { type: 'push_exploits', ...exploitsA } },
+
+    { t: 31_000, type: 'snapshot' }, // FINAL — stale advice must NOT promote on 15002 PREFLOP.
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S15-sw-reanimate',
+      symptomsTargeted: ['S15'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 2,
+      duration_ms: 31_000,
+      mechanism: 'SW eviction (30s gap) → reanimation re-pushes cached advice+exploits for hand 15001 onto hand 15002 PREFLOP — locked-hand gate must reject the stale advice',
+      locks: ['WS-105', 'WS-103'],
+    },
+  };
+}
+
+/**
+ * S16 — handNew within 80ms (sub-coalesce-window race).
+ *
+ * Mechanism: push_action_advice arrives, then handNew (PREFLOP for next hand)
+ * arrives within the 80ms NORMAL-priority coalesce window. Pre-WS-104, timer
+ * registration via queueMicrotask deferred could miss synchronous clear paths;
+ * pre-WS-102, betweenHandsFsm could enter banner-visible states for transient
+ * signals → plan-panel oscillation, between-hands flash, stale-badge leakage.
+ *
+ * Locks: RT-60 (synchronous timer registration) + R-2.3 (DOM-via-FSM-only).
+ * Sibling fixes shipped: WS-104 (SPR-045) + WS-102 (SPR-045).
+ *
+ * Post-fix observable (S16 signature): plan-panel makes AT MOST one
+ * visible→hidden transition across the snapshot sequence (no oscillation),
+ * AND the final settled state is correct (hand 16002 PREFLOP, plan hidden,
+ * advice cleared by hand boundary).
+ *
+ * fast_snapshot at t=160 captures the DOM state ~20ms into the coalesce
+ * window — used as a forensic anchor showing the pre-coalesce state, not
+ * asserted (the steady-state at t=400 is the load-bearing observable).
+ */
+export function buildS16HandNewWithin80ms() {
+  const seedHands = [
+    makeSeedHand('table_1', [
+      { seat: 3, action: 'raise', amount: 9 },
+      { seat: 5, action: 'call', amount: 9 },
+    ]),
+  ];
+
+  const ctxA = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 16_001, heroSeat: 5,
+    communityCards: ['A♠', 'K♥', '7♣', '', ''],
+    holeCards: ['Q♠', 'J♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 9, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  const adviceA = {
+    handNumber: 16_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.55, foldPct: { bet: 0.36 },
+    recommendations: [{
+      action: 'call', ev: 1.4, reasoning: 'Flop call with TPGK',
+      handPlan: { ifCall: { note: 'Continue on blank turn', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.2, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // handNew (hand 16002 PREFLOP) arrives 60ms after advice — within the 80ms
+  // coalesce window. Pre-fix, this is the timing where queueMicrotask-deferred
+  // timer registration could leave the stale-badge timer running past clear,
+  // and the betweenHandsFsm could flash banner states.
+  const ctxB_preflop = {
+    state: 'PREFLOP', currentStreet: 'preflop', handNumber: 16_002, heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['9♠', '8♠'], pot: 3,
+    activeSeatNumbers: [1, 3, 5], foldedSeats: [], dealerSeat: 3, pfAggressor: null,
+    actionSequence: [],
+  };
+
+  const events = [
+    { t: 0,   type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    { t: 50,  type: 'inject', message: { type: 'push_live_context', context: ctxA } },
+    { t: 100, type: 'inject', message: { type: 'push_action_advice', advice: adviceA } },
+    { t: 130, type: 'snapshot' },  // hand 16001 flop — advice visible
+
+    // handNew within 60ms of advice — sub-coalesce-window race.
+    { t: 160, type: 'inject', message: { type: 'push_live_context', context: ctxB_preflop } },
+    // fast_snapshot at t=180 — captures the in-flight coalesce-window DOM
+    // (forensic anchor; not asserted by signature).
+    { t: 180, type: 'fast_snapshot' },
+
+    // Confirming handNew push within 100ms — exits betweenHandsFsm pendingActive
+    // toward inactive-or-active per its rule (modeAExpired symmetry covered by
+    // WS-102; we just need at least one confirming push so the FSM settles).
+    { t: 250, type: 'inject', message: { type: 'push_live_context', context: ctxB_preflop } },
+
+    { t: 400, type: 'snapshot' },  // settled — plan-panel hidden, hand=16002 PREFLOP
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S16-handnew-within-80ms',
+      symptomsTargeted: ['S16'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 2,
+      duration_ms: 400,
+      mechanism: 'handNew arrives 60ms after advice (sub-coalesce window); WS-104 synchronous timer + WS-102 pendingActive debounce must keep plan-panel from oscillating',
+      locks: ['WS-104', 'WS-102'],
+    },
+  };
+}
+
+/**
+ * S18 — donk→cbet villain-action transition mid-coalesce.
+ *
+ * Mechanism: hero is preflop aggressor; villain donks (out-of-turn lead).
+ * New advice (defend vs donk) gets dispatched. The transition from "compute
+ * cbet" to "defend vs donk" can land mid-coalesce. Pre-WS-102, the renderer
+ * could read raw state mid-FSM-transition (R-5.6 violation) and produce a
+ * snapshot where the slot disagrees with the FSM-canonical state. Pre-WS-104,
+ * tight transitions could double-render with different villain action shown.
+ *
+ * Locks: R-5.6 (FSM-output exclusivity) + R-2.3 (DOM-via-FSM-only).
+ * Sibling fixes shipped: WS-102 (SPR-045) + WS-104 (SPR-045).
+ *
+ * Post-fix observable (S18 signature): plan-panel makes at most one flip
+ * across the snapshot sequence (no oscillation during the donk→cbet
+ * transition), AND the final snapshot has advice/context coupled to the same
+ * street (no S2-style decoupling left over).
+ */
+export function buildS18DonkToCbet() {
+  const seedHands = [
+    makeSeedHand('table_1', [
+      { seat: 3, action: 'call', amount: 3 },
+      { seat: 5, action: 'raise', amount: 9 },
+      { seat: 3, action: 'call', amount: 9 },
+    ]),
+  ];
+
+  // Hand 18001 — hero (seat 5) is pfAggressor; villain (seat 3) called preflop.
+  // Flop just dealt; villain has not yet acted (typical hero cbet spot).
+  const ctxCbetSpot = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 18_001, heroSeat: 5,
+    communityCards: ['T♥', '7♠', '2♣', '', ''],
+    holeCards: ['A♠', 'K♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 5,
+    actionSequence: [
+      { seat: 5, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 3, action: 'call', amount: 9, street: 'preflop', order: 2 },
+    ],
+  };
+
+  // Advice for the cbet decision — recommends bet (hero is the aggressor).
+  const adviceCbet = {
+    handNumber: 18_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.62, foldPct: { bet: 0.45 },
+    recommendations: [{
+      action: 'bet', ev: 2.4, reasoning: 'C-bet: nut equity + fold equity',
+      handPlan: { ifCall: { note: 'Continue on most turns', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.5, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // Villain donk-leads: villain bets out-of-turn (acts before the aggressor).
+  // actionSequence now includes [seat 3, bet, 9, flop] BEFORE hero acts.
+  const ctxDonkLead = {
+    ...ctxCbetSpot,
+    pot: 27,  // 18 + villain's 9 donk-bet
+    actionSequence: [
+      ...ctxCbetSpot.actionSequence,
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  // New advice computed for the defend-vs-donk spot — recommends call.
+  const adviceDefendDonk = {
+    handNumber: 18_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 27, heroEquity: 0.55, foldPct: { raise: 0.55 },
+    recommendations: [{
+      action: 'call', ev: 1.7, reasoning: 'Call vs donk: pot odds + equity',
+      handPlan: { ifCall: { note: 'Reassess vs turn lead', scaryCards: 2 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 3.0, branches: 3 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  const events = [
+    { t: 0,    type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    { t: 50,   type: 'inject', message: { type: 'push_live_context', context: ctxCbetSpot } },
+    { t: 100,  type: 'inject', message: { type: 'push_action_advice', advice: adviceCbet } },
+    { t: 250,  type: 'snapshot' },  // hero cbet decision — advice visible
+
+    // Villain donks → context update + new advice in tight succession.
+    { t: 300,  type: 'inject', message: { type: 'push_live_context', context: ctxDonkLead } },
+    // fast_snapshot in coalesce window — captures any FSM/raw-state disagreement.
+    { t: 320,  type: 'fast_snapshot' },
+    { t: 360,  type: 'inject', message: { type: 'push_action_advice', advice: adviceDefendDonk } },
+
+    { t: 600,  type: 'snapshot' },  // settled — advice/context coupled, no oscillation
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S18-donk-to-cbet',
+      symptomsTargeted: ['S18'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 1,
+      duration_ms: 600,
+      mechanism: 'villain donks mid-coalesce; new advice computed; FSM/raw-state must not decouple (R-5.6); plan-panel must not oscillate',
+      locks: ['WS-102', 'WS-104'],
+    },
+  };
+}
+
+/**
+ * Pipeline status with a different active table — used by S19 for the
+ * table-switch test. Distinct from PIPELINE_STATUS_TABLE_1.
+ */
+export const PIPELINE_STATUS_TABLE_2 = {
+  type: 'push_pipeline_status',
+  status: {
+    tables: { '2': { state: 'active' } },
+    tableCount: 1,
+    completedHands: 1,
+  },
+};
+
+/**
+ * S19 — table-switch during stale-advice fade timer (R-8.1 state-clear symmetry).
+ *
+ * Mechanism: hero is on table_1 with stale advice (advice age > 10s; action-bar
+ * has .stale class + "Stale Ns" badge). Hero switches to table_2 — a
+ * push_pipeline_status with table_2 active triggers clearForTableSwitch.
+ * Pre-fix, the 1Hz stale-badge fade timer could fire while clearForTableSwitch
+ * was running (microtask race), leaving stale-badge HTML on the new table's
+ * action-bar; or the lastGoodAdvice from table_1 could leak into table_2's
+ * render path. Post-WS-104 (synchronous timer registration) the timer is
+ * always findable by clear; post-R-8.1 (state-clear symmetry registry) every
+ * per-table field has a matched clear in the lifecycle path.
+ *
+ * Locks: R-8.1 (state-clear symmetry) + RT-60 (synchronous timer registration).
+ * Sibling fixes shipped: WS-104 (SPR-045) + the broader STP-1 state-clear
+ * symmetry program (pre-cluster).
+ *
+ * Post-fix observable (S19 signature): the FINAL snapshot, taken after the
+ * table switch + new-table context push, has:
+ *   - action-bar NOT stale (no .stale class),
+ *   - no "Stale Ns" badge HTML residue,
+ *   - plan-panel hidden (lastGoodAdvice cleared),
+ *   - handNumber advanced to the new table's hand (state actually changed).
+ */
+export function buildS19TableSwitchDuringFade() {
+  // Seed hands for BOTH tables so refreshHandStats produces stats for either.
+  const seedHands = [
+    {
+      tableId: 'table_1',
+      capturedAt: 1_700_000_000_000,
+      gameState: { actionSequence: [
+        { seat: 3, action: 'raise', amount: 9 },
+        { seat: 5, action: 'call', amount: 9 },
+      ]},
+    },
+    {
+      tableId: 'table_2',
+      capturedAt: 1_700_000_000_000,
+      gameState: { actionSequence: [
+        { seat: 4, action: 'raise', amount: 6 },
+        { seat: 6, action: 'call', amount: 6 },
+      ]},
+    },
+  ];
+
+  // Hand 19001 on table_1 — flop in progress.
+  const ctxTable1 = {
+    state: 'FLOP', currentStreet: 'flop', handNumber: 19_001, heroSeat: 5,
+    communityCards: ['A♠', 'K♥', '7♣', '', ''],
+    holeCards: ['Q♠', 'J♠'], pot: 18,
+    activeSeatNumbers: [3, 5], foldedSeats: [1, 7], dealerSeat: 3, pfAggressor: 3,
+    actionSequence: [
+      { seat: 3, action: 'raise', amount: 9, street: 'preflop', order: 1 },
+      { seat: 5, action: 'call', amount: 9, street: 'preflop', order: 2 },
+      { seat: 3, action: 'bet', amount: 9, street: 'flop', order: 3 },
+    ],
+  };
+
+  const adviceTable1 = {
+    handNumber: 19_001, currentStreet: 'flop', villainSeat: 3, villainStyle: 'TAG',
+    potSize: 18, heroEquity: 0.55, foldPct: { bet: 0.36 },
+    recommendations: [{
+      action: 'call', ev: 1.4, reasoning: 'Flop call with TPGK',
+      handPlan: { ifCall: { note: 'Continue on blank turn', scaryCards: 1 } },
+    }],
+    treeMetadata: { depthReached: 2, spr: 4.2, branches: 4 },
+    segmentation: { handTypes: {}, totalCombos: 0, totalWeight: 0 },
+    villainRanges: [], narrowingLog: [],
+  };
+
+  // Hand 20001 on table_2 — fresh hand, no advice yet.
+  const ctxTable2 = {
+    state: 'PREFLOP', currentStreet: 'preflop', handNumber: 20_001, heroSeat: 6,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['T♥', '9♥'], pot: 3,
+    activeSeatNumbers: [2, 4, 6], foldedSeats: [], dealerSeat: 2, pfAggressor: null,
+    actionSequence: [],
+  };
+
+  const events = [
+    { t: 0,      type: 'inject', message: { ...PIPELINE_STATUS_TABLE_1 } },
+    { t: 50,     type: 'inject', message: { type: 'push_live_context', context: ctxTable1 } },
+    { t: 100,    type: 'inject', message: { type: 'push_action_advice', advice: adviceTable1 } },
+    { t: 200,    type: 'snapshot' }, // table_1 fresh — advice visible, action-bar not stale
+
+    // Advance past 10s stale threshold; nudge context to force a render so
+    // .stale class toggles on action-bar and "Stale Ns" badge appears.
+    { t: 11_400, type: 'inject', message: { type: 'push_live_context', context: { ...ctxTable1, pot: 19 } } },
+    { t: 11_500, type: 'snapshot' }, // table_1 stale — action-bar.stale + Stale badge
+
+    // Table switch during fade — push pipeline status with table_2 active.
+    // clearForTableSwitch must clear lastGoodAdvice + stop the stale-badge timer
+    // + null all per-table fields per R-8.1.
+    { t: 11_600, type: 'inject', message: { ...PIPELINE_STATUS_TABLE_2 } },
+    // New context for table_2 arrives (different hand, different heroSeat).
+    { t: 11_700, type: 'inject', message: { type: 'push_live_context', context: ctxTable2 } },
+
+    { t: 12_000, type: 'snapshot' }, // FINAL — post-switch state must be fully cleared
+  ];
+
+  return {
+    events,
+    seedHands,
+    label: {
+      id: 'S19-table-switch-during-fade',
+      symptomsTargeted: ['S19'],
+      source: 'synthetic',
+      sanitized: true,
+      handCount: 2,
+      duration_ms: 12_000,
+      mechanism: 'stale-advice fade timer running on table_1; table_2 active push triggers clearForTableSwitch; R-8.1 state-clear symmetry must null all per-table fields including stale-badge timer state',
+      locks: ['WS-104'],
+    },
+  };
+}
+
 /**
  * Serialize an event list to JSONL.
  */

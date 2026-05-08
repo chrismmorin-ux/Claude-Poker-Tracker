@@ -483,21 +483,81 @@
         "draw": 0,
         "air": 0
       }
+    },
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "flop_root",
+      "street": "flop",
+      "board": [
+        "T♠",
+        "9♠",
+        "8♥"
+      ],
+      "villainAction": "check",
+      "narrowAction": "check",
+      "totalCombos": 73,
+      "totalWeight": 68,
+      "isCapped": false,
+      "isWeaklyCapped": true,
+      "bucketPct": {
+        "nuts": 4.4118,
+        "strong": 8.8235,
+        "marginal": 0,
+        "draw": 23.8971,
+        "air": 62.8676
+      }
+    },
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "river_after_turn_call",
+      "street": "river",
+      "board": [
+        "T♠",
+        "9♠",
+        "8♥",
+        "2♣",
+        "7♠"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 49,
+      "totalWeight": 36,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 71.5278,
+        "strong": 22.2222,
+        "marginal": 0,
+        "draw": 0,
+        "air": 6.25
+      }
+    },
+    {
+      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
+      "nodeId": "turn_after_check",
+      "street": "turn",
+      "board": [
+        "T♠",
+        "9♠",
+        "8♥",
+        "2♣"
+      ],
+      "villainAction": "bet",
+      "narrowAction": "bet",
+      "totalCombos": 55,
+      "totalWeight": 36,
+      "isCapped": false,
+      "isWeaklyCapped": false,
+      "bucketPct": {
+        "nuts": 8.3333,
+        "strong": 66.6667,
+        "marginal": 0,
+        "draw": 18.75,
+        "air": 6.25
+      }
     }
   ],
   "skippedNodes": [
-    {
-      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
-      "nodeId": "flop_root"
-    },
-    {
-      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
-      "nodeId": "river_after_turn_call"
-    },
-    {
-      "lineId": "sb-vs-btn-3bp-oop-wet-t98",
-      "nodeId": "turn_after_check"
-    },
     {
       "lineId": "utg-vs-btn-4bp-deep",
       "nodeId": "flop_root"

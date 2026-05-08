@@ -345,7 +345,12 @@ describe('computeEnginePlan — end-to-end', () => {
     expect(plan.perAction).toEqual([]);
   });
 
-  it('returns plan with errorState on multiway input (LSW-G6 deferred)', async () => {
+  it('returns valid plan on multiway input (WS-095 — MW engine shipped)', async () => {
+    // Pre-WS-095 this test asserted errorState — the MW guard was at
+    // computeBucketEVsV2 line 623. WS-095 / SPR-048 shipped the MW engine
+    // (true 3-way Monte Carlo + multiwayFoldPct cascading + per-villain
+    // decompositions), so MW input now produces a normal plan with
+    // perVillainDecompositions populated.
     const plan = await computeEnginePlan({
       ...baseInput,
       villains: [
@@ -353,8 +358,9 @@ describe('computeEnginePlan — end-to-end', () => {
         { position: 'SB', baseRange: baseInput.villains[0].baseRange },
       ],
     });
-    expect(plan.errorState).not.toBeNull();
-    expect(plan.errorState.diagnostic).toMatch(/MW engine is LSW-G6/);
+    expect(plan.errorState).toBeNull();
+    expect(Array.isArray(plan.perAction)).toBe(true);
+    expect(plan.perAction.length).toBeGreaterThan(0);
   });
 
   it('keeps nextStreetPlan null in v1 (D1 will populate)', async () => {

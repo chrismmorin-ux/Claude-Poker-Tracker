@@ -179,7 +179,7 @@ Single modal component. Variation-specific copy passed as props.
 
 ## Copy-discipline ladder — forbidden vs permitted strings
 
-This journey has the strictest CI-linted copy-discipline in the project. Gate 5 `scripts/check-commerce-copy.sh` enforces these patterns via deterministic copy generator `src/utils/entitlement/cancellationCopy.js` (mirrors EAL `retirementCopy.js` + `calibrationCopy.js` pattern).
+This journey has the strictest CI-linted copy-discipline in the project. Gate 5 `scripts/check-commerce-copy.cjs` enforces these patterns via deterministic copy generator `src/utils/entitlement/cancellationCopy.js` (mirrors EAL `retirementCopy.js` + `calibrationCopy.js` pattern).
 
 ### Forbidden strings (CI-lint refused)
 
@@ -279,7 +279,7 @@ All 10 commerce red lines enumerated; each has a testable assertion on this jour
 - **#4 Reversibility** — cancellation reversible before `accessThrough` date. Test: cancel → re-subscribe flow within billing period restores `tier` without new payment.
 - **#5 No streaks / shame / engagement-pressure** — no "you've been a member for X months — don't leave now!" copy. Test: CI-grep refused strings in cancellation surface.
 - **#6 Flat-access** — N/A (not a browse/compare surface).
-- **#7 Editor's-note tone** — CI-linted forbidden-string check enforces factual copy register. Test: `scripts/check-commerce-copy.sh` on cancellation surface.
+- **#7 Editor's-note tone** — CI-linted forbidden-string check enforces factual copy register. Test: `scripts/check-commerce-copy.cjs` on cancellation surface.
 - **#8 No cross-surface contamination** — cancellation flow renders in Settings/Billing only; never on live-play. Test: H-SC01 assertion — cancellation modal cannot mount during `isHandInProgress() === true`.
 - **#9 Incognito observation mode** — telemetry events for cancellation (cancellation-confirmed / cancellation-cancelled / cancellation-failed) respect consent gate. Test: with `usageEvents` opted-out, zero cancellation telemetry.
 - **#10 ★ NEW No dark-pattern cancellation** — ≤ 2-tap path + no exit-survey-before-confirm + 3 equal-weight buttons + factual copy + atomic writer. **Load-bearing.** Test: MPMF-G5-RL specific assertion suite — tap count, button weight (CSS size/color parity), exit-survey absence before write, forbidden-string absence in DOM.
@@ -296,7 +296,7 @@ All 10 commerce red lines enumerated; each has a testable assertion on this jour
 ### CI-linted copy generator
 
 - `src/utils/entitlement/cancellationCopy.js` (Phase 5) — deterministic generator from (tier, variation, state) → copy strings. Mirrors EAL `retirementCopy.js` pattern:
-  - Generator output passes through `scripts/check-commerce-copy.sh` forbidden-string grep at CI.
+  - Generator output passes through `scripts/check-commerce-copy.cjs` forbidden-string grep at CI.
   - Runtime LLM generation refused (non-deterministic; harder to test).
   - Single source of truth for all cancellation copy — UI components import from generator, never hardcode strings.
 
@@ -376,7 +376,7 @@ Placeholder for future findings:
 2. `src/components/views/SettingsView/BillingCancelAction.jsx`
 3. `src/utils/entitlement/cancelSubscription.js` (W-SUB-3 writer)
 4. `src/utils/entitlement/cancellationCopy.js` (CI-linted deterministic copy generator)
-5. `scripts/check-commerce-copy.sh` (CI-lint script covering cancellation + plan-change + paywall + upgrade-prompt copy)
+5. `scripts/check-commerce-copy.cjs` (CI-lint script covering cancellation + plan-change + paywall + upgrade-prompt copy)
 
 **Amended files (~3):**
 - `src/reducers/entitlementReducer.js` — cancellation action types + state transitions.

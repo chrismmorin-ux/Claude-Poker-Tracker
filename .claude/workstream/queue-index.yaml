@@ -6,8 +6,8 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-07T09:35:00Z"
-item_count: 159
+last_updated: "2026-05-07T22:40:00Z"
+item_count: 160
 # 2026-05-03: WS-150..WS-157 added — HSP v2 backlog (turn/river archetypes + multiway model +
 # adjustment composition + caching + LLM augmentation). 1 master + 7 work items. Deferred from
 # WS-136 v1 closing; not a sprint commitment — claim against /next when SCF surfaces a need.
@@ -393,6 +393,19 @@ items:
     completed_at: "2026-05-05T03:30:00Z"
     enables: ["WS-078"]
     status_note: "RESOLVED 2026-05-05 SPR-038 — panelTokens.js DELETED. designTokens.js absorbs SURFACE/BORDER/TEXT/BUCKET_COLORS/ACTION_PILL_COLORS/CLAIM_CONFIDENCE_COLOR. GOLD reconciled scalar→object (14 designTokens scalar consumers updated). 22 panelTokens consumers re-pointed to designTokens. SP/R/COLOR/FONT exports DROPPED — references migrated to Tailwind classes (font-display + font-mono added to tailwind.config) or inline literals. EV reconciled to verdict-keyed shape. ACTION (panel pill) renamed ACTION_PILL_COLORS. CONF_COLOR renamed CLAIM_CONFIDENCE_COLOR (different concept from QUALITY_CONFIG). Build clean (5.88s); 9980 tests passing / 30 skipped / 0 failures; OnlineView 36/36 invariants green. WS-078 UNBLOCKED."
+  - id: "WS-168"
+    title: "MW-equity solver-alignment validation harness (preflop range derivation baseline)"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "domain-correctness-validation"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "L"
+    claimed_by: "session-2026-05-08-next"
+    sprint_id: "SPR-053"
+    status_note: "SHIPPED SPR-053 2026-05-08 — src/__dev__/mwEquityValidation/ (BTN + UTG); 16-assertion smoke test green; project doc + baseline placeholder. Founder runs the full derivation in browser to produce divergence numbers; magnitude drives priority promotion."
   - id: "WS-014"
     title: "Stream E"
     legacy_id: "EAL-Stream-E"
@@ -578,7 +591,7 @@ items:
   - id: "WS-028"
     title: "anti-patterns"
     legacy_id: "MPMF-G4-AP"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "monetization-and-pmf"
@@ -586,8 +599,10 @@ items:
     program: "launch"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-08-spr050"
+    sprint_id: "SPR-050"
+    completed_at: "2026-05-08T13:53:42Z"
+    status_note: "RESOLVED 2026-05-08 SPR-050 — Gate 4 Batch 4 (13 net-new refusals MPMF-AP-17..AP-29 across 6 surfaces; catalog 16 → 29). Doc-only; unblocks WS-035 CI-grep."
   - id: "WS-029"
     title: "Ignition-mode surface design"
     legacy_id: "MPMF-G4-IM"
@@ -656,7 +671,7 @@ items:
   - id: "WS-034"
     title: "In-app test assertions for 10 commerce red lines"
     legacy_id: "MPMF-G5-RL"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "monetization-and-pmf"
@@ -664,12 +679,14 @@ items:
     program: "launch"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-08-spr052"
+    sprint_id: "SPR-052"
+    completed_at: "2026-05-08T14:49:55Z"
+    status_note: "RESOLVED 2026-05-08 SPR-052 — commerce-redlines.test.js (vitest, 1:1 per-RL, scan-empty). 10/10 pass. Closes Gate 5 starter trio (SPR-050 + SPR-051 + SPR-052)."
   - id: "WS-035"
     title: "CI-linted forbidden-copy-strings check"
     legacy_id: "MPMF-G5-CL"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "monetization-and-pmf"
@@ -677,8 +694,10 @@ items:
     program: "launch"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-08-spr051"
+    sprint_id: "SPR-051"
+    completed_at: "2026-05-08T14:10:47Z"
+    status_note: "RESOLVED 2026-05-08 SPR-051 — scripts/check-commerce-copy.cjs (Node.js, narrow scope, hard-fail). 63 forbidden patterns. Verified clean + negative path. 7 active spec cross-refs renamed .sh → .cjs."
   - id: "WS-036"
     title: "H-SC01 test"
     legacy_id: "MPMF-G5-SC"
@@ -1335,7 +1354,7 @@ items:
   - id: "WS-086"
     title: "Flop decision roots"
     legacy_id: "LSW-B1"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "line-study-slice-widening"
@@ -1343,8 +1362,9 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-049"
+    completed_at: "2026-05-07T22:40:00Z"
   - id: "WS-087"
     title: "Turn decision nodes where bucket shifts"
     legacy_id: "LSW-B2"
@@ -1374,7 +1394,7 @@ items:
   - id: "WS-089"
     title: "Archetype correctness widening"
     legacy_id: "LSW-C"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "line-study-slice-widening"
@@ -1382,8 +1402,9 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-049"
+    completed_at: "2026-05-07T22:40:00Z"
   - id: "WS-090"
     title: "Preflop-as-flop schema workaround documentation"
     legacy_id: "LSW-G-PreflopEnc"
@@ -1452,7 +1473,7 @@ items:
   - id: "WS-095"
     title: "Multiway bucket-EV engine for BucketEVPanel"
     legacy_id: "LSW-G6"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "line-study-slice-widening"
@@ -1460,8 +1481,8 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-048"
   - id: "WS-096"
     title: "Future surface-quality tickets from audit findings"
     legacy_id: "LSW-H*"
@@ -1530,7 +1551,7 @@ items:
   - id: "WS-101"
     title: "Replay corpus sequence extension (6 minimum sequences)"
     legacy_id: "RT-74"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "sidebar-recurrence"
@@ -1538,8 +1559,9 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-047"
+    status_note: "RESOLVED 2026-05-07 SPR-047 — 6 race-catching corpora shipped (S14..S19); 19/19 npm run replay green; 2274/2274 extension suite green (+6 net vs 2268 SPR-045 baseline, zero regressions); build clean. Sidebar-recurrence boundary-hardening cluster CLOSED 5/5."
   - id: "WS-102"
     title: "betweenHandsFsm debounce + modeAExpired symmetry"
     legacy_id: "RT-75"

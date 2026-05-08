@@ -1,0 +1,147 @@
+id: "SPR-049"
+title: "LSW Phase B HU close-out — 4 HU flop roots authored + archetype splits threaded (WS-086 + WS-089)"
+status: completed
+approved_at: "2026-05-07T18:10:00Z"
+completed_at: "2026-05-07T22:40:00Z"
+goal: |
+  Close the HU half of LSW Phase B — 4 canonical HU flop roots
+  (Q72r, K77, T98, AK2) get heroHolding authored on flop_root, and any
+  audit-declared archetype splits get correctByArchetype wired on the
+  same commits per WS-089's "threaded into B1..B3" design. Combined
+  with SPR-048's MW heroView authoring (J85mw + Q53mw), this fully
+  closes WS-086's 6-line plate.
+
+program_focus: domain-correctness
+program_initiative: "Poker Theory Integrity — direct continuation of SPR-048 (MW lines side-effect-shipped via render-path validation; HU batch is the natural close-out per WS-086 description: 'HU batch + MW batch once G6 lands'). LSW Phase B continuation; second consecutive domain-correctness sprint."
+
+composed_by: auto
+created_at: "2026-05-07T18:10:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+# Step 4a anti-goal check: skipped silently (kit/scripts/cwos-constitutional-audit.js
+# not installed in this repo). Graceful degradation per /next protocol.
+anti_goal_check:
+  status: not_run
+  reason: "audit script not installed in this repo"
+
+decisions_needed:
+  - "Item #1 — Per-line combo + bucketCandidates confirmation for the 4 HU lines (Q72r [A♠Q♣]/topPair, K77 [A♥K♦]/topPair, T98 [A♦A♣]/overpair, AK2 [A♥K♦]/twoPair). Approve LSW-H3 feasibility checklist values, or revise based on per-line content audit findings (LSW-A2..A8) on bucket coverage / hero-equity sanity."
+  - "Item #1 — Archetype split coverage threading (WS-089): which decision branches need correctByArchetype authored vs. left to resolveBranchCorrect fallback. Default: author the splits the audits explicitly declared (fish/reg/pro divergence); skip branches where no archetype divergence was called."
+
+items:
+  - id: "WS-086"
+    title: "Flop decision roots — HU batch (Q72r, K77, T98, AK2)"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: line-study-slice-widening
+    priority_score: 22.0
+    status: done
+    completed_at: "2026-05-07T22:40:00Z"
+    decision_flags:
+      - "Per-line combo + bucketCandidates confirmation (4 lines × LSW-H3 feasibility checklist)"
+      - "Archetype split coverage (which branches get correctByArchetype, threading WS-089)"
+  - id: "WS-089"
+    title: "Archetype correctness widening — co-authored with WS-086 HU batch"
+    mode: execute
+    effort: S
+    program: domain-correctness
+    category: line-study-slice-widening
+    priority_score: 22.0
+    status: done
+    completed_at: "2026-05-07T22:40:00Z"
+    notes: |
+      WS-089 description: "Each B tier commit ALSO authors correctByArchetype on
+      decision branches where the audit declared a fish/reg/pro split. Not a
+      separate session." Threaded INTO #1's commits; this row exists for
+      explicit close-out tracking.
+
+composition_notes: |
+  Two-item bundle anchored on WS-086 with WS-089 co-shipped via threading
+  (per WS-089's own "not a separate session" design). Direct continuation of
+  SPR-048: that sprint authored heroView on the 2 MW flop_root nodes
+  (J85mw + Q53mw) as a render-path validation side-effect, leaving the 4 HU
+  lines (Q72r, K77, T98, AK2) as the natural close-out. WS-095 dependency
+  satisfied by SPR-048.
+
+  Master Plan rhythm: domain-correctness program (tier=critical) gets second
+  consecutive sprint after 5-sprint gap (SPR-017 -> SPR-048). Last-3 anchors
+  (WS-095, WS-101, WS-146) all founder/conversation source — no auto-rec
+  or engine-finding saturation, no source-class damping.
+
+  Fleet-rotation override skipped: poker-tracker repo has no fleet/ or
+  kit/MANIFEST.yaml surfaces — all programs classify as internal-infra.
+
+  Auto-recommendation replenishment skipped: programs still in NEW state with
+  null health scores; nothing to compute below-target against.
+
+  Plan-first mandatory on #1: M effort + content-authoring with per-line
+  combo decisions that need owner ratification before commit. Item #2
+  threaded — no separate decisions.
+
+last_updated: "2026-05-07T22:40:00Z"
+
+completion_notes: |
+  Sprint shipped in ~30min plan-mode + ~30min implementation + ~15min visual
+  verification. M+S sized; actual S+S after plan-mode discovered Q72r and K77
+  were already authored 2026-04-22 (only T98 + AK2 needed work).
+
+  Discovered hidden blocker during plan-mode: villainRanges.js named two
+  "deferred aliases" not yet present in archetypeRanges (sb_vs_btn_3bp_btn_range
+  for T98, utg_vs_btn_4bp_btn_call for AK2). Sprint scope extended to author
+  the underlying range data + alias registration before line authoring.
+
+  Owner-ratified plan-mode decisions (D1-D4):
+    - D1 — AK2 scope: Author now (H3-only confidence) per K77/T98 precedent.
+    - D2 — T98 archetype encoding: Full 3-archetype per A4 audit.
+    - D3 — Bucket labels: Audit-pinned values verbatim (T98=overpair, AK2=twoPair).
+    - D4 — Range strings: Live-pool approximations per existing convention.
+
+  Files modified:
+    - src/utils/postflopDrillContent/archetypeRanges.js
+      (+THREEBET_RANGES.BTN_vs_SB = 'TT+,AJs+,KQs,A5s-A4s,AJo+,KQo')
+      (+CALL_RANGES.BTN_vs_UTG = 'QQ-JJ,AKs,AKo')
+    - src/utils/postflopDrillContent/villainRanges.js
+      (+sb_vs_btn_3bp_btn_range alias)
+      (+utg_vs_btn_4bp_btn_call alias)
+    - src/utils/postflopDrillContent/lines.js
+      (T98 flop_root: +heroView/villainRangeContext/decisionKind/decisionStrategy)
+      (T98 cbet branches: +correctByArchetype on Check + Bet 33%; flat false on Bet 75%)
+      (AK2 flop_root: +heroView/villainRangeContext/decisionKind/decisionStrategy)
+    - src/utils/postflopDrillContent/__tests__/__snapshots__/engine-authored-drift.json
+      (re-baselined; T98 nodes moved out of skippedNodes; AK2 retained pre-existing skip
+       due to setup.villains[0].action='fourBet' mismatch — pre-existing data shape, out of scope)
+
+  Verification:
+    - lineSchema: 109/109 passed (T98 + AK2 heroView validates)
+    - engineAuthoredDrift: regenerated; T98 bucket distributions sanity-checked
+      (flop_root: 4.4% nuts / 8.8% strong / 23.9% draw / 62.9% air on T98ss vs
+      BTN 3bet range — structurally correct for hero AA against BTN's polar 3bet)
+    - Full smart-test-runner: 10220 passed / 20 skipped / 0 failed
+      (zero regressions vs SPR-048 baseline)
+    - Build clean (6.30s)
+    - Visual at 1600×720: T98 line renders BucketEVPanelV2 with hero AA bucket
+      decomposition + DOMINATING/FAVORED tier badges; archetype toggle confirmed
+      end-to-end (Check correct vs Reg → Bet 33% correct vs Fish badge flip).
+      AK2 line renders Solver Plan + EVs (bet +19.52bb BEST vs check +17.02bb);
+      bucket decomposition surfaces the engine's pre-existing "Domination map
+      could not be computed" diagnostic on this extreme-low-SPR commit-decision
+      node — heroView authoring is wired correctly; that diagnostic is pre-
+      existing engine behavior on jam-or-fold spots, not a regression.
+
+  WS-086 6-line plate fully closed:
+    HU: Q72r ✓ (2026-04-22) · K77 ✓ (2026-04-22) · T98 ✓ (SPR-049) · AK2 ✓ (SPR-049)
+    MW: J85mw ✓ (SPR-048 side-effect) · Q53mw ✓ (SPR-048 side-effect)
+    Skipped: UTG-squeeze pre_root (preflop-only, out of scope per WS-086 description)
+
+  Follow-ups (NOT spawned this sprint):
+    - LSW-A8 audit on AK2: confirm or revise H3 recommendation [twoPair/A♥K♦]
+    - AK2 setup.villains[0].action mismatch: 'fourBet' vs comment "BTN called" —
+      pre-existing data shape; fix would unblock AK2 in drift snapshot
+    - LSW-B2 (turn decision nodes) and LSW-B3 (river decision nodes) where
+      bucket class shifts — those carry the higher-leverage archetype splits
+      that the audits called for (Q72r + K77 river-level splits)

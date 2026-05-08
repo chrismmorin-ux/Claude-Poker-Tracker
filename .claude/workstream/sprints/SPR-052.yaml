@@ -1,0 +1,183 @@
+id: "SPR-052"
+title: "Commerce red-line test scaffold — closes Gate 5 starter trio (WS-034)"
+status: completed
+approved_at: "2026-05-08T14:42:22Z"
+completed_at: "2026-05-08T14:49:55Z"
+goal: |
+  10 commerce red lines (per `docs/projects/monetization-and-pmf.project.md`
+  §Acceptance Criteria) have automated test coverage that fails CI when
+  Gate 5 surface code (paywall / billing / pricing / trial / upgrade-prompt /
+  telemetry) drifts from the autonomy doctrine. Closes the Gate 5 starter
+  trio: SPR-050 (doctrine catalog, 29 refusals) + SPR-051 (string-grep CI)
+  + SPR-052 (structural-refusal tests for what string-grep can't catch).
+
+program_focus: launch
+program_initiative: "Monetization & PMF — Gate 5 starter trio close-out (3rd consecutive launch-program sprint). Builds the structural-refusal layer that catches what string-grep cannot — animation, autofocus, scrollIntoView, bg-red-* on user-choice components, ≤2-tap depth, mid-hand defer. Founder explicitly accepted the 3-sprint launch cluster despite Master Plan rotation invariant; WS-168 was offered as alternative and passed over."
+
+composed_by: auto
+created_at: "2026-05-08T14:42:22Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo; graceful degradation"
+
+decisions_needed:
+  - "Item #1 — Test infrastructure: vitest test file, additional .cjs script(s) like SPR-051, or mixed (vitest for behavioral, .cjs for grep-style structural)?"
+  - "Item #1 — Per-red-line scope: one test per RL (10 tests, clean 1:1 to project doc) or decomposed by surface/mechanism (~30 tests, finer-grained)?"
+  - "Item #1 — Pre-surface state: scan-empty (trivially passes; gates on surface ship), todo-skip (visible-pending), or invariant-only (cross-cutting assertions that hold even with zero commerce code)?"
+
+items:
+  - id: "WS-034"
+    title: "In-app test assertions for 10 commerce red lines"
+    mode: plan-first
+    effort: M
+    program: launch
+    category: monetization-and-pmf
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-08T14:42:22Z"
+    completed_at: "2026-05-08T14:49:55Z"
+    notes: |
+      Shipped src/utils/entitlement/__tests__/commerce-redlines.test.js
+      (vitest, 1:1 per-RL granularity, scan-empty pre-surface state — all
+      3 founder decisions ratified upfront via AskUserQuestion). 10 tests
+      cover RL #1..#10. Verified both paths: 10/10 pass on clean state;
+      deliberate setInterval fixture caught by RL #5 with file:line +
+      AP-23/RL #5 attribution; fixture removed; 10/10 re-confirmed. No
+      production code changes. Closes Gate 5 starter trio.
+    decision_flags:
+      - "Test infrastructure (vitest / .cjs / mixed)"
+      - "Per-red-line scope (1:1 / decomposed)"
+      - "Pre-surface state (scan-empty / todo-skip / invariant-only)"
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Anchor selection — protocol-pure top of queue + close-out continuity:
+    - WS-034 is MPMF P1 (22.0); ranked first by close-out continuity
+      (consumes both WS-028's 29-refusal catalog and WS-035's
+      check-commerce-copy.cjs as inputs; fills the structural-refusal
+      gap that string-grep cannot catch).
+    - Buildable: WS-034 has no external-action dependency. WS-027 (Q7
+      legal), WS-030/031/032 (Stripe + tier + surfaces, all gated on
+      Q7), and WS-033 (PostHog, gated on Q8) all defer to founder
+      external action.
+    - Closes Gate 5 starter trio: SPR-050 catalog + SPR-051 string-CI +
+      SPR-052 structural-CI.
+
+  Rotation concern explicitly surfaced and accepted:
+    - 3rd consecutive launch-program sprint. Master Plan rotation
+      invariant suggests breaking the cluster, but Founder approved
+      the close-out sequence despite alternative WS-168 (MW-equity
+      validation) being offered as Option 3 / "redirect to engine work."
+
+  Source-class damping check: last 3 sprint anchors (WS-035 / WS-028 /
+  WS-086) all founder/migration source. No auto-rec or engine-finding
+  saturation. No damping. WS-034 also founder/migration source.
+
+  Fleet-rotation override skipped: poker-tracker repo has no fleet/ or
+  kit/MANIFEST.yaml surfaces.
+
+  Auto-recommendation replenishment skipped: programs in NEW state with
+  null health scores; nothing to compute below-target against.
+
+  Soft-blocked deferred from candidate ranking: WS-164 (PIO G5 child E,
+  18.0 → 4.5 via blocked_by_note Step 2-prereq).
+
+  Mode plan-first mandatory: M effort + 3 decision_flags affecting
+  fundamental shape (test infrastructure form, scope granularity,
+  pre-surface assertion semantics).
+
+  Strong alternative passed over: WS-168 (MW-equity solver-alignment
+  validation harness; P2, 15.0, L) — direct close-out from SPR-048;
+  applies "validation as quality signal" memory; rotates from launch
+  to domain-correctness. Founder declined rotation; explicitly approved
+  the cluster close-out instead.
+
+last_updated: "2026-05-08T14:49:55Z"
+
+completion_notes: |
+  Sprint shipped in ~7 minutes. M-tagged → ~S actual cadence — fifth
+  consecutive doc-discipline sprint matching the M-tagged-but-S-actual
+  pattern (SPR-043/044/045/047/050/051/052).
+
+  Founder decisions resolved upfront via AskUserQuestion:
+    D1 (form): vitest test file — runs with normal `npm test` suite via
+       existing unit project glob.
+    D2 (granularity): 1:1 per red line — 10 top-level it cases, clean
+       mapping to project doc §Acceptance Criteria.
+    D3 (pre-surface state): scan-empty — tests scan scoped paths and
+       trivially pass today (no commerce surfaces); bite automatically
+       when surfaces ship.
+
+  Authored:
+    - src/utils/entitlement/__tests__/commerce-redlines.test.js (~280
+      lines). 10 tests cover RL #1..#10.
+
+  Test mechanism by red line:
+    RL #1 (opt-in enrollment) — funnel-through-adapter scan: posthog-js
+       imports allowed only in postHogAdapter.js; postHogAdapter.capture
+       calls allowed only in adapter + consentGate. ENFORCED TODAY.
+    RL #2 (transparency) — BillingSettings disclosure assertion gated on
+       file existence. SURFACE NOT YET SHIPPED.
+    RL #3 (durable overrides) — silent un-cancel scan (canceled=false
+       outside reactivation context). ENFORCED TODAY (trivially passes).
+    RL #4 (reversibility) — symmetric reactivation existence test
+       (cancelSubscription.js implies reactivateSubscription.js). GATED
+       on file existence.
+    RL #5 (no engagement-pressure) — setInterval / @keyframes scan on
+       commerce surfaces. ENFORCED TODAY.
+    RL #6 (flat-access) — no recommended/mostPopular boolean prop on
+       PricingPage tier cards. GATED on file existence.
+    RL #7 (editor's-note) — execSync delegates to check-commerce-copy.cjs
+       (SPR-051); asserts exit 0. ENFORCED TODAY.
+    RL #8 (no cross-surface contamination) — live-play views (TableView,
+       HandReplayView, ShowdownView, HandViewer) scanned for commerce
+       imports. ENFORCED TODAY.
+    RL #9 (incognito observation) — consentGate structural shape
+       (EVENT_TO_CATEGORY usage + firstLaunchSeenAt fail-closed).
+       ENFORCED TODAY.
+    RL #10 (no dark-pattern cancellation) — BillingSettings top-level
+       Cancel + no danger-zone wrapper. GATED on file existence.
+
+  Verification:
+    - 10/10 pass on clean state (177ms test runtime).
+    - Deliberate fixture (setInterval in src/utils/entitlement/) caught
+      by RL #5 with file:line + AP-23/RL #5 attribution; fixture removed;
+      10/10 re-confirmed.
+
+  Test + script change; no production code; full suite not re-run (test
+  file is additive; no other tests touched).
+
+  Gate 5 starter trio CLOSED:
+    SPR-050 (catalog: 29 refusals across MPMF-AP-01..AP-29)
+    SPR-051 (string-CI: scripts/check-commerce-copy.cjs, 63 patterns)
+    SPR-052 (structural-CI: commerce-redlines.test.js, 10 RLs)
+  Three doctrine-discipline sprints landed in 1 day. Gate 5 surface
+  implementation (PaywallGate / BillingSettings / PricingPage / Stripe)
+  now has full safety net.
+
+  Downstream:
+    - WS-031 (PaywallGate component) — first surface implementation; gated
+      on Q7 verdict (founder external action).
+    - WS-032 (BillingSettings extension) — gated on Q7.
+    - WS-030 (Stripe integration) — gated on Q7.
+    - WS-033 (PostHog install + event schema v1) — gated on Q8 verdict.
+    - WS-027 (Q7 legal-scoping session) — founder external action; no
+      buildable MPMF P1 work remains until Q7 + Q8 land.
+    - WS-168 (MW-equity validation harness, P2 15.0, L) — natural rotation
+      back to engine work; passed over twice (SPR-051, SPR-052) but still
+      pending; P2 15.0 likely climbs to be next anchor candidate now that
+      MPMF P1 cluster is on founder-external-action gate.
+    - PIO/SCF children at P2 also climb in priority since MPMF P1 buildable
+      is exhausted.
+
+  Master Plan rhythm: 3rd consecutive launch-program sprint completes the
+  cluster. Next sprint's natural rotation is back to engine work or
+  domain-correctness (WS-168) — MPMF cluster is paused until founder
+  external actions resolve.

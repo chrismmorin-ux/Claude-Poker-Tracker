@@ -278,7 +278,7 @@ Cross-reference to `anti-patterns.md`:
 - **#4 Reversibility** — load-bearing here. Upgrade reversible (downgrade back to Plus immediately eligible; Stripe proration handles). Downgrade reversible before effective-date. Test: upgrade then immediately downgrade within same billing period.
 - **#5 No streaks / shame / engagement-pressure** — no urgency on plan-change; no "limited-time upgrade offer."
 - **#6 Flat-access** — PlanSelectModal shows all tiers at equal visual weight (tier user is on gets "Current" chip factually; other tiers tappable without pressure ranking).
-- **#7 Editor's-note tone** — CI-linted forbidden-string check on plan-change surface. Test: `scripts/check-commerce-copy.sh`.
+- **#7 Editor's-note tone** — CI-linted forbidden-string check on plan-change surface. Test: `scripts/check-commerce-copy.cjs`.
 - **#8 No cross-surface contamination** — plan-change modal never renders on live-play.
 - **#9 Incognito observation mode** — telemetry events respect consent gate.
 - **#10 No dark-pattern cancellation** — plan-change is NOT cancellation; conflation refused. Downgrade is tier-migration, not cancel-then-rejoin dark pattern.

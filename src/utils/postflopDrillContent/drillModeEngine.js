@@ -26,8 +26,9 @@
  */
 
 import { isKnownArchetype } from './archetypeRangeBuilder';
-import { handVsRange } from '../pokerCore/monteCarloEquity';
+import { handVsRange, handVsRangesMW } from '../pokerCore/monteCarloEquity';
 import { segmentRange } from '../exploitEngine/rangeSegmenter';
+import { multiwayFoldPct } from '../exploitEngine/gameTreeEquity';
 import { createRange, rangeIndex } from '../pokerCore/rangeMatrix';
 import { analyzeBoardTexture } from '../pokerCore/boardTexture';
 
@@ -536,6 +537,95 @@ export const computeDecomposedActionEVs = ({ decomposition, heroActions, pot }) 
 };
 
 /**
+ * Compute action EVs for a multiway pot using the 3-way pinned-combo equity
+ * + cascading fold probability as inputs.
+ *
+ * v1 simplification: assumes all villains either fold (cascading-fold branch)
+ * or all call (cascading-call branch). Partial-call branches (one folds, the
+ * other calls) collapse into the all-call estimate. The audits and the
+ * authored MW lines reach this v1 stub knowingly; a v2 refinement can split
+ * the call cascade per-villain once we wire per-villain fold rates derived
+ * from each villain's range. Until then this is the simplest defensible MW
+ * action-EV math.
+ *
+ * Bet/raise EV formula (extension of HU formula at line 451):
+ *   EV = foldAll * pot + (1 - foldAll) * (equity * (pot + (1+N)*B) - B)
+ * where:
+ *   foldAll  = cascadingFoldProbability
+ *   equity   = 3-way pinned-combo equity from handVsRangesMW
+ *   N        = villain count
+ *   B        = pot * betFraction
+ *
+ * Check EV: equity_3way * pot (showdown at current pot)
+ * Fold EV: 0
+ * Call EV: 0 (unsupported in v1; matches HU)
+ *
+ * @param {{
+ *   heroActions: Array,
+ *   pot: number,
+ *   pinnedComboEquity: number,
+ *   cascadingFoldProbability: number,
+ *   numVillains: number,
+ * }} args
+ */
+const computeMWActionEVs = ({ heroActions, pot, pinnedComboEquity, cascadingFoldProbability, numVillains }) => {
+  if (!Array.isArray(heroActions) || heroActions.length === 0) {
+    throw new Error('computeMWActionEVs: heroActions must be a non-empty array');
+  }
+  if (!Number.isFinite(pot) || pot < 0) {
+    throw new Error('computeMWActionEVs: pot must be a non-negative finite number');
+  }
+
+  const eq = Number.isFinite(pinnedComboEquity) ? pinnedComboEquity : 0;
+  const foldAll = Number.isFinite(cascadingFoldProbability) ? cascadingFoldProbability : 0;
+  const N = Number.isFinite(numVillains) && numVillains >= 1 ? numVillains : 1;
+
+  const actionEVs = heroActions.map((action) => {
+    let totalEV = 0;
+    let unsupported = false;
+
+    if (action.kind === 'bet' || action.kind === 'raise' || action.kind === 'jam') {
+      const betFrac = Number.isFinite(action.betFraction) ? action.betFraction : 0.75;
+      const betSize = pot * betFrac;
+      const evFold = pot;
+      const evCalled = eq * (pot + (1 + N) * betSize) - betSize;
+      totalEV = foldAll * evFold + (1 - foldAll) * evCalled;
+    } else if (action.kind === 'check') {
+      totalEV = eq * pot;
+    } else if (action.kind === 'fold') {
+      totalEV = 0;
+    } else if (action.kind === 'call') {
+      totalEV = 0;
+      unsupported = true;
+    } else {
+      totalEV = 0;
+      unsupported = true;
+    }
+
+    return {
+      actionLabel: action.label,
+      kind: action.kind,
+      betFraction: action.betFraction,
+      perGroupContribution: [], // MW path doesn't decompose by villain group in v1
+      totalEV,
+      totalEVCI: { low: totalEV - 0.5, high: totalEV + 0.5 },
+      isBest: false,
+      ...(unsupported ? { unsupported: true } : {}),
+    };
+  });
+
+  const supported = actionEVs.filter((a) => !a.unsupported);
+  if (supported.length > 0) {
+    const bestEV = Math.max(...supported.map((a) => a.totalEV));
+    for (const a of supported) {
+      if (a.totalEV === bestEV) { a.isBest = true; break; }
+    }
+  }
+
+  return actionEVs;
+};
+
+/**
  * Compute value-vs-beat ratio for bluff-catch / thin-value variants.
  * Splits the decomposition into "hero beats" (relation ∈ {favored, dominating})
  * and "hero loses to" (relation ∈ {crushed, dominated}) weight totals.
@@ -620,14 +710,6 @@ export const computeBucketEVsV2 = async (input) => {
     return bucketEVsV2Error('range-unavailable', 'No villain in input',
       'villains array was empty or missing');
   }
-  if (villains.length > 1) {
-    // MW path deferred to LSW-G6. Not a panel-blocking error — surface a
-    // structured message so the panel can render the cascading-deferred
-    // banner without routing through the error path.
-    return bucketEVsV2Error('engine-internal', 'Multiway not yet supported',
-      `villains.length was ${villains.length}; MW engine is LSW-G6`,
-      'Wait for LSW-G6 multiway engine to ship, or use an HU line.');
-  }
   if (!heroView || !['single-combo', 'combo-set', 'range-level'].includes(heroView.kind)) {
     return bucketEVsV2Error('malformed-hero', 'heroView.kind invalid',
       `heroView was ${JSON.stringify(heroView)}`);
@@ -655,11 +737,140 @@ export const computeBucketEVsV2 = async (input) => {
       `heroView.combos[0] was ${JSON.stringify(pinnedCombo)}`);
   }
 
-  const villain = villains[0];
-  if (!villain.baseRange) {
-    return bucketEVsV2Error('range-unavailable', 'Villain range missing',
-      `villains[0].baseRange is not set`);
+  // Validate every villain has a baseRange (HU + MW).
+  for (let i = 0; i < villains.length; i++) {
+    if (!villains[i].baseRange) {
+      return bucketEVsV2Error('range-unavailable', 'Villain range missing',
+        `villains[${i}].baseRange is not set`);
+    }
   }
+
+  // ===========================================================================
+  // MW path (LSW-G6 / WS-095): true 3-way Monte Carlo + per-villain
+  // decompositions + cascading fold probability via multiwayFoldPct.
+  // HU path (existing) follows below at `const villain = villains[0]`.
+  // ===========================================================================
+  if (villains.length > 1) {
+    const trialsPerGroup = Math.min(Math.floor(mcTrials / 2), 500);
+    let perVillainDecompositions;
+    try {
+      perVillainDecompositions = await Promise.all(
+        villains.map(async (v) => {
+          const map = await computeDominationMap({
+            pinnedCombo,
+            villainRange: v.baseRange,
+            board,
+            trialsPerGroup,
+          });
+          if (!map) {
+            return { villainPosition: v.position, decomposition: [], dominators: [] };
+          }
+          const dec = map.map((g) => ({
+            groupId: g.id,
+            groupLabel: g.label,
+            weightPct: g.weightPct,
+            heroEquity: g.equity,
+            heroEquityCI: {
+              low: Math.max(0, g.equity - 0.05),
+              high: Math.min(1, g.equity + 0.05),
+              method: 'mc',
+            },
+            relation: g.relation,
+            comboCount: g.sampleSize,
+          }));
+          return { villainPosition: v.position, decomposition: dec, dominators: dec };
+        })
+      );
+    } catch (err) {
+      return bucketEVsV2Error('engine-internal', 'MW per-villain domination threw',
+        err.message || String(err), 'Retry · Check line authoring');
+    }
+
+    // 3-way pinned-combo equity via handVsRangesMW (true N-way Monte Carlo).
+    let pinnedComboEquityMW;
+    try {
+      const villainRanges = villains.map((v) => v.baseRange);
+      const heroCardsArr = [pinnedCombo.card1, pinnedCombo.card2];
+      const mcResult = await handVsRangesMW(heroCardsArr, villainRanges, board, { trials: mcTrials });
+      pinnedComboEquityMW = mcResult.equity;
+    } catch (err) {
+      return bucketEVsV2Error('engine-internal', 'handVsRangesMW threw',
+        err.message || String(err), 'Retry · Check line authoring');
+    }
+
+    // Cascading fold probability via multiwayFoldPct (canonical MW fold model
+    // from src/utils/exploitEngine/gameTreeEquity.js — single source of truth).
+    // v1 uses population-baseline fold rates: primary = 0.55 (vs-cbet flop reg
+    // baseline) + opponents-behind = STYLE_FOLD_DEFAULTS['reg']. Per-villain
+    // fold rates derived from each villain's baseRange are a v2 wiring step.
+    const tx = analyzeBoardTexture(board);
+    const street = board.length === 3 ? 'flop' : board.length === 4 ? 'turn' : 'river';
+    const cascadingFoldProbability = multiwayFoldPct(
+      0.55,
+      villains.slice(1).map(() => ({ playerStats: { style: 'reg' } })),
+      street,
+      (tx && tx.texture) || '*',
+      '*',
+      0.75,
+    );
+
+    // MW action EVs from 3-way equity + cascading fold prob (v1 simplified —
+    // assumes all-fold or all-call; per-villain partial-call branches collapse
+    // into the all-call estimate). See computeMWActionEVs for the formula.
+    const mwActionEVs = computeMWActionEVs({
+      heroActions,
+      pot,
+      pinnedComboEquity: pinnedComboEquityMW,
+      cascadingFoldProbability,
+      numVillains: villains.length,
+    });
+
+    const mwBest = mwActionEVs.find((a) => a.isBest) || mwActionEVs[0];
+    const mwTemplatedReason = templateReasonForAction(mwBest, decisionKind);
+
+    const mwCaveats = ['synthetic-range', 'v1-simplified-ev', 'v1-simplified-mw'];
+    if (Date.now() - startTime > timeBudgetMs) {
+      mwCaveats.push('time-budget-soft');
+    }
+
+    let mwStreetNarrowing = null;
+    if (Array.isArray(actionHistory) && actionHistory.length > 0) {
+      mwStreetNarrowing = actionHistory.map((e) => ({
+        street: e.street,
+        actor: e.actor,
+        action: e.action,
+        sizing: e.sizing,
+        narrowingSpec: e.narrowingSpec || { kind: 'keep-continuing-vs-action' },
+        priorWeight: 100,
+        narrowedWeight: 100,
+      }));
+    }
+
+    return {
+      decomposition: null, // MW: render via perVillainDecompositions
+      actionEVs: mwActionEVs,
+      recommendation: {
+        actionLabel: mwBest?.actionLabel ?? '',
+        templatedReason: mwTemplatedReason,
+      },
+      valueBeatRatio: null, // bluff-catch / thin-value classification deferred to v2 MW
+      streetNarrowing: mwStreetNarrowing,
+      confidence: {
+        mcTrials,
+        populationPriorSource: 'multiwayFoldPct (population baseline) + handVsRangesMW',
+        archetype,
+        caveats: mwCaveats,
+      },
+      perVillainDecompositions,
+      cascadingFoldProbability,
+      errorState: null,
+    };
+  }
+
+  // ===========================================================================
+  // HU path (single villain) — existing behavior preserved
+  // ===========================================================================
+  const villain = villains[0];
 
   // 1. Compute decomposition (per-group equity + weight + relation).
   let decomposition;

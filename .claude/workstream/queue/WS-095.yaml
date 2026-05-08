@@ -2,10 +2,11 @@ id: "WS-095"
 title: "Multiway bucket-EV engine for BucketEVPanel"
 legacy_id: "LSW-G6"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T17:05:00Z"
+started_at: "2026-05-07T17:05:00Z"
+completed_at: "2026-05-07T17:58:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "line-study-slice-widening"
@@ -22,10 +23,30 @@ effort: "M"
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []
-enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED (opened by LSW-H3)"
+enables: ["WS-086", "WS-168"]
+sprint_id: "SPR-048"
+decision_flags:
+  - "Per-villain equity model (per-villain + cascading fold vs combined-range)"
+  - "Cascading fold-equity composition (reuse foldEquityCalc vs new path)"
+  - "Domination map shape (combined vs per-villain)"
+status_note: |
+  RESOLVED 2026-05-07 SPR-048. Shipped: handVsRangesMW (true 3-way Monte Carlo)
+  in pokerCore + multiwayFoldPct reuse from gameTreeEquity (canonical MW fold
+  model, single source of truth) + per-villain stacked render in BucketEVPanelV2
+  + cascading-fold-prob disclosure in P6 methodology + "simplified MW" caveat.
+  Owner-ratified plan-mode decisions: D1 true 3-way MC (over per-villain 1v1);
+  D2 reuse multiwayFoldPct; D3 per-villain stacked render. Tests: +10 pokerCore
+  MW + +14 drillModeEngineV2 MW Suite 6 + 1 inverted MW guard test (planDerivation
+  + drillModeEngineV2). 10220 passed / 20 skipped / 0 failed (+24 net vs SPR-046
+  baseline 10196). Build clean. HU drift snapshot byte-identical (zero regression).
+  Playwright-verified at 1600x720: J85mw renders VS SB + VS BB stacked
+  decompositions; Q53mw VS BB shows dominating equities (86-91%) for AQ on dry
+  Q53r; HU Q72r unchanged. Cascading fold P(all fold): 24.8% on J85mw.
+  heroView authored on J85mw + Q53mw flop_root nodes (per LSW-H3 audit values:
+  AdJc/TPTK/topPair on J85mw; AsQc/TPTK/topPair on Q53mw) so the render path
+  was testable end-to-end. Spawned WS-168 (MW-equity solver-alignment validation
+  harness; non-blocking quality signal). Unblocks WS-086 (HU + MW flop-root
+  widening). Closes LSW-G6 / H3-F1 finding.
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"

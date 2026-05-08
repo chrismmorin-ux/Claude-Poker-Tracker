@@ -2,10 +2,10 @@ id: "WS-086"
 title: "Flop decision roots"
 legacy_id: "LSW-B1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-07-next"
+claimed_at: "2026-05-07T18:10:00Z"
+completed_at: "2026-05-07T22:40:00Z"
 priority_score: 22.0
 priority_label: "P1"
 category: "line-study-slice-widening"
@@ -28,9 +28,11 @@ blocked_by_legacy:
   - "LSW-A2..A8"
   - "LSW-G6"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by LSW-A2..A8 (HU lines) + LSW-G6 (MW lines)"
+sprint_id: "SPR-049"
+decision_flags:
+  - "Per-line combo + bucketCandidates confirmation (4 HU lines × LSW-H3 feasibility checklist)"
+  - "Archetype split coverage (which branches get correctByArchetype, threading WS-089)"
+status_note: "DONE 2026-05-07 SPR-049. 6-line plate fully closed: Q72r + K77 already authored 2026-04-22; J85mw + Q53mw side-effect-shipped via SPR-048 render-path validation; T98 + AK2 authored in SPR-049 with new villain range entries (THREEBET_RANGES.BTN_vs_SB + CALL_RANGES.BTN_vs_UTG) and matching aliases (sb_vs_btn_3bp_btn_range + utg_vs_btn_4bp_btn_call). T98 archetype-split threaded via WS-089. UTG-squeeze pre_root excluded per scope. lineSchema validates; engineAuthoredDrift snapshot regenerated cleanly (T98 entries moved out of skippedNodes; AK2 retained pre-existing skip due to setup.villains[0].action='fourBet' — pre-existing, out of scope). 10220 passed / 20 skipped / 0 failed (vs SPR-048 baseline). Build clean."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"

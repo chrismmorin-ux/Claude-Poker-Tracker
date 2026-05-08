@@ -274,7 +274,7 @@ Cross-reference to `anti-patterns.md`:
 - **#4 Reversibility** — dismissal is reversible (user can navigate to pricing-page manually even during cooldown). Test: during cooldown, navigate to Settings → Billing → View plans; assert no gate.
 - **#5 No streaks / shame / engagement-pressure** — no urgency copy; no "act now"; no repeated re-firing. CI-lint.
 - **#6 Flat-access** — "Keep free" button at equal visual weight to "View plans". Test: CSS measurement — identical size/color/weight.
-- **#7 Editor's-note tone** — CI-linted forbidden-string check on paywall modal copy. Test: `scripts/check-commerce-copy.sh` on paywall-hit copy.
+- **#7 Editor's-note tone** — CI-linted forbidden-string check on paywall modal copy. Test: `scripts/check-commerce-copy.cjs` on paywall-hit copy.
 - **#8 No cross-surface contamination** — paywall modal never renders on TableView during active hand (H-SC01). Test: mock mid-hand state; trigger paywall; assert no modal.
 - **#9 Incognito observation mode** — telemetry events for paywall-hit respect per-category consent. Test: with `usageEvents` opted-out, zero paywall telemetry events.
 - **#10 No dark-pattern cancellation** — N/A (not a cancellation flow), but sibling principle applies: dismissal is ≤ 1-tap (Keep free button), no interposition.

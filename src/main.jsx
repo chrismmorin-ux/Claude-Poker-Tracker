@@ -18,6 +18,9 @@ if (import.meta.env.DEV) {
   // PIO G4 v2 Phase 1 — corpus sample renderer:
   // window.__showIdentityAvatarCorpus() / window.__hideIdentityAvatarCorpus()
   import('./__dev__/identityAvatarCorpus.jsx')
+  // WS-168 — MW equity solver-alignment validation harness:
+  // window.__validateMWEquity('BTN' | 'UTG', opts) / window.__validateMWEquity.help()
+  import('./__dev__/mwEquityValidation/index.js')
 }
 
 // PWA update listener — reload when new service worker activates

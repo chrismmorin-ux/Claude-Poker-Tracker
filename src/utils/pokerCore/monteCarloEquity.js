@@ -369,3 +369,271 @@ export const handVsRange = (heroCards, villainRange, board = [], options = {}) =
   });
 };
 
+/**
+ * Run a batch of multi-villain equity trials synchronously.
+ * Per trial: sample one combo per villain range, reject if any cards conflict,
+ * deal remaining board, score hero + each villain, attribute hero outcome
+ * (win / tie-with-k-villains / lose) and accumulate fractional equity.
+ *
+ * Hero outcome value per trial:
+ *   - WIN  (heroScore > all villain scores)        → 1.0
+ *   - TIE  (heroScore === max, k villains tied)    → 1 / (1 + k)
+ *   - LOSE (heroScore < max villain score)         → 0.0
+ *
+ * @returns {{ win, tie, lose, skipped, totalEquityContrib, perVillainBeats: Int32Array, tieByK: Int32Array }}
+ */
+const runBatchMW = (heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, batchSize) => {
+  const N = villainCombosArr.length;
+  let win = 0, tie = 0, lose = 0, skipped = 0;
+  let totalEquityContrib = 0;
+  const boardLen = board.length;
+  const cardsNeeded = 5 - boardLen;
+
+  const deadLookup = new Uint8Array(TOTAL_CARDS);
+  const deckBuf = new Array(TOTAL_CARDS);
+  const sevenBuf = new Array(7);
+  const villainCardsBuf = new Array(N * 2);
+  const villainScores = new Array(N);
+  const perVillainBeats = new Int32Array(N);
+  const tieByK = new Int32Array(N + 1);
+
+  const baseDead = new Uint8Array(TOTAL_CARDS);
+  const h0 = heroCards[0], h1 = heroCards[1];
+  baseDead[h0] = 1;
+  baseDead[h1] = 1;
+  for (let b = 0; b < boardLen; b++) baseDead[board[b]] = 1;
+  for (let b = 0; b < boardLen; b++) sevenBuf[2 + b] = board[b];
+
+  trialLoop:
+  for (let t = 0; t < batchSize; t++) {
+    // Sample one combo per villain
+    for (let i = 0; i < N; i++) {
+      const ci = sampleCombo(cumWeightsArr[i], totalWeightsArr[i]);
+      const villain = villainCombosArr[i][ci];
+      villainCardsBuf[i * 2] = villain.card1;
+      villainCardsBuf[i * 2 + 1] = villain.card2;
+    }
+
+    // Reject if any villain combo conflicts with hero or another villain
+    deadLookup.set(baseDead);
+    for (let i = 0; i < N; i++) {
+      const v0 = villainCardsBuf[i * 2];
+      const v1 = villainCardsBuf[i * 2 + 1];
+      if (deadLookup[v0] || deadLookup[v1]) {
+        skipped++;
+        continue trialLoop;
+      }
+      deadLookup[v0] = 1;
+      deadLookup[v1] = 1;
+    }
+
+    // Deal remaining board
+    const deckLen = buildDeckFast(deckBuf, deadLookup);
+    partialShuffle(deckBuf, deckLen, cardsNeeded);
+    for (let d = 0; d < cardsNeeded; d++) sevenBuf[2 + boardLen + d] = deckBuf[d];
+
+    // Score hero
+    sevenBuf[0] = h0;
+    sevenBuf[1] = h1;
+    const heroScore = bestFiveFromSeven(sevenBuf);
+
+    // Score each villain; track max + per-villain beat counts
+    let maxVillainScore = -1;
+    for (let i = 0; i < N; i++) {
+      sevenBuf[0] = villainCardsBuf[i * 2];
+      sevenBuf[1] = villainCardsBuf[i * 2 + 1];
+      const vScore = bestFiveFromSeven(sevenBuf);
+      villainScores[i] = vScore;
+      if (vScore > maxVillainScore) maxVillainScore = vScore;
+      if (heroScore > vScore) perVillainBeats[i]++;
+    }
+
+    if (heroScore > maxVillainScore) {
+      win++;
+      totalEquityContrib += 1.0;
+    } else if (heroScore < maxVillainScore) {
+      lose++;
+    } else {
+      // tied with at least one villain — count how many
+      let k = 0;
+      for (let i = 0; i < N; i++) {
+        if (villainScores[i] === heroScore) k++;
+      }
+      tie++;
+      tieByK[k]++;
+      totalEquityContrib += 1.0 / (1 + k);
+    }
+  }
+
+  return { win, tie, lose, skipped, totalEquityContrib, perVillainBeats, tieByK };
+};
+
+/**
+ * Build result object for multi-villain trials.
+ * Equity is computed directly from accumulated fractional contributions
+ * (NOT via tie * 0.5 like buildResult — MW ties can be 1/2, 1/3, ..., 1/N).
+ */
+const buildResultMW = (totalWin, totalTie, totalLose, totalEquityContrib, welfordM2, perVillainBeats, start, convergedEarly = false) => {
+  const total = totalWin + totalTie + totalLose;
+  const elapsed = Math.round(performance.now() - start);
+  const equity = total > 0 ? Math.round((totalEquityContrib / total) * 1000) / 1000 : 0.5;
+
+  let stdDev = 0, ciHalf = 0;
+  if (total > 1) {
+    const variance = welfordM2 / (total - 1);
+    stdDev = Math.sqrt(variance);
+    ciHalf = Math.round(1.96 * (stdDev / Math.sqrt(total)) * 1000) / 1000;
+  }
+
+  const perVillainBeatRate = [];
+  for (let i = 0; i < perVillainBeats.length; i++) {
+    perVillainBeatRate.push({
+      index: i,
+      beatRate: total > 0 ? Math.round((perVillainBeats[i] / total) * 1000) / 1000 : 0,
+    });
+  }
+
+  return {
+    equity,
+    win: totalWin,
+    tie: totalTie,
+    lose: totalLose,
+    trials: total,
+    elapsed,
+    stdDev: Math.round(stdDev * 1000) / 1000,
+    ciHalf,
+    ciLow: Math.max(0, Math.round((equity - ciHalf) * 1000) / 1000),
+    ciHigh: Math.min(1, Math.round((equity + ciHalf) * 1000) / 1000),
+    convergedEarly,
+    perVillainBeatRate,
+  };
+};
+
+/**
+ * Calculate hand-vs-multi-range equity using Monte Carlo simulation.
+ * Per trial: deal hero (fixed), sample one combo per villain range, deal
+ * remaining board, evaluate all (1+N) hands at showdown, attribute hero
+ * outcome (win / tie-with-k-villains / lose) as fractional equity.
+ *
+ * Compared to handVsRange, this is the multiway primitive — it captures
+ * the joint dynamics that single-villain 1v1 cannot (e.g. two villains
+ * sharing draws to the same outs compresses hero's equity below either
+ * 1v1 result). True N-way Monte Carlo, not per-villain composition.
+ *
+ * Existing `handVsRange` is unchanged — single-villain remains the fast
+ * path; this is purely additive for multiway lines.
+ *
+ * @param {number[]} heroCards - 2 encoded hero cards
+ * @param {Float64Array[]} villainRanges - N villain 13×13 range grids
+ * @param {number[]} board - Encoded board cards (0-5)
+ * @param {{ trials?: number, batchSize?: number, convergenceThreshold?: number, minTrials?: number }} options
+ * @returns {Promise<{ equity, win, tie, lose, trials, elapsed, stdDev, ciHalf, ciLow, ciHigh, convergedEarly, perVillainBeatRate: Array<{index, beatRate}> }>}
+ */
+export const handVsRangesMW = (heroCards, villainRanges, board = [], options = {}) => {
+  const {
+    trials = 5000,
+    batchSize = 500,
+    convergenceThreshold = 0.02,
+    minTrials = 200,
+  } = options;
+
+  return new Promise((resolve) => {
+    const start = performance.now();
+
+    if (!Array.isArray(villainRanges) || villainRanges.length === 0) {
+      resolve({ equity: 1.0, win: 0, tie: 0, lose: 0, trials: 0, elapsed: 0,
+        stdDev: 0, ciHalf: 0, ciLow: 1.0, ciHigh: 1.0, convergedEarly: false, perVillainBeatRate: [] });
+      return;
+    }
+
+    const deadCards = [...heroCards, ...board];
+    const villainCombosArr = villainRanges.map((r) => enumerateCombos(r, deadCards));
+
+    // If any villain has zero combos (range fully blocked by hero/board), hero
+    // effectively faces a 1v(N-1) sub-pot — but theoretical correctness of
+    // collapsing N-way to (N-1)-way is non-obvious. Return equity:1.0 to mirror
+    // existing handVsRange convention for empty ranges.
+    if (villainCombosArr.some((combos) => combos.length === 0)) {
+      const emptyBeatRate = villainRanges.map((_, index) => ({ index, beatRate: 1.0 }));
+      resolve({ equity: 1.0, win: 0, tie: 0, lose: 0, trials: 0, elapsed: 0,
+        stdDev: 0, ciHalf: 0, ciLow: 1.0, ciHigh: 1.0, convergedEarly: false, perVillainBeatRate: emptyBeatRate });
+      return;
+    }
+
+    const cumWeightsArr = [];
+    const totalWeightsArr = [];
+    for (const combos of villainCombosArr) {
+      const { cumWeights, totalWeight } = buildCumWeights(combos);
+      cumWeightsArr.push(cumWeights);
+      totalWeightsArr.push(totalWeight);
+    }
+
+    const N = villainRanges.length;
+    let totalWin = 0, totalTie = 0, totalLose = 0, totalSkipped = 0;
+    let totalEquityContribAll = 0;
+    let effectiveTrials = 0;
+    const perVillainBeatsTotal = new Int32Array(N);
+
+    let welfordMean = 0, welfordM2 = 0;
+
+    const processBatch = () => {
+      const remaining = trials - effectiveTrials;
+      if (remaining <= 0) {
+        resolve(buildResultMW(totalWin, totalTie, totalLose, totalEquityContribAll, welfordM2, perVillainBeatsTotal, start));
+        return;
+      }
+
+      const skipRate = totalSkipped / Math.max(1, effectiveTrials + totalSkipped);
+      const inflated = Math.ceil(remaining / Math.max(0.1, 1 - skipRate));
+      const size = Math.min(batchSize, inflated);
+
+      const result = runBatchMW(heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, size);
+
+      // Welford accumulation: each trial contributes its fractional equity value.
+      // Wins contribute 1.0, ties at k contribute 1/(1+k), losses contribute 0.0.
+      const feedWelford = (value, count) => {
+        for (let i = 0; i < count; i++) {
+          effectiveTrials++;
+          const delta = value - welfordMean;
+          welfordMean += delta / effectiveTrials;
+          const delta2 = value - welfordMean;
+          welfordM2 += delta * delta2;
+        }
+      };
+
+      feedWelford(1.0, result.win);
+      for (let k = 1; k <= N; k++) {
+        if (result.tieByK[k] > 0) feedWelford(1.0 / (1 + k), result.tieByK[k]);
+      }
+      feedWelford(0.0, result.lose);
+
+      totalWin += result.win;
+      totalTie += result.tie;
+      totalLose += result.lose;
+      totalSkipped += result.skipped;
+      totalEquityContribAll += result.totalEquityContrib;
+      for (let i = 0; i < N; i++) perVillainBeatsTotal[i] += result.perVillainBeats[i];
+
+      if (effectiveTrials >= minTrials && effectiveTrials > 1) {
+        const variance = welfordM2 / (effectiveTrials - 1);
+        const ciH = 1.96 * Math.sqrt(variance / effectiveTrials);
+        const currentEquity = totalEquityContribAll / effectiveTrials;
+        const relativeCI = (currentEquity > 0.05 && currentEquity < 0.95)
+          ? ciH / Math.max(currentEquity, 1 - currentEquity)
+          : ciH;
+        if (relativeCI < convergenceThreshold) {
+          resolve(buildResultMW(totalWin, totalTie, totalLose, totalEquityContribAll, welfordM2, perVillainBeatsTotal, start, true));
+          return;
+        }
+      }
+
+      if (effectiveTrials >= trials) {
+        resolve(buildResultMW(totalWin, totalTie, totalLose, totalEquityContribAll, welfordM2, perVillainBeatsTotal, start));
+      } else {
+        setTimeout(processBatch, 0);
+      }
+    };
+
+    setTimeout(processBatch, 0);
+  });
+};

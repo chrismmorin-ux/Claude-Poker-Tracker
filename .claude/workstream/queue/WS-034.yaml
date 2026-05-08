@@ -2,10 +2,12 @@ id: "WS-034"
 title: "In-app test assertions for 10 commerce red lines"
 legacy_id: "MPMF-G5-RL"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-08-spr052"
+claimed_at: "2026-05-08T14:42:22Z"
+started_at: "2026-05-08T14:42:22Z"
+completed_at: "2026-05-08T14:49:55Z"
+status_note: "RESOLVED 2026-05-08 SPR-052 — src/utils/entitlement/__tests__/commerce-redlines.test.js shipped (vitest form per founder D1; 1:1 per-RL granularity per D2; scan-empty pre-surface state per D3). 10 tests cover RL #1..#10. RL #7 delegates to scripts/check-commerce-copy.cjs (SPR-051) via execSync. RL #2/#4/#6/#10 gated on file existence (BillingSettings/PaywallModal/PricingPage don't exist yet — assertions activate when surfaces ship). RL #1/#5/#8/#9 enforced today (PostHog funnel; setInterval/@keyframes scan; live-play imports; consent-gate fail-closed structure). Verified end-to-end: 10/10 pass on clean state; deliberate setInterval fixture caught by RL #5 with file:line + AP-23/RL #5 attribution; fixture removed; 10/10 re-confirmed. Closes Gate 5 starter trio: SPR-050 catalog + SPR-051 string-CI + SPR-052 structural-CI."
 priority_score: 22.0
 priority_label: "P1"
 category: "monetization-and-pmf"
@@ -21,7 +23,7 @@ blocked_by: []
 blocked_by_legacy:
   - "MPMF-G4-*"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-052"
 decision_flags: []
 status_note: "BLOCKED by MPMF-G4-*"
 source:

@@ -236,7 +236,7 @@ All 10 commerce red lines:
 - **#4 Reversibility** — dismissal cooldown is reversible (user can navigate to pricing-page anytime; cooldown only suppresses re-rendering of this prompt).
 - **#5 No streaks / shame / engagement-pressure** — no animation; no countdown; no "you've been on free for X days" pressure. Test: visual-regression test confirms no animation; CI-grep refused strings.
 - **#6 Flat-access** — N/A directly (single-CTA prompt; no tier comparison).
-- **#7 Editor's-note tone** — CI-linted forbidden-string check on `upgradePromptCopy.js` generator. Test: `scripts/check-commerce-copy.sh`.
+- **#7 Editor's-note tone** — CI-linted forbidden-string check on `upgradePromptCopy.js` generator. Test: `scripts/check-commerce-copy.cjs`.
 - **#8 No cross-surface contamination** — prompt suppressed on TableView during active hand (H-SC01) + on presession-preparer surfaces. Test: mock active-hand state + render any host surface; assert no prompt renders.
 - **#9 Incognito observation mode** — telemetry events respect consent gate.
 - **#10 No dark-pattern cancellation** — N/A (proactive surface, not cancellation).
@@ -250,7 +250,7 @@ All 10 commerce red lines:
 - **`useUI`** — `isHandInProgress()` H-SC01 check.
 - **`EntitlementContext`** — entitlement check.
 - **`upgradePromptCopy.js`** — CI-linted copy generator.
-- **`scripts/check-commerce-copy.sh`** — enforces forbidden-string list for upgrade-prompt copy along with cancellation + plan-change + paywall.
+- **`scripts/check-commerce-copy.cjs`** — enforces forbidden-string list for upgrade-prompt copy along with cancellation + plan-change + paywall.
 
 ---
 

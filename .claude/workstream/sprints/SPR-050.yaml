@@ -1,0 +1,148 @@
+id: "SPR-050"
+title: "Monetization Gate 4 close-out — anti-patterns.md expansion (WS-028)"
+status: completed
+approved_at: "2026-05-08T13:38:02Z"
+completed_at: "2026-05-08T13:53:42Z"
+goal: |
+  Document the anti-patterns refusals that monetization Gate 5 surfaces
+  (paywall, Stripe, billing, trial, account, Ignition-mode SKU) must
+  respect, so Gate 5 implementation cannot regress autonomy red lines or
+  copy doctrine. Expand the Gate 4 stub authored at S3b into a full
+  refusal catalog mined from the Gate 4 surface specs, organized for
+  downstream CI enforcement (WS-035) and red-line tests (WS-034).
+
+program_focus: launch
+program_initiative: "Monetization & PMF — Gate 4 design discipline close-out (precedes Gate 5 implementation: PaywallGate / Stripe / BillingSettings). First sprint attention to launch program since CWOS adoption (2026-05-01); rotation away from 3-sprint engineering/domain-correctness streak (SPR-047/048/049)."
+
+composed_by: auto
+created_at: "2026-05-08T13:38:02Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo; graceful degradation"
+
+decisions_needed:
+  - "Item #1 — Surface-spec mining scope: mine all 6 Gate 4 monetization surfaces (paywall, pricing, billing, trial, account, Ignition-mode), or only specs already authored in docs/design/surfaces/?"
+  - "Item #1 — Refusal-pattern organization: AP-MPMF-* IDs grouped by surface (paywall AP-MPMF-PW-1..N, billing AP-MPMF-BL-1..N), or one flat catalog ordered by red-line family?"
+  - "Item #1 — Coverage targets: stop at autonomy red lines (RL-1..RL-10) + tone red lines, or also include legal-jargon refusals (Q7=A verdict downstream copy implications) and PIO/SCF cross-feature refusals (no demographic-targeted upgrade prompts, no streak-pressure on trial expiry)?"
+
+items:
+  - id: "WS-028"
+    title: "Monetization anti-patterns.md — Gate 4 expansion beyond S3b stub"
+    mode: plan-first
+    effort: M
+    program: launch
+    category: monetization-and-pmf
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-08T13:38:02Z"
+    completed_at: "2026-05-08T13:53:42Z"
+    notes: |
+      Gate 4 Batch 4 — 13 net-new refusals (MPMF-AP-17..AP-29) authored from
+      6 unmined surfaces/journeys (paywall-modal + pricing-page +
+      billing-settings + trial-state-indicator + upgrade-prompt-inline +
+      paywall-hit journey). Catalog: 16 → 29. File grew 282 → 513 lines.
+      Doc-only change; no code; no test runs needed. All 3 plan-mode
+      decisions ratified before authoring (scope=all-6, organization=flat,
+      coverage=autonomy+tone). Unblocks WS-035 (CI-grep).
+    decision_flags:
+      - "Surface-spec mining scope (6 surfaces all vs. authored-only)"
+      - "Refusal-pattern ID organization (per-surface vs. flat by red-line family)"
+      - "Coverage targets (autonomy + tone, vs. also legal + cross-feature)"
+
+composition_notes: |
+  Single-item M-effort sprint. Within standard 2-session cap.
+
+  Co-located WS-035 (CI-linted forbidden-copy-strings) deliberately deferred:
+  it consumes WS-028's output (forbidden strings from refusal entries) and
+  adding it would push effort to M+M (~3 sessions, over cap). Cleaner to
+  ship WS-028 first then claim WS-035 in SPR-051 with a known-stable input.
+
+  Anchor selection — protocol-pure top of queue:
+    - 9 MPMF P1 items at score 22.0 sit untouched since 2026-05-01 migration.
+    - All other backlog candidates score <= 18.0 (with PIO WS-164 damped to
+      4.5 by blocked_by_note Step 2-prereq).
+    - WS-027 (Q7 legal-scoping) is founder external action — defer.
+    - WS-028 is the smallest defensible Gate 4 close-out: doc-only authoring,
+      no external dependencies, no founder strategic decisions on tier shape,
+      no payment-processor entanglement. Achievable AI-only in plan-mode.
+    - Unblocks WS-035 (CI-grep), WS-031 (PaywallGate copy), WS-034 (red-line
+      tests) downstream.
+
+  Mode plan-first mandatory: M effort + decision-dense (3 founder decisions
+  affect the structure of the catalog) + content-authoring needs review
+  before commit. Surface-spec mining + refusal organization need ratification.
+
+  Source-class damping check: last 3 sprint anchors (WS-086 / WS-095 / WS-101)
+  are all founder/conversation source — no auto-rec or engine-finding
+  saturation, no damping applied. WS-028 is also founder/migration source.
+
+  Fleet-rotation override skipped: poker-tracker repo has no fleet/ or
+  kit/MANIFEST.yaml surfaces — all programs classify as internal-infra.
+
+  Auto-recommendation replenishment skipped: programs still in NEW state with
+  null health scores; nothing to compute below-target against. The launch
+  program in particular has never had a baseline run — flag for future
+  /pulse run launch attention after this sprint closes.
+
+  Index drift flagged for /audit (NOT blocking): queue-index.yaml shows
+  WS-105 as backlog but the ticket file (and SPR-043) say done. 8 ticket
+  files closed across SPR-043..049 may not all be reflected in the index.
+
+  Strong alternative anchor passed over (founder may redirect): WS-168
+  (MW-equity solver-alignment validation harness; P2, score 15.0, L) —
+  direct close-out from yesterday's SPR-048; applies fresh "validation as
+  quality signal" memory. Lower priority score but stronger continuity.
+
+last_updated: "2026-05-08T13:53:42Z"
+
+completion_notes: |
+  Sprint shipped in ~16 minutes (~13 min plan-mode discovery + AskUserQuestion
+  founder ratification, ~3 min authoring). M-tagged → ~S actual cadence
+  matches recent SPR-043/044/045/047 doc-discipline pattern (M-tagged but
+  S-actual). Single-item plan-first sprint with 3 decisions resolved
+  upfront via AskUserQuestion (all 3 recommendations accepted: scope=all-6
+  unmined, organization=flat-MPMF-AP-NN, coverage=autonomy+tone-only).
+
+  Catalog growth: 16 → 29 refusals. Each new entry includes Pattern, Why
+  refused (red-line citation + rationale), Forbidden patterns (structural)
+  + Forbidden strings (CI lint), Permitted alternatives. Each cross-
+  references the surface spec it was mined from. anti-patterns.md grew
+  282 → 513 lines.
+
+  Distribution by source:
+    paywall-modal.md → AP-17, AP-18
+    pricing-page.md → AP-19, AP-20, AP-21, AP-22
+    cross-cutting (3 surfaces) → AP-23
+    trial-state-indicator.md → AP-24
+    upgrade-prompt-inline.md → AP-25, AP-26, AP-28, AP-29
+    billing-settings.md → AP-27
+
+  Doc-only change; no code; no tests; no build. Vital signs N/A.
+
+  Downstream:
+    - WS-035 (CI-linted forbidden-copy-strings) now has stable input list
+      — natural anchor for SPR-051 if founder rotates back to MPMF.
+    - WS-034 (commerce red-line tests) gains test targets for the 13 new
+      refusals as Gate 5 implementation begins.
+    - Q7 external-counsel session (WS-027) still pending — legal-jargon
+      refusals deferred per plan-mode coverage decision; revisit at Batch 5
+      after Q7 verdict if applicable.
+    - PIO/SCF cross-feature refusals (demographic-targeted upgrade prompts,
+      streak-pressure on trial expiry) deferred per plan-mode coverage
+      decision; revisit when those features hit a paywall surface.
+
+  Master Plan rhythm: launch program received first sprint attention since
+  CWOS adoption (2026-05-01). Rotation away from 3-engineering/d-correct
+  streak (SPR-047/048/049) honored. Launch program tier=active but health
+  remains null/NEW — /pulse run launch baseline still outstanding.
+
+  Strategic alternative not taken (founder may pick next): WS-168 (MW-equity
+  solver-alignment validation harness) remains the natural close-out from
+  SPR-048; WS-035 (CI-grep) now unblocked + the natural close-out from this
+  sprint. Either is a defensible SPR-051 anchor.

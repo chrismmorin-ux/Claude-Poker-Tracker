@@ -1,0 +1,72 @@
+id: "SPR-047"
+title: "Sidebar-recurrence boundary cluster close-out — replay corpus sequence extension (WS-101)"
+status: completed
+completed_at: "2026-05-07T16:50:00Z"
+goal: |
+  The sidebar-recurrence boundary-hardening cluster is fully closed — the replay
+  harness gains 6 race-catching sequences that lock in the SPR-043/044/045 fixes
+  against future regressions.
+
+program_focus: engineering
+program_initiative: "Sidebar Recurrence Program — boundary-hardening cluster close-out (5 of 5; siblings WS-105/103/104/102 shipped in SPR-043/044/045)"
+
+composed_by: auto
+created_at: "2026-05-07T16:19:32Z"
+approved_at: "2026-05-07T16:19:32Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+# Step 4a anti-goal check: skipped silently (kit/scripts/cwos-constitutional-audit.js
+# not installed in this repo). Graceful degradation per /next protocol.
+anti_goal_check:
+  status: not_run
+  reason: "audit script not installed in this repo"
+
+decisions_needed:
+  - "Item #1 substrate: extend SR-1 sequence file in-place vs new corpus module under tests/replay/boundary-cluster/"
+  - "Item #1 transition-trace hash scope: full event timeline vs observable transitions only"
+
+items:
+  - id: "WS-101"
+    title: "Replay corpus sequence extension (6 minimum sequences)"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: sidebar-recurrence
+    priority_score: 22.0
+    status: done
+    completed_at: "2026-05-07T16:50:00Z"
+    decision_flags:
+      - "Substrate: extend SR-1 file vs new corpus module"
+      - "Transition-trace hash scope: full timeline vs observable transitions"
+    decisions_resolved:
+      - "D1 substrate: Extend SR-1 in-place (S14..S19 flat under test/replay/) — owner-ratified plan-mode 2026-05-07"
+      - "D2 hash scope: Full event timeline (re-use existing hashReplay() — no new function) — owner-ratified plan-mode 2026-05-07"
+    completion_notes: |
+      6 race-catching corpora shipped:
+        - S14 reconnect-mid-advice (locks WS-105+WS-103; R-7.2+R-8.1)  hash=58f6dcab
+        - S15 SW-reanimate (locks WS-105+WS-103; R-8.1+R-7.2)          hash=e0148742
+        - S16 handNew-within-80ms (locks WS-104+WS-102; RT-60+R-2.3)   hash=142be346
+        - S17 two-advice-before-context (locks WS-103+WS-105; R-7.2)   hash=edc656dd
+        - S18 donk→cbet (locks WS-102+WS-104; R-5.6+R-2.3)             hash=5a11f399
+        - S19 table-switch-during-fade (locks WS-104+STP-1; R-8.1)     hash=e5050187
+      Files: recorder.js (+6 builders + PIPELINE_STATUS_TABLE_2 const),
+             signatures.js (+6 matchers), 6 new sNN-*.test.js files.
+      Verification: npm run replay 19/19 green; npm test 2274/2274
+      (+6 net vs 2268 SPR-045 baseline, zero regressions); build clean;
+      hashes deterministic across 2 runs.
+
+composition_notes: |
+  Single-anchor sprint per state.md SPR-046 close-out "next natural anchors"
+  list. WS-101 closes the boundary-hardening cluster (4/5 done after SPR-045);
+  shape (test-corpus authoring) is intentionally different from SPR-043/044/045
+  surgical defect fixes — locks those fixes against regression. No source-class
+  damping (last 3 anchors: untagged + untagged + spr-followup; no saturation).
+  No fleet rotation override (this repo's "fleet" path doesn't apply).
+  Auto-recommendation replenishment: skipped (programs still in NEW state with
+  null health scores; nothing to compute below-target against).
+
+last_updated: "2026-05-07T16:19:32Z"

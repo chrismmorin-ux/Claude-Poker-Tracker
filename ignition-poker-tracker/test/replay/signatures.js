@@ -179,4 +179,172 @@ export const signatures = {
     }
     return { matched: false };
   },
+
+  // ── SR-cluster boundary-hardening corpus extension (S14–S19) ──────────────
+  // Added 2026-05-07 (SPR-047 / WS-101). Each signature asserts the POST-FIX
+  // observable — `matched: true` means the SPR-043/044/045 fix is in place.
+  // If a regression breaks the fix, the post-fix observable disappears, the
+  // signature returns matched: false, and the test fails with a clear delta.
+
+  S14({ snapshots }) {
+    // Post-fix observable (RT-45 + locked-hand gate, WS-105/WS-103): stale
+    // advice replayed across hand boundary onto a coincidentally-matching
+    // street is rejected. The FINAL snapshot is taken after the stale advice
+    // re-injection — it must show plan-panel hidden despite contextStreet
+    // matching the stale advice's street.
+    const last = snapshots[snapshots.length - 1];
+    if (!last) return { matched: false, evidence: 'no snapshots' };
+    if (last.handNumber !== 14_002) {
+      return { matched: false, evidence: `final hand=${last.handNumber}, expected 14002` };
+    }
+    if (last.contextStreet !== 'flop') {
+      return { matched: false, evidence: `final ctx=${last.contextStreet}, expected flop (coincidental match)` };
+    }
+    if (last.planPanelVisible) {
+      return { matched: false, evidence: `plan-panel visible at t=${last.t} — stale advice was promoted (RT-45 regressed!)` };
+    }
+    return {
+      matched: true,
+      evidence: `stale advice rejected at hand boundary; plan-panel hidden at t=${last.t} despite coincidental street match`,
+    };
+  },
+
+  S15({ snapshots }) {
+    // Post-fix observable (RT-45 + R-8.1, WS-105/WS-103): SW reanimation
+    // bundle (cached advice from hand 15001) replayed onto hand 15002 PREFLOP
+    // does NOT promote the stale advice. The FINAL snapshot must show
+    // plan-panel hidden, hand=15002, contextStreet='preflop' — proving the
+    // locked-hand gate rejected the bundled cross-hand replay.
+    const last = snapshots[snapshots.length - 1];
+    if (!last) return { matched: false, evidence: 'no snapshots' };
+    if (last.handNumber !== 15_002) {
+      return { matched: false, evidence: `final hand=${last.handNumber}, expected 15002` };
+    }
+    if (last.contextStreet !== 'preflop') {
+      return { matched: false, evidence: `final ctx=${last.contextStreet}, expected preflop` };
+    }
+    if (last.planPanelVisible) {
+      return { matched: false, evidence: `plan-panel visible at t=${last.t} — SW-reanimated stale advice promoted (RT-45/R-8.1 regressed!)` };
+    }
+    return {
+      matched: true,
+      evidence: `SW-reanimate bundle rejected; plan-panel hidden at t=${last.t} on hand 15002 PREFLOP`,
+    };
+  },
+
+  S16({ snapshots }) {
+    // Post-fix observable (WS-104 synchronous timer + WS-102 pendingActive
+    // debounce): handNew within the 80ms coalesce window does NOT cause
+    // plan-panel oscillation, AND the final settled state is correct.
+    //
+    // Check 1: planPanelVisible flips at most ONCE across the snapshot
+    //   sequence (visible → hidden on hand boundary; never back to visible).
+    // Check 2: final snapshot — hand 16002, contextStreet 'preflop',
+    //   plan-panel hidden (advice correctly cleared on hand boundary).
+    let flipCount = 0;
+    let prev = null;
+    for (const s of snapshots) {
+      if (prev != null && s.planPanelVisible !== prev) flipCount += 1;
+      prev = s.planPanelVisible;
+    }
+    if (flipCount > 1) {
+      return {
+        matched: false,
+        evidence: `plan-panel oscillated: ${flipCount} flips across ${snapshots.length} snapshots (WS-102/WS-104 regressed?)`,
+      };
+    }
+    const last = snapshots[snapshots.length - 1];
+    if (!last) return { matched: false, evidence: 'no snapshots' };
+    if (last.handNumber !== 16_002) {
+      return { matched: false, evidence: `final hand=${last.handNumber}, expected 16002` };
+    }
+    if (last.contextStreet !== 'preflop') {
+      return { matched: false, evidence: `final ctx=${last.contextStreet}, expected preflop` };
+    }
+    if (last.planPanelVisible) {
+      return { matched: false, evidence: `plan-panel stuck visible at t=${last.t} (advice not cleared on hand boundary)` };
+    }
+    return {
+      matched: true,
+      evidence: `${flipCount} flip(s) total; settled state correct at t=${last.t} (hand 16002 PREFLOP, plan hidden)`,
+    };
+  },
+
+  S18({ snapshots }) {
+    // Post-fix observable (R-5.6 FSM-output exclusivity, WS-102 + WS-104):
+    // during a rapid villain-action transition (donk→cbet), the plan-panel
+    // does not oscillate AND the final snapshot has advice/context coupled
+    // (same street; no S2-style decoupling left).
+    let flipCount = 0;
+    let prev = null;
+    for (const s of snapshots) {
+      if (prev != null && s.planPanelVisible !== prev) flipCount += 1;
+      prev = s.planPanelVisible;
+    }
+    if (flipCount > 1) {
+      return {
+        matched: false,
+        evidence: `plan-panel oscillated: ${flipCount} flips (R-5.6 FSM/raw-state decoupling regressed?)`,
+      };
+    }
+    const last = snapshots[snapshots.length - 1];
+    if (!last) return { matched: false, evidence: 'no snapshots' };
+    if (!last.adviceStreet || !last.contextStreet) {
+      return { matched: false, evidence: `final incomplete: advice=${last.adviceStreet} ctx=${last.contextStreet}` };
+    }
+    if (last.adviceStreet !== last.contextStreet) {
+      return { matched: false, evidence: `advice/context decoupled at t=${last.t}: advice=${last.adviceStreet} ctx=${last.contextStreet}` };
+    }
+    return {
+      matched: true,
+      evidence: `${flipCount} flip(s); final advice=${last.adviceStreet} ctx=${last.contextStreet} coupled at t=${last.t}`,
+    };
+  },
+
+  S19({ snapshots }) {
+    // Post-fix observable (R-8.1 state-clear symmetry, RT-60 timer discipline,
+    // WS-104): after a table switch during a stale-advice fade, the new
+    // table's snapshot has zero residual state from the prior table:
+    //   - action-bar NOT stale,
+    //   - no "Stale Ns" badge HTML,
+    //   - plan-panel hidden (lastGoodAdvice cleared),
+    //   - handNumber advanced (state actually transitioned).
+    const last = snapshots[snapshots.length - 1];
+    if (!last) return { matched: false, evidence: 'no snapshots' };
+    if (last.actionBarStale) {
+      return { matched: false, evidence: `action-bar stuck stale at t=${last.t} (R-8.1 regressed!)` };
+    }
+    if (/Stale \d+s/.test(last.actionBarHTML || '')) {
+      return { matched: false, evidence: `stale-badge HTML residue at t=${last.t} (timer/clear race regressed)` };
+    }
+    if (last.planPanelVisible) {
+      return { matched: false, evidence: `plan-panel stuck visible at t=${last.t} (lastGoodAdvice not cleared on table switch)` };
+    }
+    if (last.handNumber === 19_001) {
+      return { matched: false, evidence: `still showing prior table's hand at t=${last.t}` };
+    }
+    return {
+      matched: true,
+      evidence: `post-table-switch state cleared at t=${last.t}: action-bar fresh, no badge residue, plan-panel hidden, hand=${last.handNumber}`,
+    };
+  },
+
+  S17({ snapshots }) {
+    // Post-fix observable (R-7.2 pre-dispatch invariant gate, WS-103/WS-105):
+    // when push_action_advice arrives WITHOUT a companion push_live_context,
+    // plan-panel must remain hidden. We scan for a snapshot where adviceStreet
+    // is set (proving advice was injected) AND contextStreet is null AND
+    // planPanelVisible is false. If a future regression promotes advice
+    // without context, planPanelVisible flips to true and the match fails.
+    for (const s of snapshots) {
+      if (!s.adviceStreet) continue;
+      if (s.contextStreet) continue;
+      if (s.planPanelVisible) continue;
+      return {
+        matched: true,
+        evidence: `advice without context held at t=${s.t} (adviceStreet=${s.adviceStreet}, planPanel hidden)`,
+      };
+    }
+    return { matched: false, evidence: 'no snapshot found with advice-set + context-null + plan-panel-hidden' };
+  },
 };

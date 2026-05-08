@@ -61,6 +61,15 @@ const CALL_RANGES = {
   // same table for v1 to avoid a schema expansion. Excludes the 4bet portion
   // (AKs, AKo, QQ+ 4bet instead) and the true junk that folds.
   'BTN_vs_BB':    '22-JJ,ATs-AQs,A5s-A4s,KTs+,QTs+,JTs,T9s,98s,AJo-AQo,KQo',
+  // BTN calling a UTG 4-bet (used by the utg-vs-btn-4bp-deep AK2 line).
+  // Semantically a "call-of-4bet" range — extends the call-of-3bet reuse
+  // pattern from BTN_vs_BB above. BTN's response to a UTG 4bet is mostly
+  // 5bet-shove (KK+, occasionally AKs) or fold; the narrow flat-call slice
+  // is QQ-JJ + AK (too strong to fold to a UTG 4bet, not strong enough or
+  // structurally appropriate to 5bet-shove given UTG's tight 4bet range).
+  // Live-pool intentional approximation, not GTO ground-truth — same caveat
+  // class as BTN_vs_BB above.
+  'BTN_vs_UTG':   'QQ-JJ,AKs,AKo',
 };
 
 // 3bet ranges (in-position and out-of-position) — linear + polar mix
@@ -78,6 +87,14 @@ const THREEBET_RANGES = {
   'BTN_vs_MP1':   'JJ+,AKs,AQs,AKo',
   'BTN_vs_MP2':   'JJ+,AKs,AQs,AKo',
   'SB_vs_BTN':    'TT+,AJs+,KQs,A5s-A3s,AJo+,KQo',
+  // BTN 3betting an SB open (used by the sb-vs-btn-3bp-oop-wet-t98 line).
+  // BTN as IP 3bettor vs SB's typically loose open: linear-polar mix.
+  // Tighter than BB_vs_BTN (BB has IP-disadvantage motivating wider 3bets);
+  // narrower than SB_vs_BTN flipped, since BTN attacks SB's wide open with
+  // value-leaning hands and selective blocker bluffs (A5s-A4s).
+  // Live-pool intentional approximation; consistent with the SB-flats-3bet
+  // Category-D divergence documented in POKER_THEORY.md §9.3.
+  'BTN_vs_SB':    'TT+,AJs+,KQs,A5s-A4s,AJo+,KQo',
   'CO_vs_MP1':    'JJ+,AQs+,AKo',
   'CO_vs_MP2':    'JJ+,AQs+,AKo',
   'CO_vs_HJ':     'JJ+,AQs+,AKo',
