@@ -380,6 +380,72 @@ describe('settingsReducer', () => {
     });
   });
 
+  describe('VCE (WS-181)', () => {
+    it('default voiceCardEntry is enabled=false, threshold=0.65 (R3 spike + D-3)', () => {
+      expect(DEFAULT_SETTINGS.voiceCardEntry).toBeDefined();
+      expect(DEFAULT_SETTINGS.voiceCardEntry.enabled).toBe(false);
+      expect(DEFAULT_SETTINGS.voiceCardEntry.confidenceThreshold).toBe(0.65);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_ENABLED toggles the flag', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ENABLED,
+        payload: { enabled: true },
+      });
+      expect(s1.settings.voiceCardEntry.enabled).toBe(true);
+      // threshold preserved
+      expect(s1.settings.voiceCardEntry.confidenceThreshold).toBe(0.65);
+
+      const s2 = settingsReducer(s1, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ENABLED,
+        payload: { enabled: false },
+      });
+      expect(s2.settings.voiceCardEntry.enabled).toBe(false);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_ENABLED coerces to boolean', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ENABLED,
+        payload: { enabled: 1 },
+      });
+      expect(s.settings.voiceCardEntry.enabled).toBe(true);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD updates threshold', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD,
+        payload: { threshold: 0.8 },
+      });
+      expect(s.settings.voiceCardEntry.confidenceThreshold).toBe(0.8);
+      // enabled preserved
+      expect(s.settings.voiceCardEntry.enabled).toBe(false);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD clamps below 0.5', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD,
+        payload: { threshold: 0.1 },
+      });
+      expect(s.settings.voiceCardEntry.confidenceThreshold).toBe(0.5);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD clamps above 0.9', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD,
+        payload: { threshold: 0.99 },
+      });
+      expect(s.settings.voiceCardEntry.confidenceThreshold).toBe(0.9);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD rejects non-finite', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD,
+        payload: { threshold: 'garbage' },
+      });
+      expect(s).toEqual(state);
+    });
+  });
+
   describe('unknown action', () => {
     it('returns current state for unknown action', () => {
       const newState = settingsReducer(state, {

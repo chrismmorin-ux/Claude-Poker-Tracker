@@ -13,6 +13,8 @@ import { ErrorLogPanel } from './ErrorLogPanel';
 import { RefresherSettings } from './RefresherSettings';
 // PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
 import { PrivacySection } from './PrivacySection';
+// VCE (WS-181, 2026-05-11) — voice card entry spike behind a feature flag.
+import { VoiceCardEntrySection } from './VoiceCardEntrySection';
 // Owner-only sandbox tab (2026-05-05) — gated by email; renders nothing
 // for non-owner accounts. Houses prototypes + dev affordances.
 import { AdminSection } from './AdminSection';
@@ -136,6 +138,11 @@ export const SettingsView = ({ scale }) => {
           <RefresherSettings />
 
           <PrivacySection
+            settings={settings}
+            dispatchSettings={dispatchSettings}
+          />
+
+          <VoiceCardEntrySection
             settings={settings}
             dispatchSettings={dispatchSettings}
           />

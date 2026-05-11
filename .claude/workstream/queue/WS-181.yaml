@@ -1,0 +1,216 @@
+id: "WS-181"
+title: "Voice Card Entry (VCE) — Web Speech spike for board + villain showdown (Gate 1+4 → POC → kill/keep)"
+legacy_id: ""
+type: feature
+status: review
+claimed_by: null
+claimed_at: null
+started_at: "2026-05-11T17:14:48Z"
+completed_at: null
+priority_score: 12.0
+priority_label: "P3"
+category: "input-ux"
+capability: "core"
+program: "design"
+description: |
+  Spike a voice-driven card entry path for board cards (flop / turn / river) and
+  villain showdown cards. Goal: discreet, hands-on-phone-but-eyes-off entry at a
+  live table — owner holds the device near mouth, press-and-holds a button, says
+  "ace of hearts, jack of spades, …", releases, sees parsed cards as confirmation
+  chips, single-tap commits.
+
+  Problem: current card-entry flow requires staring at the phone in landscape for
+  ~10-15 seconds per board, which (a) breaks table presence, (b) telegraphs that
+  the owner is recording, (c) is slow enough that hands sometimes go unrecorded
+  when action moves fast.
+
+  Tech direction (founder-ratified 2026-05-11):
+  - **Web Speech API only.** Free, on-device, zero infra. Push-and-hold model
+    (release → parse). NO cloud transcription, NO Whisper escalation. If the
+    Web Speech path is too noisy for live-table use, the feature is dropped, not
+    upgraded — this is a ship-or-drop spike, not a multi-stage investment.
+  - Constrained parser maps phonetic variants of the 17-word card vocabulary
+    (13 ranks + 4 suits + "of") to cards. "ace o hearts" / "ace hearts" /
+    "ace of harts" all snap to A♥.
+  - Confirmation UX is load-bearing: parsed cards render as chips before commit;
+    one tap commits, one tap corrects an individual card.
+
+  Scope (in):
+  - Board card entry (3 flop + 1 turn + 1 river surface paths)
+  - Villain showdown card entry (2 cards per villain)
+
+  Scope (out, do NOT expand without re-ratification):
+  - Hero hole cards (owner is already looking at phone for these)
+  - Action entry (bet sizes, raises, folds) — separate, much larger problem
+  - Player names / nicknames / any free-form input
+
+  Gate framework path:
+  - Gate 1 (Entry audit) — REQUIRED before any code. Owner-as-player is sole
+    persona; JTBD is "enter recently-revealed cards without breaking table
+    presence." Gap analysis must classify GREEN / YELLOW / RED vs existing card
+    pickers. Output: docs/design/audits/YYYY-MM-DD-entry-vce.md
+  - Gate 2 (Blind-Spot Roundtable) — TRIGGERED if Gate 1 is YELLOW/RED OR if
+    audit surfaces a new surface / crosses product lines. Voice is a new
+    interaction modality → likely YELLOW minimum. If triggered, run before spec.
+  - Gate 4 (Design surface) — REQUIRED. docs/design/surfaces/voice-card-entry.md
+    must specify: push-to-talk affordance placement (per surface), parser
+    grammar table, confirmation UX, mic-permission flow, denial-recovery flow,
+    iOS-Safari fallback behavior, feature-flag gate, and KILL CRITERIA (see
+    accept_criteria below).
+  - Gate 5 (Implementation) — Spike behind a feature flag (Settings toggle,
+    OFF by default). Owner validates at ≥1 real live session. Kill/keep
+    decision recorded as a /decide ADR.
+
+  Founder ratifications binding:
+  - R1: Web Speech only. Whisper / cloud transcription NOT in scope for this
+    workstream or any follow-up unless explicitly re-opened.
+  - R2: Scope locked to board + villain showdown. Hole cards and actions are
+    OUT.
+  - R3: Ship-or-drop spike — no incremental "make it 5% better" follow-ups if
+    the live-table validation fails kill criteria.
+
+accept_criteria:
+  - "Gate 1 audit at docs/design/audits/YYYY-MM-DD-entry-vce.md with GREEN/YELLOW/RED
+    verdict. If YELLOW or RED, Gate 2 Blind-Spot Roundtable artifact at
+    docs/design/roundtables/YYYY-MM-DD-blindspot-vce.md."
+  - "Gate 4 surface artifact at docs/design/surfaces/voice-card-entry.md
+    specifying: PTT button placement per entry surface (state-aware render
+    predicates per Gate 2 E-5), parser grammar (full phonetic-variant table
+    for 13 ranks × 4 suits + 'of' + 9 villain tokens 'player one'..'player nine'
+    + 2 sequence separators 'next player' / 'and then' per Gate 2 SC-7
+    owner-ratified extended-grammar decision; explicit 'player ten' vs rank
+    'ten' collision-resolution rule), confirmation chip UX with swipe-to-cycle
+    rank correction (per Gate 2 SC-10 owner-ratified revision; long-press for
+    full re-pick), mic-permission grant + denial-recovery flows, iOS-Safari
+    fallback (silently disable if Web Speech unavailable — confirm at Gate 4
+    review), feature-flag name + default, PTT hold threshold ≥300ms (E-3),
+    audio-feedback OFF for spike (E-2), PTT visual treatment with no animation
+    (E-1), abort-without-side-effects path satisfying HE-NEW-VCE-03 (strict
+    no-op on blank/sub-0.5s utterance per Gate 2 SC-3 owner-ratified binding)."
+  - "Kill criteria explicitly enumerated in the surface doc, e.g.:
+    (a) per-card accuracy ≥ 90% at typical poker-room SPL (~70-75dB),
+    (b) end-to-end entry (PTT-hold → commit) faster than current tap baseline
+        on ≥80% of trials,
+    (c) misheard card correctable WITHOUT re-entering the full board;
+        correction requires ≤2 deliberate user actions (revised from
+        '≤1 tap' per Gate 2 SC-10 ratified 2026-05-11 — unachievable with
+        any standard picker flow), implemented as swipe-up/down on chip
+        cycles through 12 other ranks in same suit; full re-pick via
+        long-press fallback,
+    (d) zero false-commits (chips inert until explicit commit tap;
+        no auto-commit on confidence threshold or timer expiry).
+    Actual thresholds set by owner during Gate 4 review."
+  - "Spike implementation behind Settings feature flag (OFF default). Surfaces:
+    board entry (flop/turn/river) + villain showdown card entry. NO other
+    surfaces."
+  - "Real-table validation by owner at ≥1 live session. Findings documented in a
+    /decide ADR with verdict: SHIP (flag stays, default ON) / KEEP-OFF (flag
+    stays, default OFF, owner-opt-in only) / DROP (rip out)."
+  - "If DROP: code removed in the same workstream, surface doc archived with
+    post-mortem appended, /decide ADR records what failed and why Whisper
+    escalation is still out of scope."
+  - "Domain-correctness program: zero impact on engine code paths
+    (src/utils/exploitEngine/, rangeEngine/, pokerCore/). VCE is input-layer
+    only."
+
+effort: "M"
+files_involved:
+  - "docs/design/audits/YYYY-MM-DD-entry-vce.md (NEW)"
+  - "docs/design/surfaces/voice-card-entry.md (NEW)"
+  - "src/hooks/useVoiceCardEntry.js (NEW, behind flag)"
+  - "src/utils/voiceCardEntry/grammar.js (NEW — phonetic variant table)"
+  - "src/utils/voiceCardEntry/parser.js (NEW — transcript → cards)"
+  - "src/components/ui/VoicePttButton.jsx (NEW)"
+  - "src/components/ui/VoiceConfirmationChips.jsx (NEW)"
+  - "Board card entry surfaces (TableView card pickers) — wire PTT button"
+  - "Showdown card entry (ShowdownView villain card pickers) — wire PTT button"
+  - "Settings — feature flag toggle"
+  - "docs/decisions/YYYY-MM-DD-vce-ship-or-drop.md (NEW, post-validation)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+
+sprint_id: null
+
+decision_flags:
+  - "Gate 1 verdict (GREEN / YELLOW / RED) — determines whether Gate 2 fires"
+  - "PTT button placement: in-picker affordance vs floating mic button vs both"
+  - "Confirmation UX: always-show chips vs auto-commit on high confidence"
+  - "Kill-criteria numeric thresholds (accuracy %, speed ratio, false-commit budget)"
+  - "Feature flag default state (OFF for spike — confirm at Gate 4)"
+  - "iOS Safari fallback: silent-disable vs grayed-button-with-explanation"
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner explored voice card entry feasibility; ratified Web Speech-only ship-or-drop scoping"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner exploratory scoping conversation. Three founder
+  ratifications binding (R1 Web Speech only / R2 board+showdown scope only / R3
+  ship-or-drop no incremental follow-ups). Gate 1 must fire before any code per
+  design program guardrail (new interaction modality = new surface).
+
+  2026-05-11 IN-FLIGHT — session-2026-05-11-ws181-vce.
+    - Gate 1 audit complete: docs/design/audits/2026-05-11-entry-vce.md (YELLOW).
+    - Gate 2 roundtable complete: docs/design/roundtables/2026-05-11-blindspot-vce.md
+      (YELLOW + 4 CRITICAL/HIGH findings: SC-3 blank-utterance no-op, SC-7
+      multi-villain grammar, SC-10 correction kill criterion, E-5 state-aware
+      render predicates).
+    - Owner ratifications 2026-05-11 at Gate 2 close (binding for Gate 4):
+        R4 — Correction UX: swipe-up/down on chip cycles 12 other ranks in
+             same suit. Long-press for full re-pick fallback. Kill criterion (c)
+             revised to "≤2 deliberate user actions" (was "≤1 tap" — unachievable).
+        R5 — Multi-villain grammar: EXTENDED grammar with 9 villain tokens
+             ("player one".."player nine") + 2 separators ("next player" /
+             "and then"). Single PTT hold covers multi-villain showdown.
+             Collision-resolution rule: "ten" is a villain ONLY if preceded by
+             "player", else it is the rank. Parser variable-length output.
+        R6 — Blank-utterance: strict no-op binding for Gate 4. Parser
+             pre-conditions for chip render: transcript.length > 0, duration
+             >= 0.5s, confidence >= owner-set threshold, ≥1 card parsed.
+             Failure path: no chip render, no spinner, no error toast.
+    - JTBD updates (Gate 2 ratified): HE-NEW-VCE-01 Active, HE-NEW-VCE-03
+      Proposed, HE-12 voice-correction sub-flow annotation, HE-16 clarification.
+    - DISC-03 status: REJECTED → RE-OPENED-AS-WS-181 (governance updated in
+      docs/design/discoveries/LOG.md + 2026-04-21-initial-gap-list.md).
+    - Next: Gate 4 surface spec authoring → owner review of PTT placement +
+      iOS fallback + numeric kill thresholds → Gate 5 POC behind flag.
+
+  2026-05-11 — GATE 4 + GATE 5 SHIPPED (session-2026-05-11-ws181-vce).
+    - Gate 4 surface spec at docs/design/surfaces/voice-card-entry.md.
+    - D-1..D-5 ratified by owner at Gate 4 close:
+        D-1 = Per-villain PTT (R5 grammar tokens demoted to advisory).
+        D-2 = Grayed button + explanation on iOS Safari.
+        D-3 = Confidence threshold 0.65 default (slider 0.5–0.9).
+        D-4 = Kill criteria K-a 90% / K-b 80% / K-e 8s accepted.
+        D-5 = PTT outside ScaledContainer (56×56 px viewport-anchored).
+    - Gate 5 POC code shipped behind Settings feature flag (OFF default):
+        src/utils/voiceCardEntry/grammar.js + parser.js + index.js
+        src/hooks/useVoiceCardEntry.js
+        src/components/ui/VoicePttButton.jsx
+        src/components/ui/VoiceConfirmationChips.jsx
+        src/components/ui/VoiceCardEntryOverlay.jsx
+        src/components/views/SettingsView/VoiceCardEntrySection.jsx
+        src/constants/settingsConstants.js (voiceCardEntry defaults)
+        src/reducers/settingsReducer.js (2 new action handlers)
+        src/components/views/SettingsView/SettingsView.jsx (mount section)
+        src/PokerTracker.jsx (mount viewport overlay)
+    - Tests: 297 pass across grammar/parser/hook/components/settings reducer.
+    - Production build passes (npm run build OK).
+    - Dev-server smoke verified at 1600×720 (Playwright):
+        ✓ Settings toggle OFF by default; ON activates slider.
+        ✓ Overlay absent on Settings view (E-5 state-aware gate).
+        ✓ PTT renders on TableView at 56×56 px, bottom-right (16px inset).
+        ✓ PTT does NOT overlap action zone (Gate 2 SC-4 binding).
+        ✓ data-state="idle" with mic permission granted.
+    - SCOPE NOTE — ShowdownView per-villain PTT (D-1) is DEFERRED to Phase D2
+      follow-up. R3 ship-or-drop priority is validating the higher-frequency
+      board path first (3× per hand vs. 1× showdown). Same hook + parser
+      already proven; ShowdownView wiring is small (per-row PTT + chip
+      strip integration). Will be authored after Gate 5 live-table data.
+    - STATUS: POC implementation shipped. Awaiting owner live-table
+      validation per accept_criteria 4. Owner re-claims WS-181 post-session
+      to author the SHIP / KEEP-OFF / DROP /decide ADR.

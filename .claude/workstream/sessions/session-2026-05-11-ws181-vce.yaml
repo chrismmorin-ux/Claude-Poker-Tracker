@@ -1,0 +1,80 @@
+id: "session-2026-05-11-ws181-vce"
+status: completed
+started_at: "2026-05-11T17:14:48Z"
+ended_at: "2026-05-11T18:44:36Z"
+mode: standard
+ceremony: standard
+last_heartbeat: "2026-05-11T18:44:36Z"
+
+claimed_items: []
+items_progressed:
+  - "WS-181"  # moved status: open → review (POC shipped, awaiting owner real-table validation)
+
+files_locked:
+  - "docs/design/audits/YYYY-MM-DD-entry-vce.md"
+  - "docs/design/surfaces/voice-card-entry.md"
+  - "src/hooks/useVoiceCardEntry.js"
+  - "src/utils/voiceCardEntry/grammar.js"
+  - "src/utils/voiceCardEntry/parser.js"
+  - "src/components/ui/VoicePttButton.jsx"
+  - "src/components/ui/VoiceConfirmationChips.jsx"
+
+sprints_completed: []
+decisions_recorded: []
+
+handoff_notes: |
+  ## WS-181 — Voice Card Entry (VCE) — all 5 design gates traversed in one session.
+
+  ### Gates
+  - **Gate 1 Entry audit**: `docs/design/audits/2026-05-11-entry-vce.md` — verdict YELLOW. DISC-03 re-opened from REJECTED.
+  - **Gate 2 Blind-Spot Roundtable**: `docs/design/roundtables/2026-05-11-blindspot-vce.md` — verdict YELLOW with 4 CRITICAL/HIGH findings (SC-3 blank no-op, SC-7 multi-villain grammar, SC-10 unachievable 1-tap correction, E-5 state-aware render).
+  - **Gate 4 Surface spec**: `docs/design/surfaces/voice-card-entry.md` — full spec with parser grammar, interaction flows, kill criteria, drop path.
+  - **Gate 5 POC**: shipped behind `settings.voiceCardEntry.enabled` (OFF default).
+
+  ### Founder ratifications captured this session (in addition to R1/R2/R3 from WS-181 author)
+  - **R4** (Gate 2 close, SC-10): Misheard-card correction = swipe-up/down chip cycles 12 other ranks in same suit. Long-press = full re-pick. Accept criterion (c) revised from "≤1 tap" (unachievable) to "≤2 deliberate user actions."
+  - **R5** (Gate 2 close, SC-7): Multi-villain grammar = extended grammar with "player N" tokens + "next player" / "and then" separators. "ten" collision-resolved as villain only when preceded by "player."
+  - **R6** (Gate 2 close, SC-3): Strict no-op on blank/short utterance. Parser pre-conditions: transcript.length > 0, durationMs ≥ 500, confidence ≥ threshold, ≥1 card parsed.
+  - **D-1** (Gate 4 close): Per-villain PTT in ShowdownView. R5 grammar tokens demoted to ADVISORY (UI selection wins on conflict).
+  - **D-2** (Gate 4 close): iOS Safari fallback = grayed button with explanation.
+  - **D-3** (Gate 4 close): Confidence threshold default 0.65 (Settings slider 0.5–0.9).
+  - **D-4** (Gate 4 close): Kill criteria K-a ≥90% accuracy, K-b faster on ≥80% of trials, K-e 2-villain showdown within 8s.
+  - **D-5** (Gate 4 close): PTT viewport-anchored outside ScaledContainer (56×56 px constant at all scales).
+
+  ### Implementation deliverables (Gate 5)
+  - `src/utils/voiceCardEntry/grammar.js` — phonetic token tables (13 ranks × 4 suits + variants + 9 villain tokens + 2 separators).
+  - `src/utils/voiceCardEntry/parser.js` — pure-function state machine; R6 strict no-op gate; collision-resolution rule.
+  - `src/utils/voiceCardEntry/index.js` — barrel export.
+  - `src/hooks/useVoiceCardEntry.js` — Web Speech lifecycle; 300ms hold threshold (E-3); permission status tracking.
+  - `src/components/ui/VoicePttButton.jsx` — 56×56 px hold target; static-fill listening state (E-1, no animation).
+  - `src/components/ui/VoiceConfirmationChips.jsx` — swipe-to-cycle correction; commit/cancel; no auto-commit (E-4).
+  - `src/components/ui/VoiceCardEntryOverlay.jsx` — viewport-anchored mount with state-aware visibility (E-5).
+  - `src/components/views/SettingsView/VoiceCardEntrySection.jsx` — Settings UI: toggle + confidence threshold slider.
+  - `src/constants/settingsConstants.js` — DEFAULT_SETTINGS.voiceCardEntry + 2 new action types.
+  - `src/reducers/settingsReducer.js` — 2 new handlers (enable toggle + threshold).
+  - `src/components/views/SettingsView/SettingsView.jsx` — mounts the new section.
+  - `src/PokerTracker.jsx` — mounts the overlay at AppRoot.
+
+  ### Governance updates
+  - DISC-03 status REJECTED → RE-OPENED-AS-WS-181 in `docs/design/discoveries/LOG.md` + `2026-04-21-initial-gap-list.md`.
+  - JTBD additions to `docs/design/jtbd/domains/hand-entry.md`: HE-NEW-VCE-01 (Active), HE-NEW-VCE-03 (Proposed). HE-12 voice-correction sub-flow annotation. HE-16 clarification.
+  - Surface added to `docs/design/surfaces/CATALOG.md` under Inline widgets.
+
+  ### Tests
+  - 297 tests pass across grammar (80), parser (82), hook (12), VoicePttButton (10), VoiceConfirmationChips (24), settingsReducer (40), cardReducer + neighbors (49).
+  - Production build OK (`npm run build`).
+  - Dev-server smoke verified at 1600×720 (Playwright): Settings section renders correctly, OFF default + slider disabled; ON activates slider; overlay absent on Settings (E-5); PTT 56×56 px bottom-right (16px inset) on TableView; no overlap with action zone (SC-4 binding); data-state="idle" with mic permission granted in Chromium.
+
+  ### Deferred to Phase D2 follow-up (not blocking ship-or-drop validation)
+  - ShowdownView per-villain PTT wiring. R3 priority: validate board path first (3× per hand vs. 1× showdown). Same hook + parser proven; only per-row placement is new.
+
+  ### Next owner action
+  - Run live-table session with VCE flag ON. Collect data on K-a / K-b / K-c / K-d / K-e / K-f.
+  - Author `/decide` ADR with verdict: SHIP (flag flips ON by default) / KEEP-OFF (opt-in only) / DROP (rip out per R3).
+  - If DROP: archive surface artifact with post-mortem appended; remove all VCE code paths in same workstream.
+
+context_notes: |
+  Session-end state.
+  WS-181 moved status: open → review (was claimed by this session during work).
+  Files released. No active claim. Session marked completed.
+  Bug-risk note: `voiceCardEntry` is a new top-level field on settings; existing IDB-persisted user settings will hydrate via `{ ...DEFAULT_SETTINGS, ...stored }` and pick up the default (enabled: false, confidenceThreshold: 0.65). No migration needed.

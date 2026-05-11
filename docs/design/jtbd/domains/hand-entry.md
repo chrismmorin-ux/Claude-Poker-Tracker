@@ -16,6 +16,8 @@ Jobs that capture what happened in a hand — either live (manual taps) or onlin
 
 > When I tap the wrong action, I want to undo or correct it without losing the hand, so data stays clean.
 
+- **Voice-correction sub-flow (2026-05-11, ratified by Gate 2 roundtable `2026-05-11-blindspot-vce`):** When a voice card entry mishears one card (e.g., parser hears "queen of hearts" when hero said "king of hearts"), the correction path is a sub-case of HE-12 — same outcome ("correct without losing the hand"), different mechanic (chip-tap or re-speak-selected-chip instead of action-undo). Specified in `surfaces/voice-card-entry.md` correction-UX section. WS-181 kill criterion (c) revised per Gate 2 finding SC-10: correction requires ≤2 deliberate user actions (was: "≤1 tap" which is unachievable with any standard picker flow).
+
 ## HE-13 — Auto-capture via sidebar (online)
 
 > When playing online on Ignition, I want actions captured automatically, so I enter nothing manually.
@@ -34,7 +36,41 @@ Jobs that capture what happened in a hand — either live (manual taps) or onlin
 
 > When my hands are on chips / cards, I want to call actions by voice, so I stay hands-free during action.
 
-- State: **Proposed** (DISC-03).
+- State: **Proposed** (DISC-03). **2026-05-11 clarification:** HE-16 covers *actions* (fold / check / bet / raise / call), NOT cards. Card-entry-by-voice is the separate workstream WS-181 (board + villain showdown) — see HE-NEW-VCE-01. HE-16 is not subsumed by WS-181; it remains Proposed and may be taken up as a follow-on workstream if VCE ships and the grammar / hook infrastructure generalizes. R3 binding on WS-181 (no incremental follow-ups if VCE drops) means HE-16 is gated on VCE shipping first.
+
+## HE-NEW-VCE-01 — Enter newly revealed cards hands-free
+
+> When public cards are revealed (flop dealt, turn dealt, river dealt, or villain rolls hole cards at showdown), I want to record them into the app without looking down at the phone for 10+ seconds — so I stay table-present and don't draw attention to the act of recording.
+
+- State: **Active** (ratified at Gate 2 by roundtable `2026-05-11-blindspot-vce`, Stage B).
+- Primary persona: [Between-Hands Chris](../../personas/situational/between-hands-chris.md) — board reveal sits in the 5-15s sub-window at the start of the between-hands interval (before dealer-deal pressure builds).
+- Secondary persona: [Mid-Hand Chris](../../personas/situational/mid-hand-chris.md) — when action arrives faster than expected, voice entry must abort cleanly (covered by HE-NEW-VCE-03).
+- Tertiary persona: [Ringmaster (home-game host)](../../personas/core/ringmaster-home-host.md) — home tables run slower with higher social cover, so VCE likely passes kill-criteria thresholds for Ringmaster even if marginal for Chris at a casino.
+- Surfaces: TableView (board entry — flop, turn, river), ShowdownView (villain hole-card entry at showdown).
+- Distinguished from [HE-14](#he-14--discreet-entry-that-looks-like-texting) — HE-14's job is *not drawing attention via extended phone-staring* (visual discretion); HE-NEW-VCE-01's job is *keeping eyes on the table and hands available during a strategically-content-rich card reveal*. The failure modes differ: HE-14 fails when entry is conspicuous; HE-NEW-VCE-01 fails when entry forces a 10-second eyes-down window where Chris misses a timing tell or physical reaction.
+- Distinguished from [HE-16](#he-16--voice-input-for-action-calls) — same modality (voice / Web Speech), different vocabulary (cards: 13 ranks × 4 suits + "of") + cadence (reveal-triggered, not decision-triggered) + surface zone (board / villain row, not action button zone).
+- Success criteria (deferred to WS-181 kill criteria — Gate 4 ratifies numerically):
+  - Per-card accuracy ≥ owner-set threshold at typical poker-room SPL (~70–75 dB).
+  - End-to-end entry (PTT-hold → commit) faster than current tap baseline on ≥80% of trials.
+  - Misheard card correctable in ≤2 deliberate user actions (revised per Gate 2 SC-10).
+  - Zero false-commits: confirmation chips are inert until explicit commit tap.
+- Failure modes (from Gate 2 roundtable):
+  - Blank or sub-0.5s PTT release → must be a strict no-op (SC-3 CRITICAL).
+  - Multi-villain showdown grammar gap → per-villain PTT recommended (SC-7 CRITICAL).
+  - Mid-utterance interruption (dealer asks a question) → parser produces N chips for N parsed cards, no auto-commit (SC-6).
+  - Mic permission denial → passive non-modal banner, flag stays ON, PTT grayed (E-6).
+- Source: re-opened DISC-03; ticket WS-181; Gate 1 audit `audits/2026-05-11-entry-vce.md`; Gate 2 roundtable `roundtables/2026-05-11-blindspot-vce.md`.
+
+## HE-NEW-VCE-03 — Abort a voice entry in progress without side effects
+
+> When I am mid-utterance during a voice card entry and something at the table demands my attention (action arrives, dealer asks a question, villain reveals a tell I want to watch), I want to drop the voice entry instantly with zero residual UI state — no confirmation chips, no partial-board commit, no error toast — so the abort costs me nothing.
+
+- State: **Proposed** (surfaced at Gate 2 roundtable `2026-05-11-blindspot-vce`, Stage B as a gap not covered by HE-12).
+- Distinguished from [HE-12](#he-12--undo--repair-a-miskeyed-action) — HE-12 is repair-after-commit (a wrong card was committed and needs correction). HE-NEW-VCE-03 is abort-before-commit (no card was committed; the entry session itself is dropped). The mechanism differs: HE-12 uses the chip-tap / re-speak correction sub-flow; HE-NEW-VCE-03 is a strict no-op on PTT release.
+- Primary persona: [Mid-Hand Chris](../../personas/situational/mid-hand-chris.md) — voice entry must not block the action zone if action arrives mid-entry.
+- Surfaces: TableView, ShowdownView (both VCE-enabled surfaces).
+- Success criteria: PTT release with blank transcript OR sub-0.5s utterance OR explicit cancel gesture = zero UI state change. Action buttons remain reachable in one tap throughout.
+- Source: Gate 2 roundtable finding SC-5; specified in WS-181 Gate 4 surface spec.
 
 ## HE-17 — Flag a hand for post-session review while still recording it
 
@@ -79,3 +115,5 @@ Jobs that capture what happened in a hand — either live (manual taps) or onlin
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-05-06 — HE-18 (straddle) added in session-2026-05-06-straddle.
+- 2026-05-11 — HE-12 amended with voice-correction sub-flow annotation. HE-16 clarification noting actions-vs-cards distinction. HE-NEW-VCE-01 added (Active, ratified by Gate 2 roundtable `2026-05-11-blindspot-vce`). HE-NEW-VCE-03 added (Proposed). Source: WS-181 Gate 1 + Gate 2.

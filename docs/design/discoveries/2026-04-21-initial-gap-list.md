@@ -44,7 +44,7 @@
 
 ### REJECTED — per-item rationale
 
-- **DISC-03** Voice input for live entry — PWA voice-capture APIs unreliable across Chrome / Safari / Android variants; low-confidence benefit at M-effort. Re-open if platform capabilities mature + user demand surfaces.
+- **DISC-03** Voice input for live entry — PWA voice-capture APIs unreliable across Chrome / Safari / Android variants; low-confidence benefit at M-effort. Re-open if platform capabilities mature + user demand surfaces. **STATUS UPDATE 2026-05-11: RE-OPENED-AS-WS-181** (Voice Card Entry — board + villain showdown only, ship-or-drop, Web Speech only). Owner-driven re-open satisfies original "re-open if" conditions. Gate 1 audit: `audits/2026-05-11-entry-vce.md` (YELLOW). Gate 2 roundtable: `roundtables/2026-05-11-blindspot-vce.md` (YELLOW + 4 CRITICAL/HIGH for Gate 4).
 - **DISC-17** Mixed-games support (PLO / stud) — XL-effort; explicitly "deferred" in original capture. Product is NLHE-focused; expanding to mixed games fragments the engine + UI + audit surfaces without proportionate return for the current persona distribution.
 
 ### Notes
@@ -158,11 +158,12 @@ All three agent outputs are embedded in the Session 1b run context. Specific quo
 ### Tier: Plus
 
 #### DISC-03 — Voice input for live entry
-- **Personas:** Weekend Warrior, Rounder (any hands-busy live player)
-- **JTBD:** `JTBD-HE-16` voice input
-- **Rationale:** Hands on chips/cards; voice frees both hands.
-- **Effort:** M
-- **Notes:** Platform voice APIs differ; PWA voice capture has caveats.
+- **Personas:** Weekend Warrior, Rounder (any hands-busy live player). **2026-05-11 RE-OPEN scope:** Chris (live player) + Between-Hands Chris (primary operating mode) — see `audits/2026-05-11-entry-vce.md` Output 2.
+- **JTBD:** `JTBD-HE-16` voice input (for actions, remains Proposed). **2026-05-11 RE-OPEN scope:** narrowed to cards-only — adds `HE-NEW-VCE-01` (hands-free card entry on reveal) and `HE-NEW-VCE-03` (abort voice entry without side effects). HE-16 (actions) is explicitly NOT in WS-181 scope (R2 binding).
+- **Rationale:** Hands on chips/cards; voice frees both hands. **2026-05-11 RE-OPEN rationale:** Owner-self-reported losing hands to entry speed; current 10-15s phone-staring breaks table presence and violates H-PLT04 (socially discreet).
+- **Effort:** M. **2026-05-11 RE-OPEN:** still M, but ship-or-drop framing means the cost is bounded — failed spike rips out.
+- **Notes:** Platform voice APIs differ; PWA voice capture has caveats. **2026-05-11 RE-OPEN constraints:** Web Speech only (R1 — no Whisper / no cloud / no escalation). iOS Safari fallback policy is a Gate 4 decision (silent-disable vs grayed-button). If Web Speech proves unusable, feature is DROPPED per R3 — no upgrade path.
+- **Status (2026-05-11):** RE-OPENED-AS-WS-181. Gate 1 + Gate 2 complete; Gate 4 surface authoring pending founder ratification of 4 critical decisions (see WS-181 decision_flags).
 
 #### DISC-12 — Skill map / mastery tracker
 - **Personas:** Apprentice, Scholar

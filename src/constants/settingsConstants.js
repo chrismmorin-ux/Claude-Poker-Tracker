@@ -29,6 +29,10 @@ export const SETTINGS_ACTIONS = {
   // PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
   // Default OFF per AP-PIO-03 (privacy-first; user must opt in).
   SET_PRIVACY_PHOTO_CAPTURE_ENABLED: 'SET_PRIVACY_PHOTO_CAPTURE_ENABLED',
+  // VCE (WS-181, 2026-05-11) — feature flag + confidence threshold.
+  // Default OFF per WS-181 R3 (ship-or-drop spike).
+  SET_VOICE_CARD_ENTRY_ENABLED: 'SET_VOICE_CARD_ENTRY_ENABLED',
+  SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD: 'SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD',
 };
 
 // =============================================================================
@@ -94,6 +98,19 @@ export const DEFAULT_SETTINGS = {
   // entry button visibility is gated by `photoCaptureEnabled === true`.
   privacy: {
     photoCaptureEnabled: false,
+  },
+
+  // Voice Card Entry (WS-181, 2026-05-11). Ship-or-drop spike behind a flag.
+  // Default OFF. State-aware predicates in TableView / ShowdownView decide
+  // when the PTT button renders. See docs/design/surfaces/voice-card-entry.md.
+  // Founder ratifications binding: R1 Web Speech only / R2 board+showdown
+  // scope only / R3 ship-or-drop / R4 swipe-to-cycle correction / R5 extended
+  // grammar w/ villain tokens (advisory under per-villain PTT) / R6 strict
+  // no-op on blank/short utterance. Confidence threshold D-3 = 0.65 default,
+  // exposed in Settings as a slider in range 0.5–0.9.
+  voiceCardEntry: {
+    enabled: false,
+    confidenceThreshold: 0.65,
   },
 };
 

@@ -224,6 +224,41 @@ const rawSettingsReducer = (state, action) => {
       };
     }
 
+    // VCE: feature flag toggle (WS-181, R3 spike behind flag).
+    case SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ENABLED: {
+      const { enabled } = action.payload;
+      const current = state.settings.voiceCardEntry || DEFAULT_SETTINGS.voiceCardEntry;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          voiceCardEntry: {
+            ...current,
+            enabled: !!enabled,
+          },
+        },
+      };
+    }
+
+    // VCE: confidence threshold slider (WS-181, D-3 owner-tunable 0.5–0.9).
+    case SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD: {
+      const { threshold } = action.payload;
+      const n = Number(threshold);
+      if (!Number.isFinite(n)) return state;
+      const clamped = Math.max(0.5, Math.min(0.9, n));
+      const current = state.settings.voiceCardEntry || DEFAULT_SETTINGS.voiceCardEntry;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          voiceCardEntry: {
+            ...current,
+            confidenceThreshold: clamped,
+          },
+        },
+      };
+    }
+
     default:
       return state;
   }
