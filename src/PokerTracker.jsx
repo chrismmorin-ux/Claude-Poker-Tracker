@@ -40,8 +40,6 @@ const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsV
 const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
 const PrintableRefresherView = lazy(() => import('./components/views/PrintableRefresherView').then(m => ({ default: m.PrintableRefresherView })));
 const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryView').then(m => ({ default: m.AnchorLibraryView })));
-// Calibration Dashboard (EAL Stream D / WS-169 / SPR-066, 2026-05-09) — 3-tab study surface for anchor/predicate/primitive calibration audit.
-const CalibrationDashboardView = lazy(() => import('./components/views/CalibrationDashboardView').then(m => ({ default: m.CalibrationDashboardView })));
 // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface for Drill-this affordance.
 const LessonDetailView = lazy(() => import('./components/views/LessonDetailView').then(m => ({ default: m.LessonDetailView })));
 // SCF G5 Phase-5a (WS-159 / SPR-042, 2026-05-06) — Self-Coach curriculum surface (2-tab IA: Curriculum / Settings).
@@ -70,7 +68,6 @@ const HASH_TO_SCREEN = {
   '#settings': 'settings',
   '#printableRefresher': 'printableRefresher',
   '#anchorLibrary': 'anchorLibrary',
-  '#calibrationDashboard': 'calibrationDashboard',
   '#selfCoach': 'selfCoach',
   '#prototype-finder': 'prototypeFinder',
   // Phase B (2026-05-06): direct entry to the unified PlayerFinder for
@@ -155,7 +152,6 @@ const ViewRouter = () => {
           case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
           case SCREEN.PRINTABLE_REFRESHER: return <VEB viewName="Printable Refresher" onReturnToTable={onReturnToTable}><PrintableRefresherView scale={scale} /></VEB>;
           case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
-          case SCREEN.CALIBRATION_DASHBOARD: return <VEB viewName="Calibration Dashboard" onReturnToTable={onReturnToTable}><CalibrationDashboardView scale={scale} /></VEB>;
           case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
           case SCREEN.SELF_COACH: return <VEB viewName="Self Coach" onReturnToTable={onReturnToTable}><SelfCoachView scale={scale} /></VEB>;
           case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
@@ -185,7 +181,6 @@ const AppRoot = () => {
   const {
     gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState, entitlementState, refresherState, anchorLibraryState,
     dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament, dispatchEntitlement, dispatchRefresher, dispatchAnchorLibrary,
-    engineCtxGetterRef,
   } = useAppState();
 
   const blinds = useMemo(
@@ -207,7 +202,6 @@ const AppRoot = () => {
       entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}
       refresherState={refresherState} dispatchRefresher={dispatchRefresher}
       anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}
-      engineCtxGetterRef={engineCtxGetterRef}
     >
       <UpdateBanner />
       <ViewRouter />
