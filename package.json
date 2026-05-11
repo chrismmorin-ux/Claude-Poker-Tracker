@@ -9,6 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build && firebase deploy --only hosting",
+    "preflight": "node scripts/check-untracked-imports.mjs",
+    "preflight:staged": "node scripts/check-untracked-imports.mjs --staged",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:component": "vitest run --project component",

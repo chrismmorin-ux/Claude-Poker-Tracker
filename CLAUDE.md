@@ -160,6 +160,10 @@ These rules run automatically, every session, without prompting.
 - **Before marking item done:** Run `/verify`.
 - **Domain rules:** Always read `.claude/rules/` — they're mandatory and override general patterns.
 - **Self-healing:** Stale program → auto-generate maintenance item. Failed vital sign → flag + suggest fix. Invariant check commands → run periodically. Kit version behind HomeBase → mention during `/status`.
+- **Staging hygiene in a busy tree (load-bearing; see `.claude/failures/UNTRACKED_IMPORT_BUILD_BREAK.md`):** Before `git commit` when the working tree carries uncommitted modifications outside the current workstream:
+  1. Run `npm run preflight:staged` — fails if any staged source file's relative import resolves to an untracked target.
+  2. For every shared file (router / root mount / context provider / index barrel) in the staged set, run `git diff --cached <file>` and confirm every hunk belongs to the current workstream. If a hunk is cross-workstream contamination, restore the upstream file (`git show <last-green-commit>:<file> > /tmp/clean`) and re-apply only the current-workstream hunks before re-staging.
+  3. Never `git add <shared-file>` blindly in a busy tree — whole-file add sweeps all hunks. Local build passes (working tree has the untracked target); CI fails on the resolver. Caught locally by step 1, redundantly by `deploy.yml` CI preflight.
 
 ## Autonomous Work Cycle
 When working autonomously: active sprint → resume | no sprint → `/next` → approve | queue empty → `/audit` → compose | still empty → `/plan` | still empty → drift-detector questions.

@@ -9,11 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Need HEAD~1 to compute the preflight diff (untracked-imports check).
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
       - run: npm ci
+
+      # Preflight: catch cross-workstream build breaks before Vite runs.
+      # When a source file imports a path whose target is UNTRACKED in git,
+      # local builds pass (file exists in working tree) but CI builds fail
+      # several seconds into Vite. The preflight surfaces the offending
+      # import + suggested remediation in <2s. Origin: deploy break 2026-05-11
+      # (commit 582a417 vs. fix 18a031d). See
+      # `.claude/failures/UNTRACKED_IMPORT_BUILD_BREAK.md`.
+      - name: Preflight — untracked imports
+        # Compare the pushed commit (HEAD) against its parent (HEAD~1) to
+        # surface imports of any path that this push added but didn't track.
+        # `actions/checkout@v4` defaults to fetch-depth: 1; bump to 2 below.
+        run: node scripts/check-untracked-imports.mjs --since=HEAD~1
+
       - run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
