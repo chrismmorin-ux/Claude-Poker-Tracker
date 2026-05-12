@@ -444,6 +444,57 @@ describe('settingsReducer', () => {
       });
       expect(s).toEqual(state);
     });
+
+    // 2026-05-12 — first-live-use iteration additions
+    it('default activationMode is "hold"', () => {
+      expect(DEFAULT_SETTINGS.voiceCardEntry.activationMode).toBe('hold');
+    });
+
+    it('default position is "bottom-left"', () => {
+      expect(DEFAULT_SETTINGS.voiceCardEntry.position).toBe('bottom-left');
+    });
+
+    it('SET_VOICE_CARD_ENTRY_ACTIVATION_MODE accepts hold and tap', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ACTIVATION_MODE,
+        payload: { mode: 'tap' },
+      });
+      expect(s1.settings.voiceCardEntry.activationMode).toBe('tap');
+      const s2 = settingsReducer(s1, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ACTIVATION_MODE,
+        payload: { mode: 'hold' },
+      });
+      expect(s2.settings.voiceCardEntry.activationMode).toBe('hold');
+    });
+
+    it('SET_VOICE_CARD_ENTRY_ACTIVATION_MODE rejects invalid mode', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ACTIVATION_MODE,
+        payload: { mode: 'wiggle' },
+      });
+      expect(s).toEqual(state);
+    });
+
+    it('SET_VOICE_CARD_ENTRY_POSITION accepts bottom-left and top-right', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_POSITION,
+        payload: { position: 'top-right' },
+      });
+      expect(s1.settings.voiceCardEntry.position).toBe('top-right');
+      const s2 = settingsReducer(s1, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_POSITION,
+        payload: { position: 'bottom-left' },
+      });
+      expect(s2.settings.voiceCardEntry.position).toBe('bottom-left');
+    });
+
+    it('SET_VOICE_CARD_ENTRY_POSITION rejects invalid position', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_POSITION,
+        payload: { position: 'mid-center' },
+      });
+      expect(s).toEqual(state);
+    });
   });
 
   describe('unknown action', () => {

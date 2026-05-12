@@ -3,10 +3,12 @@
  *
  * Covers:
  *   - Web Speech detection (supported / unsupported).
- *   - 300ms hold threshold (E-3): below threshold = no recognition.
+ *   - LOW-LATENCY behavior: startHold begins recognition immediately;
+ *     release before 300ms aborts (no parse); release after 300ms commits.
  *   - R6 strict no-op: blank transcript, low confidence, short duration → result=null.
- *   - Permission status: 'denied' suppresses startHold.
- *   - Error path: 'not-allowed' → permissionStatus='denied'.
+ *   - Permission status: 'denied' suppresses startHold + tapToggle.
+ *   - Tap-toggle mode: tap once starts; tap again stops + commits.
+ *   - Reset clears result + error.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -24,6 +26,8 @@ class MockSpeechRecognition {
     this.onresult = null;
     this.onerror = null;
     this.onend = null;
+    this.onspeechstart = null;
+    this.onspeechend = null;
     this._started = false;
   }
   start() {
@@ -33,7 +37,6 @@ class MockSpeechRecognition {
   stop() {
     this._started = false;
   }
-  // Test helpers (not part of real Web Speech API)
   __fireResult(transcript, confidence) {
     if (this.onresult) {
       this.onresult({
@@ -57,7 +60,6 @@ function removeWebSpeechMock() {
   delete globalThis.window.webkitSpeechRecognition;
 }
 
-// Permission mock
 function installPermissionMock(state = 'granted') {
   globalThis.navigator.permissions = {
     query: vi.fn(async () => ({
@@ -71,6 +73,14 @@ function removePermissionMock() {
   delete globalThis.navigator.permissions;
 }
 
+// Stub navigator.vibrate so the hook's haptic calls don't throw.
+function installVibrateMock() {
+  globalThis.navigator.vibrate = vi.fn();
+}
+function removeVibrateMock() {
+  delete globalThis.navigator.vibrate;
+}
+
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('useVoiceCardEntry — environment detection', () => {
@@ -78,7 +88,7 @@ describe('useVoiceCardEntry — environment detection', () => {
     removeWebSpeechMock();
   });
 
-  it('reports supported=false when neither SpeechRecognition nor webkit alias is present', () => {
+  it('reports supported=false when Web Speech is unavailable', () => {
     const { result } = renderHook(() => useVoiceCardEntry());
     expect(result.current.supported).toBe(false);
   });
@@ -97,124 +107,179 @@ describe('useVoiceCardEntry — environment detection', () => {
   });
 });
 
-describe('useVoiceCardEntry — hold-threshold (E-3 300ms)', () => {
+describe('useVoiceCardEntry — hold mode: low-latency activation', () => {
   beforeEach(() => {
     installWebSpeechMock();
     installPermissionMock('granted');
+    installVibrateMock();
     vi.useFakeTimers();
   });
-
   afterEach(() => {
     vi.useRealTimers();
     removeWebSpeechMock();
     removePermissionMock();
+    removeVibrateMock();
   });
 
-  it('does not start recognition when release happens before 300ms', () => {
+  it('starts recognition IMMEDIATELY on startHold (not after 300ms)', () => {
     const { result } = renderHook(() => useVoiceCardEntry());
-
     act(() => result.current.startHold());
-    act(() => vi.advanceTimersByTime(100));
-    act(() => result.current.release());
-    // recognition never started → no listening state
-    expect(result.current.isListening).toBe(false);
-    expect(result.current.result).toBe(null);
-    expect(MockSpeechRecognition._lastInstance?._started).not.toBe(true);
-  });
-
-  it('starts recognition after exactly 300ms hold', () => {
-    const { result } = renderHook(() => useVoiceCardEntry());
-
-    act(() => result.current.startHold());
-    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS));
+    // Recognition began on the same tick — isListening true before 300ms threshold.
     expect(result.current.isListening).toBe(true);
     expect(MockSpeechRecognition._lastInstance._started).toBe(true);
   });
+
+  it('release BEFORE 300ms aborts: no result + no commit', () => {
+    const { result } = renderHook(() => useVoiceCardEntry());
+    act(() => result.current.startHold());
+    expect(result.current.isListening).toBe(true);
+    // Fire a result mid-hold (simulating early speech)
+    act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts', 0.9));
+    act(() => vi.advanceTimersByTime(100));
+    act(() => result.current.release());
+    act(() => MockSpeechRecognition._lastInstance.__fireEnd());
+    // Even though valid speech was captured, sub-300ms release is treated as
+    // an accidental press — strict no-op.
+    expect(result.current.result).toBe(null);
+  });
+
+  it('release AFTER 300ms commits: result populated', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
+    act(() => result.current.startHold());
+    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS + 100));
+    act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts jack of spades', 0.9));
+    act(() => vi.advanceTimersByTime(1500));
+    act(() => result.current.release());
+    act(() => MockSpeechRecognition._lastInstance.__fireEnd());
+    expect(result.current.result).not.toBe(null);
+    expect(result.current.result.cards).toEqual(['A♥', 'J♠']);
+  });
 });
 
-describe('useVoiceCardEntry — release + parse flow (R6 gate)', () => {
+describe('useVoiceCardEntry — R6 strict no-op gate', () => {
   beforeEach(() => {
     installWebSpeechMock();
     installPermissionMock('granted');
+    installVibrateMock();
     vi.useFakeTimers();
   });
-
   afterEach(() => {
     vi.useRealTimers();
     removeWebSpeechMock();
     removePermissionMock();
+    removeVibrateMock();
   });
 
-  function startAndSpeak(result, transcript, confidence, durationMs = 2000) {
+  function holdAndSpeak(result, transcript, confidence, durationMs) {
     act(() => result.current.startHold());
-    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS));
+    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
     act(() => MockSpeechRecognition._lastInstance.__fireResult(transcript, confidence));
     act(() => vi.advanceTimersByTime(durationMs));
     act(() => result.current.release());
     act(() => MockSpeechRecognition._lastInstance.__fireEnd());
   }
 
-  it('parses a valid utterance to a cards payload', () => {
+  it('blank transcript → null', () => {
     const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
-    startAndSpeak(result, 'ace of hearts jack of spades', 0.9, 1500);
-    expect(result.current.result).not.toBe(null);
-    expect(result.current.result.cards).toEqual(['A♥', 'J♠']);
-  });
-
-  it('returns result=null on blank transcript (R6 gate)', () => {
-    const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
-    startAndSpeak(result, '', 0.9, 1500);
+    holdAndSpeak(result, '', 0.9, 1500);
     expect(result.current.result).toBe(null);
   });
 
-  it('returns result=null on low confidence (R6 gate)', () => {
+  it('low confidence → null', () => {
     const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.9 }));
-    startAndSpeak(result, 'ace of hearts', 0.5, 1500);
+    holdAndSpeak(result, 'ace of hearts', 0.5, 1500);
     expect(result.current.result).toBe(null);
   });
 
-  it('returns result=null on short duration (R6 gate)', () => {
+  it('short total duration → null', () => {
     const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
-    startAndSpeak(result, 'ace of hearts', 0.9, 300);
+    // Total duration counted from startHold to release. We push past 300ms
+    // to get past the hold gate, but the parser still gets a short duration
+    // if we don't add time before release.
+    act(() => result.current.startHold());
+    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
+    act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts', 0.9));
+    // Only +50ms duration after results → ~400ms total — still passes R6 (>= 500 needed).
+    // To test the short-duration gate, we need < 500ms total.
+    // Recompute: startHold → 350ms → release. Total duration 350ms < 500ms.
+    act(() => result.current.release());
+    act(() => MockSpeechRecognition._lastInstance.__fireEnd());
+    // 350ms total < R6 500ms gate → null.
     expect(result.current.result).toBe(null);
   });
 });
 
-describe('useVoiceCardEntry — permission denied path', () => {
-  // NOTE: these tests use real timers because waitFor() polls real time;
-  // mixing it with vi.useFakeTimers() deadlocks.
+describe('useVoiceCardEntry — tap-toggle mode', () => {
   beforeEach(() => {
     installWebSpeechMock();
+    installPermissionMock('granted');
+    installVibrateMock();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    removeWebSpeechMock();
+    removePermissionMock();
+    removeVibrateMock();
   });
 
+  it('first tap starts recognition', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ activationMode: 'tap' }));
+    act(() => result.current.tapToggle());
+    expect(result.current.isListening).toBe(true);
+    expect(MockSpeechRecognition._lastInstance._started).toBe(true);
+  });
+
+  it('second tap stops + commits', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ activationMode: 'tap', confidenceThreshold: 0.5 }));
+    act(() => result.current.tapToggle());
+    act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts', 0.9));
+    act(() => vi.advanceTimersByTime(1500));
+    act(() => result.current.tapToggle()); // stop
+    act(() => MockSpeechRecognition._lastInstance.__fireEnd());
+    expect(result.current.result).not.toBe(null);
+    expect(result.current.result.cards).toEqual(['A♥']);
+  });
+
+  it('startHold is a no-op in tap mode', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ activationMode: 'tap' }));
+    act(() => result.current.startHold());
+    expect(result.current.isListening).toBe(false);
+  });
+
+  it('tapToggle is a no-op in hold mode', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ activationMode: 'hold' }));
+    act(() => result.current.tapToggle());
+    expect(result.current.isListening).toBe(false);
+  });
+});
+
+describe('useVoiceCardEntry — permission denied path', () => {
+  beforeEach(() => {
+    installWebSpeechMock();
+    installVibrateMock();
+  });
   afterEach(() => {
     removeWebSpeechMock();
     removePermissionMock();
+    removeVibrateMock();
   });
 
   it('startHold is a no-op when permissionStatus === "denied"', async () => {
     installPermissionMock('denied');
     const { result } = renderHook(() => useVoiceCardEntry());
     await waitFor(() => expect(result.current.permissionStatus).toBe('denied'));
-
     act(() => result.current.startHold());
-    // Wait past the 300ms hold threshold in real time
     await new Promise((r) => setTimeout(r, _VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
     expect(result.current.isListening).toBe(false);
   });
 
-  it('"not-allowed" error from recognition flips permissionStatus to denied', async () => {
+  it('"not-allowed" error flips permissionStatus to denied', async () => {
     installPermissionMock('granted');
     const { result } = renderHook(() => useVoiceCardEntry());
     await waitFor(() => expect(result.current.permissionStatus).toBe('granted'));
-
     act(() => result.current.startHold());
-    // Wait past the hold threshold so recognition starts
-    await new Promise((r) => setTimeout(r, _VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
-    expect(MockSpeechRecognition._lastInstance._started).toBe(true);
-
     act(() => MockSpeechRecognition._lastInstance.__fireError('not-allowed'));
-
     expect(result.current.error).toBe('not-allowed');
     expect(result.current.permissionStatus).toBe('denied');
   });
@@ -224,29 +289,71 @@ describe('useVoiceCardEntry — reset', () => {
   beforeEach(() => {
     installWebSpeechMock();
     installPermissionMock('granted');
+    installVibrateMock();
     vi.useFakeTimers();
   });
-
   afterEach(() => {
     vi.useRealTimers();
     removeWebSpeechMock();
     removePermissionMock();
+    removeVibrateMock();
   });
 
   it('reset() clears result and error', () => {
     const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
-
     act(() => result.current.startHold());
-    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS));
+    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
     act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts', 0.9));
     act(() => vi.advanceTimersByTime(1500));
     act(() => result.current.release());
     act(() => MockSpeechRecognition._lastInstance.__fireEnd());
-
     expect(result.current.result).not.toBe(null);
 
     act(() => result.current.reset());
     expect(result.current.result).toBe(null);
     expect(result.current.error).toBe(null);
+  });
+});
+
+describe('useVoiceCardEntry — haptic vibration on transitions', () => {
+  let vibrateSpy;
+  beforeEach(() => {
+    installWebSpeechMock();
+    installPermissionMock('granted');
+    vibrateSpy = vi.fn();
+    globalThis.navigator.vibrate = vibrateSpy;
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    removeWebSpeechMock();
+    removePermissionMock();
+    delete globalThis.navigator.vibrate;
+  });
+
+  it('vibrates on recognition start (activate envelope)', () => {
+    const { result } = renderHook(() => useVoiceCardEntry());
+    act(() => result.current.startHold());
+    expect(vibrateSpy).toHaveBeenCalledWith(_VCE_INTERNAL.HAPTIC_ACTIVATE);
+  });
+
+  it('vibrates on recognition end (deactivate envelope)', () => {
+    const { result } = renderHook(() => useVoiceCardEntry({ confidenceThreshold: 0.5 }));
+    vibrateSpy.mockClear();
+    act(() => result.current.startHold());
+    act(() => vi.advanceTimersByTime(_VCE_INTERNAL.HOLD_THRESHOLD_MS + 50));
+    act(() => MockSpeechRecognition._lastInstance.__fireResult('ace of hearts', 0.9));
+    act(() => vi.advanceTimersByTime(1500));
+    act(() => result.current.release());
+    act(() => MockSpeechRecognition._lastInstance.__fireEnd());
+    expect(vibrateSpy).toHaveBeenCalledWith(_VCE_INTERNAL.HAPTIC_DEACTIVATE);
+  });
+
+  it('vibrates on error (error envelope)', () => {
+    const { result } = renderHook(() => useVoiceCardEntry());
+    act(() => result.current.startHold());
+    vibrateSpy.mockClear();
+    act(() => MockSpeechRecognition._lastInstance.__fireError('not-allowed'));
+    expect(vibrateSpy).toHaveBeenCalledWith(_VCE_INTERNAL.HAPTIC_ERROR);
   });
 });

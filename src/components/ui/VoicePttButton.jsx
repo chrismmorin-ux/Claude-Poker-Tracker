@@ -6,15 +6,19 @@
  *
  * Design contract (binding):
  *   - 56×56 DOM-px hit area (Gate 2 E-7). H-ML06 ≥44 visual-px floor.
- *   - 300ms hold threshold before mic activates (Gate 2 E-3, enforced in hook).
- *   - No animation in active state. Static fill-color swap only (Gate 2 E-1).
- *   - Disabled when `permissionStatus === 'denied'` OR `supported === false`.
- *   - State-aware visibility is the consumer's responsibility (see surface spec
- *     §"State-aware visibility"). This component renders unconditionally when
- *     mounted; consumer decides when to mount.
+ *   - 300ms hold threshold (hold mode) enforced by hook (Gate 2 E-3).
+ *   - No PULSING animation (Gate 2 E-1 / H-PLT04 socially discreet).
+ *   - Active state uses static color swap + 2px border thickening. Static, not animated.
+ *   - Triple feedback: haptic vibration (hook), inline "Listening..." label, 2px emerald
+ *     border. Multi-channel redundancy without violating H-PLT04 (no pulsing).
+ *   - Activation mode: 'hold' uses pointer-down/up; 'tap' uses single tap to toggle.
+ *
+ * Scope label:
+ *   - Defaults to "BOARD" so the user can't confuse voice-entered cards with hole
+ *     cards. Per-villain instances on ShowdownView pass label="V<seat>".
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 const SIZE_PX = 56;
 
@@ -39,77 +43,130 @@ const SVG_MIC = (
 
 /**
  * @param {object} props
- * @param {boolean} props.supported              — Web Speech available
- * @param {string}  props.permissionStatus       — 'granted'|'denied'|'prompt'|'unknown'
- * @param {boolean} props.isListening            — mic active right now
- * @param {() => void} props.onHoldStart
- * @param {() => void} props.onHoldEnd
- * @param {string=} props.label                  — accessible label (defaults to a sensible string)
- * @param {string=} props.testId                 — data-testid override
+ * @param {boolean} props.supported
+ * @param {string}  props.permissionStatus
+ * @param {boolean} props.isListening
+ * @param {'hold' | 'tap'} props.activationMode
+ * @param {() => void} props.onHoldStart  — only used in hold mode
+ * @param {() => void} props.onHoldEnd    — only used in hold mode
+ * @param {() => void} props.onTapToggle  — only used in tap mode
+ * @param {string=} props.scopeLabel       — e.g., "BOARD" or "V3" — displayed on chip
+ * @param {string=} props.ariaLabel
+ * @param {string=} props.testId
+ * @param {string=} props.feedbackPlacement — 'bottom' (default) or 'top' for the
+ *                                            inline "Listening..." label location.
  */
 export default function VoicePttButton({
   supported,
   permissionStatus,
   isListening,
+  activationMode = 'hold',
   onHoldStart,
   onHoldEnd,
-  label = 'Hold to speak board cards',
+  onTapToggle,
+  scopeLabel = 'BOARD',
+  ariaLabel,
   testId = 'voice-ptt-button',
+  feedbackPlacement = 'bottom',
 }) {
   const disabled = !supported || permissionStatus === 'denied';
+  const wasListeningRef = useRef(false);
+
+  // Track listening transitions for diagnostic data-attrs (also exposed for tests).
+  useEffect(() => {
+    wasListeningRef.current = isListening;
+  }, [isListening]);
 
   const handlePointerDown = useCallback(
     (e) => {
       if (disabled) return;
-      // Prevent text-selection on long touch + iOS context menu.
       try { e.preventDefault(); } catch { /* ignore */ }
+      if (activationMode === 'tap') return; // tap mode listens on click, not pointer-down
       onHoldStart && onHoldStart();
     },
-    [disabled, onHoldStart],
+    [disabled, onHoldStart, activationMode],
   );
 
   const handlePointerUp = useCallback(() => {
     if (disabled) return;
+    if (activationMode === 'tap') return;
     onHoldEnd && onHoldEnd();
-  }, [disabled, onHoldEnd]);
+  }, [disabled, onHoldEnd, activationMode]);
 
-  // Visual state classes — no animation per Gate 2 E-1.
-  // Static color swap only. Disabled = 50% opacity per spec.
+  const handleClick = useCallback(() => {
+    if (disabled) return;
+    if (activationMode !== 'tap') return;
+    onTapToggle && onTapToggle();
+  }, [disabled, onTapToggle, activationMode]);
+
+  // Visual state — static color + border (no animation per Gate 2 E-1).
   const base =
-    'inline-flex items-center justify-center rounded-full select-none ' +
-    'border border-gray-600 ' +
-    'transition-colors duration-0'; // duration-0 = explicit no transition
+    'inline-flex flex-col items-center justify-center rounded-full select-none ' +
+    'transition-colors duration-0';
 
-  let stateClasses = 'bg-gray-700 text-white';
-  if (isListening) stateClasses = 'bg-emerald-700 text-white';
-  if (disabled) stateClasses = 'bg-gray-700 text-white opacity-50 cursor-not-allowed';
+  let stateClasses = 'bg-gray-700 text-white border border-gray-600';
+  if (isListening) {
+    stateClasses = 'bg-emerald-700 text-white border-2 border-emerald-400 ring-2 ring-emerald-500/40';
+  }
+  if (disabled) {
+    stateClasses = 'bg-gray-700 text-white border border-gray-600 opacity-50 cursor-not-allowed';
+  }
+
+  const labelText = isListening ? 'Listening…' : scopeLabel;
+
+  const finalAriaLabel = ariaLabel || (
+    activationMode === 'tap'
+      ? (isListening ? `Tap to stop voice entry (${scopeLabel})` : `Tap to speak ${scopeLabel} cards`)
+      : `Hold to speak ${scopeLabel} cards`
+  );
 
   return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={isListening}
-      aria-disabled={disabled}
-      data-testid={testId}
-      data-state={
-        disabled
-          ? permissionStatus === 'denied'
-            ? 'denied'
-            : 'unsupported'
-          : isListening
-            ? 'listening'
-            : 'idle'
-      }
-      style={{ width: SIZE_PX, height: SIZE_PX }}
-      className={`${base} ${stateClasses}`}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      // Prevent the browser's default mouse-up-only behavior from missing touch.
-      onContextMenu={(e) => e.preventDefault()}
+    <div
+      className={`relative inline-flex flex-col items-center ${feedbackPlacement === 'top' ? 'flex-col-reverse' : ''}`}
+      data-testid={`${testId}-wrapper`}
     >
-      {SVG_MIC}
-    </button>
+      <button
+        type="button"
+        aria-label={finalAriaLabel}
+        aria-pressed={isListening}
+        aria-disabled={disabled}
+        data-testid={testId}
+        data-state={
+          disabled
+            ? permissionStatus === 'denied'
+              ? 'denied'
+              : 'unsupported'
+            : isListening
+              ? 'listening'
+              : 'idle'
+        }
+        data-activation-mode={activationMode}
+        data-scope-label={scopeLabel}
+        style={{ width: SIZE_PX, height: SIZE_PX }}
+        className={`${base} ${stateClasses}`}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onClick={handleClick}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {SVG_MIC}
+      </button>
+      {/* Inline scope/listening label — small, close-range only (H-PLT04 OK).
+          Always renders so the button surface communicates BOARD vs V<seat>
+          even before any interaction; flips to "Listening…" during capture. */}
+      <span
+        data-testid={`${testId}-label`}
+        className={`mt-0.5 text-[10px] leading-tight px-1 rounded ${
+          isListening
+            ? 'bg-emerald-700/80 text-white font-semibold'
+            : 'text-gray-300 font-medium'
+        }`}
+        aria-hidden="true"
+      >
+        {labelText}
+      </span>
+    </div>
   );
 }

@@ -259,6 +259,41 @@ const rawSettingsReducer = (state, action) => {
       };
     }
 
+    // VCE: activation mode — 'hold' (default) or 'tap' toggle.
+    // Added 2026-05-12 per first-live-use iteration.
+    case SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_ACTIVATION_MODE: {
+      const { mode } = action.payload;
+      if (mode !== 'hold' && mode !== 'tap') return state;
+      const current = state.settings.voiceCardEntry || DEFAULT_SETTINGS.voiceCardEntry;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          voiceCardEntry: {
+            ...current,
+            activationMode: mode,
+          },
+        },
+      };
+    }
+
+    // VCE: PTT position — 'bottom-left' (default) or 'top-right'.
+    case SETTINGS_ACTIONS.SET_VOICE_CARD_ENTRY_POSITION: {
+      const { position } = action.payload;
+      if (position !== 'bottom-left' && position !== 'top-right') return state;
+      const current = state.settings.voiceCardEntry || DEFAULT_SETTINGS.voiceCardEntry;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          voiceCardEntry: {
+            ...current,
+            position,
+          },
+        },
+      };
+    }
+
     default:
       return state;
   }

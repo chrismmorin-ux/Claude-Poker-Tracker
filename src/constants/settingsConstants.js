@@ -33,6 +33,9 @@ export const SETTINGS_ACTIONS = {
   // Default OFF per WS-181 R3 (ship-or-drop spike).
   SET_VOICE_CARD_ENTRY_ENABLED: 'SET_VOICE_CARD_ENTRY_ENABLED',
   SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD: 'SET_VOICE_CARD_ENTRY_CONFIDENCE_THRESHOLD',
+  // 2026-05-12 — added per first-live-use iteration.
+  SET_VOICE_CARD_ENTRY_ACTIVATION_MODE: 'SET_VOICE_CARD_ENTRY_ACTIVATION_MODE',
+  SET_VOICE_CARD_ENTRY_POSITION: 'SET_VOICE_CARD_ENTRY_POSITION',
 };
 
 // =============================================================================
@@ -108,9 +111,17 @@ export const DEFAULT_SETTINGS = {
   // grammar w/ villain tokens (advisory under per-villain PTT) / R6 strict
   // no-op on blank/short utterance. Confidence threshold D-3 = 0.65 default,
   // exposed in Settings as a slider in range 0.5–0.9.
+  //
+  // 2026-05-12 iteration (post first-live-use feedback):
+  //   - activationMode: 'hold' (default, accidental-activation safe) or
+  //     'tap' (walkie-talkie style, hands-free; auto-stops on silence).
+  //   - position: 'bottom-left' (default, near phone speaker/mic on Galaxy A22
+  //     landscape) or 'top-right' (legacy, less ergonomic but verified safe).
   voiceCardEntry: {
     enabled: false,
     confidenceThreshold: 0.65,
+    activationMode: 'hold',
+    position: 'bottom-left',
   },
 };
 
