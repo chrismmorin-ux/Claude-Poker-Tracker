@@ -210,6 +210,11 @@ export const writeAppStatusBadge = (badgeEl, tier) => {
   if (!Object.values(STATUS_APP_TIERS).includes(tier)) {
     throw new Error(`app-status tier "${tier}" not in closed 2-tier register`);
   }
+  // WS-106 fast-path: skip DOM mutation when tier hasn't changed.
+  // Consistent with INV-STATUS-1 (single canonical writer per slot) — the
+  // writer remains the only path; idempotent same-tier calls now no-op
+  // instead of churning className + textContent on every render.
+  if (badgeEl.getAttribute('data-app-status-tier') === tier) return;
   badgeEl.setAttribute('data-app-status-tier', tier);
   badgeEl.className = `app-status app-${tier}`;
   badgeEl.textContent = APP_TIER_TEXT[tier];
@@ -248,6 +253,11 @@ export const writePipelineStageDot = (dotEl, tier) => {
   if (!Object.values(STATUS_PIPELINE_TIERS).includes(tier)) {
     throw new Error(`pipeline-stage tier "${tier}" not in closed 4-tier register`);
   }
+  // WS-106 fast-path: skip DOM mutation when tier hasn't changed.
+  // renderPipelineHealth's setDot() runs unconditionally on every snap;
+  // idempotent same-tier calls now no-op instead of churning class
+  // assignment 5×/render across the 5 stage dots.
+  if (dotEl.getAttribute('data-pipeline-tier') === tier) return;
   dotEl.setAttribute('data-pipeline-tier', tier);
   dotEl.className = `stage-dot pipeline-${tier}`;
 };

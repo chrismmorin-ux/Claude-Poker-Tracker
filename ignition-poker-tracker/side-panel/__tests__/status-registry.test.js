@@ -439,3 +439,76 @@ describe('writePipelineStageDot — canonical declaration emission', () => {
     expect(dot.classList.contains('pipeline-ok')).toBe(true);
   });
 });
+
+// =============================================================================
+// WS-106 — fast-path idempotency on canonical writers
+// =============================================================================
+// renderPipelineHealth's setDot() runs unconditionally on every snap; same
+// for updateAppStatus's writeAppStatusBadge call. Pre-WS-106, these wrote
+// className + textContent unconditionally even when tier hadn't changed,
+// causing observable flicker. Post-WS-106, the canonical writers fast-path
+// when data-*-tier already matches the requested tier — DOM stays stable
+// across no-op render cycles.
+
+describe('WS-106 — writeAppStatusBadge fast-path on same tier', () => {
+  it('skips DOM mutation when called twice with same tier', () => {
+    const badge = document.createElement('div');
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    // Manually corrupt the badge so we can detect a second-call write.
+    badge.className = 'corrupted-marker';
+    badge.textContent = 'corrupted';
+    // Second call with same tier: fast-path returns; corruption preserved.
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    expect(badge.className).toBe('corrupted-marker');
+    expect(badge.textContent).toBe('corrupted');
+  });
+
+  it('still writes DOM when tier changes', () => {
+    const badge = document.createElement('div');
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.SYNCED);
+    badge.className = 'corrupted-marker';
+    // Different tier: fast-path bypassed; canonical write runs.
+    writeAppStatusBadge(badge, STATUS_APP_TIERS.ABSENT);
+    expect(badge.className).toBe('app-status app-absent');
+    expect(badge.getAttribute('data-app-status-tier')).toBe('absent');
+  });
+});
+
+describe('WS-106 — writePipelineStageDot fast-path on same tier', () => {
+  it('skips DOM mutation when called twice with same tier', () => {
+    const dot = document.createElement('div');
+    dot.className = 'stage-dot';
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    dot.className = 'corrupted-marker';
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    expect(dot.className).toBe('corrupted-marker');
+  });
+
+  it('still writes DOM when tier changes', () => {
+    const dot = document.createElement('div');
+    dot.className = 'stage-dot';
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.OK);
+    dot.className = 'corrupted-marker';
+    writePipelineStageDot(dot, STATUS_PIPELINE_TIERS.WARN);
+    expect(dot.className).toBe('stage-dot pipeline-warn');
+    expect(dot.getAttribute('data-pipeline-tier')).toBe('warn');
+  });
+
+  it('5-stage-dot render cycle: same tiers across renders → no DOM mutations', () => {
+    // Simulates renderPipelineHealth being called twice with identical
+    // pipeline state — each of the 5 setDot calls must skip on the 2nd render.
+    const stages = ['probe', 'bridge', 'filter', 'port', 'panel'];
+    const dots = stages.map(() => {
+      const d = document.createElement('div');
+      d.className = 'stage-dot';
+      return d;
+    });
+    // First render: all 5 dots → ok
+    dots.forEach(d => writePipelineStageDot(d, STATUS_PIPELINE_TIERS.OK));
+    // Manually corrupt every dot.
+    dots.forEach(d => { d.className = 'sentinel'; });
+    // Second render: same tiers → all 5 fast-paths fire.
+    dots.forEach(d => writePipelineStageDot(d, STATUS_PIPELINE_TIERS.OK));
+    dots.forEach(d => expect(d.className).toBe('sentinel'));
+  });
+});

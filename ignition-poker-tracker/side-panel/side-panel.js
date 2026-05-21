@@ -59,6 +59,7 @@ import {
   STATUS_PIPELINE_TIERS,
   writePipelineStageDot,
 } from '../shared/render-status.js';
+import { evaluateStaleContext } from '../shared/stale-context-tick.js';
 import { recoveryBannerFsm } from './fsms/recovery-banner.fsm.js';
 import { seatPopoverFsm } from './fsms/seat-popover.fsm.js';
 import { moreAnalysisFsm } from './fsms/more-analysis.fsm.js';
@@ -544,7 +545,13 @@ injectTokens();
 
   const handleLiveContextPush = (message) => {
     if (message.context) {
-      coordinator.set('staleContext', false);
+      // WS-107 (SPR-057): staleContext is owned exclusively by
+      // _staleContextTick. The push handler used to write
+      // `coordinator.set('staleContext', false)` here as a shortcut
+      // around the tick's missing fresh-again branch; the tick now
+      // owns the clear-on-fresh-data transition. The next tick
+      // (within 10s) will clear staleContext when it sees
+      // age <= 60s and isCurrentlyStale.
 
       // Detect hero fold → start Mode A timer
       const prevCtx = coordinator.get('currentLiveContext');
@@ -602,20 +609,31 @@ injectTokens();
   // WS-104: tick body declared here as a closure over `coordinator` + `scheduleRender`;
   // the synchronous scheduleTimer call sits next to FSM registration so the
   // registry contains 'staleContext' immediately after IIFE (closes RT-60 gap).
+  // WS-107 (SPR-057): decision logic extracted to shared/stale-context-tick.js
+  // for unit-testability + the missing 'clear-stale' branch added (fires when
+  // a fresh push restored age <= 60s but staleContext is still true). This
+  // tick is now the SOLE writer of staleContext (handleLiveContextPush no
+  // longer touches it).
   const _staleContextTick = () => {
     const ctx = coordinator.get('currentLiveContext');
-    if (ctx?._receivedAt) {
-      const age = Date.now() - ctx._receivedAt;
-      if (age > 120_000) {
+    const isCurrentlyStale = coordinator.get('staleContext') === true;
+    const decision = evaluateStaleContext(Date.now(), ctx, isCurrentlyStale);
+    if (!decision) return;
+
+    switch (decision.action) {
+      case 'full-clear':
         coordinator.set('currentLiveContext', null);
         coordinator.set('staleContext', false);
         coordinator.set('advicePendingForStreet', null); // Fix 3: unblock waiting state
-        scheduleRender('stale_full_clear');
-      } else if (age > 60_000 && !coordinator.get('staleContext')) {
+        break;
+      case 'set-stale':
         coordinator.set('staleContext', true);
-        scheduleRender('stale_indicator');
-      }
+        break;
+      case 'clear-stale':
+        coordinator.set('staleContext', false);
+        break;
     }
+    scheduleRender(decision.renderTag);
   };
 
   // =========================================================================
@@ -908,6 +926,13 @@ injectTokens();
   // PIPELINE HEALTH STRIP — visual indicator for each capture stage
   // =========================================================================
 
+  // WS-106 fast-path state: closure-captured last writes for the two
+  // innerHTML / textContent zones inside renderPipelineHealth. The 5
+  // setDot calls already fast-path through writePipelineStageDot's
+  // canonical-writer skip-when-same-tier guard.
+  let lastPipelineDetailHtml = null;
+  let lastPipelineCounterText = null;
+
   const renderPipelineHealth = (snap) => {
     const healthEl = $('pipeline-health');
     if (!healthEl) return;
@@ -998,14 +1023,22 @@ injectTokens();
 
     // Detail text — explain the first broken stage
     if (detail) {
-      detail.innerHTML = getPipelineDetailHTML(d, elapsed);
+      const newDetailHtml = getPipelineDetailHTML(d, elapsed);
+      if (newDetailHtml !== lastPipelineDetailHtml) {
+        detail.innerHTML = newDetailHtml;
+        lastPipelineDetailHtml = newDetailHtml;
+      }
     }
 
     // Fix 6e: Message counter summary
     const counterEl = $('pipeline-msg-counters');
     if (counterEl) {
       const ctxAge = d.lastLiveContextAt ? `${Math.round((now - d.lastLiveContextAt) / 1000)}s` : '\u2014';
-      counterEl.textContent = `ctx: ${d.liveContextPushCount || 0} (${ctxAge} ago) \u00B7 hands: ${d.handCompletedCount || 0}`;
+      const newCounterText = `ctx: ${d.liveContextPushCount || 0} (${ctxAge} ago) \u00B7 hands: ${d.handCompletedCount || 0}`;
+      if (newCounterText !== lastPipelineCounterText) {
+        counterEl.textContent = newCounterText;
+        lastPipelineCounterText = newCounterText;
+      }
       counterEl.style.display = '';
     }
   };
@@ -1063,6 +1096,9 @@ injectTokens();
     return '';
   };
 
+  // WS-106 fast-path state for renderPidSummary innerHTML zone.
+  let lastPidSummaryHtml = null;
+
   /** Render PID distribution summary when diagnostics include pidCounts. */
   const renderPidSummary = (pidCounts) => {
     const pidEl = $('pid-summary');
@@ -1083,7 +1119,10 @@ injectTokens();
       html += `<span style="margin-right:6px;${color}">${escapeHtml(pid.replace('CO_', '').replace('PLAY_', ''))}:${escapeHtml(String(count))}</span>`;
     }
     html += '</div>';
+    // WS-106 fast-path: skip innerHTML write when content unchanged.
+    if (html === lastPidSummaryHtml) return;
     pidEl.innerHTML = html;
+    lastPidSummaryHtml = html;
   };
 
   // =========================================================================

@@ -38,6 +38,12 @@ let _prevStreet = null;
 let _timerHost = null;
 const TRANSITION_TIMER_KEY = 'streetCard_fade';
 const HEIGHT_RELEASE_TIMER_KEY = 'streetCard_heightRelease';
+// WS-112 (RT-89 / SPR-058): safety timer that fires the fade-in cleanup if
+// the native `animationend` event never arrives (Android thermal throttle,
+// GPU skip, tab backgrounded). 300ms covers the fade-in animation duration
+// (the .fade-in CSS animation is 200ms; the 100ms cushion absorbs jitter).
+const FADE_IN_CLEANUP_TIMER_KEY = 'streetCard_fadeInCleanup';
+const FADE_IN_CLEANUP_MS = 300;
 
 /**
  * Inject a coordinator-shaped timer host. Must expose `scheduleTimer(key, cb,
@@ -64,6 +70,7 @@ export const resetStreetCardState = () => {
   if (_timerHost) {
     _timerHost.clearTimer(TRANSITION_TIMER_KEY);
     _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
+    _timerHost.clearTimer(FADE_IN_CLEANUP_TIMER_KEY);
   }
   _prevStreet = null;
 };
@@ -87,6 +94,7 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
   if (_timerHost) {
     _timerHost.clearTimer(TRANSITION_TIMER_KEY);
     _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
+    _timerHost.clearTimer(FADE_IN_CLEANUP_TIMER_KEY);
   }
 
   const isLive = liveContext && liveContext.state &&
@@ -157,6 +165,7 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
     // Cancel any in-flight transition (host-level, idempotent).
     _timerHost.clearTimer(TRANSITION_TIMER_KEY);
     _timerHost.clearTimer(HEIGHT_RELEASE_TIMER_KEY);
+    _timerHost.clearTimer(FADE_IN_CLEANUP_TIMER_KEY);
 
     // Lock height to prevent layout jump during fade
     const currentHeight = card.offsetHeight;
@@ -182,10 +191,17 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
           dispatchFsm('heightReleaseFire');
         }, 250);
       });
-      // Clean up fade-in class
-      card.addEventListener('animationend', () => {
-        card.classList.remove('fade-in');
-      }, { once: true });
+      // Clean up fade-in class — paired animationend listener + 300ms
+      // safety timer (WS-112 / RT-89). Some Android devices skip
+      // GPU-accelerated CSS animations under thermal throttle, never
+      // firing animationend. Without this safety timer, the .fade-in
+      // class would leak indefinitely on the card element. The class
+      // removal is idempotent — both paths are safe to fire; with
+      // { once: true } on the listener and clearTimer-on-rerender on
+      // the safety timer, neither path leaks state if both fire.
+      const cleanupFadeIn = () => card.classList.remove('fade-in');
+      card.addEventListener('animationend', cleanupFadeIn, { once: true });
+      _timerHost.scheduleTimer(FADE_IN_CLEANUP_TIMER_KEY, cleanupFadeIn, FADE_IN_CLEANUP_MS);
     }, 200); // matches .transitioning opacity transition (R-6.1 floor)
     return;
   }
