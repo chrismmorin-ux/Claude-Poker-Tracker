@@ -19,15 +19,16 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "Pending MPMF Gate 4 surface S6 (analytics event schema spec, not yet ticketed) and Q8 verdict (analytics-vendor decision). Cannot ship instrumentation without the schema spec + vendor ratification."
 blocked_by_legacy:
   - "MPMF-G4-S6"
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by MPMF-G4-S6 + Q8 verdict"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). Depends on MPMF Gate 4 S6 analytics event schema (not ticketed) + Q8 analytics-vendor verdict. Soft-block damping applies."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
   source_line: 178
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

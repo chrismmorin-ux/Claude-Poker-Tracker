@@ -2,8 +2,8 @@
 # Rebuild from: findings/FIND-*.yaml
 # Updated by /engine (via cwos-reconcile)
 
-last_updated: "2026-05-01"
-finding_count: 21
+last_updated: "2026-05-19"
+finding_count: 22
 findings:
   - id: "FIND-001"
     title: "Credible intervals computed but never consumed in any UI surface"
@@ -173,3 +173,11 @@ findings:
     program: "domain-correctness"
     dedup_key: "eng-engine-domain-correctness-block-bet-candidate-added-unconditionally-without-villain-ra"
     created_at: "2026-05-01"
+  - id: "FIND-022"
+    title: "WS-131 positional-prior normalization widens position-label-keyed fold-estimate surface"
+    engine: eng-engine
+    severity: LOW
+    status: open
+    program: "domain-correctness"
+    dedup_key: "eng-engine-domain-correctness-ws131-positional-prior-normalization-widens-label-keyed-fold"
+    created_at: "2026-05-19"

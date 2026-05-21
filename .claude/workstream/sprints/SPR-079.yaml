@@ -1,0 +1,131 @@
+id: "SPR-079"
+title: "Refactor Sprint Item 6 — Triage ready-to-start queue (13 backlog items)"
+status: completed
+approved_at: "2026-05-14T11:50:00Z"
+completed_at: "2026-05-14T12:10:00Z"
+
+goal: |
+  Walk every "ready-to-start" backlog item and assign it a real home: each item
+  maps to an active program, gets merged with related work, or retires as stale.
+  Output: queue lake shrinks meaningfully OR surfaces architectural themes the
+  queue had been hiding.
+
+program_focus: engineering
+program_initiative: |
+  Refactor Sprint 2026-05-10 — Item 6 (queue triage). Charter sequencing line:
+  "can run in parallel with Item 4 (cheap, isolated). ~1 session." Item 4
+  shipped at SPR-078; Item 6 is the lowest-friction close-out.
+
+  Same pattern as SPR-071 (queue reconciliation sweep): execute-mode, zero
+  src/ diff, audit + classify + file dispositions per item with done_provenance
+  for retired items.
+
+  Anti-goal cross-check degraded (script unavailable); manual scan = nil risk
+  (queue hygiene, no engagement-pressure, no scoring, no surveillance).
+
+composed_by: auto
+created_at: "2026-05-14T11:50:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T11:50:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (HomeBase fleet
+    tooling absent — product repo). Manual scan: queue hygiene, no
+    engagement-pressure, no surveillance. Anti-goal risk: nil.
+
+decisions_needed: []
+
+decisions_ratified:
+  d1_charter_alignment: "Item 6 was 'NEXT-parallel' per Refactor Sprint charter; Item 4 (SPR-078) shipped → Item 6 unblocks cleanly as next."
+  d2_pattern_precedent: "Same disposition shape as SPR-071: SHIPPED-elsewhere / SUPERSEDED / LEGITIMATE-BACKLOG / NEEDS-RESCOPE / PAUSED-INDEFINITELY. done_provenance for retired items."
+  d3_zero_src_diff: "Triage produces no code changes. Files touched: queue YAMLs only + sweep report at .claude/workstream/sweeps/SPR-079-ready-to-start-triage-report.md."
+
+composition_notes: |
+  Anchor: project-direct (Refactor Sprint Item 6). No queue WS item — Items
+  1/2/3/4 followed the same pattern.
+
+  Single-item sprint. Rationale: lightweight close-out after SPR-078's heavy
+  lift (~700 LOC new + ~600 deleted + 134 new tests + 2 ADRs). Bundling
+  WS-188 Phase 1 (M effort, persistence failure-mode catalog) would risk
+  pushing over the 2-session cap given documentation work tends to expand.
+
+  13 backlog items in category "ready-to-start":
+    WS-058, WS-059, WS-060, WS-062, WS-063, WS-064, WS-065, WS-066,
+    WS-081, WS-082, WS-083, WS-084, WS-085
+
+  Source-class damping: none. Last 3 anchors all founder-driven
+  (SPR-077/078/076).
+
+  Fleet rotation: N/A (product repo).
+
+items:
+  - id: "REFACTOR-ITEM-6"
+    title: "Triage 13 ready-to-start backlog items (assign program OR merge OR retire-as-stale; promote 2-3 if appropriate)"
+    mode: execute
+    effort: S
+    program: engineering
+    category: queue-hygiene
+    project: "refactor-sprint-2026-05-10"
+    status: done
+    started_at: "2026-05-14T11:50:00Z"
+    completed_at: "2026-05-14T12:10:00Z"
+    closeout_notes: |
+      Walked 13 ready-to-start backlog items. Net: 11 LEGITIMATE-BACKLOG
+      (recategorized + status_note refresh) + 2 PROMOTED (WS-063 PSD Gate 2
+      Blind-Spot Roundtable P=8→15; WS-066 LSW soft-flag tightening P=8→15).
+
+      Recategorizations (ready-to-start → real category):
+        - range-lab: WS-058, WS-059, WS-060 (Phase 3/4/5 stretch chain)
+        - sidebar-program: WS-062 (Pilot refits v2.2)
+        - pre-session-drill: WS-063, WS-064, WS-065 (PSD Gates 2/3/4)
+        - lsw-v2: WS-066 (LSW soft-flag tightening)
+        - design-comprehension: WS-081, WS-082, WS-083, WS-084, WS-085 (DCOMP)
+
+      Program reassignments (engineering → design):
+        - WS-063, WS-064, WS-065 (PSD Gate work = design-framework lifecycle)
+        - WS-081, WS-082, WS-083, WS-084, WS-085 (DCOMP = design-program audits)
+
+      Stale dep clears: WS-063/064/065's blocked_by_legacy: ["US-1"] cleared
+      because WS-061 (US-1 = Corpus scaling) shipped 2026-05-11 via SPR-071.
+
+      Zero src/ diff. Files touched:
+        - 13 queue/WS-NNN.yaml edits
+        - 13 queue-index.yaml row edits
+        - 1 sweep report at .claude/workstream/sweeps/SPR-079-ready-to-start-triage-report.md
+
+      Cross-program rotation: 3rd engineering anchor in a row (SPR-077 DC →
+      SPR-078 eng → SPR-079 eng). All 3 are Refactor-Sprint scope; rotation
+      will resume after this close-out.
+    decision_flags: []
+    notes: |
+      Definition of done (from .claude/projects/refactor-sprint-2026-05-10.md
+      Item 6):
+        - [ ] Each item assigned to a program OR deleted as stale OR merged
+              with related
+        - [ ] 2-3 items promoted to active queue if appropriate
+
+      Process (mirrors SPR-071 pattern):
+        1. Read each item's status_note + description + acceptance criteria.
+        2. Classify per disposition bucket:
+           - SHIPPED-elsewhere: work was already done (status:done +
+             done_provenance pointer)
+           - SUPERSEDED: work is captured by another active item (status:done
+             with supersession pointer)
+           - LEGITIMATE-BACKLOG: still valid, needs status_note freshness
+             stamp + program reassignment if uncategorized
+           - NEEDS-RESCOPE: still valid in principle but scope is wrong
+             (status:backlog + rescope direction in status_note)
+           - PAUSED-INDEFINITELY: no forcing function, no consumer (P→8
+             damping; status:backlog)
+        3. For each: edit the WS YAML in-place; update queue-index.yaml
+           summary row.
+        4. Author sweep report at
+           .claude/workstream/sweeps/SPR-079-ready-to-start-triage-report.md
+           with per-item disposition + reasoning.
+        5. Zero src/ diff — pure queue + docs writes.

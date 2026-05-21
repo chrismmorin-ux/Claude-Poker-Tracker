@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "design-comprehension"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   **MT-62 offline-fallback verify**
 accept_criteria:
@@ -22,9 +22,10 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). DCOMP Wave 4 / Auditpass 3 / Finding 13 — MT-62 offline-fallback verification: confirm analysis pipeline degrades gracefully when extension disconnects mid-session; document behavior. Category retitled to 'design-comprehension'; program: engineering → design."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 380
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

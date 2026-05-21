@@ -1,0 +1,178 @@
+id: "SPR-094"
+title: "Range Lab Phase-0 unblockers — 2 ADRs + rangeToString + AP-RL-01 binding"
+status: completed
+approved_at: "2026-05-20T01:08:13Z"
+completed_at: "2026-05-20T01:22:00Z"
+
+goal: |
+  Range Lab Phase-0 unblockers ship. Paint primitive ADR + undo stack
+  ADR (Gate-4 prerequisites) ratified. `rangeToString()` reverse-
+  serializer authored in src/utils/pokerCore/rangeMatrix.js with
+  round-trip tests. AP-RL-01 anti-pattern binding (no bucket-label-
+  driven range narrowing in DS-54) authored in domain-correctness
+  doctrine.
+
+  Outcome: Gate 4 surface spec (WS-055) gains all design-side
+  prerequisites; Phase 1 engineering (WS-056) gains its first Phase-0
+  utility; domain-correctness has the doctrine binding to enforce
+  first-principles range narrowing.
+
+program_focus: design
+program_initiative: |
+  Direct downstream of SPR-093 Gate 2 Blind-Spot Roundtable. 4-item
+  batch covers three programs (design × 2, engineering × 1, DC × 1) —
+  all are post-Gate-2 unblockers for the Range Lab project. This is
+  the "Phase 0 batch" pattern: small, multi-program, all dependencies
+  on Gate 2 outputs, all enable Phase 1+ work.
+
+  Program rotation: design is the dominant program in this sprint
+  (2 of 4 items). Engineering rotation already satisfied by SPR-093.
+  DC gets its rotation back via the AP-RL-01 binding.
+
+composed_by: auto
+created_at: "2026-05-20T01:08:13Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T01:08:13Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-093 precedent). Manual scan:
+      - WS-202 + WS-203 are ADR-authoring tickets ratifying Gate 2
+        recommendations. Pure decision-document work.
+      - WS-204 is engineering implementation of a reverse-serializer
+        with code spec already in Gate 1 audit. No design surface,
+        no user-facing copy.
+      - WS-207 is doctrine binding (anti-pattern) — companion to
+        [[feedback_first_principles_decisions]]. Strengthens existing
+        autonomy red lines, doesn't introduce new ones.
+      - Honors [[feedback_first_principles_decisions]]: WS-207 is the
+        operational binding of this doctrine to Range Lab DS-54.
+      - Honors [[feedback_owner_volunteered_grading]]: Range Lab
+        remains study-only opt-in; no graded outputs in scope.
+      - Honors [[feedback_long_term_over_transition]]: paint primitive
+        + undo stack ADRs pick the long-term-correct pattern, not the
+        transition-easier one.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #2 (WS-202) — Paint primitive: ratify Gate 2 recommendation (tap-to-toggle + long-press-for-weight) vs alternative (tap-and-hold-for-weight, slider-per-cell)."
+  - "Item #3 (WS-203) — Undo stack: ratify Gate 2 recommendation (per-stroke undo) vs alternative (per-session undo)."
+  - "Item #4 (WS-207) — AP-RL-01 home location: project doc, POKER_THEORY.md §7, or new docs/anti-patterns/AP-RL-01.md doc."
+
+composition_notes: |
+  4-item plan-first sprint anchored on Range Lab Phase-0 cluster.
+
+  Anchor selection (Step 3a):
+    - Top of clean P=15 tier is the 7-ticket RL Phase-0 cluster
+      (WS-202..WS-207) + WS-054..WS-057 sequential gates + WS-020/023/025
+      EAL NEEDS-RESCOPE + WS-087 LSW-B2.
+    - WS-020/023/025: not directly executable (NEEDS-RESCOPE).
+    - WS-054/055/056/057: sequential gates, all M-effort; would each
+      anchor a separate sprint.
+    - Phase 0 cluster (WS-202..WS-205, WS-207) has 4 S-effort items
+      that combine to exactly the 2σ cap. Natural batch.
+    - WS-204 picked as anchor (Item 1) because it has no decision
+      flags — pure quick win execution.
+
+  Pair candidate evaluation (Step 3b):
+    - WS-205 (M, engineering, equity caching) — adding to 4-S bundle
+      = 3.5σ, over cap. Defer to focused engineering sprint.
+    - WS-206 (M, DC, LSW-RL parity invariant) — soft-blocked on WS-205;
+      skip until WS-205 ships.
+    - WS-054 (M, design, RL Gate 3) — would anchor next sprint after
+      this Phase-0 batch ships.
+    - WS-185 (DC, queue-index says backlog but YAML says done) —
+      hygiene task, deferred to /audit not sprint scope.
+
+  Effort accounting:
+    - 4 × S = 4 × 0.5σ = 2.0σ. Exactly at the standard cap.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-091 (spr-followup), SPR-092 (spr-followup),
+      SPR-093 (untagged WS-053). No auto-rec or engine-finding
+      saturation.
+    - All 4 sprint items source = spr-followup (parent_spr=SPR-093).
+      Founder-driven, no damping.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..093 — poker-tracker product repo, no fleet/repo-goal
+  candidates.
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (19d ago,
+      cadence 14d → 5d stale). launch protocol_history empty.
+    - Following SPR-085..093 precedent (all proceeded with same
+      stale-DC + never-baselined launch state), composing anyway.
+
+  Plan-mode entry:
+    - Item 1 (WS-204) has no decision flags → execute pattern within
+      plan-first wrapper (strict protocol classification keeps it
+      plan-first because type=improvement).
+    - Items 2-4 share single batched AskUserQuestion eliciting 3
+      decisions; then execute all four items in sequence.
+
+items:
+  - id: "WS-204"
+    title: "Range Lab — rangeToString() reverse-serializer"
+    mode: plan-first
+    effort: S
+    priority_score: 15.0
+    program: engineering
+    status: done
+    decision_flags: []
+    files_involved:
+      - "src/utils/pokerCore/rangeMatrix.js (modified — add rangeToString)"
+      - "src/utils/pokerCore/__tests__/rangeMatrix.test.js (modified — add round-trip tests)"
+  - id: "WS-202"
+    title: "Range Lab Paint Primitive ADR"
+    mode: plan-first
+    effort: S
+    priority_score: 15.0
+    program: design
+    status: done
+    decision_flags:
+      - "Confirm tap-to-toggle + long-press-for-weight (Gate 2 recommendation); alternatives: tap-and-hold-for-weight, slider-per-cell"
+    files_involved:
+      - "docs/adr/ADR-007-rl-paint-primitive.md (NEW)"
+  - id: "WS-203"
+    title: "Range Lab Undo Stack ADR"
+    mode: plan-first
+    effort: S
+    priority_score: 15.0
+    program: design
+    status: done
+    decision_flags:
+      - "Confirm per-stroke undo (Gate 2 recommendation); alternative: per-session undo"
+    files_involved:
+      - "docs/adr/ADR-008-rl-undo-stack.md (NEW)"
+  - id: "WS-207"
+    title: "Range Lab — AP-RL-01 anti-pattern binding"
+    mode: plan-first
+    effort: S
+    priority_score: 15.0
+    program: domain-correctness
+    status: done
+    decision_flags:
+      - "AP-RL-01 home: project doc / POKER_THEORY.md §7 / new anti-patterns doc"
+    files_involved:
+      - "POKER_THEORY.md or docs/projects/range-lab.project.md (modified) — depending on home decision"
+      - "src/utils/rangeEngine/CLAUDE.md (modified — add AP-RL-01 to anti-patterns)"
+
+deferred: |
+  - WS-205 (equity-precompute caching layer, M, engineering) — too
+    big for this 4-S bundle; natural anchor for a focused engineering
+    sprint next cycle.
+  - WS-206 (LSW-RL equity-parity invariant, M, DC) — soft-blocked on
+    WS-205; sequence after WS-205.
+  - WS-054 (RL Gate 3 Research, M, design) — sequenced after Phase-0
+    batch closes; will be natural next /next anchor.
+  - WS-208 (RL mobile-portrait variant, M, design, P=3) — sequenced
+    after Phase 1-2 ship.
+  - WS-185 (EV-bucket sync hygiene) — queue-index sync issue, not
+    sprint scope; deferred to /audit.

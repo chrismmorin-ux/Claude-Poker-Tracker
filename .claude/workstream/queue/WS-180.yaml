@@ -1,0 +1,116 @@
+id: "WS-180"
+title: "SLS Gate 4 close-out — shape-skill-map + lesson-runner + per-surface red-line conformance matrix"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: "session-2026-05-11-spr-074"
+claimed_at: "2026-05-11T04:30:00Z"
+started_at: "2026-05-11T04:35:00Z"
+completed_at: "2026-05-11T05:30:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "shape-language"
+capability: "core"
+program: "design"
+description: |
+  Close SLS Gate 4 per founder-ratified 2-sprint scope split (SPR-073 + SPR-074).
+  SPR-073 shipped the foundation (study-home.md + shape-language-study-home.md +
+  shape-language-enrollment.md + shape-mastery.md). This ticket ships the two
+  remaining surfaces and the per-surface red-line conformance matrix that binds
+  the project's 9 autonomy red lines to testable CI/DOM targets.
+
+  Parent: WS-039 (Gate 4 — SLS) closed at SPR-073. This ticket carries the
+  deferred deliverables enumerated in SPR-073 effort_summary + d5_red_line_enforcement.
+accept_criteria:
+  - "docs/design/surfaces/shape-skill-map.md (NEW) — transparency screen surface;
+    full red-line compliance table; W_leak/W_drill/W_test/W_recent composition
+    inspectable per feedback_scf_learning_state_not_tier_rank.md"
+  - "docs/design/surfaces/lesson-runner.md (NEW) — drill/lesson surface; mode
+    bodies (Reference / Deliberate / Discover) per SLS Gate 3 verdicts; red-line
+    compliance table"
+  - "Per-surface red-line conformance matrix — 9 SLS Gate 2 red lines × N surfaces
+    bound to specific enforcement (CI-grep / DOM-assert / runtime-flag) per
+    surface; matrix lives inline in each surface doc and aggregates in
+    docs/design/audits/2026-05-11-sls-g4-redline-conformance.md (NEW)"
+  - "docs/design/contracts/shape-mastery.md updated — 8 writer actions + 4 read
+    hooks referenced from new surfaces; invariants pinned"
+  - "docs/projects/poker-shape-language.project.md Stream A row G4 [~] → [x];
+    Streams B/D unblocked"
+  - "Zero src/ diff (design-only)"
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/shape-skill-map.md"
+  - "docs/design/surfaces/lesson-runner.md"
+  - "docs/design/audits/2026-05-11-sls-g4-redline-conformance.md"
+  - "docs/design/surfaces/study-home.md"
+  - "docs/design/surfaces/shape-language-study-home.md"
+  - "docs/design/contracts/shape-mastery.md"
+  - "docs/projects/poker-shape-language.project.md"
+blocked_by:
+  - "WS-039"
+blocked_by_legacy: []
+enables:
+  - "WS-040"
+  - "WS-041"
+  - "WS-042"
+  - "WS-043"
+sprint_id: "SPR-074"
+decision_flags:
+  - "shape-skill-map IA: single transparency page vs tabbed (Leaks/Drills/Tests/Recent)"
+  - "lesson-runner IA: per-lesson container vs shared shell with mode tabs"
+  - "Red-line conformance matrix enforcement: CI-grep / DOM-assert / hybrid"
+source:
+  parent_ws: "WS-039"
+  parent_spr: "SPR-073"
+created_at: "2026-05-11T04:30:00Z"
+status_note: |
+  RESOLVED 2026-05-11 SPR-074. SLS Gate 4 CLOSED.
+  Plan-first; 3 IA decisions ratified upfront via AskUserQuestion (D1=A
+  single-scrollable-page / D2=A shared shell with intent-as-route / D3=A
+  hybrid per-red-line enforcement). Net: 3 NEW design artifacts + 4 amended
+  artifacts; zero src/ diff.
+
+  Shipped:
+    1. docs/design/surfaces/shape-skill-map.md (NEW, ~270 lines) — transparency
+       screen; 10 descriptor rows; single-scrollable IA; expandable
+       W_drill+W_recent+declared composition with W_leak+W_test placeholders;
+       inline per-surface red-line table.
+    2. docs/design/surfaces/lesson-runner.md (NEW, ~340 lines) — drill/lesson
+       surface; shared shell with 3 intent-as-route variants
+       (Reference/Deliberate/Discover); only surface dispatching
+       RECORD_DRILL_OUTCOME; I-SM-3 reducer-entry defense-in-depth documented;
+       inline per-surface red-line table.
+    3. docs/design/audits/2026-05-11-sls-g4-redline-conformance.md (NEW, ~310
+       lines) — aggregate matrix 9 red lines × 5 surfaces × enforcement-method;
+       ~45 cells total (~15 CI-grep / ~20 DOM-assert / ~9 Hybrid / ~5 Structural
+       / ~7 N/A delegated); planned scripts/check-sls-redlines.cjs + 5
+       redlines.test.jsx files enumerated.
+
+  Amended:
+    4. docs/design/contracts/shape-mastery.md — Writers table now references
+       lesson-runner + shape-skill-map by surface link; new writer
+       TOGGLE_SESSION_INCOGNITO added (3 dispatching surfaces); MUTE_DESCRIPTOR
+       triggering surfaces expanded to 3. Readers table updated.
+    5. docs/design/contracts/README.md — shape-mastery entry: 8 → 9 writers;
+       change-log entry for SPR-074 amendment.
+    6. docs/design/surfaces/shape-language-study-home.md — 5 cross-references
+       upgraded from "Planned (SPR-074)" → live links; change-log entry added.
+    7. docs/design/surfaces/study-home.md — 3 cross-references to conformance
+       matrix upgraded from "deferred to SPR-074" → live link.
+    8. docs/design/surfaces/CATALOG.md — 3 new top-level view entries
+       (study-home + shape-skill-map + lesson-runner) at spec-level; change-log
+       entry.
+    9. docs/projects/poker-shape-language.project.md — Stream A row G4 [~] → [x].
+
+  Accept criteria all satisfied:
+    AC1 (shape-skill-map.md NEW) ✓
+    AC2 (lesson-runner.md NEW) ✓
+    AC3 (red-line conformance matrix per-surface + aggregate) ✓
+    AC4 (shape-mastery.md updated with new writer/reader bindings) ✓
+    AC5 (project doc G4 closed) ✓
+    AC6 (zero src/ diff) ✓ — verified via git status; 25 pre-existing src/
+        modifications were in working tree before this sprint.
+
+  SLS Streams B + D now unblocked (classifier modules + reducer/store) per
+  charter; their src/ implementation work is the next sprint candidate set
+  alongside DC testing-infra (WS-020/023/025) + Range Lab Gate 2-4 eng cluster.

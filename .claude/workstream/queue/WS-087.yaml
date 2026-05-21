@@ -2,34 +2,48 @@ id: "WS-087"
 title: "Turn decision nodes where bucket shifts"
 legacy_id: "LSW-B2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "SPR-096"
+claimed_at: "2026-05-20T13:30:00Z"
+completed_at: "2026-05-20T13:42:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "line-study-slice-widening"
 capability: "core"
 program: "domain-correctness"
 description: |
-  **Turn decision nodes where bucket shifts** — nodes where turn card peels/completes/pairs and the student's bucket class changes. Node list from Stream A dimension-6 output (est. ~8 nodes).
+  **Turn decision nodes where bucket shifts** — original premise: nodes where
+  turn card peels/completes/pairs and the student's bucket class changes; "node
+  list from Stream A dimension-6 output (est. ~8 nodes)."
+
+  PREMISE CORRECTED (SPR-096, 2026-05-20): the "~8 nodes" estimate was never
+  validated. The Stream A audits' dimension-6 (bucket-teaching) tables flag only
+  ~1 genuinely HIGH-leverage *turn* node with a clean action archetype-flip
+  (`turn_checked_back` on q72r, Q♠7♥2♣→3♦), plus a few PARTIAL "sizing-only"
+  turn nodes (no bet/check or call/fold flip). The other HIGH-leverage targets
+  the audits list are RIVER nodes, out of scope for a turn-node ticket. There is
+  no centralized 8-node dim-6 turn rollup; the bucket-teaching queue tables in
+  the per-line audit files are the authoritative (distributed) enumeration.
+  Founder ratified (SPR-096): author the one audit-flagged HIGH turn node only.
 accept_criteria:
-  - "✓ Every flagged turn decision has `heroHolding`"
-  - "✓ tests green"
-  - "✓ visual verification"
+  - "✓ q72r `turn_checked_back` carries the audit's proposed correctByArchetype split (call:{fish:F,reg:T,pro:T}; fold:{fish:T,reg:F,pro:F})"
+  - "✓ split + rationale faithful to btn-vs-bb-srp-ip-dry-q72r.md bucket-teaching queue"
+  - "✓ tests green (lineSchema archetype-coverage validation passes)"
+  - "✓ render parity with existing archetype-split nodes (t98 turn_after_check)"
 effort: "M"
-files_involved: []
+files_involved:
+  - "src/utils/postflopDrillContent/lines.js"
 blocked_by:
   - "WS-086"
 blocked_by_legacy:
   - "LSW-B1"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-096"
 decision_flags: []
-status_note: "BLOCKED by LSW-B1 + per-line A"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). Stream B2 turn-decision widening — gated on Stream A audit close + LSW-B1 flop completion (WS-086). Reclaim with Stream A audit cluster."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
   source_line: 535
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

@@ -21,14 +21,15 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "Structurally blocked on external solver access — verifying the JT-on-T96ss-3BP equity claim requires either a GTO Wizard subscription or a direct PioSOLVER run to produce a definitive equity-distribution number (currently approximated at 37-44% via combinatorial review per LSW-A1 row #3). Until founder secures solver access, the work cannot ship to acceptance. Promoted to structured field 2026-05-17 SPR-086 (WS-092 hygiene) so /next Step 2-prereq dampens score (P=15 × 0.25 = 3.75) rather than surfacing as a clean ship-ready candidate. Clear this note once solver access lands."
 blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "DEFERRED (blocked on solver access)"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). Stream G engine-upgrade candidate — board-texture conditioning on HERO_BUCKET_TYPICAL_EQUITY. Real solver-access dependency holds the work. Concrete scope. Reclaim when solver access lands. **2026-05-17 SPR-086 (WS-092 hygiene):** Promoted the solver-access prerequisite from prose-only status_note to structured `blocked_by_note` field so /next Step 2-prereq damps the priority to 3.75 (was surfacing as P=15 clean ship-ready candidate). Item content unchanged; only the queue-routing metadata."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
   source_line: 579
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

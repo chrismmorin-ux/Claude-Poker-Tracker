@@ -1,0 +1,172 @@
+id: "WS-172"
+title: "PMC Gate 2 — Blind-Spot Roundtable producing failure-mode taxonomy"
+type: improvement
+status: done
+claimed_by: "claude-2026-05-09T17:00Z"
+claimed_at: "2026-05-09T17:00:00Z"
+completed_at: "2026-05-09T18:00:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "predictive-model-calibration"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Gate 2 Blind-Spot Roundtable for the Predictive Model Calibration program.
+  Charter at `.claude/projects/predictive-model-calibration.md`.
+  Gate 1 Entry audit (RED verdict) at
+  `docs/design/audits/2026-05-09-entry-pmc-prediction-ledger.md`.
+
+  Charter question: "What classes of model error against real player data
+  are we likely to encounter, including ones the framework itself cannot see?"
+
+  This is the primary deliverable of Phase 2 of PMC. The output — an
+  authored failure-mode taxonomy — is load-bearing for everything
+  downstream: every analyzer rule traces to a class in it, and the ledger
+  schema (Gate 4) captures the fields needed to detect each class.
+
+  Per founder ratification 2026-05-09: adversarial roundtable refused
+  single-pass authored taxonomy as "theory validating theory" — same
+  failure mode the program is designed to break. The roundtable IS the
+  bypass.
+
+  Five specialist personas + devil's advocate convene. Each enumerates
+  failure classes independently in stage outputs, then cross-review.
+  Synthesis produces the taxonomy.
+
+  Personas:
+    1. Range-engine theorist — Bayesian range model, prior-vs-likelihood
+       balance, mixing-weight invariants. *What range errors compound vs
+       self-correct?*
+    2. Population ecology — Ignition small-stakes specifically; cash vs SNG;
+       soft-pool drift over time. *What population-level priors are we
+       likely to mis-calibrate?*
+    3. Frequentist statistician — sample-size / credible interval /
+       multiple-comparisons rigor. *When do we have data to claim a leak vs
+       pattern-matching on noise?*
+    4. Bayesian inference — hierarchical shrinkage, posterior collapse,
+       identifiability. *What aggregation hierarchy gives per-villain
+       detection without N=1 false positives?*
+    5. Adversary modeler — *what model errors persist undetected?
+       Hard-to-falsify failure classes are the dangerous ones.*
+    6. Devil's advocate — *when is "the model is wrong" the wrong frame?
+       When is deviation correct and data noisy? When does the dashboard
+       itself become a bias?*
+
+  Stages A-E per `docs/design/ROUNDTABLES.md`. Stage E (graded-work-trap
+  pre-check) load-bearing — calibration dashboard is strongest graded-work
+  surface in the codebase per calibration-dashboard.md §Purpose.
+
+  Per failure class in the taxonomy, document:
+    - Class name + ID
+    - Description (the kind of model error)
+    - Detection signature (what observation pattern reveals it)
+    - Required ledger fields (what predictionLedger must capture to
+      detect this class)
+    - Severity (impact on hero EV / on model trust)
+    - Examples (concrete scenarios)
+    - Cross-references to existing failure files where overlap exists
+
+  Also dispositioned this sprint:
+    - JTBD candidates DS-NEW-PMC-01 / DS-NEW-PMC-02 / DS-NEW-PMC-03 —
+      author / merge into DS-58 / drop
+    - Persona check: model-developer-Chris ratified or collapsed onto
+      post-session-chris
+    - Open questions 1-6 from charter (storage budget, multi-comparisons
+      rigor, ledger backfill, population definition, drift windowing,
+      range-engine update gating)
+accept_criteria:
+  - "Roundtable executed via /eng-engine pattern (or equivalent multi-agent invocation)"
+  - "≥10 failure-mode classes enumerated in the taxonomy"
+  - "Each class has detection signature + required ledger fields + severity + examples"
+  - "Stage A (persona sufficiency) explicit verdict: model-developer-Chris ratified or collapsed"
+  - "Stage B (JTBD coverage) explicit verdicts on DS-NEW-PMC-01..03"
+  - "Stage C (situational stress) walks scholar-drills-only and post-session-chris through the dashboard concept"
+  - "Stage D (cross-product) verifies sidebar / extension impact (expected: none — confirm)"
+  - "Stage E (graded-work-trap) audits aggregate-prose copy patterns explicitly; AP-PMC-01..05 reviewed"
+  - "Population-ecology stage produces priors-likely-to-be-wrong list specific to Ignition small-stakes"
+  - "Charter open questions 1-6 each get verdict (resolve, defer, escalate)"
+  - "Failure-mode taxonomy file authored at `docs/projects/predictive-model-calibration/failure-mode-taxonomy.md`"
+  - "Charter `.claude/projects/predictive-model-calibration.md` updated with Gate 2 outputs"
+  - "Audit artifact `docs/design/audits/2026-05-09-blindspot-pmc-failure-modes.md` (or session-actual date) authored"
+  - "Gate 4 ledger-schema scope ratified (depends on taxonomy's required-fields)"
+  - "Gate 3 trigger verdict (research needed YES/NO) explicit"
+effort: "L"
+files_involved:
+  - "docs/projects/predictive-model-calibration/failure-mode-taxonomy.md (NEW)"
+  - "docs/design/audits/YYYY-MM-DD-blindspot-pmc-failure-modes.md (NEW)"
+  - ".claude/projects/predictive-model-calibration.md (modify — append Gate 2 outputs)"
+  - "docs/design/jtbd/domains/drills-and-study.md (potentially modify — DS-NEW-PMC-01..03 disposition)"
+  - "docs/design/personas/situational/post-session-chris.md (potentially modify — model-developer posture amendment)"
+blocked_by: []
+blocked_by_note: ""
+blocked_by_legacy: []
+enables:
+  - "Gate 3 Research (if triggered)"
+  - "Gate 4 Design — calibration-dashboard.md amendment"
+  - "Gate 4 Design — ledger-schema.md authoring"
+  - "Gate 4 Design — aggregator-design.md authoring"
+  - "WS-169 implementation (now under PMC)"
+sprint_id: "SPR-065"
+decision_flags:
+  - "Roundtable execution mode (/eng-engine vs custom multi-agent vs sequential single-persona)"
+  - "Whether persona expansion warrants Gate 3 Research vs in-line resolution"
+  - "Storage budget verdict — full retention vs windowed retention"
+  - "Population definition — Ignition-specific vs broader live-pool"
+status_note: |
+  Sprint 2/2 SHIPPED 2026-05-09 (SPR-065). Gate 2 CLOSED. WS-172 done.
+
+  **REPLACEMENT VERDICT RATIFIED (founder, sprint 2/2):**
+  Devil's-Advocate Concern 1 disposed REPLACEMENT — predictionAudit per-hand
+  IDB field (~200 LOC, 0.5 sessions) IS PMC. Full ledger / hierarchical-
+  Bayesian aggregator / expanded calibration dashboard architecture CANCELLED.
+
+  Sprint 2/2 deliverables (all complete):
+    - Charter `.claude/projects/predictive-model-calibration.md` substantially
+      rewritten: §Status, §Scope (in-scope-under-REPLACEMENT vs cancelled-at-
+      REPLACEMENT), §Phases collapsed (5a-5e → 5a-5b), §Workstream registry,
+      §Decisions revised at Gate 2 close-out, §Open questions verdicts,
+      §Cross-program effects all updated. AP-PMC-06 authored in §Anti-pattern
+      refusals (no variance-blaming-the-model copy + no aggregation framing).
+    - Failure-mode taxonomy `docs/projects/predictive-model-calibration/
+      failure-mode-taxonomy.md` refactored with 4-state visibility framework
+      (DETECTABLE-VIA-PREDICTIONAUDIT / OUT-OF-SCOPE-AT-CURRENT-ARCHITECTURE
+      / STRUCTURALLY-INVISIBLE / MOOT-UNDER-REPLACEMENT). Per-class detail
+      (visibility + severity + detection-signature + required-extension OR
+      mitigation + worked-example) authored for all 18 Tier-1 classes.
+    - Audit `docs/design/audits/2026-05-09-blindspot-pmc-failure-modes.md`
+      appended with Stage E (PASS — structural distinguishability ratified)
+      + 4 Devil's-Advocate concerns dispositioned + close-out verdict
+      (🟢 GREEN; Gate 2 CLOSED) + 10 cross-cutting architectural asks status
+      table + change log.
+    - Pre-registration registry stub `docs/projects/predictive-model-
+      calibration/registered-hypotheses.md` shipped (FM-DISC-01 mitigation;
+      ratchet rule + entry schema; empty body — entries begin at Phase 5a
+      observation).
+    - WS-174 created (Concern 2 trigger-conditioned revisit — CFR vs
+      Bayesian frequency-matching).
+    - WS-175 created (Q6 update gating reassigned to range-engine scope).
+    - WS-169 RE-RELEASED to original EAL Stream D 3-tab anchor/predicate/
+      primitive scope (was absorbed into PMC at Gate 1 morning; REPLACEMENT
+      cancels expanded-dashboard architecture).
+
+  Charter ratifications-revised summary:
+    #1 Capture scope: REDUCED (per-hand at hand-end, not per-decision-node)
+    #2 Hierarchical Bayesian aggregation: REVERSED (cancelled)
+    #3 Full-pipeline MVP: REVERSED (predictionAudit IS the deliverable)
+    #4 Adversarial Gate 2 Roundtable produces taxonomy: STANDING ✓
+    #5 New project absorbing WS-169: AMENDED (PMC continues; WS-169
+       re-released)
+    #6 CFR deferred indefinitely: STANDING-WITH-TRIGGER (WS-174 designated
+       revisit)
+
+  Phase 5 footprint shrunk from ~5-8 sessions (5a-5e) to ~1-2 sessions:
+    Phase 5a — predictionAudit primitive (~0.5-1 session, separate WS ticket)
+    Phase 5b — Render surface (~0.5-1 session, Gate 4 design-deferred)
+
+  Markdown-only sprint. Vital signs N/A by design. No source code touched.
+source:
+  origin: "pmc-gate1-2026-05-09"
+  parent_ws: ""
+  parent_project: "predictive-model-calibration"
+created_at: "2026-05-09"
+updated_at: "2026-05-09T18:00:00Z"

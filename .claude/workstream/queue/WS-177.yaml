@@ -1,0 +1,131 @@
+id: "WS-177"
+title: "PMC Phase 5a — predictionAudit primitive (per-hand IDB field + writer + read API + AP-PMC-04 schema enforcement)"
+type: feature
+status: done
+claimed_by: "session-2026-05-10-next-spr-068"
+claimed_at: "2026-05-10T01:00:00Z"
+completed_at: "2026-05-10T01:45:00Z"
+sprint_id: "SPR-068"
+priority_score: 22.0
+priority_label: "P1"
+category: "predictive-model-calibration"
+capability: "core"
+program: "domain-correctness"
+description: |
+  PMC Phase 5a deliverable per charter (`.claude/projects/predictive-model-calibration.md` §Phase 5).
+  Authored 2026-05-10 in SPR-067 reconcile sweep — charter named the work
+  ("~0.5-1 session, separate WS ticket") but no ticket existed in queue.
+
+  Under REPLACEMENT scope (SPR-065), `predictionAudit` per-hand IDB field
+  IS PMC. The full ledger / hierarchical aggregator / expanded calibration
+  dashboard architecture was cancelled. This ticket ships the primitive.
+
+  Scope (charter §Phase 5a):
+    - IDB migration: add `predictionAudit` field on `hands` records (no new
+      store needed — schema bump only)
+    - `predictionAuditWriter.js` API:
+        writePredictionAudit(handId, { predictedDistribution, observedAction, modelVersion })
+    - Hand-end orchestrator wiring: collect prediction at decision-time,
+      write at hand-end. Captures per-actor (hero + villain) entries.
+    - Read API: `readPredictionAudit(handId)` returning the field
+    - Tests + smoke fixture
+    - **AP-PMC-04 schema-level enforcement**: drop `evRealized` at write
+      for hero entries (don't depend on copy discipline; enforce at the
+      writer layer so the field is structurally absent for hero rows)
+
+  Schema (charter §Architectural primitives):
+    interface PredictionAuditField {
+      predictedDistribution: {
+        actor: 'villain' | 'hero'
+        actorId: string                                  // playerId or 'hero'
+        seat: number
+        distribution: Array<{action, weight, sizing?}>   // model output at decision-time
+      }[]
+      observedAction: {
+        actor: 'villain' | 'hero'
+        actorId: string
+        seat: number
+        actionTaken: string
+        sizing: number?
+      }[]
+      modelVersion: string                               // semver of engine bundle
+      // AP-PMC-04: evRealized NOT captured for hero entries (schema-enforced).
+    }
+
+  Cross-references:
+    - PMC charter §Phase 5a + §Architectural primitives
+    - AP-PMC-04 (charter §Anti-pattern refusals) — hero-grading framing
+    - AP-PMC-06 (charter §Anti-pattern refusals) — variance-blame copy
+      (binds Phase 5b render surface, not this ticket; documenting here so
+      Phase 5b doesn't lose the reference)
+    - Q1 (storage budget) — trivial: ~1KB × 10K hands/year = ~10MB/year
+    - Q3 (backfill) — trivial: existing hands re-runnable through engine
+      to bootstrap field; tag backfilled rows with `historicalReplay: true`
+      to distinguish from forward-captured
+
+  Out of scope (Phase 5b — separate ticket):
+    - Render surface (HandReplay ReviewPanel or wherever Gate 4 lands)
+    - Per-hand display copy (AP-PMC-06 enforcement at component level)
+    - Pre-registration registry consumer wiring (registry stub already
+      shipped at `docs/projects/predictive-model-calibration/registered-hypotheses.md`)
+
+accept_criteria:
+  - "IDB schema bump (additive — `predictionAudit` field on `hands` store), tested via migration test"
+  - "`predictionAuditWriter.js` exports `writePredictionAudit(handId, payload)` with AP-PMC-04 schema-level guard (evRealized stripped for hero entries at write time, not read time)"
+  - "Hand-end orchestrator captures prediction snapshots from rangeEngine + exploitEngine + (optionally) heroLeak detector at decision-time and writes the consolidated field at hand-end via writePredictionAudit"
+  - "`readPredictionAudit(handId)` exported from same module returning the field (or null)"
+  - "Tests pin AP-PMC-04 (hero entries never persist evRealized regardless of caller intent), schema invariants (modelVersion present, distribution sums to 1.0), and round-trip read-back"
+  - "Smart-test-runner full-suite green; rangeEngine / exploitEngine subsuites unaffected"
+  - "Charter Phase 5a row updated to point at this ticket as resolved on close"
+  - "Phase 5b ticket authored at close (separate WS ID) capturing the render-surface deferred decision"
+
+effort: "M"
+files_involved:
+  - "src/utils/persistence/database.js (IDB schema bump — additive field on hands store)"
+  - "src/utils/persistence/predictionAuditWriter.js (NEW — writePredictionAudit + readPredictionAudit + AP-PMC-04 schema guard)"
+  - "src/utils/persistence/__tests__/predictionAuditWriter.test.js (NEW)"
+  - "src/utils/persistence/__tests__/migration.test.js (extend with new field test)"
+  - "src/hooks/useGameHandlers.js OR equivalent hand-end orchestrator (wire decision-time prediction capture + hand-end write)"
+  - ".claude/projects/predictive-model-calibration.md (Phase 5a row update on close)"
+  - "docs/projects/predictive-model-calibration/registered-hypotheses.md (no edit; bound)"
+
+blocked_by: []
+blocked_by_note: ""
+blocked_by_legacy: []
+enables: []
+decision_flags:
+  - "Decision-time capture mechanism: snapshot at every model-emission event, or snapshot only at hero-decision-points + villain-action-points (selectivity vs completeness)"
+  - "Backfill strategy: run on existing hands at first launch (boot-time rebuild), on-demand-only when a hand is opened in HandReplay, or skip backfill entirely (forward-only capture)"
+  - "modelVersion source: read from `runtimeVersions.js` engine semver, or compose from rangeEngine PROFILE_VERSION + exploitEngine version, or accept as caller-supplied string"
+status_note: |
+  RESOLVED 2026-05-10 SPR-068. PMC Phase 5a primitive shipped:
+    - IDB v25 migration (additive predictionAudit:null on legacy hands,
+      forward-only per Q2 ratification)
+    - src/utils/persistence/predictionAuditWriter.js (composeModelVersion +
+      sanitizePredictionAudit + writePredictionAudit + readPredictionAudit)
+      with AP-PMC-04 schema-level enforcement (hero observedAction entries
+      lose evRealized at writer)
+    - src/utils/predictionAudit/reconstruct.js (pure utility extracting
+      observedAction[] from actionSequence; predictedDistribution[] left
+      empty for WS-178 follow-up)
+    - usePersistence wires reconstructPredictionAudit + sanitize inline
+      before saveHand — predictionAudit field is atomic with hand record
+    - 42 new tests (migrationV25 6 + predictionAuditWriter 20 + reconstruct
+      16); 10756/10776 full smart-test-runner pass (zero regressions)
+    - Build clean (12.31s, PWA 66 entries)
+
+  Decision_flags ratified upfront: Q1 post-hoc reconstruction at hand-end,
+  Q2 forward-only no backfill, Q3 composed range-${PROFILE_VERSION}+engine-
+  ${ENGINE_VERSION} (currently range-3+engine-v123).
+
+  WS-178 authored at close-out for Phase 5a-2 (predictedDistribution
+  engine-query population). Phase 5b (render surface) remains unticketed
+  pending Gate 4 design.
+
+source:
+  origin: "spr-067-reconcile-sweep-hygiene-2026-05-10"
+  parent_doc: ".claude/projects/predictive-model-calibration.md §Phase 5a"
+  parent_ws: "WS-172"
+  parent_project: "predictive-model-calibration"
+created_at: "2026-05-10"
+updated_at: "2026-05-10"

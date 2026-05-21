@@ -1,0 +1,66 @@
+id: "WS-203"
+title: "Range Lab Undo Stack ADR (per-stroke vs per-session)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T01:08:13Z"
+completed_at: "2026-05-20T01:22:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "design"
+description: |
+  Gate-4 ADR documenting the Range Lab undo-stack design decision.
+  Output of SPR-093 Gate 2 Blind-Spot Roundtable Stage E (E-A2).
+
+  Two designs enumerated in Stage E:
+    1. Per-stroke — each cell tap = one undo-stack entry
+       (RECOMMENDED — granular control; matches H-PLT06 misclick
+       absorption; consistent with paint primitive granularity)
+    2. Per-session — each "Start paint" → "Finalize paint" = one entry
+       (simpler implementation; lower undo granularity; rejected
+       for misclick absorption weakness)
+
+  ADR documents recommended choice + alternative considered + heuristic
+  compliance (H-N03 undo, H-PLT06 misclick absorption) + interaction
+  with "Clear all" destructive confirmation (E-A3).
+
+  "Clear all" is a separate destructive action with confirmation modal;
+  it bypasses the undo stack (intentional — Clear All requires explicit
+  user intent, not undo-recoverable accident).
+
+accept_criteria:
+  - "ADR authored at docs/adr/ADR-NNN-rl-undo-stack.md"
+  - "Decision: per-stroke undo stack"
+  - "Alternative considered: per-session — rejected with reason"
+  - "Heuristic compliance verified inline (H-N03 undo, H-PLT06 misclick)"
+  - "Clear All destructive-confirmation interaction documented"
+  - "Cross-references Gate 2 audit (Stage E E-A2) + WS-202 (paint primitive)"
+effort: "S"
+files_involved:
+  - "docs/adr/ADR-NNN-rl-undo-stack.md (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables:
+  - "WS-055"
+sprint_id: "SPR-094"
+decision_flags:
+  - "Confirm per-stroke undo (alternative: per-session)"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  SHIPPED 2026-05-20 SPR-094. ADR-008 authored at docs/adr/ADR-008-rl-undo-stack.md.
+  Decision: per-stroke undo (each cell action = one stack entry) per founder ratification
+  2026-05-20. Per-session alternative rejected (loses H-PLT06 misclick absorption for
+  in-session errors). Cmd-Z / Cmd-Shift-Z bindings standard. Session-scoped stack
+  (cleared on reload). "Clear all" intentionally bypasses undo stack as separate
+  destructive action with confirmation modal. Heuristic compliance verified inline
+  (H-N03, H-PLT06, H-N04 industry-tool consistency). Composes with ADR-007 (atomic
+  actions defined there are the per-stroke entries this stack tracks). Unblocks
+  WS-055 (Gate 4 surface spec).

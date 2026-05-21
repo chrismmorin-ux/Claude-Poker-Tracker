@@ -1,0 +1,187 @@
+id: "SPR-069"
+title: "Shape Language Gate 3 — queue-hygiene close-out (WS-038 stale work-tracking)"
+status: completed
+approved_at: "2026-05-10T02:00:00Z"
+completed_at: "2026-05-10T02:20:00Z"
+
+effort_summary: |
+  M tagged → ~15 min S-actual. Plan-first burned 0 plan rounds — pre-execution
+  exploration revealed Gate 3 was already CLOSED 2026-04-23/24 (work shipped
+  in a same-session burst before WS-038 ticket existed; queue ticket was never
+  retired). Founder ratified queue-hygiene close (option A of 3) over
+  recompose / pivot-to-Gate-4 alternatives. Net work: WS-038 → status:done with
+  full done_provenance block (10 evidence pointers + 6-criterion accept-mapping)
+  + queue-index entry updated + SPR-069 closed. Zero src/ diff; markdown-only;
+  vital signs N/A by design (no code changes).
+
+goal: |
+  Original goal: Shape Language Gate 3 closes — 6 research threads (R1-R6)
+  resolved, 2 personas amended, 1 situational authored, 5 JTBDs added; Gate 2
+  re-runs GREEN/YELLOW so the project exits Gate 2 RED state.
+
+  Actual sprint outcome: queue-hygiene close. Pre-execution exploration of
+  `docs/projects/poker-shape-language/` confirmed Gate 3 was already CLOSED
+  2026-04-23/24:
+    - gate3-decision-memo.md authored 2026-04-24 with 7 verdicts (R1-R6 resolved
+      by memo; triage superseded)
+    - 2026-04-23 Gate 2 re-run audit verdict GREEN-with-residuals
+    - chris-live-player + scholar-drills-only personas amended
+    - returning-after-break situational authored
+    - DS-52..56 + ON-87 JTBDs added across drills-and-study + onboarding
+    - poker-shape-language.project.md row 74 marks `[x] G3` "Gate 3 CLOSED"
+
+  All 6 WS-038 accept criteria satisfied at the 2026-04-24 ship; WS-038 was
+  stale work-tracking (queue-index drift pattern flagged in SPR-068
+  composition_notes alongside WS-080 / WS-105 / WS-135 / WS-159).
+
+  Founder ratified queue-hygiene close at AskUserQuestion (option A of 3)
+  over (B) recompose with different anchor or (C) pivot SPR-069 to Gate 4
+  (which would have exceeded the 2-session ceremony cap).
+
+program_focus: design
+program_initiative: |
+  Design Program (5-Gate UX Framework) — Shape Language project advances
+  from Gate 2 RED → Gate 3 closure. Cross-program rotation: 7 of last 9
+  sprint anchors were domain-correctness; SPR-068 close-out explicitly
+  flagged rotation. Design last anchored at SPR-064 (5 sprints ago) and
+  SPR-061 (8 sprints ago). WS-178 (DC, P=18) was effectively next on raw
+  score but defers cleanly given the streak.
+
+  Backlog state at composition: P=22 launch items (WS-027/030/031/032/
+  033/036) all soft-blocked via blocked_by_note (external counsel + missing
+  Gate 4 surfaces) → damped to P=5.5. WS-178 (DC, P=18) → deferred for
+  rotation. WS-164 (design, P=18) → structurally blocked by WS-163.
+  Effective top unblocked at P=15: WS-038 (design) / WS-047 (design) /
+  WS-053 (engineering) — picked WS-038 because it directly clears a RED
+  gate and unblocks downstream Shape Language work.
+
+composed_by: auto
+created_at: "2026-05-10T02:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (graceful-degradation per CLAUDE.md). Manual scan: Gate 3 research
+    work directly serves the autonomy contract (Gate 2 RED was driven by
+    autonomy concerns). Research scope explicitly avoids re-introducing
+    streak/shame/engagement-pressure substrate. Persona amendments aim
+    at honoring opt-in / transparency / durable-overrides red lines.
+    No anti-goal pattern detected at composition.
+
+decisions_needed:
+  - "Item #1 — Research-thread targeting: which 6 of the available R-threads to close (Gate 2 RED concerns may reorder priority over the audit-original sequence)"
+  - "Item #1 — Persona-amendment scope: which 2 personas to amend, and what evidence sources (drill outcomes / recognition-latency notes / founder JTBD interviews) seed the amendments"
+  - "Item #1 — JTBD additions: which 5 JTBDs to author, and how they map to descriptor-classifier work in later gates (which descriptors get JTBD-level coverage, which stay catalog-only for now)"
+  - "Item #1 — Situational authoring: which situational (1 required) covers a Gate 2 blind-spot the existing personas miss"
+
+items:
+  - id: "WS-038"
+    title: "Shape Language Gate 3 — Research + persona/JTBD expansion"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    priority_score: 15.0
+    status: done
+    done_kind: queue-hygiene
+    started_at: "2026-05-10T02:05:00Z"
+    completed_at: "2026-05-10T02:15:00Z"
+    decision_flags:
+      - "Research-thread targeting (which 6 of the R-threads, prioritized by Gate 2 RED resolution)"
+      - "Persona-amendment scope (which 2 personas, what evidence)"
+      - "JTBD additions (which 5, how they map to descriptor classifiers)"
+      - "Situational authoring (which Gate 2 blind-spot it covers)"
+    notes: |
+      Plan-first because (a) 4 decision_flags require founder ratification
+      before authoring, (b) Gate 3 outputs are evidence-backed — scope choice
+      determines which research evidence has to be assembled vs assumed,
+      (c) the deliverable is a triage doc (`gate3-triage.md`) plus persona/
+      JTBD updates in adjacent project files; concrete file edits depend
+      on which personas/JTBDs are picked.
+
+      Files (likely MODIFY/NEW):
+        NEW:
+        - docs/projects/poker-shape-language/gate3-triage.md
+        - docs/projects/poker-shape-language/voices/<situational-id>.md (1 new situational voice)
+        MODIFY:
+        - docs/projects/poker-shape-language.project.md (Gate 3 status row → CLOSED)
+        - docs/projects/poker-shape-language/voices/*.md (2 persona voices amended)
+        - docs/projects/poker-shape-language/roundtable.md (Gate 2 re-run section)
+        - docs/design/personas/*.md if persona changes propagate to the global registry
+        - docs/design/jobs-to-be-done.md (5 JTBD additions if registry exists)
+
+      Acceptance highlights from WS-038:
+        - 6 research threads (R1-R6) resolved with evidence-backed answers
+        - 2 personas amended (existing voices updated)
+        - 1 situational authored (new voice file)
+        - 5 JTBDs added
+        - Gate 2 re-runs GREEN/YELLOW (RED → cleared)
+        - Triage doc at docs/projects/poker-shape-language/gate3-triage.md
+
+composition_notes: |
+  Source-class: untagged (legacy backlog migration 2026-05-01).
+  Last 3 anchors (SPR-066/067/068) were all spr-followup or plan-internal
+  (founder-driven) → no auto-rec saturation; source-damping does not fire.
+
+  Single-anchor sprint: WS-038 is M plan-first (~1.5 sessions). Standard
+  ceremony cap is 2 sessions. Adjacent design candidates at P=15 (WS-047
+  Preflop Refresher Phase A / WS-049 print-PDF Playwright) would each
+  push past the cap. Engineering candidate WS-053 (Ready-to-Start Gate 2)
+  was considered but Gate 2 has no Gate-1 evidence prepared yet —
+  composing it would just-in-time-scaffold an audit not in evidence.
+
+  Cross-program rotation rationale (transparent):
+    - Last 9 anchors: SPR-060 DC / SPR-061 design / SPR-062 eng /
+      SPR-063 DC / SPR-064 design / SPR-065 DC / SPR-066 DC /
+      SPR-067 DC / SPR-068 DC. DC saturated 7-of-9; SPR-068 close-out
+      flagged rotation. Picking WS-038 honors the flag.
+    - Design last anchored SPR-064 (PMC Gate 2 sprint 1/2). The previous
+      design anchor before that was SPR-061 (EAL Stream D session-review
+      rollup). Both were full-session L sprints; this is a tighter M.
+
+  Hygiene gaps NOT addressed this sprint (carried forward from SPR-066/
+  SPR-067/SPR-068 composition_notes — recommend a /workstream reconcile
+  + queue-index hygiene sweep at next idle moment):
+    - Queue-index drift: WS-080 / WS-105 / WS-135 / WS-159 may have been
+      shipped but not retired in queue. WS-038 was confirmed today as
+      another instance — strongly suggests 4+ stale tickets. The drift
+      pattern is structural: same-session burst work that ships before
+      a queue ticket exists, then a backlog migration retroactively
+      creates the ticket without checking project doc state.
+    - Launch-program soft-block notes: confirmed PRESENT this sprint
+      (WS-027/030/031/032/033/036 all carry concrete blocked_by_note —
+      hygiene was fixed at some prior reconcile, possibly during SPR-067
+      or SPR-068). Damping fired correctly during this composition.
+    - WS-178 (DC, P=18, PMC Phase 5a-2) deferred this sprint for
+      cross-program rotation; recommend it as next anchor candidate
+      after this sprint closes if no design/eng/launch candidate
+      surfaces with stronger evidence.
+
+closing_notes: |
+  This sprint composition surfaced a structural drift pattern worth naming:
+  the queue contains 5+ tickets (WS-038 confirmed today; WS-080 / WS-105 /
+  WS-135 / WS-159 carried forward from SPR-066/067/068 composition_notes)
+  that were authored as "future work" via legacy backlog migration on
+  2026-05-01, but whose actual deliverables had already shipped earlier in
+  same-session bursts. The migration process didn't reconcile against the
+  project docs at the time, so stale tickets entered the queue at full
+  priority.
+
+  Recommended follow-up (NOT this sprint): a `/workstream reconcile`
+  pass that walks `docs/projects/*/...project.md` files, parses the
+  Stream/Phase status grids, and cross-references against queue-index.
+  Tickets whose accept criteria are documented as shipped should be
+  closed with done_provenance pointers. This is the same shape as the
+  WS-038 close-out done here, applied at scale.
+
+  Rotation note: WS-178 (DC, P=18, PMC Phase 5a-2) remains the strongest
+  unblocked-and-uncontested workable candidate. Engineering rotation
+  candidate WS-053 (Ready-to-Start Gate 2) and design candidate WS-047
+  (Preflop Refresher Phase A) are both substantively workable. Founder
+  picks at next /next.

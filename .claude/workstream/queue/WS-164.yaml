@@ -59,9 +59,9 @@ decision_flags:
   - "Confidence thresholds: ship audit defaults (0.7 / 0.4) vs corpus-tuned"
   - "Table-Build coordination: wait for Table-Build Gate 5 surface OR ship as PlayersView-internal first"
   - "recognition-confidence-schema.md: author here vs defer to Phase 5+ exploit-engine consumer"
-status_note: "Blocked by WS-163 + soft-blocked on Table-Build Gate 5 (CandidateColumn surface)."
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). WS-163 closed at SPR-049/050; structural blocker cleared. Soft-block remains on Table-Build Gate 5 (CandidateColumn surface, not ticketed). Core deliverables (scorePlayerMatch + ConfidenceBar + PlayersView rewire + schema doc) can ship even with Table-Build wire-in deferred."
 source:
   origin: "ws-008-decomposition-spr-034-2026-05-04"
   parent_ws: "WS-008"
 created_at: "2026-05-04"
-updated_at: "2026-05-04"
+updated_at: "2026-05-11"

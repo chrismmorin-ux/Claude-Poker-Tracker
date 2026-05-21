@@ -1,0 +1,100 @@
+id: "WS-207"
+title: "Range Lab — AP-RL-01 anti-pattern binding (no bucket-label-driven narrowing)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T01:08:13Z"
+completed_at: "2026-05-20T01:22:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Author **AP-RL-01** anti-pattern in domain-correctness program scope.
+  Output of SPR-093 Gate 2 Blind-Spot Roundtable Stage B (B-G3 anti-
+  pattern flag) + Stage E (E-A11 enforcement).
+
+  **Anti-pattern statement:** DS-54 per-street range narrowing in Range
+  Lab MUST be computed from first principles — per-combo equity update
+  conditional on villain's action profile + board card revealed — NOT
+  from bucket-label heuristics.
+
+  **Wrong (forbidden):**
+    "On the turn, narrow to TPGK+ since villain bet again."
+    (Uses bucket label as input to narrowing decision.)
+
+  **Right (required):**
+    "On the turn, recompute each remaining combo's equity vs hero's
+    range conditional on villain's bet-bet line, weight by villain's
+    bet-bet frequency for that combo, surface the resulting per-combo
+    posterior."
+    (Per-combo derivation from action profile + equity update.)
+
+  **Why this matters:** Bucket-label narrowing is the most common
+  shortcut taken by range-narrowing implementations. It produces
+  *plausible* output but encodes assumptions that mask real divergences
+  (a particular combo might be in TPGK+ bucket but villain's action
+  profile assigns it 5% bet-bet frequency — different from the bucket
+  average of 60%). DS-54's primary value is surfacing those divergences;
+  bucket-label shortcut destroys that value.
+
+  Doctrinally binds with [[feedback_first_principles_decisions]] —
+  labels are outputs of computation, never inputs.
+
+  **Enforcement mechanisms:**
+  1. **Gate 4 surface spec binding**: WS-055 (Gate 4 surface spec)
+     must document AP-RL-01 in the DS-54 implementation discipline
+     section.
+  2. **CI lint pattern**: similar to PSD neutral-chrome grep — pattern
+     match against forbidden patterns in `src/utils/rangeEngine/` +
+     DS-54 implementation files.
+     - Forbidden: `if (bucket === 'TPGK')` style switches inside
+       narrowing logic.
+     - Forbidden: `POP_NARROWING_RATES[bucket]` style lookups.
+     - Allowed: per-combo equity computation + frequency weighting.
+  3. **POKER_THEORY.md cross-reference**: anti-pattern referenced from
+     POKER_THEORY.md §7 (first-principles decision modeling).
+
+  **Cross-program note:** lives in domain-correctness (Poker Theory
+  Integrity) because it enforces theoretical-correctness discipline.
+  Sibling of existing engine anti-patterns documented in
+  exploitEngine/CLAUDE.md.
+
+accept_criteria:
+  - "AP-RL-01 authored in domain-correctness program scope (location TBD: program file vs POKER_THEORY.md vs new doc)"
+  - "Anti-pattern statement clearly distinguishes forbidden (bucket-label) vs required (per-combo derivation) patterns"
+  - "Cross-reference to [[feedback_first_principles_decisions]] doctrine"
+  - "Enforcement mechanism documented: (1) Gate 4 surface spec binding (WS-055), (2) CI lint pattern, (3) POKER_THEORY.md §7 cross-reference"
+  - "CI lint pattern implemented OR explicitly tracked as separate ticket per scope"
+effort: "S"
+files_involved:
+  - "docs/projects/range-lab.project.md (modified — add AP-RL-01 anti-pattern section)"
+  - "POKER_THEORY.md (potentially modified — cross-reference §7)"
+  - "src/utils/rangeEngine/CLAUDE.md (modified — add AP-RL-01 to anti-patterns list)"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml (potentially modified — register anti-pattern in problem-classes)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables: []
+sprint_id: "SPR-094"
+decision_flags:
+  - "AP-RL-01 home location: project doc / POKER_THEORY.md / new anti-patterns doc"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  SHIPPED 2026-05-20 SPR-094. AP-RL-01 anti-pattern authored in POKER_THEORY.md §7.6
+  per founder ratification 2026-05-20 (POKER_THEORY.md highest-visibility home;
+  alternatives rejected: project-doc lower visibility, new docs/anti-patterns/ orphan-
+  file risk). Doctrine: range-narrowing decisions MUST be computed per-combo from
+  equity update conditional on villain action profile + board card, NOT from bucket-
+  label heuristics. Wrong/right code patterns documented. Generalizes beyond Range Lab
+  to any range-narrowing code. POKER_THEORY.md §7.5 lookup table extended with new
+  row. Cross-references added: src/utils/rangeEngine/CLAUDE.md Anti-patterns section +
+  docs/projects/range-lab.project.md Gate 2 outcome section. CI lint pattern deferred
+  to engineering Phase 0+ (grep against forbidden patterns in narrowing implementations).
+  Enforcement at Gate 4 surface spec (WS-055) DS-54 implementation discipline section.

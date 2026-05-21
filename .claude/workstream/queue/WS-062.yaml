@@ -8,7 +8,7 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "sidebar-program"
 capability: "core"
 program: "engineering"
 description: |
@@ -22,10 +22,10 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "LATER"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). Pilot refits to v2.2 (full pass) — flop+river artifacts re-rated to v2.2 with full §13 D13 reflexive checks. Current refits are minimal (§3+§11 row-tag for flop, §5+§11 row-tag for river). All v2/v2.1-era F-findings tracked in audits should be closed. Sidebar program follow-up; category retitled to 'sidebar-program'. P=8 unchanged; promote when LSW upper-surface work resumes."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 307
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

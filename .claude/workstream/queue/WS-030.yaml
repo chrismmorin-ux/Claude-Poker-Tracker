@@ -19,15 +19,16 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "Pending MPMF Gate 4 design (no Gate 4 ticket exists in queue yet — must be authored first per design framework guardrail) and Q7 legal-scoping verdict (WS-027). Until Gate 4 surface specs land + processor choice is ratified, this cannot ship."
 blocked_by_legacy:
   - "MPMF-G4-*"
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by MPMF-G4-* + Q7 verdict"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). MPMF Gate 4 surface specs (MPMF-G4-S1..S6 + J1..J4) authored 2026-04 in project doc but no individual queue tickets exist for them — soft-block holds. Soft-block damping (0.25× in /next) keeps this from anchoring sprints inappropriately."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
   source_line: 175
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

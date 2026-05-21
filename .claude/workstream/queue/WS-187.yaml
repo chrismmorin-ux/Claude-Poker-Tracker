@@ -1,0 +1,124 @@
+id: "WS-187"
+title: "Avatar = seat photo direction change — photo becomes primary avatar surface (currently SVG primary + photo overlay badge) — needs /decide ADR before code"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "player-identification"
+capability: "core"
+program: "design"
+description: |
+  Owner request 2026-05-11: 'I want the avatars of players to be their seat
+  image at the table. It will give a better visual check to the user being
+  able to see and transform the configuration into the app or from the app.'
+
+  **Direction change.** Player Entry Overhaul (PEO, 2026-04-16) ratified
+  custom-SVG feature-avatars as the load-bearing identification representation
+  (`src/components/ui/IdentityAvatar.jsx` + `AvatarRenderer.jsx`); photo was
+  added later (SPR-036 / WS-161) as an optional `photoOverlay` BADGE in the
+  bottom-right corner of the SVG avatar. This WS proposes inverting that
+  priority: **photo is primary when present; SVG fallback when absent**.
+
+  **Why it's not a simple fix:** PEO's ratifications are still binding for
+  the editor / picker / identification math surfaces (PIO-line work per
+  `feedback_pio_identification_utility_first.md`). PIO uses identification
+  fields (skin/hair/beard/glasses/hat) for matching, search, and adjacency-
+  range filtering. Photos can't replace identification fields in cold-read
+  contexts (no photo yet). So the photo-primary direction applies to the
+  TABLE VIEW use case ('visual mirror of the room') NOT the editor/picker.
+
+  **Pre-decision /decide ADR is mandatory** because this inverts a previously-
+  ratified contract (PEO + PIO). Options to present back to owner:
+
+    - **D-A — Photo-primary on TableView, SVG-primary on PlayerEditor/PlayerPicker.**
+      Two surfaces, two priorities. TableView seat avatars use
+      `<img src=photoBlobUrl />` when `photoBlobId != null`, else
+      `<IdentityAvatar />`. PIO line stays SVG-primary.
+      RECOMMENDED.
+
+    - **D-B — Photo-when-present everywhere.** TableView, PlayerEditor,
+      PlayerPicker all use photo if present. SVG only when no photo. Picker
+      filters still operate on identification fields (the filter axes are
+      cold-read scaffolding — not the avatar rendering). Simpler mental
+      model; loses identification-utility clarity on the editor.
+
+    - **D-C — Status quo + photo zoom-on-tap.** Keep current SVG-primary +
+      photo-overlay shape; add tap-to-zoom on the overlay badge to bring
+      the photo to full size. No direction change; small ergonomic win.
+      Not what owner asked for, but safest.
+
+  **Why not just implement D-A:** PEO + PIO are program-scoped, owner-
+  ratified directions with multi-session work behind them. A /decide ADR
+  formally records the inversion + scope (TableView only vs everywhere) +
+  the rationale (visual table mirror beats synthesized SVG for
+  configuration-recognition use case).
+
+accept_criteria:
+  - "ADR drafted at docs/decisions/YYYY-MM-DD-avatar-photo-primary.md
+    presenting options D-A / D-B / D-C with trade-offs. Owner ratifies one."
+  - "If D-A or D-B ratified: TableView seat avatars render photo when
+    `player.photoBlobId != null`. Photo loaded via existing
+    `playerPhotosStore.getPhoto` API. Fallback to `<IdentityAvatar />` when
+    no photo. Test: TableView smoke at 1600×720 — player with photoBlobId
+    shows photo; player without shows SVG."
+  - "If D-A ratified: PlayerEditor and PlayerPicker stay SVG-primary —
+    explicit code comment in IdentityAvatar.jsx documents the two-surface
+    contract."
+  - "If D-A or D-B ratified: WS-184 (capture silent-fail) MUST be complete
+    first — without the capture path working, the photo never attaches."
+  - "Update `feedback_glasses_headwear_are_accessories.md`-style memory
+    note if the inversion has implications for picker filter design."
+
+effort: "M"
+files_involved:
+  - "docs/decisions/YYYY-MM-DD-avatar-photo-primary.md (NEW)"
+  - "src/components/ui/IdentityAvatar.jsx (consult `surface` prop OR new wrapper)"
+  - "src/components/views/TableView/TableView.jsx (seat avatar rendering)"
+  - "src/utils/persistence/playerPhotosStore.js (read API exists per memory; verify)"
+
+blocked_by:
+  - "WS-184 (camera capture silent-fail) — photo path must actually attach and render before inverting avatar priority"
+  - "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks feature work until Item 4 completes"
+
+blocked_by_legacy: []
+enables: []
+
+sprint_id: null
+
+decision_flags:
+  # RATIFIED 2026-05-12: D-A. Photo-primary on TableView (+ HandReplay,
+  # Showdown, Tournament — visual-mirror surfaces). SVG-primary stays on
+  # PlayerEditor + PlayerPicker (identification-math surfaces). Two render
+  # rules; each surface uses the right representation for its job.
+  # /decide ADR still authored to formalize the inversion of PEO + PIO
+  # contracts for the table surfaces.
+  - "Visual-mirror scope confirmed at Gate 4 — does it include EVERY view
+    that renders a seat avatar (HandReplay, Showdown, Tournament,
+    SessionsView hand summary rows)? Recommendation: yes, every view
+    whose purpose is showing the table state at a moment in time.
+    Owner confirms at Gate 4."
+  - "Photo caching strategy: load once and cache in memory per session?
+    Re-fetch per render? Recommendation: hook `usePlayerPhoto(playerId)`
+    that memoizes ObjectURL by photoBlobId with revoke on unmount."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner: 'I want the avatars of players to be their seat image at the table. It will give a better visual check to the user being able to see and transform the configuration into the app or from the app.'"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner session-issue consolidation. DIRECTION
+  CHANGE inverting PEO + PIO ratifications for table-surface avatars.
+
+  D-A RATIFIED 2026-05-12: photo-primary on TableView + HandReplay +
+  Showdown + Tournament; SVG-primary stays on PlayerEditor + PlayerPicker.
+  /decide ADR still authored to formalize the per-surface contract.
+
+  Doubly-blocked: by Refactor Sprint charter (no new features) AND by
+  WS-184 (capture must work first). Lift both blockers before promoting.

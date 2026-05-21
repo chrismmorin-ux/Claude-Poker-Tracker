@@ -1,0 +1,146 @@
+id: "WS-191"
+title: "Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 20.0
+priority_label: "P1"
+category: "seat-selection"
+capability: "core"
+program: "domain-correctness"
+description: |
+  WS-189 Phase 2 — the actual fix work. Authored as a stub during SPR-077
+  Phase 1 closeout (2026-05-14). Blocked on owner-captured telemetry from
+  Phase 1's dev-mode logs.
+
+  **Phase 1 deliverables (SPR-077, 2026-05-14):**
+  - `src/utils/dev/seatSelectionTelemetry.js` — dev-only logger module
+    (no-op outside `import.meta.env.DEV`).
+  - `src/utils/seatUtils.js` — instrumented `getFirstActionSeat()` logs
+    inputs (currentStreet, dealerSeat, absentSeats, straddler, foldedSeats,
+    numSeats) + output on every evaluation.
+  - `src/hooks/useAutoSeatSelection.js` — logs every firing with
+    `{ trigger, currentStreet, prevStreet, candidateSeat, currentSelection,
+    action }` payload. `trigger ∈ 'mount' | 'street-change' | 'selector-close'
+    | 'scheduled'`.
+  - `src/components/views/TableView/CommandStrip.jsx` — passes
+    `selectedPlayers` to the hook for H3 multi-seat-clobber capture.
+  - `system/invariants.md` — INV-SEAT-SELECTION-1..7 family ratifies the
+    M2 contract.
+
+  **Phase 2 entry condition (≥3 owner-captured observations):**
+  Each captured observation = a copy/paste from live-session DevTools console
+  of a `[seat-select]` log group around a wrong-seat event. Owner annotates
+  what the autoselector picked vs what they expected. The 3 logs together
+  pin the failure path:
+    - H1 (logic): `getFirstActionSeat` output disagrees with what poker rules
+      say (e.g., SB-completing-into-limpers scenario, straddle-on, all-in skip).
+    - H2 (timing): autoselect firing trigger happens before action sequence
+      has settled, or selector-close re-fires on dismissal-without-change.
+    - H3 (multi-seat clobber): `currentSelection` was non-empty at firing
+      time, and autoselect overrode it (per current useAutoSeatSelection
+      behavior — exactly violates INV-SEAT-SELECTION-4).
+
+  **Fallback trigger (per WS-189 status_note):**
+  If <2 captures after 2 live sessions, owner may pivot to hypothesis-first
+  matrix audit: cross-reference `getFirstActionSeat()` return values against
+  the 47-row ICP matrix `first_action_seat` column. Any row where matrix
+  disagrees with the predicate is a `pinned_bug` for ICP and a fix target
+  here.
+
+  **Implementation scope (Phase 2 fix):**
+  Driven by the captured failure path. Likely subset of:
+    1. INV-SEAT-SELECTION-2/3 enforcement — update `useGameHandlers` and
+       `selectedPlayers` insertion sites to maintain canonical action order
+       (UTG-clockwise preflop with straddle-adjustment; dealer+1-clockwise
+       postflop) and head-of-queue tap-to-record semantics.
+    2. INV-SEAT-SELECTION-4 enforcement — `useAutoSeatSelection` respects
+       a non-empty manual queue on mount and selector-close; only street
+       change unconditionally resets.
+    3. INV-SEAT-SELECTION-5 enforcement — re-tapping a queued seat removes
+       only that seat. Wire the explicit clear-all gesture (long-press or
+       dedicated control — design TBD with owner).
+    4. H1-class fixes — any `getFirstActionSeat()` rule bugs surfaced by
+       telemetry (e.g., straddle edge cases, SB-completion behavior).
+    5. H2-class fixes — any timing/race conditions (likely deferring
+       autoselect into a microtask after state settle, or guard against
+       selector-close re-fire when state unchanged).
+    6. Tests against the captured failure scenarios (each capture becomes
+       a fixture).
+
+  **Coupling notes:**
+  - INV-SEAT-SELECTION-6 (rest-batch helpers) is already enforced post-WS-182.
+    Phase 2 implementation must NOT alter `restFold` / `checkAround` semantics
+    — they continue to operate on REMAINING-UNACTED-SEATS, bypassing the
+    user-selection queue.
+  - INV-SEAT-SELECTION-3 implementation requires changes to
+    `useGameHandlers.handlePlayerAction` (or wherever the seat-action
+    dispatch lives) to advance the queue instead of dispatching parallel
+    actions to all selected seats. Coordinate with WS-182's
+    `recordSeatAction(seat, intent)` per-seat API.
+
+accept_criteria:
+  - "≥3 owner-captured wrong-selection log groups present in this WS's
+    notes (or fallback audit verdict if telemetry stalled after 2 live
+    sessions)."
+  - "Failure path classified per capture (H1 / H2 / H3 / hybrid)."
+  - "For each classified failure: corresponding INV-SEAT-SELECTION rule
+    becomes enforced (status flips from 'documented' to 'ENFORCED' in
+    system/invariants.md)."
+  - "Test fixture per captured scenario, asserting the bug class CANNOT
+    recur (structural prevention preferred to validation — per
+    feedback_action_dispatch_legality.md)."
+  - "Telemetry remains in place after Phase 2 (it's cheap and surfaces
+    future regressions). Consider promoting to in-memory ring buffer in
+    Phase 2 if owner-captured volume justifies it."
+  - "Update WS-189 status to fully done (Phase 1 + Phase 2 both shipped)."
+
+effort: "M"
+files_involved:
+  - "src/hooks/useAutoSeatSelection.js (enforce INV-SEAT-SELECTION-4 override contract)"
+  - "src/hooks/useGameHandlers.js (enforce INV-SEAT-SELECTION-3 head-of-queue tap-to-record)"
+  - "src/utils/seatUtils.js (H1 rule fixes per captured failures)"
+  - "src/components/views/TableView/CommandStrip.jsx (INV-SEAT-SELECTION-5 cancel gesture + canonical-order insertion)"
+  - "src/contexts/UIContext.jsx (potentially — if setSelectedPlayers needs canonical-order enforcement at the reducer level)"
+  - "system/invariants.md (flip INV-SEAT-SELECTION-2..5 from documented → ENFORCED)"
+  - "Test fixtures per captured scenario"
+
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: "Awaiting ≥3 owner-captured Phase 1 telemetry observations from live sessions. Per WS-189 fallback clause, may pivot to hypothesis-first matrix audit if <2 captures after 2 live sessions. Phase 1 dev-mode telemetry shipped SPR-077 (2026-05-14)."
+
+enables: []
+
+sprint_id: null
+
+source:
+  parent_ws: "WS-189"
+  parent_spr: "SPR-077"
+  user_request: "2026-05-12 — owner: 'The seat autoselector appears to need a lot of work. I have seen many instances where it is just wrong.' (WS-189 Phase 1 = telemetry; this is the Phase 2 root-cause follow-up.)"
+
+created_at: "2026-05-14T00:00:00Z"
+status_note: |
+  Authored 2026-05-14 SPR-077 closeout as the natural successor to WS-189
+  Phase 1 (telemetry shipped same sprint).
+
+  Soft-blocked (blocked_by_note) — awaiting Phase 1 captures. Per Step
+  2-prereq of /next, soft-blocked items rank at 0.25× priority (P=20 → 5)
+  until the note is cleared. This is intentional: do not anchor a sprint
+  on this until owner has live-session data.
+
+  Bug-fix exempt from Refactor Sprint charter (same precedent as WS-189).
+
+  Cross-references:
+    - WS-189 (parent, Phase 1) — see status for full hypothesis taxonomy.
+    - WS-182 / INV-RULES-CONTRIBUTION — establishes recordSeatAction per-
+      seat API that Phase 2 implementation must compose with.
+    - INV-SEAT-SELECTION-1..7 in system/invariants.md — the ratified
+      contract this WS makes structurally true.
+    - feedback_action_dispatch_legality.md (memory) — "prefer
+      unrepresentable to validated" doctrine. Phase 2 fixes should make
+      INV-SEAT-SELECTION violations type-impossible where feasible, not
+      just validated.

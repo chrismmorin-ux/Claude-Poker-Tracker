@@ -1,0 +1,182 @@
+id: "SPR-055"
+title: "EAL Stream B — anchor matcher + status-filter + retirement evaluator (WS-017)"
+status: completed
+approved_at: "2026-05-09T01:26:17Z"
+completed_at: "2026-05-09T01:48:00Z"
+goal: |
+  EAL anchor-matcher pure-utils ship. `src/utils/anchorLibrary/` gains a
+  matcher (situation → matching active anchors), a status-filter that
+  short-circuits retired anchors, and a retirement evaluator. Stream C
+  (LiveAdviceBar anchor-badge slot + SizingPresetsPanel embed) is
+  unblocked at the pure-utils layer.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — EAL Phase 6 continuation. Stream D shipped
+  S10-S17 late April (Tier 0 owner observation capture flow visually
+  verified 2026-04-27). WS-017 has been backlogged since 2026-05-01
+  migration with a stale "BLOCKED by EAL-Stream-D" annotation; Stream D
+  is closed. WS-017 is the load-bearing pure-utils dep that unblocks
+  WS-016 (Stream C live anchor-badge surface).
+
+  Direct continuation of SPR-053 (MW-equity validation harness, also
+  domain-correctness) after the 1-sprint engineering interleave (SPR-054
+  sidebar tournament-bar flicker). MPMF cluster remains paused on Q7+Q8
+  per SPR-052/054 plan.
+
+composed_by: auto
+created_at: "2026-05-09T01:26:17Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo (HomeBase-side tooling). Manual scan: pure-utils domain-correctness work; no constitutional surfaces apply."
+
+decisions_needed:
+  - "#1 Architecture — matcher API surface: predicate-function ((situation, anchor) → score), generator (yield matches), or filtered-list (getMatchingAnchors(situation) → Anchor[])? Affects how LiveAdviceBar/SizingPresetsPanel will consume in Stream C."
+  - "#1 Architecture — status-filter semantics: matcher short-circuits retired anchors internally vs caller pre-filters. Confirm semantics for re-enabled (un-retired) anchors per S23 un-retirement (memory entry)."
+  - "#1 Architecture — retirement evaluator location: pure util alongside matcher (src/utils/anchorLibrary/retirementEvaluator.js) vs hook (useAnchorRetirementEvaluator). Tier 3 auto-retirement banner consumer is the Calibration Dashboard (S22+, future)."
+
+items:
+  - id: "WS-017"
+    title: "EAL Stream B — anchor matcher + status-filter + retirement evaluator"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T01:26:17Z"
+    completed_at: "2026-05-09T01:48:00Z"
+    decision_flags:
+      - "Matcher API surface (predicate / generator / filtered-list)"
+      - "Status-filter semantics (internal short-circuit vs caller pre-filters)"
+      - "Retirement evaluator location (pure util vs hook)"
+    decisions_resolved:
+      - "Matcher API → filtered-list `getMatchingAnchors` + exported `matchesAnchor` predicate (founder pick)."
+      - "Status-filter → internal default + opt-out via `{ includeStatuses }` for study-mode surfaces (founder pick)."
+      - "Retirement evaluator → leave as existing pure util (`retirementEvaluator.js`); no co-changes (already shipped Commit 3)."
+    notes: |
+      SHIPPED ~22 min actual (M tag → S-actual, matching SPR-043/044/045/047/050/051/052/054 doc-discipline + sidebar-rec cluster cadence).
+
+      Investigation surfaced that `librarySelectors.js` (status filter
+      via `selectAnchorsFiltered`) and `retirementEvaluator.js` were
+      already shipped (Commits 3 + library-selectors S19); the actual
+      missing dep was `matcher.js` itself, listed in the File
+      Responsibilities table as Commit 5 / Phase 8.
+
+      Plan-mode AskUserQuestion ratified both architecture decisions
+      upfront (filtered-list API + internal default+opt-out status
+      filter). Decision #3 was pre-resolved (retirement evaluator
+      already a pure util).
+
+      New code:
+        - `src/utils/anchorLibrary/matcher.js` (~155 LoC + JSDoc)
+          — `matchesAnchor(situation, anchor)` predicate
+          — `getMatchingAnchors(situation, anchors, options?)` filtered-list
+          — `DEFAULT_LIVE_STATUSES = ['active']` constant
+          — Internal helpers: matchesStyle, matchesStep, matchesAction,
+            matchesBoardCondition, matchesSprRange, resolveStatusAllowList
+        - `src/utils/anchorLibrary/__tests__/matcher.test.js` (45 tests)
+          — Full match (4 tests: matching, no-style wildcard, case-insensitive style, 'any' texture wildcard)
+          — Style mismatch (3 tests)
+          — Street structure (4 tests: missing street, null entry, empty/non-array lineSequence)
+          — heroAction kind+sizing (6 tests: kind diff, below/above range, missing sizing, lower/upper bound)
+          — villainAction (2 tests)
+          — boardCondition (3 tests: texture mismatch, scareKind diff, missing board)
+          — sprRange (3 tests: in range, out of range, missing actual)
+          — Anchor-side wildcards (2 tests: omitted heroAction, omitted boardCondition)
+          — Invalid inputs (4 tests: null situation, null anchor, missing actionHistory, malformed step no-throw)
+          — Status filter default (4 tests: active-only, no-status defaults active, candidate short-circuit, default constant shape)
+          — Status filter opt-out (4 tests: retired opt-in, full allow-list, empty array fallback, null/undefined/non-object fallback)
+          — Multiple anchors (5 tests: input order, mixed match/no-match, empty array, non-array input, malformed entries)
+          — Single-step anchor (1 test)
+        - `src/utils/anchorLibrary/index.js` updated:
+          — Public API gained `matchesAnchor`, `getMatchingAnchors`, `DEFAULT_LIVE_STATUSES`
+          — Header doc comment updated with Commit 5 ledger entry
+          (resolves "Commits 5-8 (upcoming): matcher, copy generators, selectors" → "Commit 5 shipped; Commits 6-8 upcoming")
+
+      AC walkthrough:
+        - "src/utils/anchorLibrary/ with tests" ✓ matcher.js + matcher.test.js
+        - "matcher short-circuits on candidate status" ✓ default
+          status-filter excludes candidate; `getMatchingAnchors` test
+          "short-circuits on candidate status" asserts this directly
+
+      Doctrine alignment:
+        - Red line #6 (sub-threshold/candidate anchors don't fire on live
+          surfaces): default `DEFAULT_LIVE_STATUSES = ['active']` enforces
+          this for all live consumers without per-call filter discipline
+        - I-AE-1 (sub-threshold anchors stay candidate): respected by
+          default filter
+        - AP-07 / red line #8 (no calibration state on live surfaces):
+          matcher returns anchor records; consumers (LiveAdviceBar) must
+          render only `archetypeName + confidence dial` per anchor-library
+          surface spec
+        - First-principles decision modeling: matcher is structural
+          dispatch (anchor's archetype matches current state), not a
+          decision input. Style match is identity check, not a label
+          fed into a downstream decision rule. No double-counting risk.
+
+      Vital signs:
+        - Matcher tests in isolation: 45/45 (487ms total / 7ms test)
+        - Full smart-test-runner: 10291/10311 (20 skipped; +45 net vs
+          SPR-053 baseline 10246/10266; zero regressions)
+        - Production build: clean (6.86s); only pre-existing chunk-size
+          warning (>500kB on index-D7mpG4uC.js — SPR-053 baseline)
+
+      Owner verification (real-world, downstream):
+        WS-017 is pure-utils only. End-to-end visual verification
+        happens when Stream C wires LiveAdviceBar (a future ticket
+        — natural follow-on, see WS-016 in queue). For now: the
+        matcher fires correctly against SEED-01-shaped situations
+        per the test fixtures.
+
+      Next Stream B follow-ons (NOT this sprint):
+        - WS-016 (Stream C): LiveAdviceBar anchor-badge slot +
+          SizingPresetsPanel embed + headless observation writer
+          — now pure-utils-unblocked
+        - W-EA-2 / W-AO-2 writer integration (matcher post-firing
+          hook): Phase 6 wiring; `updateAnchorOnFiring` +
+          `logMatcherFiring` per WRITERS.md §39, §86
+        - SPR-055 amendment (if found): close stale "BLOCKED by
+          EAL-Stream-D" annotation on the related EAL queue items
+          (WS-016 / WS-020 / WS-021 / WS-023 etc.) — Stream D
+          shipped 2026-04-27 S17-VV.
+
+composition_notes: |
+  Single-item M-effort sprint, plan-first mode (M effort + type=improvement
+  triggers plan-first per Step 3d).
+
+  Source-class damping check: last 3 anchors (WS-106 untagged + WS-168
+  spr-followup + WS-034 launch-untagged). No class saturated. WS-017
+  untagged (backlog-md-migration). No damping.
+
+  Fleet-rotation override: not applicable (poker-tracker product repo,
+  no fleet/ surfaces).
+
+  Strong alternatives passed over:
+    - WS-016 (Stream C live surface, P=15) — depends on WS-017; pairing
+      would put effort at 3 sessions (over standard 2-session cap).
+      Natural follow-on sprint candidate.
+    - WS-020/021/023/024/025 (EAL G5 testing tier, all P=15) — all
+      M-effort; pairing exceeds cap. Testing wave is the natural
+      close-out cluster after Stream B+C ships.
+    - WS-159 (SCF G5 SelfCoachView) — already DONE per WS-159.yaml
+      (sprint-index lag from SPR-042 close). Excluded.
+    - WS-105 (engineering, P=22) — already DONE per WS-105.yaml from
+      SPR-043. Queue-index lag. Excluded.
+    - WS-027/030/031/032/033/036 (launch P=22 cluster) — paused on Q7+Q8
+      founder decision per SPR-052/054 plan.
+
+  Stale-block correction: WS-017's "BLOCKED by EAL-Stream-D" annotation is
+  legacy_id migration cruft. Stream D closed S17-VV on 2026-04-27 (full
+  Tier 0 capture flow visually verified at 1600×720 with 1 real bug
+  caught and fixed at the AnchorObservationSection adapter boundary).
+
+  Plan-mode will surface 3 architecture decisions before any code lands.
+
+last_updated: "2026-05-09T01:48:00Z"

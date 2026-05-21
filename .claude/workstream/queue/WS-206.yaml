@@ -1,0 +1,94 @@
+id: "WS-206"
+title: "Range Lab — LSW-RL equity-parity invariant + CI test"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T02:00:00Z"
+completed_at: "2026-05-20T00:00:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Author **INV-LSW-RL-EQUITY-PARITY** in `system/invariants.md` + CI
+  test. Output of SPR-093 Gate 2 Blind-Spot Roundtable Stage D (D-P6).
+
+  When LSW invokes Range Lab via cross-link, the equity numbers RL
+  surfaces MUST match the equity numbers LSW asserted in its line-audit.
+  If they differ, the line-audit had stale assumptions OR RL has a
+  computation bug. RL is the validator of LSW content (DS-55 JTBD).
+
+  **Invariant statement:** For the same input (preflop context + board
+  + villain range archetype + hero combo), LSW's asserted equity AND
+  RL's computed equity MUST agree to ±0.5% (Monte Carlo variance floor)
+  OR within exact-enumeration tolerance.
+
+  **CI test design:**
+  - Sample 3 random LSW nodes from the existing 8 authored lines
+    (~85 nodes total).
+  - For each sampled node: extract preflop context + board + villain
+    range archetype + hero combo from the line node.
+  - Recompute equity in RL using the same inputs.
+  - Assert ±0.5% match (Monte Carlo) OR exact-tolerance (≤5-card board
+    exact enumeration).
+  - Run in CI on every commit that touches `src/utils/rangeEngine/` OR
+    `src/utils/drillContent/lines.js` OR `docs/upper-surface/*`.
+
+  **Anti-pattern bound by this invariant:** silent drift between LSW
+  content and engine output. Without the invariant, an engine change
+  could break LSW correctness without any test failure. With the
+  invariant, the test fires on any commit touching either side of the
+  contract.
+
+  Cross-program note: this lives in domain-correctness (Poker Theory
+  Integrity) because it enforces theoretical consistency between two
+  surfaces. Mirrors POKER_THEORY.md guardrail discipline.
+
+accept_criteria:
+  - "INV-LSW-RL-EQUITY-PARITY authored in system/invariants.md"
+  - "Tolerance documented: ±0.5% Monte Carlo / exact-enumeration ≤5-card boards"
+  - "CI test implemented at src/utils/rangeEngine/__tests__/lswRlParity.test.js (path TBD)"
+  - "Test samples 3 random LSW nodes per run (seeded for reproducibility)"
+  - "Test runs on commits touching src/utils/rangeEngine/ OR src/utils/drillContent/lines.js OR docs/upper-surface/"
+  - "Failure mode documented: which side (LSW assertion vs RL computation) is the bug"
+effort: "M"
+files_involved:
+  - "system/invariants.md (modified — add INV-LSW-RL-EQUITY-PARITY)"
+  - "src/utils/rangeEngine/__tests__/lswRlParity.test.js (NEW)"
+  - ".github/workflows/*.yml (potentially modified — CI trigger config)"
+blocked_by:
+  - "WS-205"
+blocked_by_legacy: []
+blocked_by_note: "Requires equity-precompute caching layer (WS-205) to make the per-test recompute fast enough for CI tolerance. Could land before WS-205 with slower per-test cost (~few seconds) if needed."
+enables: []
+sprint_id: "SPR-095"
+decision_flags:
+  - "CI sample size: 3 random vs full corpus walk (~85 nodes) — tradeoff is test time vs coverage"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  DONE 2026-05-20 (SPR-095). REFRAMED from charter (founder-ratified): the ticket
+  assumed each LSW node carries an *asserted equity* number to validate the engine
+  against — verified in code that NO such field exists (equity is prose-only; the
+  nodes were authored qualitatively). Same Gate-2-premise-vs-code mismatch SPR-094
+  flagged. Reframed to a DRIFT-PIN: INV-LSW-RL-EQUITY-PARITY pins the ENGINE's
+  hero-vs-range equity for each authored node to a committed, reviewed baseline;
+  CI fails if any node drifts >0.5%, catching silent engine drift on teaching spots.
+  Equity source = pokerCore exactComboEquity (WS-205 kernel) — one equity source of
+  truth shared with RL cache. Files: src/utils/rangeEngine/__tests__/lswRlParity.test.js
+  + lswRlParityBaseline.js (4 pinned nodes + 1 documented-degenerate); INV-LSW-RL-EQUITY-PARITY-1..3
+  in system/invariants.md. CI trigger satisfied by ci.yml `npm test` (full suite runs every
+  commit — superset of path-scoped trigger; no workflow edit needed).
+  Decision flag resolved: full corpus (all eligible nodes), not 3-random — deterministic
+  exact enumeration makes full coverage cheap + seeding moot.
+  COVERAGE NOTE: only 5 nodes (the flop_root of each line) are parity-eligible — the other
+  ~63 nodes lack the structured (single-combo heroView + resolvable baseRangeId) binding
+  (turn/river/terminal/multiway). Coverage auto-expands as nodes gain the binding.
+  FINDING: invariant immediately caught a real content bug — utg-vs-btn-4bp-deep::flop_root
+  declares hero A♥K♦ on board A♠K♦2♠ (K♦ duplicated = impossible holding). Tracked in
+  KNOWN_DEGENERATE_NODES + follow-up ticket WS-209."

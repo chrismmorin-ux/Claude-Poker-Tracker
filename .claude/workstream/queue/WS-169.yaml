@@ -1,0 +1,88 @@
+id: "WS-169"
+title: "EAL Stream D — Calibration Dashboard implementation (3-tab anchor/predicate/primitive)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-09-next-spr-066"
+claimed_at: "2026-05-09T19:00:00Z"
+started_at: "2026-05-09T19:30:00Z"
+completed_at: "2026-05-09T20:35:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Calibration Dashboard implementation — EAL Stream D child. Surface spec
+  at `docs/design/surfaces/calibration-dashboard.md` (371-line, 2026-04-24
+  Gate 4).
+
+  RE-RELEASED 2026-05-09 at PMC Gate 2 sprint 2/2 close-out (SPR-065).
+  Originally absorbed by PMC per Gate 1 (2026-05-09 morning). Sprint 2/2
+  founder verdict: Devil's-Advocate Concern 1 disposed REPLACEMENT —
+  predictionAudit per-hand IDB field IS PMC; full ledger / aggregator /
+  expanded dashboard architecture cancelled. WS-169 returns to its original
+  EAL Stream D scope (anchor / predicate / primitive 3-tab) independent of
+  predictionAudit.
+
+  Tabs: predicates / anchors / primitives — original 3-tab per
+  calibration-dashboard.md spec. NO per-villain / per-situation tabs
+  (those required ledger aggregator that no longer exists).
+
+  AP-08 signal separation (matcher-observed vs owner-captured) preserved.
+  AP-06 forbidden-pattern absence enforced at component level.
+
+  Cross-project shared with exploit-deviation. Coordinate route
+  (SCREEN.CALIBRATION_DASHBOARD) + flag.
+
+  Deep-link from AnchorLibraryView.jsx:128 (handleOpenDashboard) currently
+  toasts "Calibration Dashboard ships in a future session." — replace with
+  ui.setCurrentScreen(SCREEN.CALIBRATION_DASHBOARD) carrying anchorId payload.
+accept_criteria:
+  - "SCREEN.CALIBRATION_DASHBOARD route added to uiConstants.js"
+  - "ENABLE_CALIBRATION_DASHBOARD flag added to feature-flag system"
+  - "CalibrationDashboardView shell + 3-tab layout (predicates / anchors / primitives)"
+  - "PredicateCalibrationPanel + AnchorCalibrationPanel + PrimitiveCalibrationPanel"
+  - "AnchorDetailPanel deep-dive variant (distinct from S20 long-press tooltip)"
+  - "EnrollmentStateBanner + CalibrationEmptyState"
+  - "useCalibrationDashboard hook + anchorCalibrationSelectors.js util"
+  - "AnchorLibraryView:128 handleOpenDashboard wires real navigation"
+  - "Per-origin evidence split (AP-08 — matcher-system vs owner-captured never summed)"
+  - "AP-06 forbidden-pattern absence enforced at component level"
+  - "Gate 1 entry audit (likely YELLOW — new surface vocabulary on study mode; Gate 2 likely covered by 2026-04-24 EAL roundtable)"
+  - "Gate 4 surface artifact UPDATE (existing 371-line spec adjusted to current state)"
+  - "Playwright visual verification at 1600×720 across 3 tabs"
+  - "Zero regressions vs SPR-060 baseline"
+effort: "L"
+files_involved:
+  - "src/components/views/CalibrationDashboardView/CalibrationDashboardView.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/CalibrationTabs.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/PredicateCalibrationPanel.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/AnchorCalibrationPanel.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/PrimitiveCalibrationPanel.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/AnchorDetailPanel.jsx (NEW — deep-dive variant)"
+  - "src/components/views/CalibrationDashboardView/EnrollmentStateBanner.jsx (NEW)"
+  - "src/components/views/CalibrationDashboardView/CalibrationEmptyState.jsx (NEW)"
+  - "src/hooks/useCalibrationDashboard.js (NEW)"
+  - "src/utils/anchorLibrary/anchorCalibrationSelectors.js (NEW)"
+  - "src/constants/uiConstants.js (modify — add SCREEN.CALIBRATION_DASHBOARD)"
+  - "src/components/views/AnchorLibraryView/AnchorLibraryView.jsx (modify line 128)"
+blocked_by: []
+blocked_by_note: ""
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-066"
+decision_flags:
+  - "Per-origin evidence-split rendering (table vs cards vs accordion)"
+  - "Default tab — anchors / predicates / primitives"
+status_note: "Backlog. RE-RELEASED 2026-05-09 from PMC absorption back to EAL Stream D at PMC Gate 2 sprint 2/2 close-out (SPR-065). Devil's-Advocate Concern 1 disposed REPLACEMENT — predictionAudit IS PMC; full ledger architecture cancelled; WS-169's PMC-expanded scope (per-villain + per-situation tabs) cancelled. Reverts to original 3-tab EAL Stream D scope. No longer blocked on PMC infra."
+source:
+  origin: "ws-015-decomposition-spr-060-2026-05-09"
+  parent_ws: "WS-015"
+  parent_project: "exploit-anchor-library"
+  reassigned_at: "2026-05-09"
+  reassigned_from: "predictive-model-calibration"
+  reassignment_history:
+    - { date: "2026-05-09T00:00:00Z", from: "exploit-anchor-library", to: "predictive-model-calibration", reason: "PMC Gate 1 RED verdict absorbed Phase 5d" }
+    - { date: "2026-05-09T17:00:00Z", from: "predictive-model-calibration", to: "exploit-anchor-library", reason: "PMC Gate 2 sprint 2/2 REPLACEMENT — predictionAudit IS PMC; ledger/aggregator/expanded dashboard cancelled; WS-169 reverts to original EAL Stream D 3-tab scope" }
+created_at: "2026-05-09"
+updated_at: "2026-05-09T17:30:00Z"

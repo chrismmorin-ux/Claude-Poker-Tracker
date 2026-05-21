@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "design-comprehension"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   Wave 5 — Sidebar framework integration (5 zones)
 accept_criteria:
@@ -23,10 +23,10 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by W4"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). DCOMP Wave 5 — sidebar framework integration (5 zones). Surface artifacts for Z0–Z4 + heuristic cross-mapping. ~3-4 sessions. BLOCKED by Wave 4 completion (WS-081/082 + remaining W4 work). Category retitled to 'design-comprehension'; program: engineering → design."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 393
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

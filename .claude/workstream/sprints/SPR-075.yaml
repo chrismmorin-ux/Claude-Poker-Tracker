@@ -1,0 +1,157 @@
+id: "SPR-075"
+title: "Rules-correctness primitives — Showdown card-edit hard-lock + recordSeatAction primitive collapse (WS-183 + WS-182)"
+status: completed
+approved_at: "2026-05-13T00:00:00Z"
+completed_at: "2026-05-13T02:00:00Z"
+
+goal: |
+  Two rules-correctness primitives become unrepresentable-by-design:
+    1. Showdown winners can't have their cards edited unless explicitly unlocked.
+    2. CHECK-while-owing becomes structurally impossible at the action-recording API.
+  Implements owner's 2026-05-12 reframe (memory: feedback_action_dispatch_legality.md)
+  that illegal states should not be constructible at the primitive level.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — closes the highest-priority unclaimed bug (WS-182 P=30)
+  reported by owner 2026-05-11 (SB allowed to CHECK preflop while owing chips) and
+  pairs a thematically co-located showdown-rules fix (WS-183).
+
+  Both items implement the same doctrine: "prefer unrepresentable to validated."
+  WS-183 collapses a Won-state edit path (canInteract gate adds !hasWon). WS-182
+  collapses 5 free-floating action strings into a single intent-based record API
+  where the LABEL becomes a derivation of CONTRIBUTION + STATE.
+
+  Cross-program rotation: last 3 anchors = engineering (SPR-072) + design × 2
+  (SPR-073/074). DC anchor returning after design 2-of-3. No source-class
+  saturation (all recent anchors founder/plan-driven).
+
+composed_by: auto
+created_at: "2026-05-13T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-13T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase fleet tooling absent — product repo). Manual scan: both items
+    are bug fixes implementing owner-ratified doctrine ("unrepresentable not
+    validated"). No engagement-pressure, no mastery-score rendering, no
+    surveillance, no AP-PIO/AP-SCF refusals. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-183) — Hard-lock policy after Won: full lock vs lock + explicit unlock affordance"
+  - "Item #2 (WS-182, A) — API location: standalone util vs inline in useGameHandlers"
+  - "Item #2 (WS-182, B) — Strict-mode behavior on illegal raiseTo: throw vs return false vs return+toast"
+  - "Item #2 (WS-182, C) — Legacy synthetic test fixtures: migrate vs stay direct with comment"
+
+decisions_ratified:
+  d1_won_lock_policy: "Hard-lock + explicit unlock affordance. Default: Won seats cannot have card edits. Small 'Unlock cards' affordance on Won seats toggles a transient unlock state allowing correction without first unsetting Won. canInteract gate = mode==='selection' && !ABSENT && !isMucked && (!hasWon || isUnlocked)."
+  d2_api_location: "Standalone util at src/utils/recordSeatAction.js. Pure function (gameState, seat, intent) returning dispatch payload. Unit-testable without React, importable from fixtures/analytics/replay. NOT inline in useGameHandlers."
+  d3_illegal_raise: "Throw. raiseTo <= currentBet throws a typed error. Matches 'unrepresentable not validated' doctrine — caller is buggy if it can construct this. Fail-fast surfaces dev-time errors before they reach the reducer."
+  d4_legacy_fixtures: "Migrate ALL fixtures to recordSeatAction. Owner overrode recommendation. Full sweep: every RECORD_PRIMITIVE_ACTION dispatch site (including synthetic test fixtures) funnels through the new API. No caller bypasses primitive — strongest version of the doctrine."
+
+composition_notes: |
+  Anchor selection: WS-182 (P=30, M, plan-first) — highest unclaimed priority,
+  binds owner doctrine recorded 2026-05-12.
+
+  Pairing logic: WS-183 (P=18, S, plan-first per its decision_flag) thematically
+  co-located — both fix "rules-correctness primitives that accept illegal states."
+  Different files but same doctrine.
+
+  Soft-blocked / not anchored this sprint:
+    - WS-027/030/031/032/033/036 (P=22 launch/MPMF) — Q7 legal scoping + MPMF
+      Gate 4 not ticketed; soft-blocked × 0.25 → P=5.5
+    - WS-189 (P=24 L bug) — multi-seat semantics overhaul; L effort blows
+      2-session cap. Deferred to next sprint.
+
+  Source-class damping: none. WS-182 source = conversation/user_request
+  (founder-driven). WS-183 source = conversation/user_request. Founder-driven
+  classes are never damped.
+
+  Fleet rotation: N/A (product-focused codebase, no fleet/repo-goal program).
+
+  Scope expansions from D1 + D4:
+    - WS-183 grew from S (one-line guard) to S+ (~45min: guard + unlock UI + tests)
+    - WS-182 grew from M to M+ (~2 session: full fixture migration adds ~5-8
+      additional file modifications across src/utils/__tests__/, src/hooks/__tests__/,
+      and any potCalculator/showdown fixtures)
+    - Combined effort ~2.5 sessions (slight over 2-session cap; owner-ratified)
+
+items:
+  - id: "WS-183"
+    title: "Showdown — disable card-edit interaction on winning seats (canInteract guard + unlock affordance)"
+    mode: plan-first
+    effort: S
+    program: engineering
+    category: showdown-view
+    priority_score: 18.0
+    status: done
+    decision_flags:
+      - "Hard-lock vs hard-lock + explicit unlock affordance"
+    notes: |
+      Decision ratified upfront: hard-lock + explicit unlock affordance.
+
+      Implementation plan:
+        1. Add transient unlock state at ShowdownSeatRow.jsx (local useState)
+           OR lift to ShowdownView level if multiple seats need coordination.
+        2. canInteract gate becomes:
+           mode === 'selection' && inactiveStatus !== ABSENT
+                                && !isMucked
+                                && (!hasWon || isUnlocked)
+        3. Render small "Unlock cards" / "Lock cards" toggle on Won seats.
+        4. Audit ShowdownView parent for alternative dispatch paths (long-press,
+           context menu) that bypass canInteract.
+        5. Tests: hasWon=true unlock=false → tap rejected; hasWon=true unlock=true
+           → tap accepted; toggle reflects in DOM.
+        6. Visual verification at 1600×720.
+
+  - id: "WS-182"
+    title: "Action primitive collapse — recordSeatAction(seat, intent) makes CHECK-while-owing structurally unrepresentable"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: rules-invariant
+    priority_score: 30.0
+    status: done
+    decision_flags:
+      - "Standalone util vs inline in useGameHandlers"
+      - "Strict-mode behavior on illegal raiseTo: throw vs return false vs no-op"
+      - "Legacy synthetic test fixtures: migrate vs stay direct with comment"
+    notes: |
+      Three decisions ratified upfront:
+        - API location: standalone util at src/utils/recordSeatAction.js
+        - Illegal raiseTo: throw
+        - Legacy fixtures: MIGRATE ALL (owner override of recommendation)
+
+      Implementation plan:
+        1. Author src/utils/recordSeatAction.js — pure function
+           (gameState, seat, intent) → dispatch payload.
+           Intent: 'fold' | 'match' | { raiseTo: number }
+        2. Author src/utils/__tests__/recordSeatAction.test.js — direct invocation
+           tests covering:
+              - 'match' on limped-preflop SB → CALL
+              - 'match' on flop-no-bet seat → CHECK
+              - 'fold' from any state → FOLD (except showdown)
+              - 'raiseTo' with N <= currentBet → throws
+              - 'raiseTo' with currentBet=0 → BET label
+              - 'raiseTo' with currentBet>0 → RAISE label
+        3. Migrate callers:
+              - src/hooks/useGameHandlers.js — checkAround, restFold, any direct
+                RECORD_PRIMITIVE_ACTION dispatch
+              - src/components/views/TableView/CommandStrip.jsx — action buttons
+        4. Fixture migration (D4 — owner override):
+              - Grep all RECORD_PRIMITIVE_ACTION usages
+              - Migrate every test fixture / synthetic dispatch site
+              - Document any that can't migrate (and why) with a NEED_BYPASS
+                comment
+        5. Add INV-RULES-CONTRIBUTION to system/invariants.md
+        6. Update .claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md with
+           reframe (primitive-level vs dispatch-level)
+        7. Final sweep: grep RECORD_PRIMITIVE_ACTION → only recordSeatAction
+           internals + documented bypasses should remain.

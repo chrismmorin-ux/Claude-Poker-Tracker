@@ -1,0 +1,66 @@
+id: "WS-197"
+title: "PSD anchor-trace destination ADR (DS-58)"
+type: improvement
+status: done
+claimed_by: "SPR-091"
+claimed_at: "2026-05-19T04:34:12Z"
+started_at: "2026-05-19T04:34:12Z"
+completed_at: "2026-05-19T05:00:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "pre-session-drill"
+capability: "core"
+program: "design"
+description: |
+  Gate 1 Q6 (open since 2026-04-23). Pre-Session Drill (PSD) Gate 2
+  surfaced this as a YELLOW condition required to clear before Gate 4.
+
+  DS-58: "Anchor-trace from drill card to deep artifact when curious"
+  (one-tap navigation from card → source upper-surface artifact section).
+
+  Four options:
+    (a) **In-app rendering**: bundle docs/upper-surface/ into the app.
+        Robust offline; bundle-size cost ~15 artifacts × ~10KB ≈ 150KB.
+    (b) **External link**: opens hosted docs in browser. No bundle cost;
+        network dependency (Stage D Mobile-Context Skeptic flagged this
+        as risky for cab/bad-signal pre-session use).
+    (c) **Inline expansion**: truncated section appears in-card, full
+        artifact not accessible. No surface deferral; UX cost (information
+        density rises).
+    (d) **Defer to Range Lab** (WS-053+). If Range Lab Gate 4 brings
+        artifact rendering into the app, PSD inherits the renderer. If
+        Range Lab does not, PSD reverts to (a) / (b) / (c).
+
+  Per Stage D D-P5: (a) or (c) recommended for v1; (b) is mobile-fragile.
+
+  Output: /decide ADR documenting choice + rationale + bundle-size
+  impact + cross-surface ownership (coordinate with WS-053 Range Lab
+  Gate 2 closure).
+
+  ADR informs WS-199 (Gate 4 surface spec) navigation section + WS-195
+  (Gate 3) DS-58 JTBD domain placement (cross-cutting vs drills-and-study).
+accept_criteria:
+  - "/decide ADR authored documenting destination choice (a/b/c/d) + rationale"
+  - "Bundle-size impact quantified (if option (a) or (c))"
+  - "Range Lab coordination addressed (if option (d), evaluation criteria for re-eval after WS-053)"
+  - "Mobile-context-pre-session reliability discussed (per D Mobile-Context Skeptic)"
+  - "DS-58 JTBD domain placement implication documented for WS-195"
+effort: "S"
+files_involved:
+  - "docs/decisions/ADR-NNN-psd-anchor-trace-destination.md (NEW, ID assigned at /decide time)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-199"
+  - "WS-195"
+sprint_id: ""
+decision_flags:
+  - "Anchor-trace destination: in-app bundle / external link / inline / defer to Range Lab"
+status_note: "SHIPPED SPR-091 2026-05-19. Decision: IN-APP BUNDLE (founder-ratified). ADR authored at docs/adr/ADR-006-psd-anchor-trace-in-app-bundle.md. Bundle ~150KB at 15 artifacts; offline-robust per persona's primary phone-in-cab context. DS-58 (Gate 1) renamed to DS-63 in atlas (ID-collision); placed in drills-and-study.md as drill-internal navigation per ADR rationale. Unblocks WS-199 navigation section + WS-195 DS-* placement."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

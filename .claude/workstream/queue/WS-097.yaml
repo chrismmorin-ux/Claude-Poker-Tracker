@@ -6,8 +6,8 @@ status: backlog
 claimed_by: ""
 claimed_at: null
 completed_at: null
-priority_score: 15.0
-priority_label: "P2"
+priority_score: 8.0
+priority_label: "P3"
 category: "line-study-slice-widening"
 capability: "core"
 program: "domain-correctness"
@@ -24,7 +24,7 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "DEFERRED — LSW-v2"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — PAUSED-INDEFINITELY + P-score 15→8. Deferred to LSW-v2 per project doc (line 73: 'authored plans P3/P6/P7 deferred to LSW-v2'). LSW-v2 not yet ticketed. Reclaim at P=15 if/when LSW-v2 is opened."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"

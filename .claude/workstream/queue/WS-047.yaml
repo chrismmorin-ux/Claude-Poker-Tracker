@@ -18,13 +18,15 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "Structurally blocked on the Q5 differentiation-demo at Gate 4 design review (per `docs/design/surfaces/printable-refresher-card-templates.md:423` — owner must run `PreflopCardTemplate` + `PRF-PREFLOP-OPEN-CO-100BB-2-5` manifest mock vs Upswing's published preflop chart and ratify go/no-go on Phase A). Per Q5 owner-interview (2026-04-24, gate3-owner-interview.md): if preflop cards are visibly indistinguishable from Upswing free at the demo, cut Phase A entirely and link to Upswing; if differentiation (rake-aware + stakes-selected + lineage-stamped) is visibly apparent, ship as free or bundled with Plus at owner discretion. Promoted from prose to structured field 2026-05-17 SPR-087 (WS-047 hygiene) so /next Step 2-prereq dampens P=15 × 0.25 = 3.75 rather than surfacing as a clean ship-ready candidate. Clear this note once owner runs the Gate 4 demo and ratifies go/no-go."
 blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). PRF Phase B (6 math cards) shipped per src/utils/printableRefresher/manifests/prf-math-*.json. Phase A preflop cards (#1 RFI default, #10 ranges-by-position, #16 etc.) not yet authored — manifests directory contains no prf-preflop-*. Conditional on Gate 4 differentiation demo vs Upswing free pack per accept criterion. Concrete next work. **2026-05-17 SPR-087 (WS-047 hygiene):** Promoted the Q5 differentiation-demo Gate 4 prerequisite from prose-only status_note to structured `blocked_by_note` field so /next Step 2-prereq damps the priority to 3.75 (was surfacing as P=15 clean ship-ready candidate). Item content unchanged; only the queue-routing metadata."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Printable Refresher (project: `docs/projects/printable-refresher.project.md`)"
   source_line: 245
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

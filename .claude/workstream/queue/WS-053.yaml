@@ -2,13 +2,13 @@ id: "WS-053"
 title: "Gate 2"
 legacy_id: "RL-G2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T00:16:32Z"
+completed_at: "2026-05-20T00:35:00Z"
 priority_score: 15.0
 priority_label: "P2"
-category: "ready-to-start"
+category: "range-lab"
 capability: "core"
 program: "engineering"
 description: |
@@ -22,11 +22,43 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-093"
 decision_flags: []
+status_note: |
+  SHIPPED 2026-05-20 SPR-093 as singleton plan-first sprint. Zero src/ diff.
+
+  Authored: docs/design/audits/2026-05-20-blindspot-range-lab.md (~700 lines).
+  5-stage Blind-Spot Roundtable with 6 RL-native voices: Range-Paint
+  Interaction Designer + Solver/GTO Theorist + Engine-Performance Skeptic
+  + Surface-Boundary Architect + Cross-Surface Architect + First-Principles
+  Auditor.
+
+  Verdict: 🟡 YELLOW (supersedes Gate 1 YELLOW). 6 conditions for Gate 4:
+    1. JTBD canonicalization (B-G1..B-G6)
+    2. Paint primitive ADR (E-A1 → WS-202)
+    3. Undo stack ADR (E-A2 → WS-203)
+    4. Engineering Phase 0 prereqs (rangeToString → WS-204 + equity-precompute → WS-205)
+    5. LSW-RL equity-parity invariant (D-P6 → WS-206)
+    6. Mobile-portrait variant ticket (Q4 → WS-208)
+
+  Plus 1 anti-pattern (AP-RL-01 → WS-207). 7 follow-up tickets authored
+  total (WS-202..WS-208).
+
+  All 3 still-open Gate-1 owner questions resolved inline per founder
+  ratification 2026-05-20 plan-mode (Q1 phasing = Phases 0-2 v1, Phase 3+
+  surface-contracted but implementation-deferred; Q2 Coach = secondary,
+  Chris-as-author primary; Q4 mobile = landscape v1, portrait deferred to
+  WS-208). Q3 Drills Consolidation already moot per 2026-04-22 REJECTED.
+
+  Two founder decisions ratified at plan-mode: voice set (6 RL-native);
+  Gate-1-followup scope (bundle into Gate 2 stage outputs).
+
+  Project status update: range-lab.project.md gate-1-complete → gate-2-complete.
+  WS-054 (Gate 3) scope clarified: pure JTBD canonicalization + persona
+  extensions; no owner-decision residue (all resolved here).
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 286
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-20T00:35:00Z"

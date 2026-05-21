@@ -25,7 +25,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by EAL-Stream-D"
+status_note: "RECLASSIFIED 2026-05-11 SPR-071 QUEUE-RECONCILE — NEEDS-RESCOPE disposition. EAL Stream D shipped at SPR-066 2026-05-09 (CalibrationDashboardView). The 'simultaneous mount' test premise is now testable — Anchor Library + Calibration Dashboard can both mount in the same browser session per the routing change. But the specific hook-hoisting cross-surface test described here has not been authored. Needs rescope to clarify: (a) what concrete race the test should reproduce (b) how to fail-loud if persistence-hook double-loads (c) which surface combination triggers the worst case. Reclaim at P=15 after rescope."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"

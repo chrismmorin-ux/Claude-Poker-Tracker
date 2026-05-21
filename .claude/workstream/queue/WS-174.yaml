@@ -1,0 +1,69 @@
+id: "WS-174"
+title: "PMC Concern 2 Gate-N+ revisit — CFR vs Bayesian frequency-matching for sizing-conditional ranges"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "predictive-model-calibration"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Placeholder ticket capturing Devil's-Advocate Concern 2 from PMC Gate 2
+  (2026-05-09): CFR (counterfactual regret minimization) is the actual
+  mathematical answer to "is my exploit recommendation right." Bayesian
+  frequency-matching is a politically-acceptable substitute that confirms
+  the model's own assumptions.
+
+  Specifically: a model with correct frequencies and wrong sizing-conditional
+  ranges produces NO aggregate signal but bleeds EV. PMC under REPLACEMENT
+  scope (predictionAudit per-hand IDB field, decided 2026-05-09 SPR-065)
+  detects frequency-level mismatches but does NOT close FM-COMP-01
+  (range-composition vs frequency decoupling) — the same critique sharpened.
+
+  Charter ratification #6 (CFR deferred indefinitely) STANDS at Gate 2
+  close-out (2026-05-09) but with a formal trigger condition: if
+  predictionAudit observation produces evidence of EV-bleeding patterns
+  where frequency calibration is intact (the FM-COMP-01 signature), this
+  ticket is the designated revisit.
+
+  This ticket does NOT initiate CFR work. It exists so the concern is
+  trackable rather than buried in a charter footnote.
+accept_criteria:
+  - "Verdict logged: EITHER 'CFR work warranted' (which would spawn its own program-level Gate 1 audit) OR 'CFR continues to be deferred' (with explicit evidence that predictionAudit data does not show FM-COMP-01-style sizing-conditional bleeding)."
+  - "Verdict references concrete predictionAudit data slices (≥1000 captured hands across ≥3 modelVersion epochs)"
+  - "Verdict updates charter §Decisions ratified ratification #6 to reflect the revisit's outcome"
+trigger_condition: |
+  Re-evaluate when ANY of:
+    1. predictionAudit captures ≥1000 hands AND aggregate frequency-match
+       rate >0.85 AND realized hero EV (from existing hands.evRealized) is
+       persistently below model-expected EV
+    2. A new sizing-conditional range model is proposed for range-engine
+       (separate from current sizing-binned tendencies)
+    3. Range-engine update path (RANGE_ENGINE_DESIGN §4.5) produces evidence
+       that showdown-driven Bayesian updates correlate with sizing-bin
+       drift more than action-frequency drift
+effort: "M"
+files_involved:
+  - "TBD when triggered"
+blocked_by: []
+blocked_by_note: "Trigger condition gated on Phase 5a (predictionAudit primitive) shipping AND ≥1000 captured hands"
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "CFR continues deferred / CFR program-level revisit warranted"
+status_note: |
+  Created 2026-05-09 at PMC Gate 2 sprint 2/2 close-out (SPR-065).
+  REPLACEMENT scope confirmed Concern 2 stands per charter ratification #6
+  but warrants formal trigger-conditioned revisit ticket rather than burying
+  in charter footnote. Phase 5a (predictionAudit primitive) must ship and
+  capture ≥1000 hands before this ticket is even evaluable.
+source:
+  origin: "pmc-gate2-sprint2-2026-05-09"
+  parent_ws: "WS-172"
+  parent_project: "predictive-model-calibration"
+created_at: "2026-05-09"
+updated_at: "2026-05-09T17:30:00Z"

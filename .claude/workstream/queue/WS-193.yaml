@@ -1,0 +1,128 @@
+id: "WS-193"
+title: "HRP Stream E — src/utils/spotResolver/ engine (Phase 4 per played-hand-review-protocol.project.md)"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: "session-2026-05-17-next"
+claimed_at: "2026-05-17T11:30:00Z"
+started_at: "2026-05-17T14:00:00Z"
+completed_at: "2026-05-17T14:50:00Z"
+priority_score: 18.0
+priority_label: "P1"
+category: "played-hand-review-protocol"
+capability: "core"
+program: "engineering"
+description: |
+  SPR-085 / WS-067 shipped HRP Gate 4 surface specs — `hand-review-modal.md`
+  authored, `hand-replay-view.md` extended with the ledger-link chip,
+  `analysis-view.md` extended with HandBrowser flag affordances,
+  `showdown-view.md` extended with HE-17 producer. The hand-review-modal
+  consumes a `SpotMatch` from a planned `spotResolver/` module that
+  doesn't yet exist; without the engine, the chip can never fire strong
+  or partial matches and the modal can never open with linked artifact
+  content.
+
+  Per the SPOT-KEY feasibility spike (`docs/projects/played-hand-review-
+  protocol/spot-key-spike.md`, 2026-04-23, verdict GREEN), the proposed
+  architecture is 7 files + golden-test corpus:
+
+  - `src/utils/spotResolver/CLAUDE.md` — module rules (pure, no writes,
+    pokerCore-only imports)
+  - `src/utils/spotResolver/index.js` — public `resolveSpot(hand,
+    decisionIndex) → SpotMatch` API
+  - `src/utils/spotResolver/spotKeyExtractor.js` — extract 8-dim spot
+    descriptor (position, IP/OOP, texture, stack, SPR, action history,
+    cards, hero combo)
+  - `src/utils/spotResolver/potTypeInference.js` — preflop-raise-count
+    → potType
+  - `src/utils/spotResolver/boardShorthand.js` — cards → 'T96ss' /
+    'Q72r' / 'K77'
+  - `src/utils/spotResolver/nodeClassifier.js` — street + action
+    prefix + board transition → canonical node_id
+  - `src/utils/spotResolver/corpusIndex.js` — in-memory index of
+    upper-surface + LSW nodes, built at PWA boot
+  - `src/utils/spotResolver/matchScorer.js` — descriptor × corpus →
+    scored matches
+  - `src/utils/spotResolver/__tests__/` — 30+ golden-test corpus
+    entries
+
+  Estimate per spike: ~200 LoC core + ~150 LoC golden-test corpus.
+  "1-2 sessions of focused work."
+
+  Plan-mode decisions to surface to founder:
+
+  - Corpus loading strategy: build at PWA boot via `import.meta.glob`
+    (matches `lessonRegistry.js` pattern) vs lazy-load per query.
+    Recommendation: PWA boot (offline corpus availability is a
+    Stage C rule from HRP Gate 2).
+  - Node-id classification source: hand-authored code (decision-tree
+    in `nodeClassifier.js`) vs data-driven (JSON corpus importing
+    LSW/Upper-Surface manifests). Recommendation: code-first; the
+    decision tree is small enough that data-driven gives no clarity
+    win.
+  - Match-scorer scoring weights: per-dimension weights for the 8-dim
+    spot descriptor. Recommendation: equal-weight baseline; golden-
+    test corpus drives any future re-tuning (mirrors
+    silhouettePrototypes.js calibration discipline — calibrated, not
+    learned, per `feedback_first_principles_decisions.md`).
+
+  Unblocks HRP Stream U (Phases 6-8 — HandBrowser flag filter, hand-
+  review-modal component implementation, ShowdownView producer button).
+  After this engine ships, the modal contract from
+  `hand-review-modal.md` becomes implementable.
+
+accept_criteria:
+  - "`src/utils/spotResolver/` directory created with all 7 modules per spike architecture (CLAUDE.md + index + spotKeyExtractor + potTypeInference + boardShorthand + nodeClassifier + corpusIndex + matchScorer)."
+  - "`resolveSpot(hand, decisionIndex) → SpotMatch` returns `{confidence: 'strong' | 'partial' | 'no-analog', artifactId?, reason?, descriptor, scoredMatches}` shape matching the contract `hand-review-modal.md` consumes."
+  - "Corpus index loads at PWA boot via `import.meta.glob`; cold-start path tested (no on-demand load latency)."
+  - "≥30 golden-test corpus entries pass — coverage targets per spike: ~40-50% strong match, ~20-30% partial, ~15-25% no-analog. The corpus encodes both positive (strong-match) and negative (no-analog) examples."
+  - "Cross-domain guard: spotResolver imports from `pokerCore/` only — NO imports from `exploitEngine/`, `rangeEngine/`, or `shapeLanguage/`. Grep verifies."
+  - "smart-test-runner.sh green. Vite build clean."
+  - "HRP project doc Phase 4 → DONE, Phase 5 → CURRENT; Session Log entry added."
+
+effort: "M"
+files_involved:
+  - "src/utils/spotResolver/CLAUDE.md (NEW)"
+  - "src/utils/spotResolver/index.js (NEW)"
+  - "src/utils/spotResolver/spotKeyExtractor.js (NEW)"
+  - "src/utils/spotResolver/potTypeInference.js (NEW)"
+  - "src/utils/spotResolver/boardShorthand.js (NEW)"
+  - "src/utils/spotResolver/nodeClassifier.js (NEW)"
+  - "src/utils/spotResolver/corpusIndex.js (NEW)"
+  - "src/utils/spotResolver/matchScorer.js (NEW)"
+  - "src/utils/spotResolver/__tests__/*.test.js (NEW — ≥30 golden-test corpus entries)"
+  - "docs/projects/played-hand-review-protocol.project.md (Phase 4 → DONE; Session Log entry)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "HRP-E-SCHEMA (Phase 5)"
+  - "HRP-E-TREE-EXPOSE (Phase 5)"
+  - "HRP-U-BROWSER (Phase 6)"
+  - "HRP-U-MODAL (Phase 7)"
+  - "HRP-U-SHOWDOWN (Phase 8)"
+
+sprint_id: ""
+
+decision_flags:
+  - "Corpus loading strategy — PWA boot (import.meta.glob) vs lazy-load per query"
+  - "Node-id classification source — hand-authored code (decision-tree) vs data-driven (JSON corpus mapping)"
+  - "Match-scorer scoring weights — equal-weight baseline (calibrated) vs per-dimension hand-tuned vs learned-from-data"
+
+source:
+  parent_ws: "WS-067"
+  parent_spr: "SPR-085"
+  user_request: "Flagged in SPR-086 closeout summary ('HRP Stream E (`spotResolver/` engine implementation, project Phase 4) is now the explicit NEXT phase'). Founder elevated to sprint anchor at SPR-087 /next composition."
+
+status_note: |
+  Authored 2026-05-17 inline by SPR-087 /next composition. Mirrors WS-192
+  inline-authoring pattern (SPR-086) where the spr-followup ticket
+  follows a Gate 4 surface-spec sprint. HRP Phase 3 closed SPR-085;
+  this is Phase 4 per project doc sequence. Corpus loading strategy +
+  node-classifier source + scoring-weight decisions surface to founder
+  in plan mode before code. Engine ships independently of Stream U
+  UI (modal component is Phase 7); cleanest separable scope. Unblocks
+  HRP-E-SCHEMA + HRP-E-TREE-EXPOSE + entire Stream U chain (Phases 5-8).
+
+created_at: "2026-05-17T11:30:00Z"
+updated_at: "2026-05-17T11:30:00Z"

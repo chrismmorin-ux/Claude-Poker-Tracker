@@ -1,0 +1,156 @@
+id: "WS-182"
+title: "Action primitive collapse — recordSeatAction(seat, intent) makes CHECK-while-owing structurally unrepresentable (replaces dispatch-boundary validator approach)"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "SPR-075"
+claimed_at: "2026-05-13T00:00:00Z"
+started_at: "2026-05-13T00:30:00Z"
+completed_at: "2026-05-13T02:00:00Z"
+priority_score: 30.0
+priority_label: "P0"
+category: "rules-invariant"
+capability: "core"
+program: "domain-correctness"
+description: |
+  **CRITICAL — poker rules invariant breach.** Owner observed during
+  2026-05-11 session that SB was allowed to CHECK preflop while owing chips
+  to the pot. Owner-ratified framing 2026-05-12:
+
+    "The primitives here are $ in a pot, bets must be matched to be in a
+    hand. The small blind is a forced bet. A check being available when
+    you haven't matched the bet should be impossible at the primitive
+    level."
+
+  **The fix is at the primitive level, not the dispatch boundary.**
+  Previous draft of this WS proposed a validator at `gameReducer` that
+  would reject illegal payloads. Owner reframed: illegal payloads should
+  not be **constructible** in the first place. Fix the primitive shape.
+
+  **Root cause restated:** `src/constants/primitiveActions.js:28-32`
+  defines CHECK/BET/CALL/RAISE/FOLD as five free-floating string
+  constants. Any caller can pair any string with any seat:
+
+      dispatchGame({ type: RECORD_PRIMITIVE_ACTION,
+                     payload: { seat: SB_SEAT, action: 'check' } });
+
+  The reducer accepts it. The string `'check'` carries no information
+  about whether checking is legal for that seat in that state.
+
+  **Solution — collapse to a single record API with intent:**
+
+      recordSeatAction(seat, intent)
+      // intent: 'fold' | 'match' | { raiseTo: number }
+
+  Internal resolution:
+    - intent='fold'  → always legal except at showdown → emits FOLD
+    - intent='match' → reads amountOwed(seat). If 0 → emits CHECK.
+                       If > 0 → emits CALL with computed amount.
+                       CHECK-while-owing cannot occur — caller has no
+                       string 'check' to pass; only 'match', which
+                       always does the right thing.
+    - intent={raiseTo: N} → asserts N > currentBet. Auto-classifies as
+                       BET (if currentBet=0) or RAISE (if currentBet>0).
+                       Illegal sizings rejected at the function signature
+                       (JSDoc-typed + runtime invariant).
+
+  Display labels (CHECK / CALL / BET / RAISE / FOLD) are preserved in the
+  `actionSequence` records — useful for analytics, advisor copy, hand
+  history rendering. But the LABEL becomes a derivation of the
+  CONTRIBUTION + STATE, not a free-floating input. Drift between label
+  and reality becomes impossible.
+
+  **Cross-reference:** `.claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md`
+  (failure pattern + reframe), memory note
+  `feedback_action_dispatch_legality.md` (doctrine), and existing
+  `.claude/failures/TABLEVIEW_INVARIANT_GAP.md` (Invariant Coverage
+  Program — render layer; this WS handles the dispatch layer via primitive
+  collapse rather than dispatch-layer validation).
+
+accept_criteria:
+  - "New API at `src/utils/recordSeatAction.js` (or inline in
+    `useGameHandlers`): `recordSeatAction(seat, intent)` where intent is
+    'fold' | 'match' | { raiseTo: number }. Function reads
+    amountOwed/currentBet from game state, classifies the resulting
+    action label, and dispatches the existing RECORD_PRIMITIVE_ACTION
+    payload with the CORRECT action string for the seat's state."
+  - "Caller migration: `CommandStrip.jsx` action buttons + `useGameHandlers`
+    batch helpers (`checkAround`, `restFold`) call the new API. The
+    `checkAround` batch becomes
+    `remaining.forEach(seat => recordSeatAction(seat, 'match'))` — SB
+    automatically resolves to CALL because amountOwed > 0."
+  - "Test: directly invoke `recordSeatAction(SB_SEAT, 'match')` on a
+    limped-preflop fixture → resulting action sequence shows SB CALL,
+    not CHECK. Same call on a flop-with-no-bet fixture → SB CHECK."
+  - "Test: `recordSeatAction(seat, { raiseTo: N })` with N <= currentBet
+    throws/rejects (the signature does not permit it)."
+  - "Invariant in `system/invariants.md`: INV-RULES-CONTRIBUTION
+    'No seat may register a contribution less than amountOwed(seat) on
+    any street unless the contribution closes the seat for that street
+    (fold or all-in).' Check command: integration test fixture across
+    preflop/flop/turn/river × limped/raised/3bet scenarios."
+  - "PRIMITIVE_ACTIONS constants stay unchanged (CHECK/CALL/BET/RAISE/FOLD
+    string labels preserved for downstream analytics, advisor, replay).
+    What changes is that no caller passes these strings directly into
+    RECORD_PRIMITIVE_ACTION — the new API is the single funnel that
+    produces them as outputs."
+  - "Sweep of every `RECORD_PRIMITIVE_ACTION` dispatch site (grep shows
+    8 files): each is either migrated to `recordSeatAction` or
+    documented with a comment naming the rule it preserves (e.g.,
+    test fixtures dispatching synthetic actions for assertion purposes
+    may bypass; document why)."
+  - "Failure file `.claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md`
+    updated to record the reframe (primitive-level vs dispatch-level fix)."
+
+effort: "M"
+files_involved:
+  - "src/utils/recordSeatAction.js (NEW — single record API)"
+  - "src/hooks/useGameHandlers.js (migrate checkAround / restFold / any direct dispatch)"
+  - "src/components/views/TableView/CommandStrip.jsx (migrate action buttons)"
+  - "src/constants/primitiveActions.js (no constant changes — labels preserved as outputs)"
+  - "src/utils/__tests__/recordSeatAction.test.js (NEW)"
+  - "system/invariants.md (INV-RULES-CONTRIBUTION)"
+  - ".claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md (update with reframe)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+
+sprint_id: "SPR-075"
+
+decision_flags:
+  - "Single recordSeatAction file vs inline in useGameHandlers. Recommendation:
+    standalone utility — easier to unit-test, no React-hook coupling, can be
+    imported from tests/fixtures/analytics."
+  - "Strict-mode behavior on illegal raiseTo: throw vs return false vs no-op.
+    Recommendation: throw — caller code is buggy if it can produce a
+    raiseTo<=currentBet; that should surface loudly. Compare to the
+    dispatch-boundary throw vs toast question (now moot at this layer)."
+  - "Whether legacy synthetic test fixtures that dispatch RECORD_PRIMITIVE_ACTION
+    directly (e.g., asserting potCalculator behavior with hand-crafted action
+    sequences) should migrate to recordSeatAction or stay as direct dispatches
+    with a comment. Recommendation: stay direct — they're testing the reducer's
+    state-mutation behavior, not the primitive-level invariant. Add comment
+    per fixture."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner reported SB allowed to CHECK preflop while owing chips. 2026-05-12 reframe: 'A, why does this require such an advanced solution? The primitives here are $ in a pot, bets must be matched to be in a hand. The small blind is a forced bet. A check being available when you havent matched the bet should be impossible at the primitive level.'"
+
+created_at: "2026-05-11T00:00:00Z"
+updated_at: "2026-05-12T00:00:00Z"
+status_note: |
+  Authored 2026-05-11. REWRITTEN 2026-05-12 after owner reframe: solution
+  belongs at primitive level (make illegal payloads unrepresentable), not
+  at dispatch boundary (validate and reject). Owner principle now binding
+  for all future action-recording work.
+
+  PRIMITIVE_ACTIONS constants stay; what changes is the recording API
+  shape. Display labels (CHECK/CALL/BET/RAISE) become derived outputs,
+  not free-floating inputs. CHECK-while-owing becomes structurally
+  unrepresentable because no caller passes a 'check' string anymore.
+
+  Bug-fix exempt from Refactor Sprint 'no new features' charter. Pairs
+  with `.claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md` + memory
+  `feedback_action_dispatch_legality.md` (both updated for the reframe).

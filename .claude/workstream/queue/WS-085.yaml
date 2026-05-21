@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "design-comprehension"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   Hygiene H2 — First quarterly PROTO persona validation pass
 accept_criteria:
@@ -22,10 +22,10 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "SCHEDULED 2026-07-21"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). DCOMP Hygiene H2 — first quarterly PROTO persona validation pass; ≥5 of 15 personas validated or explicitly kept PROTO. SCHEDULED 2026-07-21 (quarterly cadence). ~1 session. Category retitled to 'design-comprehension'; program: engineering → design."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 395
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

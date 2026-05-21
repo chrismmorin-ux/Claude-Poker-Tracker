@@ -1,0 +1,153 @@
+id: "SPR-057"
+title: "Sidebar staleContext dual-writer oscillation — consolidate to single owner (WS-107)"
+status: completed
+approved_at: "2026-05-09T02:35:00Z"
+completed_at: "2026-05-09T03:32:43Z"
+goal: |
+  Sidebar `staleContext` is owned by a single writer. The redundant 10s
+  interval is removed (or the on-push clear is, depending on plan-mode
+  investigation); the surviving writer is the canonical clear-point.
+  Regression test pins the consolidation so the dual-writer pattern
+  doesn't reappear.
+
+program_focus: engineering
+program_initiative: |
+  Sidebar Recurrence Program — RT-* sidebar-recurrence cluster
+  continuation. WS-107 is the next RT-* sibling after the
+  SPR-043/044/045/047 boundary-hardening close-out + SPR-054 flicker
+  fix. Engineering rotation after SPR-056 (SCF G5 catalog) was abandoned
+  in plan-mode on substrate blocker.
+
+composed_by: auto
+created_at: "2026-05-09T02:35:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo (HomeBase-side tooling). Manual scan: engineering bug fix; no constitutional surfaces apply."
+
+decisions_needed:
+  - "#1 Single-owner pick: keep `handleLiveContextPush` as canonical setter+clearer (push-driven only) OR keep the 10s interval as canonical (time-driven only). Default recommendation: push-driven only — recent SR-program boundary-hardening (SPR-043/044/045/047) made SW→panel pushes reliable enough."
+
+items:
+  - id: "WS-107"
+    title: "staleContext dual-writer oscillation — consolidate to single owner + regression test"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: sidebar-recurrence
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T02:35:00Z"
+    completed_at: "2026-05-09T03:32:43Z"
+    decision_flags:
+      - "Single-owner pick: push-driven (handleLiveContextPush) vs time-driven (10s interval)"
+    decisions_resolved:
+      - "Single-owner pick → tick-driven (only viable shape; option a 'push-driven only' was misanalysis since pushes can stop arriving). Founder approved corrected design after AskUserQuestion explained why option a doesn't work."
+    notes: |
+      SHIPPED ~57 min actual (M tag → ~M actual; longer than the
+      SPR-043/044/045/047/054 RT-* cluster cadence because plan-mode
+      investigation surfaced that the AC's framing was wrong; needed
+      one extra AskUserQuestion to confirm corrected design).
+
+      Corrected analysis: the AC said "consolidate to single owner"
+      and listed two viable shapes. Investigation showed only one
+      works — the 60s stale threshold is time-driven; deleting the
+      10s interval entirely (push-driven-only) loses staleness
+      detection when pushes stop. The correct fix is tick-driven +
+      add the missing 'clear-stale' branch (the push handler's
+      `coordinator.set('staleContext', false)` was working around
+      that gap).
+
+      Files:
+        - ignition-poker-tracker/shared/stale-context-tick.js (new,
+          ~65 LoC) — pure `evaluateStaleContext(now, ctx,
+          isCurrentlyStale)` returns `{action, renderTag} | null`.
+          Three branches: 'full-clear' (age > 120s), 'set-stale'
+          (60s < age <= 120s, not currently stale), 'clear-stale'
+          (age <= 60s, currently stale — NEW). Pure: no clock reads,
+          no side effects.
+        - ignition-poker-tracker/shared/__tests__/stale-context-tick.test.js
+          (new, 20 unit tests): full-clear (3) + set-stale (3) +
+          clear-stale (3) + no-op (7) + boundary (3) + push-restores-
+          freshness lifecycle (1).
+        - ignition-poker-tracker/side-panel/__tests__/stale-context-writer-discipline.test.js
+          (new, 2 baseline-lock tests): exact-3 site-count assertion +
+          handleLiveContextPush body has zero direct staleContext writes
+          (function-body extracted via brace-matched slice; pattern
+          mirrors dom-mutation-discipline.test.js R-2.3 baseline).
+        - ignition-poker-tracker/side-panel/side-panel.js: import
+          `evaluateStaleContext` from shared/. handleLiveContextPush
+          loses its `coordinator.set('staleContext', false)` line.
+          _staleContextTick refactored to switch-on-helper-decision
+          shape; renderTag now sourced from helper.
+
+      AC walkthrough:
+        - "10 s interval sets, handleLiveContextPush:468 clears on every
+          push. Consolidate to single owner" ✓ tick is sole writer (3
+          sites in side-panel.js, all inside `_staleContextTick` body)
+        - "regression test" ✓ 20 unit tests + 2 discipline tests pin
+          single-owner invariant against future regression
+
+      Vital signs:
+        - Extension tests in isolation: 22/22 pass (4ms unit, 4ms
+          discipline)
+        - Full extension suite: 2301/2301 pass (+22 net vs SPR-054
+          baseline 2279; matches new test count; zero regressions)
+        - Extension build: clean
+        - Full smart-test-runner (app side): 10291/10311 pass (20
+          skipped, 0 failed — same as SPR-055 baseline; one mid-run
+          flake on first attempt cleared on re-run)
+        - App build: clean (7.50s)
+
+      Doctrine alignment:
+        - CLAUDE.md anti-pattern "Never import from side-panel.js":
+          decision logic lives in shared/, side-panel.js consumes the
+          helper.
+        - SR-program R-7.3 obs-honest: tick still emits a renderTag per
+          decision (full-clear / set-stale / cleared); no silent state
+          mutation.
+        - RT-60 timer registry: scheduleTimer call site at line 2232
+          unchanged; tick is still registered with cancel-on-table-switch
+          coverage.
+
+      Owner verification (real-world):
+        Open extension steady-state. Leave tab idle ~70s. Stale badge
+        should appear. Then trigger a fresh live_context push (e.g. via
+        dev tools or natural game activity). Stale badge should clear
+        within ~10s on the next tick. Full clear at ~120s closes panel
+        state. The dual-writer oscillation is now structurally impossible
+        because handleLiveContextPush no longer writes staleContext.
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (M effort + type=improvement
+  triggers plan-first per Step 3d).
+
+  Source-class damping: last 3 completed anchors (WS-017 + WS-106 +
+  WS-168) all `untagged` (backlog-md-migration); no class saturated.
+  WS-107 untagged. No damping. SPR-056 was abandoned in plan-mode (~5
+  min, zero code change) and is excluded from the saturation window
+  per Step 2d ("skip status: abandoned").
+
+  Fleet-rotation override: not applicable (poker-tracker product repo).
+
+  Strong alternatives passed over:
+    - WS-020 (EAL G5 hook-hoisting race test) — domain-correctness
+      rotation; cross-surface coordination test; deferred to EAL G5
+      testing-tier close-out cluster.
+    - WS-146 4th claim (SCF G5 catalog) — abandoned in SPR-056 on
+      substrate blocker; needs sizing-axis or hand-strength-axis
+      extension before catalog can advance further.
+    - WS-016 (EAL Stream C live anchor-badge) — UX-touching, requires
+      Gate 1 audit; deferred per founder /next re-run signal.
+
+  Plan-mode will surface 1 decision (single-owner pick) via
+  AskUserQuestion before any code lands. RT-* cluster cadence
+  (SPR-043/044/045/047/054 all M-tag→S-actual ~10-50 min) suggests
+  this lands in 15-30 min.
+
+last_updated: "2026-05-09T03:32:43Z"

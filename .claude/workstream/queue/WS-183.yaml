@@ -1,0 +1,74 @@
+id: "WS-183"
+title: "Showdown — disable card-edit interaction on winning seats (canInteract guard missing !hasWon)"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "SPR-075"
+claimed_at: "2026-05-13T00:00:00Z"
+started_at: "2026-05-13T00:00:00Z"
+completed_at: "2026-05-13T00:30:00Z"
+priority_score: 18.0
+priority_label: "P1"
+category: "showdown-view"
+capability: "core"
+program: "engineering"
+description: |
+  **Bug confirmed in code.** Owner observed during 2026-05-11 session that
+  showdown cards remain selectable on a seat that has been marked Won (and
+  possibly Muck — needs reproducer confirmation; see decision_flags).
+
+  Root cause: `src/components/views/ShowdownView/ShowdownSeatRow.jsx:40`:
+
+      const canInteract =
+        mode === 'selection'
+        && inactiveStatus !== SEAT_STATUS.ABSENT
+        && !isMucked;
+
+  The guard does NOT check `hasWon`. A seat marked Won (green border, diagonal
+  overlay) still has `canInteract === true` and its card slots accept
+  `onHighlightSlot` callbacks. Visually the cards look final; functionally
+  they're still editable.
+
+  Muck case: the line above DOES block `!isMucked` — so mucked seats should
+  reject card edit. Owner's muck observation may be a separate path (long-press,
+  context menu, or summary mode); needs reproducer.
+
+accept_criteria:
+  - "Add `&& !hasWon` to the canInteract gate at ShowdownSeatRow.jsx:40."
+  - "Confirm mucked-seat behavior: verify no alternative path (long-press,
+    context menu, ShowdownView parent dispatch) allows card edit when
+    `inactiveStatus === MUCKED`. If reproducer found, include in same fix."
+  - "Test: ShowdownSeatRow render with `hasWon={true}` — tapping card slot
+    does NOT invoke onHighlightSlot. Same for `isMucked={true}`."
+  - "Visual verification at 1600×720: winning seat's CardSlot has cursor:default
+    (or whatever the non-interactive variant is), no hover/tap highlight."
+
+effort: "S"
+files_involved:
+  - "src/components/views/ShowdownView/ShowdownSeatRow.jsx (line 40 fix)"
+  - "src/components/views/ShowdownView/__tests__/ShowdownSeatRow.test.jsx (extend)"
+  - "src/components/views/ShowdownView/ShowdownView.jsx (audit parent for alternative dispatch paths)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+
+sprint_id: "SPR-075"
+
+decision_flags:
+  - "Is there a deliberate use case for editing cards AFTER Won is selected
+    (e.g., owner mis-selected the winning hand and wants to correct)? If yes,
+    the path should be an explicit 'unlock-edit' affordance, not the default
+    tap behavior. Owner picks: hard-lock with explicit unlock, or no edit
+    after Won."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner reported 'bugs in our showdown cards, being able to select them at showdown even in the case of a win or a muck'"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner session-issue consolidation. Small fix
+  (one-line guard + test). Muck case may be the same fix or a separate path —
+  verify during implementation.

@@ -1,0 +1,115 @@
+id: "SPR-056"
+title: "SCF G5 catalog continuation — 4th claim ships 2 leak rules (WS-146)"
+status: abandoned
+approved_at: "2026-05-09T02:23:59Z"
+abandoned_at: "2026-05-09T02:30:00Z"
+abandoned_reason: |
+  Plan-mode discovery surfaced substrate blocker — same shape as SPR-046's
+  hero-pf-open-overfold pivot. The default catalog gap pick (preflop-sizing
+  × 2) requires a sizing-axis extension to deriveSituationKey (8 → 9 axes);
+  catalog scope_notes flag this explicitly: "Sizing leaks need a sizing
+  axis added to situation keys (not just action). Detector pattern shifts
+  from frequency-based to amount-based."
+
+  Catalog audit (8-axis substrate-clean check):
+    - preflop-sizing × 3 (PLANNED): blocked on sizing axis
+    - position-discipline × 2 (PLANNED): blocked on hand-strength axis
+    - multiway-adjustment × 1 PLANNED: blocked on playersRemaining axis
+    - capped-range-misread × 1 PLANNED: needs villainProfile piped to bucket
+    - turn-barrel × 1 PLANNED (hero-turn-barrel-frequency): substrate-clean ✓
+    - flop-sizing × 2 PLANNED: blocked on sizing axis
+    - all river/multiway-thin/turn-barrel × 2 FUTURE-RESEARCH: defer
+
+  Only 1 PLANNED entry is substrate-clean (hero-turn-barrel-frequency).
+  Founder presented with 4 options:
+    1. Single rule (hero-turn-barrel-frequency) — 6/25 → 7/25
+    2. Sizing-axis extension + hero-pf-open-undersizing (SPR-040-magnitude)
+    3. Hand-strength-axis extension + hero-oop-overplay (largest blast radius)
+    4. Abandon SPR-056, rotate to engineering or testing
+
+  Founder picked option 4 — different program rotation.
+
+  WS-146 4th claim is RELEASED back to in_progress for a future sprint
+  (no work landed; no code changed).
+goal: |
+  Two more leak rules ship from the SCF catalog, advancing 6/25 → 8/25
+  toward Master Plan §D close. Hero gains coverage on a currently
+  zero-shipped fold-equity dimension. Each rule = single-file leak rule
+  in src/utils/skillAssessment/leakRules/ + solver baselines + catalog
+  status update + tests; auto-registers via import.meta.glob (no
+  detector code changes).
+
+program_focus: design
+program_initiative: |
+  Self-Coach Foundation (SCF) Gate 5 — Master Plan §D Phase 5 catalog
+  continuation. WS-146 4th claim. Prior claims:
+    - SPR-031 (2026-05-03): hero-bb-defense-width
+    - SPR-040 (2026-05-06): hero-oop-cbet-overfold + hero-flop-vs-donk-misresponse + 8-axis situation-key migration
+    - SPR-046 (2026-05-07): hero-pf-3bet-overfold + hero-oop-3bet-underfold (with mid-sprint pivot from hero-pf-open-overfold which is structurally deferred)
+
+  D-line rotation after 3-of-4 domain-correctness streak (SPR-053 +
+  SPR-055 matcher pure-utils + SPR-049 LSW HU close-out) and 2
+  engineering interleaves (SPR-054 sidebar fix + SPR-047 sidebar replay
+  corpus). Last D-line work was SPR-046 (2 days ago); MPMF cluster
+  remains paused on Q7+Q8.
+
+composed_by: auto
+created_at: "2026-05-09T02:23:59Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo (HomeBase-side tooling). Manual scan: catalog continuation in established pattern; SCF refusals AP-SCF-01..N apply but are passively enforced by leak-rule template + CD-5 lint."
+
+decisions_needed:
+  - "#1 Catalog gap pick: which 2 catalog entries to ship this claim. Default recommendation: preflop-sizing × 2 (close 3/4 → fully shipped on preflop fold-equity bucket; 8-axis substrate from SPR-040 supports sizing discrimination mechanically). Alternates: position-discipline + sample-size-discipline (1 each, diversifies across 2 buckets)."
+
+items:
+  - id: "WS-146"
+    title: "SCF G5 child 2 — 4th claim: ship 2 catalog leak rules + baselines + tests"
+    mode: plan-first
+    effort: M
+    program: design
+    category: self-coach-foundation
+    priority_score: 18.0
+    status: released
+    started_at: null
+    completed_at: null
+    decision_flags:
+      - "Per-sprint: which 2 catalog entries to ship next (by coverage gap + complexity tier)"
+    notes: |
+      Released back to backlog — sprint abandoned in plan-mode after
+      substrate-blocker discovery. No code or tests changed.
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (M effort + type=improvement
+  triggers plan-first per Step 3d).
+
+  Source-class damping: WS-146 is `spr-followup` (parent_ws: WS-013).
+  Founder-driven; never damped. Last 3 anchors (WS-017 / WS-106 /
+  WS-168) are all `untagged` (backlog-md migration); no class saturated.
+
+  Fleet-rotation override: not applicable (poker-tracker product repo).
+
+  Strong alternatives passed over (founder confirmed D-line preference
+  by approving):
+    - WS-107 (engineering RT-83 staleContext oscillation) — clean
+      mechanical fix; sibling cluster cadence M-tag→S-actual; deferred
+      to follow-on sprint.
+    - WS-016 (EAL Stream C live anchor-badge) — UX-touching, requires
+      Gate 1 audit overhead; deferred per founder /next re-run signal.
+    - WS-020 (EAL G5 hook-hoisting race test) — pure test, no UX;
+      deferred to EAL G5 testing-tier close-out cluster.
+    - WS-164 (PIO G5 child E) — soft-blocked on Table-Build Gate 5;
+      requires founder to clear prereq.
+
+  Plan-mode will surface 1 decision (catalog gap pick) via
+  AskUserQuestion before any code lands. Default recommendation:
+  preflop-sizing × 2 — consistent with closing buckets (catalog
+  preflop fold-equity 3/4 → 4/4) and 8-axis substrate ready.
+
+last_updated: "2026-05-09T02:23:59Z"

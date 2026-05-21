@@ -7,6 +7,7 @@ claimed_at: null
 completed_at: null
 last_claim_completed_at: "2026-05-07T09:35:00Z"
 last_claim_sprint: "SPR-046"
+last_claim_attempted: "SPR-056 (abandoned 2026-05-09 in plan-mode — substrate blocker discovery)"
 last_claim_notes: |
   SPR-046 third claim (2026-05-07): pivot from original (hero-pf-open-overfold
   + hero-oop-3bet-underfold) → (hero-pf-3bet-overfold + hero-oop-3bet-underfold)

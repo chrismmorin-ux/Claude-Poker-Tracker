@@ -1,0 +1,210 @@
+id: "SPR-091"
+title: "PSD Gate 4 unblock trio — 2 ADRs + Gate 3 research"
+status: completed
+approved_at: "2026-05-19T04:34:12Z"
+completed_at: "2026-05-19T05:00:00Z"
+
+goal: |
+  WS-199 (PSD Gate 4 surface spec) comes off the blocked list. All three
+  structural blockers (active-recall pattern ADR, anchor-trace destination
+  ADR, Gate 3 JTBD canonicalization + persona reconciliation) close in one
+  design-themed sprint so WS-199 can claim cleanly on the next /next
+  cycle rather than wait two follow-up sprints elsewhere.
+
+program_focus: design
+program_initiative: |
+  Direct SPR-090 follow-up. The Gate 2 Blind-Spot Roundtable for PSD
+  surfaced 5 YELLOW conditions to clear before Gate 4. This sprint
+  closes 3 of them (the design-side blockers); WS-198 (engineering
+  Phase 0) and WS-200 (mobile-portrait variant) are independent
+  follow-ups that don't block Gate 4 surface authoring.
+
+  Program rotation: design anchors 2-in-a-row (SPR-090 + SPR-091).
+  Over a 6-sprint window: design=3, engineering=2, DC=1. Within
+  tolerance. The cluster's natural cohesion (all 3 tickets are
+  spr-followup of WS-063, all 3 unblock the same target WS-199)
+  outweighs the rotation pressure.
+
+composed_by: auto
+created_at: "2026-05-19T04:34:12Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+cap_excursion: |
+  Composed at ~2.5 effort sessions vs standard cap of 2.0 (0.5 over).
+  Justified by:
+    - All 3 items are PSD-G2 follow-ups (spr-followup source-class);
+      bundling them avoids context-reload over 2 sprints.
+    - WS-196 + WS-197 are S-effort ADR-elicitations (decision-document,
+      not implementation) — actual wall-clock is likely below the
+      0.5σ estimate.
+    - The 3-item bundle precisely closes the design-side WS-199 block
+      set; partial closure would force a second follow-up sprint.
+  Cap is a guide, not a hard limit, per founder ratification pattern
+  (cf. SPR-082 — also slightly over standard cap for natural cluster).
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-19T04:34:12Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-090 precedent). Manual
+    scan:
+      - WS-196 + WS-197 are ADR-authoring tickets — owner-driven design
+        decisions documented in ADR format. No engagement-pressure
+        surfaces; no graded copy; no tier-ranking labels.
+      - WS-195 is JTBD/persona research — atlas updates + persona
+        reconciliation document. No production code, no user-facing
+        copy.
+      - Honors [[feedback_owner_volunteered_grading]]: PSD remains
+        opt-in study surface; this sprint's outputs do not change that.
+      - Honors [[feedback_scf_learning_state_not_tier_rank]]: no
+        skill-rank label work in scope.
+      - Honors [[feedback_first_principles_decisions]]: ADR rationale
+        must derive choice from cognitive-mechanism + persona-fit
+        evidence, never from label-shaped categorizations.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-196) — Active-recall pattern: flip-card (predict-then-flip, RPD-aligned, standard SRS pattern) vs side-by-side (masked answer, faster for high-volume blocks). Choice shapes WS-199 layout spec + per-card budget realism."
+  - "Item #2 (WS-197) — Anchor-trace destination (DS-58): in-app bundle (~150KB, offline-robust) vs external link (mobile-fragile) vs inline expansion (UX cost, no deep nav) vs defer to Range Lab Gate 4. Stage D-P5 recommends in-app or inline for v1."
+  - "Item #3 (WS-195) — presession-preparer × post-session-chris reconciliation: (a) presession-preparer's review-mode is the drill-specific cut of post-session-chris (Gate 3 documents relationship), or (b) post-session-chris narrows to non-drill review and presession-preparer owns drill review (Gate 3 amends post-session-chris)."
+  - "Item #3 (WS-195) — PSP-1/2/3 + Apprentice depth tolerance: 4 owner-ratification questions (5/15/30-min variants, mood-detection viability, 48h review window, falsifier-depth fit for Apprentice persona)."
+
+composition_notes: |
+  3-item plan-first sprint anchoring on PSD-G2 follow-up cluster.
+
+  Anchor selection:
+    - All MPMF P=22 items (WS-027/030/031/032/033/036) remain
+      blocked_by_note → damp to 5.5.
+    - WS-191 (P=20) soft-blocked → 5.0.
+    - WS-164 (P=18) soft-blocked → 4.5.
+    - WS-195, WS-196, WS-197 are all P=18 clean (no soft-block,
+      no NEEDS-RESCOPE). Tied at top of clean tier.
+    - Cluster naturally collapses into one anchor (the PSD G4
+      unblock trio); WS-195 picked as item #3 anchor since it's
+      M-effort and the other two are S-effort ADR-elicitations
+      that ride alongside.
+
+  Pair candidate evaluation:
+    - WS-020/023/025 (EAL test infra, P=15, DC) — all
+      NEEDS-RESCOPE per SPR-071 triage. Not directly executable.
+    - WS-053 (Range Lab Gate 2, P=15, engineering) — different
+      program, different feature. Would rotate engineering but
+      split focus.
+    - WS-087 (LSW-B2, P=15, DC) — soft prereq on LSW Stream A
+      audit cluster close.
+    - WS-185 (EV-bucket sum-to-100%, P=14, DC) — real src/ bug
+      fix. Tempting as a hygiene companion. Deferred — the 3-item
+      design bundle already saturates the effort cap.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-088 (untagged), SPR-089 (spr-followup
+      WS-194 inline), SPR-090 (untagged WS-063). No auto-rec or
+      engine-finding saturation.
+    - WS-195/196/197 source-class = spr-followup (parent_ws WS-063,
+      parent_spr SPR-090). Founder-driven, no damping.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..090 — poker-tracker product repo, no fleet/repo-goal
+  candidates. composition_notes: "fleet-rotation override skipped:
+  no fleet/repo-goal candidate in current backlog."
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (18d ago,
+      cadence 14d → 4d stale). launch protocol_history empty.
+    - Following SPR-085..090 precedent (all proceeded with same
+      stale DC + never-baselined launch state), composing anyway.
+
+  Plan-mode entry:
+    - All 3 items mode = plan-first. Decision flags are tightly
+      scoped (concrete options, not open-ended exploration), so
+      a single batched AskUserQuestion elicitation across all 3
+      items is more efficient than 3 separate plan-mode entries.
+      This is the practical pattern for ADR-elicitation work
+      where the design space is already enumerated by the
+      preceding audit.
+
+items:
+  - id: "WS-196"
+    title: "PSD active-recall pattern ADR — flip-card vs side-by-side"
+    mode: plan-first
+    effort: S
+    priority_score: 18.0
+    program: design
+    status: done
+    decision_flags:
+      - "Active-recall pattern: flip-card vs side-by-side"
+    decisions_ratified:
+      D1: "Flip-card (founder choice). Predict-then-flip enforces active prediction; RPD-aligned; matches Anki/SRS user habit; cleaner mobile-portrait reflow per WS-200; honors Gate 2 Stage E-A1/A2/A3/A4 + Stage C-A2 skim-tolerant content discipline."
+    notes: |
+      Shipped. ADR-005 authored at docs/adr/ADR-005-psd-active-recall-flip-card.md.
+      Rationale: predict-then-verify cognitive loop is the RPD-mandated
+      pattern for pattern-recognition transfer; side-by-side weakens that
+      enforcement and complicates mobile-portrait reflow.
+  - id: "WS-197"
+    title: "PSD anchor-trace destination ADR (DS-58)"
+    mode: plan-first
+    effort: S
+    priority_score: 18.0
+    program: design
+    status: done
+    decision_flags:
+      - "Anchor-trace destination: in-app / inline / external / defer to Range Lab"
+    decisions_ratified:
+      D1: "In-app bundle (founder choice). docs/upper-surface/ bundled into app (~150KB at 15 artifacts, ~500KB at corpus saturation). Offline-robust per persona's primary phone-in-cab context. DS-58 (Gate 1) becomes DS-63 (atlas canonical) per ID-collision finding; placed in drills-and-study.md as drill-internal navigation."
+    notes: |
+      Shipped. ADR-006 authored at docs/adr/ADR-006-psd-anchor-trace-in-app-bundle.md.
+      External-link option rejected on mobile fragility; inline-expansion
+      rejected on Stage E-A1 collision (competing controls in card body);
+      defer-to-Range-Lab rejected on coordination liability + v1
+      JTBD-coverage loss.
+  - id: "WS-195"
+    title: "PSD Gate 3 Research — JTBD canonicalization + persona reconciliation"
+    mode: plan-first
+    effort: M
+    priority_score: 18.0
+    program: design
+    status: done
+    decision_flags:
+      - "presession-preparer × post-session-chris reconciliation (A-R1)"
+      - "PSP-1 (5/15/30-min time-budget variants)"
+      - "PSP-2 (mood-detection viability for auto-detection v2)"
+      - "PSP-3 (48h review window — shorter/longer?)"
+      - "Apprentice-Student depth tolerance (A-R3)"
+    decisions_ratified:
+      A-R1: "Siblings (Gate 3 resolution, not founder ratification needed). presession-preparer and post-session-chris cover different scopes post-session — drill-prediction-specific vs general session review. Both files updated with sibling cross-references."
+      PSP-1: "5/15/30 confirmed (founder ratified). No alternative bucket for v1."
+      PSP-2: "PROTO with v1 fallback (founder ratified pattern). User-declared mood toggle ships v1; WS-201 research determines v2 disposition (auto / hybrid / user-only)."
+      PSP-3: "48h confirmed (founder ratified). No alternative window for v1."
+      A-R3: "Resolved via card-back content discipline (Gate 3 resolution). Apprentice can absorb headline-only on 1-min/card budget; depth is opt-in via scroll + anchor-trace. Re-evaluate if usage data shows surface abandonment."
+    notes: |
+      Shipped. Gate 3 research summary at docs/design/audits/2026-05-19-research-psd-gate3.md.
+      Two material findings on entry:
+        - Finding 1: SE-01/02/03 already canonical in session-entry.md
+          (authored by exploit-deviation Gate 3 2026-04-23). B-G1 no-op.
+        - Finding 2: DS-56/57/58/59 ID slots taken by other Gate 3 outputs
+          (adaptive-seeding + EAL + PRF). PSD Gate 1 proposals re-numbered
+          as DS-62 + DS-63; two original proposals collapsed/deferred.
+      Authored:
+        - DS-62 (recency-weighted drill selection) in drills-and-study.md
+        - DS-63 (anchor-trace) in drills-and-study.md per ADR-006 placement
+        - Persona file edits to presession-preparer + post-session-chris
+        - Gate 3 research summary audit doc
+      A-AP1 autonomy red-line flag bound in DS-62 entry (no streak/mastery
+      surfaces; selection-only).
+
+deferred: |
+  - WS-198 (engineering Phase-0 hands ↔ node-ID) — does not block
+    Gate 4 design surface; will surface when WS-199 closes.
+  - WS-200 (mobile-portrait variant) — sequenced after WS-199
+    (landscape v1).
+  - WS-201 (mood-detection research, DC) — independent of Gate 4
+    schedule.
+  - WS-053 (Range Lab Gate 2) — engineering rotation candidate,
+    surfaces next /next cycle.
+  - WS-185 (EV-bucket sum-to-100%) — actual src/ DC bug fix;
+    natural hygiene companion that the 3-item bundle displaces.

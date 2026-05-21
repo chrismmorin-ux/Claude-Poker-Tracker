@@ -2,13 +2,13 @@ id: "WS-066"
 title: "LSW soft-flag tightening"
 legacy_id: "US-6"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
-priority_score: 8.0
-priority_label: "P3"
-category: "ready-to-start"
+status: done
+claimed_by: "session-2026-05-16-next"
+claimed_at: "2026-05-16T16:50:00Z"
+completed_at: "2026-05-17T10:15:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "lsw-v2"
 capability: "core"
 program: "engineering"
 description: |
@@ -23,12 +23,12 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-085"
 decision_flags: []
-status_note: "LATER"
+status_note: "PROMOTED 2026-05-14 SPR-079 ready-to-start triage (P=8 P3 → P=15 P2). LSW external-validation soft-flag tightening: 2 soft flags surfaced at LSW Stage 4 (flop: equity-vs-subset distinction; river: stake-caveat for '25-35% bluffs'). LSW A5-A8 (shipped 2026-04-23) codify 'A-with-nuance'/'A-with-stake-caveat' inline forward — retroactive tightening of A1 + pilot upper-surface artifacts remains. Documentation-only fix; no audits to re-run per owner direction. ~S effort. Category retitled to 'lsw-v2'."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 311
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

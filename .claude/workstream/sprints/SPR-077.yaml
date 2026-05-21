@@ -1,0 +1,138 @@
+id: "SPR-077"
+title: "Seat autoselector — Phase 1 telemetry instrumentation (WS-189)"
+status: completed
+approved_at: "2026-05-14T00:00:00Z"
+completed_at: "2026-05-14T08:30:00Z"
+
+goal: |
+  Surface real evidence of which "wrong seat" hypothesis (H1 logic / H2 timing /
+  H3 multi-seat clobber) is true at the live table, so a precise Phase 2 fix
+  follows from observation, not speculation. Ships dev-mode-only telemetry on
+  useAutoSeatSelection + getFirstActionSeat; no behavior change. Phase 2 root-
+  cause work is a follow-up WS authored after owner captures ≥3 live cases.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — getFirstActionSeat is the single-source-of-truth
+  predicate for "who acts next," consumed by 10 files. Disagreement with the
+  ICP 47-row matrix would make both surfaces wrong. Phase 1 surfaces the
+  disagreement (if any) on the next live session.
+
+  Charter alignment: bug-class WS, exempt from Refactor Sprint "no new
+  features" charter per WS-189 status_note. Phase 1 ships and closes; the
+  L-effort fix work is deliberately deferred to a follow-up WS.
+
+  Couples with WS-182 (shipped 2026-05-13, primitive collapse): the rest-batch
+  helpers (checkAround / restFold) need a sound first-action-seat contract
+  before they migrate to recordSeatAction per-seat. Phase 1 telemetry
+  documents that contract by recording every autoselect firing's inputs +
+  outputs.
+
+  Cross-program rotation: last 3 anchors = design (SPR-076) + DC (SPR-075) +
+  design (SPR-074). DC returns. No source-class saturation (anchor =
+  user-request founder-driven).
+
+composed_by: auto
+created_at: "2026-05-14T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase fleet tooling absent — product repo). Manual scan: Phase 1 is
+    dev-mode telemetry on an internal poker-logic predicate. No engagement-
+    pressure, no mastery grading, no surveillance, no AP-PIO/AP-SCF refusals.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-189) — Override-vs-respect for user-built multi-seat queue under M2 (recommendation: respect)"
+  - "Item #1 (WS-189) — Queue-advance behavior on user cancel/un-tap (recommendation: stays intact, only that seat removed)"
+  - "Item #1 (WS-189) — Queue ordering: canonical action order vs user-tap order (recommendation: canonical action order)"
+
+decisions_ratified:
+  d1_phase_split: "Phase 1 = dev-mode telemetry only; Phase 2 = root-cause fix authored after ≥3 captured observations (RATIFIED 2026-05-12 in WS-189 YAML)."
+  d2_m2_semantics: "Multi-seat semantic = M2 batch-pending / sequential entry (RATIFIED 2026-05-12). User-built selection is a QUEUE; tapping an action records for the first seat and advances. Rest-batch helpers (checkAround / restFold) operate on REMAINING-UNACTED-SEATS, bypassing user selection."
+  d3_hypothesis_first_fallback: "Hypothesis-first matrix audit remains AVAILABLE as fallback if telemetry yields <2 captured cases after 2 live sessions (RATIFIED 2026-05-12)."
+
+composition_notes: |
+  Anchor: WS-189 (P=24 L, plan-first) — highest unclaimed; bug-class; charter-
+  exempt. Phase 1 scope (telemetry instrumentation) is closer to S/M than full
+  L; L tag reflects total surface inventory across both phases.
+
+  Single-item sprint. Rationale:
+    - Phase 1 is one logical session unit (dev-mode telemetry + tests +
+      invariant authoring).
+    - No queue items naturally bundle: WS-188 (P=18 L) is engineering audit
+      with no shared files; WS-027..036 (P=22) are launch program items
+      blocked by Q7 legal scoping and not bug-class.
+    - Sprint composition keeps Phase 2 authorship as a clean follow-up after
+      live observation.
+
+  Soft-blocked / not anchored this sprint:
+    - Refactor Sprint Item 4 (decision-system extraction, ~3-4 sessions) is
+      the explicit "NEXT" per state.md and .claude/projects/refactor-sprint-
+      2026-05-10.md, but is not represented as a WS ticket. Offered to owner
+      as alternative anchor at proposal-time; owner approved WS-189 path.
+    - WS-188 (P=18 L) persistence audit Phase 1+3 — parallel-safe with
+      Refactor Sprint Item 4 per project file sequencing.
+    - WS-027/030/031/032/033/036 (P=22, launch program) — Q7 legal scoping
+      not closed; launch program block_sprint:true but launch is NEW
+      (never run baseline) so gate doesn't trip per repo convention.
+
+  Source-class damping: none. WS-189 source = user_request founder-driven
+  ("owner: 'The seat autoselector appears to need a lot of work...'"). Never
+  damped.
+
+  Fleet rotation: N/A (product-focused codebase, no fleet/repo-goal program).
+
+items:
+  - id: "WS-189"
+    title: "Seat autoselector overhaul — Phase 1 telemetry instrumentation"
+    mode: plan-first
+    effort: L
+    program: domain-correctness
+    category: seat-selection
+    priority_score: 24.0
+    status: done
+    decision_flags:
+      - "Override-vs-respect for user-built multi-seat queue (recommendation: respect)"
+      - "Queue-advance on cancel (recommendation: stays intact)"
+      - "Queue ordering: canonical action order (recommendation: canonical)"
+    notes: |
+      Phase 1 deliverable (this sprint):
+        - Dev-mode telemetry on useAutoSeatSelection + getFirstActionSeat.
+        - Every autoselect firing logs: trigger reason, current street, action
+          sequence summary, candidate seat set, selected seat.
+        - Gated by DEBUG flag or NODE_ENV !== 'production' — zero behavior
+          change in production; zero render impact.
+        - Surface INV-SEAT-SELECTION in system/invariants.md documenting the
+          ratified M2 semantics.
+        - Phase 1 ships and closes.
+
+      Phase 2 follow-up (separate WS, authored later):
+        - Owner captures ≥3 live-session wrong-selection cases.
+        - Each captured case becomes a fix target rooted in actual evidence.
+
+      Fallback: if telemetry yields <2 captured cases after 2 live sessions,
+      pivot to hypothesis-first matrix audit (cross-reference getFirstActionSeat
+      against the 47-row ICP matrix).
+
+      Implementation plan (validated at plan-mode):
+        1. Plan-mode: ratify the 3 minor decision flags above with owner.
+        2. Add dev-mode logger utility at src/utils/seatUtils.js OR
+           src/utils/dev/seatSelectionTelemetry.js (TBD at plan-mode).
+        3. Wrap useAutoSeatSelection firing with telemetry capture.
+        4. Wrap getFirstActionSeat call sites at consumer level (10 files) with
+           telemetry — OR instrument getFirstActionSeat itself once and rely on
+           the call-frame context. TBD at plan-mode (recommendation: instrument
+           getFirstActionSeat itself; lower drift risk than 10-site wrap).
+        5. Author INV-SEAT-SELECTION in system/invariants.md.
+        6. Tests for the telemetry no-op-in-prod guard.
+        7. Phase 2 follow-up WS authored as a stub (status: backlog,
+           blocked_by_note: "Awaiting ≥3 owner-captured Phase 1 observations").

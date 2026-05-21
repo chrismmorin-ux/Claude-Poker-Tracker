@@ -2,10 +2,12 @@ id: "WS-106"
 title: "Per-zone innerHTML diff + tourneyTimer guard"
 legacy_id: "RT-82"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-08-next"
+claimed_at: "2026-05-08T17:30:00Z"
+completed_at: "2026-05-08T17:45:00Z"
+sprint_id: "SPR-054"
+status_note: "SHIPPED in SPR-054 (2026-05-08). Fast-path added at 4 zones: writeAppStatusBadge + writePipelineStageDot canonical writers (data-*-tier attribute compared; idempotent same-tier no-op) + renderPipelineHealth detail.innerHTML + counter.textContent + renderPidSummary innerHTML (closure-captured last writes). renderSeatArc already had fast-path at side-panel.js:1129. tourneyTimer 1Hz interval only updates textContent of timer span — no innerHTML cascading; flicker source was the unconditional writers, not the timer itself. 6 new idempotency tests in status-registry.test.js. 2279/2279 extension suite + clean build (both extension and app). Owner verifies: tournament bar should no longer flicker during steady-state operation."
 priority_score: 15.0
 priority_label: "P2"
 category: "sidebar-recurrence"

@@ -1,0 +1,191 @@
+id: "SPR-084"
+title: "SLS Stream B2 — Foundation descriptors (Equity Curve, Spire/Polarization, Sizing Tag)"
+status: completed
+approved_at: "2026-05-16T15:29:00Z"
+completed_at: "2026-05-16T16:35:00Z"
+
+goal: |
+  Shape Language picks up its Stream B foundation descriptors —
+  Equity Curve, Spire/Polarization, and Sizing Tag classifiers each
+  land end-to-end. Stream B2 is the second per-shape classifier batch
+  consuming the Stream D foundation (SPR-081 / WS-040) and chains
+  directly on Stream B1 (SPR-082 / WS-041, Range Silhouette).
+
+program_focus: design
+program_initiative: |
+  Self-Coach Foundation / Shape Language System — Stream B2 batch.
+  WS-040 (Stream D foundation) shipped SPR-081 with IDB v25→v26 +
+  shapeMasteryReducer + ShapeMasteryContext + useShapeMasteryPersistence +
+  skillAssessment/shapeLanguage/ pure-math module + ShapeSkillMapPanel.
+  WS-041 (Stream B1, Range Silhouette) shipped SPR-082 with the first
+  per-shape classifier proving the foundation wires through to a real
+  surface (HandReplay descriptor row + lesson 1 read-only framing).
+  Stream B2 extends that pattern across three more descriptors so the
+  SHAPE_DESCRIPTOR_CATALOG starts to fill out.
+
+  Master Plan §D continuation: state.md Active program = Master Plan
+  2026-04-30 resumed; SPR-082 exit named WS-042 as the directly-queued
+  next ticket in `docs/projects/poker-shape-language.project.md`.
+
+composed_by: auto
+created_at: "2026-05-16T15:29:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-16T15:29:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-083 precedent). Manual scan: per-shape classifier
+    authoring bound by feedback_owner_volunteered_grading.md +
+    feedback_scf_learning_state_not_tier_rank.md +
+    feedback_scf_high_granularity.md +
+    feedback_first_principles_decisions.md. SPR-082 precedent ratified
+    the read-only / no-enrollment / no-tier-rank approach for B-stream
+    classifiers; B2 inherits. No engagement-pressure copy, no graded
+    surfaces, no live-surface contamination. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Ship order within Stream B2: which of Equity Curve / Spire (Polarization) / Sizing Tag goes first inside the sprint (recommendation: Equity Curve first — densest data binding, unblocks visual primitives the other two may reuse)"
+  - "Item #1 — Classifier module shape: one module per descriptor mirroring `rangeSilhouetteClassifier.js` (SPR-082 precedent) vs consolidate under a shared `shapeDescriptors/` namespace (recommendation: keep one-module-per-descriptor; collapse only after observed duplication)"
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-042 (SLS Stream B2),
+  priority 15, design program.
+
+  Effort cap: WS-042 is M (1.5 sessions). Adding WS-043 (Stream B3,
+  also M, blocked_by WS-042) would push the sprint to 3 sessions —
+  over the 2-session standard cap. Single-item is the right pace and
+  mirrors SPR-082's structure exactly.
+
+  Deferred (unmet prereq — soft-block damping ×0.25):
+    - WS-027 (was P=22 → 5.5): External-counsel scheduling action item;
+      Q7 legal verdict capture pending.
+    - WS-030 (was P=22 → 5.5): Pending MPMF Gate 4 design ticket
+      (no Gate 4 ticket exists in queue yet — must be authored first
+      per design framework guardrail).
+    - WS-031 (was P=22 → 5.5): Pending entitlement-rules child
+      (MPMF-G5-ER, not yet ticketed). PaywallGate consumes the ER
+      policy contract.
+    - WS-032 (was P=22 → 5.5): Pending MPMF Gate 4 surface S5
+      (BillingSettings spec, not yet ticketed).
+    - WS-033 (was P=22 → 5.5): Pending MPMF Gate 4 surface S6
+      (analytics event schema spec, not yet ticketed) + Q8 analytics-
+      vendor verdict.
+    - WS-036 (was P=22 → 5.5): Structurally blocked on WS-031
+      (PaywallGate component) — H-SC01 paywall-defer-mid-hand test
+      cannot run until the gate component exists.
+    - WS-191 (was P=20 → 5.0): Awaiting ≥3 owner-captured Phase 1
+      telemetry observations from live sessions (WS-189 fallback
+      clause applies).
+    - WS-164 (was P=18 → 4.5): Depends on Table-Build Gate 5
+      (CandidateColumn surface, not ticketed).
+    - WS-190 (was P=14 → 3.5): Blocked by Refactor Sprint
+      ratification 4 ("no new features"); bug-fixes exempt, this is
+      a feature.
+
+  Also-considered (clean but lower-scored than WS-042):
+    - WS-188 (P=18, effort L = 3 sessions): Persistence + cache audit.
+      Effort overflows the 2-session standard cap, AND it is absorbed
+      into the Refactor Sprint as Item 7 with Phase 2 + Phase 4 gated
+      on Refactor Item 4 ratifying canonical caching shape. Phase 1 +
+      Phase 3 are parallel-safe but starting standalone bypasses the
+      sprint charter. Domain-correctness rotation candidate for a
+      future sprint when Refactor Item 4 ships.
+    - WS-020 / WS-023 / WS-025 (P=15, M each): Domain-correctness
+      testing cluster (Hook-hoisting race test / Per-seed-anchor
+      snapshot tests / In-app autonomy red-line assertions). Three
+      M items = 4.5 sessions, over cap; any one alone would be a
+      single-item alternate anchor.
+    - WS-066 (P=15, M): LSW soft-flag tightening (engineering).
+    - WS-067 (P=15, M): HRP Gate 4 surface specs (design, no
+      dependencies).
+
+  Source-class damping: none. Last 3 anchors (SPR-081 / SPR-082 /
+  SPR-083) classify as untagged / untagged / conversation (founder-
+  driven). Zero auto-rec or engine-finding anchors in window.
+
+  Fleet-rotation override: skipped — poker-tracker is not the CWOS
+  HomeBase; no fleet/repo-goal candidates exist in this product-repo
+  backlog. Composition note recorded per Step 3a-rotation §3.
+
+  Stale-program soft warning (not blocking — surfaced to founder):
+  prog-domain-correctness delta protocol is overdue (3-day cadence,
+  last baselined 2026-05-01 → 12 days stale on delta; sweep at 14d
+  overdue by 1 day). block_sprint: true is set on the program but
+  recent sprints (SPR-080..SPR-083) have not enforced. Founder may
+  clear with /pulse run domain-correctness when convenient.
+
+  Queue data drift flagged:
+    - WS-185 shows status: backlog in queue-index.yaml but
+      status: done in queue/WS-185.yaml (closed by SPR-083).
+    - WS-188 same SPR-081/082 carry-over noted but unverified here.
+    cwos-reconcile.js is the canonical fix; not installed in this repo.
+
+items:
+  - id: "WS-042"
+    title: "SLS Stream B2 — Foundation descriptors (Equity Curve, Spire/Polarization, Sizing Tag)"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    status: done
+    started_at: "2026-05-16T15:35:00Z"
+    completed_at: "2026-05-16T16:35:00Z"
+    decision_flags:
+      - "Ship order — [RESOLVED 2026-05-16: A1 EDC → Spire/Polarization → Sizing Tag (pedagogical curriculum order)]"
+      - "Classifier module shape — [RESOLVED 2026-05-16: B2 consolidated shapeDescriptors/ namespace; Silhouette relocated Sub-phase 0]"
+      - "Cross-domain data dependency (recon-surfaced) — [RESOLVED 2026-05-16: C1 shapeLanguage/ may import data producers from exploitEngine/; reverse forbidden; explicit asymmetric rule added to CLAUDE.md]"
+      - "Silhouette relocation (recon follow-on) — [RESOLVED 2026-05-16 via ExitPlanMode approval: B-follow-1 relocate Silhouette in this sprint]"
+    notes: |
+      Accept criteria (per WS-042.yaml):
+        - 3 descriptors shipped end-to-end
+
+      Foundations to consume (from SPR-081 WS-040 + SPR-082 WS-041):
+        - SHAPE_DESCRIPTOR_CATALOG in src/constants/shapeMasteryConstants.js
+          (10 entries seeded; verify whether Equity Curve / Spire /
+          Sizing Tag already have entries to extend, or need new ones)
+        - shapeMasteryReducer + ShapeMasteryContext + useShapeMasteryPersistence
+        - src/utils/skillAssessment/shapeLanguage/ (betaPosterior +
+          temporalDecay) — shared infra; per-descriptor classifier sits
+          alongside `rangeSilhouetteClassifier.js`
+        - ShapeSkillMapPanel (read-only transparency row pattern;
+          new descriptors auto-render once cataloged)
+        - HeroStateSection / HandReplay descriptor-row pattern from
+          SPR-082 for any visible surface
+
+      SPR-082 RATIFIED precedents that bind B2:
+        - Discriminated-union classifier output (5-prototype + compound)
+        - Read-only "learn this concept" framing for lessons (no opt-in
+          test surface, no enrollment, no skill writes)
+        - HandReplay embed = read-only descriptor row mirroring
+          HeroStateSection (no enrollment affordance)
+        - Drill spots stay as authoring metadata for the future
+          LessonRunnerView; RECORD_DRILL_OUTCOME writer stays no-op
+
+      Memories binding this implementation:
+        - feedback_scf_learning_state_not_tier_rank.md — composition is
+          inspectable; no tier-as-rank labels.
+        - feedback_scf_high_granularity.md — concept granularity floor =
+          coherent solver-baseline region in situation-key space.
+        - feedback_owner_volunteered_grading.md — opt-in test surfaces
+          permitted; system-imposed grading refused. Lessons stay read-
+          only learn-this framing per SPR-082 ratification.
+        - feedback_first_principles_decisions.md — classifier outputs
+          (descriptor enums) are DERIVED, not inputs to plan computation.
+
+      Open questions to resolve in plan mode:
+        1. Are Equity Curve / Spire / Sizing Tag already entries in
+           SHAPE_DESCRIPTOR_CATALOG (from SPR-081 v1 seed of 10)?
+           If yes → extend with v1 enum values + classifier wiring.
+           If no → author new entries first.
+        2. What "end-to-end" means for B2 per accept_criteria:
+           classifier + test? Or classifier + test + lesson + HandReplay
+           embed (full B1 mirror)? Recommend mirror unless founder cuts
+           scope.
+        3. Lesson authoring count: B1 shipped 1 lesson. B2 = 3
+           descriptors → 1 lesson per (3 total) or 1 shared lesson?

@@ -1,0 +1,178 @@
+id: "SPR-093"
+title: "Range Lab Gate 2 — Blind-Spot Roundtable"
+status: completed
+approved_at: "2026-05-20T00:16:32Z"
+completed_at: "2026-05-20T00:35:00Z"
+
+goal: |
+  Range Lab (RL) feature gets its Gate 2 verdict — 5-stage Blind-Spot
+  Roundtable produces GREEN / YELLOW / RED + follow-up tickets,
+  addressing the 4 open owner questions from Gate 1. Engineering
+  program gets its rotation turn after three consecutive design-anchored
+  sprints (SPR-090/091/092).
+
+program_focus: engineering
+program_initiative: |
+  Range Lab is at status `gate-1-complete` (docs/projects/range-lab.project.md).
+  Gate 1 audit shipped 2026-04-22 at docs/design/audits/2026-04-22-entry-range-lab.md.
+  Per Design Program Guardrail (CLAUDE.md), Gate 2 is REQUIRED when the
+  scope introduces new interaction modalities (range-paint, equity
+  histogram, range comparison overlay) or crosses product lines.
+
+  Program rotation: last 4 anchors hit design (SPR-090/091/092) + DC
+  (SPR-089). Engineering is under-rotated. WS-053's program is
+  engineering even though Gate 2 is design-framework analysis — same
+  pattern as SPR-090 (PSD Gate 2 anchored on WS-063 with program=design,
+  but the underlying work was design-framework analysis). The "program"
+  is where the work LADDERS UP to in the accountability matrix, not what
+  shape of activity it is.
+
+composed_by: auto
+created_at: "2026-05-20T00:16:32Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T00:16:32Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-092 precedent). Manual scan:
+      - WS-053 is a Gate 2 Blind-Spot Roundtable — adversarial design
+        review producing a verdict document + follow-up tickets.
+        Output is research/design artifact, not user-facing copy or
+        production code.
+      - No graded surfaces, no engagement-pressure copy, no mastery
+        score ranking, no live-table contamination.
+      - Honors [[feedback_owner_volunteered_grading]]: Range Lab is
+        a study surface; opt-in entry; no graded outputs in scope.
+      - Honors [[feedback_first_principles_decisions]]: roundtable
+        must surface decision points that derive from first-principles
+        (equity / SPR / pot-odds), not label-shaped categorizations.
+        Will explicitly seat a "First-Principles Auditor" voice in
+        the roundtable.
+      - Honors [[feedback_long_term_over_transition]]: voice mandates
+        should target long-term repo + app evolution, not transition
+        cost.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-053) — Roundtable voice set (5-6 voices). PSD Gate 2 used 6 voices: Learning Scientist, Pro Coach, Behavioral Psychologist, Mobile-Context Skeptic, Cross-Surface Architect, Autonomy Auditor. RL has different shape: range-paint UX (precise interaction primitives), Bayesian/tendency-auto-populate engine performance, Flopzilla parity bar, AI-native differentiators, Explorer-extension scope creep. Need 5-6 voices with mandates narrow enough to surface genuine blind spots."
+  - "Item #1 (WS-053) — Gate-1 follow-up scope. Gate 1 audit left 4 owner questions open. Bundle resolution into Gate 2 stage outputs (faster — one audit covers both adversarial review + open-question resolution), or fork to a Gate 3 (Research) ticket (cleaner separation — Gate 2 is adversarial, Gate 3 is synthesis)?"
+
+composition_notes: |
+  Singleton plan-first sprint anchored on WS-053 (Range Lab Gate 2).
+
+  Anchor selection (Step 3a):
+    - All MPMF P=22 items (WS-027/030/031/032/033/036) remain
+      soft-blocked → damped to 5.5.
+    - WS-191 (P=20) soft-blocked → 5.0.
+    - WS-164 (P=18) soft-blocked → 4.5.
+    - WS-199 (P=18) shipped SPR-092 — no longer a candidate.
+    - WS-053 + WS-087 + WS-020/023/025 tied at P=15.
+      - WS-020/023/025: NEEDS-RESCOPE per SPR-071 reconcile.
+        Not directly executable as anchor.
+      - WS-087: gated on Stream A audit close (closed per memory)
+        AND LSW-B1 (WS-086, done). Eligible but DC program would
+        continue under-rotation in a different way.
+      - WS-053: engineering rotation; project at gate-1-complete;
+        natural next sequencer.
+
+  Pair candidate evaluation (Step 3b):
+    - WS-185 (EV-bucket sum-to-100%, P=14, DC) — actually DONE in
+      queue file (queue-index stale). Not a real candidate. Sync
+      hygiene task deferred to /audit.
+    - WS-190 (Mid-hand tag-for-review, P=14, design feature) —
+      Refactor Sprint blocker cleared (closed 2026-05-14). Eligible.
+      But M-effort would put sprint at 3σ; over the 2σ cap.
+    - WS-150 (HSP-v2 master, P=14, L-effort) — too big.
+    - WS-087 (LSW B2 turn decision, P=15, DC) — same program
+      shift; would put DC at heavier rotation. Defer to next /next.
+
+  Effort accounting:
+    - WS-053 = M = 1.5σ. Singleton fits under 2σ cap with 0.5σ
+      headroom but no S-effort companion exists in unblocked
+      backlog.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-090 (untagged WS-063), SPR-091
+      (spr-followup cluster), SPR-092 (spr-followup WS-199).
+      No auto-rec or engine-finding saturation. Founder-driven
+      throughout — no damping.
+    - WS-053 source = backlog-md-migration → untagged class.
+      Founder-driven, no damping.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..092 — poker-tracker product repo, no fleet/repo-goal
+  candidates. composition_notes: "fleet-rotation override skipped:
+  no fleet/repo-goal candidate in current backlog."
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (19d ago,
+      cadence 14d → 5d stale). launch protocol_history empty.
+    - Following SPR-085..092 precedent (all proceeded with same
+      stale-DC + never-baselined launch state), composing anyway.
+      Flag for /audit follow-up but do not block sprint.
+
+  Plan-mode entry:
+    - WS-053 mode = plan-first. Two open decisions (voice set,
+      Gate-1 follow-up scope) elicited at plan-mode. Then execute
+      the 5-stage Blind-Spot Roundtable inline, producing verdict
+      doc + follow-up tickets in same session — matches SPR-090
+      precedent for Gate 2 work.
+
+items:
+  - id: "WS-053"
+    title: "Range Lab Gate 2 — Blind-Spot Roundtable"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-20T00:35:00Z"
+    decision_flags:
+      - "Roundtable voice set (5-6 voices; RL blind-spot space differs from PSD's)"
+      - "Gate-1 follow-up scope (bundle into Gate 2 stages vs fork to Gate 3 ticket)"
+    decisions_ratified:
+      D1_voice_set: "RL-native 6 voices (founder choice 2026-05-20). Range-Paint Interaction Designer + Solver/GTO Theorist + Engine-Performance Skeptic + Surface-Boundary Architect + Cross-Surface Architect + First-Principles Auditor. Skipped Mobile-Context Skeptic (study-only, mobile-portrait scope-deferred to v2) + Autonomy Auditor (study-only opt-in, no graded outputs in scope) + Behavioral Psychologist (no analogous live-session mood surface)."
+      D2_gate1_followup_scope: "Bundle into Gate 2 stage outputs (founder choice 2026-05-20). Stage A absorbed Q2 Coach weighting; Stage B absorbed Q1 phasing; Stage C absorbed Q4 mobile scope; Q3 Drills Consolidation was already moot (Finding 0). PSD Gate 2 precedent followed."
+    files_involved:
+      - "docs/design/audits/2026-05-20-blindspot-range-lab.md (NEW, ~700 lines)"
+      - "Follow-up tickets WS-202..WS-208 (NEW, 7 tickets)"
+      - "docs/projects/range-lab.project.md (status update: gate-1-complete → gate-2-complete)"
+    notes: |
+      Shipped. All accept_criteria met:
+        ✓ 5 stages complete (A persona, B JTBD, C situational, D cross-surface, E heuristic)
+        ✓ Verdict YELLOW (supersedes Gate 1 YELLOW)
+        ✓ Follow-ups list populated — 4 existing tickets (WS-054..WS-057) scope-clarified + 7 new tickets (WS-202..WS-208)
+        ✓ All 4 Gate-1 open owner questions resolved: Q1 phasing (Phases 0-2 v1), Q2 Coach (secondary), Q3 Drills Consolidation (moot, Finding 0), Q4 mobile (landscape v1)
+      Two founder decisions ratified at plan-mode (see decisions_ratified above).
+
+      Authored 7 follow-up tickets:
+        - WS-202 — Paint Primitive ADR (tap-to-toggle + long-press) — design, S
+        - WS-203 — Undo Stack ADR (per-stroke recommended) — design, S
+        - WS-204 — rangeToString() reverse-serializer (Phase 0 engineering) — engineering, S
+        - WS-205 — equity-precompute caching layer at flop (Phase 0 engineering) — engineering, M
+        - WS-206 — LSW-RL equity-parity invariant + CI test — domain-correctness, M
+        - WS-207 — AP-RL-01 anti-pattern binding — domain-correctness, S
+        - WS-208 — mobile-portrait surface variant (Q4 → P3 follow-up) — design, M
+
+      Unblocks: WS-054 (Gate 3 Research, scope clarified — pure JTBD authoring, no owner-decision residue), WS-055 (Gate 4 surface spec — blocked by WS-202 + WS-203), Phase 0 engineering work (WS-204 + WS-205 independent).
+
+deferred: |
+  - WS-054 (RL Gate 3 Research) — sequenced after WS-053; unblocks
+    on Gate 2 close.
+  - WS-055 (RL Gate 4 Design surfaces) — sequenced after WS-054.
+  - WS-087 (LSW B2 turn decision, DC) — DC rotation candidate
+    for next /next cycle.
+  - WS-150 (HSP-v2 master, DC) — L-effort; needs its own focused
+    sprint when prioritized.
+  - WS-190 (Mid-hand tag-for-review, design feature) — eligible
+    now that Refactor Sprint closed; Gate 1 audit needed first.
+    Pair candidate for next /next cycle if engineering rotation
+    is satisfied.
+  - WS-185 (EV-bucket display) — actually DONE; queue-index sync
+    pending.

@@ -2,13 +2,13 @@ id: "WS-054"
 title: "Gate 3"
 legacy_id: "RL-G3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T14:10:00Z"
+completed_at: "2026-05-20T14:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
-category: "ready-to-start"
+category: "range-lab"
 capability: "core"
 program: "engineering"
 description: |
@@ -22,12 +22,14 @@ blocked_by:
 blocked_by_legacy:
   - "RL-G2"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by RL-G2"
+sprint_id: "SPR-097"
+decision_flags:
+  - "DS-ID renumber to DS-64/65/66/67 (RL Gate-1/Gate-2 proposed DS-52/53/54/55 are squatted by PSD project in ATLAS)"
+  - "4 JTBD framings + Phase split + owner-interview waive/run"
+status_note: "DONE 2026-05-20 SPR-097 (docs-only, zero src/ diff). Authored DS-64/65/66/67 (Proposed) in drills-and-study.md + registered in jtbd/ATLAS.md. Premise corrected at composition: RL's proposed DS-52/53/54/55 were squatted by Shape Language project's committed DS-52..55 — re-numbered to next free block. Backfilled missing DS-62/63 (PSD) into ATLAS + added DS-registry collision-prevention note. DS-64/65 = Phase 1-2 (paint + compare); DS-66 (per-street evolution, AP-RL-01 binding) + DS-67 (validate authored content, INV-LSW-RL-EQUITY-PARITY binding) = Phase 3+. Owner Flopzilla interview (G3.2) waived (founder-ratified at plan-mode). Gate 3 complete; Gate 4 (WS-055) unblocked. range-lab.project.md → gate-3-complete."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 287
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

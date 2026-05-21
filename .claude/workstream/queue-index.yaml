@@ -6,8 +6,83 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-07T22:40:00Z"
-item_count: 160
+last_updated: "2026-05-20T01:22:00Z"
+item_count: 196
+# 2026-05-12 — Session-issue extension. WS-182 REWRITTEN (primitive-collapse,
+# not dispatch-validation — owner reframe: "a check being available when you
+# haven't matched the bet should be impossible at the primitive level"). WS-184
+# SCOPE EXTENDED (Bugs C+D+E: dropped accept-taps, active errors, render-chain
+# refresh — common-cause hypothesis: onAccept needs FSM refactor; priority 16→22).
+# WS-186 RATIFIED owner principle on rotation: seat numbers + dealer button +
+# blind badges rotate AS A UNIT. 2 NEW items:
+#   WS-189 (P1/bug) — Seat autoselector overhaul + multi-seat semantics first-
+#     principles (M1/M2/M3 ratification needed). getFirstActionSeat is single-
+#     source-of-truth for "who acts next"; cross-references ICP matrix.
+#   WS-190 (P2/feature) — Mid-hand tag-for-review. Greenfield. One-tap toggle
+#     in CommandStrip + additive field on hand record (migration v26) + filter
+#     chip on SessionsView. BLOCKED by Refactor Sprint charter (feature).
+# Memory + failure file updated for primitive-collapse doctrine.
+# 2026-05-11 — Session-issue consolidation. 7 WS items authored from owner live-session
+# bug/feature/audit observations (WS-182..WS-188):
+#   WS-182 (P0/bug) — Action-dispatch legality invariant; closes SB-CHECK-with-debt
+#     class. Extends Invariant Coverage Program (UI-render-layer matrix) with a
+#     sibling dispatch-layer matrix. Cross-link: failure file at
+#     .claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md + memory note
+#     feedback_action_dispatch_legality.md.
+#   WS-183 (P1/bug) — ShowdownView card-edit guard missing !hasWon at
+#     ShowdownSeatRow.jsx:40 (one-line + test).
+#   WS-184 (P1/bug) — CameraCaptureModal silent-fail after accept (modal stays open
+#     + isSaving never resets) + memory-error UX (downscale before crop). Enables
+#     WS-187 validation.
+#   WS-185 (P2/bug) — Postflop EV-bucket display sum-to-100% (likely display
+#     rounding; invariant test in AC disambiguates compute vs display).
+#   WS-186 (P3/feature) — Table rotation press-hold+confirm. BLOCKED by Refactor
+#     Sprint charter ratification 4 (no new features until Item 4 complete).
+#     Gate 1+4 required before code.
+#   WS-187 (P3/feature, direction-change) — Avatar = photo (inverts PEO + PIO
+#     ratifications). DOUBLY-BLOCKED by WS-184 + Refactor Sprint charter.
+#     /decide ADR mandatory before code.
+#   WS-188 (P1/improvement) — Persistence + cache audit. RESCOPED — Refactor
+#     Sprint Item 3 (DONE 2026-05-11) already shipped migration registry + CI
+#     gate + per-store ownership; remaining scope is failure-mode catalog + cache
+#     staleness contracts + ADR consolidation + cache sweep. Project charter at
+#     .claude/projects/persistence-cache-audit.md (4 phases, ~3-5 sessions).
+# 2026-05-11 SPR-074 COMPLETE — SLS Gate 4 CLOSED. WS-180 ships shape-skill-map.md
+# + lesson-runner.md + 2026-05-11-sls-g4-redline-conformance.md (3 NEW design
+# artifacts ~920 lines) + 6 amended docs. Zero src/ diff. SLS Streams B + D
+# unblocked. 3 IA decisions ratified upfront (single-scrollable / shared shell
+# intent-as-route / hybrid CI-grep + DOM-assert enforcement).
+# 2026-05-11: WS-181 added — Voice Card Entry (VCE) spike. Web Speech API only,
+# board + villain showdown scope, ship-or-drop. Gate 1 audit required before code
+# per design program guardrail (new interaction modality = new surface). 3 founder
+# ratifications binding (R1/R2/R3) — see WS-181.yaml status_note.
+# 2026-05-11 SPR-071 COMPLETE — Queue reconciliation sweep: 43 P≥15 unclaimed tickets walked.
+# Disposition: 3 SHIPPED-elsewhere (WS-021/024/061 → status:done with done_provenance),
+# 2 SUPERSEDED (WS-049/075 → status:done with supersession pointer),
+# 22 LEGITIMATE-BACKLOG (status:backlog + freshness stamp + status_note refresh),
+# 4 NEEDS-RESCOPE (WS-020/023/025/074 → status:backlog + rescope direction in note),
+# 12 PAUSED-INDEFINITELY (WS-029/068/069/070/071/072/073/097/098/108/109/110 → P-score 15→8).
+# 13 "ready-to-start" tickets retitled: 5 → range-lab, 8 → played-hand-review-protocol.
+# Net effect on /next: 43 P≥15 candidates → 26 after sweep (5 retired, 12 deprioritized).
+# Zero src/ diff. Full report at .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md.
+# Authored 2026-05-11 SPR-071: WS-179 — Queue reconciliation sweep per SPR-069 recommendation.
+# 2026-05-09 SPR-065: WS-172 DONE — Gate 2 sprint 2/2 closed Gate 2 with REPLACEMENT verdict.
+# Devil's-Advocate Concern 1 disposed REPLACEMENT — predictionAudit per-hand IDB field IS PMC;
+# full ledger / hierarchical-Bayesian aggregator / expanded calibration dashboard architecture
+# CANCELLED. Phase 5 collapsed from 5a-5e to 5a (predictionAudit primitive ~0.5-1 session) +
+# 5b (render surface, Gate 4 design-deferred). Charter ratifications #2/#3 reversed; #5
+# amended (WS-169 RE-RELEASED to EAL Stream D); #6 STANDING-WITH-TRIGGER (WS-174 designated
+# revisit). 18 Tier-1 taxonomy classes per-class detail authored with 4-state visibility
+# framework. AP-PMC-06 authored (no variance-blaming + no aggregation framing). Pre-registration
+# registry stub shipped. WS-174 created (CFR Gate-N+ revisit). WS-175 created (range-engine Q6
+# update gating). WS-169 re-released (PMC absorption reversed).
+# 2026-05-09: WS-172 added — PMC Gate 2 Blind-Spot Roundtable (failure-mode taxonomy).
+# WS-169 reassigned from EAL Stream D to PMC Phase 5d (later REVERSED 2026-05-09 SPR-065).
+# New project: Predictive Model Calibration (PMC) — `.claude/projects/predictive-model-calibration.md`.
+# Gate 1 RED verdict — `docs/design/audits/2026-05-09-entry-pmc-prediction-ledger.md`.
+# 2026-05-09 SPR-064: WS-172 sprint 1/2 SHIPPED — Stages A-D + 14 Tier-1 taxonomy
+# class sketches authored. Status: in_progress (spans 2 sprints per founder split).
+# Sprint 2/2 ratified REPLACEMENT verdict (above).
 # 2026-05-03: WS-150..WS-157 added — HSP v2 backlog (turn/river archetypes + multiway model +
 # adjustment composition + caching + LLM augmentation). 1 master + 7 work items. Deferred from
 # WS-136 v1 closing; not a sprint commitment — claim against /next when SCF surfaces a need.
@@ -269,7 +344,7 @@ items:
     status_note: "RESOLVED 2026-05-05 SPR-037 — 4 sub-concept lessons authored (bb-defense-vs-EARLY + ip-cbet-defense-{dry,medium,wet}-LATE). Total catalog now 11 lessons / 5 tiers (T1=1, T2=2, T3=5, T4=1, T5=1). All schema-compliant (lessonRegistry 8/8 + migration 6/6 + skillAssessment 139/139); smart-test-runner 9982/9982 (30 skipped, 0 regressions); build clean. Note: WS-149 framed as 'ongoing authoring beyond initial 10' — 7 sub-concept lessons remain (4 BB-defense + 3 IP-cbet BUTTON variants); to be claimed in future sprints when WS-146 v2 splits leak rules per opener-position / per-texture-and-position."
   - id: "WS-159"
     title: "SCF G5 — SelfCoachView Curriculum surface (Gate 1 audit + Gate 4 design + implementation)"
-    status: backlog
+    status: done
     priority_score: 18.0
     priority_label: "P2"
     category: "self-coach-foundation"
@@ -277,9 +352,10 @@ items:
     program: "design"
     type: improvement
     effort: "L"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "Infrastructure ready (SPR-033 / WS-148); needs Gate 1 audit + Gate 4 surface spec before implementation per design framework guardrail (new surface)."
+    claimed_by: "session-2026-05-06-next"
+    sprint_id: "SPR-042"
+    completed_at: "2026-05-06T22:30:00Z"
+    status_note: "RESOLVED 2026-05-06 SPR-042. Index drift cleared 2026-05-10 SPR-067 reconcile sweep."
   # ─── PIO Gate 5 children (SPR-034 decomposition of WS-008) ───
   - id: "WS-160"
     title: "PIO G5 child A — IDB v23 schema + computeStability utility scaffold"
@@ -435,7 +511,7 @@ items:
   - id: "WS-016"
     title: "Stream C"
     legacy_id: "EAL-Stream-C"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "exploit-anchor-library"
@@ -443,12 +519,13 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-09-next"
+    sprint_id: "SPR-059"
+    status_note: "RESOLVED SPR-059 — Stream C live anchor badge + W-AO-2 system observation writer shipped; Gate 1 audit + Gate 4 surface authored same-session; SizingPresetsPanel embed deferred to follow-up. 47 new tests + AP-07 forbidden-DOM enforcement; 10338/10358 full suite green; build clean."
   - id: "WS-017"
     title: "Stream B"
     legacy_id: "EAL-Stream-B-matcher"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "exploit-anchor-library"
@@ -456,8 +533,10 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-09-next"
+    sprint_id: "SPR-055"
+    completed_at: "2026-05-09T01:48:00Z"
+    status_note: "RESOLVED 2026-05-09 SPR-055 — matcher.js pure-utils + 45 tests; Stream C unblocked at the pure-utils layer."
   - id: "WS-018"
     title: "Stream B"
     legacy_id: "EAL-Stream-B-expand"
@@ -500,7 +579,7 @@ items:
   - id: "WS-021"
     title: "Cross-anchor invalidation atomicity test"
     legacy_id: "EAL-G5-CA"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "exploit-anchor-library"
@@ -508,8 +587,9 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-071-reconcile"
+    sprint_id: "SPR-071"
+    status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere. primitiveValidity.js cross-anchor ripple shipped Commit 4 2026-04-25."
   - id: "WS-022"
     title: "Markdown-to-IDB seed idempotency test"
     legacy_id: "EAL-G5-SI"
@@ -539,7 +619,7 @@ items:
   - id: "WS-024"
     title: "Tier 1 simulator scenarios for 4 seed anchors"
     legacy_id: "EAL-G5-T1"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "exploit-anchor-library"
@@ -547,8 +627,9 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-071-reconcile"
+    sprint_id: "SPR-071"
+    status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere. 4 seed-anchor Tier-1 scenario tests + runner + synthetic villains shipped Stream E 2026-04-25."
   - id: "WS-025"
     title: "In-app test assertions for 9 autonomy red lines"
     legacy_id: "EAL-G5-RL"
@@ -607,8 +688,8 @@ items:
     title: "Ignition-mode surface design"
     legacy_id: "MPMF-G4-IM"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "monetization-and-pmf"
     capability: "core"
     program: "launch"
@@ -727,7 +808,7 @@ items:
   - id: "WS-038"
     title: "Gate 3"
     legacy_id: "SLS-G3"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -735,12 +816,12 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-10-spr-069"
+    sprint_id: "SPR-069"
   - id: "WS-039"
     title: "Gate 4"
     legacy_id: "SLS-G4"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -748,12 +829,13 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-073"
+    sprint_id: "SPR-073"
+    status_note: "RESOLVED 2026-05-11 SPR-073 FOUNDATION — study-home.md + shape-language-study-home.md + shape-language-enrollment.md + shape-mastery.md (4 artifacts). shape-skill-map + lesson-runner + red-line conformance matrix deferred to SPR-074."
   - id: "WS-040"
     title: "Stream D"
     legacy_id: "SLS-D"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -761,12 +843,12 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-14-next"
+    sprint_id: "SPR-081"
   - id: "WS-041"
     title: "Stream B1"
     legacy_id: "SLS-B1"
-    status: backlog
+    status: claimed
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -774,12 +856,12 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-14-next"
+    sprint_id: "SPR-082"
   - id: "WS-042"
     title: "Stream B2"
     legacy_id: "SLS-B2"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -787,12 +869,16 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-16-next"
+    sprint_id: "SPR-084"
+    completed_at: "2026-05-16T16:35:00Z"
+    status_note: "SHIPPED SPR-084. EDC compute + Spire+Polarization + Sizing Tag classifiers + 3 lessons + 3 HandReplay sections + 5 INV-SLS-B2-* invariants. shapeDescriptors/ namespace introduced; Silhouette relocated. +115 net tests; 11,557 total. Section data-wiring (perCombo/evByFraction → villainAnalysis) is the follow-up."
   - id: "WS-043"
     title: "Stream B3"
     legacy_id: "SLS-B3"
-    status: backlog
+    status: done
+    sprint_id: "SPR-088"
+    completed_at: "2026-05-18T01:30:00Z"
     priority_score: 15.0
     priority_label: "P2"
     category: "shape-language"
@@ -854,6 +940,7 @@ items:
     effort: "M"
     claimed_by: ""
     sprint_id: ""
+    blocked_by_note: "Structurally blocked on the Q5 differentiation-demo at Gate 4 design review (PreflopCardTemplate vs Upswing free pack go/no-go). Promoted to structured field 2026-05-17 SPR-087 hygiene fix so /next damps to 3.75. Clear when owner runs the demo."
   - id: "WS-048"
     title: "Phase C: Texture-Equity + Exceptions Codex"
     legacy_id: "PRF-G5-C"
@@ -870,7 +957,7 @@ items:
   - id: "WS-049"
     title: "Playwright print-to-PDF snapshot tests (16 per MVP card: 4 grids × 2 sizes × 2 color modes) + cross-browser + B&W fal..."
     legacy_id: "PRF-G5-PDF"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "printable-refresher"
@@ -878,8 +965,9 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-071-reconcile"
+    sprint_id: "SPR-071"
+    status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SUPERSEDED by PRF-G5-WR writer-registry pattern (per-card incremental snapshots, not one-time sweep)."
   - id: "WS-050"
     title: "UI components for PrintableRefresherView + comprehensive visual regression suite (chromium + firefox + webkit × Lette..."
     legacy_id: "PRF-G5-UI"
@@ -922,62 +1010,68 @@ items:
   - id: "WS-053"
     title: "Gate 2"
     legacy_id: "RL-G2"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-093"
+    completed_at: "2026-05-20T00:35:00Z"
+    status_note: "SHIPPED 2026-05-20 SPR-093. 5-stage Blind-Spot Roundtable audit at docs/design/audits/2026-05-20-blindspot-range-lab.md. Verdict YELLOW. 6 Gate-4 conditions + 1 anti-pattern. 7 follow-up tickets authored (WS-202..WS-208). All 3 open Gate-1 owner questions resolved inline."
   - id: "WS-054"
     title: "Gate 3"
     legacy_id: "RL-G3"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-097"
+    status_note: "DONE 2026-05-20 SPR-097 — Gate 3 JTBDs authored as DS-64/65/66/67 (re-numbered from squatted DS-52/53/54/55). Docs-only. Gate 4 (WS-055) unblocked."
   - id: "WS-055"
     title: "Gate 4"
     legacy_id: "RL-G4"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-098"
+    status_note: "DONE 2026-05-20 SPR-098 — Range Lab capability section authored in surfaces/postflop-drills.md (Explorer Custom-mode expansion). Docs-only. All design gates done; Phases 1-2 (WS-056/057) unblocked."
   - id: "WS-056"
     title: "Phase 1"
     legacy_id: "RL-P1"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-21-next"
+    sprint_id: "SPR-099"
+    completed_at: "2026-05-21T19:10:00Z"
+    status_note: "SHIPPED SPR-099 — Range Lab Phase 1: Custom paint source in ExplorerMode (canonical 13×13 paint matrix + per-stroke undo + sessionStorage persist + 3→5 card BoardPicker). 22 new tests; suite 11,746 pass; build clean; Playwright-verified 1600×720. Unblocks WS-057."
   - id: "WS-057"
     title: "Phase 2"
     legacy_id: "RL-P2"
     status: backlog
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -990,7 +1084,7 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1003,7 +1097,7 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1016,7 +1110,7 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "range-lab"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1026,7 +1120,7 @@ items:
   - id: "WS-061"
     title: "Corpus scaling"
     legacy_id: "US-1"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "ready-to-start"
@@ -1034,15 +1128,16 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-071-reconcile"
+    sprint_id: "SPR-071"
+    status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere. 15 upper-surface reasoning artifacts + ~50 companion files at docs/upper-surface/."
   - id: "WS-062"
     title: "Pilot refits to v2"
     legacy_id: "US-2"
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "sidebar-program"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1052,25 +1147,27 @@ items:
   - id: "WS-063"
     title: "Pre-Session Drill Gate 2"
     legacy_id: "US-3"
-    status: backlog
-    priority_score: 8.0
-    priority_label: "P3"
-    category: "ready-to-start"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "pre-session-drill"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "SPR-090"
+    sprint_id: "SPR-090"
+    completed_at: "2026-05-19T03:50:00Z"
+    status_note: "SHIPPED SPR-090. Gate 2 Blind-Spot Roundtable verdict YELLOW (supersedes Gate 1 RED — corpus blocker cleared by SPR-071 + presession-preparer persona exists + Drills Consolidation rejection permanent). Audit doc at docs/design/audits/2026-05-19-blindspot-pre-session-drill.md. 5 YELLOW conditions to clear before Gate 4 routed to follow-up tickets WS-195 (Gate 3 JTBD canonicalization + persona reconciliation) + WS-196 (flip-card ADR) + WS-197 (anchor-trace ADR) + WS-198 (hands ↔ node-ID engineering) + WS-200 (mobile-portrait variant). WS-201 added for PSP-2 mood-detection research. Zero src/ diff. Audit honors all autonomy red lines + portrait-mode scope memory + first-principles-decisions doctrine."
   - id: "WS-064"
     title: "Pre-Session Drill Gate 3"
     legacy_id: "US-4"
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "pre-session-drill"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1081,9 +1178,9 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "pre-session-drill"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1091,36 +1188,40 @@ items:
   - id: "WS-066"
     title: "LSW soft-flag tightening"
     legacy_id: "US-6"
-    status: backlog
-    priority_score: 8.0
-    priority_label: "P3"
-    category: "ready-to-start"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "lsw-v2"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-16-next"
+    sprint_id: "SPR-085"
+    completed_at: "2026-05-17T10:15:00Z"
+    status_note: "SHIPPED SPR-085. 3 retroactive scope-caveats applied (~S effort, documentation-only): (1) flop equity-vs-subset caveat on LSW A1 external-validation row #3 in btn-vs-bb-3bp-ip-wet-t96.md (A → A-with-nuance); (2) river bluff-frequency stake-caveat on LSW A1 external-validation row #2 in same file (A → A-with-stake-caveat); (3) propagated stake-caveat to pilot upper-surface btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback-audit.md CSO-2 section. LSW A5-A8 forward discipline now codified retroactively at A1 + pilot."
   - id: "WS-067"
     title: "Gate 4"
     legacy_id: "HRP-G4-SPEC"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
-    category: "ready-to-start"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-16-next"
+    sprint_id: "SPR-085"
+    completed_at: "2026-05-17T10:00:00Z"
+    status_note: "SHIPPED SPR-085. HRP Phase 3 Gate 4 surface specs CLOSED. New hand-review-modal.md (with AssumptionCard contract + inline schema) + 3 amendments (hand-replay-view.md ledger-link chip, analysis-view.md HandBrowser flag affordances, showdown-view.md HE-17 producer toggle). AssumptionCard ownership resolved: HRP authors per first-to-render rule; exploit-deviation Phase 7+ consumes via variant='compact'. WS-074 coordination resolved. Stream E + Stream U unblocked."
   - id: "WS-068"
     title: "Stream E"
     legacy_id: "HRP-E-RESOLVER"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1131,9 +1232,9 @@ items:
     title: "Stream E"
     legacy_id: "HRP-E-SCHEMA"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1144,9 +1245,9 @@ items:
     title: "Stream U"
     legacy_id: "HRP-U-BROWSER"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1157,9 +1258,9 @@ items:
     title: "Stream U"
     legacy_id: "HRP-U-MODAL"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1170,9 +1271,9 @@ items:
     title: "Stream U"
     legacy_id: "HRP-U-SHOWDOWN"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1183,9 +1284,9 @@ items:
     title: "Stream U"
     legacy_id: "HRP-U-POLISH"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
-    category: "ready-to-start"
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "played-hand-review-protocol"
     capability: "core"
     program: "engineering"
     type: improvement
@@ -1195,7 +1296,7 @@ items:
   - id: "WS-074"
     title: "Coordinate with exploit-deviation on AssumptionCard shared component"
     legacy_id: "HRP-COORD-MH12"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "ready-to-start"
@@ -1203,12 +1304,13 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-072"
+    sprint_id: "SPR-072"
+    status_note: "RESOLVED 2026-05-11 SPR-072 — RESCOPED: absorbed as accept criteria on WS-067 (HRP-G4-SPEC) + exploit-deviation Phase 7. Whichever project ships first authors AssumptionCard."
   - id: "WS-075"
     title: "Clear All Seats button height ≥44px"
     legacy_id: "DCOMP-W4-A1-F7"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "ready-to-start"
@@ -1216,8 +1318,9 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-071-reconcile"
+    sprint_id: "SPR-071"
+    status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SUPERSEDED by TableBuildView (docs/design/surfaces/table-build.md). Founder accepted supersession at 2026-04-26 Gate 4."
   - id: "WS-076"
     title: "Version-mismatch reload: diagnostic + confirm"
     legacy_id: "DCOMP-W4-A3-F4"
@@ -1263,7 +1366,7 @@ items:
   - id: "WS-079"
     title: "contracts/sidebar-to-online-view.md"
     legacy_id: "DCOMP-W4-A3-F10"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "ready-to-start"
@@ -1271,12 +1374,13 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-11-spr-072"
+    sprint_id: "SPR-072"
+    status_note: "RESOLVED 2026-05-11 SPR-072 — Authored docs/design/contracts/sidebar-to-online-view.md (~180 lines, 8 BRIDGE_MSG types, 8 invariants, 4 deliberate no-handoffs). README index + change log updated."
   - id: "WS-080"
     title: "Verify Online session classification"
     legacy_id: "DCOMP-W4-A3-F11"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "ready-to-start"
@@ -1284,17 +1388,19 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-09-next-spr-062"
+    sprint_id: "SPR-062"
+    completed_at: "2026-05-09T11:55:00Z"
+    status_note: "RESOLVED 2026-05-09 SPR-062 — verify-and-pin regression coverage (no bug; 24 net tests). Index drift cleared 2026-05-10 SPR-067 reconcile sweep."
   - id: "WS-081"
     title: "Online persona + JTBD patches"
     legacy_id: "DCOMP-W4-A3-F12"
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "design-comprehension"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1305,9 +1411,9 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "design-comprehension"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1318,9 +1424,9 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "design-comprehension"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1331,9 +1437,9 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "design-comprehension"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1344,9 +1450,9 @@ items:
     status: backlog
     priority_score: 8.0
     priority_label: "P3"
-    category: "ready-to-start"
+    category: "design-comprehension"
     capability: "core"
-    program: "engineering"
+    program: "design"
     type: improvement
     effort: "M"
     claimed_by: ""
@@ -1368,7 +1474,7 @@ items:
   - id: "WS-087"
     title: "Turn decision nodes where bucket shifts"
     legacy_id: "LSW-B2"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "line-study-slice-widening"
@@ -1376,8 +1482,8 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "SPR-096"
+    sprint_id: "SPR-096"
   - id: "WS-088"
     title: "River decision nodes"
     legacy_id: "LSW-B3"
@@ -1444,6 +1550,7 @@ items:
     effort: "M"
     claimed_by: ""
     sprint_id: ""
+    blocked_by_note: "Structurally blocked on external solver access (GTO Wizard subscription or PioSOLVER run). Promoted to structured field 2026-05-17 SPR-086 hygiene fix so /next damps to 3.75. Clear when solver access lands."
   - id: "WS-093"
     title: "Candidate: ARCHETYPE_BUCKET_MULTIPLIERS.fish may not shift bucket composition enough to reflect live-pool fish donk r..."
     legacy_id: "LSW-G2"
@@ -1500,8 +1607,8 @@ items:
     title: "Authored plans on canonical flop roots"
     legacy_id: "LSW-P3"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "line-study-slice-widening"
     capability: "core"
     program: "domain-correctness"
@@ -1513,8 +1620,8 @@ items:
     title: "Audit dimension 8 — plan accuracy"
     legacy_id: "LSW-P6"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "line-study-slice-widening"
     capability: "core"
     program: "domain-correctness"
@@ -1609,7 +1716,7 @@ items:
   - id: "WS-105"
     title: "SW→side-panel port missing validateMessage"
     legacy_id: "RT-80"
-    status: backlog
+    status: done
     priority_score: 22.0
     priority_label: "P1"
     category: "sidebar-recurrence"
@@ -1617,12 +1724,14 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-07-next"
+    sprint_id: "SPR-043"
+    completed_at: "2026-05-07T02:58:15Z"
+    status_note: "RESOLVED 2026-05-07 SPR-043 — schema gate parity at SW→side-panel port; +2 schema validators; +3 tests. Index drift cleared 2026-05-10 SPR-067 reconcile sweep."
   - id: "WS-106"
     title: "Per-zone innerHTML diff + tourneyTimer guard"
     legacy_id: "RT-82"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "sidebar-recurrence"
@@ -1630,12 +1739,13 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-08-next"
+    sprint_id: "SPR-054"
+    status_note: "SHIPPED SPR-054 2026-05-08. Fast-paths added at 4 zones (writeAppStatusBadge + writePipelineStageDot canonical writers + renderPipelineHealth detail/counter + renderPidSummary). 6 new idempotency tests; 2279/2279 extension suite green."
   - id: "WS-107"
     title: "staleContext dual-writer oscillation"
     legacy_id: "RT-83"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "sidebar-recurrence"
@@ -1643,14 +1753,16 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-09-next"
+    sprint_id: "SPR-057"
+    completed_at: "2026-05-09T03:32:43Z"
+    status_note: "RESOLVED 2026-05-09 SPR-057 — single-owner staleContext via shared/stale-context-tick.js helper + missing clear-stale branch. 22 new tests + baseline-lock discipline. Plan-mode correction: AC's 'push-driven vs time-driven' framing was misanalysis — only tick-driven is viable."
   - id: "WS-108"
     title: "Content + SW throttle coordination on reconnect"
     legacy_id: "RT-84"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "sidebar-recurrence"
     capability: "core"
     program: "engineering"
@@ -1662,8 +1774,8 @@ items:
     title: "CAPTURED_HANDS migration bypasses validateHandForRelay"
     legacy_id: "RT-86"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "sidebar-recurrence"
     capability: "core"
     program: "engineering"
@@ -1675,8 +1787,8 @@ items:
     title: "QuotaExceededError silent swallow on session storage"
     legacy_id: "RT-87"
     status: backlog
-    priority_score: 15.0
-    priority_label: "P2"
+    priority_score: 8.0
+    priority_label: "P3"
     category: "sidebar-recurrence"
     capability: "core"
     program: "engineering"
@@ -1700,7 +1812,7 @@ items:
   - id: "WS-112"
     title: "animationend fallback safety timer"
     legacy_id: "RT-89"
-    status: backlog
+    status: done
     priority_score: 8.0
     priority_label: "P3"
     category: "sidebar-recurrence"
@@ -1708,8 +1820,10 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-09-next"
+    sprint_id: "SPR-058"
+    completed_at: "2026-05-09T03:54:03Z"
+    status_note: "RESOLVED 2026-05-09 SPR-058 — paired animationend listener + 300ms coordinator-scheduled safety timer at render-street-card.js street-fade transition; idempotent cleanupFadeIn callback bound to both paths. 6 new source-grep regression tests."
   - id: "WS-113"
     title: "DEALING shimmer animates prior-hand content"
     legacy_id: "RT-90"
@@ -1980,7 +2094,7 @@ items:
     status_note: "RESOLVED 2026-05-02 — per-test fix (trials bump x2 + skip-with-precedent x1)"
   - id: "WS-135"
     title: "Credible intervals — expansive surface scope (PlayerAnalysisPanel + HandReplay tendency sections)"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "domain-correctness"
@@ -1988,9 +2102,10 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "v2 follow-up from SPR-017 staged scope; minimal v1 shipped via WS-116; parent_ws: WS-116"
+    claimed_by: "session-2026-05-09-next-spr-063"
+    sprint_id: "SPR-063"
+    completed_at: "2026-05-09T13:05:00Z"
+    status_note: "RESOLVED 2026-05-09 SPR-063 — expansive scope shipped on PlayerAnalysisPanel + HandReplay ReviewPanel; +34 tests. Index drift cleared 2026-05-10 SPR-067 reconcile sweep."
   - id: "WS-136"
     title: "HSP — Hero State Primitive (master) — design + workstream coordination"
     status: done
@@ -2225,3 +2340,550 @@ items:
     claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-031"
     status_note: "RESOLVED 2026-05-03 — accumulator refactor extracted deriveSituationKey.js (helper shared by accumulator + ReviewPanel); heroLeakDetectionPipeline.js orchestrator (loads hands → accumulates → detects → persists; mostCommonHeroSeat picker for v1); useHeroLeakDetection hook with count-cache skip pattern (mirrors usePlayerTendencies); HandReplayView fires detection on mount with GUEST_USER_ID; ReviewPanel derives situation key + calls useHeroLeaks + passes leak/onSnooze/onDismiss/onDrill into HeroCoachingCard; +15 tests (9 pipeline + 6 hook); full smart-test-runner 9708/9738 (30 skipped, 0 regressions); parent_ws: WS-145"
+  - id: "WS-169"
+    title: "EAL Stream D — Calibration Dashboard implementation (3-tab anchor/predicate/primitive)"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "L"
+    claimed_by: "session-2026-05-09-next-spr-066"
+    sprint_id: "SPR-066"
+    status_note: "RESOLVED 2026-05-09 SPR-066 — CalibrationDashboardView ships with 3-tab IA (Predicates empty-state shell pending exploit-deviation / Anchors live with per-row predicted+observed+CI+trend / Primitives live with 8 PP rows). Per-origin AP-08 split rendered as stacked cards with origin-badge per row; AP-06 forbidden patterns DOM-asserted across all 3 tabs. Operator dial deferred to WS-176. AnchorLibraryView's handleOpenDashboard now invokes ui.openCalibrationDashboard(anchorId, ANCHOR_LIBRARY) replacing toast stub. Gate 1 audit flipped OPEN→YELLOW; Gate 4 spec amendment (C1) + sourceUtilPolicy extension (C3) + AP-06/AP-08 DOM-assertion tests (C2) all landed. 31 new tests; full smart-test-runner 426/426 files pass / 10706 tests / 0 regressions. Live AP-06 scan on running app: 0 violations. Playwright-verified at 1600×720."
+  - id: "WS-170"
+    title: "EAL Stream D child — Tier-3 auto-retirement banner"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-09-next-spr-060"
+    sprint_id: "SPR-060"
+  - id: "WS-171"
+    title: "EAL Stream D child — Session-review anchor rollup"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "exploit-anchor-library"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-09-next-spr-061"
+    sprint_id: "SPR-061"
+    completed_at: "2026-05-09T11:15:00Z"
+  - id: "WS-172"
+    title: "PMC Gate 2 — Blind-Spot Roundtable producing failure-mode taxonomy"
+    status: done
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "predictive-model-calibration"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "L"
+    claimed_by: "claude-2026-05-09T17:00Z"
+    claimed_at: "2026-05-09T17:00:00Z"
+    completed_at: "2026-05-09T18:00:00Z"
+    sprint_id: "SPR-065"
+    status_note: "DONE. Gate 2 CLOSED 2026-05-09 (SPR-064 sprint 1/2 + SPR-065 sprint 2/2). REPLACEMENT verdict ratified — predictionAudit per-hand IDB field IS PMC; full ledger/aggregator/expanded-dashboard architecture CANCELLED. Charter ratifications #2/#3 reversed; #5 amended (WS-169 re-released to EAL Stream D); #6 STANDING-WITH-TRIGGER (WS-174 designated revisit). Phase 5 collapsed from 5a-5e to 5a (predictionAudit primitive) + 5b (render surface, Gate 4 design-deferred). 18 Tier-1 taxonomy classes authored at full per-class detail with 4-state visibility framework. AP-PMC-06 authored. Pre-registration registry stub shipped. WS-174 + WS-175 created."
+  - id: "WS-174"
+    title: "PMC Concern 2 Gate-N+ revisit — CFR vs Bayesian frequency-matching for sizing-conditional ranges"
+    status: backlog
+    priority_score: 8.0
+    priority_label: "P3"
+    category: "predictive-model-calibration"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+    status_note: "Created 2026-05-09 at PMC Gate 2 sprint 2/2 close-out (SPR-065). Devil's-Advocate Concern 2 trigger-conditioned revisit ticket. Trigger: ≥1000 captured hands AND aggregate frequency-match-rate >0.85 AND realized hero EV persistently below model-expected EV (the FM-COMP-01 signature). Phase 5a (predictionAudit primitive) must ship first."
+  - id: "WS-175"
+    title: "Range-engine — answer Q6 update gating (every showdown / batch / N-threshold) for §4.5 Bayesian update path"
+    status: done
+    priority_score: 12.0
+    priority_label: "P2"
+    category: "range-engine"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-10-next-spr-067"
+    sprint_id: "SPR-067"
+    completed_at: "2026-05-10T00:35:00Z"
+    status_note: "RESOLVED 2026-05-10 SPR-067 — every-showdown gating policy + FM-SEL-01 ACCEPT-with-rails. revealMechanism field added to anchor records (default 'showdown'); RANGE_ENGINE_DESIGN.md §4.5 + PMC charter Q6 + FM-SEL-01 taxonomy entry all updated. +8 tests; rangeEngine 199/199; build clean."
+  - id: "WS-177"
+    title: "PMC Phase 5a — predictionAudit primitive (per-hand IDB field + writer + read API + AP-PMC-04 schema enforcement)"
+    status: done
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "predictive-model-calibration"
+    capability: "core"
+    program: "domain-correctness"
+    type: feature
+    effort: "M"
+    claimed_by: "session-2026-05-10-next-spr-068"
+    sprint_id: "SPR-068"
+    completed_at: "2026-05-10T01:45:00Z"
+    status_note: "RESOLVED 2026-05-10 SPR-068. IDB v25 + writer + reconstructor + AP-PMC-04 enforcement + observedAction extraction. predictedDistribution capture deferred to WS-178. 42 new tests, 10756/10776 full pass, 0 regressions, build clean."
+  - id: "WS-178"
+    title: "PMC Phase 5a-2 — predictedDistribution engine-query population (range-engine + exploit-engine per-decision-node queries into reconstruct.js)"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "predictive-model-calibration"
+    capability: "core"
+    program: "domain-correctness"
+    type: feature
+    effort: "M"
+    claimed_by: "session-2026-05-10-spr-070"
+    sprint_id: "SPR-070"
+    status_note: "RESOLVED 2026-05-10 SPR-070. reconstruct.js async + deps param (isModeledNode/getRangeProfile/evaluateGameTree); hero softmax + villain preflop grid-sum distributions; <EngineCtxBridge/> ref-getter plumbing inside TendencyProvider; postflop villain deferred. +18 net tests (touched files 69/69 green). Build clean. D1=ref-getter (A) / D2=configurable predicate (C) / D3=distribution:[] (A). 9 unrelated pre-existing flakes in working-tree-modified files."
+  - id: "WS-179"
+    title: "Queue reconciliation sweep — retire stale tickets with done_provenance"
+    status: done
+    priority_score: 20.0
+    priority_label: "P1"
+    category: "queue-hygiene"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-11-spr-071"
+    sprint_id: "SPR-071"
+    completed_at: "2026-05-11T01:30:00Z"
+    status_note: "RESOLVED 2026-05-11 SPR-071. 43 P≥15 unclaimed tickets walked: 3 SHIPPED-elsewhere + 2 SUPERSEDED + 22 LEGITIMATE-BACKLOG + 4 NEEDS-RESCOPE + 12 PAUSED-INDEFINITELY. 13 ready-to-start tickets retitled to project-anchored categories. Net /next candidate set 43 → 26. Zero src/ diff. Full report at .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md."
+  - id: "WS-180"
+    title: "SLS Gate 4 close-out — shape-skill-map + lesson-runner + per-surface red-line conformance matrix"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "shape-language"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-11-spr-074"
+    sprint_id: "SPR-074"
+    completed_at: "2026-05-11T05:30:00Z"
+    status_note: "RESOLVED 2026-05-11 SPR-074. SLS Gate 4 CLOSED. Plan-first; 3 IA decisions ratified upfront (D1=A single-scrollable, D2=A shared shell intent-as-route, D3=A hybrid enforcement). 3 NEW artifacts (shape-skill-map.md + lesson-runner.md + 2026-05-11-sls-g4-redline-conformance.md) + 6 amended (shape-mastery contract + README + 2 SPR-073 surfaces cross-refs + CATALOG + project doc G4 [x]). Zero src/ diff. All 6 AC satisfied. SLS Streams B + D unblocked."
+  - id: "WS-181"
+    title: "Voice Card Entry (VCE) — Web Speech spike for board + villain showdown (Gate 1+4 → POC → kill/keep)"
+    status: review
+    priority_score: 12.0
+    priority_label: "P3"
+    category: "input-ux"
+    capability: "core"
+    program: "design"
+    type: feature
+    effort: "M"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "POC SHIPPED 2026-05-11 (session-2026-05-11-ws181-vce). All 5 gates traversed: Gate 1 audit YELLOW; Gate 2 roundtable 4 CRITICAL/HIGH; Gate 4 surface spec authored, R4/R5/R6 ratified + D-1..D-5 ratified at close; Gate 5 code shipped behind Settings flag (OFF default). 297 tests pass. Build OK. Playwright-smoke verified at 1600×720: PTT 56×56 px bottom-right, no overlap with action zone, state-aware visibility working. ShowdownView per-villain wiring DEFERRED to Phase D2 (R3 priority: validate board path first). STATUS: review = awaiting owner real-table validation per accept_criteria 4. Owner re-claims to author SHIP/KEEP-OFF/DROP /decide ADR."
+  - id: "WS-182"
+    title: "Action primitive collapse — recordSeatAction(seat, intent) makes CHECK-while-owing structurally unrepresentable (replaces dispatch-boundary validator approach)"
+    status: done
+    priority_score: 30.0
+    priority_label: "P0"
+    category: "rules-invariant"
+    capability: "core"
+    program: "domain-correctness"
+    type: bug
+    effort: "M"
+    claimed_by: "SPR-075"
+    claimed_at: "2026-05-13T00:00:00Z"
+    sprint_id: "SPR-075"
+    status_note: "DONE 2026-05-13 in SPR-075. Primitive collapse shipped end-to-end. 4 decisions ratified upfront (D1=hard-lock+unlock for WS-183 / D2=standalone util / D3=throw on illegal raiseTo / D4=migrate ALL fixtures). Net: 1 NEW src (recordSeatAction.js, ~165 LoC pure builder + dispatch wrapper) + 1 NEW test file (recordSeatAction.test.js, 22 tests covering fold/match/raiseTo + validation + WS-182 anchor case) + 4 production migrations (useGameHandlers.js renames showdown helper → recordShowdownAction + adds new betting recordSeatAction wrapper + migrates restFold/checkAround/foldToInvested; ShowdownView.jsx + useShowdownHandlers.js + tests update to recordShowdownAction; CommandStrip.jsx migrates handleRecordAction/handleSizeSelected/handleOrbitTap; GameContext.recordPrimitiveAction marked legacy/test-only with deprecation note). Fixture migration per D4: 3 reducer-internal test files (gameReducer.test.js, GameContext.expanded.test.jsx, actionSequence.integration.test.js) carry NEED_BYPASS headers per accept criterion #7 — they verify reducer robustness against malformed payloads the funnel refuses to construct by design. INV-RULES-CONTRIBUTION added to system/invariants.md. Failure file RULES_INVARIANT_DISPATCH_BYPASS.md status → RESOLVED with implementation pointer. Full smart-test-runner: 436 files / 11056 pass / 20 skip / ZERO failures. Build clean (7.21s)."
+  - id: "WS-183"
+    title: "Showdown — disable card-edit interaction on winning seats (canInteract guard missing !hasWon)"
+    status: done
+    priority_score: 18.0
+    priority_label: "P1"
+    category: "showdown-view"
+    capability: "core"
+    program: "engineering"
+    type: bug
+    effort: "S"
+    claimed_by: "SPR-075"
+    claimed_at: "2026-05-13T00:00:00Z"
+    sprint_id: "SPR-075"
+    status_note: "DONE 2026-05-13 in SPR-075. Hard-lock + unlock affordance shipped per founder D1. ShowdownSeatRow.jsx canInteract gate now reads (!hasWon || isUnlocked); Won seats get an 'Unlock cards'/'Lock cards' toggle button. Unlock state is transient (component-local useState) and auto-resets when hasWon clears. ShowdownView audited — canInteract is the single chokepoint for card-edit dispatch. 8 new tests added; 40/40 ShowdownSeatRow tests pass."
+  - id: "WS-184"
+    title: "Camera capture — accept-button failure modes (silent fail + active errors + dropped actions) + memory-error UX (downscale source before crop)"
+    status: done
+    priority_score: 22.0
+    priority_label: "P1"
+    category: "player-identification"
+    capability: "core"
+    program: "design"
+    type: bug
+    effort: "M"
+    claimed_by: "session-2026-05-13"
+    claimed_at: "2026-05-13T00:00:00Z"
+    sprint_id: "SPR-076"
+    status_note: "DONE 2026-05-13 in SPR-076. FSM rewrite of CameraCaptureModal shipped (source/preparing/cropping/saving stages + orthogonal error field; named transitions; dev-mode logTransition). NEW downscaleImageBlob.js (1500×1500 max edge before Cropper sees source); rewritten CameraCaptureModal.jsx; extended modal tests (12); NEW downscale tests (9); PlayerFinderView onSaved chain wired with photoUrl→capturedPreviewUrl. All 5 bugs (A-E) closed. Build clean. Enables WS-187."
+  - id: "WS-185"
+    title: "Postflop EV-bucket display — mutually-exclusive bucket groups must sum to exactly 100%"
+    status: backlog
+    priority_score: 14.0
+    priority_label: "P2"
+    category: "postflop-lessons"
+    capability: "core"
+    program: "domain-correctness"
+    type: bug
+    effort: "M"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "Authored 2026-05-11. Owner observed bucket percentages don't sum to 100. Likely display-rounding drift (largest-remainder formatter fix); invariant test in AC disambiguates compute vs display. Owner principle: mutually-exclusive groups must guarantee sum-to-100, overlapping groups must not."
+  - id: "WS-186"
+    title: "Table rotation — press-hold table center → confirm rotation (1-seat increments) → render-time transform (no game-state mutation)"
+    status: backlog
+    priority_score: 10.0
+    priority_label: "P3"
+    category: "table-view"
+    capability: "core"
+    program: "design"
+    type: feature
+    effort: "L"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "Authored 2026-05-11. Owner wants table-rotation view transform so on-screen seats align to physical position. FEATURE — BLOCKED by Refactor Sprint charter ratification 4 (no new features until Item 4 complete). Gate 1+4 required before code per Design Program Guardrail. Critical invariant: rotation is render-time only; never mutates game state. Seat 3 stays Seat 3 in actionSequence + downstream consumers."
+  - id: "WS-187"
+    title: "Avatar = seat photo direction change — photo becomes primary avatar surface (currently SVG primary + photo overlay badge) — needs /decide ADR before code"
+    status: backlog
+    priority_score: 10.0
+    priority_label: "P3"
+    category: "player-identification"
+    capability: "core"
+    program: "design"
+    type: feature
+    effort: "M"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "Authored 2026-05-11. Owner wants photo-primary avatars for visual-mirror of physical table. Inverts PEO + PIO ratifications. DOUBLY-BLOCKED: by Refactor Sprint charter + by WS-184 (capture must work first). /decide ADR mandatory before code presenting D-A/D-B/D-C options. Recommended D-A: photo-primary on TableView only; SVG-primary stays on PlayerEditor/PlayerPicker for identification utility."
+  - id: "WS-188"
+    title: "Persistence + cache audit — failure-mode catalog + cache staleness contracts + ADR consolidation (rescoped: migration registry already shipped by Refactor Sprint Item 3)"
+    status: done
+    sprint_id: "SPR-088"
+    completed_at: "2026-05-18T01:35:00Z"
+    priority_score: 18.0
+    priority_label: "P1"
+    category: "persistence-architecture"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "L"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "Authored 2026-05-11. RESCOPED after discovery: Refactor Sprint Item 3 (DONE 2026-05-11) already shipped migration registry + additive-only CI gate + per-store ownership. Remaining ~70% of original ask: Phase 1 failure-mode catalog (docs/persistence/FAILURE_MODES.md), Phase 2 cache staleness contracts (docs/persistence/CACHE_CONTRACTS.md), Phase 3 ≥4 ADRs, Phase 4 cache sweep. Engineering hardening — NOT a feature. Project charter at .claude/projects/persistence-cache-audit.md (4 phases, ~3-5 sessions). Owner picks: absorb into Refactor Sprint as Item 7, OR defer to after Item 4, OR run in parallel with Item 4."
+  - id: "WS-189"
+    title: "Seat autoselector overhaul — wrong seat picked in multiple scenarios; multi-seat selection semantics need first-principles redesign (extends poker logic)"
+    status: done
+    priority_score: 24.0
+    priority_label: "P1"
+    category: "seat-selection"
+    capability: "core"
+    program: "domain-correctness"
+    type: bug
+    effort: "L"
+    claimed_by: "session-2026-05-14-next"
+    claimed_at: "2026-05-14T00:00:00Z"
+    completed_at: "2026-05-14T08:30:00Z"
+    sprint_id: "SPR-077"
+    done_provenance: "Phase 1 only — telemetry + INV-SEAT-SELECTION authoring shipped SPR-077 (2026-05-14). Phase 2 fix work is WS-191 (soft-blocked on ≥3 owner-captured live observations)."
+    status_note: "Authored 2026-05-12. Owner-observed class of bugs: autoselector picks wrong seat in many scenarios; multi-seat batch semantics unclear. getFirstActionSeat is load-bearing predicate consumed by 10 files. 3 hypotheses (H1 wrong canonical 'first', H2 wrong timing, H3 blows away user multi-seat). Multi-seat semantics need owner ratification (M1 parallel-same-action, M2 batch-pending-sequential, M3 single-event-N-seats). Cross-references ICP matrix — any row whose first-action-seat disagrees with getFirstActionSeat is a pinned_bug. Couples with WS-182 (multi-seat batch helpers migrate to recordSeatAction). Bug-fix exempt from Refactor Sprint charter."
+  - id: "WS-190"
+    title: "Mid-hand tag-for-review — owner-tappable flag during action entry that surfaces in a Review Queue surface afterward"
+    status: backlog
+    priority_score: 14.0
+    priority_label: "P2"
+    category: "review-workflow"
+    capability: "core"
+    program: "design"
+    type: feature
+    effort: "M"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    status_note: "Authored 2026-05-12. Greenfield — no existing tagging infrastructure. Smallest viable: one-tap toggle in CommandStrip + additive field on hand record (migration v26) + filter chip on SessionsView. Note + advanced UX deferred to v1.1. FEATURE — BLOCKED by Refactor Sprint charter (no new features until Item 4 complete). Gate 1+4 mandatory per Design Program Guardrail."
+  - id: "WS-191"
+    title: "Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry"
+    status: backlog
+    priority_score: 20.0
+    priority_label: "P1"
+    category: "seat-selection"
+    capability: "core"
+    program: "domain-correctness"
+    type: bug
+    effort: "M"
+    claimed_by: null
+    claimed_at: null
+    sprint_id: null
+    blocked_by_note: "Awaiting ≥3 owner-captured Phase 1 telemetry observations from live sessions. Per WS-189 fallback clause, may pivot to hypothesis-first matrix audit if <2 captures after 2 live sessions. Phase 1 dev-mode telemetry shipped SPR-077 (2026-05-14)."
+    status_note: "Authored 2026-05-14 SPR-077 closeout. Soft-blocked on Phase 1 captures (blocked_by_note → 0.25× priority damping per /next Step 2-prereq, P=20 → 5 until cleared). Cross-references WS-189 (parent), WS-182 (recordSeatAction per-seat API), INV-SEAT-SELECTION-1..7 (ratified M2 contract). Bug-fix exempt from Refactor Sprint charter. Phase 2 fixes should make INV-SEAT-SELECTION violations type-impossible where feasible per feedback_action_dispatch_legality.md."
+  - id: "WS-192"
+    title: "SLS Stream B2 data wiring — thread perCombo + evByFraction through villainAnalysis for HandReplay B2 sections"
+    status: done
+    priority_score: 18.0
+    priority_label: "P1"
+    category: "shape-language"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-17-next"
+    claimed_at: "2026-05-17T10:30:00Z"
+    sprint_id: "SPR-086"
+    completed_at: "2026-05-17T11:20:00Z"
+    status_note: "SHIPPED SPR-086. SLS B2 sections live in production. Recon shrunk scope M→S+: comboDistribution already computed inside gameTreeContext.js:251; multi-sizing already in recommendations[].sizing.betFraction. 3 narrow edits (evaluateGameTree return + replayAnalysis.buildCounterfactualTree return + useHandReplayAnalysis promotion). 9 net new tests; 11,566 total green. Build clean. Cross-domain grep guard clean. INV-SLS-B2-SECTION-NULL-DEGRADATION preserved (sections still render null on preflop / sparse-range). Phase 6 of poker-shape-language project now closed."
+  - id: "WS-193"
+    title: "HRP Stream E — src/utils/spotResolver/ engine (Phase 4 per played-hand-review-protocol.project.md)"
+    status: done
+    priority_score: 18.0
+    priority_label: "P1"
+    category: "played-hand-review-protocol"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-17-next"
+    claimed_at: "2026-05-17T11:30:00Z"
+    sprint_id: "SPR-087"
+    completed_at: "2026-05-17T14:50:00Z"
+    status_note: "SHIPPED SPR-087. HRP Phase 4 spotResolver engine CLOSED. 8 modules in src/utils/spotResolver/ (CLAUDE.md + index + spotKeyExtractor + potTypeInference + boardShorthand + nodeClassifier + corpusIndex + matchScorer). All 3 plan-mode decisions resolved by spike-driven recon (PWA-boot corpus / hand-authored code classifier / calibrated equal-weight scorer). 57 net new tests; 11,623 total green. Build clean. Cross-domain grep guards clean. SPR_ZONES duplicated from exploitEngine per cross-domain rule (intentional, documented). Unblocks HRP Stream U Phases 6-8 + Phase 5 IDB schema migration."
+  - id: "WS-194"
+    title: "Engine refactor — per-combo villainStrengthBucket at showdown (Basin prereq)"
+    status: done
+    priority_score: 17.0
+    priority_label: "P1"
+    category: "shape-language"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-19-next"
+    claimed_at: "2026-05-19T02:39:23Z"
+    sprint_id: "SPR-089"
+    completed_at: "2026-05-19T03:00:00Z"
+    status_note: "SHIPPED SPR-089. pokerCore/handEvaluator.js gains STRENGTH_BUCKETS + computeBoardStrengthTable + classifyVillainCombo (rank-relative percentile bucketing, all-postflop streets, board-card collision → null, ties-share-bucket-of-group-first-member). gameTreeEquity.computeComboEquityDistribution threads villainStrengthBucket onto each perCombo entry via a once-per-call strength table. 4 new INV-STRENGTH-BUCKET-1..4 invariants in system/invariants.md. 17 new unit tests in handEvaluator.test.js + 5 new integration tests in gameTreeEquity.test.js (all 183 gameTreeEquity tests + 43 handEvaluator tests green). Build clean. Cross-domain grep guard clean (pokerCore imports none of exploitEngine/rangeEngine/shapeLanguage). Full-suite: 11,692 passing, 1 pre-existing PlayerFinderView smoke-test parallel-load flake unrelated to these changes (passes standalone in 2.5s). Unblocks SLS-B4 Basin classifier (WS-044) and any future river-decision exploit code that needs the showdown-outcome distribution by strength tier."
+    status_note: "AUTHORED INLINE 2026-05-18 SPR-088 close-out per owner correction during WS-043 plan-mode. River equity is binary per combo (showdown deterministic); the correct primitive for Basin classifier + future river-decision math is the showdown-outcome distribution with strength-tier bucketing (nuts/very-strong/strong/marginal/weak-or-bluff) computed against the public board. Prereq for SLS catalog row 6 (Basin). Memory: feedback_river_equity_is_showdown_outcome.md."
+  - id: "WS-195"
+    title: "PSD Gate 3 Research — JTBD canonicalization + persona reconciliation"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: "SPR-091"
+    sprint_id: "SPR-091"
+    completed_at: "2026-05-19T05:00:00Z"
+    status_note: "SHIPPED SPR-091. Gate 3 research at docs/design/audits/2026-05-19-research-psd-gate3.md. DS-62 (recency-weighted drill selection) + DS-63 (anchor-trace) authored in drills-and-study.md (ID collision discovered with Gate 1 proposals — slots taken by adaptive-seeding + EAL + PRF Gate 3 outputs). SE-01/02/03 already canonical (no-op). DS-59 falsifier-verify deferred pending WS-053. presession-preparer × post-session-chris reconciled as SIBLINGS. PSP-1/PSP-3 CONFIRMED. PSP-2 v1 user-declared-toggle (→ WS-201). Apprentice depth tolerance resolved via skim-tolerant card-back content discipline."
+  - id: "WS-196"
+    title: "PSD active-recall pattern ADR — flip-card vs side-by-side"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "S"
+    claimed_by: "SPR-091"
+    sprint_id: "SPR-091"
+    completed_at: "2026-05-19T05:00:00Z"
+    status_note: "SHIPPED SPR-091. Decision: FLIP-CARD. ADR at docs/adr/ADR-005-psd-active-recall-flip-card.md."
+  - id: "WS-197"
+    title: "PSD anchor-trace destination ADR (DS-58)"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "S"
+    claimed_by: "SPR-091"
+    sprint_id: "SPR-091"
+    completed_at: "2026-05-19T05:00:00Z"
+    status_note: "SHIPPED SPR-091. Decision: IN-APP BUNDLE. ADR at docs/adr/ADR-006-psd-anchor-trace-in-app-bundle.md. DS-58 (Gate 1) → DS-63 (atlas canonical) per ID-collision finding."
+  - id: "WS-198"
+    title: "Phase-0 engineering — hands ↔ upper-surface-node-ID cross-reference"
+    status: backlog
+    priority_score: 12.0
+    priority_label: "P3"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+    blocked_by_note: "Pending WS-199 (Gate 4 surface spec) close-out — surface spec confirms the recency-query API shape DS-57 needs."
+    status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Audit Stage D-P1 + Gate 1 Discovery 3. P3 — does not block Gate 4 design."
+  - id: "WS-199"
+    title: "PSD Gate 4 — postflop-drills.md surface update for Pre-Session mode"
+    status: done
+    priority_score: 18.0
+    priority_label: "P2"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-19-next"
+    sprint_id: "SPR-092"
+    completed_at: "2026-05-19T16:02:48Z"
+    status_note: "SHIPPED 2026-05-19 SPR-092. Pre-Session mode section authored in postflop-drills.md (~280 lines) covering E-A1..E-A6 + C-A1..C-A6 + ADR-005/006 + DS-62/63 selection algorithm + state machine. Inline button added to sessions-view.md action row. New per-step overflow menu (⋮) on hand-replay-view.md with Queue for tomorrow's PSD. Zero src/ diff. Unblocks WS-200 (mobile-portrait) + PSD Gate 5 implementation."
+  - id: "WS-200"
+    title: "PSD Gate 4 — mobile-portrait surface variant"
+    status: backlog
+    priority_score: 10.0
+    priority_label: "P3"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+    blocked_by_note: "Sequenced after WS-199 (landscape v1) so the mobile variant reflows a stable base."
+    status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Stage C A1 + founder D2 ratification. P3 — deferred behind landscape v1."
+  - id: "WS-201"
+    title: "PSD mood-detection reliability research (PSP-2)"
+    status: backlog
+    priority_score: 10.0
+    priority_label: "P3"
+    category: "pre-session-drill"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+    status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Stage C A6 + persona PSP-2 proto-caveat. P3 — independent of Gate 4 schedule."
+  - id: "WS-202"
+    title: "Range Lab Paint Primitive ADR (tap-to-toggle + long-press-for-weight)"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "S"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-094"
+    completed_at: "2026-05-20T01:22:00Z"
+    status_note: "SHIPPED 2026-05-20 SPR-094. ADR-007 at docs/adr/ADR-007-rl-paint-primitive.md. tap-to-toggle + long-press-for-weight ratified per founder 2026-05-20. Unblocks WS-055."
+  - id: "WS-203"
+    title: "Range Lab Undo Stack ADR (per-stroke vs per-session)"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "S"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-094"
+    completed_at: "2026-05-20T01:22:00Z"
+    status_note: "SHIPPED 2026-05-20 SPR-094. ADR-008 at docs/adr/ADR-008-rl-undo-stack.md. Per-stroke undo ratified per founder 2026-05-20. Unblocks WS-055."
+  - id: "WS-204"
+    title: "Range Lab — rangeToString() reverse-serializer"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "S"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-094"
+    completed_at: "2026-05-20T01:13:00Z"
+    status_note: "DONE 2026-05-20 SPR-094 — pre-shipped. rangeToString() already exists at rangeMatrix.js:122-196 with 59/59 round-trip tests green. Queue ticket was authored from Gate-1 follow-up without checking current code state. Tracking-vs-truth drift closed."
+  - id: "WS-205"
+    title: "Range Lab — equity-precompute caching layer at flop"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-095"
+    completed_at: "2026-05-20T00:00:00Z"
+    status_note: "DONE 2026-05-20 SPR-095. equityCache.js (in-memory Map, Float64Array[1326], narrow() for turn/river) + new deterministic pokerCore exactComboEquity kernel (DRY refactor); INV-RL-DETERMINISM-1..3; 33 new tests + 219 consumer tests green; build clean."
+  - id: "WS-206"
+    title: "Range Lab — LSW-RL equity-parity invariant + CI test"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-095"
+    completed_at: "2026-05-20T00:00:00Z"
+    status_note: "DONE 2026-05-20 SPR-095. REFRAMED (founder-ratified) from 'match LSW asserted equity' (no such field exists) to engine-equity drift-pin: INV-LSW-RL-EQUITY-PARITY-1..3 + lswRlParity.test.js + baseline (4 pinned + 1 degenerate). Caught real content bug (impossible A♥K♦ on K♦ board) → WS-209."
+  - id: "WS-207"
+    title: "Range Lab — AP-RL-01 anti-pattern binding (no bucket-label-driven narrowing)"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "S"
+    claimed_by: "session-2026-05-20-next"
+    sprint_id: "SPR-094"
+    completed_at: "2026-05-20T01:22:00Z"
+    status_note: "SHIPPED 2026-05-20 SPR-094. AP-RL-01 authored at POKER_THEORY.md §7.6 (highest-visibility home per founder 2026-05-20). Cross-references in src/utils/rangeEngine/CLAUDE.md + project doc. Wrong/right code patterns documented. POKER_THEORY.md §7.5 table extended."
+  - id: "WS-208"
+    title: "Range Lab — mobile-portrait surface variant (Gate 4 follow-up)"
+    status: backlog
+    priority_score: 10.0
+    priority_label: "P3"
+    category: "range-lab"
+    capability: "core"
+    program: "design"
+    type: improvement
+    effort: "M"
+    claimed_by: ""
+    sprint_id: ""
+    status_note: "AUTHORED 2026-05-20 SPR-093 Gate 2 follow-up. Q4 mobile scope resolution + Stage C C-A1 implicit. P3 deferred behind landscape v1 ship. Mirrors PSD WS-200 pattern."
+  - id: "WS-209"
+    title: "Fix impossible hero combo in utg-vs-btn-4bp-deep LSW line (A♥K♦ on board with K♦)"
+    status: done
+    priority_score: 16.0
+    priority_label: "P2"
+    category: "line-study-content"
+    capability: "core"
+    program: "domain-correctness"
+    type: bug
+    effort: "S"
+    claimed_by: "SPR-096"
+    sprint_id: "SPR-096"
+    status_note: "DONE 2026-05-20 SPR-096. Hero combo A♥K♦→A♥K♣ (no board collision, preserves top-two-pair); removed from KNOWN_DEGENERATE_NODES; pinned equity 0.488636 in LSW_RL_EQUITY_BASELINE. lswRlParity 8/8 + 509 postflop tests green; build clean."

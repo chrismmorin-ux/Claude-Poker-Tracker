@@ -6,9 +6,9 @@ status: backlog
 claimed_by: ""
 claimed_at: null
 completed_at: null
-priority_score: 15.0
-priority_label: "P2"
-category: "ready-to-start"
+priority_score: 8.0
+priority_label: "P3"
+category: "played-hand-review-protocol"
 capability: "core"
 program: "engineering"
 description: |
@@ -24,7 +24,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by HRP-U-MODAL"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — PAUSED-INDEFINITELY + category retitled + P-score 15→8. HRP polish downstream of HRP-U-MODAL (WS-071)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

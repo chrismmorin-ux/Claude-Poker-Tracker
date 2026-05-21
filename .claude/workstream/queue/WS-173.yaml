@@ -1,0 +1,79 @@
+id: "WS-173"
+title: "Fix WeaknessesSection ReferenceError on AnalysisView Panel 3 render"
+type: bug
+status: done
+claimed_by: "session-2026-05-09-quickfix"
+claimed_at: "2026-05-09T13:20:00Z"
+started_at: "2026-05-09T13:20:00Z"
+completed_at: "2026-05-09T13:32:00Z"
+sprint_id: null
+priority_score: 22.0
+priority_label: "P1"
+category: "ready-to-start"
+capability: "core"
+program: "engineering"
+description: |
+  Latent ReferenceError in `src/components/views/AnalysisView/PlayerAnalysisPanel.jsx:473`:
+
+    const WeaknessesSection = ({ tendency }) => {
+      const weaknesses = tendency?.weaknesses || [];
+      if (!playerId || weaknesses.length === 0) return null;  // ← `playerId` undeclared
+      // ...
+    };
+
+  `playerId` is not destructured from props, not a closure variable
+  (component is module-level), not a global. JS evaluates `!playerId`
+  first regardless of `||` short-circuit, so ReferenceError is thrown
+  on every render of `<WeaknessesSection>`.
+
+  Trigger path: `<WeaknessesSection tendency={playerTendency} />` at
+  line 438 renders unconditionally inside Panel 3 (Action
+  Recommendations + Weaknesses). Panel 3 is gated by `selectedPlayerId`
+  truthy. → AnalysisView Panel 3 crashes whenever a player is selected.
+
+  Bug age: introduced commit 4093b4b (2026-03-09 — "feat: TendencyProvider,
+  pokerCore extraction, weakness detection, dead code cleanup"). Bug went
+  undetected because:
+    - No tests exist for `src/components/views/AnalysisView/` (zero
+      coverage; no __tests__/ directory)
+    - User may rarely enter AnalysisView with a player selected, or the
+      crash is being absorbed by an ErrorBoundary higher in the tree
+
+  Discovered SPR-063 substrate-map fork (out-of-scope finding) and
+  investigated 2026-05-09 at owner request.
+
+accept_criteria:
+  - "WeaknessesSection no longer references undeclared playerId"
+  - "Empirical: rendering <WeaknessesSection tendency={...}> does not throw"
+  - "Minimal regression test exists for AnalysisView render-path"
+  - "Zero new test failures"
+  - "Build clean"
+
+effort: "S"
+files_involved:
+  - "src/components/views/AnalysisView/PlayerAnalysisPanel.jsx (modify line 473)"
+  - "src/components/views/AnalysisView/__tests__/WeaknessesSection.test.jsx (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+decision_flags: []
+status_note: |
+  SHIPPED 2026-05-09 quick-fix mode (~12 min total). Single-line guard
+  fix at PlayerAnalysisPanel.jsx:473 (drop redundant !playerId check;
+  parent already gates Panel 3 on selectedPlayerId). Exported
+  WeaknessesSection for testability. Authored regression suite at
+  src/components/views/AnalysisView/__tests__/WeaknessesSection.test.jsx
+  (11 tests pinning render-path: pre-fix all 11 fail with ReferenceError;
+  post-fix all 11 pass — verified via git stash). 45/45 focused tests
+  pass (this + SPR-063 TendencyStats + TendencyStatsCard). Build clean.
+
+  First test file under src/components/views/AnalysisView/__tests__/ —
+  also closes the test-coverage gap noted by the SPR-063 substrate-map
+  fork. Future AnalysisView regressions of similar shape (undeclared
+  identifier in render path) will be caught at CI.
+source:
+  origin: "spr-063-substrate-fork-out-of-scope-finding"
+  parent_ws: "WS-135"
+  discovered_at: "2026-05-09"
+created_at: "2026-05-09"
+updated_at: "2026-05-09"

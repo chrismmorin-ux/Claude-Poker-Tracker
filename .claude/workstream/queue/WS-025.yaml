@@ -24,7 +24,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by EAL-Stream-D + EAL-Stream-C"
+status_note: "RECLASSIFIED 2026-05-11 SPR-071 QUEUE-RECONCILE — NEEDS-RESCOPE disposition. EAL Stream D shipped at SPR-066; Stream C (live anchor badge) partially scoped per docs/design/audits/2026-05-09-entry-eal-stream-c-live-anchor-badge.md. AP-PIO-04 + AP-06 forbidden-pattern enforcement DOM-asserted in CalibrationDashboardView tests (S22 ship 2026-05-09). But the 9 distinct red-line tests (one per red line) have NOT been cataloged into a single registry of test assertions. Needs rescope: enumerate the 9 red lines as test IDs, decide whether to author one big suite or partition across consumer surfaces. Reclaim at P=15 after rescope."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"

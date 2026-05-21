@@ -1,0 +1,84 @@
+id: "WS-195"
+title: "PSD Gate 3 Research — JTBD canonicalization + persona reconciliation"
+type: improvement
+status: done
+claimed_by: "SPR-091"
+claimed_at: "2026-05-19T04:34:12Z"
+started_at: "2026-05-19T04:34:12Z"
+completed_at: "2026-05-19T05:00:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "pre-session-drill"
+capability: "core"
+program: "design"
+description: |
+  Pre-Session Drill (PSD) Gate 3 Research deliverable. Output of SPR-090
+  Gate 2 Blind-Spot Roundtable
+  (docs/design/audits/2026-05-19-blindspot-pre-session-drill.md).
+
+  Three reconciliation tracks:
+
+  (1) JTBD canonicalization (Stage B G1-G5):
+      - Author JTBD-SE-01/02/03 in docs/design/jtbd/domains/session-entry.md
+        (currently only cited locally in presession-preparer persona file).
+      - Absorb DS-56 (active-recall pattern priming) into SE-01 as a
+        mechanism citation; do NOT author DS-56 as a parallel JTBD.
+      - Author DS-57 (recency-weighted drill selection from recent leaks)
+        in docs/design/jtbd/domains/drills-and-study.md.
+      - DEFER DS-58 (anchor-trace) — domain-placement decision blocked on
+        WS-197 (anchor-trace destination ADR).
+      - DEFER DS-59 (falsifier-verify) entirely pending WS-053 (Range Lab
+        Gate 2) close-out. If Range Lab owns the falsifier-rerun flow,
+        PSD inherits via DS-58 and DS-59 is not authored.
+
+  (2) Persona reconciliation (Stage A R1):
+      Reconcile presession-preparer × post-session-chris. Either
+        (a) presession-preparer's review mode is the drill-specific cut of
+            post-session-chris (Gate 3 documents the relationship), OR
+        (b) post-session-chris narrows to non-drill review and
+            presession-preparer owns drill review (Gate 3 amends
+            post-session-chris file).
+      Decision belongs to the owner; Gate 3 surfaces options + recommendation.
+
+  (3) Proto-caveat validation (Stage A R2 + R3):
+      - Validate PSP-1 (5/15/30 min time-budget variants) with owner —
+        do these buckets match actual prep behavior?
+      - Validate PSP-2 (mood-detection reliability from session P/L) —
+        until validated, ship with user-declared mood toggle (per Stage C
+        A6 fallback).
+      - Validate PSP-3 (48h review window) — shorter (12h) or longer (1wk)?
+      - Validate Apprentice-Student depth tolerance (Stage A R3) —
+        does the falsification-criterion depth overshoot an
+        early-learner persona, or is the depth correct cross-persona?
+accept_criteria:
+  - "JTBD-SE-01/02/03 written in docs/design/jtbd/domains/session-entry.md following the domain's existing JTBD schema"
+  - "DS-57 authored in docs/design/jtbd/domains/drills-and-study.md"
+  - "presession-preparer × post-session-chris reconciliation document written (either in the persona files or in a separate Gate 3 audit note)"
+  - "PSP-1/2/3 validated with owner; persona file Owner review: Pending → Confirmed (with any amendments)"
+  - "Apprentice-Student depth tolerance question answered (with owner input if needed)"
+  - "DS-58 + DS-59 deferral explicitly documented (with re-evaluation triggers)"
+effort: "M"
+files_involved:
+  - "docs/design/jtbd/domains/session-entry.md"
+  - "docs/design/jtbd/domains/drills-and-study.md"
+  - "docs/design/personas/situational/presession-preparer.md"
+  - "docs/design/personas/situational/post-session-chris.md"
+  - "docs/design/personas/core/apprentice-student.md (verify only)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-199"
+sprint_id: ""
+decision_flags:
+  - "presession-preparer × post-session-chris: which persona owns drill-prediction-review (A-R1)?"
+  - "Time-budget variants 5/15/30 (PSP-1): correct buckets or different durations?"
+  - "Mood detection reliability (PSP-2): auto-detection v1 or user-declared toggle?"
+  - "Apprentice-Student depth tolerance (A-R3): does PSD's falsifier depth fit early-learner persona?"
+status_note: "SHIPPED SPR-091 2026-05-19. Gate 3 research summary at docs/design/audits/2026-05-19-research-psd-gate3.md. Findings: (1) SE-01/02/03 already canonical in session-entry.md (Finding 1; B-G1 no-op). (2) DS-56/57/58/59 ID-collision discovery — slots taken by adaptive-seeding / exploit-anchor-library / printable-refresher Gates 3 (Finding 2). Authored DS-62 (recency-weighted drill selection) + DS-63 (anchor-trace) in drills-and-study.md (B-G3 + B-G4 with new IDs). DS-59 (Gate 1 falsifier-verify) deferred pending WS-053 close-out (B-G5). Persona reconciliation: presession-preparer × post-session-chris are SIBLINGS (not nested) — both files updated with cross-references (A-R1). PSP-1 (5/15/30 variants) CONFIRMED; PSP-2 (mood detection) PROTO with v1 user-declared-toggle fallback (→ WS-201); PSP-3 (48h window) CONFIRMED (A-R2). Apprentice depth tolerance: card-back content discipline (Stage C-A2) makes depth opt-in via scroll + anchor-trace (A-R3). A-AP1 autonomy red-line flag bound in DS-62 entry. Unblocks WS-199."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

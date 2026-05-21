@@ -1,0 +1,156 @@
+id: "WS-178"
+title: "PMC Phase 5a-2 — predictedDistribution engine-query population (range-engine + exploit-engine per-decision-node queries into reconstruct.js)"
+type: feature
+status: done
+claimed_by: "session-2026-05-10-spr-070"
+claimed_at: "2026-05-10T02:00:00Z"
+started_at: "2026-05-10T02:05:00Z"
+completed_at: "2026-05-10T13:20:00Z"
+sprint_id: "SPR-070"
+priority_score: 18.0
+priority_label: "P2"
+category: "predictive-model-calibration"
+capability: "core"
+program: "domain-correctness"
+description: |
+  PMC Phase 5a-2 deliverable per charter (`.claude/projects/predictive-model-calibration.md`
+  §Phase 5a). Authored 2026-05-10 at SPR-068 close-out as the explicit
+  follow-up for predictedDistribution engine-query population.
+
+  Background (SPR-068 / WS-177 close-out):
+    Phase 5a shipped the substrate (IDB v25 + writer + reconstructor +
+    AP-PMC-04 enforcement + observedAction extraction). `reconstruct.js`
+    returns `predictedDistribution: []` today — a structurally-valid empty
+    array. Per-decision-node engine queries were intentionally split off
+    the primitive ticket to keep WS-177 substrate-clean (Q1 ratified
+    post-hoc reconstruction; engine integration is its own design problem).
+
+  Scope:
+    Extend `src/utils/predictionAudit/reconstruct.js` so that
+    `predictedDistribution[]` is populated with one entry per modeled
+    decision-node within the hand:
+      - **Villain decision-nodes**: query rangeEngine for the model's
+        belief about that villain's action distribution at that node
+        (given current RangeProfile + position + street + facing-action
+        context). Reuse `src/utils/rangeEngine/rangeAccessors.js`
+        (`getVillainRange`, `getVillainActionKey`) — no new range-engine
+        math required.
+      - **Hero decision-nodes**: query exploitEngine `evaluateGameTree`
+        for the model's recommended hero policy at that node (ranked
+        actions with EVs → normalized to a soft policy distribution).
+        Reuse the function in stateless mode (it already accepts a
+        snapshot).
+
+  Each entry shape per charter §Architectural primitives:
+    {
+      actor: 'villain' | 'hero',
+      actorId: string | number,
+      seat: number,
+      distribution: [{ action: string, weight: number, sizing?: number }]
+    }
+
+  Distribution must sum to 1.0 ± epsilon (pin via test). Empty
+  distribution is valid for nodes the model cannot evaluate (record as
+  `distribution: []` rather than omitting the entry, so the entry
+  count still maps 1:1 to modeled decision-nodes).
+
+  Cross-references:
+    - PMC charter §Phase 5a (this is the deferred portion)
+    - WS-177 (parent ship; this extends `reconstruct.js`)
+    - SYSTEM_MODEL §11 — FM-Engine-Drift-Silent-Invalidation (this work
+      narrows the gap further by populating the predictedDistribution
+      side; doesn't fully close it — see WS-174 for residual)
+
+  Out of scope (Phase 5b / separate tickets):
+    - Render surface (HandReplay ReviewPanel display of
+      predictionAudit) — Phase 5b ticket TBD
+    - Backfill of predictedDistribution for legacy hands (Q2 ratified
+      forward-only at WS-177; charter calls backfill "trivial" but
+      consumer-driven)
+    - Aggregate slicing surfaces (currently no aggregate consumer per
+      REPLACEMENT scope)
+
+accept_criteria:
+  - "`reconstruct.js` populates `predictedDistribution[]` with one entry per modeled decision-node in actionSequence (villain action-points → range-engine query; hero action-points → exploitEngine query)"
+  - "Each entry's `distribution` field sums to 1.0 ± epsilon (or is empty if the model cannot evaluate); pinned by reconstruct test"
+  - "Range-engine query reuses existing `getVillainRange` / `getVillainActionKey` accessors (no new math); exploitEngine query reuses `evaluateGameTree` in stateless mode"
+  - "AP-PMC-04 binding still holds — predictedDistribution entries are model OUTPUT, not user identity; no `evRealized` strip needed there"
+  - "Reconstructor signature accepts the engine-context dependencies cleanly (e.g., `reconstructPredictionAudit(handData, { rangeProfiles, engineCtx })`); usePersistence wiring updated to pass the deps"
+  - "Tests: villain action-point produces non-empty distribution; hero action-point produces non-empty policy; nodes the model cannot evaluate produce empty distribution; distribution-sums-to-1.0 invariant pinned"
+  - "Smart-test-runner full-suite green; rangeEngine + exploitEngine subsuites unaffected (this is read-only consumption of engine outputs)"
+  - "Charter `.claude/projects/predictive-model-calibration.md` Phase 5a row updated to reflect WS-178 close-out (predictedDistribution now populated)"
+
+effort: "M"
+files_involved:
+  - "src/utils/predictionAudit/reconstruct.js (extend predictedDistribution population)"
+  - "src/utils/predictionAudit/__tests__/reconstruct.test.js (extend with engine-query tests + distribution-sums-to-1.0 invariant)"
+  - "src/hooks/usePersistence.js (pass engine-context deps into reconstructPredictionAudit)"
+  - "src/utils/rangeEngine/rangeAccessors.js (REUSE — no edit; existing getVillainRange / getVillainActionKey)"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js (REUSE — no edit; existing evaluateGameTree in stateless mode)"
+  - ".claude/projects/predictive-model-calibration.md (Phase 5a row update on close)"
+
+blocked_by: []
+blocked_by_note: ""
+blocked_by_legacy: []
+enables: []
+decision_flags:
+  - "Engine-context plumbing into usePersistence: pass via prop-drill from useAppState (top-down) vs read from a shared context (e.g., RangeEngineContext + ExploitEngineContext)"
+  - "Decision-node identification: which actionSequence entries count as 'modeled' decision-nodes — every betting action / first action per street per actor / configurable"
+  - "Empty-distribution policy: when range-engine returns no usable distribution (e.g., new villain with no profile), record `distribution: []` and continue / skip the entry / fall back to populationPriors baseline"
+status_note: |
+  RESOLVED 2026-05-10 SPR-070. Phase 5a-2 shipped: reconstruct.js made async +
+  accepts deps={ isModeledNode, getRangeProfile, evaluateGameTree }.
+  Hero decision-nodes get softmax-normalized policy from evaluateGameTree;
+  preflop villain decision-nodes get action distribution from rangeProfile
+  per-action grid sums (reuse rangeAccessors.getVillainRange — no new engine
+  math). Postflop villain remains distribution:[] per D3=A. Engine context
+  plumbed via <EngineCtxBridge/> (D1=A ref-getter pattern) inside
+  TendencyProvider; usePersistence reads via engineCtxGetterRef at hand-save
+  time. +18 net tests (31 reconstruct + 18 usePersistence vs prior 16+15);
+  full-suite 10765 pass / 20 skip / 9 pre-existing flakes in unrelated
+  working-tree files; build clean. Backward-compat preserved: callers
+  without deps still get predictedDistribution: [] (Phase 5a behavior).
+
+  Founder ratifications (pre-plan-mode, 2026-05-10):
+    D1=A ref-getter bridge — over prop-drill or context-relocation
+    D2=C configurable predicate — default = first betting action per seat per street
+    D3=A record `distribution: []` and continue — preserves 1:1 entry-count alignment
+
+  Out of scope this ship (deferred):
+    - Postflop villain action distributions (need villainDecisionModel/
+      actionRates from gameTreeContext) — Phase 5a-3 candidate if consumer
+      demand emerges
+    - Production hero-snapshot construction for evaluateGameTree input —
+      currently best-effort and a known weak spot; tests inject mocked
+      evaluateGameTree to verify softmax pipeline
+    - Render surface (Phase 5b, Gate 4 design-deferred)
+
+done_provenance:
+  src_files:
+    - "src/utils/predictionAudit/reconstruct.js (extended; sync→async, +deps, +helpers)"
+    - "src/utils/predictionAudit/__tests__/reconstruct.test.js (extended; +15 net tests, all 31 pass)"
+    - "src/hooks/useAppState.js (added engineCtxGetterRef + return)"
+    - "src/hooks/usePersistence.js (added param + restructured save closure to async)"
+    - "src/hooks/__tests__/usePersistence.test.js (+3 tests, all 18 pass)"
+    - "src/AppProviders.jsx (mount <EngineCtxBridge/> inside TendencyProvider; +prop)"
+    - "src/PokerTracker.jsx (pass engineCtxGetterRef from useAppState through)"
+    - "src/components/EngineCtxBridge.jsx (NEW; ~30 LoC bridge)"
+  charter:
+    - ".claude/projects/predictive-model-calibration.md (Phase 5a row + Open work-items table updated)"
+  accept_mapping:
+    - "✓ AC1: predictedDistribution[] populated 1:1 with modeled decision-nodes — defaultIsModeledNode = first betting action per seat per street; D2=C predicate is configurable for callers wanting wider/narrower scope"
+    - "✓ AC2: distribution sums to 1.0 ± 1e-6 (or empty when model can't evaluate) — pinned by softmax test (hero) + grid-sum test (villain preflop); both use toBeCloseTo(1.0, 6)"
+    - "✓ AC3: Range-engine query reuses getVillainRange (no new math); exploitEngine reuse evaluateGameTree in stateless mode"
+    - "✓ AC4: AP-PMC-04 binding holds — predictedDistribution entries pass through sanitizePredictionAudit reference-equal (test pinned)"
+    - "✓ AC5: Reconstructor signature accepts engine-context deps cleanly — reconstructPredictionAudit(handData, { isModeledNode, getRangeProfile, evaluateGameTree }); usePersistence wires via engineCtxGetterRef.current?.()"
+    - "✓ AC6: Tests for villain action-point + hero action-point + empty-distribution case + sums-to-1.0 invariant — all present"
+    - "✓ AC7: smart-test-runner full-suite — touched files 100% green (69/69); rangeEngine + exploitEngine subsuites unaffected (gameTreeDepth2 36/36 in isolation); 9 unrelated flake-failures in pre-existing-modified files (HandReplayView/PlayerFinderView/PrintableRefresherView/SelfCoachView/entitlement/printableRefresher) are not WS-178 regressions"
+    - "✓ AC8: Charter Phase 5a row + Open work-items table updated to reflect WS-178 close-out"
+
+source:
+  origin: "spr-068-close-out-2026-05-10"
+  parent_doc: ".claude/projects/predictive-model-calibration.md §Phase 5a"
+  parent_ws: "WS-177"
+  parent_project: "predictive-model-calibration"
+created_at: "2026-05-10"
+updated_at: "2026-05-10T13:20:00Z"

@@ -1,0 +1,162 @@
+id: "SPR-059"
+title: "EAL Stream C — LiveAdviceBar anchor-badge + observation writer (WS-016)"
+status: completed
+approved_at: "2026-05-09T04:10:00Z"
+completed_at: "2026-05-09T05:00:00Z"
+goal: |
+  The live-coaching surface starts showing exploit-anchor badges when
+  classifier-fired patterns match — turning the EAL pure-utils stack
+  (matcher + retirement + selectors, all shipped) into a visible signal
+  Hero can act on at the table.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct continuation of SPR-055 (Stream B-matcher
+  shipped; explicit unblock note in exit). EAL Phase 6 live-surface
+  consumer of the matcher infrastructure. Cross-program rotation away
+  from engineering/sidebar-recurrence (3 of last 4 sprints). Master Plan
+  §C engine-maturation cadence.
+
+composed_by: auto
+created_at: "2026-05-09T04:10:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo (HomeBase-side tooling). Manual scan: domain-correctness live-surface badge for engine output; no constitutional surfaces apply (no monetization/grading/engagement-pressure axes touched)."
+
+decisions_needed:
+  - "Item #1 — Surface placement (LiveAdviceBar inline badge vs sidebar pinned-row vs SizingPresetsPanel embed)"
+  - "Item #1 — Badge anatomy (glyph-only vs glyph+1-line label vs glyph+label+retirement-tier chip)"
+  - "Item #1 — Observation writer scope (anchor-fires only vs +Hero-seen confirmations vs +dismissals)"
+
+items:
+  - id: "WS-016"
+    title: "EAL Stream C — LiveAdviceBar anchor-badge + SizingPresetsPanel embed + headless observation writer"
+    legacy_id: "EAL-Stream-C"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T04:30:00Z"
+    completed_at: "2026-05-09T05:00:00Z"
+    decision_flags:
+      - "Surface placement (LiveAdviceBar inline badge vs sidebar pinned-row vs SizingPresetsPanel embed)"
+      - "Badge anatomy (glyph-only vs glyph+1-line label vs glyph+label+retirement-tier chip)"
+      - "Observation writer scope (anchor-fires only vs +Hero-seen confirmations vs +dismissals)"
+    notes: |
+      Plan-first per Step 3d (UX-touching change → Design Program guardrail
+      requires Gate 1 Entry audit before code; Gate 4 surface artifact
+      mandatory).
+
+      Substrate confirmed clean upstream:
+        - Stream B-matcher: shipped SPR-055 (`src/utils/anchorLibrary/matcher.js`)
+        - Stream D anchor surfaces: shipped via S20-S23 (AnchorDetailPanel,
+          retirement journey, un-retirement)
+        - librarySelectors.js + retirementEvaluator.js: pre-shipped
+        - perceptionPrimitives store: IDB v19 (live)
+
+      Sequencing inside this sprint:
+        1. Gate 1 Entry audit (scope class, JTBD, gap analysis: GREEN /
+           YELLOW / RED)
+        2. If Gate 1 RED/YELLOW → Gate 2 Blind-Spot Roundtable
+        3. Gate 4 surface artifact (LiveAdviceBar anchor-badge spec +
+           SizingPresetsPanel embed spec)
+        4. Implementation: badge component + matcher subscription + writer
+        5. Verification: Playwright at 1600×720 + unit tests + invariants
+
+      Exit conditions:
+        - Strong: Gate 1 GREEN → ship implementation in this sprint
+        - Acceptable: Gate 1 RED/YELLOW → ship audit + Gate 2 + Gate 4
+          spec; implementation rolls to follow-up sprint (matches
+          SCF/PIO Gate cadence for surface work)
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (UX-touching live surface).
+
+  Source-class damping: last 3 completed anchors (WS-112 + WS-107 + WS-017)
+  all `untagged` (backlog-md-migration). No class saturated. WS-016
+  untagged. No damping applied. SPR-056 abandoned (skipped per protocol).
+
+  Fleet-rotation override: not applicable (poker-tracker product repo, no
+  fleet-health program).
+
+  Cross-program rotation rationale: 3 of last 4 anchors in
+  engineering/sidebar-recurrence (SPR-054, SPR-057, SPR-058); SPR-058 exit
+  noted remaining sidebar-recurrence backlog (WS-108/109/110) is
+  owner-marked LATER. Domain-correctness program (founder_priority: 1,
+  critical-tier) gets first attention since SPR-055.
+
+  Alternatives passed over:
+    - WS-135 credible-intervals expansive surface scope (M, domain-correctness)
+      — substrate-clean but less time-critical than EAL chain
+    - WS-159 SelfCoachView Curriculum surface (L, design)
+      — fully-bookable Gate 1+4 work but L-effort exceeds 2-session cap
+    - WS-164 PIO multi-attribute ranking (M, design)
+      — soft-blocked on Table-Build Gate 5
+    - WS-079 contracts/sidebar-to-online-view.md (M, engineering, doc-only)
+      — keeps engineering streak, but doc-only ticket; lower founder-priority
+
+exit_notes: |
+  Goal achieved. Stream C ships the live-surface consumer of the EAL
+  matcher infrastructure that landed in SPR-055. The hard floor (Gate 1
+  audit + Gate 4 surface artifact) shipped; the strong exit (badge
+  component + matcher subscription + system observation writer + tests)
+  shipped; the SizingPresetsPanel `●` overlay deferred to a follow-up
+  sibling ticket per acceptable-degradation exit condition (anchor.consequence
+  → preset mapping requires exploit-deviation lookup infrastructure not
+  yet wired).
+
+  Effort actuals:
+    - Plan-mode (Phase 1 exploration + Phase 2/3 decision flags): ~25 min
+      (3 parallel Explore agents)
+    - Gate 1 audit doc: ~15 min
+    - Gate 4 surface spec: ~20 min
+    - Implementation (5 source files + 3 modified files): ~45 min
+    - Tests (47 tests across 3 files): ~25 min
+    - Verification (build + smart-test-runner): ~10 min
+    - Total: ~2.5 hours real, well within M-effort 1.5-session budget
+
+  Net code: +5 source files (~700 LoC) + 3 modified files (~50 LoC delta).
+  Net tests: +47 (10338/10358 full suite).
+
+  Critical AP-07 enforcement: LiveAnchorBadge.test.jsx pins the absence of
+  every forbidden token (n=, %, CI, ±, stale, expiring, retired, predicted,
+  observed, gap, dividend, sample, posterior, MDF, Sharpe, tier-N,
+  polarity-name, perception-primitive ids/names) regardless of input.
+  Verified at component level; render path inspected.
+
+  Gate 1 verdict: 🟡 YELLOW (mild) — new affordance vocabulary on live.
+  Gate 2 disposition: ALREADY COVERED by 2026-04-24 EAL Blind-Spot
+  Roundtable (Stages A/C/E across 3 voices documented LiveAdviceBar
+  badge constraints explicitly: AP-07 + H-PLT01 + H-PLT04 + H-PLT07 + 9
+  red lines).
+
+  Founder-ratified design decisions (AskUserQuestion at sprint start):
+    1. Surface placement: New row inside LiveAdviceBar (Row 6)
+    2. Badge anatomy: Status dot + archetype name (≤3 words) + 10-segment dial
+    3. Observation writer scope: Anchor-fires only, gated on enrollment
+    4. SizingPresetsPanel embed: Small ● dot on recommended preset
+       (DEFERRED — follow-up ticket required)
+
+  Domain-correctness program (founder_priority: 1, critical-tier) returned
+  to focus after a 3-of-4 sidebar engineering streak. Master Plan §C
+  engine-maturation cadence advanced.
+
+  Cross-program rotation recommendation for next sprint: rotation back to
+  engineering or design depending on owner priority. The launch program
+  remains paused on Q7+Q8 founder decisions. SCF G5 had a substrate
+  blocker (SPR-056 abandoned). Reasonable next anchors:
+    - WS-159 SelfCoachView Curriculum surface (design, L) — substantial
+      Gate 1+4 work
+    - WS-135 Credible intervals expansive surface scope (domain-correctness, M)
+    - WS-080 Verify Online session classification (engineering, M)
+    - SizingPresetsPanel embed follow-up (P3, S — quick close-out)
+
+last_updated: "2026-05-09T05:00:00Z"

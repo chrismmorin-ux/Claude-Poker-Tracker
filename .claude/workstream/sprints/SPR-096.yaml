@@ -1,0 +1,111 @@
+id: "SPR-096"
+title: "LSW postflop content correctness — impossible-combo fix + turn bucket-shift nodes"
+status: completed
+approved_at: "2026-05-20T13:20:00Z"
+activated_at: "2026-05-20T13:20:00Z"
+completed_at: "2026-05-20T13:42:00Z"
+
+goal: |
+  The drill-line content the new LSW↔RL parity invariant audits is
+  theory-clean: no impossible holdings remain, and turn nodes where a
+  hand's strength bucket shifts are authored from a verified node list
+  rather than an estimate.
+
+program_focus: domain-correctness
+program_initiative: |
+  Direct follow-up to SPR-095's INV-LSW-RL-EQUITY-PARITY (WS-206), which
+  caught a real content bug (WS-209) in shipped LSW teaching content. The
+  critical-tier Poker Theory Integrity program is at health_score 5; this
+  sprint closes the parity finding and continues LSW postflop-content
+  correctness on the turn (WS-087, Stream A dimension-6).
+
+composed_by: auto
+created_at: "2026-05-20T13:20:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T13:20:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-095 precedent). Manual scan:
+      - WS-209 is a single-combo content-correctness fix (impossible
+        holding removed) + a regression-pin update. No user-facing copy,
+        no graded surface.
+      - WS-087 authors turn drill-decision nodes; content-authoring, no
+        engagement/gamification surface.
+      - Honors [[feedback_first_principles_decisions]]: equity for the
+        fixed node is computed per-combo by the engine, not asserted.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #2 (WS-087) — which turn nodes/transitions to author, and the bucket-shift classification per node (resolved in plan mode against the actual lines)."
+
+composition_notes: |
+  2-item domain-correctness sprint anchored on the highest workable item.
+
+  Anchor selection (Step 3a):
+    - WS-209 (adj P=16, S, domain-correctness, bug) is the top
+      non-soft-blocked candidate. Fresh defect caught 2026-05-20 by
+      INV-LSW-RL-EQUITY-PARITY (WS-206 / SPR-095). Source-class
+      spr-followup (parent_ws WS-206) — founder-driven, no damping.
+
+  Pair selection (Step 3b):
+    - WS-087 added as co-located domain-correctness content work
+      (src/utils/postflopDrillContent/). blocked_by WS-086 (done,
+      SPR-049). Shares LSW postflop-content-correctness theme.
+
+  Soft-block demotions (Step 2-prereq) — surfaced for visibility:
+    - WS-027..036 (launch/monetization, raw P=22 -> 5.5): external
+      legal-counsel scheduling + MPMF Gate-4 design + entitlement-rules
+      child not yet ticketed.
+    - WS-191 (seat autoselector Phase 2, raw P=20 -> 5.0): soft-blocked
+      on >=3 owner-captured live observations.
+    - WS-047 (PRF Phase A, raw P=15 -> 3.75): soft-blocked.
+    - WS-092 (HERO_BUCKET equity candidate, soft-blocked).
+
+  Fleet-rotation override (Step 3a-rotation): skipped — poker-tracker
+  product repo, no fleet/repo-goal candidates (same as SPR-082..095).
+
+  Sprint-block status (Step 1d): domain-correctness swept 2026-05-19
+  (not stale); launch never baselined (non-blocking, per SPR-085..095
+  precedent). Step 1d clear.
+
+items:
+  - id: "WS-209"
+    title: "Fix impossible hero combo in utg-vs-btn-4bp-deep LSW line (A♥K♦ on board with K♦)"
+    mode: execute
+    effort: S
+    priority_score: 16.0
+    program: domain-correctness
+    status: done
+    completed_at: "2026-05-20T13:25:00Z"
+    decision_resolved: "Hero combo A♥K♦ → A♥K♣ (ticket default). Original held no spade, so K♣ preserves top-two-pair and the exact lesson with no board collision and no backdoor-flush change."
+    completion_note: "lines.js flop_root combo A♥K♦→A♥K♣ + comment; removed utg-vs-btn-4bp-deep::flop_root from KNOWN_DEGENERATE_NODES; pinned now-computable equity 0.488636 in LSW_RL_EQUITY_BASELINE (regen via GEN_LSW_RL_BASELINE=1). lswRlParity 8/8 + full postflopDrillContent suite 509 green; build clean (7.60s). NOTE flagged: villain range not yet LSW-A8-audited (pre-existing, out of scope)."
+    files_involved:
+      - "src/utils/postflopDrillContent/lines.js"
+      - "src/utils/rangeEngine/__tests__/lswRlParityBaseline.js"
+  - id: "WS-087"
+    title: "Author turn decision nodes where bucket class shifts (~8 nodes, Stream A dim-6)"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: domain-correctness
+    status: done
+    completed_at: "2026-05-20T13:42:00Z"
+    decision_resolved: "Ticket premise corrected (founder-ratified): the '~8 nodes' estimate was unvalidated; Stream A dim-6 audit flags only ~1 HIGH-leverage turn node with a clean action archetype-flip. Founder chose 'author the audit-flagged HIGH node only'. Authored the q72r turn_checked_back FISH/REG/PRO split per the audit's proposed values; did NOT fabricate the other ~7 estimated nodes."
+    completion_note: "lines.js q72r turn_checked_back: added correctByArchetype to Call {fish:F,reg:T,pro:T} + Fold {fish:T,reg:F,pro:F} per btn-vs-bb-srp-ip-dry-q72r.md bucket-teaching queue, with per-archetype rationale (FISH probe value-weighted→fold marginal catchers; REG/PRO properly-bluffed→call). 501 postflopDrillContent tests green (schema archetype-coverage validates); build clean. Render parity with shipped t98 archetype-split node. WS-087 ticket premise + accept-criteria corrected in queue file."
+    decision_flags:
+      - "Which turn nodes/transitions to author + bucket-shift classification per node"
+    files_involved:
+      - "src/utils/postflopDrillContent/lines.js"
+
+deferred: |
+  - WS-020/023/025 (EAL DC tests, M each) — separate domain-correctness
+    test-writing sprint.
+  - WS-150..155 (HSP-v2 turn/river archetypes) — domain-correctness
+    content thread, next cycle.

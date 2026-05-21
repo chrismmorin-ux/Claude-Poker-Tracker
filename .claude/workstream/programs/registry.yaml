@@ -121,10 +121,10 @@ programs:
 
   - id: domain-correctness
     name: "Poker Theory Integrity"
-    status: NEW
+    status: ACTIVE
     tier: critical
-    health_score: null
-    last_run_date: null
+    health_score: 5
+    last_run_date: "2026-05-19"
     founder_priority: 1
     blocks: [launch]
 

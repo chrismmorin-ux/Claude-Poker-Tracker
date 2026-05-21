@@ -1,0 +1,56 @@
+id: "WS-196"
+title: "PSD active-recall pattern ADR — flip-card vs side-by-side"
+type: improvement
+status: done
+claimed_by: "SPR-091"
+claimed_at: "2026-05-19T04:34:12Z"
+started_at: "2026-05-19T04:34:12Z"
+completed_at: "2026-05-19T05:00:00Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "pre-session-drill"
+capability: "core"
+program: "design"
+description: |
+  Gate 1 Q5 (open since 2026-04-23). Pre-Session Drill (PSD) Gate 2
+  surfaced this as a YELLOW condition required to clear before Gate 4.
+
+  Two competing active-recall patterns:
+    - **Flip-card**: front shows spot, tap to reveal back. More game-like;
+      satisfies the recognition-primed-decisions (RPD) literature's
+      "predict then verify" loop more cleanly. Standard spaced-repetition
+      software (Anki, etc.) uses this pattern. Higher per-card cognitive
+      gate.
+    - **Side-by-side**: spot + masked answer that reveals on tap (or on
+      time-out). Faster for high-volume drill blocks (PSD's 30-min variant
+      could plausibly serve 10-15 cards). Lower friction; weaker
+      enforcement of active prediction.
+
+  Output: /decide ADR documenting choice + rationale + adversarial
+  considerations from Gate 2 Stage E (E-A1 dominant tap target, E-A2
+  no-destructive-skip, E-A3 state-aware primary action labels).
+
+  ADR informs WS-199 (Gate 4 surface spec) layout decisions.
+accept_criteria:
+  - "/decide ADR authored documenting flip-card vs side-by-side choice"
+  - "Rationale cites RPD literature + per-card cognitive budget + 5/15/30-min variant fit"
+  - "Adversarial considerations from Stage E (E-A1/A2/A3) explicitly addressed"
+  - "Decision references in WS-199 Gate 4 surface spec"
+effort: "S"
+files_involved:
+  - "docs/decisions/ADR-NNN-psd-active-recall-pattern.md (NEW, ID assigned at /decide time)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-199"
+sprint_id: ""
+decision_flags:
+  - "Active-recall pattern: flip-card vs side-by-side"
+status_note: "SHIPPED SPR-091 2026-05-19. Decision: FLIP-CARD (founder-ratified). ADR authored at docs/adr/ADR-005-psd-active-recall-flip-card.md. Rationale: RPD-aligned predict-then-verify cognitive loop; matches Anki/SRS user habit; cleaner mobile-portrait reflow per WS-200; honors Gate 2 Stage E-A1/A2/A3/A4 + Stage C-A2 content discipline. Unblocks WS-199 surface spec layout decisions."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

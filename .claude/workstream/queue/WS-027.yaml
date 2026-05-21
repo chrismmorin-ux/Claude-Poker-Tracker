@@ -20,6 +20,7 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "External-counsel scheduling action item — non-coding meta-task. Cannot ship autonomously; remains a placeholder until counsel session is booked and the Q7 verdict is captured. Do not surface as autonomous-execution candidate."
 blocked_by_legacy: []
 enables: []
 sprint_id: ""
@@ -28,5 +29,6 @@ source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
   source_line: 153
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). External-counsel scheduling action; non-coding meta-task. Soft-block damping (0.25× in /next) appropriate. Reclaim when counsel session is booked."
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

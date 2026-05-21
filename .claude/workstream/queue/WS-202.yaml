@@ -1,0 +1,67 @@
+id: "WS-202"
+title: "Range Lab Paint Primitive ADR (tap-to-toggle + long-press-for-weight)"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T01:08:13Z"
+completed_at: "2026-05-20T01:22:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "design"
+description: |
+  Gate-4 ADR documenting the Range Lab paint primitive decision.
+  Output of SPR-093 Gate 2 Blind-Spot Roundtable Stage E (E-A1).
+
+  Three primitive options enumerated in Stage B + Stage E:
+    1. Tap-to-toggle for in/out + long-press for weight slider
+       (RECOMMENDED — matches existing app gesture vocabulary;
+       weight is opt-in for users who want granularity)
+    2. Tap-and-hold for weight (tap = include @ 100%, hold = slider
+       in-place)
+    3. Slider-per-cell (every cell shows a slider; tap = full;
+       drag = partial weight)
+
+  ADR documents recommended choice + alternatives considered (pros/
+  cons each) + heuristic compliance verification (H-N03 undo,
+  H-N05 error prevention, H-PLT06 misclick absorption, H-ML06 touch
+  target). Mirrors ADR-005 (PSD active-recall flip-card) pattern.
+
+  Choice shapes WS-055 Gate 4 surface spec (paint UX) + WS-203
+  undo-stack ADR (per-stroke vs per-session depends on primitive).
+
+accept_criteria:
+  - "ADR authored at docs/adr/ADR-007-rl-paint-primitive.md (numbering TBD)"
+  - "Decision: tap-to-toggle + long-press-for-weight"
+  - "Alternatives considered: tap-and-hold-for-weight, slider-per-cell — pros/cons documented"
+  - "Heuristic compliance verified inline (H-N03/N05/PLT06/ML06)"
+  - "Cross-references Gate 2 audit (Stage E E-A1) + WS-055 (Gate 4 consumer)"
+  - "Scale-aware ergonomics documented (per C-A3 + E-A9): at small scales, long-press-required or grid-zoom"
+effort: "S"
+files_involved:
+  - "docs/adr/ADR-NNN-rl-paint-primitive.md (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables:
+  - "WS-055"
+sprint_id: "SPR-094"
+decision_flags:
+  - "Confirm tap-to-toggle + long-press-for-weight (alternatives: tap-and-hold, slider-per-cell)"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  SHIPPED 2026-05-20 SPR-094. ADR-007 authored at docs/adr/ADR-007-rl-paint-primitive.md.
+  Decision: tap-to-toggle + long-press-for-weight per founder ratification 2026-05-20.
+  Alternatives considered + rejected: tap-and-hold-for-weight (conflates two semantic
+  actions under timing), slider-per-cell (visually noisy, mobile-portrait infeasible),
+  hybrid mode-toggle (defers decision instead of answering). Scale-aware ergonomics
+  documented (long-press-required mode at small scales). Heuristic compliance verified
+  inline (H-N03, H-N05, H-PLT06, H-ML06). Cross-references Gate 2 audit Stage E E-A1.
+  Companion to ADR-008 (per-stroke undo composes cleanly with per-cell action atomicity).
+  Unblocks WS-055 (Gate 4 surface spec) — paint UX section can now be authored.

@@ -1,0 +1,142 @@
+id: "SPR-058"
+title: "Sidebar animationend fallback safety timer (WS-112)"
+status: completed
+approved_at: "2026-05-09T03:40:25Z"
+completed_at: "2026-05-09T03:54:03Z"
+goal: |
+  Sidebar street-card animation can no longer leak its `animating` class
+  on Android thermal throttle. A coordinator-scheduled 300ms safety timer
+  fires the post-animation cleanup if the native `animationend` event
+  doesn't fire (e.g., GPU-throttled, browser tab backgrounded).
+
+program_focus: engineering
+program_initiative: |
+  Sidebar Recurrence Program — RT-* mechanical-fix sibling continuation
+  after the SPR-057 staleContext consolidation. Lower priority (P3 vs
+  recent P2 cluster work) because Android-thermal-throttle is an edge
+  case, not a core-flow blocker — but tactical-clean and predictable
+  given recent sprints' substrate-blocker patterns.
+
+composed_by: auto
+created_at: "2026-05-09T03:40:25Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo (HomeBase-side tooling). Manual scan: engineering safety-net mechanism; no constitutional surfaces apply."
+
+decisions_needed: []
+
+items:
+  - id: "WS-112"
+    title: "animationend fallback safety timer (300ms) at render-street-card.js:186"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: sidebar-recurrence
+    priority_score: 8.0
+    status: done
+    started_at: "2026-05-09T03:40:25Z"
+    completed_at: "2026-05-09T03:54:03Z"
+    decision_flags: []
+    notes: |
+      SHIPPED ~14 min actual (M tag → S-actual; matches RT-* mechanical-fix
+      cluster cadence SPR-043/044/045/047/054 ~10-30 min). No mid-sprint
+      pivots — AC prescribed the mechanism, plan-mode just confirmed the
+      call site shape (render-street-card.js:186 → became line 195 after
+      the new constants were inserted at the top of the file).
+
+      Files:
+        - ignition-poker-tracker/side-panel/render-street-card.js (modified):
+          - Added FADE_IN_CLEANUP_TIMER_KEY + FADE_IN_CLEANUP_MS=300
+            constants alongside existing TRANSITION_TIMER_KEY +
+            HEIGHT_RELEASE_TIMER_KEY (lines 39-46).
+          - Added clearTimer(FADE_IN_CLEANUP_TIMER_KEY) to 3 sites:
+            resetStreetCardState (line 71-ish) + top-of-render
+            cancel-on-rerender (line 95-ish) + streetChanged-branch
+            cancel-before-new-fade (line 165-ish).
+          - Replaced bare addEventListener(animationend, ...) with paired
+            listener+timer pattern (line 194-205): named `cleanupFadeIn`
+            callback bound to listener ({ once: true }) and safety timer
+            (FADE_IN_CLEANUP_MS = 300ms).
+        - ignition-poker-tracker/side-panel/__tests__/fade-in-safety-timer.test.js
+          (new, 6 source-grep regression tests):
+          - Constant declarations exist (FADE_IN_CLEANUP_TIMER_KEY +
+            FADE_IN_CLEANUP_MS=300)
+          - scheduleTimer(FADE_IN_CLEANUP_TIMER_KEY) called exactly once
+          - clearTimer(FADE_IN_CLEANUP_TIMER_KEY) called in 3 sites
+          - animationend listener preserved (safety timer is a fallback,
+            not a replacement)
+          - cleanupFadeIn callback name anchored (single shared callback
+            for both paths makes dual-path symmetry obvious)
+
+      AC walkthrough:
+        - "render-street-card.js:186 — GPU-skip fallback (coordinator-
+          scheduled 300 ms) prevents class leak on Android thermal
+          throttle" ✓ FADE_IN_CLEANUP_TIMER_KEY scheduled at 300ms via
+          _timerHost; bound to same cleanupFadeIn callback as the
+          animationend listener; idempotent (whichever fires first wins,
+          second is a no-op via { once: true } + classList.remove
+          idempotence).
+
+      Doctrine alignment:
+        - RT-60 timer registry: safety timer flows through _timerHost
+          (coordinator), not bare setTimeout — preserves cancel-on-
+          lifecycle invariant.
+        - RT-50 cancel-on-rerender: top-of-render clear added so a new
+          render call cancels any pending safety timer (the timer's
+          captured callback would still operate on the same element, but
+          a stale callback could conflict with a new fade — better to
+          cancel and let the next fade re-schedule).
+        - SR-6.3 indirection: scheduleTimer / clearTimer pattern matches
+          existing TRANSITION_TIMER_KEY + HEIGHT_RELEASE_TIMER_KEY
+          discipline.
+
+      Vital signs:
+        - Extension tests in isolation: 6/6 pass (2ms)
+        - Full extension suite: 2307/2307 (+6 net vs SPR-057 baseline
+          2301; zero regressions)
+        - Extension build: clean
+        - Full smart-test-runner (app side): 10291/10311 (20 skipped,
+          0 failed; same as SPR-055/057 baseline)
+        - App build: clean
+
+      Owner verification (real-world):
+        Open extension on Android device under thermal load (or simulate
+        via Chrome DevTools "Rendering > Emulate paused/throttled
+        animations"). Trigger a street transition (preflop → flop). The
+        .fade-in class should be removed within 300ms regardless of
+        whether animationend fires. Without the fix, throttled devices
+        accumulate the .fade-in class state and the next street's fade
+        animation no-ops (CSS animations don't restart when re-adding
+        an already-present class).
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (M effort + type=improvement
+  triggers plan-first per Step 3d) but effectively execute-grade work —
+  AC prescribes the mechanism; plan-mode just confirms call-site shape.
+
+  Source-class damping: last 3 completed anchors (WS-107 + WS-017 +
+  WS-106) all `untagged` (backlog-md-migration); no class saturated.
+  WS-112 untagged. No damping. SPR-056 abandoned (skipped per protocol).
+
+  Fleet-rotation override: not applicable (poker-tracker product repo).
+
+  Queue diagnosis: tactical-clean P=15 P2 items are scarce; most need
+  substrate or architectural commitment (SCF sizing-axis, EAL atomicity
+  writer, EAL Stream C UX with Gate 1 audit, RL/HRP/US multi-gate
+  streams). WS-112 (P=8 P3) is the cleanest predictable item available
+  without architectural work — single-file fix, single AC, no decisions.
+
+  Strong alternatives passed over (each is an architectural commitment):
+    - Substrate work: SCF sizing-axis extension OR EAL
+      applyPrimitiveValidityRippleAtomically writer (each L-magnitude)
+    - EAL Stream C live anchor-badge with Gate 1 audit (UX-touching)
+    - PRF Phase A (WS-047) content authoring (Gate 4 demo gating)
+    - Multi-gate stream chunk: WS-053 (RL Gate 2), WS-068 (HRP Stream E)
+
+last_updated: "2026-05-09T03:54:03Z"

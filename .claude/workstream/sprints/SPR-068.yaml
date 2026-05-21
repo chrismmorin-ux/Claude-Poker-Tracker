@@ -1,0 +1,146 @@
+id: "SPR-068"
+title: "PMC Phase 5a — predictionAudit primitive (per-hand IDB field + writer + AP-PMC-04 enforcement) (WS-177)"
+status: completed
+approved_at: "2026-05-10T01:00:00Z"
+completed_at: "2026-05-10T01:45:00Z"
+effort_summary: |
+  M tagged → ~45 min S-actual. Plan-first; 3 founder decisions ratified
+  upfront via AskUserQuestion (Q1 post-hoc reconstruction, Q2 forward-only,
+  Q3 composed range+engine version). Substrate-clean implementation:
+  reused v24 cursor-walk migration pattern + handsStorage transaction
+  pattern + existing rangeEngine/runtimeVersions exports. Net work:
+  3 NEW src files (predictionAuditWriter.js + reconstruct.js + their
+  IDB+migration tests) + 2 modified (database.js DB_VERSION 24→25 +
+  migrations.js migrateV25 + usePersistence.js inline reconstruction).
+  +42 new tests (migrationV25 6 + predictionAuditWriter 20 + reconstruct
+  16, all passing first run after one helper-spread bug fix).
+  Full smart-test-runner: 429 files / 10756 tests pass / 20 skipped /
+  ZERO failures, ZERO regressions (+49 net vs SPR-067 baseline 10707).
+  Build clean (12.31s; PWA 66 entries). WS-178 authored at close-out
+  for predictedDistribution engine-query population (Phase 5a-2 split).
+goal: |
+  Every hand records the model's prediction next to what actually happened,
+  so PMC can measure model-vs-reality without "theory grading itself."
+
+  Ships PMC charter §Phase 5a deliverable: an additive `predictionAudit`
+  field on the `hands` IDB store, a writer module with AP-PMC-04 schema-
+  level enforcement (hero entries structurally cannot persist `evRealized`),
+  hand-end orchestrator wiring, and a read API. Closes the only PMC
+  charter row currently substrate-clean and unticketed.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct continuation of SPR-065 PMC Gate 2
+  REPLACEMENT verdict (Phase 5 collapsed to 5a + 5b) and SPR-067 Q6
+  follow-up close-out. Phase 5a was named in the charter as
+  "~0.5-1 session, separate WS ticket"; SPR-066 + SPR-067
+  composition_notes flagged as a hygiene gap that no ticket existed.
+  WS-177 was authored in SPR-067 reconcile sweep to fill that gap.
+
+  Cross-program rotation: DC anchored 6 of last 8 sprints (SPR-060/063/
+  064/065/066/067) with design (SPR-061) and eng (SPR-062) interleaved.
+  Continuing DC is the strongest available candidate because:
+    - WS-177 is the highest-priority unclaimed item (P=22 P1)
+    - All other P1=22 items (MPMF Gate-5 Stripe / PaywallGate / Billing /
+      PostHog) are paused on Q7+Q8 per recent launch-program notes
+    - PMC charter explicitly names this as Phase 5a; WS-174 (Concern 2
+      revisit) is trigger-conditioned and blocked by Phase 5a shipping first
+  Rotation flagged transparently at composition.
+
+composed_by: auto
+created_at: "2026-05-10T01:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (graceful-degradation per CLAUDE.md). Manual scan: per-hand telemetry
+    primitive enabling PMC measurability; no engagement-pressure / no
+    shame copy / no auto-grading; AP-PMC-04 (no hero-grading framing) is
+    itself a binding accept criterion enforced at the writer layer.
+
+decisions_needed:
+  - "Item #1 — Decision-time capture mechanism: snapshot at every model-emission event vs hero-decision-points + villain-action-points selectivity"
+  - "Item #1 — Backfill strategy: boot-time rebuild / on-demand-only when opened in HandReplay / forward-only (no backfill)"
+  - "Item #1 — modelVersion source: runtimeVersions.js semver / composed from rangeEngine PROFILE_VERSION + exploitEngine version / caller-supplied"
+
+items:
+  - id: "WS-177"
+    title: "PMC Phase 5a — predictionAudit primitive (per-hand IDB field + writer + read API + AP-PMC-04 schema enforcement)"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: predictive-model-calibration
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-10T01:00:00Z"
+    completed_at: "2026-05-10T01:45:00Z"
+    decision_flags:
+      - "Decision-time capture mechanism (every-emission vs selective)"
+      - "Backfill strategy (boot-time rebuild / on-demand / forward-only)"
+      - "modelVersion source (runtimeVersions semver / composed / caller-supplied)"
+    notes: |
+      Plan-first because (a) 3 decision_flags require founder ratification
+      before implementation, (b) the writer-layer AP-PMC-04 enforcement
+      shape depends on capture-mechanism choice (selective capture changes
+      what's written when), (c) backfill-strategy choice changes whether
+      a one-time bootstrap path needs to ship in this sprint.
+
+      Files (likely MODIFY/NEW per WS-177 files_involved):
+        NEW:
+        - src/utils/persistence/predictionAuditWriter.js
+        - src/utils/persistence/__tests__/predictionAuditWriter.test.js
+        MODIFY:
+        - src/utils/persistence/database.js (additive schema bump on hands store)
+        - src/utils/persistence/__tests__/migration.test.js (extend)
+        - src/hooks/useGameHandlers.js OR equivalent hand-end orchestrator
+        - .claude/projects/predictive-model-calibration.md (Phase 5a row → resolved on close)
+
+      Acceptance highlights from WS-177:
+        - IDB schema bump (additive field on hands store) tested via migration test
+        - writePredictionAudit(handId, payload) with AP-PMC-04 schema-level guard
+          (evRealized stripped for hero entries at write time, not read time)
+        - Hand-end orchestrator captures predictions at decision-time, writes consolidated
+          field at hand-end via writePredictionAudit
+        - readPredictionAudit(handId) exported from same module
+        - Tests pin AP-PMC-04 (hero never persists evRealized regardless of caller intent),
+          schema invariants (modelVersion present, distribution sums to 1.0), round-trip
+        - smart-test-runner full-suite green; rangeEngine / exploitEngine subsuites unaffected
+        - Charter Phase 5a row updated to point at this ticket as resolved on close
+        - Phase 5b ticket authored at close (separate WS ID) capturing render-surface deferral
+
+composition_notes: |
+  Source-class: spr-followup (parent_ws: WS-172, parent_project:
+  predictive-model-calibration). Last 3 anchors: WS-175 (spr-followup) /
+  WS-169 (spr-followup) / WS-172 (plan-internal) — founder-driven only;
+  no auto-rec saturation; no source-damping fired.
+
+  Single-anchor sprint: WS-177 is M plan-first (~1.5 sessions); standard
+  ceremony cap is 2 sessions. Companion-S items in queue are all already
+  done (no S-effort backlog candidates exist). Bundling another M would
+  exceed the cap; bundling an in_progress M (e.g., WS-014 EAL Stream E
+  or WS-146 SCF leak rules) would cross-program-thrash and dilute the
+  PMC focus.
+
+  Hygiene gaps NOT addressed this sprint (carried forward from SPR-066/
+  SPR-067 composition_notes — recommend a /workstream reconcile + queue-
+  index hygiene sweep at next idle moment):
+    - Queue-index drift: WS-105 / WS-159 / WS-135 / WS-080 are status:done
+      in YAML but status:backlog in queue-index.yaml.
+    - Launch-program soft-block hygiene: WS-027 / WS-030..033 / WS-036
+      carry stale blocked_by_legacy markers but empty blocked_by_note —
+      surface at full P1=22 despite being unworkable (paused on Q7+Q8).
+    - PMC charter §Open work-items table reserved generic "WS-NNN"
+      placeholder for Phase 5a → now filled by WS-177; charter still
+      needs the WS-NNN → WS-177 substitution (handled at close-out).
+
+  Backlog scan filtered candidates with explicit deferral markers
+  (status_note: "LATER" / "PAUSED" / "BLOCKED by ..." with empty
+  blocked_by_note). The unfiltered top by adjusted_score was dominated
+  by paused MPMF P1s; WS-177 emerged as the strongest concrete workable
+  P1 with fresh charter context.

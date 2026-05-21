@@ -1,0 +1,300 @@
+id: "SPR-088"
+title: "SLS Stream B3 — Saddle + Basin/Sankey + WS-188 hygiene"
+status: completed
+approved_at: "2026-05-18T00:00:00Z"
+completed_at: "2026-05-18T01:35:00Z"
+
+goal: |
+  Two more shape-language descriptors (Saddle + Basin) ship end-to-end in
+  HandReplay study mode (surface scope ratified in plan-mode at item 1
+  start; SessionsView Sankey rendering deferred or included per founder
+  decision D1). Queue drift on WS-188 (persistence audit work already
+  shipped at SPR-080 Item 7) closed so /next ranking stays honest.
+
+program_focus: design
+program_initiative: |
+  Self-Coach Foundation / Shape Language System — Stream B3 batch.
+  Direct continuation of SPR-082 (B1 Silhouette) / SPR-084 (B2 EDC +
+  Spire/Polarization + Sizing) / SPR-086 (B2 data wiring closed Phase 6).
+  Per docs/projects/poker-shape-language.project.md Phase 7:
+  "Saddle + Basin/Sankey — Advanced classifiers + lessons + session-
+  review integration."
+
+  Catalog priorities (project doc Table 4-5): Saddle = P1 way-ahead/
+  way-behind detector, threshold-driven; Basin + Street-Transition
+  Sankey = P1, Basin label on river-equity variance, Sankey is render
+  not classifier.
+
+  Master Plan 2026-04-30 §D continuation. WS-043's only blocked_by
+  (WS-042 = Stream B2) closed at SPR-084. No soft-block. No source-class
+  damping (last 3 anchors are founder-driven untagged/spr-followup
+  classes — never damped).
+
+composed_by: auto
+created_at: "2026-05-18T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-18T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075..SPR-087 precedent). Manual scan:
+      - WS-043 ships descriptors + lessons + read-only section embeds
+        (HandReplay study mode + optionally SessionsView per D1).
+        No engagement-pressure copy, no graded surfaces, no mastery-score
+        ranking, no live-table contamination (HandReplay + SessionsView
+        are post-session-only).
+      - WS-188 is a status-flip queue hygiene fix; no scope change;
+        documentation already shipped.
+      - SLS Stream B3 surfaces honor [[feedback_scf_learning_state_not_tier_rank]]
+        (descriptor labels are game-state outputs, not user-identity
+        ranks — see [[first-principles-decisions]]).
+      - [[feedback_owner_volunteered_grading]] applies on the lesson
+        drill spots (opt-in test surfaces), not on live-table or
+        session-review descriptor displays.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Surface scope (D1): ship SessionsView Sankey rendering this sprint (new UX surface — triggers design Gate 4 surface-spec authoring per CLAUDE.md design-program guardrail) OR defer Sankey to a follow-up and ship B3 as HandReplay-only (Saddle + Basin classifiers + lessons + ReviewPanel sections, mirroring B2's pattern from SPR-084)."
+  - "Item #1 — Saddle classifier output shape (D2): discriminated union {label, confidence, features} (mirrors Silhouette from SPR-082) OR two-field {wayAheadProb, wayBehindProb} (mirrors Spire+Polarization from SPR-084)."
+  - "Item #1 — Basin classifier output shape (D3): single {label, confidence} OR paired with a runoutVariance data field for downstream Sankey consumption (relevant only if D1 includes Sankey)."
+  - "Item #1 — Module structure (D4): confirm continuation of src/utils/shapeLanguage/shapeDescriptors/ pattern from B2; Saddle + Basin live alongside silhouette + equityDistributionCurve + equityShape + sizingCurveTag."
+
+composition_notes: |
+  Two-item sprint. Anchor: WS-043 (Stream B3, P=15, design, M plan-first).
+  Pair: WS-188 (queue drift fix, S execute). Total effort ~2 sessions
+  at the standard cap.
+
+  Anchor selection:
+    - Top adj-score candidate was WS-188 (P=18) but its deliverables
+      shipped at SPR-080 Item 7 — queue drift, not real work. Resolved
+      via the WS-188 hygiene item in this sprint.
+    - Top clean ship-ready P=15 cluster: WS-043 / WS-053 (RL Gate 2) /
+      WS-063 (PSD Gate 2). WS-020/023/025 (DC, P=15) are NEEDS-RESCOPE
+      per SPR-071 reclassification — not directly executable.
+    - WS-043 wins on coherent continuation: SLS B-stream has shipped
+      in 3 of last 6 sprints (B1 SPR-082, B2 SPR-084, B2 data SPR-086),
+      Phase 6 closed cleanly, Phase 7 (this) is the explicit next.
+    - Anchor rotation: last 4 anchors = design (SLS B2) / design (HRP
+      Gate 4) / engineering (SLS B2 data) / engineering (HRP spotResolver).
+      WS-043 design rotation restarts the alternation pattern after
+      engineering 2-in-a-row.
+    - domain-correctness anchor 5 sprints back (SPR-083). Concern noted;
+      clean DC candidates blocked or NEEDS-RESCOPE; deferred to a
+      dedicated DC sprint after rescope work or after WS-020/023/025
+      get rescoped tickets.
+
+  Soft-block / source damping: none applied.
+    - WS-043 has blocked_by: [WS-042] which is `done`; no soft-block-note.
+    - WS-188 has empty blocked_by_note; no damping.
+    - Last 3 anchors source-class: SPR-085 untagged / SPR-086 spr-followup
+      (WS-192 inline) / SPR-087 spr-followup (WS-193 inline). All
+      founder-driven; saturation rule does not apply to these classes
+      regardless of count.
+
+  Fleet-rotation override: skipped — this is the poker-tracker product
+  repo, no fleet/repo-goal candidates exist (no fleet-health program,
+  no fleet/ directory). Same as SPR-082..087.
+
+  Inline-authoring note: anchor IS the existing queue ticket WS-043
+  (not a new inline-authored item). This differs from SPR-086/087 which
+  authored WS-192/WS-193 inline. The clean queue candidate exists; no
+  inline-authoring needed.
+
+  Deferred:
+    - HRP Phase 5 (IDB v25→v26 + counterfactual-tree exposure):
+      explicit "next phase" called out at SPR-087 close. Would inline-
+      author a new WS. Defers cleanly because (a) the spotResolver
+      engine just shipped is pure-math with no UI consumer either way,
+      so a one-sprint delay before Phase 5 has zero blast-radius;
+      (b) anchor rotation argues against a third engineering anchor.
+    - WS-053 (Range Lab Gate 2): clean ship-ready engineering candidate.
+      Lost coherence tiebreak to WS-043 (SLS B-stream is mid-cadence).
+    - WS-063 (PSD Gate 2): clean ship-ready design candidate. Lost
+      tiebreak because PSD is a different project (would split focus);
+      SLS B-stream has cleaner finish-what-you-started momentum.
+    - WS-191 (Seat autoselector Phase 2): P=20 but soft-blocked on
+      ≥3 telemetry observations — adj P=5.
+    - WS-027/030/031/032/033/036 (launch P=22): all soft-blocked on
+      MPMF gates / external counsel — adj P=5.5.
+    - WS-150..157 (HSP-v2 cluster, DC P=13-14): valid future work,
+      deferred until SCF surfaces a turn/river need per status_note.
+    - WS-020/023/025 (DC P=15): NEEDS-RESCOPE; not directly executable
+      per SPR-071 reclassification. A dedicated rescope-and-rebuild
+      sprint would be valuable but is outside this sprint's scope.
+
+  Stale-program soft warning (carried from SPR-087):
+    prog-domain-correctness delta + sweep protocols still overdue per
+    program file cadence vs last_run_date 2026-05-01. Clear with
+    `/pulse run domain-correctness`. Not a sprint blocker because
+    block_sprint:true programs have last_run_date:null (the cadence
+    check can't fail without a baseline date) and program-activation
+    gate passes (multiple programs active).
+
+  Untracked-git state (carried): SPR-081..087 work all still uncommitted
+  in working tree. This sprint adds Saddle + Basin classifiers + lessons
+  + section embed(s) which extends the uncommitted cluster. No
+  staging-hygiene risk added beyond what's already present, but a
+  commit pass at session boundary would be useful.
+
+items:
+  - id: "WS-043"
+    title: "SLS Stream B3 — Saddle (way-ahead / way-behind) classifier + lesson + HandReplay section [scope reduced from Saddle+Basin/Sankey to Saddle-only at plan-mode founder ratification]"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    status: done
+    started_at: "2026-05-18T00:10:00Z"
+    completed_at: "2026-05-18T01:30:00Z"
+    decision_flags:
+      - "D1 — Sprint scope: [RESOLVED 2026-05-18 plan-mode AskUserQuestion → Option A 'Saddle-only (mirrors B1 pattern)']. Basin re-framed: river equity is binary per combo at showdown, not a continuous-variance metric; correct primitive is showdown-outcome distribution with strength-tier bucketing. Sankey/SessionsView remained RED-blocked (no Gate 4 surface slot, no charting library, no IDB persistence of analysis output). Engine plumbing for per-combo villainStrengthBucket inline-authored as WS-194."
+      - "D2 — Saddle classifier output shape: [RESOLVED 2026-05-18 plan-mode AskUserQuestion → 'Two-field {wayAheadMass, wayBehindMass, label}']. Mirrors Spire+Polarization (SPR-084). Two genuinely independent dimensions; label is derived rollup. INV-SLS-B3-SADDLE-TWO-MASS forbids collapsing to single softmax/discriminated union without founder ratification."
+      - "D3 — Basin classifier output shape: [N/A — Basin deferred per D1]."
+      - "D4 — Module structure: [RESOLVED implicit — continued shapeDescriptors/ pattern from B2; new saddleClassifier.js + saddlePrototypes.js + __tests__/saddleClassifier.test.js live alongside silhouette + EDC + equityShape + sizingCurveTag]."
+    notes_completion: |
+      SHIPPED 2026-05-18 SPR-088. Saddle classifier closed end-to-end:
+
+      NEW FILES:
+        - src/utils/shapeLanguage/shapeDescriptors/saddlePrototypes.js (5 calibration constants)
+        - src/utils/shapeLanguage/shapeDescriptors/saddleClassifier.js (pure-math, two-field output)
+        - src/utils/shapeLanguage/shapeDescriptors/__tests__/saddleClassifier.test.js (31 tests)
+        - src/components/views/HandReplayView/SaddleSection.jsx (label line + 3-segment mass bar)
+        - src/components/views/HandReplayView/__tests__/SaddleSection.test.jsx (16 tests)
+        - docs/projects/poker-shape-language/lessons/saddle.md (7 drill spots, 4 non-empty labels)
+
+      AMENDED:
+        - src/utils/shapeLanguage/shapeDescriptors/index.js (Saddle exports)
+        - src/utils/shapeLanguage/index.js (Stream B3 header)
+        - src/utils/shapeLanguage/CLAUDE.md (future-scope table: Saddle row flipped to SHIPPED;
+          Basin row gained "scope re-frame" note)
+        - src/components/views/HandReplayView/ReviewPanel.jsx (SaddleSection slot D5 after
+          SizingCurveTagSection)
+        - system/invariants.md (INV-SLS-B3-SADDLE-TWO-MASS / -MASS-SUM / -CALIBRATED)
+        - docs/projects/poker-shape-language.project.md (Phase 7 PARTIAL + 2026-05-18 code-log row)
+
+      VERIFICATION:
+        - 47 net new tests pass standalone (31 classifier + 16 section)
+        - shapeLanguage + HandReplayView focused suite: 366 tests pass
+        - Vite production build: clean (9.47s)
+        - Cross-domain grep: zero shapeLanguage imports from exploitEngine/rangeEngine
+        - Full vitest run: 11,667 pass / 3 fail / 20 skipped — the 3 failures are pre-existing
+          flakes/timeouts unrelated to Saddle (PlayerFinderView smoke flake per SPR-076;
+          drillContent precisionAudit + shapesCatalog with 5.4M+ ms runtimes = full-suite
+          CPU-contention timeouts)
+
+      PLAN-MODE FOUNDER CORRECTIONS:
+        - D1 scope reduced from Saddle+Basin/Sankey to Saddle-only (recon revealed Basin
+          needs new engine plumbing + Sankey needs Gate 4 surface-spec + charting library
+          dependency + IDB persistence design)
+        - D2 ratified two-field output (vs discriminated-union)
+        - During implementation, owner clarified that river equity has no variance — it's
+          a showdown-outcome distribution with strength-tier bucketing. Memory entry
+          `feedback_river_equity_is_showdown_outcome.md` captures the doctrine. New
+          WS-194 inline-authored as Basin prereq.
+
+      MEMORY: feedback_river_equity_is_showdown_outcome.md (new this sprint).
+
+    notes: |
+      Project context (docs/projects/poker-shape-language.project.md):
+        - Catalog row 4 (Saddle): P1, way-ahead/way-behind detector,
+          threshold-driven.
+        - Catalog row 5 (Basin + Street-Transition Sankey): P1, Basin
+          label on river-equity variance; Sankey is render not classifier.
+        - Phase 7: "Saddle + Basin/Sankey — Advanced classifiers +
+          lessons + session-review integration."
+
+      Patterns established by prior B-stream sprints (must match):
+        - shapeDescriptors/ subdirectory (B2 namespace consolidation,
+          SPR-084 D-2)
+        - Classifier output is discriminated union OR two-field per
+          descriptor's nature
+        - Lesson markdown at docs/projects/poker-shape-language/lessons/
+          with 7 drill spots covering every prototype
+        - HandReplay section component slots into ReviewPanel between
+          existing B1+B2 sections
+        - Section accepts null data props and renders null when data
+          unavailable (INV-SLS-B2-SECTION-NULL-DEGRADATION)
+        - Cross-domain rule: shapeLanguage/ may import from exploitEngine/
+          (asymmetric — reverse forbidden, grep guard enforced)
+        - Calibrated-not-learned prototypes (mirrors feedback_first_principles_decisions.md)
+
+      New territory introduced by B3:
+        - SessionsView as a surface embed (B1+B2 were HandReplay-only).
+          Per project doc: "SessionsView: post-session review surface —
+          Sankey + Silhouette aggregate stats."
+        - Sankey is a render not a classifier — distinct from B1/B2.
+          If included this sprint, needs (a) existing data pipeline to
+          aggregate cross-hand basin labels (b) UX surface spec at
+          docs/design/surfaces/sessions-view.md (or amendment to an
+          existing spec) authored per design framework guardrail.
+        - River-equity variance — a new computed field that may need
+          plumbing through replayAnalysis (similar pattern to evByFraction
+          from SPR-086 but for river-only).
+
+      Plan-mode probe targets:
+        - docs/design/surfaces/sessions-view.md (exists? what's its
+          current Anatomy? does it allow new descriptor row insertion?)
+        - src/components/views/SessionsView/ (current structure;
+          where would Basin aggregate render?)
+        - replayAnalysis output today: does it already expose per-hand
+          river equity, or does that need a new compute path?
+        - HRP Gate 4 spec at docs/design/surfaces/analysis-view.md
+          (SPR-085 amended) — does HRP's HandBrowser flag filter
+          conflict with SessionsView Sankey real estate?
+
+      Bindings:
+        - feedback_first_principles_decisions.md — Saddle/Basin
+          thresholds calibrated, not learned (mirrors silhouettePrototypes)
+        - INV-SLS-CLASSIFIER-1..5 (from SPR-082)
+        - INV-SLS-B2-NAMESPACE / CROSS-DOMAIN / DATA-ONLY /
+          POLARIZATION-INDEPENDENCE / SECTION-NULL-DEGRADATION (SPR-084)
+        - Cross-domain grep guard (zero shapeLanguage imports from
+          exploitEngine/ at directory level — bidirectional check)
+
+      Plan-mode entry conditions:
+        - Read accept_criteria + status_note + project doc Phase 7
+        - Probe SessionsView current state for D1
+        - Probe replayAnalysis river-equity surface for D3 implications
+        - Present 4-decision menu via AskUserQuestion before any code
+
+  - id: "WS-188"
+    title: "Queue hygiene: mark WS-188 done (persistence audit shipped at SPR-080 Item 7)"
+    mode: execute
+    effort: S
+    program: engineering
+    category: persistence-architecture
+    status: done
+    started_at: "2026-05-18T01:30:00Z"
+    completed_at: "2026-05-18T01:35:00Z"
+    decision_flags: []
+    notes_completion: |
+      Status-flip completed 2026-05-18. WS-188 (file + queue-index entry) marked done with
+      a status_note documenting that all 4 phase outputs shipped at SPR-080 Item 7:
+        - docs/persistence/FAILURE_MODES.md (12 modes) [verified on disk]
+        - docs/persistence/CACHE_CONTRACTS.md (18 surfaces) [verified on disk]
+        - .claude/decisions/2026-05-14-*.md (4 ADRs) [verified on disk]
+        - docs/persistence/CACHE_SWEEP_2026-05-14.md (residual scan) [verified on disk]
+      Zero src/ diff. Future /next composition now correctly skips WS-188 as done.
+    notes: |
+      Distilled accept criterion: flip WS-188 status from `backlog` to
+      `done` in `queue/WS-188.yaml` and the matching `queue-index.yaml`
+      entry. Add a status_note documenting that all 4 phase outputs
+      shipped at SPR-080 Item 7 + the four deliverables are visible
+      in the working tree at docs/persistence/ + .claude/decisions/
+      (4 ADRs) + the CACHE_SWEEP report.
+
+      Mirrors the WS-185 status-flip pattern but for a different kind
+      of drift (this one's that the SPR-080 closeout note named WS-188
+      explicitly — "Item 7 / WS-188: 4 phase outputs (FAILURE_MODES.md
+      12 modes + CACHE_CONTRACTS.md 18 surfaces + 4 ADRs + CACHE_SWEEP
+      _2026-05-14.md residual scan) + 5 INV-PERSIST + 6 new TDs
+      (TD-19..24). Zero behavior-changing src/ diff for Item 7." — but
+      the queue ticket never got status-flipped).
+
+      Zero src/ diff. Zero new tests. Documentation/queue metadata only.

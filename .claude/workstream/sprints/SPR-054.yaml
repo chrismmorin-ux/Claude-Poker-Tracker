@@ -1,0 +1,120 @@
+id: "SPR-054"
+title: "Sidebar tournament-bar flicker fix — per-zone innerHTML diff + tourneyTimer guard (WS-106)"
+status: completed
+approved_at: "2026-05-08T17:30:00Z"
+completed_at: "2026-05-08T17:45:00Z"
+goal: |
+  Sidebar tournament-bar flicker fixed. `tourneyTimer` no longer rebuilds
+  innerHTML 60×/min on unchanged content; per-zone diff-suppression added
+  to the 4 unconditional writers (renderSeatArc, renderPipelineHealth,
+  renderPidSummary, updateAppStatus). Owner verifies: tournament bar no
+  longer flickers.
+
+program_focus: engineering
+program_initiative: |
+  Sidebar Recurrence Program — RT-* sidebar-recurrence cluster continuation
+  after the SPR-043/044/045/047 boundary-hardening cluster CLOSED 5/5.
+  WS-106 is the cleanest entry of the 5 P=15 RT-* siblings: observable bug
+  (tournament bar flicker), mechanical fix (lastHTML === html fast-path),
+  single-file scope. Engineering rotation per SPR-052 plan ("MPMF cluster
+  paused on Q7+Q8; next rotation is engine work or domain-correctness").
+  WS-168 covered domain-correctness yesterday — engineering is natural next.
+
+composed_by: auto
+created_at: "2026-05-08T17:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: "kit/scripts/cwos-constitutional-audit.js not installed in this repo. Manual scan: engineering perf fix; no constitutional surfaces apply."
+
+decisions_needed: []
+
+items:
+  - id: "WS-106"
+    title: "Per-zone innerHTML diff + tourneyTimer guard"
+    mode: execute
+    effort: M
+    program: engineering
+    category: sidebar-recurrence
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-08T17:30:00Z"
+    completed_at: "2026-05-08T17:45:00Z"
+    notes: |
+      SHIPPED in ~15 min actual (S-actual cadence matching SPR-043/044/045/047 precedent for the boundary-hardening cluster; well under M tag).
+
+      Investigation surfaced clarifications to the AC framing:
+        - renderSeatArc already had the fast-path at side-panel.js:1129
+          (predates this ticket — kept).
+        - tourneyTimer 1Hz interval body only updates textContent of the
+          timer-id span. It does NOT cascade to innerHTML rebuilds. The
+          flicker source is the unconditional writers (renderPipelineHealth,
+          renderPidSummary, updateAppStatus, also renderSeatArc previously).
+        - "tourneyTimer rebuilds innerHTML 60×/min" in the original AC
+          appears to be a misattribution from the legacy backlog
+          (RT-82). Real cause: those 4 zones writing on every snap.
+
+      Fast-paths added at 4 zones (per AC):
+        1. writeAppStatusBadge (shared/render-status.js) — canonical writer
+           gains idempotent same-tier early-return guard via the existing
+           data-app-status-tier attribute. INV-STATUS-1 contract preserved
+           (single canonical writer; tier+text still paired). Production +
+           harness paths both benefit.
+        2. writePipelineStageDot (shared/render-status.js) — analogous
+           same-tier guard via data-pipeline-tier attribute. Each of
+           renderPipelineHealth's 5 setDot calls now no-ops when the dot
+           is already at the requested tier.
+        3. renderPipelineHealth detail.innerHTML + counterEl.textContent
+           (side-panel.js) — closure-captured lastPipelineDetailHtml +
+           lastPipelineCounterText. Compare-and-skip per zone.
+        4. renderPidSummary innerHTML (side-panel.js) — closure-captured
+           lastPidSummaryHtml. Compare-and-skip.
+
+      Tests:
+        - 6 new idempotency tests in side-panel/__tests__/status-registry.test.js
+          covering both writers (same-tier skip; different-tier write; 5-stage
+          render cycle no-op).
+        - Existing 55 status-registry tests + 2279 full extension suite all
+          green. Zero regressions.
+
+      Builds:
+        - npm run build (extension): clean
+        - npm run build (app): clean
+
+      Owner verification (real-world, NOT covered by static tests):
+        Open the extension in steady-state operation; observe the tournament
+        bar + pipeline strip. Should no longer flicker on each snap. The
+        canonical-writer fast-paths cover the dot/badge slots; the closure
+        fast-paths cover the innerHTML/textContent zones. If flicker persists,
+        check whether some other writer not on the AC list (e.g.
+        renderTournamentPanel itself, called per push_tournament event,
+        not per-snap) is the source — that would warrant a follow-up ticket.
+
+composition_notes: |
+  Single-item M-effort sprint, execute mode. Within standard 2-session cap.
+  M-tagged-S-actual cadence likely per SPR-043/044/045/047 precedent.
+
+  Source-class damping check: last 3 anchors (WS-035 launch-untagged + WS-034
+  launch-untagged + WS-168 spr-followup). No saturation. WS-106 untagged
+  (backlog-md-migration). No damping.
+
+  Fleet-rotation override: not applicable (poker-tracker product repo, no
+  fleet/ surfaces).
+
+  Strong alternatives passed over:
+    - WS-107 (RT-83 staleContext oscillation) — natural pair; tagged 2xM = 3
+      sessions exceeds standard cap. Founder explicitly declined pairing.
+    - WS-164 (PIO G5 child E, P=18) — soft-blocked → 4.5 effective; founder
+      can clear via decision_flag #3 in a future sprint.
+    - WS-097 (LSW-P3) — DEFERRED to LSW-v2; founder data-driven premise not yet
+      met.
+
+  No decision_flags — accept_criteria specify the exact fix mechanism
+  (lastHTML === html fast-path per zone). Just-do-it execution.
+
+last_updated: "2026-05-08T17:30:00Z"

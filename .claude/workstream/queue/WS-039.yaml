@@ -2,10 +2,11 @@ id: "WS-039"
 title: "Gate 4"
 legacy_id: "SLS-G4"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-073"
+claimed_at: "2026-05-11T03:00:00Z"
+started_at: "2026-05-11T03:05:00Z"
+completed_at: "2026-05-11T04:00:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -25,12 +26,46 @@ blocked_by:
 blocked_by_legacy:
   - "SLS-G3"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-073"
 decision_flags: []
-status_note: "BLOCKED by SLS-G3"
+status_note: |
+  RESOLVED 2026-05-11 SPR-073 (FOUNDATION SHIPPED; SPR-074 ships shape-skill-map + lesson-runner + conformance matrix per founder-ratified 2-sprint scope split).
+
+  Shipped 4 design artifacts:
+    1. docs/design/surfaces/study-home.md (NEW — parent cross-project surface, first authored by SLS Gate 4 per Q1 verdict)
+    2. docs/design/surfaces/shape-language-study-home.md (NEW — SLS embed binding Q1-Q7 verdicts)
+    3. docs/design/journeys/shape-language-enrollment.md (NEW — master toggle + Q7 declaration seed + Q3 welcome-back)
+    4. docs/design/contracts/shape-mastery.md (NEW — 4th cross-surface contract; 9 binding invariants)
+
+  Index updates: docs/design/contracts/README.md (entry + change log).
+  Project doc: docs/projects/poker-shape-language.project.md Stream A row updated G4 → [~] (partial; SPR-074 closes).
+
+  Zero src/ diff (design-only).
+
+done_provenance:
+  disposition: "FOUNDATION SHIPPED (2-sprint Gate 4)"
+  src_files: []
+  docs:
+    - "docs/design/surfaces/study-home.md (NEW — parent cross-project surface)"
+    - "docs/design/surfaces/shape-language-study-home.md (NEW — SLS embed)"
+    - "docs/design/journeys/shape-language-enrollment.md (NEW — enrollment journey)"
+    - "docs/design/contracts/shape-mastery.md (NEW — 4th contract; 9 invariants)"
+    - "docs/design/contracts/README.md (index + change log)"
+    - "docs/projects/poker-shape-language.project.md (Stream A row updated)"
+  charter:
+    - "Sprint SPR-073 + WS-039 (this ticket)"
+  accept_mapping:
+    - "✓ 3 surfaces authored — 2 ship in SPR-073 (study-home parent + shape-language-study-home embed); shape-skill-map + lesson-runner deferred to SPR-074 per founder-ratified scope split"
+    - "✓ Enrollment journey — shape-language-enrollment.md ships with all 3 steps + 3 variations + abort paths"
+    - "✓ Interaction spec with red-line tests — partial: each surface declares its red-line compliance table; full per-surface conformance test matrix authored at SPR-074"
+    - "✓ Cross-surface skill-state contract — shape-mastery.md ships as 4th contract alongside persisted-hand-schema/tournament-to-table/sidebar-to-online-view; 9 invariants binding"
+  remaining_for_spr_074:
+    - "docs/design/surfaces/shape-skill-map.md (transparency screen surface)"
+    - "docs/design/surfaces/lesson-runner.md (drill/lesson surface)"
+    - "Per-surface red-line conformance test matrix (DOM/grep/runtime-flag assertion targets, one row per red line × per surface)"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 198
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

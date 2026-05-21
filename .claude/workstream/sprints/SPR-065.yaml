@@ -1,0 +1,144 @@
+id: "SPR-065"
+title: "PMC Gate 2 sprint 2/2 — REPLACEMENT verdict + per-class taxonomy detail + Stage E + charter close-out (WS-172)"
+status: completed
+approved_at: "2026-05-09T17:00:00Z"
+completed_at: "2026-05-09T18:00:00Z"
+goal: |
+  Close PMC Gate 2 — failure-mode taxonomy is per-class authored (detection
+  signature + ledger fields + severity + examples for all 14 Tier-1 classes,
+  promoted Tier-2s as warranted), founder verdicts on the 5 deferred charter
+  Qs and the 4 Devil's-Advocate dissent concerns are recorded, and Gate 4
+  design specs (calibration-dashboard.md amendment, ledger-schema.md,
+  aggregator-design.md) become unblockable.
+
+  Sprint 1/2 (SPR-064) shipped Stages A-D verdicts + 14 Tier-1 sketches +
+  10 cross-cutting architectural asks. This sprint resolves what was
+  explicitly deferred per founder ratification at sprint 1/2 start.
+
+program_focus: domain-correctness
+program_initiative: |
+  Predictive Model Calibration (PMC) — Gate 2 sprint 2/2 closes the founder-
+  ratified 2-sprint split. Closes FM-Engine-Drift-Silent-Invalidation per
+  SYSTEM_MODEL §11. WS-169 (PMC Phase 5d Calibration Dashboard implementation)
+  is blocked by this; closing Gate 2 unblocks downstream Gate 4 design specs
+  + Phase 4/5 sequencing.
+
+  Anchor rotation healthy — last 4 anchors mixed (design+DC+eng+design); no
+  saturation, no fleet override (poker-tracker is user repo not HomeBase),
+  no source-class damping (SPR-064 was founder-direct).
+
+composed_by: auto
+created_at: "2026-05-09T17:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 1
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed. Manual scan:
+    Sprint 2/2 closes Gate 2 Roundtable; the Roundtable IS the bypass for
+    "theory validating theory" (per founder ratification 2026-05-09).
+    Adversarial structure is the deliverable. Devil's-Advocate dissent
+    dispositioning is explicit founder accountability. No anti-pattern triggers.
+
+decisions_needed:
+  - "Item #1 — Devil's-Advocate dissent on ratification #2 (hierarchical Bayes vs simpler intervention): amend, re-affirm, or escalate to Gate 3"
+  - "Item #1 — Devil's-Advocate dissent on ratifications #3 + #5 (full-pipeline MVP + new program absorbing WS-169): re-litigate or stand"
+  - "Item #1 — Charter Q1 (storage budget) verdict: full retention vs windowed vs tiered"
+  - "Item #1 — Charter Q2 (multi-comparisons rigor) verdict: Bonferroni / FDR / hierarchical pooling absorbs"
+  - "Item #1 — Charter Q3 (ledger backfill) verdict: append-only forward-only vs allow retroactive entries from existing showdown reveals"
+  - "Item #1 — Charter Q5 (drift windowing) + Q6 (showdown-update gating) verdicts (may fold into above)"
+
+items:
+  - id: "WS-172"
+    title: "PMC Gate 2 — Blind-Spot Roundtable producing failure-mode taxonomy"
+    mode: design-first
+    effort: L
+    program: domain-correctness
+    category: predictive-model-calibration
+    priority_score: 22.0
+    status: done
+    started_at: "2026-05-09T17:00:00Z"
+    completed_at: "2026-05-09T18:00:00Z"
+    decision_flags:
+      - "Devil's-Advocate dissent on ratification #2 (hierarchical Bayes load-bearing or simpler frequentist sufficient)"
+      - "Devil's-Advocate dissent on ratifications #3 + #5 (full-pipeline MVP + new-program absorption)"
+      - "Charter Q1 storage budget"
+      - "Charter Q2 multi-comparisons rigor"
+      - "Charter Q3 ledger backfill"
+      - "Charter Q5 drift windowing"
+      - "Charter Q6 showdown-update gating"
+    notes: |
+      Sprint 2/2 of founder-ratified 2-sprint split. WS-172 is in_progress
+      (not backlog) — sprint 1/2 deferred this scope per founder ratification.
+
+      Deferred scope to deliver this sprint:
+        - Stage E graded-work-trap audit + AP-PMC-04..06 review
+        - Per-class detail authoring for all Tier-1 (and any promoted Tier-2) classes
+        - Charter open Q1/Q2/Q3/Q5/Q6 verdicts (Q4 already preliminary in sprint 1/2)
+        - Founder dispositioning of Devil's-Advocate dissent (4 concerns)
+        - Charter formal close-out
+        - Pre-registration registry stub authoring
+        - Persona authoring (situational sub-personas) — may move to Gate 4
+
+files_involved:
+  - "docs/projects/predictive-model-calibration/failure-mode-taxonomy.md (modify — per-class detail)"
+  - "docs/design/audits/2026-05-09-blindspot-pmc-failure-modes.md (modify — Stage E + dissent verdicts)"
+  - ".claude/projects/predictive-model-calibration.md (modify — Gate 2 close-out + Q verdicts + dissent verdicts)"
+  - "docs/design/jtbd/domains/drills-and-study.md (potentially modify)"
+  - "docs/design/personas/situational/post-session-chris.md (potentially modify)"
+
+composition_notes: |
+  Single-item sprint. WS-172 status `in_progress` (not backlog) — founder-
+  ratified continuation of SPR-064. Pulled in no companion items: program
+  rotation already healthy, no co-located low-effort items would compose
+  with the L-tagged taxonomy authoring without diluting focus.
+
+  Anti-goal check skipped (script absent).
+
+  CLOSE-OUT NOTE (2026-05-09): Sprint executed via plan-mode 1 architectural
+  fork question (Devil's-Advocate Concern 1) followed by Batch 2 (4 questions
+  on WS-169/CFR-Concern-2/render-surface/Stage-E) and Batch 3 (3 questions on
+  Q2/Q5/Q6). Founder verdict on Concern 1 = REPLACEMENT, which materially
+  shrunk the sprint scope (per-class detail authored against a 4-state
+  visibility framework rather than full schema-driven spec; many architectural
+  asks dispositioned as MOOT-UNDER-REPLACEMENT). Outcome closes Gate 2 with
+  a substantially leaner Phase 5 (5a + 5b) than originally planned (5a-5e).
+
+source_class_damping: not_applicable
+fleet_rotation_override: not_applicable
+
+close_out_summary: |
+  Gate 2 CLOSED. REPLACEMENT verdict ratified.
+
+  Decisions captured (8 total, 3 batches):
+    - Plan-mode: Concern 1 → REPLACEMENT (Phase-5 architecture cancelled)
+    - Batch 2: WS-169 → re-release to EAL Stream D
+    - Batch 2: Concern 2 → STAND-WITH-TRIGGER → WS-174 created
+    - Batch 2: Render surface → TBD next sprint (Phase 5b)
+    - Batch 2: Stage E → structurally distinguishable (PASS)
+    - Batch 3: Q2 → pre-registration registry binds
+    - Batch 3: Q5 → BOCPD if drift surface emerges in Phase 5b
+    - Batch 3: Q6 → range-engine scope → WS-175 created
+
+  Files modified:
+    - .claude/projects/predictive-model-calibration.md (charter rewrite)
+    - docs/projects/predictive-model-calibration/failure-mode-taxonomy.md (per-class detail + visibility framework)
+    - docs/design/audits/2026-05-09-blindspot-pmc-failure-modes.md (Stage E + close-out)
+    - .claude/workstream/queue/WS-169.yaml (re-released to EAL Stream D)
+    - .claude/workstream/queue/WS-172.yaml (status done)
+    - .claude/workstream/queue-index.yaml
+    - .claude/workstream/sprint-index.yaml
+
+  Files created:
+    - docs/projects/predictive-model-calibration/registered-hypotheses.md (NEW)
+    - .claude/workstream/queue/WS-174.yaml (NEW — CFR Gate-N+ revisit)
+    - .claude/workstream/queue/WS-175.yaml (NEW — range-engine Q6)
+    - .claude/workstream/sprints/SPR-065.yaml (this file)
+
+  Phase 5 plan post-REPLACEMENT:
+    - Phase 5a: predictionAudit primitive (~0.5-1 session, separate WS ticket TBD)
+    - Phase 5b: Render surface design (~0.5-1 session, Gate 4 design-deferred)

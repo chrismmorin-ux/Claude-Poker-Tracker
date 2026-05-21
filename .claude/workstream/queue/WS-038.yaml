@@ -2,10 +2,35 @@ id: "WS-038"
 title: "Gate 3"
 legacy_id: "SLS-G3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-10-spr-069"
+claimed_at: "2026-05-10T02:00:00Z"
+started_at: "2026-05-10T02:05:00Z"
+completed_at: "2026-05-10T02:15:00Z"
+done_kind: "queue-hygiene"
+done_provenance:
+  shipped_on: "2026-04-23"
+  shipped_in: "Gate 3 same-session burst (Shape Language)"
+  evidence:
+    - "docs/projects/poker-shape-language/gate3-decision-memo.md (2026-04-24, 7 verdicts; R1-R6 resolved by memo, triage superseded)"
+    - "docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding-rerun.md (Gate 2 re-run GREEN-with-residuals)"
+    - "docs/design/personas/core/chris-live-player.md (amended — skill_state attribute + autonomy-constraint paragraph)"
+    - "docs/design/personas/core/scholar-drills-only.md (amended — skill_state attribute)"
+    - "docs/design/personas/situational/returning-after-break.md (NEW situational)"
+    - "docs/design/jtbd/domains/drills-and-study.md (DS-52..56 added)"
+    - "docs/design/jtbd/domains/onboarding.md (ON-87 added)"
+    - "docs/design/jtbd/ATLAS.md (updated for above)"
+    - "docs/projects/poker-shape-language/gate3-triage.md (header marks SUPERSEDED)"
+    - "docs/projects/poker-shape-language.project.md row 74 marks '[x] G3' Gate 3 CLOSED"
+  accept_criteria_mapping:
+    - "6 research threads (R1-R6) resolved → gate3-decision-memo.md (Q1-Q7 + research-backed verdicts cover R1-R6)"
+    - "2 personas amended → chris-live-player.md + scholar-drills-only.md"
+    - "1 situational authored → returning-after-break.md"
+    - "5 JTBDs added → DS-52, DS-53, DS-54, DS-55, ON-87 (DS-56 deferred per memo)"
+    - "Gate 2 re-runs GREEN/YELLOW → rerun audit verdict GREEN with scoped residuals"
+    - "Triage at gate3-triage.md → exists, superseded by decision memo"
+  closed_in_sprint: "SPR-069"
+  closed_by_check: "Read project row 74 + decision memo + rerun audit + persona/JTBD files; all 6 accept criteria satisfied as of 2026-04-24."
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -24,7 +49,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-069"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

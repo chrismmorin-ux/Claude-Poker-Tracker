@@ -2,10 +2,30 @@ id: "WS-080"
 title: "Verify Online session classification"
 legacy_id: "DCOMP-W4-A3-F11"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-09-next-spr-062"
+claimed_at: "2026-05-09T11:30:00Z"
+started_at: "2026-05-09T11:32:00Z"
+completed_at: "2026-05-09T11:55:00Z"
+sprint_id: "SPR-062"
+status_note: |
+  Investigation (SPR-062 fork) revealed NO BUG — extension-imported
+  sessions correctly receive source:'ignition' via importHands →
+  getOrCreateOnlineSession (sessionsStorage.js:688). SV-F7 classification
+  is correct.
+
+  Acceptable-degradation exit: shipped verify-and-pin regression coverage
+  instead of a fix:
+    - src/utils/sessionsFilter.js (NEW pure-util extracted from inline filter)
+    - src/utils/__tests__/sessionsFilter.test.js (NEW 19 tests pinning predicate)
+    - src/hooks/__tests__/useSyncBridgeImportPath.test.js (NEW 5 source-grep
+      tests pinning the 4-link import chain: useSyncBridge.importHands →
+      getOrCreateOnlineSession → createOnlineSession → source:'ignition' →
+      SessionsView SV-F7 filter)
+    - src/components/views/SessionsView/SessionsView.jsx (modified to use
+      matchesSessionsFilter util — 4-line refactor preserving behavior)
+  +24 net new tests, all passing first-run after one regex fix.
+  Pattern matches WS-105 / SPR-043 source-grep boundary-hardening.
 priority_score: 15.0
 priority_label: "P2"
 category: "ready-to-start"
@@ -21,8 +41,8 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
+decision_flags:
+  - "Where to set source:'ignition' if bug found (handler boundary vs writer boundary)"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

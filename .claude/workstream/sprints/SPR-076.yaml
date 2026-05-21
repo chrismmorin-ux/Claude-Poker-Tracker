@@ -1,0 +1,120 @@
+id: "SPR-076"
+title: "Camera capture FSM rewrite — accept-button stability (WS-184)"
+status: completed
+approved_at: "2026-05-13T00:00:00Z"
+completed_at: "2026-05-13T13:30:00Z"
+
+goal: |
+  Camera-capture accept-button becomes stable and observable: no silent fails,
+  no dropped taps, no raw OOM text — backed by an explicit FSM that names
+  every failure path. Closes 5 surface bugs (A-E) reported by owner across
+  the 2026-05-11 and 2026-05-12 sessions with a single primitive-level fix:
+  collapse onAccept into idle → cropping → saving → done | error with named
+  transitions and dev-mode transition telemetry.
+
+program_focus: design
+program_initiative: |
+  Player Identification v2 — closes the highest founder-driven, fits-in-cap
+  unclaimed bug on the live-table camera-capture flow. Owner reported active
+  failure modes in two consecutive sessions (2026-05-11/12); WS-184 is
+  exempt from the Refactor Sprint 'no new features' charter per its
+  status_note.
+
+  Implements owner doctrine (memory: feedback_action_dispatch_legality.md,
+  2026-05-12): "prefer unrepresentable to validated." The FSM rewrite makes
+  silent-fail states unrepresentable — every failure has a named transition,
+  not a missed branch.
+
+  Cross-program rotation: last 3 anchors = DC (SPR-075) + design ×2
+  (SPR-073/074). Design returns after DC was anchored last sprint. No
+  source-class saturation (all recent anchors founder/plan-driven; none
+  auto-rec or engine-finding).
+
+composed_by: auto
+created_at: "2026-05-13T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-13T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase fleet tooling absent — product repo). Manual scan: WS-184 is
+    a bug-fix on a live-table feature. No engagement-pressure, no mastery
+    grading, no surveillance, no AP-PIO/AP-SCF refusals. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-184, A) — Source downscale threshold (1500×1500 recommended)"
+  - "Item #1 (WS-184, B) — Domain-specific OOM error copy"
+
+decisions_ratified:
+  d1_fsm_rewrite: "Full FSM rewrite of onAccept (RATIFIED 2026-05-12 in WS-184 YAML). States: idle → cropping → saving → done | error. Named transitions; ~50 LOC vs current ~20 LOC. All 5 bug variants land on the same fix shape."
+  d2_telemetry: "Ship dev-mode transition telemetry now (RATIFIED 2026-05-12). Each transition logs in development. Generic error state shows underlying error.message verbatim; first live-table observation of Bug D drives one-line copy update mapping the failure class to domain-specific message. Iterative."
+  d3_ship_without_repro: "Ship FSM + telemetry without owner-provided Bug D repro (RATIFIED 2026-05-12). FSM makes silent-failure unrepresentable; telemetry surfaces the path on next observation."
+
+composition_notes: |
+  Anchor: WS-184 (P=22, M, plan-first) — highest founder-driven backlog item
+  that fits within the 2-session cap.
+
+  Single-item sprint by effort math: WS-184 = M (~1.5 sessions). No
+  S-effort items exist in backlog. Bundling with WS-187 (M, photo-primary
+  direction change) would push to ~3 sessions and over cap. WS-187 also
+  depends on WS-184's working capture path per its `enables` field, so
+  sequential is correct anyway.
+
+  Soft-blocked / not anchored this sprint:
+    - WS-189 (P=24 L) — seat-autoselector overhaul; L effort blows 2-session
+      cap. Needs decomposition or strategic ceremony.
+    - WS-188 (P=18 L) — persistence audit; L effort, same constraint.
+      Aligns with Refactor Sprint Item 4-6 territory.
+    - WS-027/030/031/032/033 (P=22 each, soft-blocked × 0.25 → 5.5):
+      legal scoping (Q7) + MPMF Gate 4 prereq not ticketed.
+    - WS-036 (structural blocked_by WS-031): paywall test depends on
+      paywall component which is itself soft-blocked.
+
+  Source-class damping: none. WS-184 source = conversation/user_request
+  (founder-driven). Founder-driven classes are never damped.
+
+  Fleet rotation: N/A (product-focused codebase, no fleet/repo-goal program).
+
+items:
+  - id: "WS-184"
+    title: "Camera capture — accept-button failure modes (Bugs A-E) + memory-error UX + FSM rewrite of onAccept"
+    mode: plan-first
+    effort: M
+    program: design
+    category: player-identification
+    priority_score: 22.0
+    status: done
+    decision_flags:
+      - "Source downscale threshold: 1500×1500 (recommended) — owner ratification pending"
+      - "Domain-specific OOM error copy — owner ratification pending"
+    notes: |
+      Three decisions ratified upfront (in WS-184 YAML, 2026-05-12):
+        - Full FSM rewrite of onAccept (idle → cropping → saving → done | error)
+        - Dev-mode transition telemetry on every transition
+        - Ship without Bug D repro (FSM makes silent-fail unrepresentable;
+          telemetry will surface the path on next live observation)
+
+      Two tactical decisions remain for owner ratification at plan-mode:
+        - Source downscale threshold (1500×1500 recommended)
+        - Domain-specific OOM error copy steering to upload path
+
+      Implementation plan (validated at plan-mode):
+        1. Author FSM in src/components/views/PlayerEditorView/CameraCaptureModal.jsx
+           Replace 20-line onAccept with explicit reducer (idle/cropping/saving/done/error)
+        2. Source-downscale in src/utils/playerMatching/generateCroppedBlob.js
+           Add downscale-to-1500×1500 (or owner-chosen) before canvas allocation
+        3. Bug B fix: success transition fires onSaved + onClose + setIsSaving(false)
+        4. Bug C fix: accept button DISABLED until croppedAreaPixels is set
+           (visible disabled state replaces silent early-return)
+        5. Bug D investigation: dev-mode telemetry on every transition surfaces
+           the failure path on next observation
+        6. Bug E fix: trace onSaved → PlayerEditorView → player record reload →
+           IdentityAvatar render path. Add code-comment documenting the chain.
+        7. Tests: 5 onAccept scenarios + Playwright smoke at 1600×720
+        8. Update src/components/views/PlayerEditorView/__tests__/CameraCaptureModal.test.jsx

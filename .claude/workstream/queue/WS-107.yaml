@@ -2,10 +2,73 @@ id: "WS-107"
 title: "staleContext dual-writer oscillation"
 legacy_id: "RT-83"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-09-next"
+claimed_at: "2026-05-09T02:35:00Z"
+completed_at: "2026-05-09T03:32:43Z"
+status_note: |
+  RESOLVED 2026-05-09 SPR-057. Plan-mode investigation surfaced an
+  analysis correction: the AC's "consolidate to single owner" framing
+  initially read as 2 viable shapes (push-driven vs time-driven), but
+  push-driven-only doesn't actually work — the 60s stale threshold is
+  time-driven and pushes can stop arriving at any moment. Only viable
+  single-owner is tick-driven, with a missing 'clear-stale' branch
+  added.
+
+  Fix: extracted decision logic to new pure helper
+  `ignition-poker-tracker/shared/stale-context-tick.js`
+  (`evaluateStaleContext(now, ctx, isCurrentlyStale)` returns
+  `{action, renderTag} | null`). Three branches preserve original
+  60s/120s thresholds (full-clear, set-stale) and add the new
+  clear-stale branch (age <= 60s + currently stale → clear; handles
+  push-restores-freshness without a separate writer in
+  handleLiveContextPush).
+
+  Refactored `_staleContextTick` in side-panel.js to consume the
+  helper via switch-on-action. Deleted the redundant
+  `coordinator.set('staleContext', false)` at side-panel.js:547
+  inside `handleLiveContextPush`. Three direct `coordinator.set('staleContext'`
+  writes remain in side-panel.js, all inside `_staleContextTick`
+  (full-clear, set-stale, clear-stale).
+
+  Trade-off accepted: up to 10s lag between fresh-push-arrival and
+  stale-badge-clearing (vs instantaneous before). Acceptable because
+  user is between hands during stale period; not blocked.
+
+  Tests:
+    - shared/__tests__/stale-context-tick.test.js (20 unit tests
+      covering full-clear / set-stale / clear-stale / 7 no-op cases /
+      4 boundary cases / full-lifecycle integration scenario)
+    - side-panel/__tests__/stale-context-writer-discipline.test.js
+      (2 baseline-lock tests: side-panel.js has exactly 3 staleContext
+      writes; handleLiveContextPush body has zero direct staleContext
+      writes — extracted via brace-matched function-body slice)
+
+  Vital signs:
+    - Extension tests in isolation: 22/22 (4ms unit + 4ms discipline)
+    - Full extension suite: 2301/2301 (+22 net vs SPR-054 baseline 2279,
+      zero regressions)
+    - Extension build: clean
+    - Full smart-test-runner: 10291/10311 (20 skipped, 0 failed; same
+      as SPR-055 baseline, zero app regressions)
+    - App build: clean (7.50s)
+
+  Files:
+    - ignition-poker-tracker/shared/stale-context-tick.js (new, 65 LoC)
+    - ignition-poker-tracker/shared/__tests__/stale-context-tick.test.js (new, 130 LoC)
+    - ignition-poker-tracker/side-panel/__tests__/stale-context-writer-discipline.test.js (new, 88 LoC)
+    - ignition-poker-tracker/side-panel/side-panel.js (3 sites: import added,
+      handleLiveContextPush body trimmed -1 line, _staleContextTick refactored
+      to switch-on-helper-decision)
+
+  Owner verification (real-world, NOT covered by unit tests):
+    Open the extension in steady-state operation; trigger stale by leaving
+    the tab idle ~70s. Stale badge should appear (set-stale branch). When
+    a fresh live_context push arrives, the stale badge clears within ~10s
+    (clear-stale branch on next tick). Full clear at ~120s closes the panel
+    state entirely (currentLiveContext=null). The dual-writer oscillation
+    is structurally impossible because handleLiveContextPush no longer
+    writes staleContext.
 priority_score: 15.0
 priority_label: "P2"
 category: "sidebar-recurrence"
@@ -21,7 +84,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-057"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

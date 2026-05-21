@@ -479,3 +479,41 @@ src/
 **Context:** WS-002 Sprint A1 (commit f3cdb89) + Sprint A2 (commit 9c37a3b). Closes 9 of the 14 `spec_gap` rows in `actionInvariants.fixture.js` documented at `.claude/failures/TABLEVIEW_INVARIANT_GAP.md` line 100+. Sets a precedent for any future "forced posted action" (e.g., dead-money blind, all-in-ante variant) to be modeled as additional primitives rather than parallel state fields.
 
 ---
+
+## DEC-015: IDB migration registry shape — JS module over YAML manifest
+
+**Date:** 2026-05-11 | **Status:** Accepted | **Detected:** explicit (Refactor Sprint Item 3 plan-mode)
+
+**Decision:** Per-version IDB migration metadata lives in `src/utils/persistence/migrationRegistry.js` as an ordered array of `MigrationRegistryEntry` objects, not as a YAML manifest at `.claude/context/idb-registry.yaml` or similar. Three derived helpers ship in the same module: `getStoreOwner(name)`, `getVersionsForStore(name)`, `getStoresAtVersion(version)`.
+
+**Reasoning:** Colocates the registry with the runtime it describes (`migrations.js` imports it; tests import it directly; CI gate reads the same file). Matches existing repo conventions for inventories — `src/utils/printableRefresher/writers.js` (set-based field ownership), `src/utils/printableRefresher/cardRegistry.js` (Vite glob barrel) — none of which live in YAML. No precedent for YAML inside `src/`. CWOS-native YAML registries (engines, programs) live in `.claude/workstream/` because they describe meta-system state, not runtime data. Trade-off: YAML would be a touch more human-scannable in PRs, but the registry is dense structured data that benefits from JSDoc typedefs + autocomplete more than from YAML's whitespace clarity.
+
+**Context:** Refactor Sprint Item 3 (2026-05-11). Resolves SYSTEM_MODEL.md §11 TD-16. Owner ratified via AskUserQuestion in plan-mode. See plan file `~/.claude/plans/precious-leaping-orbit.md` for full decision matrix.
+
+---
+
+## DEC-016: Per-store ownership inline in migration registry, not separate STORE_OWNERS map
+
+**Date:** 2026-05-11 | **Status:** Accepted | **Detected:** explicit (Refactor Sprint Item 3 plan-mode)
+
+**Decision:** A store's owner ({program, project, projectRef?}) lives on the registry entry that first added the store (the entry whose `storesAdded` array contains that store name). The helper `getStoreOwner(storeName)` walks the registry to answer ownership queries. There is no separate `STORE_OWNERS` constant in `database.js` or elsewhere. The 7 inline ownership comment blocks in `database.js` lines 64–110 are now redundant (deferred cleanup tracked as a follow-up).
+
+**Reasoning:** Single source of truth. Ownership and migration history can never drift apart because both are properties of the same entry — you cannot add a new store without simultaneously declaring its owner. A separate STORE_OWNERS map would require two edits per new store, with no enforcement that they agree. The closest contemporary precedent is the PRF `writers.js` model (writer registration colocated with the function, not a separate registry table); applying the same shape here. Trade-off: cross-store ownership queries are O(n) walks instead of O(1) map lookups, but n=23 today and forecast n ≤ 50 over the next 12 months — irrelevant cost.
+
+**Context:** Refactor Sprint Item 3 (2026-05-11). Companion to DEC-015. Owner ratified via AskUserQuestion in plan-mode.
+
+---
+
+## DEC-017: Additive-only IDB migration invariant enforced by BOTH unit test + CI grep gate
+
+**Date:** 2026-05-11 | **Status:** Accepted | **Detected:** explicit (Refactor Sprint Item 3 plan-mode)
+
+**Decision:** The "no IDB migration may remove a store" invariant is enforced by two independent mechanisms running on every test invocation:
+1. **Unit test** at `src/utils/persistence/__tests__/migrationRegistry.test.js` asserts the semantic invariant at the registry-data level (every entry's `storesRemoved` is `[]`; cumulative store set is monotonically non-decreasing across versions).
+2. **CI grep gate** at `scripts/check-idb-additive.sh`, wired as a pre-test gate in `scripts/smart-test-runner.sh`, asserts the source-code primitive (forbids `deleteObjectStore` / `deleteIndex` calls in `migrations.js`).
+
+**Reasoning:** Each mechanism catches a different failure mode. The unit test catches a contributor who removes a store from `storesAdded` (or sets `storesRemoved`) but forgets the destructive API call. The CI grep gate catches a contributor who slips a `deleteObjectStore` call into a future migration without touching the registry at all. Either alone would have a blind spot. ~80 LOC total cost across both; small enough to ship both without ceremony. Both mechanisms have been trip-tested by injecting a violation and confirming the failure mode. Trade-off rejected: pure semantic test only — would miss the orthogonal source-code failure case.
+
+**Context:** Refactor Sprint Item 3 (2026-05-11). The same pattern is used in `scripts/check-refresher-writers.sh` (PRF writer-registry I-WR-1 / I-WR-5 enforcement), though that gate is currently orphaned (not wired into the test runner) — flagged as separate follow-up.
+
+---

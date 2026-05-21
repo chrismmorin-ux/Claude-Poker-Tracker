@@ -1,0 +1,72 @@
+id: "WS-198"
+title: "Phase-0 engineering — hands ↔ upper-surface-node-ID cross-reference"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 12.0
+priority_label: "P3"
+category: "pre-session-drill"
+capability: "core"
+program: "engineering"
+description: |
+  Phase-0 engineering prerequisite for PSD's DS-57 (recency-weighted drill
+  selection from recent leaks). Surfaced in Gate 1 Discovery 3 and
+  reaffirmed by Gate 2 Stage D-P1.
+
+  Today: docs/upper-surface/ has 15 reasoning artifacts; each is keyed by
+  a node-ID (e.g., "btn-vs-bb-3bp-ip-wet-t96-flop_root"). The IndexedDB
+  `hands` store records actions per hand but has NO cross-reference to
+  upper-surface node-IDs. DS-57's recency-weighting algorithm needs to
+  answer "which artifacts did the user's last N hands pass through and
+  fail / succeed at?"
+
+  Two schema decisions absorbed into this ticket (or split into a
+  sub-ADR if owner prefers):
+    - **Schema-write**: tag each new hand at write-time with matching
+      node-IDs. O(node-IDs × matching-cost) on hand write; cheap query.
+      Historical hands need backfill migration OR recency-weighting is
+      forward-only.
+    - **Query-time match**: no schema change; cross-reference at drill
+      open. Zero migration; higher query cost (~15 node-matchers × ~last-
+      session N-hand sample).
+
+  Estimated 200-300 LOC per Gate 1. Includes:
+    - node-matching logic (input: hand record; output: list of matching
+      node-IDs with confidence/strength)
+    - aggregate query (input: time window + persona context; output:
+      ranked node-ID list with hit-count and recency)
+    - tests (unit on matcher, integration on aggregate query)
+    - IDB schema migration if schema-write path chosen
+
+  Does NOT block Gate 4 design surface (WS-199). Does block PSD's actual
+  recency-weighted selection function shipping with v1.
+accept_criteria:
+  - "Schema decision (schema-write vs query-time) made, ADR'd if owner prefers"
+  - "Node-matching logic shipped with unit tests covering each artifact"
+  - "Aggregate query shipped with integration tests"
+  - "IDB schema migration (if applicable) reversible + tested"
+  - "Cross-domain grep clean (pokerCore / rangeEngine / shapeLanguage / exploitEngine)"
+effort: "M"
+files_involved:
+  - "src/utils/upperSurface/nodeMatcher.js (NEW)"
+  - "src/utils/upperSurface/recencyQuery.js (NEW)"
+  - "src/utils/upperSurface/__tests__/ (NEW)"
+  - "src/utils/persistence/handsStorage.js (potentially modified if schema-write)"
+  - "src/utils/persistence/idbSchema.js (modified if schema-write)"
+blocked_by: []
+blocked_by_note: "Pending WS-199 (Gate 4 surface spec) close-out — surface spec confirms the recency-query API shape DS-57 needs. Engineering can start sooner on the node-matcher; aggregate query API freezes after WS-199."
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Schema-write vs query-time strategy"
+status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Source: 2026-05-19-blindspot-pre-session-drill.md Stage D-P1 + Gate 1 Discovery 3. P3 because it does not block Gate 4 design; promoted when WS-199 closes."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

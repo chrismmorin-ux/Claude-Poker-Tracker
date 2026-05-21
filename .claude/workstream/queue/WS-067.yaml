@@ -2,30 +2,48 @@ id: "WS-067"
 title: "Gate 4"
 legacy_id: "HRP-G4-SPEC"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-16-next"
+claimed_at: "2026-05-16T16:50:00Z"
+completed_at: "2026-05-17T10:00:00Z"
 priority_score: 15.0
 priority_label: "P2"
-category: "ready-to-start"
+category: "played-hand-review-protocol"
 capability: "core"
 program: "engineering"
 description: |
-  Gate 4 — Surface specs
+  Gate 4 — Surface specs.
+
+  Cross-project coordination (absorbed from WS-074 at SPR-072 2026-05-11):
+  HRP Gate 2 Stage D identified a shared infra opportunity with the
+  exploit-deviation project on the `AssumptionCard` ledger-row component.
+  Per the original WS-074 rule: "whichever project reaches the ledger-row
+  render first authors the component; the other consumes." Neither has
+  shipped AssumptionCard as of 2026-05-11. When this ticket authors the
+  `hand-review-modal.md` claims-ledger tab spec, the AssumptionCard
+  decision lands here OR formally defers to exploit-deviation Gate 4.
+
 accept_criteria:
   - "Update `surfaces/hand-replay-view.md` (ledger-link + modal overlay + match confidence + L-key shortcut), `surfaces/analysis-view.md` (HandBrowser flag filter + flag indicator + last-reviewed column), `surfaces/showdown-view.md` (HE-17 producer entry). Author new `surfaces/hand-review-modal.md`. Schema spec for `hand.flags[]` + `hand.reviewState`. Effort: M."
+  - "AssumptionCard ownership decision (absorbed from WS-074): the `hand-review-modal.md` claims-ledger tab spec either (a) names HRP as the authoring project + carries the component contract, OR (b) formally defers to exploit-deviation Gate 4 with a cross-reference + import-when-ready note. No-decision is not acceptable — the coordination ticket exists because both projects need it."
 effort: "M"
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "PAUSED"
+sprint_id: "SPR-085"
+decision_flags:
+  - "AssumptionCard ownership (absorbed from WS-074) — HRP authors vs defers to exploit-deviation Gate 4"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). HRP project doc lists Phase 3 (Gate 4 Surface Specs) as 'NEXT <- CURRENT' per docs/projects/played-hand-review-protocol.project.md. HRP-E-TREE-EXPOSE shipped 2026-04-29 (commit ef81ef6) demonstrating ongoing project activity. Stale 'PAUSED' note from 2026-05-01 migration removed; Gate 4 specs (5 surfaces + schema) are the unstarted next phase. Category retitled. Claimed 2026-05-16 by SPR-085."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 327
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"
+absorbed_tickets:
+  - id: "WS-074"
+    title: "Coordinate with exploit-deviation on AssumptionCard shared component"
+    absorbed_at: "2026-05-11T02:35:00Z"
+    absorbed_by_sprint: "SPR-072"
+    reason: "NEEDS-RESCOPE follow-through from SPR-071 sweep. Coordination ticket without standalone scope; lives as a checklist line on the actual consumer (HRP Gate 4) instead of as a sprint anchor."

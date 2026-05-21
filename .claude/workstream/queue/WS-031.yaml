@@ -19,15 +19,16 @@ accept_criteria:
 effort: "M"
 files_involved: []
 blocked_by: []
+blocked_by_note: "Pending entitlement-rules child (MPMF-G5-ER, not yet ticketed in queue). PaywallGate consumes the ER policy contract; until ER ships the rules registry, this would have nothing to gate against."
 blocked_by_legacy:
   - "MPMF-G5-ER"
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by MPMF-G5-ER"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). Depends on entitlement-rules registry (MPMF-G5-ER) which is not yet ticketed. Soft-block damping (0.25× in /next) applies."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
   source_line: 176
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

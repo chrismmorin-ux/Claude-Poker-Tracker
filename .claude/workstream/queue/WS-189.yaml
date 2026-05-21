@@ -1,0 +1,211 @@
+id: "WS-189"
+title: "Seat autoselector overhaul — wrong seat picked in multiple scenarios; multi-seat selection semantics need first-principles redesign (extends poker logic)"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "session-2026-05-14-next"
+claimed_at: "2026-05-14T00:00:00Z"
+started_at: "2026-05-14T00:00:00Z"
+completed_at: "2026-05-14T08:30:00Z"
+priority_score: 24.0
+priority_label: "P1"
+category: "seat-selection"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Owner observation 2026-05-12: "The seat autoselector appears to need a lot
+  of work. I have seen many instances where it is just wrong, and the
+  combination of multi-seat makes me think this through properly. is wrong
+  or not behaving as it should. This extends the poker logic as well."
+
+  **Surface inventory:**
+  - `src/hooks/useAutoSeatSelection.js` — fires on mount, street change,
+    and card selector close. Always sets `setSelectedPlayers([firstSeat])`
+    (single-seat array). 55 lines, narrow.
+  - `src/utils/seatUtils.js` `getFirstActionSeat()` — the function that
+    decides who "first" is. Consumed by 10 files including CommandStrip
+    + useGameHandlers + useAutoSeatSelection + tests.
+  - Multi-seat selection mechanism: `setSelectedPlayers` can accept arrays;
+    autoselector always picks 1, manual user multi-tap can produce N.
+    `useGameHandlers.checkAround` / `restFold` iterate the multi-seat
+    set. No clear contract for what multi-seat selection MEANS.
+
+  **Three hypotheses for the "wrong seat" observation (need owner repro
+  to confirm which):**
+
+    H1 — getFirstActionSeat returns the wrong canonical "first."
+      Likely cases: SB-completing-into-limpers (action goes to SB, not BB);
+      straddle-on (action starts after straddler, not after BB); folded
+      seats not being skipped consistently; absent seats not skipped;
+      hand-over states (≤1 active) where firstSeat should be null but
+      isn't.
+
+    H2 — getFirstActionSeat is correct, but the autoselect FIRES at the
+      wrong moment. Race conditions on street transition (advances street
+      then autoselects before the action sequence has settled); selector-
+      close re-fire when user dismissed without changing state.
+
+    H3 — getFirstActionSeat is correct AND timing is correct, but
+      `setSelectedPlayers([firstSeat])` blows away an intentional
+      multi-seat selection the user had built up. The current
+      implementation has no concept of "user manually selected; don't
+      auto-override."
+
+  **Multi-seat semantics — RATIFIED 2026-05-12: M2 (batch-pending /
+  sequential entry).**
+
+  User-built multi-seat selection (`selectedPlayers.length > 1` from
+  manual seat-tapping) is a QUEUE, not a parallel batch. When the user
+  taps an action with N seats selected, the action records for the FIRST
+  seat in the queue (or canonically-ordered first by action order),
+  then the queue advances. Selection persists across the action; the
+  next-action seat is the next in queue.
+
+      Selection: [seat 2, seat 4, seat 7] (in canonical action order)
+      User taps Fold  → seat 2 records FOLD;  queue advances; pointer at seat 4
+      User taps Call  → seat 4 records CALL;  queue advances; pointer at seat 7
+      User taps Raise → seat 7 records RAISE; queue empty; autoselect fires
+
+  This is a behavior CHANGE from today's M1 parallel-same-action. Today's
+  `checkAround` and `restFold` iterate the selection set and dispatch the
+  same action for ALL selected seats. Under M2 that becomes wrong.
+
+  **Resolution: separate two concepts.**
+  - **User multi-seat selection** = M2 queue (user manually taps multiple
+    seats and intends to record actions one at a time).
+  - **"Rest" batch helpers** = `checkAround` / `restFold` operate on
+    REMAINING-UNACTED-SEATS, not on the user's selection. They are
+    shortcuts that say "apply this action to every seat that still owes
+    an action on this street." They do not touch `selectedPlayers`.
+
+  This separation makes the contract explicit:
+  - `selectedPlayers` is a queue of seats the user is entering actions
+    for, one at a time.
+  - "Rest" helpers are intent-typed primitive bulk operations on
+    remaining-unacted seats — they bypass the user-selection model
+    entirely.
+
+  After WS-182 ships, the rest helpers route through `recordSeatAction`
+  with `intent='match'` (for "check around") or `intent='fold'` (for
+  "fold the rest"), per-seat. The intent does the right thing per seat,
+  preserving correctness for heterogeneous states like SB-still-owes.
+
+  **"Extends the poker logic" — what owner means:**
+  - First-action seat in poker depends on: street (preflop vs postflop
+    have different ordering: under-the-gun preflop, left-of-button
+    postflop), blinds (SB owes 0.5, BB has the option preflop), straddle
+    (additional forced bet shifts UTG one seat further), all-in dead
+    seats (skip in action order but stay in pot eligibility), absent
+    seats (skip entirely), folded seats (skip for this hand), hand-over
+    (1 seat left → no action needed → autoselect null).
+  - Many of these are already covered in the ICP 47-row matrix — the
+    matrix asserts CommandStrip's button-rendering for the first-action
+    seat, which is what autoselect picks. So gaps in the matrix are gaps
+    in autoselect.
+  - getFirstActionSeat must be the SINGLE SOURCE OF TRUTH for "who acts
+    next." If it's wrong, the matrix is also wrong (or worse: the matrix
+    is right but autoselect uses a different code path).
+
+accept_criteria:
+  - "Phase 1 deliverable: development-mode telemetry on useAutoSeatSelection
+    + getFirstActionSeat. Every autoselect firing logs trigger reason,
+    current street, action sequence summary, candidate seat set, and
+    selected seat. Logs are dev-mode only (gated by DEBUG flag or
+    NODE_ENV !== 'production'). Phase 1 ships and closes; no fix yet."
+  - "Phase 2 (follow-up WS, opened post-observation): owner captures
+    ≥3 live-session wrong-selection cases with log snapshots. Each
+    captured case becomes a fix target. Phase 2 WS authored after the
+    first owner-captured observation."
+  - "Fallback escalation: if telemetry yields <2 captured cases after 2
+    live sessions, owner may pivot to hypothesis-first audit (cross-
+    reference getFirstActionSeat against the 47-row ICP matrix). Not
+    required upfront."
+  - "Multi-seat semantic — RATIFIED M2 (queue / sequential entry).
+    Surface this in `system/invariants.md` (INV-SEAT-SELECTION) and in
+    `useGameHandlers` comments at each consumer. Implementation:
+    `selectedPlayers` is sorted by canonical action order; tapping an
+    action records for the first seat and advances the queue (drops
+    the seat from selectedPlayers). Queue persists across actions until
+    empty; autoselect then fires."
+  - "Separate concept: `checkAround` / `restFold` (renamed if helpful)
+    operate on REMAINING-UNACTED-SEATS, not on `selectedPlayers`. They
+    are primitive bulk operations that dispatch `recordSeatAction(seat,
+    intent)` per-seat over the remaining-unacted set. They do NOT touch
+    user multi-seat queue state."
+  - "getFirstActionSeat audit: cross-reference its return values against
+    the 47-row ICP matrix. Any row where the matrix's 'first action seat'
+    column disagrees with `getFirstActionSeat()` for the same input
+    state is a `pinned_bug` for ICP and a fix target for this WS."
+  - "Straddle integration: confirm getFirstActionSeat correctly skips
+    past the straddler. Per `failures/TABLEVIEW_INVARIANT_GAP.md` post-
+    2026-05-06 wave, STRADDLE coverage is in the matrix at `matches`.
+    Verify autoselect reads the same predicates."
+  - "Folded + absent + all-in seat skip logic: explicit test fixture
+    that exercises each combination. Today useAutoSeatSelection trusts
+    getFirstActionSeat — fixture must exercise getFirstActionSeat with
+    each skip state explicitly."
+  - "Stop blowing away user multi-seat selections on auto re-fire. New
+    behavior: if user has set `selectedPlayers.length > 1` manually
+    (within the current street, before any action recorded), autoselect
+    does NOT override. Owner ratifies the override-vs-respect contract."
+  - "Hand-over guard: when ≤1 active seat remains, autoselect emits
+    null (and CommandStrip already hides action buttons per matrix row
+    BUG-CANDIDATE-HAND-OVER-BUTTONS — verify the path is consistent)."
+
+effort: "L"
+files_involved:
+  - "src/hooks/useAutoSeatSelection.js (potentially rewritten)"
+  - "src/utils/seatUtils.js (getFirstActionSeat — single source of truth audit)"
+  - "src/hooks/useSeatUtils.js (consumer of getFirstActionSeat)"
+  - "src/hooks/useGameHandlers.js (checkAround / restFold multi-seat consumers)"
+  - "src/components/views/TableView/CommandStrip.jsx (consumer; multi-seat dispatch)"
+  - "src/utils/__tests__/seatUtils.test.js (extend)"
+  - "src/hooks/__tests__/useAutoSeatSelection.test.js (extend)"
+  - "src/components/views/TableView/__tests__/actionInvariants.fixture.js (cross-reference; pin discrepancies as pinned_bug)"
+  - "system/invariants.md (INV-SEAT-SELECTION new invariant family)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-182 (action primitive collapse) benefits from a sound first-action-seat predicate; multi-seat batch helpers consume it"
+
+sprint_id: "SPR-077"
+
+decision_flags:
+  # RATIFIED 2026-05-12: M2 batch-pending / sequential entry. User-built
+  # multi-seat is a queue; tapping an action records for the FIRST seat
+  # in the queue and advances. Separate concept from "rest" batch helpers
+  # (checkAround / restFold) which operate on REMAINING-UNACTED-SEATS and
+  # bypass user-selection entirely.
+  # RATIFIED 2026-05-12: Telemetry-first. WS scope splits into two phases:
+  # Phase 1 (this WS) — instrument useAutoSeatSelection + getFirstActionSeat
+  #   with development-mode logging on every firing. Ship + close phase.
+  # Phase 2 (follow-up WS, created when owner captures observations) —
+  #   root-cause each observed wrong-selection case from captured logs.
+  # Hypothesis-first matrix audit remains AVAILABLE as a fallback if
+  # telemetry observations are sparse or ambiguous after ~2-3 live sessions.
+  - "Override-vs-respect for user-built multi-seat selection: under M2 this becomes binding — autoselect MUST NOT override a non-empty user-built queue. Only set selectedPlayers when current set is empty AND the user has not built a queue manually. Owner ratifies (recommendation: respect)."
+  - "Queue-advance behavior on cancel: if user cancels mid-queue (e.g., taps the same seat to remove from queue), does the queue stay intact or reset? Recommendation: stays intact (cancel only that seat); reset is via explicit clear."
+  - "Queue ordering: canonical action order (UTG → ... → BB) vs user-tap order vs explicit reorder? Recommendation: canonical action order — matches how the user thinks about who acts next."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-12 — owner: 'The seat autoselector appears to need a lot of work. I have seen many instances where it is just wrong, and the combination of multi-seat makes me think this through properly. is wrong or not behaving as it should. This extends the poker logic as well.'"
+
+created_at: "2026-05-12T00:00:00Z"
+status_note: |
+  Authored 2026-05-12 from owner session-issue extension. CLASS of bugs,
+  not a one-off — getFirstActionSeat is a load-bearing predicate consumed
+  by 10 files. Owner flagged that multi-seat semantics also need first-
+  principles thinking (M1/M2/M3 above).
+
+  Bug-fix exempt from Refactor Sprint 'no new features' charter. Cross-
+  references Invariant Coverage Program — any matrix row whose 'first
+  action seat' disagrees with getFirstActionSeat output is a pinned_bug
+  for that program too.
+
+  Couples with WS-182 (primitive-collapse): the multi-seat batch helpers
+  in useGameHandlers (checkAround / restFold) will migrate to
+  recordSeatAction in WS-182; this WS clarifies what multi-seat MEANS
+  before that migration so the new API has a sound contract.

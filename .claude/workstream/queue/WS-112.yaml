@@ -2,10 +2,54 @@ id: "WS-112"
 title: "animationend fallback safety timer"
 legacy_id: "RT-89"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-09-next"
+claimed_at: "2026-05-09T03:40:25Z"
+completed_at: "2026-05-09T03:54:03Z"
+status_note: |
+  RESOLVED 2026-05-09 SPR-058 (~14 min — matches RT-* mechanical-fix
+  cluster cadence M-tag→S-actual). Paired animationend listener +
+  300ms coordinator-scheduled safety timer at render-street-card.js's
+  street-fade transition. Without the safety timer, GPU-throttled
+  Android devices that skip animationend would leak the .fade-in
+  class indefinitely. The class removal is idempotent — both paths
+  call the same `cleanupFadeIn` named function; whichever fires first
+  wins; the second is a no-op (class already removed + listener
+  auto-removes via { once: true } + safety timer cleared on next
+  render via existing RT-50 cancel-on-rerender pattern).
+
+  Files:
+    - ignition-poker-tracker/side-panel/render-street-card.js: added
+      FADE_IN_CLEANUP_TIMER_KEY + FADE_IN_CLEANUP_MS=300 constants
+      next to TRANSITION_TIMER_KEY/HEIGHT_RELEASE_TIMER_KEY; threaded
+      clearTimer(FADE_IN_CLEANUP_TIMER_KEY) into 3 sites
+      (resetStreetCardState + top-of-render + streetChanged-branch
+      cancel-before-new-fade); replaced bare addEventListener with
+      named cleanupFadeIn callback bound to BOTH the listener
+      ({ once: true }) and the safety timer (300ms).
+    - ignition-poker-tracker/side-panel/__tests__/fade-in-safety-timer.test.js
+      (new, 6 tests): source-grep regression test pinning constant
+      declarations + scheduleTimer count (1) + clearTimer count (3) +
+      animationend listener preserved + cleanupFadeIn callback name
+      anchored. Mirrors stale-context-writer-discipline.test.js
+      pattern from SPR-057.
+
+  Vital signs:
+    - Extension tests in isolation: 6/6 (2ms)
+    - Full extension suite: 2307/2307 (+6 net vs SPR-057 baseline
+      2301; zero regressions)
+    - Extension build: clean
+    - Full smart-test-runner (app side): 10291/10311 pass (20
+      skipped, 0 failed; same as SPR-055/057 baseline)
+    - App build: clean
+
+  Owner verification (real-world):
+    Open extension on Android device (or simulate GPU-throttle via
+    Chrome DevTools "Rendering > Emulate paused/throttled"). Trigger
+    a street transition (preflop → flop). Confirm the .fade-in class
+    is removed within 300ms regardless of whether animationend fires.
+    Without the fix, throttled devices show the .fade-in class
+    persisting and visually accumulating across street transitions.
 priority_score: 8.0
 priority_label: "P3"
 category: "sidebar-recurrence"
@@ -20,7 +64,7 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-058"
 decision_flags: []
 source:
   origin: "backlog-md-migration-2026-05-01"

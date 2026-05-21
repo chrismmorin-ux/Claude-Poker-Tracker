@@ -1,0 +1,75 @@
+id: "SPR-098"
+title: "Range Lab Gate 4 (Design) — Range Lab capability section in postflop-drills surface"
+status: completed
+approved_at: "2026-05-20T14:40:00Z"
+activated_at: "2026-05-20T14:40:00Z"
+completed_at: "2026-05-20T15:00:00Z"
+
+goal: |
+  Range Lab is design-complete — the postflop-drills surface carries a full
+  Range Lab capability spec (paint UX, filters, histogram, comparison,
+  per-street evolution, validate, cross-links, mobile decision) so Phase 1-2
+  engineering (WS-056/057) can implement against it.
+
+program_focus: engineering
+program_initiative: |
+  Direct continuation of SPR-097 (Gate 3). WS-055 is the final design gate
+  for Range Lab. All 6 Gate-2 YELLOW conditions cleared: JTBDs (SPR-097),
+  ADR-007/008 (SPR-094), rangeToString + WS-205 cache + WS-206 parity
+  (SPR-094/095). WS-208 mobile-portrait deferred (non-blocking). Gate 4
+  unblocks Phase 1-2 implementation.
+
+composed_by: auto
+created_at: "2026-05-20T14:40:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T14:40:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..097
+    precedent). Manual scan: WS-055 is design-surface authoring (markdown).
+    The spec binds AP-RL-01 (per-combo narrowing, no bucket-label
+    heuristics) + INV-LSW-RL-EQUITY-PARITY — honors
+    [[feedback_first_principles_decisions]]. Range Lab is study-only, no
+    engagement/gamification surface (neutral-chrome inherited). Anti-goal
+    risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-055) — structural placement: Range Lab as a Custom range-source toggle inside ExplorerMode (per Gate 1 'expand Explorer, no new view') vs a new mode-bar tab."
+  - "Item #1 (WS-055) — partial-weight cell rendering treatment (ADR-007 explicitly defers to Gate 4): partial-fill height vs weight badge vs hatched pattern."
+
+composition_notes: |
+  Singleton Gate-4 sprint, direct downstream of SPR-097. Founder said
+  'do it' after SPR-097 close. WS-055 blocked_by WS-053/WS-054 (both done)
+  + consumes ADR-007/008 + WS-204/205. All clear.
+
+  Step 1d: domain-correctness sweep-fresh (not stale); launch non-blocking.
+  Step 1d-pre activation gate: pass. Step 1e: no auto-recs queued.
+  Fleet-rotation (3a-rotation): skipped — product repo, no fleet candidates.
+
+items:
+  - id: "WS-055"
+    title: "Range Lab Gate 4 (Design) — capability section in surfaces/postflop-drills.md"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-20T15:00:00Z"
+    decision_resolved: "Founder ratified at plan-mode: (1) Range Lab placement = Custom range-source toggle inside ExplorerMode (no new tab/view); (2) partial-weight cell rendering = partial-fill height."
+    completion_note: "Docs-only (zero src/ diff). Authored Range Lab capability section in surfaces/postflop-drills.md: Explorer Custom-mode paint UX (ADR-007 tap-toggle + long-press-weight; ADR-008 per-stroke undo + Clear-all confirm; partial-fill weight rendering; scale-aware ergonomics), state-aware primary action (E-A4), surface elements E-A5/E-A6/E-A7/E-A10, sub-capability phase split (DS-64/65 Phase 1-2; DS-66/67 Phase 3+ surface-contracted), AP-RL-01 binding (E-A11) + INV-LSW-RL-EQUITY-PARITY binding, Phase-5 cross-link contract (E-A8 unsaved-paint guard), landscape-v1 mobile decision (portrait → WS-208), Gate-5 test-coverage expectations, adjacent-surface dependency table. JTBD list + Anatomy + State block + Last-reviewed updated. range-lab.project.md → gate-4-complete (all G4 tasks ✅ + 2 decisions logged). LSW/HandReplay cross-link affordances deferred to Phase 5. All design gates done; Phases 1-2 (WS-056/057) unblocked."
+    decision_flags:
+      - "Structural placement: Explorer Custom-mode toggle vs new mode-bar tab"
+      - "Partial-weight cell rendering treatment (ADR-007 defers to Gate 4)"
+    files_involved:
+      - "docs/design/surfaces/postflop-drills.md"
+      - "docs/projects/range-lab.project.md"
+
+deferred: |
+  - WS-056 (Phase 1 implementation) + WS-057 (Phase 2) — engineering, unblocked once Gate 4 closes.
+  - WS-208 (mobile-portrait variant) — separate Gate-4 surface deliverable, P3, sequenced after Phases 1-2.

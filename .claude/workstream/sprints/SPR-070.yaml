@@ -1,0 +1,153 @@
+id: "SPR-070"
+title: "PMC Phase 5a-2 — predictedDistribution engine-query population (range-engine + exploitEngine queries into reconstruct.js) (WS-178)"
+status: completed
+approved_at: "2026-05-10T02:00:00Z"
+completed_at: "2026-05-10T13:25:00Z"
+effort_summary: |
+  M tagged → ~1 session actual (plan-first; 3 decisions ratified upfront via
+  AskUserQuestion before plan-mode per SPR-068 pattern). Net work: 1 NEW src
+  file (EngineCtxBridge.jsx ~30 LoC) + 5 modified (reconstruct.js
+  sync→async +deps +helpers, useAppState.js +ref, usePersistence.js
+  +param +async restructure, AppProviders.jsx +mount, PokerTracker.jsx
+  +prop) + 2 test files extended (+18 net tests). +33 tests authored:
+  31 reconstruct (was 16) + 18 usePersistence (was 15). Touched-files
+  100% green: reconstruct + usePersistence + predictionAuditWriter
+  69/69 in targeted run. Full suite: 10765 pass / 9 fail / 20 skip
+  (vs SPR-068 baseline 10756/0/20). 9 failures are all in PRE-EXISTING
+  working-tree-modified files (HandReplayView/PlayerFinderView/
+  PrintableRefresherView/SelfCoachView/entitlement/printableRefresher);
+  none are in WS-178 scope. Targeted re-run of gameTreeDepth2 (the only
+  exploitEngine-adjacent failure) showed 36/36 green in isolation —
+  flakes under heavy parallel load. Build clean (PWA 66 entries,
+  exploitEngine chunk 283 KB stable).
+goal: |
+  Every modeled decision-node in a recorded hand carries the model's belief —
+  range-engine queries fill villain action-points (using existing
+  rangeAccessors), exploitEngine queries fill hero action-points (stateless
+  evaluateGameTree) — closing the predicted-vs-observed gap that Phase 5a
+  intentionally left as an empty array.
+
+  Ships PMC charter §Phase 5a deferred portion: extends
+  `src/utils/predictionAudit/reconstruct.js` so `predictedDistribution[]`
+  is populated 1:1 with modeled decision-nodes in actionSequence. No new
+  engine math — read-only consumption of existing engine outputs.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct continuation of SPR-068 (Phase 5a
+  substrate ship, WS-177) and SPR-067 (range-engine Q6 update gating,
+  WS-175). WS-178 was authored at SPR-068 close-out as the explicit
+  deferred portion the substrate ticket split off (post-hoc engine
+  queries are their own design problem; substrate kept clean).
+
+  Cross-program rotation: DC anchored 6 of last 8 sprints prior to
+  SPR-068 (interleaved with design SPR-061/064/069 + eng SPR-062). DC
+  continues here because:
+    - WS-178 is the highest-priority workable item once soft-block
+      damping is applied to the P=22 MPMF cluster (WS-027/030/031/032/
+      033/036 all paused on Q7 legal + MPMF Gate 4 not yet ticketed)
+    - PMC charter explicitly names this as Phase 5a-2; gating Phase 5b
+      (render surface) requires the engine queries to land first
+    - WS-174 (Concern 2 Gate-N+ revisit) is P=8, trigger-conditioned,
+      and explicitly deferred per Gate 2 REPLACEMENT verdict
+  Rotation flagged transparently at composition.
+
+composed_by: auto
+created_at: "2026-05-10T02:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (graceful-degradation per CLAUDE.md). Manual scan: read-only
+    consumption of existing engine outputs into a per-hand telemetry
+    primitive; no engagement-pressure / no shame copy / no auto-grading;
+    AP-PMC-04 binding (no hero-grading framing) explicitly carried as
+    accept criterion #4.
+
+decisions_needed:
+  - "Item #1 — Engine-context plumbing into reconstructPredictionAudit: prop-drill from useAppState (top-down) vs read from a shared context (e.g., RangeEngineContext + ExploitEngineContext)"
+  - "Item #1 — Decision-node identification: which actionSequence entries count as 'modeled' decision-nodes — every betting action / first action per street per actor / configurable"
+  - "Item #1 — Empty-distribution policy: when range-engine returns no usable distribution (e.g., new villain with no profile), record `distribution: []` and continue / skip the entry / fall back to populationPriors baseline"
+
+items:
+  - id: "WS-178"
+    title: "PMC Phase 5a-2 — predictedDistribution engine-query population (range-engine + exploit-engine per-decision-node queries into reconstruct.js)"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: predictive-model-calibration
+    priority_score: 18.0
+    status: done
+    started_at: "2026-05-10T02:05:00Z"
+    completed_at: "2026-05-10T13:20:00Z"
+    decision_flags:
+      - "Engine-context plumbing (prop-drill vs shared context provider)"
+      - "Decision-node identification (every betting action / first action per street / configurable)"
+      - "Empty-distribution policy (record [] and continue / skip entry / populationPriors fallback)"
+    notes: |
+      Plan-first because (a) 3 decision_flags require founder ratification
+      before implementation, (b) engine-context plumbing choice ripples
+      into usePersistence wiring shape, (c) decision-node identification
+      determines the entry-count contract that tests pin.
+
+      Files (per WS-178 files_involved):
+        MODIFY:
+        - src/utils/predictionAudit/reconstruct.js (extend predictedDistribution population)
+        - src/utils/predictionAudit/__tests__/reconstruct.test.js (engine-query tests + sums-to-1.0 invariant)
+        - src/hooks/usePersistence.js (pass engine-context deps into reconstructPredictionAudit)
+        - .claude/projects/predictive-model-calibration.md (Phase 5a row update on close)
+        REUSE (no edit):
+        - src/utils/rangeEngine/rangeAccessors.js (getVillainRange, getVillainActionKey)
+        - src/utils/exploitEngine/gameTreeEvaluator.js (evaluateGameTree stateless)
+
+      Acceptance highlights from WS-178:
+        - predictedDistribution[] entry per modeled decision-node
+        - Each distribution sums to 1.0 ± epsilon (or empty if model can't evaluate)
+        - Range-engine query reuses existing accessors; exploitEngine query reuses
+          evaluateGameTree in stateless mode (no new engine math)
+        - AP-PMC-04 binding holds — predictedDistribution entries are model OUTPUT,
+          not user identity (no evRealized strip needed there)
+        - Reconstructor signature accepts engine-context deps cleanly
+        - smart-test-runner full-suite green; rangeEngine + exploitEngine subsuites
+          unaffected (read-only consumption)
+        - Charter Phase 5a row updated to reflect WS-178 close-out
+
+composition_notes: |
+  Source-class: spr-followup (parent_ws: WS-177, parent_project:
+  predictive-model-calibration). Last 3 anchors: WS-175 (spr-followup) /
+  WS-177 (spr-followup) / WS-038 (untagged backlog-md-migration) —
+  founder-driven only; no auto-rec saturation; no source-damping fired.
+
+  Fleet-anchor rotation invariant: not applicable (poker-tracker repo
+  has no fleet-health program and no distribution-surface paths
+  matching kit/MANIFEST.yaml / engines/INDEX.md / fleet/**).
+
+  Soft-block damping applied to top P=22 candidates (Step 2-prereq):
+    WS-027 (Q7 legal-scoping, founder external) → 22 × 0.25 = 5.5
+    WS-030 (Stripe integration, blocked on Q7 + MPMF Gate 4) → 5.5
+    WS-031 (PaywallGate, blocked on MPMF-G5-ER) → 5.5
+    WS-032 (BillingSettings, blocked on MPMF Gate 4 S5) → 5.5
+    WS-033 (PostHog, blocked on MPMF Gate 4 S6 + Q8) → 5.5
+    WS-036 (H-SC01 test, structurally blocked on WS-031) → 5.5
+    WS-164 (PIO G5 child E, depends on Table-Build Gate 5) → 18 × 0.25 = 4.5
+  Net: WS-178 (P=18, blocked_by_note empty) is highest workable score.
+
+  Single-anchor sprint: WS-178 is M plan-first (~1.5 sessions); standard
+  ceremony cap is 2 sessions. No clean co-located smalls in domain-
+  correctness backlog (WS-020/021/023/024/025 are exploit-anchor-library
+  tests at M each; bundling would exceed effort cap and cross-cluster).
+
+  Hygiene gaps NOT addressed this sprint (carried forward from
+  SPR-066/067/068 composition_notes):
+    - Queue-index drift: WS-105 / WS-159 / WS-135 / WS-080 historically
+      flagged status:done in YAML but status:backlog in queue-index.yaml.
+      Recommend /workstream reconcile pass at next idle moment.
+    - Launch-program soft-block hygiene FIXED since SPR-068: all 6 P=22
+      MPMF items now carry populated blocked_by_note (verified at
+      composition); damping pipeline working as designed.

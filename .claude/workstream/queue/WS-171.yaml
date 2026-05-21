@@ -1,0 +1,63 @@
+id: "WS-171"
+title: "EAL Stream D child — Session-review anchor rollup"
+type: improvement
+status: done
+claimed_by: "session-2026-05-09-next-spr-061"
+claimed_at: "2026-05-09T09:45:00Z"
+started_at: "2026-05-09T09:50:00Z"
+completed_at: "2026-05-09T11:15:00Z"
+sprint_id: "SPR-061"
+priority_score: 15.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Per-session anchor activity rollup surface — host = ReviewPanel.jsx
+  (existing live surface). Per `docs/design/surfaces/session-review-anchor-rollup.md`
+  (312-line spec authored 2026-04-24 Gate 4).
+
+  Per-session aggregation of:
+    - Anchors that fired during the session (count + summary)
+    - Anchors with new owner observations (Tier 0 captures from SPR's S10-S17)
+    - Anchors that auto-transitioned at session-close (from WS-170 evaluator)
+    - New candidates from Tier 1 clustering (Phase 2 — placeholder slot)
+
+  Reuse material:
+    - AnchorObservation* per-hand surfaces (button + modal + list + section)
+      shipped in SPR's S10-S17 — adjacent reuse for per-anchor detail
+    - librarySelectors.js — existing flat-list selectors
+    - retirementEvaluator output — read evaluator transitions per-session
+
+  AP-08 signal separation: matcher-fired vs owner-captured observations
+  are surfaced separately, never summed.
+accept_criteria:
+  - "Gate 1 entry audit (verdict likely GREEN — implementation of authored design)"
+  - "Gate 4 surface artifact UPDATE if state has shifted from 2026-04-24 spec"
+  - "AnchorRollupSection.jsx component rendered in ReviewPanel (new slot)"
+  - "Per-session aggregation selector — anchorActivityForSession(sessionId)"
+  - "Per-origin signal separation enforced at render (AP-08)"
+  - "AP-06 forbidden-pattern absence enforced"
+  - "Visual verification at 1600×720"
+  - "Zero regressions"
+effort: "M"
+files_involved:
+  - "src/components/views/HandReplayView/ReviewPanel.jsx (modify — add slot)"
+  - "src/components/views/HandReplayView/AnchorRollupSection.jsx (NEW)"
+  - "src/components/views/HandReplayView/__tests__/AnchorRollupSection.test.jsx (NEW)"
+  - "src/utils/anchorLibrary/anchorActivitySelectors.js (NEW)"
+  - "src/utils/anchorLibrary/__tests__/anchorActivitySelectors.test.js (NEW)"
+  - "docs/design/surfaces/session-review-anchor-rollup.md (likely modify — update for current state)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+decision_flags:
+  - "Rollup placement: ReviewPanel slot vs new ReviewPanel section vs SessionReviewView (broader)"
+  - "Cross-link to AutoRetireBanner — review entry from rollup vs library banner deduplication"
+  - "Tier 1 candidate-promotion placeholder — render now or wait for Phase 2 wiring"
+status_note: "Backlog — third child of WS-015 decomposition (SPR-060). Spec at session-review-anchor-rollup.md."
+source:
+  origin: "ws-015-decomposition-spr-060-2026-05-09"
+  parent_ws: "WS-015"
+created_at: "2026-05-09"
+updated_at: "2026-05-09"

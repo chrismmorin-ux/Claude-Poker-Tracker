@@ -1,0 +1,214 @@
+id: "SPR-087"
+title: "HRP Stream E spotResolver engine (Phase 4) + WS-047 hygiene"
+status: completed
+approved_at: "2026-05-17T11:30:00Z"
+completed_at: "2026-05-17T15:00:00Z"
+
+goal: |
+  The HRP spot-resolver engine ships — given any played decision, hero
+  gets back a `SpotMatch` with confidence (strong / partial / no-analog)
+  against the upper-surface + LSW corpus, unblocking the Stream U code
+  work for the hand-review-modal that landed in SPR-085's surface spec.
+
+program_focus: engineering
+program_initiative: |
+  HRP Phase 4 (`spotResolver/` engine implementation) is the explicit
+  next phase per `docs/projects/played-hand-review-protocol.project.md`
+  after SPR-085 closed Phase 3 (Gate 4 surface specs). The
+  hand-review-modal contract authored at SPR-085 consumes a `SpotMatch`
+  from a `spotResolver/` module that doesn't yet exist — without the
+  engine, the ledger-link chip can never fire strong/partial matches
+  and the modal can never open with linked artifact content.
+
+  SPOT-KEY feasibility spike (2026-04-23, verdict GREEN) already
+  designed the architecture: 7 files + ~30 golden-test corpus entries,
+  estimated 1-2 sessions. WS-193 authored inline at this /next per the
+  WS-192 / SPR-086 inline-authoring precedent.
+
+  Continuation pattern: SPR-085 specced the surface → SPR-086 wired
+  SLS B2 data through → SPR-087 builds the engine HRP needs for its
+  just-shipped surface specs. After this engine ships, the Stream U
+  chain (Phases 6-8: HandBrowser flag filter, modal component, HE-17
+  producer button) becomes implementable.
+
+composed_by: auto
+created_at: "2026-05-17T11:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-17T11:30:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-086 precedent). Manual scan: this sprint builds
+    the engine that backs an already-shipped surface spec (HRP hand-
+    review-modal from SPR-085). No engagement-pressure copy, no graded
+    surfaces, no live-surface contamination (HRP is post-session-only
+    per project doc line 30; spotResolver is a pure-math primitive
+    with no UI surface). Founder-driven via SPR-086 carry-over signal.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Corpus loading strategy: PWA boot via `import.meta.glob` (matches lessonRegistry.js pattern) vs lazy-load per query. Recommendation: PWA boot — offline corpus availability is a Stage C rule from HRP Gate 2 (Coach-review-session persona depends on it)."
+  - "Item #1 — Node-id classification source: hand-authored code (decision-tree in `nodeClassifier.js`, ~100 LoC per spike) vs data-driven (JSON corpus mapping). Recommendation: code-first — the decision tree is small enough that data-driven gives no clarity win and code is testable."
+  - "Item #1 — Match-scorer scoring weights: per-dimension weights for the 8-dim spot descriptor (position/IP-OOP/texture/stack/SPR/action/cards/hero combo). Recommendation: equal-weight baseline + golden-test corpus drives any future re-tuning (mirrors silhouettePrototypes.js calibrated-not-learned discipline per feedback_first_principles_decisions.md)."
+
+composition_notes: |
+  Two-item sprint. Anchor: WS-193 (NEW, authored inline at /next),
+  priority 18, engineering program (HRP Stream E engine). Pair:
+  WS-047 (queue-hygiene annotation), priority 15, ~S effort (5-min
+  flag update).
+
+  Effort math: WS-193 = M (1.5 sessions) + WS-047 = trivial S
+  (0.1 sessions). Total = ~1.6 sessions, within the 2-session standard
+  cap. Per SPOT-KEY spike: "1-2 sessions of focused work" for the
+  engine alone — M sizing aligns.
+
+  Inline-authoring rationale: founder heard HRP Stream E flagged in
+  SPR-086 closeout summary ('HRP Stream E ... is now the explicit
+  NEXT phase'). Did not auto-queue a ticket. At SPR-087 /next
+  composition, elevated as anchor with architecture pre-designed by
+  the 2026-04-23 SPOT-KEY spike. Authored as
+  `source: { parent_ws: WS-067, parent_spr: SPR-085, user_request: ... }`
+  to mark spr-followup class.
+
+  WS-047 hygiene rationale: recon confirmed the "Q5 differentiation
+  demo at Gate 4" prerequisite is real and unsatisfied per
+  `docs/design/surfaces/printable-refresher-card-templates.md:423`
+  ("Run the Q5 differentiation demo at Gate 4 design review ...
+  Owner decides Phase A go/no-go"). Same shape as the WS-092 hygiene
+  fix from SPR-086 — promote the prose conditional into structured
+  `blocked_by_note` field so /next damps P=15 × 0.25 = 3.75. WS-047
+  itself stays in backlog (work is still pending the demo).
+
+  Source-class damping: none. Last 3 anchors (SPR-084 untagged /
+  SPR-085 untagged / SPR-086 spr-followup) all founder-driven. WS-193
+  is spr-followup class (founder-driven). WS-047 is untagged.
+
+  Program rotation: last 4 anchors = design / design / engineering /
+  engineering (SPR-084..087 incl). With WS-193 engineering this
+  becomes 3/4 engineering. Soft concern — but the rotation tracks
+  HRP project coherence (Gate 4 specs → Stream E engine is the
+  natural sequence), not generic program-rotation drift. Acceptable.
+
+  Fleet-rotation override: skipped — no fleet/repo-goal candidate
+  exists in this product-repo backlog. (Same as SPR-082-086.)
+
+  Deferred (rationale carried from SPR-085/086):
+    - WS-188 (P=18, L): exceeds cap + Refactor-Sprint Item 4 gate on
+      Phase 2+4. 4th deferral.
+    - WS-020 / WS-023 / WS-025 (DC P=15, NEEDS-RESCOPE): rescope-first
+      pattern; dedicated rescope sprint would be valuable.
+    - WS-043 (Stream B3, SLS): would push design back to 3/5 sprints.
+      SLS B-stream is healthy; HRP catching up takes priority.
+    - WS-053 (Range Lab Gate 2) / WS-063 (Pre-Session Drill Gate 2):
+      clean ship-ready design-program Blind-Spot Roundtables. Compete
+      on coherence with WS-193; WS-193 wins on "complete what the
+      previous sprint started" grounds.
+
+  Stale-program soft warning (carried over):
+    prog-domain-correctness delta + sweep protocols overdue. Recent
+    sprints have not enforced. Clear with `/pulse run domain-correctness`.
+
+  Untracked-git state (carried over): SPR-081→086 work all still
+  uncommitted in working tree. This sprint adds the `src/utils/spotResolver/`
+  directory which extends the uncommitted cluster. No staging-hygiene
+  risk added beyond what's already present, but a commit pass at
+  session boundary would prevent future drift.
+
+items:
+  - id: "WS-193"
+    title: "HRP Stream E — src/utils/spotResolver/ engine (Phase 4 per played-hand-review-protocol.project.md)"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: played-hand-review-protocol
+    status: done
+    started_at: "2026-05-17T14:00:00Z"
+    completed_at: "2026-05-17T14:50:00Z"
+    decision_flags:
+      - "Corpus loading strategy — [RESOLVED 2026-05-17 by spike-driven recon: PWA boot via import.meta.glob. Spike line 145 ratified; matches lessonRegistry.js precedent; offline corpus availability is a Gate 2 Stage C rule.]"
+      - "Node-id classification source — [RESOLVED 2026-05-17 by recon: hand-authored code (decision-tree in nodeClassifier.js). The canonical vocabulary is small (~16 non-terminal node IDs across 8 LSW lines + 6 upper-surface artifacts); code is testable and CI catches lines.js drift.]"
+      - "Match-scorer scoring weights — [RESOLVED 2026-05-17: equal-weight baseline (calibrated). Per-dimension tolerances for sprBucket (adjacent zones get 0.5 credit) + texture ('paired' tolerates wet/dry). Thresholds STRONG=0.875 (7/8) and PARTIAL=0.625 (5/8) per plan. Calibrated, not learned, per feedback_first_principles_decisions.md.]"
+    notes: |
+      Architecture pre-designed by SPOT-KEY feasibility spike
+      (`docs/projects/played-hand-review-protocol/spot-key-spike.md`,
+      verdict GREEN 2026-04-23):
+        - 7 source files: CLAUDE.md + index + spotKeyExtractor +
+          potTypeInference + boardShorthand + nodeClassifier +
+          corpusIndex + matchScorer
+        - 30+ golden-test corpus entries
+        - ~200 LoC core + ~150 LoC tests per spike estimate
+        - Coverage targets: ~40-50% strong / ~20-30% partial /
+          ~15-25% no-analog
+        - Sole consumer is HRP hand-review-modal per SPR-085 spec
+        - Cross-domain rule: imports from `pokerCore/` only —
+          NO imports from `exploitEngine/` / `rangeEngine/` /
+          `shapeLanguage/` (decision-driving engines stay
+          downstream-only; spotResolver is a pure descriptor-matching
+          primitive)
+
+      Bindings:
+        - feedback_first_principles_decisions.md — scoring weights
+          calibrated, not learned (mirrors silhouettePrototypes.js)
+        - HRP project doc line 30 — HRP is a bridge, not a producer;
+          resolver returns artifact IDs, never reasoning
+        - HRP project doc line 32 — load-bearing invariant is
+          spot-key resolution at ~60-70% confident-or-partial coverage
+        - HRP Gate 2 Stage C rule 7 — offline corpus availability
+          (drives PWA-boot corpus loading recommendation)
+
+      Open question to resolve at plan-mode start:
+        - Verify which existing utilities to reuse vs build fresh
+          (positionUtils.POSITION_NAMES, boardTexture.analyzeBoardTexture,
+          rangeMatrix per spike's "~70% of dimensions extractable
+          with zero new code" claim)
+
+  - id: "WS-047"
+    title: "Annotate blocked_by_note on the PRF Phase A Q5-differentiation-demo prereq (queue hygiene)"
+    mode: execute
+    effort: S
+    program: design
+    category: printable-refresher
+    status: done
+    started_at: "2026-05-17T14:55:00Z"
+    completed_at: "2026-05-17T14:58:00Z"
+    decision_flags: []
+    notes_completion: |
+      Promoted Q5 differentiation-demo Gate 4 prerequisite from prose-only
+      status_note to structured blocked_by_note field in WS-047.yaml +
+      queue-index.yaml entry. WS-047 itself returned to status: backlog
+      (the Phase A authoring work is still pending the demo go/no-go;
+      only the queue-routing metadata changed). Future /next composition
+      will damp WS-047 to P=15 × 0.25 = 3.75, preventing it from
+      surfacing as a clean ship-ready candidate.
+
+      Mirrors the WS-092 hygiene pattern from SPR-086 + the same
+      pattern used at SPR-086. Pattern of "promote prose to structured
+      field" now established 2x; could be a 5-min retroactive sweep
+      across the remaining backlog if more conditional items are
+      surfaced.
+    notes: |
+      Distilled accept criterion: WS-047.yaml + queue-index.yaml entry
+      gain a `blocked_by_note` field recording the PRF Gate 4 Q5
+      differentiation-demo prerequisite (per
+      `docs/design/surfaces/printable-refresher-card-templates.md:423`
+      — "Run the Q5 differentiation demo at Gate 4 design review ...
+      Owner decides Phase A go/no-go"). Future /next composition will
+      damp WS-047 to P=15 × 0.25 = 3.75 (vs current full P=15),
+      preventing it from sneaking into the candidate set as a clean
+      ship-ready item.
+
+      Mirrors the WS-092 hygiene pattern from SPR-086: existing
+      description prose ("conditional on Gate 4 visual differentiation
+      demo vs Upswing free pack") already names the prereq accurately;
+      the annotation just promotes it into the structured field per
+      the Step 2-prereq convention.
+
+      WS-047 itself stays in `status: backlog` — the Phase A authoring
+      work is still pending the demo go/no-go. Only the queue-routing
+      metadata changes.

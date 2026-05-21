@@ -2,10 +2,10 @@ id: "WS-041"
 title: "Stream B1"
 legacy_id: "SLS-B1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-14-next"
+claimed_at: "2026-05-14T18:00:00Z"
+completed_at: "2026-05-15T14:50:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -24,12 +24,15 @@ blocked_by:
 blocked_by_legacy:
   - "SLS-D"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by SLS-D"
+sprint_id: "SPR-082"
+decision_flags:
+  - "Classifier shape — descriptor catalog entry + v1 enum values"
+  - "Lesson 1 authoring tone — opt-in test surface vs read-only framing"
+  - "HandReplay embed shape — read-only descriptor vs seed-yourself flow"
+status_note: "DONE SPR-082 2026-05-15. Shipped end-to-end: src/utils/shapeLanguage/ (gridFeatures + silhouettePrototypes + silhouetteClassifier + lessonRegistry + CLAUDE.md) — 5-prototype + compound architecture, 71 unit tests green. Lesson 1 authored at docs/projects/poker-shape-language/lessons/silhouette.md (5 prototypes + 7 drill spots). HandReplay embed: src/components/views/HandReplayView/RangeSilhouetteSection.jsx wired in ReviewPanel between HeroStateSection and VillainAnalysisSection (14 tests green). INV-SLS-CLASSIFIER-1..5 added to system/invariants.md. Session-2 verification: 73 Stream D foundation tests still green; npm run build clean; smart-test-runner shows 3 pre-existing exploitEngine timeout flakes (gameTreeDepth2) unrelated to SLS work — those pass in isolation. Session-2 reconciliation note: prior session (2026-05-14) implemented full 5-prototype + compound architecture before being interrupted; current session owner ratified accepting the shipped 5-class code rather than reverting to a smaller 3-class baseline."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 200
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

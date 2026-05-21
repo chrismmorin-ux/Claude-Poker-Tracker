@@ -1,0 +1,167 @@
+id: "SPR-085"
+title: "HRP Gate 4 surface specs + LSW soft-flag tightening"
+status: completed
+approved_at: "2026-05-16T16:50:00Z"
+completed_at: "2026-05-17T10:20:00Z"
+
+goal: |
+  Played-Hand Review Protocol gets its Gate 4 surface specs landed
+  (with the cross-project AssumptionCard ownership decision formally
+  made), and LSW external-validation logs get the two soft-flag
+  tightenings the audit identified.
+
+program_focus: design
+program_initiative: |
+  Rotation off Shape Language after 3/4 of the last 4 sprints anchored
+  on `design`/SLS. Keeps program=design but rotates to a different
+  project (Played-Hand Review Protocol) whose project doc explicitly
+  names Gate 4 Surface Specs as the next phase. The AssumptionCard
+  cross-project coordination (absorbed from WS-074) is load-bearing —
+  it blocks both HRP and exploit-deviation from authoring the
+  ledger-row component until ownership is settled.
+
+  Paired with WS-066 (LSW soft-flag tightening, documentation-only ~S
+  effort per status_note) to use the remaining cap cleanly.
+
+composed_by: auto
+created_at: "2026-05-16T16:50:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-16T16:50:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-084 precedent). Manual scan: design-spec
+    authoring + documentation cleanup — no engagement copy, no graded
+    surfaces, no live-surface contamination. Owner-driven (HRP project
+    is in active rotation; LSW soft-flag tightening promoted from
+    P=8→15 by SPR-079 ready-to-start triage with explicit owner
+    direction "documentation-only fix, no audits to re-run"). Anti-goal
+    risk: nil.
+
+decisions_needed:
+  - "Item #1 — AssumptionCard ownership (absorbed from WS-074): when authoring `hand-review-modal.md`'s claims-ledger tab spec, either (a) HRP owns the AssumptionCard component contract OR (b) HRP formally defers to exploit-deviation Gate 4 with a cross-reference + import-when-ready note. WS-067 accept criteria says 'no-decision is not acceptable.' Recommendation: defer to exploit-deviation if exploit-deviation Gate 4 is queued sooner; otherwise HRP authors."
+
+composition_notes: |
+  Two-item sprint. Anchor: WS-067 (HRP Gate 4 Surface Specs),
+  priority 15, design program (PHR project). Pair: WS-066 (LSW
+  soft-flag tightening), priority 15, engineering program.
+
+  Effort math: WS-067 = M (1.5 sessions) + WS-066 = S (0.5 sessions
+  per status_note "~S effort"; effort field says M but the actual
+  scope is two one-line documentation updates). Total = 2.0 sessions
+  at the standard cap.
+
+  Founder-surfaced alternative noted in proposal (not chosen):
+  SPR-084 data-wiring follow-up. The three B2 section components
+  shipped in SPR-084 render null today because villainAnalysis.perCombo
+  and villainAnalysis.evByFraction are not yet exposed by the analysis
+  pipeline. INV-SLS-B2-SECTION-NULL-DEGRADATION captures the contract;
+  sections light up when the data lands. Founder may pick this as an
+  override at any time; ticket is unauthored.
+
+  Deferred (rationale):
+    - WS-043 (Stream B3, SLS, P=15): would push design saturation to
+      4/5 sprints. Rotate off.
+    - WS-188 (P=18, L, Persistence + cache audit): effort exceeds cap;
+      absorbed into Refactor Sprint Item 7 with Phase 2+4 gated on
+      Refactor Item 4 caching-shape ratification.
+    - WS-020 / WS-023 / WS-025 (domain-correctness, P=15): all marked
+      NEEDS-RESCOPE in their own status_note (SPR-071 reclassification).
+      Anchoring would require front-loaded scoping; safer to leave for
+      a future rescope-then-execute pair.
+    - WS-092 (P=15, HERO_BUCKET_TYPICAL_EQUITY topPair overstatement):
+      structurally blocked on GTO Wizard / PioSOLVER access per
+      description, but lacks an annotated blocked_by_note. Small
+      queue-hygiene fix (add the note) worth doing in a follow-up.
+
+  Source-class damping: none. Last 3 anchors (SPR-082 / SPR-083 /
+  SPR-084) classify as untagged / conversation / untagged (founder-
+  driven). Zero auto-rec or engine-finding saturation.
+
+  Fleet-rotation override: skipped — poker-tracker is not the CWOS
+  HomeBase; no fleet/repo-goal candidates exist in this product-repo
+  backlog.
+
+  Stale-program soft warning (not blocking — carried from SPR-084):
+  prog-domain-correctness delta + sweep protocols remain overdue.
+  Recent sprints have not enforced. Founder can clear with
+  `/pulse run domain-correctness` when convenient.
+
+  Untracked-git state (carried from SPR-084): all SLS code +
+  HandReplayView Section additions + lesson markdowns from
+  SPR-081/082/083/084 are untracked. This sprint touches design docs
+  (HRP) + LSW logs — no overlap with the untracked SLS code, so the
+  staging-hygiene rule does not bite for this sprint specifically.
+
+items:
+  - id: "WS-067"
+    title: "HRP Gate 4 — Surface specs (hand-replay-view, analysis-view, showdown-view, hand-review-modal + schema)"
+    mode: plan-first
+    effort: M
+    program: design
+    category: played-hand-review-protocol
+    status: done
+    started_at: "2026-05-16T17:00:00Z"
+    completed_at: "2026-05-17T10:00:00Z"
+    decision_flags:
+      - "AssumptionCard ownership (absorbed from WS-074) — [RESOLVED 2026-05-17 by recon: HRP authors. Reasoning: exploit-deviation reached Phase 6 engine code without authoring a surface-spec ledger-row render; HRP's hand-review-modal.md is the first surface spec to render the ledger. Per project rule 'whichever reaches the ledger-row render first authors the component,' HRP wins. exploit-deviation Phase 7+ consumes via variant='compact'. Cross-reference note added to exploit-deviation.project.md §Coordination.]"
+    notes: |
+      Accept criteria (per WS-067.yaml):
+        - Update `docs/design/surfaces/hand-replay-view.md` (ledger-link
+          + modal overlay + match confidence + L-key shortcut)
+        - Update `docs/design/surfaces/analysis-view.md` (HandBrowser
+          flag filter + flag indicator + last-reviewed column)
+        - Update `docs/design/surfaces/showdown-view.md` (HE-17
+          producer entry)
+        - Author NEW `docs/design/surfaces/hand-review-modal.md`
+        - Schema spec for `hand.flags[]` + `hand.reviewState`
+        - AssumptionCard ownership decision (absorbed from WS-074):
+          claims-ledger tab spec MUST either name HRP as authoring
+          project + carry the component contract, OR formally defer
+          to exploit-deviation Gate 4 with cross-reference + import-
+          when-ready note. "No-decision is not acceptable."
+
+      Context:
+        - HRP project doc lists "Gate 4 Surface Specs" as 'NEXT <-
+          CURRENT' per docs/projects/played-hand-review-protocol.project.md
+        - HRP-E-TREE-EXPOSE shipped 2026-04-29 (commit ef81ef6) —
+          project is in active rotation
+        - WS-074 absorbed into WS-067 at SPR-072 (2026-05-11) — the
+          coordination ticket lives as a checklist line on this
+          actual consumer
+
+  - id: "WS-066"
+    title: "LSW soft-flag tightening (documentation-only)"
+    mode: execute
+    effort: S
+    program: engineering
+    category: lsw-v2
+    status: done
+    started_at: "2026-05-17T10:00:00Z"
+    completed_at: "2026-05-17T10:15:00Z"
+    decision_flags: []
+    notes: |
+      Accept criteria (per WS-066.yaml — distilled):
+        - Two soft flags surfaced at LSW Stage 4:
+          - flop: equity-vs-subset distinction in LSW external-validation
+          - river: stake-caveat for "25-35% bluffs"
+        - Owner direction (status_note SPR-079): documentation-only
+          fix, no re-audits
+        - Retroactive tightening of LSW-A1 + pilot upper-surface
+          artifacts (LSW A5-A8 already codify forward via 'A-with-
+          nuance' / 'A-with-stake-caveat' inline 2026-04-23)
+
+      Scope: add one-line scope-caveats to LSW external-validation
+      logs at A1 + pilot upper-surface artifact locations. No re-runs,
+      no code changes.
+
+      Files (to be located during execution):
+        - Search for LSW-A1 external-validation log / artifact
+        - Identify "pilot upper-surface" artifacts (likely under
+          `docs/projects/line-study-slice-widening/` or similar)

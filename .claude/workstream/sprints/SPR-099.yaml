@@ -1,0 +1,89 @@
+id: "SPR-099"
+title: "Range Lab Phase 1 — interactive range paint + turn/river in Explorer mode"
+status: completed
+approved_at: "2026-05-21T15:30:00Z"
+activated_at: "2026-05-21T15:30:00Z"
+completed_at: "2026-05-21T19:10:00Z"
+
+goal: |
+  Range Lab becomes usable for the first time — you can paint a custom hand
+  range, run the board out to the river, and have the painted range persist
+  for the session.
+
+program_focus: engineering
+program_initiative: |
+  First implementation sprint of the Range Lab thread. All five design gates
+  closed across SPR-093..SPR-098; SPR-098's exit note named Phase 1-2
+  (WS-056/057) as the unblocked next step. Engine foundation already shipped:
+  equity-precompute cache (WS-205) + LSW<->RL equity-parity guardrail
+  (WS-206). WS-056's only blocker (WS-055 / Gate 4) closed 2026-05-20.
+
+composed_by: auto
+created_at: "2026-05-21T15:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-21T15:30:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..098
+    precedent). Manual scan: WS-056 is a study-only interactive surface
+    (paint a range, see equity). No engagement/gamification, no grading, no
+    commerce, no dark pattern. Range Lab inherits neutral study chrome and
+    binds AP-RL-01 + INV-LSW-RL-EQUITY-PARITY. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-056) — session-persistence mechanism for the painted range: in-memory context vs sessionStorage vs IndexedDB store (affects whether the range survives a tab reload)."
+  - "Item #1 (WS-056) — BoardPicker 5-card extension: extend the existing BoardPicker to turn+river vs a Range-Lab-specific picker."
+
+composition_notes: |
+  Singleton plan-first sprint; WS-057 (Phase 2, M) excluded — it depends_on
+  WS-056 and adding it would push effort to 3.0 > standard cap 2.0.
+
+  Two of the three originally-flagged decisions are pre-ratified by SPR-098
+  plan-mode: (1) Range Lab placement = Custom range-source toggle inside
+  ExplorerMode (no new view); (2) partial-weight cell rendering = partial-fill
+  height. Interaction model ratified in ADR-007 (tap-toggle + long-press-weight)
+  + ADR-008 (per-stroke undo). Plan mode is wiring/architecture, not UX re-decision.
+
+  Prioritization: launch/monetization cluster (WS-027/030/031/032/033/036, P1=22)
+  all carry blocked_by_note (owner-gated on Q7 legal-scoping + un-authored MPMF
+  Gate 4) -> Step 2-prereq damps 22 -> 5.5, below Range Lab's 15. WS-027 explicitly
+  flagged "do not surface as autonomous candidate." Top workable candidate = WS-056.
+
+  Step 1d-pre activation gate: pass (design/domain-correctness/change-mgmt/
+  methodology/launch active). Step 1d: domain-correctness sweep-fresh 2026-05-19
+  (not stale); launch non-blocking (precedent across 98 sprints). Step 1e: no
+  auto-recs generated (kit/scripts absent; queue well-populated, programs carry
+  open items). Fleet-rotation (3a-rotation): skipped — product repo, no fleet
+  candidates. Context.md empty -> no boosts.
+
+items:
+  - id: "WS-056"
+    title: "Range Lab Phase 1 — interactive range paint + turn/river in ExplorerMode"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-21T19:10:00Z"
+    decision_resolved: "Founder ratified: (1) persistence = sessionStorage; (2) BoardPicker extended in place (3→5 cards). Mid-build founder note: paint surface must be the canonical range matrix (familiar GTO/Flopzilla look), visually distinct from dropdown pickers — honored."
+    completion_note: "New: rangeLabPersistence.js (sessionStorage save/load), useRangePaint.js (Float64Array(169) + per-stroke undo/redo + Cmd-Z, ADR-008), RangePaintGrid.jsx (canonical square-cell matrix; tap-toggle + long-press weight slider per ADR-007; partial-fill height; scale-aware; first-use hint). Edited: RangeGrid.jsx (export index helpers), BoardPicker.jsx (3→5 cards, adaptive street labels, Add/remove), ExplorerMode.jsx (Archetype|Custom toggle; controls pinned; painted range → RangeFlopBreakdown on flop with turn/river caption; restore on mount; clear-all/new confirm). 4 test files / 22 tests. Full suite 11,746 pass / 20 skipped / 0 fail; build clean (7s); Playwright 1600×720 verified all 6 paths incl. save→reload→restore. handTypeBreakdown is flop-only (board.length===3), so turn/river per-street evolution stays Phase 3+ (DS-66) — Phase 1 records+persists the full board and renders flop composition. No new equity path → AP-RL-01 + INV-LSW-RL-EQUITY-PARITY untouched."
+    decision_flags:
+      - "Painted-range session-persistence mechanism (in-memory / sessionStorage / IDB)"
+      - "BoardPicker 5-card extension vs Range-Lab-specific picker"
+    files_involved:
+      - "src/utils/postflopDrillContent/rangeLabPersistence.js"
+      - "src/components/views/PostflopDrillsView/useRangePaint.js"
+      - "src/components/views/PostflopDrillsView/RangePaintGrid.jsx"
+      - "src/components/views/PostflopDrillsView/ExplorerMode.jsx"
+      - "src/components/views/PostflopDrillsView/BoardPicker.jsx"
+      - "src/components/ui/RangeGrid.jsx"
+
+deferred: |
+  - WS-057 (Phase 2 — subrange filters + equity histogram + range comparison; Flopzilla parity) — depends_on WS-056; next sprint.
+  - WS-208 (Range Lab mobile-portrait variant) — P3, sequenced after Phases 1-2.

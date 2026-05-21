@@ -1,0 +1,127 @@
+id: "SPR-072"
+title: "Boundary contract + AssumptionCard coordination rescope (WS-079 + WS-074)"
+status: completed
+approved_at: "2026-05-11T02:00:00Z"
+completed_at: "2026-05-11T02:45:00Z"
+effort_summary: |
+  S+S as tagged → ~45 min actual. Both items execute-mode; zero plan-mode
+  decisions; zero src/ diff.
+
+  WS-079 (sidebar↔OnlineView contract doc):
+    Authored docs/design/contracts/sidebar-to-online-view.md (~180 lines).
+    Documents: 8 BRIDGE_MSG message types across both directions, 8 state-
+    ownership rows (sidebar-side IIFE vs main-app context), 8 invariants
+    binding the boundary (bridge-is-only-channel, per-surface selection,
+    PROTOCOL_VERSION hard-error, etc.), and 4 deliberate no-handoffs with
+    reasons (pinnedVillain↔selectedSeat, sessionId↔active-table, mid-hand
+    DOM, user input). Sits alongside persisted-hand-schema.md +
+    tournament-to-table.md. docs/design/contracts/README.md index + change
+    log updated.
+
+  WS-074 (AssumptionCard coordination rescope):
+    NEEDS-RESCOPE follow-through from SPR-071 sweep. Coordination ticket
+    converted from standalone sprint anchor → parallel checklist lines on
+    both consumer projects:
+      • WS-067 (HRP-G4-SPEC) — added cross-project coordination section in
+        description; new accept criterion #2: "AssumptionCard ownership
+        decision: either (a) HRP authors + carries component contract, or
+        (b) formally defers to exploit-deviation Gate 4. No-decision not
+        acceptable." absorbed_tickets[] includes WS-074.
+      • docs/projects/exploit-deviation.project.md Phase 7 — added "Cross-
+        project coordination (absorbed from WS-074)" section; new accept
+        criterion mirroring the rule from the other direction.
+    Original WS-074 rule preserved: "whichever project reaches the ledger-
+    row render first authors the component." WS-074 closed as RESCOPED.
+
+  Net: 1 new contract doc + 2 docs touched (HRP project doc absorbed via
+  WS-067 YAML; exploit-deviation project doc edited directly) + 2 ticket
+  closures (WS-079 done, WS-074 rescoped). Cross-program rotation honored:
+  last 5 anchors now DC / design / DC / engineering / engineering.
+
+goal: |
+  Continue refactor thread — author the long-deferred sidebar↔OnlineView
+  boundary contract; convert the AssumptionCard coordination ticket from a
+  sprint anchor into a checklist note on its actual consumer tickets. Closes
+  SPR-071 NEEDS-RESCOPE follow-through for WS-074 + ships the missing
+  contract doc that sits alongside persisted-hand-schema.md and
+  tournament-to-table.md.
+
+program_focus: engineering
+program_initiative: |
+  Engineering refactor continuation. SPR-071 (queue reconcile sweep) just
+  shipped; this sprint addresses NEEDS-RESCOPE followup #4 directly (WS-074
+  → checklist conversion) and clears a 10-day-old contract doc (WS-079).
+  Both items are S-effort execute-mode; no plan-mode decisions; zero engine
+  or UX surface changes.
+
+  Cross-program rotation: last 4 anchors = DC / design / DC / engineering
+  (SPR-068/069/070/071). Keeping engineering this sprint avoids DC re-
+  saturation while staying in refactor energy.
+
+composed_by: auto
+created_at: "2026-05-11T02:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    Manual scan: pure refactor/governance work; doc authoring + ticket-state
+    conversion; zero src/ diff for WS-074; one new doc for WS-079; no
+    autonomy / engagement-pressure / shame-copy surface touched.
+
+decisions_needed: []
+
+composition_notes: |
+  Deferred (unmet prereq from SPR-071 sweep):
+    - WS-027/030/031/032/033 (P=22 soft-blocked → 5.5): MPMF cluster paused
+      on Q7 legal verdict + MPMF Gate 4 surfaces.
+    - WS-036 (P=22 structurally blocked): WS-031 not done.
+    - WS-164 (P=18 soft-blocked → 4.5): PIO G5 child E paused on Table-Build
+      Gate 5.
+
+  Source-class damping: none (last 3 anchors = spr-followup ×2 + untagged ×1;
+  no auto-rec or engine-finding saturation).
+
+  Fleet rotation: N/A (no fleet/repo-goal vs internal-infra split applicable
+  in this product-focused codebase).
+
+items:
+  - id: "WS-079"
+    title: "contracts/sidebar-to-online-view.md"
+    mode: execute
+    effort: S
+    program: engineering
+    category: ready-to-start
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-11T02:05:00Z"
+    completed_at: "2026-05-11T02:30:00Z"
+    notes: |
+      Single-doc deliverable. Authors docs/design/contracts/sidebar-to-online-view.md
+      alongside persisted-hand-schema.md + tournament-to-table.md. Documents:
+      sidebar ↔ OnlineView handoff (or explicit no-handoff), when to use which
+      surface, does seat-selection feed back, post-hand review entry point.
+
+  - id: "WS-074"
+    title: "AssumptionCard coordination → checklist on WS-067 + exploit-deviation Gate 4"
+    mode: execute
+    effort: S
+    program: engineering
+    category: ready-to-start
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-11T02:30:00Z"
+    completed_at: "2026-05-11T02:45:00Z"
+    notes: |
+      NEEDS-RESCOPE follow-through from SPR-071 sweep. Convert WS-074 from
+      standalone sprint anchor into:
+        (a) a checklist line on WS-067 (HRP-G4-SPEC) — first project that
+            renders a ledger row authors AssumptionCard
+        (b) parallel note on exploit-deviation Gate 4 (if that ticket exists
+            or in the project doc)
+      Then close WS-074 with status:done + rescope_provenance pointing at
+      the new homes. Zero src/ diff.

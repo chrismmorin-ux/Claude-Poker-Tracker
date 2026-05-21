@@ -1,0 +1,94 @@
+id: "WS-199"
+title: "PSD Gate 4 — postflop-drills.md surface update for Pre-Session mode"
+type: improvement
+status: done
+claimed_by: "session-2026-05-19-next"
+claimed_at: "2026-05-19T15:50:45Z"
+completed_at: "2026-05-19T16:02:48Z"
+priority_score: 18.0
+priority_label: "P2"
+category: "pre-session-drill"
+capability: "core"
+program: "design"
+description: |
+  Pre-Session Drill (PSD) Gate 4 design deliverable. Output of SPR-090
+  Gate 2 Blind-Spot Roundtable. PSD ships as a new mode inside
+  PostflopDrillsView (not a new routed view — per Gate 1 + Drills
+  Consolidation rejection).
+
+  Surface spec content (per Gate 2 Stage E + Stage C findings):
+    - **Mode placement** inside PostflopDrillsView mode-bar (alongside
+      Drill / Explorer / Line modes).
+    - **Card layout** per WS-196 ADR (flip-card vs side-by-side).
+      Dominant tap target (E-A1); card-back skim discipline (C-A2):
+      falsifier headline → citation paragraph → anchor links.
+    - **State-aware primary actions** (E-A3): "Flip" → "Got it / Partial /
+      Missed" → "Next". No generic "Continue."
+    - **Tri-state self-grade** (E-A4) with retract until card closes;
+      no destructive binary commit.
+    - **Mood-aware SELECTION** (C-A3) — stuck-mode biases winnable spots,
+      heater-mode biases edge cases. Surface TONE stays neutral.
+      Until mood auto-detection validates (WS-201), ship user-declared
+      toggle.
+    - **Time-budget variants** 5 / 15 / 30 min: card-count adapts (3 /
+      5-7 / 10-15). 30-min depth cap (C-A4): adds count, not depth.
+    - **Phone-sleep recovery** (C-A5): missed card → not-attempted →
+      retry-later queue.
+    - **No destructive skip** (E-A2): "next" mid-prediction auto-marks
+      not-attempted.
+    - **Neutral chrome** (E-A5): no streaks / mastery scores /
+      leaderboards / tier badges / shame copy / congratulatory inflation.
+      Citation strings only.
+    - **Anchor-trace navigation** per WS-197 ADR.
+    - **SessionsView entry point** (D-P2): additive affordance to
+      surfaces/sessions-view.md.
+    - **HandReplayView cross-link** (D-P3): additive affordance to
+      surfaces/hand-replay-view.md.
+
+  Do NOT author `docs/design/surfaces/pre-session-drill.md` — rejected
+  by Gate 1 unless Drills Consolidation reverses (it has not).
+
+  Mobile-portrait variant is a SEPARATE Gate 4 ticket (WS-200) — this
+  ticket covers 1600×720 landscape v1 only (per founder D2 ratification).
+accept_criteria:
+  - "docs/design/surfaces/postflop-drills.md updated with Pre-Session mode section"
+  - "Section covers card layout, primary actions, self-grade UX, mood-aware selection, time-budget variants, phone-sleep recovery, neutral chrome, anchor-trace navigation"
+  - "docs/design/surfaces/sessions-view.md updated with PSD entry-point affordance (D-P2)"
+  - "docs/design/surfaces/hand-replay-view.md updated with PSD cross-link affordance (D-P3)"
+  - "References WS-196 (active-recall pattern ADR) + WS-197 (anchor-trace ADR) + WS-195 (Gate 3 JTBD canonicalization)"
+  - "All Stage E heuristics (E-A1..E-A6) addressed in surface text"
+  - "All Stage C adjustments (C-A1..C-A6) addressed in surface text"
+  - "No new src/ files; surface spec only"
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/postflop-drills.md (modified)"
+  - "docs/design/surfaces/sessions-view.md (modified)"
+  - "docs/design/surfaces/hand-replay-view.md (modified)"
+blocked_by:
+  - "WS-195"
+  - "WS-196"
+  - "WS-197"
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-092"
+decision_flags: []
+status_note: |
+  SHIPPED 2026-05-19 SPR-092 as singleton plan-first sprint. Zero src/ diff.
+
+  Authored:
+    - docs/design/surfaces/postflop-drills.md — new "Pre-Session mode (PSD Gate 4 extension, 2026-05-19)" section (~280 lines). Covers all Stage E heuristics (E-A1..E-A6) + Stage C adjustments (C-A1..C-A6): card layout (flip-card per ADR-005), state-aware primary actions, tri-state self-grade, mood-aware selection (mix not framing), time-budget variants (5/15/30 with depth cap on 30-min), phone-sleep recovery, neutral chrome (E-A5 + A-AP1 binding), anchor-trace navigation via in-app bundle (ADR-006), card-back content discipline, selection algorithm (recency × frequency × mood), state machine, mode entry points, adjacent surface dependencies, test-coverage expectations. Mode-bar updated to put [Pre-Session] in leftmost slot (founder ratification 2026-05-19 plan-mode). JTBD list extended (SE-01/02/03 + DS-62/DS-63). Personas extended (presession-preparer as situational primary).
+
+    - docs/design/surfaces/sessions-view.md — inline [Pre-Session Drill] button added to primary action row between [Import] and [Backup]. Persona list extended with presession-preparer (sibling of post-session-chris per Gate 3 A-R1). JTBD-SE-01 entry path documented. Key interactions list extended. Related surfaces gains postflop-drills (Pre-Session mode) cross-link. Founder ratification 2026-05-19 plan-mode: inline button (split with HandReplay overflow-menu, matching workflow asymmetry — SessionsView opens PSD; HandReplay flags spots for PSD).
+
+    - docs/design/surfaces/hand-replay-view.md — new "PSD review-mode entry-point wire" section (~110 lines). Per-step overflow menu (⋮) on ReviewPanel with [Open in HandReview…] + [Open in HRP modal] + NEW [Queue for tomorrow's PSD]. Disabled state for no-analog spots (spot-resolver returns no match). Toast with Undo. Anti-pattern + autonomy compliance (red lines #5 + #8 + A-AP1 binding inherited). Test-coverage expectations. Anatomy diagram updated. JTBDs grew (SE-02 partial — producer half of prep↔session↔review loop). Personas extended (presession-preparer review-mode-feeder). Related surfaces gains postflop-drills (Pre-Session mode).
+
+  Verified against accept_criteria — all 8 met. Zero src/ diff (Gate 4 is documentation/spec). Gate 5 implementation work tracked separately.
+
+  Unblocks: WS-200 (mobile-portrait variant), WS-198 (Phase-0 engineering — hands ↔ node-ID cross-reference; ships in parallel; DS-62 functions with frequency-only fallback pre-WS-198). PSD Gate 5 (implementation) authorable as next /next cycle composition.
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19T16:02:48Z"

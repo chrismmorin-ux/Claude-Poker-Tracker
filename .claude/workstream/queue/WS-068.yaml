@@ -6,9 +6,9 @@ status: backlog
 claimed_by: ""
 claimed_at: null
 completed_at: null
-priority_score: 15.0
-priority_label: "P2"
-category: "ready-to-start"
+priority_score: 8.0
+priority_label: "P3"
+category: "played-hand-review-protocol"
 capability: "core"
 program: "engineering"
 description: |
@@ -24,7 +24,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by HRP-G4-SPEC"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — PAUSED-INDEFINITELY disposition + category retitled (ready-to-start → played-hand-review-protocol) + P-score reset 15→8 (P2→P3). HRP project is technically active (HRP-E-TREE-EXPOSE shipped 2026-04-29) but Gate 4 surface specs (WS-067) have not been authored since 2026-04-23 Gate 3 close. Downstream of unscheduled phase; no concrete timeline. Reclaim by reopening at P=15 when WS-067 Gate 4 specs land."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

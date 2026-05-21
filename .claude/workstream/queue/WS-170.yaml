@@ -1,0 +1,75 @@
+id: "WS-170"
+title: "EAL Stream D child — Tier-3 auto-retirement banner"
+type: improvement
+status: done
+claimed_by: "session-2026-05-09-next-spr-060"
+claimed_at: "2026-05-09T06:30:00Z"
+started_at: "2026-05-09T06:30:00Z"
+completed_at: "2026-05-09T09:30:00Z"
+sprint_id: "SPR-060"
+priority_score: 18.0
+priority_label: "P2"
+category: "exploit-anchor-library"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Wire the existing pure-util retirementEvaluator.js (shipped, zero
+  callers) into endCurrentSession session-close hook. Ship the
+  AutoRetireBanner UI per `docs/design/journeys/anchor-retirement.md`
+  Variation D step 3s.
+
+  When at session-close ≥1 anchor's retirementCondition fires, the
+  evaluator transitions them through active → expiring → retired. On
+  next AnchorLibraryView open, banner surfaces:
+
+    "N anchor(s) auto-retired since you last looked. [ Review ] [ × ]"
+
+  Tap Review → filter to retired-since-dismissal. Tap Dismiss →
+  localStorage timestamp persisted; banner stays cleared on reload.
+
+  Smallest-substrate-clean-child of WS-015 decomposition (SPR-060
+  founder Q2 ratification). Mirrors WS-160 first-child pattern.
+accept_criteria:
+  - "Gate 1 entry audit at docs/design/audits/2026-05-09-entry-eal-tier3-autoretire-banner.md (verdict GREEN)"
+  - "§AutoRetireBanner slot fragment appended to docs/design/surfaces/anchor-library.md"
+  - "src/utils/anchorLibrary/autoRetireBannerCopy.js — buildAutoRetireBannerCopy({ count }) deterministic generator + AP-06 FORBIDDEN_PATTERNS reuse from retirementCopy.js"
+  - "src/components/views/AnchorLibraryView/AutoRetireBanner.jsx — banner UI + Review + Dismiss handlers + ≥44px tap targets"
+  - "src/hooks/useAnchorAutoRetire.js — orchestrator: watches sessionState.currentSession.endTime null→set transition; calls evaluateAllAnchors; dispatches ANCHOR_OVERRIDDEN with system-stamped operator (lastOverrideBy: 'system', overrideReason: 'auto-retire'); manages localStorage banner-dismissal flag"
+  - "AnchorLibraryContext wires useAnchorAutoRetire; exposes pendingBannerCount + dismissBanner via context"
+  - "AnchorLibraryView renders AutoRetireBanner between header (line 199) and filters (line 202) when pendingBannerCount > 0"
+  - "WRITERS.md registers new W-EA-3 caller site"
+  - "Banner cannot render mid-session (orchestrator triggers on endTime transition only — no render-loop firing)"
+  - "Banner does NOT render for 'expiring' transitions — only confirmed 'retired' per spec"
+  - "Owner-override durability preserved (already in evaluator)"
+  - "AP-06 forbidden patterns absent at every count value (CI-asserted via component DOM tests + validateRetirementCopy on copy generator output)"
+  - "Visual verification at 1600×720 — banner renders + Review filters + Dismiss persists across reload"
+  - "Zero regressions vs SPR-059 baseline (10338/10358); build clean"
+effort: "M"
+files_involved:
+  - "docs/design/audits/2026-05-09-entry-eal-tier3-autoretire-banner.md (NEW)"
+  - "docs/design/surfaces/anchor-library.md (modify — append §AutoRetireBanner fragment)"
+  - "docs/projects/exploit-anchor-library/WRITERS.md (modify — register new caller site)"
+  - "src/utils/anchorLibrary/autoRetireBannerCopy.js (NEW)"
+  - "src/utils/anchorLibrary/__tests__/autoRetireBannerCopy.test.js (NEW)"
+  - "src/utils/anchorLibrary/index.js (modify — export buildAutoRetireBannerCopy)"
+  - "src/components/views/AnchorLibraryView/AutoRetireBanner.jsx (NEW)"
+  - "src/components/views/AnchorLibraryView/__tests__/AutoRetireBanner.test.jsx (NEW)"
+  - "src/components/views/AnchorLibraryView/AnchorLibraryView.jsx (modify — render banner slot)"
+  - "src/contexts/AnchorLibraryContext.jsx (modify — wire orchestrator)"
+  - "src/hooks/useAnchorAutoRetire.js (NEW)"
+  - "src/hooks/__tests__/useAnchorAutoRetire.test.js (NEW)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+decision_flags: []
+decisions_locked:
+  - "First child of WS-015 decomposition: tier-3 banner (smallest, substrate-clean)"
+  - "Operator stamp variant: fork buildAutoRetirePayload to keep manual-path tests stable (not extend buildOverridePayload)"
+  - "Banner-dismissal persistence: localStorage (transient client preference; not IDB)"
+  - "Review filter behavior: status: ['retired'] + changedSince: lastBannerDismissedAt"
+status_note: "First child of WS-015 decomposition (SPR-060 plan-mode). Substrate-clean per evaluator already shipped at retirementEvaluator.js."
+source:
+  origin: "ws-015-decomposition-spr-060-2026-05-09"
+  parent_ws: "WS-015"
+created_at: "2026-05-09"
+updated_at: "2026-05-09"

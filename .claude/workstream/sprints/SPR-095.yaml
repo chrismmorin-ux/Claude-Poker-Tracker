@@ -1,0 +1,158 @@
+id: "SPR-095"
+title: "Range Lab engine Phase-0 — equity-precompute cache + LSW-RL parity invariant"
+status: completed
+approved_at: "2026-05-20T02:00:00Z"
+activated_at: "2026-05-20T00:00:00Z"
+completed_at: "2026-05-20T00:00:00Z"
+
+goal: |
+  Range Lab's per-street range evolution becomes fast enough to ship,
+  and the numbers it surfaces are provably consistent with the Line
+  Study (LSW) lessons that cross-link to it.
+
+  WS-205 adds a Float64Array per-combo equity cache computed at
+  flop-paint-finalize so turn/river narrowing is a filter+weight
+  operation (~10ms/turn-card) rather than a full per-frame recompute.
+  WS-206 locks theoretical consistency: a CI parity test asserts LSW's
+  asserted equity == RL's computed equity within tolerance, so an engine
+  change can't silently break authored drill content.
+
+program_focus: engineering
+program_initiative: |
+  Direct downstream of SPR-093 Gate 2 Blind-Spot Roundtable and the
+  explicit deferral note in SPR-094 ("WS-205 — natural anchor for a
+  focused engineering sprint next cycle; WS-206 — sequence after
+  WS-205"). This is the engineering Phase-0 batch that unblocks Range
+  Lab Phase 1+ implementation (WS-056/WS-057) and the DS-55 content-
+  validation JTBD.
+
+  Cross-program: WS-205 is engineering, WS-206 is domain-correctness
+  (Poker Theory Integrity) — the parity invariant enforces theoretical
+  consistency between two surfaces, keeping the critical program active.
+
+composed_by: auto
+created_at: "2026-05-20T02:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T02:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-094 precedent). Manual scan:
+      - WS-205 is a performance caching primitive with concrete perf
+        benchmarks and deterministic-seed invariant. Pure engineering
+        infrastructure; no user-facing copy, no graded surface.
+      - WS-206 is a correctness invariant + CI test enforcing LSW<->RL
+        equity parity. Strengthens domain-correctness doctrine.
+      - Honors [[feedback_first_principles_decisions]]: WS-206 validates
+        that per-combo equity (not bucket labels) drives both surfaces.
+      - Honors [[feedback_validation_as_quality_signal]]: WS-206 is a
+        non-blocking quality signal (parity test); magnitude of any
+        divergence drives follow-up priority.
+      - Honors [[feedback_long_term_over_transition]]: cache storage
+        decision optimizes for long-term correctness, not transition ease.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-205) — Cache storage layer: in-memory Map vs WeakMap (auto-evicting) vs IDB-persisted (survives reload)."
+  - "Item #2 (WS-206) — CI sample size: 3 random LSW nodes per run (fast) vs full ~85-node corpus walk (full coverage, slower)."
+
+composition_notes: |
+  2-item plan-first sprint anchored on Range Lab engineering Phase-0.
+
+  Anchor selection (Step 3a):
+    - Clean (non-soft-blocked) P=15 tier: WS-205 (eng), WS-020/023/025
+      (EAL DC tests), WS-205-sibling WS-206 (soft-prereq on WS-205).
+    - WS-205 wins the P=15 tie via program continuity (Range Lab is the
+      active thread, last 2 sprints) + co-location (src/utils/rangeEngine/)
+      + downstream enablement (unblocks WS-056/057/206).
+    - SPR-094 explicitly nominated WS-205 as the next focused-engineering
+      anchor.
+
+  Pair selection (Step 3b):
+    - WS-206 added as dependent: blocked_by WS-205, co-located in
+      src/utils/rangeEngine/, same SPR-093 Gate-2 follow-up parent.
+      Executes after WS-205 in-sprint (dependency order).
+
+  Effort accounting:
+    - 2 x M. Repo convention (cf. SPR-008 "M+M = ~2 sessions") treats a
+      tight co-located dependency pair as ~2 sessions; at the standard
+      cap. Protocol M=1.5 strict would cap at 1 item, but repo history
+      consistently bundles M+M dependency chains.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-092 (spr-followup), SPR-093 (untagged WS-053),
+      SPR-094 (spr-followup). No auto-rec / engine-finding saturation.
+    - Both items source = spr-followup (parent_spr=SPR-093).
+      Founder-driven, no damping.
+
+  Soft-block demotions (Step 2-prereq) — surfaced for visibility:
+    - WS-027..036 (launch/monetization, raw P=22 -> 5.5): external
+      legal-counsel scheduling + payment-processor decisions pending.
+    - WS-191 (seat autoselector Phase 2, raw P=20 -> 5.0): soft-blocked
+      on >=3 owner-captured live observations.
+    - WS-047 (PRF Phase A, raw P=15 -> 3.75): soft-blocked.
+
+  Fleet-rotation override (Step 3a-rotation): skipped — poker-tracker
+  product repo, no fleet/repo-goal candidates (same as SPR-082..094).
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (sweep cadence
+      lapsed 2026-05-15). launch never baselined.
+    - Following SPR-085..094 precedent (all proceeded with same
+      stale-DC + never-baselined launch state), composing anyway.
+      WS-206 itself is a domain-correctness deliverable, partially
+      servicing the program.
+
+  Plan-mode entry:
+    - Both items plan-first. WS-205 has a cache-storage decision flag;
+      WS-206 has a CI-sample-size decision flag. Plan WS-205 first
+      (WS-206 depends on it), present design + decision, execute, then
+      plan WS-206.
+
+items:
+  - id: "WS-205"
+    title: "Range Lab — equity-precompute caching layer at flop"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-20T00:00:00Z"
+    decision_resolved: "Cache storage = in-memory Map (founder-ratified). Equity source = reuse pokerCore exactComboEquity (new deterministic kernel, founder-ratified)."
+    completion_note: "equityCache.js (Map cache + narrow + Float64Array[1326]) + new pokerCore exactComboEquity kernel (DRY refactor of exactEnumerateEquity); INV-RL-DETERMINISM-1..3; 33 new tests green; 219 consumer tests green; build clean."
+    decision_flags:
+      - "Cache storage layer: in-memory Map vs WeakMap vs IDB-persisted"
+    files_involved:
+      - "src/utils/rangeEngine/equityCache.js (NEW — path TBD per module structure)"
+      - "src/utils/rangeEngine/__tests__/equityCache.test.js (NEW)"
+      - "system/invariants.md (modified — add INV-RL-DETERMINISM)"
+  - id: "WS-206"
+    title: "Range Lab — LSW-RL equity-parity invariant + CI test"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: domain-correctness
+    status: done
+    completed_at: "2026-05-20T00:00:00Z"
+    depends_on:
+      - "WS-205"
+    decision_resolved: "Sample size = full corpus (all eligible nodes), founder-ratified via reframe. Reframed (founder-ratified) from 'match LSW asserted equity' to engine-equity drift-pin baseline — no asserted-equity field exists in node data."
+    completion_note: "INV-LSW-RL-EQUITY-PARITY-1..3 + lswRlParity.test.js + lswRlParityBaseline.js (4 nodes pinned, 1 documented-degenerate). Caught a real content bug (impossible hero combo A♥K♦ on K♦ board) → follow-up WS-209. CI satisfied by ci.yml full-suite run. 516 pokerCore+rangeEngine tests green."
+    files_involved:
+      - "system/invariants.md (modified — added INV-LSW-RL-EQUITY-PARITY family)"
+      - "src/utils/rangeEngine/__tests__/lswRlParity.test.js (NEW)"
+      - "src/utils/rangeEngine/__tests__/lswRlParityBaseline.js (NEW)"
+
+deferred: |
+  - WS-054 (RL Gate 3 Research/JTBD, M, design) — next design-track
+    anchor after this engineering Phase-0 batch.
+  - WS-055 (RL Gate 4 surface spec, M, design) — blocked_by WS-054.
+  - WS-208 (RL mobile-portrait variant, M, design, P=3) — after Phase 1-2.
+  - WS-020/023/025 (EAL DC tests, M each) — separate domain-correctness
+    test-writing sprint.

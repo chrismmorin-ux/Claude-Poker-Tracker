@@ -1,0 +1,147 @@
+id: "SPR-073"
+title: "SLS Gate 4 — FOUNDATION SHIPPED (2-sprint split: SPR-073 + SPR-074); WS-039 done"
+status: completed
+approved_at: "2026-05-11T03:00:00Z"
+completed_at: "2026-05-11T04:00:00Z"
+effort_summary: |
+  M plan-first → ~1 session actual. 2 decisions ratified upfront via AskUserQuestion
+  (D1=split-into-two-sprints, D2=contract at docs/design/contracts/shape-mastery.md).
+  Decisions ratified at Gate 3 already covered the substance (Q1-Q7 verdicts);
+  plan-mode mainly resolved scope and contract-location.
+
+  Shipped 4 design artifacts:
+    1. docs/design/surfaces/study-home.md (~160 lines — parent cross-project
+       surface; three-intent taxonomy as routes; embed contract; red-line
+       compliance table; future embeds enumerated)
+    2. docs/design/surfaces/shape-language-study-home.md (~170 lines — SLS
+       embed; Reference/Deliberate/Discover mode bodies; full red-line
+       compliance table; cross-references)
+    3. docs/design/journeys/shape-language-enrollment.md (~170 lines — 3-step
+       journey; copy invariants; 3 variations; abort paths)
+    4. docs/design/contracts/shape-mastery.md (~270 lines — 4th cross-surface
+       contract; 8 writer actions; 4 read hooks; 9 binding invariants;
+       refused-writers list; change protocol)
+
+  Index updates:
+    - docs/design/contracts/README.md (4th entry + change log)
+    - docs/projects/poker-shape-language.project.md (Stream A row G4 → [~]
+      partial; SPR-074 closes)
+
+  Zero src/ diff (design-only).
+
+  Cross-program rotation: last 6 anchors = DC/design/DC/eng/eng/design.
+  Healthy rotation pattern preserved.
+
+  Followup: SPR-074 (future) ships:
+    • docs/design/surfaces/shape-skill-map.md (transparency screen surface)
+    • docs/design/surfaces/lesson-runner.md (drill/lesson surface)
+    • Per-surface red-line conformance test matrix
+  Gate 4 closes at SPR-074 completion; Stream A G4 [~] → [x] at that point.
+
+goal: |
+  Ship Shape Language Gate 4 design spec — bind the 8 carry-forwards from
+  Gate 3's decision memo into testable design rules. Authors the 3 user-
+  facing surfaces (`shape-language-study-home`, `shape-skill-map`,
+  `lesson-runner`), the enrollment journey, the interaction spec with red-
+  line tests, and the cross-surface `shapeMastery` contract. Unblocks the
+  whole SLS Stream B/D arc (WS-040 skill-state foundation → WS-041/042/043
+  classifiers).
+
+program_focus: design
+program_initiative: |
+  Design Program — SLS Gate 4 is the next gate after WS-038 (Gate 3) closed
+  at SPR-069 2026-05-10. Project doc lists Gate 3 + 8 carry-forwards CLOSED;
+  Gate 4 unblocked; downstream Stream B/D chain is queued.
+
+  Cross-program rotation honored after SPR-072: last 5 anchors = DC / design /
+  DC / engineering / engineering. Rotating to design breaks the engineering
+  streak before it re-saturates.
+
+composed_by: auto
+created_at: "2026-05-11T03:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    Manual scan: pure design-doc authoring on a project whose autonomy red
+    lines are well-rehearsed (Gate 2 RED → re-run GREEN binding). No engine
+    code; no UX surface code; no engagement-pressure / shame copy / mastery-
+    score rendering. AP refusals from SLS Gate 2 + the broader autonomy red-
+    line ladder will be DOM/grep-asserted as part of Gate 4's red-line tests
+    (acceptance criterion #3).
+
+decisions_needed: []
+
+decisions_ratified:
+  d1_scope_split: "SPR-073 ships FOUNDATION: parent study-home.md + SLS embed + enrollment journey + shapeMastery contract. SPR-074 (future) ships shape-skill-map.md + lesson-runner.md + per-surface red-line conformance matrix."
+  d2_contract_home: "docs/design/contracts/shape-mastery.md — 4th contract alongside persisted-hand-schema / tournament-to-table / sidebar-to-online-view."
+  d3_surface_granularity: "Pre-ratified at Q1 (gate3-decision-memo §Q1) — parent study-home.md as cross-project surface + per-project embeds. NOT consolidated."
+  d4_enrollment_gate: "Pre-ratified at Q2 + Q7 — single master toggle + skippable Q7 self-declaration seed + Q3 passive welcome-back (no notifications). NOT per-descriptor."
+  d5_red_line_enforcement: "Pre-ratified at gate3-decision-memo Pattern 3 — Gate 4 enumerates red-line checks as boolean conformance matrix per surface. Matrix authoring deferred to SPR-074."
+  d6_shape_mastery_contract: "Pre-ratified at Q4 + Q5 + Q6 + shared skillAssessment proposal — separation-of-signals invariant (I-AE-7 analog), on-read decay (Q3), mode-gated writes (Q5), polymorphic export (Q6)."
+
+composition_notes: |
+  Deferred (unmet prereq from sweep):
+    - MPMF cluster soft-blocked (Q7 legal + Gate 4 surfaces).
+    - WS-164 PIO G5 child E soft-blocked (Table-Build Gate 5).
+    - WS-146 SCF G5 catalog in_progress with abandon risk.
+
+  Source-class damping: none. Last 3 anchors = spr-followup×2 + untagged.
+  No auto-rec or engine-finding saturation.
+
+  Fleet rotation: N/A (product-focused codebase).
+
+items:
+  - id: "WS-039"
+    title: "SLS Gate 4 — Design spec (FOUNDATION; SPR-074 closes)"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-11T03:05:00Z"
+    completed_at: "2026-05-11T04:00:00Z"
+    decision_flags:
+      - "Surface granularity (3 separate vs consolidated)"
+      - "Enrollment gate placement"
+      - "Red-line test enforcement strategy"
+      - "Cross-surface shapeMastery contract shape"
+    notes: |
+      Plan-first because (a) 4 decision_flags must be ratified before doc
+      authoring, (b) surface-granularity choice ripples into the routing +
+      Stream D skill-state contract shape, (c) red-line test strategy
+      determines CI-grep targets for the whole project.
+
+      Source materials for the design:
+        - docs/projects/poker-shape-language.project.md (charter)
+        - docs/projects/poker-shape-language/gate3-decision-memo.md (8 carry-forwards)
+        - docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding-rerun.md (Gate 2 GREEN re-run)
+        - docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding.md (Gate 2 RED original)
+        - docs/projects/poker-shape-language/roundtable.md (descriptor catalog)
+        - docs/design/LIFECYCLE.md (Gate 4 protocol)
+
+      Deliverables (per WS-039 accept_criteria):
+        1. docs/design/surfaces/shape-language-study-home.md (NEW or amend)
+        2. docs/design/surfaces/shape-skill-map.md (NEW)
+        3. docs/design/surfaces/lesson-runner.md (NEW or amend)
+        4. Enrollment journey doc (NEW — likely as a journey/ artifact)
+        5. Interaction spec with 9-red-line test mapping (inline in surfaces or sidecar)
+        6. Cross-surface shapeMastery contract — added to docs/design/contracts/
+           (would be the 4th contract sitting alongside persisted-hand-schema,
+           tournament-to-table, sidebar-to-online-view)
+
+      Verification:
+        - Each surface spec references Gate 2 Stage-C/E rules that constrain it
+        - Each red-line gets a binding test target (DOM / grep / runtime-flag)
+        - Cross-surface contract documents writers + readers + invariants
+        - 8 Gate 3 carry-forwards bound to specific surface or invariant
+        - Zero src/ diff (design-only)
+
+      Source-class: spr-followup (parent_spr: SPR-072 → SPR-069 chain via
+      WS-038 cascade). Not damped.

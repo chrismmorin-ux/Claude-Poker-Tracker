@@ -1,0 +1,94 @@
+id: "WS-194"
+title: "Engine refactor — per-combo villainStrengthBucket at showdown (Basin prereq)"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: "session-2026-05-19-next"
+claimed_at: "2026-05-19T02:39:23Z"
+started_at: "2026-05-19T02:39:23Z"
+completed_at: "2026-05-19T03:00:00Z"
+priority_score: 17.0
+priority_label: "P1"
+category: "shape-language"
+capability: "core"
+program: "domain-correctness"
+description: |
+  SPR-088 plan-mode (2026-05-18) owner correction: at the river, equity
+  per villain combo is binary (showdown is deterministic — cards are
+  known). There is no continuous variance to compute across runouts.
+  The correct primitive for river-decision math (Basin classifier,
+  future river-bluff-catch frequency, river thin-value sizing, etc.)
+  is the **showdown-outcome distribution** of villain's range, with
+  per-combo strength-tier bucketing computed against the public board
+  (not vs hero) — because the strength-tier mix exposes potential bluff
+  content.
+
+  Today `gameTreeEquity.computeComboEquityDistribution` gives `perCombo`
+  with per-combo `heroEquity` (0 / 0.5 / 1 at river). What is missing:
+  for each combo, a `villainStrengthBucket` ∈ {nuts, very-strong,
+  strong, marginal, weak-or-bluff} computed against the current board
+  alone (independent of hero's cards).
+
+  This is the prereq for Basin (SLS catalog row 6, currently deferred
+  behind SPR-088). Without it, Basin cannot classify the showdown
+  distribution shape; with it, Basin becomes a clean classifier on the
+  strength-tier histogram.
+
+  Per the memory entry `feedback_river_equity_is_showdown_outcome.md`,
+  the rule generalizes: any future river-decision exploit code or
+  descriptor should consume the strength-tier histogram, not reach for
+  a variance metric.
+
+  **Scope:**
+  1. Add a pure helper `classifyVillainCombo(combo, board)` in
+     `src/utils/pokerCore/` (or `exploitEngine/gameTreeEquity.js`) that
+     returns a `strengthBucket` ∈ the 5-tier enumeration.
+  2. Thread the bucket onto each `perCombo` entry at river street;
+     decide whether to also expose it on earlier streets for
+     consistency (flop / turn — the strength-bucket vs the current
+     board is still meaningful, just less load-bearing because future
+     cards will reshape it).
+  3. Add tests covering each 5-tier classification on representative
+     boards (paired board, flush board, monotone, straight-textured).
+  4. Update `INV-PERSIST` / cross-domain rules as appropriate.
+
+  **Out of scope for this ticket:** the Basin classifier itself
+  (downstream consumer); the Sankey rendering (SessionsView
+  Gate-4-blocked); IDB persistence of analysis output (separate
+  decision).
+
+accept_criteria:
+  - "`perCombo` entries at river decisions carry a `villainStrengthBucket` field"
+  - "Bucket value is one of the 5-tier enumeration (nuts / very-strong / strong / marginal / weak-or-bluff)"
+  - "Bucketing is computed against the public board only — does NOT depend on hero's cards"
+  - "Tests cover each 5-tier classification on a representative board"
+  - "Cross-domain grep guard remains clean (no rangeEngine / shapeLanguage imports added by this work)"
+  - "Existing perCombo consumers (EDC, Saddle, Spire+Polarization) continue to function unchanged"
+effort: "M"
+files_involved:
+  - "src/utils/pokerCore/ (new strength-bucket helper)"
+  - "src/utils/exploitEngine/gameTreeEquity.js (thread bucket onto perCombo)"
+  - "src/utils/handAnalysis/replayAnalysis.js (pass-through)"
+  - "system/invariants.md (new INV-PERSIST entries if applicable)"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "SLS-B4-BASIN (Basin classifier on showdown-outcome distribution)"
+sprint_id: "SPR-089"
+decision_flags:
+  - "Bucket boundary thresholds (calibrated, not learned — what's a 'very-strong' vs 'strong' threshold for a hand vs a board?)"
+  - "Should pre-river streets also carry the bucket field, or river-only?"
+  - "Where does the helper live — pokerCore (general-purpose) or exploitEngine (alongside computeComboEquityDistribution)?"
+status_note: |
+  AUTHORED INLINE at SPR-088 close-out (2026-05-18) per owner correction
+  during item 1 plan-mode. Memory `feedback_river_equity_is_showdown_outcome.md`
+  carries the full rationale. Companion to [[first-principles-decisions]]:
+  descriptor labels live downstream of the bucketed distribution, never
+  upstream of it. Basin (SLS catalog row 6) is the first consumer once
+  this lands.
+source:
+  parent_ws: "WS-043"
+  parent_spr: "SPR-088"
+  user_request: "2026-05-18 — owner: 'Sounds like we need to redo some engine plumbing. The equity at the river has no variance, just variation in what they down [show] down with. We go from a % against their range, to a equity that is instead % of times they turn over a hand that beats them. We should still bucket them, since that informs potential bluffs. But the equity shouldn't be a variance based number beyond range fluctuations.'"
+created_at: "2026-05-18"
+updated_at: "2026-05-18"

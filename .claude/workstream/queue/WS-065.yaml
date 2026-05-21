@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "pre-session-drill"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   Pre-Session Drill Gate 4 — Design
 accept_criteria:
@@ -20,16 +20,14 @@ files_involved: []
 blocked_by:
   - "WS-063"
   - "WS-064"
-blocked_by_legacy:
-  - "US-3"
-  - "US-4"
+blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by US-3/US-4"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). PSD Gate 4 (Design). Surface artifact `docs/design/surfaces/postflop-drills.md` updated with Pre-Session mode addition + interaction spec + mobile decision. Depends on WS-063 (Gate 2 verdict) + WS-064 (Gate 3 research). Category retitled to 'pre-session-drill'; program: engineering → design (Gate work)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 310
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

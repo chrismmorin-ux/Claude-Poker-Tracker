@@ -1,0 +1,205 @@
+id: "SPR-063"
+title: "Credible intervals expansive surface scope — PlayerAnalysisPanel + HandReplay tendency-stats sections (WS-135)"
+status: completed
+approved_at: "2026-05-09T12:15:00Z"
+completed_at: "2026-05-09T13:10:00Z"
+goal: |
+  Credible-interval bands (the ±X.X% suffix shipped in SPR-017 minimal v1)
+  expand into 2 new tendency-stats sections — PlayerAnalysisPanel and
+  HandReplay's villain analysis surface — so the analyst can see noise
+  bounds wherever villain stats are evaluated, not just on TendencyStats
+  inline rows.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — closes a v1→v2 staged-scope deferral from
+  SPR-017 (WS-116 / FIND-001). Owner staged-by note at WS-135:60-61
+  marked this as v2 follow-up. Substrate-clean: TendencyStats.jsx
+  already renders ±X.X% intervals; tendencyCalculations math layer
+  untouched. Cross-program rotation eased — last 4 anchors:
+  SPR-059 DC, SPR-060 DC, SPR-061 design, SPR-062 engineering.
+
+composed_by: auto
+created_at: "2026-05-09T12:15:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed. Manual scan:
+    domain-correctness UI surface for engine-output noise bounds. No
+    constitutional surfaces apply. Goal + title scanned for "compliance
+    over value" / "gold-plating" / "metric-as-goal" /
+    "self-aggrandizing complexity" — no matches.
+
+decisions_needed:
+  - "Item #1a — PlayerAnalysisPanel section placement (below VillainProfileModal vs above vs collapsed-by-default expand)"
+  - "Item #1b — HandReplay section host (ReviewPanel main card vs VillainAnalysisSection sub-section)"
+  - "Item #1c — Component reuse strategy (embed TendencyStats verbatim vs extract TendencyStatsCard with header/footer)"
+
+items:
+  - id: "WS-135"
+    title: "Credible intervals expansive surface scope (PlayerAnalysisPanel + HandReplay tendency-stats)"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: domain-correctness
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T12:25:00Z"
+    completed_at: "2026-05-09T13:05:00Z"
+    decision_flags:
+      - "PlayerAnalysisPanel section placement"
+      - "HandReplay section host"
+      - "Component reuse strategy (verbatim vs extract Card)"
+    notes: |
+      Plan-first per Step 3d (M effort + 3 decision_flags + UX-touching
+      multi-surface change).
+
+      Substrate confirmed clean upstream:
+        - TendencyStats.jsx — modified SPR-017 to render ±X.X% intervals
+          (vpip / pfr / threeBet / cbet / foldToCbet / foldTo3Bet); AF
+          unchanged
+        - tendencyCalculations math layer — untouched
+        - PlayerAnalysisPanel.jsx — currently does NOT render tendency
+          stats; only feeds them to game-tree advisor (lines 90-100)
+        - HandReplayView/ReviewPanel + VillainAnalysisSection — currently
+          render ranges/equity/segmentation but NO aggregate tendency stats
+        - Hide-when-narrow heuristic (n > 200) preserved for parity with
+          SPR-017
+
+      Sequencing inside this sprint:
+        1. Plan-mode: present 3 decision flags via AskUserQuestion
+        2. Once decisions ratified:
+           - Author/extract component per Q1c decision
+           - Add PlayerAnalysisPanel section per Q1a placement
+           - Add HandReplay section per Q1b placement
+        3. Component tests (rendering + AP-04 absence — no scalar score
+           rendering)
+        4. Visual verification at 1600×720
+        5. Verification (focused tests + smart-test-runner + build)
+
+      Hard rules carried from prog-domain-correctness:
+        - First-principles decision modeling preserved (no labels-as-inputs)
+        - Hide-when-narrow heuristic preserved (n > 200 → bands hidden,
+          surface noise instead of signal — established in SPR-017)
+        - Existing tendencyCalculations math layer untouched (no engine
+          changes; rendering work only)
+
+      Exit conditions:
+        - Strong: both surfaces ship + visual verification
+        - Acceptable: 1 surface ships + Gate-1 audit covering scope of
+          deferred surface; documents the cut
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (UX-touching multi-surface
+  change with 3 decision flags).
+
+  Source-class damping: last 3 completed anchors:
+    - WS-170 (SPR-060) — spr-followup
+    - WS-171 (SPR-061) — spr-followup
+    - WS-080 (SPR-062) — untagged
+  No class saturated. WS-135 has source.parent_ws → spr-followup; not
+  damped (founder-driven class).
+
+  Fleet-rotation override: not applicable (poker-tracker product repo).
+
+  Cross-program rotation rationale: last 6 anchors: 4 DC + 1 design + 1 eng.
+  Last 4 anchors broke the streak (SPR-061 design, SPR-062 eng). Returning
+  to DC for owner-flagged v2 follow-up is consistent with founder priority 1.
+
+  Alternatives passed over:
+    - WS-014 (Stream E) — soft-blocked on exploit-deviation PREDICATE_KEYS
+      coordination; effective P=3.75 after damping
+    - WS-079 (sidebar↔OnlineView contract doc) — owner-marked LATER
+    - WS-097/092 (LSW-related) — DEFERRED status_notes
+    - WS-146 (SCF leak rule) — only 1/9 catalog entries substrate-clean per
+      SPR-056 abandonment notes; restart requires care
+    - WS-029-033 launch — Q7 gated
+    - WS-169 (Calibration Dashboard) — externally reassigned to new PMC
+      program 2026-05-09; now blocked on WS-172 (PMC Phase 5a-5c infra)
+
+  Index drift carryover: queue-index.yaml stale on multiple WS items.
+  WS-169 reassignment is fresh (2026-05-09) and not yet reflected in
+  queue-index. Reconcile script not installed.
+
+exit_notes: |
+  Goal achieved. Credible-interval bands now appear on the 2 surfaces
+  that consume tendency stats but didn't render the noise bounds:
+  PlayerAnalysisPanel (collapsed-by-default disclosure) + HandReplay
+  ReviewPanel (open card peer to VillainAnalysisSection). The hide-
+  when-narrow heuristic (n > 200) is preserved automatically by the
+  internal formatBandSuffix in TendencyStats.
+
+  Effort actuals:
+    - Substrate-map fork: ~2 min
+    - Plan-mode + 3 founder decisions (AskUserQuestion): ~5 min
+    - Gate 1 audit doc (GREEN): ~10 min
+    - TendencyStats.test.jsx backfill (16 tests): ~15 min (passed first run)
+    - TendencyStatsCard.jsx + 18 tests: ~20 min (passed first run)
+    - PlayerAnalysisPanel wiring (3-line addition): ~3 min
+    - ReviewPanel wiring (villainTendency memo + card render): ~5 min
+    - Verification (focused tests + build + smart-test-runner): ~10 min
+    - Total: ~70 min real, well within M-effort 2-session budget
+
+  Net code: +1 source file (TendencyStatsCard.jsx, ~95 LoC) + 2 modified
+  surface files (PlayerAnalysisPanel + ReviewPanel, ~25 LoC delta) +
+  1 design artifact (Gate 1 audit doc).
+  Net tests: +34 (16 TendencyStats backfill + 18 TendencyStatsCard).
+
+  Test verification:
+    - 34/34 focused tests pass first-run after wiring
+    - Full smart-test-runner: 10563/10583 — ZERO failures (Monte-Carlo
+      flakes from prior sprints cleared this run; matches SPR-061 zero-
+      failure pattern)
+    - Net diff vs SPR-062 baseline: 10549 → 10583 = +34 (matches expected)
+    - npm run build clean (PWA 65 entries 2195 KiB)
+
+  Founder-ratified design decisions (AskUserQuestion at sprint start):
+    Q1a PlayerAnalysisPanel placement = Collapsed-by-default disclosure
+    Q1b HandReplay host = ReviewPanel main card peer to VillainAnalysisSection
+    Q1c Component reuse = Extract TendencyStatsCard wrapper
+
+  Critical AP-04 enforcement: TendencyStats.test.jsx + TendencyStatsCard.test.jsx
+  both DOM-assert no element matches /score|grade|rank|overall/i tokens.
+  Pinned at every render branch (open card / collapsed disclosure).
+
+  Hard rules verified by tests:
+    - ±X.X% bands appear at sampleSize ≤ 200, hidden at sampleSize > 200
+      (SPR-017 convention preserved automatically via internal formatBandSuffix)
+    - AF row never has a band (SPR-017 convention)
+    - MIN_DISPLAY_SAMPLE (10) gate flows through to wrapper (returns null)
+    - Style badge gates at MIN_STYLE_SAMPLE (20)
+    - Disclosure tap target ≥44×44 (WCAG SC 2.5.5; doctrine R-1.12)
+    - Singular/plural noun in footer caption ("1 hand" / "N hands")
+    - aria-expanded toggles correctly on disclosure tap
+
+  Out-of-scope finding (recorded for follow-up):
+    - PlayerAnalysisPanel.jsx:462 WeaknessesSection references undefined
+      `playerId` per substrate-map fork. Not addressed this sprint per
+      out-of-scope clause.
+
+  Visual verification deferred (acceptable degradation per plan):
+    - Surface integration paths for both hosts. Component-level coverage
+      (TendencyStatsCard 18 tests + bare TendencyStats 16 tests) provides
+      load-bearing rendering verification. Same posture as SPR-060/061.
+
+  Cross-program rotation pattern: domain-correctness has now anchored 5 of
+  last 6 sprints (SPR-055/059/060/063 + SPR-058 was eng + SPR-061 design +
+  SPR-062 was eng). Re-saturated. Recommend rotation for next sprint:
+    - WS-079 (engineering, doc-only) — sidebar↔OnlineView contract; light
+    - WS-014 (Stream E) — soft-blocked on PREDICATE_KEYS coordination
+    - WS-029-033 (launch) — Q7 gated
+    - WS-146 (SCF leak rule) — design rotation; substrate-blocked on most
+      catalog entries per SPR-056 abandonment
+    - WS-172 (PMC Phase 5a/b/c infra) — newly-created ticket from
+      WS-169 reassignment; foundational for Calibration Dashboard
+
+  Index drift carryover: queue-index.yaml stale on multiple WS items.
+  Reconcile script not installed.
+
+last_updated: "2026-05-09T13:10:00Z"

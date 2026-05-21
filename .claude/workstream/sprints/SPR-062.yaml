@@ -1,0 +1,190 @@
+id: "SPR-062"
+title: "Verify Online session classification — extension-imported sessions surface under SV-F7 Online filter (WS-080)"
+status: completed
+approved_at: "2026-05-09T11:30:00Z"
+completed_at: "2026-05-09T12:05:00Z"
+goal: |
+  Online sessions imported via the Ignition extension are correctly
+  classified by the SessionsView Live/Online filter, so the past-sessions
+  list shows them under Online (not Live), restoring SV-F7 audit
+  compliance.
+
+program_focus: engineering
+program_initiative: |
+  Engineering Health — cross-program rotation after domain-correctness
+  anchored 4 of last 5 sprints (SPR-055/059/060/061; SPR-058 was
+  engineering). Hot-touch surface (SessionsView was modified SPR-061 to
+  wrap rows with rollup). Substrate-clean + bounded scope: source:'ignition'
+  marker is already the SV-F7 Online indicator at sessionsStorage.js:688
+  and SV-F7 filter logic is shipped at SessionsView.jsx:464-465. Only the
+  import path needs verification.
+
+composed_by: auto
+created_at: "2026-05-09T11:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo.
+    Manual scan: engineering verify-and-fix on classification field; no
+    constitutional surfaces apply (no monetization / grading /
+    engagement-pressure axes touched). Goal + title scanned for
+    "compliance over value" / "gold-plating" / "metric-as-goal" /
+    "self-aggrandizing complexity" — no matches.
+
+decisions_needed:
+  - "Item #1 (only if bug found) — Where to set source:'ignition' on extension import (handler boundary in useSessionPersistence/SyncBridge vs writer boundary in sessionsStorage)"
+
+items:
+  - id: "WS-080"
+    title: "Verify Online session classification — SV-F7 filter shows extension-imported sessions under Online"
+    legacy_id: "DCOMP-W4-A3-F11"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: ready-to-start
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T11:32:00Z"
+    completed_at: "2026-05-09T11:55:00Z"
+    decision_flags:
+      - "Where to set source:'ignition' if bug found (handler boundary vs writer boundary)"
+    notes: |
+      Plan-first per Step 3d (M effort). Likely S-actual if no fix needed
+      (verify-and-confirm path); plan-first is the structural default.
+
+      Investigation sequence:
+        1. Trace the extension-import path: SyncBridge or useSessionPersistence?
+           Find where extension-captured Ignition sessions become Session
+           records in IDB.
+        2. Check whether the import path sets source:'ignition' on the
+           Session record. Compare to sessionsStorage.js:672-688
+           createOnlineSession reference, which DOES set source:'ignition'.
+        3. If the import path is a different code path that omits source,
+           identify the cleanest insertion point.
+        4. If the bug is present:
+           - Decide insertion point via AskUserQuestion (handler boundary
+             vs writer boundary)
+           - Add source: 'ignition' to imported Session records
+           - Author regression test pinning the SV-F7 filter behavior
+        5. If the bug is NOT present (already correct):
+           - Author regression test anyway (verify-and-pin pattern;
+             mirrors WS-105 SPR-043 pattern of adding tests to lock
+             current correctness against future drift)
+           - Close out
+
+      Substrate confirmed clean upstream:
+        - source:'ignition' marker present at sessionsStorage.js:688
+        - SV-F7 filter logic shipped at SessionsView.jsx:464-465
+          (s.source === 'ignition' for Online; s.source !== 'ignition' for Live)
+        - SessionsView is hot-touch (modified SPR-061 for row-expand rollup)
+
+      Exit conditions:
+        - Strong: investigation + (fix if needed) + regression test
+        - Acceptable: investigation reveals no bug → ship verify-and-pin
+          regression test only, document finding in WS-080.yaml status_note
+
+composition_notes: |
+  Single-anchor M sprint (likely S-actual), plan-first mode (M-effort
+  default).
+
+  Source-class damping: last 3 completed anchors:
+    - WS-016 (SPR-059) — untagged
+    - WS-170 (SPR-060) — spr-followup (parent_ws: WS-015)
+    - WS-171 (SPR-061) — spr-followup (parent_ws: WS-015)
+  No class saturated. WS-080 is untagged. No damping applied.
+
+  Fleet-rotation override: not applicable (poker-tracker product repo).
+
+  Cross-program rotation rationale: domain-correctness anchored 4 of last
+  5 sprints (SPR-055/059/060/061). Engineering has 1 of last 5 (SPR-058).
+  Strong rotation pressure to engineering. WS-080 is the cleanest
+  substrate-clean engineering anchor in the queue.
+
+  Alternatives passed over:
+    - WS-014 (Stream E) — same program as last 4; soft-blocked on
+      exploit-deviation PREDICATE_KEYS coordination per yaml status_note
+    - WS-135 (credible intervals expansive) — same program as last 4
+    - WS-079 (sidebar↔OnlineView contract doc) — engineering rotation OK
+      but doc-only; pairs well with WS-080 if founder wants to bundle
+    - WS-029-033 launch — Q7 gated
+
+  Hot-touch context: SessionsView modified SPR-061 (row-expand wrapper);
+  this work is in the same surface area; warm context.
+
+exit_notes: |
+  Goal achieved with NO BUG verdict. Investigation fork (SPR-062) traced
+  both extension-import paths (file-import + live-push) and confirmed
+  they funnel through importHands → getOrCreateOnlineSession →
+  createOnlineSession → source:'ignition' at sessionsStorage.js:688.
+  SV-F7 classification was already correct.
+
+  Acceptable-degradation exit per sprint YAML: shipped verify-and-pin
+  regression coverage instead of a fix. Pattern matches WS-105 / SPR-043
+  source-grep boundary-hardening.
+
+  Effort actuals:
+    - Investigation fork (Trace extension-import path Explore): ~2 min
+    - sessionsFilter.js pure-util extract + 19 tests: ~10 min (passed first run)
+    - SessionsView refactor (4-line swap): ~1 min
+    - useSyncBridgeImportPath.js source-grep test + 5 tests: ~12 min
+      (1 regex fix after first run — Link 2 getOrCreateOnlineSession body)
+    - Verification (focused tests + build + smart-test-runner): ~12 min
+    - WS-080.yaml + SPR-062.yaml + sprint-index updates: ~3 min
+    - Total: ~40 min real, well under M-effort 1-session budget. S-actual
+      as predicted.
+
+  Net code: +2 source files (~50 LoC: sessionsFilter.js + useSyncBridgeImportPath
+  test) + 1 modified file (~4 LoC delta: SessionsView.jsx swap inline filter
+  for util import).
+  Net tests: +24 (19 sessionsFilter + 5 source-grep boundary-hardening).
+
+  Test verification:
+    - 208/208 focused tests pass (sessionsFilter + sessionsStorage +
+      sessionsView component suite + useSyncBridgeImportPath)
+    - Full smart-test-runner: 1 failure — pre-existing Monte-Carlo flake
+      (gameTreeDepth2 'returns correct shape' timing out under full-suite
+      contention; passes 4239ms in isolation under 15000ms timeout).
+      Matches WS-134 known flake pattern; NOT caused by SPR-062 changes.
+    - npm run build clean (PWA 64 entries 2193 KiB)
+
+  No founder decisions ratified — the conditional Q1 (insertion point if
+  bug found) didn't fire because no bug was found.
+
+  Hard rules verified by tests:
+    - SV-F7 filter predicate covers all 3 modes (all/live/online)
+    - Legacy sessions without source field default to Live (pin)
+    - Empty source-equality with 'ignition' (positive Online match)
+    - Non-equality (negative Live match)
+    - Frozen mode enum (cannot mutate at runtime)
+    - 4-link import chain structurally pinned:
+      Link 1: useSyncBridge.js imports getOrCreateOnlineSession
+      Link 2: importHands body calls getOrCreateOnlineSession
+      Link 3: getOrCreateOnlineSession delegates to createOnlineSession
+      Link 4: createOnlineSession assigns source:'ignition'
+      Plus: SessionsView.jsx wires SV-F7 to the marker (via util or inline)
+
+  Cross-program rotation: engineering rotation achieved (SPR-062). Last 6
+  anchors: 4 domain-correctness + 2 engineering. Engineering pressure
+  partially relieved.
+
+  Reasonable next anchors:
+    - WS-014 (domain-correctness, M, in_progress) — Stream E producer
+      wiring; closes EAL Phase 6 100% but soft-blocked on exploit-deviation
+      PREDICATE_KEYS coordination
+    - WS-079 (engineering, M, doc-only) — sidebar↔OnlineView contract doc;
+      lighter; engineering momentum
+    - WS-135 (domain-correctness, M) — credible-intervals expansive surface;
+      same program (anti-rotation)
+    - WS-029-033 launch — Q7 gated
+
+  Index drift carryover: queue-index.yaml still shows stale statuses for
+  WS-105/107/112/016/017/159/170/171; reconcile script not installed.
+  Recommend /audit refresh post-sprint (carried since SPR-060).
+
+last_updated: "2026-05-09T12:05:00Z"

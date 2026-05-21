@@ -2,10 +2,11 @@ id: "WS-043"
 title: "Stream B3"
 legacy_id: "SLS-B3"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-18-next"
+claimed_at: "2026-05-18T00:00:00Z"
+started_at: "2026-05-18T00:10:00Z"
+completed_at: "2026-05-18T01:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -22,12 +23,26 @@ blocked_by:
 blocked_by_legacy:
   - "SLS-B2"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-088"
 decision_flags: []
-status_note: "BLOCKED by SLS-B2"
+status_note: |
+  SHIPPED PARTIAL 2026-05-18 SPR-088. Saddle (way-ahead/way-behind) classifier closed end-to-end:
+  saddleClassifier + saddlePrototypes + 31 classifier tests + SaddleSection + 16 section tests +
+  saddle.md lesson (7 drill spots) + ReviewPanel slot (D5 after SizingCurveTagSection) + 3 new
+  INV-SLS-B3-* invariants (TWO-MASS / MASS-SUM / CALIBRATED). 47 net new tests pass; full vitest
+  11,667/11,690 pass (1 known PlayerFinderView smoke flake per SPR-076 + 2 timeout-driven flakes
+  in drillContent unrelated tests). Build clean. Cross-domain grep clean (no shapeLanguage imports
+  from exploitEngine/rangeEngine). Basin + Sankey scope re-framed at plan-mode (river equity is
+  binary per combo at showdown, not a continuous-variance metric — see memory
+  `feedback_river_equity_is_showdown_outcome.md`); engine plumbing for per-combo
+  villainStrengthBucket inline-authored as WS-194 (P1, Basin prereq). Sankey + SessionsView remain
+  RED-blocked behind Gate 4 surface-spec amendment + charting-library dep ratification +
+  hand-analysis IDB persistence design. Stream B3 status: 1 of 2 catalog descriptors shipped
+  (Saddle done; Basin deferred to WS-194 + a future B-stream sprint).
+
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 202
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

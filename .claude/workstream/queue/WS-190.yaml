@@ -1,0 +1,147 @@
+id: "WS-190"
+title: "Mid-hand tag-for-review — owner-tappable flag during action entry that surfaces in a Review Queue surface afterward"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 14.0
+priority_label: "P2"
+category: "review-workflow"
+capability: "core"
+program: "design"
+description: |
+  Owner request 2026-05-12: "We need a way for a player to tag a hand for
+  later review, while entering the hand."
+
+  **Goal:** mid-hand, a quick visible affordance (button / chip / icon)
+  that marks the current hand for later review. Tagged hands accumulate
+  in a Review Queue surface. Owner returns to the queue later (between
+  sessions or post-session) to study each.
+
+  **Why this matters:** the live-table cognitive flow is "capture-first,
+  analyze-later." Owner notices something interesting in a hand (a
+  villain made a surprising call, hero made a marginal decision, board
+  ran out wild) but can't pause mid-hand to study it. Today the only
+  way to "save for later" is memory — and that's lossy. A tag-for-review
+  flag turns a fleeting "I should think about that hand" into a durable
+  queue entry without breaking flow.
+
+  **Greenfield — no existing infrastructure.** Grep confirms:
+    - No `flaggedHands`, `markedForReview`, `bookmarked`, `reviewLater`
+      fields in hand records.
+    - No existing UI affordance for hand-tagging.
+    - SessionsView lists hands; HandReplayView replays them; neither has
+      a "tagged" filter or list mode.
+
+  **Surface scope:**
+  - **Tag affordance**: a single tap during action entry adds the tag.
+    Placement TBD at Gate 4 — likely lives in CommandStrip alongside
+    other hand-level controls (undo, end-hand). Visible state: tagged
+    vs untagged. Tapping again untags. Optional: long-press to add a
+    short text note (free-text reason — "donk bet into 3 callers, why?").
+  - **Tag storage**: append to existing hand record OR new IDB store.
+    Recommendation: append `reviewTag: { tagged: true, note?: string,
+    taggedAt: number }` to hand record — simplest, atomic with hand
+    save, no migration complexity.
+  - **Review Queue surface**: new view OR filter on SessionsView. Owner
+    picks at Gate 4. Recommendation: SessionsView filter chip
+    'Tagged ⭐' that shows only tagged hands; secondary tap on a hand
+    row opens HandReplayView with the tag visible.
+  - **Tag removal**: from Review Queue, swipe-to-untag OR explicit
+    "Reviewed — clear tag" button on the replay surface.
+
+  **Cognitive load discipline:** the tag affordance MUST be one-tap
+  during action entry. If it requires a modal, sub-menu, or confirmation,
+  it fails the goal (owner can't pause mid-hand). Long-press for note is
+  optional and only when owner has the time.
+
+  **Gate path (Design Program Guardrail):**
+  - Gate 1 (Entry) — REQUIRED. Persona: owner mid-hand. JTBD: 'flag this
+    hand so I can find it later without losing focus right now.' Gap
+    analysis: no existing surface covers this. Likely YELLOW or RED.
+  - Gate 2 (Blind-Spot Roundtable) — TRIGGERED if Gate 1 ≥ YELLOW. New
+    interaction modality (tag-during-entry) + new persistent state class.
+  - Gate 4 (Design surface) — REQUIRED. Surface doc:
+    `docs/design/surfaces/hand-tag-for-review.md` specifying tap
+    affordance placement, state shape, Review Queue UX, untag flow.
+  - Gate 5 (Implementation) — straightforward once Gates 1+4 ratified.
+
+accept_criteria:
+  - "Gate 1 audit at docs/design/audits/YYYY-MM-DD-entry-hand-tag.md
+    with GREEN/YELLOW/RED verdict. Gate 2 fires if needed."
+  - "Gate 4 surface at docs/design/surfaces/hand-tag-for-review.md
+    specifying: affordance placement (recommended: CommandStrip
+    secondary row), tap interaction (single-tap toggle), optional note
+    affordance (long-press), storage shape (hand record vs new store),
+    Review Queue surface (recommended: SessionsView filter chip), untag
+    UX, accessibility (one-handed thumb reach in landscape 1600×720)."
+  - "Tag affordance is ONE TAP during action entry — no modal, no
+    confirmation, no sub-menu. Test: Playwright records action sequence,
+    taps tag, taps tag again (untag), end-to-end < 500ms each tap."
+  - "Tagged state persists across page reload + session-end + app-restart
+    (IDB-backed). Test: tag a hand, reload, hand still shows as tagged
+    in Review Queue."
+  - "Review Queue surface: tagged hands appear sorted by tagged-at
+    descending. Optional: filter by note-present vs note-absent."
+  - "Schema migration: new field on existing hand record is additive;
+    must conform to Refactor Sprint Item 3 migration registry pattern
+    (`migrationRegistry.js` gets v26 entry — additive only, no destructive
+    operations, owner.program='design'). If owner picks separate store,
+    same rules apply with new store registration."
+  - "Tests: tag toggle, persistence across reload, Review Queue filter,
+    untag from queue, untag from replay surface."
+
+effort: "M"
+files_involved:
+  - "docs/design/audits/YYYY-MM-DD-entry-hand-tag.md (NEW)"
+  - "docs/design/surfaces/hand-tag-for-review.md (NEW)"
+  - "src/components/views/TableView/CommandStrip.jsx (tag affordance)"
+  - "src/utils/persistence/migrationRegistry.js (v26 entry — additive field)"
+  - "src/utils/persistence/migrations.js (migrationV26)"
+  - "src/utils/persistence/sessionsStorage.js (hand-record schema extension)"
+  - "src/components/views/SessionsView/SessionsView.jsx (Review Queue filter chip)"
+  - "src/components/views/HandReplayView/HandReplayView.jsx (tag display + untag)"
+  - "src/reducers/sessionReducer.js OR new tag-handler action"
+  - "system/invariants.md (INV-TAG-* — single-source-of-truth for tagged state)"
+
+blocked_by:
+  - "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 (no new features). Bug fixes exempt; this is a feature."
+
+blocked_by_legacy: []
+enables: []
+
+sprint_id: null
+
+decision_flags:
+  # RATIFIED 2026-05-12: Field on hand record. Additive shape:
+  #   hand.reviewTag = { tagged: bool, note?: string, taggedAt: number }
+  # Migration v26 is additive-only; existing hands without reviewTag
+  # treated as untagged. Atomic with hand save. If v2 needs history,
+  # extract to separate store later.
+  - "Review Queue surface — SessionsView filter chip vs separate view.
+    Recommendation: filter chip (zero new view, less surface area).
+    Owner ratification pending at Gate 4."
+  - "Note affordance — long-press for text note, or omit for v1?
+    Recommendation: omit for v1 (one-tap is the load-bearing UX);
+    add as v1.1 if owner finds untagged-text-context insufficient.
+    Owner ratification pending."
+  - "Untag UX — swipe / explicit button / both. Owner picks at Gate 4."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-12 — owner: 'We need a way for a player to tag a hand for later review, while entering the hand.'"
+
+created_at: "2026-05-12T00:00:00Z"
+status_note: |
+  Authored 2026-05-12 from owner session-issue extension. FEATURE —
+  blocked by Refactor Sprint charter (no new features until Item 4
+  complete). Gate 1 + 4 required before code per Design Program
+  Guardrail (new interaction modality + new persistent state).
+
+  Greenfield — no existing infrastructure. Smallest viable shape:
+  one-tap toggle on CommandStrip + additive field on hand record +
+  filter chip on SessionsView. Note + advanced UX deferred to v1.1.

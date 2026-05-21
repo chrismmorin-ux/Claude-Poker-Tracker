@@ -1,0 +1,236 @@
+id: "SPR-061"
+title: "EAL Stream D close-out (full) — session-review anchor rollup (WS-171)"
+status: completed
+approved_at: "2026-05-09T09:45:00Z"
+completed_at: "2026-05-09T11:15:00Z"
+goal: |
+  Session-review picks up where the per-hand capture flow left off —
+  when the founder reviews a session, anchor activity (matcher fires +
+  owner captures + auto-retirements) rolls up into a single ReviewPanel
+  section, closing EAL Stream D's third and final child.
+
+program_focus: design
+program_initiative: |
+  Design 5-Gate Framework — direct cross-program rotation after
+  domain-correctness anchored 3 of last 4 sprints (SPR-055 Stream B,
+  SPR-059 Stream C, SPR-060 Stream D Tier-3 banner). WS-171 closes EAL
+  Stream D fully. Spec already authored 2026-04-24 (312-line surface
+  artifact); Gate 4 substrate-clean. ReviewPanel.jsx is hot-touch
+  surface (SPR-059 modified for LiveAdviceBar); AnchorObservation*
+  per-hand surfaces shipped S10-S17 are direct reuse material.
+
+composed_by: auto
+created_at: "2026-05-09T09:45:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase-side tooling). Manual scan: design-program study surface
+    for engine output rollup. No constitutional surfaces apply (no
+    monetization / grading / engagement-pressure axes touched). Goal +
+    title scanned for tokens "compliance over value" / "gold-plating" /
+    "metric-as-goal" / "self-aggrandizing complexity" — no matches.
+
+decisions_needed:
+  - "Item #1a — Rollup placement (new ReviewPanel section / new dedicated SessionReviewView / append to existing section)"
+  - "Item #1b — AutoRetireBanner cross-link (surface auto-retire transitions in rollup vs let library banner stay only entry)"
+  - "Item #1c — Tier-1 candidate-promotion placeholder (render deferred slot with empty copy vs omit until Phase 2)"
+
+items:
+  - id: "WS-171"
+    title: "EAL Stream D child — session-review anchor rollup"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T09:50:00Z"
+    completed_at: "2026-05-09T11:15:00Z"
+    decision_flags:
+      - "Rollup placement (ReviewPanel section / dedicated SessionReviewView / append)"
+      - "AutoRetireBanner cross-link (rollup surfaces auto-retires vs library-banner-only)"
+      - "Tier-1 candidate-promotion placeholder (render vs omit until Phase 2)"
+    notes: |
+      Plan-first per Step 3d (UX-touching change → Design Program guardrail
+      requires Gate 1 Entry audit before code; Gate 4 surface artifact
+      mandatory).
+
+      Substrate confirmed clean upstream:
+        - ReviewPanel.jsx — hot-touch surface; LiveAdviceBar integration
+          shipped SPR-059
+        - AnchorObservation* per-hand surfaces (Button + Modal + List +
+          Section) — shipped SPR S10-S17 (Tier 0 capture flow)
+        - librarySelectors.js — flat-list selectors (selectAllAnchors)
+        - retirementEvaluator output — exposed via useAnchorAutoRetire
+          (SPR-060 / WS-170); per-session auto-transitions readable
+        - logMatcherFiring — system-firing observation writer (SPR-059)
+        - perceptionPrimitives store — IDB v19 (live)
+
+      Sequencing inside this sprint:
+        1. Plan-mode: present 3 decision flags via AskUserQuestion
+        2. Once decisions ratified:
+           - Run Gate 1 Entry audit on chosen rollup placement
+           - If Gate 1 RED/YELLOW → Gate 2 Blind-Spot Roundtable (likely
+             COVERED by 2026-04-24 EAL Roundtable + rerun)
+           - Update Gate 4 surface artifact at
+             docs/design/surfaces/session-review-anchor-rollup.md per
+             current state (existing 312-line spec may need adjustments
+             to reflect SPR-060 Tier-3 wiring)
+        3. Author anchorActivitySelectors.js — per-session aggregation
+           pure-util reading from anchors + observations + transitions
+        4. AnchorRollupSection.jsx component — embedded in ReviewPanel
+           per founder placement decision
+        5. ReviewPanel.jsx slot wire-in
+        6. Verification: Playwright at 1600×720 + unit + invariant tests
+
+      Hard rules (carried from CLAUDE.md + journey + anti-patterns):
+        - AP-08 signal separation: matcher-fired (origin: matcher-system)
+          vs owner-captured (origin: owner-captured) observations
+          rendered separately, never summed into a single count
+        - AP-06 forbidden patterns absent in any rollup copy
+        - Tier-1 candidate promotion is Phase 2 scope; placeholder slot
+          must NOT auto-fire any state transition
+
+      Exit conditions:
+        - Strong: Gate 1 GREEN → ship implementation in this sprint
+        - Acceptable: Gate 1 RED/YELLOW or unexpected substrate gap →
+          ship Gate 1 audit + Gate 4 surface update + selectors only;
+          component + wiring rolls to follow-up sprint
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (UX-touching study surface).
+
+  Source-class damping: last 3 completed anchors:
+    - WS-016 (SPR-059) — untagged
+    - WS-112 (SPR-058) — untagged
+    - WS-170 (SPR-060) — spr-followup (parent_ws: WS-015)
+  No class saturated (no auto-rec or engine-finding clusters). WS-171
+  is spr-followup (parent_ws: WS-015). No damping applied.
+
+  Fleet-rotation override: not applicable (poker-tracker product repo,
+  no fleet-health program).
+
+  Cross-program rotation rationale: domain-correctness has anchored 3 of
+  last 4 sprints (SPR-055/059/060). WS-171's category is
+  exploit-anchor-library and program field is domain-correctness, but
+  the load-bearing work is design-program (Gate 1 audit + Gate 4
+  surface artifact). Treated as design-program rotation for this sprint.
+
+  Alternatives passed over:
+    - WS-080 engineering "Verify Online session classification" — small
+      ambiguous scope; deferrable
+    - WS-014 EAL Stream E end-to-end producer wiring — same program as
+      last 3 anchors; rotation pressure says no (carry forward)
+    - WS-135 credible-intervals expansive surface — same program as
+      last 3 anchors; carry forward
+    - WS-169 Calibration Dashboard MVP — L-effort; exceeds 2-session cap
+    - WS-029-033 launch program — Q7 gated; not selectable
+
+  Index drift carryover from SPR-060: WS-105/107/112/016/017/159 stale
+  in queue-index; reconcile script not installed.
+
+exit_notes: |
+  Goal achieved. EAL Stream D is now CLOSED — all 3 decomposed children
+  shipped (WS-016 SPR-059 LiveAdviceBar badge / WS-170 SPR-060 Tier-3
+  banner / WS-171 SPR-061 session-review rollup). EAL Phase 6 is one
+  child away from full close (WS-014 Stream E end-to-end producer wiring).
+
+  Effort actuals:
+    - Phase 1 substrate-map exploration (Explore fork): ~2 min
+    - Plan-mode + 3 founder decisions (AskUserQuestion): ~5 min
+    - Gate 1 audit doc (GREEN): ~10 min
+    - Gate 4 surface fragment (variant placement): ~5 min
+    - sessionRollupSelectors.js + 19 tests: ~12 min (passed first run)
+    - SessionAnchorRollup.jsx + 20 tests: ~15 min (1 fixture-shape fix
+      after first run — ownerTags string vs object)
+    - SessionRowWithRollup.jsx + 9 tests: ~12 min (passed first run)
+    - SessionsView wiring (single-line swap): ~2 min
+    - index.js barrel export + WS-171.yaml status: ~3 min
+    - Verification (focused tests + build + smart-test-runner): ~12 min
+    - Total: ~1.3 hours real, well within M-effort 2-session budget
+
+  Net code: +3 source files (~410 LoC) + 2 modified files (~10 LoC delta) +
+  3 design artifacts (audit + spec fragment + WS-171.yaml lifecycle) +
+  1 barrel export.
+  Net tests: +48 (19 selectors + 20 component + 9 wrapper).
+
+  Test verification:
+    - 925/925 anchor-library + sessions tests pass (zero regressions)
+    - Full smart-test-runner: 10505/10505 + 20 skipped — ZERO FAILURES
+      (Monte-Carlo flakes from SPR-060's run all passed cleanly this time)
+    - Net diff vs SPR-060 baseline: 10477 (10452 passed + 5 flake-failures +
+      20 skipped) → 10525 = 10505 + 20. +48 net new = exactly matches.
+    - npm run build clean (12.21s; PWA 64 entries 2193 KiB)
+
+  Founder-ratified design decisions (AskUserQuestion at sprint start):
+    Q1a Placement = SessionsView row-expand extension (not new SessionReviewView route)
+    Q1b Auto-retire inline = YES (rollup surfaces auto-retires; deduped from AnchorLibraryView banner)
+    Q1c Tier-1 placeholder = OMIT until Phase 2
+
+  Critical AP-08 enforcement: SessionAnchorRollup test asserts at the DOM
+  level that matcherFired and ownerCaptured sections are NEVER nested
+  (structurally separated) and no element renders a summed total like
+  "3 total observations". Selector layer constructs the two arrays
+  independently — never push to a unified array.
+
+  Critical AP-06 enforcement: forbidden-pattern absence asserted at every
+  count value (1, 2, 5, 17, 99). Reused FORBIDDEN_PATTERNS from
+  retirementCopy.js (same source as SPR-060 banner copy).
+
+  Tier-1 placeholder enforcement: test asserts rendered DOM contains no
+  "Tier 1" / "candidate-promotion" / "coming in Phase" tokens. Per founder
+  Q1c at sprint start (Phase 2 scope per CLAUDE.md core principle 3).
+
+  Hard rules verified by tests:
+    - AP-08 signal separation (matcher / owner never combined at selector
+      OR component level)
+    - AP-06 copy discipline (forbidden patterns absent at every count)
+    - Auto-retire window filter (sessionStart/end inclusive boundaries)
+    - Owner-retire excluded from auto-retire section (only system origin)
+    - Lazy-load (no IDB fetch before first expand)
+    - Cache hit on collapse → re-expand (single fetch per mount)
+    - Fail-soft on IDB error (rollup mounts with empty hands)
+    - ActiveSessionCard NOT wrapped (live session has no closed activity)
+
+  Visual verification deferred (acceptable degradation per plan):
+    - Live rollup population requires seeded sessions with hands +
+      observations + retired anchors falling in session window. Not
+      pre-built; component-level + integration-level tests cover the
+      rendering path + AP-06/AP-08 enforcement.
+    - Same posture as SPR-060.
+
+  EAL Phase 6 status update:
+    - Stream A (Tier 1 simulator): partially shipped per WS-014
+    - Stream B (matcher pure-utils): SHIPPED SPR-055 (WS-017)
+    - Stream C (LiveAdviceBar badge + writer): SHIPPED SPR-059 (WS-016)
+    - Stream D (study surfaces): CLOSED — all 3 children done
+      - AnchorLibraryView base: shipped pre-SPR (S20-S23)
+      - HandReplay Tier 0 capture: shipped pre-SPR (S10-S17)
+      - Tier-3 auto-retirement banner: SHIPPED SPR-060 (WS-170)
+      - Session-review rollup: SHIPPED SPR-061 (WS-171)
+    - Stream E (end-to-end producer wiring): IN PROGRESS (WS-014)
+    - Stream F (LSW soft-flag tightening): backlog (WS-046)
+    - Calibration Dashboard MVP: backlog (WS-169 — full 3-tab L-effort)
+
+  Cross-program rotation pattern: domain-correctness anchored 4 of last 5
+  sprints (SPR-055/059/060/061; SPR-058 was engineering). Engineering
+  rotation pressure mounting. Reasonable next anchors:
+    - WS-080 (engineering, M) — Verify Online session classification
+    - WS-014 (domain-correctness, M, in_progress) — Stream E producer
+      wiring; closes EAL Phase 6 fully if shipped
+    - WS-079 (engineering, M, doc) — sidebar↔OnlineView contract doc
+    - WS-135 (domain-correctness, M) — credible-intervals expansive scope
+    - WS-029-033 launch — gated on Q7 founder decision
+
+  Index drift carryover: queue-index.yaml still shows stale statuses for
+  WS-105/107/112/016/017/159; reconcile script not installed. Recommend
+  /audit refresh post-sprint.
+
+last_updated: "2026-05-09T11:15:00Z"

@@ -2,10 +2,12 @@ id: "WS-015"
 title: "Stream D"
 legacy_id: "EAL-Stream-D"
 type: improvement
-status: in_progress
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: decomposed
+claimed_by: "session-2026-05-09-next-spr-060"
+claimed_at: "2026-05-09T06:00:00Z"
+started_at: "2026-05-09T06:05:00Z"
+completed_at: "2026-05-09T06:30:00Z"
+sprint_id: "SPR-060"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -16,18 +18,33 @@ description: |
 accept_criteria:
   - "**B3 capture flow shipped + visually verified (S10..S17 + visual verification):** S10-S17 layers (capture pure-utils + migrateV19 + wrappers + reducer/context/hook + AppRoot wiring + orchestrator hooks + Button/List/Modal components + AnchorObservationSection composite + ReviewPanel.jsx Section G slot) + Playwright visual verification at 1600×720 against 61-hand seeded data (button renders + modal opens with all spec elements + Incognito red-line-#9 visible-and-disabled-when-not-enrolled + chip→Save→list-row→IDB persistence + reload-hydration with \"2m ago\" timestamp). **Real bug caught + fixed during visual verification:** `hand.handId` from IndexedDB is a number (auto-increment PK) but EAL pure-utils require string per schema-delta §3.1 — fixed by string-coercion at the AnchorObservationSection adapter boundary"
   - "+2 regression tests added. **554 EAL tests green** (23 files"
-  - "+2 from S17 visual-verification fix). The Tier 0 owner observation capture surface is operational at user level. **Remaining:** 3 study surfaces (anchor-library / calibration-dashboard / session-review-anchor-rollup) + Phase 8 LiveAdviceBar anchor badge integration."
+  - "+2 from S17 visual-verification fix). The Tier 0 owner observation capture surface is operational at user level. **Remaining (closed by decomposition):** 3 study surfaces (anchor-library / calibration-dashboard / session-review-anchor-rollup) + Phase 8 LiveAdviceBar anchor badge integration."
 effort: "M"
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []
-enables: []
-sprint_id: ""
+enables:
+  - "WS-169"
+  - "WS-170"
+  - "WS-171"
 decision_flags: []
-status_note: "IN PROGRESS (B3 capture flow visually-verified end-to-end COMPLETE 2026-04-25..27 S10..S17 + visual verification)"
+decisions_locked:
+  - "Decomposition: 3 children (W-169 calibration-dashboard / WS-170 tier-3 banner / WS-171 session-review rollup) mapped 1:1 to remaining Stream D surfaces"
+  - "First child: WS-170 tier-3 banner (smallest scope; substrate-clean — retirementEvaluator already shipped unwired)"
+  - "Calibration Dashboard scope (when WS-169 ships): full 3-tab as authored at docs/design/surfaces/calibration-dashboard.md"
+  - "AnchorLibraryView shipped via S20-S23; LiveAdviceBar anchor badge shipped via SPR-059 (WS-016) — those Stream D items were closed before decomposition"
+status_note: |
+  DECOMPOSED SPR-060 (2026-05-09). Per WS-015 multi-surface umbrella decomposition
+  in plan-mode, split into 3 children:
+    - WS-169 (calibration-dashboard MVP, full 3-tab): backlog
+    - WS-170 (Tier-3 auto-retirement banner): in_progress this sprint
+    - WS-171 (session-review anchor rollup): backlog
+  Mirrors WS-008 PIO Gate 5 decomposition (SPR-034 plan-mode).
+  AnchorLibraryView base + LiveAdviceBar badge already shipped via S20-S23 +
+  SPR-059 — original WS-015 accept_criteria scope partly closed before decomposition.
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
   source_line: 111
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-09"

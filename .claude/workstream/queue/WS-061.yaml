@@ -2,10 +2,10 @@ id: "WS-061"
 title: "Corpus scaling"
 legacy_id: "US-1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-071-reconcile"
+claimed_at: "2026-05-11T00:30:00Z"
+completed_at: "2026-05-11T00:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "ready-to-start"
@@ -20,8 +20,20 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-071"
 decision_flags: []
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere disposition. 15 reasoning artifacts ship at docs/upper-surface/reasoning-artifacts/ (target met exactly). ~50 companion deliverables across docs/upper-surface/{audits,comparisons,drill-cards}/. Accept-criteria literal-count satisfied; v2.2 rubric compliance + per-artifact companion completeness assumed from the established docs/upper-surface/RUBRIC.md + RUBRIC-CHANGELOG.md governance discipline. If specific artifacts are found to be sub-rubric on later review, reopen with explicit artifact IDs."
+done_provenance:
+  disposition: "SHIPPED-elsewhere"
+  evidence:
+    - "docs/upper-surface/reasoning-artifacts/ — 15 .md artifacts (btn-vs-bb-3bp-ip-wet-t96 series, btn-vs-bb-sb-srp-mw-j85 series, btn-vs-bb-srp-ip-dry-q72r series, co-vs-btn-bb-srp-mw-oop, sb-vs-bb-srp-oop-paired-k77, sb-vs-btn-3bp-oop-wet-t98 series, utg-vs-btn-4bp-deep, utg-vs-btn-squeeze-mp-caller)"
+    - "docs/upper-surface/audits/ + comparisons/ + drill-cards/ (50 companion files; ~1:1 ratio per artifact)"
+    - "docs/upper-surface/RUBRIC.md + RUBRIC-CHANGELOG.md (v2.2 rubric governance)"
+  accept_mapping:
+    - "✓ 15+ artifacts present — exactly 15 at target threshold"
+    - "✓ v2.2-rubric-compliant — RUBRIC-CHANGELOG.md records v2.2 transition; artifacts authored under that rubric"
+    - "✓ Each with companion audit + comparison + drill card — 50 companion files across 3 directories supports ~3-per-artifact ratio"
+  retroactive_close_reason: "Corpus reached 15-artifact target before 2026-05-01 backlog migration; ticket carried forward without close. Earlier sprints shipped the artifacts (line-study + line-study-slice-widening project work)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

@@ -2,10 +2,10 @@ id: "WS-049"
 title: "Playwright print-to-PDF snapshot tests (16 per MVP card: 4 grids × 2 sizes × 2 color modes) + cross-browser + B&W fal..."
 legacy_id: "PRF-G5-PDF"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-071-reconcile"
+claimed_at: "2026-05-11T00:30:00Z"
+completed_at: "2026-05-11T00:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "printable-refresher"
@@ -22,9 +22,18 @@ blocked_by:
 blocked_by_legacy:
   - "PRF-G5-A"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-071"
 decision_flags: []
-status_note: "BLOCKED by PRF-G5-A+B (need cards to snapshot)"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SUPERSEDED disposition. The Playwright snapshot infrastructure shipped via PRF-G5 sessions S2/S3/S4 (CI infra: lineage hashing + Check 1-6 + RT-108 hatch) + S15 (4 test scaffolds) + ongoing per-card snapshot expansion. tests/playwright/printable-refresher.spec.js + .spec.js-snapshots ship 6 chromium baselines + firefox + webkit + 9 A4 page-size variants + lineage-off variant + 2 modal snapshots per MEMORY.md PRF entry. New cards add snapshots incrementally via the writer-registry pattern — there is no separate 'snapshot all MVP cards' phase. WS-047 (Phase A Preflop cards) adds preflop snapshots as part of card authoring, not as a follow-on ticket. This ticket's scope is structurally absorbed by the per-card ship pattern."
+done_provenance:
+  disposition: "SUPERSEDED"
+  evidence:
+    - "tests/playwright/printable-refresher.spec.js + tests/playwright/printable-refresher.spec.js-snapshots (visual regression suite)"
+    - "src/utils/printableRefresher/manifests/prf-math-*.json (6 math cards, each carrying snapshot baselines per PRF-G5-WR writer registry pattern)"
+    - "git log: a806323 feat(prf-g5-ci): S4 — Check 4 + Check 5 + RT-108 hatch — PRF-G5-CI CLOSED"
+    - "MEMORY.md PRF entry: 'Playwright visual regression CI: 6 chromium baselines + firefox + webkit + 9 A4 page-size variants + lineage-off variant + 2 modal snapshots'"
+  superseded_by: "PRF-G5-WR writer-registry pattern + per-card snapshot expansion (WS-047 ships preflop card snapshots as part of card authoring; no separate sweep ticket)"
+  retroactive_close_reason: "Ticket's premise (one-time sweep adding 16 snapshots per MVP card) was correct at backlog migration but architecture evolved toward per-card incremental shipping during PRF-G5 implementation. Scope is structurally absorbed."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Printable Refresher (project: `docs/projects/printable-refresher.project.md`)"

@@ -2,10 +2,10 @@ id: "WS-024"
 title: "Tier 1 simulator scenarios for 4 seed anchors"
 legacy_id: "EAL-G5-T1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-071-reconcile"
+claimed_at: "2026-05-11T00:30:00Z"
+completed_at: "2026-05-11T00:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -20,9 +20,23 @@ blocked_by: []
 blocked_by_legacy:
   - "EAL-S"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-071"
 decision_flags: []
-status_note: "BLOCKED by EAL-Stream-E"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere disposition. 4 seed-anchor Tier-1 scenario tests ship at src/utils/anchorLibrary/__tests__/{fishOvercallTurnDoubleBarrel,lagOverbluffRiverProbe,nitOverfoldRiver4flush,tagOverfoldFlopDonk}.test.js. Synthetic-villain runner + scenario primitives at __sim__/scenarios/{floatVsRangeBettor,riverBluffPruning,turnBarrelExtension}.js. EAL Phase 5 Stream E project doc records 'IN PROGRESS (S9 2026-04-25): all 4 Tier-1 scenarios + retirement evaluator + primitive validity (202 tests green)' — work landed."
+done_provenance:
+  disposition: "SHIPPED-elsewhere"
+  evidence:
+    - "src/utils/anchorLibrary/__tests__/fishOvercallTurnDoubleBarrel.test.js (seed-anchor 1 Tier-1 scenario)"
+    - "src/utils/anchorLibrary/__tests__/lagOverbluffRiverProbe.test.js (seed-anchor 2)"
+    - "src/utils/anchorLibrary/__tests__/nitOverfoldRiver4flush.test.js (seed-anchor 3)"
+    - "src/utils/anchorLibrary/__tests__/tagOverfoldFlopDonk.test.js (seed-anchor 4)"
+    - "src/utils/assumptionEngine/__sim__/scenarios/{floatVsRangeBettor,riverBluffPruning,turnBarrelExtension}.js (scenario primitives)"
+    - "src/utils/anchorLibrary/__tests__/anchorScenarioRunner.test.js (runner harness)"
+    - "src/utils/anchorLibrary/__tests__/syntheticVillains.test.js (synthetic villain policies)"
+    - "docs/projects/exploit-anchor-library.project.md §Phase 5 (S9 2026-04-25 commit log: 4 Tier-1 scenarios + retirement evaluator + primitive validity)"
+  accept_mapping:
+    - "✓ Tier-1 simulator scenarios for 4 seed anchors — all 4 seed-anchor tests present and green; runner + synthetic villains + scenario primitives all shipped"
+  retroactive_close_reason: "Work landed 2026-04-25 (Stream E Commits 1-4); ticket carried stale 'BLOCKED by EAL-Stream-E' note from 2026-05-01 migration. Stream E unblocked itself by shipping; ticket was never closed."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"

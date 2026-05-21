@@ -2,10 +2,11 @@ id: "WS-040"
 title: "Stream D"
 legacy_id: "SLS-D"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-14-next"
+claimed_at: "2026-05-14T15:00:00Z"
+started_at: "2026-05-14T15:05:00Z"
+completed_at: "2026-05-14T17:40:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -25,12 +26,12 @@ blocked_by:
 blocked_by_legacy:
   - "SLS-G4"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-081"
 decision_flags: []
-status_note: "BLOCKED by SLS-G4"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071 QUEUE-RECONCILE). Downstream of WS-039 (SLS-G4) which is now unblocked. Step 2 filter excludes from /next composition until WS-039 done."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 199
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

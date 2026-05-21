@@ -1,0 +1,148 @@
+id: "WS-185"
+title: "Postflop EV-bucket display — mutually-exclusive bucket groups must sum to exactly 100%"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "session-2026-05-15-spr-083"
+claimed_at: "2026-05-15T15:05:00Z"
+started_at: "2026-05-15T15:05:00Z"
+completed_at: "2026-05-16T00:10:00Z"
+priority_score: 14.0
+priority_label: "P2"
+category: "postflop-lessons"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Owner observed during 2026-05-11 session that postflop lesson EV-bucket
+  displays do not sum to 100% — symptom of independent rounding per bucket
+  (33.4% + 33.4% + 33.3% = 100.1%) or actual compute drift in the 4-class
+  decomposition (`vsValue / vsBluff / vsDraw / vsAir`).
+
+  Owner principle: 'Not every EV bucket is mutually exclusive, but the ones
+  that are need to sum to 100% so players can see' — display must communicate
+  which groups partition the space and guarantee those sum to exactly 100%.
+
+  Compute is likely correct (`equityVsRangeParts.js` is invariant-tested per
+  memory `project_hero_state_primitive.md`, 4-class decomposition is
+  load-bearing) — bug is most likely in display rounding. Need to verify
+  compute first.
+
+  Affected surfaces (per grep):
+  - `src/components/views/PostflopDrillsView/LessonsMode.jsx`
+  - `src/components/views/PostflopDrillsView/BucketEVPanelV2.jsx`
+  - `src/components/views/OnlineView/panels/BucketEquityPanel.jsx`
+  - `src/components/views/PreflopDrillsView/EquityDecompositionPanel.jsx`
+  - `src/components/views/HandReplayView/HeroStateSection.jsx` (4-class display)
+
+accept_criteria:
+  - "Partition classification RATIFIED 2026-05-12 (see decision_flags):
+    only displays #1 (4-class HSP vsValue/vsBluff/vsDraw/vsAir) and #2
+    (hero win/tie/lose) must sum to 100%. Range-by-hand-strength shape
+    is overlapping; per-action EV is not a partition. Both partitions
+    get sum-preserving rounding; the latter two displays do not change."
+  - "Introduce a single sum-preserving formatter
+    `src/utils/pokerCore/percentGroup.js` that uses largest-remainder
+    rounding so displayed percents of a partition sum to exactly 100.
+    Replace per-bucket independent rounding at affected surfaces."
+  - "UI: label each partition display with '(sums to 100%)' or equivalent
+    inline indicator so user knows the math invariant. Overlapping
+    displays explicitly carry no such label. Owner approves exact copy
+    at implementation review."
+  - "Invariant test (compute): for 100 random hero-vs-range fixtures
+    across street and range size, `vsValue + vsBluff + vsDraw + vsAir`
+    of the COMPUTED decomposition is 1.0 ± 1e-6. If this fails, the
+    bug is in compute, not display, and fix moves to
+    `equityVsRangeParts.js`."
+  - "Invariant test (compute): for 100 random fixtures, hero win + tie
+    + lose of the COMPUTED equity is 1.0 ± 1e-6."
+  - "Invariant test (display): for 100 random fixtures, the DISPLAYED
+    percents (after rounding) of partition displays #1 and #2 sum to
+    exactly 100 (no floating-point slack)."
+  - "Negative invariant test: overlapping display #3 (range-by-shape)
+    and non-partition display #4 (per-action EV) do NOT have a sum-to-100
+    test applied — they're allowed to drift / have different scales."
+
+effort: "M"
+files_involved:
+  - "src/utils/formatPercentGroup.js (NEW) OR src/utils/pokerCore/percentGroup.js"
+  - "src/utils/heroState/equityVsRangeParts.js (verify, fix if compute drifts)"
+  - "src/components/views/PostflopDrillsView/BucketEVPanelV2.jsx"
+  - "src/components/views/OnlineView/panels/BucketEquityPanel.jsx"
+  - "src/components/views/PreflopDrillsView/EquityDecompositionPanel.jsx"
+  - "src/components/views/HandReplayView/HeroStateSection.jsx"
+  - "src/utils/heroState/__tests__/equityVsRangeParts.test.js (extend)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+
+sprint_id: "SPR-083"
+
+decision_flags:
+  # RATIFIED 2026-05-12: Bucket classification.
+  #   PARTITIONS (must sum to exactly 100%):
+  #     1. 4-class HSP decomposition (vsValue / vsBluff / vsDraw / vsAir)
+  #        — every villain combo belongs to exactly one class on a given board
+  #     2. Hero win / tie / lose vs villain range
+  #        — every showdown runout is exactly one outcome
+  #   OVERLAPPING (do NOT force sum):
+  #     3. Range by hand-strength shape (made-hand / draw / overcard / air)
+  #        — a hand can be both a made hand AND a draw structurally
+  #   NOT-A-PARTITION (do NOT force sum):
+  #     4. Per-action EV (bet / check / call / raise)
+  #        — alternatives the hero chooses between; conditional on
+  #          different futures; not on a 0-100 scale (EV in bb, not %)
+  # Fix scope: largest-remainder rounding applied to displays #1 and #2
+  # only. Both surface in postflop lessons; one of them is the immediate
+  # bug owner observed.
+  - "Display copy distinguishing the two group types — recommended in
+    Definition of Done above; owner approves wording at implementation."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner reported 'Postflop lessons highlights that the EV buckets needs to add up to 100% for accuracy. Not every EV bucket is mutually exclusive, but the ones that are need to sum to 100% so players can see'"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner session-issue consolidation. Bucket
+  classification RATIFIED 2026-05-12.
+
+  DONE SPR-083 2026-05-16. Plan-mode audit found this YAML's listed
+  files_involved didn't match the actual partition displays in code —
+  owner ratified broader scope (Decision #1, 2026-05-15). Shipped:
+
+    NEW src/utils/pokerCore/percentGroup.js — largest-remainder
+        sum-preserving partition formatter (`formatPercentGroup` +
+        `percentGroupNumbers`). 26 unit tests green.
+
+    NEW unit tests asserting partition-sum=100 invariant on 4 surfaces:
+      - src/components/views/PreflopDrillsView/MatchupBreakdown.jsx
+        (win/tie/lose 3-way partition)
+      - src/components/views/PostflopDrillsView/panels/VillainRangeDecomposition.jsx
+        (per-row + polar 3-subtotal partitions)
+      - src/components/views/PostflopDrillsView/panels/WeightedTotalTable.jsx
+        (DetailTable top-N+Other + AggregatedTable beats/pays/other partitions)
+      - src/components/views/PostflopDrillsView/panels/ActionRecommendationStrip.jsx
+        (value vs bluff-or-pay 2-way partition)
+
+    Compute invariant test added on equityDecomposition.js
+    (winRate+tieRate+loseRate=1.0 ±1e-9) across 8 canonical hand-vs-hand
+    matchups. Confirms compute layer holds; display drift was the bug.
+
+  Scope correction from WS-185 original accept_criteria:
+    - `vsValue+vsBluff+vsDraw+vsAir = 1.0` compute test NOT added —
+      `equityVsRangeParts.js` returns per-role HERO EQUITIES (independent
+      [0,1] values), not a partition. The roleMapping mass-fractions IS a
+      partition but isn't currently rendered with percentages anywhere.
+      Re-rendering 4-class mass partition deferred.
+    - Files originally listed in files_involved that didn't host partition
+      displays (BucketEquityPanel, EquityDecompositionPanel, HeroStateSection,
+      BucketEVPanelV2 directly) NOT touched per the ratified scope.
+
+  Inline label "(sums to 100%)" added on partition surfaces only — owner
+  ratified copy wording 2026-05-15. ActionRecommendationStrip omits the
+  label per plan (2-value thin strip; ratio reads cleanly).
+
+  Verification: 11,442 tests green; npm run build clean. Vital sign
+  green across full app suite.

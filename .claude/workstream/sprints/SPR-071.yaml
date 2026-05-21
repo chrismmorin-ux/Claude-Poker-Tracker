@@ -1,0 +1,159 @@
+id: "SPR-071"
+title: "Queue reconciliation sweep — retire stale tickets with done_provenance (WS-179)"
+status: completed
+approved_at: "2026-05-11T00:00:00Z"
+completed_at: "2026-05-11T01:30:00Z"
+effort_summary: |
+  M tagged → ~1.5 hours actual. Plan-first; 4 decisions ratified upfront via
+  AskUserQuestion before sweep execution (D1=P≥15 unclaimed scope, D2=5-bucket
+  taxonomy, D3=in-place retention, D4=per-merits RTS handling). All defaults
+  accepted. Sweep walked 43 P≥15 unclaimed tickets:
+
+    SHIPPED-elsewhere (3): WS-021 (cross-anchor invalidation — primitiveValidity.js
+      shipped Commit 4 2026-04-25), WS-024 (4 Tier-1 seed-anchor scenario tests —
+      Stream E shipped 2026-04-25), WS-061 (corpus scaling — 15 reasoning artifacts
+      + 50 companions ship at docs/upper-surface/).
+    SUPERSEDED (2): WS-049 (PDF snapshots — PRF-G5-WR per-card pattern absorbs),
+      WS-075 (44px button — TableBuildView replaces seat-assignment grid).
+    LEGITIMATE-BACKLOG (22): MPMF cluster (6) + PIO WS-164 + SLS cluster (5) +
+      PRF WS-047 + RL cluster (5) + HRP WS-067 + DCOMP WS-079 + LSW WS-087/092.
+      All carry refreshed 2026-05-11 status_note with current freshness rationale.
+    NEEDS-RESCOPE (4): WS-020 (hook-hoist race), WS-023 (per-seed snapshot),
+      WS-025 (9 red lines registry), WS-074 (AssumptionCard coordination).
+    PAUSED-INDEFINITELY (12): WS-029 (Ignition mode), WS-068..073 (HRP Stream E/U
+      downstream), WS-097/098 (LSW-v2 deferred), WS-108..110 (sidebar-recurrence
+      LATER). P-score reset 15→8 (P2→P3).
+
+  13 tickets retitled from "ready-to-start" to project-anchored categories:
+    range-lab (5): WS-053..057
+    played-hand-review-protocol (8): WS-067/068/069/070/071/072/073 + carrying forward
+      from prior session's HRP work
+
+  Net /next composition impact: 43 P≥15 unclaimed candidates → 26 after sweep
+  (5 retired to done, 12 deprioritized to P=8). Future /next invocations no
+  longer pay the inspection cost on stale tickets.
+
+  Zero src/ diff (queue-state-only sweep). 43 queue/WS-*.yaml files modified
+  (status / status_note / priority_score / category / updated_at). queue-index.yaml
+  updated: 5 retired-entry status flips + header sweep summary comment block +
+  WS-179 entry transition (backlog→claimed→done). New artifact:
+  .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md (~120 lines, full
+  per-ticket audit table).
+
+  Followups surfaced (not in sweep scope):
+    1. MPMF Gate 4 surface tickets (S1..S6 + J1..J4) — enumerated in project doc
+       but no queue entries; soft-block holds.
+    2. LSW-v2 charter — WS-097/098 deferred there; no charter exists.
+    3. Table-Build Gate 5 ticketing — WS-164 soft-blocks on it; not ticketed.
+    4. NEEDS-RESCOPE follow-through (4 tickets carry concrete rescope direction).
+    5. P<15 unclaimed pass — this sweep was P≥15 scope.
+
+goal: |
+  Queue reflects actual project state — stale tickets that point to
+  already-shipped work are retired with done_provenance; legitimate-backlog
+  items keep their P-scores and gain freshness signal; tickets pointing to
+  paused/superseded scope get explicit disposition. Future /next invocations
+  compose against a reconciled candidate set without pay-the-inspection-cost
+  per stale ticket.
+
+program_focus: engineering
+program_initiative: |
+  Engineering — queue hygiene meta-refactor. SPR-069 close-out explicitly
+  recommended this sweep after WS-038 (Shape Language Gate 3) was retired as
+  the first confirmed stale ticket. SPR-067 already retroactively patched
+  three resolved items with "Index drift cleared 2026-05-10 SPR-067 reconcile
+  sweep" markers — this ticket is the comprehensive pass.
+
+  Cross-program rotation: DC anchored 8 of last 10 sprints. Founder picked
+  "refactor work" rotation; selected queue-reconcile-sweep over sidebar
+  boundary cluster or component extraction. Sprint touches engineering /
+  domain-correctness / design / launch categories simultaneously — not a
+  single-program anchor. Resets the DC-saturation pattern.
+
+  Compounding value: SPR-070 already had to apply soft-block damping to 5
+  P=22 MPMF items. If any P=15 candidates are similarly mis-priced (stale),
+  every future /next invocation pays the inspection cost. Sweep once, future
+  sprints compose cleanly.
+
+composed_by: auto
+created_at: "2026-05-11T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (graceful-degradation per CLAUDE.md). Manual scan: meta-refactor of
+    queue YAML state; zero src/ diff; no user-facing engagement-pressure;
+    no shame copy; no auto-grading. AP-* bindings not relevant (no hero
+    surface or autonomy red-line touched).
+
+decisions_needed:
+  - "Item #1 — Sweep scope: all P≥15 unclaimed (~20 items) vs all unclaimed regardless of P (~86) vs close-out-flagged target list (~25)"
+  - "Item #1 — Disposition taxonomy: 5 buckets (SHIPPED-elsewhere / SUPERSEDED / LEGITIMATE-BACKLOG / NEEDS-RESCOPE / PAUSED-INDEFINITELY) — confirm or adjust"
+  - "Item #1 — Retention vs archive: SHIPPED-elsewhere keeps YAML in place with status:done+done_provenance (mirrors WS-038) OR moves to .claude/workstream/queue/archive/"
+  - "Item #1 — Generic-name 'ready-to-start' cluster (WS-053..WS-068 + WS-079): retitle in-place with <project-id>: <gate-name> for searchability OR retire entirely if parent project is dormant"
+
+composition_notes: |
+  Deferred (unmet prereq):
+    - WS-027/030/031/032/033 (P=22, soft-blocked → 5.5): MPMF cluster paused
+      on Q7 legal verdict + MPMF Gate 4 surfaces (not yet ticketed). Same
+      condition flagged at SPR-070 composition.
+    - WS-036 (P=22, structurally blocked): WS-031 PaywallGate not done.
+    - WS-164 (P=18, soft-blocked → 4.5): PIO G5 child E paused on Table-Build
+      Gate 5 surface (not yet ticketed).
+    - WS-146 (P=18, in_progress, abandon risk): SPR-056 abandoned in
+      plan-mode because 8 of 9 PLANNED catalog entries need a new
+      situation-key axis; only hero-turn-barrel-frequency substrate-clean.
+
+  Rotation honored: design SPR-069 → DC SPR-070 → engineering SPR-071.
+  DC saturation 8/10 broken.
+
+  Anti-pattern this sprint avoids: continuing to anchor against P=15
+  tickets without first verifying which of them point at real backlog vs
+  shipped/paused/superseded work. SPR-066/067/068/069 all surfaced the
+  pattern; WS-038 confirmed it; without a sweep the same inspection burden
+  recurs every /next invocation.
+
+items:
+  - id: "WS-179"
+    title: "Queue reconciliation sweep — retire stale tickets with done_provenance"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: queue-hygiene
+    priority_score: 20.0
+    status: done
+    started_at: "2026-05-11T00:05:00Z"
+    completed_at: "2026-05-11T01:30:00Z"
+    decision_flags:
+      - "Sweep scope (P≥15 / all unclaimed / close-out-flagged target list)"
+      - "Disposition taxonomy (5-bucket model — confirm or adjust)"
+      - "Retention vs archive (in-place status:done+done_provenance vs archive/ directory)"
+      - "Ready-to-start cluster handling (retitle vs retire)"
+    notes: |
+      Plan-first because (a) 4 decision_flags must be ratified before sweep
+      execution, (b) sweep scope determines effort by 4-5x (20 items vs 86),
+      (c) retention policy is irreversible at scale.
+
+      Files (per WS-179 files_involved):
+        MODIFY in-place:
+        - .claude/workstream/queue/WS-*.yaml (count depends on scope decision)
+        - .claude/workstream/queue-index.yaml (regenerate)
+        CREATE:
+        - .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md
+        ZERO src/ diff.
+
+      Verification (per WS-179 accept_criteria):
+        - Each swept ticket carries explicit disposition + evidence pointer
+        - SHIPPED-elsewhere tickets mirror WS-038's done_provenance template
+        - Sweep report renders the full table for audit
+        - queue-index header gets a sweep-completion comment block
+        - Zero src/ diff (queue-state-only)
+
+      Source-class: spr-followup (parent: SPR-069 recommendation).
+      Not damped per Step 2d (founder-driven class).

@@ -6,8 +6,8 @@ status: backlog
 claimed_by: ""
 claimed_at: null
 completed_at: null
-priority_score: 15.0
-priority_label: "P2"
+priority_score: 8.0
+priority_label: "P3"
 category: "sidebar-recurrence"
 capability: "core"
 program: "engineering"
@@ -22,7 +22,7 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "LATER"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — PAUSED-INDEFINITELY + P-score 15→8. Owner directive: 'Deferred — mitigated in practice once RT-68 ships.' No current trigger; observable behavior is not failing in production. Reclaim at P=15 if RT-68 doesn't mitigate or a fresh observation surfaces."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"

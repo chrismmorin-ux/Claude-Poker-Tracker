@@ -1,0 +1,235 @@
+id: "WS-184"
+title: "Camera capture — accept-button failure modes (silent fail + active errors + dropped actions) + memory-error UX (downscale source before crop)"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "session-2026-05-13"
+claimed_at: "2026-05-13T00:00:00Z"
+started_at: "2026-05-13T00:00:00Z"
+completed_at: "2026-05-13T13:30:00Z"
+priority_score: 22.0
+priority_label: "P1"
+category: "player-identification"
+capability: "core"
+program: "design"
+description: |
+  Owner observed multiple failure modes around the accept button in the photo
+  capture flow during 2026-05-11 and 2026-05-12 sessions. Symptoms cluster
+  around `onAccept` in `CameraCaptureModal.jsx`:
+
+  **Bug A — "Photo capture unsuccessful (memory)" error.** Canvas allocation
+  OOM in `src/utils/playerMatching/generateCroppedBlob.js` on large camera-
+  sourced images on memory-constrained mobile browsers. Caught at
+  `CameraCaptureModal.jsx:114` and surfaced verbatim — raw platform error
+  text exposed to user.
+
+  **Bug B — silent-fail after successful save.** `CameraCaptureModal.jsx:108-112`:
+
+      const { blobId } = await savePhotoAtomically(playerId, blob);
+      onSaved?.(blobId);
+
+  No `onClose?.()` call and `isSaving` never reset on success (only on error
+  at line 115). Modal stays open with Save button disabled.
+
+  **Bug C (new 2026-05-12) — accept button drops the action completely.**
+  Owner: "Sometimes it drops the action completely." Symptom: tap accept,
+  nothing visible happens. No error toast, no spinner, no modal change.
+  The button tap is silently lost. Hypotheses:
+    1. Race condition — second tap arrives while `isSaving` is true; the
+       async work from the first tap completed but never reset state, so
+       the second tap is no-op'd by an `if (isSaving) return` guard.
+    2. `onAccept` early-return at line 98:
+         `if (!imageUrl || !croppedAreaPixels) return;`
+       If `croppedAreaPixels` is null (cropper hasn't fired `onCropComplete`
+       yet — e.g., user tapped accept before the cropper finished its first
+       layout pass), the function silently returns. No error, no toast,
+       no diagnostic.
+    3. `onAcceptOverride` path silently no-ops if the override returns a
+       rejected promise that's swallowed (the await is in a try/catch but
+       the catch is only entered for thrown errors; rejected promises that
+       resolve to a falsy value are not).
+
+  **Bug D (new 2026-05-12) — active errors after pressing accept.** Owner:
+  "silent failures and active errors on players camera feature after trying
+  to hit accept." The "active errors" half suggests visible error states
+  appearing post-accept — distinct from Bug A (which is a specific OOM
+  text). Need owner repro or screenshot to disambiguate (toast? modal
+  error region? full-page error boundary?). Likely candidates:
+    - `savePhotoAtomically` tx abort surfaces via the existing
+      `tx.onabort` reject path at line 60 of savePhotoAtomically.js with
+      message "Photo save aborted (player not found or write failed)".
+    - `generateCroppedBlob` non-OOM canvas errors (CORS-tainted image,
+      0-byte file from camera capture interrupted mid-write).
+    - `onSaved` parent handler throwing — propagates up through onAccept
+      try/catch, surfaces as a generic save error.
+
+  **Bug E (new 2026-05-12) — onSaved chain may not refresh avatar render.**
+  Same as prior Bug B narrative: even on successful save, the player avatar
+  doesn't visibly update. Either `onSaved` doesn't trigger a refetch of
+  `player.photoBlobId` OR the avatar render surface ignores it (currently
+  treats photo as an optional `photoOverlay` badge — not primary). WS-187
+  is the larger direction-change; this WS gets the immediate render path
+  working so any subsequent change has a foundation.
+
+  **Common root-cause hypothesis across A–E:** the `onAccept` function is
+  a 20-line async handler with three failure surfaces (generateCroppedBlob,
+  savePhotoAtomically, onAcceptOverride, onSaved) and a single setError
+  catch — no diagnostic logging, no telemetry, no state-machine clarity
+  about "what stage failed." A small finite-state-machine refactor of the
+  modal (idle → cropping → saving → done | error) with explicit telemetry
+  per transition would surface all five bugs as the same shape: "transition
+  X expected; actual is Y."
+
+accept_criteria:
+  - "Bug B fix: on `savePhotoAtomically` success, the modal must call
+    `setIsSaving(false); onSaved?.(blobId); onClose?.();` — same close
+    behavior as the override path at line 107."
+  - "Bug A fix: downscale source image (max 1500×1500, JPEG quality 0.9)
+    before passing to `generateCroppedBlob`. If the browser still OOMs,
+    surface a domain-specific error (steer to upload path):
+    'Couldn't process this photo — try uploading instead of capturing.'
+    Not the raw platform error text."
+  - "Bug C fix: accept button must be EITHER a no-op with visible feedback
+    (toast: 'Photo not ready — adjust crop and try again') when
+    croppedAreaPixels is null, OR disabled until croppedAreaPixels is set.
+    Recommendation: DISABLE the button until cropper.onCropComplete fires
+    at least once; visible disabled-state is unambiguous. Silent early-
+    return is the bug, regardless of cause."
+  - "Bug C fix (concurrent-tap): isSaving guard must be backed by a
+    visibly disabled button — not a silent early-return on a still-enabled
+    button. If accept is tapped while isSaving=true, the second tap must
+    be impossible (disabled state), not silently dropped."
+  - "Bug D investigation deliverable: owner-provided repro OR Playwright
+    test that reproduces the active-error path. Without a repro, the
+    work scope is 'add telemetry to onAccept transitions' — every entry
+    point and exit point logs (development) so the next observation
+    surfaces the path. Owner picks: ship telemetry-only fix and wait for
+    next observation, OR block this WS until repro is captured."
+  - "Bug E (chain): trace `onSaved` from CameraCaptureModal →
+    PlayerEditorView → player record reload → avatar render path. Document
+    the chain in a code comment in PlayerEditorView so the contract is
+    visible. On successful save, the player's avatar surface must visibly
+    update to show the photo (per current `photoOverlay` semantics,
+    regardless of WS-187 direction-change outcome)."
+  - "Common refactor: collapse onAccept into an explicit finite state
+    machine (idle → cropping → saving → done | error) with one transition
+    function. Each transition logs (development). Each failure mode has
+    a named state; no failure can result in 'silent stuck in idle.'
+    This is the architectural shape that prevents bugs A–E from
+    reoccurring as different surface symptoms of the same hidden mess."
+  - "Tests: (a) onAccept success → idle→saving→done; modal closes;
+    onSaved + onClose invoked. (b) onAccept with null croppedAreaPixels →
+    button is disabled; no transition fires; test asserts disabled state.
+    (c) onAccept memory-OOM path → idle→saving→error with domain-specific
+    message. (d) onAccept double-tap → second tap is impossible (disabled);
+    no second transition fires. (e) onAccept with savePhotoAtomically
+    tx-abort → idle→saving→error with specific abort message."
+  - "Playwright smoke at 1600×720: capture → crop → accept → modal closes →
+    player avatar shows photo within 500ms. Plus negative-path Playwright:
+    accept before crop ready → button is visibly disabled (no silent fail)."
+
+effort: "M"
+files_involved:
+  - "src/components/views/PlayerEditorView/CameraCaptureModal.jsx (onAccept success path + error UX)"
+  - "src/utils/playerMatching/generateCroppedBlob.js (downscale source before canvas allocation)"
+  - "src/components/views/PlayerEditorView/PlayerEditorView.jsx (onSaved chain + player refetch)"
+  - "src/components/ui/IdentityAvatar.jsx (verify photoOverlay render path is hit by saved photo)"
+  - "src/components/views/PlayerEditorView/__tests__/CameraCaptureModal.test.jsx (extend)"
+
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-187 (avatar = photo direction change) — needs working capture path to validate"
+
+sprint_id: "SPR-076"
+
+decision_flags:
+  - "Source downscale threshold: 1500×1500 (recommended) — owner ratification
+    pending."
+  - "Domain-specific error copy: 'Couldn't process this photo — try uploading
+    instead of capturing' (recommended, steers to working alternative).
+    Owner ratification pending."
+  # RATIFIED 2026-05-12: Ship FSM rewrite with development-mode transition
+  # telemetry now. Generic 'error' state shows underlying error.message
+  # verbatim. First live-table observation of Bug D drives a one-line
+  # copy update that maps the specific failure class to a domain-specific
+  # message. Iterative; no need to repro before shipping the FSM.
+  # RATIFIED 2026-05-12: full FSM rewrite of onAccept in this WS. States
+  # are idle/cropping/saving/done/error with named transitions. All 5
+  # bug variants (A-E) land on the same fix shape. Estimated ~50 LOC
+  # vs current ~20 LOC; cheaper overall than 3 separate patch wavefronts.
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: |
+    2026-05-11 — owner: "The photo capture appeared to have two bugs. first,
+    it stated photo capture unsuccessful error (memory) or something. Then
+    it failed silently after a picture was taken, cropped and accepted. It
+    just never attached to the player, or isn't displayed anywhere properly."
+
+    2026-05-12 — owner extended scope: "there are silent failures and active
+    errors on players camera feature after trying to hit accept. Sometimes
+    it drops the action completely." Added Bugs C + D + E and the FSM-refactor
+    common root-cause framing.
+
+created_at: "2026-05-11T00:00:00Z"
+updated_at: "2026-05-12T00:00:00Z"
+status_note: |
+  DONE 2026-05-13 in SPR-076. FSM rewrite of CameraCaptureModal shipped
+  per all 5 ratified decisions (full FSM / dev-mode telemetry / ship
+  without Bug D repro / 1500×1500 downscale / "Couldn't process this
+  photo. Try again..." failure copy).
+
+  Net change:
+    - NEW src/utils/playerMatching/downscaleImageBlob.js (~70 LoC pure
+      bounding-box downscale; returns original Blob if already-small)
+    - NEW src/utils/playerMatching/__tests__/downscaleImageBlob.test.js
+      (9 tests covering downscale-when-large, no-op-when-small, custom
+      maxEdge, landscape/portrait aspect, error paths, URL.revokeObjectURL
+      cleanup)
+    - REWRITE src/components/views/PlayerEditorView/CameraCaptureModal.jsx
+      (useReducer FSM: source / preparing / cropping / saving stages +
+      orthogonal error field; named transitions; dev-mode logTransition)
+    - EDIT src/components/views/PlayerEditorView/__tests__/CameraCaptureModal.test.jsx
+      (extended from 3 smoke tests to 12 tests: source-stage init, FSM
+      mount stage, file-pick downscale success/failure, Accept button
+      disabled gate, save-success onSaved+onClose chain with photoUrl,
+      save-failure standard copy + raw-message NOT leaked, concurrent
+      tap impossible, Retake clears error, override path no-IDB)
+    - EDIT src/components/views/PlayerFinderView/PlayerFinderView.jsx
+      (added onSaved callback for production path; updated capturedPreviewUrl
+      from blobUrl returned by modal; documented chain in code comment
+      per AC #6)
+
+  Bugs closed (5):
+    A — OOM: downscale at file-pick (1500×1500) keeps Cropper + crop op
+        under ~9MB. OOM path becomes structurally rare, not routine.
+    B — silent fail after save: success path explicitly fires onSaved +
+        onClose. Modal unmounts. No "Saving…" forever.
+    C — silent dropped accept tap: button-disabled is the sole gate;
+        early-return removed; concurrent tap impossible by disabled
+        attribute (asserted in test).
+    D — active errors with raw text: all errors funnel through one
+        dispatch → fixed user-facing copy. Raw err.message in dev console only.
+    E — avatar doesn't refresh: onSaved(blobId, photoUrl) signature
+        passes the in-memory blob URL back; PlayerFinderView writes it
+        to capturedPreviewUrl; IdentityAvatar photoOverlay re-renders.
+
+  Tests: 21 NEW (modal 12 + downscale 9) + all 61 touched-area tests
+  green (PlayerEditorView + PlayerFinderView + playerMatching). Build
+  clean (15.41s). Smart-test-runner full pass had a single 10s-timeout
+  flake on PlayerFinderView.smoke (passes in isolation in 6.96s — pre-
+  existing borderline-against-default-timeout flake, not introduced).
+
+  Out-of-scope follow-ups noted:
+    - docs/design/surfaces/camera-capture-modal.md still describes the
+      spec'd 2-stage flow (auto-crop) not the shipped 3-stage flow
+      (manual crop via react-easy-crop). Doc-update is a design-program
+      task, not WS-184. Author a separate WS to refresh that surface doc.
+    - PlayerFinderView.smoke.test.jsx is brittle near 10s default timeout;
+      consider raising to 20s OR splitting the smoke test off the heavy
+      module-graph. Out-of-scope for this WS.
+
+  Enables WS-187 (avatar = photo direction change) — capture path now
+  works reliably.

@@ -8,7 +8,7 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "range-lab"
 capability: "core"
 program: "engineering"
 description: |
@@ -24,10 +24,10 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by RL-P2"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). Range Lab Phase 3 (AI-native differentiators) downstream of WS-057 (RL-P2 — Flopzilla parity). Blocked-by chain preserved. Aspirational stretch phase; category retitled to 'range-lab' matching WS-056/057 disposition from SPR-071. P=8 unchanged; promote only when WS-057 + WS-058 ships and owner reactivates Range Lab."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 292
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

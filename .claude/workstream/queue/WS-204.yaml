@@ -1,0 +1,82 @@
+id: "WS-204"
+title: "Range Lab — rangeToString() reverse-serializer"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T01:08:13Z"
+completed_at: "2026-05-20T01:13:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "engineering"
+description: |
+  Engineering Phase-0 prerequisite for Range Lab. Build
+  `rangeToString(Float64Array): string` in `src/utils/pokerCore/rangeMatrix.js`
+  as the reverse of the existing `parseRangeString()`. Required for
+  save/load of custom painted ranges (DS-52 dependency).
+
+  ~100 LOC + tests. Not UX-touching in itself; can be authored
+  independently of gate ceremony (no design surface to update).
+
+  Listed in Gate 1 audit (2026-04-22-entry-range-lab.md) as the
+  "Phase 0 engineering prerequisite, authorized post-Gate 4." Now
+  authored as a queue ticket per SPR-093 Gate 2 close-out — Gate 4
+  scope confirmed and Phase 0 work is unblocked.
+
+  Round-trip property: `parseRangeString(rangeToString(arr))` MUST
+  produce a Float64Array that is byte-equal to the input (up to
+  serialization-format precision). Tests must enforce.
+
+accept_criteria:
+  - "rangeToString(Float64Array): string implemented in src/utils/pokerCore/rangeMatrix.js"
+  - "Round-trip test: parseRangeString(rangeToString(arr)) equals arr byte-equal"
+  - "Edge cases tested: empty range, full range, fractional weights, boundary cells"
+  - "Serialization format documented in code comment"
+  - "Compatible with parseRangeString() input format (same string representation as canonical)"
+effort: "S"
+files_involved:
+  - "src/utils/pokerCore/rangeMatrix.js (modified — add rangeToString)"
+  - "src/utils/pokerCore/__tests__/rangeMatrix.test.js (modified — add round-trip tests)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables:
+  - "WS-056"
+  - "WS-057"
+sprint_id: "SPR-094"
+decision_flags: []
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+  gate_1_audit: "docs/design/audits/2026-04-22-entry-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  DONE 2026-05-20 SPR-094 — verified pre-shipped.
+
+  Investigation: rangeToString() already exists in src/utils/pokerCore/rangeMatrix.js
+  at lines 122-196 (export rangeToString = (range, opts = {}) => { ... }).
+  Comprehensive test coverage at src/utils/pokerCore/__tests__/rangeMatrix.test.js
+  including:
+    - rangeToString unit tests (lines 90-180): empty range, pairs, suited,
+      offsuit, "TT+" / "ATs+" chain compaction, partial weights, verbose mode,
+      precision option
+    - rangeToString ↔ parseRangeString round-trip block (lines 182-226):
+      test.each over canonical range strings (compact + verbose modes),
+      partial-weight round-trip, ALL PREFLOP_CHARTS round-trip
+
+  Verified: npx vitest run src/utils/pokerCore/__tests__/rangeMatrix.test.js
+    → 59/59 tests pass (63ms).
+
+  All accept_criteria met by pre-existing code. Function was shipped
+  opportunistically before the WS-204 ticket was authored at SPR-093
+  Gate 2 close-out. Queue ticket was authored from Gate 1's listed
+  "Phase 0 prerequisite" without verifying the implementation already
+  existed — a tracking-vs-truth drift that this close-out closes.
+
+  Hygiene note: this is a recurring failure pattern — Gate-1 audits list
+  prerequisites without checking current code state, leading to
+  duplicate ticket authoring. Worth a /audit follow-up to scan other
+  Gate-1 follow-up tickets for similar drift.

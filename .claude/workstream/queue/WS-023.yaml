@@ -24,7 +24,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by EAL-Stream-B-matcher"
+status_note: "RECLASSIFIED 2026-05-11 SPR-071 QUEUE-RECONCILE — NEEDS-RESCOPE disposition. EAL Stream B matcher infra ships per src/utils/anchorLibrary/matcher.js + matcher.test.js. RT-108 pattern (snapshot-based regression test for sidebar zones) was the inspiration; the per-seed-anchor analog has not been authored. Distinct from WS-024 (4 seed Tier-1 scenario tests already shipped — those test SIMULATOR behavior; this would test MATCHER+APPLIER output against frozen scenarios). Needs rescope to clarify: which scenarios get snapshotted, where the snapshots live, how engine-drift triggers CI failure. Reclaim at P=15 after rescope."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"

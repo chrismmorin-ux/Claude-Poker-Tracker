@@ -2,10 +2,10 @@ id: "WS-042"
 title: "Stream B2"
 legacy_id: "SLS-B2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-16-next"
+claimed_at: "2026-05-16T15:29:00Z"
+completed_at: "2026-05-16T16:35:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "shape-language"
@@ -22,12 +22,14 @@ blocked_by:
 blocked_by_legacy:
   - "SLS-B1"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by SLS-B1"
+sprint_id: "SPR-084"
+decision_flags:
+  - "Ship order within sprint — Equity Curve / Spire (Polarization) / Sizing Tag first?"
+  - "Classifier module shape — one module per descriptor vs shared shapeDescriptors/ namespace"
+status_note: "RESOLVED 2026-05-16 SPR-084. Stream B2 shipped end-to-end. 3 catalog descriptors (equity-distribution-curve + spire-polarization + sizing-curve-tag) covered by 2 classifiers + 1 data-only compute module (per roundtable §Top-6 distinction) + 3 lessons + 3 HandReplay sections + 5 INV-SLS-B2-* invariants. Module structure consolidated under new `shapeDescriptors/` namespace (Decision B); Silhouette (B1) relocated in same sprint (Sub-phase 0). 115 net new tests; 11,557 total green. Vite build clean. Sections render null today because `villainAnalysis.perCombo` / `evByFraction` is not yet exposed in the analysis pipeline — follow-up ticket can wire the data through and the sections will light up without component edits. Cross-domain rule (Decision C) added to shapeLanguage CLAUDE.md and enforced by grep guard (zero shapeLanguage imports from exploitEngine/rangeEngine)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 201
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

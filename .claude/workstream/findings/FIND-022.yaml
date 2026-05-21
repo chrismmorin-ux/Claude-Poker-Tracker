@@ -1,0 +1,42 @@
+id: "FIND-022"
+title: "WS-131 positional-prior normalization widens position-label-keyed fold-estimate surface"
+severity: LOW
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-05-19"
+  date: "2026-05-19"
+description: |
+  preflopAdvisor.js (WS-131) added normalizePositionToCategory() so the
+  POSITIONAL_FOLD_TO_3BET / POSITIONAL_FOLD_TO_4BET lookup tables now accept
+  granular labels (BTN/CO/HJ/MP/UTG) by mapping them to category labels
+  (LATE/MIDDLE/EARLY). The change itself is a benign normalization that
+  preserves prior fall-through (unknown labels still drop to population).
+
+  The doctrine tension: these tables key fold-estimate priors on POSITION
+  LABELS, which §7.3 of POKER_THEORY.md says to derive from players-remaining
+  and range width rather than position label. The change does not introduce
+  the pattern (tables predate the 2026-05-01 baseline) but it WIDENS the
+  surface — more callers passing granular vocab now hit the positional prior
+  instead of falling through. This is the kind of label-shortcut reach-creep
+  the program exists to keep in check.
+affected_files:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+recommended_fix: |
+  ACCEPTED AS-IS for now — POSITIONAL_FOLD_TO_3BET/4BET are documented Tier-1/2
+  prior fallbacks consulted only when priorMean == null (no observed per-player
+  data). This is a range-level prior, not a per-combo decision input, so it sits
+  within the §7.3 "bucket label acceptable for range-level" allowance. Monitor:
+  if a future change makes the positional prior the PRIMARY path (rather than a
+  null-fallback), or stacks it on top of observed stats, escalate to a real
+  violation. No code change required this cycle.
+theory_citation: "POKER_THEORY.md §7.3 (label-as-input boundary); §7 first-principles decision modeling"
+disposition: "accepted-prior-fallback-monitor"
+dedup_key: "eng-engine-domain-correctness-ws131-positional-prior-normalization-widens-label-keyed-fold"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"
+promoted_to: ""

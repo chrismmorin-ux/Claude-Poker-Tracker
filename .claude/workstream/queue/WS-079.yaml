@@ -2,10 +2,11 @@ id: "WS-079"
 title: "contracts/sidebar-to-online-view.md"
 legacy_id: "DCOMP-W4-A3-F10"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-072"
+claimed_at: "2026-05-11T02:00:00Z"
+started_at: "2026-05-11T02:05:00Z"
+completed_at: "2026-05-11T02:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "ready-to-start"
@@ -22,11 +23,24 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-072"
 decision_flags: []
+status_note: |
+  RESOLVED 2026-05-11 SPR-072. Authored docs/design/contracts/sidebar-to-online-view.md (~180 lines, 8 BRIDGE_MSG types, 8 state-ownership rows, 8 invariants, 4 deliberate no-handoffs). Companion README index + change log updated. Sits alongside persisted-hand-schema.md + tournament-to-table.md.
+
+done_provenance:
+  src_files: []
+  docs:
+    - "docs/design/contracts/sidebar-to-online-view.md (NEW — full contract doc)"
+    - "docs/design/contracts/README.md (index entry + change log entry)"
+  accept_mapping:
+    - "✓ Document sidebar ↔ OnlineView handoff — Canonical shape table + 8 BRIDGE_MSG types documented across both directions"
+    - "✓ When to use which surface — opening 'Why this contract matters' section + state-ownership table"
+    - "✓ Does seat-selection feed back — Invariant 2 (no) + deliberate no-handoff entry"
+    - "✓ Post-hand review entry point — Invariant 6 (no deep-link today) + Known Drift entry on the JTBD ask"
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 377
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

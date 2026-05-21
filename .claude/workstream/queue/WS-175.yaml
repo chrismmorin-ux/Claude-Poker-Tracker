@@ -1,0 +1,83 @@
+id: "WS-175"
+title: "Range-engine — answer Q6 update gating (every showdown / batch / N-threshold) for §4.5 Bayesian update path"
+type: improvement
+status: done
+claimed_by: "session-2026-05-10-next-spr-067"
+claimed_at: "2026-05-10T00:00:00Z"
+started_at: "2026-05-10T00:05:00Z"
+completed_at: "2026-05-10T00:35:00Z"
+sprint_id: "SPR-067"
+priority_score: 12.0
+priority_label: "P2"
+category: "range-engine"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Reassigned from PMC Gate 2 close-out (SPR-065, 2026-05-09). PMC's
+  Charter Open Question Q6 — "When do showdown reveals trigger range-engine
+  Bayesian updates per RANGE_ENGINE_DESIGN §4.5? Every showdown / batch by
+  session-close / require N showdowns before updating?" — was originally
+  scoped to PMC Phase 5e.
+
+  Under REPLACEMENT (predictionAudit IS PMC) Phase 5e is cancelled. But the
+  underlying RANGE_ENGINE_DESIGN §4.5 update path continues to operate
+  independently of predictionAudit. Q6 belongs to range-engine, not PMC.
+
+  Authoring needed:
+    - Read existing RANGE_ENGINE_DESIGN.md §4.5 Bayesian update path
+    - Read `src/utils/rangeEngine/bayesianUpdater.js` (or §4.5 equivalent)
+    - Determine current update gating behavior (likely: every showdown
+      writes immediately to rangeProfiles store; verify this)
+    - Decide gating policy answering Q6
+    - Document decision in RANGE_ENGINE_DESIGN.md or POKER_THEORY.md
+    - Wire any code change required
+
+  Cross-references:
+    - FM-SEL-01 in PMC failure-mode-taxonomy.md — showdown selection bias
+      (MNAR) — Bayesian updates from showdowns systematically over-weight
+      value-and-stubborn-bluff range portions. Update gating MUST account
+      for this OR the policy must explicitly accept the bias.
+    - Range-engine theorist persona's ordering concern (Stage D, sprint 1/2):
+      semantic-boost path is order-dependent in current bayesianUpdater.
+      Update gating decision must NOT exacerbate this.
+accept_criteria:
+  - "Q6 answer documented in RANGE_ENGINE_DESIGN.md or POKER_THEORY.md with rationale"
+  - "Decision references FM-SEL-01 selection bias explicitly (accept / mitigate / refuse)"
+  - "Code change (if any) wired and tested against existing rangeEngine test suite"
+  - "Charter `.claude/projects/predictive-model-calibration.md` Q6 row updated to point at this ticket's verdict"
+effort: "M"
+files_involved:
+  - "docs/RANGE_ENGINE_DESIGN.md (modify §4.5 with update-gating policy)"
+  - "src/utils/rangeEngine/bayesianUpdater.js (potentially modify gating logic)"
+  - "src/utils/rangeEngine/__tests__/bayesianUpdater.test.js (potentially add gating tests)"
+  - ".claude/projects/predictive-model-calibration.md (update Q6 row at close)"
+blocked_by: []
+blocked_by_note: ""
+blocked_by_legacy: []
+enables: []
+decision_flags:
+  - "Update gating policy: every showdown / batch by session-close / N-threshold"
+  - "FM-SEL-01 selection bias: accept / mitigate / refuse (and how)"
+status_note: |
+  RESOLVED 2026-05-10 SPR-067. Plan-first; 2 founder decisions ratified
+  upfront via AskUserQuestion: (Q6) every-showdown gating = status quo
+  policy chosen explicitly over batch / N-threshold; (FM-SEL-01) ACCEPT
+  with observability rails — no boost-magnitude correction today.
+  `revealMechanism` field added to showdown anchor records (default
+  'showdown'; reserved 'mucked-shown' / 'all-in-runout' /
+  'inferred-from-fold'). `actionExtractor.js` emits the field; default
+  is the observability rail since current extractor cannot distinguish.
+  `applyShowdownAnchor` accepts new 6th arg with back-compat default.
+  RANGE_ENGINE_DESIGN.md §4.5 grew Update gating policy + FM-SEL-01
+  disposition subsections (~70 lines). FM-SEL-01 in failure-mode-taxonomy.md
+  updated (rail shipped marker; ACCEPT stance recorded). PMC charter Q6
+  CLOSED with verdict; FM-SEL-01 stays open as long-term monitoring concern.
+  +8 tests in bayesianUpdater.test.js; rangeEngine 199/199;
+  rangeEngine+exploitEngine 2578/2583 (5 pre-existing skips, 0 failures);
+  build clean. Charter row CLOSED.
+source:
+  origin: "pmc-gate2-sprint2-2026-05-09"
+  parent_ws: "WS-172"
+  parent_project: "range-engine"
+created_at: "2026-05-09"
+updated_at: "2026-05-09T17:30:00Z"

@@ -2,10 +2,85 @@ id: "WS-016"
 title: "Stream C"
 legacy_id: "EAL-Stream-C"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-09-next"
+claimed_at: "2026-05-09T04:10:00Z"
+started_at: "2026-05-09T04:30:00Z"
+completed_at: "2026-05-09T05:00:00Z"
+status_note: |
+  RESOLVED 2026-05-09 SPR-059. Stream C live-surface anchor badge + W-AO-2
+  system observation writer SHIPPED. SizingPresetsPanel embed deferred to a
+  follow-up sibling ticket (anchor.consequence → preset mapping requires
+  exploit-deviation lookup infrastructure not yet wired).
+
+  Plan-mode + Gate 1 + Gate 4 + impl + tests + verification all in this
+  sprint. Hard floor (Gate 1 audit + Gate 4 surface) shipped; strong
+  exit (badge + writer + tests) shipped; SizingPresetsPanel embed
+  deferred per acceptable-degradation exit condition.
+
+  Files:
+    NEW (8):
+      docs/design/audits/2026-05-09-entry-eal-stream-c-live-anchor-badge.md
+      docs/design/surfaces/live-anchor-badge.md
+      src/utils/anchorLibrary/deriveLiveSituation.js
+      src/utils/anchorLibrary/logMatcherFiring.js
+      src/hooks/useExploitAnchorsForLive.js
+      src/components/views/TableView/LiveAnchorBadge.jsx
+      src/utils/anchorLibrary/__tests__/deriveLiveSituation.test.js (14 tests)
+      src/utils/anchorLibrary/__tests__/logMatcherFiring.test.js (17 tests)
+      src/components/views/TableView/__tests__/LiveAnchorBadge.test.jsx (16 tests)
+    MODIFIED:
+      src/components/views/TableView/CommandStrip.jsx — matcher subscription
+        + W-AO-2 dispatch + tap handler + LiveAdviceBar prop wiring
+      src/components/views/TableView/LiveAdviceBar.jsx — Row 6 anchor badge
+        + render-suppression-gate now considers liveAnchor presence
+      docs/projects/exploit-anchor-library/anti-patterns.md — AP-07 cross-ref
+        to new Gate 4 surface artifact
+
+  Vital signs:
+    - smart-test-runner full suite: 10338 passed / 20 skipped / 0 failed
+      (+47 net vs SPR-058 baseline 10291; zero regressions)
+    - production build: clean (7.73s)
+    - 47 new tests covering deriveLiveSituation (14) + logMatcherFiring (17)
+      + LiveAnchorBadge (16, including AP-07 forbidden-DOM enforcement)
+
+  AP-07 enforcement (HARD FLOOR):
+    LiveAnchorBadge.test.jsx pins the absence of forbidden tokens
+    (n=, %, CI, ±, stale, expiring, retired, predicted, observed, gap,
+    dividend, sample, posterior, MDF, Sharpe, tier-N, polarity-name,
+    perception-primitive ids/names) regardless of input. Snapshot test
+    runs against fully-populated anchor and confirms only `archetypeName +
+    status-dot glyph + 10-segment dial` reach the rendered DOM.
+
+  Owner verification (MANUAL — visual at 1600×720):
+    Per CLAUDE.md "verify visually" rule. Implementation tested via unit +
+    component suites; visual confirmation requires owner to run dev server
+    and seed a hand where EAL_SEED_01 anchor matches (Nit/Fish villain,
+    flop call → turn bet → river overbet on 4-flush completing board).
+    Expected: Row 6 of LiveAdviceBar shows `● Nit scare-fold` + 10-segment
+    dial bar; tap fires console.info '[anchor-badge] tapped — deferred
+    drill queued' with anchor metadata.
+
+  Out of scope (deferred to follow-up tickets):
+    - SizingPresetsPanel `●` overlay on anchor-recommended preset (founder
+      ratified the recommended option; deferred because anchor.consequence
+      → preset mapping requires exploit-deviation infrastructure not yet
+      wired). Sibling ticket needed.
+    - Deferred-drill v2: tap currently console.info-stubs the intent; v2
+      wires HandReplay (or a between-hands drill panel) to consume
+      pending_anchor_drill_id state.
+    - Calibration Dashboard surface (AP-07 line 112 deep-link target —
+      future surface).
+    - Multiway anchor matching (schema v1.1 §9.2 research agenda).
+    - Newcomer threshold gate (Gate 2 voice flagged 20-50-hand minimum
+      for anchor-feature activation; v1 ships ungated).
+    - MH-14 *Archetype-level pattern recognition* JTBD framing (deferred
+      Gate 3 ticket if follow-up surfaces accumulate anchor-specific
+      outcomes that don't fit MH-12).
+
+  Stream C boundary cluster status: closed at the implementation layer.
+  Next EAL work likely: SizingPresetsPanel embed follow-up (P3 sibling),
+  Calibration Dashboard surface (Phase 8), or deferred-drill v2 wiring.
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -24,7 +99,7 @@ blocked_by_legacy:
   - "EAL-S"
   - "EAL-S"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-059"
 decision_flags: []
 status_note: "BLOCKED by EAL-Stream-D + EAL-Stream-B-matcher"
 source:

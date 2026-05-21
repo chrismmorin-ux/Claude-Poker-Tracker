@@ -1,0 +1,122 @@
+id: "SPR-083"
+title: "Postflop EV-bucket display — partition groups sum to exactly 100% (WS-185)"
+status: completed
+approved_at: "2026-05-15T15:05:00Z"
+completed_at: "2026-05-16T00:10:00Z"
+
+goal: |
+  Postflop lesson EV-bucket displays that ARE partitions (4-class HSP
+  decomposition + win/tie/lose) sum to exactly 100% on screen via a
+  shared sum-preserving formatter; overlapping/non-partition displays
+  remain unchanged. Compute is invariant-tested to disambiguate
+  display-rounding from compute drift.
+
+program_focus: domain-correctness
+program_initiative: |
+  Domain-correctness rotation after two consecutive SLS-anchored sprints
+  (SPR-081 Stream D + SPR-082 Stream B1). domain-correctness is the
+  critical-tier program in this repo per registry.yaml. WS-185 was
+  explicitly named in SPR-082 composition_notes as the next rotation
+  candidate: "Also-considered (clean but lower-scored): WS-185 (P=14,
+  postflop EV-bucket sum-to-100% bug). Domain-correctness rotation
+  candidate for the next sprint after WS-041 ships." Bucket classification
+  RATIFIED 2026-05-12 — only the one remaining copy-approval decision
+  surfaces during implementation.
+
+composed_by: auto
+created_at: "2026-05-15T15:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-15T15:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-082 precedent). Manual scan: bug-class display-math
+    fix on already-ratified partition classification. No engagement copy,
+    no graded surfaces, no live-surface contamination (surfaces affected
+    are PostflopDrillsView lesson mode, HandReplay review mode, OnlineView
+    panel, PreflopDrillsView panel — review/study surfaces only, no
+    cross-surface SCF contamination). Owner-driven (user_request 2026-05-11).
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Final wording for the inline '(sums to 100%)' label on partition displays (owner approves at implementation review per WS-185.accept_criteria; bucket classification itself is already ratified)"
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-185 (postflop EV-bucket
+  partition-sum bug), priority 14, domain-correctness program.
+
+  Why not WS-042 (SLS B2, P=15) as anchor: 3rd consecutive SLS-anchored
+  sprint would over-index design program; domain-correctness is
+  critical-tier and has been silent since SPR-077 (2026-05-14). WS-042
+  is a strong successor for SPR-084.
+
+  Effort cap: WS-185 alone is M (~1.5 sessions). Bundling WS-042 (also
+  M) would be 3 sessions, exceeding the standard 2-session cap. Single-
+  item is the right pace.
+
+  Source class damping: none. Last 3 anchors (SPR-080/081/082) are
+  founder-driven (untagged + plan-internal class). Zero auto-rec or
+  engine-finding anchors in window. WS-185 itself is conversation-class
+  (parent: user_request 2026-05-11).
+
+  Fleet-rotation override: skipped — poker-tracker is not HomeBase;
+  no fleet/repo-goal candidates.
+
+  Deferred (unmet prereq):
+    - WS-027 (was P=22, soft-blocked → 5.5): External-counsel scheduling action item
+    - WS-030 (was P=22, soft-blocked → 5.5): Pending MPMF Gate 4 design + Q7 verdict
+    - WS-031 (was P=22, soft-blocked → 5.5): Pending entitlement-rules child (MPMF-G5-ER)
+    - WS-032 (was P=22, soft-blocked → 5.5): Pending MPMF Gate 4 surface S5
+    - WS-033 (was P=22, soft-blocked → 5.5): Pending MPMF Gate 4 surface S6 + Q8 verdict
+    - WS-036 (was P=22, structurally blocked_by WS-031): cannot ship before PaywallGate
+    - WS-164 (was P=18, soft-blocked → 4.5): Depends on Table-Build Gate 5
+
+  Also-considered (clean but lower-priority anchor for SPR-084):
+    - WS-042 (P=15, SLS B2 Spire + Polarization) — newly unblocked since
+      WS-041 closed; natural SLS continuation; would be a 3rd consecutive
+      design-anchored sprint.
+
+items:
+  - id: "WS-185"
+    title: "Postflop EV-bucket display — partition groups sum to exactly 100%"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: postflop-lessons
+    status: done
+    started_at: "2026-05-15T15:05:00Z"
+    completed_at: "2026-05-16T00:10:00Z"
+    decision_flags:
+      - "Display copy wording — RESOLVED 2026-05-15: '(sums to 100%)' on partition surfaces; ActionRecommendationStrip omits label (2-value strip)"
+      - "Scope reconciliation — RESOLVED 2026-05-15: broader scope, 4 real partition surfaces fixed; equityVsRangeParts compute test rescoped (not a partition); WS-185 files_involved was incorrect — corrected in WS-185 close-out status_note"
+    notes: |
+      Accept criteria summary (full at .claude/workstream/queue/WS-185.yaml):
+        - Add `src/utils/pokerCore/percentGroup.js` (largest-remainder rounding)
+        - Replace per-bucket independent rounding at:
+          - PostflopDrillsView/BucketEVPanelV2.jsx
+          - OnlineView/panels/BucketEquityPanel.jsx
+          - PreflopDrillsView/EquityDecompositionPanel.jsx
+          - HandReplayView/HeroStateSection.jsx (4-class display)
+        - Inline label '(sums to 100%)' on partition displays only
+        - Compute invariant tests: vsValue+vsBluff+vsDraw+vsAir = 1.0 ±1e-6
+        - Compute invariant tests: win+tie+lose = 1.0 ±1e-6
+        - Display invariant tests: partition displays sum to exactly 100 after rounding
+        - Negative invariant: overlapping (#3) + non-partition (#4) displays NOT forced to 100
+
+      Partition classification (RATIFIED 2026-05-12):
+        Partitions (force sum to 100%): #1 4-class HSP (vsValue/vsBluff/vsDraw/vsAir) + #2 win/tie/lose
+        Overlapping (do NOT force): #3 range by hand-shape (made/draw/overcard/air)
+        Not a partition: #4 per-action EV (bet/check/call/raise) — EV in bb, not %
+
+      Memory bindings:
+        - project_hero_state_primitive.md — equityVsRangeParts.js 4-class
+          decomposition is load-bearing; invariant test in accept criteria
+          re-asserts this binding.
+        - feedback_first_principles_decisions.md — display labels are
+          outputs of computation, not inputs to it.

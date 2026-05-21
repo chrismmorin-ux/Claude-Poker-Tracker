@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "design-comprehension"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   Wave 3 — Drills (preflop/postflop) audit + WIP tab decision
 accept_criteria:
@@ -22,9 +22,10 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). DCOMP Wave 3 — drills (preflop/postflop) audit + WIP tab decision. Owner decision on WIP tabs' fate. Gate 2 for drills. ~3-4 sessions. Category retitled to 'design-comprehension'; program: engineering → design."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 392
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

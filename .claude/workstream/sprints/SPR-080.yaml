@@ -1,0 +1,202 @@
+id: "SPR-080"
+title: "Refactor Sprint close-out — Items 5 + 7 (useLiveActionAdvisor split + persistence/cache audit)"
+status: completed
+approved_at: "2026-05-14T12:15:00Z"
+completed_at: "2026-05-14T14:30:00Z"
+
+goal: |
+  The Refactor Sprint 2026-05-10 program closes — useLiveActionAdvisor is split
+  into responsibility-shaped sub-hooks (PMC Phase 5b can now add a hand-end
+  integration point without risk), and the persistence + cache audit ships its
+  4-phase output (failure-mode catalog + cache staleness contracts + ≥4 ADRs +
+  cache sweep). All 7 charter items done.
+
+program_focus: engineering
+program_initiative: |
+  Refactor Sprint 2026-05-10 — Items 5 + 7 close-out (5 of 7 done after
+  SPR-077/078/079). Owner instruction "close out the refactor" 2026-05-14.
+
+  Item 5 forcing function: PMC Phase 5b needs a hand-end integration point
+  on useLiveActionAdvisor. Adding to a 528-LOC hook is risky; split makes
+  the future integration cheap. Same forcing-function class as Item 4 was
+  for decision-system extraction.
+
+  Item 7 was originally split Phase 1+3 (parallel-safe with Item 4) and
+  Phase 2+4 (waits for Item 4 to ratify canonical caching shape). With
+  Item 4 shipped at SPR-078, all 4 phases are unblocked.
+
+  Cross-program rotation: 4th eng anchor in a row (SPR-078/079/080 all
+  Refactor-Sprint close-out). Deliberate program close-out, not drift.
+  Rotation resumes after this sprint.
+
+composed_by: auto
+created_at: "2026-05-14T12:15:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+  cap_override_reason: |
+    Bundle is M + L = ~4.5 sessions. Over the 2-session standard cap.
+    Owner-approved override: "close out the refactor" command spans both
+    remaining items in one approval cycle. SPR-078 already established the
+    single-L over-cap precedent; this stretches to two plan-first items.
+    Multi-session scope; pause anytime with /session-end.
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T12:15:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed. Manual scan:
+    internal architectural hardening (hook split + documentation audit). No
+    engagement-pressure, no scoring, no surveillance. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (Item 5) — Responsibility cut: pure state-derive / side-effect / computation (charter recommendation), or some other axis after reading the hook?"
+  - "Item #1 (Item 5) — New hook names (useLiveAdvisorState / useLiveAdvisorEffects / useLiveAdvisorComputation or similar)?"
+  - "Item #1 (Item 5) — Where does PMC Phase 5b's hand-end integration point live in the split shape?"
+  - "Item #2 (Item 7 / WS-188) — Phase 1 catalog completeness threshold: cap at 1 session of enumeration, or push until exhaustive?"
+  - "Item #2 (Item 7 / WS-188) — Phase 2 cache-contract format: table-per-surface vs prose-per-surface?"
+  - "Item #2 (Item 7 / WS-188) — Phase 4 sweep scope: every useMemo/useCallback with non-trivial deps, or just cache surfaces named in Phase 2?"
+
+decisions_ratified:
+  d1_close_out_scope: "Owner-instructed close-out: 'close out the refactor' (2026-05-14). Both Items 5 + 7 ship in one sprint."
+  d2_item_order: "Item 5 first (code refactor, surgical, tests-gated). Item 7 second (documentation audit, no code risk). Risk-front-loaded."
+  d3_over_cap: "Sprint over standard 2-session cap by owner approval; multi-session execution OK with /session-end pause points."
+
+composition_notes: |
+  Anchor: project-direct (Refactor Sprint Items 5 + 7). No queue WS item for
+  Item 5 (project-only tracking, same as Items 1/2/3/4/6). Item 7 = WS-188
+  in the queue.
+
+  Two-item plan-first sprint. Sequencing: Item 5 → Item 7. Item 7 doesn't
+  depend on Item 5, so order is by risk-front-loading (code change first).
+
+  Source-class damping: none. Both items founder-driven (project-direct
+  ratifications + user_request).
+
+  Fleet rotation: N/A (product repo).
+
+  After this sprint, the Refactor Sprint program is fully closed; system
+  returns to regular work (PMC Phase 5b enabling work, PIO Phase 5, SCF
+  Gate 5, or other Master Plan workstreams).
+
+items:
+  - id: "REFACTOR-ITEM-5"
+    title: "Split useLiveActionAdvisor.js (528 LOC) by responsibility (state-derive / side-effect / computation)"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: architecture
+    project: "refactor-sprint-2026-05-10"
+    status: done
+    started_at: "2026-05-14T12:16:00Z"
+    completed_at: "2026-05-14T14:06:00Z"
+    closeout_notes: |
+      Owner ratified Q1=Helpers-out / Q2=src/utils/liveAdvisor/ / Q3=onHandComplete callback prop.
+
+      Shipped:
+        - src/utils/liveAdvisor/computeHelpers.js (NEW, 228 LOC) — 6 pure helpers
+          extracted verbatim: computeTrialCount, computeAllVillainRanges,
+          computeVillainEquities, narrowWithLog, buildPreflopAdvice,
+          buildPostflopAdvice.
+        - src/utils/liveAdvisor/CLAUDE.md (NEW) — module rules (pure module,
+          single consumer, no React, extraction-not-redesign).
+        - src/utils/liveAdvisor/__tests__/computeTrialCount.test.js — moved
+          from src/hooks/__tests__/; import path updated; 23 tests pass.
+        - src/hooks/useLiveActionAdvisor.js — slimmed from 528 → 370 LOC.
+          Adds optional onHandComplete callback at L260-271; fires before
+          setAdvice when a per-hand prediction is produced. Try/catch
+          wraps callback to keep advisor flow stable on consumer error.
+          computeTrialCount re-exported for back-compat.
+
+      Verification:
+        - 3301 tests pass across src/contexts + src/utils/liveAdvisor +
+          src/utils/exploitEngine + src/hooks.
+        - 23 computeTrialCount tests pass at new location.
+        - Zero callers (only OnlineAnalysisContext) needed any change.
+
+      PMC Phase 5b can now wire writePredictionAudit to onHandComplete in
+      a small follow-up — no further surgery on the 528-LOC hook needed.
+    decision_flags:
+      - "Responsibility cut shape (state-derive / side-effect / computation)"
+      - "New hook names"
+      - "PMC Phase 5b hand-end integration point location"
+    notes: |
+      Definition of done (from .claude/projects/refactor-sprint-2026-05-10.md
+      Item 5):
+        - [ ] Hook split by responsibility
+        - [ ] Existing tests still pass
+        - [ ] PMC integration point clear in the new shape
+
+      Charter framing: "PMC Phase 5b needs to add a hand-end integration
+      point — adding to a 528-LOC hook is risky." Split is preventive.
+
+      Other top-5 hooks tracked but NOT in scope this sprint:
+        - usePlayerFinder (466 LOC)
+        - useSyncBridge (386 LOC)
+        - usePlayerFiltering (359 LOC)
+        - useSessionPersistence (358 LOC)
+      These get future tickets if same forcing-function pattern surfaces.
+
+  - id: "WS-188"
+    title: "Persistence + cache audit (Phase 1 failure-mode catalog + Phase 2 cache contracts + Phase 3 ≥4 ADRs + Phase 4 cache sweep)"
+    mode: plan-first
+    effort: L
+    program: engineering
+    category: persistence-architecture
+    project: "refactor-sprint-2026-05-10"
+    status: done
+    started_at: "2026-05-14T14:08:00Z"
+    completed_at: "2026-05-14T14:30:00Z"
+    closeout_notes: |
+      Owner ratified Phase-1=12-modes / Phase-2=hybrid / Phase-3=4-ADRs-spec-list / Phase-4=residual-only.
+
+      Shipped:
+        - docs/persistence/FAILURE_MODES.md — 12 modes (8 verified + 4 additional findings).
+          Each: severity, status (OBSERVED / PARTIALLY-MITIGATED / THEORETICAL / etc.),
+          source pointer, mitigation. 6 follow-up TDs filed.
+        - docs/persistence/CACHE_CONTRACTS.md — 18-surface inventory table + 5 prose entries
+          for load-bearing surfaces + §3 debounce convention + §4 hydration-then-debounce pattern
+          + §5 multi-tab contract.
+        - .claude/decisions/2026-05-14-{schema-versioning-policy,multi-store-migration,
+          append-only-stores,blob-storage-strategy}.md — 4 ADRs (ADR-PERSIST-1..4) per WS-188 spec.
+        - docs/persistence/CACHE_SWEEP_2026-05-14.md — residual surface scan; 5-7 follow-up
+          candidates identified.
+        - system/invariants.md — 5 INV-PERSIST-* invariants added.
+        - .claude/context/SYSTEM_MODEL.md — §11 expanded with TD-19..24 (6 new entries);
+          §12 Decision Log adds 2026-05-14 Refactor-Sprint-CLOSED entry.
+        - .claude/projects/refactor-sprint-2026-05-10.md — Items 5+7 marked DONE;
+          project status → completed; project frontmatter closed 2026-05-14.
+        - system/state.md — Project Phase row updated; Active program → Master Plan resumed.
+
+      Zero behavior-changing src/ diff. JSDoc back-pointers deferred (not blocking;
+      tracked as cleanup follow-up).
+
+      Phase 4 residual-WS-item filing deferred to next session (5-7 expected at
+      P=8 P3, category persistence-architecture). Sweep report identifies the
+      candidates; authoring the tickets is bookkeeping.
+    decision_flags:
+      - "Phase 1 catalog completeness threshold (cap at 1 session vs exhaustive)"
+      - "Phase 2 cache-contract format (table-per-surface vs prose-per-surface)"
+      - "Whether to extract a generic useCacheWithStalenessContract primitive (recommendation: NO)"
+      - "Phase 4 sweep scope (all useMemo/useCallback non-trivial vs Phase-2-named-surfaces only)"
+    notes: |
+      Definition of done (from WS-188.yaml accept_criteria):
+        - [ ] Phase 1: docs/persistence/FAILURE_MODES.md with ≥8 failure modes
+              (name / severity / status / fix surface / mitigation)
+        - [ ] Phase 2: docs/persistence/CACHE_CONTRACTS.md enumerating every
+              cache surface (~15-25 expected) with staleness contract per entry
+        - [ ] Phase 3: ≥4 ADRs in .claude/decisions/ covering schema
+              versioning, multi-store migration, append-only stores, blob storage
+        - [ ] Phase 4: docs/persistence/CACHE_SWEEP_2026-05-XX.md listing
+              undocumented cache surfaces; follow-up WS items filed
+        - [ ] system/invariants.md INV-PERSIST-* family added
+        - [ ] SYSTEM_MODEL.md §11 cross-links to all four phase outputs
+
+      Project charter: .claude/projects/persistence-cache-audit.md
+      (referenced from refactor-sprint-2026-05-10.md Item 7).
+
+      Engineering hardening — NOT a feature. No new IDB schema, no new
+      caching layer, no new modules — output is documentation + small
+      enforcement scripts.

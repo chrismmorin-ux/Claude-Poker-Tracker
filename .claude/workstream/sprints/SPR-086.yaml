@@ -1,0 +1,199 @@
+id: "SPR-086"
+title: "SLS B2 data wiring (closes SPR-084 inert sections) + WS-092 hygiene"
+status: completed
+approved_at: "2026-05-17T10:30:00Z"
+completed_at: "2026-05-17T11:25:00Z"
+
+goal: |
+  The three SLS Stream B2 descriptor sections (Equity-Distribution
+  Curve, Spire/Polarization, Sizing Curve Tag) actually render in
+  HandReplayView when a hero replays a postflop hand — `perCombo` +
+  `evByFraction` land in `villainAnalysis` and the sections light up
+  without any further UI changes. Paired with a 5-minute queue-hygiene
+  fix annotating WS-092's solver-access prerequisite.
+
+program_focus: engineering
+program_initiative: |
+  Rotates focus toward CLOSING finished-but-inert work rather than
+  starting new construction. SPR-084 (WS-042) shipped 91 net tests +
+  6 modules + 3 lessons + 3 section components for SLS Stream B2 —
+  all of which currently render null in production because
+  `villainAnalysis.perCombo` and `villainAnalysis.evByFraction`
+  aren't yet exposed by the analysis pipeline. WS-192 (authored
+  inline at this /next) is the smallest possible change that flips
+  that to working — localized to `replayAnalysis.js` +
+  `useHandReplayAnalysis.js` + ReviewPanel verification.
+
+  INV-SLS-B2-SECTION-NULL-DEGRADATION (added at SPR-084) captures the
+  contract: sections light up automatically when the data lands; zero
+  section-level edits required.
+
+  Founder elevated this to sprint anchor at /next composition after
+  the gap was surfaced in SPR-084 + SPR-085 summaries.
+
+composed_by: auto
+created_at: "2026-05-17T10:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-17T10:30:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-085 precedent). Manual scan: this sprint closes
+    data-pipeline gaps on already-ratified surface components +
+    applies a queue-hygiene tag. No engagement-pressure copy, no
+    graded surfaces, no live-surface contamination (B2 sections
+    render only inside HandReplayView review-mode per
+    INV-SLS-B2-CROSS-DOMAIN). Owner-driven (founder explicitly
+    elevated this follow-up to anchor at SPR-086 /next composition).
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — perCombo attachment location: sibling of `bucketEquities` (flat on per-action analysis result) vs nested under `counterfactualTree`. Recommendation: sibling of bucketEquities — keeps consumers cheap; counterfactual-tree nesting would couple unrelated concerns."
+  - "Item #1 — evByFraction derivation strategy: extract from existing `recommendations[]` per-sizing entries (cheap; assumes game tree emits multi-sizing) vs add explicit multi-sizing eval pass (expensive). If multi-sizing extraction yields no data, defer Sizing Curve Tag wiring to a follow-up ticket and ship EDC + Spire+Polarization only this sprint."
+
+composition_notes: |
+  Two-item sprint. Anchor: WS-192 (NEW, authored inline at /next),
+  priority 18, engineering program. Pair: WS-092 (queue-hygiene
+  annotation), priority 15, ~S effort (5-min flag update).
+
+  Effort math: WS-192 = M (1.5 sessions) + WS-092 = trivial S
+  (0.1 sessions). Total = ~1.6 sessions, within the 2-session
+  standard cap.
+
+  WS-192 inline-authoring rationale: founder heard the SPR-084
+  data-wiring gap surfaced in SPR-084 plan exit + SPR-084 summary +
+  SPR-085 summary (3x). Did not auto-queue a ticket. At SPR-086 /next
+  composition, elevated as anchor with effort scoped (recon done in
+  composition step: `replayAnalysis.js` already carries villainRange
+  + heroCards + board; computeComboEquityDistribution lives at
+  exploitEngine/gameTreeEquity.js:273; sections accept the data prop
+  shape per SPR-084 section components). Ticket authored as
+  `source: { parent_ws: WS-042, parent_spr: SPR-084, user_request: ... }`
+  to mark spr-followup class.
+
+  Rotation pressure: last 4 sprint anchors = design / domain-correctness /
+  design / design (SPR-082→SPR-085). WS-192's program=engineering
+  (analysis pipeline + hook + util). Design impact is downstream-
+  visible only — the B2 sections themselves remain unchanged.
+
+  Source-class damping: none. Last 3 anchors (SPR-083 conversation /
+  SPR-084 untagged / SPR-085 untagged) all founder-driven. WS-192
+  is spr-followup class (founder-driven). WS-092 is untagged.
+
+  Fleet-rotation override: skipped — no fleet/repo-goal candidate
+  exists in this product-repo backlog. (Same as SPR-082-085.)
+
+  Deferred (rationale unchanged from SPR-085):
+    - WS-188 (P=18, L): exceeds cap + Refactor-Sprint Item 4
+      gate on Phase 2+4.
+    - WS-020 / WS-023 / WS-025 (DC P=15, NEEDS-RESCOPE): rescope-first
+      pattern; safer in a dedicated rescope sprint.
+    - WS-043 (Stream B3, SLS, P=15): would push design saturation to
+      4/5 sprints; duplicates the "inert until wired" pattern. Better
+      to first prove the wiring path with B2, then return to B-stream.
+    - WS-027/030/031/032/033/036 (P=22 launch cluster, soft-blocked):
+      external-counsel/MPMF Gate 4/entitlement-rules/analytics-vendor
+      prereqs unchanged.
+
+  Also-considered (clean ship-ready alternatives):
+    - WS-047 (Preflop Refresher Phase A, design, P=15)
+    - WS-053 (Range Lab Gate 2, engineering, P=15)
+    - WS-063 (Pre-Session Drill Gate 2, design, P=15)
+    Compete on value with WS-192; WS-192 wins on "complete what's
+    started" grounds — the SPR-084 work is concretely valuable but
+    currently invisible to the user.
+
+  Stale-program soft warning (carried over):
+    prog-domain-correctness delta + sweep protocols overdue. Recent
+    sprints have not enforced. Clear with `/pulse run domain-correctness`.
+
+  Untracked-git state (carried over): SLS code from
+  SPR-081/082/083/084 still uncommitted in working tree. This sprint
+  TOUCHES the shapeLanguage import surface indirectly (replayAnalysis.js
+  imports from exploitEngine; no shapeLanguage import added in code
+  per cross-domain rule). The new code IS in the same uncommitted
+  cluster but doesn't add to staging-hygiene risk beyond what's
+  already present.
+
+items:
+  - id: "WS-192"
+    title: "SLS Stream B2 data wiring — thread perCombo + evByFraction through villainAnalysis for HandReplay B2 sections"
+    mode: plan-first
+    effort: M
+    program: engineering
+    category: shape-language
+    status: done
+    started_at: "2026-05-17T11:00:00Z"
+    completed_at: "2026-05-17T11:20:00Z"
+    decision_flags:
+      - "perCombo attachment location — [RESOLVED 2026-05-17 by recon: sibling of bucketEquities on per-action analysis result. Rationale: comboDistribution is the same computation source that produces bucketEquities; both belong at the same nesting level. Implementation: evaluateGameTree return + replayAnalysis pass-through + useHandReplayAnalysis promotion from result.counterfactualTree to result top-level so ReviewPanel reads villainAnalysis.perCombo directly per SPR-084 section contract.]"
+      - "evByFraction derivation strategy — [RESOLVED 2026-05-17 by recon: extract from existing recommendations[].sizing.betFraction. No expensive multi-sizing eval pass needed. heroActionBuilder.js already emits multiple bet candidates; gameTreeEvaluator.js:491 propagates sizing through. Sizing Curve Tag wires this sprint after all. deriveEvByFraction helper filters bet/raise + sorts ascending; null when < MIN_SAMPLES_FOR_CLASSIFICATION=3.]"
+    notes: |
+      Accept criteria (per WS-192.yaml):
+        - replayAnalysis.js extends per-action analysis with perCombo
+          attachment via computeComboEquityDistribution
+        - evByFraction extracted from recommendations[] if multi-sizing;
+          else defer Sizing Curve Tag with explicit follow-up
+        - 3 B2 sections render real data at 1600×720 on a real postflop
+          hero-action step
+        - smart-test-runner green + Vite build clean
+        - New tests cover perCombo path + section integration with
+          non-mock data
+        - Cross-domain grep guard clean
+        - Project doc Session Log updated
+
+      Bindings:
+        - INV-SLS-B2-SECTION-NULL-DEGRADATION — sections already
+          accept null prop; wiring just provides the data
+        - INV-SLS-B2-CROSS-DOMAIN — wiring lives in
+          handAnalysis/ (neutral domain) and exploitEngine/ →
+          shapeLanguage/ direction is permitted
+        - INV-SLS-B2-EDC-DATA-ONLY — perCombo is data structure,
+          not classifier label
+        - feedback_first_principles_decisions.md — perCombo is
+          consumed by descriptor classifiers (presentation), never
+          fed back into decision engines
+
+      Open question to resolve in plan mode:
+        - Whether evaluateGameTree's recommendations[] currently
+          emits multiple bet-sizing entries per decision (needed
+          to derive evByFraction cheaply). Inspect at plan-mode start;
+          if not, EDC + Spire+Polarization ship this sprint, Sizing
+          Curve Tag wiring defers to a follow-up ticket.
+
+  - id: "WS-092"
+    title: "Annotate blocked_by_note on the solver-access blocker (queue hygiene)"
+    mode: execute
+    effort: S
+    program: domain-correctness
+    category: line-study-slice-widening
+    status: done
+    started_at: "2026-05-17T11:20:00Z"
+    completed_at: "2026-05-17T11:23:00Z"
+    decision_flags: []
+    notes_completion: |
+      Promoted solver-access prerequisite from prose-only status_note
+      to structured blocked_by_note field in WS-092.yaml +
+      queue-index.yaml entry. WS-092 itself returned to `status: backlog`
+      (the underlying engine work is still pending solver access; only
+      the queue-routing metadata changed). Future /next composition
+      will damp WS-092 to P=15 × 0.25 = 3.75, preventing it from
+      surfacing as a clean ship-ready candidate. Clear the note when
+      solver access lands.
+    notes: |
+      Distilled accept criterion: WS-092.yaml + queue-index.yaml entry
+      gain a `blocked_by_note` field recording the GTO Wizard / PioSOLVER
+      access prerequisite. Future /next composition will damp WS-092 to
+      P=15 × 0.25 = 3.75 (vs current full P=15), preventing it from
+      sneaking into the candidate set as a clean ship-ready item.
+
+      Current status_note text already describes the blocker accurately
+      ("Real solver-access dependency holds the work"). The annotation
+      just promotes that prose into the structured `blocked_by_note`
+      field per the Step 2-prereq convention (FIND-106 / WS-243).

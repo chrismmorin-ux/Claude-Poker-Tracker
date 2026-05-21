@@ -1,0 +1,155 @@
+id: "SPR-074"
+title: "SLS Gate 4 CLOSE-OUT — shape-skill-map + lesson-runner + per-surface red-line conformance matrix (WS-180)"
+status: completed
+approved_at: "2026-05-11T04:30:00Z"
+completed_at: "2026-05-11T05:30:00Z"
+
+goal: |
+  Close SLS Gate 4 — ship the two remaining design surfaces (transparency screen
+  + drill runner) and the per-surface red-line conformance matrix that binds the
+  project's 9 autonomy red lines to testable CI/DOM targets. Closing Gate 4
+  unblocks Stream B/D (WS-040 skill-state foundation + WS-041/042/043
+  classifiers).
+
+program_focus: design
+program_initiative: |
+  Design Program — SLS Gate 4 close-out. Founder-ratified 2-sprint split from
+  SPR-073: foundation (study-home + SLS embed + enrollment journey + shape-
+  mastery contract) shipped 2026-05-11; this sprint ships the deferred 3
+  artifacts (shape-skill-map.md + lesson-runner.md + per-surface red-line
+  conformance matrix).
+
+  Cross-program rotation: last 6 anchors = DC/design/DC/eng/eng/design.
+  Continuation of SPR-073 commitment — not a fresh anchor choice. Founder
+  retained option to pivot at approval; approved as proposed.
+
+composed_by: auto
+created_at: "2026-05-11T04:30:00Z"
+
+effort_summary: |
+  M plan-first → ~1 session actual (matched SPR-073 doc-authoring cadence).
+  3 founder decisions ratified upfront via AskUserQuestion (all 3
+  recommendations accepted: D1=single-scrollable / D2=shared shell intent-as-
+  route / D3=hybrid enforcement).
+
+  Net work:
+    - 3 NEW design artifacts (~920 lines total)
+      • docs/design/surfaces/shape-skill-map.md (~270 lines)
+      • docs/design/surfaces/lesson-runner.md (~340 lines)
+      • docs/design/audits/2026-05-11-sls-g4-redline-conformance.md (~310 lines)
+    - 6 amended artifacts
+      • docs/design/contracts/shape-mastery.md (Writers/Readers tables + new
+        writer TOGGLE_SESSION_INCOGNITO + change log)
+      • docs/design/contracts/README.md (8→9 writer count + change log)
+      • docs/design/surfaces/shape-language-study-home.md (5 cross-refs
+        upgraded from "Planned (SPR-074)" → live links + change log)
+      • docs/design/surfaces/study-home.md (3 cross-refs to conformance matrix
+        upgraded → live link)
+      • docs/design/surfaces/CATALOG.md (3 new top-level view entries +
+        change log)
+      • docs/projects/poker-shape-language.project.md (Stream A row G4 [~] → [x])
+
+  Zero src/ diff (design-only sprint per AC6). 25 pre-existing src/
+  modifications were in the working tree before this sprint.
+
+  All 6 accept criteria satisfied. SLS Gate 4 CLOSED across SPR-073 + SPR-074.
+  Streams B + D (classifier modules + reducer/store + IDB v17→v18) now
+  unblocked at the design layer.
+
+  Cross-program rotation analysis: anchors after this sprint =
+  DC/design/DC/eng/eng/design/design → design 2-in-3-of-last-7. Rotation back
+  to DC (WS-020/023/025 testing-infra) or engineering (RL Gate 2-4 cluster)
+  available next sprint.
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-05-11T04:30:00Z"
+  reason: |
+    Manual scan (script not installed locally). Pure design-doc authoring on a
+    project whose autonomy red lines are well-rehearsed (Gate 2 RED → re-run
+    GREEN binding). No engine code; no UX surface code; no engagement-pressure
+    / shame copy / mastery-score rendering. The conformance-matrix item
+    enumerates red-line checks rather than violating them. AP refusals from
+    SLS Gate 2 + the broader autonomy red-line ladder are explicit targets of
+    the conformance matrix authored this sprint.
+
+decisions_needed:
+  - "Item #1.A — shape-skill-map IA: single transparency page (all signal
+    sources in one scrollable view) vs tabbed (Leaks / Drills / Tests / Recent)"
+  - "Item #1.B — lesson-runner IA: per-lesson drill container vs shared shell
+    with mode tabs (Reference / Deliberate / Discover)"
+  - "Item #1.C — Red-line conformance matrix enforcement: CI-grep boolean
+    table vs runtime DOM assertion vs hybrid per-red-line"
+
+decisions_ratified:
+  d1_skill_map_ia: "Single scrollable page IA. All 10 descriptors in one grid; expandable composition row per descriptor (W_drill + W_recent + declared + W_leak placeholder + W_test placeholder). Matches feedback_scf_learning_state_not_tier_rank.md 'composition is always inspectable'. Tabbed and hybrid IAs refused."
+  d2_runner_ia: "Shared shell with intent as route param. SCREEN.LESSON_RUNNER + ?intent=reference|deliberate|discover. Reference variant structurally cannot dispatch RECORD_DRILL_OUTCOME per I-SM-3 reducer enforcement (defense-in-depth third layer on top of surface design + route discipline). Three-separate-surfaces and per-descriptor-container refused."
+  d3_conformance_enforcement: "Hybrid per-red-line. CI-grep for syntactic violations (forbidden field names like masteryScore, forbidden copy strings like 'streak'); DOM-assert for behavioral violations (mute exclusion, intent-mode gating, dispatch behavior). Matrix specifies enforcement method per cell. Aggregate test catalog at docs/design/audits/2026-05-11-sls-g4-redline-conformance.md."
+
+composition_notes: |
+  Soft-blocked / not anchored this sprint:
+    - WS-027/030/031/032/033/036 (P=22 launch / MPMF) — soft-blocked × 0.25
+      damping → P=5.5. Q7 legal scoping + MPMF Gate 4 not yet ticketed.
+    - WS-164 (P=18 PIO G5 child E) — soft-blocked × 0.25 → P=4.5. Table-Build
+      Gate 5 dep.
+
+  Source-class damping: none. Last 3 anchors = eng-meta-refactor (SPR-071) +
+  spr-followup eng (SPR-072) + spr-followup design (SPR-073). No auto-rec or
+  engine-finding saturation.
+
+  Cross-program rotation: design 2-of-3 recent if SPR-074 anchors design. But
+  this is a founder-committed split closer, not a fresh anchor choice. Rotation
+  back to DC (WS-020/023/025 testing-infra) or eng (RL Gate 2-4 cluster)
+  available next sprint.
+
+  Fleet rotation: N/A (product-focused codebase).
+
+items:
+  - id: "WS-180"
+    title: "SLS Gate 4 close-out — shape-skill-map + lesson-runner + red-line conformance matrix"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-11T04:35:00Z"
+    completed_at: "2026-05-11T05:30:00Z"
+    decision_flags:
+      - "shape-skill-map IA (single page vs tabbed)"
+      - "lesson-runner IA (per-lesson vs shared shell w/ mode tabs)"
+      - "Red-line conformance matrix enforcement strategy"
+    notes: |
+      Plan-first because all 3 decision_flags must be ratified before doc
+      authoring. Pre-existing source materials:
+        - docs/design/surfaces/study-home.md (SPR-073)
+        - docs/design/surfaces/shape-language-study-home.md (SPR-073)
+        - docs/design/journeys/shape-language-enrollment.md (SPR-073)
+        - docs/design/contracts/shape-mastery.md (SPR-073, 9 invariants)
+        - docs/projects/poker-shape-language.project.md (charter)
+        - docs/projects/poker-shape-language/gate3-decision-memo.md (8 carry-forwards)
+        - docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding-rerun.md (Gate 2 GREEN; 9 red lines listed)
+
+      Deliverables (per WS-180 accept_criteria):
+        1. docs/design/surfaces/shape-skill-map.md (NEW)
+        2. docs/design/surfaces/lesson-runner.md (NEW)
+        3. docs/design/audits/2026-05-11-sls-g4-redline-conformance.md (NEW —
+           aggregate matrix; per-surface tables inline in each surface doc)
+        4. docs/design/contracts/shape-mastery.md (UPDATE — bind 8 writer
+           actions + 4 read hooks to new surfaces)
+        5. docs/projects/poker-shape-language.project.md (UPDATE — G4 [~] → [x])
+
+      Verification:
+        - Each new surface spec references Gate 2 Stage-C/E rules that constrain it
+        - Each of the 9 red lines gets binding test target (CI-grep / DOM / runtime-flag)
+        - shape-mastery contract writers + readers referenced from new surfaces
+        - 8 Gate 3 carry-forwards bound where applicable
+        - Zero src/ diff (design-only)
+
+      Source-class: spr-followup (parent_ws: WS-039 → parent_spr: SPR-073).
+      Not damped.

@@ -6,9 +6,9 @@ status: backlog
 claimed_by: ""
 claimed_at: null
 completed_at: null
-priority_score: 15.0
-priority_label: "P2"
-category: "ready-to-start"
+priority_score: 8.0
+priority_label: "P3"
+category: "played-hand-review-protocol"
 capability: "core"
 program: "engineering"
 description: |
@@ -27,7 +27,7 @@ blocked_by_legacy:
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by HRP-G4-SPEC + HRP-E-RESOLVER + HRP-E-TREE-EXPOSE"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — PAUSED-INDEFINITELY + category retitled + P-score 15→8. HRP-E-TREE-EXPOSE shipped 2026-04-29 (commit ef81ef6) but HRP-G4-SPEC + HRP-E-RESOLVER still pending. Reclaim at P=15 when prerequisites land."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

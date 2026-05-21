@@ -1,0 +1,111 @@
+id: "SPR-097"
+title: "Range Lab Gate 3 (Research) — author RL JTBDs + advance to design-ready"
+status: completed
+approved_at: "2026-05-20T14:10:00Z"
+activated_at: "2026-05-20T14:10:00Z"
+completed_at: "2026-05-20T14:30:00Z"
+
+goal: |
+  Range Lab's JTBD research is authored and the project advances to
+  design-ready — the last design blocker before the Gate 4 surface spec
+  (WS-055) that unblocks Phase 1-2 implementation.
+
+program_focus: engineering
+program_initiative: |
+  Range Lab is the live owner-driven thread: SPR-093 (Gate 2 YELLOW) ->
+  SPR-094/095 (Phase-0 engine: ADR-007/008, equity-precompute cache,
+  LSW-RL parity invariant) -> SPR-096 (LSW correctness follow-up). WS-054
+  (Gate 3) is now unblocked (its only dep WS-053/Gate 2 closed in SPR-093)
+  and is the single remaining design blocker for Gate 4 (WS-055). Gate 2
+  audit (2026-05-20-blindspot-range-lab.md) Stage B pre-specifies the
+  Gate 3 deliverable.
+
+composed_by: auto
+created_at: "2026-05-20T14:10:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-20T14:10:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-096 precedent). Manual scan:
+      - WS-054 is design-research JTBD authoring (markdown). No user-facing
+        copy, no graded/engagement surface.
+      - The DS-66 (per-street evolution) JTBD binds AP-RL-01 (no
+        bucket-label narrowing) and DS-67 (validate authored content)
+        binds INV-LSW-RL-EQUITY-PARITY — both honor
+        [[feedback_first_principles_decisions]].
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-054) — DS-ID renumber: RL Gate-1/Gate-2 proposed DS-52/53/54/55, but those IDs were squatted by the Poker Shape Language project (committed 2026-04-23, one day after RL Gate 1). Re-number RL JTBDs to next free block DS-64/65/66/67."
+  - "Item #1 (WS-054) — confirm 4 JTBD framings + Phase split (DS-64 paint + DS-65 compare = Phase 1-2; DS-66 evolution + DS-67 validate = Phase 3+) + whether owner Flopzilla-workflow interview (G3.2) is needed or waived (Gate 2 resolved open questions inline)."
+
+composition_notes: |
+  Singleton Gate-3 sprint anchored on the live Range Lab thread.
+
+  Anchor selection (Step 3a):
+    - WS-054 (P=15, M, engineering/design-gate, improvement) is the
+      genuinely-unblocked next gate in the dominant active project. Its
+      only dep WS-053 (Gate 2) closed SPR-093. Source-class spr-followup
+      / plan-internal (founder-driven), no damping.
+
+  Premise verification at composition (per [[feedback_verify_ticket_premise_at_composition]]):
+    - CAUGHT a DS-ID collision: RL's proposed DS-52/53/54/55 are occupied
+      in jtbd/ATLAS.md by the Shape Language project (Retention / Edge-case
+      probe / Exploration override / Resumption — all Active). RL Gate 3
+      will re-number to DS-64/65/66/67 (next free; DS-62/63 taken by PSD).
+      Same failure class as SPR-091's DS-56/57/58/59 collision.
+
+  Pair selection (Step 3b): WS-055 (Gate 4) is the natural next item and
+    depends only on WS-054, but 2x M tags to ~3 sessions, over the standard
+    2-session cap. Founder approved singleton (option 1). WS-055 is the
+    immediate next-sprint candidate.
+
+  Soft-block demotions (Step 2-prereq) unchanged from SPR-096:
+    WS-027..036 (launch/monetization), WS-191 (seat autoselector), WS-047
+    (PRF Phase A), WS-092 (HERO_BUCKET equity).
+
+  Fleet-rotation override (Step 3a-rotation): skipped — poker-tracker
+  product repo, no fleet/repo-goal candidates (same as SPR-082..096).
+
+  Sprint-block status (Step 1d): domain-correctness swept 2026-05-19 (not
+  stale; block_sprint cleared); launch never baselined (non-blocking, per
+  SPR-085..096 precedent). Step 1d clear. Activation gate (Step 1d-pre):
+  pass (design/change-mgmt/methodology/launch active + domain-correctness
+  critical). Step 1e: no programs have queued auto-recs; domain-correctness
+  below ceiling but sweep-fresh with no queued code work — no auto-rec
+  generated.
+
+items:
+  - id: "WS-054"
+    title: "Range Lab Gate 3 (Research) — author RL JTBDs (DS-64..67) + advance to design-ready"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-20T14:30:00Z"
+    decision_resolved: "Founder ratified at plan-mode: (1) re-number RL JTBDs to DS-64/65/66/67 (proposed DS-52/53/54/55 squatted by Shape Language); (2) waive owner Flopzilla-workflow interview (Gate 2 resolved owner questions inline)."
+    completion_note: "Docs-only (zero src/ diff). Authored DS-64 (paint) / DS-65 (compare, ≥1-decimal fidelity) / DS-66 (per-street evolution, AP-RL-01 binding) / DS-67 (validate authored content, INV-LSW-RL-EQUITY-PARITY binding) as Proposed in jtbd/domains/drills-and-study.md. Registered all 4 in jtbd/ATLAS.md; backfilled missing DS-62/63 (PSD) + added DS-registry collision-prevention note. range-lab.project.md → gate-3-complete (G3.1/G3.2-waived/G3.3-GREEN; session + decisions logs updated). Gate 4 (WS-055) unblocked."
+    decision_flags:
+      - "DS-ID renumber to DS-64/65/66/67 (collision with PSD-squatted DS-52/55)"
+      - "4 JTBD framings + Phase split + owner-interview waive/run"
+    files_involved:
+      - "docs/design/jtbd/domains/drills-and-study.md"
+      - "docs/design/jtbd/ATLAS.md"
+      - "docs/projects/range-lab.project.md"
+      - "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+
+deferred: |
+  - WS-055 (Range Lab Gate 4 surface spec) — immediate next-sprint
+    candidate; depends only on WS-054. Author Range Lab section in
+    surfaces/postflop-drills.md.
+  - WS-205 (equity cache) already shipped SPR-095; WS-206 (parity
+    invariant) shipped SPR-095. Phase 1-2 implementation (WS-056/057)
+    unblocked once Gate 4 closes.

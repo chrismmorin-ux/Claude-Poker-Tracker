@@ -1,0 +1,122 @@
+id: "WS-179"
+title: "Queue reconciliation sweep — retire stale tickets with done_provenance"
+type: improvement
+status: done
+claimed_by: "session-2026-05-11-spr-071"
+claimed_at: "2026-05-11T00:00:00Z"
+started_at: "2026-05-11T00:05:00Z"
+completed_at: "2026-05-11T01:30:00Z"
+ratified_decisions:
+  d1_scope: "P≥15 unclaimed"
+  d2_taxonomy: "5 buckets (SHIPPED-elsewhere / SUPERSEDED / LEGITIMATE-BACKLOG / NEEDS-RESCOPE / PAUSED-INDEFINITELY)"
+  d3_retention: "in-place with status:done + done_provenance (mirror WS-038)"
+  d4_rts_cluster: "disposition each on its merits via the taxonomy"
+priority_score: 20.0
+priority_label: "P1"
+category: "queue-hygiene"
+capability: "core"
+program: "engineering"
+description: |
+  Meta-refactor of the workstream queue itself. SPR-069 close-out explicitly
+  recommended this sweep after WS-038 was retired as the first confirmed case
+  of "stale work-tracking" (Shape Language Gate 3 had shipped 2026-04-23/24
+  but the ticket was never closed). SPR-066/067/068 close-outs flagged the
+  same pattern accumulating across multiple categories. SPR-067 already
+  retroactively patched three resolved items with "Index drift cleared
+  2026-05-10 SPR-067 reconcile sweep" markers — this ticket is the full sweep.
+
+  The drift problem (recap):
+    The 2026-05-01 mass-migration of `.claude/BACKLOG.md` → `queue/WS-*.yaml`
+    captured items at their then-current priority but did NOT reconcile against
+    project doc state. Result: tickets that point to work which has actually
+    shipped (or paused, or been superseded) remain in queue at full P-score
+    and anchor `/next` candidate ranking. SPR-070 already had to apply
+    soft-block damping to 5 P=22 MPMF items; the same problem at the P=15 tier
+    will continue to compound across future sprints until the queue is
+    reconciled.
+
+  Scope (to be ratified in plan mode):
+    Walk a defined set of unclaimed tickets and classify each into one of
+    5 dispositions. Update YAML in-place (no archive directory) per the
+    WS-038 pattern: status:done + done_provenance for shipped cases, status
+    note + freshness stamp for legitimate-backlog cases.
+
+  Cross-references:
+    - SPR-069 close-out: "Recommended /workstream reconcile sweep as separate ticket"
+    - SPR-068 composition_notes: "WS-080/105/135/159 likely also stale"
+    - WS-038 done_provenance (template for SHIPPED-elsewhere disposition)
+    - SPR-067 reconcile-sweep markers in WS-029/077/078/105/106/107 status_notes
+      (partial precedent; this ticket is the comprehensive pass)
+
+  Out of scope (separate tickets if needed):
+    - Source-class damping algorithm changes
+    - queue-index.yaml schema additions (e.g. dedicated freshness field)
+    - Migration of legacy_id namespace
+    - The BACKLOG-legacy.md / BACKLOG_ARCHIVE.md files (historical references only)
+
+accept_criteria:
+  - "Sweep covers the scope ratified in plan mode (one of: all P≥15 unclaimed; all 86 unclaimed; or the close-out-flagged target list)"
+  - "Each swept ticket gets explicit disposition: SHIPPED-elsewhere / SUPERSEDED / LEGITIMATE-BACKLOG / NEEDS-RESCOPE / PAUSED-INDEFINITELY"
+  - "SHIPPED-elsewhere tickets: status:done + done_provenance block with evidence pointers (project doc, commit SHA, sprint ID, accept-criteria mapping)"
+  - "SUPERSEDED tickets: status:done + status_note containing the replacement-ticket or project-doc pointer"
+  - "LEGITIMATE-BACKLOG tickets: status stays backlog, status_note updated with current date + 1-line freshness rationale"
+  - "NEEDS-RESCOPE tickets: status stays backlog, status_note explains what's missing for the ticket to become actionable"
+  - "PAUSED-INDEFINITELY tickets: status stays backlog, priority_score reset to P3=8 to deprioritize in /next ranking"
+  - "queue-index.yaml regenerated to reflect updated statuses; sweep summary written into the index header comment block"
+  - "Sweep report at .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md (NEW) — table of all swept tickets + disposition + rationale + evidence pointer"
+  - "Zero src/ diff (this is queue-state-only; no code changes)"
+
+effort: "M"
+files_involved:
+  - ".claude/workstream/queue/WS-*.yaml (multiple — modify in-place per disposition)"
+  - ".claude/workstream/queue-index.yaml (regenerate)"
+  - ".claude/workstream/sweeps/SPR-071-queue-reconcile-report.md (NEW)"
+
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables: []
+sprint_id: "SPR-071"
+decision_flags:
+  - "Sweep scope: all P≥15 unclaimed (~20 items) vs all unclaimed regardless of P (~86) vs close-out-flagged target list (~25)"
+  - "Disposition taxonomy: 5 buckets (SHIPPED-elsewhere / SUPERSEDED / LEGITIMATE-BACKLOG / NEEDS-RESCOPE / PAUSED-INDEFINITELY) — confirm or adjust"
+  - "Retention vs archive: SHIPPED-elsewhere keeps YAML in place with status:done+done_provenance (mirrors WS-038) OR moves to .claude/workstream/queue/archive/"
+  - "Generic-name 'ready-to-start' cluster (WS-053..WS-068 + WS-079): retitle in-place with <project-id>: <gate-name> for searchability OR retire entirely if parent project is dormant"
+
+status_note: |
+  RESOLVED 2026-05-11 SPR-071. 4 decisions ratified upfront (D1=P≥15 unclaimed, D2=5 buckets, D3=in-place, D4=per-merits). Sweep walked 43 tickets:
+    SHIPPED-elsewhere (3): WS-021 / WS-024 / WS-061 — closed with done_provenance + evidence pointers.
+    SUPERSEDED (2): WS-049 / WS-075 — closed with supersession pointers.
+    LEGITIMATE-BACKLOG (22): refreshed status_note + freshness stamp 2026-05-11; 13 retitled from ready-to-start to project-anchored categories (5 range-lab, 8 played-hand-review-protocol).
+    NEEDS-RESCOPE (4): WS-020 / WS-023 / WS-025 / WS-074 — status:backlog + rescope direction in note.
+    PAUSED-INDEFINITELY (12): WS-029 / WS-068..073 / WS-097..098 / WS-108..110 — P-score reset 15→8 (P2→P3).
+  Net /next composition impact: 43 P≥15 candidates → 26 after sweep. Full report at .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md. Zero src/ diff.
+
+done_provenance:
+  src_files: []
+  queue_yaml:
+    - "Modified: 43 queue/WS-*.yaml files (status / status_note / priority_score / category / updated_at per disposition)"
+    - "Modified: queue-index.yaml (5 retired entries + header sweep summary block + WS-179 entry)"
+  reports:
+    - ".claude/workstream/sweeps/SPR-071-queue-reconcile-report.md (NEW — full audit table with per-ticket disposition + evidence)"
+  charter:
+    - "Sprint SPR-071 + WS-179 (this ticket)"
+  accept_mapping:
+    - "✓ AC1 Sweep scope: P≥15 unclaimed (43 tickets) — confirmed via grep count"
+    - "✓ AC2 Each swept ticket gets explicit disposition — 43/43 carry SHIPPED-elsewhere | SUPERSEDED | LEGITIMATE-BACKLOG | NEEDS-RESCOPE | PAUSED-INDEFINITELY"
+    - "✓ AC3 SHIPPED-elsewhere — 3 tickets carry done_provenance with evidence pointers (file paths + commit SHAs + project doc refs)"
+    - "✓ AC4 SUPERSEDED — 2 tickets carry supersession pointers in status_note"
+    - "✓ AC5 LEGITIMATE-BACKLOG — 22 tickets carry 2026-05-11 freshness stamp + 1-line freshness rationale"
+    - "✓ AC6 NEEDS-RESCOPE — 4 tickets carry rescope direction"
+    - "✓ AC7 PAUSED-INDEFINITELY — 12 tickets reset to P=8 with 'no current trigger' note"
+    - "✓ AC8 queue-index.yaml regenerated to reflect 5 status:done flips + sweep summary header block"
+    - "✓ AC9 Sweep report at .claude/workstream/sweeps/SPR-071-queue-reconcile-report.md — table of all 43 tickets + disposition + rationale + evidence"
+    - "✓ AC10 Zero src/ diff verified"
+
+source:
+  origin: "spr-071-composition-2026-05-11"
+  parent_spr: "SPR-069"
+  parent_recommendation: "Recommended /workstream reconcile sweep as separate ticket"
+
+created_at: "2026-05-11"
+updated_at: "2026-05-11"

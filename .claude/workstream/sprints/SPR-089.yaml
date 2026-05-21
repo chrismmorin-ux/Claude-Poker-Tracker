@@ -1,0 +1,176 @@
+id: "SPR-089"
+title: "Per-combo villainStrengthBucket primitive (Basin classifier prereq from SPR-088)"
+status: completed
+approved_at: "2026-05-19T02:39:23Z"
+completed_at: "2026-05-19T03:00:00Z"
+
+goal: |
+  The river-decision primitive ships honestly — every showdown `perCombo`
+  carries a `villainStrengthBucket` against the public board, so Basin
+  (and future river-decision exploit code) classifies on a real
+  showdown-outcome distribution instead of a placeholder.
+
+program_focus: domain-correctness
+program_initiative: |
+  Direct SPR-088 follow-up. SPR-088 plan-mode (item 1, 2026-05-18) owner
+  correction reframed river equity as a showdown-outcome distribution
+  (binary per combo, deterministic cards) rather than a
+  variance-across-runouts metric. WS-194 was authored inline at SPR-088
+  close-out to ship the engine plumbing that the SLS B3 Basin
+  classifier needs to be a real classifier instead of a deferred
+  placeholder.
+
+  Per memory `feedback_river_equity_is_showdown_outcome.md`: descriptor
+  labels live downstream of the bucketed distribution, never upstream
+  of it (companion to `[[first-principles-decisions]]`). Variance is a
+  label; on a deterministic river it is the wrong abstraction.
+
+  Domain-correctness program rotation: last DC anchor was SPR-083 (5
+  sprints back). SPR-088 explicitly deferred to "a dedicated DC sprint."
+  WS-194 fills that gap with a clean ship-ready P=17 item.
+
+composed_by: auto
+created_at: "2026-05-19T02:39:23Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-19T02:39:23Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075..SPR-088 precedent). Manual scan:
+      - WS-194 is a pure engine refactor adding a per-combo strength
+        bucket primitive at showdown. No UI, no user-facing copy.
+      - No graded surfaces, no engagement-pressure copy, no mastery
+        score ranking, no live-table contamination.
+      - Honors [[feedback_river_equity_is_showdown_outcome]]: bucketed
+        distribution is the load-bearing river primitive, not variance.
+      - Honors [[first-principles-decisions]]: descriptor labels (Basin)
+        are OUTPUTS of the bucketed distribution, never inputs.
+      - Honors [[feedback_action_dispatch_legality]] in spirit: prefer
+        a primitive that makes downstream classifiers unrepresentable
+        in wrong shapes (a strength bucket per combo, vs a free
+        variance number that has to be validated against the river's
+        deterministic structure).
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Bucket-boundary thresholds (D1): how does a combo qualify as nuts / very-strong / strong / marginal / weak-or-bluff against a public board? Calibrated thresholds (e.g., 2nd-pair-or-better → strong) OR rank-relative (top-N% of all combos vs board). Calibrated is more transparent; rank-relative is more board-adaptive."
+  - "Item #1 — Bucket on river-only vs all streets (D2): river-only is the load-bearing case (deterministic showdown). Flop/turn buckets vs the current board are still meaningful but less stable because future cards reshape them. River-only keeps the abstraction honest; all-streets unlocks consistency for hypothetical 'if we checked-back here, what does the bucket distribution look like?' at the cost of a label that might mislead on early streets."
+  - "Item #1 — Helper location (D3): src/utils/pokerCore/ (general-purpose, alongside evaluateHand) OR src/utils/exploitEngine/gameTreeEquity.js (alongside the consumer computeComboEquityDistribution). pokerCore is the cleaner home if other engines might consume it; exploitEngine keeps the dependency localized."
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-194 (P=17, M effort, 3
+  decision flags, source-class = spr-followup). No companion item.
+
+  Anchor selection:
+    - Top adj-score CLEAN candidate is WS-194 (P=17, no soft-block, no
+      damping). All higher-priority candidates (WS-027/030/031/032/033/036
+      at P=22; WS-191 at P=20; WS-164 at P=18) carry blocked_by_note —
+      after 0.25× soft-block damping (Step 2-prereq), they drop to
+      5.5 / 5.0 / 4.5, well below WS-194.
+    - WS-194 is direct continuation of SPR-088 plan-mode owner
+      correction. Basin shipped at SPR-088 with a deferred-classifier
+      placeholder; this primitive unlocks it.
+    - Domain-correctness program rotation: last DC anchor was SPR-083
+      (5 sprints back). SPR-088 composition_notes explicitly deferred
+      to "a dedicated DC sprint after rescope work or after WS-020/023/025
+      get rescoped tickets." WS-194 fills the rotation cleanly without
+      waiting on rescope work.
+
+  Pair candidate evaluation:
+    - No clean S-effort backlog item at P>=15 exists. Every WS-118..173
+      S-effort item is already status=done.
+    - WS-087 (LSW-B2 turn-decision widening, P=15, M) — same program
+      but gated on Stream A audit close; would push past 2-session cap.
+    - WS-053 (RL Gate 2, P=15, M) — different program (engineering),
+      different stream; would dilute the plan-first focus on river-
+      primitive design decisions.
+    - Single-item sprint accepted: caps are maxima, not minima. Three
+      decision flags warrant focused attention.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-086 (spr-followup, WS-192 inline), SPR-087
+      (spr-followup, WS-193 inline), SPR-088 (untagged, WS-043 cleared
+      queue item). All founder-driven — saturation rule does not apply.
+    - WS-194 source-class = spr-followup (has source.parent_ws=WS-043
+      + parent_spr=SPR-088). Founder-driven, no damping.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..088 — this is the poker-tracker product repo, no
+  fleet/repo-goal candidates exist (no fleet-health program, no
+  fleet/ directory).
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (17d ago, cadence
+      14d → 3d stale). Strict block_sprint reading would block.
+    - Following SPR-085..088 precedent (all proceeded with same stale
+      DC state), composing this sprint anyway. The composition itself
+      reduces the program-health gap.
+    - Note: dedicated /pulse run domain-correctness sweep is worth
+      scheduling soon — sweep protocol due 2026-05-15 per program
+      health_ceiling_reason, currently 3d overdue.
+
+  Plan-mode entry:
+    - Item 1 mode = plan-first. Three decision flags must be resolved
+      with owner before code.
+    - Plan-mode exploration scope: read existing perCombo shape in
+      gameTreeEquity.js, evaluateHand structure in pokerCore, board-
+      relative-strength helpers if any.
+
+items:
+  - id: "WS-194"
+    title: "Engine refactor — per-combo villainStrengthBucket at showdown (Basin prereq)"
+    mode: plan-first
+    effort: M
+    priority_score: 17.0
+    program: domain-correctness
+    status: done
+    decision_flags:
+      - "D1 — Bucket-boundary thresholds: calibrated vs rank-relative"
+      - "D2 — River-only vs all streets"
+      - "D3 — Helper location (pokerCore vs exploitEngine)"
+    decisions_ratified:
+      D1: "Rank-relative percentile (founder choice). Per board, enumerate every legal 2-card combo, score via bestFiveFromSeven, sort desc, bucket by percentile bands [0.05, 0.20, 0.50, 0.80, 1.00]. Board-adaptive by construction."
+      D2: "All postflop streets (founder choice). Bucket appears on flop/turn/river uniformly. Founder rationale: surfaces should expose which runouts move villain's combos up/down the strength ladder, informing bluff candidacy."
+      D3: "src/utils/pokerCore/handEvaluator.js (founder choice). Pure card-math, no engine imports — fits pokerCore's contract; reusable from rangeEngine / shapeLanguage if needed."
+    notes: |
+      Shipped. Implementation followed plan-mode design exactly:
+        - STRENGTH_BUCKETS enum + STRENGTH_BAND_TOPS + comboKey internal helper
+        - computeBoardStrengthTable(board) — O(C(52-boardLen, 2)) enumeration with
+          tie-by-score grouping; ties share the bucket of the group's first member
+        - classifyVillainCombo(c1, c2, board, table=null) — returns null on
+          board-card collision, c1===c2, or board.length outside 3..5
+        - gameTreeEquity.computeComboEquityDistribution computes the strength
+          table once per call and stamps villainStrengthBucket onto each perCombo
+        - 4 new INV-STRENGTH-BUCKET invariants in system/invariants.md
+      Tests:
+        - 17 new unit tests in handEvaluator.test.js (43/43 green)
+        - 5 new integration tests in gameTreeEquity.test.js (183/183 green)
+      Smart-test-runner: 11,692 passing / 1 pre-existing flake (PlayerFinderView
+      smoke under parallel load, passes standalone in 2.5s, no connection to
+      gameTreeEquity / pokerCore).
+      Build: clean.
+      Cross-domain grep guard: clean (pokerCore imports none of exploitEngine /
+      rangeEngine / shapeLanguage).
+      Unblocks: SLS-B4 Basin classifier (WS-044) — strength-tier histogram is
+      now consumable from perCombo. Future river-decision exploit code (bluff-
+      catch frequency, thin-value sizing) can read villainStrengthBucket
+      directly.
+
+deferred: |
+  - LSW-B2 (WS-087, P=15, turn-decision widening) — same program but
+    gated on Stream A audit close; M effort would push past cap.
+  - Range Lab Gate 2 (WS-053, P=15) — different program (engineering);
+    would split focus.
+  - PSD Gate 2 (WS-063, P=15) — design program; would split focus.
+  - SLS-B4 (WS-044, P=8) — downstream of WS-194 (the Basin classifier
+    consumer). Wait for primitive to land before scoping.
+  - MPMF cohort (WS-027/030/031/032/033/036, P=22) — all soft-blocked
+    on Q7 legal-scoping / Gate 4 surface specs / counsel scheduling.
+  - WS-191 (Seat autoselector Phase 2, P=20) — awaiting >=3 owner-
+    captured telemetry observations from live sessions.

@@ -2,10 +2,10 @@ id: "WS-021"
 title: "Cross-anchor invalidation atomicity test"
 legacy_id: "EAL-G5-CA"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-071-reconcile"
+claimed_at: "2026-05-11T00:30:00Z"
+completed_at: "2026-05-11T00:30:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -22,9 +22,20 @@ blocked_by: []
 blocked_by_legacy:
   - "EAL-S"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-071"
 decision_flags: []
-status_note: "BLOCKED by EAL-Stream-E"
+status_note: "RESOLVED 2026-05-11 SPR-071 QUEUE-RECONCILE — SHIPPED-elsewhere disposition. Cross-anchor invalidation is implemented at src/utils/anchorLibrary/primitiveValidity.js (commit 4 ship 2026-04-25 per src/utils/anchorLibrary/index.js header) and tested via src/utils/anchorLibrary/__tests__/primitiveValidity.test.js covering the Tier-2 posterior updater + computeRipple cross-anchor invalidation atomicity. The PP-flag → degradation → dependent-anchor-ripple pipeline ships green; dependentAnchorCount invariant pinned by the test."
+done_provenance:
+  disposition: "SHIPPED-elsewhere"
+  evidence:
+    - "src/utils/anchorLibrary/primitiveValidity.js (Public API — cross-anchor invalidation ripple at line 150; computeRipple implementation)"
+    - "src/utils/anchorLibrary/__tests__/primitiveValidity.test.js (Tier-2 posterior + cross-anchor invalidation tests)"
+    - "src/utils/anchorLibrary/CLAUDE.md §4 (I-EAL-9 invariant pinned)"
+    - "src/utils/anchorLibrary/index.js line 11 (Commit 4 ship marker 2026-04-25)"
+  accept_mapping:
+    - "✓ Test passes — primitiveValidity.test.js green (part of full anchorLibrary suite)"
+    - "✓ dependentAnchorCount invariant holds — computeRipple emits PRIMITIVE_VALIDITY_UPDATED + per-anchor degradation events atomically per CLAUDE.md §4"
+  retroactive_close_reason: "Work shipped 2026-04-25 (Commit 4); ticket was migrated from BACKLOG.md 2026-05-01 with stale BLOCKED note. SPR-067 partial-reconcile sweep marked similar items; SPR-071 comprehensive sweep closes this ticket."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"

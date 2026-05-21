@@ -1,0 +1,217 @@
+id: "SPR-078"
+title: "Refactor Sprint Item 4 — Extract decision-system module pattern (decisionSystems/ core + anchorLibrary migration + ADR)"
+status: completed
+approved_at: "2026-05-14T00:00:00Z"
+completed_at: "2026-05-14T11:43:00Z"
+
+goal: |
+  Extract the unnamed 4-instance "decision-system" pattern (engine logic + IDB
+  store + reducer + hook + context+view) into shared infrastructure at
+  src/utils/decisionSystems/. Migrate anchorLibrary as the proof-of-pattern
+  instance (most mature, smallest blast radius from a migration mistake). Ratify
+  the pattern with an ADR. PMC Phase 5b is the 5th instance waiting to be built —
+  this sprint stops the build cost from repeating and stops the existing 4
+  instances from drifting further.
+
+program_focus: engineering
+program_initiative: |
+  Refactor Sprint 2026-05-10 — Item 4 (the explicit "NEXT" per project charter
+  sequencing). Charter ratification #3 (binding): "Decision-system pattern is
+  the headline — Item 4 is the largest unlock; Items 1+2+3 exist to enable
+  it." Items 1+2+3 done (SYSTEM_MODEL.md restored 2026-05-10, state.md reshaped
+  2026-05-10, persistence migration registry shipped 2026-05-11). Item 4 is the
+  load-bearing extraction the prior items were sequenced to enable.
+
+  Charter ratification #4 (binding): no new features during this sprint until
+  Item 4 is complete. All P=22 (MPMF launch-program) and P=20 (WS-191 seat
+  autoselector Phase 2) candidates are soft-blocked. Bug-class work continues
+  to ship as charter-exempt (SPR-075/076/077 precedent).
+
+  SYSTEM_MODEL.md cross-links: C-15 (Hidden Coupling — decision-system pattern
+  unnamed, §6.1) and TD-15 (Tech Debt Register, §11) both trace back to this
+  extraction.
+
+  Cross-program rotation: last 3 anchors = DC (SPR-077) + design (SPR-076) +
+  DC (SPR-075). Engineering returns. No source-class saturation; anchor is
+  project-direct founder-ratified (not auto-rec, not engine-finding).
+
+composed_by: auto
+created_at: "2026-05-14T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+  cap_override_reason: |
+    Single-item L sprint (~3 sessions). Exceeds the 2-session standard cap.
+    Matches SPR-076 (M plan-first → 1.5 actual) and SPR-077 (L tagged → ~1
+    actual for Phase 1 scope) precedent: single-anchor sprints on large
+    architectural items are preferred over splitting the design across two
+    composition cycles. Item 4 is a single coherent extraction; splitting the
+    ADR from the proof migration would prevent the proof from validating the
+    pattern.
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase fleet tooling absent — product repo). Manual scan: Item 4 is an
+    internal architectural extraction with an owner-ratified charter justifying
+    it (project charter ratification #3 binding). Value: stop drift in 4
+    instances + cut cost of 5th. Not "self-aggrandizing complexity" — the
+    pattern was already built 4 times; extraction reduces, not adds, surface
+    area. Not "compliance over value" — measured against real consumers (PMC
+    Phase 5b is the immediate 5th instance). Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Abstraction shape: ship accumulator base + registry interface + IDB store factory + reducer-composition helpers (full 4-piece), OR ship only what anchorLibrary actually consumes and grow as future instances migrate?"
+  - "Item #1 — Migration boundary: confirm anchorLibrary is the ONLY migration this sprint; assumptionEngine + skillAssessment + predictionAudit stay tracked-as-future even if migration looks cheap mid-execution?"
+  - "Item #1 — ADR scope: one ADR ratifying the whole pattern, OR split (e.g., one for the accumulator base + one for the IDB store factory contract)?"
+  - "Item #1 — Naming + coupling: confirm `src/utils/decisionSystems/` directory name from charter? Does the IDB store factory depend on `persistence/migrationRegistry.js` (Item 3 output), or stay decoupled to keep the abstraction transport-agnostic?"
+
+decisions_ratified:
+  d1_full_architectural_reset: "Full architectural reset over staged sprints (project charter ratification #1, 2026-05-10). Bias toward depth over speed."
+  d2_long_term_aggressive: "Long-term-aggressive over transition-cost (per feedback_long_term_over_transition.md). Refactors prioritize end-state shape over migration ergonomics."
+  d3_headline: "Decision-system pattern IS the headline (project charter ratification #3). Item 4 is the largest unlock; Items 1+2+3 existed to enable it."
+  d4_no_new_features: "No new features during the sprint (project charter ratification #4). Items 4/5/6/7 only; bug-fix exempt."
+  d5_proof_instance: "anchorLibrary is the proof-of-pattern migration (most mature instance, smallest blast radius from a migration mistake) — per project DoD."
+
+composition_notes: |
+  Anchor: project-direct (Refactor Sprint Item 4). No queue WS item exists —
+  Items 1/2/3 followed the same pattern (project-tracked only, sprint files
+  written without queue claims). The owner-ratified charter is the
+  accountability surface.
+
+  Single-item sprint. Item 4 is L-effort and architecturally cross-cutting; no
+  candidate bundles cleanly:
+    - WS-188 (P=18 L, Item 7 persistence audit) is parallel-safe per charter
+      sequencing but separate decision space; adding it would multiply
+      plan-mode decision load past usable.
+    - Item 6 (queue triage, ~1 session, parallel-safe) is a candidate
+      bundle-mate but the founder ratified it can run in parallel — it does
+      NOT need to ship in the same sprint.
+    - All P=22 (MPMF launch-program) and P=20 (WS-191) candidates are
+      soft-blocked (Step 2-prereq 0.25× damping → effective P=5).
+
+  Sequencing within Item 4:
+    1. Plan-mode: ratify 4 decision flags with owner.
+    2. Author src/utils/decisionSystems/ core (per ratified abstraction shape).
+    3. Author the ADR ratifying the pattern.
+    4. Migrate anchorLibrary as proof; verify all anchorLibrary tests pass.
+    5. Update SYSTEM_MODEL.md C-15 + TD-15 (mark extracted; renumber).
+    6. Document tracking for future migrations (assumptionEngine /
+       skillAssessment / predictionAudit) — NOT migrated this sprint.
+    7. Smart-test-runner green; build clean.
+
+  Source-class damping: none. Anchor source = project-direct, owner-ratified.
+  Founder-driven classes are never damped.
+
+  Fleet rotation: N/A (product repo; no fleet/repo-goal program).
+
+  SPR-077 composition_notes explicitly offered Item 4 as alternative anchor at
+  proposal-time and owner chose WS-189 (Phase 1 telemetry). With Phase 1 now
+  shipped and the seat-autoselector Phase 2 soft-blocked on live captures, the
+  project-charter-mandated Item 4 is the unambiguous next anchor.
+
+items:
+  - id: "REFACTOR-ITEM-4"
+    title: "Extract decisionSystems/ core + migrate anchorLibrary as proof + ratify with ADR"
+    mode: plan-first
+    effort: L
+    program: engineering
+    category: architecture
+    project: "refactor-sprint-2026-05-10"
+    status: done
+    started_at: "2026-05-14T00:00:00Z"
+    completed_at: "2026-05-14T11:43:00Z"
+    closeout_notes: |
+      Shipped per Q1=Broader / Q2=Bind / Q3=Two ADRs (owner ratified in plan-mode).
+
+      decisionSystems/ surface (~700 LOC across 4 submodules + tests):
+        - accumulator/ — createAccumulator + betaPosterior (canonical Z_95 =
+          1.959963984540054) + wilsonCI. 50 tests.
+        - registry/ — createRegistry append-only + registryInvariants. 20 tests.
+        - idbStore/ — createUpsertStore + createReplaceAllStore +
+          createEmbeddedRecordStore + migrationGuard (ADR-DS-2 binding).
+          45 tests.
+        - reducerComposition/ — createNamespacedReducer +
+          withPersistenceDispatch. Ships unadopted by anchorLibrary per
+          ADR-DS-1. 19 tests.
+        - CLAUDE.md (module rules) + index.js barrel (≤10 exports).
+
+      anchorLibrary migration (~600 LOC deleted, ~10 files touched):
+        - primitiveValidity.js — Beta math delegated to betaPosterior.
+          z constant unified to 1.959963984540054.
+        - 4 IDB store wrappers collapsed via createUpsertStore factory
+          (243/202/181/162 LOC → 45/42/54/46 LOC).
+        - writers.js (NEW) — in-code mirror of WRITERS.md via createRegistry.
+        - writers.test.js (NEW) — drift cross-check between MD + registry. 9 tests.
+
+      ADRs ratified:
+        - ADR-DS-1: .claude/decisions/2026-05-14-decision-systems-extraction.md
+        - ADR-DS-2: .claude/decisions/2026-05-14-idb-store-factory-migration-binding.md
+
+      SYSTEM_MODEL.md updates:
+        - §1.1 component map: decisionSystems/ added; decision-system instance
+          row updated to reflect migration status.
+        - §6.1 C-15: refactored to describe new shared spine + members
+          (anchorLibrary migrated; assumptionEngine tracked-as-future;
+          pure-detector pattern explicitly excluded).
+        - §11 TD-15: PARTIALLY RESOLVED; new TD-15-followup tracks
+          assumptionEngine migration.
+        - §11 TD-16: sub-item closed via ADR-DS-2 factory binding.
+        - §12 Decision Log: 2026-05-14 entry for SPR-078.
+
+      Verification:
+        - Full smart-test-runner: 11222/11222 tests pass (20 skipped pre-existing).
+          448 test files green.
+        - npm run build clean (11.44s; standard chunk-size warning unchanged).
+        - z-constant drift check: 1.96 inlined ONLY in test/doc files; no
+          production code outside betaPosterior.js.
+        - bypassMigrationCheck scope: __tests__/ + migrationGuard.js +
+          CLAUDE.md doc only. No production usage.
+
+      Deferred:
+        - assumptionEngine migration (forcing function: next persistence-layer
+          touch OR PMC Phase 5b ship).
+        - skillAssessment/heroLeakDetector registry migration.
+        - assumptionEngine/PRODUCTION_RECIPES registry migration.
+        - Reducer-composition adoption by anchorLibrary (no clean slice
+          decomposition; forcing function deferred to next stateful migration).
+
+      Charter Item 4 → DONE row written; remaining Refactor Sprint scope
+      (Items 5, 6, 7) unchanged.
+    decision_flags:
+      - "Abstraction shape (4-piece all-up vs anchorLibrary-driven)"
+      - "Migration boundary (anchorLibrary only this sprint)"
+      - "ADR scope (one vs split)"
+      - "Naming + coupling (decisionSystems/ dir + persistence/migrationRegistry.js dependency)"
+    notes: |
+      Definition of done (from .claude/projects/refactor-sprint-2026-05-10.md
+      Item 4):
+        - [ ] src/utils/decisionSystems/ core: shared accumulator base,
+              registry interface, IDB store factory, reducer-composition
+              helpers (final shape ratified at plan-mode).
+        - [ ] anchorLibrary migrated as proof (most mature instance, smallest
+              blast radius from a migration mistake).
+        - [ ] One ADR ratifying the pattern as the standard.
+        - [ ] Other 3 instances (assumptionEngine, skillAssessment,
+              predictionAudit) tracked as future migrations — NOT migrated
+              this sprint.
+
+      Test surface to preserve green:
+        - anchorLibrary existing tests must all pass post-migration.
+        - smart-test-runner full sweep green.
+        - Build clean.
+
+      Update surface:
+        - SYSTEM_MODEL.md §6.1 C-15 → extraction notes; §11 TD-15 → resolved.
+        - system/state.md Recent Sessions row added at /session-end.
+        - Project charter Item 4 → DONE row with closeout notes.
+
+      Cross-program coupling to note in the ADR:
+        - persistence/migrationRegistry.js (Item 3 output) — IDB store factory
+          may delegate version registration here.
+        - PMC Phase 5b (predictionAudit second-pass) will be the first
+          authoring-of-new built on this pattern post-extraction.

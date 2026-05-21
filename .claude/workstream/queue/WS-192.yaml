@@ -1,0 +1,92 @@
+id: "WS-192"
+title: "SLS Stream B2 data wiring — thread perCombo + evByFraction through villainAnalysis for HandReplay B2 sections"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: "session-2026-05-17-next"
+claimed_at: "2026-05-17T10:30:00Z"
+started_at: "2026-05-17T11:00:00Z"
+completed_at: "2026-05-17T11:20:00Z"
+priority_score: 18.0
+priority_label: "P1"
+category: "shape-language"
+capability: "core"
+program: "engineering"
+description: |
+  SPR-084 (WS-042) shipped three SLS Stream B2 section components inside
+  HandReplayView's ReviewPanel — EquityDistributionCurveSection,
+  SpirePolarizationSection, SizingCurveTagSection. All three accept
+  null data props today (`villainAnalysis.perCombo`,
+  `villainAnalysis.evByFraction`) and render null per
+  INV-SLS-B2-SECTION-NULL-DEGRADATION because the analysis pipeline
+  doesn't yet produce those fields.
+
+  Wiring is a localized change in the analysis pipeline:
+
+  1. `src/utils/handAnalysis/replayAnalysis.js` already computes
+     `villainRange`, `board`, `heroCards` per postflop hero-action
+     decision (lines ~290-330 in `buildCounterfactualTree`'s inputs).
+     Need to extend with a call to
+     `computeComboEquityDistribution(heroCards, board, segCombos, ...)`
+     from `src/utils/exploitEngine/gameTreeEquity.js:273` (per
+     SPR-084 Decision C — `shapeLanguage/` ↔ `exploitEngine/`
+     asymmetric import rule already established; this wiring lives
+     in `handAnalysis/`, neutral domain).
+
+  2. Attach `result.perCombo` (and `result.evByFraction` derived from
+     `recommendations[]` per-sizing entries if multi-sizing emits) to
+     the analysis result object so `villainAnalysis` carries them
+     through to ReviewPanel.
+
+  3. Section props in ReviewPanel.jsx already read
+     `villainAnalysis?.perCombo` / `villainAnalysis?.evByFraction` —
+     no UI changes required once data lands.
+
+  Plan-mode decisions to surface to founder:
+
+  - perCombo attachment location: sibling of `bucketEquities` (flat on
+    analysis result) vs nested under `counterfactualTree`.
+  - evByFraction derivation strategy: extract from existing
+    `recommendations[]` per-sizing entries (cheap; assumes game tree
+    emits multi-sizing) vs add explicit multi-sizing eval pass
+    (expensive). If multi-sizing extraction doesn't yield data,
+    defer Sizing Curve Tag wiring to a follow-up ticket and ship EDC
+    + Spire+Polarization only this sprint.
+
+  Lights up SPR-084 work in production. Closes the "shipped-but-inert"
+  carry-over flagged at SPR-084 + SPR-085 sprint summaries.
+accept_criteria:
+  - "`replayAnalysis.js` calls `computeComboEquityDistribution` for each postflop hero-action analysis step with a `villainRange` + `heroCards` + `board`; result attaches `perCombo` to the per-action analysis object."
+  - "Where `recommendations[]` carries multi-sizing entries, the per-action analysis object exposes `evByFraction: Array<{fraction, ev}>`. If multi-sizing is absent, ship EDC + Spire+Polarization wiring only and explicitly defer Sizing Curve Tag in this ticket's status_note with a follow-up ticket queued."
+  - "Three B2 section components render real curve + spire/polarization labels + (conditionally) sizing-curve tag on a real postflop hero-action step in HandReplayView. Visually verified at 1600×720."
+  - "smart-test-runner.sh green. Vite build clean."
+  - "New tests cover the perCombo attachment path in `replayAnalysis.js` + the section components consuming real (non-mock) shapes via integration test."
+  - "Cross-domain grep guard still clean: `grep 'from.*shapeLanguage' src/utils/exploitEngine src/utils/rangeEngine` returns zero matches."
+  - "SPR-084 status_note + project doc Session Log entry for poker-shape-language.project.md updated to note B2 sections now live in production."
+effort: "M"
+files_involved:
+  - "src/utils/handAnalysis/replayAnalysis.js (extend per-action analysis with perCombo + optional evByFraction)"
+  - "src/hooks/useHandReplayAnalysis.js (pass-through, no logic change expected)"
+  - "src/components/views/HandReplayView/ReviewPanel.jsx (props already wired; verify; remove TODO comments)"
+  - "src/utils/handAnalysis/__tests__/replayAnalysis.test.js (extend with perCombo coverage)"
+  - "src/components/views/HandReplayView/__tests__/*Section.test.jsx (extend with real-data integration test)"
+  - "docs/projects/poker-shape-language.project.md (Session Log + Phase 6 status note)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "perCombo attachment location — sibling of bucketEquities on analysis result vs nested under counterfactualTree"
+  - "evByFraction derivation strategy — extract from existing recommendations[] per-sizing entries vs add explicit multi-sizing eval pass; conditional scope-cut to defer Sizing Curve Tag if multi-sizing not emitted"
+source:
+  parent_ws: "WS-042"
+  parent_spr: "SPR-084"
+  user_request: "Surfaced as explicit follow-up at SPR-084 plan ExitPlanMode + flagged at SPR-084 + SPR-085 sprint summaries. Founder elevated to sprint anchor at SPR-086 /next composition (2026-05-17)."
+status_note: |
+  Authored 2026-05-17 inline by SPR-086 /next composition. The SLS B2
+  section components shipped at SPR-084 are inert pending this wiring;
+  per INV-SLS-B2-SECTION-NULL-DEGRADATION, no section edits are
+  needed once perCombo + evByFraction land. Plan-mode decisions
+  surface to founder before code.
+created_at: "2026-05-17T10:30:00Z"
+updated_at: "2026-05-17T10:30:00Z"

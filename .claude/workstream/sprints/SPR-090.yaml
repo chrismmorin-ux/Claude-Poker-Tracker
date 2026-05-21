@@ -1,0 +1,224 @@
+id: "SPR-090"
+title: "Pre-Session Drill Gate 2 — Blind-Spot Roundtable"
+status: completed
+approved_at: "2026-05-19T03:25:02Z"
+completed_at: "2026-05-19T03:50:00Z"
+
+goal: |
+  Pre-Session Drill (PSD) feature gets its Gate 2 verdict — GREEN /
+  YELLOW / RED + follow-up tickets — addressing the 6 open owner
+  questions from the Gate 1 audit. The 5-stage Blind-Spot Roundtable
+  produces an adversarial design review the founder can ratify before
+  any production code is authored.
+
+program_focus: design
+program_initiative: |
+  Design Program (5-Gate UX Framework) — Gate 2 Blind-Spot Roundtable.
+  PSD Gate 1 audit shipped 2026-04-23
+  (docs/design/audits/2026-04-23-entry-pre-session-drill.md) with the
+  explicit recommendation to defer Gate 2 until the reasoning-artifact
+  corpus reached ≥15 entries. SPR-071 shipped the 15 artifacts at
+  docs/upper-surface/reasoning-artifacts/ (2026-05-11), clearing the
+  prerequisite. SPR-079 (2026-05-14) promoted WS-063 from P3 → P2
+  to reflect the unblock.
+
+  Program rotation: last 4 anchors split DC=1 (SPR-089) / design=1
+  (SPR-088) / engineering=2 (SPR-086, SPR-087). Design is one-sprint
+  under-rotated. Engineering would be over-rotated if WS-053 (RL
+  Gate 2) anchored instead.
+
+composed_by: auto
+created_at: "2026-05-19T03:25:02Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-19T03:25:02Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-089 precedent). Manual
+    scan:
+      - WS-063 is a Gate 2 Blind-Spot Roundtable — adversarial design
+        review producing a verdict document + follow-up tickets.
+        Output is research/design artifact, not user-facing copy or
+        production code.
+      - No graded surfaces, no engagement-pressure copy, no mastery
+        score ranking, no live-table contamination.
+      - Honors [[feedback_owner_volunteered_grading]]: PSD itself is
+        an opt-in pre-session drill surface, which is the autonomy-
+        aligned design class.
+      - Honors [[feedback_scf_learning_state_not_tier_rank]]: any
+        skill-state output should be a descriptor with transparent
+        composition, never a tier rank.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Stage 1 (User truth ground): Who is the PSD primary persona — the founder-as-self-coach, the founder-as-pre-session-warmup, or both (with different surfaces)? Gate 1 audit left this ambiguous."
+  - "Item #1 — Stage 2 (Adversarial UX): What is the worst-case PSD flow that *succeeds* at producing the wrong outcome (e.g., builds false confidence, narrows attention to the wrong leak class)?"
+  - "Item #1 — Stage 3 (Domain authority): Which existing primitives back PSD — SLS (shape-language), HSP (hero state archetypes), reasoning-artifacts corpus, or all three? Gate 1 left primitive-sourcing under-specified."
+  - "Item #1 — Stage 4 (Failure-mode mapping): What are PSD's top-3 failure modes by likelihood × harm? Gate 1 listed 6 open questions; not all are equal-weight failure surfaces."
+  - "Item #1 — Stage 5 (Verdict criteria): What conditions trigger GREEN vs YELLOW vs RED? Owner pre-commitment to verdict-criteria before stages 1-4 prevents post-hoc rationalization."
+  - "Item #1 — Roundtable persona roster: which 5 personas to seat (e.g., poker-coach, UX-skeptic, founder-as-user, engine-correctness reviewer, anti-engagement-pressure auditor)?"
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-063 (P=15, M effort,
+  6 inferred decision flags, source-class = untagged).
+
+  Anchor selection:
+    - All higher-priority items damp to ≤5.5 after Step 2-prereq
+      soft-block filter:
+        WS-027/030/031/032/033/036 (P=22, MPMF launch) — soft-blocked
+        on legal verdict (Q7), Gate 4 surfaces (S5/S6), entitlement
+        rules (ER), vendor decision (Q8). All 6 → 5.5.
+        WS-191 (P=20) — soft-blocked on Phase 1 telemetry capture
+        (≥3 owner observations). → 5.0.
+        WS-164 (P=18) — soft-blocked on Table-Build Gate 5 surface
+        not yet ticketed. → 4.5.
+    - At P=15 cohort, candidates split:
+        WS-020 / WS-023 / WS-025 — NEEDS-RESCOPE per SPR-071
+        triage. Not directly executable.
+        WS-053 — Range Lab Gate 2 (engineering program). Would
+        over-rotate engineering (3 of last 4 anchors).
+        WS-087 — LSW-B2 turn decisions. Status note says "Reclaim
+        with Stream A audit cluster" — soft prereq.
+        WS-063 — PSD Gate 2 (design program). Clean. Prereq
+        corpus shipped at SPR-071.
+    - WS-063 selected on rotation rationale + prereq-cleared status.
+
+  Pair candidate evaluation:
+    - No clean S-effort backlog item at P≥15 exists. WS-118..173
+      S-effort items are status=done.
+    - Single-item sprint accepted: Gate 2 roundtable is a self-
+      contained deliverable producing verdict + new tickets. Adding
+      a hygiene companion would dilute plan-mode focus on 6 decision
+      flags.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-087 (spr-followup, WS-193 inline),
+      SPR-088 (untagged, WS-043 cleared queue item), SPR-089
+      (spr-followup, WS-194 inline). All founder-driven —
+      saturation rule does not apply.
+    - WS-063 source-class = untagged (origin: backlog-md-migration-
+      2026-05-01). Founder-driven, no damping.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..089 — this is the poker-tracker product repo, no
+  fleet/repo-goal candidates exist (no fleet-health program, no
+  fleet/ directory). Composition_notes: "fleet-rotation override
+  skipped: no fleet/repo-goal candidate in current backlog."
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (18d ago,
+      cadence 14d → 4d stale). launch protocol_history empty.
+    - Following SPR-085..089 precedent (all proceeded with same
+      stale DC + never-baselined launch state), composing this
+      sprint anyway. Worth scheduling /pulse run domain-correctness
+      sweep + a /pulse run launch baseline soon.
+
+  Plan-mode entry:
+    - Item 1 mode = plan-first. Six decision flags must be resolved
+      with owner before authoring the verdict document.
+    - Plan-mode exploration scope: read PSD Gate 1 audit
+      (docs/design/audits/2026-04-23-entry-pre-session-drill.md),
+      reasoning-artifact corpus index, ROUNDTABLES.md template,
+      relevant existing PSD project docs if any.
+
+items:
+  - id: "WS-063"
+    title: "Pre-Session Drill Gate 2 — Blind-Spot Roundtable"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: design
+    status: done
+    decision_flags_at_compose:
+      - "(generic placeholders replaced at plan-mode by Gate 1 Q1-Q6 derivative D1/D2/D3)"
+    decisions_ratified:
+      D1: "Scope = prep + review modes together. Honors presession-preparer bidirectional persona authoring. Includes JTBD-SE-02 (loop-close review) and DS-57 (recency-weighted from recent leaks)."
+      D2: "Landscape v1 (1600×720) + mobile-portrait audit follow-up. Honors feedback_portrait_mode_player_screens.md — PSD is a study surface, not a PIO-line surface. Mobile-portrait Gate 4 ticket (WS-200) authored as separate deliverable."
+      D3: "Re-verdict authority — Gate 2 verdict supersedes Gate 1 RED. Justified by corpus blocker resolution + persona pre-existence + drills-consolidation rejection."
+    notes: |
+      Shipped. Five-stage Blind-Spot Roundtable executed in single-author
+      inline format (matches 17 prior blindspot audits' precedent).
+
+      Audit doc: docs/design/audits/2026-05-19-blindspot-pre-session-drill.md
+
+      Verdict: 🟡 YELLOW — supersedes Gate 1 RED.
+
+      Per-stage outputs:
+        - Stage A (persona sufficiency): ⚠️ Patch needed (3 reconciliation
+          items A-R1..A-R3 + 1 autonomy flag A-AP1)
+        - Stage B (JTBD coverage): ⚠️ Expansion needed (5 work items
+          B-G1..B-G5; DS-58 deferred pending WS-197; DS-59 deferred
+          pending WS-053 Range Lab Gate 2 close-out)
+        - Stage C (situational stress): ⚠️ Adjust (6 surface-design
+          adjustments C-A1..C-A6 including mobile-portrait variant)
+        - Stage D (cross-product / cross-surface): ⚠️ Partner surfaces
+          need updates (6 cross-surface findings D-P1..D-P6 including
+          IDB schema + SessionsView entry + HandReplay cross-link)
+        - Stage E (heuristic pre-check): ⚠️ Specific adjustments needed
+          (6 heuristic adjustments E-A1..E-A6 including neutral-chrome
+          enforcement per autonomy red lines)
+
+      Follow-up tickets authored:
+        - WS-195 (Gate 3 JTBD canonicalization + persona reconciliation, P2 M, design)
+        - WS-196 (active-recall pattern ADR via /decide, P2 S, design)
+        - WS-197 (anchor-trace destination ADR via /decide, P2 S, design)
+        - WS-198 (hands ↔ node-ID engineering Phase 0, P3 M, engineering)
+        - WS-199 (Gate 4 surface spec, P2 M, design — blocked by WS-195+196+197)
+        - WS-200 (mobile-portrait variant Gate 4, P3 M, design — blocked by WS-199)
+        - WS-201 (PSP-2 mood-detection research, P3 M, domain-correctness)
+
+      5 YELLOW conditions to clear before Gate 4 starts:
+        1. JTBD canonicalization (WS-195)
+        2. Active-recall pattern decision (WS-196)
+        3. Anchor-trace destination decision (WS-197)
+        4. hands ↔ node-ID schema decision (in WS-198)
+        5. Mobile-portrait Gate 4 surface ticket exists (WS-200 authored)
+
+      Zero src/ diff. Doc-only work product.
+
+      Memory honored: feedback_portrait_mode_player_screens (PSD landscape
+      v1 correct), feedback_long_term_over_transition (no transition-cost
+      framing in audit), feedback_owner_volunteered_grading (PSD opt-in
+      study surface — autonomy-aligned; A-AP1 binds against
+      streak/mastery surfaces), feedback_scf_learning_state_not_tier_rank
+      (no skill-ranking copy in drill chrome — E-A5).
+
+deferred: |
+  - WS-053 (Range Lab Gate 2) — referenced as a coordination point for
+    DS-59 deferral + artifact-rendering ownership (D-P6). Not in this
+    sprint scope; surfaces next /next cycle.
+  - Five Q5/Q6/schema/portrait/mood decisions — routed to follow-up
+    tickets, not in this sprint's authoring scope.
+
+verification: |
+  - Audit doc format matches ROUNDTABLES.md lines 145–183 schema
+    (Feature summary → Stage A/B/C/D/E → Overall verdict → Required
+    follow-ups). All 5 stages executed (anti-pattern #4 averted).
+  - Follow-up tickets land in .claude/workstream/queue/WS-{195..201}.yaml
+    with consistent schema (per WS-194 template).
+  - Queue index updated (item_count 181 → 188; WS-063 → done; 7 new
+    backlog entries).
+  - Sprint index updated (sprint_count 89 → 90; SPR-090 active →
+    completed).
+  - Zero src/ diff verified (grep -r src/ for changes since SPR-089
+    completion = empty).
+  - Memory binding doc-only confirmed: audit text passes
+    feedback_portrait_mode_player_screens (study surface = landscape
+    correct), feedback_owner_volunteered_grading (drill is opt-in),
+    feedback_scf_learning_state_not_tier_rank (no tier-rank labels,
+    E-A5 enforces).
+
+deferred: |
+  - WS-053 (Range Lab Gate 2, P=15, engineering) — over-rotates
+    engineering; will surface next /next cycle.
+  - WS-087 (LSW-B2 turn-decision widening, P=15, DC) — soft prereq
+    on LSW Stream A audit cluster close.
+  - WS-020 / WS-023 / WS-025 (EAL test infra, P=15, DC) — all
+    NEEDS-RESCOPE per SPR-071 triage; require ticket clarification
+    before they can be claimed.

@@ -1,0 +1,109 @@
+id: "SPR-067"
+title: "PMC follow-up — Range-engine Q6 update gating + FM-SEL-01 disposition (WS-175)"
+status: completed
+approved_at: "2026-05-10T00:00:00Z"
+completed_at: "2026-05-10T00:35:00Z"
+goal: |
+  Range-engine answers PMC Charter Open Question Q6 — when showdown reveals
+  trigger Bayesian updates per RANGE_ENGINE_DESIGN §4.5 — and explicitly
+  disposes the FM-SEL-01 showdown selection bias surfaced by PMC Gate 2.
+
+  Closes the only PMC charter row that was reassigned out of PMC scope at
+  SPR-065 close-out, not buried. Charter Q6 row points back at this ticket;
+  verdict propagates back to the charter on completion.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct continuation of PMC Gate 2 close-out
+  (SPR-065). REPLACEMENT verdict cancelled PMC Phase 5e (range-engine
+  showdown-update wiring); Q6 was reassigned to range-engine scope as
+  WS-175. This ticket is the formal accountability that Q6 was answered.
+
+  FM-SEL-01 (showdown selection bias / MNAR) was authored in PMC's
+  failure-mode-taxonomy.md but operates on Bayesian updater behavior —
+  Bayesian updates from showdowns systematically over-weight value-and-
+  stubborn-bluff range portions. Update gating decision must explicitly
+  accept, mitigate, or refuse this bias; range-engine theorist persona's
+  ordering concern (Stage D, sprint 1/2) bounds the acceptable solution
+  space (semantic-boost path is order-dependent in current bayesianUpdater).
+
+  Cross-program rotation: DC anchored 5 of last 8 sprints (SPR-060/063/064/
+  065/066) with design (SPR-061) and eng (SPR-062) interleaved. Continuing
+  DC for WS-175 is the strongest available candidate because every
+  higher-priority eng/design candidate carries a LATER/PAUSED status_note
+  or is soft-blocked on Gate 4 design that doesn't exist as a ticket.
+  Rotation flagged transparently at composition time; founder approved.
+
+composed_by: auto
+created_at: "2026-05-10T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (graceful-degradation per CLAUDE.md). Manual scan: theory-correctness
+    ticket disposing a known failure mode; no engagement-pressure / shame
+    copy / cross-surface contamination triggers; FM-SEL-01 disposition is
+    itself an explicit accept criterion.
+
+decisions_needed:
+  - "Item #1 — Update gating policy: every showdown updates immediately / batch by session-close / require N-threshold showdowns before updating"
+  - "Item #1 — FM-SEL-01 stance: accept the MNAR bias / mitigate (and how) / refuse to update from showdowns"
+
+items:
+  - id: "WS-175"
+    title: "Range-engine — answer Q6 update gating (every showdown / batch / N-threshold) for §4.5 Bayesian update path"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: range-engine
+    priority_score: 12.0
+    status: done
+    started_at: "2026-05-10T00:05:00Z"
+    completed_at: "2026-05-10T00:35:00Z"
+    decision_flags:
+      - "Update gating policy: every showdown / batch by session-close / N-threshold"
+      - "FM-SEL-01 selection bias: accept / mitigate / refuse (and how)"
+    notes: |
+      Plan-first because (a) decision_flags require founder ratification
+      before implementation, (b) the range-engine theorist's ordering concern
+      bounds the acceptable solution space.
+
+      Files (likely MODIFY):
+        - docs/RANGE_ENGINE_DESIGN.md (§4.5 update-gating policy authored)
+        - src/utils/rangeEngine/bayesianUpdater.js (gating logic, if any)
+        - src/utils/rangeEngine/__tests__/bayesianUpdater.test.js (gating tests)
+        - .claude/projects/predictive-model-calibration.md (Q6 row update at close)
+
+      Acceptance highlights from WS-175:
+        - Q6 answer documented in RANGE_ENGINE_DESIGN.md or POKER_THEORY.md with rationale
+        - Decision references FM-SEL-01 selection bias explicitly (accept / mitigate / refuse)
+        - Code change (if any) wired and tested against existing rangeEngine test suite
+        - Charter `.claude/projects/predictive-model-calibration.md` Q6 row updated to point at this ticket's verdict
+
+composition_notes: |
+  Source-class: spr-followup (parent_ws: WS-172, parent_project: range-engine).
+  Last 3 anchors: WS-169 / WS-172 / WS-172 = spr-followup + plan-internal +
+  plan-internal. spr-followup count = 1 in window; not saturated.
+
+  Hygiene gaps carried forward from SPR-066 composition_notes (still NOT
+  addressed; recommend a /workstream reconcile + queue-index hygiene sweep
+  before next /next pass):
+    - Queue-index drift: WS-105 / WS-159 / WS-135 / WS-080 are status:done
+      in YAML but status:backlog in queue-index.yaml.
+    - Launch-program soft-block hygiene: WS-027 / WS-030..033 / WS-036
+      carry stale blocked_by_legacy markers but empty blocked_by_note —
+      surface at full P1=22 despite being unworkable.
+    - PMC Phase 5a ticket missing: SPR-065 described predictionAudit
+      primitive (~0.5-1 session) as "separate WS ticket" — none exists yet.
+
+  Backlog scan filtered candidates with explicit deferral markers
+  (status_note: "LATER" / "PAUSED" / "BLOCKED by ..." with empty
+  blocked_by_note). The unfiltered top-10 by adjusted_score was
+  dominated by these — anchor WS-175 emerged as the strongest concrete
+  workable item with fresh charter context.

@@ -1,0 +1,144 @@
+id: "WS-186"
+title: "Table flip (180°) — press-hold table center → confirm flip → render-time transform of all positional badges as a unit (no game-state mutation)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "table-view"
+capability: "core"
+program: "design"
+description: |
+  Owner request 2026-05-11: 'I'd like an option to change the view of the table
+  by rotating it, after press-hold and then confirming the rotation. A player
+  in this way is given a little less need to think spatially about the players
+  when trying to place seat number or where the action needs to be entered
+  and where.'
+
+  Goal: rotate the visual seat layout so the user's physical seat is consistent
+  with the on-screen layout — reduces spatial translation when entering action.
+
+  **Critical design constraint:** rotation is a render-time VIEW TRANSFORM, not
+  a game-state mutation. Seat numbers, action history, and game-tree state
+  must be unchanged. Only the visual position of each seat element changes.
+  Reason: persisting a rotation into game state would corrupt every downstream
+  consumer (replay, analytics, exploit engine, range engine) that reads
+  seat-keyed data with assumed canonical seat positions.
+
+  **Gate path (mandatory per Design Program Guardrail):**
+  - **Gate 1 (Entry)** REQUIRED before code. Persona: live player at any
+    seat. JTBD: 'align on-screen seat layout to my physical orientation so
+    I don't mentally rotate every input.' Gap analysis: existing `mySeat`
+    selection addresses 'where am I?' but not 'rotate so my seat is at the
+    bottom of the screen.' Output:
+    `docs/design/audits/YYYY-MM-DD-entry-table-rotation.md` with
+    GREEN/YELLOW/RED verdict.
+  - **Gate 2 (Blind-Spot Roundtable)** TRIGGERED if Gate 1 ≥ YELLOW or if
+    rotation introduces new interaction modalities (gesture conflicts, etc.).
+  - **Gate 4 (Design surface)** REQUIRED:
+    `docs/design/surfaces/table-rotation.md` specifying gesture (press-hold
+    target + duration), confirmation UX, rotation increment (1-seat vs
+    180°-only), state-storage location (ui reducer — NOT game reducer),
+    accessibility (keyboard fallback?).
+  - **Gate 5 (Implementation)** behind feature flag.
+
+  **Owner-ratified 2026-05-12 (binding for Gate 4):**
+
+  - **Rotation increment: 180° flip only.** State is a single boolean
+    `ui.tableFlipped` (false = default canonical, true = 180° flipped).
+    Not a 0..8 integer; not a CW/CCW/reset modal. Single-tap toggle.
+  - **Seat numbers + dealer button + SB/BB badges rotate AS A UNIT** with
+    the visual layout. Owner principle: "Seat numbers should always be
+    consistent with the location of the dealer box." All positional
+    indicators are bound to each other; rotation moves them together as
+    a single visual unit. 'Seat 3' stays Seat 3 in game state (canonical
+    seat ID unchanged); on screen, every positional badge on Seat 3 —
+    number, dealer indicator if held, blind badges, action highlight —
+    moves to the flipped position together.
+
+  **Implementation shape after ratifications:**
+  - Press-hold center of table (~500ms) is the SOLE entry point. No
+    visible button in CommandStrip. Owner is sole user; discoverability
+    cost is acceptable.
+  - Long-press → small confirm popover ('Flip table?' with Yes / Cancel
+    buttons) → tap Yes → 180° flip applied via CSS transform on the
+    TableView seat layout.
+  - State: `ui.tableFlipped` boolean. No integer offset. No CW/CCW.
+  - View transform applied at TableView render time only — never
+    persisted into game state.
+  - Gate 4 must verify table-center long-press is not in conflict with
+    any existing or planned gesture.
+
+accept_criteria:
+  - "Gate 1 audit at docs/design/audits/YYYY-MM-DD-entry-table-rotation.md
+    with GREEN/YELLOW/RED verdict. Gate 2 triggered if needed."
+  - "Gate 4 surface artifact at docs/design/surfaces/table-rotation.md
+    specifying: gesture target (table center? specific affordance?), hold
+    duration (≥300ms per WS-181 PTT precedent), confirmation modal copy
+    + layout, rotation increment policy, state location (ui reducer),
+    feature-flag name + default, keyboard accessibility fallback."
+  - "INVARIANT (must be in surface doc + enforced in test): rotation never
+    mutates game state. Seat 3 is Seat 3 in actionSequence, potCalculator,
+    exploitEngine inputs regardless of visual rotation. Test: rotate by
+    arbitrary N, record an action, assert action is recorded on canonical
+    seat ID, not rotated position."
+  - "Implementation behind feature flag (Settings toggle, owner-named).
+    Default OFF — owner ratifies default at Gate 4 close."
+  - "Playwright visual regression: 1600×720, rotate by 1/2/3 seats, confirm
+    seat-number badges + dealer/SB/BB position badges + action highlight
+    all rotate consistently. No drift between visual position and recorded
+    seat ID."
+
+effort: "L"
+files_involved:
+  - "docs/design/audits/YYYY-MM-DD-entry-table-rotation.md (NEW)"
+  - "docs/design/surfaces/table-rotation.md (NEW)"
+  - "src/components/views/TableView/TableView.jsx (rotation transform applied at render)"
+  - "src/reducers/uiReducer.js (tableRotation state)"
+  - "src/components/views/TableView/__tests__/tableRotation.invariant.test.jsx (NEW)"
+  - "src/components/views/SettingsView/SettingsView.jsx (feature flag toggle)"
+
+blocked_by:
+  - "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks all feature work until Item 4 (decision-system extraction) completes. Bug fixes are exempt; this is not a bug."
+
+blocked_by_legacy: []
+enables: []
+
+sprint_id: null
+
+decision_flags:
+  # RATIFIED 2026-05-12: 180°-only flip. State is a single boolean
+  # `ui.tableFlipped`. No 1-seat increments, no CW/CCW/reset modal.
+  # Single tap toggle.
+  # RATIFIED 2026-05-12: Seat numbers + dealer button + SB/BB badges
+  # rotate AS A UNIT. Owner: "Seat numbers should always be consistent
+  # with the location of the dealer box." No decoupling option.
+  # RATIFIED 2026-05-12: Press-hold on table center is the SOLE entry
+  # point — no visible button. Owner is sole user; discoverability cost
+  # is zero; screen real-estate preserved. Long-press duration ~500ms.
+  # Long-press conflict check binding: table-center region is not used
+  # by any other gesture today; Gate 4 must confirm. If a future
+  # feature wants long-press on table center, this gesture moves OR
+  # the conflict is resolved by region-partitioning.
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner requested 'an option to change the view of the table by rotating it, after press-hold and then confirming the rotation. A player in this way is given a little less need to think spatially about the players when trying to place seat number or where the action needs to be entered and where.'"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner session-issue consolidation. FEATURE — subject
+  to Refactor Sprint charter ratification 4 ('no new features during this
+  sprint'). Cannot enter active queue until Refactor Sprint Items 1+2+3+4
+  complete (Item 4 = decision-system extraction, currently NEXT).
+
+  Design Program Guardrail binding — Gates 1 + 4 mandatory before any code.
+  Gate 2 likely triggered (new interaction modality + new surface).
+
+  Critical invariant: rotation must NOT mutate game state — render-time
+  transform only. Surface doc must enforce.

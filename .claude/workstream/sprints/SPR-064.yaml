@@ -1,0 +1,252 @@
+id: "SPR-064"
+title: "PMC Gate 2 sprint 1/2 — Stages A-D + 14 Tier-1 taxonomy class sketches (WS-172)"
+status: completed
+approved_at: "2026-05-09T13:30:00Z"
+completed_at: "2026-05-09T16:30:00Z"
+goal: |
+  Execute the Gate 2 Blind-Spot Roundtable for the Predictive Model
+  Calibration program (PMC). Charter at `.claude/projects/predictive-model-calibration.md`,
+  Gate 1 RED audit at `docs/design/audits/2026-05-09-entry-pmc-prediction-ledger.md`.
+
+  Sprint scope SPLIT per founder ratification at sprint start: Stages A-D +
+  ≥10-class taxonomy sketches THIS sprint; per-class detail + Stage E +
+  charter close-out + open-Q verdicts + Devil's-Advocate dispositioning
+  NEXT sprint.
+
+  Execution mode: hybrid roundtable — 6 parallel general-purpose Agents,
+  each given persona-specific forced-reading list + open architectural-
+  pushback invitation. Founder-ratified at sprint start: "We don't want to
+  lock in an agent's view too much, otherwise they optimize within a
+  potential suboptimal bubble. We want to be able to surface real problems
+  with architecture if they exist."
+
+program_focus: design
+program_initiative: |
+  Predictive Model Calibration (PMC) — newly-initiated cross-cutting
+  program (created 2026-05-09 from EAL Stream D reassignment + WS-169
+  absorption). Closes FM-Engine-Drift-Silent-Invalidation per
+  SYSTEM_MODEL §11. Rotation away from domain-correctness saturation
+  (DC anchored 5 of last 6 sprints per SPR-063 exit notes).
+
+composed_by: founder-direct
+created_at: "2026-05-09T13:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 1
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed. Manual scan:
+    Gate 2 Roundtable producing failure-mode taxonomy. The Roundtable IS
+    the bypass for "theory validating theory" (per founder ratification
+    2026-05-09 captured in PMC charter §Decisions ratified line 273).
+    Adversarial structure built into deliverable. No anti-pattern triggers.
+
+decisions_needed:
+  - "Sprint 1 — Roundtable execution mode (sequential / parallel-agent / /eng-engine)"
+  - "Sprint 1 — Sprint scope (single full Gate 2 / split A-D this + taxonomy E next / split A-D this + taxonomy E next conservative)"
+
+items:
+  - id: "WS-172"
+    title: "PMC Gate 2 — Blind-Spot Roundtable producing failure-mode taxonomy"
+    mode: design-first
+    effort: L
+    program: domain-correctness
+    category: predictive-model-calibration
+    priority_score: 22.0
+    status: in_progress  # Sprint 1/2 done; sprint 2/2 deferred
+    started_at: "2026-05-09T13:30:00Z"
+    completed_at: null  # Ticket spans 2 sprints by founder ratification
+    decision_flags:
+      - "Roundtable execution mode (founder picked: hybrid — parallel agents + forced reading + open architectural-pushback)"
+      - "Sprint scope (founder picked: split — A-D + taxonomy sketches this sprint, per-class detail + E next sprint)"
+    notes: |
+      Founder-ratified at sprint start via AskUserQuestion (2 questions, 2
+      decisions captured upfront). Both decisions drove the execution shape:
+
+      - Hybrid execution model: parallel general-purpose Agents (max
+        independence — no agent saw another's output before producing
+        their stage contributions) + forced-reading lists per persona
+        (4-6 files each tailored to specialty: range, ecology,
+        frequentist, Bayesian, adversary, devil's advocate) + explicit
+        open invitation to challenge architecture itself.
+
+      - Split scope: single sprint produces A-D + ≥10-class taxonomy
+        sketches; per-class detail + Stage E + charter close-out +
+        open-Q verdicts + Devil's-Advocate dispositioning is sprint 2/2.
+
+      WS-172 status remains in_progress — ticket spans 2 sprints. Pattern
+      matches WS-146 (re-claimed across SPR-031, SPR-040, SPR-046).
+
+composition_notes: |
+  Founder-direct sprint composition. WS-172 was the only candidate at sprint
+  start: a high-priority freshly-created ticket from PMC Gate 1 RED
+  ratification (2026-05-09 same day). No queue-scan required.
+
+  Rotation rationale:
+    - Last 6 anchors before this sprint: 5 DC + 1 design + 1 eng
+      (saturated DC pattern documented in SPR-063 exit notes)
+    - PMC is design program (Gate 2 Roundtable = design-program-canonical
+      gate work) — natural rotation to design
+    - SPR-061 was design (1-sprint stagger); design re-anchors
+    - Cross-program ripples (12+ surfaces under-scoped per Stage D)
+      would re-engage DC + EAL + range-engine + exploit-engine in
+      Phase 4-5 — but that work is downstream of this sprint
+
+  Alternatives passed over:
+    - WS-014 EAL Stream E — soft-blocked on PREDICATE_KEYS coordination
+    - WS-079 sidebar↔OnlineView contract doc — owner-marked LATER
+    - WS-146 SCF leak rule — substrate-blocked per SPR-056 abandonment;
+      8/9 catalog entries need a new situation-key axis
+    - WS-029-033 launch program — Q7 gated
+
+  Index drift carryover: queue-index.yaml stale on multiple WS items
+  (carried from SPR-062/SPR-063). Reconcile script not installed.
+
+exit_notes: |
+  Sprint 1/2 SHIPPED; sprint 2/2 deferred per founder split.
+
+  Effort actuals:
+    - Founder ratification (AskUserQuestion 2-question round): ~3 min
+    - Reference-file existence check: ~1 min
+    - WS-172 claim + project-dir scaffold: ~2 min
+    - 6 parallel agent dispatches (single message): ~1 min author
+    - Agent execution + return: ~3-7 min wall-clock per agent (parallel)
+      → Total agent wall-clock ~10 min (longest agent)
+    - Synthesis + cross-persona theme extraction: ~10 min
+    - Failure-mode-taxonomy.md authoring (~14 Tier-1 sketches across 9
+      families + Tier-2 candidates + 10 cross-cutting architectural asks
+      + open-questions deferred section): ~20 min
+    - Audit artifact authoring (Stages A-D verdicts + Devil's-Advocate
+      dispositioning + cross-cutting asks + follow-ups): ~20 min
+    - Charter Gate 2 progress section append: ~10 min
+    - WS-172 status_note update + claim release: ~5 min
+    - User briefing (5 headline findings): ~3 min
+    - Total: ~85 min real, far under L-effort 3-session estimate
+      (split scope + hybrid-execution efficiency vs sequential)
+
+  Artifacts shipped:
+    - docs/projects/predictive-model-calibration/failure-mode-taxonomy.md (NEW)
+      14 Tier-1 classes across 9 families + ~18 Tier-2 candidates + 10
+      cross-cutting architectural asks. ~750 lines.
+    - docs/design/audits/2026-05-09-blindspot-pmc-failure-modes.md (NEW)
+      Stages A-D verdicts + execution model documentation + Devil's-Advocate
+      dissent dispositioning + 9 follow-up checklist items. ~430 lines.
+    - .claude/projects/predictive-model-calibration.md (MODIFIED)
+      Status updated; Gate 2 progress section appended; charter
+      ratifications status table added (rat #2 amend, #3 + #5 re-litigate,
+      #6 standing-with-note).
+    - .claude/workstream/queue/WS-172.yaml (MODIFIED)
+      Status: in_progress; claimed_by: ""; comprehensive status_note
+      documenting sprint 1/2 deliverables + sprint 2/2 deferred scope.
+    - docs/projects/predictive-model-calibration/ (NEW directory)
+
+  Net diff:
+    - 4 new files (2 substantive markdown ~1180 lines + 0 src + 0 tests)
+    - 2 modified files (charter + WS-172 yaml)
+    - 0 src/ diff
+    - 0 net tests (markdown-only sprint; vital signs N/A by design)
+
+  Founder-ratified design decisions (AskUserQuestion at sprint start):
+    Q1 Execution mode = HYBRID — parallel general-purpose Agents with
+       forced-reading lists + open architectural-pushback invitation
+       (founder framed: "force invoked agents to read certain context
+       items… don't lock in too much… surface real problems with
+       architecture if they exist")
+    Q2 Sprint scope = SPLIT — Stages A-D + taxonomy class sketches this
+       sprint; per-class detail + Stage E next sprint
+
+  Headline findings (founder accepted all 5):
+    1. Charter's "frequency violations are the signal" mathematically
+       over-stated; needs amendment. 4-of-6 personas independently
+       challenged; FM-COMP-01 documents the failure mode.
+    2. Per-villain shrinkage degenerates to population-only inference for
+       ~95% of Ignition observations. Convergent ask: add latent-class
+       layer between population and per-villain. Charter rat #2 needs
+       amendment to 3-level hierarchy.
+    3. Adversary modeler refuted charter's headline FM-Engine-Drift-Silent-
+       Invalidation closure claim. Drift moves four hops downstream
+       (engine → ledger → aggregator → dashboard → owner trust); each
+       transition is a new silent surface.
+    4. Devil's Advocate proposed 0.5-session simpler intervention
+       (predictionAudit IDB field on hands record + HandReplay query).
+       80% inferential value at 5% cost. NOT killing PMC — but founder
+       must explicitly disposition this sprint 2/2 before Gate 4.
+    5. Six ratifications in one day on Heavy decision = anchoring signal.
+       Re-litigate rat #3 (full-pipeline MVP) + #5 (new project absorbing
+       WS-169) at sprint 2/2 close-out.
+
+  10 cross-cutting architectural asks bind Gate 4:
+    1. Add latent-class/archetype layer (charter rat #2 amend)
+    2. Population baseline (situation × format × stakes × daypart) — Q4 verdict
+    3. Ledger schema +6 fields (priorAtDecision, evidenceUsed, likelihoodFamily,
+       posteriorPrecision, selectionPath, revealMechanism, heroPolicyHash,
+       keyDefinitionVersion, actionTaxonomyVersion, taxonomyVersion,
+       partialFlush, referenceClass)
+    4. Tier-1/Tier-2 reporting separation + pre-registered hypothesis registry
+    5. Defensibility floor n ≥ max(30, 4/p, 4/(1-p))
+    6. Time-horizon partition (this session/month/quarter)
+    7. Two-mode toggle (default / posterior-diagnostic)
+    8. Schema-level enforcement of AP-PMC-04 (drop evRealized at write)
+    9. Drift-detection estimator separation (HBA for level; sequential for drift)
+    10. Off-taxonomy bucket as first-class artifact + adversarial maintenance
+
+  Stage outcomes:
+    - Stage A: ⚠️ Patch needed — situational sub-personas
+      (post-session-chris-model-audit-mode + post-session-chris-population-mode).
+      NOT new core persona (Devil's-Advocate concern about hypothetical
+      analyst is valid).
+    - Stage B: ⚠️ Expansion needed — DS-NEW-PMC-03 author + DS-NEW-PMC-04a/b/c
+      cluster + DS-NEW-PMC-02 amend (with AP-PMC-06 author for variance-
+      blame refusal); DS-NEW-PMC-01 collapses into DS-58 sub-clause.
+    - Stage C: ⚠️ Adjust needed — 5 Gate-4 dashboard requirements ratified.
+    - Stage D: ❌ Scope was wrong — ~12 surfaces under-scoped (sidebar/
+      extension confirmed GREEN no-ripple ✓).
+    - Stage E: DEFERRED to sprint 2/2.
+
+  Charter Q4 verdict (preliminary): NOT a single global "live pool" —
+  explicit Ignition × format slicing. Q1/Q2/Q3/Q5/Q6 deferred to sprint 2/2.
+
+  Acceptable-degradation exits (per founder split):
+    - Per-class detail (detection signature + ledger fields + severity +
+      examples) NOT yet authored; sketches only. Sprint 2/2 closes this.
+    - Stage E graded-work-trap audit deferred. Sprint 2/2 closes this.
+    - Charter formal close-out deferred (interim Gate-2-progress section
+      authored; final close-out sprint 2/2).
+
+  Sprint 2/2 scope (deferred, ready for next claim of WS-172):
+    - Stage E graded-work-trap audit + AP-PMC-04..06 review + structural
+      distinguishability from mastery-score surface
+    - Per-class detail authoring for 14 Tier-1 (and any promoted Tier-2)
+      classes — detection signature + required ledger fields + severity +
+      worked examples
+    - Charter open Q1 (storage budget) / Q2 (multi-comparisons rigor) /
+      Q3 (ledger backfill) / Q5 (drift windowing) / Q6 (range-engine
+      update gating) verdicts (Q4 already preliminary)
+    - Founder dispositioning of 4 Devil's-Advocate concerns
+    - Charter formal close-out (final form)
+    - Pre-registration registry stub authoring at
+      docs/projects/predictive-model-calibration/registered-hypotheses.md
+    - Persona authoring (situational sub-personas) — may move to Gate 4
+    - JTBD authoring (DS-NEW-PMC-03 / 04a/b/c / DS-58 sub-clause /
+      DS-NEW-PMC-02 amend) — may move to Gate 3
+
+  Cross-program rotation pattern: design rotation broke 5-of-6 DC streak
+  (per SPR-063 exit-notes recommendation). 7 of last 8 anchors:
+  4 DC + 2 eng + 1 design + 1 design (this sprint).
+
+  Index drift carryover: queue-index.yaml stale on multiple WS items.
+  Reconcile script not installed. WS-172 status change reflected
+  in queue YAML; queue-index.yaml may need manual reconcile if next
+  sprint's /next consults it.
+
+  Recommendation for next sprint: WS-172 sprint 2/2 is the natural
+  continuation (per-class detail + Stage E + charter close-out). If
+  founder wants rotation away from PMC for one sprint, design's
+  saturated state (1-of-8 design) is healthier than DC's saturation;
+  alternates: WS-014 EAL Stream E (DC, soft-blocked) or housekeeping.
+
+last_updated: "2026-05-09T16:30:00Z"

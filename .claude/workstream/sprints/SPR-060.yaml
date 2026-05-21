@@ -1,0 +1,244 @@
+id: "SPR-060"
+title: "EAL Stream D close-out — decompose WS-015 + ship Tier-3 auto-retirement banner (WS-170)"
+status: completed
+approved_at: "2026-05-09T06:00:00Z"
+completed_at: "2026-05-09T09:30:00Z"
+goal: |
+  EAL Phase 6 Stream D advances — the multi-surface study cluster is
+  decomposed into shippable children, and the first surface (Calibration
+  Dashboard MVP) lands as a study route, closing the EAL Phase 6 chain
+  from anchor-library → live-badge → calibration.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — direct continuation of SPR-059 (EAL Stream C
+  LiveAdviceBar anchor-badge shipped). EAL Phase 6 close-out: with
+  Streams B + C closed and Stream D's anchor-library + LiveAdviceBar
+  surfaces shipped, the remaining Stream D children (calibration
+  dashboard / session-review rollup / Tier-3 retirement banner) are
+  the last study-surface gap. Master Plan §C engine-maturation cadence
+  continued; domain-correctness back-to-back consistent with EAL hot-path
+  closure pattern (parallel to PIO Gate 5 SPR-034..036 streak).
+
+composed_by: auto
+created_at: "2026-05-09T06:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed in this repo
+    (HomeBase-side tooling). Manual scan: domain-correctness study
+    surface for engine-output calibration. No constitutional surfaces
+    apply (no monetization / grading / engagement-pressure axes touched).
+    Goal + title scanned for tokens "compliance over value" /
+    "gold-plating" / "metric-as-goal" / "self-aggrandizing complexity" —
+    no matches.
+
+decisions_needed:
+  - "Item #1a — Decomposition granularity (3 children: calibration-dashboard / tier-3 retirement banner / session-review-anchor-rollup, OR keep umbrella + ship serially)"
+  - "Item #1b — First-child pick (Calibration Dashboard MVP / Tier-3 auto-retirement banner / session-review anchor rollup)"
+  - "Item #1c — Calibration Dashboard scope (full 3-tab predicates+anchors+primitives, OR single-tab MVP with deferral)"
+
+items:
+  - id: "WS-015"
+    title: "EAL Stream D umbrella — decompose into 3 children"
+    legacy_id: "EAL-Stream-D"
+    mode: execute
+    effort: S
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 15.0
+    status: done
+    started_at: "2026-05-09T06:05:00Z"
+    completed_at: "2026-05-09T06:30:00Z"
+    decision_flags: []
+    notes: |
+      Admin closure: WS-015 decomposed into 3 children (WS-169 calibration-
+      dashboard / WS-170 tier-3 banner / WS-171 session-review rollup) per
+      founder Q1 ratification. WS-170 ships this sprint as anchor (Q2).
+      WS-169 + WS-171 to backlog.
+  - id: "WS-170"
+    title: "EAL Stream D child — Tier-3 auto-retirement banner"
+    mode: plan-first
+    effort: M
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 18.0
+    status: done
+    started_at: "2026-05-09T06:30:00Z"
+    completed_at: "2026-05-09T09:30:00Z"
+    decision_flags: []
+    notes: |
+      Plan-first per Step 3d (UX-touching change → Design Program guardrail
+      requires Gate 1 Entry audit before code; Gate 4 surface artifact
+      mandatory for any new study surface).
+
+      Founder decisions ratified at sprint approval (3 questions, all picked):
+        - Q1: Decompose into 3 children (vs umbrella)
+        - Q2: Tier-3 banner ships first (vs calibration / session-review)
+        - Q3: Calibration Dashboard scope = full 3-tab when WS-169 ships
+              (not applicable this sprint; carried into WS-169)
+
+      Substrate confirmed clean upstream:
+        - Stream B-matcher: shipped SPR-055 (`src/utils/anchorLibrary/matcher.js`)
+        - Stream C live-badge + observation writer: shipped SPR-059
+        - AnchorLibraryView + AnchorDetailPanel + retirement journey: shipped S20-S23
+        - librarySelectors.js + retirementEvaluator.js: shipped pre-SPR-055
+        - perceptionPrimitives store: IDB v19 (live)
+        - HandReplay Tier 0 capture (S10-S17): shipped pre-SPR-055
+
+      Stream D remaining (per WS-015 accept_criteria + memory note):
+        - Calibration Dashboard surface (3-tab: predicates + anchors + primitives)
+        - Tier-3 auto-retirement banner
+        - Session-review anchor rollup (lives in ReviewPanel)
+
+      Sequencing inside this sprint:
+        1. Plan-mode: present 3 decision flags via AskUserQuestion
+        2. Once decomposition + first-child + scope are ratified:
+           - Author child WS tickets (if decomposed)
+           - Run Gate 1 Entry audit on chosen first-child surface
+           - If Gate 1 RED/YELLOW → Gate 2 Blind-Spot Roundtable (likely
+             COVERED by 2026-04-24 EAL roundtable, same as SPR-059)
+           - Author Gate 4 surface artifact at docs/design/surfaces/
+        3. Implementation: route + view + tab/section components + tests
+        4. Verification: Playwright at 1600×720 + unit tests + invariants
+
+      Exit conditions:
+        - Strong: Gate 1 GREEN → ship implementation in this sprint
+        - Acceptable: Gate 1 RED/YELLOW → ship Gate 1 audit + Gate 2 +
+          Gate 4 surface spec; implementation rolls to follow-up sprint
+          (matches SPR-059 acceptable-degradation pattern + SCF/PIO Gate
+          cadence for surface work)
+
+composition_notes: |
+  Single-anchor M sprint, plan-first mode (UX-touching new study surface).
+
+  Source-class damping: last 3 completed anchors (WS-016 + WS-112 + WS-107)
+  all `untagged` (backlog-md-migration). No class saturated. WS-015
+  untagged. No damping applied. SPR-056 abandoned (skipped per protocol).
+
+  Fleet-rotation override: not applicable (poker-tracker product repo, no
+  fleet-health program).
+
+  Cross-program rotation rationale: domain-correctness back-to-back with
+  SPR-059 — consistent with EAL hot-path closure pattern. Memory shows
+  parallel pattern in PIO Gate 5 (SPR-034..036 — 3 consecutive design
+  sprints to close PIO Phase 5). EAL Phase 6 has 1 substantive child
+  remaining (calibration-dashboard MVP); after this sprint, rotation
+  back to engineering/design is natural.
+
+  SPR-059 exit notes recommended: WS-159 (design L) / WS-135 (domain-
+  correctness M) / WS-080 (engineering M) / SizingPresetsPanel embed
+  follow-up. Of these:
+    - WS-159 — L exceeds 2-session cap; needs further decomposition
+    - WS-135 — substrate-clean but less time-critical than EAL chain
+    - WS-080 — engineering rotation deferrable
+    - SizingPresetsPanel embed — substrate-blocked (anchor.consequence →
+      preset mapping requires exploit-deviation lookup not yet wired)
+  WS-015 is the cleanest close-out option that doesn't require new
+  upstream substrate.
+
+  Index drift noted (not blocking): queue-index.yaml shows WS-105/159/112/
+  107/016/017 as backlog but their YAML files show done. State-store +
+  reconcile scripts not installed. Recommend /audit refresh post-sprint.
+
+exit_notes: |
+  Goal achieved. EAL Stream D umbrella decomposed (WS-015 → WS-169 +
+  WS-170 + WS-171); first child shipped end-to-end (WS-170 Tier-3
+  auto-retirement banner). The retirement evaluator pure-util shipped
+  in Commit 3 finally has its caller — session-close hook is wired,
+  banner surfaces on next AnchorLibraryView open, AP-06 copy discipline
+  preserved.
+
+  Effort actuals:
+    - Phase 1 surface-map exploration (Explore fork): ~2.5 min
+    - Plan-mode + 3 founder decisions (AskUserQuestion): ~5 min
+    - Gate 1 audit doc: ~10 min
+    - Gate 4 surface fragment: ~3 min
+    - WS-015 decomposition + 3 children authored: ~5 min
+    - autoRetireBannerCopy.js + 71 tests: ~10 min (passed first run)
+    - AutoRetireBanner.jsx + 21 tests: ~10 min (passed first run)
+    - useAnchorAutoRetire.js + 27 tests: ~25 min (passed first run)
+    - AnchorLibraryContext + AppProviders + AnchorLibraryView wiring: ~10 min
+    - WRITERS.md update + index barrel export: ~5 min
+    - Verification (build + smart-test-runner): ~12 min
+    - Total: ~1.5 hours real, well within M-effort 2-session budget
+
+  Net code: +4 source files (~370 LoC) + 4 modified files (~80 LoC delta) +
+  3 design artifacts (audit + surface fragment + WRITERS.md update) +
+  3 new queue YAMLs (WS-169 / WS-170 / WS-171).
+  Net tests: +119 (71 banner copy + 21 banner component + 27 orchestrator).
+
+  Test verification:
+    - 803/803 anchor-library + retirement + auto-retire + integration tests pass
+    - 119 net new tests against SPR-059 baseline 10338 → 10477 expected (+119)
+    - Full smart-test-runner: 10452/10477 (+114 of expected +119; 5 failures
+      are pre-existing Monte-Carlo flakes timing out under full-suite load —
+      gameTreeDepth2 'returns correct shape' passes 4969ms in isolation but
+      exceeds 15000ms under contention. Matches memory entry "Monte-Carlo
+      equity flakes" pattern (WS-134 closed). Zero failures are caused by
+      this sprint's changes; all changed-area tests pass clean. 20 skipped
+      unchanged from SPR-059 baseline.)
+    - npm run build clean (10.82s; PWA 63 entries 2188 KiB)
+
+  Founder-ratified design decisions (AskUserQuestion at sprint start):
+    Q1 = Decompose WS-015 into 3 children (WS-169 / WS-170 / WS-171)
+    Q2 = Tier-3 banner ships first
+    Q3 = Calibration Dashboard scope = full 3-tab as authored (carried into
+         WS-169 for a future sprint)
+
+  Critical AP-06 enforcement: AutoRetireBanner.test.jsx pins the absence of
+  every retirementCopy.FORBIDDEN_PATTERNS regex regardless of count value
+  (1, 2, 5, 17, 99 — every count from 1..50 also asserted at copy-generator
+  level). DOM-asserted at component test layer + validateRetirementCopy
+  asserted at unit test layer.
+
+  Hard rules verified by tests:
+    - Mid-session firing structurally impossible (sessionEndTime null →
+      orchestrator never dispatches; verified in 'does NOT fire while
+      session is active' test)
+    - Owner-override durability respected (red line #3 — 'respects
+      owner-override durability' test)
+    - Banner does NOT render for 'expiring' transitions, only 'retired'
+      ('does NOT count anchors with status=expiring' test)
+    - Manual retire (lastOverrideBy=owner) excluded from banner count
+      ('does NOT count anchors retired by owner' test)
+    - Banner dismissal persists across reload via localStorage
+      ('hydrates dismissal timestamp from localStorage on mount' test)
+    - Double-dispatch prevented in StrictMode ('does NOT re-fire on
+      subsequent re-renders with same sessionEndTime' test)
+
+  Visual verification deferred (acceptable degradation per plan):
+    - Live banner renders only when sessionEndTime transitions null → set
+      AND ≥1 anchor's CI overlaps gtoBaseline.referenceRate at session-close
+      AND localStorage dismissal hasn't been recorded since.
+    - Reproducing this state in dev-server requires IDB seeding fixtures
+      (anchor with retirementCondition + matching evidence + closed session)
+      that aren't pre-built. Recommend a follow-up dev-mode seeder ticket
+      if user-facing visual confirmation is needed.
+    - Component-level + integration-level + unit-level coverage (47 net tests
+      across the rendering path + AP-06 DOM enforcement) is the load-bearing
+      verification surface for SPR-060.
+
+  Index drift carryover: queue-index.yaml still shows stale statuses for
+  WS-105/107/112/016/017/159; reconcile script not installed. Recommend
+  `/audit` refresh or manual rebuild.
+
+  Cross-program rotation recommendation for next sprint: domain-correctness
+  has now anchored 3 of last 4 sprints (SPR-055 + SPR-059 + SPR-060). Natural
+  rotation back to engineering or design. Reasonable next anchors:
+    - WS-159 SelfCoachView Curriculum (shipped per SPR-042 — already done)
+    - WS-135 Credible-intervals expansive surface scope (domain-correctness, M)
+    - WS-080 Verify Online session classification (engineering, M)
+    - WS-029/030/031/032/033 launch program — gated on Q7 founder decision
+    - WS-014 EAL Stream E end-to-end producer wiring (closes Phase 6)
+    - WS-169 Calibration Dashboard MVP (full 3-tab — L; carried from this sprint)
+    - WS-171 Session-review anchor rollup (M; sibling of WS-170)
+  EAL Phase 6 close-out is now 1 child away (WS-171) once Stream E ships.
+
+last_updated: "2026-05-09T09:30:00Z"

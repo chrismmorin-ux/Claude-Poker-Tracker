@@ -2,13 +2,13 @@ id: "WS-056"
 title: "Phase 1"
 legacy_id: "RL-P1"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-21-next"
+claimed_at: "2026-05-21T15:30:00Z"
+completed_at: "2026-05-21T19:10:00Z"
 priority_score: 15.0
 priority_label: "P2"
-category: "ready-to-start"
+category: "range-lab"
 capability: "core"
 program: "engineering"
 description: |
@@ -25,12 +25,14 @@ blocked_by_legacy:
   - "RL-G4"
   - "RL-P0"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by RL-G4 + RL-P0"
+sprint_id: "SPR-099"
+decision_flags:
+  - "Painted-range session-persistence mechanism (in-memory / sessionStorage / IDB)"
+  - "BoardPicker 5-card extension vs Range-Lab-specific picker"
+status_note: "SHIPPED 2026-05-21 SPR-099. Range Lab Phase 1 implemented: range-source toggle (Archetype | Custom) inside ExplorerMode; canonical 13×13 paint matrix (RangePaintGrid.jsx — square cells, tap-toggle + long-press weight slider per ADR-007, partial-fill height, scale-aware <44px long-press-required, first-use hint); per-stroke undo/redo (useRangePaint.js, ADR-008) + Cmd-Z/Cmd-Shift-Z; Clear-all confirm (outside undo); sessionStorage persistence (rangeLabPersistence.js, Save/restore); BoardPicker extended 3→5 cards (Add Turn/River + remove, adaptive street labels). Painted range feeds existing RangeFlopBreakdown (flop composition; turn/river per-street evolution deferred to Phase 3+ with a visible caption). RangeGrid index helpers exported for reuse. 22 new tests; full suite 11,746 pass / 0 fail; build clean; Playwright-verified at 1600×720 (toggle, paint, partial weight, turn add, breakdown, save→reload→restore). Founder visual req honored: canonical range-grid look distinct from dropdown picker. Unblocks WS-057 (Phase 2)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 290
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

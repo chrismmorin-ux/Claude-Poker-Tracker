@@ -1,0 +1,177 @@
+id: "WS-188"
+title: "Persistence + cache audit — failure-mode catalog + cache staleness contracts + ADR consolidation (rescoped: migration registry already shipped by Refactor Sprint Item 3)"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: "session-2026-05-18-next"
+claimed_at: "2026-05-18T00:00:00Z"
+started_at: "2026-05-18T01:30:00Z"
+completed_at: "2026-05-18T01:35:00Z"
+priority_score: 18.0
+priority_label: "P1"
+category: "persistence-architecture"
+capability: "core"
+program: "engineering"
+description: |
+  Owner request 2026-05-11: 'I think we need a persistence audit and cache
+  audit. a deep one, done very well. I don't think we have any load-bearing
+  decision architecture around that.'
+
+  **Rescoped after discovery (2026-05-11 same session):** Refactor Sprint
+  Item 3 SHIPPED 2026-05-11 already covers a meaningful subset of the
+  original ask:
+    ✅ Migration registry at `src/utils/persistence/migrationRegistry.js`
+       (25 entries, per-store ownership, owner-program linkage)
+    ✅ Additive-only invariant enforced by CI gate
+       (`scripts/check-idb-additive.sh`)
+    ✅ Per-store ownership single-source (`getStoreOwner` helper, 23 stores)
+
+  What is **still missing** and constitutes the load-bearing decision
+  architecture the owner asked for:
+
+  **Phase 1 — Failure-mode catalog (`docs/persistence/FAILURE_MODES.md`)**.
+    Enumerate every way persistence can fail, with severity + observed-or-
+    theoretical + fix surface:
+      - Tx abort mid-write (e.g., `savePhotoAtomically` abort path —
+        blob orphan? Verify GC strategy)
+      - Schema mismatch / downgrade (newer browser opens DB written by older
+        version — what's the behavior?)
+      - IDB quota exceeded (mobile Safari ~50MB default)
+      - `customBetSizes[key]=[]` regression class (per
+        `feedback_idb_persisted_defaults.md` — IDB-persisted defaults must
+        distinguish absent-array from empty-array)
+      - Concurrent writes from multiple tabs (single-tab assumption load-
+        bearing? Document.)
+      - Migration failure mid-transaction (registry handles upgrade order,
+        but not partial-success recovery)
+      - Append-only-store violations (predictionAudit, anchorObservations —
+        registry says additive, but data-mutation rules per store?)
+      - Photo blob orphan after tx abort (`savePhotoAtomically.js:84-86`
+        aborts the txn but no compensating cleanup of any partial blob)
+
+  **Phase 2 — Cache staleness contracts (`docs/persistence/CACHE_CONTRACTS.md`)**.
+    Every hook / context / utility that caches derived state must have a
+    staleness contract:
+      - `useAnalysisContext` — re-runs on what? Stale if?
+      - `useExploitAnchorsForLive` — same
+      - `useTendencyContext` — same
+      - `rangeEngine` memos (`useMemoryConstrainedMemo`?) — eviction policy?
+      - `anchorLibraryContext` selectors — invalidation triggers?
+      - `usePlayerPersistence` cache — sync with IDB writes?
+    Each gets an entry: triggers / invalidators / staleness-window /
+    consistency-guarantee.
+
+  **Phase 3 — Decision log consolidation**. ADRs for the patterns that
+  currently live in scattered comments + `gate4-p3-decisions.md`:
+    - ADR: Schema versioning policy (`max(currentVersion+1, targetVersion)`)
+    - ADR: Multi-store migration in single version (precedent
+      `gate4-p3-decisions.md §2`)
+    - ADR: Append-only stores (which? why? rules?)
+    - ADR: Blob storage strategy (photos; future: replay snapshots?)
+    - ADR: Settings-defaults shape (`[]` semantics, per
+      `feedback_idb_persisted_defaults.md`)
+
+  **Phase 4 — Sweep for cache hooks that have no contract documented**.
+    Enumerate every `useMemo`/`useCallback` with non-trivial deps. Flag any
+    that cache derived state with no documented staleness window.
+
+  Scope discipline: this is engineering hardening, not a new feature. No new
+  IDB schema, no new caching layer, no new modules — output is documentation
+  + small enforcement scripts.
+
+accept_criteria:
+  - "Phase 1 deliverable: `docs/persistence/FAILURE_MODES.md` with at minimum
+    8 failure modes catalogued, each with: name / severity / status
+    (observed/theoretical) / fix surface / mitigation. Cross-link from
+    SYSTEM_MODEL.md §11 (TD register) and from each per-mode source file
+    via JSDoc."
+  - "Phase 2 deliverable: `docs/persistence/CACHE_CONTRACTS.md` enumerating
+    every cache surface (~15-25 expected) with staleness contract per
+    entry. Each cache surface gains a JSDoc header pointing back."
+  - "Phase 3 deliverable: ≥4 ADRs in `docs/decisions/` covering schema
+    versioning, multi-store migration, append-only stores, blob storage.
+    Settings-defaults ADR optional if `feedback_idb_persisted_defaults.md`
+    captures the rule adequately."
+  - "Phase 4 deliverable: report at
+    `docs/persistence/CACHE_SWEEP_2026-05-XX.md` listing every undocumented
+    cache surface — feeds queue items for documentation follow-ups."
+  - "Invariants added to `system/invariants.md`: INV-PERSIST-* family
+    (additive-only — already enforced by Item 3 CI gate, document the
+    invariant; blob-orphan-cleanup; settings-empty-vs-absent; tab-
+    concurrency assumption)."
+  - "Failure file at `.claude/failures/PERSISTENCE_FAILURE_MODE_DRIFT.md`
+    (if any drift found between current code and the new contracts —
+    optional; omit if zero drift)."
+
+effort: "L"
+files_involved:
+  - "docs/persistence/FAILURE_MODES.md (NEW)"
+  - "docs/persistence/CACHE_CONTRACTS.md (NEW)"
+  - "docs/decisions/YYYY-MM-DD-schema-versioning.md (NEW)"
+  - "docs/decisions/YYYY-MM-DD-multi-store-migration.md (NEW)"
+  - "docs/decisions/YYYY-MM-DD-append-only-stores.md (NEW)"
+  - "docs/decisions/YYYY-MM-DD-blob-storage.md (NEW)"
+  - "docs/persistence/CACHE_SWEEP_2026-05-XX.md (NEW)"
+  - "system/invariants.md (INV-PERSIST-* additions)"
+  - ".claude/projects/persistence-cache-audit.md (NEW — project charter)"
+  - "SYSTEM_MODEL.md §11 cross-links"
+
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+
+sprint_id: "SPR-088"
+
+decision_flags:
+  # RATIFIED 2026-05-12: WS-188 absorbed into Refactor Sprint as Item 7.
+  # Same charter as Items 1-6 ('no new features during this sprint').
+  # Sequencing within sprint: Phase 1+3 parallel-safe with Item 4;
+  # Phase 2+4 wait for Item 4 to ratify canonical caching shape.
+  - "Failure-mode catalog completeness threshold — 8 modes is the floor;
+    upper bound is whatever the audit surfaces. Recommendation: cap audit at
+    1 session of failure-mode enumeration, ship Phase 1, iterate."
+  - "Cache contract format — table-per-surface vs prose-per-surface. Owner
+    picks at Phase 2 start."
+  - "Whether to extract a generic `useCacheWithStalenessContract(...)`
+    primitive. Recommendation: NO at this audit — document the contracts,
+    don't enforce a shape. Refactor Sprint Item 4 (decision-system
+    extraction) may surface a better extraction target."
+
+source:
+  parent_ws: ""
+  parent_spr: ""
+  user_request: "2026-05-11 — owner: 'I think we need a persistence audit and cache audit. a deep one, done very well. I don't think we have any load-bearing decision architecture around that.'"
+
+created_at: "2026-05-11T00:00:00Z"
+status_note: |
+  Authored 2026-05-11 from owner session-issue consolidation. RESCOPED after
+  discovering Refactor Sprint Item 3 SHIPPED 2026-05-11 with migration registry
+  + additive-only CI gate + per-store ownership. Original ask covered ~30%
+  of the persistence governance surface; this WS covers the remaining
+  ~70% (failure modes + cache contracts + ADR consolidation + cache sweep).
+
+  RATIFIED 2026-05-12: ABSORBED into Refactor Sprint as Item 7. Same
+  charter as Items 1-6 ('no new features during this sprint'). Within-
+  sprint sequencing:
+    - Phase 1 (failure-mode catalog) — parallel-safe with Item 4
+    - Phase 3 (ADRs) — parallel-safe with Item 4
+    - Phase 2 (cache contracts) — waits for Item 4 to ratify canonical
+      caching shape from decision-system extraction
+    - Phase 4 (cache sweep) — waits for Phase 2
+
+  Refactor Sprint charter file at `.claude/projects/refactor-sprint-2026-05-10.md`
+  amended 2026-05-12 to add Item 7 entry pointing to this WS + project
+  charter at `.claude/projects/persistence-cache-audit.md`.
+
+  STATUS-FLIP 2026-05-18 SPR-088 (queue hygiene). All 4 phase outputs shipped
+  at SPR-080 Item 7 (Refactor Sprint close-out, 2026-05-14):
+    - docs/persistence/FAILURE_MODES.md (12 failure modes)        [verified on disk]
+    - docs/persistence/CACHE_CONTRACTS.md (18 cache surfaces)     [verified on disk]
+    - .claude/decisions/2026-05-14-*.md (4 ADRs)                  [verified on disk]
+    - docs/persistence/CACHE_SWEEP_2026-05-14.md (residual scan)  [verified on disk]
+    - 5 INV-PERSIST entries in system/invariants.md
+    - 6 new tech-debt items TD-19..24 in SYSTEM_MODEL.md §11
+  Sprint-index sprint SPR-080 closeout notes named this WS explicitly:
+  "Item 7 / WS-188: 4 phase outputs ... Zero behavior-changing src/ diff for Item 7."
+  Queue drift (status stayed `backlog` after the actual ship) cleared in SPR-088
+  Item 2. Zero src/ diff, zero new tests for this status-flip alone.

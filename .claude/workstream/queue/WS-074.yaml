@@ -2,10 +2,11 @@ id: "WS-074"
 title: "Coordinate with exploit-deviation on AssumptionCard shared component"
 legacy_id: "HRP-COORD-MH12"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-11-spr-072"
+claimed_at: "2026-05-11T02:00:00Z"
+started_at: "2026-05-11T02:05:00Z"
+completed_at: "2026-05-11T02:45:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "ready-to-start"
@@ -21,9 +22,37 @@ files_involved: []
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-072"
 decision_flags: []
-status_note: "LATER"
+status_note: |
+  RESOLVED 2026-05-11 SPR-072. NEEDS-RESCOPE follow-through from SPR-071 sweep executed:
+  coordination ticket converted from standalone sprint anchor into parallel checklist lines on
+  both consumer projects.
+
+  Updates landed:
+    1. WS-067 (HRP-G4-SPEC) — added cross-project coordination note in description + new accept
+       criterion #2: "AssumptionCard ownership decision (absorbed from WS-074): hand-review-modal.md
+       claims-ledger tab either (a) names HRP as authoring project + carries component contract,
+       OR (b) formally defers to exploit-deviation Gate 4 with cross-reference. No-decision
+       not acceptable." WS-067 absorbed_tickets list now includes WS-074 with provenance.
+    2. docs/projects/exploit-deviation.project.md Phase 7 — added "Cross-project coordination
+       (absorbed from WS-074)" section pointing at HRP Gate 2 audit §190-211 source; added
+       new accept criterion: "AssumptionCard ownership decision: if this phase ships first,
+       author component contract here; otherwise consume from HRP's hand-review-modal.md."
+
+  WS-074 is now closed; whichever of WS-067 / exploit-deviation Phase 7 ships first authors
+  the AssumptionCard contract per the original rule. Zero src/ diff.
+
+done_provenance:
+  disposition: "RESCOPED → absorbed into consumer tickets"
+  src_files: []
+  ticket_absorptions:
+    - "WS-067 (HRP-G4-SPEC) carries the AssumptionCard ownership decision as accept_criteria #2; absorbed_tickets[] includes WS-074 reference"
+    - "docs/projects/exploit-deviation.project.md Phase 7 carries parallel coordination note + accept criterion"
+  accept_mapping:
+    - "✓ Shared infra opportunity per Gate 2 Stage D — coordination requirement preserved on both consumer tickets"
+    - "✓ Whichever project reaches the ledger-row render first authors the component — rule preserved verbatim on WS-067 + exploit-deviation Phase 7"
+  rescope_reason: "Coordination ticket without committed scope shouldn't anchor a sprint by itself. The rule lives on whichever ticket will actually render a ledger row; closing WS-074 as standalone removes it from /next ranking without losing the constraint."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

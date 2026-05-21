@@ -1,0 +1,70 @@
+id: "WS-200"
+title: "PSD Gate 4 — mobile-portrait surface variant"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "pre-session-drill"
+capability: "core"
+program: "design"
+description: |
+  Mobile-portrait surface variant for Pre-Session Drill (PSD). Per founder
+  D2 ratification (2026-05-19), landscape 1600×720 is v1 baseline; mobile-
+  portrait is a separate Gate 4 deliverable so it does not block landscape
+  v1 ship.
+
+  Gate 2 Stage C surfaced this as a YELLOW finding (C-A1): the
+  presession-preparer persona explicitly lists phone-in-cab and walking as
+  the primary context. Shipping landscape-only without a mobile follow-up
+  would silently downgrade the persona's primary context (anti-pattern 1
+  in ROUNDTABLES.md — persona stretching).
+
+  Scope:
+    - Surface variant authored in postflop-drills.md (mobile-portrait
+      section) OR separate surfaces/postflop-drills-mobile.md if portrait
+      reflow is dramatic enough to warrant its own page.
+    - Reflow card layout for portrait (single-column-stack; flip-card area
+      remains dominant tap target; bottom-of-screen primary action).
+    - Confirm card-back content discipline still works at portrait width
+      (falsifier headline must remain above-fold; citation paragraph may
+      need scroll).
+    - Touch targets ≥44 DOM-px at common phone DPR (Galaxy A22 baseline
+      already documented in INV-DENSITY register).
+    - Hand-off-to-landscape behavior: if user rotates mid-drill, current
+      card state is preserved.
+
+  Does NOT block landscape v1 (WS-199). Owner can authorize WS-199 ship
+  and WS-200 follow.
+
+  Honors `feedback_portrait_mode_player_screens.md` boundary —
+  portrait-native is reserved for PIO-line identification surfaces; PSD
+  is a study surface, so portrait is a *variant*, not the primary mode.
+accept_criteria:
+  - "Portrait surface variant authored (location decision: in-line in postflop-drills.md vs separate file)"
+  - "Reflow strategy documented (single-column-stack; flip-card area dominant)"
+  - "Card-back content discipline verified at portrait width"
+  - "Touch targets ≥44 DOM-px at Galaxy A22 baseline DPR"
+  - "Orientation-change behavior specified (state preservation)"
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/postflop-drills.md (potentially modified)"
+  - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
+blocked_by:
+  - "WS-199"
+blocked_by_note: "Sequenced after WS-199 (landscape v1) so the mobile variant reflows a stable base. Could parallelize if owner prefers, at cost of double-revision."
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"
+status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Source: 2026-05-19-blindspot-pre-session-drill.md C-A1 + founder D2 ratification. P3 because deferred behind landscape v1 ship."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

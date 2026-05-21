@@ -1,0 +1,89 @@
+id: "WS-205"
+title: "Range Lab — equity-precompute caching layer at flop"
+type: improvement
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T02:00:00Z"
+completed_at: "2026-05-20T00:00:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "engineering"
+description: |
+  Engineering Phase-0 prerequisite for Range Lab DS-54 (per-street
+  range evolution). Output of SPR-093 Gate 2 Blind-Spot Roundtable
+  Stage C (C-A1).
+
+  Without caching, DS-54 multi-street narrowing requires per-frame
+  recompute: 47 turn cards × 46 river cards × ~1000 combos ×
+  per-combo equity update. With Float64Array per-combo cache computed
+  at flop-paint-finalize, turn/river narrowing becomes a filter+weight
+  operation rather than a recompute → ~10ms per turn card render.
+
+  Sibling pattern to PSD WS-198 (hands ↔ upper-surface-node-ID
+  cross-reference) — both are engineering Phase-0 work that ships
+  independently of design gates and unblocks downstream feature
+  function.
+
+  Architecture sketch:
+    - At flop-paint-finalize, compute equity per villain combo vs
+      hero range on the 3-card flop. Store as Float64Array[1326] keyed
+      by combo index.
+    - On turn card reveal, filter combos that have card collision
+      with turn (~50 combos blocked) + update remaining combos'
+      equity via incremental recompute (1-card runout, not full
+      runout).
+    - On river card reveal, similar incremental update from turn.
+    - Memoize per (preflop context + flop + villain range archetype)
+      key so re-entering RL with same state hits cache.
+    - Cache TTL: session-scoped (cleared on app reload).
+
+  INV-RL-DETERMINISM (per C-A4 / Stage E): deterministic seed for
+  any Monte Carlo path in RL (exact enumeration preferred for ≤5-card
+  boards; Monte Carlo only when exact is intractable, with fixed
+  seed).
+
+accept_criteria:
+  - "Caching layer implemented in src/utils/rangeEngine/ (path TBD per existing module structure)"
+  - "Float64Array per combo at flop-paint-finalize; turn/river narrowing via filter+weight"
+  - "Memoization keyed by (preflop context + flop + villain range archetype)"
+  - "Cache TTL session-scoped (cleared on reload)"
+  - "INV-RL-DETERMINISM enforced: deterministic seed for any Monte Carlo path"
+  - "Performance benchmark: ≤10ms per turn card render on cached path"
+  - "Performance benchmark: ≤100ms per paint stroke histogram recompute (Coach perf budget per C-A6)"
+  - "Tests: cache hit / miss correctness; deterministic output for same input; precompute correctness against direct calculation"
+effort: "M"
+files_involved:
+  - "src/utils/rangeEngine/equityCache.js (NEW)"
+  - "src/utils/rangeEngine/__tests__/equityCache.test.js (NEW)"
+  - "system/invariants.md (modified — add INV-RL-DETERMINISM)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables:
+  - "WS-056"
+  - "WS-057"
+sprint_id: "SPR-095"
+decision_flags:
+  - "Cache storage layer: in-memory Map vs WeakMap vs IDB-persisted"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: |
+  DONE 2026-05-20 (SPR-095). Shipped src/utils/rangeEngine/equityCache.js —
+  in-memory Map cache (founder-ratified) keyed by (preflopContext|flop|archetype|hero),
+  Float64Array[1326] per-combo hero equity, narrow(entry, card) for turn/river
+  (filter board-colliding combos + exact recompute), memoized per full board.
+  Equity source reuses a NEW deterministic kernel exactComboEquity() added to
+  pokerCore/monteCarloEquity.js (founder-ratified "reuse existing"); the private
+  exactEnumerateEquity was DRY-refactored to share a comboOutcome helper (no
+  behavior change — 219 game-tree consumer tests still green). INV-RL-DETERMINISM
+  satisfied by exact enumeration (no RNG). 33 tests (15 cache + 18 pokerCore) green;
+  build clean. Decision flag resolved: in-memory Map (not WeakMap — string keys;
+  not IDB — contradicts session-scoped TTL). Discovered + avoided duplication of
+  gameTreeEquity.computeComboEquityDistribution per SPR-094 flagged pattern.
+  INV-RL-DETERMINISM-1..3 added to system/invariants.md."

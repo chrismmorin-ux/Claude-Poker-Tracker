@@ -457,6 +457,62 @@ Before adding any constant, multiplier, or lookup table, ask:
 | Does a villain model or observed stat already capture this? | Don't add another adjustment | Add as lowest-priority fallback |
 | Is this a position/IP/OOP adjustment? | Derive from players-remaining and range width | Don't use position label |
 | Is this a per-bucket rate? | Use per-combo equity if available | Bucket label acceptable for range-level |
+| Is this a range-narrowing decision (turn/river)? | Compute per-combo equity update conditional on villain's action profile + board card (see AP-RL-01 §7.6) | Defer narrowing until per-combo derivation is available |
+
+### 7.6 Range Narrowing: Per-Combo Derivation, Not Bucket Heuristics (AP-RL-01)
+
+**Anti-pattern statement (AP-RL-01):** Range-narrowing decisions (how villain's range shrinks turn → river given a betting line) MUST be computed from first principles — per-combo equity update conditional on villain's action profile + board card revealed — NOT from bucket-label heuristics.
+
+This is the most exposed surface for the label-shortcut anti-pattern: the implementation feels harmless ("on the turn, narrow to TPGK+") but encodes assumptions that hide real divergences. A particular combo might be in the TPGK+ bucket but villain's action profile assigns it 5% bet-bet frequency — different from the bucket average of 60%. The whole purpose of range-narrowing is to surface those divergences; bucket-shortcut destroys it.
+
+**Origin:** Authored 2026-05-20 (SPR-094 / WS-207) as the binding anti-pattern from Range Lab Gate 2 Blind-Spot Roundtable Stage B (B-G3) + Stage E (E-A11). Range Lab DS-54 (per-street range evolution) is the primary implementation surface this binds; the doctrine generalizes to any range-narrowing implementation in the codebase.
+
+**Wrong (forbidden):**
+```js
+// On the turn, narrow to TPGK+ since villain bet again.
+const narrowed = villainRange.filter(combo => combo.bucket >= TPGK_BUCKET);
+```
+This uses a bucket label as the input to the narrowing decision. The bucket boundary is arbitrary relative to villain's actual action-conditional behavior.
+
+**Wrong (also forbidden — masquerading version):**
+```js
+// Look up per-bucket bet-bet frequency.
+const narrowed = villainRange.map(combo => ({
+  combo,
+  posteriorWeight: combo.priorWeight * POP_BET_BET_RATES[combo.bucket],
+}));
+```
+Same anti-pattern — bucket-keyed lookup instead of per-combo derivation. The per-bucket rate is an aggregate over an arbitrary partition; combos within the bucket have variance the rate hides.
+
+**Right (required):**
+```js
+// On the turn, recompute each combo's posterior conditional on villain's bet-bet line.
+const narrowed = villainRange.map(combo => {
+  const equity = computeEquityVsHeroRange(combo, board, heroRange);
+  const betBetFrequency = villainActionProfile(combo, equity, potSize, spr).betBetFreq;
+  const posteriorWeight = combo.priorWeight * betBetFrequency;
+  return { combo, posteriorWeight };
+});
+```
+Per-combo derivation: equity is computed from cards, frequency is derived from equity + game state, posterior is computed multiplicatively. No bucket label appears in the narrowing path.
+
+**When bucket labels ARE acceptable** (consistent with §7.3):
+- **Display**: "39% of villain's posterior range is in the TPGK+ bucket" — the bucket label is a name for an aggregate, applied AFTER per-combo narrowing.
+- **Range-level summaries**: total combo count in each bucket, percentage breakdown.
+- **Range-level fallback**: when per-combo equity is genuinely unavailable (e.g., partial-information game like online with unknown villain). In those cases, bucket-driven narrowing is the least-bad approximation — but must be flagged in the implementation and surfaced to the user as a low-confidence path.
+
+**When bucket labels are NOT acceptable** (binding):
+- **Per-combo narrowing decisions** — use per-combo posterior multiplicative update.
+- **Frequency-weighted equity computations** — weight by per-combo derived frequency, not by bucket-average.
+- **DS-54 multi-street evolution** — the entire feature value is surfacing per-combo divergence from bucket averages.
+
+**Enforcement mechanisms:**
+1. **Gate 4 surface spec binding (WS-055):** the Range Lab surface spec MUST document AP-RL-01 in the DS-54 implementation discipline section.
+2. **CI lint pattern (deferred to engineering Phase 0+):** grep against forbidden patterns in `src/utils/rangeEngine/` + Range Lab narrowing implementation files. Forbidden: `[bucket === 'TPGK']` switches inside narrowing logic, `POP_NARROWING_RATES[bucket]` lookups, any per-bucket-keyed frequency table consulted during narrowing. Allowed: per-combo equity computation + frequency derivation + posterior multiplicative update.
+3. **Engine sub-directory CLAUDE.md cross-reference:** `src/utils/rangeEngine/CLAUDE.md` lists AP-RL-01 in its Anti-patterns section.
+4. **Project doc cross-reference:** `docs/projects/range-lab.project.md` Gate 2 audit section cites AP-RL-01 as a binding doctrine.
+
+**Why this is a separate subsection (not just an example under §7.3):** §7.3 says "bucket labels are NOT acceptable for per-combo action probability computation." AP-RL-01 extends that to *range narrowing*, which is a distinct operation — narrowing computes a *posterior* over the range, not an action probability. The two concepts are mechanically similar (multiplicative Bayesian update conditional on observation) but semantically distinct (action prob = forward inference; range narrowing = backward inference given observed action). Making AP-RL-01 explicit prevents engineers from reading §7.3 and concluding "but range narrowing is different."
 
 ---
 

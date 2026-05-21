@@ -1,0 +1,56 @@
+id: "WS-209"
+title: "Fix impossible hero combo in utg-vs-btn-4bp-deep LSW line (A♥K♦ on board with K♦)"
+type: bug
+status: done
+claimed_by: "SPR-096"
+claimed_at: "2026-05-20T13:20:00Z"
+completed_at: "2026-05-20T13:25:00Z"
+priority_score: 16.0
+priority_label: "P2"
+category: "line-study-content"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Caught by INV-LSW-RL-EQUITY-PARITY (WS-206) on 2026-05-20.
+
+  The `flop_root` node of LINE_UTG_VS_BTN_4BP_DEEP
+  (src/utils/postflopDrillContent/lines.js ~line 2240) declares:
+    board: ['A♠', 'K♦', '2♠']
+    heroView.combos: ['A♥K♦']    ← K♦ is ALSO on the board
+  This is an impossible holding — hero cannot hold the K♦ that is on the
+  board. The node teaches "top two pair" (AA + KK using board A♠ + K♦),
+  so hero's K must be a non-board suit.
+
+  The node comment already flags it was authored "with H3-only confidence
+  per SPR-049 D1 ratification ... LSW-A8 per-line audit has not yet been
+  conducted" — so it was a known-unaudited spot.
+
+  **Recommended fix:** change hero combo to `A♥K♣` (keeps the A♥, gives a
+  legal K for top-two-pair, no board collision, no flush-draw implication
+  on the A♠2♠ backdoor since hero holds no spade either way). Confirm the
+  intended K suit — if a backdoor-spade-draw teaching point was intended,
+  hero would need a spade, which changes the lesson.
+
+accept_criteria:
+  - "hero combo in utg-vs-btn-4bp-deep::flop_root no longer collides with the board"
+  - "node still classifies as the authored bucket (twoPair)"
+  - "remove the entry from KNOWN_DEGENERATE_NODES in lswRlParityBaseline.js"
+  - "add the node's now-computable equity to LSW_RL_EQUITY_BASELINE (regen + review)"
+  - "lswRlParity.test.js green with the node moved from degenerate → pinned"
+effort: "S"
+files_involved:
+  - "src/utils/postflopDrillContent/lines.js"
+  - "src/utils/rangeEngine/__tests__/lswRlParityBaseline.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_by_note: ""
+enables: []
+sprint_id: "SPR-096"
+decision_flags:
+  - "Which K suit for hero (K♣/K♥/K♠) — depends on whether a backdoor-draw teaching point was intended. Default recommendation: K♣."
+source:
+  origin: "WS-206-finding-2026-05-20"
+  parent_ws: "WS-206"
+  parent_spr: "SPR-095"
+created_at: "2026-05-20"
+status_note: "AUTHORED 2026-05-20 from WS-206 finding. INV-LSW-RL-EQUITY-PARITY-3 flagged an impossible hero holding in shipped LSW teaching content. Small fix but needs a poker-judgment call on the K suit (decision_flag), so ticketed rather than auto-fixed."

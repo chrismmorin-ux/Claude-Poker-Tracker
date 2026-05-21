@@ -2,13 +2,13 @@ id: "WS-055"
 title: "Gate 4"
 legacy_id: "RL-G4"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-20-next"
+claimed_at: "2026-05-20T14:40:00Z"
+completed_at: "2026-05-20T15:00:00Z"
 priority_score: 15.0
 priority_label: "P2"
-category: "ready-to-start"
+category: "range-lab"
 capability: "core"
 program: "engineering"
 description: |
@@ -24,12 +24,14 @@ blocked_by_legacy:
   - "RL-G2"
   - "RL-G3"
 enables: []
-sprint_id: ""
-decision_flags: []
-status_note: "BLOCKED by RL-G2/RL-G3"
+sprint_id: "SPR-098"
+decision_flags:
+  - "Structural placement: Explorer Custom-mode toggle vs new tab (ratified: Explorer toggle)"
+  - "Partial-weight cell rendering (ratified: partial-fill height)"
+status_note: "DONE 2026-05-20 SPR-098 (docs-only, zero src/ diff). Authored Range Lab capability section in surfaces/postflop-drills.md as Explorer Custom-mode expansion (no new tab/view per Gate 1 + Drills Consolidation hold). Paint UX (ADR-007/008), partial-fill weight rendering, E-A4..E-A11, AP-RL-01 + INV-LSW-RL-EQUITY-PARITY bindings, Phase-5 cross-link contract, landscape-v1 mobile decision, Gate-5 test expectations. JTBD list + Anatomy + State updated. range-lab.project.md → gate-4-complete. All design gates done; Phases 1-2 (WS-056/057) unblocked."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 288
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-11"

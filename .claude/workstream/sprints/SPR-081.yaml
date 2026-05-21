@@ -1,0 +1,196 @@
+id: "SPR-081"
+title: "SLS Stream D — Skill-state foundation (Master Plan §D continuation)"
+status: completed
+approved_at: "2026-05-14T15:00:00Z"
+completed_at: "2026-05-14T17:40:00Z"
+
+goal: |
+  Skill-state foundation ships — SCF's Shape Language System gets a working
+  mastery store, reducer, context, and transparency screen so the per-shape
+  classifiers (Streams B1-B5) can wire into a real surface.
+
+program_focus: design
+program_initiative: |
+  Self-Coach Foundation / Shape Language System — Stream D close-out.
+  SCF Gate 4 closed across SPR-073 + SPR-074 (2026-05-11); WS-039 (SLS-G4)
+  done unblocked WS-040 structurally. Stream D is the foundational skill-
+  state block gating Streams B1-B5 (per-shape classifiers + lessons).
+  State.md Active Program = Master Plan 2026-04-30 resumed; SPR-080 exit
+  note named PIO Phase 5 / SCF Gate 5 / PMC Phase 5b as next candidates.
+  This sprint anchors SCF Gate 5 work via the SLS workstream.
+
+  Cross-program rotation: 3 engineering anchors in a row (SPR-078/079/080
+  Refactor Sprint close-out); design rotation is healthy and overdue.
+
+composed_by: auto
+created_at: "2026-05-14T15:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T15:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent with
+    SPR-075 onward precedent). Manual scan: design-first scaffolding for
+    owner-volunteered learning surface. Bound by
+    feedback_owner_volunteered_grading.md + feedback_scf_learning_state_not_tier_rank.md
+    — no mastery-rank labels, no engagement-pressure, no surveillance.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — IDB schema shape: concrete fields for additive shapeMastery + shapeLessons stores (per-shape counters? W_leak/W_drill/W_test/W_recent inputs per feedback_scf_learning_state_not_tier_rank.md?)"
+  - "Item #1 — Reducer/context structure: new shapeReducer + ShapeContext, or fold into existing analysisReducer/SelfCoachContext?"
+  - "Item #1 — Transparency screen scope: toggleable signal-sources UI (W_* sliders + composition inspector per feedback_scf_high_granularity.md) or read-only state-dump for now?"
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-040 (SLS Stream D), priority 15,
+  design program.
+
+  Deferred (unmet prereq):
+    - WS-191 (was P=20, soft-blocked → 5): Awaiting ≥3 owner-captured
+      Phase 1 telemetry observations from live sessions.
+    - WS-164 (was P=18, soft-blocked → 4.5): Depends on Table-Build Gate 5
+      (CandidateColumn surface, not ticketed).
+
+  Higher-P alternatives intentionally not picked: WS-027/030/031/032/033/036
+  (P=22 launch / MPMF commerce) are blocked on owner setup (Stripe keys,
+  legal-scoping, PostHog account). SPR-080 exit explicitly steers toward
+  Master Plan §A/§C/§D, not commerce.
+
+  Queue data drift flagged (not anchor-able): WS-188 (persistence/cache
+  audit) shipped in SPR-080 Item 7 but its YAML still says status: backlog.
+  cwos-reconcile.js is the canonical fix.
+
+  Source-class damping: none. Last 3 anchors (SPR-078/079/080) are founder-
+  driven Refactor Sprint items (untagged / plan-internal class). Zero auto-
+  rec or engine-finding anchors in window. No damping applied.
+
+  Fleet-rotation override: skipped — no fleet/repo-goal candidates in this
+  product repo (poker-tracker is not HomeBase).
+
+items:
+  - id: "WS-040"
+    title: "SLS Stream D — Skill-state foundation (IDB v25→v26 + reducer + context + transparency screen)"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    status: done
+    started_at: "2026-05-14T15:05:00Z"
+    completed_at: "2026-05-14T17:40:00Z"
+    closeout_notes: |
+      Owner ratified Decision 1=B (foundation + read-only transparency) and
+      Decision 2=B (per-user lesson completion history) at plan-mode.
+
+      Shipped:
+        - IDB v25 → v26 migration (additive). `shapeMastery` singleton
+          (keyPath: userId) + `shapeLessons` append-only completion history
+          (keyPath: id = `${userId}:${lessonId}:${completedAt}`, 3 indexes:
+          by_userId / by_descriptorId / by_completedAt).
+        - src/utils/persistence/shapeMasteryStorage.js (4 CRUD wrappers +
+          clearLessonCompletions; mirrors telemetryConsentStore.js pattern).
+        - src/constants/shapeMasteryConstants.js (SHAPE_DESCRIPTOR_CATALOG of
+          10 + SHAPE_MASTERY_ACTIONS frozen SCREAMING_SNAKE block enumerating
+          3 active + 8 deferred writers + USER_MUTE_STATES + DECLARED_LEVELS
+          + FORBIDDEN_MASTERY_FIELDS + FORBIDDEN_FUSED_FIELDS guards +
+          initialShapeMasteryState + SHAPE_MASTERY_STATE_SCHEMA).
+        - src/reducers/shapeMasteryReducer.js with 3 active writers
+          (HYDRATED / ENROLL / DISENROLL) wrapped in createValidatedReducer.
+          8 deferred writer cases stay no-op stubs with `// TODO(WS-NEXT)`.
+        - src/contexts/ShapeMasteryContext.jsx mounted as sibling of
+          AnchorLibraryProvider in AppProviders.jsx (after EntitlementProvider,
+          outside GameProvider) — useAppState + PokerTracker.jsx wire-through.
+        - src/hooks/useShapeMasteryPersistence.js (singleton hydrate +
+          400ms debounce-write + first-launch-guard against overwriting
+          IDB with empty defaults).
+        - src/utils/skillAssessment/shapeLanguage/ pure-math module with
+          CLAUDE.md, betaPosterior.js (clamps to I-SM-7 floor; delegates
+          credibleInterval to canonical exploitEngine/bayesianConfidence.js),
+          temporalDecay.js (read-time-only per I-SM-2; regresses posterior
+          toward uniform prior as evidence decays; 90-day half-life default),
+          hooks.js (useShapeMasteryDecay).
+        - src/components/views/SettingsView/ShapeSkillMapPanel/ read-only
+          transparency surface — 10 descriptor rows in catalog order;
+          posterior + declaredLevel + lastValidatedAt render in separate
+          DOM regions (I-SM-1); disabled [Recalibrate] / [Mark as already
+          known] / [Unmute] buttons with "Coming soon" tooltips. Mounted
+          but unlinked from nav (Settings deep-link is fast-follow scope).
+        - system/invariants.md — I-SM-1 / I-SM-2 / I-SM-6 / I-SM-7 / I-SM-8
+          / I-SM-9 flipped to ENFORCED; I-SM-3 / I-SM-4 / I-SM-5 stay
+          DOCUMENTED pending fast-follow WS.
+        - docs/design/contracts/shape-mastery.md change log + Known drift
+          updated.
+        - src/contexts/__tests__/ShapeMasteryContext.test.jsx (6 tests)
+          — schema-validation test contract honored.
+
+      Tests:
+        - shapeMasteryReducer.test.js: 30 tests (3 active writers + 8 deferred
+          no-op + invariants I-SM-1/2/3/7/8/9 + catalog integrity).
+        - shapeMasteryStorage.test.js: 13 tests (v26 store keyPaths + indexes
+          + round-trip + filtering + multi-user isolation).
+        - betaPosterior.test.js: 14 tests (1000-random-sequence I-SM-7
+          posterior bounds + credible interval shape).
+        - temporalDecay.test.js: 12 tests (decay regression toward prior +
+          monotonicity + floor enforcement + clock-skew safety).
+        - ShapeSkillMapPanel.test.jsx: 11 tests (10-row render + I-SM-1
+          separation + I-SM-9 forbidden-field grep + recovery affordances
+          disabled + enrollment status).
+        - ShapeMasteryContext.test.jsx: 6 tests (provider value shape +
+          selectors + consumer-hook outside-provider contract).
+        - migrationRegistry.test.js + database.test.js: bumped final store
+          count 23→25.
+
+      Verification:
+        - Full smart-test-runner: 454 test files / 11308 tests pass /
+          20 skipped / ZERO failures.
+        - Production build clean (7.49s).
+        - bash scripts/check-idb-additive.sh: OK.
+        - node scripts/check-commerce-copy.cjs: OK (15 files scanned,
+          0 violations — initial scan caught "streak" in a docstring on
+          ShapeSkillMapPanel.jsx because SettingsView/ is in commerce
+          scope; rephrased to "engagement-pressure counter fields").
+
+      Unblocks Streams B1-B5 (WS-041/042/043/044/045 — per-shape
+      classifiers and lessons; each declares blocked_by: WS-040 or chains
+      via WS-041).
+
+      Fast-follow WS (deferred per Decision 1-B):
+        - 8 recovery writers (SEED_DESCRIPTOR_DECLARATION, RECORD_DRILL_OUTCOME,
+          MUTE_DESCRIPTOR, RECORD_SKIP_DISAMBIGUATION, UNMUTE_DESCRIPTOR,
+          RECALIBRATE_DESCRIPTOR, RESET_SHAPE_MASTERY,
+          TOGGLE_SESSION_INCOGNITO).
+        - I-SM-4 (seeder ranking — useShapeMasterySeederRanking).
+        - I-SM-5 (recalibrate atomicity).
+        - I-SM-6 reducer-side hardening (read-only sprint already
+          documents-and-tests the contract).
+        - Welcome-back banner (≥28d gate).
+        - Settings → Shape Language deep-link.
+        - Enrollment journey surface (Q7 seed picker).
+    decision_flags:
+      - "IDB schema shape — concrete fields for shapeMastery + shapeLessons stores"
+      - "Reducer/context structure — new dedicated vs fold into existing"
+      - "Transparency screen scope — interactive sliders vs read-only state dump"
+    notes: |
+      Accept criteria (per WS-040.yaml):
+        - IDB v17→v18 additive (`shapeMastery`, `shapeLessons` stores)
+        - reducer
+        - context
+        - transparency screen functional
+
+      Unblocks Streams B1-B5 (WS-041/042/043/044/045 — per-shape
+      classifiers and lessons). Each Stream B item declares blocked_by:
+      WS-040 (or WS-040 transitively via WS-041).
+
+      Memories binding this implementation:
+        - feedback_scf_learning_state_not_tier_rank.md — "learning state"
+          descriptor, NOT tier rank; W_leak/W_drill/W_test/W_recent are
+          configurable inputs; composition always inspectable; 6-tier
+          ladder = authoring metadata only, never user-facing rank label.
+        - feedback_scf_high_granularity.md — concept granularity floor =
+          coherent solver-baseline region in situation-key space.
+        - feedback_owner_volunteered_grading.md — opt-in test surfaces are
+          permitted; system-imposed grading refused.

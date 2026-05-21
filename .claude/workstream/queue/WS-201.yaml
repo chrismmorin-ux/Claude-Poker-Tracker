@@ -1,0 +1,70 @@
+id: "WS-201"
+title: "PSD mood-detection reliability research (PSP-2)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "pre-session-drill"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Validate the stuck/heater mood-detection mechanism that presession-
+  preparer persona Constraints depend on (proto-caveat PSP-2). Gate 2
+  surfaced this in Stage C (mood-aware SELECTION, not framing — C-A3 +
+  C-A6).
+
+  Today: presession-preparer assumes mood can be inferred reliably from
+  session P/L. Stage C Behavioral Psychologist flagged this as the
+  highest-risk mechanism — wrong mood inference produces the WORST drill
+  experience (rubbing failure in stuck-hero's face, or pushing complacent
+  heater toward overconfidence).
+
+  Until validated, PSD ships with user-declared mood toggle (C-A6
+  fallback). This ticket investigates whether auto-detection can be
+  earned in v2.
+
+  Research scope:
+    - Define stuck / heater / neutral operational criteria. Candidates:
+      session P/L threshold, multi-session P/L trajectory, time-since-
+      last-session, hand-count-since-last-significant-loss.
+    - Backtest against existing session corpus (if reliable session data
+      exists in IDB).
+    - Estimate false-positive + false-negative rates for each criterion.
+    - Recommend: ship auto-detection v2, ship hybrid (auto-detect default
+      + user override), or keep user-declared-only.
+
+  Cross-program note: this lives in domain-correctness (not design)
+  because it is a *model of user state*, which is a Bayesian-inference
+  problem subject to the same hierarchical-shrinkage discipline as the
+  villain-modeling work. Anti-pattern surface: do not bucket users into
+  "stuck-mode personas" — keep the descriptor downstream of the inference
+  per `feedback_first_principles_decisions.md` (labels are outputs, never
+  inputs).
+accept_criteria:
+  - "Operational criteria for stuck/heater/neutral defined"
+  - "Backtest against existing session corpus (or explicit gap: insufficient corpus)"
+  - "False-positive / false-negative rate estimates per criterion"
+  - "Recommendation: auto v2 / hybrid / user-only — with rationale"
+  - "Forbidden patterns documented: bucket-as-input, persona-as-label, etc."
+effort: "M"
+files_involved:
+  - "docs/research/psd-mood-detection.md (NEW)"
+  - "src/utils/sessionStats/__tests__/moodDetection.test.js (NEW, if implementation candidate authored)"
+blocked_by: []
+blocked_by_note: "Does not block any other PSD ticket. Hybrid/v2 decision can land any time after Gate 4 ships v1 with user-declared toggle."
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Auto v2 / hybrid / user-only — choice depends on backtest reliability"
+status_note: "AUTHORED 2026-05-19 SPR-090 Gate 2 follow-up. Source: 2026-05-19-blindspot-pre-session-drill.md Stage C A6 + persona PSP-2 proto-caveat. P3 — independent of Gate 4 schedule."
+source:
+  origin: "SPR-090-gate2-followup-2026-05-19"
+  parent_ws: "WS-063"
+  parent_spr: "SPR-090"
+  audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
+created_at: "2026-05-19"
+updated_at: "2026-05-19"

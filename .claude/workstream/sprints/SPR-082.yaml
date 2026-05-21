@@ -1,0 +1,125 @@
+id: "SPR-082"
+title: "SLS Stream B1 — Range Silhouette classifier + lesson 1 + HandReplay embed"
+status: completed
+approved_at: "2026-05-14T18:00:00Z"
+completed_at: "2026-05-15T14:50:00Z"
+
+goal: |
+  Range Silhouette becomes a real shape descriptor — classifier lands,
+  Lesson 1 ships, HandReplay picks it up so SLS visibly proves out on
+  a real surface. Stream B1 is the first per-shape classifier consuming
+  the Stream D foundation shipped in SPR-081.
+
+program_focus: design
+program_initiative: |
+  Self-Coach Foundation / Shape Language System — Stream B1 kickoff.
+  WS-040 (Stream D foundation) shipped SPR-081 with IDB v25→v26 +
+  shapeMasteryReducer + ShapeMasteryContext + useShapeMasteryPersistence +
+  skillAssessment/shapeLanguage/ pure-math module + ShapeSkillMapPanel
+  read-only transparency surface. That structurally unblocked Streams
+  B1-B5 (WS-041..WS-045). B1 is the first per-shape classifier; it
+  proves the foundation actually wires through to a user-facing flow.
+
+  Master Plan §D continuation: state.md Active program = Master Plan
+  2026-04-30 resumed; SPR-080 exit named SCF Gate 5 as a next candidate;
+  SPR-081 exit said "Unblocks Streams B1-B5".
+
+composed_by: auto
+created_at: "2026-05-14T18:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-14T18:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (consistent
+    with SPR-075→SPR-081 precedent). Manual scan: design-first scaffolding
+    for an owner-volunteered learning surface bound by
+    feedback_owner_volunteered_grading.md + feedback_scf_learning_state_not_tier_rank.md
+    + feedback_scf_high_granularity.md. No engagement-pressure copy, no
+    mastery-rank labels, no surveillance. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 — Classifier shape: Range Silhouette descriptor catalog entry + v1 enum values (compact 3-4-class baseline vs fuller SLS-G4 taxonomy)"
+  - "Item #1 — Lesson 1 authoring tone: opt-in test surface (owner-volunteered grading hook lit) vs read-only 'learn this concept' framing only"
+  - "Item #1 — HandReplay embed shape: read-only descriptor row mirroring HeroStateSection vs 'seed-yourself' flow with disabled-but-rendered enrollment affordance"
+
+composition_notes: |
+  Single-item plan-first sprint. Anchor: WS-041 (SLS Stream B1),
+  priority 15, design program.
+
+  Effort cap: WS-042 (Stream B2) chains on WS-041 but is also M effort;
+  M+M = 3 sessions exceeds the standard 2-session cap. Single-item is
+  the right pace.
+
+  Deferred (unmet prereq):
+    - WS-191 (was P=20, soft-blocked → 5): Awaiting ≥3 owner-captured
+      Phase 1 telemetry observations from live sessions.
+    - WS-164 (was P=18, soft-blocked → 4.5): Depends on Table-Build
+      Gate 5 (CandidateColumn surface, not ticketed).
+    - WS-027/030/031/032/033/036 (P=22 launch/MPMF cluster → ~5.5):
+      Soft-blocked on owner setup (Stripe / legal / PostHog).
+
+  Queue data drift flagged (carry-over from SPR-081): WS-188
+  (persistence/cache audit) shipped in SPR-080 Item 7 but its YAML still
+  says status: backlog. cwos-reconcile.js is the canonical fix; not
+  installed in this repo.
+
+  Source-class damping: none. Last 3 anchors (SPR-079/080/081) are
+  founder-driven (untagged/plan-internal class). Zero auto-rec or
+  engine-finding anchors in window.
+
+  Fleet-rotation override: skipped — poker-tracker is not HomeBase;
+  no fleet/repo-goal candidates.
+
+  Also-considered (clean but lower-scored): WS-185 (P=14, postflop
+  EV-bucket sum-to-100% bug). Domain-correctness rotation candidate
+  for the next sprint after WS-041 ships.
+
+items:
+  - id: "WS-041"
+    title: "SLS Stream B1 — Range Silhouette classifier + lesson 1 + HandReplay embed"
+    mode: plan-first
+    effort: M
+    program: design
+    category: shape-language
+    status: done
+    started_at: "2026-05-14T18:05:00Z"
+    completed_at: "2026-05-15T14:50:00Z"
+    decision_flags:
+      - "Classifier shape — descriptor catalog entry + v1 enum values [RESOLVED 2026-05-14: discriminated-union output with 5-prototype + compound (oval/barbell/triangle/comb/cloud/compound/empty); Session-2 owner ratified accepting the shipped 5-class code]"
+      - "Lesson 1 authoring tone — opt-in test surface vs read-only framing [RESOLVED 2026-05-15: read-only 'learn this concept' framing; drill spots stay as authoring metadata for the future LessonRunnerView; RECORD_DRILL_OUTCOME writer stays no-op]"
+      - "HandReplay embed shape — read-only descriptor vs seed-yourself flow [RESOLVED 2026-05-15: read-only descriptor row mirroring HeroStateSection pattern; no enrollment affordance, no skill writes]"
+    notes: |
+      Accept criteria (per WS-041.yaml):
+        - Classifier module + tests
+        - Lesson 1 authored
+        - HandReplay embed
+
+      Foundations to consume (from SPR-081 WS-040):
+        - SHAPE_DESCRIPTOR_CATALOG in src/constants/shapeMasteryConstants.js
+          (10 entries; Range Silhouette is presumably one of them — verify
+          in plan-mode whether to extend or use existing entry)
+        - shapeMasteryReducer (3 active writers: HYDRATED / ENROLL /
+          DISENROLL; 8 deferred SCREAMING_SNAKE no-op stubs)
+        - ShapeMasteryContext + useShapeMasteryPersistence
+        - src/utils/skillAssessment/shapeLanguage/ (betaPosterior +
+          temporalDecay)
+        - ShapeSkillMapPanel (read-only transparency; 10 descriptor rows)
+        - I-SM-1/2/6/7/8/9 ENFORCED; I-SM-3/4/5 documented pending
+
+      Memories binding this implementation:
+        - feedback_scf_learning_state_not_tier_rank.md — composition is
+          inspectable; no tier-as-rank labels; W_leak/W_drill/W_test/W_recent
+          are configurable inputs.
+        - feedback_scf_high_granularity.md — concept granularity floor =
+          coherent solver-baseline region in situation-key space.
+        - feedback_owner_volunteered_grading.md — opt-in test surfaces
+          are permitted; system-imposed grading refused. Lesson 1 must
+          gate any assessment behind explicit opt-in.
+        - feedback_first_principles_decisions.md — classifier outputs
+          (silhouette enum) are DERIVED, not inputs to plan computation.

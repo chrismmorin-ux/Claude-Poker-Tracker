@@ -1,0 +1,101 @@
+id: "SPR-066"
+title: "EAL Phase 6 close-out — Calibration Dashboard 3-tab implementation (WS-169)"
+status: completed
+approved_at: "2026-05-09T19:00:00Z"
+completed_at: "2026-05-09T20:35:00Z"
+goal: |
+  Ship the EAL Calibration Dashboard — the 3-tab study surface
+  (anchor / predicate / primitive) goes live so AnchorLibraryView's
+  handleOpenDashboard deep-link routes to a real screen instead of toasting
+  "ships in a future session." Closes EAL Phase 6 Stream D dashboard child;
+  Stream E (sidebar overlay) remains open as a separate ticket.
+
+  Per-origin evidence-split (matcher-system rows vs owner-captured rows)
+  must never sum (AP-08); AP-06 forbidden-pattern absence enforced at
+  component level.
+
+program_focus: domain-correctness
+program_initiative: |
+  Poker Theory Integrity — EAL Phase 6 close-out continues. WS-169 just
+  re-released 2026-05-09 at SPR-065 close-out from PMC absorption back to
+  original EAL Stream D 3-tab scope (PMC Devil's-Advocate Concern 1
+  REPLACEMENT verdict cancelled the expanded ledger / aggregator architecture).
+  No longer blocked on PMC infra. Spec at docs/design/surfaces/calibration-dashboard.md
+  predates the REPLACEMENT verdict and needs scope-tightening this sprint.
+
+  Cross-program rotation: DC anchored 4 of last 6 sprints (SPR-060/063/064/065)
+  with design (SPR-061) and eng (SPR-062) interleaved. Continuing DC for WS-169
+  is acceptable because (a) it's the only clean 18.0+ candidate, (b) closes EAL
+  Phase 6 dashboard surface, (c) re-scoping context is hot from this morning.
+
+composed_by: auto
+created_at: "2026-05-09T19:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 1
+  max_effort_sessions: 2  # exceeded by L item; single-L precedent SPR-064 + SPR-065 today
+
+anti_goal_check:
+  status: not_run
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (graceful-degradation
+    per CLAUDE.md). Manual scan: surface implementation closing a Gate-4-spec'd
+    deliverable; no engagement-pressure / shame copy / cross-surface contamination
+    triggers; AP-06 forbidden-pattern absence is itself an explicit accept criterion.
+
+decisions_needed:
+  - "Item #1 — Per-origin evidence-split rendering (matcher-system rows vs owner-captured rows): table vs cards vs accordion"
+  - "Item #1 — Default tab on open: anchors / predicates / primitives"
+  - "Item #1 — Gate 1 entry-audit verdict + Gate 4 spec amendment to remove per-villain/per-situation tabs cancelled by PMC REPLACEMENT verdict"
+
+items:
+  - id: "WS-169"
+    title: "EAL Stream D — Calibration Dashboard implementation (3-tab anchor/predicate/primitive)"
+    mode: plan-first
+    effort: L
+    program: domain-correctness
+    category: exploit-anchor-library
+    priority_score: 18.0
+    status: done
+    started_at: "2026-05-09T19:30:00Z"
+    completed_at: "2026-05-09T20:35:00Z"
+    decision_flags:
+      - "Per-origin evidence-split rendering (table vs cards vs accordion)"
+      - "Default tab — anchors / predicates / primitives"
+      - "Gate 1 entry-audit verdict + Gate 4 spec amendment"
+    notes: |
+      L-effort single-item sprint. Plan-first because (a) decision_flags require
+      founder ratification before implementation, (b) new surface SCREEN.CALIBRATION_DASHBOARD
+      requires Gate 1 entry audit + Gate 4 surface spec per design framework guardrail.
+
+      Files (NEW):
+        - src/components/views/CalibrationDashboardView/CalibrationDashboardView.jsx
+        - src/components/views/CalibrationDashboardView/CalibrationTabs.jsx
+        - src/components/views/CalibrationDashboardView/{Predicate,Anchor,Primitive}CalibrationPanel.jsx
+        - src/components/views/CalibrationDashboardView/AnchorDetailPanel.jsx (deep-dive variant; distinct from S20 long-press tooltip)
+        - src/components/views/CalibrationDashboardView/{EnrollmentStateBanner,CalibrationEmptyState}.jsx
+        - src/hooks/useCalibrationDashboard.js
+        - src/utils/anchorLibrary/anchorCalibrationSelectors.js
+        - docs/design/audits/2026-05-09-entry-calibration-dashboard.md (Gate 1)
+
+      Files (MODIFY):
+        - src/constants/uiConstants.js (add SCREEN.CALIBRATION_DASHBOARD)
+        - src/components/views/AnchorLibraryView/AnchorLibraryView.jsx:128 (replace toast with real navigation)
+        - docs/design/surfaces/calibration-dashboard.md (Gate 4 amendment)
+
+      Acceptance highlights from WS-169:
+        - SCREEN.CALIBRATION_DASHBOARD route + ENABLE_CALIBRATION_DASHBOARD flag
+        - 3-tab layout (predicates / anchors / primitives) — NO per-villain / per-situation tabs
+        - Per-origin evidence-split (AP-08 — matcher-system vs owner-captured never summed)
+        - AP-06 forbidden-pattern absence enforced at component level
+        - Playwright visual verification at 1600×720 across 3 tabs
+        - Zero regressions vs SPR-065 baseline
+
+composition_notes: |
+  Hygiene gaps surfaced (NOT in this sprint — separate ticket / sweep recommended):
+    - Queue-index drift: WS-105 / WS-159 / WS-135 / WS-080 are status:done in YAML but status:backlog in queue-index.yaml. Reconcile recommended before next /next pass.
+    - Launch-program soft-block hygiene: WS-027 / WS-030..033 / WS-036 carry stale blocked_by_legacy [MPMF-G4-*, Q7] + status_note "BLOCKED by..." but empty blocked_by + empty blocked_by_note. Surface at full priority 22.0 despite being unworkable. Either populate blocked_by_note (Step 2-prereq damping kicks in) or drop to P3 until Q7 verdict.
+    - PMC Phase 5a ticket missing: SPR-065 close-out described Phase 5a (predictionAudit primitive, ~0.5-1 session) as "separate WS ticket" — no such ticket exists yet.
+
+  Source-class: spr-followup (parent_ws: WS-015). Last 3 anchors: WS-172/172/135 = untagged + untagged + spr-followup. spr-followup count = 1 in window; not saturated.

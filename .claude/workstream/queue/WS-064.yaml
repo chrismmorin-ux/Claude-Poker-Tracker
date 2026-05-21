@@ -8,9 +8,9 @@ claimed_at: null
 completed_at: null
 priority_score: 8.0
 priority_label: "P3"
-category: "ready-to-start"
+category: "pre-session-drill"
 capability: "core"
-program: "engineering"
+program: "design"
 description: |
   Pre-Session Drill Gate 3 — Research (conditional on US-3 verdict)
 accept_criteria:
@@ -20,15 +20,14 @@ effort: "M"
 files_involved: []
 blocked_by:
   - "WS-063"
-blocked_by_legacy:
-  - "US-3"
+blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: []
-status_note: "BLOCKED by US-3"
+status_note: "LEGITIMATE-BACKLOG (verified 2026-05-14 SPR-079 ready-to-start triage). PSD Gate 3 (Research). Conditional on WS-063 (PSD Gate 2 verdict). Author DS-56/57/58/59 as 'Proposed' in `drills-and-study.md` + possibly owner-interview on session-prep workflow. Category retitled to 'pre-session-drill'; program: engineering → design (Gate work)."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 309
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-05-14"

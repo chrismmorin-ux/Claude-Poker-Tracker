@@ -2,10 +2,31 @@ id: "WS-017"
 title: "Stream B"
 legacy_id: "EAL-Stream-B-matcher"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-09-next"
+claimed_at: "2026-05-09T01:26:17Z"
+completed_at: "2026-05-09T01:48:00Z"
+status_note: |
+  RESOLVED 2026-05-09 SPR-055. New `src/utils/anchorLibrary/matcher.js`
+  pure-utils ships `matchesAnchor(situation, anchor)` predicate +
+  `getMatchingAnchors(situation, anchors, options?)` filtered-list with
+  default active-only status filter (red line #6 / "matcher short-circuits
+  on candidate" accept criterion). Style match wildcards on absent
+  villainStyle; lineSequence walks step-by-step vs object-keyed
+  actionHistory; LineStep fields (heroAction.kind+sizingRange,
+  villainAction, boardCondition.texture/scareKind, sprRange) all checked.
+  Anchor texture 'any' is explicit wildcard. Status-filter is internal
+  default + opt-out via `{ includeStatuses }` for study-mode surfaces
+  (AnchorLibraryView / CalibrationDashboardView). 45 tests in
+  `__tests__/matcher.test.js` (full match, style mismatch, street
+  structure, hero+villain action kind+sizing inc. boundary, board
+  condition, sprRange, anchor-side wildcards, invalid inputs, status
+  filter default + opt-out, multiple anchors). Index public API extended
+  with `matchesAnchor` + `getMatchingAnchors` + `DEFAULT_LIVE_STATUSES`.
+  Stream C unblocked at the pure-utils layer. retirementEvaluator.js +
+  librarySelectors.js were already shipped; no co-changes. Full
+  smart-test-runner 10291/10311 (20 skipped, +45 net vs SPR-053
+  baseline 10246, zero regressions); production build clean (6.86s).
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -22,7 +43,7 @@ blocked_by: []
 blocked_by_legacy:
   - "EAL-S"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-055"
 decision_flags: []
 status_note: "BLOCKED by EAL-Stream-D"
 source:

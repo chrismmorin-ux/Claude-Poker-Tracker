@@ -10,7 +10,60 @@ repo_archetype: frontend
 
 # Section A: User-driven feedback
 # Captured via /feedback command or when Claude detects user expressing concerns
-user_feedback: []
+user_feedback:
+  - id: fb-001
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: concern
+    summary: "Verify ticket premise against current code DURING /next composition, before approval — not mid-execution"
+    detail: >
+      SPR-095's two anchors were authored by a Gate-2 blind-spot audit and both
+      had premises that didn't match the code: WS-206 assumed LSW line nodes
+      store an asserted-equity number to validate against (none exists — equity
+      is prose-only), forcing a mid-sprint reframe + an extra founder decision;
+      WS-205 risked duplicating existing equity infra (computeComboEquityDistribution).
+      The approval option also said "~68 nodes" when only 5 were parity-eligible.
+      This is the SAME pattern flagged one sprint earlier (SPR-094: WS-204 was a
+      duplicate of pre-existing work) — now a confirmed RECURRING failure mode of
+      audit-authored tickets. Fix: /next composition should spend ~2 min checking
+      each anchor's core assumption (does the data structure exist? is the work
+      already done? what's the real scope/count?) against the codebase BEFORE
+      presenting for approval, so reframes/scope-corrections happen upfront in one
+      accurate proposal instead of as mid-flight interruptions.
+    resolved: false
+    resolution: null
+  - id: fb-002
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: concern
+    summary: "/next resume-check only looks for status:active — misses approved-but-unexecuted sprints"
+    detail: >
+      SPR-095 was status:approved with items_done:0 (a prior session composed +
+      got it approved, then stopped before executing). /next Step 1 only scans for
+      status:active, so a freshly-approved-but-unstarted sprint is invisible to the
+      resume path and a new /next would stack a second sprint on top, orphaning the
+      approved work. Caught only by luck (reading a sprint file for schema reference).
+      Fix: Step 1 resume-check should also surface sprints where status==approved AND
+      completed_at==null (especially items_done<item_count) and offer to resume them.
+    resolved: false
+    resolution: null
+  - id: fb-003
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: concern
+    summary: "queue-index drift + soft-block flag absent from index make /next ranking unreliable"
+    detail: >
+      queue-index.yaml disagreed with the WS-*.yaml files: WS-205/206 showed
+      status:backlog in the index but were claimed in their files; WS-185 showed
+      backlog but was done. Separately, the index summary does NOT carry
+      blocked_by_note, so soft-blocked items (the P=22 monetization cluster, WS-191,
+      WS-047, WS-092) surfaced at full priority in the first-pass ranking until each
+      WS file was opened. Both stem from the absent cwos-reconcile.js (no automated
+      index rebuild) — see fr-002/fr-011. Fix: install the reconcile suite, OR
+      mirror blocked_by_note into the index, OR have /next read candidate WS files
+      before ranking (slower but correct).
+    resolved: false
+    resolution: null
 # Entry format:
 #   - id: fb-001
 #     timestamp: "2026-04-07T19:00:00Z"
@@ -103,6 +156,30 @@ friction_log:
     detail: "Re-encounter of fr-001 + fr-002 + fr-003 in SPR-014 (SCF Gate 2). Same 4 missing kit/scripts/cwos-* scripts (constitutional-audit, reconcile, state-store, event). Identical fallback behavior: manual anti-goal review (recorded in SPR-014 anti_goal_check.reason as status=skipped + reason); direct YAML reads of queue-index + sprint-index; manual lockstep edits of indexes during sprint close-out; shadow-event append skipped silently. No new friction surface; pattern is stable. Single recurrence entry rather than 4 to avoid bloat."
     component: cwos-scripts-suite
     workaround: "All 4 fallbacks identical to fr-001..fr-004. Worth re-stating: fleet-level kit-installation gap remains the load-bearing fix (single /adopt re-run or kit-version bump installs all 4). No per-session friction beyond the documentation overhead."
+  - id: fr-011
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: file_not_found
+    severity: medium
+    detail: "Re-encounter of fr-001/002/003/010 in SPR-095 (Range Lab Phase-0). Same missing kit/scripts/cwos-* suite (constitutional-audit, reconcile, state-store, event). Anti-goal check skipped (no script); state-store query fell back to direct queue-index YAML read; post-sprint reconcile done by hand (queue-index + sprint-index + WS files in lockstep); shadow-event append skipped. Third+ recurrence — kit-installation gap is stable and now demonstrably causing index drift (see fr-013)."
+    component: cwos-scripts-suite
+    workaround: "Manual fallbacks identical to fr-001..fr-004/fr-010. Load-bearing fix is still installing the script suite (/adopt re-run or kit-version bump)."
+  - id: fr-012
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: workaround
+    severity: high
+    detail: "/next Step 1 resume-check only matches status:active. SPR-095 was status:approved, items_done:0 (prior session composed + approved, never executed). It was invisible to the resume path; without catching it, this session would have composed SPR-096 (WS-190) on top, orphaning approved engineering work. Discovered incidentally while reading a sprint file for schema reference. See user_feedback fb-002."
+    component: next-step1-resume-check
+    workaround: "Manually detected the approved-but-unexecuted sprint, surfaced the conflict to the founder via AskUserQuestion (resume / set aside / parallel), founder chose resume. Activated SPR-095 (status approved→active) and executed it instead of composing a new sprint."
+  - id: fr-013
+    timestamp: "2026-05-20T00:00:00Z"
+    session_id: "session-2026-05-20-next"
+    category: manual_fix
+    severity: medium
+    detail: "queue-index.yaml drifted from queue/WS-*.yaml: WS-205/WS-206 showed status:backlog in index but were claimed in their files; WS-185 showed backlog but was done. Also queue-index summary lacks blocked_by_note, so soft-blocked items ranked at full priority in the first pass (P=22 monetization cluster, WS-191, WS-047, WS-092) until each WS file was opened. Root cause: absent cwos-reconcile.js (no automated index rebuild). See user_feedback fb-003."
+    component: queue-index
+    workaround: "Read candidate WS-*.yaml files directly to recover true status + soft-block state before ranking. Hand-corrected index entries for WS-205/206 (→done) and added WS-209 during sprint close-out; WS-185 staleness left for next reconcile."
 
 # Pre-existing entry (kept for context):
 # Entry format:
@@ -117,29 +194,31 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 10
-  total_user_feedback: 0
-  unresolved_feedback: 0
+  total_friction_events: 13
+  total_user_feedback: 3
+  unresolved_feedback: 3
   by_severity:
-    high: 0
-    medium: 2
+    high: 1
+    medium: 4
     low: 8
   by_category:
-    file_not_found: 8
-    manual_fix: 1
-    workaround: 1
+    file_not_found: 9
+    manual_fix: 2
+    workaround: 2
   by_component:
     cwos-constitutional-audit.js: 1
     cwos-reconcile.js: 1
     cwos-state-store.js: 1
     cwos-event.js: 1
-    cwos-scripts-suite: 1
+    cwos-scripts-suite: 2
     session-tracking: 2
     usage-telemetry: 1
     system-summary: 1
     findings-reconciliation: 1
-  most_recent_friction: "fr-010 — 2026-05-02T04:25:00Z — recurrence of cwos-scripts-suite missing in SPR-014"
-  most_recent_feedback: null
+    next-step1-resume-check: 1
+    queue-index: 1
+  most_recent_friction: "fr-013 — 2026-05-20 — queue-index drift + soft-block flag absent from index (SPR-095)"
+  most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
 # /adopt run or kit-version bump should install the script suite. Operational

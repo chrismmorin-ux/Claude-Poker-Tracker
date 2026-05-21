@@ -1,0 +1,172 @@
+id: "SPR-092"
+title: "PSD Gate 4 — postflop-drills.md surface authoring"
+status: completed
+approved_at: "2026-05-19T15:50:45Z"
+completed_at: "2026-05-19T16:02:48Z"
+
+goal: |
+  Pre-Session Drill (PSD) Gate 4 surface specs land. The
+  postflop-drills.md surface gains a Pre-Session mode section consuming
+  the Gate 2 + ADR-005/006 + Gate 3 outputs from SPR-090 + SPR-091.
+  sessions-view.md + hand-replay-view.md gain additive entry-point
+  affordances. Gate 5 implementation (mode-bar wiring, card layout,
+  state-aware actions, tri-state self-grade, time-budget variants,
+  mood-aware selection, anchor-trace navigation) becomes scopeable on
+  the next /next cycle.
+
+program_focus: design
+program_initiative: |
+  Design Program (5-Gate UX Framework) — Gate 4 surface authoring for
+  PSD. This is the direct downstream of the SPR-090 → SPR-091 chain:
+
+    - SPR-090 (Gate 2 Blind-Spot Roundtable) — produced the 5-stage
+      adversarial review verdict with Stage C/D/E adjustments.
+    - SPR-091 (PSD G4 unblock trio) — closed the 3 design-side
+      blockers: ADR-005 (flip-card pattern), ADR-006 (in-app
+      anchor-trace bundle), Gate 3 JTBD + persona reconciliation.
+
+  Gate 4 is the last design-program gate before Gate 5 implementation.
+  Per the design-program guardrail in CLAUDE.md: "Gate 4 (Design) is
+  not bypassable — a surface artifact in docs/design/surfaces/ must
+  exist (or be authored same-session) for any UX change." This sprint
+  authors that artifact set.
+
+  Program rotation: design anchors 3-in-a-row (SPR-090 + SPR-091 +
+  SPR-092). Within rotation tolerance because all three are the same
+  PSD feature pipeline; treating the chain as one logical program-arc
+  rather than three independent design anchors.
+
+composed_by: auto
+created_at: "2026-05-19T15:50:45Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-19T15:50:45Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js + corpus not installed in
+    this repo (consistent with SPR-075..SPR-091 precedent). Manual scan:
+      - WS-199 is a surface-spec authoring ticket — markdown updates to
+        3 design surfaces. No production code, no user-facing runtime
+        copy beyond what the spec dictates.
+      - Gate 2 Stage E-A5 explicitly forbade engagement-pressure
+        chrome (streaks, mastery scores, leaderboards, tier badges,
+        shame copy, congratulatory inflation). The spec MUST encode
+        that neutrality.
+      - Honors [[feedback_owner_volunteered_grading]]: PSD is opt-in
+        study mode; surface spec preserves the opt-in gate.
+      - Honors [[feedback_scf_learning_state_not_tier_rank]]: no
+        skill-rank label work in scope.
+      - Honors [[feedback_first_principles_decisions]]: card layout +
+        mood selection biasing must derive from cognitive-mechanism
+        evidence (ADR-005 rationale) and Stage C/E findings, not from
+        label-shaped categorization.
+      - Honors [[feedback_long_term_over_transition.md]]: spec
+        prefers long-term design coherence; no transition-cost
+        excuses.
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-199) — PSD mode-bar slot order: where does Pre-Session sit alongside the existing Drill / Explorer / Line tabs in PostflopDrillsView?"
+  - "Item #1 (WS-199) — sessions-view + hand-replay-view entry affordance shape: inline button block vs context-menu item vs filter chip. Stage D-P2/D-P3 left this open."
+
+composition_notes: |
+  Singleton sprint anchored on WS-199 (PSD Gate 4 surface spec).
+
+  Anchor selection (Step 3a):
+    - All MPMF P=22 items (WS-027/030/031/032/033/036) carry
+      blocked_by_note → damped to 5.5 (external-counsel / Gate-4-pending).
+    - WS-191 (P=20, seat autoselector Phase 2) soft-blocked → 5.0
+      (awaiting owner live-session telemetry per WS-189 Phase 1
+      fallback clause).
+    - WS-164 (P=18) soft-blocked → 4.5.
+    - WS-199 (P=18) is the top *unblocked* candidate after SPR-091
+      closed its 3 hard blockers (WS-195/196/197).
+
+  Pair candidate evaluation (Step 3b):
+    - WS-200 (PSD mobile-portrait variant, P=10) — blocked_by WS-199;
+      cannot ride alongside in same sprint per Step 2 filter.
+    - WS-198 (Phase-0 engineering, P=12) — soft-blocked.
+    - WS-190 (review-workflow, P=14, design) — same program but
+      different feature; M-effort. Would put cap at 3.0σ.
+    - WS-185 (EV-bucket sum-to-100%, P=14, DC) — actual src/ bug
+      fix candidate. Tempting hygiene companion BUT effort cap
+      precludes a second M-effort item. Deferred to next /next.
+
+  Effort accounting:
+    - WS-199 = M = 1.5σ. Singleton fits under the 2.0σ cap with
+      0.5σ headroom but no S-effort companion exists in unblocked
+      backlog.
+
+  Source-class damping (Step 2d):
+    - Last 3 anchors: SPR-090 (untagged WS-063), SPR-091
+      (spr-followup cluster), SPR-089 (spr-followup WS-194).
+      No auto-rec or engine-finding saturation. Founder-driven
+      anchors throughout — no damping applies.
+
+  Fleet-rotation override (Step 3a-rotation): skipped. Same as
+  SPR-082..091 — poker-tracker product repo, no fleet/repo-goal
+  candidates. composition_notes: "fleet-rotation override skipped:
+  no fleet/repo-goal candidate in current backlog."
+
+  Sprint-block status (Step 1d):
+    - domain-correctness baseline last ran 2026-05-01 (18d ago,
+      cadence 14d → 4d stale). launch protocol_history empty.
+    - Following SPR-085..091 precedent (all proceeded with same
+      stale-DC + never-baselined launch state), composing anyway.
+      Flag for /audit follow-up but do not block sprint.
+
+  Plan-mode entry:
+    - WS-199 mode = plan-first. Most decisions are pre-ratified
+      by Gate 2 + Gate 3 + ADR-005/006. The 2 open decisions
+      (mode-bar slot, entry-affordance shape) are tightly scoped
+      with concrete options. Single AskUserQuestion batched
+      elicitation will gate the writing pass.
+
+items:
+  - id: "WS-199"
+    title: "PSD Gate 4 — postflop-drills.md surface update for Pre-Session mode"
+    mode: plan-first
+    effort: M
+    priority_score: 18.0
+    program: design
+    status: done
+    completed_at: "2026-05-19T16:02:48Z"
+    decision_flags:
+      - "PSD mode-bar slot order in PostflopDrillsView (Drill / Explorer / Line / ???)"
+      - "sessions-view + hand-replay-view entry-point affordance shape (inline button / context-menu / filter chip / other)"
+    decisions_ratified:
+      D1_mode_bar_slot: "First (before Line) — leftmost slot per founder ratification 2026-05-19. Mode-bar becomes [Pre-Session] [Line] [Explorer] [Estimate Drill] [Framework Drill] [Library] [Lessons]. Rationale: Pre-Session is the primary daily workflow for presession-preparer; leftmost slot maximises one-tap discovery on app entry."
+      D2_entry_affordance_shape: "Inline button + context-menu (split per surface) — founder ratification 2026-05-19. SessionsView: inline [Pre-Session Drill] button in primary action row (one-tap discovery for daily workflow). HandReplayView: per-step overflow menu (⋮) with Queue for tomorrow's PSD option (defers visibility cost; PSD entry is via SessionsView so HandReplay can use lower-discoverability menu pattern for the flag-for-later workflow)."
+    files_involved:
+      - "docs/design/surfaces/postflop-drills.md (modified — ~280-line Pre-Session mode section added)"
+      - "docs/design/surfaces/sessions-view.md (modified — inline button + persona + JTBD + key interaction + related surfaces)"
+      - "docs/design/surfaces/hand-replay-view.md (modified — ~110-line PSD wire section + anatomy + persona + JTBD + related surfaces)"
+    notes: |
+      Shipped. All accept_criteria met:
+        ✓ postflop-drills.md updated with Pre-Session mode section
+        ✓ Section covers card layout (flip-card per ADR-005), state-aware primary actions, tri-state self-grade, mood-aware selection (mix not framing), time-budget variants (5/15/30) with 30-min depth cap, phone-sleep recovery, neutral chrome (E-A5 + A-AP1), anchor-trace navigation via in-app bundle (ADR-006)
+        ✓ sessions-view.md updated with PSD entry-point affordance (D-P2) — inline [Pre-Session Drill] button
+        ✓ hand-replay-view.md updated with PSD cross-link affordance (D-P3) — per-step overflow menu (⋮) with Queue for tomorrow's PSD
+        ✓ References WS-196 (ADR-005), WS-197 (ADR-006), WS-195 (Gate 3 research) — all cited
+        ✓ All Stage E heuristics E-A1..E-A6 addressed
+        ✓ All Stage C adjustments C-A1..C-A6 addressed
+        ✓ No new src/ files; surface spec only
+      Two founder decisions ratified at plan-mode (see decisions_ratified above).
+      Unblocks: WS-200 (mobile-portrait variant), PSD Gate 5 (implementation).
+
+deferred: |
+  - WS-200 (PSD mobile-portrait variant) — sequenced after WS-199
+    closes; will surface as next-cycle candidate.
+  - WS-198 (engineering Phase-0 hands ↔ node-ID) — independent of
+    Gate 4 surface authoring.
+  - WS-185 (EV-bucket sum-to-100% on remaining surfaces) — natural
+    src/-side hygiene companion displaced by effort cap.
+  - WS-053 (Range Lab Gate 2, engineering) — engineering-rotation
+    candidate for next /next cycle.
+  - WS-190 (review-workflow design) — same-program companion that
+    didn't fit under the cap.

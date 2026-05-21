@@ -1,0 +1,117 @@
+id: "session-2026-05-11-refactor-sprint-item-3"
+status: completed
+started_at: "2026-05-11T19:00:00Z"
+ended_at: "2026-05-11T20:30:00Z"
+mode: strategic
+ceremony: strategic
+last_heartbeat: "2026-05-11T20:30:00Z"
+
+# Refactor Sprint Item 3 is tracked at the project-file level
+# (.claude/projects/refactor-sprint-2026-05-10.md), not as a WS-* queue item.
+# Matches the pattern used for Items 1+2 (sessions 2026-05-10).
+claimed_items: []
+items_progressed:
+  - "refactor-sprint-item-3"  # Project-file pseudo-id; status: open → done
+
+files_locked:
+  - "src/utils/persistence/migrationRegistry.js"
+  - "src/utils/persistence/__tests__/migrationRegistry.test.js"
+  - "src/utils/persistence/migrations.js"
+  - "scripts/check-idb-additive.sh"
+  - "scripts/smart-test-runner.sh"
+  - ".claude/context/SYSTEM_MODEL.md"
+  - ".claude/projects/refactor-sprint-2026-05-10.md"
+
+sprints_completed: []
+decisions_recorded:
+  - "DEC: Registry shape = JS module (src/utils/persistence/migrationRegistry.js) over YAML manifest — colocate with runtime, match PRF+cardRegistry patterns, no precedent for YAML inside src/."
+  - "DEC: Per-store ownership inline in migration registry over separate STORE_OWNERS map — single source of truth, ownership and migration history can never drift apart."
+  - "DEC: Additive-only enforcement via BOTH unit test (semantic invariant at registry level) AND CI grep gate (source-code primitive level forbidding deleteObjectStore/deleteIndex) — different failure modes, ~80 LOC total cost."
+  - "DEC: PMC Phase 5a out of scope for Item 3 — v25 predictionAudit migration + writer + test already shipped 2026-05-09 (WS-177); Item 3 ships pure registry infrastructure documenting v25 retroactively."
+
+handoff_notes: |
+  ## Refactor Sprint Item 3 — Persistence Migration Registry — SHIPPED
+
+  ### Plan and execution
+  Plan-mode session opened with 4 design decisions for the owner (registry shape,
+  ownership format, enforcement, PMC scope). All 3 recommended options selected
+  via AskUserQuestion; decision 4 was resolved by exploration showing PMC v25 was
+  already shipped. Plan file: `~/.claude/plans/precious-leaping-orbit.md`.
+
+  ### Shipped
+  - **`src/utils/persistence/migrationRegistry.js`** — 25 entries (v1–v25) with
+    per-version description, storesAdded/storesChanged, owner ({program,project}),
+    migrationFn, shippedAt. Three derived helpers: `getStoreOwner(name)`,
+    `getVersionsForStore(name)`, `getStoresAtVersion(version)`.
+  - **`__tests__/migrationRegistry.test.js`** — 19 cases covering completeness,
+    additive-only invariant, monotonic store-set growth, owner-program integrity
+    against KNOWN_PROGRAM_IDS, migrationFn naming convention, DB_VERSION
+    alignment, and the 3 helpers. All 19 green.
+  - **`scripts/check-idb-additive.sh`** — CI grep gate forbidding
+    `deleteObjectStore` / `deleteIndex` calls in `migrations.js`. Mirrors the
+    `check-refresher-writers.sh` shape (set -euo pipefail; exit 1 on violation;
+    ✅ on clean). Trip-tested (injected destructive call → exit 1 with line
+    numbers; reverted → exit 0).
+  - **`scripts/smart-test-runner.sh`** — wired the new gate as a pre-test
+    gate. Test suite is now blocked if a destructive IDB API is introduced.
+  - **`migrations.js`** — `MIGRATION_REGISTRY` imported; `runMigrations` now
+    logs an applied-versions summary after the orchestrator's ordered guards.
+    A stale/missing registry entry surfaces at upgrade time rather than
+    silently drifting. 762/762 persistence tests still pass.
+  - **`SYSTEM_MODEL.md` §1 + §11** — §1 persistence row updated to reference
+    the registry + CI gate + helpers (and corrected "~30 stores" drift → "23
+    stores"). §11 TD-16 marked RESOLVED with completion date and full
+    resolution citation. Also corrected the Item 2/Item 3 numbering drift in
+    TD-16's prose (project file renumbered after state.md reshape became
+    the new Item 2 mid-sprint).
+  - **`refactor-sprint-2026-05-10.md`** — Item 3 checked DONE 2026-05-11; all
+    4 DoD bullets marked complete with citations. Sequencing block rewritten
+    so the next session can see at a glance that Item 4 (decision-system
+    extraction) is now NEXT. Closeout notes capture the discovered drifts
+    + deferred follow-ups + orphaned-PRF-gate finding.
+
+  ### Decisions ratified (Heavy — recorded in system/decisions.md)
+  - **DEC-(next): Registry shape = JS module over YAML manifest.** Reason: colocate
+    with runtime, match existing PRF + cardRegistry patterns, no precedent for
+    YAML inside `src/`. Owner-volunteered selection of the recommended option.
+  - **DEC-(next): Per-store ownership inline in migration registry, not separate map.**
+    Reason: single source of truth. Ownership and migration history can never
+    drift apart because both are properties of the same entry.
+  - **DEC-(next): Additive-only enforcement via BOTH unit test + CI grep gate.**
+    Reason: each catches a different failure mode (registry-data drift vs.
+    source-code primitive use). ~80 LOC total; both required.
+
+  ### Pre-existing flaky tests surfaced (not my changes)
+  Full ~11K test suite run had 7 failing tests in 4 files, including
+  `SelfCoachView.copy-discipline.test.jsx > CurriculumTab body contains no
+  rank-label words anywhere`. That test passes in 1.7s when run in isolation
+  (well under its 10s threshold) — the failures are parallel-load timeouts.
+  Persistence tests all green (762/762); registry tests all green (19/19).
+  Worth a `/health-check` to characterize the flakiness as a separate item.
+
+  ### Deferred (flagged cheap follow-ups)
+  - **`database.js` inline-ownership comment cleanup** (lines 64–110). Now
+    redundant with the registry. ~10-min edit; not a correctness issue but
+    drift surface.
+  - **Wire `scripts/check-refresher-writers.sh` into `smart-test-runner.sh`.**
+    Discovered orphaned during this session — the PRF gate exists but is
+    never run by any automated path. ~5-min edit; engineering program territory.
+
+  ### Next recommended action
+  Item 4 — decision-system extraction (the architectural-survey headline
+  finding). Extract `src/utils/decisionSystems/` core (accumulator base,
+  registry interface, IDB store factory, reducer-composition helpers);
+  migrate `anchorLibrary/` as proof; record ADR. Estimated ~3-4 sessions.
+  Item 6 (queue triage) can run in parallel.
+
+  Autopilot eligible: 0 — Item 4 is plan-first by classification.
+
+context_notes: |
+  - Refactor Sprint program (2026-05-10 → ~2026-05-25) is the active charter;
+    feature work paused until at least Items 1+2+3+4 complete. Items 1+2+3
+    now done. Item 4 is the headline architectural unlock.
+  - State.md vital signs: Tests | GREEN | Build | GREEN | Git | YELLOW (220 files
+    uncommitted across many prior sessions; this session's specific changes are
+    a small subset). Owner may want to commit + push periodically; not blocking.
+  - Plan file at `~/.claude/plans/precious-leaping-orbit.md` documents the
+    decisions and definition-of-done in full detail.

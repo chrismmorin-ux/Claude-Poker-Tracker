@@ -1,0 +1,65 @@
+id: "WS-208"
+title: "Range Lab — mobile-portrait surface variant (Gate 4 follow-up)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P3"
+category: "range-lab"
+capability: "core"
+program: "design"
+description: |
+  Mobile-portrait surface variant for Range Lab. Output of SPR-093
+  Gate 2 Blind-Spot Roundtable Stage C (C-A1 implicit) + founder Q4
+  resolution 2026-05-20.
+
+  Gate 2 Q4 resolution: landscape 1600×720 is v1 baseline; mobile-
+  portrait is a separate Gate 4 deliverable so it does not block
+  landscape v1 ship.
+
+  **Constraint:** 13×13 paint grid at mobile-portrait compresses cells
+  to ~15-18px DOM-px width — below H-ML06 floor of 44. Even with scale-
+  aware ergonomics (C-A3), pure-tap paint is non-viable. Two design
+  options:
+  1. **Grid-zoom modal**: tap a quadrant of the 13×13 to enter a 7×7
+     zoomed view; paint inside the zoomed view; exit back to overview.
+  2. **Row-paint modal**: present one row at a time (13 cells full-
+     width); user advances through rows; less efficient but better
+     ergonomics per row.
+
+  Mirrors PSD WS-200 pattern — separate Gate 4 ticket for mobile-
+  portrait so landscape v1 ships unblocked.
+
+  Honors [[feedback_portrait_mode_player_screens]] — portrait-native
+  reserved for PIO-line identification surfaces; RL is study, so
+  mobile-portrait is a *variant*, not the primary mode.
+
+accept_criteria:
+  - "Portrait surface variant authored (location decision: in-line in postflop-drills.md vs separate file)"
+  - "Reflow strategy documented (grid-zoom modal vs row-paint modal vs other)"
+  - "Touch targets ≥44 DOM-px at Galaxy A22 baseline DPR achieved"
+  - "Paint UX viable on portrait (tap + long-press primitives preserve from landscape ADR WS-202)"
+  - "Orientation-change behavior specified (state preservation across landscape ↔ portrait)"
+  - "Equity histogram + range comparison overlay reflow documented"
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/postflop-drills.md (potentially modified — mobile-portrait Range Lab section)"
+  - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
+blocked_by:
+  - "WS-055"
+blocked_by_legacy: []
+blocked_by_note: "Sequenced after WS-055 (landscape v1 Gate 4 surface spec) so mobile variant reflows a stable base. Could parallelize if owner prefers, at cost of double-revision."
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Grid-zoom modal vs row-paint modal vs other reflow strategy"
+  - "In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"
+source:
+  origin: "SPR-093-gate2-followup-2026-05-20"
+  parent_ws: "WS-053"
+  parent_spr: "SPR-093"
+  audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
+created_at: "2026-05-20"
+status_note: "AUTHORED 2026-05-20 SPR-093 Gate 2 follow-up. Source: 2026-05-20-blindspot-range-lab.md Q4 mobile scope resolution + Stage C C-A1 implicit. P3 because deferred behind landscape v1 ship. Mirrors PSD WS-200 pattern."
