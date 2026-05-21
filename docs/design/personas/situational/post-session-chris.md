@@ -77,6 +77,13 @@ The session is over. Chris is home, or in a car, or at a coffee shop. He wants t
 
 ---
 
+## Relationship to presession-preparer (review mode)
+
+`post-session-chris` and [`presession-preparer`](./presession-preparer.md) (in its review mode) are **sibling situational personas** — they share post-session timing but cover different scopes. `post-session-chris` is the broader reflective-mode persona (hand-by-hand replay, villain notes, player records, aggregate stats). `presession-preparer` review mode is drill-prediction-specific (did flagged patterns fire? did hero catch them?). A user may engage both in one post-session window — they do not nest, do not subsume, and do not need to share surfaces. Authored 2026-05-19 as Gate 3 reconciliation of SPR-091 / WS-195.
+
+---
+
 ## Change log
 
 - 2026-04-21 — Created Session 1.
+- 2026-05-19 — Added sibling-relationship reconciliation note vs `presession-preparer`. Per Gate 3 research (SPR-091 / WS-195): the two personas are sibling, not nested. See `docs/design/audits/2026-05-19-research-psd-gate3.md`.

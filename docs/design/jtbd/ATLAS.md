@@ -152,7 +152,7 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | TS-45 | Blind-out threshold reached | ◐ | Active |
 | TS-46 | Rebuy decision at late-reg boundary | ◐ | Proposed |
 
-### Drills and study (DS-43..59)
+### Drills and study (DS-43..67)
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -175,6 +175,12 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | DS-59 | Retire-advice-that-stopped-working (lifecycle override) | ◐ | Active (EAL, pending Gate 4) |
 | DS-60 | Carry-the-reference-offline (physical laminated study artifact) | ◐ | Active (PRF, pending Gate 4) |
 | DS-61 | Export-the-personal-codex (owner-authored content into printable form) | ◐ | Active (PRF Phase 2+, pending Gate 4) |
+| DS-62 | Pre-session drill biased toward recently-missed spots | ◐ | Proposed (PSD, pending Gate 4) |
+| DS-63 | Anchor-trace from drill card into source reasoning artifact | ◐ | Proposed (PSD, pending Gate 4) |
+| DS-64 | Paint a custom range from scratch | ◐ | Proposed (Range Lab Phase 1-2) |
+| DS-65 | Compare two ranges on the same board with delta highlighting | ◐ | Proposed (Range Lab Phase 2) |
+| DS-66 | Per-street range evolution from the betting line | ◐ | Proposed (Range Lab Phase 3+, AP-RL-01 binding) |
+| DS-67 | Validate authored drill / line-study content against the engine | ◐ | Proposed (Range Lab Phase 3+, INV-LSW-RL-EQUITY-PARITY binding) |
 
 ### Coaching (CO-48..57)
 
@@ -283,6 +289,16 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 
 ---
 
+## DS registry note (2026-05-20)
+
+DS IDs are append-only and **never reused**. Two projects have hit collisions by proposing
+DS-IDs at Gate 1 that a faster-moving project committed first: PSD (proposed DS-57/58, re-numbered
+to DS-62/63) and Range Lab (proposed DS-52/53/54/55, re-numbered to DS-64/65/66/67 — the originals
+were squatted by Poker Shape Language one day after RL Gate 1). **Lesson: a DS-ID is not reserved
+until it lands in this registry table.** When proposing DS-IDs at Gate 1, check the current max here
+and the change logs of any in-flight Gate-3 projects; treat the number as provisional until Gate 3
+authoring commits it to this table.
+
 ## Rules for adding / evolving JTBD
 
 1. **Prefer decomposition over duplication.** If a new job feels 80% the same as an existing one, it's probably a sub-job.
@@ -304,4 +320,5 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 - 2026-04-24 — Added DS-57 (capture-the-insight), DS-58 (validate-confidence-matches-experience), DS-59 (retire-advice-that-stopped-working) as Gate 3 output of Exploit Anchor Library project. All Active pending Gate 4; DS-57 is the project's highest-priority single JTBD (standalone-valuable independent of Tier 1 candidate promotion). No new JTBD domain (extends Drills-and-Study). Chris persona amended with `observation_capture_active` attribute. See `../audits/2026-04-24-blindspot-exploit-anchor-library.md` + `../../projects/exploit-anchor-library/gate3-owner-interview.md`.
 - 2026-04-24 — Added DS-60 (carry-the-reference-offline), DS-61 (export-the-personal-codex / Phase 2+), CC-82 (trust-the-sheet lineage), CC-83 (know-my-reference-is-stale staleness surfacing), SE-04 (pre-session kinesthetic visualization). 5 JTBDs across 3 domains (Drills-and-Study + Cross-Cutting + Session-Entry). Output of Gate 3 for Printable Refresher project. No new JTBD domain. CC-82 + CC-83 are cross-project patterns (any engine-derived reference artifact inherits). SE-04 parallels SE-01 (villain-specific vs generic-principles rehearsal). New cross-persona situational `stepped-away-from-hand` authored (paper-reference-permitted-at-venue: off-hand windows only). Apprentice + Rounder personas amended with one Goal bullet each. See `../audits/2026-04-24-blindspot-printable-refresher.md` (Gate 2) + `../../projects/printable-refresher/gate3-owner-interview.md` (Gate 3).
 - 2026-04-24 — Added SA-71..78 (try-before-paying / understand-free-vs-paid / hit-paywall-with-dignity / cancel-without-friction / evaluate-sidebar-separately / switch-between-plan-tiers / manage-payment-method-without-churning / know-when-ill-be-billed-and-how-much), CC-88 (have-the-app-observe-my-usage-honestly-and-transparently), ON-88 (expert-bypass-onboarding-for-category-experienced-evaluators). 10 JTBDs across 3 domains (Subscription-Account + Cross-Cutting + Onboarding). Output of Gate 3 for Monetization & PMF project (Session 3a — Claude-solo authoring; owner-attended modes Q1–Q10 interview + 3 persona ratification + Gate 2 re-run deferred to Session 3b). All 10 Active pending MPMF Gate 4. Ranges bumped: SA-64..70 → SA-64..78; CC adds 88; ON-82..87 → ON-82..88. CC-88 is a cross-project pattern (any future project installing telemetry, session replay, or usage tracking inherits the same consent-gating + incognito-per-event + off-switch-always-visible pattern). ON-88 distinct from ON-84 (skip-tutorials-entirely) + ON-87 (seed-adaptive-skill-model) — ON-88 is UI-orientation, not model-state or tutorial-skip. Q9 JTBD domain-split deferred to owner verdict (SA-64..78 all in `subscription-account.md` for now; Q9 may split SA-76..78 to new `billing-management.md`). See `../audits/2026-04-24-blindspot-monetization-and-pmf.md` (Gate 2) + `../../projects/monetization-and-pmf.project.md`.
+- 2026-05-20 — Added DS-64 (paint custom range) / DS-65 (compare two ranges) / DS-66 (per-street range evolution, AP-RL-01 binding) / DS-67 (validate authored content, INV-LSW-RL-EQUITY-PARITY binding) as Gate 3 output of the **Range Lab** project (SPR-097 / WS-054). All 4 Proposed; DS-64/65 Phase 1-2 (Flopzilla parity), DS-66/67 Phase 3+ (AI-native, surface-contracted). No new domain, no new personas. **ID-collision correction:** these were proposed at RL Gate 1 (2026-04-22) as DS-52/53/54/55 but those slots were committed by Poker Shape Language Gate 3 the next day (2026-04-23) — re-numbered to the next free block. **Backfill:** also registered DS-62/DS-63 (PSD, authored in `drills-and-study.md` 2026-05-19 but never added to this table) and added the DS registry note above to prevent recurrence. See `../audits/2026-05-20-blindspot-range-lab.md` + `../../projects/range-lab.project.md`.
 - 2026-04-24 (later same day) — Monetization & PMF Gate 3 CLOSED. All 10 owner-interview verdicts captured (all on Recommended positions per Gate 2 audit advocacy). Q9 verdicted A → **new Billing Management domain** (`BM`) added as 16th domain. SA-76/77/78 moved from subscription-account.md → billing-management.md; IDs preserved (not renumbered) for reference persistence; new entries in that domain use `BM-*` prefix going forward. SA range now SA-64..75 (was ..78). Q1=A (doctrine binds all commerce UX); Q5=A (session-scoped free tier); Q2=B (parallel soft-launch + telemetry); Q3=C (defer Ignition commercial lane); Q4=A ($299 lifetime cap 50 founding); Q6=C (defer Scholar fork pending telemetry); Q7=A (schedule separate legal-scoping session with counsel for Ignition); Q8=B (opt-out telemetry with first-launch panel); Q10=B (keep Evaluator unified at core; E-IGNITION as attribute, not separate situational). 3 personas (evaluator / trial-first-session / returning-evaluator) ratified PROTO → Owner-Confirmed (structural); full Verified status pending Stream D telemetry 30-60-day window. Gate 2 re-run audit authored at `../audits/2026-04-24-blindspot-monetization-and-pmf-rerun.md` — verdict GREEN. Gate 4 unblocked for main-app surfaces (Ignition surfaces remain Phase 2+ deferred). See `../../projects/monetization-and-pmf/gate3-owner-interview.md` for full verdicts + rationale + Gate 4 implications + carry-forwards.

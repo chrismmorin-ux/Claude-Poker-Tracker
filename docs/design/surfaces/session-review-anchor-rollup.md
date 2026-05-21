@@ -307,6 +307,53 @@ None at creation.
 
 ---
 
+## §SessionsView row-expand variant (shipped SPR-061)
+
+The 2026-04-24 v1.0 spec recommended a new `SCREEN.SESSION_REVIEW` route, with SessionsView extension noted as a reversible alternative (lines 46-55 of v1.0). Founder ratified the **SessionsView row-expand variant** at SPR-061 sprint approval — reuses an existing surface; no new route.
+
+**Shipped placement:**
+
+- Each row in the past-sessions `.map()` of `src/components/views/SessionsView/SessionsView.jsx` (line 469) is wrapped by `SessionRowWithRollup` instead of being a flat `SessionCard`.
+- The wrapper composes `<SessionCard>` (unchanged) + an expand affordance + a collapsed `<SessionAnchorRollup>` panel.
+- Default-collapsed; per-row expand state held in `useState` (no localStorage; rollup is opt-in per session glance).
+- ActiveSessionCard is **not** wrapped — the live session has no closed-session activity to roll up; rollup applies only after session-end.
+
+**Anatomy of the rollup panel (3 sections, AP-08 separated):**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Matcher-fired anchors (n=N)                             │
+│    [list of anchors with system-origin firings]          │
+├──────────────────────────────────────────────────────────┤
+│  Owner-captured observations (n=M)                       │
+│    [reused AnchorObservationList component]              │
+├──────────────────────────────────────────────────────────┤
+│  Auto-retired this session (n=K)                         │
+│    [list of anchor ids transitioned by retirementEvaluator]│
+└──────────────────────────────────────────────────────────┘
+```
+
+- Matcher-fired and Owner-captured counts/lists are **never summed at selector or render layer** — AP-08 is the load-bearing invariant.
+- Auto-retired section reads from anchor state filtered by `operator.lastOverrideBy === 'system' AND operator.overrideReason === 'auto-retire' AND operator.lastOverrideAt` within session window `[startTime, endTime]`.
+- Tier-1 candidate-promotion placeholder is **omitted** per founder Q1c at SPR-061 (Phase 2 scope per CLAUDE.md core principle 3).
+
+**Reversibility:** The new `SCREEN.SESSION_REVIEW` route remains a future-option. If founder ever wants the broader SessionReviewView surface (auto-open-post-cashout flow + dedicated header + footer "[Done]" navigation), the rollup panel component (`SessionAnchorRollup.jsx`) is shape-compatible with that route — same selector + same component, different host.
+
+**Cross-surface deduplication with AutoRetireBanner (SPR-060):**
+
+- `AutoRetireBanner` on AnchorLibraryView surfaces **global pending review** ("N anchor(s) auto-retired since you last looked").
+- `SessionAnchorRollup` auto-retire section surfaces **session-scoped record** ("auto-retired during this session").
+- They are different views of overlapping data; no synchronization needed (banner dismissal does not affect rollup; rollup expand does not dismiss banner).
+
+**Selector path:**
+
+- `sessionRollupSelectors.selectAnchorActivityForSession({ sessionId, sessionStart, sessionEnd, hands, observations, anchors })`
+- Bridges hand→session via `getHandsBySessionId` (handsStorage.js:234)
+- Returns `{ matcherFired, ownerCaptured, distinctAnchorIds, autoRetired }` (AP-08 separated by construction)
+
+---
+
 ## Change log
 
 - 2026-04-24 — v1.0 authored as Gate 4 Session 5 artifact (EAL-G4-S4). Decision: new route `SCREEN.SESSION_REVIEW` (not SessionsView extension) — rationale documented, owner-reversible. Full anatomy + session-scoped rollup + per-anchor row layout + AP-04/06/08 refusals + 9 red-line compliance + Phase 5 code-path plan + 4 Playwright evidence placeholders. Zero code.
+- 2026-05-09 — v1.1 — added §SessionsView row-expand variant fragment (SPR-061 / WS-171). Founder ratified row-expand placement over new route at sprint approval. SessionReviewView route remains future-option per spec reversibility note.

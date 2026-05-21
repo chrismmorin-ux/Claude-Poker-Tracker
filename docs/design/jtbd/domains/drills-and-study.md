@@ -192,6 +192,95 @@ Jobs around learning and concept mastery, typically off-table.
   - **DE-72** (raw JSON/CSV export) — DE-72 is data-portability; DS-61 is print-artifact personalization. Distinct purposes.
 - Doctrine basis: `docs/projects/printable-refresher.project.md` §Risks (risk #7 skill-state contamination + personalization default OFF); Gate 2 audit Stage B Voice 2 §Missing JTBDs PRF-NEW-5; Gate 3 Q7 owner interview (pending ratification — recommendation Phase 2+ opt-in, default OFF).
 
+## DS-62 — Pre-session drill biased toward recently-missed spots
+
+> When I open the pre-session drill, I want the card selection to weight spots I've missed or under-performed on in recent sessions higher than spots I'm crushing, so my 5/15/30 minute prep targets my actual leaks rather than rotating randomly through the library.
+
+- **State:** Proposed (implementation in PSD project Phase 0 — see WS-198 for the `hands` ↔ upper-surface-node-ID cross-reference infra; Phase 1 in WS-199 for the surface integration).
+- **Primary persona:** [Pre-Session Preparer](../../personas/situational/presession-preparer.md).
+- **Success criteria:**
+  - Drill selection algorithm reads from the user's recent N hands (window TBD via Gate 4 — likely 7-30 days OR "since last drill" whichever is shorter).
+  - Each candidate node-ID in the corpus carries a `recencyScore` and a `frequencyScore`; selection ranks by `recencyScore × frequencyScore × time-budget-fit`.
+  - Spots the user faced AND failed at in the recent window outrank spots the user faced AND succeeded at, which outrank spots the user did not face.
+  - Mood-aware *selection* (not framing) per Gate 2 audit Stage C-A3: stuck-mood biases winnable spots, heater-mood biases edge cases. Until WS-201 (mood detection research) lands, user-declared mood toggle drives the selection bias.
+- **Failure modes:**
+  - **Misery-loop trap**: same spot served day-after-day after each miss, even when the user clearly wants to move on. Mitigation per Stage D Behavioral Psychologist: cap consecutive presentations of the same spot at N (Gate 4 spec).
+  - **Recency without competence**: a single recent loss anchors the algorithm to a node-ID that wasn't actually a leak (random variance). Mitigation: blend recency with frequency; single hits don't dominate.
+  - **Forward-only blindness**: if implementation chooses `query-time match` schema strategy (WS-198 ADR), users adopting PSD inherit the matcher running over their historical corpus without backfill; if schema-write, only forward hands get tagged. Resolved at WS-198 ADR.
+- **Distinct from:**
+  - **DS-45** (custom drill from own hand history) — DS-45 is user-initiated single-hand drill ("drill *this specific* spot I just played"); DS-62 is *automated* recency-weighted rotation across the drill library, not single-hand. DS-62 is the algorithm; DS-45 is the manual override.
+  - **DS-46** (spaced repetition for key charts) — DS-46 is *scheduling* (when to re-encounter); DS-62 is *selection* (which spots to encounter). They compose: DS-46 schedules, DS-62 selects within the scheduled set. Critically, DS-62 must NOT promote DS-46 to a streak/mastery surface — selection-only, no engagement-pressure layer (per `feedback_scf_learning_state_not_tier_rank.md` + `feedback_owner_volunteered_grading.md`).
+  - **DS-57** (capture-the-insight) — DS-57 is forward observation flagging during play; DS-62 is backward leak-targeting in study. Compose by: a DS-57 capture creates an anchor, which produces hand history, which feeds DS-62's selection.
+- Doctrine basis: PSD Gate 2 audit (`docs/design/audits/2026-05-19-blindspot-pre-session-drill.md`) Stage B-G3 + Stage C-A3 (mood-aware selection) + Stage D-P1 (hands ↔ node-ID cross-reference); Gate 3 research (`docs/design/audits/2026-05-19-research-psd-gate3.md`). ID-collision note: PSD Gate 1 (2026-04-23) proposed "DS-57" for this outcome; slot was already taken by exploit-anchor-library Gate 3 (2026-04-24). DS-62 is the canonical ID.
+
+## DS-63 — Anchor-trace from drill card into the source reasoning artifact
+
+> When a drill card raises a question I want to dig into, I want one-tap navigation from the card to the section of the source upper-surface artifact that justifies the answer, so I can read the full §11 ledger or §13 leading-theory comparison without leaving the app.
+
+- **State:** Proposed (implementation in PSD project — see WS-199 Gate 4 surface spec navigation section; depends on artifact-renderer infrastructure per [ADR-006](../../../adr/ADR-006-psd-anchor-trace-in-app-bundle.md)).
+- **Primary personas:** [Scholar](../../personas/core/scholar-drills-only.md), [Pre-Session Preparer](../../personas/situational/presession-preparer.md) (occasional — pre-session use is mostly time-constrained, anchor-trace is the depth path for the 30-min variant or post-session-Chris coming back to a missed card).
+- **Success criteria:**
+  - Drill card back contains anchor links to specific sections in the source artifact (e.g., `§11.3 Ledger entry — opponent class A`).
+  - Tap navigates to the artifact section without leaving the app (per ADR-006 in-app bundle decision).
+  - Back-navigation returns to the drill card with state preserved (mid-prediction state, mid-grade state, etc.).
+  - Anchor links use fragment IDs derived from artifact markdown headings; no human-written index.
+- **Failure modes:**
+  - **Bundle-size drift**: corpus grows unboundedly, bundle exceeds budget. Mitigation: lazy-loaded artifact bundle per ADR-006 Mitigations.
+  - **Anchor-rot**: section headings in artifacts change without updating drill-card link references. Mitigation: CI grep test asserting every drill-card anchor resolves to a live heading in its referenced artifact.
+  - **Context loss**: deep navigation into artifact loses the drill card it came from. Mitigation: back-navigation state preservation per success criteria.
+- **Distinct from:**
+  - **DS-50** (walk a hand line branch-by-branch with consequences shown) — DS-50 is line-level study mode; DS-63 is anchor-link from drill to artifact. DS-50 is a study surface; DS-63 is a navigation pattern within drill.
+  - **DS-44** (correct-answer reasoning) — DS-44 is the reasoning shown *on* the card back; DS-63 is the *navigation away from* the card into deeper material.
+- Doctrine basis: PSD Gate 2 audit Stage D-P5 + ADR-006 (in-app bundle); Gate 3 research doc. ID-collision note: PSD Gate 1 (2026-04-23) proposed "DS-58" for this outcome; slot was already taken by exploit-anchor-library Gate 3 (2026-04-24). DS-63 is the canonical ID.
+
+## DS-64 — Paint a custom range from scratch
+
+> When studying a board, I want to paint an arbitrary 13×13 range with per-combo weights — tap to toggle a combo, long-press to set a partial weight — so I can analyze any range I imagine, not only the pre-built archetypes the Context Picker offers.
+
+- **State:** Proposed (Range Lab Phase 1-2 — served by an ExplorerMode "Custom" range mode alongside the archetype ContextPicker; painted range persists for the session).
+- **Primary personas:** [Chris](../../personas/core/chris-live-player.md) (author/validate), [Scholar](../../personas/core/scholar-drills-only.md) (study). Coach is **secondary** (Gate 2 Q2 — Chris-as-author is the primary validated user).
+- **Paint primitive:** tap-to-toggle + long-press-for-weight ([ADR-007](../../adr/ADR-007-rl-paint-primitive.md)); per-stroke undo stack ([ADR-008](../../adr/ADR-008-rl-undo-stack.md)).
+- **Foundational:** every other Range Lab JTBD parameterizes on a painted (or archetype-seeded) range. Without DS-64, range study stays archetype-only.
+- **Round-trip:** painted range serializes via `rangeToString()` / `parseRangeString()` (Phase 0, shipped 2026-04-22) for session persistence + cross-surface `restoreContext`.
+- **Success criteria:** user can paint any range on flop/turn/river and see range composition + per-bucket equity + filter/histogram views; no regression to existing ExplorerMode (DS-48/49/50/51).
+- **Distinct from DS-51** (range shape on any flop): DS-51 is *reading* a given range's shape vs a board; DS-64 is *authoring* the range itself.
+- Doctrine basis: Gate 2 audit (`../../audits/2026-05-20-blindspot-range-lab.md`) Stage B-G1 + Stage A (paint primitive); `range-lab.project.md` Phase 1. ID-collision note: RL Gate 1 (2026-04-22) proposed "DS-52" for this outcome; the slot was taken one day later by Poker Shape Language Gate 3 (2026-04-23, retention-maintenance). DS-64 is the canonical ID.
+
+## DS-65 — Compare two ranges on the same board with delta highlighting
+
+> When I want to understand how two candidate ranges differ on a texture, I want to overlay them on the same board and see the per-combo + per-bucket delta highlighted, so I can reason about range construction as a first-class interaction instead of overlaying two Flopzilla windows by hand.
+
+- **State:** Proposed (Range Lab Phase 2 — a comparison primitive wired into `RangeFlopBreakdown` or a sibling component).
+- **Primary personas:** [Chris](../../personas/core/chris-live-player.md), [Scholar](../../personas/core/scholar-drills-only.md).
+- **Differentiator vs Flopzilla:** Flopzilla doesn't natively compare; users overlay windows manually. DS-65 makes range comparison first-class. Two Float64Arrays subtracted cell-by-cell = O(169) — trivial, no perf concern.
+- **Fidelity (load-bearing):** equity renders to **≥1 decimal place** (Gate 2 Stage E — whole-percent rounding would mask the sub-0.5% differences the comparison exists to surface). Flop equity is exact-enumerated; turn/river fall back to higher-sample Monte Carlo or the precompute cache.
+- **Distinct from DS-48** (villain range composition as decision driver): DS-48 decomposes one range vs hero's hand; DS-65 diffs two whole ranges against each other on a board.
+- Doctrine basis: Gate 2 audit Stage B-G2 + Stage E (1-decimal fidelity, exact-flop-enumeration). ID-collision note: RL Gate 1 (2026-04-22) proposed "DS-53"; the slot was taken by Shape Language Gate 3 (2026-04-23, edge-case probe). DS-65 is the canonical ID.
+
+## DS-66 — Per-street range evolution from the betting line
+
+> When I paste or build a hand line, I want to see how villain's range narrows flop → turn → river computed from the actual betting actions plus a per-combo equity update, so I learn realistic range dynamics rather than hand-class guesses.
+
+- **State:** Proposed (Range Lab Phase 3-4 — surface-contracted at Gate 2, implementation deferred). The true AI-native differentiator: Flopzilla cannot do this because it lacks the action-profile pipeline.
+- **Primary personas:** [Chris](../../personas/core/chris-live-player.md), [Scholar](../../personas/core/scholar-drills-only.md).
+- **AP-RL-01 binding (load-bearing):** per-street narrowing MUST be computed **per-combo** — equity update conditional on villain's action profile + the board card revealed — **NEVER** from bucket-label heuristics ("narrow by hand-class"). Full doctrine: [`POKER_THEORY.md §7.6`](../../../.claude/context/POKER_THEORY.md). Enforcement: Gate 4 surface spec (WS-055) + future CI lint + a per-combo-derivation assertion in the Phase 3+ narrowing implementation. Honors first-principles modeling — labels are outputs of the computation, never inputs to it.
+- **Determinism:** narrowing must be deterministic for a given (paint + action-profile) input — no "varies each render" — so DS-67 (validate authored content) is testable. Engineering ticket: deterministic seed for any Monte Carlo path in RL.
+- **Perf:** flop equity precompute cached as `Float64Array` per combo (WS-205, shipped SPR-095) makes each turn/river card a filter+weight, not a recompute (~10ms/turn-card render).
+- **Distinct from DS-50** (walk a hand line branch-by-branch): DS-50 walks a *pre-authored* line's nodes with consequences shown; DS-66 *computes* villain's range at each street from the line.
+- Doctrine basis: Gate 2 audit Stage B-G3 + Stage E §AP-RL-01 + Stage C (caching prerequisite); `POKER_THEORY.md §7.6`; memory `feedback_first_principles_decisions.md` + `feedback_river_equity_is_showdown_outcome.md`. ID-collision note: RL Gate 1 (2026-04-22) proposed "DS-54"; the slot was taken by Shape Language Gate 3 (2026-04-23, exploration override — non-negotiable). DS-66 is the canonical ID.
+
+## DS-67 — Validate authored drill / line-study content against the engine
+
+> When I author LSW line-study decision nodes, I want to validate the range and equity claims inside Range Lab instead of an external web search, so my authored teaching content is engine-verified for ≥80% of decision-node checks.
+
+- **State:** Proposed (Range Lab Phase 3+ — Chris-as-author is the **primary** validated user; Coach is secondary per Gate 2 Q2).
+- **Primary persona:** [Chris](../../personas/core/chris-live-player.md) (validation-mode authoring). [Scholar](../../personas/core/scholar-drills-only.md) secondary.
+- **INV-LSW-RL-EQUITY-PARITY binding (load-bearing):** equity computed in Range Lab for an LSW node must match the LSW engine's value within tolerance (±0.5% Monte Carlo / exact-match enumeration). The invariant + CI test shipped as WS-206 (SPR-095): sample random LSW nodes, recompute in RL, assert parity. This is the trust contract that lets RL replace external validation. (The invariant already caught a real content bug — WS-209, fixed SPR-096.)
+- **Cross-surface contract:** LSW `LineWalkthrough` node → "Inspect in Range Lab" with a `restoreContext` payload (Gate 2 Stage D; Phase 5 cross-link).
+- **Cognitive-mode note:** distinguishes validation-mode authoring from exploratory study — the [study-block](../../personas/situational/study-block.md) Snapshot is extended to acknowledge both modes (Gate 2 A-R1).
+- **Distinct from DS-58** (validate-confidence-matches-experience): DS-58 audits a *shipped exploit's* predicted rate vs observed play over many firings; DS-67 validates *authored content's* equity/range claims against the engine at authoring time.
+- Doctrine basis: Gate 2 audit Stage B-G4 + Stage D (LSW-RL cross-link) + A-R1/A-R2; `system/invariants.md` INV-LSW-RL-EQUITY-PARITY; `range-lab.project.md` AC ("LSW line-audit uses Range Lab for ≥80% of decision-node checks"). ID-collision note: RL Gate 1 (2026-04-22) proposed "DS-55"; the slot was taken by Shape Language Gate 3 (2026-04-23, resumption after break). DS-67 is the canonical ID.
+
 ---
 
 ## Domain-wide constraints
@@ -205,5 +294,7 @@ Jobs around learning and concept mastery, typically off-table.
 
 - 2026-04-21 — Created Session 1b.
 - 2026-04-22 — Added DS-48 / DS-49 / DS-50 / DS-51 (LSW-J1). DS-48 + DS-49 open new first-principles-teaching outcomes served by `bucket-ev-panel-v2`. DS-50 + DS-51 promote outcomes previously marked "implicit" in `surfaces/postflop-drills.md` to explicit atlas entries.
+- 2026-05-20 — Added DS-64 (paint custom range) + DS-65 (compare two ranges, delta) + DS-66 (per-street range evolution, AP-RL-01 binding) + DS-67 (validate authored content, INV-LSW-RL-EQUITY-PARITY binding) as Gate 3 output of the Range Lab project (SPR-097 / WS-054). All 4 **Proposed**. DS-64/65 are Phase 1-2 (Flopzilla parity); DS-66/67 are Phase 3+ (AI-native, surface-contracted, implementation-deferred). No new JTBD domain (extends Drills-and-Study); no new personas. **ID-collision correction:** RL Gate 1 (2026-04-22) proposed these as DS-52/53/54/55, but those slots were squatted one day later by the Poker Shape Language project (DS-52..56, committed 2026-04-23). Re-numbered to the next free block DS-64..67 (same failure class as PSD's DS-62/63 re-number). Owner Flopzilla-workflow interview (G3.2) waived — Gate 2 resolved all 4 open owner questions inline. See `../../audits/2026-05-20-blindspot-range-lab.md` (Gate 2) + `../../../projects/range-lab.project.md`.
 - 2026-04-23 — Added DS-52 (retention), DS-53 (edge-case probe), DS-54 (exploration override — non-negotiable), DS-55 (resumption after break), DS-56 (calibration check, Proposed). Output of Gate 3 for Poker Shape Language adaptive-seeding project. See `docs/design/audits/2026-04-23-blindspot-shape-language-adaptive-seeding.md` (Gate 2) + `docs/projects/poker-shape-language/gate3-decision-memo.md` (Gate 3 decision memo).
 - 2026-04-24 — Added DS-57 (capture-the-insight), DS-58 (validate-confidence-matches-experience), DS-59 (retire-advice-that-stopped-working). Output of Gate 3 for Exploit Anchor Library project. DS-57 is the highest-priority single JTBD for the project (standalone-valuable even if Tier 1 candidate promotion never ships). See `docs/design/audits/2026-04-24-blindspot-exploit-anchor-library.md` (Gate 2) + `docs/projects/exploit-anchor-library/gate3-owner-interview.md` (Q&A log).
+- 2026-05-19 — Added DS-62 (recency-weighted drill selection for pre-session prep) and DS-63 (anchor-trace from drill card into source artifact). Output of Gate 3 research for Pre-Session Drill project (SPR-091 / WS-195). PSD Gate 1 (2026-04-23) proposed these as DS-57 and DS-58 respectively; both IDs were already taken by exploit-anchor-library Gate 3 (2026-04-24). DS-62/DS-63 are the canonical IDs. Two other Gate 1 proposals — "DS-56 active-recall pattern priming" and "DS-59 falsifier-verify" — were absorbed differently: the active-recall mechanism is the implementation pattern for SE-01's watchlist (no new JTBD authored, see ADR-005); falsifier-verify is deferred per audit B-G5 pending WS-053 (Range Lab Gate 2) close-out and re-evaluation. See `docs/design/audits/2026-05-19-blindspot-pre-session-drill.md` (Gate 2) + `docs/design/audits/2026-05-19-research-psd-gate3.md` (Gate 3 research summary).

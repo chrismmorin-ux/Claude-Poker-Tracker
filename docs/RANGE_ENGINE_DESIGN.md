@@ -161,6 +161,73 @@ overwhelmed by real data as observations accumulate. Purpose: reasonable estimat
 
 ### 4.5 Bayesian Update Rules
 
+#### Update gating policy (ratified WS-175 / SPR-067, 2026-05-10)
+
+The implementation is **stateless full-rebuild**: `buildRangeProfile()` reads the
+entire hand history every call. There is no incremental write queue keyed off
+showdowns — each rebuild is the posterior given all observations to date.
+
+**Gating policy:** every showdown reveal applies an anchor on every rebuild.
+
+Rationale:
+- Showdowns are sparse — gated by reaching the river — so per-showdown updates
+  do not flood the engine.
+- Recompute-thrash is handled at the consumer layer (count-cache skip pattern
+  in `usePlayerTendencies` + `useOnlineAnalysis`), not by gating evidence.
+- Batching to session-close would contradict the live-HUD freshness contract:
+  a showdown one hand ago must shape the next decision.
+- N-threshold gating (require N≥k showdowns before any update) discards the
+  strongest single-showdown evidence the engine has — see CLAUDE.md §6
+  "Showdown Evidence Is Sacred."
+
+The gating decision applies to the engine layer. Future incremental-persistence
+work (event log to a `rangeProfiles` IDB store) MAY revisit gating, but that is
+not in scope for the current architecture.
+
+#### FM-SEL-01 disposition — showdown selection bias (MNAR)
+
+Showdowns are non-random samples of the player's range. Reaching showdown
+requires both players to call to the river, conditional on action history,
+hero policy, and bet sizing — so the showdowns we observe over-sample the
+value-and-stubborn-bluff portion of the range relative to the population.
+Applying anchors as if showdowns were missing-at-random tightens posteriors
+on a non-representative slice. PMC Gate 2 catalogued this as **FM-SEL-01**
+(`docs/projects/predictive-model-calibration/failure-mode-taxonomy.md`).
+
+**Stance (ratified WS-175 / SPR-067, 2026-05-10):** ACCEPT the bias with
+observability rails. No boost-magnitude reduction today.
+
+Rationale:
+- The current extractor cannot distinguish voluntary showdown from
+  mucked-shown / all-in-runout / inferred-from-fold. Any math correction
+  applied today would be calibrated against a feature the engine cannot yet
+  populate.
+- Empirical evidence is the only path to a correct correction magnitude;
+  guessing the magnitude before that evidence exists risks over-correcting
+  away from the strongest signal the engine has.
+- The bias is bounded by what reaches showdown — for low-stakes live games
+  where hero rarely barrels rivers without value, the slice is closer to
+  representative than at higher stakes.
+
+**Observability rails (shipped WS-175 / SPR-067):** every showdown anchor
+record now carries a `revealMechanism` field. Reserved values:
+
+| Value | Meaning |
+|-------|---------|
+| `'showdown'` | Voluntary turn-of-cards at river (everything observable today defaults here) |
+| `'mucked-shown'` | Player flashed cards after losing without showdown obligation |
+| `'inferred-from-fold'` | Range narrowed by villain's later fold without a reveal |
+| `'all-in-runout'` | Cards revealed by all-in board run-out, not by voluntary continuation |
+
+Today every anchor records `'showdown'` because the extractor cannot yet
+distinguish. Future extractor refinements MAY populate the other values; when
+that happens, mechanism-aware boost-magnitude correction can be added without
+a schema change.
+
+**Charter cross-ref:** `.claude/projects/predictive-model-calibration.md`
+Q6 row points back here. FM-SEL-01 stays open as a long-term monitoring
+concern — it is accepted-with-rails, not closed.
+
 #### From observed action frequency:
 When we observe player V take action A from position P, we increment counts and
 the overall frequency shifts the range width for that action.
@@ -172,6 +239,7 @@ When player V shows hand H after taking action A from position P:
    higher weight in the open range)
 3. Update behavioral flags (trapping, mixing, etc.)
 4. **DO NOT set H's weight in other ranges to zero** — they might mix
+5. Record `revealMechanism` on the anchor for FM-SEL-01 observability (see above)
 
 #### From sub-action sequences:
 Limp then fold vs limp then call vs limp then reraise tells us about the

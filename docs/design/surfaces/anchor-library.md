@@ -291,6 +291,38 @@ Placeholder for future audit findings:
 
 ---
 
+## §AutoRetireBanner slot (Tier 3 entry point — added SPR-060)
+
+A one-time banner surfaces above the filter row when the Tier-3 retirement evaluator transitioned ≥1 anchor at the previous session-close and the founder has not yet dismissed the resulting review prompt.
+
+**Slot location:** between header (`<header>`) and `<AnchorFilters>` row in `AnchorLibraryView.jsx`. Visible only when `pendingBannerCount > 0`.
+
+**Anatomy:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ N anchor(s) auto-retired since you last looked.          │
+│                                       [ Review ]  [ × ]  │
+└──────────────────────────────────────────────────────────┘
+```
+
+- **Message** — `buildAutoRetireBannerCopy({ count })` from `src/utils/anchorLibrary/autoRetireBannerCopy.js`. AP-06 forbidden patterns absent (reuses `FORBIDDEN_PATTERNS` from `retirementCopy.js`).
+- **Review button** — primary action (≥44×44 tap target). Sets `view.filters.status = ['retired']` + `view.filters.changedSince = lastBannerDismissedAt`, then calls `dismissBanner()` so the banner does not re-show on this open.
+- **Dismiss button** — `[ × ]` icon, ≥44×44 tap target. Calls `dismissBanner()`. Persists `lastBannerDismissedAt` to localStorage key `eal-auto-retire-banner-last-dismissed`. Banner stays cleared across reloads.
+
+**Lifecycle:** the banner is a one-shot per session-close-with-transitions. Once dismissed (explicitly or via Review), it does not re-render until the next session-close fires another auto-transition. No nag, no AP-05 reconsider-prompt.
+
+**Spec source:** `docs/design/journeys/anchor-retirement.md` Variation D step 3s (verbatim copy template) + step 4s (review filter behavior).
+
+**Hard rules carried from journey + CLAUDE.md:**
+- Banner cannot render mid-session — orchestrator triggers on session-end transition only.
+- Banner copy must pass `validateRetirementCopy()` for every count value.
+- Banner does NOT render for `expiring` transitions — only confirmed `retired` per spec ("retirement already happened").
+- Owner-override durability preserved: anchors with recent owner override are skipped by evaluator (red line #3).
+
+---
+
 ## Change log
 
 - 2026-04-24 — v1.0 authored as Gate 4 Session 4 artifact (EAL-G4-S1). Full anatomy + filter/sort/card/panel/empty-state specs + 9 red-line compliance assertions + anti-pattern refusal cross-references + Phase 5 code-path plan + 5 Playwright evidence placeholders. Zero code changes.
+- 2026-05-09 — v1.1 — added §AutoRetireBanner slot fragment (SPR-060 / WS-170) linking to journey Variation D step 3s. Slot location, anatomy, lifecycle, and hard rules captured for traceability.

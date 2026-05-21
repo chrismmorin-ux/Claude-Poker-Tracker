@@ -2,9 +2,9 @@
 
 **Type:** Situational (cross-persona)
 **Applies to:** [Chris (live player)](../core/chris-live-player.md), [Rounder](../core/rounder.md), [Circuit Grinder](../core/circuit-grinder.md), [Hybrid Semi-Pro](../core/hybrid-semi-pro.md), [Weekend Warrior](../core/weekend-warrior.md) (occasional)
-**Evidence status:** PROTO — derived from Gate 2 Blind-Spot Roundtable 2026-04-23 for exploit-deviation project
-**Last reviewed:** 2026-04-23
-**Owner review:** Pending
+**Evidence status:** PROTO → CONFIRMED (PSP-1, PSP-3) / PROTO with v1 fallback (PSP-2) — see Change log 2026-05-19
+**Last reviewed:** 2026-05-19 (Gate 3 research SPR-091 / WS-195)
+**Owner review:** Confirmed 2026-05-19 — owner ratified time-budget variants (PSP-1) + 48h review window (PSP-3); PSP-2 mood-detection remains proto with v1 user-declared-toggle fallback per Gate 2 Stage C-A6 + WS-201 research deferral.
 
 ---
 
@@ -154,12 +154,37 @@ Exits review mode when: review completed, or explicit dismiss, or > 48h elapses 
 
 ## Proto-persona caveats
 
-- **[PSP-1]** Three time-budget variants (5/15/30 min) are assumption, not observation. Verify by asking owner or users: do these buckets match actual prep behavior, or are the natural durations different?
-- **[PSP-2]** Mood-aware review framing assumes reliable stuck/heater detection from session P/L. May need explicit hero mood declaration as fallback.
-- **[PSP-3]** Loop-close window of 48h is arbitrary. May be shorter (12h — "review before next session") or longer (1 week — "review before deciding what to drill next"). Data-driven calibration needed.
+- **[PSP-1] CONFIRMED 2026-05-19** — Three time-budget variants (5/15/30 min) match owner's actual prep cadence. No alternative bucket required for v1. Re-evaluate if usage data reveals a missing variant (e.g., 10-min cab-departure cohort).
+- **[PSP-2] PROTO with v1 fallback** — Mood-aware *selection* (not framing) per Gate 2 Stage C-A3 + C-A6. v1 ships **user-declared mood toggle** (explicit stuck / heater / neutral). Auto-detection from session P/L deferred to WS-201 research; if validated, hybrid (auto-detect default + user override) becomes v2.
+- **[PSP-3] CONFIRMED 2026-05-19** — 48h review auto-archive window confirmed. Long enough that next-morning review still works; short enough to enforce loop-close before stale-mood drift sets in.
+
+---
+
+## Relationship to post-session-chris (Gate 3 reconciliation, 2026-05-19)
+
+`presession-preparer` and [`post-session-chris`](./post-session-chris.md) are **sibling situational personas**, not nested. They share post-session timing but cover different scopes:
+
+| | `presession-preparer` (review mode) | `post-session-chris` |
+|---|---|---|
+| **Focus** | Drill-prediction × outcome reconciliation. Did flagged patterns fire? Did hero catch them? Calibration update visible. | General session review. Hand-by-hand replay, villain notes refinement, player record corrections, aggregate stats. |
+| **JTBDs** | `JTBD-SE-02` (review drill predictions against session outcomes) + DS-62 prep (recency-weighted next session) | `session-review/*` (placeholder domain — hand-by-hand JTBDs to be authored as audits reach those surfaces) |
+| **Trigger** | Hero opens drill-review surface within 48h of session end | Session ended; hero opens any post-session reflective view |
+| **Time budget** | ~30s/interaction (per prediction-outcome cell) | 30s–2min/hand (per Constraints) |
+| **Mood-coloring** | Critical (Stage C-A3) — stuck/heater bias selection | Lower priority — review pace is generous |
+
+A user may engage *both* personas in one post-session window: open drill-review (presession-preparer review mode) → close → open HandReplay for a specific hand (post-session-chris). The personas overlap in time but not in surface. No file edit needed to `post-session-chris.md` beyond the reconciliation note added 2026-05-19 — both personas remain canonical.
+
+---
+
+## Apprentice-Student depth tolerance (Gate 3 reconciliation, 2026-05-19)
+
+Per Gate 2 audit Stage A-R3: PSD's card-back depth (falsifier headline + citation paragraph + anchor links) was flagged as potentially overshooting [Apprentice-Student](../core/apprentice-student.md) depth tolerance.
+
+**Resolution:** Apprentice remains an `Applies to` persona for `presession-preparer`. Card-back content discipline (per Gate 2 Stage C-A2 + ADR-005): falsifier headline first, citation paragraph second, anchor links last. Skim-tolerant by design. An Apprentice can absorb the headline-only on a 1-min/card budget; citation depth is opt-in via scroll; anchor-trace to source artifact is opt-in via tap (DS-63). The depth is *available*, not *required*. Re-evaluate if Apprentice usage data shows abandonment of the surface, which would be evidence the depth-tolerance flag was correct after all.
 
 ---
 
 ## Change log
 
 - 2026-04-23 — Created as Gate 3 output of exploit-deviation project Phase 3. Authored same-session as the triggering Gate 2 Blind-Spot Roundtable (`2026-04-23-exploit-deviation-blindspot.md`).
+- 2026-05-19 — Owner review CONFIRMED via SPR-091 / WS-195 Gate 3 research. PSP-1 (5/15/30 variants) CONFIRMED. PSP-2 (mood detection) remains PROTO with v1 user-declared-toggle fallback; WS-201 research will determine v2 disposition. PSP-3 (48h review window) CONFIRMED. Added sibling-relationship reconciliation with `post-session-chris` (different scopes, may co-engage). Added Apprentice-Student depth-tolerance resolution. See `docs/design/audits/2026-05-19-research-psd-gate3.md`.

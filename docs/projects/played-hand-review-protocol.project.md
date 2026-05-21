@@ -89,9 +89,9 @@ A (Gates 1-4) ──┬──▶ E (spotResolver + schema + tree exposure) ─�
 |-------|--------|-------------|-----------------|
 | 1 | [x] | Gate 1 Entry + Gate 2 Blind-Spot + Gate 3 JTBD authoring | Three artifacts on disk; YELLOW/YELLOW verdicts; SR-28..34 in atlas |
 | 2 | [x] | SPOT-KEY feasibility spike | Spike artifact authored; GREEN feasibility; `spotResolver/` architecture proposed |
-| 3 | [ ] | Gate 4 Surface specs | Surface artifacts updated (hand-replay-view, analysis-view, showdown-view); new `hand-review-modal` spec authored; schema spec for `hand.flags[]` + `hand.reviewState` |
-| 4 | [ ] | Stream E — `spotResolver/` engine implementation | Module builds; 30+ golden-test corpus entries pass; corpus index loads at PWA boot |
-| 5 | [ ] | Stream E — IDB schema migration + counterfactual-tree exposure | Schema v(next) ships additive; `gameTreeEvaluator.js` output exposed on replay analysis |
+| 3 | [x] | Gate 4 Surface specs | **DONE 2026-05-17 SPR-085 / WS-067.** All 4 surface artifacts shipped: new `hand-review-modal.md` (with AssumptionCard contract + inline schema); amended `hand-replay-view.md` (ledger-link chip + L-key + Anatomy diagram + JTBDs + change log); amended `analysis-view.md` (HandBrowser flag filter + indicator + last-reviewed column + JTBDs + change log); amended `showdown-view.md` (HE-17 flag-for-review toggle in Summary mode + JTBDs + change log). AssumptionCard ownership decision: HRP authors (first-to-render via surface spec; exploit-deviation Phase 7+ consumes via `variant='compact'`). |
+| 4 | [x] | Stream E — `spotResolver/` engine implementation | **DONE 2026-05-17 SPR-087 / WS-193.** 8 modules shipped to `src/utils/spotResolver/`: CLAUDE.md + index.js + spotKeyExtractor.js + potTypeInference.js + boardShorthand.js + nodeClassifier.js + corpusIndex.js + matchScorer.js. Corpus loads at PWA boot via `import.meta.glob` (upper-surface markdown) + static import (LSW LINES export). Public `resolveSpot(hand, decisionIndex) → SpotMatch \| null` returns `{confidence, artifactId, source, reason?, spotKey, descriptor, scoredMatches}` matching the `hand-replay-view.md:213` contract. Per-dimension equal-weight matcher with calibrated thresholds (`STRONG_THRESHOLD = 0.875` / `PARTIAL_THRESHOLD = 0.625`). Cross-domain rule enforced: spotResolver imports from `pokerCore/` + `positionUtils` + `handAnalysis/buildTimeline` + `postflopDrillContent/lines` only — NO imports from `exploitEngine/` / `rangeEngine/` / `shapeLanguage/` (verified by grep). SPR_ZONES duplicated from exploitEngine per the cross-domain rule (documented as intentional in CLAUDE.md §Deliberate duplication note). 57 net new tests (13 corpusIndex + 23 spotKeyExtractor + 21 spotResolver.golden); 11,623 total green. Vite build clean. |
+| 5 | [ ] | Stream E — IDB schema migration + counterfactual-tree exposure <- CURRENT | Schema v(next) ships additive; `gameTreeEvaluator.js` output exposed on replay analysis |
 | 6 | [ ] | Stream U — HandBrowser flag filter + indicator + last-reviewed column | HE-17 consumer side ships; feature-flagged rollout |
 | 7 | [ ] | Stream U — hand-review-modal + ledger render + counterfactual tab + drill-card tab | Modal overlay renders linked artifact; progressive disclosure; match confidence visible |
 | 8 | [ ] | Stream U — ShowdownView HE-17 producer entry + first-open tutorial + inline glossary + keyboard shortcut | Flag-for-review gesture at record time; tutorial + glossary + L-key shortcut live |
@@ -148,7 +148,7 @@ Empirically verify that the spot-key resolution invariant (SR-29) is computable 
 
 ---
 
-## Phase 3: Gate 4 Surface Specs [ ] NEXT <- CURRENT
+## Phase 3: Gate 4 Surface Specs [x] DONE 2026-05-17 SPR-085 / WS-067
 
 ### Goal
 
@@ -179,7 +179,7 @@ Author or update all surface artifacts HRP touches, consuming the Gate 2 Stage-C
 
 ---
 
-## Phase 4: Stream E — `spotResolver/` engine [ ]
+## Phase 4: Stream E — `spotResolver/` engine [x] DONE 2026-05-17 SPR-087 / WS-193
 
 ### Goal
 
@@ -262,6 +262,8 @@ For `.claude/BACKLOG.md` when owner approves:
 ## Session log
 
 - **2026-04-23 Session 1 — Gate 1 + Gate 2 + Gate 3 + SPOT-KEY spike + charter.** Four artifacts shipped: Gate 1 Entry (YELLOW), Gate 2 Blind-Spot Roundtable (YELLOW), SR-28..34 authoring in session-review.md + ATLAS.md, SPOT-KEY feasibility spike (GREEN). Project charter (this file) authored. Ready for Gate 4 surface specs. Handoff: `.claude/handoffs/hrp-gates-1-2-3-spike.md`.
+- **2026-05-17 SPR-085 / WS-067 — Gate 4 Surface Specs CLOSED.** Phase 3 done. New `docs/design/surfaces/hand-review-modal.md` authored end-to-end (5 tabs: Summary / Claims Ledger / Counterfactual Tree / Drill Card / Full Artifact; AssumptionCard component contract; inline `hand.flags[]` + `hand.reviewState` schema spec; all Gate 2 Stage-C + Stage-E rules bound; chris-live-player autonomy red lines #5/#8/#9 documented). Three amendments shipped: `hand-replay-view.md` (ledger-link chip in ReviewPanel + L-key + Anatomy update + 2 new JTBDs + change log entry); `analysis-view.md` (HandBrowser flag filter chip + per-card indicator + last-reviewed column + Anatomy update + new JTBD + change log entry); `showdown-view.md` (HE-17 producer toggle in Summary mode + Anatomy update + new JTBD + change log entry). **AssumptionCard ownership resolved:** HRP authors the contract in `hand-review-modal.md` per the cross-project first-to-render rule (recon confirmed exploit-deviation reached Phase 6 engine code without authoring a surface-spec ledger render). exploit-deviation Phase 7+ consumes via `variant='compact'`. Cross-reference note added to `exploit-deviation.project.md` §Coordination. Spec-only sprint: zero code, zero tests, zero build changes. Stream E + Stream U unblocked. Phase 4 (`spotResolver/` engine implementation) is the next phase per the Phases table.
+- **2026-05-17 SPR-087 / WS-193 — Phase 4 Stream E `spotResolver/` engine CLOSED.** 8 modules shipped to `src/utils/spotResolver/` per the SPOT-KEY spike's pre-designed architecture: `CLAUDE.md` + `index.js` + `spotKeyExtractor.js` + `potTypeInference.js` + `boardShorthand.js` + `nodeClassifier.js` + `corpusIndex.js` + `matchScorer.js`. Public `resolveSpot(hand, decisionIndex) → SpotMatch | null` returns `{confidence, artifactId, source, reason?, spotKey, descriptor, scoredMatches}` matching the SPR-085 `hand-replay-view.md:213` contract. Corpus loads at PWA boot via `import.meta.glob` (upper-surface markdown) + static `LINES` import (LSW lines.js). Per-dimension equal-weight matcher with calibrated thresholds (`STRONG_THRESHOLD = 0.875` = 7/8 dims exact; `PARTIAL_THRESHOLD = 0.625` = 5/8). SPR_ZONES duplicated from `exploitEngine/gameTreeConstants.js` per the cross-domain rule (documented as intentional in `spotResolver/CLAUDE.md` §Deliberate duplication note — universal poker concept, 5 constants, future cleanup may move to `pokerCore/`). **All three plan-mode decisions resolved by spike-driven recon** (corpus loading = PWA boot per spike line 145; node-id classification = hand-authored code; scoring weights = calibrated equal-weight baseline per `feedback_first_principles_decisions.md`). 57 net new tests (13 corpusIndex + 23 spotKeyExtractor + 21 spotResolver.golden) — exceeds spike's 30+ golden target. 11,623 total app tests green. Vite build clean (6.96s). Cross-domain grep guards clean (zero `from.*exploitEngine` / `from.*rangeEngine` / `from.*shapeLanguage` import lines in spotResolver source). Phase 5 (IDB schema migration + counterfactual-tree exposure) is the next phase. Stream U Phases 6-8 (HandBrowser flag filter / hand-review-modal component / ShowdownView producer) now unblocked by both Gate 4 specs + spotResolver engine.
 
 ---
 

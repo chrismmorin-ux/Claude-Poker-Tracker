@@ -28,6 +28,7 @@ Capture the end-of-hand truth: which seats went to showdown, which cards they he
 Primary:
 - `JTBD-HE-11` finish the hand's action record
 - `JTBD-HE-12` undo / repair a miskey before committing the hand
+- `JTBD-HE-17` flag hand for later review at record time — HRP Gate 4 wire adds the producer-side toggle (2026-05-17)
 - `JTBD-SR-23` (seed) the completed hand becomes reviewable — the showdown record is the authoritative input to later review
 
 Secondary:
@@ -61,6 +62,11 @@ Secondary:
 │   ┌────────────────────────────────────────┐         │
 │   │ ActionHistoryGrid — all actions grouped │         │
 │   │ by street, per-seat rows                 │         │
+│   └────────────────────────────────────────┘         │
+│   ┌────────────────────────────────────────┐         │
+│   │ ⚐ Flag for review (HRP Gate 4, SPR-085) │         │
+│   │   single-tap toggle; reversible from    │         │
+│   │   HandBrowser later                     │         │
 │   └────────────────────────────────────────┘         │
 ├──────────────────────────────────────────────────────┤
 │ [Back to Table]        [Next Hand / Commit]          │
@@ -109,6 +115,39 @@ Secondary:
 
 ---
 
+## HRP flag-for-review (HRP Gate 4 wire, 2026-05-17, SPR-085 / WS-067)
+
+**Added by:** WS-067 / SPR-085 (HRP Phase 3 Gate 4 surface specs). See `docs/design/surfaces/hand-review-modal.md` for the full new-surface spec.
+
+**What this adds.** A single-tap "Flag for review" toggle in ShowdownView mode-2 (Summary), serving as the HE-17 producer entry. ShowdownView is the natural host per Stage D Information Architect voice (Gate 2 audit line 180): "ShowdownView is the natural host for HE-17 producer — it's the record-committing surface. Add 'Flag for review' checkbox/button there. Avoid TableView intrusion (live-cadence surface)."
+
+**Visual treatment.** A flag chip below the ActionHistoryGrid in Summary mode (see updated Anatomy). Two states:
+- **Unflagged** — gray ⚐ icon + "Flag for review" label
+- **Flagged** — colored ⚐ icon + "Flagged ✓" label
+
+Tap toggles. No modal. No "are you sure?" confirmation. The flag is fully reversible from HandBrowser later (per `analysis-view.md` HandBrowser augmentations), so a tap-and-undo workflow doesn't need destructive-action ceremony at record time.
+
+**Interaction.**
+- Single tap toggles `hand.flags[]` for the current hand
+- When toggling on: append `{id: <ulid>, createdAt: <now>, source: 'showdown'}` to `hand.flags[]`
+- When toggling off: remove the most recent `source: 'showdown'` entry from `hand.flags[]`
+- The flag persists with the hand on `Next Hand` commit (no separate persistence path; uses the existing hand-commit IDB write)
+- Flag changes are included in the existing toast+undo flow (F1 ship 2026-04-21) — if the user toggles flag then taps Next Hand then hits Undo, the flag state is restored along with the rest of the hand state
+
+**State integration.**
+- Writes to `hand.flags[]` via a new `useShowdownHandlers.toggleFlagForReview()` action (planned at Stream U Phase 8 — spec only here)
+- Reads `hand.flags[].some(f => f.source === 'showdown')` to determine the chip's flagged state
+- Multiple flags can accumulate on a hand across different sessions (flagged at showdown, re-flagged later from HandBrowser, etc.); the showdown chip only tracks its own source entries
+
+**Anti-pattern compliance:**
+- Red line #5 (no engagement-pressure): the chip is a neutral toggle. No "you should flag this" prompts, no "review streak", no "flagged hands per session" counter.
+- Red line #8 (no cross-surface contamination): the flag-for-review chip lives only in ShowdownView. TableView is explicitly excluded (live-cadence intrusion is banned per Gate 2 Stage D).
+- No destructive-action concern: flag toggle is fully reversible, no commit ceremony, no confirmation dialog.
+
+**Cross-reference:** Schema details (`hand.flags[]` entry shape with `source: 'showdown' | 'handbrowser' | 'replay'`) at `docs/design/surfaces/hand-review-modal.md` §Schema additions.
+
+---
+
 ## Test coverage
 
 - `src/components/views/ShowdownView/__tests__/*.test.jsx` — per-subcomponent coverage.
@@ -118,6 +157,8 @@ Secondary:
 - `table-view` — entry.
 - `hand-replay-view` — this surface's output feeds replay.
 - `sessions-view` — session bankroll/stats update on commit.
+- `hand-review-modal` — HRP Gate 4 deep-surface (2026-05-17). ShowdownView is the HE-17 producer (writes `hand.flags[]` with `source: 'showdown'`); the modal is the consumer (reads the flags + renders the linked artifact).
+- `analysis-view` — HandBrowser augmentations consume `hand.flags[]` produced here (flag filter chip + per-card indicator + last-reviewed column).
 
 ---
 
@@ -126,3 +167,4 @@ Secondary:
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
 - 2026-04-21 — DCOMP-W1-S4: Gate 4 heuristic audit + Gate 5 P0. `handleNextHandFromShowdown` rewritten with toast+undo. 111/111 tests pass.
 - 2026-04-21 — **DCOMP-W1 S5–S7 (Gate 5): ALL 7 ShowdownView audit findings SHIPPED.** F1 (S4: Next Hand toast+undo with openShowdownView-on-undo). F3 + F4 (S5: Clear Cards undo + hide-in-Quick; Won auto-muck passive "mucks N" sub-label + undo for the bulk write). F2 + F5 (S6: ShowdownHeader layout separation with Done-left + Next-Hand-right; CardGrid overflow-auto). F6 + F7 (S7: Labels dead buttons removed → Seat N headers; empty-rankings info banner). **All findings code-complete. Pending owner visual verification on device.**
+- 2026-05-17 — HRP Gate 4 wire (WS-067 / SPR-085). HE-17 producer entry spec'd: "Flag for review" single-tap toggle in Summary mode, below ActionHistoryGrid. Writes `hand.flags[]` with `source: 'showdown'`; fully reversible from HandBrowser later. Integrated with existing toast+undo flow on Next Hand commit. JTBDs served list grew: HE-17 (flag for review). Spec-only: no code (HRP Phase 3 is documentation-only). Schema authored in `hand-review-modal.md`; ShowdownView is producer-only.

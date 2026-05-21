@@ -33,8 +33,9 @@ Both tabs share the same analysis pipeline as the live engine; this view surface
 
 Primary:
 - `JTBD-SR-23` highlight worst-EV spots
-- `JTBD-SR-24` filter hands by street / position / opponent-style (HandBrowser filters)
+- `JTBD-SR-24` filter hands by street / position / opponent-style (HandBrowser filters; HRP Gate 4 adds flag filter)
 - `JTBD-SR-25` replay at own pace with range overlay (entry to `hand-replay-view`)
+- `JTBD-SR-31` flag-queue surfacing — HandBrowser flag filter chip + per-card flag indicator + last-reviewed column (HRP Gate 4 wire, 2026-05-17)
 - `JTBD-SR-88` (partial) similar-spot search across history — currently per-player, not cross-player
 - (Coach) understand a specific villain's patterns across many hands
 - (Student) see correctness labels on past decisions with reasoning
@@ -72,10 +73,15 @@ Secondary:
 │                                                      │
 │ TAB: Hand Review                                     │
 │   HandBrowser (filters + list)                       │
+│     • flag filter chip ⚐ [all|flagged|unflagged]     │
+│     • per-card flag indicator ⚐                       │
+│     • last-reviewed column (rel. timestamp)          │
 │     ↓ select hand                                    │
 │   HandWalkthrough (action-by-action)                 │
 │     ├── ReviewObservations (per-action cards)        │
 │     └── [Open Immersive Replay] → hand-replay-view   │
+│         (flagged hands → modal auto-opens at         │
+│          first flagged decision per HRP Gate 4)      │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -115,6 +121,38 @@ Secondary:
 - **HandBrowser filters are in-memory** over the current session's hands by default; "all sessions" mode exists but is expensive on large archives.
 - **`useHandReplayAnalysis` is async** — `isComputing` guard avoids rendering partial state.
 
+---
+
+## HRP HandBrowser augmentations (HRP Gate 4 wire, 2026-05-17, SPR-085 / WS-067)
+
+**Added by:** WS-067 / SPR-085 (HRP Phase 3 Gate 4 surface specs). See `docs/design/surfaces/hand-review-modal.md` for the full new-surface spec.
+
+**What this adds.** The HandBrowser sub-component (in the Hand Review tab) gains three HRP affordances that make the flag queue visible and navigable, satisfying SR-31 (flag-queue surfacing). These are HandBrowser-side surfaces of the `hand.flags[]` + `hand.reviewState` schema additions specified in `hand-review-modal.md` §Schema additions.
+
+**Three new affordances:**
+
+1. **Flag filter chip** — a tri-state filter at the top of the HandBrowser list: `[all] [flagged] [unflagged]` (default: `all`). Reads `hand.flags.length > 0` to classify. Mirrors the visual style of existing HandBrowser filters (street / position / opponent-style).
+
+2. **Per-card flag indicator** — a small ⚐ icon on each hand card in the list when `hand.flags.length > 0`. Tooltip on hover: "Flagged for review (N flags, most recent <date>)" where N = flag count and date is the most recent `hand.flags[i].createdAt`.
+
+3. **Last-reviewed column** — a relative-timestamp column ("3d ago", "never", "2wk ago") fed by `hand.reviewState.lastReviewedAt`. Sortable. "Never reviewed" rows sort to the bottom by default; explicit sort flips them to the top.
+
+**Navigation handoff to HandReplayView.** Selecting a flagged hand in HandBrowser opens HandReplayView with a small change: if the hand has flags AND the user clicked the flag indicator (vs the hand card body), HandReplayView auto-jumps to the first flagged decision and opens the `hand-review-modal` overlay automatically. Clicking the hand card body opens HandReplayView at the start without opening the modal (default behavior preserved). This satisfies SR-31's "find it again in the queue" criterion without breaking the existing review flow.
+
+**State integration.**
+- Reads from the same `useSession` / hand-loading path HandBrowser already uses; no new IDB queries.
+- The flag filter is a local UI state inside HandBrowser (not persisted across sessions).
+- Sorting by last-reviewed uses an in-memory sort over the loaded hands.
+- No writes from HandBrowser. The `lastReviewedAt` update happens in `hand-review-modal` (the consumer side).
+
+**Anti-pattern compliance:**
+- Red line #5 (no engagement-pressure): the flag indicator is a neutral data signal, not a "you have N unreviewed hands!" notification. No badge counter, no overdue framing, no "review streak" anywhere on this surface.
+- Red line #8 (no cross-surface contamination): HandBrowser augmentations land only in `AnalysisView/HandBrowser.jsx`. Live-table surfaces are unaffected.
+
+**Cross-reference:** Schema details + modal contract at `docs/design/surfaces/hand-review-modal.md`.
+
+---
+
 ## Known issues
 
 - **DCOMP-W2-A2 audit shipped 2026-04-22 (verdict RED).** 12 findings: **1 P0** (HandReviewPanel.jsx:43 native `confirm('Delete this hand? This cannot be undone.')` destructive-action anti-pattern — same class as Wave 1 + W4), 4 P1 (touch targets <44 systematic, text-size floor, HandBrowser filter discoverability + segregation, all-sessions filter cost+progress), 4 P2 (PlayerAnalysisPanel decomposition + hand-significance badge + single-hand export + SR-88 discovery), 3 P3 (SR-26/SR-27 merged w/ W2-A1-F3, profile-first contract doc, tab persistence). Full audit: `../audits/2026-04-22-analysis-view.md`.
@@ -141,6 +179,7 @@ Secondary:
 - `hand-replay-view` — primary pivot from Hand Review tab.
 - `players-view` — alternate entry to player-level analysis via RangeDetailPanel.
 - `table-view` — exit.
+- `hand-review-modal` — HRP Gate 4 deep-surface (2026-05-17). HandBrowser's flag indicator opens a flagged hand directly into the modal at the first flagged decision; the modal renders the claims ledger + counterfactual tree + drill card + full artifact in a 5-tab overlay.
 
 ---
 
@@ -148,3 +187,4 @@ Secondary:
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-04-22 — DCOMP-W2-A2 Gate-4 audit appended. Verdict RED. 12 findings; 1 P0 destructive-action persists in HandReviewPanel.jsx:43.
+- 2026-05-17 — HRP Gate 4 wire (WS-067 / SPR-085). HandBrowser augmentations spec'd: flag filter chip (tri-state all/flagged/unflagged), per-card flag indicator (⚐ icon on flagged hands), last-reviewed column (relative-timestamp). Navigation handoff: selecting a flagged hand from the flag indicator (vs the card body) auto-opens `hand-review-modal` at the first flagged decision when HandReplayView mounts. JTBDs served list grew: SR-31 (flag-queue surfacing). Spec-only: no code (HRP Phase 3 is documentation-only). Schema additions (`hand.flags[]` + `hand.reviewState`) authored in `hand-review-modal.md`; HandBrowser is read-only consumer.

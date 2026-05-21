@@ -17,7 +17,7 @@
 
 **Product line:** Main app
 **Tier placement:** Free+ (cap on session count applies in Free tier per INVENTORY F-04). BB-ante / ICM timing and cloud backup are Plus+ / Pro.
-**Last reviewed:** 2026-04-21
+**Last reviewed:** 2026-05-19 (PSD Gate 4 — inline Pre-Session Drill entry added)
 
 ---
 
@@ -34,6 +34,7 @@ Primary:
 - `JTBD-SM-20` recover session from interruption (post-crash resume)
 - `JTBD-SM-21` clean cash-out with tip logging
 - `JTBD-SM-22` backfill a forgotten session (manual create with past dates)
+- `JTBD-SE-01` prepare tonight's watchlist — entry path served by the inline `Pre-Session Drill` button (PSD Gate 4, 2026-05-19). Routes to `postflop-drills` Pre-Session mode with `activeTab='presession'` + `mode='prep'`. SessionsView is the primary launching surface for the daily Pre-Session workflow per `presession-preparer` persona.
 - `JTBD-DE-72` raw JSON export (Download backup)
 - `JTBD-DE-75` full-archive export on leave
 
@@ -44,6 +45,7 @@ Secondary:
 ## Personas served
 
 - [Chris](../personas/core/chris-live-player.md), [Between-hands Chris](../personas/situational/between-hands-chris.md), [Post-session Chris](../personas/situational/post-session-chris.md) — primary
+- [Pre-Session preparer](../personas/situational/presession-preparer.md) — situational primary for the inline Pre-Session Drill entry added 2026-05-19. Sibling of `post-session-chris` (Gate 3 A-R1 reconciliation): SessionsView serves the prep workflow (open PSD) while `post-session-chris` covers general post-session review; PSD's own review-mode covers drill-prediction-specific review only.
 - [Weekend Warrior](../personas/core/weekend-warrior.md), [Rounder](../personas/core/rounder.md), [Hybrid Semi-Pro](../personas/core/hybrid-semi-pro.md), [Circuit Grinder](../personas/core/circuit-grinder.md) — primary bankroll users
 - [Traveler](../personas/core/traveler.md) — offline-first / multi-currency pain point (F-P14 proposed)
 - [Ringmaster](../personas/core/ringmaster-home-host.md) — home-game settling flows
@@ -54,21 +56,23 @@ Secondary:
 ## Anatomy
 
 ```
-┌────────────────────────────────────────────────┐
-│ BankrollDisplay — totals across all sessions   │
-├────────────────────────────────────────────────┤
-│ ActiveSessionCard (if session is running)      │
-│   [Resume] [Cash Out] [Add-on] [Abandon]       │
-├────────────────────────────────────────────────┤
-│ [+ New Session]   [Import]   [Download backup] │
-├────────────────────────────────────────────────┤
-│ Past sessions list (SessionCard ×N)            │
-│   • date • venue • game • hands • net          │
-│   → click to edit/delete/inspect               │
-├────────────────────────────────────────────────┤
-│ CashOutModal / ImportConfirmModal (overlays)   │
-└────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ BankrollDisplay — totals across all sessions             │
+├──────────────────────────────────────────────────────────┤
+│ ActiveSessionCard (if session is running)                │
+│   [Resume] [Cash Out] [Add-on] [Abandon]                 │
+├──────────────────────────────────────────────────────────┤
+│ [+ New Session]  [Import]  [Pre-Session Drill]  [Backup] │
+├──────────────────────────────────────────────────────────┤
+│ Past sessions list (SessionCard ×N)                      │
+│   • date • venue • game • hands • net                    │
+│   → click to edit/delete/inspect                         │
+├──────────────────────────────────────────────────────────┤
+│ CashOutModal / ImportConfirmModal (overlays)             │
+└──────────────────────────────────────────────────────────┘
 ```
+
+Action-row placement rationale (Pre-Session Drill, 2026-05-19): inline button placed between `[Import]` and `[Backup]`. The button is for *opening tomorrow's drill*, not for managing sessions; placing it in the primary action row mirrors `+ New Session` discoverability for the daily-prep workflow. The button is visible on every SessionsView mount — no submenu, no overflow. Routes to `postflop-drills` with `activeTab='presession'` + `mode='prep'`; user picks variant (5/15/30) + mood inside the destination view.
 
 Wrapped in `ScaledContainer` with `scale` prop forwarded.
 
@@ -93,6 +97,7 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 4. **Edit past session** → click `SessionCard` → inline or modal editor → `updateSessionField` → persists.
 5. **Import** → `readJsonFile` → `validateImportData` → `ImportConfirmModal` → `importAllData` merges into IDB.
 6. **Download backup** → `downloadBackup()` emits a JSON archive of sessions + hands + players.
+7. **Pre-Session Drill** (added 2026-05-19, PSD Gate 4) → tap inline `[Pre-Session Drill]` button → `setCurrentScreen(SCREEN.POSTFLOP_DRILLS)` with `activeTab='presession'` + `mode='prep'` UI hint. No modal; one-tap launch. Variant + mood picker rendered inside the destination view (per `postflop-drills.md` Pre-Session mode anatomy). Cross-link: serves JTBD-SE-01 (prepare tonight's watchlist) for `presession-preparer` persona.
 
 ---
 
@@ -132,6 +137,7 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - `stats-view` — consumes sessions aggregate.
 - `hand-replay-view` — drills down into per-hand review from a SessionCard.
 - `settings-view` — venue / game-type config that populates SessionForm dropdowns.
+- `postflop-drills` (Pre-Session mode) — added 2026-05-19. Inline `Pre-Session Drill` button in the action row routes here with `activeTab='presession'` + `mode='prep'`. Primary daily-prep workflow entry path for `presession-preparer` persona. See `postflop-drills.md` § Pre-Session mode for the destination spec.
 
 ---
 
@@ -140,3 +146,4 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - 2026-04-21 — Created (DCOMP-W0 session 1, Tier A baseline).
 - 2026-04-21 — DCOMP-W1-S4: Gate 4 heuristic audit + Gate 5 P0 implementation. `handleDeleteSession` rewritten to deferred-delete toast+undo pattern. F3 (import warning copy) verified and withdrawn.
 - 2026-04-21 — **DCOMP-W1 S4–S9 (Gate 5): ALL 6 active SessionsView audit findings SHIPPED** (F3 withdrawn). F1 (S4: deferred-delete Delete Session). F4 (S5: rebuy inputMode=decimal + 44px + "Use $X" preset + undo). F5 (S6: bottom-bar flex container). F6 + F7 (S7: SessionForm dirty-state backdrop guard; Live/Online filter pills with localStorage persistence). F2 (S9: optional tip field on CashOutModal wired through P&L — additive schema, backward-compat). **All findings code-complete. Pending owner visual verification on device.**
+- 2026-05-19 — **PSD Gate 4 entry-point** (WS-199 / SPR-092): inline `[Pre-Session Drill]` button added to the primary action row between `[Import]` and `[Backup]`. Persona list extended with `presession-preparer` (sibling of `post-session-chris` per Gate 3 A-R1). JTBD list extended with JTBD-SE-01 (entry path). Key interactions list extended with the launch interaction (one-tap, no modal, routes to `postflop-drills` with `activeTab='presession'` + `mode='prep'` UI hint). Related surfaces section extended with `postflop-drills (Pre-Session mode)` entry. Companion to `postflop-drills.md` § Pre-Session mode + `hand-replay-view.md` overflow-menu addition.

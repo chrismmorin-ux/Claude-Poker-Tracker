@@ -4,8 +4,8 @@
 **Parent surface:** top-level routed view (`SCREEN.CALIBRATION_DASHBOARD`, new route added in exploit-deviation Phase 6 OR exploit-anchor-library Phase 5 — whichever ships first).
 **Cross-project shared surface:** this dashboard is authored **jointly by Exploit Deviation and Exploit Anchor Library**. Both projects proposed the same `CalibrationDashboardView/`; per S3 handoff cross-project coordination flag + §Cross-project coordination below, this spec ratifies the **one-view-with-tabs** architecture (not two separate views).
 **Product line:** Main app. No extension-side equivalent.
-**Tier placement:** Pro (inherits the calibration-framework's Pro gating). Flag-gated via `ENABLE_CALIBRATION_DASHBOARD`.
-**Last reviewed:** 2026-04-24 (Gate 4, Session 4)
+**Tier placement:** Pro (inherits the calibration-framework's Pro gating). Gating is via `FEATURE_TIER.CALIBRATION_DASHBOARD = TIERS.PRO` entitlement at `src/utils/entitlement/featureMap.js`; the codebase has no separate per-screen `ENABLE_*` flag pattern (corrected 2026-05-09 — earlier text suggested a flag that does not exist).
+**Last reviewed:** 2026-05-09 (amended for WS-169 / SPR-066 implementation slice; original Gate 4 authoring 2026-04-24, Session 4)
 
 **Code paths (future — Phase 6 exploit-deviation / Phase 5 exploit-anchor-library):**
 - `src/components/views/CalibrationDashboardView/CalibrationDashboardView.jsx` (new — route root with tabs)
@@ -129,6 +129,7 @@ Not served (explicit non-goals):
 │  │  │  Override actions:                                   ││
 │  │  │   [ Retire ]  [ Suppress ]  [ Reset calibration ]    ││
 │  │  │   [ Adjust operator dial ] (slider, -1 to +1)        ││
+│  │  │     ↑ DEFERRED to WS-176 (post-WS-169)               ││
 │  │  └──────────────────────────────────────────────────── ││
 │  │  ┌── next anchor row ... ────────────────────────────── ││
 │  │  ...                                                   ││
@@ -178,16 +179,16 @@ Rendered only when `observation_enrollment_state === 'not-enrolled'`:
   - ✗ `"You have observed this 34 times — good data accumulation."` (engagement-pressure coded as praise)
   - Copy generator lives in `src/utils/anchorLibrary/calibrationCopy.js` (Phase 5).
 - **Perception primitives driving prediction** — list of `perceptionPrimitiveIds` with each primitive's validity posterior + CI. Tap on primitive → navigate to Primitives tab scrolled to that primitive.
-- **Evidence list (chronological, last 10)** — per-firing rows with origin (`matcher-observed` vs `owner-captured`), timestamp (relative), metric (EV delta for matcher observations; "qualitative" for owner-captured with no numeric). **AP-08 signal-separation is enforced at render level** — origin is always visible; rows are never summed into a single "observation count." Full list beyond 10 → modal with virtualized scroll.
+- **Evidence list (chronological, last 10)** — per-firing rows with origin (`matcher-system` vs `owner-captured`), timestamp (relative), metric (EV delta for matcher observations; "qualitative" for owner-captured with no numeric). **Layout = stacked cards** (locked SPR-066, 2026-05-09). Each evidence row renders as its own card with a leading origin badge (e.g., `◆ matcher-system` or `◆ owner-captured`), a situation summary, and the outcome line. Chronological mixed by origin (NOT grouped/blended into per-origin sections — that would defeat AP-08's "origin always visible per row" guarantee). **AP-08 signal-separation is enforced at render level** — origin is always visible; rows are never summed into a single "observation count." Full list beyond 10 → modal with virtualized scroll.
 - **Override actions — 3 primary:**
   - `[ Retire ]` — enters retirement journey at step 2 (confirm with status-transition summary).
   - `[ Suppress ]` — enters retirement journey at step 2 with suppress flow.
   - `[ Reset calibration ]` — enters retirement journey at step 2 with reset flow (destructive; 2-tap confirm; undo available for 12s).
-- **Adjust operator dial** — slider from -1 to +1 (inherited from `VillainAssumption.operator.currentDial`). Granular override short of retirement. Changes trigger W-EA-3 single-transaction write.
+- **Adjust operator dial** — slider from -1 to +1 (inherited from `VillainAssumption.operator.currentDial`). Granular override short of retirement. Changes trigger W-EA-3 single-transaction write. **DEFERRED to WS-176 (post-WS-169).** Founder ratified deferral at SPR-066 plan-mode (2026-05-09): the dial is a complex micro-control distinct from Retire/Suppress/Reset and is not blocking the dashboard's audit value. Retire/Suppress/Reset action buttons (reusing `useAnchorRetirement` + `RetirementConfirmModal`) cover the override JTBD coarsely in v1.
 
 ### Predicates panel — `PredicateCalibrationPanel`
 
-Full spec inherited from `exploit-deviation/calibration.md` §8.1. Column layout:
+Full spec inherited from `exploit-deviation/calibration.md` §8.1. Column layout (post-exploit-deviation Phase 6):
 
 - Predicate ID + title.
 - Tier 1 scenario: ✓ / ✗ / ⊘ (not-run).
@@ -197,6 +198,12 @@ Full spec inherited from `exploit-deviation/calibration.md` §8.1. Column layout
 - Status chip.
 
 Row expansion: same pattern as anchors — model-accuracy prose + evidence list + override actions.
+
+**v1 empty-state (WS-169 / SPR-066, 2026-05-09 — EAL ships first):** Predicates tab renders an empty-state shell with banner copy:
+
+> Predicate calibration ships with the exploit-deviation project. Anchors and primitives use independent infrastructure and are live above.
+
+Founder ratified this disposition at SPR-066 plan-mode. No predicate-calibration data layer exists in EAL (predicates are implicit via `lineSequence: LineStep[]`; no per-predicate observed-true/false counts persisted). Tab structure is preserved so the IA matches spec; the cross-project dependency stays visible. When exploit-deviation Phase 6 ships predicate-calibration infrastructure, the empty-state component is replaced with the column layout above; no IA reshape required.
 
 ### Primitives panel — `PrimitiveCalibrationPanel`
 
@@ -229,9 +236,9 @@ Row expansion: same pattern as anchors — model-accuracy prose + evidence list 
 
 ### Environment assumptions
 
-- Both `AnchorLibraryProvider` and `AssumptionProvider` (exploit-deviation) mounted at app root.
-- If EAL Phase 5 ships before exploit-deviation Phase 6, the `Predicates` tab renders a "coming soon" empty state; tabs still render.
-- If exploit-deviation Phase 6 ships before EAL Phase 5, the `Anchors` + `Primitives` tabs render "coming soon"; tabs still render.
+- `AnchorLibraryProvider` mounted at app root (live since Phase 6 Stream A).
+- `AssumptionProvider` (exploit-deviation) — not yet mounted; provides predicate-calibration data when exploit-deviation Phase 6 ships.
+- **EAL ships first (confirmed 2026-05-09 / WS-169 / SPR-066).** The `Predicates` tab renders the empty-state shell described in §PredicateCalibrationPanel; `Anchors` + `Primitives` tabs render with full data. When exploit-deviation Phase 6 ships, the Predicates empty-state component is replaced with the predicate column layout; no IA reshape required.
 
 ---
 
@@ -252,7 +259,7 @@ Row expansion: same pattern as anchors — model-accuracy prose + evidence list 
 3. **Expand row.** Tap `[ Details ▼ ]` → inline expansion with prose + evidence + primitives + override actions. Multiple rows expandable; independent state.
 4. **Deep-link from anchor-library.** On entry, auto-scroll to deep-linked anchor's row + auto-expand detail.
 5. **Override action.** Tap `[ Retire ]` / `[ Suppress ]` / `[ Reset calibration ]` → enters retirement journey at step 2. Full journey in journey doc.
-6. **Operator dial adjust.** Slider drag → debounced 300ms → W-EA-3 write. Visual dial position reflects current value from `operator.currentDial`.
+6. **Operator dial adjust.** Slider drag → debounced 300ms → W-EA-3 write. Visual dial position reflects current value from `operator.currentDial`. **DEFERRED to WS-176** — interaction not implemented in v1 (WS-169 / SPR-066).
 7. **Primitive deep-link (Anchors → Primitives).** Tap primitive name in anchor's expanded detail → switch to Primitives tab + scroll to that primitive.
 8. **Anchor deep-link (Primitives → Anchors).** Tap dependent anchor name in primitive's row → switch to Anchors tab + scroll-expand to anchor.
 9. **Back navigation.** Back button / Escape → caller. If deep-link entry, return to caller.
@@ -316,7 +323,7 @@ Row expansion: same pattern as anchors — model-accuracy prose + evidence list 
 - **Empty state per tab** — before any firings accumulate, Anchors tab shows `"No anchor firings yet. Calibration data accrues as anchors fire in matched hands."` Factual, no engagement-pressure nudge.
 - **Sparkline at n < 5** — shows "Insufficient data for sparkline (n=3)" instead of attempting to render with too few points.
 - **Trend calculation** — requires n ≥ 10 firings; text is `"(collecting data)"` until threshold crossed.
-- **Operator dial drag** — visual state updates on drag; persistence debounced 300ms; final write on release. Undo toast for 12s after explicit release (no undo for mid-drag drags).
+- **Operator dial drag** — visual state updates on drag; persistence debounced 300ms; final write on release. Undo toast for 12s after explicit release (no undo for mid-drag drags). **DEFERRED to WS-176** — not in WS-169 / SPR-066 scope.
 - **Incognito observations** — filtered from the dashboard's evidence list because `contributesToCalibration: false` is authoritative. This is red line #9's structural guarantee at the read side. The observation is still visible on the hand-replay-view's AnchorObservationList (its capture-side), but never here.
 - **Primitive invalidation ripple visualization** — when user taps "What does this mean?" on an at-risk primitive, a modal shows the list of dependent anchors and the penalty factor that will apply. No auto-retire happens from the dashboard; the penalty is scheduled for next session-close per schema-delta §3.3.1.
 
@@ -369,3 +376,13 @@ Placeholder for future audit findings:
 ## Change log
 
 - 2026-04-24 — v1.0 authored as Gate 4 Session 4 artifact (EAL-G4-S2). Cross-project one-view-with-tabs architecture ratified (flagged reversible for owner override). Full anatomy + 3-tab spec + model-accuracy copy discipline + 9 red-line compliance assertions + AP-01..08 anti-pattern cross-references + Phase 5/6 code-path plan + 6 Playwright evidence placeholders. Zero code.
+- 2026-05-09 — v1.1 amended for WS-169 / SPR-066 implementation slice. **Driver: PMC Gate 2 sprint 2/2 (SPR-065) REPLACEMENT verdict** — Devil's-Advocate Concern 1 disposed REPLACEMENT, cancelling the expanded ledger / hierarchical Bayesian aggregator / per-villain + per-situation tab architecture that PMC Gate 1 (RED) had proposed adding. WS-169 was re-released to EAL Stream D with its **original** 3-tab scope. This amendment ratifies the 3-tab IA was always correct. Specific changes:
+  - **Operator dial slider deferred to WS-176** (post-WS-169). Annotated at §Anatomy line 131-equivalent + §AnchorCalibrationPanel + §Key interactions #6 + §Known behavior notes. Founder ratified deferral at SPR-066 plan-mode — dial is a complex micro-control distinct from Retire/Suppress/Reset, not blocking the dashboard's audit value.
+  - **Predicates tab empty-state explicit (v1).** §PredicateCalibrationPanel adds explicit empty-state copy ("Predicate calibration ships with the exploit-deviation project. Anchors and primitives use independent infrastructure and are live above."). §Environment assumptions confirms EAL-first sequencing.
+  - **Evidence-list layout locked to stacked cards.** §AnchorCalibrationPanel "Evidence list" entry locks the visual layout (each row = its own card with leading origin badge `◆ matcher-system` / `◆ owner-captured` + situation summary + outcome line; chronological mixed by origin). This is layout-locking, not scope-shifting; AP-08 origin-per-row guarantee carries forward.
+  - **No removal of per-villain / per-situation tab references** — original spec was always 3-tab (Predicates / Anchors / Primitives); PMC's expansion proposal was in the WS-169 ticket text, never reached this spec. Amendment confirms the 3-tab IA survives unchanged.
+  - **No structural reshape, no decision-flag flips.** §Cross-project coordination one-view-with-tabs decision (reversibility flag at line 281) remains open for owner walkthrough; not load-bearing for v1.
+  - **Last reviewed** updated to 2026-05-09 in header.
+  - **Tier-placement gating clarification.** Header `**Tier placement:**` corrected — gating is via `FEATURE_TIER.CALIBRATION_DASHBOARD = TIERS.PRO` entitlement at `src/utils/entitlement/featureMap.js`, NOT via a per-screen `ENABLE_CALIBRATION_DASHBOARD` flag (which never existed). Earlier text reflected an aspirational flag pattern; codebase reality is tier-based. WS-169 acceptance criterion "ENABLE_CALIBRATION_DASHBOARD flag added to feature-flag system" therefore voided as redundant — entitlement is already in place.
+
+  Companion artifacts: Gate 1 entry audit at [`audits/2026-05-09-entry-calibration-dashboard.md`](../audits/2026-05-09-entry-calibration-dashboard.md) (verdict YELLOW + 3 conditions: this amendment is C1). PMC Gate 2 sprint 2/2 close-out at [`audits/2026-05-09-blindspot-pmc-failure-modes.md`](../audits/2026-05-09-blindspot-pmc-failure-modes.md).
