@@ -2,6 +2,19 @@
  * actionSequence.integration.test.js - Integration tests for action sequence system
  *
  * Tests the full round-trip: record → save → load → display
+ *
+ * NEED_BYPASS (WS-182): These integration tests dispatch raw
+ * RECORD_PRIMITIVE_ACTION payloads as synthetic setup for verifying
+ * reducer behaviors that sit BELOW the WS-182 recording funnel (UNDO,
+ * CLEAR, NEXT_HAND/RESET_HAND, order sequencing). The asserted
+ * behaviors are reducer-internal contracts independent of how callers
+ * construct payloads.
+ *
+ * The product-level guarantee — "no production caller passes a 'check'
+ * string when amountOwed > 0" — is enforced by buildSeatActionPayload's
+ * intent='match' resolution and by the WS-182 migration sweep (see
+ * .claude/failures/RULES_INVARIANT_DISPATCH_BYPASS.md). These tests
+ * verify the reducer remains robust at the lowest layer regardless.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

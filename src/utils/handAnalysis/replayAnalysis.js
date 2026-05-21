@@ -362,12 +362,45 @@ export const buildCounterfactualTree = async ({
     foldMeta: result.foldMeta,
     modelQuality: result.modelQuality,
     bucketEquities: result.bucketEquities,
+    // SLS Stream B2 wiring (SPR-086 / WS-192). perCombo is the per-villain-
+    // combo equity distribution exposed by evaluateGameTree; consumed by
+    // EquityDistributionCurveSection + SpirePolarizationSection inside
+    // ReviewPanel. evByFraction is derived from the same recommendations[]
+    // already returned; consumed by SizingCurveTagSection. Both are null
+    // when the engine produced no usable distribution (e.g., sparse villain
+    // range) — sections render null per INV-SLS-B2-SECTION-NULL-DEGRADATION.
+    perCombo: result.perCombo || null,
+    evByFraction: deriveEvByFraction(result.recommendations),
     villainContext: {
       villainSeat,
       villainAction,
       villainBet,
     },
   };
+};
+
+/**
+ * Derive an `evByFraction` array from evaluateGameTree's recommendations[]
+ * for SizingCurveTagSection consumption.
+ *
+ * The Sizing Curve Tag classifier expects an array of `{fraction, ev}`
+ * sorted ascending by fraction. heroActionBuilder.js emits multiple
+ * `{action: 'bet'|'raise', sizing: {betFraction, ...}}` candidates per
+ * decision; we filter + map + sort.
+ *
+ * Returns null when fewer than `MIN_SAMPLES_FOR_CLASSIFICATION` (3) bet
+ * candidates are emitted — the classifier would label 'empty' anyway,
+ * so the section renders null per INV-SLS-B2-SECTION-NULL-DEGRADATION.
+ *
+ * SLS Stream B2 wiring — SPR-086 / WS-192.
+ */
+const deriveEvByFraction = (recommendations) => {
+  if (!Array.isArray(recommendations)) return null;
+  const betSizing = recommendations
+    .filter((r) => (r.action === 'bet' || r.action === 'raise') && r.sizing?.betFraction != null)
+    .map((r) => ({ fraction: r.sizing.betFraction, ev: r.ev }))
+    .sort((a, b) => a.fraction - b.fraction);
+  return betSizing.length >= 3 ? betSizing : null;
 };
 
 /**

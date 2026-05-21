@@ -5,6 +5,7 @@
 import { STREETS, BETTING_STREETS, SEAT_STATUS, isFoldAction } from '../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
 import { hasSeatFolded, hasShowdownAction as seqHasShowdownAction, getStraddler } from './sequenceUtils';
+import { logFirstActionSeat } from './dev/seatSelectionTelemetry';
 
 /**
  * Checks if a seat is inactive (absent or folded)
@@ -79,6 +80,21 @@ export const getFirstActionSeat = (
   actionSequence,
   numSeats
 ) => {
+  // WS-189 Phase 1 telemetry: capture inputs once for the dev-mode log.
+  const straddler = getStraddler(actionSequence);
+  const foldedSeats = [];
+  for (let s = 1; s <= numSeats; s++) {
+    if (hasSeatFolded(actionSequence, s)) foldedSeats.push(s);
+  }
+  const telemetryInputs = {
+    currentStreet,
+    dealerSeat,
+    absentSeats,
+    straddler,
+    foldedSeats,
+    numSeats,
+  };
+
   if (currentStreet === 'preflop') {
     // WS-002 Sprint A2 (revised 2026-05-06): when a straddle is in play, the
     // straddle takes the place of the BB for action-order purposes — first to
@@ -86,9 +102,10 @@ export const getFirstActionSeat = (
     // rule). Without a straddle, first to act is BB+1.
     // Postflop is unaffected: first to act = first non-folded clockwise from
     // dealer, regardless of straddle.
-    const straddler = getStraddler(actionSequence);
     if (straddler !== null) {
-      return getNextActiveSeat(straddler, absentSeats, numSeats);
+      const result = getNextActiveSeat(straddler, absentSeats, numSeats);
+      logFirstActionSeat(telemetryInputs, result);
+      return result;
     }
     const sbSeat = getSmallBlindSeat(dealerSeat, absentSeats, numSeats);
     const bbSeat = getNextActiveSeat(sbSeat, absentSeats, numSeats);
@@ -98,6 +115,7 @@ export const getFirstActionSeat = (
       seat = (seat % numSeats) + 1;
       attempts++;
     }
+    logFirstActionSeat(telemetryInputs, seat);
     return seat;
   } else {
     // Postflop, first to act is first non-absent, non-folded seat after dealer
@@ -105,11 +123,13 @@ export const getFirstActionSeat = (
     let attempts = 0;
     while (attempts < numSeats) {
       if (!absentSeats.includes(seat) && !hasSeatFolded(actionSequence, seat)) {
+        logFirstActionSeat(telemetryInputs, seat);
         return seat;
       }
       seat = (seat % numSeats) + 1;
       attempts++;
     }
+    logFirstActionSeat(telemetryInputs, 1);
     return 1; // Fallback
   }
 };

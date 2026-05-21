@@ -50,6 +50,13 @@ const FORBIDDEN_IMPORTS = [
   'utils/skillAssessment/',
   'hooks/useHeroLeaks',
   'hooks/useHeroLeakDetection',
+  // EAL Calibration Dashboard study surface (WS-169 / SPR-066, 2026-05-09).
+  // Per Gate 1 audit condition C3: study-mode calibration state must NEVER leak
+  // into live-table surfaces (AP-07). Anchor Library is a study surface and
+  // remains importable here; only CalibrationDashboardView + its dashboard
+  // hook are forbidden.
+  'CalibrationDashboardView',
+  'hooks/useCalibrationDashboard',
 ];
 
 const collectFiles = (rootDir, exts = ['.js', '.jsx']) => {

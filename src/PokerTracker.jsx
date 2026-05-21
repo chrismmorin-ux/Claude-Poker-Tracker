@@ -179,8 +179,8 @@ const ViewRouter = () => {
 
 const AppRoot = () => {
   const {
-    gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState, entitlementState, refresherState, anchorLibraryState,
-    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament, dispatchEntitlement, dispatchRefresher, dispatchAnchorLibrary,
+    gameState, uiState, cardState, sessionState, playerState, settingsState, authState, tournamentState, entitlementState, refresherState, anchorLibraryState, shapeMasteryState,
+    dispatchGame, dispatchUi, dispatchCard, dispatchSession, dispatchPlayer, dispatchSettings, dispatchAuth, dispatchTournament, dispatchEntitlement, dispatchRefresher, dispatchAnchorLibrary, dispatchShapeMastery,
   } = useAppState();
 
   const blinds = useMemo(
@@ -202,6 +202,7 @@ const AppRoot = () => {
       entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}
       refresherState={refresherState} dispatchRefresher={dispatchRefresher}
       anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}
+      shapeMasteryState={shapeMasteryState} dispatchShapeMastery={dispatchShapeMastery}
     >
       <UpdateBanner />
       <ViewRouter />

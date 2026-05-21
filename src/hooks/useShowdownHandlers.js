@@ -22,7 +22,7 @@ export const useShowdownHandlers = ({
   dispatchGame,
   isSeatInactive,
   actionSequence,
-  recordSeatAction,
+  recordShowdownAction,
   nextHand,
   numSeats,
   log,
@@ -140,7 +140,7 @@ export const useShowdownHandlers = ({
 
   // Handler: Mark seat as mucked and advance (auto-win on heads-up)
   const handleMuckSeat = useCallback((seat) => {
-    recordSeatAction(seat, ACTIONS.MUCKED);
+    recordShowdownAction(seat, ACTIONS.MUCKED);
 
     // HE-2c: After mucking, count remaining active seats (exclude just-mucked seat)
     const remaining = SEAT_ARRAY.filter(
@@ -148,12 +148,12 @@ export const useShowdownHandlers = ({
     );
     if (remaining.length === 1) {
       // Auto-mark last player as winner
-      recordSeatAction(remaining[0], ACTIONS.WON);
+      recordShowdownAction(remaining[0], ACTIONS.WON);
       log('Auto-win: Seat', remaining[0], '(last active after muck)');
     } else {
       advanceToNextActiveSeat(seat);
     }
-  }, [recordSeatAction, advanceToNextActiveSeat, isSeatInactive, actionSequence, log]);
+  }, [recordShowdownAction, advanceToNextActiveSeat, isSeatInactive, actionSequence, log]);
 
   // Handler: Mark seat as winner and auto-muck remaining opponents (14.2c).
   // AUDIT-2026-04-21-SDV F4: adds snapshot + toast+undo around the bulk WON+MUCKED
@@ -162,7 +162,7 @@ export const useShowdownHandlers = ({
   const handleWonSeat = useCallback((seat) => {
     const prevActionSequence = Array.isArray(actionSequence) ? [...actionSequence] : [];
 
-    recordSeatAction(seat, ACTIONS.WON);
+    recordShowdownAction(seat, ACTIONS.WON);
 
     // Auto-muck all other active seats (heads-up shortcut + multi-way cleanup)
     const remaining = SEAT_ARRAY.filter(
@@ -170,7 +170,7 @@ export const useShowdownHandlers = ({
     );
     if (remaining.length > 0) {
       remaining.forEach(s => {
-        recordSeatAction(s, ACTIONS.MUCKED);
+        recordShowdownAction(s, ACTIONS.MUCKED);
       });
       log('Auto-muck:', remaining.length, 'seat(s) after Won on S' + seat);
 
@@ -202,7 +202,7 @@ export const useShowdownHandlers = ({
       advanceToNextActiveSeat(seat);
     }
   }, [
-    recordSeatAction,
+    recordShowdownAction,
     advanceToNextActiveSeat,
     isSeatInactive,
     actionSequence,

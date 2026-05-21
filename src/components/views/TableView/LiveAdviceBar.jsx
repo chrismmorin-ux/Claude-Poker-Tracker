@@ -9,6 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ADVICE_COLORS } from '../../../constants/designTokens';
+import { LiveAnchorBadge } from './LiveAnchorBadge';
 
 const TEXTURE_LABEL = {
   wet: { text: 'wet', color: '#3b82f6' },
@@ -149,7 +150,18 @@ const deriveSimpleGuidance = (eq, fp, label) => {
   return null;
 };
 
-export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTreeAdvice, currentStreet }) => {
+export const LiveAdviceBar = ({
+  actionAdvice,
+  liveEquity,
+  boardTexture,
+  gameTreeAdvice,
+  currentStreet,
+  // Stream C — exploit anchor surface (Row 6 anchor-badge).
+  // Per `docs/design/surfaces/live-anchor-badge.md`. AP-07 hard floor.
+  liveAnchor = null,
+  currentHandId = null,
+  onAnchorTap,
+}) => {
   const [showFoldCurve, setShowFoldCurve] = useState(false);
   const [now, setNow] = useState(Date.now());
 
@@ -159,7 +171,10 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
     return () => clearInterval(id);
   }, []);
 
-  if (!actionAdvice && !liveEquity?.isComputing && !gameTreeAdvice) return null;
+  // Render-suppression gate: bar shows when ANY signal is live (advice,
+  // computing, game-tree, OR a matched anchor — anchor-only fires keep the
+  // bar visible per surface spec Row-6 placement convention).
+  if (!actionAdvice && !liveEquity?.isComputing && !gameTreeAdvice && !liveAnchor) return null;
 
   // When full game tree advice is available, use the top recommendation
   const topRec = gameTreeAdvice?.recommendations?.[0];
@@ -378,6 +393,13 @@ export const LiveAdviceBar = ({ actionAdvice, liveEquity, boardTexture, gameTree
             </div>
           )}
         </>
+      )}
+      {/* Row 6 — Stream C exploit anchor badge (per `surfaces/live-anchor-badge.md`).
+          Renders only when an authored archetype anchor matches the current line. */}
+      {liveAnchor && (
+        <div data-testid="live-advice-bar-row-anchor" style={{ marginTop: 3 }}>
+          <LiveAnchorBadge anchor={liveAnchor} handId={currentHandId} onTap={onAnchorTap} />
+        </div>
       )}
     </div>
   );

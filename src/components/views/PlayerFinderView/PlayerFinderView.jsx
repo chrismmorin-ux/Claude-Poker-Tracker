@@ -738,11 +738,27 @@ export const PlayerFinderView = ({ scale: _scale = 1 }) => {
       {/* CAMERA MODAL — production path. Persists via savePhotoAtomically
           (default) when an existing player is loaded; otherwise stashes
           the preview URL for live builder display until save creates the
-          player record (post-save photo binding is a follow-up). */}
+          player record (post-save photo binding is a follow-up).
+
+          Avatar render-chain (per WS-184 Bug E fix, SPR-076):
+            CameraCaptureModal save success
+              → onSaved(blobId, photoUrl) fires
+              → setCapturedPreviewUrl(photoUrl) updates local state
+              → IdentityAvatar above re-renders with photoOverlay=true
+                + photoUrl=<the in-memory blob URL of the just-saved photo>.
+            The blob is durable in IDB via savePhotoAtomically; the URL
+            here is the in-session preview so the avatar updates without
+            an IDB re-fetch round-trip. */}
       {cameraOpen ? (
         <CameraCaptureModal
           playerId={activeRecord?.playerId ?? 'live-builder'}
           onClose={closeCamera}
+          onSaved={activeRecord ? (_blobId, photoUrl) => {
+            setCapturedPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return photoUrl;
+            });
+          } : undefined}
           onAcceptOverride={!activeRecord ? async (blob, _previewUrl) => {
             // No record yet — stash a copy of the URL on the local state so
             // the live builder avatar shows the photo. The captured blob is

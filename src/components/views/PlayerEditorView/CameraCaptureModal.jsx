@@ -1,16 +1,17 @@
 /**
  * @file CameraCaptureModal — capture or upload a photo, manually crop, save.
  *
- * Three stages:
+ * Three stages (FSM-managed):
  *   1. SOURCE       — user picks Camera (capture=environment) or Upload
  *                     (no capture attribute, gallery + files).
- *   2. CROP         — react-easy-crop renders the chosen image with
+ *   2. PREPARING    — file picked; downscaling source to 1500×1500 max
+ *                     edge BEFORE the Cropper renders. Keeps memory
+ *                     pressure low on mobile (Galaxy A22, etc.) per
+ *                     WS-184 / SPR-076. Brief — usually 50-200ms.
+ *   3. CROPPING     — react-easy-crop renders the downscaled image with
  *                     pinch-to-zoom + drag-to-pan + zoom slider. User
- *                     positions the square crop window over the desired
- *                     face. Auto-detection isn't reliable across
- *                     orientation / lighting / multi-face shots, so manual
- *                     positioning is the load-bearing path.
- *   3. SAVE         — generateCroppedBlob renders the user's crop region
+ *                     positions the square crop window.
+ *   4. SAVING       — generateCroppedBlob renders the user's crop region
  *                     into a 512×512 JPEG. Either:
  *                       - savePhotoAtomically (production path, atomic
  *                         player + photo IDB write), OR
@@ -18,30 +19,94 @@
  *                         (prototype: stash for live-builder avatar without
  *                          IDB writes).
  *
- * Owner ask 2026-05-06: "We should have the modal, after taking the
- * picture, able to support the user zooming with a pinch or expand finger
- * motion, and draggable centering. … support uploading a photo, that the
- * user can then crop in the same way."
+ * FSM (WS-184 / SPR-076) — every transition is named; no silent stage
+ * changes. Each transition logs in dev. Replaces the prior 20-line
+ * imperative onAccept that held isSaving/stage/error in three useState
+ * hooks with no transition discipline (Bugs A-E).
+ *
+ * Owner ask 2026-05-06: pinch-zoom + draggable centering for both camera
+ * and upload sources.
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useReducer, useRef, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { Camera, Upload, X } from 'lucide-react';
 import { generateCroppedBlob } from '../../../utils/playerMatching/generateCroppedBlob';
+import { downscaleImageBlob } from '../../../utils/playerMatching/downscaleImageBlob';
 import { savePhotoAtomically } from '../../../utils/persistence/savePhotoAtomically';
+
+// Per WS-184 D2 ratification: bounding-box max edge for source-image
+// downscale at file-pick time. Keeps Cropper + crop-canvas memory
+// envelope predictable on mobile.
+const SOURCE_MAX_EDGE = 1500;
+
+// Per WS-184 D3 ratification: single user-facing copy for any failure in
+// the camera path. Steers user to in-modal recovery (Retake / Take photo)
+// with Upload mentioned only as a secondary option if it keeps failing.
+// Raw err.message goes to dev console only.
+const FAILURE_COPY = "Couldn't process this photo. Try again — if it keeps failing, you can also Upload from your gallery.";
+
+const STAGE = {
+  SOURCE: 'source',
+  PREPARING: 'preparing',
+  CROPPING: 'cropping',
+  SAVING: 'saving',
+};
+
+const INITIAL_STATE = {
+  stage: STAGE.SOURCE,
+  imageUrl: null,
+  error: null,
+};
+
+const isDev = (() => {
+  try { return !!import.meta.env?.DEV; } catch { return false; }
+})();
+
+const logTransition = (from, action) => {
+  if (isDev) {
+    // eslint-disable-next-line no-console
+    console.log('[CameraCaptureModal FSM]', from, '→', action.type);
+  }
+};
+
+const reducer = (state, action) => {
+  logTransition(state.stage, action);
+  switch (action.type) {
+    case 'SOURCE_FILE_PICKED':
+      return { stage: STAGE.PREPARING, imageUrl: null, error: null };
+    case 'DOWNSCALE_OK':
+      return { stage: STAGE.CROPPING, imageUrl: action.imageUrl, error: null };
+    case 'DOWNSCALE_FAIL':
+      // Stay on source stage — user can re-tap Take photo or Upload.
+      return { stage: STAGE.SOURCE, imageUrl: null, error: FAILURE_COPY };
+    case 'ACCEPT_TAPPED':
+      return { ...state, stage: STAGE.SAVING, error: null };
+    case 'SAVE_FAIL':
+      // Return to crop stage — user keeps their positioned crop and can
+      // Retake or re-tap Accept. Avoids losing their work on transient errors.
+      return { ...state, stage: STAGE.CROPPING, error: FAILURE_COPY };
+    case 'RETAKE':
+      return { stage: STAGE.SOURCE, imageUrl: null, error: null };
+    default:
+      return state;
+  }
+};
 
 export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverride }) => {
   const cameraInputRef = useRef(null);
   const uploadInputRef = useRef(null);
 
-  // Stages: 'source' (pick camera/upload), 'crop' (manual position), 'saving'.
-  const [stage, setStage] = useState('source');
-  const [imageUrl, setImageUrl] = useState(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [error, setError] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const { stage, imageUrl, error } = state;
+
+  // Cropper widget state stays as plain useState — react-easy-crop owns
+  // these and they're reset whenever a fresh source enters the cropping
+  // stage. Tracking them via the FSM would just shuffle data without any
+  // discipline win.
+  const [crop, setCrop] = React.useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = React.useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState(null);
 
   // Revoke any object URL we created on unmount or replacement.
   useEffect(() => {
@@ -54,21 +119,30 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
     setCroppedAreaPixels(areaPixels);
   }, []);
 
-  const onSourceFileSelected = (e) => {
+  const onSourceFileSelected = async (e) => {
     const file = e.target.files?.[0];
     if (!file) {
       // User dismissed picker without selecting — stay on source stage.
       return;
     }
-    setError(null);
-    if (imageUrl) URL.revokeObjectURL(imageUrl);
-    const url = URL.createObjectURL(file);
-    setImageUrl(url);
-    // Reset crop state for the new image.
+    dispatch({ type: 'SOURCE_FILE_PICKED' });
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
-    setStage('crop');
+
+    try {
+      // Per WS-184 D1 + D2: downscale BEFORE the Cropper renders the source.
+      // Keeps mobile memory under ~9MB even on 13MP sensor shots.
+      const downscaled = await downscaleImageBlob(file, SOURCE_MAX_EDGE);
+      const url = URL.createObjectURL(downscaled);
+      dispatch({ type: 'DOWNSCALE_OK', imageUrl: url });
+    } catch (err) {
+      if (isDev) {
+        // eslint-disable-next-line no-console
+        console.error('[CameraCaptureModal] downscale failed:', err);
+      }
+      dispatch({ type: 'DOWNSCALE_FAIL' });
+    }
   };
 
   const startCamera = () => {
@@ -86,40 +160,62 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
 
   const onRetake = () => {
     if (imageUrl) URL.revokeObjectURL(imageUrl);
-    setImageUrl(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
-    setStage('source');
-    setError(null);
+    dispatch({ type: 'RETAKE' });
   };
 
   const onAccept = async () => {
-    if (!imageUrl || !croppedAreaPixels) return;
-    setIsSaving(true);
-    setError(null);
+    // Belt + suspenders — the Accept button is disabled when the FSM
+    // isn't in CROPPING with croppedAreaPixels set. This guard exists
+    // so that if some future caller programmatically calls onAccept,
+    // it can't drop silently.
+    if (stage !== STAGE.CROPPING || !imageUrl || !croppedAreaPixels) {
+      if (isDev) {
+        // eslint-disable-next-line no-console
+        console.warn('[CameraCaptureModal] onAccept called from invalid state', { stage, hasImage: !!imageUrl, hasCrop: !!croppedAreaPixels });
+      }
+      return;
+    }
+    dispatch({ type: 'ACCEPT_TAPPED' });
     try {
       const blob = await generateCroppedBlob(imageUrl, croppedAreaPixels);
       if (onAcceptOverride) {
         // Prototype path — caller handles the blob (no IDB write).
         const previewUrl = URL.createObjectURL(blob);
         await onAcceptOverride(blob, previewUrl);
+        // Caller manages preview lifecycle. Close + unmount.
         onClose?.();
-      } else {
-        // Production path — atomic save + emit blobId.
-        const { blobId } = await savePhotoAtomically(playerId, blob);
-        onSaved?.(blobId);
+        return;
       }
+      // Production path — atomic save + emit blobId AND preview URL so the
+      // caller can update its avatar overlay without re-fetching the blob
+      // from IDB. This closes Bug E (avatar render-chain refresh): the
+      // chain is CameraCaptureModal → onSaved(blobId, photoUrl) →
+      // PlayerFinderView setCapturedPreviewUrl → IdentityAvatar
+      // photoOverlay re-render.
+      const { blobId } = await savePhotoAtomically(playerId, blob);
+      const photoUrl = URL.createObjectURL(blob);
+      onSaved?.(blobId, photoUrl);
+      onClose?.();
     } catch (err) {
-      setError(err?.message || 'Save failed');
-      setIsSaving(false);
+      if (isDev) {
+        // eslint-disable-next-line no-console
+        console.error('[CameraCaptureModal] save failed:', err);
+      }
+      dispatch({ type: 'SAVE_FAIL' });
     }
   };
+
+  const isSaving = stage === STAGE.SAVING;
+  const isPreparing = stage === STAGE.PREPARING;
 
   return (
     <div
       className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3"
       data-testid="camera-capture-modal"
+      data-fsm-stage={stage}
     >
       {/* Hidden inputs — fired programmatically. Camera input has
           capture='environment' (back camera on phones); upload input has
@@ -146,12 +242,12 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <h3 className="text-white text-base font-semibold">
-            {stage === 'source' ? 'Add photo' : 'Position the crop'}
+            {stage === STAGE.SOURCE ? 'Add photo' : 'Position the crop'}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            disabled={isSaving}
+            disabled={isSaving || isPreparing}
             className="text-gray-400 hover:text-white disabled:opacity-50 p-1"
             aria-label="Close"
             data-testid="camera-capture-close"
@@ -161,7 +257,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
         </div>
 
         {/* Body */}
-        {stage === 'source' ? (
+        {stage === STAGE.SOURCE || stage === STAGE.PREPARING ? (
           <div className="px-4 py-6 flex flex-col gap-3" data-testid="camera-capture-stage-source">
             <p className="text-sm text-gray-400 mb-1">
               Take a new photo or upload one from your gallery. You'll be
@@ -170,16 +266,18 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
             <button
               type="button"
               onClick={startCamera}
-              className="flex items-center justify-center gap-2 bg-cyan-700 hover:bg-cyan-600 text-white font-semibold rounded-lg py-3 min-h-[48px]"
+              disabled={isPreparing}
+              className="flex items-center justify-center gap-2 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white font-semibold rounded-lg py-3 min-h-[48px]"
               data-testid="camera-capture-take"
             >
               <Camera size={18} />
-              Take photo
+              {isPreparing ? 'Preparing…' : 'Take photo'}
             </button>
             <button
               type="button"
               onClick={startUpload}
-              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-gray-100 font-semibold rounded-lg py-3 min-h-[48px]"
+              disabled={isPreparing}
+              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-600 text-gray-100 font-semibold rounded-lg py-3 min-h-[48px]"
               data-testid="camera-upload"
             >
               <Upload size={18} />
@@ -188,7 +286,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
           </div>
         ) : null}
 
-        {stage === 'crop' && imageUrl ? (
+        {(stage === STAGE.CROPPING || stage === STAGE.SAVING) && imageUrl ? (
           <div className="flex flex-col" data-testid="camera-capture-stage-crop">
             {/* Crop surface — fixed-aspect square via aspect ratio 1; the
                 crop area is fixed in viewport, image moves under it via
@@ -225,6 +323,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
                   className="flex-1 accent-amber-500"
                   data-testid="camera-capture-zoom-slider"
                   aria-label="Zoom"
+                  disabled={isSaving}
                 />
                 <span className="text-[11px] text-gray-400 w-10 text-right tabular-nums">
                   {zoom.toFixed(2)}×
@@ -239,8 +338,9 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
 
         {error ? (
           <div
-            className="text-red-400 text-xs mx-4 my-2 px-3 py-2 bg-red-900/30 border border-red-700/50 rounded"
+            className="text-red-300 text-xs mx-4 my-2 px-3 py-2 bg-red-900/30 border border-red-700/50 rounded"
             data-testid="camera-capture-error"
+            role="alert"
           >
             {error}
           </div>
@@ -248,7 +348,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
 
         {/* Footer actions */}
         <div className="flex gap-2 justify-end px-4 py-3 border-t border-slate-700">
-          {stage === 'crop' ? (
+          {stage === STAGE.CROPPING || stage === STAGE.SAVING ? (
             <>
               <button
                 type="button"
@@ -273,7 +373,8 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
             <button
               type="button"
               onClick={onClose}
-              className="bg-slate-800 hover:bg-slate-700 text-gray-300 text-sm font-semibold px-4 py-2 rounded-md min-h-[44px]"
+              disabled={isPreparing}
+              className="bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-gray-300 text-sm font-semibold px-4 py-2 rounded-md min-h-[44px]"
               data-testid="camera-capture-cancel"
             >
               Cancel

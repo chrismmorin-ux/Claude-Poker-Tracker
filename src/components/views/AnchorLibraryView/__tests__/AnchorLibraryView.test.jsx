@@ -20,6 +20,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 let mockAnchorLibrary;
 let mockSession;
 let mockSetCurrentScreen;
+let mockOpenCalibrationDashboard;
 let mockView;
 let mockToggleFilter;
 let mockSetSort;
@@ -39,7 +40,10 @@ vi.mock('../../../../contexts/AnchorLibraryContext', () => ({
 }));
 
 vi.mock('../../../../contexts', () => ({
-  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen }),
+  useUI: () => ({
+    setCurrentScreen: mockSetCurrentScreen,
+    openCalibrationDashboard: mockOpenCalibrationDashboard,
+  }),
   useSession: () => mockSession,
 }));
 
@@ -103,6 +107,7 @@ const makeAnchor = (overrides = {}) => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockSetCurrentScreen = vi.fn();
+  mockOpenCalibrationDashboard = vi.fn();
   mockToggleFilter = vi.fn();
   mockSetSort = vi.fn();
   mockClearFilters = vi.fn();
@@ -546,13 +551,14 @@ describe('AnchorLibraryView — S20 expansion + tooltip wiring', () => {
     expect(mockDispatchAnchorLibrary).toHaveBeenCalledTimes(1);
   });
 
-  it('Deep-link to Calibration Dashboard still fires showInfo toast (no modal)', () => {
+  it('Deep-link to Calibration Dashboard navigates with anchorId payload (SPR-066 — no longer a toast stub)', () => {
     seedOneAnchor();
     mockExpandedCardIds = new Set(['anchor:test:1']);
     render(<AnchorLibraryView />);
     fireEvent.click(screen.getByTestId('panel-deep-link-dashboard'));
-    expect(mockShowInfo).toHaveBeenCalledTimes(1);
-    expect(mockShowInfo.mock.calls[0][0]).toMatch(/Calibration Dashboard/);
+    expect(mockOpenCalibrationDashboard).toHaveBeenCalledTimes(1);
+    expect(mockOpenCalibrationDashboard).toHaveBeenCalledWith('anchor:test:1', 'anchorLibrary');
+    expect(mockShowInfo).not.toHaveBeenCalled();
     expect(screen.queryByTestId('retirement-modal')).toBeNull();
   });
 });

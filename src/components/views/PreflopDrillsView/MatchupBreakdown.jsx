@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { EquityDecompositionPanel } from './EquityDecompositionPanel';
+import { formatPercentGroup } from '../../../utils/pokerCore/percentGroup';
 
 /**
  * MatchupBreakdown — shared panel showing exact equity and framework
@@ -43,6 +44,12 @@ export const MatchupBreakdown = ({
   }
 
   const equityPct = (n) => `${(n * 100).toFixed(1)}%`;
+  // Partition (win/tie/lose) — force display sum to 100 via largest-remainder
+  // rounding per WS-185. Bucket classification ratified 2026-05-12.
+  const winTieLosePcts = formatPercentGroup(
+    [result.winRate, result.tieRate, result.loseRate],
+    1,
+  );
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 min-h-[400px]">
@@ -59,10 +66,28 @@ export const MatchupBreakdown = ({
           <div className="text-6xl font-bold text-emerald-400 mb-2">
             {equityPct(result.equity)}
           </div>
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <Stat label={`${handALabel} wins`} value={equityPct(result.winRate)} color="text-emerald-300" />
-            <Stat label="Tie" value={equityPct(result.tieRate)} color="text-gray-300" />
-            <Stat label={`${handBLabel} wins`} value={equityPct(result.loseRate)} color="text-rose-300" />
+          <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-1.5">
+            Outcome breakdown <span className="text-gray-600 normal-case tracking-normal">(sums to 100%)</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-6" data-testid="matchup-win-tie-lose-partition">
+            <Stat
+              label={`${handALabel} wins`}
+              value={`${winTieLosePcts[0]}%`}
+              color="text-emerald-300"
+              testId="matchup-pct-win"
+            />
+            <Stat
+              label="Tie"
+              value={`${winTieLosePcts[1]}%`}
+              color="text-gray-300"
+              testId="matchup-pct-tie"
+            />
+            <Stat
+              label={`${handBLabel} wins`}
+              value={`${winTieLosePcts[2]}%`}
+              color="text-rose-300"
+              testId="matchup-pct-lose"
+            />
           </div>
         </>
       )}
@@ -111,10 +136,12 @@ export const MatchupBreakdown = ({
   );
 };
 
-const Stat = ({ label, value, color }) => (
+const Stat = ({ label, value, color, testId }) => (
   <div className="bg-gray-900/60 rounded px-3 py-2">
     <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-    <div className={`text-lg font-semibold ${color}`}>{value}</div>
+    <div className={`text-lg font-semibold ${color}`} data-testid={testId}>
+      {value}
+    </div>
   </div>
 );
 

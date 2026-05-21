@@ -71,10 +71,26 @@ export const updateProfileFromActions = (profile, extractions) => {
     );
   }
 
-  // 3. Apply showdown anchors and count showdowns
+  // 3. Apply showdown anchors and count showdowns.
+  //
+  // Update gating policy (RANGE_ENGINE_DESIGN.md §4.5; ratified WS-175 / SPR-067):
+  // every showdown reveal applies an anchor on every buildRangeProfile call.
+  // The architecture is stateless full-rebuild — there is no incremental write
+  // queue to batch against. The 'every showdown' policy was chosen explicitly
+  // over batch / N-threshold variants because (a) showdowns are sparse and
+  // already gated by reaching the river, (b) the count-cache skip pattern in
+  // usePlayerTendencies handles recompute-thrash, (c) batching contradicts
+  // the live-HUD freshness contract.
   for (const ext of extractions) {
     if (ext.showdownIndex !== null) {
-      applyShowdownAnchor(profile, ext.position, ext.rangeAction, ext.showdownIndex, ext.showdownOutcome);
+      applyShowdownAnchor(
+        profile,
+        ext.position,
+        ext.rangeAction,
+        ext.showdownIndex,
+        ext.showdownOutcome,
+        ext.revealMechanism || 'showdown'
+      );
       profile.opportunities[ext.position].showdownsSeen++;
     }
   }
@@ -133,13 +149,21 @@ const updateScenarioRanges = (ranges, counts, actions, popFreqs, totalObserved, 
  * other Ax suited, other Kx suited (same high/low card combos).
  * Does NOT boost arbitrary grid neighbors — only semantically related hands.
  *
+ * FM-SEL-01 disposition (RANGE_ENGINE_DESIGN.md §4.5; ratified WS-175 / SPR-067):
+ * showdown selection bias (MNAR) is ACCEPTED with observability rails — the
+ * `revealMechanism` field is recorded on every anchor so future calibration
+ * (when distinguishable mechanisms are extracted) can apply mechanism-aware
+ * boost-magnitude correction without a schema change. Boost magnitudes are
+ * NOT reduced today (no math change); the field exists as a hook.
+ *
  * @param {Object} profile - Range profile (mutated)
  * @param {string} position
  * @param {string} action
  * @param {number} handGridIndex - 0-168 grid index
  * @param {string|null} outcome - 'won', 'lost', or null (backward compat)
+ * @param {string} revealMechanism - 'showdown' | 'mucked-shown' | 'all-in-runout' | 'inferred-from-fold' (default 'showdown')
  */
-export const applyShowdownAnchor = (profile, position, action, handGridIndex, outcome = null) => {
+export const applyShowdownAnchor = (profile, position, action, handGridIndex, outcome = null, revealMechanism = 'showdown') => {
   if (!profile.ranges[position] || !profile.ranges[position][action]) return;
 
   const range = profile.ranges[position][action];
@@ -180,12 +204,15 @@ export const applyShowdownAnchor = (profile, position, action, handGridIndex, ou
     }
   }
 
-  // Record the anchor
+  // Record the anchor (revealMechanism is the FM-SEL-01 observability rail —
+  // every recorded mechanism today is 'showdown' but the field is reserved
+  // for future distinguishability per RANGE_ENGINE_DESIGN.md §4.5).
   profile.showdownAnchors.push({
     position,
     action,
     handIndex: handGridIndex,
     outcome,
+    revealMechanism,
   });
 };
 

@@ -17,7 +17,13 @@ import { rangeIndex } from '../pokerCore/rangeMatrix';
  * Extract a single player's preflop action from one hand.
  * @param {number|string} playerId
  * @param {Object} hand - Hand record from DB
- * @returns {{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null, showdownOutcome: string|null } | null}
+ * @returns {{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null, showdownOutcome: string|null, revealMechanism: string|null } | null}
+ *
+ * `revealMechanism` is currently 'showdown' (when showdownIndex !== null) or null.
+ * Reserved values per RANGE_ENGINE_DESIGN.md §4.5: 'showdown' | 'mucked-shown' |
+ * 'all-in-runout' | 'inferred-from-fold'. The current extractor cannot
+ * distinguish voluntary showdown from mucked-shown / all-in-runout / inference;
+ * default to 'showdown' as the observability rail for FM-SEL-01.
  */
 export const extractPreflopAction = (playerId, hand) => {
   const seat = findPlayerSeat(playerId, hand);
@@ -34,7 +40,7 @@ export const extractPreflopAction = (playerId, hand) => {
   const playerActions = preflopActions.filter(e => e.seat === seat);
   if (playerActions.length === 0) {
     // Player was in hand but took no action — treat as fold
-    return { position, rangeAction: 'fold', facedRaise: false, showdownIndex: null, showdownOutcome: null };
+    return { position, rangeAction: 'fold', facedRaise: false, showdownIndex: null, showdownOutcome: null, revealMechanism: null };
   }
 
   const firstAction = playerActions[0].action;
@@ -89,14 +95,20 @@ export const extractPreflopAction = (playerId, hand) => {
     }
   }
 
-  return { position, rangeAction, facedRaise, showdownIndex, showdownOutcome };
+  // Reveal mechanism (FM-SEL-01 observability rail). Today: any non-null
+  // showdownIndex is treated as 'showdown'. Future extractors may refine
+  // to 'mucked-shown' / 'all-in-runout' / 'inferred-from-fold' when the
+  // hand record carries enough provenance to distinguish.
+  const revealMechanism = showdownIndex !== null ? 'showdown' : null;
+
+  return { position, rangeAction, facedRaise, showdownIndex, showdownOutcome, revealMechanism };
 };
 
 /**
  * Extract preflop actions for a player across all hands.
  * @param {number|string} playerId
  * @param {Object[]} hands - Array of hand records
- * @returns {Array<{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null }>}
+ * @returns {Array<{ position: string, rangeAction: string, facedRaise: boolean, showdownIndex: number|null, showdownOutcome: string|null, revealMechanism: string|null }>}
  */
 export const extractAllActions = (playerId, hands) => {
   const results = [];

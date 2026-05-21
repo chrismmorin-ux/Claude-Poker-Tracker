@@ -22,6 +22,7 @@ import {
   useResponsiveBreakpoint,
   p2ColumnModeForBreakpoint,
 } from './useResponsiveBreakpoint';
+import { formatPercentGroup } from '../../../../utils/pokerCore/percentGroup';
 
 const formatEV = (ev) => {
   if (!Number.isFinite(ev)) return '—';
@@ -64,25 +65,41 @@ const DetailTable = ({ decomposition, actionEVs }) => {
   const otherIdSet = new Set(otherIds);
   const selectedIdSet = new Set(selected.map((g) => g.groupId));
 
+  // Partition: [selected[0..N].weightPct, otherWeight] sum to 100% of villain
+  // range. Format as one group so the row sums to exactly 100.0 (WS-185).
+  const headerPartitionRaw = [...selected.map((g) => g.weightPct), otherWeight];
+  const headerPartitionPcts = formatPercentGroup(headerPartitionRaw, 1);
+  const selectedPcts = headerPartitionPcts.slice(0, selected.length);
+  const otherPct = headerPartitionPcts[selected.length];
+
   return (
     <div className="overflow-x-auto rounded border border-gray-800">
+      <div className="px-2 py-1 text-[9px] uppercase tracking-wide text-gray-500 border-b border-gray-800/70">
+        Range partition <span className="text-gray-600 normal-case tracking-normal">(sums to 100%)</span>
+      </div>
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-gray-900/60 text-gray-400">
             <th className="text-left px-2 py-1.5 font-medium">Action</th>
-            {selected.map((g) => (
+            {selected.map((g, i) => (
               <th key={g.groupId} className="text-right px-2 py-1.5 font-medium whitespace-nowrap">
                 <BucketLabel labelId={g.groupId} variant="table-header" />
-                <div className="text-[9px] text-gray-500 font-normal mt-0.5">
-                  {g.weightPct.toFixed(1)}%
+                <div
+                  className="text-[9px] text-gray-500 font-normal mt-0.5"
+                  data-testid={`wtt-detail-pct-${g.groupId}`}
+                >
+                  {selectedPcts[i]}%
                 </div>
               </th>
             ))}
             {otherIds.length > 0 && (
               <th className="text-right px-2 py-1.5 font-medium whitespace-nowrap">
                 Other (+{otherIds.length})
-                <div className="text-[9px] text-gray-500 font-normal mt-0.5">
-                  {otherWeight.toFixed(1)}%
+                <div
+                  className="text-[9px] text-gray-500 font-normal mt-0.5"
+                  data-testid="wtt-detail-pct-other"
+                >
+                  {otherPct}%
                 </div>
               </th>
             )}
@@ -140,24 +157,33 @@ const AggregatedTable = ({ decomposition, actionEVs }) => {
   const beatsWeight = decomposition.filter((g) => beatsIds.has(g.groupId)).reduce((s, g) => s + g.weightPct, 0);
   const paysWeight = decomposition.filter((g) => paysIds.has(g.groupId)).reduce((s, g) => s + g.weightPct, 0);
   const otherWeight = decomposition.filter((g) => otherIds.has(g.groupId)).reduce((s, g) => s + g.weightPct, 0);
+  // Partition (beats / pays / other) sums to 100% of villain range — format
+  // as one group so the displayed pcts sum to exactly 100.0 (WS-185).
+  const [beatsPct, paysPct, otherPct] = formatPercentGroup(
+    [beatsWeight, paysWeight, otherWeight],
+    1,
+  );
 
   return (
     <div className="overflow-hidden rounded border border-gray-800">
+      <div className="px-2 py-1 text-[9px] uppercase tracking-wide text-gray-500 border-b border-gray-800/70">
+        Range partition <span className="text-gray-600 normal-case tracking-normal">(sums to 100%)</span>
+      </div>
       <table className="w-full text-xs">
         <thead>
           <tr className="bg-gray-900/60 text-gray-400">
             <th className="text-left px-2 py-1.5 font-medium">Action</th>
             <th className="text-right px-2 py-1.5 font-medium">
               Beats you
-              <div className="text-[9px] text-gray-500 font-normal">{beatsWeight.toFixed(1)}%</div>
+              <div className="text-[9px] text-gray-500 font-normal" data-testid="wtt-agg-pct-beats">{beatsPct}%</div>
             </th>
             <th className="text-right px-2 py-1.5 font-medium">
               Pays you
-              <div className="text-[9px] text-gray-500 font-normal">{paysWeight.toFixed(1)}%</div>
+              <div className="text-[9px] text-gray-500 font-normal" data-testid="wtt-agg-pct-pays">{paysPct}%</div>
             </th>
             <th className="text-right px-2 py-1.5 font-medium">
               Other
-              <div className="text-[9px] text-gray-500 font-normal">{otherWeight.toFixed(1)}%</div>
+              <div className="text-[9px] text-gray-500 font-normal" data-testid="wtt-agg-pct-other">{otherPct}%</div>
             </th>
             <th className="text-right px-2 py-1.5 font-medium text-teal-300">Total EV</th>
           </tr>

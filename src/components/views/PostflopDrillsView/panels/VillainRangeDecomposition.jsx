@@ -22,18 +22,19 @@
  * reweighted.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BucketLabel } from './BucketLabel';
 import {
   useResponsiveBreakpoint,
   p1RowCapForBreakpoint,
 } from './useResponsiveBreakpoint';
 import { RELATION_STYLE } from './panelHelpers';
+import { formatPercentGroup } from '../../../../utils/pokerCore/percentGroup';
 
 const VALUE_RELATIONS = new Set(['crushed', 'dominated']);
 const BLUFF_RELATIONS = new Set(['favored', 'dominating']);
 
-const DecompositionRow = ({ row }) => {
+const DecompositionRow = ({ row, formattedWeightPct }) => {
   const style = RELATION_STYLE[row.relation] || RELATION_STYLE.neutral;
   return (
     <div className="flex items-center justify-between gap-3 text-[11px] py-1.5 border-b border-gray-800/50 last:border-b-0">
@@ -48,31 +49,39 @@ const DecompositionRow = ({ row }) => {
         </span>
       </div>
       <div className="flex items-center gap-4 text-gray-500 font-mono flex-1 justify-end">
-        <span>{row.weightPct.toFixed(1)}%</span>
+        <span data-testid={`vrd-weight-pct-${row.groupId}`}>{formattedWeightPct}%</span>
         <span className={style.color}>{(row.heroEquity * 100).toFixed(0)}% eq</span>
       </div>
     </div>
   );
 };
 
-const SectionHeader = ({ label, sub, weightPct, accentClass = 'text-gray-400' }) => (
+const SectionHeader = ({ label, sub, formattedWeightPct, testId, accentClass = 'text-gray-400' }) => (
   <div className={`flex items-baseline justify-between pt-1 pb-0.5 text-[10px] uppercase tracking-wide font-semibold ${accentClass}`}>
     <span>
       {label}
       {sub && <span className="ml-1.5 text-gray-500 normal-case tracking-normal">{sub}</span>}
     </span>
-    {typeof weightPct === 'number' && (
-      <span className="font-mono normal-case tracking-normal">{weightPct.toFixed(1)}% of range</span>
+    {formattedWeightPct != null && (
+      <span className="font-mono normal-case tracking-normal" data-testid={testId}>
+        {formattedWeightPct}% of range
+      </span>
     )}
   </div>
 );
 
-const renderStandard = ({ rows, rowCap, expanded, setExpanded }) => {
+const renderStandard = ({ rows, formattedRowPcts, rowCap, expanded, setExpanded }) => {
   const visibleRows = expanded ? rows : rows.slice(0, rowCap);
   const overflow = rows.length - visibleRows.length;
   return (
     <>
-      {visibleRows.map((row) => <DecompositionRow key={row.groupId} row={row} />)}
+      {visibleRows.map((row, i) => (
+        <DecompositionRow
+          key={row.groupId}
+          row={row}
+          formattedWeightPct={formattedRowPcts[i]}
+        />
+      ))}
       {overflow > 0 && !expanded && (
         <button
           type="button"
@@ -86,36 +95,47 @@ const renderStandard = ({ rows, rowCap, expanded, setExpanded }) => {
   );
 };
 
-const renderPolar = ({ rows, labels, valueFilter, bluffFilter }) => {
+const renderPolar = ({ rows, formattedRowPctByGroupId, labels, valueFilter, bluffFilter, formattedSubtotals }) => {
   const valueRows = rows.filter((r) => valueFilter.has(r.relation));
   const bluffRows = rows.filter((r) => bluffFilter.has(r.relation));
   const neutralRows = rows.filter(
     (r) => !valueFilter.has(r.relation) && !bluffFilter.has(r.relation)
   );
-  const valueW = valueRows.reduce((s, r) => s + r.weightPct, 0);
-  const bluffW = bluffRows.reduce((s, r) => s + r.weightPct, 0);
-  const neutralW = neutralRows.reduce((s, r) => s + r.weightPct, 0);
 
   return (
     <>
       <SectionHeader
         label={labels.value}
         sub="(villain beats you)"
-        weightPct={valueW}
+        formattedWeightPct={formattedSubtotals.value}
+        testId="vrd-subtotal-value"
         accentClass="text-rose-300"
       />
       {valueRows.length > 0
-        ? valueRows.map((row) => <DecompositionRow key={row.groupId} row={row} />)
+        ? valueRows.map((row) => (
+            <DecompositionRow
+              key={row.groupId}
+              row={row}
+              formattedWeightPct={formattedRowPctByGroupId[row.groupId]}
+            />
+          ))
         : <div className="text-[11px] text-gray-500 italic py-1">none in this range</div>}
 
       <SectionHeader
         label={labels.bluff}
         sub="(you beat)"
-        weightPct={bluffW}
+        formattedWeightPct={formattedSubtotals.bluff}
+        testId="vrd-subtotal-bluff"
         accentClass="text-teal-300"
       />
       {bluffRows.length > 0
-        ? bluffRows.map((row) => <DecompositionRow key={row.groupId} row={row} />)
+        ? bluffRows.map((row) => (
+            <DecompositionRow
+              key={row.groupId}
+              row={row}
+              formattedWeightPct={formattedRowPctByGroupId[row.groupId]}
+            />
+          ))
         : <div className="text-[11px] text-gray-500 italic py-1">none in this range</div>}
 
       {neutralRows.length > 0 && (
@@ -123,10 +143,17 @@ const renderPolar = ({ rows, labels, valueFilter, bluffFilter }) => {
           <SectionHeader
             label="Close"
             sub="(roughly coin-flip)"
-            weightPct={neutralW}
+            formattedWeightPct={formattedSubtotals.neutral}
+            testId="vrd-subtotal-neutral"
             accentClass="text-amber-300"
           />
-          {neutralRows.map((row) => <DecompositionRow key={row.groupId} row={row} />)}
+          {neutralRows.map((row) => (
+            <DecompositionRow
+              key={row.groupId}
+              row={row}
+              formattedWeightPct={formattedRowPctByGroupId[row.groupId]}
+            />
+          ))}
         </>
       )}
     </>
@@ -148,6 +175,41 @@ export const VillainRangeDecomposition = ({
   const rowCap = p1RowCapForBreakpoint(bp);
   const [expanded, setExpanded] = useState(false);
 
+  // Compute formatted partition pct strings ONCE for the full row set so
+  // the displayed values sum to exactly 100 — per WS-185. Rows that are
+  // clipped by the row cap still render their share of the full partition.
+  const formattedRowPcts = useMemo(
+    () => {
+      if (!Array.isArray(decomposition) || decomposition.length === 0) return [];
+      return formatPercentGroup(decomposition.map((r) => r.weightPct), 1);
+    },
+    [decomposition],
+  );
+  const formattedRowPctByGroupId = useMemo(() => {
+    const map = {};
+    decomposition.forEach((r, i) => { map[r.groupId] = formattedRowPcts[i]; });
+    return map;
+  }, [decomposition, formattedRowPcts]);
+
+  // Polar subtotals: compute group sums in raw units, then format as a 3-way
+  // partition so the three header subtotals sum to exactly 100.
+  const formattedSubtotals = useMemo(() => {
+    if (!Array.isArray(decomposition) || decomposition.length === 0) {
+      return { value: '0.0', bluff: '0.0', neutral: '0.0' };
+    }
+    const valueW = decomposition
+      .filter((r) => VALUE_RELATIONS.has(r.relation))
+      .reduce((s, r) => s + r.weightPct, 0);
+    const bluffW = decomposition
+      .filter((r) => BLUFF_RELATIONS.has(r.relation))
+      .reduce((s, r) => s + r.weightPct, 0);
+    const neutralW = decomposition
+      .filter((r) => !VALUE_RELATIONS.has(r.relation) && !BLUFF_RELATIONS.has(r.relation))
+      .reduce((s, r) => s + r.weightPct, 0);
+    const [value, bluff, neutral] = formatPercentGroup([valueW, bluffW, neutralW], 1);
+    return { value, bluff, neutral };
+  }, [decomposition]);
+
   if (!Array.isArray(decomposition) || decomposition.length === 0) {
     return (
       <div className="rounded border border-gray-800 bg-gray-900/30 px-3 py-2 text-[11px] text-gray-500 italic">
@@ -161,7 +223,8 @@ export const VillainRangeDecomposition = ({
       <div className="flex items-baseline justify-between pb-1 border-b border-gray-800/70">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-teal-300/90">
-            Villain's range vs you
+            Villain's range vs you{' '}
+            <span className="text-gray-500 normal-case tracking-normal">(sums to 100%)</span>
           </div>
           <div className="text-[10px] text-gray-500 mt-0.5">
             Weight% is base-range — unaffected by archetype · Equity and fold rates shift with archetype
@@ -174,20 +237,25 @@ export const VillainRangeDecomposition = ({
 
       {decisionKind === 'bluff-catch' && renderPolar({
         rows: decomposition,
+        formattedRowPctByGroupId,
         labels: { value: 'Value region', bluff: 'Bluff region' },
         valueFilter: VALUE_RELATIONS,
         bluffFilter: BLUFF_RELATIONS,
+        formattedSubtotals,
       })}
 
       {decisionKind === 'thin-value' && renderPolar({
         rows: decomposition,
+        formattedRowPctByGroupId,
         labels: { value: 'Hands that beat you', bluff: 'Hands that pay you' },
         valueFilter: VALUE_RELATIONS,
         bluffFilter: BLUFF_RELATIONS,
+        formattedSubtotals,
       })}
 
       {(decisionKind === 'standard' || !['bluff-catch', 'thin-value'].includes(decisionKind)) && renderStandard({
         rows: decomposition,
+        formattedRowPcts,
         rowCap,
         expanded,
         setExpanded,

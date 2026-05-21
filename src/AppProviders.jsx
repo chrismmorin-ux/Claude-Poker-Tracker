@@ -28,9 +28,11 @@ import {
   EntitlementProvider,
   RefresherProvider,
   AnchorLibraryProvider,
+  ShapeMasteryProvider,
 } from './contexts';
 import { AssumptionProvider } from './contexts/AssumptionContext';
 import { manifests as refresherCardRegistry } from './utils/printableRefresher/cardRegistry';
+import { EngineCtxBridge } from './components/EngineCtxBridge';
 
 /**
  * AppProviders - Wraps children in all context providers
@@ -79,11 +81,26 @@ export const AppProviders = ({
   // EAL Phase 6 Stream D B3 (S14) — exploit anchor library state.
   anchorLibraryState,
   dispatchAnchorLibrary,
+  // SLS Stream D (SPR-081 / WS-040) — shape language mastery state.
+  shapeMasteryState,
+  dispatchShapeMastery,
+  // PMC Phase 5a-2 (WS-178) — engine-context bridge ref. Populated by
+  // <EngineCtxBridge/> below; read by usePersistence at hand-save time.
+  engineCtxGetterRef,
 }) => (
   <ToastProvider>
     <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
       <EntitlementProvider entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}>
-        <AnchorLibraryProvider anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}>
+        <AnchorLibraryProvider
+          anchorLibraryState={anchorLibraryState}
+          dispatchAnchorLibrary={dispatchAnchorLibrary}
+          currentSessionId={sessionState?.currentSession?.sessionId ?? null}
+          currentSessionEndTime={sessionState?.currentSession?.endTime ?? null}
+        >
+        <ShapeMasteryProvider
+          shapeMasteryState={shapeMasteryState}
+          dispatchShapeMastery={dispatchShapeMastery}
+        >
         <RefresherProvider
           refresherState={refresherState}
           dispatchRefresher={dispatchRefresher}
@@ -95,6 +112,7 @@ export const AppProviders = ({
                 <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
                   <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
                     <TendencyProvider>
+                      <EngineCtxBridge engineCtxGetterRef={engineCtxGetterRef} />
                       <AssumptionProvider>
                       <SyncBridgeProvider>
                         <CardProvider cardState={cardState} dispatchCard={dispatchCard}>
@@ -119,6 +137,7 @@ export const AppProviders = ({
             </UIProvider>
           </GameProvider>
         </RefresherProvider>
+        </ShapeMasteryProvider>
         </AnchorLibraryProvider>
       </EntitlementProvider>
     </AuthProvider>

@@ -71,10 +71,12 @@ export const ShowdownView = ({ scale }) => {
   const { getSeatPlayerName } = usePlayer();
 
   // Game handlers for shared logic
+  // WS-182: recordShowdownAction (formerly recordSeatAction) records
+  // MUCKED/WON; recordSeatAction now belongs to the betting funnel.
   const {
     isSeatInactive,
     allCardsAssigned,
-    recordSeatAction,
+    recordShowdownAction,
     nextHand,
   } = useGameHandlers();
 
@@ -94,7 +96,7 @@ export const ShowdownView = ({ scale }) => {
     dispatchGame,
     isSeatInactive,
     actionSequence,
-    recordSeatAction,
+    recordShowdownAction,
     nextHand,
     numSeats: LIMITS.NUM_SEATS,
     log: (...args) => console.debug('[Showdown]', ...args),

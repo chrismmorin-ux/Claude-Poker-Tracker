@@ -55,6 +55,9 @@ Our priors are POPULATION priors, not GTO. A typical 1/2 player limps small pair
 ### DO NOT treat observation counts as confidence directly
 5 observations with 2 showdowns is MORE informative than 15 observations with 0 showdowns. Showdowns affect range weights via anchoring (setting weight to 1.0 with semantic boosting), providing stronger evidence than frequency observations alone. See `RANGE_ENGINE_DESIGN.md` §4.6.
 
+### DO NOT narrow ranges by bucket label (AP-RL-01)
+Range-narrowing decisions (how villain's range shrinks turn → river given a betting line) MUST be computed per-combo — equity update conditional on villain's action profile + board card — NOT from bucket-label heuristics like `if (combo.bucket >= TPGK_BUCKET)` or `POP_NARROWING_RATES[bucket]`. Bucket-keyed narrowing hides per-combo variance, which is the entire value of DS-54 multi-street range evolution. The doctrine generalizes to any range-narrowing code in the codebase, not just Range Lab. Full doctrine: [`POKER_THEORY.md §7.6 (AP-RL-01)`](../../../.claude/context/POKER_THEORY.md#76-range-narrowing-per-combo-derivation-not-bucket-heuristics-ap-rl-01).
+
 ## Key Concepts
 
 ### Population Priors

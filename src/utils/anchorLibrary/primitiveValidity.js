@@ -24,9 +24,10 @@
  *    perceptionPrimitiveIds includes this.id)`. Recomputed on every anchor write
  *    (caller responsibility); this module exposes the pure rebuild helper.
  *
- * Beta math is **module-local** (no import from `exploitEngine/bayesianConfidence`)
- * to avoid the I-AE-CIRC-1 inheritance from `assumptionEngine/CLAUDE.md` (anchor
- * library does not depend on exploit engine).
+ * Beta math is delegated to `decisionSystems/accumulator/betaPosterior.js` (SPR-078
+ * extraction, 2026-05-14). The CLAUDE.md rule "Beta math is module-local (no
+ * import from exploitEngine/bayesianConfidence)" still holds — `decisionSystems/`
+ * is a NEW shared-infrastructure layer at `src/utils/`, NOT exploitEngine.
  *
  * Pure module — no IO, no side effects. Returns updated records; caller writes.
  *
@@ -37,6 +38,9 @@
  * which makes invalidation harder to fire — conservative direction. Phase 6+
  * may swap to exact Beta CDF if precision becomes load-bearing.
  */
+
+import { credibleInterval } from '../decisionSystems/accumulator/betaPosterior';
+import { createAccumulator } from '../decisionSystems/accumulator/createAccumulator';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Constants
@@ -56,13 +60,6 @@ export const PRIMITIVE_LOAD_BEARING_THRESHOLD = 0.5;
  * schema-delta §3.3.1 the default is 0.85.
  */
 export const DEFAULT_PENALTY_FACTOR = 0.85;
-
-/**
- * Z-score for 95% credible interval (two-tailed). Used by the normal-approximation
- * CI computation. Hardcoded for the v1 schema (validityScore.credibleInterval.level
- * is always 0.95 per schema-delta §3.3).
- */
-const Z_95 = 1.959963984540054;
 
 // ───────────────────────────────────────────────────────────────────────────
 // Public API — Beta-posterior update
@@ -108,12 +105,18 @@ export const updatePrimitiveValidity = (primitive, event) => {
   const newSampleSize = sampleSize + weight;
   const newSupportsCount = supportsCount + (event.supportsClaim ? weight : 0);
 
-  const posteriorAlpha = priorAlpha + newSupportsCount;
-  const posteriorBeta = priorBeta + (newSampleSize - newSupportsCount);
-  const total = posteriorAlpha + posteriorBeta;
-  const pointEstimate = posteriorAlpha / total;
-  const variance = (posteriorAlpha * posteriorBeta) / (total * total * (total + 1));
-  const credibleInterval = approximateCredibleInterval(pointEstimate, variance, 0.95);
+  // Delegate Beta math to the shared decisionSystems primitive. The local
+  // bookkeeping (sampleSize / supportsCount) stays here — it's domain
+  // semantics (I-EAL-9 dependent-anchor-count is tracked separately) and
+  // serves the back-derived-supportsCount bootstrap for pre-extraction
+  // primitives.
+  const posteriorShape = {
+    alpha: priorAlpha + newSupportsCount,
+    beta: priorBeta + (newSampleSize - newSupportsCount),
+  };
+  const total = posteriorShape.alpha + posteriorShape.beta;
+  const pointEstimate = posteriorShape.alpha / total;
+  const ci = credibleInterval(posteriorShape, 0.95);
 
   return {
     ...primitive,
@@ -124,7 +127,7 @@ export const updatePrimitiveValidity = (primitive, event) => {
       pointEstimate,
       sampleSize: newSampleSize,
       supportsCount: newSupportsCount,
-      credibleInterval,
+      credibleInterval: ci,
       lastUpdated: event.observedAt ?? validity.lastUpdated ?? null,
       dependentAnchorCount: numberOrDefault(validity.dependentAnchorCount, 0),
     },
@@ -135,15 +138,23 @@ export const updatePrimitiveValidity = (primitive, event) => {
  * Apply a batch of firing events to a primitive in order.
  * Returns the final updated primitive.
  *
+ * Delegates iteration to the shared `createAccumulator` factory (SPR-078).
+ * Behavior is identical to `events.reduce(updatePrimitiveValidity, primitive)`.
+ *
  * @param {Object} primitive
  * @param {FiringEvent[]} events
  * @returns {Object}
  */
+const firingBatchAccumulator = createAccumulator({
+  initialState: null, // overridden via fold's start-state argument
+  reduce: (p, e) => updatePrimitiveValidity(p, e),
+});
+
 export const applyFiringBatch = (primitive, events) => {
   if (!Array.isArray(events)) {
     throw new TypeError('applyFiringBatch: events must be an array');
   }
-  return events.reduce((p, e) => updatePrimitiveValidity(p, e), primitive);
+  return firingBatchAccumulator.fold(events, primitive);
 };
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -334,35 +345,6 @@ const derivedSupportsCount = (validity, sampleSize) => {
   const pe = validity?.pointEstimate;
   if (typeof pe !== 'number' || sampleSize <= 0) return 0;
   return pe * sampleSize;
-};
-
-/**
- * Approximate credible interval for a Beta posterior using normal approximation.
- *
- * For Beta(α, β) with mean = α/(α+β) and variance = αβ/((α+β)²(α+β+1)),
- * the (1-α) credible interval ≈ mean ± z_{1-α/2} × √variance, clamped to [0, 1].
- *
- * Phase 6+ may upgrade to exact Beta CDF inversion if precision matters more.
- */
-const approximateCredibleInterval = (mean, variance, level = 0.95) => {
-  if (!Number.isFinite(mean) || !Number.isFinite(variance) || variance < 0) {
-    return { lower: 0, upper: 1, level };
-  }
-  const z = level === 0.95 ? Z_95 : approximateZ(level);
-  const sd = Math.sqrt(variance);
-  const lower = Math.max(0, mean - z * sd);
-  const upper = Math.min(1, mean + z * sd);
-  return { lower, upper, level };
-};
-
-/**
- * Approximate inverse standard-normal CDF for non-95% levels.
- * Beasley-Springer-Moro is overkill here; use a simple approximation.
- */
-const approximateZ = (level) => {
-  // Common z-scores for two-tailed CI levels
-  const map = { 0.90: 1.6449, 0.95: 1.96, 0.99: 2.5758 };
-  return map[level] ?? 1.96;
 };
 
 /**

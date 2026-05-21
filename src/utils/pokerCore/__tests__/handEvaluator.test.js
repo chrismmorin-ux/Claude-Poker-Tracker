@@ -1,5 +1,13 @@
 import { describe, test, expect } from 'vitest';
-import { evaluate5, bestFiveFromSeven, handCategory, HAND_CATEGORIES } from '../handEvaluator';
+import {
+  evaluate5,
+  bestFiveFromSeven,
+  handCategory,
+  HAND_CATEGORIES,
+  STRENGTH_BUCKETS,
+  computeBoardStrengthTable,
+  classifyVillainCombo,
+} from '../handEvaluator';
 import { encodeCard } from '../cardParser';
 
 // Helper: create 5 cards from rank/suit pairs
@@ -210,6 +218,189 @@ describe('handEvaluator', () => {
 
       const flush = makeHand([12, 0], [10, 0], [7, 0], [5, 0], [2, 0]);
       expect(handCategory(evaluate5(flush))).toBe('Flush');
+    });
+  });
+
+  describe('STRENGTH_BUCKETS', () => {
+    test('enum has 5 ordered tiers from strongest to weakest', () => {
+      expect(STRENGTH_BUCKETS).toEqual([
+        'nuts',
+        'very-strong',
+        'strong',
+        'marginal',
+        'weak-or-bluff',
+      ]);
+    });
+  });
+
+  describe('computeBoardStrengthTable', () => {
+    test('returns empty Map for preflop (no board)', () => {
+      expect(computeBoardStrengthTable([]).size).toBe(0);
+      expect(computeBoardStrengthTable([encodeCard(12, 0), encodeCard(11, 0)]).size).toBe(0);
+    });
+
+    test('returns empty Map for board with more than 5 cards', () => {
+      const sevenCards = [12, 11, 10, 9, 8, 7, 6].map((r) => encodeCard(r, 0));
+      expect(computeBoardStrengthTable(sevenCards).size).toBe(0);
+    });
+
+    test('returns table covering every legal combo on a flop (3 cards)', () => {
+      const board = [encodeCard(12, 0), encodeCard(11, 0), encodeCard(10, 0)]; // A♠ K♠ Q♠
+      const table = computeBoardStrengthTable(board);
+      // Combos excluding the 3 board cards: C(49, 2) = 1176
+      expect(table.size).toBe(1176);
+      // Every value is a valid bucket
+      for (const bucket of table.values()) {
+        expect(STRENGTH_BUCKETS).toContain(bucket);
+      }
+    });
+
+    test('returns table for turn (4 cards): C(48, 2) = 1128', () => {
+      const board = [
+        encodeCard(12, 0), encodeCard(11, 0), encodeCard(10, 0), encodeCard(9, 0),
+      ]; // A♠ K♠ Q♠ J♠
+      const table = computeBoardStrengthTable(board);
+      expect(table.size).toBe(1128);
+    });
+
+    test('returns table for river (5 cards): C(47, 2) = 1081', () => {
+      const board = [
+        encodeCard(12, 0), encodeCard(11, 0), encodeCard(10, 0),
+        encodeCard(9, 0), encodeCard(8, 0),
+      ]; // royal-flush board: A♠ K♠ Q♠ J♠ T♠
+      const table = computeBoardStrengthTable(board);
+      expect(table.size).toBe(1081);
+    });
+
+    test('top combos on dry rainbow board land in nuts (set of kings on K72r)', () => {
+      // K♠ 7♦ 2♣ — sets are the top tier
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+      const table = computeBoardStrengthTable(board);
+      // KK = set of kings
+      const kk = classifyVillainCombo(encodeCard(11, 1), encodeCard(11, 2), board, table);
+      expect(kk).toBe('nuts');
+      // 77 = set of sevens (still nuts-tier on a low-card board)
+      const sevens = classifyVillainCombo(encodeCard(5, 0), encodeCard(5, 1), board, table);
+      expect(sevens).toBe('nuts');
+    });
+
+    test('bottom combos on a board land in weak-or-bluff (offsuit low cards on Ah7h2h)', () => {
+      // monotone hearts board — non-heart low cards have nothing
+      const board = [encodeCard(12, 1), encodeCard(5, 1), encodeCard(0, 1)]; // A♥ 7♥ 2♥
+      const table = computeBoardStrengthTable(board);
+      // 3♠ 4♣ — high card 4, no flush draw, no pair
+      const trash = classifyVillainCombo(encodeCard(1, 0), encodeCard(2, 3), board, table);
+      expect(trash).toBe('weak-or-bluff');
+    });
+
+    test('all five buckets appear on a dry rainbow flop', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)]; // K♠ 7♦ 2♣
+      const table = computeBoardStrengthTable(board);
+      const seen = new Set(table.values());
+      for (const bucket of STRENGTH_BUCKETS) {
+        expect(seen.has(bucket)).toBe(true);
+      }
+    });
+
+    test('non-trivial spread: no bucket holds the whole table', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)]; // K72r
+      const table = computeBoardStrengthTable(board);
+      const counts = {};
+      for (const bucket of table.values()) {
+        counts[bucket] = (counts[bucket] || 0) + 1;
+      }
+      const total = table.size;
+      // Each bucket should be at least 1% of the table (very loose floor).
+      for (const bucket of STRENGTH_BUCKETS) {
+        expect(counts[bucket] || 0).toBeGreaterThan(total * 0.01);
+      }
+    });
+
+    test('board-adaptive: a pocket pair of kings lands in different tier on dry vs wet board', () => {
+      // Dry rainbow K72r: KK = set of kings, top tier.
+      // K♠ is on the dry board, so villain holds K♥ K♦ (suits 1+2).
+      const dryBoard = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)]; // K♠ 7♦ 2♣
+      const dryTable = computeBoardStrengthTable(dryBoard);
+      const kkDry = classifyVillainCombo(encodeCard(11, 1), encodeCard(11, 2), dryBoard, dryTable);
+
+      // Monotone hearts board Ah7h2h: same KK combo. K♥ is not on this board.
+      // KK is just a pocket pair below the ace; many heart-flush combos
+      // dominate it.
+      const wetBoard = [encodeCard(12, 1), encodeCard(5, 1), encodeCard(0, 1)]; // A♥ 7♥ 2♥
+      const wetTable = computeBoardStrengthTable(wetBoard);
+      const kkWet = classifyVillainCombo(encodeCard(11, 1), encodeCard(11, 2), wetBoard, wetTable);
+
+      expect(kkDry).toBe('nuts'); // set of kings on dry rainbow K-high
+      expect(kkWet).not.toBe('nuts'); // flushes + AA dominate on monotone ace-high
+
+      // Equivalent hand strength lands in different tiers depending on board.
+      const tierIndex = (b) => STRENGTH_BUCKETS.indexOf(b);
+      expect(tierIndex(kkDry)).toBeLessThan(tierIndex(kkWet)); // stronger on dry
+    });
+
+    test('ties on score share the same bucket', () => {
+      // On A♠ K♠ Q♠ J♠ T♠ (royal flush on board), every villain combo plays
+      // the board (5-card score is the royal flush regardless of hole cards).
+      // All combos tie on score. They must all land in the same bucket.
+      const board = [
+        encodeCard(12, 0), encodeCard(11, 0), encodeCard(10, 0),
+        encodeCard(9, 0), encodeCard(8, 0),
+      ];
+      const table = computeBoardStrengthTable(board);
+      const buckets = new Set(table.values());
+      // All combos tied → one bucket. Per the "ties get the higher bucket"
+      // rule, the percentile of the first combo is 0 → 'nuts'.
+      expect(buckets.size).toBe(1);
+      expect(buckets.has('nuts')).toBe(true);
+    });
+  });
+
+  describe('classifyVillainCombo', () => {
+    test('returns null when a combo card collides with the board', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)]; // K♠ 7♦ 2♣
+      // K♠ is on the board
+      expect(classifyVillainCombo(encodeCard(11, 0), encodeCard(11, 1), board)).toBeNull();
+      // 7♦ is on the board
+      expect(classifyVillainCombo(encodeCard(12, 0), encodeCard(5, 2), board)).toBeNull();
+    });
+
+    test('returns null for invalid card1 === card2', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+      expect(classifyVillainCombo(encodeCard(12, 0), encodeCard(12, 0), board)).toBeNull();
+    });
+
+    test('returns null for boards outside 3..5 cards', () => {
+      const c1 = encodeCard(12, 1);
+      const c2 = encodeCard(11, 1);
+      expect(classifyVillainCombo(c1, c2, [])).toBeNull();
+      expect(classifyVillainCombo(c1, c2, [encodeCard(0, 0), encodeCard(1, 0)])).toBeNull();
+      const sixCards = [12, 11, 10, 9, 8, 7].map((r) => encodeCard(r, 0));
+      expect(classifyVillainCombo(c1, c2, sixCards)).toBeNull();
+    });
+
+    test('deterministic for same (combo, board): two calls return the same bucket', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+      const c1 = encodeCard(12, 1);
+      const c2 = encodeCard(11, 1);
+      const a = classifyVillainCombo(c1, c2, board);
+      const b = classifyVillainCombo(c1, c2, board);
+      expect(a).toBe(b);
+    });
+
+    test('order-independent: (c1, c2) and (c2, c1) yield the same bucket', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+      const c1 = encodeCard(12, 1);
+      const c2 = encodeCard(11, 1);
+      expect(classifyVillainCombo(c1, c2, board)).toBe(classifyVillainCombo(c2, c1, board));
+    });
+
+    test('passing a pre-computed table matches a fresh computation', () => {
+      const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+      const table = computeBoardStrengthTable(board);
+      const c1 = encodeCard(12, 1);
+      const c2 = encodeCard(11, 1);
+      expect(classifyVillainCombo(c1, c2, board, table))
+        .toBe(classifyVillainCombo(c1, c2, board));
     });
   });
 });

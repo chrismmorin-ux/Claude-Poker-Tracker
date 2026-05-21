@@ -12,6 +12,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { initDB, saveHand, loadLatestHand, GUEST_USER_ID, createPersistenceLogger } from '../utils/persistence/index';
+import { sanitizePredictionAudit } from '../utils/persistence/predictionAuditWriter';
+import { reconstructPredictionAudit } from '../utils/predictionAudit/reconstruct';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
 import { CARD_ACTIONS } from '../reducers/cardReducer';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
@@ -40,7 +42,7 @@ const { log, logError } = createPersistenceLogger('usePersistence');
  * @param {string} userId - User ID for data isolation (defaults to 'guest')
  * @returns {Object} { isReady, lastSavedAt }
  */
-export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchPlayer = null, userId = GUEST_USER_ID) => {
+export const usePersistence = (gameState, cardState, playerState, dispatchGame, dispatchCard, dispatchPlayer = null, userId = GUEST_USER_ID, engineCtxGetterRef = null) => {
   // State
   const [isReady, setIsReady] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -146,7 +148,11 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       seatPlayers: playerState.seatPlayers
     };
 
-    // Skip save if data hasn't actually changed
+    // Skip save if data hasn't actually changed. Snapshot intentionally
+    // excludes predictionAudit — that field is reconstructed inside the
+    // async save closure below (Phase 5a-2 made reconstruction async, so it
+    // can no longer run inline here). Engine-context changes that don't
+    // affect game state shouldn't trigger a save anyway.
     const snapshot = JSON.stringify(handData);
     if (snapshot === lastSnapshotRef.current) {
       return;
@@ -160,6 +166,29 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
     // Capture data for save closure
     pendingSaveRef.current = async () => {
       try {
+        // PMC Phase 5a (WS-177) + Phase 5a-2 (WS-178): attach predictionAudit
+        // field at hand-save time. Q1 ratified — post-hoc reconstruction from
+        // handData; no live coupling. Engine-context deps come via the
+        // ref-getter bridge (D1=A, populated by <EngineCtxBridge/> inside
+        // TendencyProvider). When the ref is null/empty (initial render
+        // before bridge mounts), reconstruct falls back to Phase 5a behavior
+        // (empty predictedDistribution).
+        // sanitizePredictionAudit enforces AP-PMC-04 schema-level (drops
+        // evRealized from any hero observedAction entries — defensive).
+        // Failures are swallowed so a reconstructor regression cannot break
+        // the auto-save hot path.
+        try {
+          const deps = (engineCtxGetterRef && typeof engineCtxGetterRef.current === 'function')
+            ? (engineCtxGetterRef.current() ?? {})
+            : {};
+          handData.predictionAudit = sanitizePredictionAudit(
+            await reconstructPredictionAudit(handData, deps),
+          );
+        } catch (e) {
+          logError('predictionAudit reconstruction failed (auto-save continues):', e);
+          handData.predictionAudit = null;
+        }
+
         lastSnapshotRef.current = snapshot;
         const handId = await saveHand(handData, userId);
         setLastSavedAt(new Date());

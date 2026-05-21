@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CardSlot } from '../../ui/CardSlot';
 import { VisibilityToggle } from '../../ui/VisibilityToggle';
 import { PositionBadge } from '../../ui/PositionBadge';
@@ -37,7 +37,22 @@ export const ShowdownSeatRow = ({
   // surface a passive count sub-label so the scope is visible BEFORE the tap.
   wonAutoMuckCount = 0,
 }) => {
-  const canInteract = mode === 'selection' && inactiveStatus !== SEAT_STATUS.ABSENT && !isMucked;
+  // WS-183: Won seats hard-lock card edits by default; an explicit Unlock
+  // affordance reopens them for correction without first unsetting Won.
+  // Unlock state is transient and reseals automatically whenever Won clears.
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  useEffect(() => {
+    if (!hasWon && isUnlocked) {
+      setIsUnlocked(false);
+    }
+  }, [hasWon, isUnlocked]);
+
+  const canInteract =
+    mode === 'selection'
+    && inactiveStatus !== SEAT_STATUS.ABSENT
+    && !isMucked
+    && (!hasWon || isUnlocked);
+
   const isFolded = inactiveStatus === SEAT_STATUS.FOLDED;
 
   // Check if any seat has won (for hiding Won button on other seats)
@@ -165,6 +180,22 @@ export const ShowdownSeatRow = ({
             )}
           </div>
         )}
+
+      {/* WS-183: Unlock/Lock affordance for Won seats — full mode only.
+          Quick mode shows a winner overlay that supersedes card editing entirely. */}
+      {mode === 'selection' && hasWon && !isMucked && (
+        <button
+          onClick={() => setIsUnlocked(prev => !prev)}
+          aria-pressed={isUnlocked}
+          className={`btn-press rounded font-semibold text-xs px-2 py-1 mt-1 ${
+            isUnlocked
+              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-400'
+          }`}
+        >
+          {isUnlocked ? 'Lock cards' : 'Unlock cards'}
+        </button>
+      )}
     </div>
   );
 };

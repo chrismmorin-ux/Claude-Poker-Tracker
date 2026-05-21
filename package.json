@@ -13,6 +13,7 @@
     "preflight:staged": "node scripts/check-untracked-imports.mjs --staged",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
+    "test:slow-unit": "vitest run --project slow-unit",
     "test:component": "vitest run --project component",
     "test:hooks": "vitest run --project hooks",
     "test:watch": "vitest",

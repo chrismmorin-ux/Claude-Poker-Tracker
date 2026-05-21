@@ -7,7 +7,7 @@
  * Returns all state, dispatchers, and persistence functions needed by the app.
  */
 
-import { useReducer } from 'react';
+import { useReducer, useRef } from 'react';
 import { gameReducer, initialGameState } from '../reducers/gameReducer';
 import { uiReducer, initialUiState } from '../reducers/uiReducer';
 import { cardReducer, initialCardState } from '../reducers/cardReducer';
@@ -22,6 +22,8 @@ import { entitlementReducer, initialEntitlementState } from '../reducers/entitle
 import { refresherReducer, initialRefresherState } from '../reducers/refresherReducer';
 // EAL Phase 6 Stream D B3 (2026-04-27, S14) — exploit anchor library reducer.
 import { anchorLibraryReducer, initialAnchorLibraryState } from '../reducers/anchorLibraryReducer';
+// SLS Stream D (2026-05-14, SPR-081 / WS-040) — shape language mastery reducer.
+import { shapeMasteryReducer, initialShapeMasteryState } from '../reducers/shapeMasteryReducer';
 import { usePersistence } from './usePersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
@@ -57,6 +59,11 @@ export const useAppState = () => {
   // parallel `Promise.all` over 4 wrapper getAlls + 400ms debounced
   // per-slice diff-write (mirrors EntitlementProvider pattern).
   const [anchorLibraryState, dispatchAnchorLibrary] = useReducer(anchorLibraryReducer, initialAnchorLibraryState);
+  // SLS Stream D (SPR-081 / WS-040) — shape language mastery state. Hydration
+  // happens inside ShapeMasteryProvider via useShapeMasteryPersistence —
+  // single-record load + 400ms debounce singleton write (mirrors
+  // useTelemetryConsentPersistence pattern).
+  const [shapeMasteryState, dispatchShapeMastery] = useReducer(shapeMasteryReducer, initialShapeMasteryState);
 
   // =========================================================================
   // PERSISTENCE - Auto-save/restore for all state types
@@ -65,6 +72,13 @@ export const useAppState = () => {
   // Auth persistence (Firebase auth state listener)
   useAuthPersistence(dispatchAuth);
 
+  // PMC Phase 5a-2 (WS-178 / SPR-070) — engine-context bridge ref.
+  // Populated by <EngineCtxBridge/> inside <TendencyProvider/>; read by
+  // usePersistence at hand-save time to query rangeProfiles + evaluateGameTree
+  // for predictionAudit.predictedDistribution. Null until bridge mounts;
+  // reconstruct falls back to Phase 5a behavior (empty array) until then.
+  const engineCtxGetterRef = useRef(null);
+
   // Hand persistence (auto-save + auto-restore)
   usePersistence(
     gameState,
@@ -72,7 +86,9 @@ export const useAppState = () => {
     playerState,
     dispatchGame,
     dispatchCard,
-    dispatchPlayer
+    dispatchPlayer,
+    undefined,
+    engineCtxGetterRef,
   );
 
   // Settings persistence
@@ -95,6 +111,7 @@ export const useAppState = () => {
     entitlementState,
     refresherState,
     anchorLibraryState,
+    shapeMasteryState,
 
     // Dispatchers
     dispatchGame,
@@ -108,6 +125,9 @@ export const useAppState = () => {
     dispatchEntitlement,
     dispatchRefresher,
     dispatchAnchorLibrary,
+    dispatchShapeMastery,
 
+    // Engine-context bridge ref (PMC Phase 5a-2)
+    engineCtxGetterRef,
   };
 };

@@ -98,6 +98,17 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
           boardTexture: result?.boardTexture,
           deps: { evaluateGameTree },
         });
+        // SLS Stream B2 wiring (SPR-086 / WS-192): promote the per-combo
+        // equity distribution + derived evByFraction from the counterfactual
+        // tree's evaluateGameTree call up to the top of the per-action result
+        // so HandReplayView/ReviewPanel can read villainAnalysis.perCombo +
+        // villainAnalysis.evByFraction directly (matches the SPR-084 section
+        // component contract; INV-SLS-B2-SECTION-NULL-DEGRADATION preserved
+        // — both stay null when the tree did not produce a usable distribution).
+        if (result.counterfactualTree) {
+          result.perCombo = result.counterfactualTree.perCombo || null;
+          result.evByFraction = result.counterfactualTree.evByFraction || null;
+        }
         if (handId !== lastHandIdRef.current) return;
 
         results.push(result);

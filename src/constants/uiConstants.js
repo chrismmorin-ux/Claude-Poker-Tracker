@@ -29,6 +29,12 @@ export const SCREEN = {
   // Exploit Anchor Library (EAL) — Phase 6+; flat-list study surface for anchors.
   // Per surfaces/anchor-library.md. Deep-link target for capture toast Undo (S18+).
   ANCHOR_LIBRARY: 'anchorLibrary',
+  // Calibration Dashboard (EAL Stream D / WS-169 / SPR-066, 2026-05-09) — 3-tab
+  // study-mode audit surface (Predicates / Anchors / Primitives). Deep-link
+  // target from AnchorLibraryView's handleOpenDashboard. Per
+  // docs/design/surfaces/calibration-dashboard.md (v1.1 amended 2026-05-09) +
+  // docs/design/audits/2026-05-09-entry-calibration-dashboard.md (verdict YELLOW).
+  CALIBRATION_DASHBOARD: 'calibrationDashboard',
   // SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface.
   // Per docs/projects/self-coach-foundation/lesson-authoring-template.md +
   // src/utils/skillAssessment/CLAUDE.md source-util-policy whitelist (read-allowed

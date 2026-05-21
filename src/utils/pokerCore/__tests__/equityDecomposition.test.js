@@ -109,3 +109,32 @@ describe('equityDecomposition — caching', () => {
     expect(ba.cached).toBeUndefined();
   }, 120000);
 });
+
+describe('equityDecomposition — partition invariant (WS-185 / SPR-083)', () => {
+  beforeEach(() => {
+    clearDecompositionCache();
+    clearEquityCache();
+  });
+
+  test('winRate + tieRate + loseRate === 1.0 across canonical matchups', () => {
+    // Hand-vs-hand outcome is a true 3-way partition (every runout is exactly
+    // one of win, tie, lose for hero). The compute layer must guarantee the
+    // sum invariant to within float epsilon — display sum-to-100 (via
+    // formatPercentGroup) layers on top of this compute invariant.
+    const cases = [
+      ['AKs', 'JTs'],
+      ['AKo', '22'],
+      ['AA', 'KK'],
+      ['AA', '22'],
+      ['AKs', 'AKo'],   // tie-heavy
+      ['TT', '87s'],    // coin-flip-ish
+      ['AKo', 'QQ'],    // classic race
+      ['72o', 'AA'],    // worst-vs-best
+    ];
+    for (const [a, b] of cases) {
+      const r = decomposeHandVsHand(a, b);
+      const sum = r.winRate + r.tieRate + r.loseRate;
+      expect(Math.abs(sum - 1)).toBeLessThan(1e-9);
+    }
+  }, 240000);
+});

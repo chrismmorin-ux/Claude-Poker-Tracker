@@ -498,6 +498,15 @@ describe('gameReducer', () => {
   // Action Sequence Tests
   // ===========================================================================
 
+  // NEED_BYPASS (WS-182): This describe block tests reducer-internal
+  // contracts — invariants the reducer must hold even when callers
+  // construct payloads outside the WS-182 funnel (recordSeatAction).
+  // Examples: "rejects invalid seat", "rejects invalid primitive action"
+  // assert the reducer remains robust to malformed payloads that
+  // recordSeatAction would refuse to construct by design. Migrating
+  // these to recordSeatAction would make those test cases impossible
+  // to write (the util throws on invalid inputs — which IS the doctrine).
+  // Bypass is permitted by accept criterion #7 of WS-182.
   describe('RECORD_PRIMITIVE_ACTION', () => {
     it('adds action entry to sequence', () => {
       const state = { ...initialGameState, currentStreet: 'preflop' };

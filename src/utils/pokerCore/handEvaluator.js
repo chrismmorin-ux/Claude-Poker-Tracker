@@ -221,3 +221,117 @@ export const handCategory = (score) => {
   const cat = (score >> 20) & 0xF;
   return CATEGORY_NAMES[cat] || 'Unknown';
 };
+
+// =============================================================================
+// VILLAIN STRENGTH BUCKET (board-relative, hero-agnostic)
+// =============================================================================
+// Per WS-194 / memory feedback_river_equity_is_showdown_outcome.md:
+// classify each 2-card combo on a fixed postflop board into a rank-relative
+// strength tier. The bucket reflects how strong this combo's CURRENT 5-card
+// hand is vs every other legal combo on the same board (no hero card
+// dependency, no range context). Consumers (e.g., Basin classifier) use the
+// strength-tier histogram of a villain's range to expose bluff content.
+
+export const STRENGTH_BUCKETS = ['nuts', 'very-strong', 'strong', 'marginal', 'weak-or-bluff'];
+
+// Cumulative percentile band ceilings (top of each tier). Ties on score group
+// together; the group's bucket is decided by the percentile of its FIRST
+// member, so a tie straddling a boundary lands in the higher tier.
+const STRENGTH_BAND_TOPS = [0.05, 0.20, 0.50, 0.80, 1.00];
+
+const bucketForPercentile = (p) => {
+  if (p < STRENGTH_BAND_TOPS[0]) return STRENGTH_BUCKETS[0];
+  if (p < STRENGTH_BAND_TOPS[1]) return STRENGTH_BUCKETS[1];
+  if (p < STRENGTH_BAND_TOPS[2]) return STRENGTH_BUCKETS[2];
+  if (p < STRENGTH_BAND_TOPS[3]) return STRENGTH_BUCKETS[3];
+  return STRENGTH_BUCKETS[4];
+};
+
+// Order-independent integer key for an unordered 2-card combo. Cards are
+// 0-51; the key fits in ~2,700 max so a Map<number, string> is compact.
+const comboKey = (c1, c2) => (c1 < c2 ? c1 * 52 + c2 : c2 * 52 + c1);
+
+/**
+ * Compute the board-relative strength table for a postflop board.
+ *
+ * Enumerates every legal 2-card combo (skips combos using any board card),
+ * scores each via bestFiveFromSeven, sorts descending, then assigns a
+ * STRENGTH_BUCKETS tier by percentile. Combos with identical scores share
+ * the bucket of the group's first member (ties get the higher tier when
+ * they straddle a boundary).
+ *
+ * Returns an empty Map for invalid boards (length < 3).
+ *
+ * @param {number[]} board - 3, 4, or 5 encoded board cards
+ * @returns {Map<number, string>} comboKey -> bucket name
+ */
+export const computeBoardStrengthTable = (board) => {
+  const table = new Map();
+  if (!Array.isArray(board) || board.length < 3 || board.length > 5) {
+    return table;
+  }
+
+  const boardSet = new Set(board);
+  const entries = [];
+  for (let a = 0; a < 52; a++) {
+    if (boardSet.has(a)) continue;
+    for (let b = a + 1; b < 52; b++) {
+      if (boardSet.has(b)) continue;
+      const score = bestFiveFromSeven([a, b, ...board]);
+      entries.push({ key: comboKey(a, b), score });
+    }
+  }
+  const total = entries.length;
+  if (total === 0) return table;
+
+  // Sort by score desc. Tie-stable order across runs (a, b ascending order
+  // is preserved because the inner loop visits combos in a deterministic
+  // sequence, and Array.prototype.sort with a comparator that only depends
+  // on score keeps tied items adjacent — exact within-tie order is
+  // irrelevant since the whole tie group shares one bucket).
+  entries.sort((x, y) => y.score - x.score);
+
+  // Walk groups by score. The percentile assigned to a group is the
+  // starting-index percentile (group's first member). Every combo in the
+  // group inherits that bucket.
+  let i = 0;
+  while (i < total) {
+    const groupScore = entries[i].score;
+    const groupStartIndex = i;
+    const percentile = groupStartIndex / total;
+    const bucket = bucketForPercentile(percentile);
+    while (i < total && entries[i].score === groupScore) {
+      table.set(entries[i].key, bucket);
+      i++;
+    }
+  }
+
+  return table;
+};
+
+/**
+ * Classify a single villain combo on a board into its strength bucket.
+ *
+ * Returns null if either combo card collides with a board card (invalid
+ * combo — villain can't hold a card that's on the public board). Returns
+ * null for boards with fewer than 3 cards (preflop has no current-strength
+ * concept — equity-by-runout is the right primitive there, not bucket).
+ *
+ * Optional `table` parameter amortizes the ~1,200-combo enumeration cost
+ * across many classifications on the same board. Callers iterating
+ * segCombos for one board should call computeBoardStrengthTable once and
+ * pass the result here.
+ *
+ * @param {number} card1 - First combo card (0-51)
+ * @param {number} card2 - Second combo card (0-51)
+ * @param {number[]} board - 3, 4, or 5 encoded board cards
+ * @param {Map<number, string> | null} table - optional pre-computed table
+ * @returns {string | null} STRENGTH_BUCKETS member or null
+ */
+export const classifyVillainCombo = (card1, card2, board, table = null) => {
+  if (!Array.isArray(board) || board.length < 3 || board.length > 5) return null;
+  if (board.includes(card1) || board.includes(card2)) return null;
+  if (card1 === card2) return null;
+  const t = table ?? computeBoardStrengthTable(board);
+  return t.get(comboKey(card1, card2)) ?? null;
+};

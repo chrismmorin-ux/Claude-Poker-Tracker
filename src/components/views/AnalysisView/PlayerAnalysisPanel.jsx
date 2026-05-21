@@ -6,6 +6,7 @@ import { SegmentationBar } from '../../ui/SegmentationBar';
 import SeverityBar from '../../ui/SeverityBar';
 import { VillainModelCard } from '../../ui/VillainModelCard';
 import { VillainProfileModal } from '../../ui/VillainProfileModal';
+import { TendencyStatsCard } from '../../ui/TendencyStatsCard';
 import { ObservationPanel } from '../../ui/ObservationPanel';
 import { RANKS, SUITS } from '../../../constants/gameConstants';
 import { usePlayer, useSession, useTendency } from '../../../contexts';
@@ -172,6 +173,16 @@ export const PlayerAnalysisPanel = () => {
             onViewFullProfile={() => setProfileModalOpen(true)}
           />
         </div>
+      )}
+
+      {/* SPR-063 / WS-135 — Credible-interval tendency summary, collapsed-by-default */}
+      {selectedPlayerId && playerTendency && (
+        <TendencyStatsCard
+          stats={playerTendency}
+          title="Tendency Summary"
+          defaultCollapsed
+          testId="player-analysis-tendency-card"
+        />
       )}
 
       {/* Three-panel grid */}
@@ -456,10 +467,15 @@ const ContextBadge = ({ text }) => (
   </span>
 );
 
-const WeaknessesSection = ({ tendency }) => {
+export const WeaknessesSection = ({ tendency }) => {
   const weaknesses = tendency?.weaknesses || [];
 
-  if (!playerId || weaknesses.length === 0) return null;
+  // WS-173: parent gates this component on selectedPlayerId before Panel 3
+  // renders, so a separate playerId guard here is structurally redundant.
+  // The original guard referenced an undeclared `playerId`, throwing a
+  // ReferenceError on every render. Empty-weaknesses guard is the only
+  // structural condition that can hide the section.
+  if (weaknesses.length === 0) return null;
 
   // Group by category
   const grouped = {};

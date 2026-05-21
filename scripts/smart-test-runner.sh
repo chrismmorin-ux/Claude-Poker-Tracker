@@ -8,6 +8,18 @@ set -o pipefail
 # Optional workspace project filter (e.g., "unit", "component", "hooks")
 PROJECT="${1:-}"
 
+# ─── Pre-test gates ──────────────────────────────────────────────────────
+# Source-level invariant checks that must pass before tests run. Each gate
+# is an independent script that exits non-zero on violation. Failed gates
+# block the test run entirely — the gate's own output explains the fix.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! bash "$SCRIPT_DIR/check-idb-additive.sh"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-idb-additive.sh"
+  echo "   Tests skipped — fix the violation above and re-run."
+  exit 1
+fi
+
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then
   npm test -- --project "$PROJECT" 2>&1 | tee .test-output.tmp

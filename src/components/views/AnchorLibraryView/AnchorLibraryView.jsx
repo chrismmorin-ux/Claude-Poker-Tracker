@@ -46,6 +46,7 @@ import { AnchorCard } from './AnchorCard';
 import { AnchorEmptyState } from './AnchorEmptyState';
 import { AnchorFilters } from './AnchorFilters';
 import { AnchorLongPressTooltip } from './AnchorLongPressTooltip';
+import { AutoRetireBanner } from './AutoRetireBanner';
 import { RetirementConfirmModal } from './RetirementConfirmModal';
 
 /**
@@ -63,13 +64,20 @@ const computeTotalHandsSeen = (allSessions, currentSession) => {
 };
 
 export const AnchorLibraryView = () => {
-  const { selectAllAnchors, isReady, dispatchAnchorLibrary } = useAnchorLibrary();
+  const {
+    selectAllAnchors,
+    isReady,
+    dispatchAnchorLibrary,
+    pendingBannerCount,
+    dismissBanner,
+  } = useAnchorLibrary();
   const ui = useUI();
   const { allSessions, currentSession, loadAllSessions } = useSession();
   const toast = useToast();
   const {
     view,
     toggleFilter,
+    setFilters,
     setSort,
     clearFilters,
     expandedCardIds,
@@ -126,15 +134,33 @@ export const AnchorLibraryView = () => {
   }, [allAnchors, beginRetirement]);
 
   const handleOpenDashboard = useCallback((anchorId) => {
-    toast.showInfo('Calibration Dashboard ships in a future session.');
-    // Future wiring: ui.setCurrentScreen(SCREEN.CALIBRATION_DASHBOARD) with deep-link payload anchorId
-    void anchorId;
-  }, [toast]);
+    if (typeof ui.openCalibrationDashboard === 'function') {
+      ui.openCalibrationDashboard(anchorId, SCREEN.ANCHOR_LIBRARY);
+    }
+  }, [ui]);
 
   // First successful long-press auto-dismisses the discovery tooltip.
   const handleLongPressFire = useCallback(() => {
     if (showTooltip) dismissTooltip();
   }, [showTooltip, dismissTooltip]);
+
+  // SPR-060/WS-170 — Auto-retire banner Review action: filter the list to
+  // retired-only + dismiss the banner so it doesn't re-show this open per
+  // journey doc Variation D step 4s.
+  const handleAutoRetireReview = useCallback(() => {
+    if (typeof setFilters === 'function') {
+      setFilters({ statuses: ['retired'] });
+    }
+    if (typeof dismissBanner === 'function') {
+      dismissBanner();
+    }
+  }, [setFilters, dismissBanner]);
+
+  const handleAutoRetireDismiss = useCallback(() => {
+    if (typeof dismissBanner === 'function') {
+      dismissBanner();
+    }
+  }, [dismissBanner]);
 
   const isNewcomer = handsSeen < ANCHOR_LIBRARY_UNLOCK_THRESHOLD;
   const filtersActive = !isFilterEmpty(view.filters);
@@ -197,6 +223,17 @@ export const AnchorLibraryView = () => {
           <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Loading…</span>
         )}
       </header>
+
+      {/* SPR-060/WS-170 — Tier-3 auto-retire review banner. Renders only
+          when sessionEndCloseFired ≥1 transition AND the founder hasn't
+          dismissed it yet. Hidden in newcomer state (no anchors to retire). */}
+      {!isNewcomer && pendingBannerCount > 0 && (
+        <AutoRetireBanner
+          count={pendingBannerCount}
+          onReview={handleAutoRetireReview}
+          onDismiss={handleAutoRetireDismiss}
+        />
+      )}
 
       {/* Filters — render only when not in newcomer state (no anchors to filter) */}
       {!isNewcomer && (

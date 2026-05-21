@@ -168,6 +168,83 @@ const buildResult = (totalWin, totalTie, totalLose, welfordM2, start, convergedE
 };
 
 /**
+ * Deterministic win/tie/lose fractions for a single hero-vs-villain matchup on
+ * a 3–5 card board, by exhaustive runout enumeration. No RNG — pure card math.
+ * Returned fractions sum to 1.0 (river is a single deterministic outcome).
+ * Returns null when the two hands share a card or collide with the board.
+ *
+ * @param {number[]} heroCards - [c0, c1] encoded hole cards
+ * @param {number[]} villainCards - [c0, c1] encoded hole cards
+ * @param {number[]} board - 3, 4, or 5 encoded community cards
+ * @returns {{ win: number, tie: number, lose: number }|null}
+ */
+const comboOutcome = (heroCards, villainCards, board) => {
+  const [h0, h1] = heroCards;
+  const [v0, v1] = villainCards;
+  if (v0 === h0 || v0 === h1 || v1 === h0 || v1 === h1) return null;
+  const dead = new Set([h0, h1, v0, v1, ...board]);
+  if (dead.size !== 4 + board.length) return null; // duplicate / board collision
+  const cardsNeeded = 5 - board.length;
+
+  if (cardsNeeded === 0) {
+    const hScore = bestFiveFromSeven([h0, h1, ...board]);
+    const vScore = bestFiveFromSeven([v0, v1, ...board]);
+    if (hScore > vScore) return { win: 1, tie: 0, lose: 0 };
+    if (hScore === vScore) return { win: 0, tie: 1, lose: 0 };
+    return { win: 0, tie: 0, lose: 1 };
+  }
+
+  let win = 0, tie = 0, lose = 0, count = 0;
+  const remaining = [];
+  for (let c = 0; c < TOTAL_CARDS; c++) if (!dead.has(c)) remaining.push(c);
+
+  if (cardsNeeded === 1) {
+    for (let i = 0; i < remaining.length; i++) {
+      count++;
+      const board5 = [...board, remaining[i]];
+      const hScore = bestFiveFromSeven([h0, h1, ...board5]);
+      const vScore = bestFiveFromSeven([v0, v1, ...board5]);
+      if (hScore > vScore) win++; else if (hScore === vScore) tie++; else lose++;
+    }
+  } else {
+    // cardsNeeded === 2 (flop): enumerate every turn+river pair
+    for (let i = 0; i < remaining.length; i++) {
+      for (let j = i + 1; j < remaining.length; j++) {
+        count++;
+        const board5 = [...board, remaining[i], remaining[j]];
+        const hScore = bestFiveFromSeven([h0, h1, ...board5]);
+        const vScore = bestFiveFromSeven([v0, v1, ...board5]);
+        if (hScore > vScore) win++; else if (hScore === vScore) tie++; else lose++;
+      }
+    }
+  }
+  if (count === 0) return null;
+  return { win: win / count, tie: tie / count, lose: lose / count };
+};
+
+/**
+ * Deterministic exact hero equity for a single hero-vs-villain-combo matchup on
+ * a 3–5 card board (ties counted as 0.5). Pure exhaustive enumeration — no RNG,
+ * so the same inputs always yield the same output (INV-RL-DETERMINISM).
+ *
+ * This is the single source of per-combo equity truth for the Range Lab cache
+ * (`rangeEngine/equityCache.js`) and the LSW↔RL parity invariant (WS-206).
+ *
+ * @param {number[]} heroCards - [c0, c1] encoded hole cards
+ * @param {number[]} villainCards - [c0, c1] encoded hole cards
+ * @param {number[]} board - 3, 4, or 5 encoded community cards
+ * @returns {number} hero equity in [0, 1], or NaN if the matchup is illegal
+ *                   (shared card or board collision)
+ */
+export const exactComboEquity = (heroCards, villainCards, board) => {
+  if (board.length < 3 || board.length > 5) {
+    throw new RangeError(`exactComboEquity requires a 3-5 card board, got ${board.length}`);
+  }
+  const o = comboOutcome(heroCards, villainCards, board);
+  return o === null ? NaN : o.win + 0.5 * o.tie;
+};
+
+/**
  * Exact equity calculation for sparse ranges (≤20 combos on turn/river).
  * Enumerates all remaining runout cards deterministically — no MC variance.
  * Returns the same shape as handVsRange for seamless integration.
@@ -175,7 +252,6 @@ const buildResult = (totalWin, totalTie, totalLose, welfordM2, start, convergedE
 const exactEnumerateEquity = (heroCards, combos, board) => {
   const start = performance.now();
   const [h0, h1] = heroCards;
-  const dead = new Set([...heroCards, ...board]);
 
   let totalWin = 0, totalTie = 0, totalLose = 0, totalWeight = 0;
 
@@ -183,60 +259,14 @@ const exactEnumerateEquity = (heroCards, combos, board) => {
     if (combo.card1 === h0 || combo.card1 === h1 || combo.card2 === h0 || combo.card2 === h1) continue;
     const w = combo.weight;
     if (w < 0.001) continue;
+
+    const o = comboOutcome(heroCards, [combo.card1, combo.card2], board);
+    if (o === null) continue;
+
     totalWeight += w;
-
-    const comboDead = new Set([...dead, combo.card1, combo.card2]);
-    const cardsNeeded = 5 - board.length;
-
-    if (cardsNeeded === 0) {
-      // River: deterministic comparison
-      const sevenH = [...heroCards, ...board];
-      const sevenV = [combo.card1, combo.card2, ...board];
-      const hScore = bestFiveFromSeven(sevenH);
-      const vScore = bestFiveFromSeven(sevenV);
-      if (hScore > vScore) totalWin += w;
-      else if (hScore === vScore) totalTie += w;
-      else totalLose += w;
-    } else if (cardsNeeded === 1) {
-      // Turn: enumerate all remaining river cards
-      let comboWin = 0, comboTie = 0, comboLose = 0, count = 0;
-      for (let river = 0; river < 52; river++) {
-        if (comboDead.has(river)) continue;
-        count++;
-        const board5 = [...board, river];
-        const hScore = bestFiveFromSeven([...heroCards, ...board5]);
-        const vScore = bestFiveFromSeven([combo.card1, combo.card2, ...board5]);
-        if (hScore > vScore) comboWin++;
-        else if (hScore === vScore) comboTie++;
-        else comboLose++;
-      }
-      if (count > 0) {
-        totalWin += w * comboWin / count;
-        totalTie += w * comboTie / count;
-        totalLose += w * comboLose / count;
-      }
-    } else {
-      // Flop: enumerate turn+river (too expensive for >20 combos, but ≤20 is fine)
-      let comboWin = 0, comboTie = 0, comboLose = 0, count = 0;
-      const remaining = [];
-      for (let c = 0; c < 52; c++) if (!comboDead.has(c)) remaining.push(c);
-      for (let ti = 0; ti < remaining.length; ti++) {
-        for (let ri = ti + 1; ri < remaining.length; ri++) {
-          count++;
-          const board5 = [...board, remaining[ti], remaining[ri]];
-          const hScore = bestFiveFromSeven([...heroCards, ...board5]);
-          const vScore = bestFiveFromSeven([combo.card1, combo.card2, ...board5]);
-          if (hScore > vScore) comboWin++;
-          else if (hScore === vScore) comboTie++;
-          else comboLose++;
-        }
-      }
-      if (count > 0) {
-        totalWin += w * comboWin / count;
-        totalTie += w * comboTie / count;
-        totalLose += w * comboLose / count;
-      }
-    }
+    totalWin += w * o.win;
+    totalTie += w * o.tie;
+    totalLose += w * o.lose;
   }
 
   const elapsed = performance.now() - start;

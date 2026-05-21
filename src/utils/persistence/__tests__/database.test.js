@@ -89,7 +89,10 @@ describe('database initialization', () => {
       // v23 — PIO G5 child A / WS-160 sightingLogs + playerPhotos
       expect(storeNames).toContain('sightingLogs');
       expect(storeNames).toContain('playerPhotos');
-      expect(storeNames.length).toBe(23);
+      // v26 — SLS Stream D / WS-040 shapeMastery + shapeLessons
+      expect(storeNames).toContain('shapeMastery');
+      expect(storeNames).toContain('shapeLessons');
+      expect(storeNames.length).toBe(25);
       db.close();
     });
 

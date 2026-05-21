@@ -150,6 +150,106 @@ describe('showdownsSeen counting', () => {
   });
 });
 
+describe('FM-SEL-01 observability — revealMechanism field (WS-175 / SPR-067)', () => {
+  const AKs_index = rangeIndex(12, 11, true);
+
+  it('extractor emits revealMechanism="showdown" when showdown cards are present', () => {
+    const hand = makeHand(1, 3, 1, [
+      { seat: 3, action: 'raise' },
+    ], { cards: ['A♠', 'K♠'], wonSeat: 3 });
+
+    const result = extractPreflopAction(1, hand);
+    expect(result.revealMechanism).toBe('showdown');
+  });
+
+  it('extractor emits revealMechanism=null when no showdown cards', () => {
+    const hand = makeHand(1, 3, 1, [
+      { seat: 3, action: 'raise' },
+    ]);
+
+    const result = extractPreflopAction(1, hand);
+    expect(result.revealMechanism).toBeNull();
+  });
+
+  it('extractor emits revealMechanism=null on the synthetic-fold path (no preflop actions)', () => {
+    // No preflop action recorded → extractor returns synthesised fold
+    const hand = makeHand(1, 3, 1, [
+      { seat: 5, action: 'raise' }, // some other seat acted
+    ]);
+
+    const result = extractPreflopAction(1, hand);
+    expect(result).not.toBeNull();
+    expect(result.rangeAction).toBe('fold');
+    expect(result.revealMechanism).toBeNull();
+  });
+
+  it('applyShowdownAnchor records revealMechanism on the anchor', () => {
+    const profile = createEmptyProfile(1, 'user1');
+    applyShowdownAnchor(profile, 'LATE', 'open', AKs_index, 'won', 'showdown');
+
+    expect(profile.showdownAnchors).toHaveLength(1);
+    expect(profile.showdownAnchors[0].revealMechanism).toBe('showdown');
+  });
+
+  it('applyShowdownAnchor defaults revealMechanism to "showdown" when arg omitted (back-compat)', () => {
+    const profile = createEmptyProfile(1, 'user1');
+    applyShowdownAnchor(profile, 'LATE', 'open', AKs_index, 'won');
+
+    expect(profile.showdownAnchors[0].revealMechanism).toBe('showdown');
+  });
+
+  it('applyShowdownAnchor accepts reserved future mechanisms without altering boost magnitudes', () => {
+    // Per WS-175 / SPR-067 disposition: field is observability-only today.
+    // Boost magnitudes MUST be identical regardless of mechanism — pin behaviour
+    // so a future mechanism-aware correction is intentional, not accidental.
+    const AKo_index = rangeIndex(12, 11, false);
+
+    const showdownProfile = createEmptyProfile(1, 'user1');
+    applyShowdownAnchor(showdownProfile, 'LATE', 'open', AKs_index, 'won', 'showdown');
+
+    const muckedProfile = createEmptyProfile(2, 'user1');
+    applyShowdownAnchor(muckedProfile, 'LATE', 'open', AKs_index, 'won', 'mucked-shown');
+
+    const allInProfile = createEmptyProfile(3, 'user1');
+    applyShowdownAnchor(allInProfile, 'LATE', 'open', AKs_index, 'won', 'all-in-runout');
+
+    // Anchor magnitudes must match — accept-with-rails means NO math change today.
+    expect(muckedProfile.ranges.LATE.open[AKs_index]).toBe(showdownProfile.ranges.LATE.open[AKs_index]);
+    expect(muckedProfile.ranges.LATE.open[AKo_index]).toBe(showdownProfile.ranges.LATE.open[AKo_index]);
+    expect(allInProfile.ranges.LATE.open[AKs_index]).toBe(showdownProfile.ranges.LATE.open[AKs_index]);
+    expect(allInProfile.ranges.LATE.open[AKo_index]).toBe(showdownProfile.ranges.LATE.open[AKo_index]);
+
+    // But the field IS persisted distinctly per anchor — observability hook intact.
+    expect(muckedProfile.showdownAnchors[0].revealMechanism).toBe('mucked-shown');
+    expect(allInProfile.showdownAnchors[0].revealMechanism).toBe('all-in-runout');
+  });
+
+  it('updateProfileFromActions plumbs revealMechanism from extraction → anchor record', () => {
+    const profile = createEmptyProfile(1, 'user1');
+    const extractions = [
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: AKs_index, showdownOutcome: 'won', revealMechanism: 'showdown' },
+    ];
+
+    updateProfileFromActions(profile, extractions);
+
+    expect(profile.showdownAnchors).toHaveLength(1);
+    expect(profile.showdownAnchors[0].revealMechanism).toBe('showdown');
+  });
+
+  it('updateProfileFromActions falls back to "showdown" when extraction lacks revealMechanism (back-compat)', () => {
+    // Older extraction shapes (pre-SPR-067) may not have the field — must still anchor cleanly.
+    const profile = createEmptyProfile(1, 'user1');
+    const extractions = [
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: AKs_index, showdownOutcome: 'won' },
+    ];
+
+    updateProfileFromActions(profile, extractions);
+
+    expect(profile.showdownAnchors).toHaveLength(1);
+    expect(profile.showdownAnchors[0].revealMechanism).toBe('showdown');
+  });
+});
+
 describe('full pipeline integration', () => {
   it('extracts outcome and applies differentiated boosts through full pipeline', () => {
     // Use seat 1 with dealer at 1 (BTN = LATE position)

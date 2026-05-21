@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 24;
+export const DB_VERSION = 26;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';
@@ -96,6 +96,24 @@ export const TELEMETRY_CONSENT_STORE_NAME = 'telemetryConsent';
 // BLACKLISTED: live-table surfaces per chris-live-player.md autonomy red line #8.
 // See src/utils/skillAssessment/CLAUDE.md for the source-util-policy whitelist.
 export const HERO_LEAKS_STORE_NAME = 'heroLeaks';
+
+// SLS Stream D (2026-05-14, SPR-081 / WS-040) — shape language mastery + lesson completion.
+// Per `docs/design/contracts/shape-mastery.md` canonical shape +
+// `docs/design/surfaces/shape-skill-map.md` transparency surface +
+// `docs/projects/poker-shape-language/gate3-decision-memo.md` Q1-Q7 verdicts.
+//
+// `shapeMastery` — singleton per user (keyPath: userId). Record holds
+// {userId, enrolled, enrolledAt, schemaVersion, descriptors: {[id]: DescriptorMastery}}.
+// Per-descriptor mastery state includes Bayesian Beta posterior, declared signal,
+// mute state, and temporal anchors. I-SM-1 separates declared from posterior; no
+// fused score field exists by design.
+//
+// `shapeLessons` — append-only per-completion store (keyPath: id where id =
+// `${userId}:${lessonId}:${completedAt}`). 3 indexes (userId, descriptorId,
+// completedAt). Lesson CATALOG stays in code (src/utils/skillAssessment/lessonRegistry.js
+// pattern) — this store is owner-ratified per-user history only (SPR-081 plan-mode Decision 2).
+export const SHAPE_MASTERY_STORE_NAME = 'shapeMastery';
+export const SHAPE_LESSONS_STORE_NAME = 'shapeLessons';
 
 // PIO Gate 5 child A (2026-05-04, SPR-034 / WS-160) — player identification v2 stores.
 // Per `docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md` §PIO-G4-MIG.

@@ -12,7 +12,8 @@
  * Phase 6 B3-foundation (shipped 2026-04-25 S10): observation-tag normalizer + W-AO-1 capture writer (pure utils for Hand Replay Section G capture).
  * Commit 2.5 (upcoming): end-to-end producer wiring (replace scenario test stubs with real assumptionEngine integration).
  * Phase 6 B3-remaining (upcoming): IDB v18 migration + AnchorLibraryContext/reducer/persistence + capture modal React components.
- * Commits 5-8 (upcoming): matcher, copy generators, selectors
+ * Commit 5 (shipped SPR-055 / WS-017): live anchor matcher pure-utils — `getMatchingAnchors` + `matchesAnchor` predicate. Status-filter defaults to active-only with opt-out for study mode. Unblocks Stream C (LiveAdviceBar anchor-badge slot + SizingPresetsPanel embed).
+ * Commits 6-8 (upcoming): writer registry, copy generators
  * — per `src/utils/anchorLibrary/CLAUDE.md` File Responsibilities table.
  *
  * Before editing ANY file in this directory, read `CLAUDE.md`.
@@ -107,3 +108,56 @@ export {
 } from './observationTags';
 
 export { captureObservation } from './captureObservation';
+
+// ───────────────────────────────────────────────────────────────────────────
+// Commit 5 — live anchor matcher (Stream B / WS-017 / SPR-055)
+// ───────────────────────────────────────────────────────────────────────────
+
+export {
+  matchesAnchor,
+  getMatchingAnchors,
+  DEFAULT_LIVE_STATUSES,
+} from './matcher';
+
+// ───────────────────────────────────────────────────────────────────────────
+// Stream D child — Tier-3 auto-retire banner copy generator (SPR-060 / WS-170)
+// ───────────────────────────────────────────────────────────────────────────
+
+export {
+  buildAutoRetireBannerCopy,
+  validateAutoRetireBannerCopyBundle,
+} from './autoRetireBannerCopy';
+
+// ───────────────────────────────────────────────────────────────────────────
+// Stream D child — session-review anchor rollup selectors (SPR-061 / WS-171)
+// ───────────────────────────────────────────────────────────────────────────
+
+export {
+  selectAnchorActivityForSession,
+} from './sessionRollupSelectors';
+
+// ───────────────────────────────────────────────────────────────────────────
+// Stream D child — Calibration Dashboard selectors + copy (WS-169 / SPR-066)
+// ───────────────────────────────────────────────────────────────────────────
+
+export {
+  selectAnchorCalibration,
+  selectAllAnchorCalibrations,
+  selectPrimitiveValidity,
+  selectAllPrimitiveValidities,
+  MIN_SPARKLINE_SAMPLE_SIZE,
+  MIN_TREND_SAMPLE_SIZE,
+  TREND_RECENT_WINDOW,
+  TREND_STABILITY_BAND,
+} from './anchorCalibrationSelectors';
+
+export {
+  buildCalibrationProse,
+  buildAnchorsEmptyStateCopy,
+  buildPredicatesEmptyStateCopy,
+  buildEnrollmentBannerCopy,
+  buildInsufficientSparklineCopy,
+  buildCollectingDataTrendCopy,
+  validateCalibrationProse,
+  FORBIDDEN_PATTERNS as CALIBRATION_FORBIDDEN_PATTERNS,
+} from './calibrationCopy';

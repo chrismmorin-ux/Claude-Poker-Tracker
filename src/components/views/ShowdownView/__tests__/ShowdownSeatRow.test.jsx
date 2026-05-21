@@ -280,6 +280,109 @@ describe('ShowdownSeatRow', () => {
     });
   });
 
+  describe('won-state lock (WS-183)', () => {
+    it('does not render Unlock cards button when not won', () => {
+      render(<ShowdownSeatRow {...defaultProps} mode="selection" hasWon={false} />);
+      expect(screen.queryByText('Unlock cards')).not.toBeInTheDocument();
+      expect(screen.queryByText('Lock cards')).not.toBeInTheDocument();
+    });
+
+    it('renders Unlock cards button when seat has won', () => {
+      render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          hasWon={true}
+          showdownActionsArray={[ACTIONS.WON]}
+        />
+      );
+      expect(screen.getByText('Unlock cards')).toBeInTheDocument();
+    });
+
+    it('toggles to Lock cards label after Unlock is tapped', () => {
+      render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          hasWon={true}
+          showdownActionsArray={[ACTIONS.WON]}
+        />
+      );
+      fireEvent.click(screen.getByText('Unlock cards'));
+      expect(screen.getByText('Lock cards')).toBeInTheDocument();
+    });
+
+    it('card slot click is ignored when hasWon and not unlocked', () => {
+      const { container } = render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          hasWon={true}
+          showdownActionsArray={[ACTIONS.WON]}
+        />
+      );
+      // canInteract=false → CardSlot onClick should NOT invoke onHighlightSlot.
+      // CardSlot reads canInteract internally; we verify by reading the cursor class.
+      const interactiveSlots = container.querySelectorAll('[class*="cursor-pointer"]');
+      expect(interactiveSlots.length).toBe(0);
+      expect(defaultProps.onHighlightSlot).not.toHaveBeenCalled();
+    });
+
+    it('card slot click is accepted after Unlock is tapped', () => {
+      const { container } = render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          hasWon={true}
+          showdownActionsArray={[ACTIONS.WON]}
+        />
+      );
+      fireEvent.click(screen.getByText('Unlock cards'));
+      // After unlock, canInteract becomes true; some slot should render the
+      // cursor-pointer affordance.
+      const interactiveSlots = container.querySelectorAll('[class*="cursor-pointer"]');
+      expect(interactiveSlots.length).toBeGreaterThan(0);
+    });
+
+    it('does not render Unlock affordance in quick mode', () => {
+      // Quick mode uses the winner overlay; card editing is fully suppressed.
+      render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="quick"
+          hasWon={true}
+          showdownActionsArray={[ACTIONS.WON]}
+        />
+      );
+      expect(screen.queryByText('Unlock cards')).not.toBeInTheDocument();
+    });
+
+    it('does not render Unlock affordance when seat is mucked', () => {
+      // Mucked is its own lock and uses the existing isMucked path.
+      render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          isMucked={true}
+          hasWon={false}
+        />
+      );
+      expect(screen.queryByText('Unlock cards')).not.toBeInTheDocument();
+    });
+
+    it('card slots remain non-interactive on mucked seat', () => {
+      const { container } = render(
+        <ShowdownSeatRow
+          {...defaultProps}
+          mode="selection"
+          isMucked={true}
+        />
+      );
+      const interactiveSlots = container.querySelectorAll('[class*="cursor-pointer"]');
+      expect(interactiveSlots.length).toBe(0);
+    });
+  });
+
   describe('overlay status', () => {
     it('calls getOverlayStatus with correct params', () => {
       render(

@@ -102,9 +102,52 @@ export default defineConfig({
             'src/test/**/*.test.js',
             'scripts/__tests__/**/*.test.{js,cjs}',
           ],
+          // Slow CPU-bound equity-enumeration tests live in the
+          // `slow-unit` project below — they need a dedicated process
+          // to fit within their per-test timeouts. Excluding them here
+          // prevents the thread-pool from co-running them with peers
+          // and starving them of CPU. See SPR-089 fix.
+          exclude: [
+            'src/utils/drillContent/__tests__/frameworkValidator.test.js',
+            'src/utils/drillContent/__tests__/matchupShapeRouting.test.js',
+            'src/utils/drillContent/__tests__/precisionAudit.test.js',
+            'src/utils/drillContent/__tests__/shapesCatalog.test.js',
+          ],
           pool: 'threads',
           poolOptions: { threads: { maxThreads: 4 } },
           testTimeout: 5000,
+        },
+      },
+      {
+        // Slow-unit project — CPU-bound equity-enumeration tests over
+        // src/utils/drillContent/. These iterate ~150–400 (hero, villain)
+        // pairs through preflop-equity enumeration; per-test cold runtimes
+        // are 5–15 minutes. The regular `unit` project's `pool: threads,
+        // maxThreads: 4` causes them to time-out under co-runner CPU
+        // contention even when they'd pass cleanly in isolation.
+        //
+        // This project pins them to `pool: forks, maxForks: 1` so each
+        // file runs in its own dedicated Node process, in sequence —
+        // no thread-pool sharing, no cross-file contention.
+        //
+        // If you author a new slow drillContent equity test, add it here
+        // AND to the exclude list above.
+        extends: true,
+        test: {
+          name: 'slow-unit',
+          environment: 'node',
+          include: [
+            'src/utils/drillContent/__tests__/frameworkValidator.test.js',
+            'src/utils/drillContent/__tests__/matchupShapeRouting.test.js',
+            'src/utils/drillContent/__tests__/precisionAudit.test.js',
+            'src/utils/drillContent/__tests__/shapesCatalog.test.js',
+          ],
+          pool: 'forks',
+          poolOptions: { forks: { maxForks: 1 } },
+          // Inline per-test timeouts in these files (300_000–900_000ms)
+          // already override this project default; this floor is the
+          // safety net if a new test in this set forgets the inline arg.
+          testTimeout: 1800000,
         },
       },
       {

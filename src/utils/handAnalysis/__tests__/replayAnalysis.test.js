@@ -488,6 +488,113 @@ describe('buildCounterfactualTree', () => {
     expect(result).not.toHaveProperty('boardTexture');
   });
 
+  // SLS Stream B2 wiring (SPR-086 / WS-192) — perCombo + evByFraction
+  // surface on the per-action counterfactual-tree result so
+  // useHandReplayAnalysis can promote them to the top of villainAnalysis
+  // for the SPR-084 ReviewPanel section components to consume.
+
+  it('exposes perCombo from engine result onto counterfactual tree output', async () => {
+    const params = baseParams();
+    const samplePerCombo = [
+      { card1: 0, card2: 1, weight: 1, bucket: 'air', heroEquity: 0.7 },
+      { card1: 2, card2: 3, weight: 1, bucket: 'air', heroEquity: 0.6 },
+    ];
+    params.deps.evaluateGameTree = vi.fn().mockResolvedValue({
+      recommendations: [
+        { action: 'bet', ev: 5.2, sizing: { betSize: 10 }, depth: 2, handPlan: { reasoning: 'value' } },
+        { action: 'check', ev: 3.1, depth: 2 },
+      ],
+      treeMetadata: { depth: 2, depthReached: 2, computeMs: 87, sprZone: 'MEDIUM' },
+      foldPct: { bet: 0.42 },
+      foldMeta: { bet: { source: 'model' } },
+      modelQuality: { overallSource: 'observed', facingBetConfidence: 0.45 },
+      bucketEquities: { strong: 0.7 },
+      perCombo: samplePerCombo,
+    });
+    const result = await buildCounterfactualTree(params);
+    expect(result.perCombo).toBe(samplePerCombo);
+  });
+
+  it('perCombo is null when engine result has no perCombo field', async () => {
+    const params = baseParams();
+    const result = await buildCounterfactualTree(params);
+    expect(result).toHaveProperty('perCombo');
+    expect(result.perCombo).toBe(null);
+  });
+
+  it('evByFraction is derived from recommendations bet/raise sizings sorted ascending', async () => {
+    const params = baseParams();
+    params.deps.evaluateGameTree = vi.fn().mockResolvedValue({
+      recommendations: [
+        { action: 'bet', ev: 5.2, sizing: { betFraction: 0.75, betSize: 22 } },
+        { action: 'bet', ev: 4.1, sizing: { betFraction: 0.33, betSize: 10 } },
+        { action: 'bet', ev: 6.0, sizing: { betFraction: 1.00, betSize: 30 } },
+        { action: 'check', ev: 3.1 },
+        { action: 'fold', ev: 0 },
+      ],
+      treeMetadata: { depth: 2 },
+      foldPct: { bet: 0.4 },
+      foldMeta: { bet: { source: 'model' } },
+      modelQuality: { overallSource: 'observed' },
+      bucketEquities: {},
+    });
+    const result = await buildCounterfactualTree(params);
+    expect(result.evByFraction).toEqual([
+      { fraction: 0.33, ev: 4.1 },
+      { fraction: 0.75, ev: 5.2 },
+      { fraction: 1.00, ev: 6.0 },
+    ]);
+  });
+
+  it('evByFraction is null when fewer than 3 bet/raise candidates emit', async () => {
+    const params = baseParams();
+    // baseParams' makeEngineSuccess emits 1 bet + 1 check → fewer than 3 bets
+    const result = await buildCounterfactualTree(params);
+    expect(result.evByFraction).toBe(null);
+  });
+
+  it('evByFraction filters out non-bet/raise actions and entries missing sizing', async () => {
+    const params = baseParams();
+    params.deps.evaluateGameTree = vi.fn().mockResolvedValue({
+      recommendations: [
+        { action: 'bet', ev: 5.2, sizing: { betFraction: 0.50, betSize: 15 } },
+        { action: 'bet', ev: 4.1, sizing: { betFraction: 0.75, betSize: 22 } },
+        { action: 'raise', ev: 6.0, sizing: { betFraction: 1.50, betSize: 45 } },
+        { action: 'bet', ev: 3.0, sizing: undefined }, // no sizing → filtered out
+        { action: 'check', ev: 2.0 }, // non-bet → filtered out
+        { action: 'call', ev: 1.5 }, // non-bet → filtered out
+      ],
+      treeMetadata: { depth: 2 },
+      foldPct: { bet: 0.4 },
+      foldMeta: { bet: { source: 'model' } },
+      modelQuality: { overallSource: 'observed' },
+      bucketEquities: {},
+    });
+    const result = await buildCounterfactualTree(params);
+    expect(result.evByFraction).toHaveLength(3);
+    expect(result.evByFraction.map((e) => e.fraction)).toEqual([0.5, 0.75, 1.5]);
+  });
+
+  it('evByFraction handles bet entries with betFraction === 0 distinctly from missing sizing', async () => {
+    const params = baseParams();
+    params.deps.evaluateGameTree = vi.fn().mockResolvedValue({
+      recommendations: [
+        { action: 'bet', ev: 1.0, sizing: { betFraction: 0, betSize: 0 } },
+        { action: 'bet', ev: 2.0, sizing: { betFraction: 0.5, betSize: 15 } },
+        { action: 'bet', ev: 3.0, sizing: { betFraction: 1.0, betSize: 30 } },
+      ],
+      treeMetadata: { depth: 2 },
+      foldPct: { bet: 0.4 },
+      foldMeta: { bet: { source: 'model' } },
+      modelQuality: { overallSource: 'observed' },
+      bucketEquities: {},
+    });
+    const result = await buildCounterfactualTree(params);
+    // betFraction === 0 is a legitimate value (!= null); should NOT be filtered
+    expect(result.evByFraction).toHaveLength(3);
+    expect(result.evByFraction[0]).toEqual({ fraction: 0, ev: 1.0 });
+  });
+
   it('passes hero perspective inputs to the engine (board, heroCards encoded, pot, villainAction/Bet)', async () => {
     const params = baseParams();
     await buildCounterfactualTree(params);

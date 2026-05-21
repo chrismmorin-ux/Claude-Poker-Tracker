@@ -15,10 +15,32 @@ import { HeroCoachingCard } from './HeroCoachingCard';
 import { VillainAnalysisSection } from './VillainAnalysisSection';
 // EAL Phase 6 Stream D B3 (S17, 2026-04-27) — Tier 0 owner observation capture.
 import { AnchorObservationSection } from './AnchorObservationSection';
+import { TendencyStatsCard } from '../../ui/TendencyStatsCard';
 // HSP-W1 (WS-143 / SPR-029, 2026-05-03) — first-consumer wire for the Hero State Primitive.
 // Renders canonical-vs-actual side-by-side panels per hero decision point.
 // Surface spec: docs/design/surfaces/hand-replay-view.md §"HeroStateSection".
 import { HeroStateSection } from './HeroStateSection';
+// SLS Stream B1 (WS-041 / SPR-082, 2026-05-15) — Range Silhouette descriptor row.
+// Classifies the active villain's preflop range into one of 5 prototypes
+// (Oval/Barbell/Triangle/Comb/Cloud) and renders the label + confidence.
+// Read-only embed; no mastery writes. See `docs/projects/poker-shape-language.project.md`.
+import { RangeSilhouetteSection } from './RangeSilhouetteSection';
+// SLS Stream B2 (WS-042 / SPR-084, 2026-05-16) — Equity-Distribution Curve,
+// Spire+Polarization, Sizing Curve Tag descriptor rows. All three currently
+// receive null props because per-combo equity + EV-by-sizing data is not yet
+// exposed in `villainAnalysis` for the review surface — sections render null
+// until a follow-up sprint plumbs the data through. Classifier modules +
+// lessons + tests are real; visible-on-screen impact unlocks then.
+import { EquityDistributionCurveSection } from './EquityDistributionCurveSection';
+import { SpirePolarizationSection } from './SpirePolarizationSection';
+import { SizingCurveTagSection } from './SizingCurveTagSection';
+// SLS Stream B3 (WS-043 / SPR-088, 2026-05-18) — Saddle (way-ahead /
+// way-behind) descriptor row. Consumes `villainAnalysis.perCombo` (wired
+// by SPR-086) and emits a two-mass classification (wayAheadMass +
+// wayBehindMass + middleMass + label). Basin/Sankey deferred — see
+// shapeLanguage/CLAUDE.md Basin scope re-frame note and memory
+// `feedback_river_equity_is_showdown_outcome.md`.
+import { SaddleSection } from './SaddleSection';
 // SCF G5 / WS-158 (2026-05-03) — hero-leak badge inside HeroCoachingCard.
 // Per chris-live-player.md autonomy red lines #5 + #8: source-util-policy
 // whitelisted (review-mode only); no shame copy in alignment labels.
@@ -63,6 +85,14 @@ export const ReviewPanel = ({
     const playerId = seatPlayers[selectedVillainSeat];
     if (!playerId) return null;
     return tendencyMap?.[playerId]?.style || null;
+  }, [selectedVillainSeat, seatPlayers, tendencyMap]);
+
+  // SPR-063 / WS-135 — Compute villainTendency for the credible-interval rollup card
+  const villainTendency = useMemo(() => {
+    if (!selectedVillainSeat) return null;
+    const playerId = seatPlayers[selectedVillainSeat];
+    if (!playerId) return null;
+    return tendencyMap?.[playerId] || null;
   }, [selectedVillainSeat, seatPlayers, tendencyMap]);
 
   // Is current action a hero action?
@@ -241,6 +271,46 @@ export const ReviewPanel = ({
         />
       )}
 
+      {/* D3. SLS Range Silhouette descriptor row (WS-041 / SPR-082, 2026-05-15).
+          Read-only classifier embed; no mastery writes. */}
+      {isHeroAction && (
+        <RangeSilhouetteSection
+          villainRange={villainAnalysis?.villainRange || null}
+        />
+      )}
+
+      {/* D4. SLS Stream B2 descriptor rows (WS-042 / SPR-084, 2026-05-16).
+          Equity-Distribution Curve + Spire+Polarization + Sizing Curve Tag.
+          All three accept null props today (data not yet wired through
+          villainAnalysis) and render null. Per-combo equity + EV-by-sizing
+          plumbing is a follow-up. Sections are mounted now so the wiring
+          flips a single null → real-data swap when it lands. */}
+      {isHeroAction && (
+        <EquityDistributionCurveSection
+          perCombo={villainAnalysis?.perCombo || null}
+        />
+      )}
+      {isHeroAction && (
+        <SpirePolarizationSection
+          perCombo={villainAnalysis?.perCombo || null}
+        />
+      )}
+      {isHeroAction && (
+        <SizingCurveTagSection
+          evByFraction={villainAnalysis?.evByFraction || null}
+        />
+      )}
+      {/* D5. SLS Stream B3 Saddle descriptor row (WS-043 / SPR-088,
+          2026-05-18). Way-ahead / way-behind mass classification on the
+          villain's per-combo equity distribution. Sibling to the B2
+          sections; same prop wire (perCombo). Renders null when
+          perCombo is absent or below the sparse-input floor. */}
+      {isHeroAction && (
+        <SaddleSection
+          perCombo={villainAnalysis?.perCombo || null}
+        />
+      )}
+
       {/* E. Villain Analysis */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <VillainAnalysisSection
@@ -260,6 +330,17 @@ export const ReviewPanel = ({
           villainStyle={villainStyle}
         />
       </div>
+
+      {/* SPR-063 / WS-135 — Villain tendency credible-interval card,
+          peer to VillainAnalysisSection. Reads tendencyMap at the
+          ReviewPanel level so VillainAnalysisSection stays unchanged. */}
+      {villainTendency && (
+        <TendencyStatsCard
+          stats={villainTendency}
+          title="Villain Tendency"
+          testId="review-panel-tendency-card"
+        />
+      )}
 
       {/* G. Anchor Observation Capture (EAL S17, Tier 0) */}
       {hand?.handId && (

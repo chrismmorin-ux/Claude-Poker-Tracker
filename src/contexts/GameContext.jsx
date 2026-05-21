@@ -39,7 +39,19 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     return calculated;
   }, [actionSequence, blinds, potOverride]);
 
-  // Action helper: Record a primitive action for a seat
+  // Action helper: Record a primitive action for a seat.
+  //
+  // WS-182: Legacy raw-passthrough helper retained for test fixtures and
+  // any non-product callers that intentionally construct primitive payloads
+  // (e.g., reducer unit tests pinning state-mutation behavior). Production
+  // code MUST use recordSeatAction from useGameHandlers instead — that
+  // funnel derives the label from intent + game state and prevents illegal
+  // pairings like CHECK-while-owing.
+  //
+  // Bypass policy: callers of recordPrimitiveAction must document why the
+  // intent funnel is unsuitable (typically: testing the reducer's invalid-
+  // input handling, or constructing synthetic state at a layer below the
+  // hook).
   const recordPrimitiveAction = useCallback((seat, primitiveAction, amount) => {
     dispatchGame({
       type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,

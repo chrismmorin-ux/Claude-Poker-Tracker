@@ -70,6 +70,8 @@ describe('usePersistence', () => {
       dispatchGame: dispatchers.dispatchGame,
       dispatchCard: dispatchers.dispatchCard,
       dispatchPlayer: dispatchers.dispatchPlayer,
+      userId: undefined,
+      engineCtxGetterRef: undefined,
       ...overrides,
     };
     return renderHook(() =>
@@ -79,7 +81,9 @@ describe('usePersistence', () => {
         params.playerState,
         params.dispatchGame,
         params.dispatchCard,
-        params.dispatchPlayer
+        params.dispatchPlayer,
+        params.userId,
+        params.engineCtxGetterRef,
       )
     );
   };
@@ -324,6 +328,109 @@ describe('usePersistence', () => {
 
       // Should only save once with the final state
       expect(saveHand).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('predictionAudit reconstruction (PMC Phase 5a + 5a-2)', () => {
+    const handDataWithAction = () => createMockGameState({
+      currentStreet: 'preflop',
+      mySeat: 2,
+      dealerButtonSeat: 1,
+      actionSequence: [
+        { seat: 3, action: 'open', street: 'preflop', order: 1, amount: 30 },
+      ],
+    });
+
+    it('attaches predictionAudit with empty predictedDistribution when no engineCtxGetterRef is provided', async () => {
+      gameState = handDataWithAction();
+      const { rerender } = createHook({ gameState });
+
+      await act(async () => { await vi.runAllTimersAsync(); });
+      vi.mocked(saveHand).mockClear();
+
+      gameState = createMockGameState({
+        currentStreet: 'flop',
+        mySeat: 2,
+        dealerButtonSeat: 1,
+        actionSequence: handDataWithAction().actionSequence,
+      });
+      rerender();
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+
+      expect(saveHand).toHaveBeenCalled();
+      const saved = vi.mocked(saveHand).mock.calls[0][0];
+      expect(saved.predictionAudit).toBeDefined();
+      expect(saved.predictionAudit).not.toBeNull();
+      expect(saved.predictionAudit.predictedDistribution).toEqual([]);
+      expect(saved.predictionAudit.observedAction).toHaveLength(1);
+      expect(typeof saved.predictionAudit.modelVersion).toBe('string');
+    });
+
+    it('populates predictedDistribution when engineCtxGetterRef returns engine context', async () => {
+      // Build a rangeProfile keyed by 'BB' (offset 2 from button seat 1 → seat 3 is BB).
+      const grid = new Float64Array(169);
+      for (let i = 0; i < 169; i++) grid[i] = 30 / 169;
+      const grid2 = new Float64Array(169);
+      for (let i = 0; i < 169; i++) grid2[i] = 20 / 169;
+      const rangeProfile = { ranges: { BB: { open: grid, coldCall: grid2 } } };
+      const engineCtxGetterRef = {
+        current: () => ({
+          getRangeProfile: (playerId) => rangeProfile,
+          evaluateGameTree: undefined,
+        }),
+      };
+
+      // seatPlayers must map seat 3 → some playerId so actorId resolves.
+      playerState = createMockPlayerState({ seatPlayers: { 3: 99 } });
+      gameState = handDataWithAction();
+      const { rerender } = createHook({ gameState, playerState, engineCtxGetterRef });
+
+      await act(async () => { await vi.runAllTimersAsync(); });
+      vi.mocked(saveHand).mockClear();
+
+      gameState = createMockGameState({
+        currentStreet: 'flop',
+        mySeat: 2,
+        dealerButtonSeat: 1,
+        actionSequence: handDataWithAction().actionSequence,
+      });
+      rerender();
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+
+      expect(saveHand).toHaveBeenCalled();
+      const saved = vi.mocked(saveHand).mock.calls[0][0];
+      expect(saved.predictionAudit.predictedDistribution).toHaveLength(1);
+      const entry = saved.predictionAudit.predictedDistribution[0];
+      expect(entry.actor).toBe('villain');
+      expect(entry.distribution.length).toBeGreaterThan(0);
+      const total = entry.distribution.reduce((s, d) => s + d.weight, 0);
+      expect(total).toBeCloseTo(1.0, 6);
+    });
+
+    it('falls back gracefully when engineCtxGetterRef.current() returns null mid-save', async () => {
+      const engineCtxGetterRef = { current: () => null };
+      gameState = handDataWithAction();
+      const { rerender } = createHook({ gameState, engineCtxGetterRef });
+
+      await act(async () => { await vi.runAllTimersAsync(); });
+      vi.mocked(saveHand).mockClear();
+
+      gameState = createMockGameState({
+        currentStreet: 'flop',
+        mySeat: 2,
+        dealerButtonSeat: 1,
+        actionSequence: handDataWithAction().actionSequence,
+      });
+      rerender();
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+
+      expect(saveHand).toHaveBeenCalled();
+      const saved = vi.mocked(saveHand).mock.calls[0][0];
+      expect(saved.predictionAudit).toBeDefined();
+      expect(saved.predictionAudit.predictedDistribution).toEqual([]);
     });
   });
 

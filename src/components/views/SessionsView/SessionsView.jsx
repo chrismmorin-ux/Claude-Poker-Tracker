@@ -10,7 +10,8 @@ import { logger } from '../../../utils/errorHandler';
 import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { SessionForm } from '../../ui/SessionForm';
-import { SessionCard } from '../../ui/SessionCard';
+import { SessionRowWithRollup } from './SessionRowWithRollup';
+import { matchesSessionsFilter } from '../../../utils/sessionsFilter';
 import { GAME_TYPES } from '../../../constants/sessionConstants';
 import { calculateTotalRebuy } from '../../../utils/displayUtils';
 import { downloadBackup, readJsonFile, validateImportData, importAllData } from '../../../utils/exportUtils';
@@ -460,13 +461,9 @@ export const SessionsView = ({ scale }) => {
             <div className="divide-y divide-gray-700">
               {sessions
                 .filter((s) => !s.isActive)
-                .filter((s) => {
-                  if (pastSessionFilter === 'live') return s.source !== 'ignition';
-                  if (pastSessionFilter === 'online') return s.source === 'ignition';
-                  return true;
-                })
+                .filter((s) => matchesSessionsFilter(s, pastSessionFilter))
                 .map((session) => (
-                  <SessionCard
+                  <SessionRowWithRollup
                     key={session.sessionId}
                     session={session}
                     onDelete={handleDeleteSession}

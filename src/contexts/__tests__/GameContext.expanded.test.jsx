@@ -56,6 +56,12 @@ describe('GameContext derived values', () => {
     });
   });
 
+  // NEED_BYPASS (WS-182): recordPrimitiveAction is the legacy raw-passthrough
+  // context helper retained for tests + reducer-layer callers per GameContext.jsx
+  // deprecation note. These tests verify it dispatches the documented payload
+  // shape directly — they are NOT product-level recording tests (those live
+  // in useGameHandlers.test.js + actionSequence.integration.test.js and now
+  // exercise the WS-182 recordSeatAction funnel via product code paths).
   describe('recordPrimitiveAction', () => {
     it('dispatches RECORD_PRIMITIVE_ACTION with correct payload', () => {
       const mockDispatch = vi.fn();

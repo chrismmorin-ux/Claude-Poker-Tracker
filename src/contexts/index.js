@@ -26,3 +26,5 @@ export { EntitlementProvider, useEntitlement } from './EntitlementContext';
 export { RefresherProvider, useRefresher } from './RefresherContext';
 // EAL Phase 6 Stream D B3 (2026-04-27, S14) — exploit anchor library state.
 export { AnchorLibraryProvider, useAnchorLibrary } from './AnchorLibraryContext';
+// SLS Stream D (2026-05-14, SPR-081 / WS-040) — shape language mastery state.
+export { ShapeMasteryProvider, useShapeMastery } from './ShapeMasteryContext';

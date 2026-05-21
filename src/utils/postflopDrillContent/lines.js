@@ -261,30 +261,49 @@ const LINE_BTN_VS_BB_SRP_DRY_Q72R = {
       ],
       decision: {
         prompt: 'Villain bets 60% pot into our checked-flop range. What now?',
+        // WS-087 (SPR-096, 2026-05-20) — Stream B2 turn bucket-teaching.
+        // Archetype split threaded per the q72r Stream A audit's
+        // bucket-teaching queue (docs/design/audits/line-audits/
+        // btn-vs-bb-srp-ip-dry-q72r.md, `turn_checked_back` row): the call
+        // is +EV vs a properly-bluffed probe (REG/PRO) but a marginal
+        // bluff-catcher should fold vs a value-weighted passive probe (FISH).
+        // This is the one HIGH-leverage *turn* archetype flip in the line
+        // (the other two HIGH targets the audit lists are river nodes).
         branches: [
           {
             label: 'Call',
             nextId: 'river_after_flop_checkback',
             correct: true,
+            correctByArchetype: { fish: false, reg: true, pro: true },
             // LSW-F2-A3 (2026-04-22): pot-odds "~30%" → "~27%". For a 60%
             // pot bet, required equity is 0.6 / (1.6 + 0.6) = 27.3%. Call
             // is still clearly +EV at either threshold, but the teaching
             // number is now precise.
             rationale:
-              'Correct. Our range has enough pair-strength hands to call '
-              + 'down comfortably, and overfolding against a probe bet is '
-              + 'a classic exploit point. Pot odds of ~27% require modest '
-              + 'equity; any pair plus ace-high with a backdoor has it.',
+              'Correct vs REG/PRO; not vs FISH. Our range has enough '
+              + 'pair-strength hands to call down comfortably, and overfolding '
+              + 'against a probe bet is a classic exploit point. Pot odds of '
+              + '~27% require modest equity; any pair plus ace-high with a '
+              + 'backdoor has it. This holds vs REG/PRO, who probe a checked '
+              + 'flop with a properly polarized range (enough bluffs to make '
+              + 'bluff-catching profitable). vs FISH it flips: a passive '
+              + 'player\'s 60% lead is value-weighted (they bet when they have '
+              + 'it), so the thin bluff-catchers in our range should fold '
+              + 'rather than pay off a range that is rarely bluffing.',
           },
           {
             label: 'Fold',
             nextId: 'terminal_overfold',
             correct: false,
+            correctByArchetype: { fish: true, reg: false, pro: false },
             rationale:
-              'Overfold. Villain\'s probe range is too wide to fold our '
-              + 'pair hands. MDF math on a 60%-pot lead requires us to '
-              + 'defend ~63% of our range; any pair plus ace-highs clears '
-              + 'that threshold easily.',
+              'Overfold vs REG/PRO; correct vs FISH. Against a regular\'s or '
+              + 'pro\'s probe, folding is a leak — their range is too wide '
+              + '(MDF on a 60%-pot lead requires defending ~63% of our range; '
+              + 'any pair plus ace-highs clears it). Against a FISH it flips: '
+              + 'their probe-bet under-bluffs, so a marginal bluff-catcher has '
+              + 'too little equity-when-called to continue — fold and preserve '
+              + 'the showdown hands that beat their air for free.',
           },
           {
             label: 'Raise',
@@ -2244,15 +2263,19 @@ const LINE_UTG_VS_BTN_4BP_DEEP = {
       pot: 45.0,
       villainAction: { kind: 'check' },
       // SPR-049 (2026-05-07) — LSW-B1 HU close-out. Hero is UTG with
-      // A♥K♦ (top two pair on A♠K♦2♠). Pinned to `twoPair` per LSW-H3
+      // A♥K♣ (top two pair on A♠K♦2♠). Pinned to `twoPair` per LSW-H3
       // visual feasibility list. NOTE: LSW-A8 per-line audit has not yet
       // been conducted; authored here with H3-only confidence per
       // SPR-049 D1 ratification (precedent: K77 / T98 were authored,
       // then audited, then patched via LSW-F3/F4). Recovers via follow-up
       // commit if A8 later revises bucket / combo.
+      // WS-209 (SPR-096, 2026-05-20): combo was A♥K♦, which collided with
+      // the board K♦ (impossible holding; caught by INV-LSW-RL-EQUITY-PARITY).
+      // Changed to A♥K♣ — keeps top-two-pair, no board collision, and the
+      // original held no spade so no backdoor-flush teaching point is lost.
       heroView: {
         kind: 'single-combo',
-        combos: ['A♥K♦'],
+        combos: ['A♥K♣'],
         bucketCandidates: ['twoPair'],
         classLabel: 'top two pair',
       },

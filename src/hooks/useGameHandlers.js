@@ -19,6 +19,7 @@ import {
   LIMITS,
 } from '../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { recordSeatAction as recordSeatActionUtil } from '../utils/recordSeatAction';
 import { useGame, useUI, useCard, useSession } from '../contexts';
 import { useSeatUtils } from './useSeatUtils';
 
@@ -62,7 +63,25 @@ export const useGameHandlers = () => {
     getFirstActionSeat,
   } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
 
-  const recordSeatAction = useCallback((seat, action) => {
+  // WS-182: recordSeatAction is the single funnel for BETTING actions.
+  // Intent is 'fold' | 'match' | { raiseTo: number }; the label
+  // (CHECK/BET/CALL/RAISE/FOLD) is derived from intent + game state.
+  // CHECK-while-owing is structurally unrepresentable — no caller passes
+  // the 'check' string anymore.
+  const recordSeatAction = useCallback((seat, intent) => {
+    return recordSeatActionUtil(
+      { actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat },
+      dispatchGame,
+      seat,
+      intent
+    );
+  }, [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame]);
+
+  // WS-182 rename: this helper records SHOWDOWN actions (MUCKED / WON),
+  // not betting actions. Previously misnamed `recordSeatAction` — that
+  // name now belongs to the betting-API funnel above. Callers updated
+  // simultaneously (ShowdownView, useShowdownHandlers).
+  const recordShowdownAction = useCallback((seat, action) => {
     log(`Seat ${seat}: ${action} on ${currentStreet}`);
     dispatchGame({
       type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
@@ -217,30 +236,29 @@ export const useGameHandlers = () => {
     });
   }, [isSeatInactive, actionSequence, currentStreet]);
 
+  // WS-182: batch helpers funnel through recordSeatAction. SB owing chips
+  // gets resolved to CALL automatically by intent='match' — no caller passes
+  // a 'check' string into a CHECK label anymore.
   const restFold = useCallback(() => {
     const remaining = getRemainingSeats();
     remaining.forEach(seat => {
-      dispatchGame({
-        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
-        payload: { seat, action: 'fold' },
-      });
+      recordSeatAction(seat, 'fold');
     });
     // Don't clear selection — useAutoStreetAdvance will advance the street,
     // then useAutoSeatSelection will select the first action seat on the new street.
     return remaining.length;
-  }, [getRemainingSeats, dispatchGame]);
+  }, [getRemainingSeats, recordSeatAction]);
 
   const checkAround = useCallback(() => {
     const remaining = getRemainingSeats();
     remaining.forEach(seat => {
-      dispatchGame({
-        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
-        payload: { seat, action: 'check' },
-      });
+      // intent='match' — auto-resolves to CHECK or CALL based on amountOwed.
+      // SB owing chips ends up as CALL, not CHECK.
+      recordSeatAction(seat, 'match');
     });
     // Don't clear selection — auto-advance pipeline handles the transition.
     return remaining.length;
-  }, [getRemainingSeats, dispatchGame]);
+  }, [getRemainingSeats, recordSeatAction]);
 
   const foldToInvested = useCallback(() => {
     const remaining = getRemainingSeats();
@@ -272,19 +290,17 @@ export const useGameHandlers = () => {
         setSelectedPlayers([seat]);
         break;
       }
-      dispatchGame({
-        type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
-        payload: { seat, action: 'fold' },
-      });
+      recordSeatAction(seat, 'fold');
       count++;
     }
     // If no invested seat found, let auto-advance pipeline handle selection
     // (previously cleared selection, leaving user stranded)
     return count;
-  }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, dispatchGame, setSelectedPlayers]);
+  }, [getRemainingSeats, getFirstActionSeat, actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat, recordSeatAction, setSelectedPlayers]);
 
   return {
     recordSeatAction,
+    recordShowdownAction,
     clearSeatActions,
     undoLastAction,
     undoBatch,

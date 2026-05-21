@@ -39,6 +39,8 @@ export const UI_ACTIONS = {
   SET_LESSON_DETAIL: 'SET_LESSON_DETAIL',
   // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile nav state.
   SET_PLAYER_PROFILE: 'SET_PLAYER_PROFILE',
+  // EAL Stream D / WS-169 / SPR-066 (2026-05-09) — Calibration Dashboard nav state.
+  SET_CALIBRATION_DASHBOARD: 'SET_CALIBRATION_DASHBOARD',
 };
 
 import { SCREEN } from '../constants/uiConstants';
@@ -82,6 +84,13 @@ export const initialUiState = {
   // profileReturnScreen: where back-nav should return to (typically PLAYERS).
   profilePlayerId: null,
   profileReturnScreen: null,
+  // EAL Stream D / WS-169 / SPR-066 (2026-05-09) — Calibration Dashboard nav state.
+  // dashboardAnchorDeepLink: anchor id to auto-scroll/expand on entry; null
+  //   when entry is via primary nav (no deep-link).
+  // dashboardReturnScreen: where back-nav should return to (typically
+  //   ANCHOR_LIBRARY when entered via deep-link, else TABLE).
+  dashboardAnchorDeepLink: null,
+  dashboardReturnScreen: null,
 };
 
 // =============================================================================
@@ -123,6 +132,9 @@ export const UI_STATE_SCHEMA = {
   // migrate to stable string IDs if cross-venue identity is added.
   profilePlayerId: { type: 'number', required: false },
   profileReturnScreen: { type: 'string', required: false },
+  // EAL Stream D / WS-169 / SPR-066
+  dashboardAnchorDeepLink: { type: 'string', required: false }, // null when no deep-link
+  dashboardReturnScreen: { type: 'string', required: false },
 };
 
 // =============================================================================
@@ -327,6 +339,13 @@ const rawUiReducer = (state, action) => {
         ...state,
         profilePlayerId: action.payload?.profilePlayerId ?? null,
         profileReturnScreen: action.payload?.profileReturnScreen ?? null,
+      };
+
+    case UI_ACTIONS.SET_CALIBRATION_DASHBOARD:
+      return {
+        ...state,
+        dashboardAnchorDeepLink: action.payload?.dashboardAnchorDeepLink ?? null,
+        dashboardReturnScreen: action.payload?.dashboardReturnScreen ?? null,
       };
 
     // Open/close the unified PlayerFinder. Payload is either the finder

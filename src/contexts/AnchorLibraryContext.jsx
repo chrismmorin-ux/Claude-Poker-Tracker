@@ -28,6 +28,7 @@
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { useAnchorLibraryPersistence } from '../hooks/useAnchorLibraryPersistence';
+import { useAnchorAutoRetire } from '../hooks/useAnchorAutoRetire';
 import { ENROLLMENT_STATES } from '../constants/anchorLibraryConstants';
 
 // =============================================================================
@@ -49,17 +50,37 @@ const AnchorLibraryContext = createContext(null);
  * @param {Object} props
  * @param {Object} props.anchorLibraryState - State from anchorLibraryReducer
  * @param {Function} props.dispatchAnchorLibrary - Dispatcher for anchor library actions
+ * @param {string|null} [props.currentSessionId] - SPR-060/WS-170: current session id (Tier-3 evaluator context)
+ * @param {number|null} [props.currentSessionEndTime] - SPR-060/WS-170: ms timestamp set on session-end; orchestrator triggers on null→set transition
  * @param {React.ReactNode} props.children
  */
 export const AnchorLibraryProvider = ({
   anchorLibraryState,
   dispatchAnchorLibrary,
+  currentSessionId = null,
+  currentSessionEndTime = null,
   children,
 }) => {
   // Persistence: hydrates from IDB on mount; auto-saves on state change.
   // Returns { isReady } so consumers can defer enrollment-gated UI until
   // hydration completes (avoids flash-of-not-enrolled for enrolled owners).
   const { isReady } = useAnchorLibraryPersistence(anchorLibraryState, dispatchAnchorLibrary);
+
+  // SPR-060/WS-170 — Tier-3 auto-retirement orchestrator. Watches session-end
+  // transition (null → set), evaluates retirement conditions, dispatches
+  // ANCHOR_OVERRIDDEN with system-stamped operator metadata. Mid-session
+  // firing is structurally impossible (gated on sessionEndTime transition,
+  // not on render). Banner dismissal lives in localStorage.
+  const allAnchorsArray = useMemo(
+    () => Object.values(anchorLibraryState?.anchors || {}),
+    [anchorLibraryState],
+  );
+  const { pendingBannerCount, dismissBanner } = useAnchorAutoRetire({
+    anchors: allAnchorsArray,
+    dispatchAnchorLibrary,
+    sessionId: currentSessionId,
+    sessionEndTime: currentSessionEndTime,
+  });
 
   // ==========================================================================
   // SELECTOR HELPERS
@@ -161,6 +182,9 @@ export const AnchorLibraryProvider = ({
       selectAllPrimitives,
       selectPrimitivesByStyle,
       isEnrolled,
+      // SPR-060/WS-170 — Tier-3 auto-retire banner state
+      pendingBannerCount,
+      dismissBanner,
       // Dispatch (writers go through W-EA-* / W-AO-* / W-PP-* entry points
       // per WRITERS.md I-WR-1 — components dispatch via these constants)
       dispatchAnchorLibrary,
@@ -176,6 +200,8 @@ export const AnchorLibraryProvider = ({
       selectAllPrimitives,
       selectPrimitivesByStyle,
       isEnrolled,
+      pendingBannerCount,
+      dismissBanner,
       dispatchAnchorLibrary,
     ],
   );

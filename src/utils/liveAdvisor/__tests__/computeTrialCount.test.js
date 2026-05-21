@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTrialCount } from '../useLiveActionAdvisor';
+import { computeTrialCount } from '../computeHelpers';
 
 describe('computeTrialCount', () => {
   // -------------------------------------------------------------------------

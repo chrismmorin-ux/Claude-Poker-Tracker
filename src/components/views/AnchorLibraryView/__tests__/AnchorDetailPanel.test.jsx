@@ -199,12 +199,12 @@ describe('AnchorDetailPanel — section 5: Last fired', () => {
   });
 });
 
-describe('AnchorDetailPanel — section 6: Deep-link button (S20 stub)', () => {
-  it('renders disabled-style deep-link button with aria-disabled=true', () => {
+describe('AnchorDetailPanel — section 6: Deep-link button (live SPR-066)', () => {
+  it('renders an active deep-link button without aria-disabled', () => {
     render(<AnchorDetailPanel anchor={buildAnchor()} />);
     const btn = screen.getByTestId('panel-deep-link-dashboard');
-    expect(btn.getAttribute('aria-disabled')).toBe('true');
-    expect(btn.getAttribute('title')).toContain('Calibration Dashboard');
+    expect(btn.getAttribute('aria-disabled')).toBeNull();
+    expect(btn.getAttribute('aria-label')).toContain('Calibration Dashboard');
   });
 
   it('invokes onOpenDashboard with anchorId on click', () => {

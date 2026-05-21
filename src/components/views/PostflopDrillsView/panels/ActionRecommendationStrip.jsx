@@ -14,6 +14,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { formatPercentGroup } from '../../../../utils/pokerCore/percentGroup';
 
 export const ActionRecommendationStrip = ({ recommendation, valueBeatRatio = null }) => {
   const authored = recommendation?.authoredReason;
@@ -32,6 +33,18 @@ export const ActionRecommendationStrip = ({ recommendation, valueBeatRatio = nul
   const reason = authored || templated;
   if (!actionLabel && !reason) return null;
 
+  // 2-value partition: value-region weight vs bluff-or-pay-region weight,
+  // sums to 100% of the relevant villain range slice. WS-185.
+  // Note: 2-value display intentionally renders without the "(sums to 100%)"
+  // inline label per plan — the ratio reads cleanly without the annotation
+  // and the label would dominate this thin one-line strip.
+  const [valuePct, bluffPayPct] = valueBeatRatio && Number.isFinite(valueBeatRatio.ratio)
+    ? formatPercentGroup(
+        [valueBeatRatio.valueWeight, valueBeatRatio.bluffOrPayWeight],
+        1,
+      )
+    : [null, null];
+
   return (
     <div className="rounded-md border border-teal-700/60 bg-teal-950/40 px-3 py-2">
       <div className="text-[11px] text-teal-100 leading-snug">
@@ -39,9 +52,10 @@ export const ActionRecommendationStrip = ({ recommendation, valueBeatRatio = nul
       </div>
       {valueBeatRatio && Number.isFinite(valueBeatRatio.ratio) && (
         <div className="text-[10px] text-gray-400 mt-1 font-mono">
-          value:bluff-or-pay ratio ≈ {valueBeatRatio.valueWeight.toFixed(1)}%
+          value:bluff-or-pay ratio ≈{' '}
+          <span data-testid="ars-pct-value">{valuePct}%</span>
           {' : '}
-          {valueBeatRatio.bluffOrPayWeight.toFixed(1)}%
+          <span data-testid="ars-pct-bluff-or-pay">{bluffPayPct}%</span>
           {valueBeatRatio.bluffOrPayWeight > 0
             ? ` (${valueBeatRatio.ratio.toFixed(2)}×)`
             : ' (no opposing region)'}

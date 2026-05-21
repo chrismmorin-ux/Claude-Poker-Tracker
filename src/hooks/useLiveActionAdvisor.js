@@ -8,228 +8,44 @@
  * Preflop uses a dedicated branch (handVsRange + stat-based fold estimation)
  * since the postflop pipeline (segmentRange) doesn't work with an empty board.
  * Postflop delegates to getActionAdvice() which chains narrowing → segmentation → equity → EV.
+ *
+ * SPR-080 (2026-05-14): 6 pure helpers extracted to
+ * `src/utils/liveAdvisor/computeHelpers.js`. This hook now owns state +
+ * orchestration only. PMC Phase 5b integration point: optional
+ * `onHandComplete` callback in options fires when a per-hand prediction is
+ * produced (see compute() body before `setAdvice`). The callback receives
+ * `{ handNumber, street, heroCards, villainSeat, prediction, modelVersion }`.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { logger } from '../utils/errorHandler';
-import { evaluateGameTree } from '../utils/exploitEngine/gameTreeEvaluator';
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { rangeWidth } from '../utils/pokerCore/rangeMatrix';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
-import { handVsRange as handVsRangeDirect } from '../utils/pokerCore/monteCarloEquity';
-import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
 import { analyzeBoardTexture } from '../utils/pokerCore/boardTexture';
 import {
   buildBaselineRange,
-  computePreflopAdvice,
   detectSituation,
   SITUATION_LABELS,
 } from '../utils/exploitEngine/preflopAdvisor';
 import { useAbortControl } from './useAbortControl';
 import { getQualityTier } from '../constants/designTokens';
-import { getSPRZone, SPR_ZONES } from '../utils/exploitEngine/gameTreeConstants';
 import {
-  estimatePot, buildPlayerStats, computeEffectiveStack,
-  buildOpponentModels, buildPostflopContextHints, countPlayersToAct,
+  estimatePot, buildPlayerStats,
 } from '../utils/exploitEngine/liveGameContext';
+import {
+  computeTrialCount,
+  computeAllVillainRanges,
+  computeVillainEquities,
+  narrowWithLog,
+  buildPreflopAdvice,
+  buildPostflopAdvice,
+} from '../utils/liveAdvisor/computeHelpers';
 
-// =========================================================================
-// HELPERS
-// =========================================================================
-
-/**
- * Compute trial count based on game context.
- * Fewer trials when the decision is simpler or data is thin.
- */
-export const computeTrialCount = ({ spr, street, activeOpponents, sampleSize } = {}) => {
-  if (street === 'river') return 500;
-  const zone = getSPRZone(spr);
-  if (zone === SPR_ZONES.MICRO || zone === SPR_ZONES.LOW) return 500;
-  if (zone === SPR_ZONES.MEDIUM) return 800;
-  if (sampleSize != null && sampleSize < 10) return 500;
-  if (activeOpponents != null && activeOpponents >= 3) return 1500;
-  return 1000;
-};
-
-/**
- * Compute Bayesian range data for ALL active (non-folded) villains.
- * Returns array of { seat, position, actionKey, range, villainData }.
- */
-export const computeAllVillainRanges = (liveHandState, tendencyMap, dealerSeat) => {
-  const heroSeat = liveHandState.heroSeat;
-  const foldedSet = new Set(liveHandState.foldedSeats || []);
-  const activeSeats = (liveHandState.activeSeatNumbers || [])
-    .filter(s => s !== heroSeat && !foldedSet.has(s));
-
-  return activeSeats.map(seat => {
-    const villainData = tendencyMap[String(seat)] || {};
-    const position = getRangePositionCategory(seat, dealerSeat || 1);
-    const actionKey = getVillainActionKey(liveHandState.actionSequence, seat);
-    let range = getVillainRange(villainData.rangeProfile, position, actionKey);
-    if (!range) {
-      range = buildBaselineRange(villainData.vpip, villainData.pfr, position);
-    }
-    return { seat, position, actionKey, range, villainData };
-  });
-};
-
-/**
- * Compute hero equity vs each villain's range in parallel.
- * Divides trial budget across villains (min 200 per villain).
- */
-const computeVillainEquities = async (heroCards, villainRangeEntries, board, baseTrials, equityFn = handVsRangeDirect) => {
-  if (!villainRangeEntries.length) return { perVillain: [], multiway: null };
-
-  const trialsPerVillain = Math.max(200, Math.floor(baseTrials / villainRangeEntries.length));
-
-  const equityResults = await Promise.all(
-    villainRangeEntries.map(({ range }) =>
-      equityFn(heroCards, range, board, { trials: trialsPerVillain, minTrials: 100 })
-        .catch(() => null)
-    )
-  );
-
-  const perVillain = equityResults.map((result, i) => ({
-    seat: villainRangeEntries[i].seat,
-    equity: result?.equity ?? null,
-    equityCI: result ? [result.ciLow, result.ciHigh] : null,
-  }));
-
-  // Multiway equity: pairwise product approximation
-  const validEquities = perVillain.filter(pv => pv.equity != null);
-  let multiway = null;
-  if (validEquities.length >= 2) {
-    const product = validEquities.reduce((acc, pv) => acc * pv.equity, 1.0);
-    // Slight upward adjustment — pairwise product underestimates
-    const adjusted = Math.min(1.0, product * (1 + 0.05 * (validEquities.length - 1)));
-    multiway = {
-      equity: adjusted,
-      ci: null, // CI for multiway is complex — omit for now
-      method: 'pairwise',
-    };
-  }
-
-  return { perVillain, multiway };
-};
-
-/**
- * Narrow a villain's range for a postflop street and record the narrowing.
- * Returns { narrowed, logEntry }.
- */
-const narrowWithLog = (range, action, board, deadCards, options, seat, street) => {
-  const beforeWidth = rangeWidth(range);
-  const narrowed = narrowByBoard(range, action, board, deadCards, options);
-  const afterWidth = rangeWidth(narrowed);
-
-  const delta = beforeWidth - afterWidth;
-  let description;
-  if (action === 'bet' || action === 'raise') {
-    description = `${action === 'raise' ? 'Raise' : 'Bet'} → top ${afterWidth}% by equity`;
-  } else if (action === 'call') {
-    description = delta > 5
-      ? `Call removed ${delta}% air, kept medium+ hands`
-      : `Calling range mostly preserved (${afterWidth}%)`;
-  } else if (action === 'check') {
-    description = `Check → weak/trapping range (${afterWidth}%)`;
-  } else {
-    description = `Range adjusted ${beforeWidth}% → ${afterWidth}%`;
-  }
-
-  return {
-    narrowed,
-    logEntry: { street, seat, action, fromWidth: beforeWidth, toWidth: afterWidth, description },
-  };
-};
-
-/**
- * Build preflop advice from live hand state context.
- * Handles positional dynamics, squeeze/limp detection, and playersToAct counting.
- */
-const buildPreflopAdvice = async ({
-  liveHandState, heroSeat, targetSeat, dealerSeat,
-  villainRange, encodedHero, adjustedPot,
-  detectedSituation, playerStats, villainData, villainModel, rakeConfig,
-  equityFn,
-}) => {
-  const { situation, villainAction, villainBet } = detectedSituation;
-  const heroPosition = getRangePositionCategory(heroSeat, dealerSeat || 1);
-  const villainPosition = getRangePositionCategory(targetSeat, dealerSeat || 1);
-  const playersToAct = countPlayersToAct(liveHandState, heroSeat, dealerSeat);
-
-  const posCtx = {
-    heroPosition, villainPosition,
-    situation,
-    limperCount: detectedSituation.limperCount || 0,
-    callerCount: detectedSituation.callerCount || 0,
-    deadMoney: detectedSituation.deadMoney || 0,
-    trapWarning: villainData.traits?.trapsPreflop || false,
-    playersToAct,
-    heroSeat,
-    villainSeat: targetSeat,
-    dealerSeat: dealerSeat || 1,
-  };
-
-  return computePreflopAdvice(
-    villainRange, encodedHero, adjustedPot,
-    villainAction, villainBet || 0, playerStats,
-    posCtx, villainModel, rakeConfig, equityFn
-  );
-};
-
-/**
- * Build postflop advice from live hand state context.
- * Handles board encoding, multi-way opponents, stack depth, and game tree evaluation.
- */
-const buildPostflopAdvice = async ({
-  liveHandState, heroSeat, targetSeat, dealerSeat, currentStreet,
-  villainRange, encodedHero, adjustedPot,
-  detectedSituation, playerStats, villainData, villainModel,
-  tendencyMap, dataQuality, sampleSize, rakeConfig, equityFn,
-}) => {
-  const { villainAction, villainBet } = detectedSituation;
-  const communityCards = liveHandState.communityCards || [];
-  const visibleBoard = communityCards.filter(c => c && c !== '');
-  const encodedBoard = visibleBoard.map(c => parseAndEncode(c)).filter(c => c >= 0);
-  if (encodedBoard.length < 3) return null;
-
-  // Surface villain model quality in dataQuality
-  dataQuality.villainModelNote = villainModel?._buckets
-    ? 'Calibrated to villain behavior'
-    : villainModel
-      ? 'Partial villain model — some generic assumptions'
-      : 'Generic advice — no villain model';
-
-  const effStack = computeEffectiveStack(liveHandState, heroSeat, targetSeat);
-  const { models: opponentModels, activeOpponents } = buildOpponentModels(liveHandState, heroSeat, targetSeat, tendencyMap);
-  const { contextHints } = buildPostflopContextHints({
-    liveHandState, heroSeat, targetSeat, dealerSeat,
-    villainData, encodedBoard,
-  });
-
-  return evaluateGameTree({
-    villainRange,
-    board: encodedBoard,
-    heroCards: encodedHero,
-    potSize: adjustedPot,
-    villainAction: (villainAction === 'check' || !villainAction) ? undefined : villainAction,
-    villainBet: villainBet || 0,
-    trials: computeTrialCount({
-      spr: effStack != null && adjustedPot > 0 ? effStack / adjustedPot : null,
-      street: currentStreet,
-      activeOpponents,
-      sampleSize,
-    }),
-    playerStats,
-    villainModel,
-    effectiveStack: effStack,
-    numOpponents: Math.max(1, activeOpponents),
-    opponentModels,
-    contextHints,
-    rakeConfig,
-    equityFn,
-  });
-};
+// Re-export computeTrialCount for back-compat with any external importers.
+// Canonical location is now `src/utils/liveAdvisor/computeHelpers.js`.
+export { computeTrialCount };
 
 // =========================================================================
 // MAIN HOOK
@@ -238,9 +54,16 @@ const buildPostflopAdvice = async ({
 /**
  * @param {Object|null} liveHandState - From useSyncBridge
  * @param {Object} tendencyMap - From useOnlineAnalysis
+ * @param {Object} [options]
+ * @param {Function} [options.equityFn] - Override equity computation (used for equity worker).
+ * @param {Function} [options.onHandComplete] - Optional callback fired when a per-hand
+ *   prediction is produced. Receives `{ handNumber, street, heroCards, villainSeat,
+ *   prediction, modelVersion }`. Reserved for PMC Phase 5b hand-end audit capture.
+ *   Failures in this callback are logged and swallowed; the advisor flow continues.
  * @returns {{ advice: Object|null, isComputing: boolean }}
  */
-export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = {}) => {
+export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) => {
+  const { equityFn, onHandComplete } = options;
   const [advice, setAdvice] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
   const lastComputeKey = useRef(null);
@@ -463,7 +286,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = 
         );
       }
 
-      setAdvice({
+      const assembledAdvice = {
         villainSeat: targetSeat,
         villainStyle: villainData.style || null,
         villainSampleSize: sampleSize,
@@ -504,7 +327,27 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = 
         multiwayEquity: multiway,
         narrowingLog: [...streetRangesRef.current.log],
         timestamp: Date.now(),
-      });
+      };
+
+      // PMC Phase 5b hand-end integration point (SPR-080):
+      // Optional callback fires when a per-hand prediction is produced.
+      // Callback failures must NOT break advisor flow — wrap in try/catch.
+      if (onHandComplete) {
+        try {
+          onHandComplete({
+            handNumber: liveHandState?.handNumber ?? null,
+            street: currentStreet,
+            heroCards: encodedHero,
+            villainSeat: targetSeat,
+            prediction: assembledAdvice,
+            modelVersion: result.modelVersion ?? null,
+          });
+        } catch (err) {
+          logger.warn('LiveActionAdvisor', 'onHandComplete callback threw:', err?.message);
+        }
+      }
+
+      setAdvice(assembledAdvice);
       logger.debug('LiveActionAdvisor', 'Advice computed:', {
         street: currentStreet, situation, villain: targetSeat,
         heroEq: Math.round(result.heroEquity * 100) + '%',
@@ -525,4 +368,3 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, { equityFn } = 
 
   return { advice, isComputing };
 };
-

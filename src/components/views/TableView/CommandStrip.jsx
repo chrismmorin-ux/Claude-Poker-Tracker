@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ActionSequence } from '../../ui/ActionSequence';
 import { LAYOUT, STREETS, LIMITS } from '../../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS } from '../../../constants/primitiveActions';
@@ -8,12 +8,16 @@ import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet, hasSeatFolded, getStr
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
 import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession } from '../../../contexts';
+import { useAnchorLibrary } from '../../../contexts/AnchorLibraryContext';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
 import { useAutoSeatSelection } from '../../../hooks/useAutoSeatSelection';
 import { useCardSelection } from '../../../hooks/useCardSelection';
+import { useExploitAnchorsForLive } from '../../../hooks/useExploitAnchorsForLive';
+import { logMatcherFiring } from '../../../utils/anchorLibrary/logMatcherFiring';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
+import { ANCHOR_LIBRARY_ACTIONS } from '../../../constants/anchorLibraryConstants';
 import { CardSelectorPanel } from './CardSelectorPanel';
 import { LiveAdviceBar } from './LiveAdviceBar';
 import { SizingPresetsPanel } from './SizingPresetsPanel';
@@ -70,8 +74,11 @@ export const CommandStrip = ({
   liveEquity,
   boardTexture,
 }) => {
-  // Contexts — consumed directly (CH-2: all orchestration callbacks internalized)
-  const { recordPrimitiveAction, potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, dispatchGame } = useGame();
+  // Contexts — consumed directly (CH-2: all orchestration callbacks internalized).
+  // WS-182: recordPrimitiveAction (primitive-string passthrough) is no longer
+  // used here — every recording funnels through recordSeatAction (intent-based)
+  // from useGameHandlers below.
+  const { potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, dispatchGame } = useGame();
   const { settings, updateSetting } = useSettings();
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
@@ -79,9 +86,16 @@ export const CommandStrip = ({
   const { advice: gameTreeAdvice } = useAnalysisContext();
   const { addToast, showInfo, showWarning } = useToast();
   const { currentSession, setHandCount } = useSession();
+  const {
+    selectActiveAnchors,
+    isReady: anchorLibraryReady,
+    enrollment: anchorEnrollment,
+    dispatchAnchorLibrary,
+  } = useAnchorLibrary();
 
   // Hooks — consumed directly instead of receiving computed values as props
   const {
+    recordSeatAction, // WS-182: intent-based betting recorder
     toggleAbsent,
     clearSeatActions,
     undoLastAction,
@@ -100,8 +114,10 @@ export const CommandStrip = ({
 
   const { getNextActionSeat, getFirstActionSeat, activeSeatCount } = useSeatUtils(currentStreet, dealerButtonSeat, absentSeats, actionSequence, LIMITS.NUM_SEATS);
 
-  // Auto-select first action seat on mount, street change, or card selector close
-  const { scheduleAutoSelect } = useAutoSeatSelection(showCardSelector, currentStreet, getFirstActionSeat, setSelectedPlayers);
+  // Auto-select first action seat on mount, street change, or card selector close.
+  // selectedPlayers passed for WS-189 Phase 1 telemetry only (logs H3 multi-seat-clobber
+  // evidence — does NOT change firing behavior).
+  const { scheduleAutoSelect } = useAutoSeatSelection(showCardSelector, currentStreet, getFirstActionSeat, setSelectedPlayers, selectedPlayers);
 
   // Card selection logic (community and hole cards)
   const selectCard = useCardSelection(highlightedBoardIndex, cardSelectorType, communityCards, holeCards, currentStreet, dispatchCard, { closeCardSelector, setHighlightedCardIndex });
@@ -114,6 +130,79 @@ export const CommandStrip = ({
   const remainingCount = getRemainingSeats().length;
   const singleSeatForNext = selectedPlayers.length === 1 ? selectedPlayers[0] : null;
   const nextActionSeat = singleSeatForNext ? getNextActionSeat(singleSeatForNext) : null;
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Stream C: Live anchor matcher subscription + system observation writer.
+  // Per `docs/design/surfaces/live-anchor-badge.md` (Gate 4 surface) +
+  // WRITERS.md W-AO-2 (matcher-system-observation-writer).
+  //
+  // Matcher runs against active anchors only (DEFAULT_LIVE_STATUSES); top-1
+  // by composite quality is rendered. Observation writer is enrollment-gated
+  // (I-WR-5) and idempotent on (anchorId, handId, streetKey) tuple.
+  // ────────────────────────────────────────────────────────────────────────
+  const activeAnchors = useMemo(
+    () => (typeof selectActiveAnchors === 'function' ? selectActiveAnchors() : []),
+    [selectActiveAnchors],
+  );
+  const heroSeatForAnchor = settings?.mySeat ?? null;
+  const villainSeatForAnchor = liveEquity?.villainSeat ?? null;
+  const { topAnchor: liveAnchor } = useExploitAnchorsForLive({
+    activeAnchors,
+    actionSequence,
+    currentStreet,
+    heroSeat: heroSeatForAnchor,
+    villainSeat: villainSeatForAnchor,
+    villainStyle: null, // v1: matcher treats absent style as wildcard
+    boardTexture,
+    isReady: anchorLibraryReady,
+  });
+  // Synthetic handId for live observations — composes session id + hand
+  // counter. Hands aren't yet IDB-persisted at fire-time, so the synthetic
+  // shape lets W-AO-2 idempotence work within a session even before the
+  // hand commits to the `hands` store.
+  const currentHandId = useMemo(() => {
+    if (!currentSession || !currentSession.id) return null;
+    const handCount = typeof currentSession.handCount === 'number' ? currentSession.handCount : 0;
+    return `live:${currentSession.id}:hand-${handCount}`;
+  }, [currentSession]);
+
+  // Fire the W-AO-2 observation writer when an anchor becomes the active
+  // top match. Idempotent on duplicate fires within the same hand+street
+  // (deterministic id collapses at dispatch).
+  const lastFiredKeyRef = useRef(null);
+  useEffect(() => {
+    if (!liveAnchor || !currentHandId || !currentStreet) return;
+    const enrollmentState = anchorEnrollment?.observation_enrollment_state || 'not-enrolled';
+    const fireKey = `${currentHandId}:${currentStreet}:${liveAnchor.id}`;
+    if (lastFiredKeyRef.current === fireKey) return; // local-tick idempotence
+
+    const result = logMatcherFiring(
+      {
+        anchorId: liveAnchor.id,
+        handId: currentHandId,
+        streetKey: currentStreet,
+        firingMetrics: { confidence: liveAnchor?.evidence?.pointEstimate ?? null },
+      },
+      { observation_enrollment_state: enrollmentState },
+    );
+    lastFiredKeyRef.current = fireKey;
+    if (!result.ok || !result.record) return; // I-WR-5 short-circuit when not enrolled
+    dispatchAnchorLibrary({
+      type: ANCHOR_LIBRARY_ACTIONS.OBSERVATION_CAPTURED,
+      payload: { observation: result.record },
+    });
+  }, [liveAnchor, currentHandId, currentStreet, anchorEnrollment, dispatchAnchorLibrary]);
+
+  // Tap → deferred drill stub (per AP-07 line 112 + Gate 4 surface §Tap).
+  // v1 records the intent; v2 wires HandReplay (or a between-hands panel)
+  // to consume it. Logged for telemetry visibility in the meantime.
+  const handleAnchorTap = useCallback((payload) => {
+    // Console log is deliberate v1 stub — provides Redux-DevTools-equivalent
+    // visibility without coupling to a deferred-drill surface that hasn't
+    // shipped yet.
+    // eslint-disable-next-line no-console
+    console.info('[anchor-badge] tapped — deferred drill queued', payload);
+  }, []);
 
   // Auto-advance to next seat after recording an action
   const handleAdvanceSeat = useCallback((currentSeat) => {
@@ -155,17 +244,16 @@ export const CommandStrip = ({
     // Save undo point before auto-folding
     orbitUndoPointRef.current = actionSequence.length;
 
-    // Auto-fold un-acted, non-folded seats between current and target
+    // Auto-fold un-acted, non-folded seats between current and target.
+    // WS-182: funnel through recordSeatAction(seat, 'fold') instead of
+    // direct RECORD_PRIMITIVE_ACTION dispatch.
     const preflopEntries = actionSequence.filter(e => e.street === 'preflop');
     let foldCount = 0;
     for (let i = currentIdx; i < targetIdx; i++) {
       const seat = order[i];
       const hasActed = preflopEntries.some(e => e.seat === seat);
       if (!hasActed) {
-        dispatchGame({
-          type: GAME_ACTIONS.RECORD_PRIMITIVE_ACTION,
-          payload: { seat, action: 'fold' },
-        });
+        recordSeatAction(seat, 'fold');
         foldCount++;
       }
     }
@@ -173,7 +261,7 @@ export const CommandStrip = ({
       showInfo(`Folded ${foldCount} seat${foldCount > 1 ? 's' : ''}`);
     }
     setSelectedPlayers([targetSeat]);
-  }, [currentStreet, dealerButtonSeat, absentSeats, getFirstActionSeat, actionSequence, dispatchGame, setSelectedPlayers, showInfo]);
+  }, [currentStreet, dealerButtonSeat, absentSeats, getFirstActionSeat, actionSequence, recordSeatAction, setSelectedPlayers, showInfo]);
 
   // RT-26: Batch undo all orbit auto-folds at once
   const handleUndo = useCallback((seat) => {
@@ -405,28 +493,41 @@ export const CommandStrip = ({
     ? getSizingOptions(currentStreet, sizingAction, blinds, potInfo.total, currentBet, customMultipliers)
     : [];
 
+  // WS-182: handleRecordAction maps button-derived labels (CHECK/CALL/FOLD)
+  // to recordSeatAction intents. The button label is presentational; the
+  // primitive label written to actionSequence is derived from intent +
+  // game state inside recordSeatAction. CHECK-while-owing becomes
+  // structurally unrepresentable — if the UI shows "Check" but state has
+  // amountOwed>0, 'match' resolves to CALL and the action is correctly
+  // recorded as CALL (not the stale "Check" label).
   const handleRecordAction = useCallback((action) => {
-    if (!recordPrimitiveAction) return;
+    if (!recordSeatAction) return;
+    let intent;
+    if (action === PRIMITIVE_ACTIONS.CHECK || action === PRIMITIVE_ACTIONS.CALL) {
+      intent = 'match';
+    } else if (action === PRIMITIVE_ACTIONS.FOLD) {
+      intent = 'fold';
+    } else {
+      // BET / RAISE come through handleSizeSelected with a raiseTo amount;
+      // this branch is unreachable for valid action buttons.
+      return;
+    }
     selectedPlayers.forEach(seat => {
-      if (action === PRIMITIVE_ACTIONS.CALL) {
-        const alreadyIn = seatContributions[seat] || 0;
-        const increment = Math.max(0, effectiveBet - alreadyIn);
-        recordPrimitiveAction(seat, action, increment);
-      } else {
-        recordPrimitiveAction(seat, action);
-      }
+      recordSeatAction(seat, intent);
     });
     if (!isMultiSeat) {
       handleAdvanceSeat(selectedPlayers[0]);
     }
-  }, [recordPrimitiveAction, isMultiSeat, selectedPlayers, handleAdvanceSeat, seatContributions, effectiveBet]);
+  }, [recordSeatAction, isMultiSeat, selectedPlayers, handleAdvanceSeat]);
 
+  // WS-182: sizing presets fold into intent={ raiseTo: amount }. The label
+  // (BET vs RAISE) is derived inside recordSeatAction from currentBet.
   const handleSizeSelected = useCallback((amount) => {
-    if (!recordPrimitiveAction || !sizingAction) return;
+    if (!recordSeatAction || !sizingAction) return;
     const seat = selectedPlayers[0];
-    recordPrimitiveAction(seat, sizingAction, amount);
+    recordSeatAction(seat, { raiseTo: amount });
     handleAdvanceSeat(seat);
-  }, [recordPrimitiveAction, sizingAction, selectedPlayers, handleAdvanceSeat]);
+  }, [recordSeatAction, sizingAction, selectedPlayers, handleAdvanceSeat]);
 
   const handleCustomSubmit = useCallback((e) => {
     e.preventDefault();
@@ -578,7 +679,16 @@ export const CommandStrip = ({
         />
       )}
 
-      <LiveAdviceBar actionAdvice={actionAdvice} liveEquity={liveEquity} boardTexture={boardTexture} gameTreeAdvice={gameTreeAdvice} currentStreet={currentStreet} />
+      <LiveAdviceBar
+        actionAdvice={actionAdvice}
+        liveEquity={liveEquity}
+        boardTexture={boardTexture}
+        gameTreeAdvice={gameTreeAdvice}
+        currentStreet={currentStreet}
+        liveAnchor={liveAnchor}
+        currentHandId={currentHandId}
+        onAnchorTap={handleAnchorTap}
+      />
 
       {/* ═══ ACTION ZONE (top) — recording what happened ═══ */}
 

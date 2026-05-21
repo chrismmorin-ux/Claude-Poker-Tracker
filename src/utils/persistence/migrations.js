@@ -1,11 +1,19 @@
 /**
- * migrations.js - IndexedDB migration functions (v1-v12)
+ * migrations.js - IndexedDB migration functions (v1..N).
  *
  * Each migration is a named function receiving (db, transaction, oldVersion).
  * Called by runMigrations() in version order, guarded by oldVersion checks.
+ *
+ * Per-version metadata (description, storesAdded, owner) lives in
+ * `./migrationRegistry.js` — single source of truth. `runMigrations` logs a
+ * summary from the registry at upgrade time so a stale/missing entry surfaces
+ * as a runtime warning rather than silent drift. CI gate
+ * `scripts/check-idb-additive.sh` enforces the additive-only invariant at
+ * the source-code primitive level.
  */
 
 import { GUEST_USER_ID } from '../../constants/authConstants';
+import { MIGRATION_REGISTRY } from './migrationRegistry';
 import {
   STORE_NAME,
   SESSIONS_STORE_NAME,
@@ -30,6 +38,8 @@ import {
   HERO_LEAKS_STORE_NAME,
   SIGHTING_LOGS_STORE_NAME,
   PLAYER_PHOTOS_STORE_NAME,
+  SHAPE_MASTERY_STORE_NAME,
+  SHAPE_LESSONS_STORE_NAME,
   log,
   logError,
 } from './database';
@@ -963,6 +973,94 @@ const migrateV21 = (db, transaction) => {
   }
 };
 
+/**
+ * v25: PMC Phase 5a — predictionAudit primitive (WS-177 / SPR-068).
+ *
+ * Adds `predictionAudit` field to hands records. The field captures
+ * `{predictedDistribution, observedAction, modelVersion}` paired at
+ * hand-end so PMC can measure model-vs-reality without "theory grading
+ * theory" (charter `.claude/projects/predictive-model-calibration.md`).
+ *
+ * SCOPE OF THIS MIGRATION (additive, forward-only — Q2 ratified):
+ *   1. Default `predictionAudit: null` for legacy hands lacking the field.
+ *   2. New hands populate the field via predictionAuditWriter at write time
+ *      (forward-only — no engine-replay backfill of historical hands).
+ *
+ * Pattern follows v13 cursor walk + idempotence checks.
+ */
+const migrateV25 = (db, transaction) => {
+  log('Upgrading to v25: predictionAudit field on hands records (PMC Phase 5a / WS-177)');
+
+  // Skip on fresh install (no hands store yet — v0 → v25 path).
+  if (!db.objectStoreNames.contains(STORE_NAME)) return;
+
+  const handsStore = transaction.objectStore(STORE_NAME);
+  const cursor = handsStore.openCursor();
+
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (!c) {
+      log('v25 migration: predictionAudit field defaults complete');
+      return;
+    }
+    const hand = c.value;
+    if (hand.predictionAudit === undefined) {
+      hand.predictionAudit = null;
+      c.update(hand);
+    }
+    c.continue();
+  };
+
+  cursor.onerror = (e) => {
+    logError('v25 hands cursor failed:', e.target.error);
+  };
+};
+
+/**
+ * v26: shapeMastery + shapeLessons stores (additive, SLS Stream D / SPR-081 / WS-040).
+ *
+ * Schema-only migration — no data backfill (fresh install on this slice; legacy
+ * users have no shape-language data to migrate). Per
+ * `docs/design/contracts/shape-mastery.md` canonical shape.
+ *
+ * `shapeMastery` (singleton per user, keyPath: userId, no indexes):
+ *   { userId, enrolled, enrolledAt, schemaVersion, descriptors: {...} }
+ *
+ * `shapeLessons` (append-only per-completion, keyPath: id, 3 indexes):
+ *   { id, userId, lessonId, descriptorId, completedAt, accuracy, totalSpots,
+ *     correctSpots, sessionIncognito, schemaVersion }
+ *   id = `${userId}:${lessonId}:${completedAt}`.
+ *
+ * Idempotent via `db.objectStoreNames.contains()` guards. Mirrors migrateV20
+ * (PRF two-store pattern) and migrateV22 (heroLeaks composite indexes).
+ */
+const migrateV26 = (db) => {
+  log('Upgrading to v26: Shape Language stores (shapeMastery + shapeLessons)');
+
+  // ─── shapeMastery (singleton per user) ──────────────────────────────────
+  if (!db.objectStoreNames.contains(SHAPE_MASTERY_STORE_NAME)) {
+    db.createObjectStore(SHAPE_MASTERY_STORE_NAME, {
+      keyPath: 'userId',
+      autoIncrement: false,
+    });
+    log('shapeMastery object store created (v26)');
+    // No seeding — empty until user opts into Shape Language adaptive layer
+    // via ENROLL_SHAPE_MASTERY (Q2 master toggle ratified at SLS Gate 3).
+  }
+
+  // ─── shapeLessons (append-only completion history) ──────────────────────
+  if (!db.objectStoreNames.contains(SHAPE_LESSONS_STORE_NAME)) {
+    const lessonsStore = db.createObjectStore(SHAPE_LESSONS_STORE_NAME, {
+      keyPath: 'id',
+      autoIncrement: false,
+    });
+    lessonsStore.createIndex('by_userId', 'userId', { unique: false });
+    lessonsStore.createIndex('by_descriptorId', 'descriptorId', { unique: false });
+    lessonsStore.createIndex('by_completedAt', 'completedAt', { unique: false });
+    log('shapeLessons object store created (v26) with userId / descriptorId / completedAt indexes');
+  }
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -1093,4 +1191,30 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // v24: SPR-041 Phase 3 — distinguishingMarks default + accessoryInventory
   // default + backfill from legacy headwear/eyewear (additive, no field removal).
   if (oldVersion < 24) migrateV24(db, transaction);
+
+  // v25: PMC Phase 5a — predictionAudit primitive (additive; WS-177 / SPR-068).
+  // Adds predictionAudit field on hands records for model-vs-reality capture
+  // at hand-end. Forward-only backfill: legacy hands set to null. Per charter
+  // §Phase 5a + §Architectural primitives. Q2 backfill ratified forward-only.
+  if (oldVersion < 25 && oldVersion > 0) migrateV25(db, transaction);
+
+  // v26: SLS Stream D — shapeMastery + shapeLessons stores (additive; WS-040 / SPR-081).
+  // Per `docs/design/contracts/shape-mastery.md` canonical shape +
+  // `docs/projects/poker-shape-language/gate3-decision-memo.md` Q1-Q7 verdicts.
+  // Schema-only; no data backfill (fresh slice on a feature no legacy user has).
+  if (oldVersion < 26) migrateV26(db);
+
+  // Registry summary — logs which versions were applied this upgrade. A stale
+  // registry surfaces here (entries.length === 0 on upgrade is a red flag).
+  // Source of truth: ./migrationRegistry.js. Maintenance rule documented there.
+  const appliedEntries = MIGRATION_REGISTRY.filter(
+    (entry) => entry.version > oldVersion,
+  );
+  if (appliedEntries.length > 0) {
+    log(
+      `Migration registry: applied ${appliedEntries.length} version(s) (` +
+        appliedEntries.map((e) => `v${e.version}:${e.name}`).join(', ') +
+        ')',
+    );
+  }
 };

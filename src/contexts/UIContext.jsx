@@ -38,6 +38,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     lessonReturnScreen,
     profilePlayerId,
     profileReturnScreen,
+    dashboardAnchorDeepLink,
+    dashboardReturnScreen,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -195,6 +197,26 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
   }, [dispatchUi, profileReturnScreen]);
 
+  // EAL Stream D / WS-169 / SPR-066 (2026-05-09) — open Calibration Dashboard
+  // with optional anchor deep-link payload. Caller (typically AnchorLibraryView's
+  // long-press AnchorDetailPanel) supplies anchorId for auto-scroll/expand on entry.
+  const openCalibrationDashboard = useCallback((anchorId = null, returnScreen = null) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_CALIBRATION_DASHBOARD,
+      payload: {
+        dashboardAnchorDeepLink: typeof anchorId === 'string' && anchorId.length > 0 ? anchorId : null,
+        dashboardReturnScreen: returnScreen || currentView,
+      },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.CALIBRATION_DASHBOARD });
+  }, [dispatchUi, currentView]);
+
+  const closeCalibrationDashboard = useCallback(() => {
+    const prev = dashboardReturnScreen || SCREEN.TABLE;
+    dispatchUi({ type: UI_ACTIONS.SET_CALIBRATION_DASHBOARD, payload: { dashboardAnchorDeepLink: null, dashboardReturnScreen: null } });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, dashboardReturnScreen]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     // State
@@ -218,6 +240,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     lessonReturnScreen,
     profilePlayerId,
     profileReturnScreen,
+    dashboardAnchorDeepLink,
+    dashboardReturnScreen,
     // Screen constants
     SCREEN,
     // Handlers
@@ -249,6 +273,9 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     // PIO G5 child C — player profile navigation
     openPlayerProfile,
     closePlayerProfile,
+    // EAL Stream D — Calibration Dashboard navigation (WS-169 / SPR-066)
+    openCalibrationDashboard,
+    closeCalibrationDashboard,
   }), [
     currentView,
     selectedPlayers,
@@ -270,6 +297,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     lessonReturnScreen,
     profilePlayerId,
     profileReturnScreen,
+    dashboardAnchorDeepLink,
+    dashboardReturnScreen,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -295,6 +324,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closeLessonDetail,
     openPlayerProfile,
     closePlayerProfile,
+    openCalibrationDashboard,
+    closeCalibrationDashboard,
   ]);
 
   return (

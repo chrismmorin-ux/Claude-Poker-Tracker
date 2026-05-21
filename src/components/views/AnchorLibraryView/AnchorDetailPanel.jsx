@@ -19,8 +19,8 @@
  * S20 stub boundaries (deferred to later sessions):
  *   - Override action buttons render but invoke `onOverrideAction(action, anchorId)`
  *     which the parent surfaces via toast ("Retirement flow ships in S21").
- *   - Deep-link button renders with `aria-disabled="true"` and tooltip "Opens
- *     once Calibration Dashboard ships." Invokes `onOpenDashboard(anchorId)`
+ *   - Deep-link button is now active (SPR-066/WS-169 — Calibration Dashboard
+ *     ships). Invokes `onOpenDashboard(anchorId)`
  *     if provided (parent shows toast).
  *
  * EAL Phase 6 — Session 20 (S20).
@@ -274,25 +274,22 @@ export const AnchorDetailPanel = ({
         <span>{lastFiredText}</span>
       </div>
 
-      {/* Section 6 — Deep-link to Calibration Dashboard (stub) */}
+      {/* Section 6 — Deep-link to Calibration Dashboard (live SPR-066) */}
       <div style={{ marginTop: '0.25rem' }}>
         <button
           type="button"
           onClick={handleOpenDashboard}
           aria-label="Open Calibration Dashboard for this anchor"
-          aria-disabled="true"
           data-testid="panel-deep-link-dashboard"
-          title="Opens once Calibration Dashboard ships."
           style={{
             minHeight: 40,
             padding: '0.5rem 0.75rem',
             background: '#1f2937',
-            color: '#9ca3af',
-            border: '1px solid #374151',
+            color: '#e5e7eb',
+            border: '1px solid #4b5563',
             borderRadius: '0.375rem',
             cursor: 'pointer',
             fontSize: '0.8125rem',
-            opacity: 0.65,
           }}
         >
           Open Calibration Dashboard for this anchor →

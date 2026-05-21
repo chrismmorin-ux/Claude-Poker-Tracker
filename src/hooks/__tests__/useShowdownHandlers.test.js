@@ -27,7 +27,7 @@ describe('useShowdownHandlers', () => {
   let closeCardSelector;
   let dispatchGame;
   let isSeatInactive;
-  let recordSeatAction;
+  let recordShowdownAction;
   let nextHand;
   let log;
 
@@ -39,7 +39,7 @@ describe('useShowdownHandlers', () => {
     closeCardSelector = vi.fn();
     dispatchGame = vi.fn();
     isSeatInactive = vi.fn(() => null);
-    recordSeatAction = vi.fn();
+    recordShowdownAction = vi.fn();
     nextHand = vi.fn();
     log = vi.fn();
     vi.mocked(findFirstActiveSeat).mockReturnValue(1);
@@ -63,7 +63,7 @@ describe('useShowdownHandlers', () => {
         dispatchGame,
         isSeatInactive,
         actionSequence: params.actionSequence,
-        recordSeatAction,
+        recordShowdownAction,
         nextHand,
         numSeats: params.numSeats,
         log,
@@ -170,7 +170,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleMuckSeat(3);
       });
 
-      expect(recordSeatAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
+      expect(recordShowdownAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
     });
 
     it('advances to next active seat when multiple remain', () => {
@@ -196,8 +196,8 @@ describe('useShowdownHandlers', () => {
         result.current.handleMuckSeat(3);
       });
 
-      expect(recordSeatAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
-      expect(recordSeatAction).toHaveBeenCalledWith(5, ACTIONS.WON);
+      expect(recordShowdownAction).toHaveBeenCalledWith(3, ACTIONS.MUCKED);
+      expect(recordShowdownAction).toHaveBeenCalledWith(5, ACTIONS.WON);
     });
 
     it('clears highlight when no more active seats', () => {
@@ -222,7 +222,7 @@ describe('useShowdownHandlers', () => {
         result.current.handleWonSeat(7);
       });
 
-      expect(recordSeatAction).toHaveBeenCalledWith(7, ACTIONS.WON);
+      expect(recordShowdownAction).toHaveBeenCalledWith(7, ACTIONS.WON);
     });
 
     it('advances to next active seat', () => {

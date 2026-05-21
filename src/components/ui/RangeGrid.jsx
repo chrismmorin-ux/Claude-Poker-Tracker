@@ -33,7 +33,7 @@ const getConfidence = (sampleSize) => {
  * Row/col use internal rank indices (0=2, 12=A).
  * Display grid is inverted: row 0 = A (rank 12), row 12 = 2 (rank 0).
  */
-const getHandLabel = (displayRow, displayCol) => {
+export const getHandLabel = (displayRow, displayCol) => {
   // Convert display coordinates to rank indices (invert so A is top-left)
   const rankRow = 12 - displayRow;
   const rankCol = 12 - displayCol;
@@ -53,7 +53,7 @@ const getHandLabel = (displayRow, displayCol) => {
  * Get the range index for a display cell.
  * Upper triangle (rankRow > rankCol) = suited, lower = offsuit.
  */
-const getGridIndex = (displayRow, displayCol) => {
+export const getGridIndex = (displayRow, displayCol) => {
   const rankRow = 12 - displayRow;
   const rankCol = 12 - displayCol;
   const suited = rankRow > rankCol;
