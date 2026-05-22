@@ -1,0 +1,91 @@
+id: "SPR-100"
+title: "Range Lab Phase 2 — equity histogram + subrange filters (scope of 'Flopzilla parity')"
+status: completed
+approved_at: "2026-05-21T19:30:00Z"
+activated_at: "2026-05-21T19:30:00Z"
+completed_at: "2026-05-21T23:20:00Z"
+
+goal: |
+  Range Lab becomes an interactive equity-analysis tool — paint a range, read
+  its equity distribution against a board, and filter to subranges — the first
+  analysis layer on top of the paint matrix shipped in SPR-099.
+
+program_focus: engineering
+program_initiative: |
+  Second implementation sprint of the Range Lab thread. Direct downstream of
+  SPR-099 (Phase 1 / WS-056), which shipped the canonical 13x13 paint matrix +
+  per-stroke undo + 5-card BoardPicker in ExplorerMode. WS-057's only blocker
+  (WS-056) closed 2026-05-21. Engine foundation already shipped: equity-precompute
+  cache (WS-205) + LSW<->RL equity-parity guardrail (WS-206). All five Range Lab
+  design gates closed (SPR-093..098); Gate-4 surface spec covers this capability.
+
+composed_by: auto
+created_at: "2026-05-21T19:30:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-21T19:30:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..099
+    precedent). Manual scan: WS-057 is a study-only analysis surface (paint a
+    range, see its equity distribution, filter subranges). No engagement/
+    gamification, no grading, no commerce, no dark pattern. Binds AP-RL-01 +
+    INV-LSW-RL-EQUITY-PARITY (equity path reuses the WS-205 deterministic cache
+    kernel). Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-057) — Scope of 'Flopzilla parity': the lone accept criterion bundles three features (subrange filters + equity histogram + range comparison). Recommend shipping equity histogram + subrange filters as the core analysis loop this phase; split range comparison into a Phase 2b follow-up. Founder ratifies the slice at plan mode."
+
+composition_notes: |
+  Singleton plan-first sprint. WS-057 is M (1.5 sessions); the only co-located
+  range-lab backlog items are WS-058 (Phase 3, depends_on WS-057 — blocked) and
+  WS-208 (mobile-portrait, P3, sequenced behind landscape v1) — neither batches.
+
+  Premise check at composition (per feedback_verify_ticket_premise memory):
+  Phase 1 confirmed shipped in code (SPR-099 completion_note). WS-057 accept
+  criterion "Flopzilla parity" is scope-inflated — three distinct features in one
+  M ticket. Flagged as the sprint's lone decision so the slice is scoped upfront,
+  not mid-execution. Count/scope-inflation is the recurring signature.
+
+  Prioritization: launch/monetization cluster (WS-027/030/031/032/033/036, P1=22)
+  are owner-gated on business decisions (payment processor, Q7 legal scoping) and
+  not autonomously actionable — excluded with founder note. WS-191 (P1=20) soft-
+  blocked on telemetry captures -> damped to 5. Top workable candidate = WS-057
+  (P=15), also the live-thread continuation.
+
+  Step 1d-pre activation gate: pass (design/domain-correctness/change-mgmt/
+  methodology/launch active). Step 1d: domain-correctness sweep-fresh 2026-05-19
+  (not stale); launch non-blocking (precedent across 99 sprints). Step 1e: no
+  auto-recs generated (kit/scripts absent; queue well-populated — 0 existing
+  auto-recommendation items, programs carry open work). Fleet-rotation: skipped
+  (product repo, no fleet candidates). Context.md: no active boosts.
+
+items:
+  - id: "WS-057"
+    title: "Range Lab Phase 2 — subrange filters + equity histogram + range comparison"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completed_at: "2026-05-21T23:20:00Z"
+    decision_resolved: "Founder (AskUserQuestion 2026-05-21): ship equity histogram (vs random) + subrange filters; DEFER range comparison (2nd painted range) to Phase 2b. 'Flopzilla parity' was 3 features in one M ticket — scoped to the coherent analysis core."
+    completion_note: "NEW src/utils/postflopDrillContent/rangeEquityHistogram.js (UNIFORM_VILLAIN_RANGE + filterCombosByGroups [pure] + computeEquityHistogram [async, DI'd equityFn, default reuses handVsRange — one equity source, AP-RL-01-clean: equity is card-math input, bins are outputs; INV-LSW-RL-EQUITY-PARITY untouched]). NEW SubrangeFilter.jsx (toggle chips per non-empty HAND_TYPE_GROUPS w/ weighted %) + EquityHistogram.jsx (manual Compute affordance + progress + 5 quintile bars + mean equity + MC caveat + stale-guard clearing result on inputKey change). Wired into ExplorerMode Custom layout only (subrangeGroups Set state + memoized handTypeBreakdown.engine + histKey). 25 new tests (15 util + 6 SubrangeFilter + 4 EquityHistogram). Full smart-test-runner 11,771 pass / 20 skip / 0 fail (+25 net vs SPR-099's 11,746; 0 regressions). Build clean (10.5s). Playwright 1600x720: Sessions→Postflop Drills→Explorer→Custom; painted AA/KK/QQ/AKs/KQs/JTs on K72 → chips Set/Trips 12% / Top Pair 48% / Mid-Low 24% / Backdoor 16% (Air hidden at 0); Compute → mean 81%, dist 40-60:16% 60-80:16% 80-100:68%; Top-Pair filter → stale-guard cleared histogram, rescoped to 12 combos → mean 89% all 80-100%; 0 console errors."
+    files_involved:
+      - "src/utils/postflopDrillContent/rangeEquityHistogram.js (new)"
+      - "src/components/views/PostflopDrillsView/SubrangeFilter.jsx (new)"
+      - "src/components/views/PostflopDrillsView/EquityHistogram.jsx (new)"
+      - "src/components/views/PostflopDrillsView/ExplorerMode.jsx (wire)"
+      - "src/utils/postflopDrillContent/__tests__/rangeEquityHistogram.test.js (new)"
+      - "src/components/views/PostflopDrillsView/__tests__/SubrangeFilter.test.jsx (new)"
+      - "src/components/views/PostflopDrillsView/__tests__/EquityHistogram.test.jsx (new)"
+
+deferred: |
+  - WS-058 (Phase 3 — turn/river per-street range evolution; DS-66) — depends_on WS-057.
+  - WS-208 (Range Lab mobile-portrait variant) — P3, sequenced after landscape Phases 1-2.
+  - Range comparison feature likely split here into a Phase 2b follow-up (pending plan-mode scope decision).

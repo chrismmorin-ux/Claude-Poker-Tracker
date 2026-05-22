@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-05-21T15:30:00Z"
-sprint_count: 99
+last_updated: "2026-05-21T19:30:00Z"
+sprint_count: 100
 
 sprints:
   - id: "SPR-001"
@@ -1191,3 +1191,15 @@ sprints:
     created_at: "2026-05-21T15:30:00Z"
     approved_at: "2026-05-21T15:30:00Z"
     completed_at: "2026-05-21T19:10:00Z"
+  - id: "SPR-100"
+    title: "Range Lab Phase 2 — equity histogram + subrange filters (scope of 'Flopzilla parity')"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first (WS-057). Singleton. Shipped equity histogram (vs random) + subrange filters in ExplorerMode Custom; range comparison deferred to Phase 2b per founder scope decision. 3 new modules + 25 tests; 11,771 pass / 0 fail; build clean; Playwright-verified 1600x720."
+    program_focus: engineering
+    program_initiative: "Range Lab Phase 2 — first analysis layer on the paint matrix. WS-057 unblocked by WS-056 (SPR-099). Engine foundation (WS-205 cache + WS-206 parity) shipped. 'Flopzilla parity' scope-inflation flagged at composition; founder scoped to histogram + filters."
+    composed_by: auto
+    created_at: "2026-05-21T19:30:00Z"
+    approved_at: "2026-05-21T19:30:00Z"
+    completed_at: "2026-05-21T23:20:00Z"

@@ -16,8 +16,12 @@ import { ContextPicker, isValidContext } from './ContextPicker';
 import { BoardPicker } from './BoardPicker';
 import { RangeFlopBreakdown } from './RangeFlopBreakdown';
 import { RangePaintGrid } from './RangePaintGrid';
+import { SubrangeFilter } from './SubrangeFilter';
+import { EquityHistogram } from './EquityHistogram';
 import { useRangePaint } from './useRangePaint';
 import { archetypeRangeFor } from '../../../utils/postflopDrillContent/archetypeRanges';
+import { handTypeBreakdown } from '../../../utils/postflopDrillContent/handTypeBreakdown';
+import { filterCombosByGroups } from '../../../utils/postflopDrillContent/rangeEquityHistogram';
 import { parseBoard } from '../../../utils/pokerCore/cardParser';
 
 const SourceToggle = ({ value, onChange }) => (
@@ -65,6 +69,7 @@ export const ExplorerMode = () => {
   const [boardCards, setBoardCards] = useState(['K♠', '7♥', '2♦']);
   const [runMc, setRunMc] = useState(false);
   const [confirm, setConfirm] = useState(null); // { message, onConfirm }
+  const [subrangeGroups, setSubrangeGroups] = useState(() => new Set()); // Range Lab subrange filter (empty = all)
 
   const isCustom = rangeSource === 'custom';
   const paint = useRangePaint({ enabled: isCustom });
@@ -97,6 +102,23 @@ export const ExplorerMode = () => {
   const boardReady = board.length === 3 && new Set(flopCards).size === 3;
   const hasDupes = new Set(boardCards).size !== boardCards.length;
   const hasExtraStreets = boardCards.length > 3;
+
+  // Range Lab Phase 2 (WS-057): subrange filter + equity-histogram inputs.
+  // Classify the painted range once on the flop; the histogram consumes the
+  // filtered combo set. handType classification feeds SELECTION only — equity
+  // is computed separately from card math (AP-RL-01).
+  const subrange = useMemo(() => {
+    if (!isCustom || !boardReady || error || hasDupes || !range) return null;
+    try {
+      const bd = handTypeBreakdown(range, board);
+      const filtered = filterCombosByGroups(bd.engine, subrangeGroups);
+      const weightSum = filtered.reduce((s, c) => s + c.weight, 0);
+      const histKey = `${board.join(',')}|${[...subrangeGroups].sort().join(',')}|${filtered.length}|${weightSum.toFixed(3)}`;
+      return { byGroup: bd.byGroup, filtered, histKey };
+    } catch {
+      return null;
+    }
+  }, [isCustom, boardReady, error, hasDupes, range, board, subrangeGroups]);
 
   const requestNewRange = () => {
     const doClear = () => { paint.clearAll(); setConfirm(null); };
@@ -154,6 +176,12 @@ export const ExplorerMode = () => {
                   </div>
                 )}
                 <RangeFlopBreakdown range={range} opposingRange={null} board={board} context={null} opposingContext={null} heroEquityOpts={null} />
+                {subrange && (
+                  <div className="mt-3 space-y-3">
+                    <SubrangeFilter byGroup={subrange.byGroup} value={subrangeGroups} onChange={setSubrangeGroups} />
+                    <EquityHistogram combos={subrange.filtered} board={board} inputKey={subrange.histKey} />
+                  </div>
+                )}
               </>
             )}
           </div>

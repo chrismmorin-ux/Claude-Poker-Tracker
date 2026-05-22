@@ -2,10 +2,10 @@ id: "WS-057"
 title: "Phase 2"
 legacy_id: "RL-P2"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-21-next"
+claimed_at: "2026-05-21T19:30:00Z"
+completed_at: "2026-05-21T23:20:00Z"
 priority_score: 15.0
 priority_label: "P2"
 category: "range-lab"
@@ -22,9 +22,9 @@ blocked_by:
 blocked_by_legacy:
   - "RL-P1"
 enables: []
-sprint_id: ""
+sprint_id: "SPR-100"
 decision_flags: []
-status_note: "LEGITIMATE-BACKLOG (verified 2026-05-11 SPR-071). Downstream of WS-056 (RL-P1). Category retitled."
+status_note: "DONE 2026-05-21 SPR-100. Scope decision (founder, AskUserQuestion): 'Flopzilla parity' bundled 3 features; shipped equity-histogram (vs random) + subrange filters; range comparison DEFERRED to Phase 2b. New rangeEquityHistogram.js (filterCombosByGroups pure + computeEquityHistogram async, DI'd equityFn, reuses handVsRange — one equity source, AP-RL-01-clean: bins are equity OUTPUTS) + SubrangeFilter.jsx + EquityHistogram.jsx (manual Compute, stale-guard on input change) wired into ExplorerMode Custom layout. 25 new tests; full suite 11,771 pass / 20 skip / 0 fail (+25 net, 0 regressions); build clean (10.5s); Playwright-verified 1600x720 (paint→filter→Compute; AA/KK/QQ/AKs/KQs/JTs on K72 mean 81%, Top-Pair subrange mean 89%, 0 console errors). Phase 2b (range comparison) + Phase 3 (WS-058, turn/river evolution) remain."
 source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"

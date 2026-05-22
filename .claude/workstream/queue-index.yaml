@@ -6,7 +6,7 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-20T01:22:00Z"
+last_updated: "2026-05-21T23:20:00Z"
 item_count: 196
 # 2026-05-12 — Session-issue extension. WS-182 REWRITTEN (primitive-collapse,
 # not dispatch-validation — owner reframe: "a check being available when you
@@ -1068,7 +1068,7 @@ items:
   - id: "WS-057"
     title: "Phase 2"
     legacy_id: "RL-P2"
-    status: backlog
+    status: done
     priority_score: 15.0
     priority_label: "P2"
     category: "range-lab"
@@ -1076,8 +1076,10 @@ items:
     program: "engineering"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-05-21-next"
+    sprint_id: "SPR-100"
+    completed_at: "2026-05-21T23:20:00Z"
+    status_note: "DONE SPR-100 — Range Lab Phase 2: equity histogram (vs random) + subrange filters in ExplorerMode Custom. Range comparison deferred to Phase 2b. +25 tests; 11,771 pass; Playwright-verified 1600x720."
   - id: "WS-058"
     title: "Phase 3"
     legacy_id: "RL-P3"
