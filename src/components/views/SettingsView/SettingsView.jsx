@@ -1,6 +1,4 @@
 import React, { useCallback } from 'react';
-import { ScaledContainer } from '../../ui/ScaledContainer';
-import { LAYOUT } from '../../../constants/gameConstants';
 import { useSettings, useAuth, useUI, useToast } from '../../../contexts';
 import { AccountSection } from '../../ui/AccountSection';
 import { EmailVerificationBanner } from '../../ui/EmailVerificationBanner';
@@ -57,23 +55,17 @@ export const SettingsView = ({ scale }) => {
 
   if (isLoading) {
     return (
-      <ScaledContainer scale={scale}>
-        <div
-          className="bg-gray-900 flex items-center justify-center"
-          style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
-        >
-          <div className="text-white text-xl">Loading settings...</div>
-        </div>
-      </ScaledContainer>
+      <div className="min-h-dvh bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading settings...</div>
+      </div>
     );
   }
 
   return (
-    <ScaledContainer scale={scale}>
-      <div
-        className="bg-gray-900 overflow-y-auto p-6"
-        style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
-      >
+    <div className="min-h-dvh bg-gray-900 overflow-y-auto">
+      {/* Portrait-native fluid layout (2026-06-06) — no 1600×720 ScaledContainer
+          so settings fields (venue notes, game defaults) stay legible on a phone. */}
+      <div className="max-w-5xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">Settings</h2>
@@ -94,7 +86,7 @@ export const SettingsView = ({ scale }) => {
           />
         )}
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {authInitialized && (
             <AccountSection
               onNavigateToLogin={handleNavigateToLogin}
@@ -155,7 +147,7 @@ export const SettingsView = ({ scale }) => {
           <AdminSection />
         </div>
       </div>
-    </ScaledContainer>
+    </div>
   );
 };
 

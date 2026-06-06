@@ -144,6 +144,7 @@ Wrapped in `ScaledContainer` with `LAYOUT.TABLE_WIDTH/HEIGHT`.
 - 2026-04-22 — DCOMP-W4-A4 audit appended. Verdict YELLOW — no P0. 12 findings (4 P1, 5 P2, 3 P3).
 - 2026-05-02 — PIO Gate 4 SET subsection appended (SPR-021 / WS-007). New "Privacy" section with master "Photo capture enabled" toggle. Implementation deferred to PIO Gate 5 multi-PR.
 - 2026-06-06 — Venue notes (Sessions View Improvement Phase 1). VenuesManager gains a per-venue free-text note. See `../audits/2026-06-06-entry-venue-notes.md` and the section below.
+- 2026-06-06 — Portrait-native fluid layout. `SettingsView` dropped `ScaledContainer` / the fixed 1600×720 frame; the 2-column panel grid is now `grid-cols-1 md:grid-cols-2` inside a fluid `max-w-5xl` container so venue/game-default fields stay legible on a phone. `SCREEN.SETTINGS` added to `VIEW_TO_ORIENTATION='portrait'`. See `../audits/2026-06-06-entry-sessions-settings-portrait.md`.
 
 ---
 

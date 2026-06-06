@@ -115,12 +115,14 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
+      {/* Responsive modal (2026-06-06): full-width up to a max, scrollable when
+          tall. No scale transform — the parent view is portrait-native fluid, so
+          the form renders at real, legible size on a phone. */}
       <div
-        className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-96"
-        style={{ transform: `scale(${scale})` }}
+        className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

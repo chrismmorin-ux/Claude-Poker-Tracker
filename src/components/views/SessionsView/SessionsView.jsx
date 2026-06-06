@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { logger } from '../../../utils/errorHandler';
 import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
-import { ScaledContainer } from '../../ui/ScaledContainer';
 import { SessionForm } from '../../ui/SessionForm';
 import { SessionRowWithRollup } from './SessionRowWithRollup';
 import { matchesSessionsFilter } from '../../../utils/sessionsFilter';
@@ -306,14 +305,15 @@ export const SessionsView = ({ scale }) => {
   };
 
   return (
-    <ScaledContainer scale={scale}>
-      <div className="w-full bg-gray-900 relative" style={{ width: 1600, height: 720 }}>
-        {/* Scrollable Content */}
-        <div className="w-full h-full pt-8 px-8 pb-24 overflow-y-auto">
+    <div className="min-h-dvh bg-gray-900 overflow-y-auto">
+      {/* Portrait-native fluid layout (2026-06-06): no 1600×720 ScaledContainer
+          so every field stays legible/tappable on a phone. Capped width keeps
+          lines readable on wide screens. */}
+      <div className="max-w-3xl mx-auto px-4 pt-6 pb-10">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
             <h1 className="text-2xl font-bold text-white">Sessions</h1>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
               {sessionState.currentSession.isActive ? (
                 <button
                   onClick={handleEndSession}
@@ -490,12 +490,41 @@ export const SessionsView = ({ scale }) => {
             </div>
           </div>
 
+          {/* Drills — inline at the bottom of the fluid page (portrait-native).
+              Full-width, wrapping CTAs; no absolute positioning to collide with
+              scroll content. */}
+          <div className="flex flex-wrap gap-3 mt-6">
+            <button
+              onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
+              className="flex-1 min-w-[140px] px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+              style={{ minHeight: 48 }}
+            >
+              Preflop Drills
+            </button>
+            <button
+              onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
+              className="flex-1 min-w-[140px] px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+              style={{ minHeight: 48 }}
+            >
+              Postflop Drills
+            </button>
+            {ENABLE_PRESESSION_DRILL && (
+              <button
+                onClick={() => setCurrentScreen(SCREEN.PRESESSION_DRILL)}
+                className="flex-1 min-w-[140px] px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-lg font-medium transition-colors"
+                style={{ minHeight: 48 }}
+                data-testid="sessions-view-presession-drill-cta"
+              >
+                Prepare for tonight
+              </button>
+            )}
+          </div>
+
           {/* New Session Form Modal */}
           {showNewSessionForm && (
             <SessionForm
               onSubmit={handleNewSession}
               onCancel={() => setShowNewSessionForm(false)}
-              scale={scale}
               defaultGameType={
                 sessions.length > 0
                   ? Object.keys(GAME_TYPES).find(key => GAME_TYPES[key].label === sessions[0].gameType)
@@ -504,63 +533,31 @@ export const SessionsView = ({ scale }) => {
               defaultVenue={sessions.length > 0 ? sessions[0].venue : ''}
             />
           )}
-        </div>
 
-        {/* AUDIT-2026-04-21-SV F5: bottom bar unified into a single flex container
-            (collision-proof at any scale). Phase 2 (2026-06-06): the bottom-left
-            BankrollDisplay was folded into the top InsightsBand, so the bar now
-            carries only the drill CTAs (right-aligned). */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-end items-center px-8 pb-8 z-10 pointer-events-none">
-          <div className="flex gap-3 pointer-events-auto">
-            <button
-              onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium transition-colors"
-            >
-              Preflop Drills
-            </button>
-            <button
-              onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
-              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium transition-colors"
-            >
-              Postflop Drills
-            </button>
-            {ENABLE_PRESESSION_DRILL && (
-              <button
-                onClick={() => setCurrentScreen(SCREEN.PRESESSION_DRILL)}
-                className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-lg font-medium transition-colors"
-                style={{ minHeight: 48 }}
-                data-testid="sessions-view-presession-drill-cta"
-              >
-                Prepare for tonight
-              </button>
-            )}
-          </div>
-        </div>
+          {/* Import Confirmation Modal */}
+          <ImportConfirmModal
+            isOpen={showImportConfirm}
+            importData={importData}
+            onConfirm={handleConfirmImport}
+            onCancel={() => { setShowImportConfirm(false); setImportData(null); }}
+          />
 
-        {/* Import Confirmation Modal */}
-        <ImportConfirmModal
-          isOpen={showImportConfirm}
-          importData={importData}
-          onConfirm={handleConfirmImport}
-          onCancel={() => { setShowImportConfirm(false); setImportData(null); }}
-        />
-
-        {/* Cash Out Modal */}
-        <CashOutModal
-          isOpen={showCashOutModal}
-          cashOutAmount={cashOutAmount}
-          onCashOutAmountChange={setCashOutAmount}
-          tipAmount={tipAmount}
-          onTipAmountChange={setTipAmount}
-          onConfirm={handleConfirmCashOut}
-          onCancel={() => {
-            setShowCashOutModal(false);
-            setCashOutAmount('');
-            setTipAmount('');
-          }}
-        />
+          {/* Cash Out Modal */}
+          <CashOutModal
+            isOpen={showCashOutModal}
+            cashOutAmount={cashOutAmount}
+            onCashOutAmountChange={setCashOutAmount}
+            tipAmount={tipAmount}
+            onTipAmountChange={setTipAmount}
+            onConfirm={handleConfirmCashOut}
+            onCancel={() => {
+              setShowCashOutModal(false);
+              setCashOutAmount('');
+              setTipAmount('');
+            }}
+          />
       </div>
-    </ScaledContainer>
+    </div>
   );
 };
 

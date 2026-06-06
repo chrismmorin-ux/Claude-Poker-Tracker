@@ -85,6 +85,13 @@ const VIEW_TO_ORIENTATION = {
   [SCREEN.PLAYER_FINDER]: 'portrait',
   [SCREEN.PLAYER_PROFILE]: 'portrait',
   [SCREEN.PROTOTYPE_FINDER]: 'portrait',
+  // Sessions View Improvement (2026-06-06): Sessions + Settings are data-entry
+  // surfaces (venue / buy-in / tip / notes fields). They render portrait-native
+  // fluid (no 1600×720 ScaledContainer) so fields stay legible and tappable on a
+  // phone instead of being scaled to ~24% in portrait. Best-effort lock; the
+  // fluid layout is the load-bearing part. See feedback_portrait_mode_player_screens.
+  [SCREEN.SESSIONS]: 'portrait',
+  [SCREEN.SETTINGS]: 'portrait',
 };
 const orientationFor = (currentView, isShowdownOpen) => {
   if (isShowdownOpen) return 'landscape';

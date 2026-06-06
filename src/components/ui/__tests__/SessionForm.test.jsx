@@ -328,10 +328,14 @@ describe('SessionForm', () => {
   });
 
   describe('styling', () => {
-    it('applies scale from props', () => {
-      const { container } = renderWithSettings(<SessionForm {...defaultProps} scale={0.8} />);
+    it('renders a responsive modal (no scale transform)', () => {
+      // Portrait-native (2026-06-06): the modal sizes fluidly (max-w-md, full
+      // width) instead of being scaled, so fields stay legible on a phone.
+      const { container } = renderWithSettings(<SessionForm {...defaultProps} />);
       const form = container.querySelector('.bg-gray-800.rounded-lg');
-      expect(form.style.transform).toBe('scale(0.8)');
+      expect(form.style.transform).toBe('');
+      expect(form.className).toContain('max-w-md');
+      expect(form.className).toContain('w-full');
     });
 
     it('has fixed overlay for modal', () => {
