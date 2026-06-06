@@ -31,8 +31,9 @@ import { getHandsBySessionId } from '../../../utils/persistence/index';
  * @param {Object} props.session     — Session record (must include sessionId, startTime, endTime)
  * @param {Function} props.onDelete  — Delete handler (passed through to SessionCard)
  * @param {string} [props.venueNote] — Venue note (passed through to SessionCard)
+ * @param {Function} [props.onShowDetails] — Open session detail (to SessionCard)
  */
-export const SessionRowWithRollup = ({ session, onDelete, venueNote = '' }) => {
+export const SessionRowWithRollup = ({ session, onDelete, venueNote = '', onShowDetails }) => {
   const [expanded, setExpanded] = useState(false);
   const [hands, setHands] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -102,7 +103,7 @@ export const SessionRowWithRollup = ({ session, onDelete, venueNote = '' }) => {
 
   return (
     <div data-testid={`session-row-with-rollup-${session.sessionId}`}>
-      <SessionCard session={session} onDelete={onDelete} venueNote={venueNote} />
+      <SessionCard session={session} onDelete={onDelete} venueNote={venueNote} onShowDetails={onShowDetails} />
       <div
         style={{
           padding: '0.5rem 1rem 0.75rem',

@@ -209,6 +209,20 @@ describe('SessionCard', () => {
     });
   });
 
+  describe('details affordance', () => {
+    it('renders a Details button only when onShowDetails is provided', () => {
+      const { rerender } = render(<SessionCard {...defaultProps} />);
+      expect(screen.queryByTestId('session-card-details')).not.toBeInTheDocument();
+
+      const onShowDetails = vi.fn();
+      rerender(<SessionCard {...defaultProps} onShowDetails={onShowDetails} />);
+      const btn = screen.getByTestId('session-card-details');
+      expect(btn).toBeInTheDocument();
+      fireEvent.click(btn);
+      expect(onShowDetails).toHaveBeenCalledWith(mockSession);
+    });
+  });
+
   describe('venue note', () => {
     it('renders the venue note when provided', () => {
       render(<SessionCard {...defaultProps} venueNote="soft 1/3, $5 max rake" />);

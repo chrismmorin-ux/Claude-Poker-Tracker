@@ -44,8 +44,10 @@ const formatDate = (timestamp) => {
  * @param {string} [props.venueNote] - Free-text note for the session's venue.
  *   Supplied by the parent (which has settings context); '' for built-in /
  *   unknown venues. Phase 1 — Sessions View Improvement (2026-06-06).
+ * @param {Function} [props.onShowDetails] - When provided, renders a "Details"
+ *   button that opens the session-detail drill-down. Phase 3 (2026-06-06).
  */
-export const SessionCard = ({ session, onDelete, venueNote = '' }) => {
+export const SessionCard = ({ session, onDelete, venueNote = '', onShowDetails }) => {
   const isTournament = session.gameType === 'Tournament';
   const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
   const hasCashOut = session.cashOut !== null && session.cashOut !== undefined;
@@ -155,12 +157,24 @@ export const SessionCard = ({ session, onDelete, venueNote = '' }) => {
           </div>
         </div>
 
-        <button
-          onClick={() => onDelete(session.sessionId)}
-          className="ml-4 p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center gap-1 ml-4 flex-shrink-0">
+          {onShowDetails && (
+            <button
+              onClick={() => onShowDetails(session)}
+              className="px-3 min-h-[44px] text-sm font-medium text-blue-300 hover:bg-blue-900/30 rounded transition-colors"
+              data-testid="session-card-details"
+            >
+              Details
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(session.sessionId)}
+            className="p-2 min-h-[44px] text-red-400 hover:bg-red-900/30 rounded transition-colors"
+            aria-label="Delete session"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

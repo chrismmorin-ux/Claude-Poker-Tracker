@@ -18,6 +18,10 @@ import {
   matchesSessionsFilter,
   filterSessionsByMode,
   SESSIONS_FILTER_MODES,
+  sortSessions,
+  searchSessions,
+  groupSessionsByMonth,
+  SESSION_SORT_KEYS,
 } from '../sessionsFilter';
 
 const liveSession = (overrides = {}) => ({
@@ -147,5 +151,114 @@ describe('SESSIONS_FILTER_MODES enum', () => {
     expect(() => {
       SESSIONS_FILTER_MODES.push('tournament');
     }).toThrow();
+  });
+});
+
+// ===========================================================================
+// PHASE 3 — sort / search / month grouping
+// ===========================================================================
+
+const HOUR = 3600000;
+const completed = (overrides = {}) => ({
+  sessionId: 's',
+  startTime: 1000,
+  endTime: 1000 + 2 * HOUR,
+  venue: 'Casino A',
+  gameType: '1/2',
+  buyIn: 200,
+  rebuyTransactions: [],
+  cashOut: 350,
+  tipAmount: 0,
+  handCount: 50,
+  isActive: false,
+  ...overrides,
+});
+
+describe('sortSessions', () => {
+  it('sorts by date descending by default', () => {
+    const a = completed({ sessionId: 'old', startTime: 1000 });
+    const b = completed({ sessionId: 'new', startTime: 9000 });
+    expect(sortSessions([a, b]).map((s) => s.sessionId)).toEqual(['new', 'old']);
+  });
+
+  it('sorts by date ascending when asked', () => {
+    const a = completed({ sessionId: 'old', startTime: 1000 });
+    const b = completed({ sessionId: 'new', startTime: 9000 });
+    expect(sortSessions([a, b], 'date', 'asc').map((s) => s.sessionId)).toEqual(['old', 'new']);
+  });
+
+  it('sorts by profit descending', () => {
+    const win = completed({ sessionId: 'win', cashOut: 600 }); // +400
+    const lose = completed({ sessionId: 'lose', cashOut: 50 }); // -150
+    expect(sortSessions([lose, win], 'profit').map((s) => s.sessionId)).toEqual(['win', 'lose']);
+  });
+
+  it('sorts by duration descending', () => {
+    const short = completed({ sessionId: 'short', endTime: 1000 + 1 * HOUR });
+    const long = completed({ sessionId: 'long', endTime: 1000 + 5 * HOUR });
+    expect(sortSessions([short, long], 'duration').map((s) => s.sessionId)).toEqual(['long', 'short']);
+  });
+
+  it('does not mutate the input array', () => {
+    const arr = [completed({ sessionId: 'a', startTime: 1 }), completed({ sessionId: 'b', startTime: 2 })];
+    const before = arr.map((s) => s.sessionId);
+    sortSessions(arr, 'date', 'desc');
+    expect(arr.map((s) => s.sessionId)).toEqual(before);
+  });
+
+  it('falls back to date for an unknown key and tolerates non-array', () => {
+    expect(sortSessions(undefined)).toEqual([]);
+    const a = completed({ sessionId: 'old', startTime: 1000 });
+    const b = completed({ sessionId: 'new', startTime: 9000 });
+    expect(sortSessions([a, b], 'bogus').map((s) => s.sessionId)).toEqual(['new', 'old']);
+  });
+
+  it('exposes the valid sort keys', () => {
+    expect(SESSION_SORT_KEYS).toEqual(['date', 'profit', 'duration']);
+  });
+});
+
+describe('searchSessions', () => {
+  const rows = [
+    completed({ sessionId: 'a', venue: 'Bellagio', gameType: '2/5', goal: 'tighten up' }),
+    completed({ sessionId: 'b', venue: 'Horseshoe', gameType: '1/2', goal: 'work on cbets' }),
+  ];
+
+  it('returns the list unchanged for empty query', () => {
+    expect(searchSessions(rows, '')).toBe(rows);
+    expect(searchSessions(rows, '   ')).toBe(rows);
+  });
+
+  it('matches venue case-insensitively', () => {
+    expect(searchSessions(rows, 'bell').map((s) => s.sessionId)).toEqual(['a']);
+  });
+
+  it('matches game type', () => {
+    expect(searchSessions(rows, '1/2').map((s) => s.sessionId)).toEqual(['b']);
+  });
+
+  it('matches goal text', () => {
+    expect(searchSessions(rows, 'cbet').map((s) => s.sessionId)).toEqual(['b']);
+  });
+
+  it('returns [] when nothing matches and tolerates non-array', () => {
+    expect(searchSessions(rows, 'zzz')).toEqual([]);
+    expect(searchSessions(undefined, 'x')).toEqual([]);
+  });
+});
+
+describe('groupSessionsByMonth', () => {
+  it('buckets sessions by calendar month, preserving order', () => {
+    const jun1 = completed({ sessionId: 'j1', startTime: new Date(2026, 5, 1).getTime() });
+    const jun2 = completed({ sessionId: 'j2', startTime: new Date(2026, 5, 20).getTime() });
+    const may = completed({ sessionId: 'm1', startTime: new Date(2026, 4, 15).getTime() });
+    const groups = groupSessionsByMonth([jun1, jun2, may]);
+    expect(groups.map((g) => g.key)).toEqual(['2026-06', '2026-05']);
+    expect(groups[0].sessions.map((s) => s.sessionId)).toEqual(['j1', 'j2']);
+    expect(groups[0].label).toMatch(/June 2026/);
+  });
+
+  it('tolerates non-array input', () => {
+    expect(groupSessionsByMonth(undefined)).toEqual([]);
   });
 });

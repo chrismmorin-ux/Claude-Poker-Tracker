@@ -10,13 +10,19 @@ import { logger } from '../../../utils/errorHandler';
 import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
 import { SessionForm } from '../../ui/SessionForm';
 import { SessionRowWithRollup } from './SessionRowWithRollup';
-import { matchesSessionsFilter } from '../../../utils/sessionsFilter';
+import {
+  matchesSessionsFilter,
+  sortSessions,
+  searchSessions,
+  groupSessionsByMonth,
+} from '../../../utils/sessionsFilter';
 import { GAME_TYPES } from '../../../constants/sessionConstants';
 import { downloadBackup, readJsonFile, validateImportData, importAllData } from '../../../utils/exportUtils';
 import { ActiveSessionCard } from './ActiveSessionCard';
 import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { InsightsBand } from './InsightsBand';
+import { SessionDetailModal } from './SessionDetailModal';
 import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
 import { useSession, useUI, useTournament, useSyncBridge, useSettings } from '../../../contexts';
@@ -43,6 +49,28 @@ export const SessionsView = ({ scale }) => {
     setPastSessionFilter(next);
     try { localStorage.setItem('sessionsView.pastFilter', next); } catch {}
   };
+
+  // Phase 3 (2026-06-06): past-sessions sort / search / month-grouping +
+  // session-detail drill-down. Sort + grouping persist like the filter above.
+  const [sortKey, setSortKey] = useState(() => {
+    try { return localStorage.getItem('sessionsView.sortKey') || 'date'; } catch { return 'date'; }
+  });
+  const handleSetSortKey = (next) => {
+    setSortKey(next);
+    try { localStorage.setItem('sessionsView.sortKey', next); } catch {}
+  };
+  const [groupByMonth, setGroupByMonth] = useState(() => {
+    try { return localStorage.getItem('sessionsView.groupByMonth') === '1'; } catch { return false; }
+  });
+  const handleToggleGroupByMonth = () => {
+    setGroupByMonth((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('sessionsView.groupByMonth', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [detailSession, setDetailSession] = useState(null);
 
   // AUDIT-2026-04-21-SV F1: deferred-delete pattern for Delete Session toast+undo.
   // Tracks { sessionId → timeout, snapshot } while the undo window is open.
@@ -289,13 +317,33 @@ export const SessionsView = ({ scale }) => {
   // bottom-left BankrollDisplay widget is folded into that band.
 
   // Past sessions in the current Live/Online/All scope — shared by the Insights
-  // band and the row list so both reflect the same filter.
+  // band and the row list so both reflect the same filter. (Insights reflects the
+  // mode scope only; text search/sort below shape the row list, not the stats.)
   const visiblePastSessions = sessions
     .filter((s) => !s.isActive)
     .filter((s) => matchesSessionsFilter(s, pastSessionFilter));
 
   const insightsScopeLabel =
     pastSessionFilter === 'live' ? 'Live' : pastSessionFilter === 'online' ? 'Online' : null;
+
+  // Phase 3: the row list = scope → text search → sort. Month grouping (if on)
+  // buckets the already-sorted list.
+  const displayedSessions = sortSessions(
+    searchSessions(visiblePastSessions, sessionSearch),
+    sortKey,
+    'desc'
+  );
+  const sessionGroups = groupByMonth ? groupSessionsByMonth(displayedSessions) : null;
+
+  const renderSessionRow = (session) => (
+    <SessionRowWithRollup
+      key={session.sessionId}
+      session={session}
+      onDelete={handleDeleteSession}
+      venueNote={getVenueNote(session.venue)}
+      onShowDetails={setDetailSession}
+    />
+  );
 
   // WS-190: open a tagged hand from the Review Queue in HandReplayView.
   // Mirrors HandReviewPanel's replay-open pattern (set hand, then switch screen).
@@ -432,59 +480,102 @@ export const SessionsView = ({ scale }) => {
 
           {/* Past Sessions */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg">
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-200">Past Sessions</h2>
-              {/* AUDIT-2026-04-21-SV F7: Live/Online filter pills.
-                  In-memory filter over the past-sessions list. Previously, online
-                  (ignition) sessions mixed with live sessions without grouping —
-                  post-session-chris scanning live-only history had to visually
-                  skip online entries. Filter persists to localStorage. */}
-              {(() => {
-                const pastSessions = sessions.filter(s => !s.isActive);
-                const onlineCount = pastSessions.filter(s => s.source === 'ignition').length;
-                const liveCount = pastSessions.length - onlineCount;
-                if (pastSessions.length === 0 || onlineCount === 0) return null;
-                const pills = [
-                  { id: 'all', label: `All (${pastSessions.length})` },
-                  { id: 'live', label: `Live (${liveCount})` },
-                  { id: 'online', label: `Online (${onlineCount})` },
-                ];
-                return (
-                  <div className="flex gap-1">
-                    {pills.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => handleSetPastSessionFilter(p.id)}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
-                          pastSessionFilter === p.id
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
+            <div className="p-4 border-b border-gray-700">
+              <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                <h2 className="text-lg font-bold text-gray-200">Past Sessions</h2>
+                {/* AUDIT-2026-04-21-SV F7: Live/Online filter pills. Persist to
+                    localStorage. Only shown when online (ignition) sessions exist. */}
+                {(() => {
+                  const pastSessions = sessions.filter(s => !s.isActive);
+                  const onlineCount = pastSessions.filter(s => s.source === 'ignition').length;
+                  const liveCount = pastSessions.length - onlineCount;
+                  if (pastSessions.length === 0 || onlineCount === 0) return null;
+                  const pills = [
+                    { id: 'all', label: `All (${pastSessions.length})` },
+                    { id: 'live', label: `Live (${liveCount})` },
+                    { id: 'online', label: `Online (${onlineCount})` },
+                  ];
+                  return (
+                    <div className="flex gap-1">
+                      {pills.map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => handleSetPastSessionFilter(p.id)}
+                          className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            pastSessionFilter === p.id
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Phase 3 (2026-06-06): search + sort + month grouping. Only shown
+                  when there are past sessions to act on. */}
+              {sessions.filter((s) => !s.isActive).length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={sessionSearch}
+                    onChange={(e) => setSessionSearch(e.target.value)}
+                    placeholder="Search venue, stake, goal…"
+                    className="flex-1 min-w-[160px] px-3 min-h-[44px] bg-gray-700 text-gray-200 text-sm rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    data-testid="sessions-search"
+                  />
+                  <select
+                    value={sortKey}
+                    onChange={(e) => handleSetSortKey(e.target.value)}
+                    className="px-3 min-h-[44px] bg-gray-700 text-gray-200 text-sm rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    data-testid="sessions-sort"
+                    aria-label="Sort sessions"
+                  >
+                    <option value="date">Newest first</option>
+                    <option value="profit">Biggest win</option>
+                    <option value="duration">Longest</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleToggleGroupByMonth}
+                    aria-pressed={groupByMonth}
+                    className={`px-3 min-h-[44px] text-sm font-medium rounded-lg transition-colors ${
+                      groupByMonth ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                    data-testid="sessions-group-toggle"
+                  >
+                    By month
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="divide-y divide-gray-700">
-              {visiblePastSessions
-                .map((session) => (
-                  <SessionRowWithRollup
-                    key={session.sessionId}
-                    session={session}
-                    onDelete={handleDeleteSession}
-                    venueNote={getVenueNote(session.venue)}
-                  />
-                ))}
+              {sessionGroups
+                ? sessionGroups.map((group) => (
+                    <div key={group.key}>
+                      <div className="px-4 py-2 bg-gray-900/40 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        {group.label} · {group.sessions.length}
+                      </div>
+                      {group.sessions.map(renderSessionRow)}
+                    </div>
+                  ))
+                : displayedSessions.map(renderSessionRow)}
 
               {sessions.filter((s) => !s.isActive).length === 0 && (
                 <div className="p-8 text-center flex flex-col items-center">
                   <Calendar size={48} className="text-gray-600 mb-3" />
                   <div className="text-xl font-semibold text-gray-400">No Past Sessions</div>
                   <div className="text-sm text-gray-500">Complete a session to see it here</div>
+                </div>
+              )}
+
+              {sessions.filter((s) => !s.isActive).length > 0 && displayedSessions.length === 0 && (
+                <div className="p-8 text-center text-sm text-gray-500">
+                  No sessions match your search.
                 </div>
               )}
             </div>
@@ -556,6 +647,19 @@ export const SessionsView = ({ scale }) => {
               setTipAmount('');
             }}
           />
+
+          {/* Session Detail Modal (Phase 3) */}
+          {detailSession && (
+            <SessionDetailModal
+              session={detailSession}
+              venueNote={getVenueNote(detailSession.venue)}
+              onClose={() => setDetailSession(null)}
+              onOpenHand={(handId, hand) => {
+                setDetailSession(null);
+                handleOpenTaggedHand(handId, hand);
+              }}
+            />
+          )}
       </div>
     </div>
   );
