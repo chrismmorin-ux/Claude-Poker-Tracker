@@ -1,0 +1,91 @@
+id: "SPR-102"
+title: "HSP-A3 — Turn archetype taxonomy + templates"
+status: completed
+approved_at: "2026-05-22T12:05:00Z"
+activated_at: "2026-05-22T12:05:00Z"
+completed_at: "2026-05-22T12:35:00Z"
+
+goal: |
+  Hero State coaching narratives extend to the turn — when reviewing a hand,
+  the coach can describe turn decisions (double-barrels, probes, check-raises)
+  the same way it already handles preflop and flop. Unblocks WS-153 (classifier
+  turn/river extension), which lets Self-Coach leak rules cover later streets.
+
+program_focus: domain-correctness
+program_initiative: |
+  Hero State Primitive v2 authoring (HSP-A3). v1 (WS-136 + 7 children) shipped
+  preflop + flop archetypes 2026-05-03; this is the first v2 authoring ticket.
+  Markdown/taxonomy authoring mirroring the proven v1 WS-138/139 shape. Highest
+  verified-ready actionable item after launch (owner-gated) and stale/blocked
+  candidates (WS-020 needs-rescope, WS-185 already done, WS-190 refactor-charter
+  blocked) were filtered at composition.
+
+composed_by: auto
+created_at: "2026-05-22T12:05:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-22T12:05:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..101
+    precedent). Manual scan: domain-content authoring (turn archetype taxonomy +
+    presentation-only narrative templates). No engagement/gamification, no
+    grading, no commerce, no dark pattern. Binds the HSP v1 first-principles
+    guard (archetype IDs are OUTPUTS not INPUTS; templates render strings only).
+    Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-151) — Final turn archetype count + boundaries (provisional 8); whether to split delayed-cbet from probe given IP/OOP asymmetry. Plan-mode ratification."
+
+composition_notes: |
+  Singleton plan-first sprint. Anchor = WS-151 (HSP-A3 turn archetype taxonomy),
+  child of WS-150 (HSP v2 master, NOT itself claimable — umbrella). A second M
+  item (WS-152 river) would exceed the 2-session cap; founder offered the bundle
+  at proposal and chose the clean singleton (option 1). WS-152 is the natural
+  next sprint.
+
+  Prioritization: launch cluster (P=22) owner-gated/non-actionable (monetization
+  decisions); WS-020 (P=15) NEEDS-RESCOPE; WS-185 (P=14) already done
+  (queue-index stale); WS-190 (P=14) blocked by refactor-sprint no-new-features
+  charter. WS-151 (P=13) is the highest verified-ready actionable anchor.
+
+  Step 1d-pre activation gate: pass (7 active programs). Step 1d: domain-
+  correctness critical-tier, sweep-fresh (not stale). Step 1e: no auto-recs (kit
+  scripts absent; queue well-populated). Fleet-rotation: skipped (product repo).
+  Context.md: no active boosts.
+
+items:
+  - id: "WS-151"
+    title: "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)"
+    mode: plan-first
+    effort: M
+    priority_score: 13.0
+    program: domain-correctness
+    status: done
+    completion_notes: |
+      Founder ratified the mirror-flop pot-type-split taxonomy (12 archetypes,
+      not provisional 8). Authored §4.4 taxonomy table + §4.4.1 policy note + 12
+      CONVENTIONS-compliant turn templates. Zero src/ changes — types.js enum +
+      loadTemplates glob + classifyArchetype routing deferred to WS-153 (avoids
+      breaking reachability/all-18 tests while classifier still throws for turn).
+      122/122 heroState tests green; first-principles guard preserved (slot-only
+      numerics). Enables WS-153 (needs WS-152 river first for full later-street
+      classifier extension).
+    decision_flags:
+      - "Final archetype count + boundaries (provisional 8; finalize during ticket)"
+      - "Whether to split delayed-cbet from probe (similar IP/OOP asymmetry)"
+    enables:
+      - "WS-153"
+    files_involved:
+      - "docs/HERO_STATE_DESIGN.md (extend §4.4)"
+      - "docs/design/hero-state-templates/turn/ (NEW)"
+      - "docs/design/hero-state-templates/CONVENTIONS.md (read)"
+
+deferred: |
+  - WS-152 (HSP-A4 river taxonomy) — natural next sprint; bundle declined to keep within cap.
+  - WS-153 (classifier turn/river extension) — depends on WS-151 + WS-152.

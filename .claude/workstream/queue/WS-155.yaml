@@ -1,10 +1,77 @@
 id: "WS-155"
 title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "SPR-105"
+claimed_at: "2026-06-04T00:00:00Z"
+started_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+completion_notes: |
+  Shipped end-to-end pipeline per founder-ratified expanded scope (composer +
+  delta producer). Plan-mode caught premise issue at start: villainProfile
+  .vulnerabilities had no delta field — buildAdjustments was applying `{}`
+  uniformly. Scope expanded M → M+S to wire WEAKNESS_TO_DELTA producer.
+
+  Files shipped:
+    - NEW src/utils/heroState/composeAdjustments.js (~160 LoC, 5 exports +
+      SIZING_MULTIPLIER_FLOOR/CEILING constants)
+    - src/utils/exploitEngine/villainProfileBuilder.js — added
+      WEAKNESS_TO_DELTA (8 entries) + deltaForWeaknessId helper; extended
+      translateWeaknesses to attach delta + rationale per vulnerability;
+      exported _WEAKNESS_TO_DELTA for testing
+    - src/utils/heroState/buildHeroState.js — buildAdjustments now passes
+      delta + severity + confidence through; main orchestrator now exposes
+      composedDelta in returned HeroState
+    - src/utils/heroState/types.js — added ComposedDelta typedef; extended
+      HeroState typedef with composedDelta field
+    - docs/HERO_STATE_DESIGN.md §7.2 — RESOLVED 2026-06-04; new §7.2.1
+      subsection documents per-axis rules + poker-theory derivation
+    - NEW src/utils/heroState/__tests__/composeAdjustments.test.js (~280 LoC,
+      34 tests across 5 describe blocks)
+    - src/utils/heroState/__tests__/buildHeroState.test.js — +5 integration
+      tests for composedDelta (identity / calling-station / stack-clamp /
+      soft-degrade / adjustments-pre-composition preservation)
+    - src/utils/exploitEngine/__tests__/villainProfileBuilder.test.js — +5
+      tests for WEAKNESS_TO_DELTA mapping (calling station / over-folder /
+      overvalues-medium / unmapped / all-8-entries schema validation)
+
+  Per-axis composition rules ratified at plan-mode:
+    1. sizingMultiplier — multiplicative with clamp [0.6, 2.0] + clamped:true
+       flag (poker-theory: locally-linear regime bounds; 2.0 ceiling from
+       POKER_THEORY §3.5 polarization breakpoint; 0.6 floor matches
+       RIVER_BLOCK_BET threshold)
+    2. polarize — OR (any-fires-wins; range-construction is binary, not
+       intensity dial)
+    3. bluffFreq — MIN-wins (asymmetric loss; minimax-regret; calling-station
+       worst-case error dominates)
+    4. actionOverride — precedence-by-severity, conservatism tiebreak
+       (fold < check < call < bet < raise)
+
+  WEAKNESS_TO_DELTA v1 maps 8 load-bearing vulnerability classes:
+  sit-overcalls-river (calling station), sit-folds-to-pressure (over-folder),
+  sit-cbets-wet-unprofitable (wet-cbet bluffer), sit-checks-dry-underbet
+  (dry under-bettor), sit-slowplays-strong (uncapped check-range),
+  sit-weak-showdowns (light caller), sit-overvalues-medium (overbet target),
+  pf-folds-to-3bet-high (preflop fold-to-3bet). Unmapped ids ship delta:{} —
+  informational entries with rationale but no numeric lever. Future tickets
+  extend the map as new vulnerability classes emerge.
+
+  Acceptance:
+    - 34/34 composeAdjustments tests green
+    - 49/49 buildHeroState tests green (was 44; +5 integration)
+    - 48/48 villainProfileBuilder tests green (was 43; +5 mapping)
+    - 221/221 full heroState suite green (was 182; +39 net)
+    - Production build clean (14.66s, 64 precache entries)
+    - 3 pre-existing flakes in combined impact-zone run (1 date-aged
+      conceptMastery; 2 slow EV tests timeout under concurrent load) — all
+      reproduce on pre-change main; 66/66 pass when run in isolation.
+      Independent of WS-155.
+
+  First-principles guard preserved: composedDelta is OUTPUT of composition
+  over Adjustment[] (POKER_THEORY §7); never input to gameTreeEvaluator.
+  Plans come from equity / SPR / pot odds / players remaining. composedDelta
+  is consumer-facing summary; consumers (HandReplay, future SCF + live coach)
+  decide application.
 priority_score: 13.0
 priority_label: "P2"
 category: "hero-state-primitive"
@@ -55,7 +122,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-105"
 decision_flags:
   - "Hybrid per-axis vs uniform rule — likely hybrid; finalize during design"
   - "Whether to clamp multiplicative composition (avoid runaway sizing inflation)"

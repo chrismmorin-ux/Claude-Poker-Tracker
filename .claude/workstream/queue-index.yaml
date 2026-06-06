@@ -6,8 +6,8 @@
 # Rebuild from files: scan queue/WS-*.yaml, extract summary fields
 # Updated by: /workstream create, claim, release, start, done, block
 
-last_updated: "2026-05-21T23:20:00Z"
-item_count: 196
+last_updated: "2026-05-30T13:00:00Z"
+item_count: 198
 # 2026-05-12 — Session-issue extension. WS-182 REWRITTEN (primitive-collapse,
 # not dispatch-validation — owner reframe: "a check being available when you
 # haven't matched the bet should be impossible at the primitive level"). WS-184
@@ -2240,7 +2240,7 @@ items:
     status_note: "v2 master; deferred from WS-136 v1 closing 2026-05-03; children WS-151..WS-157"
   - id: "WS-151"
     title: "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)"
-    status: backlog
+    status: done
     priority_score: 13.0
     priority_label: "P2"
     category: "hero-state-primitive"
@@ -2248,12 +2248,13 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "v2 authoring; parallel-friendly; parent_ws: WS-150"
+    claimed_by: "session-2026-05-22-next"
+    sprint_id: "SPR-102"
+    completed_at: "2026-05-22T12:35:00Z"
+    status_note: "DONE SPR-102. Founder ratified 12-archetype pot-type-split turn taxonomy (mirrors flop). §4.4 doc + 12 turn templates; zero src/ changes (enum+classifier deferred to WS-153); 122/122 heroState tests green. parent_ws: WS-150."
   - id: "WS-152"
-    title: "HSP-A4 — River archetype taxonomy + templates (~8 archetypes)"
-    status: backlog
+    title: "HSP-A4 — River archetype taxonomy + templates (14 archetypes)"
+    status: done
     priority_score: 13.0
     priority_label: "P2"
     category: "hero-state-primitive"
@@ -2261,12 +2262,13 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "v2 authoring; parallel-friendly; parent_ws: WS-150"
+    claimed_by: "session-2026-05-30-next"
+    sprint_id: "SPR-103"
+    completed_at: "2026-05-30T12:30:00Z"
+    status_note: "DONE SPR-103. Founder ratified Option B (14 archetypes: 12 turn-mirror + BLOCK_BET/VS_BLOCK_BET pair) via AskUserQuestion. §4.5 + §4.5.1 doc authored; 14 CONVENTIONS-compliant river templates at docs/design/hero-state-templates/river/. Zero src/ changes (types.js + loadTemplates glob + classifyArchetype routing deferred to WS-153). 122/122 heroState tests green (matches pre-ticket baseline). First-principles guard preserved. WS-153 unblocked. parent_ws: WS-150."
   - id: "WS-153"
     title: "HSP-B3 — Extend classifyArchetype() to turn + river (remove NotImplementedError)"
-    status: backlog
+    status: done
     priority_score: 13.0
     priority_label: "P2"
     category: "hero-state-primitive"
@@ -2274,12 +2276,13 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "v2 classifier extension; blocked by WS-151 + WS-152; parent_ws: WS-150"
+    claimed_by: "session-2026-05-30-next"
+    sprint_id: "SPR-103"
+    completed_at: "2026-05-30T13:00:00Z"
+    status_note: "DONE SPR-103. classifyArchetype extended to turn (12 archetypes) + river (14 archetypes). NotImplementedError throw REMOVED. New sizingFraction axis (caller-supplied) drives river BLOCK_BET/VS_BLOCK_BET routing per §4.5.1 (threshold <=0.40). types.js ARCHETYPE_IDS 18→44 + ARCHETYPE_FAMILIES 11→29. loadTemplates glob {preflop,flop}→{preflop,flop,turn,river}; bundles all 44 templates. buildHeroState ARCHETYPE_FAMILY_MAP extended with 26 new entries; passes sizingFraction through. Tests: classifyArchetype 32→72 (+40), loadTemplates count 18→44, buildHeroState +3 turn/river tests (replaced 2 throw-assertion tests). 163/163 heroState green; 772/772 in impact zones (heroState + HandReplayView + shapeLanguage + skillAssessment); production build clean (15.22s, 44 templates bundled). Audit finding: decisionAccumulator vocab reuse moot — classifier consumes opaque axes.actionContext, no history reconstruction needed; that orchestrator-side derivation upgrade is documented as follow-up. First-principles guard preserved (archetypeId OUTPUT only). parent_ws: WS-150."
   - id: "WS-154"
     title: "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)"
-    status: backlog
+    status: done
     priority_score: 13.0
     priority_label: "P2"
     category: "hero-state-primitive"
@@ -2287,9 +2290,9 @@ items:
     program: "domain-correctness"
     type: improvement
     effort: "L"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "v2 multiway model; complex — may spawn child tickets; parent_ws: WS-150"
+    claimed_by: "session-2026-06-04"
+    sprint_id: "SPR-106"
+    status_note: "SHIPPED SPR-106 2026-06-04. 3 multiway archetypes by potType (FLOP_MULTIWAY_SRP/_3BP/_LIMPED) + multiwayHeroRole descriptor slot + §7.4 design-doc RESOLVED + equityVsRangeParts MULTIWAY throw lifted (null role partition return) + buildHeroState:519 dead-code guard fix. 239/239 heroState + production build clean. HSP v2 milestone: WS-154 (this) done; only conditional WS-156/157 remain."
   - id: "WS-155"
     title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
     status: backlog
@@ -2609,7 +2612,7 @@ items:
     status_note: "Authored 2026-05-12. Owner-observed class of bugs: autoselector picks wrong seat in many scenarios; multi-seat batch semantics unclear. getFirstActionSeat is load-bearing predicate consumed by 10 files. 3 hypotheses (H1 wrong canonical 'first', H2 wrong timing, H3 blows away user multi-seat). Multi-seat semantics need owner ratification (M1 parallel-same-action, M2 batch-pending-sequential, M3 single-event-N-seats). Cross-references ICP matrix — any row whose first-action-seat disagrees with getFirstActionSeat is a pinned_bug. Couples with WS-182 (multi-seat batch helpers migrate to recordSeatAction). Bug-fix exempt from Refactor Sprint charter."
   - id: "WS-190"
     title: "Mid-hand tag-for-review — owner-tappable flag during action entry that surfaces in a Review Queue surface afterward"
-    status: backlog
+    status: done
     priority_score: 14.0
     priority_label: "P2"
     category: "review-workflow"
@@ -2617,6 +2620,8 @@ items:
     program: "design"
     type: feature
     effort: "M"
+    sprint_id: "SPR-107"
+    completed_at: "2026-06-05T00:00:00Z"
     claimed_by: null
     claimed_at: null
     sprint_id: null
@@ -2889,3 +2894,30 @@ items:
     claimed_by: "SPR-096"
     sprint_id: "SPR-096"
     status_note: "DONE 2026-05-20 SPR-096. Hero combo A♥K♦→A♥K♣ (no board collision, preserves top-two-pair); removed from KNOWN_DEGENERATE_NODES; pinned equity 0.488636 in LSW_RL_EQUITY_BASELINE. lswRlParity 8/8 + 509 postflop tests green; build clean."
+  - id: "WS-210"
+    title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
+    status: done
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "range-lab"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "M"
+    claimed_by: "session-2026-05-21-next"
+    sprint_id: "SPR-101"
+    completed_at: "2026-05-22T11:55:00Z"
+    status_note: "SHIPPED SPR-101 (resume) — the 3rd 'Flopzilla parity' feature deferred from WS-057. Side-by-side dual-paint grids + A-vs-B equity via RangeFlopBreakdown opposingRange path. 24/24 tests, clean build, founder ratified UX."
+  - id: "WS-211"
+    title: "HSP — Orchestrator deriveActionContext() upgrade for turn/river precision"
+    status: claimed
+    priority_score: 15.0
+    priority_label: "P2"
+    category: "hero-state-primitive"
+    capability: "core"
+    program: "domain-correctness"
+    type: improvement
+    effort: "M"
+    claimed_by: "SPR-104"
+    sprint_id: "SPR-104"
+    status_note: "Claimed for SPR-104 (status: approved, awaiting new-session execution per founder direction 2026-05-31). Mode: execute (Path A — IMPLEMENT-LOCAL in heroState; founder ratified at /next composition after Explore-agent audit found all 3 shape-compatible accumulator modules invert dependency direction). 4-module vocab-reuse audit + Path-A scope detail captured in SPR-104.yaml composition_notes + implementation_notes."

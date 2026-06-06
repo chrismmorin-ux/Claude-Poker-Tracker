@@ -1,0 +1,219 @@
+id: "SPR-106"
+title: "HSP-M1 — Full multiway model (HSP v2 close-out — lone hard-dep remaining)"
+status: completed
+approved_at: "2026-06-04T00:00:00Z"
+activated_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+
+goal: |
+  Hero State can reason about 3+ way pots. Author the multiway archetype family
+  + sequential-decision modeling + first-principles bluff-frequency adjustment
+  that replaces the FLOP_MULTIWAY v1 stub. Resolves HERO_STATE_DESIGN.md §7.4
+  and collapses HSP v2 milestone to the two conditional tail items (WS-156
+  caching + WS-157 LLM authoring).
+
+program_focus: domain-correctness
+program_initiative: |
+  Hero State Primitive v2 close-out (HSP-M1). 6th consecutive HSP-v2 sprint
+  (SPR-101 paint matrix unrelated; SPR-102 archetypes → SPR-103 turn/river →
+  SPR-104 orchestrator precision → SPR-105 composition rule → SPR-106 multiway).
+  Directly nominated by SPR-105 exit-note ("WS-154 — natural successor to
+  WS-155. L effort + 3 decision_flags; warrants its own sprint."). Multiway
+  invalidates HU range/nut-advantage reasoning enough that templates need their
+  own slot vocabularies — last load-bearing HSP-v2 modeling gap. domain-
+  correctness program: critical tier, founder-priority 1, health 5/8 (sweep
+  clean 2026-05-19; ceiling held by 8 open MEDIUM findings).
+
+composed_by: auto
+created_at: "2026-06-04T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-06-04T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..105
+    precedent). Manual scan: design-doc resolution + new archetype family
+    authoring + classifier/equity extensions + tests. No engagement /
+    gamification / grading / commerce surface. archetypeId remains OUTPUT
+    (HSP first-principles guard binds). Bluff-frequency adjustment must derive
+    from equity decomposition + pot odds + players remaining — explicit
+    anti-pattern guard against "multiway multiplier" hardcoded as f(player
+    count). Anti-goal risk: nil. Active risk vectors are first-principles
+    drift (covered by accept criterion) and scope balloon (covered by
+    decision_flag #3 — spawn child tickets if needed).
+
+decisions_needed:
+  - "Item #1 (WS-154): Archetype family scope — does multiway get its own MULTIWAY_* namespace (5+ archetypes per spec), or stay under flop family with a multiway flag? Recommendation in proposal: own family — multiway invalidates HU range/nut-advantage reasoning enough that templates need different slot vocabularies."
+  - "Item #1 (WS-154): Sequential-decision modeling depth — pairwise conditioning only (villain₂'s range given villain₁'s call), or full ordering (every villain conditioned on all priors)? Recommendation in proposal: pairwise first, with a doc note about when full ordering becomes load-bearing."
+  - "Item #1 (WS-154): Scope-balloon handling — if multiway design surfaces 2+ new implementation tickets during plan-mode, spawn them as separate WS-* and ship the design-only portion of WS-154 this sprint, or fold them into this sprint?"
+
+composition_notes: |
+  Sprint composed 2026-06-04 immediately after SPR-105 close-out earlier this
+  same session. SPR-105 exit-note explicitly named WS-154 as natural successor.
+
+  Premise verification at composition (per memory [[verify-ticket-premise-at-composition]]):
+    - docs/HERO_STATE_DESIGN.md §7.4 confirmed still open as the multiway
+      modeling question (per SPR-105 deferred section reference).
+    - src/utils/heroState/classifyArchetype.js currently exposes
+      ARCHETYPE_IDS for HU only; multiway templates limited to a single
+      FLOP_MULTIWAY v1 stub per docs/design/hero-state-templates/CONVENTIONS.md.
+    - src/utils/heroState/equityVsRangeParts.js currently models single-
+      villain conditioning; sequential-decision multiway will require an
+      extension contract (pairwise minimum per recommendation).
+    - WS-154 spec explicitly enumerates 5 archetypes (MULTIWAY_SRP_VS_PFR_
+      AND_CALLER, MULTIWAY_SRP_AS_CALLER_PFR_BEHIND, _PFR_ACTED,
+      MULTIWAY_3BP_FLOP, MULTIWAY_LIMP_FLOP). Premise is concrete; no
+      "~N nodes" inflation pattern detected.
+
+  Step 1d-pre activation gate: pass (7 active programs).
+  Step 1d block-sprint scan: domain-correctness baseline cadence 14d, last
+    run 2026-05-19 (16 days ago, 2d past cadence) — within sweep currency
+    window per program file's block_sprint clear note in last sweep result.
+    No block fired (precedent: SPR-094..105 all composed in this window).
+  Step 1e auto-recommendations: kit scripts absent — graceful degradation;
+    no auto-rec items generated.
+  Fleet-rotation (Step 3a-rotation): product repo, not HomeBase — inert.
+  Context.md: no active boosts read.
+
+  Source-class damping (Step 2d): last 3 sprint anchors (SPR-103 WS-152
+    founder-promotion, SPR-104 WS-211 spr-followup, SPR-105 WS-155 founder-
+    promotion) all founder-driven classes — never damped. No saturation,
+    no damping applied to candidates.
+
+  Soft-block damping (Step 2-prereq) demoted from the candidate list:
+    - WS-027/030/031/032/033/036 (P=22 launch monetization cluster → 5.5 each;
+      Q7 legal + payment + paywall + billing + posthog + H-SC01 prereqs all
+      external/non-coding)
+    - WS-191 (P=20 seat autoselector Phase 2 → 5.0; awaiting ≥3 telemetry
+      captures)
+    - WS-164 (P=18 PIO PVA scoring → 4.5; WS-163 hard-block now CLEARED per
+      queue-index, but blocked_by_note still binds — Table-Build Gate 5
+      surface not ticketed)
+    - WS-092 (P=15 HERO_BUCKET_TYPICAL_EQUITY topPair overstates → 3.75;
+      external solver access required)
+    - WS-047 (P=15 PRF Phase A → 3.75; Q5 differentiation-demo Gate 4 prereq)
+
+  NEEDS-RESCOPE batch (per SPR-071 queue-reconciliation 2026-05-11) —
+  surfaced again for founder visibility but NOT pulled in:
+    - WS-020 (P=15): Hook-hoisting race test premise needs adapting to
+      shipped CalibrationDashboardView surface
+    - WS-023 (P=15): Per-seed-anchor snapshot tests — pattern needs adapting
+      to shipped matcher.js contract
+    - WS-025 (P=15): 9 autonomy red-lines registry — surface inventory needs
+      updating before authoring
+
+  Clean candidate passed over for visibility:
+    - WS-190 (P=14, design): Mid-hand tag-for-review. Refactor-sprint hard-
+      block now CLEARED (Items 4/5/6/7 all done per SPR-078/079/080).
+      Founder-requested 2026-05-12 feature. Viable design-line pivot if
+      founder wants to break HSP momentum — surfaced in proposal as
+      alternative anchor.
+
+  Capability filter (Step 2a): WS-154 capability = core / enabled. No boost.
+
+  Why singleton plan-first L at strategic-cap-exceeding effort: WS-154 spec
+  status_note flags "complex — may spawn child tickets during design"; per
+  decision_flag #3 the founder ratifies child-ticket-vs-fold-in handling at
+  plan-mode. Single-item containment is the appropriate scope shape; HSP
+  precedent (SPR-026 / SPR-027 / SPR-030 / SPR-040 L singletons) supports
+  this.
+
+items:
+  - id: "WS-154"
+    title: "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)"
+    mode: plan-first
+    effort: L
+    priority_score: 13.0
+    program: domain-correctness
+    status: done
+    started_at: "2026-06-04T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"
+    completion_notes: |
+      Founder-ratified scope contraction at plan-mode (Phase 1 found
+      gameTreeEvaluator already multiway-aware; ~80% of pre-figured
+      engine work was already shipped). Three founder decisions:
+        D1: 3-archetype potType split + multiwayHeroRole descriptor slot
+        D2: equityVsRangeParts MULTIWAY throw lifted (null role partition
+            + populated overall); buildHeroState:519 dead-code guard fix
+        D3: Ship in-sprint, zero child tickets upfront; v3_TODO frontmatter
+      Delivered: §7.4 design-doc RESOLVED + 3 new templates +
+      FLOP_MULTIWAY catch-all body rewrite + types.js v3 catalog (47 IDs;
+      MULTIWAY_HERO_ROLES enum; multiwayHeroRole typedef) +
+      classifyArchetype potType-routed multiway block +
+      buildHeroState.deriveMultiwayHeroRole() + ARCHETYPE_FAMILY_MAP
+      extensions + equityVsRangeParts skipRolePartition pattern +
+      18 net new tests (8 classifier + 5 e2e + 1 equityVsRangeParts
+      behavior + cascading updates).
+      239/239 heroState; gameTreeEvaluator 193/193 paranoia;
+      HeroStateSection 21/21; production build 12.41s clean;
+      smart-test-runner 11901/1 pre-existing flake/20 skipped.
+      First-principles guard preserved: bluff-freq DERIVES from ∏ fold
+      rates (multiwayFoldPct); equity DERIVES from 0.85^(n-1)
+      (adjustedRealization); no hardcoded multiway multiplier; archetype
+      / hero-role / potType are all OUTPUTS, never INPUTS to plans.
+    decision_flags:
+      - "Archetype family scope — own MULTIWAY_* namespace vs flop-family multiway flag"
+      - "Sequential-decision modeling depth — pairwise conditioning vs full ordering"
+      - "Scope-balloon handling — spawn child tickets vs fold into this sprint"
+    blocked_by: []
+    files_involved:
+      - "docs/HERO_STATE_DESIGN.md (rewrite §7.4 multiway model design)"
+      - "docs/design/hero-state-templates/multiway/ (NEW — archetype templates)"
+      - "src/utils/heroState/classifyArchetype.js (extend ARCHETYPE_IDS + multiway dispatch)"
+      - "src/utils/heroState/equityVsRangeParts.js (extend for sequential-decision conditioning)"
+      - "src/utils/heroState/buildHeroState.js (extend for multiway routing)"
+      - "src/utils/heroState/types.js (extend ARCHETYPE_IDS + multiway-specific fields if needed)"
+      - "src/utils/heroState/__tests__/*.test.js (extend coverage for ≥3-way flop scenarios)"
+    accept_criteria_summary: |
+      1. docs/HERO_STATE_DESIGN.md §7.4 multiway model design ratified
+      2. Multiway archetype family enumerated + templates authored at
+         docs/design/hero-state-templates/multiway/
+      3. FLOP_MULTIWAY v1 stub deprecated (or replaced inline) with link
+      4. equityVsRangeParts handles sequential-decision conditioning when
+         villain count > 2
+      5. Plan computation reflects multiway bluff-frequency reduction WITHOUT
+         hardcoded multipliers (first-principles guard: derive from equity
+         decomposition + pot odds + players remaining)
+      6. Unit tests cover ≥3-way flop scenarios end-to-end
+    plan_mode_focus: |
+      Plan-mode goals:
+        (a) Walk the founder through the 5 candidate multiway archetypes
+            (MULTIWAY_SRP_VS_PFR_AND_CALLER, _AS_CALLER_PFR_BEHIND,
+            _AS_CALLER_PFR_ACTED, MULTIWAY_3BP_FLOP, MULTIWAY_LIMP_FLOP) and
+            confirm scope — own family vs flop-family flag.
+        (b) Specify the pairwise-conditioning contract for equityVsRangeParts:
+            villain₂'s range-given-call conditions on villain₁'s prior action.
+            Document the case where full ordering matters (rare in practice;
+            note when it becomes load-bearing).
+        (c) Derive bluff-frequency reduction from first principles:
+            pot-odds dilution (multiway pots inflate calling-range value);
+            capped caller ranges (flop callers typically capped, would have
+            raised with strongest hands preflop). Adjustment is computed from
+            game state, NOT a player-count multiplier.
+        (d) Identify scope-balloon candidates: which archetypes require new
+            slot vocabulary? Which require equityVsRangeParts extension vs
+            pure template work? Founder ratifies child-ticket-vs-fold-in
+            split at this point.
+        (e) Lock down the test matrix before authoring (≥3 archetypes covered
+            end-to-end; sequential-decision conditioning verified;
+            first-principles bluff-frequency guard tested).
+
+deferred: |
+  - WS-150 master (HSP v2 umbrella) — remains tracking parent. After WS-154
+    ships, only conditional WS-156 (X2 caching, only if production HSP
+    usage surfaces a perf signal) + WS-157 (X3 LLM authoring, research
+    spike) remain. Master closes when conditionals fire or are de-scoped.
+  - WS-020 / WS-023 / WS-025 — NEEDS-RESCOPE batch surfaced again above;
+    defer to a queue-reconciliation sprint when founder schedules.
+  - WS-027 / WS-030 / WS-031 / WS-032 / WS-033 / WS-036 — launch P=22
+    cluster, all soft-blocked on external prereqs. Defer per Step 2-prereq.
+  - WS-191 — Seat autoselector Phase 2; awaiting ≥3 telemetry captures.
+  - WS-164 — PIO PVA scoring; hard-block cleared (WS-163 done) but
+    blocked_by_note still binds (Table-Build Gate 5 surface not ticketed).
+  - WS-190 — Mid-hand tag-for-review; viable design-line pivot if founder
+    wants to break HSP momentum after this sprint closes.

@@ -1,0 +1,156 @@
+id: "WS-211"
+title: "HSP — Orchestrator deriveActionContext() upgrade for turn/river precision"
+type: improvement
+status: done
+claimed_by: "SPR-104"
+claimed_at: "2026-05-31T00:00:00Z"
+started_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+completion_notes: |
+  Path A (heroState-local) shipped per founder ratification at composition.
+
+  Implementation:
+    - 4 new local helpers in buildHeroState.js (alongside countPreflopRaises):
+      normalizeActionVerb, wasHeroPreflopAggressor, heroBetStreet,
+      villainBetStreet, allPriorPostflopStreetsCheckedThrough.
+    - deriveActionContext() extended with a precision branch for turn/river
+      when gameState.heroSeat is present; falls back to v1 heuristic when
+      heroSeat is missing (preserves backward-compat for callers like
+      HandReplay's reconstructGameStateAt which doesn't yet pass heroSeat —
+      out of scope per WS-211 files_involved).
+    - buildSituation() now derives sizingFraction from pendingBetSize/pot
+      when caller omits sizingFraction (avoids divide-by-zero when pot=0;
+      caller-supplied value wins).
+    - +19 tests in __tests__/buildHeroState.test.js covering:
+        * TURN BARREL (action complete) + BARREL spot (decision point)
+        * TURN VS_BARREL OOP
+        * TURN PROBE (flop checked through, hero leads turn OOP)
+        * TURN CBET-delayed (hero PFA checked back flop IP, bets turn)
+        * TURN VS_DONK (×2 — checked-back-flop pattern + bet-flop-villain-donks-turn pattern)
+        * RIVER BARREL / VS_BARREL OOP / PROBE (requires flop+turn both checked)
+        * RIVER CBET-delayed / VS_DONK
+        * RIVER PROBE strict-prereq (turn-bet break ≠ probe)
+        * sizingFraction derivation from pendingBetSize/pot → RIVER_BLOCK_BET
+        * Caller-supplied sizingFraction wins over derived
+        * No derivation when pot=0 (divide-by-zero guard)
+        * Caller-supplied actionContext wins over derived (override path)
+        * heroSeat absent → v1 fallback (no consumer regression)
+        * 3BP TURN BARREL routing
+
+  Vocab-reuse audit (accept_criterion #6):
+    - exploitEngine/decisionAccumulator.js (READ) — shape-compatible but lives
+      in a higher layer that consumes heroState. Direct import would invert
+      dependency direction. REJECTED.
+    - skillAssessment/heroDecisionAccumulator.js (READ) — shape-compatible
+      but lives in skillAssessment which consumes heroState. REJECTED.
+    - skillAssessment/deriveSituationKey.js (READ) — strongest shape match
+      (8-axis with preflopAggressor `pfa`/`pfc` axis), mirrored its
+      NORMALIZE_ACTION + DERIVE_PREFLOP_AGGRESSOR patterns heroState-locally
+      (normalizeActionVerb + wasHeroPreflopAggressor). REJECTED for direct
+      import (layer inversion) — patterns copied with provenance comment.
+    - decisionSystems/accumulator/createAccumulator.js (READ) — generic
+      factory with no domain content. REJECTED (no-fit).
+
+  Follow-up path B (extract neutral src/utils/actionHistory/streetContext.js)
+  remains a legitimate refactor if/when a 3rd consumer surfaces the same
+  turn/river vocabulary in skillAssessment or exploitEngine. Single consumer
+  today → YAGNI per founder ratification.
+
+  First-principles guard preserved: archetypeId stays OUTPUT-only. The
+  derived actionContext is itself an OUTPUT of action-history reconstruction;
+  the classifier reads it as an axis. POKER_THEORY.md §7 contract holds.
+
+  Acceptance:
+    - 44/44 buildHeroState tests green (+19 net).
+    - 182/182 heroState suite green (was 163; +19 matches).
+    - Production build clean (12.02s).
+    - Impact-zone (HandReplayView + skillAssessment + shapeLanguage):
+      790/791 green. The 1 failure is a pre-existing date-aged flake at
+      conceptMastery.test.js:120 ('2026-05-04' lastUpdatedAt → recencyPenalty
+      decays to 0 as of 2026-06-04). Independent of WS-211 — reproduces on
+      pre-change main.
+priority_score: 15.0
+priority_label: "P2"
+category: "hero-state-primitive"
+capability: "core"
+program: "domain-correctness"
+description: |
+  buildHeroState.deriveActionContext() v1 heuristic only distinguishes
+  CBET / VS_CBET on postflop streets (returns CBET when villain hasn't bet
+  this street, VS_CBET when they have). For accurate turn/river HSP v2
+  archetype routing (per WS-153 shipped 2026-05-30), the orchestrator needs
+  to distinguish:
+
+    Turn:
+      - BARREL          — hero bet flop AND bets turn
+      - VS_BARREL       — hero called flop, faces turn bet
+      - PROBE           — flop checked through, hero leads turn OOP
+      - CBET (delayed)  — hero checked back flop IP, bets turn
+      - VS_DONK         — hero was preflop aggressor, villain donks turn
+
+    River:
+      - BARREL          — continuation (triple-barrel pattern, but axis is just
+                           "hero bets the river")
+      - VS_BARREL       — facing a river bet
+      - PROBE           — flop+turn both checked through, hero leads river OOP
+      - CBET (delayed)  — hero checked back turn IP, bets river
+      - VS_DONK         — villain donk-leads river
+
+  Block-bet detection (RIVER_BLOCK_BET / RIVER_VS_BLOCK_BET) currently relies
+  on caller-supplied gameState.sizingFraction. Could also derive from
+  gameState.pendingBetSize / gameState.pot if both fields are present.
+
+  Closest-match fallbacks the classifier already provides (CBET on turn →
+  TURN_DELAYED_CBET; VS_CBET on turn → VS_BARREL family) keep the contract
+  "always return a valid archetypeId" intact when callers don't supply
+  explicit actionContext. This ticket makes routing PRECISE without that
+  caller burden.
+
+  Implementation hints:
+    - Inspect gameState.actionSequence per-street to reconstruct who-bet-what.
+    - Audit existing candidates for reusable vocab:
+      * src/utils/exploitEngine/decisionAccumulator.js (action-history schema)
+      * src/utils/skillAssessment/heroDecisionAccumulator.js
+      * src/utils/skillAssessment/deriveSituationKey.js (SCF situation-keying)
+      * src/utils/decisionSystems/accumulator/createAccumulator.js
+    - "Compatible" criterion: same action shape (street + action type +
+      bettor/caller identity), same street enum (preflop/flop/turn/river).
+    - Prefer reuse over local re-implementation if any candidate fits;
+      heroState-local fallback if none do.
+
+  Tests: extend buildHeroState.test.js with turn/river action-history
+  scenarios (hero bets flop → BARREL on turn; villain bets flop → VS_CBET
+  → VS_BARREL on turn called → VS_BARREL on river; flop checked through →
+  PROBE on turn; etc.). Each scenario produces the expected archetypeId
+  without explicit gameState.actionContext.
+accept_criteria:
+  - "buildHeroState.deriveActionContext() returns BARREL/VS_BARREL/PROBE/CBET (delayed)/VS_DONK for turn"
+  - "buildHeroState.deriveActionContext() returns BARREL/VS_BARREL/PROBE/CBET (delayed)/VS_DONK for river"
+  - "Turn/river archetypes route precisely without callers passing gameState.actionContext"
+  - "Optional: gameState.sizingFraction derived from pendingBetSize/pot when both present"
+  - "All 12 turn + 14 river archetypes reachable via action-history-only scenarios"
+  - "decisionAccumulator vocab reuse audit recorded in completion notes (reused or rejected with reason)"
+  - "buildHeroState tests cover the new action-history derivation scenarios"
+  - "No regression in 163 heroState tests; full impact-zone suite green"
+effort: "M"
+files_involved:
+  - "src/utils/heroState/buildHeroState.js (deriveActionContext extension)"
+  - "src/utils/heroState/__tests__/buildHeroState.test.js (new scenario coverage)"
+  - "src/utils/exploitEngine/decisionAccumulator.js (READ — reuse audit)"
+  - "src/utils/skillAssessment/heroDecisionAccumulator.js (READ — reuse audit)"
+  - "src/utils/skillAssessment/deriveSituationKey.js (READ — reuse audit)"
+  - "src/utils/decisionSystems/accumulator/createAccumulator.js (READ — reuse audit)"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-104"
+decision_flags: []
+decisions_resolved:
+  - "Reuse-vs-local accumulator question resolved at /next composition 2026-05-31: Path A (IMPLEMENT-LOCAL in heroState). Audit (Explore agent, medium breadth) found all 3 shape-compatible candidates (exploitEngine/decisionAccumulator, skillAssessment/heroDecisionAccumulator, skillAssessment/deriveSituationKey) live in higher layers that consume heroState — direct import inverts dependency direction. 4th candidate (decisionSystems/accumulator/createAccumulator) is a generic factory with no domain content. 5 new context labels (BARREL/VS_BARREL/PROBE/CBET-delayed/VS_DONK) are HSP-specific vocabulary originated in WS-153's archetype taxonomy. Founder ratified Path A; declined Path B (extract to neutral src/utils/actionHistory/ module) as premature abstraction with skillAssessment regression surface. See SPR-104.yaml composition_notes for full audit + implementation_notes for scope detail."
+source:
+  origin: "ws-153-followup-2026-05-30"
+  parent_ws: "WS-150"
+  parent_doc: "src/utils/heroState/classifyArchetype.js JSDoc (WS-153 spec resolution note) + .claude/workstream/sprints/SPR-103.yaml"
+status_note: "Follow-up surfaced by WS-153 (SPR-103) classifier work. Without this upgrade, turn/river archetype routing requires callers to pass gameState.actionContext explicitly for precision; otherwise classifier's closest-match fallback applies (CBET on turn → TURN_DELAYED_CBET; VS_CBET on turn → VS_BARREL family) which keeps the always-returns-valid contract but loses BARREL vs DELAYED-CBET vs PROBE precision."
+created_at: "2026-05-30"
+updated_at: "2026-05-30"

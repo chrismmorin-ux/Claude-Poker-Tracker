@@ -1,0 +1,230 @@
+id: "SPR-103"
+title: "HSP v2 turn+river close-out — river archetypes + classifier extension"
+status: completed
+approved_at: "2026-05-30T12:00:00Z"
+activated_at: "2026-05-30T12:00:00Z"
+completed_at: "2026-05-30T13:00:00Z"
+
+goal: |
+  Hero State archetypes work on the turn and river — not just preflop and flop.
+  classifyArchetype() returns a real archetype for every street instead of
+  throwing NotImplementedError. Closes the v2 "archetypes on every street"
+  milestone end-to-end: river templates (WS-152) → classifier wired for
+  turn+river (WS-153). Unblocks downstream Self-Coach leak rules and any
+  HeroState consumer (HandReplay, SCF) on later streets.
+
+program_focus: domain-correctness
+program_initiative: |
+  Hero State Primitive v2 authoring close-out (HSP-A4 + HSP-B3). Direct
+  continuation of SPR-102 (HSP-A3 turn taxonomy). domain-correctness is
+  founder-priority 1 / critical tier / lowest-health (5); this is the live
+  thread the prior sprint's exit note named ("enables WS-153"). Tight
+  dependency cluster: WS-153 is blocked_by [WS-151 (done), WS-152]; ship
+  WS-152 first then WS-153 unblocks within the same sprint.
+
+composed_by: auto
+created_at: "2026-05-30T12:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-30T12:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..102
+    precedent). Manual scan: river-archetype taxonomy + presentation-only
+    narrative templates + classifier extension that maps game-state → archetypeId
+    (OUTPUT, never INPUT — HSP first-principles guard binds). No engagement /
+    gamification / grading / commerce / dark-pattern surface. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-152) — River archetype count + boundaries: mirror the turn's pot-type-split (~12 archetypes) or keep the ticket's leaner provisional ~8? §4.5 currently reads 'river follows the same pot-type discipline.' And: split BLUFF_CATCHER by position (IP/OOP) or single archetype + adjustment? Plan-mode ratification."
+  - "Item #2 (WS-153) — Reuse decisionAccumulator.js prior-street action-history vocabulary, or keep a heroState-local vocab? Audit decisionAccumulator first; decide based on shape/fit."
+
+composition_notes: |
+  2-item dependency cluster (WS-152 enables WS-153, which is otherwise blocked).
+  Tagged effort M+M = 3.0σ, OVER the 2-session standard cap. Founder approved
+  at proposal after explicit transparency: WS-152 is markdown authoring whose
+  twin WS-151 tagged M ran ~30 min actual; realistic combined effort ≈ 2.0σ.
+  Cluster cap-override justified: WS-153 alone in a future sprint reaches the
+  same total work without closing the milestone now.
+
+  Prioritization: launch cluster (P=22) owner-gated / non-actionable + launch
+  program blocked by domain-correctness. WS-191 (P=20) soft-blocked (awaiting
+  ≥3 telemetry observations from live sessions → damped to 5.0). WS-146 (P=18,
+  SCF leak-rule catalog) nominally outranks HSP (P=13) but is design-program +
+  open-ended incremental + closes no milestone; founder offered the pivot at
+  proposal (option 3) and approved the milestone-closing HSP cluster (option 1).
+  WS-164 (P=18) soft-blocked on Table-Build Gate 5. WS-185 (P=14) shipped in
+  SPR-083 (index drift — separate hygiene item).
+
+  Premise verification done at composition (per memory feedback rule):
+    - WS-152 (river dir): glob confirmed docs/design/hero-state-templates/river/
+      does not exist; only preflop/, flop/, turn/ are present. §4.5 in
+      HERO_STATE_DESIGN.md still reads "River archetypes — defer to v2."
+      Premise holds. CORRECTION SURFACED: ticket says "~8 archetypes" but
+      predates WS-151's pot-type split decision; §4.5 explicitly says river
+      "follows the same pot-type discipline" → realistic count is likely ~12,
+      not 8. Surfaced as decision #1 (not a silent scope-inflation).
+    - WS-153 (NotImplementedError premise): grep confirmed classifyArchetype.js
+      lines 115-117 throw Error("classifyArchetype: turn/river not implemented
+      (v1 deferred to v2)") exactly as ticket describes. Premise holds.
+
+  Step 1d-pre activation gate: pass (6 active programs in registry; domain-
+  correctness critical tier). Step 1d: no block_sprint trips. Step 1e: queue
+  well-populated (84 backlog items); no auto-recs needed; kit scripts absent.
+  Fleet-rotation: skipped (product repo, not HomeBase). Context.md: no active
+  boosts. Source-class damping (Step 2d): last 3 sprint anchors all founder-
+  promoted / plan-internal (SPR-100 WS-057, SPR-101 WS-210, SPR-102 WS-151) —
+  no saturation, no damping applied.
+
+items:
+  - id: "WS-152"
+    title: "HSP-A4 — River archetype taxonomy + templates (14 archetypes)"
+    mode: plan-first
+    effort: M
+    priority_score: 13.0
+    program: domain-correctness
+    status: done
+    started_at: "2026-05-30T12:00:00Z"
+    completed_at: "2026-05-30T12:30:00Z"
+    completion_notes: |
+      Founder ratified Option B (14 archetypes: 12 turn-mirror + BLOCK_BET/VS_BLOCK_BET
+      pair) via AskUserQuestion 2026-05-30, after the design proposal flagged §4.1
+      "shared archetype + adjustments" rule against the original ticket's ~8-entry
+      hand-class-proliferation shape. Authored §4.5 taxonomy table + §4.5.1
+      implementation policy (mirrors §4.4 + §4.4.1 structure) and 14 CONVENTIONS-
+      compliant river templates at docs/design/hero-state-templates/river/.
+
+      Zero src/ changes — types.js enum extension + loadTemplates glob extension
+      + classifyArchetype routing all deferred to WS-153 (same scope-boundary
+      discipline as WS-151; keeps reachability + "loads all 18" tests green while
+      the classifier still throws for river).
+
+      122/122 heroState tests green (matches SPR-102 baseline exactly — markdown-
+      only change is invisible to the still-scoped {preflop,flop} glob). First-
+      principles guard preserved: every numeric is a slot, archetype IDs are
+      OUTPUTS only. Block-bet detection policy documented for WS-153 prep
+      (sizingFraction <= 0.40 → BLOCK_BET / VS_BLOCK_BET routing).
+
+      No separate RIVER_BLUFF_CATCHER or RIVER_THIN_VALUE archetype (hand-class
+      framing folds into RIVER_*_VS_BET / RIVER_*_BET bodies per §4.1). BLOCK_BET
+      pair IS separate because small-sizing is a different decision tree, not a
+      hand-class variant — rationale documented inline in §4.5.
+
+      WS-153 unblocked.
+    decision_flags:
+      - "Final archetype count + boundaries: mirror turn's 12-way pot-type split, or keep leaner ~8?"
+      - "Split BLUFF_CATCHER by IP/OOP, or single archetype + position adjustment?"
+    decisions_resolved:
+      - "Founder ratified Option B (14 archetypes: 12 turn-mirror + BLOCK_BET/VS_BLOCK_BET pair). BLUFF_CATCHER split question moot — no separate BLUFF_CATCHER archetype (hand-class frame folds into RIVER_*_VS_BET per §4.1)."
+    enables:
+      - "WS-153"
+    files_involved:
+      - "docs/HERO_STATE_DESIGN.md (extend §4.5)"
+      - "docs/design/hero-state-templates/river/ (NEW, 14 files)"
+      - "docs/design/hero-state-templates/CONVENTIONS.md (read)"
+
+  - id: "WS-153"
+    title: "HSP-B3 — Extend classifyArchetype() to turn + river (remove NotImplementedError)"
+    mode: plan-first
+    effort: M
+    priority_score: 13.0
+    program: domain-correctness
+    status: done
+    started_at: "2026-05-30T12:30:00Z"
+    completed_at: "2026-05-30T13:00:00Z"
+    completion_notes: |
+      classifyArchetype extended to turn (12 archetypes) + river (14 archetypes).
+      NotImplementedError throw REMOVED. Architectural audit resolved Decision #2
+      cleanly: src/utils/decisionAccumulator.js does NOT exist at the ticket's
+      asserted path (closest matches are exploitEngine/, skillAssessment/, and
+      decisionSystems/accumulator/). More fundamentally, the classifier doesn't
+      reconstruct action history — it consumes opaque axes.actionContext (an
+      output of buildHeroState.deriveActionContext). The accumulator-vocab-reuse
+      question therefore had no integration point in the classifier; it's
+      properly a buildHeroState orchestrator concern, deferred to a follow-up
+      ticket (see status_note).
+
+      Changes (4 src files + 3 test files):
+        - types.js: ARCHETYPE_IDS 18→44 (+12 turn +14 river); ARCHETYPE_FAMILIES
+          11→29 (+8 turn +10 river); added optional sizingFraction to Situation
+          typedef for river block-bet routing.
+        - loadTemplates.js: glob extended {preflop,flop}→{preflop,flop,turn,
+          river}; bundles all 44 templates at Vite build time.
+        - classifyArchetype.js: added classifyTurn (mirrors classifyFlop
+          discipline) + classifyRiver (mirrors + sizingFraction routing for
+          BLOCK_BET / VS_BLOCK_BET at threshold <=0.40 per §4.5.1); removed the
+          turn/river throw; added sizingFraction axis; refreshed module JSDoc
+          (44 IDs, fallback policy across all 4 streets).
+        - buildHeroState.js: ARCHETYPE_FAMILY_MAP extended with 26 new entries;
+          buildSituation reads gameState.sizingFraction (caller-supplied);
+          classifyArchetype call site passes sizingFraction through.
+
+      Tests:
+        - classifyArchetype.test.js: 32→72 (+40 net). Removed "deferred-throws"
+          block (2 tests). Added 4 v2-implemented sanity + 12 turn happy + 3
+          turn edge + 14 river happy + 9 river edge (incl. sizingFraction
+          boundary, undefined, IP-anomaly, multiway dominates) + 44-ID
+          reachability smoke.
+        - loadTemplates.test.js: count assertion 18→44.
+        - buildHeroState.test.js: replaced 2 throw-assertion tests with 3 new
+          ones (turn returns TURN_*, river returns RIVER_*, sizingFraction
+          passthrough produces RIVER_BLOCK_BET). 25 tests total (+1 net).
+
+      Verification:
+        - 163/163 heroState tests green.
+        - 772/772 tests green across impact zones (heroState + HandReplayView +
+          shapeLanguage + skillAssessment).
+        - Production build clean (15.22s, 44 templates bundled, PWA SW
+          regenerated).
+        - External callsites audit (HeroStateSection.jsx + 2 lessonRegistries):
+          all use only parseFrontmatter (unchanged) or buildHeroState (backward-
+          compatible — turn/river now succeed instead of throwing, strict
+          improvement). No callsite imports ARCHETYPE_IDS/FAMILIES/classifier
+          directly outside heroState/.
+
+      First-principles guard preserved: archetypeId is OUTPUT of classification,
+      never INPUT to plan computation. Block-bet routing reads sizingFraction
+      (derived from game state pendingBet/pot by caller), not from archetype
+      label. All template numerics remain slot-only.
+
+      Follow-up surfaced (NOT WS-153 scope): buildHeroState.deriveActionContext()
+      v1 heuristic emits only CBET/VS_CBET. For accurate turn/river archetype
+      routing without explicit caller-supplied actionContext, the orchestrator
+      needs to distinguish BARREL / PROBE / DELAYED-CBET / VS_DONK from
+      prior-street action history. Callers wanting precise routing should pass
+      gameState.actionContext explicitly until that lands. Closest-match
+      fallbacks (CBET on turn → TURN_DELAYED_CBET; VS_CBET on turn → VS_BARREL
+      family) keep the contract "always return a valid archetypeId" intact.
+    decision_flags:
+      - "Reuse decisionAccumulator action-history vocab, or keep heroState-local?"
+    decisions_resolved:
+      - "Architecturally MOOT — audit found src/utils/decisionAccumulator.js does not exist; classifier doesn't reconstruct action history (consumes opaque axes.actionContext from upstream orchestrator). Buildheroh-state-side derivation upgrade is a separate follow-up ticket."
+    blocked_by:
+      - "WS-152"
+    files_involved:
+      - "src/utils/heroState/classifyArchetype.js"
+      - "src/utils/heroState/types.js (ARCHETYPE_IDS + ARCHETYPE_FAMILIES + Situation.sizingFraction)"
+      - "src/utils/heroState/loadTemplates.js (glob extended)"
+      - "src/utils/heroState/buildHeroState.js (ARCHETYPE_FAMILY_MAP + sizingFraction passthrough)"
+      - "src/utils/heroState/__tests__/classifyArchetype.test.js (rewritten 32→72)"
+      - "src/utils/heroState/__tests__/loadTemplates.test.js (count 18→44)"
+      - "src/utils/heroState/__tests__/buildHeroState.test.js (turn/river tests replaced)"
+    decision_flags:
+      - "Reuse decisionAccumulator action-history vocab, or keep heroState-local?"
+    blocked_by:
+      - "WS-152"
+    files_involved:
+      - "src/utils/heroState/classifyArchetype.js"
+      - "src/utils/heroState/types.js (extend ARCHETYPE_IDS const + add turn/river entries; loadTemplates glob to pick up turn/ + river/ dirs)"
+      - "src/utils/heroState/__tests__/classifyArchetype.test.js"
+      - "src/utils/decisionAccumulator.js (read — action-history vocab reuse audit)"
+
+deferred: |
+  - WS-154 (full multiway model, L) — separate v2 ticket; tackled when SCF surfaces a multiway need.
+  - WS-155 (adjustment composition rule) — resolves §7.2; standalone next.
+  - WS-146 (SCF leak-rule catalog continuation) — founder declined pivot at proposal; ready for a future design-program sprint.

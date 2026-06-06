@@ -1,0 +1,171 @@
+id: "SPR-105"
+title: "HSP-X1 — Adjustment composition rule (resolves HERO_STATE_DESIGN.md §7.2)"
+status: completed
+approved_at: "2026-06-04T00:00:00Z"
+activated_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+
+goal: |
+  HSP v2 adjustment composition lands: when multiple villain tendencies fire on
+  the same hero decision (e.g., calling-station AND short-stacked), the final
+  delta is computed by explicit per-axis rules grounded in poker theory — not
+  serial application order. Resolves the last open §7.2 question in
+  HERO_STATE_DESIGN.md and unblocks WS-150's HSP v2 milestone.
+
+program_focus: domain-correctness
+program_initiative: |
+  Hero State Primitive v2 close-out (HSP-X1). Direct continuation of SPR-104
+  per its exit note ("natural successor is WS-155 — HSP-X1 Adjustment
+  composition rule, resolves HERO_STATE_DESIGN.md §7.2"). 4th consecutive
+  HSP-v2 sprint (SPR-102 archetypes → SPR-103 turn/river → SPR-104 orchestrator
+  precision → SPR-105 composition rule). domain-correctness program: critical
+  tier, founder-priority 1, health 5.
+
+composed_by: auto
+created_at: "2026-06-04T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-06-04T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..104
+    precedent). Manual scan: design-doc resolution + new orchestrator-layer
+    composition module + tests. No engagement / gamification / grading /
+    commerce surface. archetypeId remains OUTPUT (HSP first-principles guard
+    binds). Composition rules must derive from poker-theory rationale per
+    accept_criterion #3 — explicit anti-pattern guard against code-convenience
+    framing. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-155): Per-axis composition strategy — hybrid per-axis vs uniform rule (sizing-multiplier / bluff-freq / polarize-flag each likely want different rules). Finalize per-axis derivation in plan-mode."
+  - "Item #1 (WS-155): Clamp behavior for multiplicative composition — bound runaway sizing inflation (e.g., 3 tendencies × 1.3 each = 2.2× sizing). Specify upper/lower bounds + rationale."
+
+composition_notes: |
+  Sprint composed 2026-06-04. SPR-104 closed earlier this session (WS-211
+  HSP orchestrator deriveActionContext turn/river precision shipped end-to-end).
+  WS-155 was named the natural successor in SPR-104 close-out summary.
+
+  Premise verification at composition (per memory [[verify-ticket-premise-at-composition]]):
+    - HERO_STATE_DESIGN.md §7.2 (line 352) is still the open question:
+      "When multiple tendencies fire, do deltas multiply, sum, or take
+      precedence by rank? Needs a composeAdjustments(list) → final delta rule."
+      Confirmed open.
+    - src/utils/heroState/buildHeroState.js:241-252 buildAdjustments() v1
+      currently slices vulnerabilities to 3 and exposes them as a flat
+      Adjustment[] — composition is "consumer's responsibility for v1" per
+      JSDoc. WS-155's job is to make composition the orchestrator's
+      responsibility.
+    - No src/utils/heroState/composeAdjustments.js exists yet — clean greenfield.
+
+  Step 1d-pre activation gate: pass (7 active programs).
+  Step 1d block-sprint scan: domain-correctness sweep cadence 30d, last sweep
+    2026-05-19 (16 days ago) — fresh; no block.
+  Step 1e auto-recommendations: kit scripts absent — graceful degradation.
+  Fleet-rotation: product repo, not HomeBase — skipped.
+  Context.md: no active boosts read.
+
+  Source-class damping (Step 2d): last 3 sprint anchors (SPR-102 WS-151, SPR-103
+  WS-152, SPR-104 WS-211) all spr-followup (founder-driven, never damped). No
+  saturation, no damping.
+
+  Soft-block damping (Step 2-prereq) demoted from the candidate list:
+    - WS-027/030/031/032/033/036 (P=22 launch monetization cluster, Q7 legal
+      + payment + paywall + billing + posthog + H-SC01 → 5.5 each)
+    - WS-191 (P=20 seat autoselector Phase 2, awaiting ≥3 telemetry captures → 5.0)
+    - WS-164 (P=18 PIO PVA scoring, blocked_by WS-163 + bbn → 4.5; also hard-blocked)
+    - WS-092 (P=15 HERO_BUCKET_TYPICAL_EQUITY topPair overstates, external solver → 3.75)
+    - WS-047 (P=15 PRF Phase A, Q5 differentiation-demo Gate 4 → 3.75)
+
+  NEEDS-RESCOPE blockers (per SPR-071 queue-reconciliation sweep 2026-05-11) —
+  top-ranked items by raw priority but premise has shifted and they're not
+  workable without rescoping first. Surfaced here for founder visibility per
+  [[verify-ticket-premise-at-composition]] memory rather than silently
+  anchoring on a known-stale ticket:
+    - WS-020 (P=15, NEEDS-RESCOPE): Hook-hoisting race test (cross-surface).
+      Premise: "simultaneous mount" test for EAL Stream D. EAL Stream D
+      shipped at SPR-066; the test premise needs reframing against the
+      shipped CalibrationDashboardView surface.
+    - WS-023 (P=15, NEEDS-RESCOPE): Per-seed-anchor snapshot tests (RT-108
+      pattern). EAL Stream B matcher infra shipped at src/utils/anchorLibrary/
+      matcher.js; RT-108 snapshot pattern needs adapting to the matcher
+      contract.
+    - WS-025 (P=15, NEEDS-RESCOPE): In-app test assertions for 9 autonomy
+      red lines. EAL Stream D shipped; Stream C (live anchor badge)
+      partially scoped — surface inventory needs updating before authoring.
+
+  Founder may want to schedule a queue-reconciliation pass to address these
+  before the natural priority order is restored. They are NOT pulled into
+  this sprint per minimal-scope discipline.
+
+  Capability filter (Step 2a): WS-155 capability = core / enabled. No boost.
+
+items:
+  - id: "WS-155"
+    title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
+    mode: plan-first
+    effort: M
+    priority_score: 13.0
+    program: domain-correctness
+    status: done
+    started_at: "2026-06-04T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"
+    completion_notes: |
+      Founder-ratified expanded scope (composer + delta producer) per
+      plan-mode premise discovery — villainProfile.vulnerabilities had no
+      delta field; buildAdjustments was passing empty {}. Shipped end-to-end
+      pipeline with WEAKNESS_TO_DELTA producer mapping 8 load-bearing
+      vulnerability classes. 4 per-axis composition rules ratified
+      (multiplicative-clamp / OR / MIN / precedence-by-severity). 34/34
+      composeAdjustments + 49/49 buildHeroState + 48/48 villainProfileBuilder
+      green. 221/221 heroState suite (+39 net). Build clean (14.66s).
+      HERO_STATE_DESIGN.md §7.2 RESOLVED with §7.2.1 derivation table.
+    decision_flags:
+      - "Hybrid per-axis vs uniform rule — likely hybrid; finalize during design"
+      - "Whether to clamp multiplicative composition (avoid runaway sizing inflation)"
+    blocked_by: []
+    files_involved:
+      - "docs/HERO_STATE_DESIGN.md (resolve §7.2 open question, line 352)"
+      - "src/utils/heroState/buildHeroState.js (integrate composer at buildAdjustments lines 241-252)"
+      - "src/utils/heroState/composeAdjustments.js (NEW — per-axis composition module)"
+      - "src/utils/heroState/__tests__/composeAdjustments.test.js (NEW — stacking / contradicting / all-firing cases)"
+    accept_criteria_summary: |
+      1. docs/HERO_STATE_DESIGN.md §7.2 resolved with explicit per-axis composition rules
+      2. composeAdjustments module shipped (new file or inline in buildHeroState)
+      3. Per-axis rule rationale documented (poker-theory derivation, not code convenience)
+      4. Unit tests cover stacking / contradicting / all-firing edge cases
+      5. buildHeroState integrates composer; existing v1 tests still green
+    plan_mode_focus: |
+      Plan-mode goals:
+        (a) Walk the founder through per-axis composition options with
+            poker-theory rationale (sizingMultiplier likely multiply-with-
+            clamp; bluffFreq likely MIN/take-most-conservative; polarize-flag
+            likely OR; cumulative-effect rationale derived from how range
+            mass actually shifts under stacking tendencies).
+        (b) Specify clamp bounds with reasoning (e.g., total sizingMultiplier
+            in [0.6, 2.0]; outside that range the model's piecewise-linear
+            assumptions break and a higher-fidelity model is needed).
+        (c) Decide module location: new src/utils/heroState/composeAdjustments.js
+            vs inlining in buildAdjustments(). Likely new file for testability.
+        (d) Lock down the test matrix before authoring tests.
+
+deferred: |
+  - WS-150 master (HSP v2 umbrella) — remains tracking parent. Close when
+    WS-154 (M1 multiway) + WS-155 (X1 adjustment composition, THIS sprint) +
+    WS-156 (X2 caching, conditional on perf signal) + WS-157 (X3 LLM
+    authoring, research spike) all ship or are de-scoped. After WS-155 ships,
+    only WS-154 + the two conditional v2 items remain.
+  - WS-154 (HSP-M1 Full multiway model) — natural successor to WS-155. L
+    effort + 3 decision_flags; warrants its own sprint.
+  - WS-020 / WS-023 / WS-025 — NEEDS-RESCOPE batch surfaced in composition
+    notes above; defer to a queue-reconciliation sprint when founder
+    schedules.
+  - WS-027 / WS-030 / WS-031 / WS-032 / WS-033 / WS-036 — launch P=22
+    cluster, all soft-blocked on external prereqs (counsel session,
+    payment-vendor decision, paywall design, etc.). Defer per Step 2-prereq.
+  - WS-191 — Seat autoselector Phase 2; awaiting ≥3 telemetry captures.
+  - WS-164 — PIO PVA scoring; hard-blocked on WS-163.

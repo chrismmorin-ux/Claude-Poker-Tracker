@@ -1,10 +1,10 @@
 id: "WS-152"
-title: "HSP-A4 — River archetype taxonomy + templates (~8 archetypes)"
+title: "HSP-A4 — River archetype taxonomy + templates (14 archetypes)"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-30-next"
+claimed_at: "2026-05-30T12:00:00Z"
+completed_at: "2026-05-30T12:30:00Z"
 priority_score: 13.0
 priority_label: "P2"
 category: "hero-state-primitive"
@@ -53,7 +53,7 @@ blocked_by: []
 blocked_by_legacy: []
 enables:
   - "WS-153"
-sprint_id: ""
+sprint_id: "SPR-103"
 decision_flags:
   - "Final archetype count + boundaries"
   - "Whether to break BLUFF_CATCHER by IP/OOP (likely yes) or single archetype with adjustment"

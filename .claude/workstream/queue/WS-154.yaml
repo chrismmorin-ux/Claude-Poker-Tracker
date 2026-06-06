@@ -1,10 +1,68 @@
 id: "WS-154"
 title: "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-06-04"
+claimed_at: "2026-06-04T00:00:00Z"
+started_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+completion_notes: |
+  SHIPPED 2026-06-04 (SPR-106). Plan-mode Phase 1 finding significantly
+  contracted scope from spec pre-figure: gameTreeEvaluator is already
+  fully multiway-aware (numOpponents threads through adjustedRealization
+  0.85^(n-1) + multiwayFoldPct ∏ formula), so no engine work needed.
+  Three founder decisions ratified:
+    1. 3 archetypes split by potType (FLOP_MULTIWAY_SRP / _3BP / _LIMPED)
+       + multiwayHeroRole descriptor slot for hero-PFR-vs-caller axis.
+       FLOP_MULTIWAY retained as catch-all.
+    2. equityVsRangeParts MULTIWAY throw lifted; returns null role
+       partition + populated overall against the supplied range.
+       buildHeroState:519 dead-code guard fixed (gates on
+       playersRemaining<3 now).
+    3. Ship in-sprint, zero child tickets upfront; turn/river splits +
+       pairwise narrowing primitive captured as v3_TODO frontmatter.
+  Delivered:
+    - docs/HERO_STATE_DESIGN.md §7.4 RESOLVED with 4 subsections
+      (taxonomy / already-shipped primitives table / role-partition
+      limitation / first-principles guard binding); §7 Q4 flipped
+    - 3 new templates: FLOP_MULTIWAY_SRP / _3BP / _LIMPED at
+      docs/design/hero-state-templates/flop/ (all 5 pedagogical
+      structural points; slot-driven, no hardcoded numerics)
+    - FLOP_MULTIWAY body rewritten as catch-all; v2_TODO → v3_TODO
+    - types.js: ARCHETYPE_IDS 44 → 47; MULTIWAY_HERO_ROLES enum added;
+      Situation typedef extended with multiwayHeroRole property
+    - classifyArchetype.js: potType-routed multiway block in
+      classifyFlop; v3_TODO comments added to classifyTurn/River
+    - buildHeroState.js: deriveMultiwayHeroRole() helper + wired into
+      buildSituation; ARCHETYPE_FAMILY_MAP +3 entries; dead-code guard
+      at line 572 rephrased to playersRemaining<3
+    - equityVsRangeParts.js: MULTIWAY throw lifted; skipRolePartition
+      flag pattern; JSDoc updated
+    - Tests: +8 classifier multiway-routing tests + 5 buildHeroState
+      end-to-end multiway tests + 1 equityVsRangeParts behavior change +
+      reachability case updates + types.js v3 catalog assertions =
+      239/239 heroState (+18 net vs 221 at SPR-105 close)
+  Verification:
+    - heroState __tests__/: 239/239 passing
+    - HandReplay HeroStateSection: 21/21 passing
+    - gameTreeEvaluator: 193/193 passing (paranoia check; not touched)
+    - skillAssessment: 216/217 passing (1 pre-existing date-aged flake
+      at conceptMastery.test.js:120, also flagged in SPR-104 notes —
+      independent of WS-154)
+    - Production build: 12.41s, clean
+    - smart-test-runner.sh: 11,901 passing / 1 pre-existing flake /
+      20 skipped (483/484 files green)
+  First-principles guard preserved end-to-end:
+    - archetypeId / multiwayHeroRole / potType are OUTPUTS of game-state
+      derivation; templates RENDER, never DECIDE
+    - Bluff-frequency reduction DERIVES from ∏ fold rates (gameTreeEquity
+      multiwayFoldPct); no hardcoded multiway multiplier
+    - Equity discount DERIVES from 0.85^(n-1) (adjustedRealization);
+      no archetype-keyed sizing lookup
+  HSP v2 milestone significantly closer: only conditional WS-156
+  (caching, perf-signal-gated) + WS-157 (LLM authoring, research spike)
+  remain. WS-150 master ticket can close after those land or are
+  de-scoped.
 priority_score: 13.0
 priority_label: "P2"
 category: "hero-state-primitive"
@@ -62,7 +120,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: ""
+sprint_id: "SPR-106"
 decision_flags:
   - "Whether multiway gets its own archetype family or stays under flop family"
   - "Sequential-decision modeling depth (just pairwise vs full ordering)"

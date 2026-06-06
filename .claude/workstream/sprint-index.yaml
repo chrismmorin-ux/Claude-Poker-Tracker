@@ -2,8 +2,16 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-05-21T19:30:00Z"
-sprint_count: 100
+last_updated: "2026-06-05T00:00:00Z"
+sprint_count: 107
+# 2026-06-04 — Single session closed both SPR-104 (WS-211 deferred from 2026-05-31)
+# AND SPR-105 (WS-155 HSP-X1, founder-ratified expanded scope). HSP v2 milestone
+# now: WS-155 + WS-211 done; WS-154 (multiway) is the lone hard-dep remaining
+# (WS-156/157 conditional). 4th + 5th consecutive HSP v2 sprints back-to-back.
+# SPR-106 composed + COMPLETED same session — WS-154 (HSP-M1 multiway) shipped
+# end-to-end. 6 consecutive HSP v2 sprints (SPR-101..106). HSP v2 hard-dep
+# closed; only conditional WS-156/157 remain. Plan-mode Phase 1 contracted spec
+# scope ~80% (gameTreeEvaluator already multiway-aware); 3 founder decisions.
 
 sprints:
   - id: "SPR-001"
@@ -1203,3 +1211,87 @@ sprints:
     created_at: "2026-05-21T19:30:00Z"
     approved_at: "2026-05-21T19:30:00Z"
     completed_at: "2026-05-21T23:20:00Z"
+  - id: "SPR-101"
+    title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first (WS-210). Singleton. Closes the Flopzilla-parity arc (Phases 1+2 = SPR-099/100). Shipped on resume — impl was complete-but-uncommitted; verified 24/24 tests + clean build; founder ratified side-by-side-grids UX."
+    program_focus: engineering
+    program_initiative: "Third Range Lab implementation sprint — range-vs-range comparison, the deferred third Phase-2 feature. Reuses existing range-vs-range engine (RangeFlopBreakdown two-column + rangeVsRangeEquity). Founder directed 'continue' after SPR-100."
+    composed_by: auto
+    created_at: "2026-05-22T00:10:00Z"
+    approved_at: "2026-05-22T00:10:00Z"
+    completed_at: "2026-05-22T11:55:00Z"
+  - id: "SPR-102"
+    title: "HSP-A3 — Turn archetype taxonomy + templates"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first (WS-151). Singleton. First HSP v2 authoring ticket; enables WS-153 classifier turn/river extension. Founder ratified 12-archetype pot-type-split taxonomy; 12 templates + §4.4 doc; zero src/ changes; 122/122 heroState tests green."
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive v2 authoring (HSP-A3). Markdown/taxonomy authoring mirroring proven v1 WS-138/139 shape. Highest verified-ready actionable item after launch (owner-gated) + stale/blocked candidates filtered."
+    composed_by: auto
+    created_at: "2026-05-22T12:05:00Z"
+    approved_at: "2026-05-22T12:05:00Z"
+    completed_at: "2026-05-22T12:35:00Z"
+  - id: "SPR-103"
+    title: "HSP v2 turn+river close-out — river archetypes + classifier extension"
+    status: completed
+    item_count: 2
+    items_done: 2
+    effort_summary: "M+M plan-first (WS-152 + WS-153) SHIPPED end-to-end. WS-152: 14 river archetype templates (founder ratified Option B mirror+block-bet-pair via AskUserQuestion) + §4.5/§4.5.1 doc; zero src/ diff. WS-153: classifier extended turn (12) + river (14) → 44 total IDs; sizingFraction axis for block-bet routing; loadTemplates glob extended; ARCHETYPE_FAMILY_MAP +26 entries; Decision #2 architecturally moot per audit. 163/163 heroState + 772/772 impact-zone tests green; production build clean (15.22s, 44 templates bundled). HSP v2 'archetypes on every street' milestone CLOSED."
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive v2 close-out (HSP-A4 + HSP-B3). Direct continuation of SPR-102 per its exit note ('enables WS-153'). domain-correctness critical tier, lowest-health (5), founder-priority 1. Premise verification at composition: WS-152 river/ dir missing (confirmed); §4.5 still 'defer to v2'; WS-153 NotImplementedError at classifyArchetype.js:115-117 (confirmed). Scope correction surfaced: river count likely ~12 not ~8 (pot-type-split mirror); founder ratified 14 (mirror+block-bet pair)."
+    composed_by: auto
+    created_at: "2026-05-30T12:00:00Z"
+    approved_at: "2026-05-30T12:00:00Z"
+    completed_at: "2026-05-30T13:00:00Z"
+  - id: "SPR-104"
+    title: "HSP — Orchestrator deriveActionContext() turn/river precision (Path A: heroState-local)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M execute-mode singleton SHIPPED 2026-06-04 in ~30 min (well under typed M ~1.5 sessions — pre-resolved decision_flag + execute-mode let work go straight to implementation). 4 new helpers (normalizeActionVerb / wasHeroPreflopAggressor / heroBetStreet / villainBetStreet / allPriorPostflopStreetsCheckedThrough) + extended deriveActionContext for turn/river when heroSeat present + sizingFraction derivation from pendingBetSize/pot (with divide-by-zero guard) + 19 new tests covering BARREL/VS_BARREL/PROBE/CBET-delayed/VS_DONK on both turn + river, sizingFraction derivation, backward-compat fallback, 3BP routing. 182/182 heroState green (+19 net); production build clean (12.02s); impact-zone (HandReplayView + skillAssessment + shapeLanguage) 790/791 — 1 pre-existing date-aged flake at conceptMastery.test.js:120 independent of WS-211. Vocab-reuse audit recorded (all 4 candidates REJECTED with reasons — Path B extract-shared remains a clean follow-up if/when a 3rd consumer surfaces). First-principles guard preserved (archetypeId OUTPUT-only)."
+    program_focus: domain-correctness
+    program_initiative: "Direct continuation of SPR-103. WS-211 was authored as SPR-103 exit-note follow-up. domain-correctness critical tier, founder-priority 1. Resumed approved-but-deferred sprint per memory [[resume-approved-sprints]] (sprint had status:approved + completed_at:null + items_done:0 from 2026-05-31; founder direction 'queue it up to be worked in a new session' satisfied)."
+    composed_by: auto
+    created_at: "2026-05-31T00:00:00Z"
+    approved_at: "2026-05-31T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"
+  - id: "SPR-105"
+    title: "HSP-X1 — Adjustment composition rule (resolves HERO_STATE_DESIGN.md §7.2)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first → M+S actual (founder-ratified expanded scope after plan-mode caught premise issue — villainProfile.vulnerabilities had no `delta` field; buildAdjustments was applying empty {} uniformly; ticket as-written would have shipped a no-op composer). Shipped end-to-end pipeline: NEW composeAdjustments.js (~160 LoC, 5 exports) + WEAKNESS_TO_DELTA producer mapping 8 load-bearing vulnerability classes in villainProfileBuilder.js + ComposedDelta typedef + HeroState.composedDelta integration + HERO_STATE_DESIGN.md §7.2 RESOLVED with §7.2.1 per-axis derivation table + 44 net new tests. Per-axis rules: sizingMultiplier multiplicative-clamp [0.6, 2.0] (POKER_THEORY §3.5 + §4.5.1 derivation) | polarize OR | bluffFreq MIN-wins (minimax-regret) | actionOverride precedence-by-severity. 221/221 heroState (+39 net); 48/48 villainProfileBuilder (+5); build clean (14.66s). First-principles guard preserved (composedDelta OUTPUT-only)."
+    program_focus: domain-correctness
+    program_initiative: "Direct continuation of SPR-104. 4th consecutive HSP v2 sprint (archetypes → turn/river → orchestrator precision → composition rule). HSP v2 milestone significantly closer: of 5 v2 children, WS-155 done; WS-154 is lone hard-dep remaining (X2/X3 conditional). Plan-mode premise-verification caught missing delta-producer wire upstream — saved shipping a no-op composer."
+    composed_by: auto
+    created_at: "2026-06-04T00:00:00Z"
+    approved_at: "2026-06-04T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"
+  - id: "SPR-107"
+    title: "Mid-hand tag-for-review — one-tap flag + Review Queue (WS-190)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first (WS-190) SHIPPED end-to-end. One-tap reviewTag in gameState (TOGGLE_REVIEW_TAG, pure) → persisted top-level on hand record via usePersistence → IDB v27 migration → ControlZone affordance + SessionsView ReviewQueuePanel + HandReplayView badge/clear. 3 owner decisions (Sessions-panel queue, one-tap-only v1, replay clear button). Premise correction: migration v27 not v26 (v26=SLS Stream D already exists). BUG caught+fixed: migrateV27 cursor raced migrateV25 on hands store (clobbered predictionAudit) → guarded for oldVersion<25. +24 net tests; impact zone green; build clean. Gate 1 audit + Gate 4 surface + INV-TAG-1/2/3 authored. REMAINING: manual Playwright visual pass."
+    program_focus: design
+    program_initiative: "Owner-requested feature, now unblocked. Launch-prep (P22) outscores but soft-blocked on external founder decisions. Founder-selected direction via AskUserQuestion after HSP v2 milestone close."
+    composed_by: auto
+    created_at: "2026-06-05T00:00:00Z"
+    approved_at: "2026-06-05T00:00:00Z"
+    completed_at: "2026-06-05T00:00:00Z"
+  - id: "SPR-106"
+    title: "HSP-M1 — Full multiway model (HSP v2 close-out — lone hard-dep remaining)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "L plan-first → M actual (Phase 1 plan-mode finding contracted spec scope ~80%; gameTreeEvaluator already multiway-aware). 3 founder decisions ratified at plan-mode: (1) 3-archetype potType split [FLOP_MULTIWAY_SRP/_3BP/_LIMPED] + multiwayHeroRole descriptor slot; (2) equityVsRangeParts MULTIWAY throw lifted (null role partition + populated overall); (3) ship in-sprint, zero child tickets upfront. Shipped end-to-end: §7.4 design-doc RESOLVED + 3 new templates + FLOP_MULTIWAY catch-all rewrite + ARCHETYPE_IDS 44→47 + MULTIWAY_HERO_ROLES enum + classifyArchetype potType routing + deriveMultiwayHeroRole() helper + ARCHETYPE_FAMILY_MAP extensions + equityVsRangeParts skipRolePartition + buildHeroState:519 dead-code guard fix + 18 net new tests. 239/239 heroState + 21/21 HeroStateSection + 193/193 gameTreeEvaluator paranoia + production build 12.41s clean. First-principles guard preserved (bluff-freq derives from ∏ fold rates; equity derives from 0.85^(n-1); no hardcoded multipliers)."
+    program_focus: domain-correctness
+    program_initiative: "Hero State Primitive v2 close-out (HSP-M1). 6th consecutive HSP v2 sprint anchor. Lone v2 hard-dep CLOSED — only conditional WS-156 (caching, perf-signal-gated) + WS-157 (LLM authoring, research spike) remain."
+    composed_by: auto
+    created_at: "2026-06-04T00:00:00Z"
+    approved_at: "2026-06-04T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"

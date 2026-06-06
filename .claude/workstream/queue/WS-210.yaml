@@ -1,0 +1,44 @@
+id: "WS-210"
+title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
+legacy_id: null
+type: improvement
+status: done
+claimed_by: "session-2026-05-21-next"
+claimed_at: "2026-05-22T00:10:00Z"
+completed_at: "2026-05-22T11:55:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "range-lab"
+capability: "core"
+program: "engineering"
+description: |
+  Range Lab Phase 2b — the third "Flopzilla parity" feature deferred from
+  WS-057 (SPR-100): paint a SECOND range and compare the two ranges' equity +
+  hand-type makeup side by side on the board.
+
+  Builds on the Phase 1 paint surface (WS-056) + Phase 2 histogram/filters
+  (WS-057). The range-vs-range engine already exists — Archetype mode renders
+  focal-vs-opposing via RangeFlopBreakdown's two-column HandTypePanel, and
+  rangeVsRangeEquity (rangeVsBoard.js) computes MC range-vs-range equity. This
+  ticket is primarily paint-state + layout, not new poker math.
+accept_criteria:
+  - "Custom mode lets the user paint two ranges (A and B) and a board."
+  - "Side-by-side hand-type breakdown for A and B (reuse RangeFlopBreakdown two-column path)."
+  - "Range-vs-range equity (A vs B) shown on Compute, reusing the existing kernel — no second equity implementation."
+  - "Per-combo equity histogram (WS-057) remains available for the active/selected range."
+  - "AP-RL-01 + INV-LSW-RL-EQUITY-PARITY untouched (equity stays card-math; no label-driven narrowing)."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: "SPR-101"
+decision_flags:
+  - "Dual-paint UX: two side-by-side paint grids (A+B visible) vs one grid with an A/B paint-target toggle (recommended for 1600x720 width budget)"
+decision_resolution: "Founder ratified TWO SIDE-BY-SIDE GRIDS (2026-05-22), overriding the sprint's toggle recommendation. Both ranges stay visible; a focus model (focusedGrid) routes undo/redo/clear to the last-touched grid; Save is global (writes A + B + board + compareOn in one sessionStorage blob). Both ranges visible was preferred over the narrower width budget."
+status_note: "AUTHORED 2026-05-21 SPR-100 close-out. SHIPPED 2026-05-22 (SPR-101 resume — implementation was complete-but-uncommitted from prior session; verified 24/24 tests + clean build, founder ratified UX). The third 'Flopzilla parity' feature deferred from WS-057. Completes the Range Lab analysis loop (Phases 1+2 shipped SPR-099/100). Distinct from WS-058 (Phase 3 — AI-native differentiators, aspirational P3)."
+source:
+  origin: "spr-followup"
+  parent_ws: "WS-057"
+created_at: "2026-05-21"
+updated_at: "2026-05-21"

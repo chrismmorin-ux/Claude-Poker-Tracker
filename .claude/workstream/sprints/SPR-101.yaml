@@ -1,0 +1,84 @@
+id: "SPR-101"
+title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
+status: completed
+approved_at: "2026-05-22T00:10:00Z"
+activated_at: "2026-05-22T00:10:00Z"
+completed_at: "2026-05-22T11:55:00Z"
+
+goal: |
+  Range Lab reaches full Flopzilla parity — paint two ranges and compare their
+  equity and hand-type makeup side by side on a board. Cashes the third feature
+  deferred from Phase 2 (SPR-100).
+
+program_focus: engineering
+program_initiative: |
+  Third Range Lab implementation sprint, closing the "Flopzilla parity" arc
+  (Phase 1 paint = SPR-099, Phase 2 histogram+filters = SPR-100, Phase 2b
+  comparison = this). Reuses the existing range-vs-range engine: Archetype mode
+  already renders focal-vs-opposing via RangeFlopBreakdown's two-column path, and
+  rangeVsRangeEquity (rangeVsBoard.js) computes MC range-vs-range equity. Mostly
+  paint-state + layout, not new poker math.
+
+composed_by: auto
+created_at: "2026-05-22T00:10:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-22T00:10:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..100
+    precedent). Manual scan: study-only analysis surface (paint two ranges, see
+    their equity comparison). No engagement/gamification, no grading, no
+    commerce, no dark pattern. Reuses existing range-vs-range kernel; binds
+    AP-RL-01 + INV-LSW-RL-EQUITY-PARITY. Anti-goal risk: nil.
+
+decisions_needed:
+  - "Item #1 (WS-210) — Dual-paint UX: two side-by-side paint grids (A+B visible) vs one grid with an A/B paint-target toggle. Recommend the toggle for the 1600x720 width budget; founder ratifies at plan mode."
+
+composition_notes: |
+  Singleton plan-first sprint. Anchor = WS-210 (authored this sprint as the
+  spr-followup to WS-057's deferred range-comparison feature). No co-located
+  range-lab item batches: WS-058 (Phase 3) is aspirational P3 and depends on the
+  full Phase-2 line; WS-208 (mobile-portrait) is P3 behind landscape v1.
+
+  Prioritization: founder directed "continue" immediately after SPR-100 (Range
+  Lab Phase 2) → continue the live thread to its natural close. Higher-scoring
+  alternative WS-146 (SCF leak rules, P2=18) was surfaced as the rotation option
+  in the proposal; founder chose to continue Range Lab. Launch cluster
+  (P1=22) remains owner-gated/non-actionable.
+
+  Step 1d-pre activation gate: pass. Step 1d: domain-correctness sweep-fresh
+  2026-05-19 (not stale); launch non-blocking (precedent across 100 sprints).
+  Step 1e: no auto-recs (kit/scripts absent; queue well-populated). Fleet-
+  rotation: skipped (product repo). Context.md: no active boosts.
+
+items:
+  - id: "WS-210"
+    title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
+    mode: plan-first
+    effort: M
+    priority_score: 15.0
+    program: engineering
+    status: done
+    completion_notes: |
+      Implementation was complete-but-uncommitted from the composing session.
+      Resume verified it: 24/24 tests green (RangeLabExplorer 8 + useRangePaint 8
+      + rangeLabPersistence 8), build clean (14.0s). Founder ratified the
+      as-built side-by-side-grids UX (overriding the sprint's toggle
+      recommendation). AP-RL-01 + INV-LSW-RL-EQUITY-PARITY untouched — A-vs-B
+      equity reuses RangeFlopBreakdown's opposingRange path + the existing MC
+      kernel; no second equity implementation.
+    decision_flags:
+      - "Dual-paint UX: two side-by-side grids vs one grid with an A/B paint-target toggle"
+    files_involved:
+      - "src/components/views/PostflopDrillsView/ExplorerMode.jsx"
+      - "src/components/views/PostflopDrillsView/useRangePaint.js"
+
+deferred: |
+  - WS-058 (Phase 3 — AI-native differentiators) — aspirational P3, downstream of full Phase 2 line.
+  - WS-208 (Range Lab mobile-portrait variant) — P3, behind landscape v1.

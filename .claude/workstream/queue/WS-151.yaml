@@ -1,10 +1,10 @@
 id: "WS-151"
 title: "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-05-22-next"
+claimed_at: "2026-05-22T12:05:00Z"
+completed_at: "2026-05-22T12:35:00Z"
 priority_score: 13.0
 priority_label: "P2"
 category: "hero-state-primitive"
@@ -51,10 +51,30 @@ blocked_by: []
 blocked_by_legacy: []
 enables:
   - "WS-153"
-sprint_id: ""
+sprint_id: "SPR-102"
 decision_flags:
   - "Final archetype count + boundaries (provisional 8; finalize during ticket)"
   - "Whether to split delayed-cbet from probe (similar IP/OOP asymmetry)"
+decision_resolution: |
+  Founder ratified (2026-05-22) the MIRROR-FLOP / pot-type-split taxonomy:
+  12 archetypes (not the provisional 8). Barrel & vs-barrel split by SRP/3BP ×
+  IP/OOP (8) + TURN_PROBE + TURN_DELAYED_CBET + TURN_MULTIWAY + TURN_VS_DONK (4).
+  Probe (OOP, flop checked through) and delayed-cbet (IP, checked back flop) kept
+  distinct. Check-raise is a branch inside VS_BARREL templates, not a standalone
+  archetype (matches flop). Rationale: 3BP turns run at much lower SPR with
+  tighter/polarized ranges than SRP — same divergence that justified the flop's
+  SRP/3BP split; keeps classifier (WS-153) routing on identical axes.
+status_note: |
+  DONE SPR-102 2026-05-22. Authored docs/HERO_STATE_DESIGN.md §4.4 (12-entry turn
+  taxonomy table + §4.4.1 implementation policy) + 12 narrative templates in
+  docs/design/hero-state-templates/turn/. All CONVENTIONS-compliant (frontmatter +
+  Headline/Body/Branch summary, slot-only numerics, first-person plural voice).
+  Zero src/ changes: types.js ARCHETYPE_IDS/FAMILIES enum + loadTemplates glob +
+  classifyArchetype routing deliberately deferred to WS-153 (extending the enum
+  now would fail classifyArchetype reachability + loadTemplates 'all 18' tests
+  since the classifier still throws NotImplementedError for turn). 122/122
+  heroState tests green. WS-153 unblocked-on-content (still needs WS-152 river
+  taxonomy before classifier extends to both later streets).
 source:
   origin: "founder-promotion-2026-05-03"
   parent_ws: "WS-150"

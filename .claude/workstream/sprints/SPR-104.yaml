@@ -1,0 +1,223 @@
+id: "SPR-104"
+title: "HSP — Orchestrator deriveActionContext() turn/river precision (Path A: heroState-local)"
+status: completed
+approved_at: "2026-05-31T00:00:00Z"
+activated_at: "2026-06-04T00:00:00Z"
+completed_at: "2026-06-04T00:00:00Z"
+
+goal: |
+  Turn/river HSP archetype routing becomes precise from action-history alone.
+  Callers (HandReplay, SCF, future live coach) no longer have to pass
+  gameState.actionContext explicitly for buildHeroState() to route to the right
+  WS-153 archetype — buildHeroState.deriveActionContext() reconstructs
+  BARREL / VS_BARREL / PROBE / CBET (delayed) / VS_DONK from gameState
+  .actionSequence per street, and optionally derives sizingFraction from
+  pendingBetSize / pot for RIVER_BLOCK_BET / RIVER_VS_BLOCK_BET routing.
+
+program_focus: domain-correctness
+program_initiative: |
+  Direct follow-up to SPR-103 (HSP v2 turn+river close-out). SPR-103 shipped
+  the 44-archetype classifier (WS-153) with a closest-match fallback chain
+  (CBET on turn → TURN_DELAYED_CBET; VS_CBET → VS_BARREL family) that keeps
+  the always-valid-archetype contract intact but loses BARREL vs DELAYED-CBET
+  vs PROBE precision unless callers supply gameState.actionContext. WS-211
+  closes that precision gap at the orchestrator layer — caller burden drops,
+  HSP v2 routing becomes self-contained on action history.
+
+  domain-correctness program: critical tier, founder-priority 1, health 5.
+
+composed_by: auto
+created_at: "2026-05-31T00:00:00Z"
+
+caps:
+  ceremony: standard
+  max_items: 5
+  max_effort_sessions: 2
+
+anti_goal_check:
+  status: degraded
+  reviewed_at: "2026-05-31T00:00:00Z"
+  reason: |
+    kit/scripts/cwos-constitutional-audit.js not installed (SPR-075..103
+    precedent). Manual scan: orchestrator-layer derivation of context labels
+    from existing action-history axes. No engagement / gamification / grading
+    / commerce surface. archetypeId remains OUTPUT (HSP first-principles guard
+    binds). Anti-goal risk: nil.
+
+decisions_needed: []
+decisions_resolved:
+  - "Founder ratified Path A (IMPLEMENT-LOCAL in heroState) at /next composition 2026-05-31, after audit reframed the original WS-211 decision_flag. Audit findings: gameState.actionSequence shape IS compatible with 3 candidate modules (exploitEngine/decisionAccumulator + skillAssessment/heroDecisionAccumulator + skillAssessment/deriveSituationKey); decisionSystems/accumulator/createAccumulator is a generic factory (no domain content). However, ALL three candidates live in higher layers that consume heroState — importing them would invert the dependency direction. The 5 new context labels (BARREL/VS_BARREL/PROBE/CBET-delayed/VS_DONK) are HSP-specific vocabulary originated in WS-153's archetype taxonomy. Path A keeps heroState self-contained; Path B (extract shared module at neutral src/utils/actionHistory/streetContext.js) was offered but declined as premature abstraction with skillAssessment regression surface."
+
+composition_notes: |
+  Sprint composed 2026-05-31 from SPR-103 exit note. Founder chose Path A via
+  option 2 (tighten the plan) after the original WS-211 decision_flag triaged
+  to a clean architectural question. WS-211 mode flipped plan-first → execute;
+  no further plan-mode needed at start of work.
+
+  Audit performed at composition (Explore subagent, medium breadth):
+    - src/utils/exploitEngine/decisionAccumulator.js — PARTIAL-FIT shape, flop-
+      only labels, single-aggressor assumption. Lives in exploitEngine (higher
+      layer than heroState).
+    - src/utils/skillAssessment/heroDecisionAccumulator.js — PARTIAL-FIT shape,
+      hero-only filtering, no turn/river labels. Lives in skillAssessment
+      (higher layer; consumes heroState).
+    - src/utils/skillAssessment/deriveSituationKey.js — STRONGEST shape match:
+      8-axis with preflopAggressor (pfa/pfc) which is exactly the axis needed
+      to distinguish BARREL (PFA bet flop, bets turn) from PROBE (PFC, flop
+      checked through, leads turn) from VS_DONK (PFA, villain donks). Still
+      lives in skillAssessment.
+    - src/utils/decisionSystems/accumulator/createAccumulator.js — NO-FIT,
+      generic accumulator factory (no domain knowledge).
+
+  All three shape-compatible candidates would invert the dependency direction
+  if imported from heroState. Path B (extract to neutral location) was the
+  legitimate alternative; Path A wins on (1) scope discipline — 2 files vs
+  4+, (2) dependency boundary cleanliness, (3) YAGNI — single consumer today.
+
+  Premise verification at composition:
+    - buildHeroState.deriveActionContext() at src/utils/heroState/buildHeroState
+      .js:92-108 is the v1 CBET/VS_CBET-only heuristic. Confirmed.
+    - countPreflopRaises helper at lines 110-115 is a precedent for adding
+      local action-history helpers in this file.
+    - classifyArchetype already accepts sizingFraction per SPR-103 WS-153.
+      Orchestrator buildSituation reads gameState.sizingFraction at lines
+      165-167 with caller-supplied semantics; the optional derivation from
+      pendingBetSize/pot is a clean v2 add.
+    - WS-211.yaml decision_flags + accept_criteria intact and addressable.
+
+  Step 1d-pre activation gate: pass (6 active programs; domain-correctness
+  critical). Step 1d: no block_sprint trips (domain-correctness last_run
+  2026-05-19, 12 days < 14-day cadence). Step 1e: queue well-populated; no
+  auto-recs needed; kit scripts absent — graceful degradation per CLAUDE.md.
+  Fleet-rotation: skipped (product repo, not HomeBase). Context.md: no active
+  boosts.
+
+  Source-class damping (Step 2d): last 3 sprint anchors (SPR-101 WS-210,
+  SPR-102 WS-151, SPR-103 WS-152) all spr-followup (founder-driven, never
+  damped). No saturation, no damping.
+
+  Soft-block damping (Step 2-prereq) demoted from the candidate list:
+    - WS-027/030/031/032/033/036 (P=22 launch monetization cluster, Q7 legal
+      + MPMF Gate 4 + ER policy contract + analytics-vendor verdict → 5.5)
+    - WS-191 (P=20 seat autoselector Phase 2, awaiting ≥3 live-session
+      telemetry captures → 5.0)
+    - WS-164 (P=18 PIO PVA scoring, Table-Build Gate 5 not ticketed → 4.5)
+    - WS-092 (P=15 LSW HERO_BUCKET overstates, external solver access → 3.75)
+    - WS-047 (P=15 PRF Phase A, Q5 differentiation-demo Gate 4 → 3.75)
+
+  Capability filter (Step 2a): WS-211 capability = core / enabled. No boost.
+
+  User direction: queue for a new session ("que it up in the workstream to
+  get worked in a new session"). Sprint is approved + WS-211 claimed, but NOT
+  executed in this session. Resume at next /next or /session-start.
+
+  Memory [[resume-approved-sprints]] anchor: this sprint is status: approved,
+  completed_at: null, items_done: 0. Next session's /next Step 1 must scan
+  for status: approved (not just status: active) — per logged fr-012/fb-002.
+
+items:
+  - id: "WS-211"
+    title: "HSP — Orchestrator deriveActionContext() upgrade for turn/river precision"
+    mode: execute
+    effort: M
+    priority_score: 15.0
+    program: domain-correctness
+    status: done
+    started_at: "2026-06-04T00:00:00Z"
+    completed_at: "2026-06-04T00:00:00Z"
+    completion_notes: |
+      Shipped Path A (heroState-local) — 4 helpers + deriveActionContext extended for
+      turn/river when heroSeat present + sizingFraction derived from pendingBetSize/pot.
+      +19 tests; 182/182 heroState green; build clean. Vocab-reuse audit recorded in
+      queue/WS-211.yaml. Impact-zone clean modulo pre-existing date-aged flake at
+      conceptMastery.test.js:120 (independent of WS-211).
+    decision_flags: []
+    decisions_resolved:
+      - "Reuse-vs-local accumulator question → Path A (IMPLEMENT-LOCAL). Founder ratified 2026-05-31. See sprint composition_notes for audit + rationale."
+    blocked_by: []
+    files_involved:
+      - "src/utils/heroState/buildHeroState.js (extend deriveActionContext for turn/river; optionally derive sizingFraction from pendingBetSize/pot)"
+      - "src/utils/heroState/__tests__/buildHeroState.test.js (new action-history scenarios; BARREL/VS_BARREL/PROBE/CBET-delayed/VS_DONK coverage)"
+    implementation_notes: |
+      Path A scope (founder-ratified):
+
+      1. Add local helpers in buildHeroState.js (alongside countPreflopRaises,
+         which is the precedent for this pattern):
+           - wasHeroPreflopAggressor(actionSequence, heroSeat) → boolean
+           - findStreetAggressor(actionSequence, street) → seat | null
+           - heroBetStreet(actionSequence, street, heroSeat) → boolean
+           - villainBetStreet(actionSequence, street, heroSeat) → boolean
+         Each filters actionSequence per street and inspects action verbs
+         (bet | raise) per seat. Mirror the patterns in
+         skillAssessment/deriveSituationKey.js (lines 131-147 for
+         preflopAggressor; 125-129 for findLastAggressiveAction) but kept
+         heroState-local for the dependency-direction reason captured above.
+
+      2. Extend deriveActionContext(gameState) for turn:
+           - BARREL          — hero bet flop AND bets turn (current action)
+           - VS_BARREL       — hero called flop, faces turn bet
+           - PROBE           — flop checked through, hero leads turn OOP
+           - CBET (delayed)  — hero checked back flop IP, bets turn
+           - VS_DONK         — hero was PFA, villain donks turn (no flop bet
+                                from hero — villain takes betting lead on turn)
+         Closest-match fallbacks for unrecognized patterns: continue to return
+         CBET / VS_CBET per current v1 heuristic so always-valid contract holds.
+
+      3. Extend deriveActionContext(gameState) for river: same 5 contexts
+         applied to river street with prior-street action history. Triple-
+         barrel pattern collapses to BARREL (axis is just "hero bets the
+         river", not "hero bet flop AND turn AND river"). DELAYED on river
+         means hero checked back turn IP and now bets river.
+
+      4. Optional (per accept_criterion): derive gameState.sizingFraction
+         from (gameState.pendingBetSize / gameState.pot) when both fields
+         are present AND caller did NOT supply sizingFraction explicitly.
+         Add to buildSituation alongside the existing caller-supplied path
+         at lines 165-167. Preserves classifier's RIVER_BLOCK_BET routing
+         when caller forgets to pass sizingFraction.
+
+      5. Tests: extend buildHeroState.test.js with action-history-only
+         scenarios. Each scenario constructs gameState.actionSequence and
+         asserts the expected archetypeId without setting gameState
+         .actionContext. Coverage matrix:
+           - Turn BARREL (PFA, bet flop, bet turn) → TURN_*_BARREL_*
+           - Turn VS_BARREL (PFC, called flop, vs turn bet) → TURN_*_VS_BARREL_*
+           - Turn PROBE (PFC, flop checked through, hero leads turn) → TURN_PROBE
+           - Turn DELAYED CBET (PFA IP, checked back flop, bets turn) → TURN_DELAYED_CBET
+           - Turn VS_DONK (PFA, villain donks turn) → TURN_VS_DONK
+           - All 5 mirrored on river
+           - sizingFraction derivation from pendingBetSize/pot when caller
+             omits it (RIVER_BLOCK_BET routing)
+           - Backward-compat: caller-supplied actionContext still wins
+             (early-return at line 93 unchanged)
+           - All 12 turn + 14 river archetypes reachable via action-history-
+             only scenarios per accept_criterion
+
+      6. Record vocab-reuse audit in completion_notes:
+           - Confirm: deriveSituationKey shape-matches but layer-inversion
+             precluded direct import.
+           - Identify extract-to-shared-module as a follow-up if/when a 3rd
+             consumer surfaces.
+           - First-principles guard preserved: derivedActionContext is an
+             output of action-history reconstruction; routing follows.
+             archetypeId stays OUTPUT-only (POKER_THEORY §7 binds).
+
+      Acceptance bar (from WS-211):
+        - All accept_criteria addressed.
+        - 163/163 heroState tests green (plus new ones).
+        - Full impact-zone suite green (HandReplayView + skillAssessment +
+          shapeLanguage — no consumer regressions).
+        - Production build clean.
+
+deferred: |
+  - WS-150 master (HSP v2 umbrella) — remains the tracking parent; close when
+    WS-155 (X1 adjustment composition) + WS-154 (M1 multiway) + WS-156 (X2
+    caching, conditional on perf signal) + WS-157 (X3 LLM authoring, research
+    spike) all ship or are explicitly de-scoped.
+  - WS-155 (HSP-X1 Adjustment composition rule) — natural successor after
+    WS-211; resolves HERO_STATE_DESIGN.md §7.2. M effort, plan-first.
+  - WS-146 (SCF leak-rule catalog continuation) — design-program, ready for
+    a future sprint when SCF priority resurfaces.
+  - Path B (EXTRACT-SHARED src/utils/actionHistory/streetContext.js) — open
+    follow-up if/when a 3rd consumer surfaces the same turn/river vocabulary
+    in skillAssessment or exploitEngine.
