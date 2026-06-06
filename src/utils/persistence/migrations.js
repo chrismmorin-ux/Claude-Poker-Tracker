@@ -1061,6 +1061,61 @@ const migrateV26 = (db) => {
   }
 };
 
+/**
+ * v27: reviewTag field on hands records (additive; WS-190 / SPR-107).
+ *
+ * Mid-hand tag-for-review feature. Defaults `reviewTag: null` for legacy hands
+ * lacking the field. New/tagged hands carry `{ tagged: true, taggedAt: number }`
+ * written at hand-save time (forward-only; no backfill of historical hands).
+ *
+ * Pattern follows v25 cursor walk + idempotence check.
+ *
+ * CONCURRENT-CURSOR HAZARD (load-bearing): migrateV25 also walks a cursor over
+ * the SAME `hands` store. Two openCursor walks on one store inside a single
+ * upgrade transaction interleave per the IDB request-ordering spec — a stale-
+ * snapshot put from one walk silently clobbers the other walk's field write
+ * (here, v27's reviewTag put would drop v25's predictionAudit default, and vice
+ * versa). So when v25 is co-running in this same upgrade (oldVersion < 25), we
+ * SKIP v27's pass. Legacy hands on a pre-v25 → v27 upgrade then carry
+ * `reviewTag: undefined`, which every consumer treats as untagged (all reads use
+ * `hand.reviewTag?.tagged`). The cursor pass runs only for oldVersion >= 25,
+ * where it is the sole hands-store walk in the transaction.
+ */
+const migrateV27 = (db, transaction, oldVersion) => {
+  log('Upgrading to v27: reviewTag field on hands records (WS-190 / SPR-107)');
+
+  // Skip on fresh install (no hands store yet — v0 → v27 path).
+  if (!db.objectStoreNames.contains(STORE_NAME)) return;
+
+  // Avoid a concurrent cursor walk against `hands` while migrateV25 is also
+  // running in this same upgrade transaction (see hazard note above).
+  if (oldVersion < 25) {
+    log('v27 migration: skipping reviewTag cursor (migrateV25 owns the hands pass this upgrade; legacy reviewTag stays undefined = untagged)');
+    return;
+  }
+
+  const handsStore = transaction.objectStore(STORE_NAME);
+  const cursor = handsStore.openCursor();
+
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (!c) {
+      log('v27 migration: reviewTag field defaults complete');
+      return;
+    }
+    const hand = c.value;
+    if (hand.reviewTag === undefined) {
+      hand.reviewTag = null;
+      c.update(hand);
+    }
+    c.continue();
+  };
+
+  cursor.onerror = (e) => {
+    logError('v27 hands cursor failed:', e.target.error);
+  };
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -1203,6 +1258,11 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // `docs/projects/poker-shape-language/gate3-decision-memo.md` Q1-Q7 verdicts.
   // Schema-only; no data backfill (fresh slice on a feature no legacy user has).
   if (oldVersion < 26) migrateV26(db);
+
+  // v27: mid-hand tag-for-review — reviewTag field on hands records (additive;
+  // WS-190 / SPR-107). Forward-only backfill: legacy hands set to null. Mirrors
+  // v25 predictionAudit cursor-walk pattern.
+  if (oldVersion < 27 && oldVersion > 0) migrateV27(db, transaction, oldVersion);
 
   // Registry summary — logs which versions were applied this upgrade. A stale
   // registry surfaces here (entries.length === 0 on upgrade is a red flag).

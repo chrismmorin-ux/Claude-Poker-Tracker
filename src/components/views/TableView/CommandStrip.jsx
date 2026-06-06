@@ -78,7 +78,7 @@ export const CommandStrip = ({
   // WS-182: recordPrimitiveAction (primitive-string passthrough) is no longer
   // used here — every recording funnels through recordSeatAction (intent-based)
   // from useGameHandlers below.
-  const { potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, dispatchGame } = useGame();
+  const { potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, reviewTag, dispatchGame } = useGame();
   const { settings, updateSetting } = useSettings();
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
@@ -949,6 +949,8 @@ export const CommandStrip = ({
         onClearStreet={handleClearStreet}
         onResetHand={handleResetHand}
         onNextHand={handleNextHand}
+        reviewTagged={!!reviewTag?.tagged}
+        onToggleReviewTag={() => dispatchGame({ type: GAME_ACTIONS.TOGGLE_REVIEW_TAG, payload: { taggedAt: Date.now() } })}
       />
     </div>
   );

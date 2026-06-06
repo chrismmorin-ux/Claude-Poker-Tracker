@@ -727,4 +727,51 @@ describe('gameReducer', () => {
       expect(result.actionSequence).toEqual([]);
     });
   });
+
+  // WS-190: mid-hand tag-for-review
+  describe('TOGGLE_REVIEW_TAG', () => {
+    it('initial state is untagged (reviewTag null)', () => {
+      expect(initialGameState.reviewTag).toBeNull();
+    });
+
+    it('tags an untagged hand, stamping taggedAt from payload', () => {
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.TOGGLE_REVIEW_TAG,
+        payload: { taggedAt: 1717000000000 },
+      });
+      expect(result.reviewTag).toEqual({ tagged: true, taggedAt: 1717000000000 });
+    });
+
+    it('untags a tagged hand (toggle off → null)', () => {
+      const tagged = { ...initialGameState, reviewTag: { tagged: true, taggedAt: 123 } };
+      const result = gameReducer(tagged, { type: GAME_ACTIONS.TOGGLE_REVIEW_TAG, payload: { taggedAt: 999 } });
+      expect(result.reviewTag).toBeNull();
+    });
+
+    it('defaults taggedAt to 0 when payload omits it (reducer stays pure)', () => {
+      const result = gameReducer(state, { type: GAME_ACTIONS.TOGGLE_REVIEW_TAG });
+      expect(result.reviewTag).toEqual({ tagged: true, taggedAt: 0 });
+    });
+
+    it('clears reviewTag on NEXT_HAND', () => {
+      const tagged = { ...initialGameState, reviewTag: { tagged: true, taggedAt: 5 } };
+      const result = gameReducer(tagged, { type: GAME_ACTIONS.NEXT_HAND });
+      expect(result.reviewTag).toBeNull();
+    });
+
+    it('clears reviewTag on RESET_HAND', () => {
+      const tagged = { ...initialGameState, reviewTag: { tagged: true, taggedAt: 5 } };
+      const result = gameReducer(tagged, { type: GAME_ACTIONS.RESET_HAND });
+      expect(result.reviewTag).toBeNull();
+    });
+
+    it('restores reviewTag via HYDRATE_STATE', () => {
+      const tag = { tagged: true, taggedAt: 42 };
+      const result = gameReducer(state, {
+        type: GAME_ACTIONS.HYDRATE_STATE,
+        payload: { ...initialGameState, reviewTag: tag },
+      });
+      expect(result.reviewTag).toEqual(tag);
+    });
+  });
 });

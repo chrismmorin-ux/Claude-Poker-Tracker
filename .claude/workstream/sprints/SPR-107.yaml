@@ -1,0 +1,67 @@
+id: "SPR-107"
+title: "Mid-hand tag-for-review — one-tap flag + Review Queue (WS-190)"
+status: completed
+goal: >
+  You can flag a hand for review with one tap mid-session, then find all your
+  flagged hands later in a Review Queue — turning "I should think about that
+  hand" into a durable, studyable list instead of relying on memory.
+program_focus: design
+program_initiative: >
+  First post-HSP-v2-milestone sprint. Anchors the only direct unfulfilled owner
+  request in the backlog (WS-190, requested 2026-05-12), unblocked when the
+  Refactor Sprint charter closed 2026-05-14. Launch-prep items (P22) outscore it
+  but are soft-blocked on external founder decisions (legal/payment/analytics).
+composed_by: auto
+created_at: "2026-06-05T00:00:00Z"
+approved_at: "2026-06-05T00:00:00Z"
+completed_at: "2026-06-05T00:00:00Z"
+
+item_count: 1
+items_done: 1
+
+decisions_needed:
+  - "Item #1: Review Queue surface — SessionsView 'Tagged ⭐' filter chip (recommended) vs dedicated new view"
+  - "Item #1: Note affordance — strict one-tap v1 (recommended) vs long-press text note"
+  - "Item #1: Untag UX — swipe / explicit button / both (decide at Gate 4)"
+
+composition_notes: |
+  Premise corrections caught at composition (verify-at-composition discipline):
+  - Ticket assumes IDB migration v26; v26 already exists (SLS Stream D, 2026-05-14).
+    Real next version is v27. Implementation must use v27, not v26.
+  - Greenfield premise RE-VERIFIED: no reviewTag/flaggedHands/markedForReview/
+    bookmarked infrastructure in src/. Confirmed via grep at composition.
+  - Storage shape pre-ratified 2026-05-12: field on hand record
+    (hand.reviewTag = { tagged: bool, note?: string, taggedAt: number }), additive.
+
+  Tooling note: kit/scripts/ absent in this repo — anti-goal auto-check
+  (cwos-constitutional-audit.js), state-store CLI, and cwos-reconcile/event
+  scripts unavailable. Steps degrade gracefully. Goal has no constitutional
+  (anti-goal / failed-state) concerns regardless.
+
+  anti_goal_check: { status: skipped_tooling_absent, reviewed_at: "2026-06-05T00:00:00Z" }
+
+  Candidate ranking at composition (post-drift-correction + soft-block damping):
+  - Launch P22 (WS-027/030/031/032/033/036): all soft-blocked → ~5.5, not workable
+  - WS-146 P18 (SCF leak rules): workable, founder declined this direction
+  - WS-020/023/025 P15 (EAL test hardening): workable, founder declined
+  - WS-190 P14: founder-selected via AskUserQuestion (owner request, now unblocked)
+
+items:
+  - seq: 1
+    id: "WS-190"
+    title: "Mid-hand tag-for-review — one-tap flag during action entry + Review Queue surface"
+    mode: plan-first
+    effort: "M"
+    status: done
+    program: design
+    type: feature
+    decision_flags:
+      - "Review Queue surface: SessionsView filter chip vs separate view (rec: filter chip)"
+      - "Note affordance: omit for v1 vs long-press text note (rec: omit v1)"
+      - "Untag UX: swipe / button / both (rec: decide at Gate 4)"
+    gate_path:
+      - "Gate 1 (Entry) — REQUIRED. Persona: owner mid-hand. Likely YELLOW/RED."
+      - "Gate 2 (Blind-Spot) — fires if Gate 1 >= YELLOW (new interaction modality + new state class)."
+      - "Gate 4 (Design surface) — REQUIRED: docs/design/surfaces/hand-tag-for-review.md"
+      - "Gate 5 (Implementation) — IDB v27 additive field + CommandStrip affordance + SessionsView filter + HandReplay tag display"
+    notes: ""

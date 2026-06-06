@@ -6,12 +6,13 @@
  */
 
 import React from 'react';
-import { Undo2, SkipForward, RotateCcw } from 'lucide-react';
+import { Undo2, SkipForward, RotateCcw, Star } from 'lucide-react';
 
 export const ControlZone = ({
   singleSeat, actionArray, hasSeatSelected, remainingCount, currentStreet,
   batchUndoCount = 0, onClearSeat, onUndo, onDeselect, onToggleAbsent,
   onClearStreet, onResetHand, onNextHand,
+  reviewTagged = false, onToggleReviewTag,
 }) => (
   <div style={{ background: 'var(--panel-surface)', borderTop: '1px solid var(--panel-border)' }}>
     {/* Clear Seat / Undo — per-seat action management */}
@@ -30,6 +31,31 @@ export const ControlZone = ({
           style={{ height: '48px', fontSize: '13px', background: batchUndoCount > 0 ? '#92400e' : '#854d0e' }}
         >
           <Undo2 size={14} /> {batchUndoCount > 0 ? `Undo ${batchUndoCount}` : 'Undo'}
+        </button>
+      </div>
+    )}
+
+    {/* Tag-for-review (WS-190) — one-tap flag for the in-progress hand. Always
+        visible, single tap toggles, no modal/confirm. Surfaces later in the
+        Sessions "Tagged ⭐" Review Queue. */}
+    {onToggleReviewTag && (
+      <div className="flex px-2 pt-2 pb-1">
+        <button
+          onClick={onToggleReviewTag}
+          aria-pressed={reviewTagged}
+          aria-label={reviewTagged ? 'Remove review tag from this hand' : 'Tag this hand for later review'}
+          title={reviewTagged ? 'Tagged for review — tap to remove' : 'Tag this hand for later review'}
+          className="btn-press flex-1 rounded-lg flex items-center justify-center gap-1.5 font-semibold"
+          style={{
+            height: '48px',
+            fontSize: '13px',
+            background: reviewTagged ? 'rgba(212, 168, 71, 0.18)' : '#1f2937',
+            border: reviewTagged ? '1px solid #d4a847' : '1px solid var(--panel-border)',
+            color: reviewTagged ? '#d4a847' : '#9ca3af',
+          }}
+        >
+          <Star size={15} fill={reviewTagged ? '#d4a847' : 'none'} />
+          {reviewTagged ? 'Tagged for Review' : 'Tag for Review'}
         </button>
       </div>
     )}

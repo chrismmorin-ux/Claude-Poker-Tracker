@@ -37,6 +37,8 @@ import {
   getHandsBySource,
   updateSeatPlayerForHand,
   batchUpdateSeatPlayers,
+  updateHandReviewTag,
+  getTaggedHands,
 } from '../handsStorage';
 
 // ---------------------------------------------------------------------------
@@ -754,5 +756,68 @@ describe('batchUpdateSeatPlayers', () => {
     // The successful first update should have been rolled back
     const hand = await loadHandById(h1);
     expect(hand.seatPlayers || {}).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review-tag operations (WS-190 mid-hand tag-for-review)
+// ---------------------------------------------------------------------------
+
+describe('updateHandReviewTag', () => {
+  beforeEach(async () => {
+    await initDB();
+  });
+
+  it('sets a reviewTag on a saved hand', async () => {
+    const handId = await saveHand(createValidHandData(), 'guest');
+    const tag = { tagged: true, taggedAt: 1717000000000 };
+    await updateHandReviewTag(handId, tag);
+    const hand = await loadHandById(handId);
+    expect(hand.reviewTag).toEqual(tag);
+  });
+
+  it('clears a reviewTag when passed null (untag)', async () => {
+    const handId = await saveHand(
+      createValidHandData({ reviewTag: { tagged: true, taggedAt: 5 } }),
+      'guest',
+    );
+    await updateHandReviewTag(handId, null);
+    const hand = await loadHandById(handId);
+    expect(hand.reviewTag).toBeNull();
+  });
+
+  it('rejects for a non-existent hand', async () => {
+    await expect(updateHandReviewTag(999999, { tagged: true, taggedAt: 1 })).rejects.toThrow();
+  });
+});
+
+describe('getTaggedHands', () => {
+  beforeEach(async () => {
+    await initDB();
+  });
+
+  it('returns only tagged hands, newest tag first', async () => {
+    await saveHand(createValidHandData(), 'guest'); // untagged
+    const idA = await saveHand(createValidHandData({ reviewTag: { tagged: true, taggedAt: 100 } }), 'guest');
+    const idB = await saveHand(createValidHandData({ reviewTag: { tagged: true, taggedAt: 300 } }), 'guest');
+    const idC = await saveHand(createValidHandData({ reviewTag: { tagged: true, taggedAt: 200 } }), 'guest');
+
+    const tagged = await getTaggedHands('guest');
+    expect(tagged.map((h) => h.handId)).toEqual([idB, idC, idA]);
+  });
+
+  it('excludes hands with reviewTag null or absent', async () => {
+    await saveHand(createValidHandData(), 'guest');
+    await saveHand(createValidHandData({ reviewTag: null }), 'guest');
+    const tagged = await getTaggedHands('guest');
+    expect(tagged).toEqual([]);
+  });
+
+  it('isolates by userId', async () => {
+    await saveHand(createValidHandData({ reviewTag: { tagged: true, taggedAt: 1 } }), 'userA');
+    await saveHand(createValidHandData({ reviewTag: { tagged: true, taggedAt: 2 } }), 'userB');
+    const taggedA = await getTaggedHands('userA');
+    expect(taggedA).toHaveLength(1);
+    expect(taggedA[0].userId).toBe('userA');
   });
 });

@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Star } from 'lucide-react';
 import { useUI, usePlayer, useTendency } from '../../../contexts';
 import { useHandReview } from '../../../hooks/useHandReview';
 import { useHandReplayAnalysis } from '../../../hooks/useHandReplayAnalysis';
@@ -16,7 +17,7 @@ import { useReplayState } from '../../../hooks/useReplayState';
 // + SelfCoachView only). Per chris-live-player.md autonomy red line #8 —
 // MUST NOT be imported from live-table surfaces.
 import { useHeroLeakDetection } from '../../../hooks/useHeroLeakDetection';
-import { loadHandById, GUEST_USER_ID } from '../../../utils/persistence/index';
+import { loadHandById, updateHandReviewTag, GUEST_USER_ID } from '../../../utils/persistence/index';
 import { buildTimeline, buildSeatNameMap, getPlayerName } from '../../../utils/handAnalysis';
 import { getPositionName } from '../../../utils/positionUtils';
 import { LAYOUT, SEAT_ARRAY, SEAT_POSITIONS } from '../../../constants/gameConstants';
@@ -68,6 +69,20 @@ export const HandReplayView = ({ scale }) => {
   const handleBack = useCallback(() => {
     setCurrentScreen(SCREEN.HISTORY);
   }, [setCurrentScreen]);
+
+  // WS-190: clear the review tag on this hand ("Reviewed — clear tag").
+  // Updates the persisted record and the local copy so the badge disappears.
+  const isReviewTagged = !!hand?.reviewTag?.tagged;
+  const handleClearReviewTag = useCallback(async () => {
+    const id = hand?.handId ?? replayHandId;
+    if (id == null) return;
+    try {
+      await updateHandReviewTag(id, null);
+      setHand(prev => (prev ? { ...prev, reviewTag: null } : prev));
+    } catch (err) {
+      console.warn('[HandReplay] Failed to clear review tag', id, err);
+    }
+  }, [hand, replayHandId]);
 
   // Keyboard navigation (use refs to avoid effect churn)
   const replayRef = React.useRef(replay);
@@ -154,6 +169,20 @@ export const HandReplayView = ({ scale }) => {
           Pot ${replay.potAtPoint}
         </span>
         {isComputing && <span className="text-gray-600 text-[10px] ml-3">(analyzing...)</span>}
+        {isReviewTagged && (
+          <span className="ml-3 flex items-center gap-2" data-testid="replay-review-tag">
+            <span className="flex items-center gap-1 text-amber-400 text-[11px] font-semibold">
+              <Star size={12} fill="#fbbf24" /> Tagged for review
+            </span>
+            <button
+              onClick={handleClearReviewTag}
+              className="px-2 py-0.5 rounded text-[11px] font-semibold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors"
+              data-testid="replay-clear-review-tag"
+            >
+              Reviewed — clear tag
+            </button>
+          </span>
+        )}
         <span className="ml-auto text-cyan-600 text-[10px] font-semibold tracking-widest uppercase">
           Reviewing
         </span>

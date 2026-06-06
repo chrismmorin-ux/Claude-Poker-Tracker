@@ -139,7 +139,10 @@ describe('usePersistence', () => {
 
       expect(dispatchers.dispatchGame).toHaveBeenCalledWith({
         type: GAME_ACTIONS.HYDRATE_STATE,
-        payload: mockHand.gameState,
+        // WS-190: reviewTag is merged into the hydrate payload (stored top-level
+        // on the record, not inside the saved gameState subset) so the live tag
+        // flag restores across reload. Absent on this mock record → null.
+        payload: { ...mockHand.gameState, reviewTag: null },
       });
     });
 

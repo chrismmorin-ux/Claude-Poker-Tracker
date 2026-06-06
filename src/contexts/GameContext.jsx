@@ -19,7 +19,7 @@ const GameContext = createContext(null);
  * Wraps children with game state and derived utilities
  */
 export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
-  const { currentStreet, dealerButtonSeat, mySeat, absentSeats, actionSequence, potOverride } = gameState;
+  const { currentStreet, dealerButtonSeat, mySeat, absentSeats, actionSequence, potOverride, reviewTag } = gameState;
 
   // Derived: blind seat positions
   const smallBlindSeat = useMemo(() => {
@@ -77,6 +77,7 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     mySeat,
     absentSeats,
     actionSequence,
+    reviewTag,
     // Dispatch
     dispatchGame,
     // Derived utilities
@@ -94,6 +95,7 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     mySeat,
     absentSeats,
     actionSequence,
+    reviewTag,
     dispatchGame,
     smallBlindSeat,
     bigBlindSeat,

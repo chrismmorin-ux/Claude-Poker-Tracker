@@ -29,6 +29,7 @@ export const GAME_ACTIONS = {
   RECORD_PRIMITIVE_ACTION: 'RECORD_PRIMITIVE_ACTION',
   RECORD_STRADDLE: 'RECORD_STRADDLE',
   SET_POT_OVERRIDE: 'SET_POT_OVERRIDE',
+  TOGGLE_REVIEW_TAG: 'TOGGLE_REVIEW_TAG',
 };
 
 // Initial state
@@ -39,6 +40,7 @@ export const initialGameState = {
   absentSeats: [],
   actionSequence: [], // Ordered list of { seat, action, street, order, amount? } — single source of truth for all actions (betting + showdown)
   potOverride: null, // Manual pot correction (number or null)
+  reviewTag: null, // WS-190: mid-hand tag-for-review. null = untagged; { tagged: true, taggedAt: number } = flagged for later study. Persisted to the hand record at save time.
 };
 
 // Use centralized LIMITS.NUM_SEATS instead of hardcoded value
@@ -59,6 +61,7 @@ export const GAME_STATE_SCHEMA = {
   absentSeats: SCHEMA_RULES.seatArray,
   actionSequence: SCHEMA_RULES.array,
   potOverride: SCHEMA_RULES.optionalNumber,
+  reviewTag: { type: 'object', required: false }, // null | { tagged: true, taggedAt: number }
 };
 
 // =============================================================================
@@ -207,6 +210,7 @@ const rawGameReducer = (state, action) => {
         absentSeats: [],
         actionSequence: [],
         potOverride: null,
+        reviewTag: null,
       };
 
     case GAME_ACTIONS.NEXT_HAND:
@@ -216,8 +220,21 @@ const rawGameReducer = (state, action) => {
         dealerButtonSeat: getNextActiveSeat(state.dealerButtonSeat, state.absentSeats, NUM_SEATS),
         actionSequence: [],
         potOverride: null,
+        reviewTag: null,
         // Keep absentSeats as-is (don't clear)
       };
+
+    // WS-190: toggle the mid-hand review tag for the in-progress hand. One-tap
+    // semantics — tagging an untagged hand stamps taggedAt (passed in payload to
+    // keep the reducer pure); re-toggling clears it. Persisted to the hand record
+    // via the auto-save path (usePersistence threads gameState.reviewTag through).
+    case GAME_ACTIONS.TOGGLE_REVIEW_TAG: {
+      if (state.reviewTag?.tagged) {
+        return { ...state, reviewTag: null };
+      }
+      const taggedAt = action.payload?.taggedAt ?? 0;
+      return { ...state, reviewTag: { tagged: true, taggedAt } };
+    }
 
     // Hydrate game state from database (on app startup)
     // Merges with defaults to ensure all fields exist (handles old records lacking new fields)

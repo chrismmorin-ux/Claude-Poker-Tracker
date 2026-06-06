@@ -39,6 +39,8 @@ export {
   saveOnlineHand,
   updateSeatPlayerForHand,
   batchUpdateSeatPlayers,
+  updateHandReviewTag,
+  getTaggedHands,
 } from './handsStorage';
 
 // Player draft persistence (PEO-1)

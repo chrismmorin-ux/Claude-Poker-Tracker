@@ -72,11 +72,13 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         if (latestHand) {
           log(`Restoring hand ${latestHand.handId} from ${new Date(latestHand.timestamp).toLocaleString()}`);
 
-          // Hydrate game state
+          // Hydrate game state. reviewTag (WS-190) is stored top-level on the
+          // hand record, not inside the saved gameState subset, so merge it back
+          // into the hydrate payload to restore the live tag flag across reload.
           if (latestHand.gameState) {
             dispatchGame({
               type: GAME_ACTIONS.HYDRATE_STATE,
-              payload: latestHand.gameState
+              payload: { ...latestHand.gameState, reviewTag: latestHand.reviewTag ?? null }
             });
             log('Game state hydrated');
           }
@@ -145,7 +147,11 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         holeCardsVisible: cardState.holeCardsVisible,
         allPlayerCards: cardState.allPlayerCards
       },
-      seatPlayers: playerState.seatPlayers
+      seatPlayers: playerState.seatPlayers,
+      // WS-190: mid-hand tag-for-review. Stored top-level on the hand record as
+      // null | { tagged: true, taggedAt }. Stable object (no fresh timestamp
+      // here) so the dedup snapshot below stays stable between renders.
+      reviewTag: gameState.reviewTag ?? null
     };
 
     // Skip save if data hasn't actually changed. Snapshot intentionally

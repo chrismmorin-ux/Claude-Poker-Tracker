@@ -403,6 +403,71 @@ export const batchUpdateSeatPlayers = async (updates) => {
 };
 
 // =============================================================================
+// REVIEW-TAG OPERATIONS (WS-190 mid-hand tag-for-review)
+// =============================================================================
+
+/**
+ * Set (or clear) the reviewTag on a single saved hand record.
+ *
+ * Used to untag a past hand from the Review Queue / replay surface, where the
+ * hand is no longer the in-progress hand held in game state. Tagging during
+ * live play rides the auto-save path (gameState.reviewTag → handData.reviewTag);
+ * this function is for after-the-fact edits to a persisted record.
+ *
+ * @param {number} handId - The hand ID to update
+ * @param {{tagged: boolean, taggedAt: number} | null} reviewTag - Tag object, or null to untag
+ * @returns {Promise<void>}
+ */
+export const updateHandReviewTag = async (handId, reviewTag) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME], 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const getReq = store.get(handId);
+
+    getReq.onsuccess = (event) => {
+      const hand = event.target.result;
+      if (!hand) {
+        reject(new Error(`Hand ${handId} not found`));
+        return;
+      }
+      hand.reviewTag = reviewTag ?? null;
+      const putReq = store.put(hand);
+      putReq.onsuccess = () => {
+        log(`Hand ${handId} reviewTag updated (tagged: ${!!reviewTag?.tagged})`);
+        resolve();
+      };
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+    tx.onabort = () => reject(tx.error || new Error('updateHandReviewTag aborted'));
+  });
+};
+
+/**
+ * Load all tagged hands (reviewTag.tagged === true) for a user, sorted by
+ * taggedAt descending (most-recently-tagged first). Powers the Sessions
+ * "Tagged ⭐" Review Queue filter.
+ *
+ * Scans the user's hands and filters in memory. A single user's local hand
+ * volume is modest; a boolean reviewTag index is not worth the IDB complexity.
+ *
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<Array>} Array of tagged hand records, newest tag first
+ */
+export const getTaggedHands = async (userId = GUEST_USER_ID) => {
+  try {
+    const hands = await getAllHands(userId);
+    return hands
+      .filter((h) => h.reviewTag?.tagged === true)
+      .sort((a, b) => (b.reviewTag?.taggedAt ?? 0) - (a.reviewTag?.taggedAt ?? 0));
+  } catch (error) {
+    logError('Error in getTaggedHands:', error);
+    return [];
+  }
+};
+
+// =============================================================================
 
 /**
  * Clear all hands for a specific user from the database

@@ -19,6 +19,7 @@ import { ActiveSessionCard } from './ActiveSessionCard';
 import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
+import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
 import { useSession, useUI, useTournament, useSyncBridge } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
@@ -48,7 +49,7 @@ export const SessionsView = ({ scale }) => {
   // AUDIT-2026-04-21-SV F1: deferred-delete pattern for Delete Session toast+undo.
   // Tracks { sessionId → timeout, snapshot } while the undo window is open.
   const pendingDeletesRef = useRef(new Map());
-  const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession } = useUI();
+  const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession, setReplayHand } = useUI();
   const { resetHand: resetTableState } = useGameHandlers();
   const { initTournament, createNewTournament } = useTournament();
   const {
@@ -302,6 +303,13 @@ export const SessionsView = ({ scale }) => {
   const totalBankroll = calculateTotalBankroll();
   const completedSessionCount = sessions.filter(s => s.endTime && s.cashOut !== null).length;
 
+  // WS-190: open a tagged hand from the Review Queue in HandReplayView.
+  // Mirrors HandReviewPanel's replay-open pattern (set hand, then switch screen).
+  const handleOpenTaggedHand = (handId, hand) => {
+    setReplayHand(handId, hand || null);
+    setCurrentScreen(SCREEN.HAND_REPLAY);
+  };
+
   return (
     <ScaledContainer scale={scale}>
       <div className="w-full bg-gray-900 relative" style={{ width: 1600, height: 720 }}>
@@ -418,6 +426,9 @@ export const SessionsView = ({ scale }) => {
               </div>
             </div>
           )}
+
+          {/* Review Queue — tagged hands (WS-190). Renders only when ≥1 hand is tagged. */}
+          <ReviewQueuePanel onOpenHand={handleOpenTaggedHand} />
 
           {/* Past Sessions */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg">

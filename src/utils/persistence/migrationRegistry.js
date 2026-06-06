@@ -427,6 +427,18 @@ export const MIGRATION_REGISTRY = [
     migrationFn: 'migrateV26',
     notes: 'WS-040 / SPR-081 read-only scope (B). Recovery writers (MUTE/RECALIBRATE/UNMUTE/RESET) deferred to fast-follow WS.',
   },
+  {
+    version: 27,
+    name: 'reviewTag field on hands (mid-hand tag-for-review)',
+    description: 'Data migration: defaults reviewTag=null on legacy hands. New/tagged hands carry { tagged: true, taggedAt: number } written at hand-save time (forward-only — no backfill). Powers the one-tap mid-hand flag + Sessions "Tagged" Review Queue filter.',
+    storesAdded: [],
+    storesChanged: ['hands'],
+    storesRemoved: [],
+    owner: { program: 'design', project: 'review-workflow' },
+    shippedAt: '2026-06-05',
+    migrationFn: 'migrateV27',
+    notes: 'WS-190 / SPR-107. Skip-on-fresh-install (oldVersion > 0 guard). Additive only. Mirrors v25 predictionAudit cursor-walk pattern, BUT skips its cursor pass when oldVersion < 25 to avoid a concurrent same-store cursor clobbering migrateV25 (legacy pre-v25 hands then carry reviewTag=undefined, treated as untagged by all reads).',
+  },
 ];
 
 /**
