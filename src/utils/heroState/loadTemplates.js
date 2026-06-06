@@ -1,9 +1,13 @@
 /**
  * @file Loads HSP narrative templates at build time via Vite's `import.meta.glob`.
  *
- * Loads all 18 templates from docs/design/hero-state-templates/{preflop,flop}/*.md
+ * Loads all 44 templates from docs/design/hero-state-templates/{preflop,flop,turn,river}/*.md
  * at build time (zero runtime fetch), parses each into {meta, sections},
  * and exposes a Map keyed by archetypeId.
+ *
+ * v2 catalog: 8 preflop + 10 flop + 12 turn + 14 river = 44 templates.
+ * Turn templates authored 2026-05-22 (WS-151); river templates authored
+ * 2026-05-30 (WS-152); both glob roots wired in by WS-153 (2026-05-30).
  *
  * Pattern follows src/utils/printableRefresher/cardRegistry.js:16 — the
  * established convention in this repo for bundling structured assets.
@@ -14,10 +18,10 @@
 
 import { parseFrontmatter } from './parseFrontmatter.js';
 
-// Import all 18 templates as raw strings at build time.
+// Import all 44 templates as raw strings at build time.
 // `as: 'raw'` returns the file content as a string instead of a parsed module.
 const rawTemplates = import.meta.glob(
-  '../../../docs/design/hero-state-templates/{preflop,flop}/*.md',
+  '../../../docs/design/hero-state-templates/{preflop,flop,turn,river}/*.md',
   { eager: true, query: '?raw', import: 'default' },
 );
 

@@ -187,13 +187,89 @@ If two templates differ in plan structure (different action set, different branc
 - `playersRemaining >= 3` postflop → `FLOP_MULTIWAY` overrides all other axes (per §7.4: HU range-vs-range reasoning breaks multiway)
 - Postflop actionContext that leaks into preflop (callsite bug) → `PF_OPEN_RFI` defensive fallback
 
-### 4.4 Turn archetypes — defer to v2
+### 4.4 Turn archetypes (v2: 12)
 
-Turn taxonomy needs a similar 8–10 entry catalog (double barrel, probe, polarized turn check-raise, etc.). Defer until v1 ships and we've validated the authorship workflow.
+Authored 2026-05-22 by WS-151 (HSP-A3). Mirrors the §4.3 flop catalog's discipline: **pot type (SRP / 3BP) is a primary axis** on the continuation lines, because 3-bet-pot turns run at much lower SPR with tighter, more polarized ranges than single-raised-pot turns — a genuinely different decision, the same reason the flop split SRP from 3BP. Founder ratified the pot-type split (vs a flatter 8-entry action+position-only catalog) via AskUserQuestion 2026-05-22.
 
-### 4.5 River archetypes — defer to v2
+| ID | Trigger | Coarse axes |
+|---|---|---|
+| `TURN_SRP_BARREL_IP` | SRP, hero cbet flop, second-barrel decision turn IP | BARREL, IP, SRP |
+| `TURN_SRP_BARREL_OOP` | SRP, hero cbet flop, barrel turn OOP | BARREL, OOP, SRP |
+| `TURN_SRP_VS_BARREL_IP` | SRP, hero called flop, facing turn barrel IP | VS_BARREL, IP, SRP |
+| `TURN_SRP_VS_BARREL_OOP` | SRP, hero called flop, facing turn barrel OOP | VS_BARREL, OOP, SRP |
+| `TURN_3BP_BARREL_IP` | 3BP, hero cbet flop, barrel turn IP | BARREL, IP, 3BP |
+| `TURN_3BP_BARREL_OOP` | 3BP, hero cbet flop, barrel turn OOP | BARREL, OOP, 3BP |
+| `TURN_3BP_VS_BARREL_IP` | 3BP, hero called flop, facing turn barrel IP | VS_BARREL, IP, 3BP |
+| `TURN_3BP_VS_BARREL_OOP` | 3BP, hero called flop, facing turn barrel OOP | VS_BARREL, OOP, 3BP |
+| `TURN_PROBE` | Flop checked through, hero leads turn OOP into capped range | PROBE, OOP |
+| `TURN_DELAYED_CBET` | Hero checked back flop IP, bets turn | CBET, IP (delayed) |
+| `TURN_MULTIWAY` | 3+ players to the turn | MULTIWAY |
+| `TURN_VS_DONK` | Hero (prior-street aggressor) faces a turn donk lead | VS_DONK |
 
-River archetypes hinge on bluff-catcher classification, polarized vs merged sizing, and blocker reasoning. Defer until v1 ships.
+Families (8, mirroring the flop's family grouping): `TURN_SRP_BARREL`, `TURN_SRP_VS_BARREL`, `TURN_3BP_BARREL`, `TURN_3BP_VS_BARREL`, `TURN_PROBE`, `TURN_DELAYED_CBET`, `TURN_MULTIWAY`, `TURN_VS_DONK`.
+
+**Check-raise is a branch, not an archetype** — facing a barrel, the raise/check-raise line lives inside the relevant `VS_BARREL` template's branch summary (as on the flop, where there is no standalone `FLOP_CHECK_RAISE`). This keeps the catalog routed on the same `(potType, action, position)` axes as the flop.
+
+#### 4.4.1 Turn implementation policy (WS-151, 2026-05-22)
+
+**ID format.** Position is the suffix throughout (`TURN_SRP_BARREL_IP`), unlike the flop catalog's minor internal inconsistency (`FLOP_SRP_HU_IP_CBET` vs `FLOP_3BP_VS_CBET_IP`). The turn IDs are uniform; no `HU` token (multiway is its own archetype, so all barrel/vs-barrel IDs are heads-up by construction).
+
+**Scope boundary — this ticket authored the taxonomy table + the 12 narrative templates only** (`docs/design/hero-state-templates/turn/*.md`). The following land with **WS-153** (classifyArchetype turn/river extension), deliberately deferred so the test suite stays green:
+
+- `ARCHETYPE_IDS` + `ARCHETYPE_FAMILIES` in `src/utils/heroState/types.js` are **not yet extended** with the turn entries. Adding them now would fail `classifyArchetype.test.js` (`reached.size === ARCHETYPE_IDS.length` — every ID must be reachable, but the classifier still throws `NotImplementedError` for turn) and `loadTemplates.test.js` ("loads all 18").
+- `loadTemplates.js`'s `import.meta.glob` matches `{preflop,flop}/*.md` only — the new `turn/` directory is intentionally invisible to the loader until WS-153 extends the glob and the enum together.
+- `classifyArchetype.js` continues to throw for turn states (design §4.4 was a v2 stub; WS-153 implements the routing using the `(potType, actionContext, inPosition, playersRemaining)` axes above, with the same closest-match fallback discipline as §4.3.1).
+
+**4BP fallback (inherited from §4.3.1).** 4-bet-pot turns route to the `3BP` archetype IDs; lower-SPR mechanics come from `sprZone` in the Plan, not from a separate 4BP family.
+
+**First-principles guard (binding).** Archetype IDs are OUTPUTS of classification, never INPUTS to plan computation. Every numeric in these templates is a `{{slot}}` — sizings, equities, and SPR-zone references interpolate from `plan.*` / `equity.*` / `situation.*` at render time. The pot-type and position axes are derived from game state (preflop action history → `potType`; closing action → `inPosition`), never asserted from the label.
+
+### 4.5 River archetypes (v2: 14)
+
+Authored 2026-05-30 by WS-152 (HSP-A4). Mirrors §4.4 turn discipline — **pot type (SRP / 3BP) is a primary axis** on continuation lines — and adds **two river-distinctive sizing archetypes** (`RIVER_BLOCK_BET`, `RIVER_VS_BLOCK_BET`) because the small-lead game-theoretic regime is structurally distinct from polarized bet sizing (different MDF math, different bluff-frequency optimum, different raise-as-bluff response). Founder ratified the 14-entry catalog (vs a 12-entry strict mirror or the original ticket's 8-entry sketch) via AskUserQuestion 2026-05-30.
+
+| ID | Trigger | Coarse axes |
+|---|---|---|
+| `RIVER_SRP_BET_IP` | SRP, hero bets river IP | BET, IP, SRP |
+| `RIVER_SRP_BET_OOP` | SRP, hero bets river OOP | BET, OOP, SRP |
+| `RIVER_SRP_VS_BET_IP` | SRP, hero faces river bet IP | VS_BET, IP, SRP |
+| `RIVER_SRP_VS_BET_OOP` | SRP, hero faces river bet OOP | VS_BET, OOP, SRP |
+| `RIVER_3BP_BET_IP` | 3BP, hero bets river IP | BET, IP, 3BP |
+| `RIVER_3BP_BET_OOP` | 3BP, hero bets river OOP | BET, OOP, 3BP |
+| `RIVER_3BP_VS_BET_IP` | 3BP, hero faces river bet IP | VS_BET, IP, 3BP |
+| `RIVER_3BP_VS_BET_OOP` | 3BP, hero faces river bet OOP | VS_BET, OOP, 3BP |
+| `RIVER_PROBE` | Flop + turn both checked through, hero leads river OOP into capped range | PROBE, OOP |
+| `RIVER_DELAYED_BET` | Hero checked back turn IP, bets river | BET, IP (delayed) |
+| `RIVER_MULTIWAY` | 3+ players to the river | MULTIWAY |
+| `RIVER_VS_DONK` | Hero (prior-street aggressor) faces a river donk lead | VS_DONK |
+| `RIVER_BLOCK_BET` | OOP small lead on river (~25–40% pot) for thin value + bluff-catch induce | BET, OOP, small-sizing |
+| `RIVER_VS_BLOCK_BET` | Facing a small river lead (~25–40% pot) | VS_BET, IP-or-OOP, small-sizing |
+
+Families (10): `RIVER_SRP_BET`, `RIVER_SRP_VS_BET`, `RIVER_3BP_BET`, `RIVER_3BP_VS_BET`, `RIVER_PROBE`, `RIVER_DELAYED_BET`, `RIVER_MULTIWAY`, `RIVER_VS_DONK`, `RIVER_BLOCK_BET`, `RIVER_VS_BLOCK_BET`.
+
+**No separate `RIVER_BLUFF_CATCHER` or `RIVER_THIN_VALUE` archetype.** Per §4.1 ("if two templates only differ in tendency/hand-class response, they share an archetype"), bluff-catching is a `handClass: BLUFF_CATCHER` frame inside `RIVER_*_VS_BET_{IP,OOP}` body content, and thin-value is a `handClass: THIN_VALUE` frame inside `RIVER_*_BET_{IP,OOP}` with the sizing slot doing the work. Adding hand-class-driven archetypes would proliferate the catalog without changing the decision tree.
+
+**Why `BLOCK_BET` / `VS_BLOCK_BET` ARE separate** despite the above rule: block-betting is not a hand-class variant of the `BET_OOP` line — it's a structurally different decision regime. The small sizing changes the raise-as-bluff incentive for villain, changes the MDF threshold dramatically (defending ~80%+ of range vs ~55% facing 2/3 pot), and reshapes hero's range construction (block-bet range is value-heavy with select induce-bluffs; full-pot OOP range is polarized to nuts + air). Different decision tree → different archetype.
+
+**Check-raise is a branch, not an archetype** — facing a river bet, the raise/check-raise line lives inside `RIVER_*_VS_BET_*`'s branch summary, mirroring the turn discipline.
+
+#### 4.5.1 River implementation policy (WS-152, 2026-05-30)
+
+**ID format.** Position is the suffix throughout (`RIVER_SRP_BET_IP`), matching §4.4's uniform turn-IDs convention. No `HU` token — multiway is its own archetype. The two `BLOCK_BET` archetypes carry no position suffix: `RIVER_BLOCK_BET` is OOP by definition (small lead is OOP), and `RIVER_VS_BLOCK_BET` covers both positions because the sizing-response math is dominated by the small-bet pot-odds regime rather than position.
+
+**Scope boundary — this ticket authored the taxonomy table + the 14 narrative templates only** (`docs/design/hero-state-templates/river/*.md`). The following land with **WS-153** (`classifyArchetype` turn/river extension), deliberately deferred so the test suite stays green:
+
+- `ARCHETYPE_IDS` + `ARCHETYPE_FAMILIES` in `src/utils/heroState/types.js` are **not yet extended** with the river entries. Adding them now would fail `classifyArchetype.test.js` (`reached.size === ARCHETYPE_IDS.length` — every ID must be reachable, but the classifier still throws `NotImplementedError` for river) and `loadTemplates.test.js` ("loads all 18").
+- `loadTemplates.js`'s `import.meta.glob` matches `{preflop,flop}/*.md` only — both the `turn/` directory (WS-151) and the new `river/` directory (this ticket) are intentionally invisible to the loader until WS-153 extends the glob and the enum together.
+- `classifyArchetype.js` continues to throw for river states (design §4.5 was a v2 stub; WS-153 implements the routing using `(potType, actionContext, inPosition, playersRemaining)` axes plus prior-street action-history reconstruction for the block-bet detection and the PROBE/DELAYED_BET history conditions, with the same closest-match fallback discipline as §4.3.1 + §4.4.1).
+
+**Block-bet detection (WS-153 prep note).** `RIVER_BLOCK_BET` and `RIVER_VS_BLOCK_BET` route on `sizingFraction <= 0.40` (sizing as fraction of pot). Sizing comes from action history; the threshold is a classifier policy decision that WS-153 will ratify. Above 40%, route to `RIVER_*_BET_OOP` / `RIVER_*_VS_BET_*` instead.
+
+**4BP fallback (inherited from §4.3.1).** 4-bet-pot rivers route to the `3BP` archetype IDs; lower-SPR mechanics come from `sprZone` in the Plan, not from a separate 4BP family.
+
+**First-principles guard (binding).** Archetype IDs are OUTPUTS of classification, never INPUTS to plan computation. Every numeric in these templates is a `{{slot}}` — sizings, equities, and SPR-zone references interpolate from `plan.*` / `equity.*` / `situation.*` at render time. Pot-type, position, and sizing-fraction axes are derived from game state (preflop action history → `potType`; closing action → `inPosition`; bet amount + pot → sizing-fraction → block-bet routing), never asserted from the label.
+
+**River-specific theory binding (POKER_THEORY companion).** At the river, equity per villain combo is binary (cards are deterministic — see memory `feedback_river_equity_is_showdown_outcome.md`). Templates reference `equity.vsRangeParts.{vsValue, vsBluff, vsBluffCatch, vsAir}` for the 4-class strength decomposition vs the public board, NOT a runout-variance metric. Bluff-catching narratives lean on this decomposition + the bluff-to-value ratio implicit in `equity.vsRangeParts`.
 
 ## 5. Worked examples
 
@@ -273,9 +349,99 @@ These three examples seed the narrative voice. Numbers are illustrative — fina
 ## 7. Open questions
 
 1. **Granularity / catalog growth.** 18 archetypes (8 preflop + 10 flop) for v1. Turn + river deferred. Is 18 enough to validate the framework? Probably yes — one preflop spot + one flop spot per major axis combination covers the common path. Will need 8–12 more for turn/river.
-2. **Adjustment composition.** When multiple tendencies fire (e.g., "calling station AND short-stacked"), do deltas multiply, sum, or take precedence by rank? Needs a `composeAdjustments(list) → final delta` rule. Suggest precedence-by-magnitude with explicit conflict resolution per axis.
+2. **Adjustment composition.** ~~When multiple tendencies fire (e.g., "calling station AND short-stacked"), do deltas multiply, sum, or take precedence by rank? Needs a `composeAdjustments(list) → final delta` rule. Suggest precedence-by-magnitude with explicit conflict resolution per axis.~~ **RESOLVED 2026-06-04 (WS-155 / SPR-105) — composeAdjustments shipped at `src/utils/heroState/composeAdjustments.js` with explicit per-axis rules, each derived from poker theory rather than code convenience. See §7.2.1 below.**
+
+### §7.2.1 — Composition rules (resolution, WS-155)
+
+Each `AdjustmentDelta` axis composes by a distinct rule chosen for poker-theory reasons, not symmetry or convenience. `composeAdjustments(Adjustment[]) → ComposedDelta` is a pure function consumed by `buildHeroState` and exposed as `HeroState.composedDelta` alongside the pre-composition `adjustments[]` (consumers can read either).
+
+| Axis | Rule | Derivation |
+|------|------|------------|
+| `sizingMultiplier` | **Multiplicative, clamped to [0.6, 2.0]** with `clamped:true` flag when bounds engage | Sizing changes compound when multiple tendencies point the same direction (calling-station + over-folds-river both → larger value sizing); pure-additive composition under-weights cumulative effect, pure-precedence discards smaller real effects. Clamp prevents leaving the locally-linear regime — above 2× pot the fold-to-bet curve is bimodal (snap-fold or snap-call) per POKER_THEORY §3.5; below 0.6× the hand should generally check rather than block-bet for an ill-defined reason (matches the RIVER_BLOCK_BET threshold at §4.5.1). |
+| `polarize` | **OR (any-fires-wins)** | Polarization is a range-construction decision, not an intensity dial. If ANY firing tendency creates a structural reason to polarize (sticky caller, capped range, asymmetric fold-equity), polarized construction wins — there is no symmetric "anti-polarize" force that would cancel it. |
+| `bluffFreq` | **MIN-wins (most-conservative)** | Bluffing has asymmetric loss: false-positive bluff into a sticky player costs ~pot; false-negative (failed bluff) costs ~edge. When one signal says "villain calls too much" and another says "villain folds too much," the calling-station signal must dominate because its worst-case error is larger. Direct application of minimax-regret reasoning. |
+| `actionOverride` | **Precedence by severity; conservatism tiebreak** | actionOverride is the most consequential adjustment — it discards the gameTree's primary recommendation. Only the strongest-confidence tendency should be allowed to overrule the equity-grounded plan. At equal severity, the less-aggressive action has lower max-regret (checking back is recoverable; an erroneous raise commits chips). Action conservatism order: `fold < check < call < bet < raise`. |
+
+**Output shape (`ComposedDelta`):**
+```
+{
+  sizingMultiplier: number,    // 1.0 default; clamped [0.6, 2.0]
+  polarize: boolean,           // false default
+  bluffFreq: number|null,      // null when no firing adjustment specifies
+  actionOverride: string|null, // null when no override fires
+  clamped: boolean,            // true when sizingMultiplier hit ceiling/floor
+  contributingCount: number,   // adjustments with ≥1 non-default delta field
+}
+```
+
+The `clamped` flag is a transparency contract — surfaces showing `composedDelta` (e.g., HandReplay's HeroStateSection) MUST surface a UI hint when `clamped: true` so the founder can see that multiple tendencies stacked beyond the model's modeled regime. Silent clamping would mask a model boundary.
+
+**Per-vulnerability delta producer:** populated by `WEAKNESS_TO_DELTA` map in `src/utils/exploitEngine/villainProfileBuilder.js`. v1 maps the 8 load-bearing vulnerability classes (`sit-overcalls-river`, `sit-folds-to-pressure`, `sit-cbets-wet-unprofitable`, `sit-checks-dry-underbet`, `sit-slowplays-strong`, `sit-weak-showdowns`, `sit-overvalues-medium`, `pf-folds-to-3bet-high`). Unmapped vulnerabilities ship `delta: {}` — they remain Adjustment entries with rationale text but no numeric contribution to composition (informational reads, not numeric levers). Future tickets extend the map as new vulnerability classes emerge.
+
+**First-principles guard:** composedDelta is itself an OUTPUT of composition over Adjustment[] (POKER_THEORY §7); it is never an input to the gameTreeEvaluator. Plans come from equity / SPR / pot odds / players remaining. The composedDelta is a CONSUMER-FACING summary of how villain tendencies should *bias* the rendered plan — consumers (HandReplay, SCF leak detector, future live coach) decide how to apply the bias.
+
+### §7.4 — Multiway model (resolution, WS-154 / SPR-106)
+
+Multiway pots (3+ players postflop) invalidate the HU range-vs-range frame the rest of the HSP catalog uses. Resolution lands as four coordinated changes, none of which require new engine primitives — the multiway EV math already ships in `gameTreeEvaluator` and reaches HSP via `buildHeroState.js:510` (`numOpponents = max(1, playersRemaining - 1)`).
+
+#### §7.4.1 — Archetype taxonomy (3-way potType split + catch-all)
+
+`FLOP_MULTIWAY` is retained as a catch-all and three new sub-archetypes route by `potType`:
+
+| ID | Trigger | Typical hero role descriptor |
+|---|---|---|
+| `FLOP_MULTIWAY_SRP` | `playersRemaining >= 3` AND `potType === 'SRP'` | `PFR_LEADING` / `CALLER_PFR_BEHIND` / `CALLER_PFR_ACTED` |
+| `FLOP_MULTIWAY_3BP` | `playersRemaining >= 3` AND `potType ∈ {'3BP', '4BP'}` (rare) | `PFR_LEADING` / `CALLER_PFR_ACTED` |
+| `FLOP_MULTIWAY_LIMPED` | `playersRemaining >= 3` AND `potType === 'LIMPED'` | `LIMPER` |
+| `FLOP_MULTIWAY` (catch-all) | `playersRemaining >= 3` AND `potType` null / unknown | `null` (descriptor not derivable) |
+
+All four IDs map to the existing `FLOP_MULTIWAY` archetype family (no new entry in `ARCHETYPE_FAMILIES`). Authoring discipline: each sub-archetype gets its own template body that narrates the structural differences (capped 3BP callers vs uncapped limp ranges vs mid-capped SRP callers), while shared multiway pedagogy (equity dilution, cascading fold equity, value-heavy mode) repeats across all four.
+
+**Why three and not five.** The spec pre-figured five archetypes (potType × hero-role). Three SRP-hero-role bodies would share ~90% of their prose — the hero-role distinction is fundamentally a one-sentence reframe, not a distinct narrative voice (per CONVENTIONS.md "1 archetype = 1 voice"). Splitting by potType captures the load-bearing range-shape difference; the hero-role axis lives in a new descriptor slot.
+
+**`situation.multiwayHeroRole` descriptor slot** — additive to the `Situation` typedef:
+- `'PFR_LEADING'` — hero was preflop aggressor, multiple opponents called → hero leads the flop
+- `'CALLER_PFR_BEHIND'` — hero called preflop; PFR (someone else) has not yet acted on flop
+- `'CALLER_PFR_ACTED'` — hero called preflop; PFR has bet or checked on flop
+- `'LIMPER'` — no preflop raise (limped pot)
+- `null` — HU (descriptor not applicable)
+
+Derived in `buildHeroState.deriveMultiwayHeroRole(gameState)` from `actionSequence` + `heroSeat` + already-derived `potType`. The descriptor is an **OUTPUT** of game-state derivation — same first-principles guard as `archetypeId` itself (POKER_THEORY §7).
+
+**Turn / river deferral.** `TURN_MULTIWAY` and `RIVER_MULTIWAY` remain single archetypes in v2. Multiway hands are bet-out by turn ~70% of the time; pot-type discrimination on later streets serves a rarer scenario. Template frontmatter carries a `v3_TODO` note covering the future split if observed multiway-turn/river usage proves common.
+
+#### §7.4.2 — Already-shipped multiway primitives (HSP relies on, doesn't reinvent)
+
+These formulas already exist in `src/utils/exploitEngine/` and flow into HSP plans via `buildHeroState.js:510`'s `numOpponents` pass-through. Documented here to make explicit what HSP depends on rather than build atop a hidden contract.
+
+| Quantity | Formula | Module:line |
+|---|---|---|
+| Equity realization discount (multiway) | `r *= Math.pow(0.85, numOpponents - 1)` when no per-opponent AF data; per-opponent AF discount (e.g., AF > 2.5 → ×0.80) when `opponentModels` available | `gameTreeEquity.adjustedRealization:31` |
+| Fold equity (all opponents fold) | `P(all fold) = ∏ P(opponent_i folds)` with bet-size × N correlation adjustment | `gameTreeEquity.multiwayFoldPct:569` |
+| Bluff-frequency optimum (multiway) | Derived from `multiwayFoldPct` × pot odds at gameTreeEvaluator depth-2; **no hardcoded multiplier** | `gameTreeEvaluator.evaluateBluffEV` (via `multiwayFoldPct`) |
+| Range narrowing (multiway) | `rangeSegmenter` is multiway-agnostic (board-conditional only); per-villain conditioning deferred to v3 (would live in `src/utils/exploitEngine/`, not heroState/) | `rangeSegmenter.segmentRange` |
+
+#### §7.4.3 — Role partition limitation (the new `equity.vsRangeParts` multiway behavior)
+
+`equity.vsRangeParts` requires HU semantics — the 4-class role partition (`vsValue/vsBluff/vsDraw/vsAir`) describes ONE villain's range shape given their action context, style, and polarization (see §9.3 decision table). Multiway has N villains with N action contexts; no defensible function signature for "role partition vs the field." When `playersRemaining >= 3`:
+
+- `equity.vsRangeParts`: `null` (signals degraded state to consumers — UI must render this honestly)
+- `equity.overall`: populated (MC equity vs the supplied villain range; caller may pass union or HU-narrowed range)
+- `equity.realization`: populated (multiway-discounted by 0.85^(n-1) per §7.4.2)
+
+`equityVsRangeParts.js` previously threw on `actionContext === 'MULTIWAY'`. The throw is lifted as of WS-154 — the function now returns `{vsValue: null, vsBluff: null, vsDraw: null, vsAir: null, overall: <computed>, strengthBreakdown: null}` when the multiway flag is set. The real guard (gating on `playersRemaining < 3`) lives upstream in `buildHeroState.js:519`, replacing the dead-code `actionContext !== 'MULTIWAY'` check.
+
+Per-pair villain-range conditioning (villain₂'s range given villain₁'s prior call action) is a `rangeSegmenter` / `postflopNarrower` extension, NOT a `heroState/` job. Deferred to v3; current `gameTreeEvaluator` multiway math is sufficient for HSP-quality narrative output.
+
+#### §7.4.4 — First-principles guard (binding — POKER_THEORY §1.4 + §7 + AP-RL-01)
+
+- Multiway **bluff-frequency reduction** DERIVES from `∏ fold rates × pot odds` (already implemented at `multiwayFoldPct`). No `if (multiway) bluffFreq *= 0.5` shortcut.
+- Multiway **equity discount** DERIVES from `0.85^(n-1)` realization (or per-opponent AF when `opponentModels` available). No archetype-keyed sizing lookup.
+- `archetypeId`, `multiwayHeroRole`, `potType` are all **OUTPUTS** of game-state derivation; templates only RENDER them. No `if (archetypeId === 'FLOP_MULTIWAY_3BP') sizing *= 0.7` is anywhere in the code path.
+- Templates contain **no hardcoded numerics** per CONVENTIONS.md — all sizings, equities, player counts, and realization values come from slots (`{{plan.primary.sizing}}`, `{{equity.realization}}`, `{{situation.playersRemaining}}`).
+
 3. **Narrative authorship workflow.** Hand-authored templates with parametric slots, or LLM-generated at runtime against the HeroState object? Hand-authored gives stability + auditability + offline-capable; LLM handles long tail. Lean: hand-author the v1 archetype list; revisit LLM augmentation later.
-4. **Multiway extension.** Multiway invalidates HU range-vs-range reasoning. `FLOP_MULTIWAY` is a stub — multiway needs its own template family with sequential-decision modeling. Defer detail.
+4. **Multiway extension.** ~~Multiway invalidates HU range-vs-range reasoning. `FLOP_MULTIWAY` is a stub — multiway needs its own template family with sequential-decision modeling. Defer detail.~~ **RESOLVED 2026-06-04 (WS-154 / SPR-106) — see §7.4 below. Three-archetype split by potType (`FLOP_MULTIWAY_SRP` / `_3BP` / `_LIMPED`) + `multiwayHeroRole` descriptor slot for the hero-PFR-vs-caller axis. `equityVsRangeParts` MULTIWAY throw lifted (returns null role partition; `overall` remains populated against the union range). Plans are already multiway-correct via `gameTreeEvaluator` (which threads `numOpponents` through `adjustedRealization` 0.85^(n-1) and `multiwayFoldPct` ∏ formula). Per-pair villain-range conditioning deferred to v3. TURN_MULTIWAY / RIVER_MULTIWAY remain single archetypes (v3_TODO).**
 5. **Range-engine alignment.** ~~`equity.vsRangeParts` requires the rangeEngine to expose villain range partitioned by class (value / draw / bluff / air). Need to audit whether this exists or whether a `villainRangePartitioner.js` is a prerequisite.~~ **RESOLVED 2026-05-03 (WS-137 audit) — see §9 for full report. Verdict: REJECT building a standalone `villainRangePartitioner.js`; the strength partition + per-bucket equity is fully solved by `src/utils/exploitEngine/rangeSegmenter.js`. ACCEPT building a thin role-translator (`src/utils/heroState/equityVsRangeParts.js`) that translates the existing 5-class strength partition (`nuts/strong/marginal/draw/air`) into HSP's 4-class role partition (`vsValue/vsBluff/vsDraw/vsAir`) using villain action context + style. New WS ticket created for the translator module.**
 6. **Caching.** Re-derive per state transition vs cache by decision-key hash. Likely cache, since HeroState is non-trivial and SCF needs deterministic comparison across replay sessions.
 7. **First-principles guard.** Per `POKER_THEORY.md` §7 and `exploitEngine/CLAUDE.md`: archetype IDs must be **outputs** of the classification process, not inputs to plan computation. The plan tree comes from equity / SPR / pot odds / players remaining — never `if (archetypeId === 'PF_VS_OPEN_SB') sizing = 4.5x`. Templates are presentation; plans are computed.

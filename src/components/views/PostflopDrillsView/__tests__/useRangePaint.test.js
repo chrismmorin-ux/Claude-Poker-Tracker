@@ -75,6 +75,32 @@ describe('useRangePaint — paint + per-stroke undo', () => {
     expect(result.current.canRedo).toBe(false);
   });
 
+  it('setRange replaces the range and clears stacks + dirty (Phase 2b coordinated restore)', () => {
+    const { result } = renderHook(() => useRangePaint({ enabled: false }));
+    act(() => result.current.tapCell(AA));
+    act(() => result.current.undo()); // leaves a redo entry + dirty
+    expect(result.current.canRedo).toBe(true);
+
+    const next = new Float64Array(169);
+    next[KK] = 0.75;
+    act(() => result.current.setRange(next));
+    expect(result.current.range[KK]).toBeCloseTo(0.75, 6);
+    expect(result.current.range[AA]).toBe(0);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+    expect(result.current.isDirty).toBe(false);
+  });
+
+  it('markSaved clears dirty without writing storage', () => {
+    const { result } = renderHook(() => useRangePaint({ enabled: false }));
+    act(() => result.current.tapCell(AA));
+    expect(result.current.isDirty).toBe(true);
+    act(() => result.current.markSaved());
+    expect(result.current.isDirty).toBe(false);
+    // nothing persisted (markSaved does not write)
+    expect(window.sessionStorage.getItem('rangelab:painted:v1')).toBeNull();
+  });
+
   it('save then restore preserves the painted range', () => {
     const { result: a } = renderHook(() => useRangePaint({ enabled: false }));
     act(() => a.current.tapCell(AA));

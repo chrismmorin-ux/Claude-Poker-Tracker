@@ -3,6 +3,7 @@ import {
   SPR_ZONES,
   getSPRZone,
   ARCHETYPE_FAMILIES,
+  ARCHETYPE_IDS,
   ACTION_CONTEXTS,
   POSITION_CLASSES,
   STREETS,
@@ -11,6 +12,7 @@ import {
   BOARD_TEXTURES,
   ADVANTAGE_VALUES,
   PLAN_ACTIONS,
+  MULTIWAY_HERO_ROLES,
 } from '../types.js';
 import { SPR_ZONES as SPR_ZONES_SOURCE } from '../../exploitEngine/gameTreeConstants.js';
 
@@ -80,5 +82,27 @@ describe('heroState/types', () => {
 
   it('exports PLAN_ACTIONS covering all standard hero choices', () => {
     expect(PLAN_ACTIONS).toEqual(['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE']);
+  });
+
+  // v3 catalog assertions (WS-154 / SPR-106 2026-06-04) — flop grew by 3
+  // multiway sub-archetypes (FLOP_MULTIWAY_SRP / _3BP / _LIMPED).
+  it('ARCHETYPE_IDS v3 catalog has 47 entries (8 PF + 13 flop + 12 turn + 14 river)', () => {
+    expect(ARCHETYPE_IDS.length).toBe(47);
+  });
+
+  it('ARCHETYPE_IDS contains the WS-154 multiway sub-archetypes', () => {
+    expect(ARCHETYPE_IDS).toContain('FLOP_MULTIWAY');
+    expect(ARCHETYPE_IDS).toContain('FLOP_MULTIWAY_SRP');
+    expect(ARCHETYPE_IDS).toContain('FLOP_MULTIWAY_3BP');
+    expect(ARCHETYPE_IDS).toContain('FLOP_MULTIWAY_LIMPED');
+  });
+
+  it('exports MULTIWAY_HERO_ROLES descriptor enum (WS-154)', () => {
+    expect(MULTIWAY_HERO_ROLES).toEqual([
+      'PFR_LEADING',
+      'CALLER_PFR_BEHIND',
+      'CALLER_PFR_ACTED',
+      'LIMPER',
+    ]);
   });
 });

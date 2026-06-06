@@ -30,29 +30,59 @@ export { SPR_ZONES, getSPRZone };
  * Archetype families — coarse grouping of archetype IDs. Authoring the
  * narrative template happens at archetype-ID granularity (e.g.,
  * `FLOP_SRP_HU_OOP_CBET`); the family groups archetypes that share the
- * same broad situation for routing. v1: preflop + flop only; turn/river
- * deferred per design doc §4.4–§4.5.
+ * same broad situation for routing.
+ *
+ * v3 catalog (47 IDs / 29 families):
+ *   - preflop:  5 families  (PF, design doc §4.2)
+ *   - flop:     6 families  (FLOP, §4.3) — multiway sub-archetypes all map
+ *                                          to the FLOP_MULTIWAY family;
+ *                                          no family-count change (§7.4)
+ *   - turn:     8 families  (TURN, §4.4 — authored 2026-05-22 by WS-151)
+ *   - river:   10 families  (RIVER, §4.5 — authored 2026-05-30 by WS-152)
  */
 export const ARCHETYPE_FAMILIES = [
+  // Preflop (5)
   'PREFLOP_OPEN',
   'PREFLOP_VS_OPEN',
   'PREFLOP_3BET',
   'PREFLOP_VS_3BET',
   'PREFLOP_LIMP_NAV',
+  // Flop (6)
   'FLOP_SRP_HU_CBET',
   'FLOP_SRP_HU_VS_CBET',
   'FLOP_3BP_HU_CBET',
   'FLOP_3BP_HU_VS_CBET',
   'FLOP_MULTIWAY',
   'FLOP_VS_DONK',
+  // Turn (8) — see design doc §4.4
+  'TURN_SRP_BARREL',
+  'TURN_SRP_VS_BARREL',
+  'TURN_3BP_BARREL',
+  'TURN_3BP_VS_BARREL',
+  'TURN_PROBE',
+  'TURN_DELAYED_CBET',
+  'TURN_MULTIWAY',
+  'TURN_VS_DONK',
+  // River (10) — see design doc §4.5
+  'RIVER_SRP_BET',
+  'RIVER_SRP_VS_BET',
+  'RIVER_3BP_BET',
+  'RIVER_3BP_VS_BET',
+  'RIVER_PROBE',
+  'RIVER_DELAYED_BET',
+  'RIVER_MULTIWAY',
+  'RIVER_VS_DONK',
+  'RIVER_BLOCK_BET',
+  'RIVER_VS_BLOCK_BET',
 ];
 
 /**
- * Stable archetype IDs — the 18 v1 catalog entries (8 preflop + 10 flop).
- * IDs are the binding surface for narrative templates (per design doc §3
- * open question: enum over hash). classifyArchetype() output is one of these.
- *
- * Turn/river IDs deferred to v2 (§4.4–§4.5).
+ * Stable archetype IDs — the 47 v3 catalog entries (8 preflop + 13 flop +
+ * 12 turn + 14 river). IDs are the binding surface for narrative templates
+ * (per design doc §3 open question: enum over hash). classifyArchetype()
+ * output is one of these. v3 flop count grew by 3 from the WS-154 multiway
+ * potType split (FLOP_MULTIWAY → FLOP_MULTIWAY + FLOP_MULTIWAY_SRP +
+ * FLOP_MULTIWAY_3BP + FLOP_MULTIWAY_LIMPED); see design doc §7.4.
  */
 export const ARCHETYPE_IDS = [
   // Preflop (8) — see design doc §4.2
@@ -64,7 +94,7 @@ export const ARCHETYPE_IDS = [
   'PF_SQUEEZE',
   'PF_VS_3BET',
   'PF_LIMP_NAV',
-  // Flop (10) — see design doc §4.3
+  // Flop (13) — see design doc §4.3 + §7.4 (multiway potType split, WS-154)
   'FLOP_SRP_HU_IP_CBET',
   'FLOP_SRP_HU_OOP_CBET',
   'FLOP_SRP_HU_IP_VS_CBET',
@@ -74,7 +104,38 @@ export const ARCHETYPE_IDS = [
   'FLOP_3BP_VS_CBET_IP',
   'FLOP_3BP_VS_CBET_OOP',
   'FLOP_MULTIWAY',
+  'FLOP_MULTIWAY_SRP',
+  'FLOP_MULTIWAY_3BP',
+  'FLOP_MULTIWAY_LIMPED',
   'FLOP_VS_DONK',
+  // Turn (12) — see design doc §4.4
+  'TURN_SRP_BARREL_IP',
+  'TURN_SRP_BARREL_OOP',
+  'TURN_SRP_VS_BARREL_IP',
+  'TURN_SRP_VS_BARREL_OOP',
+  'TURN_3BP_BARREL_IP',
+  'TURN_3BP_BARREL_OOP',
+  'TURN_3BP_VS_BARREL_IP',
+  'TURN_3BP_VS_BARREL_OOP',
+  'TURN_PROBE',
+  'TURN_DELAYED_CBET',
+  'TURN_MULTIWAY',
+  'TURN_VS_DONK',
+  // River (14) — see design doc §4.5
+  'RIVER_SRP_BET_IP',
+  'RIVER_SRP_BET_OOP',
+  'RIVER_SRP_VS_BET_IP',
+  'RIVER_SRP_VS_BET_OOP',
+  'RIVER_3BP_BET_IP',
+  'RIVER_3BP_BET_OOP',
+  'RIVER_3BP_VS_BET_IP',
+  'RIVER_3BP_VS_BET_OOP',
+  'RIVER_PROBE',
+  'RIVER_DELAYED_BET',
+  'RIVER_MULTIWAY',
+  'RIVER_VS_DONK',
+  'RIVER_BLOCK_BET',
+  'RIVER_VS_BLOCK_BET',
 ];
 
 /**
@@ -102,6 +163,24 @@ export const ACTION_CONTEXTS = [
 
 /** Position class. */
 export const POSITION_CLASSES = ['EP', 'MP', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+
+/**
+ * Multiway hero role descriptor. Identifies hero's role within a multiway
+ * pot (3+ players to flop), distinguishing the PFR from callers and the
+ * "PFR yet to act" vs "PFR has acted" caller positions. Output of
+ * `buildHeroState.deriveMultiwayHeroRole()` (NOT input to classifyArchetype
+ * or plan computation — first-principles guard, POKER_THEORY §7).
+ *
+ * `null` in HU situations (playersRemaining < 3). See design doc §7.4.1.
+ *
+ * Added 2026-06-04 by WS-154.
+ */
+export const MULTIWAY_HERO_ROLES = [
+  'PFR_LEADING',
+  'CALLER_PFR_BEHIND',
+  'CALLER_PFR_ACTED',
+  'LIMPER',
+];
 
 /** Streets. */
 export const STREETS = ['preflop', 'flop', 'turn', 'river'];
@@ -160,7 +239,8 @@ export const PLAN_ACTIONS = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
  * over hash because narrative templates need stable IDs to bind to. Format
  * is `<STREET>_<CONTEXT>_<...modifiers>` (e.g., `FLOP_3BP_HU_OOP_CBET`).
  *
- * v1 catalog: 8 preflop + 10 flop = 18 IDs (see design doc §4.2–§4.3).
+ * v3 catalog: 8 preflop + 13 flop + 12 turn + 14 river = 47 IDs
+ * (see design doc §4.2–§4.5 + §7.4 for the multiway potType split).
  *
  * @typedef {string} ArchetypeId
  */
@@ -184,6 +264,20 @@ export const PLAN_ACTIONS = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
  *   classifyArchetype to disambiguate flop archetypes (SRP vs 3BP). 4BP
  *   maps to 3BP for archetype routing per design doc §4.3.1; lower-SPR
  *   adjustments come from sprZone, not archetype.
+ * @property {number|null} [sizingFraction] - River-only. Optional bet size
+ *   as fraction of pot (0..N) for the pending bet at this decision node.
+ *   When supplied AND <= 0.40, river classifier routes to RIVER_BLOCK_BET
+ *   (hero OOP own bet) or RIVER_VS_BLOCK_BET (facing small bet) per design
+ *   doc §4.5.1. Caller-supplied; orchestrator does NOT derive in v2 (added
+ *   by WS-153; orchestrator derivation is a follow-up).
+ * @property {string|null} [multiwayHeroRole] - Multiway hero role descriptor.
+ *   One of {@link MULTIWAY_HERO_ROLES}; null in HU situations (playersRemaining
+ *   < 3). Derived by `buildHeroState.deriveMultiwayHeroRole()` from action
+ *   history + potType. Templates consume this slot to differentiate hero's
+ *   structural position within a multiway pot (PFR_LEADING /
+ *   CALLER_PFR_BEHIND / CALLER_PFR_ACTED / LIMPER). OUTPUT of game-state
+ *   derivation — never input to plan computation. See design doc §7.4.1.
+ *   Added by WS-154 (2026-06-04).
  */
 
 /**
@@ -279,15 +373,38 @@ export const PLAN_ACTIONS = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
 
 /**
  * Adjustment delta — modifications applied on top of the primary plan when
- * a tendency condition fires. Stack via {@link Adjustment}; composition
- * rule (multiply / sum / precedence) is an open design question per
- * design doc §7.2 and is the responsibility of the consumer for v1.
+ * a tendency condition fires. Stack via {@link Adjustment}; per-axis
+ * composition into a {@link ComposedDelta} happens in composeAdjustments
+ * per HERO_STATE_DESIGN.md §7.2 RESOLVED 2026-06-04 (WS-155 / SPR-105).
  *
  * @typedef {object} AdjustmentDelta
  * @property {number} [sizingMultiplier] - Multiplier on PlanPrimary.sizing.
  * @property {boolean} [polarize] - Shift to a polarized betting mode.
  * @property {number} [bluffFreq] - Override bluff frequency (0..1).
  * @property {string} [actionOverride] - One of {@link PLAN_ACTIONS}; replaces PlanPrimary.action when present.
+ */
+
+/**
+ * Composed delta — single per-axis combined result of all firing
+ * {@link Adjustment}s. Output of composeAdjustments(adjustments[]) per
+ * HERO_STATE_DESIGN.md §7.2 resolution.
+ *
+ * Per-axis composition rules (poker-theory rationale in
+ * src/utils/heroState/composeAdjustments.js header):
+ *   - sizingMultiplier: multiplicative with clamp [0.6, 2.0]; `clamped`
+ *     flag is true when the clamp engaged
+ *   - polarize: OR (any-fires-wins)
+ *   - bluffFreq: MIN-wins (most-conservative); null when no firing
+ *     adjustment specifies bluffFreq
+ *   - actionOverride: precedence-by-severity, conservatism tiebreak
+ *
+ * @typedef {object} ComposedDelta
+ * @property {number} sizingMultiplier - Composed multiplier (1.0 when no firings; clamped to [0.6, 2.0]).
+ * @property {boolean} polarize - True if any firing adjustment requested polarization.
+ * @property {number|null} bluffFreq - MIN of firing bluffFreq specs; null when none specified.
+ * @property {string|null} actionOverride - Highest-severity actionOverride (conservative tiebreak); null when none specified.
+ * @property {boolean} clamped - True when sizingMultiplier was clamped to ceiling/floor.
+ * @property {number} contributingCount - How many adjustments contributed at least one non-default delta field.
  */
 
 /**
@@ -320,6 +437,7 @@ export const PLAN_ACTIONS = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
  * @property {HandContext} handContext - Fine axes derived from hand vs range vs board.
  * @property {Equity} equity - Equity decomposition.
  * @property {Plan} plan - Recommended plan tree.
- * @property {Adjustment[]} adjustments - Tendency-triggered modifications stacked on top.
+ * @property {Adjustment[]} adjustments - Tendency-triggered modifications stacked on top (pre-composition).
+ * @property {ComposedDelta} composedDelta - Per-axis composition of {@link adjustments} per §7.2 resolution (WS-155).
  * @property {Narrative} narrative - Rendered presentation layer.
  */

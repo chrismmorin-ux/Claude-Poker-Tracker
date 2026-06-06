@@ -16,8 +16,10 @@
  *   villain's bet/raise). Bare names (OPEN/CBET/BARREL/PROBE/DONK/3BET/
  *   SQUEEZE) → hero is aggressor → villain is defender.
  *   LIMP_NAV → defender (no aggressor yet in the action history).
- *   MULTIWAY → throws from computeEquityVsRangeParts (HU range-vs-range
- *   reasoning breaks; design doc §7.4).
+ *   MULTIWAY → returns null role partition + populated overall (design doc
+ *     §7.4.3, WS-154 / SPR-106 2026-06-04 — previously threw). The
+ *     upstream guard at buildHeroState.js gates on `playersRemaining < 3`
+ *     so this branch only fires on defensive caller injection.
  */
 
 import { segmentRange, enrichWithEquity } from '../exploitEngine/rangeSegmenter.js';
@@ -120,8 +122,14 @@ export const translateStrengthToRole = (segResult, actionContext, villainStyle) 
  *   equities that map to it, or null when the role partition has zero weight
  *   in this state (e.g., vsDraw on river; vsBluff/vsDraw preflop).
  *
- * @throws {Error} when actionContext === 'MULTIWAY' (HU range-vs-range
- *   reasoning breaks; design doc §7.4).
+ *   When `actionContext === 'MULTIWAY'`, the role partition is undefined
+ *   (the labels vsValue/vsBluff assume one villain's range shape; multiway
+ *   has N action contexts with no defensible aggregation). All 4 role
+ *   buckets return null; `overall` is computed against the supplied range
+ *   (caller passes union range or HU-narrowed range). See design doc §7.4.3.
+ *   Pre-WS-154 (2026-06-04) this case threw; now it returns degraded.
+ *   The upstream guard at buildHeroState.js gates on `playersRemaining < 3`
+ *   so this branch fires only on defensive caller injection.
  */
 export const computeEquityVsRangeParts = async ({
   heroCards,
@@ -132,18 +140,31 @@ export const computeEquityVsRangeParts = async ({
   villainStyle,
   options = {},
 }) => {
-  if (actionContext === 'MULTIWAY') {
-    throw new Error(
-      'equityVsRangeParts: MULTIWAY not supported in v1 (design doc §7.4). ' +
-      'Pass HU-narrowed range or compute per-villain.'
-    );
-  }
+  const skipRolePartition = (actionContext === 'MULTIWAY');
 
   const equityFn = options.equityFn ?? handVsRange;
   const trials = options.trials ?? 2000;
 
   if (street === 'preflop') {
     const overallResult = await equityFn(heroCards, villainRange, [], { trials });
+    return {
+      vsValue: null,
+      vsBluff: null,
+      vsDraw: null,
+      vsAir: null,
+      overall: overallResult.equity,
+      strengthBreakdown: null,
+    };
+  }
+
+  // Multiway short-circuit (WS-154 / SPR-106): when actionContext === 'MULTIWAY'
+  // the role partition is undefined (see header JSDoc + design doc §7.4.3).
+  // Compute `overall` directly against the supplied range and return null role
+  // buckets. We skip rangeSegmenter / enrichWithEquity because their output
+  // would feed translateStrengthToRole — which has no defensible N-villain
+  // semantics — and the cheaper direct MC gives the caller the same `overall`.
+  if (skipRolePartition) {
+    const overallResult = await equityFn(heroCards, villainRange, board, { trials });
     return {
       vsValue: null,
       vsBluff: null,

@@ -2,31 +2,33 @@
 archetypeId: FLOP_MULTIWAY
 family: FLOP_MULTIWAY
 voiceNotes: |
-  v1 stub per WS-139 plan-mode resolution. Multiway breaks HU
-  range-vs-range reasoning per design doc §7.4 — full template
-  needs sequential decision modeling (cascading folds, multiway
-  fold-frequency math). Captured here at minimum coverage so the
-  catalog is complete and the orchestrator has a fallback to
-  render. Expand in v2.
-v2_TODO: |
-  Multiway invalidates HU range-vs-range reasoning (design doc
-  §7.4). v1 stub. v2 should add:
-    - Sequential decision modeling (multiway fold-frequency
-      math: P(all fold) = ∏ P(player_i folds))
-    - Bluff-frequency reduction formulas (cascading fold equity
-      decays multiplicatively)
-    - Equity dilution by player count (3-way ~75% of HU, 4-way
-      ~60%)
-    - Specific 3-way and 4-way archetypes (split FLOP_MULTIWAY
-      into FLOP_MULTIWAY_3W and FLOP_MULTIWAY_4W+)
-    - Position-specific multiway plans (3-way on the BTN vs
-      3-way OOP have different shapes)
+  Catch-all multiway template (3+ players to flop with null or unknown
+  potType). Three sibling sub-archetypes — FLOP_MULTIWAY_SRP / _3BP /
+  _LIMPED — handle the load-bearing pot-type cases (WS-154 / SPR-106,
+  2026-06-04). This template fires only when potType doesn't classify
+  (defensive default). Generic multiway pedagogy applies: equity
+  dilution, cascading fold equity, capped caller ranges, value-heavy
+  mode. See HERO_STATE_DESIGN.md §7.4 for the multiway taxonomy.
+v3_TODO: |
+  Multiway model is v2 (WS-154). Open follow-ups, file ONLY if
+  observed usage demands them:
+    - TURN_MULTIWAY / RIVER_MULTIWAY pot-type splits (mirror the flop
+      taxonomy if multiway-turn/river hands prove common)
+    - Pairwise villain-range conditioning primitive in src/utils/
+      exploitEngine/multiwayRangeNarrower.js (narrow villain₂'s range
+      given villain₁'s prior action — would enable real role-partition
+      computation per-villain, currently null multiway)
 slotsUsed:
   - handContext.hand
   - handContext.boardTexture
   - handContext.handClass
   - situation.playersRemaining
+  - situation.multiwayHeroRole
+  - equity.overall
+  - equity.realization
   - plan.primary.action
+  - plan.primary.sizing
+  - plan.primary.sizingRationale
   - plan.branches[*].trigger
   - plan.branches[*].rationale
 ---
@@ -37,14 +39,14 @@ slotsUsed:
 
 ## Body
 
-We're in a multiway pot ({{situation.playersRemaining}} players to the flop). The HU range-vs-range frame that the rest of the HSP catalog uses doesn't directly apply — our equity is diluted by every additional opponent, fold equity drops multiplicatively (every opponent has to fold, not just one), and bluff frequency has to drop accordingly. The default mode is value-heavy and face up.
+We're in a multiway pot ({{situation.playersRemaining}} players to the flop) where the pot type didn't classify into one of the load-bearing shapes (SRP / 3BP / limped). The heads-up range-vs-range frame doesn't apply — our overall equity against the field is {{equity.overall}}, diluted by every additional opponent, and equity realization is discounted further. The default mode is value-heavy and face up.
 
-Continue with strong made hands (top pair good kicker or better; overpairs on disconnected boards) and premium draws (combo draws, OESD with overcards). Marginal pairs that would float HU get folded multiway because (a) the equity dilution against multiple ranges is severe, (b) we have no fold equity to compensate, and (c) somebody usually has the hand we're worried about.
+Cascading fold equity is structurally weak multiway because every opponent has to fold, not just one. The probability that everyone folds scales multiplicatively with player count; bluff frequency must drop accordingly. The recommended action is {{plan.primary.action}} for {{plan.primary.sizingRationale}}, with the multiway fold-equity collapse and equity-realization discount already baked into the EV math.
 
-Sizing skews larger on value (charge multiple opponents for setting up draws) and smaller on bluff-light lines (when bluffing at all). Bet only with hands that genuinely want to be played for stacks at a higher frequency — donk leads, semi-bluff raises, value bets — and check-fold the marginals.
+Continue with strong made hands (top pair good kicker or better; overpairs on disconnected boards) and premium draws (combo draws, OESD with overcards). Marginal pairs that would float HU get folded multiway: equity dilution is severe, we have no fold equity to compensate, and somebody usually has the hand we're worried about. Sizing is {{plan.primary.sizing}} — larger on value lines (to charge multiple opponents for setting up draws) and smaller on bluff-light lines (when bluffing at all). Bet only with hands that genuinely want to play for stacks at a higher frequency.
 
 ## Branch summary
 
 {{plan.branches[*].trigger}} → {{plan.branches[*].rationale}}.
 
-Default branches: (1) bet for value with strong made hands. (2) bet for protection with vulnerable made hands on dynamic boards. (3) check-fold most marginals. (4) selective semi-bluffs with strong draws when the field is passive. The full multiway decision tree is deferred to v2 (see `v2_TODO` frontmatter).
+Default branches: (1) bet for value with strong made hands. (2) bet for protection with vulnerable made hands on dynamic boards. (3) check-fold most marginals. (4) selective semi-bluffs with strong draws when the field is passive. The pot-type-conditioned templates (FLOP_MULTIWAY_SRP / _3BP / _LIMPED) carry more specific guidance; this catch-all body applies when potType is null or unknown at classification time.

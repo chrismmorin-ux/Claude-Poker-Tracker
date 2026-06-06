@@ -52,4 +52,40 @@ describe('rangeLabPersistence', () => {
   it('save is a no-op (false) when range is missing', () => {
     expect(saveRangeLabState({ range: null, board: [] })).toBe(false);
   });
+
+  // ── Phase 2b (WS-210): additive second range + compare flag ──
+  it('round-trips a comparison range B + compareOn', () => {
+    const range = createRange();
+    range[AA] = 1;
+    const rangeB = createRange();
+    rangeB[AKs] = 1;
+    rangeB[rangeIndex(11, 11, false)] = 0.5; // KK partial
+
+    expect(saveRangeLabState({ range, board: ['K♠', '7♥', '2♦'], rangeB, compareOn: true })).toBe(true);
+
+    const loaded = loadRangeLabState();
+    expect(loaded.compareOn).toBe(true);
+    expect(loaded.rangeB).not.toBeNull();
+    expect(loaded.rangeB[AKs]).toBeCloseTo(1, 6);
+    expect(loaded.rangeB[rangeIndex(11, 11, false)]).toBeCloseTo(0.5, 6);
+    expect(loaded.range[AA]).toBeCloseTo(1, 6);
+  });
+
+  it('legacy single-range blob loads with rangeB null + compareOn false', () => {
+    const range = createRange();
+    range[AA] = 1;
+    saveRangeLabState({ range, board: ['K♠', '7♥', '2♦'] }); // no rangeB / compareOn
+
+    const loaded = loadRangeLabState();
+    expect(loaded.rangeB).toBeNull();
+    expect(loaded.compareOn).toBe(false);
+    expect(loaded.range[AA]).toBeCloseTo(1, 6);
+  });
+
+  it('omitting rangeB when compareOn is false persists no comparison range', () => {
+    saveRangeLabState({ range: createRange(), board: [], rangeB: null, compareOn: false });
+    const loaded = loadRangeLabState();
+    expect(loaded.rangeB).toBeNull();
+    expect(loaded.compareOn).toBe(false);
+  });
 });

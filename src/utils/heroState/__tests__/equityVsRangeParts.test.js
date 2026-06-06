@@ -178,19 +178,28 @@ describe('translateStrengthToRole', () => {
 // ─── computeEquityVsRangeParts ───────────────────────────────────────────
 
 describe('computeEquityVsRangeParts', () => {
-  // MULTIWAY guard ──────────────────────────────────────────────────────
+  // MULTIWAY behavior (WS-154 / SPR-106) ────────────────────────────────
+  // Previously threw; now returns null role partition + populated overall.
+  // The upstream guard at buildHeroState.js gates on playersRemaining<3 so
+  // this branch only fires on defensive caller injection.
 
-  it('throws Error containing "MULTIWAY" when actionContext === MULTIWAY', async () => {
-    await expect(
-      computeEquityVsRangeParts({
-        heroCards: [0, 1],
-        villainRange: new Float64Array(169),
-        board: [],
-        street: 'flop',
-        actionContext: 'MULTIWAY',
-        villainStyle: null,
-      }),
-    ).rejects.toThrow(/MULTIWAY/);
+  it('returns null role partition + populated overall when actionContext === MULTIWAY', async () => {
+    const equityFn = async () => ({ equity: 0.42 });
+    const result = await computeEquityVsRangeParts({
+      heroCards: [0, 1],
+      villainRange: new Float64Array(169).fill(1),
+      board: [10, 20, 30],
+      street: 'flop',
+      actionContext: 'MULTIWAY',
+      villainStyle: null,
+      options: { equityFn },
+    });
+    expect(result.vsValue).toBe(null);
+    expect(result.vsBluff).toBe(null);
+    expect(result.vsDraw).toBe(null);
+    expect(result.vsAir).toBe(null);
+    expect(result.overall).toBe(0.42);
+    expect(result.strengthBreakdown).toBe(null);
   });
 
   // Preflop short-circuit ────────────────────────────────────────────────

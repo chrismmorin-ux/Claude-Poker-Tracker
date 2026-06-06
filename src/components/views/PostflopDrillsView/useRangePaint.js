@@ -103,12 +103,36 @@ export const useRangePaint = ({ enabled = true } = {}) => {
     setIsDirty(true);
   }, []);
 
-  /** Persist current range + board to the session; clears the dirty flag. */
-  const save = useCallback((board) => {
-    const ok = saveRangeLabState({ range, board });
+  /**
+   * Replace the range wholesale (clears BOTH stacks + dirty flag). Used by a
+   * parent that owns coordinated restore across multiple paint instances
+   * (Range Lab Phase 2b compare mode); a fresh externally-supplied range has no
+   * meaningful local undo history. Falls back to an empty range if given null.
+   */
+  const setRangeExternal = useCallback((nextRange) => {
+    setRange(nextRange instanceof Float64Array ? cloneRange(nextRange) : createRange());
+    setUndoStack([]);
+    setRedoStack([]);
+    setIsDirty(false);
+  }, []);
+
+  /**
+   * Persist current range + board to the session; clears the dirty flag.
+   * `extra` is merged into the persisted blob (Phase 2b passes the comparison
+   * range B + compareOn flag so one Save writes the whole Range Lab state).
+   */
+  const save = useCallback((board, extra = {}) => {
+    const ok = saveRangeLabState({ range, board, ...extra });
     if (ok) setIsDirty(false);
     return ok;
   }, [range]);
+
+  /**
+   * Clear the dirty flag WITHOUT writing storage. Used when a sibling paint
+   * instance owns the coordinated write (Phase 2b: Save A writes both ranges,
+   * then B is marked saved here).
+   */
+  const markSaved = useCallback(() => setIsDirty(false), []);
 
   /**
    * Restore the last-saved range from the session. Returns the saved board (if
@@ -148,7 +172,9 @@ export const useRangePaint = ({ enabled = true } = {}) => {
     undo,
     redo,
     clearAll,
+    setRange: setRangeExternal,
     save,
+    markSaved,
     restore,
   };
 };

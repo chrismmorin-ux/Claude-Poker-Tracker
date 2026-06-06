@@ -28,18 +28,25 @@ const getStore = () => {
 };
 
 /**
- * Persist the painted range + board to sessionStorage.
+ * Persist the painted range(s) + board to sessionStorage.
  *
- * @param {{ range: Float64Array, board: string[] }} state
+ * Phase 2b (WS-210) adds an optional second range (B) + a compare flag, persisted
+ * additively alongside the Phase-1 single range (A). Old single-range blobs remain
+ * loadable (they simply lack `rangeBStr` / `compareOn`).
+ *
+ * @param {{ range: Float64Array, board: string[], rangeB?: Float64Array|null, compareOn?: boolean }} state
  * @returns {boolean} true if written, false if storage was unavailable/failed
  */
-export const saveRangeLabState = ({ range, board }) => {
+export const saveRangeLabState = ({ range, board, rangeB = null, compareOn = false }) => {
   const store = getStore();
   if (!store || !range) return false;
   try {
     const payload = JSON.stringify({
       rangeStr: rangeToString(range),
       board: Array.isArray(board) ? board : [],
+      // Additive (Phase 2b): only written when a comparison range exists.
+      rangeBStr: rangeB ? rangeToString(rangeB) : null,
+      compareOn: !!compareOn,
     });
     store.setItem(STORAGE_KEY, payload);
     return true;
@@ -51,10 +58,11 @@ export const saveRangeLabState = ({ range, board }) => {
 };
 
 /**
- * Load the last-saved painted range + board.
+ * Load the last-saved painted range(s) + board.
  *
- * @returns {{ range: Float64Array, board: string[] } | null} null if nothing
- *   saved, storage unavailable, or the payload is corrupt.
+ * @returns {{ range: Float64Array, board: string[], rangeB: Float64Array|null, compareOn: boolean } | null}
+ *   null if nothing saved, storage unavailable, or the payload is corrupt.
+ *   `rangeB` is null and `compareOn` false for legacy single-range blobs.
  */
 export const loadRangeLabState = () => {
   const store = getStore();
@@ -67,6 +75,8 @@ export const loadRangeLabState = () => {
     return {
       range: parseRangeString(parsed.rangeStr),
       board: Array.isArray(parsed.board) ? parsed.board : [],
+      rangeB: typeof parsed.rangeBStr === 'string' ? parseRangeString(parsed.rangeBStr) : null,
+      compareOn: !!parsed.compareOn,
     };
   } catch (e) {
     console.warn('[rangeLab] loadRangeLabState failed:', e?.message || e);
