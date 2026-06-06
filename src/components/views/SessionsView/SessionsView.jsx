@@ -13,12 +13,11 @@ import { SessionForm } from '../../ui/SessionForm';
 import { SessionRowWithRollup } from './SessionRowWithRollup';
 import { matchesSessionsFilter } from '../../../utils/sessionsFilter';
 import { GAME_TYPES } from '../../../constants/sessionConstants';
-import { calculateTotalRebuy } from '../../../utils/displayUtils';
 import { downloadBackup, readJsonFile, validateImportData, importAllData } from '../../../utils/exportUtils';
 import { ActiveSessionCard } from './ActiveSessionCard';
 import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
-import { BankrollDisplay } from './BankrollDisplay';
+import { InsightsBand } from './InsightsBand';
 import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
 import { useSession, useUI, useTournament, useSyncBridge, useSettings } from '../../../contexts';
@@ -285,26 +284,19 @@ export const SessionsView = ({ scale }) => {
     setImportData(null);
   };
 
-  // Calculate running total bankroll.
-  // AUDIT-2026-04-21-SV F2: tipAmount subtracted from P&L. Prior to this, tipped
-  // sessions silently overcounted lifetime bankroll by the tip amount per session.
-  // Legacy sessions without `tipAmount` read as undefined → `|| 0` fallback →
-  // zero deduction (backward-compatible).
-  const calculateTotalBankroll = () => {
-    return sessions.reduce((total, session) => {
-      if (session.endTime && session.cashOut !== null && session.cashOut !== undefined) {
-        const buyIn = session.buyIn || 0;
-        const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
-        const tip = session.tipAmount || 0;
-        const profitLoss = session.cashOut - buyIn - totalRebuys - tip;
-        return total + profitLoss;
-      }
-      return total;
-    }, 0);
-  };
+  // Phase 2 (Sessions View Improvement, 2026-06-06): lifetime-bankroll math
+  // moved into the InsightsBand (sessionAnalytics.computeSummary), which also
+  // surfaces $/hr, win-rate, breakdowns, and the bankroll trend. The former
+  // bottom-left BankrollDisplay widget is folded into that band.
 
-  const totalBankroll = calculateTotalBankroll();
-  const completedSessionCount = sessions.filter(s => s.endTime && s.cashOut !== null).length;
+  // Past sessions in the current Live/Online/All scope — shared by the Insights
+  // band and the row list so both reflect the same filter.
+  const visiblePastSessions = sessions
+    .filter((s) => !s.isActive)
+    .filter((s) => matchesSessionsFilter(s, pastSessionFilter));
+
+  const insightsScopeLabel =
+    pastSessionFilter === 'live' ? 'Live' : pastSessionFilter === 'online' ? 'Online' : null;
 
   // WS-190: open a tagged hand from the Review Queue in HandReplayView.
   // Mirrors HandReviewPanel's replay-open pattern (set hand, then switch screen).
@@ -430,6 +422,11 @@ export const SessionsView = ({ scale }) => {
             </div>
           )}
 
+          {/* Insights band — at-a-glance performance summary (Phase 2). Scopes
+              with the Live/Online/All filter; renders only when ≥1 completed
+              session exists. Folds in the former bottom-left bankroll widget. */}
+          <InsightsBand sessions={visiblePastSessions} scopeLabel={insightsScopeLabel} />
+
           {/* Review Queue — tagged hands (WS-190). Renders only when ≥1 hand is tagged. */}
           <ReviewQueuePanel onOpenHand={handleOpenTaggedHand} />
 
@@ -473,9 +470,7 @@ export const SessionsView = ({ scale }) => {
             </div>
 
             <div className="divide-y divide-gray-700">
-              {sessions
-                .filter((s) => !s.isActive)
-                .filter((s) => matchesSessionsFilter(s, pastSessionFilter))
+              {visiblePastSessions
                 .map((session) => (
                   <SessionRowWithRollup
                     key={session.sessionId}
@@ -511,18 +506,11 @@ export const SessionsView = ({ scale }) => {
           )}
         </div>
 
-        {/* AUDIT-2026-04-21-SV F5: bottom bar unified. Previously three independent
-            absolute-positioned elements (BankrollDisplay @ bottom-8 left-8,
-            Preflop Drills @ bottom-8 right-48, Postflop Drills @ bottom-8 right-8)
-            risked visual collision at sub-reference scale. Single flex container
-            with justify-between is collision-proof at any scale. */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-between items-center px-8 pb-8 z-10 pointer-events-none">
-          <div className="pointer-events-auto">
-            <BankrollDisplay
-              totalBankroll={totalBankroll}
-              completedSessionCount={completedSessionCount}
-            />
-          </div>
+        {/* AUDIT-2026-04-21-SV F5: bottom bar unified into a single flex container
+            (collision-proof at any scale). Phase 2 (2026-06-06): the bottom-left
+            BankrollDisplay was folded into the top InsightsBand, so the bar now
+            carries only the drill CTAs (right-aligned). */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-end items-center px-8 pb-8 z-10 pointer-events-none">
           <div className="flex gap-3 pointer-events-auto">
             <button
               onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
