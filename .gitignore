@@ -20,6 +20,8 @@ yarn-debug.log*
 yarn-error.log*
 .test-out.log
 *.test-out.log
+full-test.log
+*-test.log
 
 # Editor directories
 .idea/
