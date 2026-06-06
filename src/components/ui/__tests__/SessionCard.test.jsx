@@ -209,6 +209,24 @@ describe('SessionCard', () => {
     });
   });
 
+  describe('venue note', () => {
+    it('renders the venue note when provided', () => {
+      render(<SessionCard {...defaultProps} venueNote="soft 1/3, $5 max rake" />);
+      expect(screen.getByText('soft 1/3, $5 max rake')).toBeInTheDocument();
+    });
+
+    it('renders no note when venueNote is empty', () => {
+      render(<SessionCard {...defaultProps} venueNote="" />);
+      expect(screen.queryByText('soft 1/3, $5 max rake')).not.toBeInTheDocument();
+    });
+
+    it('renders no note when venueNote prop is omitted', () => {
+      render(<SessionCard {...defaultProps} />);
+      // No crash, and no stray note text.
+      expect(screen.getByText(/Horseshoe Casino/)).toBeInTheDocument();
+    });
+  });
+
   describe('edge cases', () => {
     it('handles session with endTime equal to startTime', () => {
       const zeroLength = createMockSession({

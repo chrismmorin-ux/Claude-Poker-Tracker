@@ -34,6 +34,7 @@ export const SettingsView = ({ scale }) => {
     allGameTypeKeys,
     addCustomVenue,
     removeCustomVenue,
+    setVenueNote,
     addCustomGameType,
     removeCustomGameType,
     dispatchSettings,
@@ -116,6 +117,7 @@ export const SettingsView = ({ scale }) => {
             settings={settings}
             addCustomVenue={addCustomVenue}
             removeCustomVenue={removeCustomVenue}
+            setVenueNote={setVenueNote}
           />
 
           <GameTypesManager

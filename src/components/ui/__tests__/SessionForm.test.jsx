@@ -12,6 +12,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SessionForm } from '../SessionForm';
 import { SettingsProvider } from '../../../contexts/SettingsContext';
 import { createMockSettingsState } from '../../../test/utils';
+import { DEFAULT_SETTINGS } from '../../../constants/settingsConstants';
 
 // Wrapper that provides SettingsContext
 // Pattern documented in engineering_practices.md "Testing Components with Context Dependencies"
@@ -137,6 +138,36 @@ describe('SessionForm', () => {
       renderWithSettings(<SessionForm {...defaultProps} defaultVenue="Horseshoe Casino" />);
       const venueSelect = screen.getAllByRole('combobox')[0];
       expect(venueSelect).toHaveValue('Horseshoe Casino');
+    });
+  });
+
+  describe('venue note hint', () => {
+    const stateWithNotedVenue = createMockSettingsState({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        customVenues: [{ name: 'My Card Room', notes: 'soft 1/3, $5 max rake' }],
+      },
+    });
+
+    it('shows the note when a custom venue with a note is selected', () => {
+      renderWithSettings(
+        <SessionForm {...defaultProps} defaultVenue="My Card Room" />,
+        stateWithNotedVenue
+      );
+      expect(screen.getByText('soft 1/3, $5 max rake')).toBeInTheDocument();
+    });
+
+    it('does not show a note for a built-in venue', () => {
+      renderWithSettings(
+        <SessionForm {...defaultProps} defaultVenue="Online" />,
+        stateWithNotedVenue
+      );
+      expect(screen.queryByText('soft 1/3, $5 max rake')).not.toBeInTheDocument();
+    });
+
+    it('shows no note hint when no venue is selected', () => {
+      renderWithSettings(<SessionForm {...defaultProps} />, stateWithNotedVenue);
+      expect(screen.queryByText('soft 1/3, $5 max rake')).not.toBeInTheDocument();
     });
   });
 

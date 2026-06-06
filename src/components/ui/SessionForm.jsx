@@ -23,7 +23,7 @@ import { TournamentSetupForm } from './TournamentSetupForm';
  */
 export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '', defaultVenue = '' }) => {
   // Get venues and game types from settings (includes custom ones)
-  const { allVenues, allGameTypes, allGameTypeKeys } = useSettings();
+  const { allVenues, allGameTypes, allGameTypeKeys, getVenueNote } = useSettings();
 
   // Initialize with defaults from previous session
   const initialGameType = defaultGameType || 'ONE_TWO'; // Default to 1/2 if no previous session
@@ -186,6 +186,13 @@ export const SessionForm = ({ onSubmit, onCancel, scale = 1, defaultGameType = '
             </select>
             {errors.venue && (
               <p className="text-red-500 text-xs mt-1">{errors.venue}</p>
+            )}
+            {/* Venue note hint — Phase 1 Sessions View Improvement (2026-06-06).
+                Shows the free-text note attached to the selected custom venue. */}
+            {venue && getVenueNote && getVenueNote(venue) && (
+              <p className="mt-1 text-xs text-gray-400 italic whitespace-pre-wrap">
+                {getVenueNote(venue)}
+              </p>
             )}
           </div>
 

@@ -20,6 +20,9 @@ export const SETTINGS_ACTIONS = {
   SET_LOADING: 'SET_LOADING',
   ADD_CUSTOM_VENUE: 'ADD_CUSTOM_VENUE',
   REMOVE_CUSTOM_VENUE: 'REMOVE_CUSTOM_VENUE',
+  // Phase 1 — Sessions View Improvement (2026-06-06). Set/clear the free-text
+  // note on a custom venue. customVenues entries are { name, notes } objects.
+  SET_VENUE_NOTE: 'SET_VENUE_NOTE',
   ADD_CUSTOM_GAME_TYPE: 'ADD_CUSTOM_GAME_TYPE',
   REMOVE_CUSTOM_GAME_TYPE: 'REMOVE_CUSTOM_GAME_TYPE',
   // SCF self-coach settings (WS-148 / SPR-033) — UI lands in WS-159.
@@ -63,6 +66,9 @@ export const DEFAULT_SETTINGS = {
   backupFrequency: 'manual',
 
   // Customization
+  // customVenues entries are { name: string, notes: string } objects
+  // (Phase 1 — Sessions View Improvement, 2026-06-06). Legacy string entries
+  // are normalized to this shape on read in the settings reducer.
   customVenues: [],
   customGameTypes: [],
 

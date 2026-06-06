@@ -21,7 +21,7 @@ import { ImportConfirmModal } from './ImportConfirmModal';
 import { BankrollDisplay } from './BankrollDisplay';
 import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
-import { useSession, useUI, useTournament, useSyncBridge } from '../../../contexts';
+import { useSession, useUI, useTournament, useSyncBridge, useSettings } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { ENABLE_PRESESSION_DRILL } from '../PresessionDrillView';
 
@@ -68,6 +68,9 @@ export const SessionsView = ({ scale }) => {
 
   // Online play sync
   const { isExtensionConnected, importedCount } = useSyncBridge();
+  // Venue notes — Phase 1 Sessions View Improvement (2026-06-06). Looked up per
+  // past-session row and threaded into SessionCard via SessionRowWithRollup.
+  const { getVenueNote } = useSettings();
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -478,6 +481,7 @@ export const SessionsView = ({ scale }) => {
                     key={session.sessionId}
                     session={session}
                     onDelete={handleDeleteSession}
+                    venueNote={getVenueNote(session.venue)}
                   />
                 ))}
 

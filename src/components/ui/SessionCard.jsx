@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Clock, DollarSign, Target, Trash2, Trophy } from 'lucide-react';
+import { Clock, DollarSign, Target, Trash2, Trophy, StickyNote } from 'lucide-react';
 import { formatTime12Hour, calculateTotalRebuy, ordinalSuffix } from '../../utils/displayUtils';
 
 /**
@@ -41,8 +41,11 @@ const formatDate = (timestamp) => {
  * @param {Object} props
  * @param {Object} props.session - Session data object
  * @param {Function} props.onDelete - Delete handler
+ * @param {string} [props.venueNote] - Free-text note for the session's venue.
+ *   Supplied by the parent (which has settings context); '' for built-in /
+ *   unknown venues. Phase 1 — Sessions View Improvement (2026-06-06).
  */
-export const SessionCard = ({ session, onDelete }) => {
+export const SessionCard = ({ session, onDelete, venueNote = '' }) => {
   const isTournament = session.gameType === 'Tournament';
   const totalRebuys = calculateTotalRebuy(session.rebuyTransactions);
   const hasCashOut = session.cashOut !== null && session.cashOut !== undefined;
@@ -68,6 +71,14 @@ export const SessionCard = ({ session, onDelete }) => {
               </span>
             )}
           </div>
+
+          {/* Venue note line — only when the session's venue has a note. */}
+          {venueNote && (
+            <div className="flex items-start gap-1 mb-2 text-xs text-gray-400 italic">
+              <StickyNote size={13} className="mt-0.5 flex-shrink-0 text-gray-500" />
+              <span className="whitespace-pre-wrap">{venueNote}</span>
+            </div>
+          )}
 
           <div className="flex gap-6 text-sm text-gray-400 flex-wrap">
             {/* Duration */}

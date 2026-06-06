@@ -1,8 +1,49 @@
 import React, { useState } from 'react';
 import { GOLD } from '../../../constants/designTokens';
 
-export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) => {
+/**
+ * VenueRow — a single custom venue with an editable free-text note.
+ *
+ * The note draft is held locally and committed via setVenueNote on blur, so
+ * typing does not dispatch (and re-persist settings) on every keystroke.
+ * Phase 1 — Sessions View Improvement (2026-06-06).
+ */
+const VenueRow = ({ venue, onRemove, onNoteChange }) => {
+  const [noteDraft, setNoteDraft] = useState(venue.notes || '');
+
+  const commitNote = () => {
+    if ((venue.notes || '') !== noteDraft) {
+      onNoteChange(venue.name, noteDraft);
+    }
+  };
+
+  return (
+    <div className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-gray-100 font-medium">{venue.name}</span>
+        <button
+          onClick={() => onRemove(venue.name)}
+          className="text-red-400 hover:text-red-300 text-sm font-medium px-2 min-h-[44px]"
+          title={`Remove ${venue.name}`}
+        >
+          Remove
+        </button>
+      </div>
+      <textarea
+        value={noteDraft}
+        onChange={(e) => setNoteDraft(e.target.value)}
+        onBlur={commitNote}
+        placeholder="Notes (rake, table feel, parking, comps…)"
+        rows={2}
+        className="w-full px-3 py-2 bg-gray-800 text-gray-200 text-sm rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
+      />
+    </div>
+  );
+};
+
+export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue, setVenueNote }) => {
   const [newVenueName, setNewVenueName] = useState('');
+  const [newVenueNote, setNewVenueNote] = useState('');
   const [venueError, setVenueError] = useState('');
 
   const handleAddVenue = () => {
@@ -10,9 +51,10 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
       setVenueError('Venue name is required');
       return;
     }
-    const success = addCustomVenue(newVenueName);
+    const success = addCustomVenue(newVenueName, newVenueNote);
     if (success) {
       setNewVenueName('');
+      setNewVenueNote('');
       setVenueError('');
     } else {
       setVenueError('Venue already exists');
@@ -28,7 +70,7 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
         <label className="block text-gray-300 text-sm font-medium mb-2">
           Add Custom Venue
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-2">
           <input
             type="text"
             value={newVenueName}
@@ -46,6 +88,13 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
             Add
           </button>
         </div>
+        <textarea
+          value={newVenueNote}
+          onChange={(e) => setNewVenueNote(e.target.value)}
+          placeholder="Notes for this venue (optional)"
+          rows={2}
+          className="w-full px-3 py-2 bg-gray-700 text-gray-200 text-sm rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
+        />
         {venueError && (
           <p className="mt-1 text-red-400 text-sm">{venueError}</p>
         )}
@@ -59,21 +108,14 @@ export const VenuesManager = ({ settings, addCustomVenue, removeCustomVenue }) =
         {settings.customVenues.length === 0 ? (
           <p className="text-gray-500 text-sm italic">No custom venues added yet</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2">
             {settings.customVenues.map((venue) => (
-              <span
-                key={venue}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-700 text-gray-200 rounded-full text-sm"
-              >
-                {venue}
-                <button
-                  onClick={() => removeCustomVenue(venue)}
-                  className="ml-1 text-red-400 hover:text-red-300 font-bold"
-                  title="Remove venue"
-                >
-                  ×
-                </button>
-              </span>
+              <VenueRow
+                key={venue.name}
+                venue={venue}
+                onRemove={removeCustomVenue}
+                onNoteChange={setVenueNote}
+              />
             ))}
           </div>
         )}

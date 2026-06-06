@@ -84,14 +84,18 @@ describe('settingsReducer', () => {
     });
 
     it('updates array settings', () => {
+      const venues = [
+        { name: 'Casino A', notes: '' },
+        { name: 'Casino B', notes: '' },
+      ];
       const newState = settingsReducer(state, {
         type: SETTINGS_ACTIONS.UPDATE_SETTING,
         payload: {
           key: 'customVenues',
-          value: ['Casino A', 'Casino B'],
+          value: venues,
         },
       });
-      expect(newState.settings.customVenues).toEqual(['Casino A', 'Casino B']);
+      expect(newState.settings.customVenues).toEqual(venues);
     });
   });
 
@@ -174,21 +178,32 @@ describe('settingsReducer', () => {
   });
 
   describe('ADD_CUSTOM_VENUE', () => {
-    it('adds a new custom venue', () => {
+    it('adds a new custom venue (string payload normalizes to object)', () => {
       const newState = settingsReducer(state, {
         type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
         payload: { venue: 'New Casino' },
       });
-      expect(newState.settings.customVenues).toContain('New Casino');
+      expect(newState.settings.customVenues).toContainEqual({ name: 'New Casino', notes: '' });
     });
 
-    it('prevents duplicate venues', () => {
-      state.settings.customVenues = ['Existing Casino'];
+    it('adds a custom venue with a note (object payload)', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
+        payload: { venue: { name: 'Noted Casino', notes: 'great rake, soft 1/3' } },
+      });
+      expect(newState.settings.customVenues).toContainEqual({
+        name: 'Noted Casino',
+        notes: 'great rake, soft 1/3',
+      });
+    });
+
+    it('prevents duplicate venues by name', () => {
+      state.settings.customVenues = [{ name: 'Existing Casino', notes: '' }];
       const newState = settingsReducer(state, {
         type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
         payload: { venue: 'Existing Casino' },
       });
-      expect(newState.settings.customVenues).toEqual(['Existing Casino']);
+      expect(newState.settings.customVenues).toEqual([{ name: 'Existing Casino', notes: '' }]);
     });
 
     it('ignores empty venue', () => {
@@ -201,22 +216,94 @@ describe('settingsReducer', () => {
   });
 
   describe('REMOVE_CUSTOM_VENUE', () => {
-    it('removes a custom venue', () => {
-      state.settings.customVenues = ['Casino A', 'Casino B'];
+    it('removes a custom venue by name', () => {
+      state.settings.customVenues = [
+        { name: 'Casino A', notes: '' },
+        { name: 'Casino B', notes: 'has notes' },
+      ];
       const newState = settingsReducer(state, {
         type: SETTINGS_ACTIONS.REMOVE_CUSTOM_VENUE,
         payload: { venue: 'Casino A' },
       });
-      expect(newState.settings.customVenues).toEqual(['Casino B']);
+      expect(newState.settings.customVenues).toEqual([{ name: 'Casino B', notes: 'has notes' }]);
     });
 
     it('handles removing non-existent venue', () => {
-      state.settings.customVenues = ['Casino A'];
+      state.settings.customVenues = [{ name: 'Casino A', notes: '' }];
       const newState = settingsReducer(state, {
         type: SETTINGS_ACTIONS.REMOVE_CUSTOM_VENUE,
         payload: { venue: 'Non-existent' },
       });
-      expect(newState.settings.customVenues).toEqual(['Casino A']);
+      expect(newState.settings.customVenues).toEqual([{ name: 'Casino A', notes: '' }]);
+    });
+  });
+
+  describe('SET_VENUE_NOTE', () => {
+    it('sets the note on an existing custom venue', () => {
+      state.settings.customVenues = [
+        { name: 'Casino A', notes: '' },
+        { name: 'Casino B', notes: 'old' },
+      ];
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VENUE_NOTE,
+        payload: { name: 'Casino A', notes: 'tight 2/5, $2 max rake' },
+      });
+      expect(newState.settings.customVenues).toEqual([
+        { name: 'Casino A', notes: 'tight 2/5, $2 max rake' },
+        { name: 'Casino B', notes: 'old' },
+      ]);
+    });
+
+    it('clears the note when passed empty string', () => {
+      state.settings.customVenues = [{ name: 'Casino A', notes: 'old' }];
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VENUE_NOTE,
+        payload: { name: 'Casino A', notes: '' },
+      });
+      expect(newState.settings.customVenues).toEqual([{ name: 'Casino A', notes: '' }]);
+    });
+
+    it('is a no-op for an unknown venue name', () => {
+      state.settings.customVenues = [{ name: 'Casino A', notes: '' }];
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_VENUE_NOTE,
+        payload: { name: 'Built-In Venue', notes: 'ignored' },
+      });
+      expect(newState.settings.customVenues).toEqual([{ name: 'Casino A', notes: '' }]);
+    });
+  });
+
+  describe('customVenues normalize-on-read (legacy migration)', () => {
+    it('LOAD_SETTINGS migrates legacy string venues to objects', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.LOAD_SETTINGS,
+        payload: { settings: { customVenues: ['Old Casino', 'Another'] } },
+      });
+      expect(newState.settings.customVenues).toEqual([
+        { name: 'Old Casino', notes: '' },
+        { name: 'Another', notes: '' },
+      ]);
+    });
+
+    it('HYDRATE_SETTINGS preserves object venues and drops malformed entries', () => {
+      const newState = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.HYDRATE_SETTINGS,
+        payload: {
+          settings: {
+            customVenues: [
+              { name: 'Kept', notes: 'note' },
+              'Legacy',
+              null,
+              { notes: 'no name' },
+              { name: '   ' },
+            ],
+          },
+        },
+      });
+      expect(newState.settings.customVenues).toEqual([
+        { name: 'Kept', notes: 'note' },
+        { name: 'Legacy', notes: '' },
+      ]);
     });
   });
 

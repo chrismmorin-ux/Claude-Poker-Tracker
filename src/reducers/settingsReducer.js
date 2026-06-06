@@ -38,6 +38,38 @@ export const SETTINGS_STATE_SCHEMA = {
 };
 
 // =============================================================================
+// HELPERS
+// =============================================================================
+
+/**
+ * Normalize the customVenues array to the { name, notes } object shape.
+ *
+ * Phase 1 — Sessions View Improvement (2026-06-06). customVenues used to be a
+ * plain string[]; it is now an array of { name, notes } objects so the owner can
+ * attach a free-text note to each custom venue. Legacy persisted data (string
+ * entries) is migrated on read here — there is no IndexedDB version bump because
+ * settings persist as a singleton blob. Malformed/empty entries are dropped.
+ *
+ * @param {Array<string|{name:string, notes?:string}>} venues
+ * @returns {Array<{name:string, notes:string}>}
+ */
+const normalizeVenues = (venues) => {
+  if (!Array.isArray(venues)) return [];
+  return venues
+    .map((v) => {
+      if (typeof v === 'string') {
+        const name = v.trim();
+        return name ? { name, notes: '' } : null;
+      }
+      if (v && typeof v === 'object' && typeof v.name === 'string' && v.name.trim()) {
+        return { name: v.name.trim(), notes: typeof v.notes === 'string' ? v.notes : '' };
+      }
+      return null;
+    })
+    .filter(Boolean);
+};
+
+// =============================================================================
 // RAW REDUCER
 // =============================================================================
 
@@ -48,15 +80,17 @@ export const SETTINGS_STATE_SCHEMA = {
 const rawSettingsReducer = (state, action) => {
   switch (action.type) {
     // Load settings from database (full replacement)
-    case SETTINGS_ACTIONS.LOAD_SETTINGS:
+    case SETTINGS_ACTIONS.LOAD_SETTINGS: {
+      const merged = { ...DEFAULT_SETTINGS, ...action.payload.settings };
       return {
         ...state,
         settings: {
-          ...DEFAULT_SETTINGS,
-          ...action.payload.settings,
+          ...merged,
+          customVenues: normalizeVenues(merged.customVenues),
         },
         isInitialized: true,
       };
+    }
 
     // Update a single setting
     case SETTINGS_ACTIONS.UPDATE_SETTING:
@@ -77,14 +111,19 @@ const rawSettingsReducer = (state, action) => {
 
     // Hydrate settings from database (on app startup)
     // Merges with defaults to ensure all fields exist
-    case SETTINGS_ACTIONS.HYDRATE_SETTINGS:
+    case SETTINGS_ACTIONS.HYDRATE_SETTINGS: {
+      const merged = action.payload.settings
+        ? { ...DEFAULT_SETTINGS, ...action.payload.settings }
+        : { ...DEFAULT_SETTINGS };
       return {
         ...state,
-        settings: action.payload.settings
-          ? { ...DEFAULT_SETTINGS, ...action.payload.settings }
-          : { ...DEFAULT_SETTINGS },
+        settings: {
+          ...merged,
+          customVenues: normalizeVenues(merged.customVenues),
+        },
         isInitialized: true,
       };
+    }
 
     // Set loading state
     case SETTINGS_ACTIONS.SET_LOADING:
@@ -93,33 +132,59 @@ const rawSettingsReducer = (state, action) => {
         isLoading: action.payload.isLoading,
       };
 
-    // Add a custom venue
+    // Add a custom venue. Payload.venue may be a string (legacy callers/tests)
+    // or a { name, notes } object; both normalize to the object shape. Dedupe
+    // by name (case-sensitive, matching the context-layer guard).
     case SETTINGS_ACTIONS.ADD_CUSTOM_VENUE: {
-      const venue = action.payload.venue;
-      // Prevent duplicates
-      if (!venue || state.settings.customVenues.includes(venue)) {
+      const raw = action.payload.venue;
+      const entry =
+        typeof raw === 'string'
+          ? { name: raw.trim(), notes: '' }
+          : raw && typeof raw.name === 'string'
+            ? { name: raw.name.trim(), notes: typeof raw.notes === 'string' ? raw.notes : '' }
+            : null;
+      if (!entry || !entry.name) return state;
+      if (state.settings.customVenues.some((v) => v.name === entry.name)) {
         return state;
       }
       return {
         ...state,
         settings: {
           ...state.settings,
-          customVenues: [...state.settings.customVenues, venue],
+          customVenues: [...state.settings.customVenues, entry],
         },
       };
     }
 
-    // Remove a custom venue
+    // Remove a custom venue by name (payload.venue is the name string).
     case SETTINGS_ACTIONS.REMOVE_CUSTOM_VENUE:
       return {
         ...state,
         settings: {
           ...state.settings,
           customVenues: state.settings.customVenues.filter(
-            (v) => v !== action.payload.venue
+            (v) => v.name !== action.payload.venue
           ),
         },
       };
+
+    // Set/clear the free-text note on an existing custom venue (by name).
+    // No-op if the venue is not found (built-in venues have no note in v1).
+    case SETTINGS_ACTIONS.SET_VENUE_NOTE: {
+      const { name, notes } = action.payload;
+      if (!name || !state.settings.customVenues.some((v) => v.name === name)) {
+        return state;
+      }
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          customVenues: state.settings.customVenues.map((v) =>
+            v.name === name ? { ...v, notes: typeof notes === 'string' ? notes : '' } : v
+          ),
+        },
+      };
+    }
 
     // Add a custom game type
     case SETTINGS_ACTIONS.ADD_CUSTOM_GAME_TYPE: {

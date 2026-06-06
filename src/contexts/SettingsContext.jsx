@@ -19,9 +19,12 @@ const SettingsContext = createContext(null);
 export const SettingsProvider = ({ settingsState, dispatchSettings, children }) => {
   const { settings, isLoading, isInitialized } = settingsState;
 
-  // Derived: Combined venues (defaults + custom)
+  // Derived: Combined venue names (defaults + custom). customVenues entries are
+  // { name, notes } objects (Phase 1 — Sessions View Improvement, 2026-06-06);
+  // allVenues stays a string[] of names so dropdown consumers (SessionForm,
+  // GameDefaults) are unaffected.
   const allVenues = useMemo(() => {
-    return [...VENUES, ...(settings.customVenues || [])];
+    return [...VENUES, ...(settings.customVenues || []).map((v) => v.name)];
   }, [settings.customVenues]);
 
   // Derived: Combined game types (defaults + custom)
@@ -62,28 +65,45 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     });
   }, [dispatchSettings]);
 
-  // Handler: Add a custom venue
-  const addCustomVenue = useCallback((venue) => {
+  // Handler: Add a custom venue (with optional free-text note).
+  const addCustomVenue = useCallback((venue, notes = '') => {
     if (!venue || !venue.trim()) return false;
     const trimmedVenue = venue.trim();
-    // Check if already exists in defaults or custom
-    if (VENUES.includes(trimmedVenue) || settings.customVenues.includes(trimmedVenue)) {
+    // Check if already exists in defaults or custom (by name)
+    if (
+      VENUES.includes(trimmedVenue) ||
+      settings.customVenues.some((v) => v.name === trimmedVenue)
+    ) {
       return false;
     }
     dispatchSettings({
       type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
-      payload: { venue: trimmedVenue },
+      payload: { venue: { name: trimmedVenue, notes: (notes || '').trim() } },
     });
     return true;
   }, [dispatchSettings, settings.customVenues]);
 
-  // Handler: Remove a custom venue
+  // Handler: Remove a custom venue (by name)
   const removeCustomVenue = useCallback((venue) => {
     dispatchSettings({
       type: SETTINGS_ACTIONS.REMOVE_CUSTOM_VENUE,
       payload: { venue },
     });
   }, [dispatchSettings]);
+
+  // Handler: Set/clear the free-text note on a custom venue (by name).
+  const setVenueNote = useCallback((name, notes) => {
+    dispatchSettings({
+      type: SETTINGS_ACTIONS.SET_VENUE_NOTE,
+      payload: { name, notes: notes ?? '' },
+    });
+  }, [dispatchSettings]);
+
+  // Helper: Read the note for a venue name ('' for built-ins / unknown).
+  const getVenueNote = useCallback((name) => {
+    const match = (settings.customVenues || []).find((v) => v.name === name);
+    return match?.notes || '';
+  }, [settings.customVenues]);
 
   // Handler: Add a custom game type
   const addCustomGameType = useCallback((gameType) => {
@@ -119,7 +139,7 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
 
   // Handler: Check if a venue is custom (can be removed)
   const isCustomVenue = useCallback((venue) => {
-    return settings.customVenues.includes(venue);
+    return settings.customVenues.some((v) => v.name === venue);
   }, [settings.customVenues]);
 
   // Handler: Check if a game type is custom (can be removed)
@@ -145,6 +165,8 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     restoreSettings,
     addCustomVenue,
     removeCustomVenue,
+    setVenueNote,
+    getVenueNote,
     addCustomGameType,
     removeCustomGameType,
     isCustomVenue,
@@ -162,6 +184,8 @@ export const SettingsProvider = ({ settingsState, dispatchSettings, children }) 
     resetSettings,
     addCustomVenue,
     removeCustomVenue,
+    setVenueNote,
+    getVenueNote,
     addCustomGameType,
     removeCustomGameType,
     isCustomVenue,

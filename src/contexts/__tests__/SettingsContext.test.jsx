@@ -80,7 +80,10 @@ describe('SettingsContext', () => {
       const settingsState = createDefaultSettingsState({
         settings: {
           ...DEFAULT_SETTINGS,
-          customVenues: ['My Local Casino', 'Home Game'],
+          customVenues: [
+            { name: 'My Local Casino', notes: '' },
+            { name: 'Home Game', notes: '' },
+          ],
         },
       });
       const { result } = renderHook(() => useSettings(), {
@@ -95,7 +98,7 @@ describe('SettingsContext', () => {
       const settingsState = createDefaultSettingsState({
         settings: {
           ...DEFAULT_SETTINGS,
-          customVenues: ['Custom Casino'],
+          customVenues: [{ name: 'Custom Casino', notes: '' }],
         },
       });
       const { result } = renderHook(() => useSettings(), {
@@ -191,7 +194,7 @@ describe('SettingsContext', () => {
 
       expect(mockDispatch).toHaveBeenCalledWith({
         type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
-        payload: { venue: 'New Casino' },
+        payload: { venue: { name: 'New Casino', notes: '' } },
       });
     });
 
@@ -230,7 +233,7 @@ describe('SettingsContext', () => {
       const settingsState = createDefaultSettingsState({
         settings: {
           ...DEFAULT_SETTINGS,
-          customVenues: ['Existing Casino'],
+          customVenues: [{ name: 'Existing Casino', notes: '' }],
         },
       });
       const { result } = renderHook(() => useSettings(), {
@@ -258,7 +261,24 @@ describe('SettingsContext', () => {
 
       expect(mockDispatch).toHaveBeenCalledWith({
         type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
-        payload: { venue: 'New Casino' },
+        payload: { venue: { name: 'New Casino', notes: '' } },
+      });
+    });
+
+    it('passes a trimmed note through to the dispatch', () => {
+      const mockDispatch = vi.fn();
+      const settingsState = createDefaultSettingsState();
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: createWrapper(settingsState, mockDispatch),
+      });
+
+      act(() => {
+        result.current.addCustomVenue('Noted Casino', '  soft 1/3  ');
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: SETTINGS_ACTIONS.ADD_CUSTOM_VENUE,
+        payload: { venue: { name: 'Noted Casino', notes: 'soft 1/3' } },
       });
     });
   });
@@ -269,7 +289,7 @@ describe('SettingsContext', () => {
       const settingsState = createDefaultSettingsState({
         settings: {
           ...DEFAULT_SETTINGS,
-          customVenues: ['Custom Casino'],
+          customVenues: [{ name: 'Custom Casino', notes: '' }],
         },
       });
       const { result } = renderHook(() => useSettings(), {
@@ -376,7 +396,7 @@ describe('SettingsContext', () => {
       const settingsState = createDefaultSettingsState({
         settings: {
           ...DEFAULT_SETTINGS,
-          customVenues: ['Custom Casino'],
+          customVenues: [{ name: 'Custom Casino', notes: 'soft game' }],
         },
       });
       const { result } = renderHook(() => useSettings(), {
@@ -393,6 +413,56 @@ describe('SettingsContext', () => {
       });
 
       expect(result.current.isCustomVenue('Online')).toBe(false);
+    });
+  });
+
+  describe('getVenueNote helper', () => {
+    it('returns the note for a custom venue', () => {
+      const settingsState = createDefaultSettingsState({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          customVenues: [{ name: 'Custom Casino', notes: 'soft 1/3, $2 max rake' }],
+        },
+      });
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: createWrapper(settingsState),
+      });
+
+      expect(result.current.getVenueNote('Custom Casino')).toBe('soft 1/3, $2 max rake');
+    });
+
+    it('returns empty string for a built-in or unknown venue', () => {
+      const settingsState = createDefaultSettingsState();
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: createWrapper(settingsState),
+      });
+
+      expect(result.current.getVenueNote('Online')).toBe('');
+      expect(result.current.getVenueNote('Nonexistent')).toBe('');
+    });
+  });
+
+  describe('setVenueNote handler', () => {
+    it('dispatches SET_VENUE_NOTE with the name and note', () => {
+      const mockDispatch = vi.fn();
+      const settingsState = createDefaultSettingsState({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          customVenues: [{ name: 'Custom Casino', notes: '' }],
+        },
+      });
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: createWrapper(settingsState, mockDispatch),
+      });
+
+      act(() => {
+        result.current.setVenueNote('Custom Casino', 'updated note');
+      });
+
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: SETTINGS_ACTIONS.SET_VENUE_NOTE,
+        payload: { name: 'Custom Casino', notes: 'updated note' },
+      });
     });
   });
 

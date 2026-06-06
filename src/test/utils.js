@@ -345,7 +345,7 @@ export const ALL_VALID_CARDS = (() => {
  * // Test with custom settings
  * it('shows custom venues', () => {
  *   const customState = createMockSettingsState({
- *     settings: { customVenues: ['My Casino'] }
+ *     settings: { customVenues: [{ name: 'My Casino', notes: '' }] }
  *   });
  *   renderWithSettings(<MyComponent />, customState);
  * });
