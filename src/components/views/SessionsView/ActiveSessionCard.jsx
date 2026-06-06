@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Square } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Square, Clock } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS, SESSION_GOALS } from '../../../constants/sessionConstants';
 import { formatTime12Hour, calculateTotalRebuy } from '../../../utils/displayUtils';
 import { useToast } from '../../../contexts/ToastContext';
@@ -32,17 +32,21 @@ export const ActiveSessionCard = ({
   const [goalValue, setGoalValue] = useState('');
   const [rebuyAmount, setRebuyAmount] = useState('');
 
-  // Format relative time
-  const formatRelativeTime = (timestamp) => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
+  // Live elapsed timer — Phase 4 (Sessions View Improvement, 2026-06-06).
+  // Ticks every 30s so "Playing for …" stays current without a per-second
+  // re-render. Replaces the old static "Started Xm ago" with a precise,
+  // continuously-updating elapsed time.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+  const formatElapsed = (start) => {
+    const ms = Math.max(0, nowTs - start);
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
   // Get default rebuy amount based on game type
@@ -129,8 +133,9 @@ export const ActiveSessionCard = ({
           <h2 className="text-2xl font-bold mb-1">
             {currentSession.venue} - {currentSession.gameType} - {formatTime12Hour(currentSession.startTime)}
           </h2>
-          <p className="text-green-100">
-            Started {formatRelativeTime(currentSession.startTime)}
+          <p className="text-green-100 flex items-center gap-1.5 tabular-nums" data-testid="active-session-elapsed">
+            <Clock size={14} />
+            Playing for {formatElapsed(currentSession.startTime)}
           </p>
         </div>
         <button
@@ -142,8 +147,8 @@ export const ActiveSessionCard = ({
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4 text-sm">
+      {/* Stats Grid — stacks on narrow phones (portrait-native), 3-up on wider. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
         {/* Hands */}
         <div className="bg-white/10 rounded-lg p-3">
           <div className="text-green-100 mb-1">Hands</div>

@@ -11,6 +11,7 @@ import { ActiveSessionCard } from '../ActiveSessionCard';
 // using useToast (which transitively imports Toast.jsx icons).
 vi.mock('lucide-react', () => ({
   Square: () => <span data-testid="square-icon">■</span>,
+  Clock: () => <span data-testid="clock-icon">⏱</span>,
   X: () => <span data-testid="x-icon">×</span>,
   AlertCircle: () => <span data-testid="alert-icon">!</span>,
   CheckCircle: () => <span data-testid="check-icon">✓</span>,
@@ -60,9 +61,10 @@ describe('ActiveSessionCard', () => {
       expect(screen.getByText(/Horseshoe Casino - 1\/2 NL/)).toBeInTheDocument();
     });
 
-    it('renders relative time since start', () => {
+    it('renders the live elapsed timer since start', () => {
       render(<ActiveSessionCard {...defaultProps} />);
-      expect(screen.getByText(/Started/)).toBeInTheDocument();
+      // defaultProps.startTime is 1h ago → "Playing for 1h 0m".
+      expect(screen.getByTestId('active-session-elapsed')).toHaveTextContent(/Playing for/);
     });
 
     it('renders End Session button', () => {
@@ -337,32 +339,32 @@ describe('ActiveSessionCard', () => {
     });
   });
 
-  describe('relative time formatting', () => {
-    it('formats minutes ago', () => {
+  describe('live elapsed timer', () => {
+    it('formats minutes-only when under an hour', () => {
       const props = {
         ...defaultProps,
         currentSession: { ...baseSession, startTime: Date.now() - 5 * 60000 },
       };
       render(<ActiveSessionCard {...props} />);
-      expect(screen.getByText(/5m ago/)).toBeInTheDocument();
+      expect(screen.getByTestId('active-session-elapsed')).toHaveTextContent('Playing for 5m');
     });
 
-    it('formats hours ago', () => {
+    it('formats hours and minutes past an hour', () => {
       const props = {
         ...defaultProps,
-        currentSession: { ...baseSession, startTime: Date.now() - 2 * 3600000 },
+        currentSession: { ...baseSession, startTime: Date.now() - (2 * 3600000 + 15 * 60000) },
       };
       render(<ActiveSessionCard {...props} />);
-      expect(screen.getByText(/2h ago/)).toBeInTheDocument();
+      expect(screen.getByTestId('active-session-elapsed')).toHaveTextContent('Playing for 2h 15m');
     });
 
-    it('formats days ago', () => {
+    it('clamps to 0m for a future start time (clock skew)', () => {
       const props = {
         ...defaultProps,
-        currentSession: { ...baseSession, startTime: Date.now() - 3 * 86400000 },
+        currentSession: { ...baseSession, startTime: Date.now() + 60000 },
       };
       render(<ActiveSessionCard {...props} />);
-      expect(screen.getByText(/3d ago/)).toBeInTheDocument();
+      expect(screen.getByTestId('active-session-elapsed')).toHaveTextContent('Playing for 0m');
     });
   });
 
