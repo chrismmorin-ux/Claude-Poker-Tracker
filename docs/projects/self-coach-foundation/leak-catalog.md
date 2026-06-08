@@ -23,13 +23,13 @@ This catalog **is** that mechanism.
 | Flop sizing | 2 | 0 | 0 | 2 | 0 | 0 |
 | Turn barrel | 3 | 0 | 0 | 1 | 2 | 0 |
 | River bluff-catch | 2 | 0 | 0 | 0 | 2 | 0 |
-| Multiway adjustment | 2 | 0 | 0 | 1 | 1 | 0 |
+| Multiway adjustment | 2 | **1** ★ | 0 | 0 | 1 | 0 |
 | Capped-range misread | 2 | 0 | 0 | 1 | 1 | 0 |
 | Position discipline | 2 | 0 | 0 | 2 | 0 | 0 |
 | Sample-size discipline | 2 | 0 | 0 | 2 | 0 | 0 |
-| **Total** | **25** | **6** | 0 | 12 | 6 | 1 |
+| **Total** | **25** | **7** | 0 | 11 | 6 | 1 |
 
-**v1 milestone:** 6/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031); ★ OOP cbet defense overfold (SPR-040); ★ Flop vs donk misresponse (SPR-040); ★ PF 3bet overfold (SPR-046); ★ OOP 3bet underfold (SPR-046)). Flop-continuation category **closed 3/3**; preflop fold-equity **3/4 shipped** (1 deferred — `hero-pf-open-overfold` blocked on accumulator design). Shipped rules bind to **cluster umbrella concepts** (SPR-033 / WS-148 + SPR-040 + SPR-046): `cbet-defense-cluster` + `bb-defense-cluster` + `oop-cbet-defense-cluster` + `flop-vs-donk-defense-cluster` + `pf-3bet-defense-cluster` + `oop-3bet-defense-cluster`. SPR-046 also shipped the **first UNDER-fold direction** in the catalog (`hero-oop-3bet-underfold`) — establishes the mirror detection pattern for future under-fold rules. Per the granularity floor (`feedback_scf_high_granularity.md`), 29 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
+**v1 milestone:** 7/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031); ★ OOP cbet defense overfold (SPR-040); ★ Flop vs donk misresponse (SPR-040); ★ PF 3bet overfold (SPR-046); ★ OOP 3bet underfold (SPR-046); ★ Multiway cbet frequency (SPR-108) — **first decision-bucket/aggression-frequency rule**, opening the frequency-of-aggression substrate that was the blocker class deferred since SPR-046). Flop-continuation category **closed 3/3**; preflop fold-equity **3/4 shipped** (1 deferred — `hero-pf-open-overfold` blocked on accumulator design). Shipped rules bind to **cluster umbrella concepts** (SPR-033 / WS-148 + SPR-040 + SPR-046): `cbet-defense-cluster` + `bb-defense-cluster` + `oop-cbet-defense-cluster` + `flop-vs-donk-defense-cluster` + `pf-3bet-defense-cluster` + `oop-3bet-defense-cluster`. SPR-046 also shipped the **first UNDER-fold direction** in the catalog (`hero-oop-3bet-underfold`) — establishes the mirror detection pattern for future under-fold rules. Per the granularity floor (`feedback_scf_high_granularity.md`), 29 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
 
 **SPR-040 architectural note:** Situation key extended from 7 to 8 axes (added `preflopAggressor` — `pfa`/`pfc`/`na`). This was necessary for the donk rule to distinguish "hero raised preflop, faces villain donk" from "hero called preflop, faces villain cbet" — both situations had collapsed to the same bucket under the 7-axis key. The IP cbet rule narrowed to `pfc` post-migration (donk-response cases now route to the new donk rule). All existing baselines + tests + sub-concept resolution migrated.
 
@@ -261,16 +261,19 @@ This catalog **is** that mechanism.
 
 ### Multiway adjustment leaks
 
-#### `hero-multiway-bluff-frequency`
-- **Label:** Bluffing too much in 3+ way pots
+#### `hero-multiway-bluff-frequency` ★ v1 (SPR-108)
+- **Label:** Multiway flop cbet frequency
 - **Category:** multiway-adjustment
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `flop:*:*:agg:*:bet:cbet` filtered by playersRemaining ≥ 3
-- **Solver baseline source:** Hardcoded (multiway cbet frequency should drop dramatically — 10-25% vs ~70% HU)
+- **Status:** **SHIPPED v1 (SPR-108 / WS-146 fifth claim)** — Drill-this opens `multiway-cbet-discipline-cluster.md`. **FIRST decision-bucket (aggression-frequency) rule in the catalog.**
+- **Decision key:** `flop:cbet-decision:mw` (NOT an 8-axis action key — a parallel decision-bucket key). Emitted by `deriveCbetDecision()` when hero was preflop aggressor, first-in on the flop, with ≥2 villains remaining (3+ way). Aggregates aggress (cbet) vs pass (check) so a FREQUENCY is computable.
+- **Solver baseline source:** Hardcoded ~25% (conservative high-end; multiway cbet frequency drops from ~70% HU because fold equity = ∏ fold rates, §7.4). Confidence 0.70. Fires on OVER-betting (>30% with 5pp delta).
+- **Ship sprint:** SPR-108
+- **Related concept:** `multiway-cbet-discipline-cluster` (umbrella; tier 5). Children `multiway-cbet-discipline-{3way,4way-plus}` registered ahead per v2 split (no SITUATION_KEY_TO_CONCEPT entries yet — umbrella absorbs fire-state, same as bb-defense v1).
+- **Substrate added (SPR-108):** The catalog's frequency-of-aggression blocker (named in the deferred `hero-pf-open-overfold` entry — cbet + check route to different `contextAction` buckets) is resolved here via catalog option (b): an additive parallel **decision-bucket** type in `heroDecisionAccumulator` + `deriveCbetDecision` + detector `bucketType: 'decision'` routing. The `playersRemaining` (`hu`/`mw`) dimension lives ONLY in the decision-bucket key, so the 6 shipped 8-axis fold-rate rules and their calibrations are untouched. This substrate also unblocks future frequency rules (turn barrel-frequency, RFI open-fold, HU cbet-frequency).
 - **Intent:** Multiway HU-style cbet frequency bleeds because fold equity drops multiplicatively.
-- **Scope notes:** Per design doc §7.4, multiway breaks HU range-vs-range — this rule operationalizes that.
-- **Expansion notes:** v2 split by playersRemaining (3-way vs 4-way+).
+- **Scope notes:** Per design doc §7.4, multiway breaks HU range-vs-range — this rule operationalizes that. v1 coarse single baseline (no texture/position split); flop only; over-betting direction only.
+- **Expansion notes:** v2 split decision key by playersRemaining (3-way vs 4-way+) + texture/position; v3 add turn barrel-frequency (same decision-bucket substrate) + HU under-cbet mirror.
 
 #### `hero-multiway-thin-value`
 - **Label:** Thin-value betting in multiway

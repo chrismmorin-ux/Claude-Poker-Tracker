@@ -5,8 +5,50 @@ status: in_progress
 claimed_by: ""
 claimed_at: null
 completed_at: null
-last_claim_completed_at: "2026-05-07T09:35:00Z"
-last_claim_sprint: "SPR-046"
+last_claim_completed_at: "2026-06-06T00:00:00Z"
+last_claim_sprint: "SPR-108"
+last_claim_attempted: "SPR-056 (abandoned 2026-05-09 in plan-mode — substrate blocker discovery)"
+spr108_claim_notes: |
+  SPR-108 fifth claim (2026-06-06): shipped hero-multiway-bluff-frequency
+  (catalog 6/25 → 7/25). FOUNDER-RATIFIED SCOPE EXPANSION M → L+ via
+  AskUserQuestion ("Frequency + multiway axis") after plan-mode substrate
+  verification discovered the WS-146 premise hit a boundary:
+
+  FINDING — the 6 prior shipped rules consumed ALL catalog entries that fit
+  the 8-axis fold-rate-over-a-vs-bet-defense substrate. Every remaining
+  PLANNED entry needs a NEW situation-key axis (playersRemaining / sizing /
+  hand-strength) OR a frequency-of-aggression accumulator path (cbet+check
+  route to different contextAction buckets — the same blocker that deferred
+  hero-pf-open-overfold since SPR-046) OR is FUTURE-RESEARCH. No further rule
+  was authorable as a pure single-file addition.
+
+  SHIPPED (substrate + rule, additive — zero migration of the 6 shipped rules):
+    - deriveSituationKey.deriveCbetDecision() — derives a coarse decision key
+      flop:cbet-decision:{hu|mw} (mw = ≥2 villains remaining) classifying
+      hero-as-PFA first-in flop actions as aggress (cbet) / pass (check).
+      playersRemaining dimension lives ONLY in this new bucket type.
+    - heroDecisionAccumulator — parallel `decisionBuckets` output with
+      aggressFrequency + Wilson CI (catalog resolution option b).
+    - heroLeakDetector — `bucketType: 'decision'` routing; iterates
+      decisionBuckets for opt-in rules; action rules untouched, backward-compat.
+    - leakRules/heroMultiwayBluffFrequency.js — FIRST decision-bucket
+      (aggression-frequency) rule. Fires on OVER-cbetting multiway (baseline
+      ~25%, conf 0.70; fold equity = ∏ fold rates per §7.4).
+    - solverBaselines flop:cbet-decision:mw; tierConceptMap umbrella
+      multiway-cbet-discipline-cluster (tier 5) + 2 anticipated children;
+      lesson multiway-cbet-discipline-cluster.md; leak-catalog SHIPPED status.
+  +24 net tests (14 rule + 6 accumulator decision-bucket + 4 detector).
+  Full smart-test-runner 11,952 passing / 20 skipped / 2 pre-existing flakes
+  (conceptMastery.test.js:120 date-aged + slow-EV-timeout-under-load — both
+  confirmed reproduce on pre-change main). Production build clean (11.14s).
+  First-principles guard preserved (decision label is OUTPUT; rule compares
+  OBSERVED frequency to a hardcoded baseline, no label-as-input).
+
+  SUBSTRATE NOW UNBLOCKS (next claims, no further substrate work): turn
+  barrel-frequency, RFI open-fold (the deferred hero-pf-open-overfold — same
+  frequency-of-aggression path), HU under-cbet mirror. Other blocked classes
+  still need their own axes (sizing leaks → sizing axis; position-discipline
+  / thin-value / capped → hand-strength axis).
 last_claim_attempted: "SPR-056 (abandoned 2026-05-09 in plan-mode — substrate blocker discovery)"
 last_claim_notes: |
   SPR-046 third claim (2026-05-07): pivot from original (hero-pf-open-overfold

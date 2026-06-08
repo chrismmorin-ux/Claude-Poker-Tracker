@@ -20,7 +20,12 @@
  * compute keys identically to the offline accumulator.
  */
 
-import { deriveSituationKey, buildHeroSituationKey, _internals } from './deriveSituationKey.js';
+import {
+  deriveSituationKey,
+  deriveCbetDecision,
+  buildHeroSituationKey,
+  _internals,
+} from './deriveSituationKey.js';
 
 const { NORMALIZE_ACTION } = _internals;
 
@@ -38,10 +43,16 @@ export { buildHeroSituationKey };
  */
 export const accumulateHeroDecisions = ({ hands, heroSeat }) => {
   const buckets = {};
+  // Parallel bucket type for aggression-frequency decisions (WS-146 SPR-108).
+  // Keyed by decision key (e.g. 'flop:cbet-decision:mw'); counts aggress (cbet)
+  // vs pass (check) so cbetFrequency is computable from one bucket — the
+  // 8-axis action buckets above cannot do this (cbet + check route to
+  // different contextAction keys).
+  const decisionBuckets = {};
   let totalActions = 0;
 
   if (!Array.isArray(hands) || !heroSeat) {
-    return { buckets, totalActions: 0, sparseBucketCount: 0, totalBucketCount: 0 };
+    return { buckets, decisionBuckets, totalActions: 0, sparseBucketCount: 0, totalBucketCount: 0 };
   }
 
   for (const hand of hands) {
@@ -83,6 +94,34 @@ export const accumulateHeroDecisions = ({ hands, heroSeat }) => {
       else if (verb === 'raise') bucket.raiseCount += 1;
       else if (verb === 'check') bucket.checkCount += 1;
       else if (verb === 'bet') bucket.betCount += 1;
+
+      // Parallel decision-bucket population: if this hero action is a flop
+      // cbet decision (hero-as-PFA, first-in), aggregate aggress (cbet) vs
+      // pass (check) into the decision bucket. Most hero actions return null
+      // here (not a cbet decision) — only first-in flop continuation acts.
+      const decision = deriveCbetDecision({
+        hand,
+        actionEntry: heroAction,
+        heroSeat,
+        buttonSeat,
+        totalPlayers,
+      });
+      if (decision) {
+        if (!decisionBuckets[decision.decisionKey]) {
+          decisionBuckets[decision.decisionKey] = {
+            situationKey: decision.decisionKey, // alias so the detector interface (matchesBucket/bucket.situationKey) is shared
+            decisionKey: decision.decisionKey,
+            playersRemaining: decision.playersRemaining,
+            aggressCount: 0,
+            passCount: 0,
+            sampleSize: 0,
+          };
+        }
+        const db = decisionBuckets[decision.decisionKey];
+        db.sampleSize += 1;
+        if (decision.decisionClass === 'aggress') db.aggressCount += 1;
+        else db.passCount += 1;
+      }
     }
   }
 
@@ -96,9 +135,17 @@ export const accumulateHeroDecisions = ({ hands, heroSeat }) => {
     b.foldRateCI = ci;
   }
 
+  // Derived stats per decision bucket: aggression frequency + Wilson CI.
+  for (const key of Object.keys(decisionBuckets)) {
+    const d = decisionBuckets[key];
+    d.aggressFrequency = d.sampleSize > 0 ? d.aggressCount / d.sampleSize : 0;
+    d.aggressFrequencyCI = wilsonCI(d.aggressCount, d.sampleSize);
+  }
+
   const bucketKeys = Object.keys(buckets);
   return {
     buckets,
+    decisionBuckets,
     totalActions,
     totalBucketCount: bucketKeys.length,
     sparseBucketCount: bucketKeys.filter((k) => buckets[k].sampleSize < 30).length,

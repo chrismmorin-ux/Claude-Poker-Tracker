@@ -176,6 +176,28 @@ export const CONCEPT_REGISTRY = {
 
   // ─── Tier 5 — capped vs uncapped range awareness ──────────────────────
   'capped-vs-uncapped-ranges': { kind: 'general-skill', tier: 5, parent: null, children: [] },
+
+  // ─── Tier 5 (cont.) — multiway cbet discipline umbrella (SPR-108 / WS-146 fifth claim) ────
+  // hero-multiway-bluff-frequency: hero cbets too often as PFA in 3+ way pots.
+  // First DECISION-bucket (aggression-frequency) rule in the catalog. Tier 5
+  // because multiway adjustment requires understanding that fold equity drops
+  // multiplicatively (HERO_STATE_DESIGN.md §7.4) on top of cbet fundamentals.
+  // v1 fires on the coarse `flop:cbet-decision:mw` bucket → umbrella absorbs
+  // fire-state (no SITUATION_KEY_TO_CONCEPT entry yet, same as bb-defense v1).
+  // Children registered ahead per the catalog v2 split (3-way vs 4-way+);
+  // their SITUATION_KEY_TO_CONCEPT entries land when the playersRemaining
+  // bucket splits in v2. Sub-concept lessons follow in WS-149.
+  'multiway-cbet-discipline-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 5,
+    parent: null,
+    children: [
+      'multiway-cbet-discipline-3way',
+      'multiway-cbet-discipline-4way-plus',
+    ],
+  },
+  'multiway-cbet-discipline-3way':      { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
+  'multiway-cbet-discipline-4way-plus': { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
 };
 
 // ─── Reverse map: situation-key → most-specific conceptId ───────────────

@@ -95,6 +95,22 @@ const BASELINES = {
   // defense width; baseline is averaged across typical sizings).
   'preflop:none:SMALL_BLIND:def:oop:raise:vs3bet:na': { baseline: 0.72, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-05-07' },
   'preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na':   { baseline: 0.75, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-05-07' },
+
+  // ─── hero-multiway-bluff-frequency rule (SHIPPED v1, SPR-108 / WS-146 fifth claim) ────
+  // DECISION-bucket baseline (not an 8-axis action key). Multiway flop cbet
+  // frequency: how often hero continuation-bets the flop as the preflop
+  // aggressor in a 3+ way pot. Fold equity drops multiplicatively with each
+  // extra player (∏ fold rates — see HERO_STATE_DESIGN.md §7.4), so the
+  // profitable cbet frequency collapses from ~70% heads-up to ~10-25% multiway.
+  // The rule fires on OVER-betting (cbet frequency too HIGH = bluffing too much).
+  // v1 single coarse baseline (no texture/position/3way-vs-4way+ split — those
+  // are v2 expansions). Conservative high-end baseline (0.25) + 5pp delta means
+  // the rule only flags clear over-continuation (>30%), avoiding false positives
+  // on the sparser multiway sample. Confidence 0.70 (lower than fold-rate
+  // baselines — multiway solver data is sparser + the metric mixes value+bluff
+  // cbets; a high observed frequency is dominated by over-bluffing because the
+  // value fraction is small multiway).
+  'flop:cbet-decision:mw': { baseline: 0.25, source: 'hardcoded', confidence: 0.70, lastValidatedAt: '2026-06-06' },
 };
 
 /**

@@ -1,0 +1,79 @@
+id: "SPR-109"
+title: "SCF leak rules — frequency-of-aggression follow-through (turn barrel + RFI open-fold) (WS-146 6th claim)"
+status: approved
+goal: >
+  The self-coach catches two more real mistakes — barreling the turn too often,
+  and opening too tight preflop — by reusing the aggression-frequency machinery
+  we built last sprint, with no new plumbing.
+program_focus: design
+program_initiative: >
+  Direct follow-through on SPR-108. SPR-108 paid the one-time substrate cost
+  (parallel decision-bucket accumulator + deriveCbetDecision + bucketType:'decision'
+  detector routing) and the leak-catalog explicitly states that investment unblocks
+  the turn-barrel-frequency, RFI open-fold, and HU cbet-frequency rules with no
+  further substrate work. This sprint capitalizes while the substrate is fresh.
+  WS-146 is the highest-priority genuinely-ready item: the higher-scored frontrunners
+  remain blocked (launch P22 = domain-correctness program gate + external founder
+  decisions; WS-191 P20 = soft-blocked on uncaptured live-session telemetry; EAL
+  P15 all needs-rescope). Sixth catalog-driven claim of the proven WS-146 pattern.
+composed_by: auto
+created_at: "2026-06-06T00:00:00Z"
+approved_at: "2026-06-06T00:00:00Z"
+completed_at: null
+
+item_count: 1
+items_done: 0
+
+decisions_needed:
+  - "Item #1: Confirm which rules to ship. Recommend BOTH hero-turn-barrel-frequency (turn-barrel category 0/3 — top coverage-gap; over-barrel direction; HU coarse baseline ~0.50) + hero-pf-open-overfold (preflop fold-equity 3/4 -> 4/4; resolves the SPR-046 deferral; UNDER-open direction = first under-FREQUENCY decision-bucket rule; position-split baselines). Alternatives: ship only one (turn-barrel is simpler; RFI closes the long-standing deferral), or swap in the HU under-cbet mirror. Confirmed in plan mode after substrate re-verification."
+
+composition_notes: |
+  Premise verified at composition (verify-at-composition discipline). Read WS-146.yaml
+  + leak-catalog.md + deriveSituationKey.js + heroDecisionAccumulator.js +
+  solverBaselines.js + heroLeakDetector.js. Confirmed the SPR-108 decision-bucket
+  substrate genuinely supports both recommended rules as additive single-file rules
+  + small derivation helpers (no migration of the 6 shipped 8-axis fold-rate rules):
+    - hero-turn-barrel-frequency: derive turn:barrel-decision:hu from a new
+      deriveTurnBarrelDecision (hero pfa + bet flop + first-in turn -> aggress(bet)
+      / pass(check)). Over-frequency rule, mirrors heroMultiwayBluffFrequency polarity.
+    - hero-pf-open-overfold (DEFERRED since SPR-046): derive preflop:rfi-decision:{POS}
+      from a new deriveRfiDecision (folded to hero -> open(raise)=aggress / fold=pass;
+      limp excluded for v1). UNDER-frequency rule (open freq too LOW) — first under-
+      frequency decision-bucket rule; mirrors hero-oop-3bet-underfold direction.
+      Position-split baselines (EARLY/MIDDLE/LATE/BUTTON). The exact accumulator
+      decision-bucket path SPR-108 named as the resolution for this blocker.
+  Accumulator generalization: replace the single hardcoded deriveCbetDecision call
+  with a registry of decision derivers (cbet + turn-barrel + rfi), each returning a
+  decision or null. Additive; existing flop:cbet-decision unaffected.
+
+  Blocked frontrunners (re-verified — same-day finding from SPR-108 holds):
+  launch P22 program-gated + founder-decision-blocked; WS-191 P20 soft-blocked on
+  telemetry; EAL P15 needs-rescope.
+
+  Source-class damping (Step 2d): last 3 anchors WS-146 (spr-followup), WS-190
+  (conversation), WS-154 (HSP plan). No auto-rec/engine-finding saturation -> no damping.
+  Fleet-anchor rotation: N/A in this product repo (no fleet/repo-goal candidate).
+  Tooling: kit/scripts/ absent -> cwos-reconcile/anti-goal/state-store steps degrade
+  gracefully (done by hand on touched entries).
+
+  anti_goal_check: { status: skipped_tooling_absent, reviewed_at: "2026-06-06T00:00:00Z" }
+  No constitutional concern: owner-built coaching detection is autonomy-aligned
+  (owner-volunteered grading permitted); factual CD-5 copy, no engagement-pressure /
+  mastery-rank / shame substrate.
+
+items:
+  - seq: 1
+    id: "WS-146"
+    title: "SCF G5 child 2 — ship turn-barrel + RFI open-fold frequency rules (6th claim)"
+    mode: plan-first
+    effort: "M"
+    status: pending
+    program: design
+    type: improvement
+    decision_flags:
+      - "Which rules to ship (recommend turn-barrel + RFI open-fold; alt: one of them, or HU under-cbet mirror)"
+      - "Substrate re-verification in plan mode before authoring: confirm deriveTurnBarrelDecision (hero-bet-flop precondition) + deriveRfiDecision (first-in detection, limp handling) are cleanly derivable from existing primitives (SPR-046-blocker guard)"
+    candidate_rules:
+      - "hero-turn-barrel-frequency (PRIMARY) — turn-barrel 0/3; over-frequency; turn:barrel-decision:hu; coarse baseline ~0.50; mirrors heroMultiwayBluffFrequency"
+      - "hero-pf-open-overfold (PRIMARY) — preflop-fold-equity 3/4->4/4; under-frequency (first of its kind for decision buckets); preflop:rfi-decision:{EARLY|MIDDLE|LATE|BUTTON}; position-split baselines (~0.15/0.19/0.26/0.42); resolves SPR-046 deferral"
+    notes: "Catalog 7/25 -> 9/25 target (or 8/25 if one rule). Single-file rule per leakRules/ + decision-deriver helper + solverBaselines entries + tierConceptMap umbrella(s) + lesson(s) + catalog status update + tests. Auto-registered via import.meta.glob."

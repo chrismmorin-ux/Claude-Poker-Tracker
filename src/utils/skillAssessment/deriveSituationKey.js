@@ -256,6 +256,83 @@ export const deriveSituationKey = ({ hand, actionEntry, heroSeat, buttonSeat, to
   });
 };
 
+// ─── Aggression-frequency decision derivation (WS-146 SPR-108) ───────────
+//
+// The 8-axis situation key buckets each hero ACTION by what was taken (a
+// fold and a check route to different `contextAction` values). That makes
+// fold-rate-over-a-vs-bet-defense decisions computable from one bucket, but
+// NOT frequency-of-aggression decisions (cbet vs check live in separate
+// buckets). This mirrors the deferred `hero-pf-open-overfold` blocker
+// (catalog 2026-05-07): RFI fold + RFI open bucket to different keys.
+//
+// Resolution (catalog option b — additive parallel bucket type): a SEPARATE
+// "decision bucket" aggregates across the action-taken for a single decision
+// class, so cbetFrequency = aggress / (aggress + pass) is computable. The
+// player-count dimension (`hu` vs `mw`) lives ONLY in this new bucket type —
+// it does NOT fragment the 8-axis action buckets, so the 6 shipped action
+// rules and their calibrations are untouched.
+//
+// v1 scope: flop cbet decision only (hero was the preflop aggressor and is
+// first-in on the flop, choosing to continuation-bet or check). Coarse key
+// (no texture/position split) maximizes sample size for the rarer multiway
+// decision. Texture/position/3way-vs-4way+ splits are v2 expansions.
+
+const PLAYERS_REMAINING_BUCKET = (villainCount) => (villainCount >= 2 ? 'mw' : 'hu');
+
+/**
+ * Derive the cbet-frequency decision for a single hero action, or null if the
+ * action is not a flop cbet decision (hero-as-PFA, first-in on the flop).
+ *
+ * A cbet decision is: street===flop, hero was the preflop aggressor (`pfa`),
+ * and hero is first-in on the flop (no prior aggression this street, so the
+ * action's contextAction is `cbet` (hero bet/raised) or `check`). Facing a
+ * bet (`vsBet`), or hero-as-preflop-caller (`pfc`), is NOT a cbet decision.
+ *
+ * @param {object} args - Same shape as deriveSituationKey().
+ * @returns {{decisionKey: string, decisionClass: 'aggress'|'pass', playersRemaining: 'hu'|'mw', villainCount: number}|null}
+ */
+export const deriveCbetDecision = ({ hand, actionEntry, heroSeat, buttonSeat, totalPlayers = 6 }) => {
+  if (!hand || !actionEntry || !heroSeat || !buttonSeat) return null;
+  const street = actionEntry.street;
+  if (street !== 'flop') return null; // v1: flop cbet decision only
+
+  const actionSequence = hand?.gameState?.actionSequence || [];
+  const order = actionEntry.order ?? 0;
+
+  const preflopAggressor = DERIVE_PREFLOP_AGGRESSOR({ street, actionSequence, heroSeat });
+  if (preflopAggressor !== 'pfa') return null; // only hero-as-PFA continuation decisions
+
+  const isAgg = HERO_IS_AGGRESSOR({
+    street,
+    actionSequence,
+    heroSeat,
+    currentOrder: order,
+    currentAction: actionEntry.action,
+  });
+  const contextAction = DERIVE_CONTEXT_ACTION({
+    street,
+    action: actionEntry.action,
+    actionSequence,
+    order,
+    isAgg,
+  });
+
+  let decisionClass;
+  if (contextAction === 'cbet') decisionClass = 'aggress';
+  else if (contextAction === 'check') decisionClass = 'pass';
+  else return null; // vsBet / unknown — hero is not first-in, not a cbet decision
+
+  const villainCount = computeActiveOpponentSeats(actionSequence, heroSeat, street, order).length;
+  const playersRemaining = PLAYERS_REMAINING_BUCKET(villainCount);
+
+  return {
+    decisionKey: `${street}:cbet-decision:${playersRemaining}`,
+    decisionClass,
+    playersRemaining,
+    villainCount,
+  };
+};
+
 // Internal helpers exported for accumulator's bucket population (it needs
 // these same primitives to count actions per hand).
 export const _internals = {
@@ -263,6 +340,7 @@ export const _internals = {
   POS_CATEGORY_FOR_SEAT,
   DERIVE_TEXTURE,
   DERIVE_PREFLOP_AGGRESSOR,
+  PLAYERS_REMAINING_BUCKET,
   getBoardForStreet,
   computeActiveOpponentSeats,
 };

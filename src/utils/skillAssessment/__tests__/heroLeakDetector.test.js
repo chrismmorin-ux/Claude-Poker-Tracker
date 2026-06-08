@@ -151,3 +151,77 @@ describe('detectHeroLeaks', () => {
     expect(fired[0].situationKey).toBe('flop:medium:LATE:def:ip:bet:vsBet:pfc');
   });
 });
+
+describe('detectHeroLeaks — decision buckets (aggression-frequency rules, SPR-108)', () => {
+  it('fires the multiway bluff-frequency rule from a decision bucket', () => {
+    const accumulator = {
+      buckets: {},
+      decisionBuckets: {
+        'flop:cbet-decision:mw': {
+          situationKey: 'flop:cbet-decision:mw',
+          aggressCount: 30,
+          passCount: 20,
+          sampleSize: 50,
+          aggressFrequency: 0.60,
+          aggressFrequencyCI: { lower: 0.46, upper: 0.74, mean: 0.60 },
+        },
+      },
+    };
+    const fired = detectHeroLeaks(accumulator);
+    expect(fired.length).toBe(1);
+    expect(fired[0].leakRuleId).toBe('hero-multiway-bluff-frequency');
+    expect(fired[0].situationKey).toBe('flop:cbet-decision:mw');
+  });
+
+  it('does NOT fire on a within-baseline multiway cbet frequency', () => {
+    const accumulator = {
+      buckets: {},
+      decisionBuckets: {
+        'flop:cbet-decision:mw': {
+          situationKey: 'flop:cbet-decision:mw',
+          aggressCount: 12,
+          passCount: 38,
+          sampleSize: 50,
+          aggressFrequency: 0.24, // ~ baseline 0.25
+          aggressFrequencyCI: { lower: 0.14, upper: 0.37, mean: 0.24 },
+        },
+      },
+    };
+    expect(detectHeroLeaks(accumulator)).toEqual([]);
+  });
+
+  it('does NOT fire on the heads-up decision bucket (no HU rule yet)', () => {
+    const accumulator = {
+      buckets: {},
+      decisionBuckets: {
+        'flop:cbet-decision:hu': {
+          situationKey: 'flop:cbet-decision:hu',
+          aggressCount: 40,
+          passCount: 10,
+          sampleSize: 50,
+          aggressFrequency: 0.80,
+          aggressFrequencyCI: { lower: 0.68, upper: 0.89, mean: 0.80 },
+        },
+      },
+    };
+    expect(detectHeroLeaks(accumulator)).toEqual([]);
+  });
+
+  it('is backward-compatible: accumulator output without decisionBuckets does not throw', () => {
+    const accumulator = {
+      buckets: {
+        'flop:medium:LATE:def:ip:bet:vsBet:pfc': {
+          situationKey: 'flop:medium:LATE:def:ip:bet:vsBet:pfc',
+          sampleSize: 50,
+          foldCount: 35,
+          foldRate: 0.70,
+          foldRateCI: { lower: 0.56, upper: 0.84, mean: 0.70 },
+        },
+      },
+      // no decisionBuckets key
+    };
+    const fired = detectHeroLeaks(accumulator);
+    expect(fired.length).toBe(1);
+    expect(fired[0].leakRuleId).toBe('hero-ip-cbet-overfold');
+  });
+});

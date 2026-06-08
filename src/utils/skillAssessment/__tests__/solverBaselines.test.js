@@ -103,8 +103,9 @@ describe('listCoveredSituationKeys', () => {
   it('returns sorted list of all baseline keys', () => {
     const keys = listCoveredSituationKeys();
     // 6 IP cbet + 1 BB defense + 6 OOP cbet + 6 donk + 4 PF 3bet (per-position;
-    // isIP normalized) + 2 OOP 3bet underfold = 25 keys post-SPR-046
-    expect(keys.length).toBe(25);
+    // isIP normalized) + 2 OOP 3bet underfold = 25 keys post-SPR-046; + 1
+    // multiway cbet-frequency decision-bucket baseline = 26 post-SPR-108.
+    expect(keys.length).toBe(26);
     const sorted = [...keys].sort();
     expect(keys).toEqual(sorted);
   });

@@ -217,3 +217,105 @@ describe('accumulateHeroDecisions — bucketing', () => {
     expect(flopBucket.foldRateCI.lower).toBeGreaterThan(0.85);
   });
 });
+
+// ─── decisionBuckets — aggression-frequency (WS-146 SPR-108) ─────────────
+
+describe('accumulateHeroDecisions — decisionBuckets (cbet frequency)', () => {
+  // Hero (seat 1) raised preflop (PFA), then makes a first-in flop decision.
+  // villainCount comes from how many opponents called preflop and stayed in.
+  const buildCbetHand = ({ flopAction, callers }) => ({
+    gameState: {
+      dealerButtonSeat: BTN_SEAT,
+      mySeat: HERO_SEAT,
+      players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+      actionSequence: [
+        { seat: HERO_SEAT, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+        ...callers.map((seat, i) => ({ seat, action: 'call', street: 'preflop', order: i + 1, amount: 2.5 })),
+        { seat: HERO_SEAT, action: flopAction, street: 'flop', order: callers.length + 1, amount: flopAction === 'bet' ? 3 : 0 },
+      ],
+    },
+    cardState: { communityCards: [20, 13, 3], heroCards: [51, 46] },
+  });
+
+  it('emits a multiway cbet decision bucket when hero (PFA) bets flop 3-way', () => {
+    const hand = buildCbetHand({ flopAction: 'bet', callers: [2, 3] });
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    expect(result.decisionBuckets).toBeDefined();
+    const mw = result.decisionBuckets['flop:cbet-decision:mw'];
+    expect(mw).toBeDefined();
+    expect(mw.aggressCount).toBe(1);
+    expect(mw.passCount).toBe(0);
+    expect(mw.sampleSize).toBe(1);
+    expect(mw.aggressFrequency).toBe(1.0);
+    expect(mw.playersRemaining).toBe('mw');
+  });
+
+  it('classifies a first-in flop check (PFA) as a pass', () => {
+    const hand = buildCbetHand({ flopAction: 'check', callers: [2, 3] });
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    const mw = result.decisionBuckets['flop:cbet-decision:mw'];
+    expect(mw.aggressCount).toBe(0);
+    expect(mw.passCount).toBe(1);
+    expect(mw.aggressFrequency).toBe(0);
+  });
+
+  it('buckets a heads-up cbet decision under :hu (not :mw)', () => {
+    const hand = buildCbetHand({ flopAction: 'bet', callers: [2] }); // single caller → HU
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    expect(result.decisionBuckets['flop:cbet-decision:hu']).toBeDefined();
+    expect(result.decisionBuckets['flop:cbet-decision:mw']).toBeUndefined();
+  });
+
+  it('does NOT emit a cbet decision when hero was a preflop caller (pfc)', () => {
+    // Hero calls preflop (seat 4 opens), then leads flop — that is a donk/probe,
+    // not a cbet decision. deriveCbetDecision returns null (hero is pfc).
+    const hand = {
+      gameState: {
+        dealerButtonSeat: BTN_SEAT,
+        mySeat: HERO_SEAT,
+        players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+        actionSequence: [
+          { seat: 4, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'call', street: 'preflop', order: 1, amount: 2.5 },
+          { seat: 2, action: 'call', street: 'preflop', order: 2, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'bet', street: 'flop', order: 3, amount: 3 },
+        ],
+      },
+      cardState: { communityCards: [20, 13, 3], heroCards: [51, 46] },
+    };
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    expect(Object.keys(result.decisionBuckets)).toHaveLength(0);
+    // ...but the action bucket still records the flop bet normally.
+    expect(result.totalActions).toBe(2);
+  });
+
+  it('aggregates cbet frequency across multiple multiway hands + computes CI', () => {
+    const hands = [
+      ...Array.from({ length: 6 }, () => buildCbetHand({ flopAction: 'bet', callers: [2, 3] })),
+      ...Array.from({ length: 4 }, () => buildCbetHand({ flopAction: 'check', callers: [2, 3] })),
+    ];
+    const result = accumulateHeroDecisions({ hands, heroSeat: HERO_SEAT });
+    const mw = result.decisionBuckets['flop:cbet-decision:mw'];
+    expect(mw.sampleSize).toBe(10);
+    expect(mw.aggressCount).toBe(6);
+    expect(mw.aggressFrequency).toBeCloseTo(0.6, 5);
+    expect(mw.aggressFrequencyCI.mean).toBeCloseTo(0.6, 5);
+    expect(mw.aggressFrequencyCI.lower).toBeLessThan(0.6);
+    expect(mw.aggressFrequencyCI.upper).toBeGreaterThan(0.6);
+  });
+
+  it('decisionBuckets is present (empty) even when no cbet decisions occur', () => {
+    const hand = buildHand({
+      heroAction: 'fold',
+      street: 'flop',
+      priorActions: [
+        { seat: 4, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+        { seat: HERO_SEAT, action: 'call', street: 'preflop', order: 1 },
+        { seat: 4, action: 'bet', street: 'flop', order: 2, amount: 3 },
+      ],
+    });
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    expect(result.decisionBuckets).toBeDefined();
+    expect(Object.keys(result.decisionBuckets)).toHaveLength(0);
+  });
+});

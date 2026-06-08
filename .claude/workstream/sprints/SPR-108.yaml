@@ -1,0 +1,101 @@
+id: "SPR-108"
+title: "SCF leak rules — ship 2 more catalog rules incl. first multiway-specific (WS-146 5th claim)"
+status: completed
+goal: >
+  The self-coach catches two more real mistakes at the table — including its
+  first multiway-specific leak (over-bluffing in 3+ way pots) — so it covers a
+  wider slice of the spots that actually cost you money.
+program_focus: design
+program_initiative: >
+  First sprint after SPR-107. WS-146 is the highest-priority genuinely-ready item
+  after premise verification corrected the queue: the three highest-scored items
+  are all blocked (launch P22 = domain-correctness program gate + external founder
+  decisions; WS-191 P20 = soft-blocked on uncaptured live-session telemetry), and
+  WS-185 + WS-155 were stale-done in the index. WS-146 is the proven catalog-driven
+  authoring pattern (4 clean prior claims SPR-031/040/046). The recommended primary
+  rule (hero-multiway-bluff-frequency) operationalizes design-doc §7.4 and builds
+  directly on the multiway HSP model just shipped in SPR-106.
+composed_by: auto
+created_at: "2026-06-06T00:00:00Z"
+approved_at: "2026-06-06T00:00:00Z"
+completed_at: null
+
+item_count: 1
+items_done: 1
+completed_summary: >
+  SHIPPED. Plan-mode substrate verification found WS-146 hit a boundary: the 6
+  prior shipped rules consumed all catalog entries fitting the 8-axis
+  fold-rate-over-vsBet-defense substrate; every remaining entry needs a new
+  situation-key axis / a frequency-of-aggression accumulator path / is
+  future-research. Founder ratified scope expansion M→L+ ("Frequency + multiway
+  axis" via AskUserQuestion). Shipped the ADDITIVE frequency-of-aggression
+  substrate (deriveCbetDecision + parallel decisionBuckets + bucketType:'decision'
+  detector routing; player-count dimension lives only in the new bucket type so
+  the 6 fold-rate rules + calibrations are untouched) + hero-multiway-bluff-frequency
+  (first decision-bucket rule; fires on over-cbetting multiway, baseline ~25%,
+  §7.4 ∏-fold-rate rationale) + baseline + tier-5 umbrella concept + lesson +
+  catalog SHIPPED (7/25). +24 net tests (14 rule + 6 accumulator + 4 detector);
+  full smart-test-runner 11,952 passing / 20 skipped / 2 pre-existing flakes
+  (conceptMastery.test.js:120 date-aged + slow-EV-timeout-under-load, both
+  confirmed on pre-change main); production build clean (11.14s). First-principles
+  guard preserved. Substrate now unblocks turn-barrel + RFI-open-fold + HU-cbet
+  frequency rules next claim with no further substrate work.
+
+decisions_needed:
+  - "Item #1: Which 2 catalog leak rules to ship — recommend hero-multiway-bluff-frequency (multiway-adjustment, 0/2 category, hardcoded baseline, leverages SPR-106 multiway model) + one position-discipline rule (hero-oop-overplay or hero-ip-underplay, 0/2 category). Final pick made in plan mode AFTER verifying the accumulator/situation-key substrate supports each rule (guard against SPR-046-style mid-sprint structural block)."
+
+composition_notes: |
+  Premise verification at composition (verify-at-composition discipline) surfaced
+  queue-index drift — index last_updated 2026-05-30, predates SPR-104/105/106/107:
+  - WS-185 (EV-bucket display, P14) shows backlog but is DONE (SPR-083, 2026-05-16).
+  - WS-155 (HSP-X1 composition rule, P13) shows backlog but is DONE (SPR-105).
+  - WS-191 (seat autoselector Phase 2, P20) is soft-blocked (blocked_by_note):
+    needs >=3 owner-captured live-session telemetry observations that do not exist;
+    ticket status_note explicitly: "do not anchor a sprint on this until owner has
+    live-session data." Soft-block damps P20 -> 5.
+  - Launch P22 (WS-027/030/031/032/033/036): domain-correctness program blocks
+    launch (registry: blocks:[launch]) + external founder decisions (Q7 legal
+    scoping, payment-processor choice). Not workable now.
+  - EAL test-hardening (WS-020/023/025, P15): all flagged NEEDS-RESCOPE (SPR-071);
+    files_involved empty, vague accept_criteria; not execute-ready.
+
+  Fleet-anchor rotation (Step 3a-rotation): last 4 anchors (SPR-104/105/106/107)
+  all product work; this product repo has no fleet/repo-goal candidate in backlog
+  (no fleet-health program, no kit/ or engines/ distribution-surface items).
+  Override SKIPPED per spec: "no fleet/repo-goal candidate in current backlog."
+
+  Source-class damping (Step 2d): last 3 anchors are founder/plan/conversation
+  driven (WS-190 owner request, WS-154/WS-155 HSP plan). No auto-rec or
+  engine-finding saturation. WS-146 source = ws-013-decomposition (spr-followup
+  class, never damped). No damping applied.
+
+  Tooling note: kit/scripts/ absent in this repo — anti-goal auto-check
+  (cwos-constitutional-audit.js), state-store CLI, and cwos-reconcile/event
+  scripts unavailable. Steps degrade gracefully.
+
+  anti_goal_check: { status: skipped_tooling_absent, reviewed_at: "2026-06-06T00:00:00Z" }
+  Goal has no constitutional concern: owner-built coaching detections are
+  autonomy-aligned (owner-volunteered grading permitted per memory
+  feedback_owner_volunteered_grading.md). No engagement-pressure / mastery-rank /
+  shame-copy substrate.
+
+  QUEUE HOUSEKEEPING FLAGGED (not done this sprint, cwos-reconcile.js absent):
+  queue-index.yaml needs reconcile to clear WS-185 + WS-155 stale-backlog entries.
+
+items:
+  - seq: 1
+    id: "WS-146"
+    title: "SCF G5 child 2 — ship 2 more catalog leak rules (5th claim)"
+    mode: plan-first
+    effort: "M"
+    status: done
+    program: design
+    type: improvement
+    decision_flags:
+      - "Which 2 catalog entries to ship (by coverage gap + complexity tier)"
+      - "Substrate verification: confirm deriveSituationKey / heroDecisionAccumulator support each chosen rule's situation keys + filters BEFORE authoring (SPR-046 hero-pf-open-overfold was structurally blocked mid-sprint; same risk class for playersRemaining filter on multiway rule + hand-strength filter on position-discipline rules)"
+    candidate_rules:
+      - "hero-multiway-bluff-frequency (PRIMARY rec) — multiway-adjustment 0/2; Medium; hardcoded baseline (~10-25% multiway cbet vs ~70% HU); situation key flop:*:*:agg:*:bet:cbet filtered playersRemaining>=3; operationalizes design-doc §7.4; builds on SPR-106 multiway model"
+      - "hero-oop-overplay OR hero-ip-underplay (SECONDARY) — position-discipline 0/2; Medium; needs hand-strength filter (verify substrate)"
+      - "FALLBACK if both above hit substrate blockers: hero-pf-open-undersizing or hero-3bet-undersizing-oop (preflop-sizing 0/3) — but these need a NEW sizing axis (amount-based detector), bigger lift; only if frequency-based rules blocked"
+    notes: "Per WS-146 pattern: single-file rule per leakRules/ + solverBaselines entries + catalog status update + tests. Auto-registered via import.meta.glob (no detector code changes). Catalog 6/25 -> 8/25 target."

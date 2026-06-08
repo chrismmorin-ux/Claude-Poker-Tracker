@@ -297,9 +297,9 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
-    status_note: "3rd claim shipped 2026-05-07 SPR-046 (catalog 4/25 → 6/25): hero-pf-3bet-overfold + hero-oop-3bet-underfold (first UNDER-fold rule). Mid-sprint pivot from original hero-pf-open-overfold pair after discovery of accumulator structural blocker (RFI fold + open bucket to different keys); pf-open-overfold deferred with documented resolution path. Prior claims: SPR-031 (1 rule), SPR-040 (2 rules), SPR-046 (2 rules)."
+    claimed_by: "session-2026-06-06-next"
+    sprint_id: "SPR-109"
+    status_note: "6th claim IN PROGRESS SPR-109 (2026-06-06): turn-barrel + RFI open-fold frequency rules on the SPR-108 decision-bucket substrate (catalog-named unblocked next rules). Prior 5th claim SHIPPED SPR-108 (2026-06-06, catalog 6/25→7/25): hero-multiway-bluff-frequency — FIRST decision-bucket (aggression-frequency) rule. Founder-ratified scope expansion M→L+ ('Frequency + multiway axis' via AskUserQuestion) after plan-mode found WS-146 hit a substrate boundary (6 prior rules consumed all fold-rate-over-vsBet-defense catalog entries; remaining all need a new axis/frequency-path/research). Added ADDITIVE decision-bucket substrate (deriveCbetDecision + decisionBuckets + bucketType:'decision' detector routing) — zero migration of 6 shipped rules; unblocks turn-barrel/RFI-open-fold/HU-cbet frequency rules next claim. +24 net tests; 11,952 passing; build clean. Prior: SPR-031 (1), SPR-040 (2), SPR-046 (2 incl first UNDER-fold; mid-sprint pivot off hero-pf-open-overfold accumulator blocker)."
   - id: "WS-147"
     title: "SCF G5 child 3 — lesson authoring framework"
     status: done

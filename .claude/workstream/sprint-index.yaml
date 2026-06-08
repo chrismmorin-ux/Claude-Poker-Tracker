@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-06-05T00:00:00Z"
-sprint_count: 107
+last_updated: "2026-06-06T00:00:00Z"
+sprint_count: 109
 # 2026-06-04 — Single session closed both SPR-104 (WS-211 deferred from 2026-05-31)
 # AND SPR-105 (WS-155 HSP-X1, founder-ratified expanded scope). HSP v2 milestone
 # now: WS-155 + WS-211 done; WS-154 (multiway) is the lone hard-dep remaining
@@ -1271,6 +1271,18 @@ sprints:
     created_at: "2026-06-04T00:00:00Z"
     approved_at: "2026-06-04T00:00:00Z"
     completed_at: "2026-06-04T00:00:00Z"
+  - id: "SPR-108"
+    title: "SCF leak rules — first multiway-specific leak + frequency-of-aggression substrate (WS-146 5th claim)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    effort_summary: "M plan-first → L+ actual (founder-ratified scope expansion 'Frequency + multiway axis' via AskUserQuestion). Plan-mode substrate verification found WS-146 hit a boundary — 6 prior rules consumed all fold-rate-over-vsBet-defense catalog entries; remaining all need new axis/frequency-path/research. Shipped ADDITIVE frequency-of-aggression substrate (deriveCbetDecision + parallel decisionBuckets + bucketType:'decision' detector routing; playersRemaining dimension in new bucket type only → 6 fold-rate rules untouched) + hero-multiway-bluff-frequency (FIRST decision-bucket rule; over-cbet multiway, baseline ~25%, §7.4 ∏-fold-rate) + tier-5 umbrella + lesson + catalog 6/25→7/25. +24 net tests; smart-test-runner 11,952 passing / 20 skipped / 2 pre-existing flakes (conceptMastery:120 date-aged + slow-EV-timeout, both on pre-change main); build clean 11.14s. Substrate unblocks turn-barrel/RFI-open-fold/HU-cbet rules next."
+    program_focus: design
+    program_initiative: "First sprint after SPR-107. Highest-priority genuinely-ready item after premise verification corrected queue drift (WS-185/WS-155 stale-done; WS-191 soft-blocked; launch P22 program-gated + founder-decision-blocked; EAL P15 needs-rescope). WS-146 catalog-driven authoring (5th claim) reached the single-file substrate boundary; founder ratified the substrate investment that opens the frequency-of-aggression rule class (deferred since SPR-046)."
+    composed_by: auto
+    created_at: "2026-06-06T00:00:00Z"
+    approved_at: "2026-06-06T00:00:00Z"
+    completed_at: "2026-06-06T00:00:00Z"
   - id: "SPR-107"
     title: "Mid-hand tag-for-review — one-tap flag + Review Queue (WS-190)"
     status: completed
@@ -1295,3 +1307,15 @@ sprints:
     created_at: "2026-06-04T00:00:00Z"
     approved_at: "2026-06-04T00:00:00Z"
     completed_at: "2026-06-04T00:00:00Z"
+  - id: "SPR-109"
+    title: "SCF leak rules — frequency-of-aggression follow-through (turn barrel + RFI open-fold) (WS-146 6th claim)"
+    status: approved
+    item_count: 1
+    items_done: 0
+    effort_summary: "M plan-first (WS-146 6th claim). Composed via /next after SPR-108. Direct follow-through on the SPR-108 decision-bucket substrate (catalog names turn-barrel + RFI open-fold as the unblocked next rules, no further substrate work). Frontrunners re-verified blocked (launch P22 program-gated + founder-decision; WS-191 P20 telemetry soft-block; EAL P15 needs-rescope)."
+    program_focus: design
+    program_initiative: "Self-Coach Foundation Gate 5 — catalog authoring continuation. 6th WS-146 claim. Capitalizes on the fresh SPR-108 aggression-frequency substrate."
+    composed_by: auto
+    created_at: "2026-06-06T00:00:00Z"
+    approved_at: "2026-06-06T00:00:00Z"
+    completed_at: null
