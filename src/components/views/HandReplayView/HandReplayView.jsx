@@ -143,7 +143,14 @@ export const HandReplayView = ({ scale }) => {
   return (
     <div className="flex items-center justify-center h-dvh bg-gray-950 overflow-hidden">
     <div
-      className="relative overflow-hidden"
+      // shrink-0 is load-bearing: this box is a flex child with overflow-hidden,
+      // which makes its CSS min-width:auto resolve to 0, so the default
+      // flex-shrink:1 would collapse the 1600px box to the viewport width on any
+      // screen narrower than 1600px (every phone in landscape) — clipping the
+      // right half of the felt + review panel. shrink-0 pins the design width so
+      // transform:scale fits it to the viewport. Other views avoid this via
+      // ScaledContainer, whose inner box has no overflow and keeps min-width:auto.
+      className="relative overflow-hidden shrink-0"
       style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
