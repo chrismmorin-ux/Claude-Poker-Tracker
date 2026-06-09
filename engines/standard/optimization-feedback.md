@@ -4,6 +4,18 @@ description: "Universal self-improvement protocol — every engine run can produ
 procedure: null
 extends: null
 user-invocable: false
+default_mode: explore
+---
+
+## Intent Contract (ADR-038)
+
+Before phase work, read the `engine_intent_recorded` event from the loaded envelope (look-back 5 min, match on `engine: optimization-feedback` + target). The contract carries four fields this engine MUST honor:
+
+- **`mode`** — output shape. Frontmatter declares `default_mode: explore`. Specializations: `decide` (comparison/audit/scoring with tradeoffs), `build-best` (commit to one direction; concrete deliverable; sequencing-ranked), `mockup` (low-fidelity sketch; structure-only; skip scoring + work-item creation), `explore` (surface adjacent possibilities; emphasize divergence over selection). When the loaded contract specifies a mode that differs from the default, honor the contract; the briefing's Contract Alignment block records the departure.
+- **`stretch`** — when `true`, question the AS-N tags + constraints already loaded in the envelope; surface where current state is load-bearing vs. inertial. When `false` (default), honor loaded state. **Stretch MUST NOT re-read `system/` files** — INV-cli-envelope-consumed-completely applies.
+- **`success_shape`** — the structured target the briefing phase MUST honor. The Briefing's Contract Alignment block reports honored vs. departed items with reason.
+- **`scope_ceiling`** — items listed here are out-of-bounds. Do not spend cycles on them; briefing's Contract Alignment block reports compliance.
+
 ---
 
 # Optimization Feedback Protocol
@@ -144,7 +156,7 @@ These signals are generated during `/session-end` or `/next` when items transiti
 ### Validation of Applied Changes
 
 When `/evolve optimize` applies a change:
-1. Record a `validation_plan` in `docs/evolution/change-impacts.yaml` (what to check, which engine, expected improvement)
+1. Record a `validation_plan` in `change-impacts.yaml`, located in the calibration dir resolved per repo scope (`resolveEvolutionDir`: the HomeBase evolution apparatus dir, or `.claude/workstream/` in adopted repos) — what to check, which engine, expected improvement
 2. On the NEXT run of the affected engine, the optimization epilogue checks:
    - Did the change-targeted dimension improve? → Generate `effectiveness` signal, update original signal to `validated`
    - Did it get worse? → Generate `calibration_drift` signal, flag the applied change for review
@@ -168,3 +180,17 @@ Deep runs (blind_spot, challenge, meta-engine) also produce a detailed `protocol
 | `/pulse` | When running a protocol, checks for `confirmed` signals against that protocol and applies them |
 | `/next` | When composing sprints, boosts priority for work items that address `confirmed` optimization signals |
 | `/audit` | Checks for `plateau` signals — programs stuck despite runs indicate a systemic issue |
+
+---
+
+## Contract Alignment (ADR-038)
+
+The briefing/output phase MUST emit this block (per ADR-038 Decision #6):
+
+```
+### Contract Alignment
+- mode: <honored | departed (reason)>
+- stretch: <honored | departed (reason)>
+- success_shape: <honored — list which target items hit | departed (reason)>
+- scope_ceiling: <complied — items skipped: [list] | violated (reason)>
+```

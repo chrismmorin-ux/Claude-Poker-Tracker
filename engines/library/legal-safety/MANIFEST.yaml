@@ -1,0 +1,29 @@
+# Engine Extension Pack Manifest
+engine_id: legal-safety
+name: Legal Safety
+description: Privacy assessment, regulatory compliance, data protection, terms of service adherence, and intervention risk evaluation
+archetypes: [saas, data-platform]
+install_conditions: PII handling or regulated data detected
+programs: [compliance]
+personas_required: [legal-guardian]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/legal-safety.md
+category: analysis
+impact: changes-state
+procedure: suite-check
+extends: context-gather
+trigger: manual
+inputs: [codebase, system_model]
+outputs: [finding, report]
+chains:
+  on_complete: null
+  on_finding: create_work_item
+finding_severities:
+  critical: 90
+  high: 72
+  medium: 54
+  low: 36
+  info: 18

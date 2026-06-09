@@ -1,0 +1,25 @@
+# Engine Extension Pack Manifest
+engine_id: upgrade-prep
+name: Upgrade Preparation
+description: Scan for breaking changes, compatibility issues, and affected code paths before upgrading a dependency — zero impact guaranteed
+category: preparation
+impact: zero-impact
+safety_guarantee: "This engine reads your codebase and documents what it finds. It makes NO code changes and NO dependency changes."
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [senior-engineer, architect]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/upgrade-prep.md
+procedure: suite-check
+extends: context-gather
+trigger: manual
+inputs: [codebase, system_model, upgrade_target]
+outputs: [readiness-report]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null

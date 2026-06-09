@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/workstream/item-archived.json",
+  "title": "workstream.item-archived",
+  "description": "T6:workstream item-archived event payload (cwos-gc). WS-210.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "entity_type": { "type": "string" },
+    "path": { "type": "string" },
+    "age_days": { "type": ["integer", "number"], "minimum": 0 }
+  }
+}

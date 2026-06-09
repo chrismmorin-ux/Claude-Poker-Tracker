@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/command_failed.json",
+  "title": "envelope.command_failed",
+  "description": "T0:envelope command_failed event payload (WS-190).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type"],
+  "properties": {
+    "type": { "type": "string", "const": "command_failed" },
+    "transcript_mark": { "type": ["integer", "null"], "minimum": 0 },
+    "command": { "type": ["string", "null"] },
+    "reason": { "type": ["string", "null"] }
+  }
+}

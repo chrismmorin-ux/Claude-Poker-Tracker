@@ -1,0 +1,37 @@
+# Shadow Backlog Index
+# Tracks CWOS sprint state for items read from external sources
+# (BACKLOG.md, TODO.md, GitHub Issues) without modifying the source.
+#
+# Created automatically when backlog.source is "markdown" or "github-issues"
+# in .cwos-config.yaml. Rebuilt on each /next sync.
+
+source: ""              # markdown | github-issues
+source_path: ""         # path to backlog file (empty = auto-detect)
+last_synced: ""         # ISO timestamp of last sync
+
+# Priority mapping for markdown backlogs
+priority_map:
+  P0: 30.0
+  P1: 22.0
+  P2: 15.0
+  P3: 8.0
+  critical: 30.0
+  high: 22.0
+  medium: 15.0
+  low: 8.0
+  default: 12.0
+
+items: []
+# Each item:
+#   source_id: "heading:slug"       # or "gh:42" for GitHub Issues
+#   shadow_id: "SH-001"
+#   title: "Item title"
+#   priority_score: 15.0
+#   effort: M                       # S | M | L (default M)
+#   category: ""
+#   status: backlog                 # backlog | claimed | in_progress | done | skipped
+#   blocked_by: []
+#   sprint_id: ""
+#   claimed_at: ""
+#   completed_at: ""
+#   description: ""

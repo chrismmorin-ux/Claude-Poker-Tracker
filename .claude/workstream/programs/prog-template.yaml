@@ -1,0 +1,410 @@
+# ============================================================================
+# CWOS Program Template (Schema v4)
+# ============================================================================
+# v4 adds the `assumptions:` and `market_dynamics:` blocks required at
+# tier: active | critical per framework-spec.md §5.2.
+# A program is a PERMANENT ACCOUNTABILITY STRUCTURE — not a dashboard.
+#
+# Why programs exist:
+#   AI sessions forget. Single passes fix visible problems but miss entire
+#   problem classes. Programs compensate for these limitations by ensuring
+#   domains of responsibility are continuously challenged, regardless of
+#   session boundaries, founder expertise, or AI blind spots.
+#
+# The founder's contract:
+#   "If it's a program, the AI will see around blind spots via structured
+#   protocols so I don't have to manage this domain myself."
+#
+# Programs are NOT identical to the work they generate — they CAPTURE the
+# spirit of ongoing accountability and use engines, protocols, and personas
+# to deliver it. They are the "cannot be forgotten" threads of a repo.
+# ============================================================================
+
+id: your-program-id              # Unique ID, used as prog-{id}.yaml filename
+name: Your Program Name          # Human-readable name shown in /pulse
+schema_version: 4
+status: NEW                      # NEW | active | paused | retired
+
+# --- Optional: System Program Fields ---
+# These fields are only used by system programs (e.g., prog-optimization).
+# Product programs should omit them entirely.
+#
+# monitor_only: true             # When true: no work items, no sprint entries, no escalation.
+#                                # Findings surface as ambient indicators only.
+# install_group: system          # "system" programs render in a separate section in /pulse
+#                                # and are excluded from product program tables everywhere.
+#                                # Omit for product programs (defaults to install group from registry).
+# founder_priority: 5            # Priority 5 = tool infrastructure, never competes with product work.
+
+# --- Founder Contract ---
+# What the founder is delegating. Written in plain language.
+# This is the promise: if this program is active, this domain is handled.
+contract: >
+  What the founder can stop worrying about once this program is active.
+  What "handled" means in concrete terms. What would go wrong without it.
+
+# --- Capability Brief (REQUIRED for product programs; OPTIONAL for monitor_only) ---
+# Founder-facing UX block rendered in three places:
+#   - /adopt Step 4x ("Your Governance Pack — What's Installed and Why")
+#   - /status YELLOW Case B (when last_run_by_protocol.baseline.date is null)
+#   - /pulse program detail view (when baseline has never run)
+#
+# Enforces the "no silent install, no user invention" principle
+# (feedback_no_silent_install_no_user_invention; see ADR-028). A program
+# installed without a brief is invisible to the founder — they cannot learn
+# what it does, what it would catch, or how to activate it.
+#
+# Validator: node kit/scripts/cwos-program-schema-validate.js
+# Invariant: INV-041 (every product program ships a capability_brief).
+#
+# OMIT this block entirely on monitor_only system programs (e.g., prog-
+# optimization). They never surface to the founder; a brief would be dead UX.
+capability_brief:
+  value: "One-line value proposition. What this program does in plain language. ≥40 chars."
+  problems_prevented:
+    - "Concrete failure mode 1 — what goes wrong without this program"
+    - "Concrete failure mode 2"
+    - "Concrete failure mode 3"
+    # 3-5 entries. Derived from problem_classes + their examples.
+  cost:
+    activation: "Time-to-baseline (e.g., '~5 min for the baseline audit')"
+    ongoing: "Cadence summary (e.g., 'Periodic /pulse run <id> (14-day cadence) + closing findings alongside other work')"
+  first_output:
+    - "Concrete artifact 1 the baseline produces"
+    - "Concrete artifact 2"
+    - "Concrete artifact 3"
+    # 3-4 entries. What the founder gets back from the activation_command.
+  activation_command: "/pulse run <program-id> baseline"
+  requires_user_input: false       # true if founder must supply context (e.g.,
+                                   # policies, domain rules) for the engine to
+                                   # produce useful output. Drives the framing
+                                   # of first_output (drafts vs. final artifacts).
+
+# --- Problem Classes ---
+# The CATEGORIES of problems this program must consider.
+# Not just "what files to watch" but "what can go wrong and how."
+# This is what prevents single-pass blindness — the AI must check
+# each class, not just react to visible symptoms.
+problem_classes:
+  - name: "Problem Class Name"
+    description: "What this class covers"
+    examples: ["specific failure mode 1", "specific failure mode 2"]
+    detection: "How to detect problems in this class"
+  # Add more classes. A program with 1-2 classes is probably too narrow.
+  # A program with 10+ is probably too broad. 3-7 is typical.
+
+# --- External Expertise ---
+# Some problem classes require human domain expertise the AI cannot provide.
+# When true, the program should flag this in /pulse so the founder knows
+# to seek external specialists periodically.
+requires_external_expertise: false
+expertise_type: ""               # e.g., "RESPA compliance attorney", "particle physicist", "statistician"
+expertise_cadence: ""            # e.g., "quarterly review", "before each gate decision", "annually"
+
+# --- What This Program Watches ---
+scope:
+  file_patterns:                 # Glob patterns for relevant source files
+    - "**/*.py"
+  invariants: []                 # IDs from system/invariants.md
+  anti_invariants: []            # Things that must NEVER be true
+  constraints: []                # IDs from system/constraints.md
+
+# --- Tier System ---
+# Tiers control protocol depth. They scale the program from lightweight
+# to comprehensive based on actual need — not upfront complexity.
+#
+#   dormant  — Domain exists but isn't active. Awareness only.
+#              Protocols: none. Just tracks that this domain exists.
+#   watch    — Domain is active but low-risk. Periodic delta checks.
+#              Protocols: delta only.
+#   active   — Domain is critical to operations. Full protocol suite.
+#              Protocols: delta + sweep + challenge.
+#   critical — Domain has had issues or is high-stakes. Intensive.
+#              Protocols: all, including blind-spot. Shorter cadences.
+tier: dormant
+
+# What causes tier escalation (evaluated on each protocol run):
+tier_triggers:
+  watch: "Condition that moves from dormant to watch (e.g., 'code exists in scope paths')"
+  active: "Condition that moves to active (e.g., 'app is deployed to production')"
+  critical: "Condition that moves to critical (e.g., 'handles financial data' or 'incident occurred')"
+
+# --- Protocols ---
+# Protocols are the structured checks that run against this program's scope.
+# They are what make programs MORE than a single refactor pass.
+# Each protocol type serves a different purpose.
+protocols:
+
+  # Runs ONCE when program is established. Maps the full problem space.
+  # Produces a baseline assessment the founder can review.
+  baseline:
+    engine: eng-engine
+    focus: "What to analyze during baseline"
+    problem_classes: all          # Which problem classes to check (or "all")
+    outputs:
+      - baseline_report           # Stored in evidence/
+      - initial_findings          # Fed to workstream
+      - problem_class_coverage    # Which classes have issues, which are clean
+
+  # Periodic comprehensive sweep across all problem classes.
+  # This is the "did we miss anything" check.
+  sweep:
+    engine: eng-engine
+    cadence_days: 14             # Full sweep every N days
+    focus: "Full review of all problem classes"
+    problem_classes: all
+    min_tier: active             # Only runs at active tier or above
+
+  # Frequent lightweight check on recent changes.
+  # Fast, focused, runs often.
+  delta:
+    engine: preflight
+    cadence_days: 7              # Quick check every N days
+    focus: "Recent changes within scope"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch              # Runs at watch tier or above
+
+  # Adversarial check. Tries to BREAK assumptions.
+  # "What would go wrong if X?" "What are we assuming that isn't verified?"
+  challenge:
+    engine: eng-engine
+    cadence_days: 30             # Challenge run every N days
+    focus: "Adversarial review — find what other protocols miss"
+    prompt_additions: >
+      You are running a CHALLENGE protocol. Your job is not to confirm health —
+      it is to find what breaks. For each problem class, ask:
+      - What are we assuming that isn't verified?
+      - What edge cases haven't been tested?
+      - What would a malicious actor or unlucky user encounter?
+      - What works today but will break at 10x scale?
+      Do NOT report things that are fine. Only report genuine risks.
+    min_tier: active
+
+  # Looks for what OTHER protocols systematically miss.
+  # Meta-analysis: what classes of problems are we not catching?
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60             # Blind spot check every N days
+    focus: "What are we not seeing?"
+    prompt_additions: >
+      You are running a BLIND SPOT protocol. Review this program's history:
+      - What problem classes have NEVER produced a finding? Are they clean, or unchecked?
+      - What incidents or bugs appeared that this program should have caught but didn't?
+      - What assumptions in tier_triggers or problem_classes are outdated?
+      - Are there new problem classes this program should add?
+      Recommend scope expansions, new problem classes, or protocol adjustments.
+    min_tier: critical
+
+# --- Accountability ---
+# Programs have FORCED accountability. Findings are not suggestions.
+# The program generates mandatory work when issues are found.
+accountability:
+  # When protocols find issues:
+  on_finding:
+    action: create_work_item     # Mandatory — findings become work items
+    max_open_items: 3            # Don't overwhelm, but don't bottleneck at 1
+    priority_floor: 18           # Minimum RICE score for program-generated items
+    escalation:                  # What happens when findings aren't addressed
+      stale_days: 14             # If a finding sits unresolved for this long...
+      escalate_to: session_start # ...surface it prominently in session start
+      escalate_priority_bump: 9  # ...and bump its priority score
+
+  # When the program itself goes stale (no protocol has run):
+  on_stale:
+    action: create_work_item
+    message: "Program '{name}' has not been checked in {days} days. Run /pulse run {id} to clear."
+    block_sprint: false          # If true, /next won't compose a sprint until this is addressed
+    stale_days: 30               # How long before the program is considered stale (WS-370 / FIND-252).
+                                 # /next gate reads this to decide if block_sprint should fire.
+                                 # If omitted, /next falls back to acc.escalation.stale_days, then 30.
+    # NOTE: When block_sprint is true and the program goes stale, /next cannot compose
+    # sprints. The escape hatch is: /pulse run {id} — this runs the protocol directly
+    # and clears the block. The on_stale message MUST include this instruction.
+
+  # When tier should escalate based on tier_triggers:
+  on_tier_change:
+    action: notify_founder       # Alert in session start
+    auto_escalate: true          # Tier goes up automatically when trigger met
+    auto_deescalate: false       # Tier does NOT go down automatically (founder decides)
+
+# --- Interconnections ---
+interconnections:
+  feeds_into: []                 # Program IDs whose health depends on this
+  fed_by: []                     # Program IDs that feed findings into this
+  blocks: []                     # Program IDs that CANNOT go green until this is healthy
+
+# --- Phase Relevance ---
+# Adjusts effective cadences by project lifecycle phase.
+# critical=0.5x cadence (more frequent), high=1x, medium=2x, low=4x
+phase_relevance:
+  foundation: medium
+  pre-launch: high
+  launch: high
+  growth: medium
+  maturity: medium
+
+# --- Evidence & History (managed by CWOS) ---
+# Per-protocol tracking: each protocol type stores its own last run date.
+# This prevents delta protocols from using sweep dates as their git diff baseline.
+last_run_by_protocol:
+  baseline:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  delta:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  sweep:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  challenge:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  blind_spot:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+
+# Bootstrap defaults — health_score=0 and health_ceiling=0 are PROVISIONAL per DEC-023:
+# rigor-based scoring means no score is earned until an actual engine run executes.
+# /adopt installs programs at 0/0. First /pulse run <id> baseline is what ratchets
+# ceiling off 0. Do not raise these defaults without rewriting DEC-023.
+health_score: 0                  # 0-10, computed per kit/templates/system/health-scoring.md
+health_ceiling: 0                # 0-10, max reachable given analysis rigor completed. Starts at 0 — no score is possible until a real engine runs.
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+health_breakdown:                # Component scores from formula
+  finding_health: null
+  protocol_currency: null
+  problem_class_coverage: null
+  maturity_progress: null
+  hard_caps_applied: []          # e.g., ["CRITICAL finding caps at 4"]
+health_next_action: ""           # Single highest-value action to improve score
+health_updated_at: null          # Timestamp of last health computation
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  # Each entry: {date, protocol, run_id, engine, findings, work_items, result, health_score, spec_compliant?}
+  #   date:           YYYY-MM-DD when protocol ran
+  #   protocol:       which protocol (baseline, sweep, delta, challenge, blind_spot)
+  #   run_id:         unique run identifier (e.g., "run-004")
+  #   engine:         which engine executed the protocol (e.g., "eng-engine")
+  #   findings:       count of findings produced
+  #   work_items:     count of work items created from findings — derive deterministically
+  #                   via countWorkItemsForRun() in cwos-reconcile.js (WS-371). Hand-counting
+  #                   is error-prone and lets the findings→WS promotion loop drift silently.
+  #   result:         one-line summary of what the run found
+  #   health_score:   program health score computed at time of run (null if not computed)
+  #   spec_compliant: optional boolean; default true. Set to false when the run executed under
+  #                   a degraded protocol (e.g., engine declared eng-engine but actually ran
+  #                   single-pass-review). Reconciler skips promotion-gap checks for entries
+  #                   where spec_compliant === false; AS-N evaluators ignore them too.
+  #                   Don't set false casually — it exempts the entry from the accountability
+  #                   loop. Use only when the protocol declaration itself was honored degraded.
+  retention_days: 90
+  evidence_dir: ".claude/workstream/evidence/your-program-id/"
+
+# --- Maturity ---
+# Programs mature as protocols run and problem classes are verified.
+maturity:
+  level: 1                       # 1-4
+  criteria:
+    level_1: "Program established. Baseline protocol has run."
+    level_2: "All problem classes checked. Sweep + delta running on cadence."
+    level_3: "Challenge protocol active. Findings trend improving over 3+ sweeps."
+    level_4: "Blind-spot protocol active. Zero critical findings sustained. Full coverage."
+  current_gaps: "Never run."
+
+# --- Optional: Self-Referential Guard ---
+# Only used by programs that monitor their own optimization infrastructure.
+# Prevents runaway self-modification loops by capping signal auto-confirmation.
+#
+# self_referential_guard:
+#   enabled: true
+#   rule: "Description of what signals are capped"
+#   max_status: pending          # Signals about this program never auto-confirm
+#   review_command: "/evolve meta"
+#   reason: "Why this guard exists"
+
+# --- Optimization ---
+# Tracks self-improvement signals about THIS program's structure.
+# Signals are generated by engine runs and accumulated in optimization-index.yaml.
+# When 2+ runs flag the same gap, it becomes a confirmed pattern for /evolve optimize.
+optimization:
+  signals_received: 0             # Count of optimization signals targeting this program
+  last_signal_at: null
+  confirmed_patterns: 0           # Patterns ready for /evolve optimize review
+  applied_changes: 0              # Changes applied from optimization feedback
+  # Examples of what optimization feedback looks like for a program:
+  #   - plateau signal: "Health score unchanged after 3 protocol runs" → protocol needs new focus questions
+  #   - coverage_gap: "Problem class X has zero findings across 5 runs" → either X is solved or the check is broken
+  #   - calibration_drift: "Founder rates findings from this program as noise" → scope too broad or severity too high
+  #   - convergence: "3 programs share the same scope.file_patterns gap" → systemic fix needed in /adopt
+
+created_at: null
+updated_at: null
+
+# --- Load-Bearing Assumptions (AS-N) ---
+# REQUIRED when tier is active or critical (schema v4, framework-spec §5.2).
+# Each AS-N declares a falsifiable claim the program's existence depends on.
+# Validator: node kit/scripts/cwos-asn-validate.js --program <this-file>
+#
+# At minimum one AS-N. If the program is a strategic bet (e.g., betting on
+# Anthropic's trajectory or a competitor's limitation), at least one AS-N
+# MUST be type: strategic. This is what caught the A-1 anti-pattern in
+# prog-corrective — a strategic bet written without a falsification test.
+#
+# Uncomment and fill in when promoting from dormant/watch to active/critical.
+#
+# assumptions:
+#   - id: AS-NN                  # integer, HomeBase-wide unique
+#     type: strategic            # empirical | strategic | methodological
+#     severity: medium           # OPTIONAL (schema v5): critical | high | medium. Default: medium.
+#     claim: >
+#       One sentence. Subject + specific claim. No hedging. ≥20 chars.
+#     falsifies_if:
+#       # type: strategic shape — watch_surfaces[] + trigger_event
+#       watch_surfaces:
+#         - "https://example.com/surface"   # URL / handle / channel, ≥5 chars each
+#       trigger_event: >
+#         Specific observable event that falsifies the claim. ≥20 chars.
+#       # type: empirical shape:
+#       #   threshold: "metric_X > Y over window_Z"
+#       #   window: "T+14 days to T+90 days after first ship"
+#       # type: methodological shape:
+#       #   control_case: "seeded test artifact + measurement harness, ≥20 chars"
+#       #   pass_criterion: "observable bar the control must clear"
+#     revisit: 2026-07-22        # ISO date OR trigger-event string
+#     status: proposed           # proposed|active|at_risk|validated|contradicted|retired
+#     # history:                 # OPTIONAL (schema v5): append one entry per transition.
+#     #                          # Written by cwos-asn-transition.js / /decide lifecycle modes.
+#     #   - date: 2026-04-22
+#     #     from: proposed
+#     #     to: active
+#     #     reason: "Short prose on why this transition fired (≥5 chars)."
+
+# --- Market Dynamics Assessment ---
+# REQUIRED when tier is active or critical. Five fields minimum. Validator
+# enforces the insufficient-data coupling rule (insufficient-data only legal
+# if paired with watch_surfaces + trigger_event).
+#
+# market_dynamics:
+#   subsumption_risk: medium              # low | medium | high | insufficient-data
+#   self_preference: ours                 # ours | would_switch_to:<tool> | insufficient-data
+#   durable_ground: >
+#     One sentence on what remains defensible and why. ≥20 chars.
+#   watch_surfaces:                       # required if any value above is insufficient-data
+#     - "https://docs.anthropic.com/en/docs/claude-code"
+#   trigger_event: >                      # required if any value above is insufficient-data
+#     Specific observable that would flip the assessment. ≥20 chars.
+#   last_reviewed: YYYY-MM-DD

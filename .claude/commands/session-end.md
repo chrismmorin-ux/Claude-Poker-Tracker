@@ -16,6 +16,55 @@ Close the current session cleanly, ensuring all state is current and handoff not
 
 ## Steps
 
+### 0a. Dormant-mode capture (WS-321 Phase B)
+
+Read `.cwos-onboarding.yaml`. If top-level `adoption_phase` equals `M0`, the repo is in dormant mode (kit installed, programs inert, queue closed). The standard session-end ceremony does not apply — there's no sprint to close, no claimed items to release, no programs to refresh. Instead, run the **dormant capture pass** below and stop:
+
+1. **Diff the working tree to find new founder content.** Use `git status --porcelain` to enumerate untracked + modified files. Filter to files under:
+   - `notes/` (any file) — emits `note_added`
+   - `system/` (any file NOT named `intention.md` — that file is template-shipped at scaffold time and tracked separately via `intention_edit` in /session-start Step 0c) — emits `file_dropped`
+
+2. **For each `notes/` file**, emit a `T20:capture-buffer` event with `track_tag: note_added`:
+   ```bash
+   node kit/scripts/cwos-event.js append note_added \
+     --track T20:capture-buffer \
+     --tag note_added \
+     --payload '{"path":"<relative-path>","byte_size":<bytes>,"first_line":"<first-non-empty-line, ≤200 chars>","content_hash":"<sha256-hex>"}'
+   ```
+
+3. **For each non-template `system/` file**, emit `track_tag: file_dropped`:
+   ```bash
+   node kit/scripts/cwos-event.js append file_dropped \
+     --track T20:capture-buffer \
+     --tag file_dropped \
+     --payload '{"path":"<relative-path>","byte_size":<bytes>,"first_line":"<first-non-empty-line, ≤200 chars>"}'
+   ```
+
+4. **Emit one `conversation_summary` event** capturing the session in plain prose (target 100-400 chars). Frame it as "what the founder was thinking about / shaping / deciding this session" — this is what the ignition proposal will read to infer archetype and principles. Do NOT manufacture content if the session was empty (e.g., founder ran one command and left); in that case skip step 4 entirely.
+   ```bash
+   node kit/scripts/cwos-event.js append conversation_summary \
+     --track T20:capture-buffer \
+     --tag conversation_summary \
+     --payload '{"summary_text":"<prose summary>","turn_count":<N>,"session_id":null}'
+   ```
+
+5. **For any `implicit_decision` patterns** detected during the session (the same patterns Step 5.4 below uses — "let's use X", "we'll go with Y", "decided to skip Z"), emit one event per decision:
+   ```bash
+   node kit/scripts/cwos-event.js append implicit_decision \
+     --track T20:capture-buffer \
+     --tag implicit_decision \
+     --payload '{"decision_text":"<quoted decision>","source_path":"<file-or-null>","line_no":<N-or-null>}'
+   ```
+
+6. **Render a one-line dormant summary** to the founder:
+   ```
+   Session captured: <N> notes · <M> file drops · <K> conversation summary · <D> implicit decisions. Capture buffer: events/current.jsonl. Run /intend when ready to ignite.
+   ```
+
+7. **Stop.** Do NOT execute Steps 1–9 below. Specifically: no session.yaml write, no claim release, no decisions.md append (decisions during M0 go through capture-buffer, not the canonical decisions.md surface — that's the feed-forward contract), no usage.yaml mutation, no handoff_notes file. The dormant phase deliberately doesn't produce session-history artifacts; the capture buffer is the only post-session signal.
+
+If `adoption_phase` is unset or `M1`–`M5`, skip this step entirely and continue with the Preferred read path / Step 1 below.
+
 ### Preferred read path (ADR-020 step 2)
 
 For claimed-item summary + recent envelope context, prefer the typed-API CLI:
@@ -182,6 +231,25 @@ Catch any finding→health drift that Step 6b of `/next` missed (e.g., items com
 4. If any findings were reconciled, log to session notes: "Reconciled N stale findings across M programs"
 
 This step is idempotent — if `/next` Step 6b already resolved everything, this finds nothing to do.
+
+### 5.5d. Record stage marker (WS-251 / ADR-035)
+
+If `.cwos-onboarding.yaml#stage` is non-null, copy its value into `last_recorded_stage` so the next session's `/session-start` Step 3d can detect cross-session declaration changes.
+
+```bash
+# Pragmatic: read current stage, write into last_recorded_stage. No-op if stage is null.
+node -e '
+const fs=require("fs"), p=".cwos-onboarding.yaml";
+if (!fs.existsSync(p)) process.exit(0);
+let txt=fs.readFileSync(p,"utf8");
+const m=txt.match(/^stage:\s*"?([SN]\d)"?/m);
+if (!m) process.exit(0);
+const re=/^(last_recorded_stage:[ \t]*)([^\n#]*?)([ \t]*(?:#[^\n]*)?)$/m;
+if (re.test(txt)) { txt=txt.replace(re,`$1"${m[1]}"$3`); fs.writeFileSync(p,txt); }
+'
+```
+
+Silent — the stage marker is housekeeping, not founder-facing.
 
 ### 5.6. Regenerate System Summary
 

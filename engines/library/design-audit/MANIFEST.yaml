@@ -1,0 +1,37 @@
+# Engine Extension Pack Manifest
+engine_id: design-audit
+name: Design Audit (Four-Surface UX)
+description: Score a repo independently on four UX surfaces (end-user, operator, builder, AI-conversation). Emits per-surface maturity, gap list, and convergence path. Findings auto-promote to the design program queue.
+category: governance
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: governance capability enabled AND prog-design registered
+programs: [design]
+personas_required:
+  - product-ux-engineer          # end-user surface
+  - operator-experience-designer # operator surface
+  - developer-experience-designer # builder surface
+  - ai-interaction-designer      # AI-conversation surface
+  - cross-critic                 # cross-surface boundary critique
+  - roundtable-facilitator       # synthesis
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/design-audit.md
+trigger: manual
+inputs: [repo_path, previous_scorecard]
+outputs: [per_surface_scorecard, gap_inventory, convergence_path, findings]
+chains:
+  on_complete: null
+  on_finding: workstream-promote
+finding_severities: [critical, high, medium, low]
+
+choice_point:
+  accepts: repo
+  size: standard
+  estimated_time: "~5 min"
+  hook: "Score the repo on 4 UX surfaces, surface asymmetries, emit convergence path"

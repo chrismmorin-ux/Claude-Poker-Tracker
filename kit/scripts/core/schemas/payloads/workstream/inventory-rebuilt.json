@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/workstream/inventory-rebuilt.json",
+  "title": "workstream.inventory-rebuilt",
+  "description": "T6:workstream inventory-rebuilt event payload (WS-210).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "mismatches_fixed": { "type": "integer", "minimum": 0 }
+  }
+}

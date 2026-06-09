@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/engine_token_budget_acknowledged.json",
+  "title": "envelope.engine_token_budget_acknowledged",
+  "description": "T0:envelope engine_token_budget_acknowledged event payload (WS-289). Emitted when founder uses --override-engine-token-budget to bypass an engine_token_budget_alarm with a written rationale. Mirrors the pattern of /next's --override-token-budget per ADR-037 Decision #5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type", "tag", "engine_id", "rationale", "tokens_t0", "tokens_t1",
+    "tokens_t2", "pct_increase", "threshold_pct", "composed_by", "acknowledged_at"
+  ],
+  "properties": {
+    "type":            { "type": "string", "const": "engine_token_budget_acknowledged" },
+    "tag":             { "type": "string", "pattern": "^/engine/[A-Za-z0-9._:-]+$" },
+    "engine_id":       { "type": "string", "minLength": 1 },
+    "rationale":       { "type": "string", "minLength": 20 },
+    "tokens_t0":       { "type": "integer", "minimum": 0 },
+    "tokens_t1":       { "type": "integer", "minimum": 0 },
+    "tokens_t2":       { "type": "integer", "minimum": 0 },
+    "pct_increase":    { "type": "number" },
+    "threshold_pct":   { "type": "number" },
+    "composed_by":     { "type": "string", "const": "cli-deterministic" },
+    "acknowledged_at": { "type": "string", "format": "date-time" }
+  }
+}

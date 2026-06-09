@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/command_started.json",
+  "title": "envelope.command_started",
+  "description": "T0:envelope command_started event payload (WS-190).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type"],
+  "properties": {
+    "type": { "type": "string", "const": "command_started" },
+    "transcript_mark": { "type": ["integer", "null"], "minimum": 0 },
+    "command": { "type": ["string", "null"] }
+  }
+}

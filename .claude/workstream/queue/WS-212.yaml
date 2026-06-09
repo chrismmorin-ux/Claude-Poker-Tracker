@@ -1,10 +1,20 @@
 id: "WS-212"
 title: "Kit upgrade 3.5.0 → 3.8.0 — install missing cwos-* script suite (run from HomeBase)"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
-completed_at: null
+completed_at: "2026-06-09T00:00:00Z"
+done_note: |
+  Resolved 2026-06-09: kit upgraded 3.5.0 → 3.8.0 (run from HomeBase between
+  sessions). Verified at /audit: .cwos-version=3.8.0; kit/scripts/ suite present
+  (cwos-reconcile.js, cwos-state-store.js, cwos-audit.js, cwos-event.js,
+  cwos-gc.js, cwos-kit-upgrade.js all ✓); reconcile ran (sprint-index reformatted
+  to 3.8.0 compact form, WS-146 reconciled to done, queue rebuilt to 210 items).
+  cwos-audit.js compose|render now produces deterministic envelopes. The recurring
+  manual-reconcile friction (fr-011..fr-014) is resolved — automated index rebuild
+  is available. Upgrade also installed 6 new programs (claims-policy, compliance,
+  data-quality, infrastructure, security, self-compliance).
 priority_score: 16.0
 priority_label: "P2"
 category: "cwos-infrastructure"

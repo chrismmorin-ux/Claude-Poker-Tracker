@@ -1,0 +1,192 @@
+id: compliance
+name: Regulatory Compliance
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that the application meets legal and regulatory requirements
+  for every jurisdiction it operates in. Privacy policies, data handling, consent
+  flows, and industry-specific regulations are handled correctly. If a regulator,
+  lawyer, or enterprise customer asks "are you compliant?" — this program ensures
+  the answer is yes, with evidence.
+
+capability_brief:
+  value: "Holds the application accountable to legal and regulatory requirements — privacy, consent, data handling, and jurisdiction-specific rules don't slip through unwatched."
+  problems_prevented:
+    - "Silent privacy-policy gaps when new data flows are added"
+    - "Missing consent capture for data-collection or marketing flows"
+    - "Jurisdiction-specific rules (GDPR, HIPAA, CCPA, etc.) overlooked because no one was assigned to track them"
+    - "Compliance evidence not documented when a regulator, lawyer, or enterprise buyer asks for it"
+  cost:
+    activation: "~10-15 min — founder confirms which jurisdictions and regulations apply"
+    ongoing: "Periodic /pulse run compliance + tracking regulatory updates + closing consent / data-flow findings"
+  first_output:
+    - "docs/compliance/{privacy-policy,consent-flows,applicable-regulations}.draft.md — three drafts inferred from repo content + dependencies + user-facing copy + founder-named jurisdictions (founder reviews and promotes via rename)"
+    - "Applicable-regulations matrix as code-level checkpoints (each requirement tied to file:line OR explicitly marked missing)"
+    - "Compliance gap report (after promotion) — drift, missing enforcement, untested consent flows"
+    - "Evidence checklist for each compliance class (what proof to collect, where to store it)"
+  activation_command: "/pulse run compliance baseline"
+  requires_user_input: true   # Founder must name applicable jurisdictions during baseline; engine cannot infer jurisdiction set from code alone
+
+problem_classes:
+  - name: Privacy & Data Handling
+    description: "Personal data is collected, stored, and processed lawfully"
+    examples: ["no privacy policy", "collecting data without consent", "no way to delete user data"]
+    detection: "Consent flow audit, data collection inventory, deletion capability check"
+
+  - name: Cookie & Tracking Consent
+    description: "Tracking technologies require user consent where legally mandated"
+    examples: ["analytics without consent banner", "third-party cookies set before consent", "no opt-out mechanism"]
+    detection: "Cookie audit, tracking script inventory, consent flow verification"
+
+  - name: Terms & Legal Documents
+    description: "Required legal documents exist, are accessible, and match actual behavior"
+    examples: ["terms of service missing", "privacy policy doesn't mention data sharing with third parties", "no refund policy where required"]
+    detection: "Document existence check, content-vs-behavior cross-reference"
+
+  - name: Industry-Specific Requirements
+    description: "Regulations specific to the application's domain are met"
+    examples: ["PCI DSS for payment processing", "HIPAA for health data", "SOX for financial reporting"]
+    detection: "Domain-specific checklist audit (determined during baseline based on detected industry)"
+
+  - name: Access & Audit Controls
+    description: "Who accessed what data and when is traceable"
+    examples: ["no audit log for admin actions", "PII accessible without logging", "no access controls on sensitive data exports"]
+    detection: "Audit trail review, access control matrix, logging coverage check"
+
+scope:
+  file_patterns:
+    - "compliance/**"
+    - "**/privacy*"
+    - "**/consent*"
+    - "**/gdpr*"
+    - "**/terms*"
+    - "**/legal*"
+    # /adopt populates with repo-specific regulatory paths
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: dormant
+tier_triggers:
+  watch: "Application collects any user data (even email addresses)"
+  active: "Application is publicly accessible"
+  critical: "Application handles PII, health data, financial data, or serves EU users"
+
+protocols:
+  # Baseline runs the dedicated compliance-audit engine. On first run (when
+  # docs/compliance/ has no promoted artifacts), the engine's Phase 0b drafts
+  # privacy-policy + consent-flows + applicable-regulations from repo signals
+  # + dependency manifests + user-facing copy + founder-named jurisdictions
+  # into docs/compliance/*.draft.md for founder review and promotion. Phase 0b
+  # surfaces an interactive jurisdiction prompt unless fleet/registry.yaml
+  # records jurisdictions for this repo. Subsequent runs (with promoted
+  # artifacts) skip Phase 0b and run drift / blindspot / cross-document
+  # consistency checks. legal-safety remains available as the deep-audit
+  # engine for findings that warrant veto-authority review.
+  # See engines/library/compliance-audit/SKILL.md for the full phase sequence.
+  baseline:
+    engine: compliance-audit
+    focus: "Full compliance assessment: drafts privacy/consent/regulations on first run, then verifies implementation and catches drift on subsequent runs"
+    problem_classes: all
+    outputs: [baseline_report, privacy_policy_draft, consent_flows_draft, applicable_regulations_draft, drafts_manifest, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Comprehensive compliance review"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 14
+    focus: "Recent changes affecting compliance: new data collection, consent changes, third-party integrations"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "Adversarial compliance review"
+    prompt_additions: >
+      CHALLENGE protocol for Compliance. Think like a regulator:
+      - What personal data are we collecting that we haven't disclosed?
+      - Could a user exercise their right to deletion and actually have all their data removed?
+      - What third parties receive user data, and is each relationship documented?
+      - What would happen if we received a GDPR/CCPA subject access request today?
+      - Are there new regulations or enforcement actions relevant to this domain?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 90
+    focus: "What compliance requirements are we not aware of?"
+    prompt_additions: >
+      BLIND SPOT protocol for Compliance. Review history and ask:
+      - Has the application expanded into new jurisdictions since baseline?
+      - Are there new third-party integrations that change our compliance posture?
+      - What industry-specific regulations exist that we haven't evaluated?
+      - Are there accessibility requirements (ADA, WCAG) that should be tracked?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 27
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Compliance program has not been checked in {days} days."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [launch]
+  fed_by: [security, data-quality]
+  blocks: [launch]
+
+phase_relevance:
+  foundation: medium
+  pre-launch: critical
+  launch: critical
+  growth: high
+  maturity: high
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/compliance/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline has identified applicable regulations."
+    level_2: "All problem classes checked. Required legal documents exist."
+    level_3: "Challenge active. Consent flows verified. Audit trail in place."
+    level_4: "Blind-spot active. Zero compliance gaps. Regular review schedule established."
+  current_gaps: "Never run."
+
+created_at: null
+updated_at: null

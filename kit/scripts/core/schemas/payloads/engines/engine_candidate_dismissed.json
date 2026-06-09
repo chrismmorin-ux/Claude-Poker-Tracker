@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_candidate_dismissed.json",
+  "title": "engines.engine_candidate_dismissed",
+  "description": "ADR-040 Decision #7 — emitted when a previously-suggested engine candidate is dismissed. Three reasons per the bypass-without-friction principle: silent (founder ignored within window), explicit-no (founder said no), invoked-different-engine (founder ran a non-matching engine). Powers post-hoc accept-rate analysis via AS-CATCH-2. WS-298.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "candidate_event_ref", "dismissal_reason"],
+  "properties": {
+    "type":                { "type": "string", "const": "engine_candidate_dismissed" },
+    "candidate_event_ref": { "type": "string", "minLength": 1, "description": "Event id of the originating engine_candidate_suggested event" },
+    "suggested_engine":    { "type": ["string", "null"], "description": "Engine that was suggested (denormalized for analysis convenience)" },
+    "dismissal_reason":    {
+      "type": "string",
+      "enum": ["silent", "explicit-no", "invoked-different-engine"],
+      "description": "silent = founder ignored suggestion within PRE_FILL_WINDOW_TURNS; explicit-no = founder declined; invoked-different-engine = founder invoked a different engine within the window"
+    },
+    "invoked_engine":      { "type": ["string", "null"], "description": "When dismissal_reason='invoked-different-engine', the engine the founder actually invoked" },
+    "elapsed_turns":       { "type": ["integer", "null"], "minimum": 0, "description": "Founder turns elapsed between suggestion and dismissal" },
+    "dismissed_at":        { "type": ["string", "null"], "format": "date-time" }
+  }
+}

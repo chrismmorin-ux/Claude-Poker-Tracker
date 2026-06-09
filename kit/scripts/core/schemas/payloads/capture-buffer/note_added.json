@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/capture-buffer/note_added.json",
+  "title": "capture-buffer.note_added",
+  "description": "T20:capture-buffer note_added event (WS-321 Phase B). Emitted by /session-end when adoption_phase=M0 and a new file appears under notes/. Read once by /intend ignition then archived in place.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["path"],
+  "properties": {
+    "path": { "type": "string", "minLength": 1, "description": "Repo-relative path to the note file" },
+    "byte_size": { "type": ["integer", "null"], "minimum": 0 },
+    "first_line": { "type": ["string", "null"], "description": "First non-empty line of the note (for proposal preview, capped at 200 chars)" },
+    "content_hash": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$|^$", "description": "SHA-256 hex (64 chars) or empty string" }
+  }
+}

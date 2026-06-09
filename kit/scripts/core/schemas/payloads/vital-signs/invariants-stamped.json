@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/vital-signs/invariants-stamped.json",
+  "title": "vital-signs.invariants-stamped",
+  "description": "T11:vital-signs invariants-stamped event (cwos-verify). WS-210.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "path": { "type": "string" },
+    "stamped_count": { "type": "integer", "minimum": 0 }
+  }
+}

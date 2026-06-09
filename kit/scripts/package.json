@@ -1,0 +1,4 @@
+{
+  "type": "commonjs",
+  "//": "CWOS kit scripts are CommonJS. This marker scopes kit/scripts/** back to CommonJS in adopter repos whose root package.json sets \"type\": \"module\". Without it, Node treats these .js files as ES modules and require() throws. Do not delete."
+}

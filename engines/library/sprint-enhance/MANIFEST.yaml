@@ -1,0 +1,31 @@
+# Engine Extension Pack Manifest
+engine_id: sprint-enhance
+name: Sprint Enhancement
+description: Refine a composed sprint — tighten sequencing, flag risks, rebalance effort, improve coherence
+category: enhancement
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [architect, failure-engineer, senior-engineer]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/sprint-enhance.md
+trigger: manual
+inputs: [sprint_context, system_model]
+outputs: [enhancement]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null
+
+choice_point:
+  accepts: sprint
+  size: standard
+  estimated_time: "~2 min"
+  hook: "Tighten sequencing, flag risks, rebalance effort"

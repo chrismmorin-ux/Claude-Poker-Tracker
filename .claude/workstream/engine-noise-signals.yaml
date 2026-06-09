@@ -1,0 +1,15 @@
+# Engine Noise Signals — per-engine aggregate noise feedback from /engine Step 9b.
+#
+# Lifecycle: ONE-SHOT.
+#   1. Founder responds "none", "few", "mostly noise" (etc.) at Step 9b after a run.
+#   2. /engine writes a signal here with active: true.
+#   3. Next run of the same engine: Step 2d loads the signal, Step 5.0 drops
+#      candidate findings with priority_score < 50, then marks active: false
+#      and populates cleared_at / cleared_by.
+#   4. Signal re-arms only if the founder flags noise again.
+#
+# This mechanism closes the noise feedback loop in ONE cycle (not 2+). It is
+# independent of findings-feedback.yaml (per-finding signals) and of
+# optimization-index.yaml (manual-review pipeline).
+
+signals: []

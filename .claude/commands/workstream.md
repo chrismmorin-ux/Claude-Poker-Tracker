@@ -59,13 +59,24 @@ In shadow mode:
 
 ## Counter Reconciliation
 
-Before using any counter from `config.yaml` (`next_item_id`, `next_finding_id`, `next_run_id`, `next_rec_id`):
-1. Scan existing files (glob `queue/WS-*.yaml`, `findings/FIND-*.yaml`, `runs/run-*.yaml`, `recommendations/REC-*.yaml`)
+Before using any counter from `config.yaml` (`next_finding_id`, `next_rec_id`):
+1. Scan existing files (glob `queue/WS-*.yaml`, `findings/FIND-*.yaml`, `recommendations/REC-*.yaml`)
 2. Extract the max numeric ID from filenames
 3. If `config.yaml` counter is <= max found ID, set counter = max + 1
 4. Then increment and use
 
 This prevents duplicate IDs from crashes, manual edits, or concurrent writes.
+
+> **WS-id allocation (WS-040):** allocate every new work item's id via `node kit/scripts/cwos-next.js allocate-ws-id` — call it once per id, in order. Do NOT compute the next id by eyeballing the active-queue max: that scan misses `queue/archive/` and re-issues retired ids, which lets reconcile force-complete the new item (the SPR-018 / WS-033 incident). The CLI scans queue + archive + index.
+
+**Run-id allocation (WS-311 AC e): always atomic.** Do NOT scan-then-increment for `next_run_id` from prose — two engines firing in the same minute would both compute the same id and silently overwrite each other's run scaffolding (run-017 demonstrated this live). Use the deterministic CLI:
+
+```bash
+node kit/scripts/cwos-engine-manifest.js allocate-run-id
+# → { "ok": true, "run_id": "run-018", "raw_id": 18 }
+```
+
+The CLI takes a file lock on `config.yaml.lock`, reads `next_run_id`, writes the incremented value, and returns the allocated id. Use the returned `run_id` for `cwos-engine-manifest init`, `run_workspace`, etc.
 
 ## Queue Index Maintenance
 
@@ -262,14 +273,20 @@ Update the session's `last_heartbeat` in its YAML file on every invocation.
 
 ---
 
-## Subcommand: `done <id> [notes]`
+## Subcommand: `done <id> [notes] [--commit <sha>]`
 
-1. Verify item is `in_progress` and claimed by current session
-2. Update: `status: done`, `completed_at: <timestamp>`, `completion_notes: <notes>`
-3. Move the item file from `queue/WS-<id>.yaml` to `queue/archive/WS-<id>.yaml`
-4. Remove the item's entry from `queue-index.yaml` (archived items are not indexed)
-5. Remove from session's `claimed_items` and `files_locked`
-6. Output: confirmation, suggest running `/verify`
+1. Verify item is `in_progress` and claimed by current session.
+
+   **Drift-recovery exception (WS-257):** if invoked with `--commit <sha>` AND the item is `backlog` or `claimed` (not in_progress), this is a state-drift correction — the work shipped outside the sprint loop and is being marked done after the fact. Skip the in_progress check; record `drift_correction: true` in the archived YAML.
+
+2. Update: `status: done`, `completed_at: <timestamp>`, `completion_notes: <notes>`.
+
+3. **If `--commit <sha>` provided:** record `completed_by_commit: <sha>` in the YAML before archiving. This gives the state-drift detector ground-truth linkage for future runs (instead of guessing from log search) and creates an audit trail for retroactive completions.
+
+4. Move the item file from `queue/WS-<id>.yaml` to `queue/archive/WS-<id>.yaml`.
+5. Remove the item's entry from `queue-index.yaml` (archived items are not indexed).
+6. Remove from session's `claimed_items` and `files_locked`.
+7. Output: confirmation, suggest running `/verify` (or for drift-corrections: suggest re-running the drift detector to confirm the resolution).
 
 ---
 
@@ -345,7 +362,7 @@ Same behavior as `/session-end`. See session-end.md.
 
 ## Subcommand: `create <title>`
 
-1. Get next item ID from `config.yaml`, increment counter
+1. Allocate the next item ID via `node kit/scripts/cwos-next.js allocate-ws-id` (see [WS-id allocation](#counter-reconciliation) — never eyeball the active-queue max; the CLI scans queue + archive + index)
 2. Ask for: description, type, category, effort, priority score, files involved, accept criteria
 3. Write `queue/WS-<id>.yaml`:
 
@@ -399,7 +416,7 @@ Same behavior as `/pulse` with no args. See pulse.md.
    - **program-scope-expansion:** Add new problem_classes and file_patterns to the target program. Note what was added.
    - **new-engine:** Add entry to `engines/registry.yaml` with suggested fields. Note: engine skill file still needs to be built via `/build-engine`
    - **new-invariant:** Append invariant to `system/invariants.md` using the proposal's rule and check fields
-   - **architecture-change:** Create a work item (WS-NNN) of type `improvement` with the change description
+   - **architecture-change:** Create a work item of type `improvement` with the change description — allocate its id via `node kit/scripts/cwos-next.js allocate-ws-id` (see [WS-id allocation](#counter-reconciliation))
 3. Update recommendation: `status: approved`, `approved_at: <timestamp>`
 4. Output confirmation with what was created
 

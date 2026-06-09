@@ -1,0 +1,47 @@
+# Engine readiness rules — single source per ADR-038 Decision #5 + WS-277.
+#
+# Per-engine prerequisite checks consulted by `cwos-frame compose` to populate
+# the `readiness` field of the intent contract. When a rule fails, readiness
+# becomes `defer` and the failing rule's `reason` text surfaces in the
+# pre-flight prompt. Founder either supplies the missing piece, accepts the
+# defer outcome, or overrides via `--just-run`.
+#
+# Rule shape:
+#   <engine-id>:
+#     - check: <check-type>          # 'baseline_run' | 'min_count' | 'file_exists' | 'event_present'
+#       <check-specific args>
+#       reason: "<human-readable defer message>"
+#
+# Schema (informal):
+#   - baseline_run: requires ≥1 baseline_run event in the program's evidence dir
+#       program: <program-id>  (uses the target as program if omitted)
+#   - min_count: requires ≥N items matching a glob
+#       glob: <relative path glob>
+#       min: <integer>
+#   - file_exists: requires a specific file to exist
+#       path: <repo-relative path>
+#   - event_present: requires ≥1 event of a given type in the last N days
+#       event_type: <type>
+#       within_days: <integer>
+#
+# Engines not listed here have no readiness rules — readiness defaults to
+# `ready` unless cwos-staleness or cwos-session-recovery flag a violation.
+
+eng-engine:
+  - check: baseline_run
+    reason: "engineering-engine wants ≥1 baseline run in evidence/<program>/ before deeper analysis is meaningful"
+
+product-evolution:
+  - check: min_count
+    glob: "fleet/repos/*/registry.yaml"
+    min: 3
+    reason: "product-evolution wants ≥3 adopted repos to see cross-fleet patterns (per OPT-023)"
+
+design-audit:
+  - check: file_exists
+    path: "system/intention.md"
+    reason: "design-audit needs system/intention.md to ground its anti-goal cross-checks"
+
+# Add new engines here as their prerequisites become load-bearing. Keep
+# rules minimal — over-aggressive readiness is the same anti-pattern as a
+# checklist ritual.

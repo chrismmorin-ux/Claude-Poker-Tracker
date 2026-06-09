@@ -83,6 +83,21 @@ backlog:
   source: yaml
   path: ""  # Custom path. Empty = default location for the source type.
 
+# Kit version drift handling (WS-404)
+# /status surfaces a "CWOS kit: <local> → <homebase>" header on every run and
+# suggests /fleet-update when this repo is behind. This block declares how you
+# WANT drift resolved per severity. SPEC ONLY — not yet enforced; the knobs are
+# read by tooling but auto-application is a follow-up. Until then every level
+# behaves as "prompt" (you decide when /fleet-update or /kit-upgrade runs).
+#   patches: patch-level drift (x.y.Z)  — e.g. 3.8.0 → 3.8.1
+#   minors:  minor-level drift (x.Y.z)  — e.g. 3.7.x → 3.8.0
+#   majors:  major-level drift (X.y.z)  — e.g. 2.x   → 3.0
+# Values: prompt (default, ask first) | auto (apply on next session — future) | ignore
+# auto_upgrade:
+#   patches: prompt
+#   minors: prompt
+#   majors: prompt
+
 # Ceremony level presets (reference — these are applied automatically):
 #
 # | Setting              | minimal    | standard   | strategic  |

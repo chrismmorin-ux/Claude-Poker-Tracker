@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_candidate_suppressed.json",
+  "title": "engines.engine_candidate_suppressed",
+  "description": "ADR-040 Decision #8 — recorded when the classifier produces a candidate below CONFIDENCE_THRESHOLD (v1=0.6). Suppressed candidates are NEVER surfaced to the founder; they accumulate as tuning data for the confidence-gate threshold (AS-CATCH-1) and the rule catalog. WS-298.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "trigger_signals", "mode", "suggested_engine", "confidence", "suppressed_reason"],
+  "properties": {
+    "type":                  { "type": "string", "const": "engine_candidate_suppressed" },
+    "trigger_signals":       { "type": "array", "items": { "type": "string" } },
+    "mode":                  { "type": "string", "enum": ["PREDICTIVE", "DISAMBIGUATING"] },
+    "active_engine_context": { "type": ["string", "null"] },
+    "suggested_engine":      { "type": "string", "minLength": 1 },
+    "suggested_target":      { "type": ["string", "null"] },
+    "suggested_contract":    { "type": ["object", "null"] },
+    "confidence":            { "type": "number", "minimum": 0, "maximum": 1 },
+    "alternatives_considered": { "type": "array" },
+    "suppressed_reason":     { "type": "string", "description": "Why suppressed — typically below_threshold (confidence=X < Y)" }
+  }
+}

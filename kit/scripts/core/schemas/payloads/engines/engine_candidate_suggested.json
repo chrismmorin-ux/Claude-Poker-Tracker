@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_candidate_suggested.json",
+  "title": "engines.engine_candidate_suggested",
+  "description": "ADR-040 Layer 2 (catch-state) — emitted by kit/scripts/core/cwos-catch-state.js when the rule-tier (R1–R6) or LLM fallback produces an engine candidate at confidence ≥ 0.6. Payload feeds Layer 3's intent-contract pre-fill if the founder invokes the suggested engine within PRE_FILL_WINDOW_TURNS (v1=10) turns. WS-298.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "trigger_signals", "mode", "suggested_engine", "confidence"],
+  "properties": {
+    "type":                  { "type": "string", "const": "engine_candidate_suggested" },
+    "trigger_signals":       { "type": "array", "items": { "type": "string" }, "description": "Names of rules that fired (e.g. ['R1','R3']) or ['LLM'] for fallback" },
+    "mode":                  { "type": "string", "enum": ["PREDICTIVE", "DISAMBIGUATING"] },
+    "active_engine_context": { "type": ["string", "null"], "description": "Engine id the founder has already invoked, or null when no context" },
+    "suggested_engine":      { "type": "string", "minLength": 1 },
+    "suggested_target":      { "type": ["string", "null"], "description": "Extracted target ref (file path, prog-* name, design-doc, plan, WS id)" },
+    "suggested_contract": {
+      "type": ["object", "null"],
+      "description": "Pre-filled Layer-3 intent contract draft per ENGINE_CONTRACT_DEFAULTS",
+      "properties": {
+        "mode":          { "type": "string", "enum": ["decide", "build-best", "mockup", "explore"] },
+        "stretch":       { "type": "boolean" },
+        "success_shape": { "type": ["string", "null"] },
+        "scope_ceiling": { "type": ["string", "null"] }
+      }
+    },
+    "confidence":            { "type": "number", "minimum": 0, "maximum": 1 },
+    "alternatives_considered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["engine_id", "why_not"],
+        "properties": {
+          "engine_id": { "type": "string" },
+          "why_not":   { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -20,9 +20,98 @@ Read `.cwos-config.yaml` from the repo root (if it exists). Extract:
 
 If `.cwos-config.yaml` is missing, default to `standard`. The user can always override by explicitly requesting `/session-start` (strategic) or just describing work (quick fix).
 
+## Step 0c: Dormant-mode short-circuit (WS-321 Phase B/E)
+
+Read `.cwos-onboarding.yaml`. If top-level `adoption_phase` equals `M0`, the repo is in dormant mode. The standard escalation signals (red programs, empty queue, overdue protocols) are meaningless — programs are inert by design, the queue is closed, and there are no protocols running. Run the **dormant briefing** below and stop. If `adoption_phase` is unset or `M1`–`M5`, skip this step entirely and continue with Step 0b.
+
+### 0c.1 Compute current intention.md content hash
+
+Read `system/intention.md`. Strip HTML comment blocks (`<!-- ... -->`) and whitespace-only lines, trim, and compute SHA-256 of the result. Call this `current_hash`.
+
+Read `m0_dormant.intention_content_hash` from `.cwos-onboarding.yaml`. Call this `prior_hash`.
+
+### 0c.2 Decide what changed
+
+Three states matter:
+
+- **No change** (`current_hash === prior_hash`): nothing to do. Skip to 0c.4 (render briefing).
+- **Hash changed AND content is non-placeholder**: founder authored real content. Emit an `intention_edit` event in 0c.3 and update the hash; the briefing in 0c.4 will surface the optional ignition nudge.
+- **Hash changed BUT content is still placeholder**: founder edited template comments/examples but didn't author real content. Update the hash silently (no event, no nudge). This avoids re-firing on every session for stale-but-non-canonical edits.
+
+**Non-placeholder heuristic** — mirrors the logic in `cwos-genesis-ignite.js` so a passing intention here means a passing precondition there:
+
+- Extract the `## Principles` and `## Imagined Outcome` sections.
+- For Principles: count bullets that are NOT `_placeholder_`, NOT italic-wrapped (`_..._`), NOT containing the word "placeholder" (case-insensitive).
+- For Imagined Outcome: count paragraphs that are NOT italic-wrapped and NOT containing "placeholder".
+- "Non-placeholder" = at least one Principles bullet OR a non-empty Imagined Outcome paragraph.
+
+### 0c.3 Emit `intention_edit` event AND update hash (only when content is non-placeholder)
+
+If 0c.2 classified as "hash changed AND content is non-placeholder", run BOTH steps:
+
+```bash
+node kit/scripts/cwos-event.js append intention_edit \
+  --track T20:capture-buffer \
+  --tag intention_edit \
+  --payload '{"old_hash":"<prior_hash>","new_hash":"<current_hash>","changed_sections":["Imagined Outcome","Principles"]}'
+```
+
+Then patch `m0_dormant.intention_content_hash` in `.cwos-onboarding.yaml` to `current_hash` so the next session-start sees no-change state. Both steps are required; emitting the event without updating the hash means the same edit fires repeatedly, polluting the buffer.
+
+If 0c.2 classified as "hash changed BUT content is still placeholder", patch the hash WITHOUT emitting the event.
+
+### 0c.4 Render the lean dormant briefing
+
+Pull capture counts directly from `.claude/workstream/events/current.jsonl` (no bundle in M0):
+
+- `note_added` count, `file_dropped` count, `conversation_summary` count, `implicit_decision` count
+
+Render this shape (substitute real values, no bracketed placeholders in the founder-visible output):
+
+```
+## Dormant — kit installed, awaiting intention
+
+Capture so far: <N> notes · <M> file drops · <K> conversation summaries · <D> implicit decisions
+
+<NUDGE_LINE>
+
+When you're ready: /intend
+```
+
+`<NUDGE_LINE>` substitution rules — exactly one of these, picked in order:
+
+1. **Hash just changed AND content is non-placeholder** (the founder authored real content this session or between sessions):
+   > intention.md has new content. Run /intend to ignite, or keep editing.
+
+2. **Total buffer event count == 0 AND intention.md is still placeholder** (nothing captured yet):
+   > Nothing captured yet. Drop a note in notes/, write a paragraph in system/intention.md, or just keep talking.
+
+3. **Otherwise** (capture is happening but no fresh intention edit this run):
+   > Capture is active. /intend reads what's accumulated when you're ready.
+
+The wording in option 1 — "Run /intend to ignite, or keep editing" — is load-bearing for AS-114 (the nudge must read as informational, not pressuring). Do not edit this wording without an ADR superseding ADR-047. "Keep editing" is the explicit out — it tells the founder the nudge is not a deadline.
+
+### 0c.5 Stop
+
+Do NOT execute Step 0b through Step 9. Specifically: do NOT run `cwos-session-recovery.js`, do NOT generate a session ID, do NOT scan programs for escalation, do NOT write a session lock file. The dormant phase deliberately doesn't produce session-history artifacts.
+
+## Step 0d: Check Kit Health (passive)
+
+Skipped if the Step 0c dormant short-circuit fired. Otherwise, run:
+
+```
+node kit/scripts/cwos-kit-health.js --line --quiet
+```
+
+This deterministic check (<500ms target) cross-references `kit/MANIFEST.yaml` + `.cwos-onboarding.yaml#capabilities` against on-disk file presence and Windows hardlink integrity. It is silent on the clean path and emits a single passive line on the degraded path — never blocks the session, never asks for input.
+
+If the script's exit code is `0` (or the script is missing in older kits): no output. Continue to Step 0b.
+
+If exit code is `1`: prepend the script's stdout (a single line beginning with `Kit health: …`) to the briefing. Place it ABOVE everything else as the first user-visible line, then continue with the rest of the session-start output. The line is informational; the founder may keep working without addressing it. WS-379 / `feedback_determinism_first`.
+
 ## Step 0b: Determine Session Path
 
-Evaluate five escalation signals. If **any** signal fires, set `path: full` and proceed through Steps 1–9 below. If none fire, set `path: lean` and jump directly to **Step 9-lean: Lean Briefing** — skipping Steps 1–9 entirely.
+Evaluate six escalation signals. If **any** signal fires, set `path: full` and proceed through Steps 1–9 below. If none fire, set `path: lean` and jump directly to **Step 9-lean: Lean Briefing** — skipping Steps 1–9 entirely.
 
 **Force overrides:**
 - `$ARGUMENTS` contains `full` OR `strategic` OR `--full` → `path: full` regardless of signals
@@ -39,6 +128,8 @@ Evaluate five escalation signals. If **any** signal fires, set `path: full` and 
 4. **overdue_critical_protocol** — For each program with `tier: critical`, check its `last_run_by_protocol` entries against each protocol's `cadence_days`. If any protocol is overdue by **≥ 2× cadence** (e.g., cadence 3 days, last run ≥ 6 days ago), signal fires.
 
 5. **stale_state** — Check `system/state.md` file mtime. If it is more than **7 days old**, signal fires.
+
+6. **exception_sunset** — Run `node kit/scripts/cwos-exception-sunset-check.js --no-emit 2>/dev/null`. Parse the JSON. If `exit_code >= 1` (at_risk or past) OR `transitions.length > 0`, signal fires. Reason: an active exception artifact is approaching or past its sunset_date without a `resolved_at` field, OR a cascading AS-N transition has been triggered. ADR-050's labeled-exception architecture relies on this surface (FIND-272 / WS-413, DEC-029). If `cwos-exception-sunset-check.js` is missing (older kit), the signal does not fire.
 
 **Record the decision:**
 - Track which signal(s) fired (may be multiple). The full-path briefing leads with a "Why escalated" line citing them.
@@ -179,6 +270,26 @@ The script locates HomeBase from the cwd, matches the current repo's entry by `p
 **If the repo isn't found in the registry** (the script reports "repo not in fleet registry"), note it once: the repo may have been moved or was adopted without fleet registration. Point the founder at `/adopt` or manual registry update. Do not attempt to auto-register.
 
 **Skip this step** if no HomeBase root can be found walking up from cwd (solo-repo usage, not part of a fleet).
+
+### 3d. Detect cross-session stage transition (WS-251 / ADR-035)
+
+Re-use the `.cwos-onboarding.yaml` content read in Step 3b. Compare two fields:
+
+- `stage` (or `declared_stage`) — current declared stage
+- `last_recorded_stage` — set by `/session-end` at the prior session's close
+
+If both are non-null AND they differ, surface a one-line prompt at the top of the Step 9 briefing (above the adoption-arc block):
+
+```
+📊 Stage changed since last session: <last_recorded_stage> → <stage>.
+   Tier defaults refreshed. Run `/stage status` to see current program tiers.
+```
+
+If they match, or `last_recorded_stage` is null (first session post-WS-251 or template-default), no prompt.
+
+**Do NOT call `cwos-stage-detect.js` here** — signal-scan latency belongs in `/audit`, which surfaces stage-mismatch as an ephemeral envelope finding (see `kit/commands/audit.md` `compose` subcommand). Step 3d catches *cross-session declaration changes only*; signal-driven escalation is `/audit`'s job.
+
+If `.cwos-onboarding.yaml` is absent or `stage` is null (pre-ADR-035 repo / unconfigured), skip silently.
 
 ### 4. Quick Health Check
 Run vital sign check commands from `system/state.md`:
@@ -405,6 +516,19 @@ Run `/pulse` for the full program dashboard and recommended actions.
 
 ### Escalation Alerts
 [programs where tier should be higher, or findings past escalation threshold]
+
+### Exception Sunset Health
+[Only shown if exception_sunset signal fired in Step 0b, OR if any exception artifact is within 30 days of sunset. Source: `node kit/scripts/cwos-exception-sunset-check.js --no-emit` JSON output. WS-413 / FIND-272.]
+
+- Active exceptions: N
+- At-risk (≤7 days from sunset): N
+- Past sunset (in 7-day grace): N
+- Past sunset (RED, grace lapsed): N  ← if >0, block all non-corrective work until resolved
+- Cascading transitions queued: N
+- Last sunset check: [time_ago]
+
+[If past_grace_lapsed > 0:]
+**Action required:** Pick a `sunset_resolution_option` (record / retire / amend) for each lapsed exception and write `resolved_at` to the artifact. The pre-commit hook is BLOCKING commits until this is resolved.
 
 ### Active Context
 | Type | Item | Urgency | Related Programs | Date |

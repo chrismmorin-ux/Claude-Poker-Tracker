@@ -34,19 +34,48 @@ Claude matches ceremony to task weight automatically.
 
 ## Engine Selection (Proactive Suggestions)
 
-Claude should **proactively suggest the right engine** for the situation rather than waiting for the user to guess. Reference `kit/engine-selection-protocol.md` for the full decision guide.
+Claude should **proactively suggest the right engine** for the situation rather than waiting for the user to guess. Before executing a non-trivial task, check whether an engine fits better than ad-hoc analysis.
 
-**Quick triggers:**
-- "Is this ready to ship?" / pre-launch anxiety → `eng-engine` focus=full
-- "Review this X" → `eng-engine` focus=X (budget trio for scoped, 6-persona for broad)
-- About to refactor / migrate / upgrade → `refactor-prep` / `migration-prep` / `upgrade-prep` FIRST
-- Multiple viable paths → `/decide` + `decision-enhance`
-- "Something feels off" but can't name it → `eng-engine` budget trio, focus=full
-- Production issue → `incident-response`
+### Situation → Engine Map
 
-**After any engine run** — suggest the next engine in the chain if findings warrant it (see `kit/engine-selection-protocol.md` → Engine Chains). Frame suggestions as business outcomes, not engine names: "Your API has critical security issues. Want a deeper attack chain analysis?" not "Run security-deep-dive."
+| User Signal | Suggest Engine | Config |
+|-------------|---------------|--------|
+| "Is this ready to ship?" / pre-launch anxiety | `eng-engine` | 6-persona, focus=full |
+| "Review this module / PR / feature" | `eng-engine` | 6-persona, focus=<area> |
+| "I want to refactor X" | `refactor-prep` | default |
+| "I need to upgrade dep X" | `upgrade-prep` | default |
+| "I'm planning a schema change" | `migration-prep` | default |
+| "Should I do A or B?" | `decide` → `decision-enhance` | default |
+| "Is my plan any good?" | `plan-enhance` | default |
+| "Something is broken in prod" | `incident-response` | default |
+| "Something feels off but I can't name it" | `eng-engine` | budget trio, focus=full |
+| "Financial logic concerns" | `financial-audit` | default |
+| "UX doesn't feel right" | `ux-audit` | default |
+| "Legal/compliance question" | `legal-safety` | default |
+| "Tests are weak" | `eng-engine` | focus="testing" |
+| "Priorities are unclear" | `traction` | default |
+| "What's the strategic play?" | `business-engine` | default |
+
+### After-action Engine Chains
+
+When one engine completes, proactively suggest the next step if findings warrant:
+
+| After Running | Suggest Next | When |
+|---------------|-------------|------|
+| `eng-engine` | `traction` | Any HIGH/CRITICAL findings — re-score backlog |
+| `eng-engine` | `financial-audit` | Findings touched payment/money code |
+| `eng-engine` | `ux-audit` | product-ux persona flagged 3+ UX issues |
+| `eng-engine` | `context-curator` | Findings feel generic or miss obvious issues |
+| `plan-enhance` | `decision-enhance` | Plan contains unresolved tradeoffs |
+| `refactor-prep` | `eng-engine` (focus=area) | After refactor completes |
+| `upgrade-prep` | `verify` | Before merging upgrade PR |
+| Any engine | `/decide` | Engine surfaced an architectural question |
+
+Frame suggestions as business outcomes, not engine names: "Your API has critical security issues. Want a deeper attack chain analysis?" — not "Run security-deep-dive."
 
 **Do NOT suggest an engine** for narrow lookups, single-line fixes, or when the user already specified exact scope.
+
+**Engine Intent Contract pre-flight (ADR-038 Layer 3, WS-277).** When `/engine <id>` runs, `cwos-frame compose` resolves mode/readiness/success_shape/scope_ceiling/stretch before tokens burn. If the founder signals impatience ("just go", "skip the framing", "I know what I want") OR has clearly already locked the framing in the previous turn (explicit mode + target + scope all stated), surface the **`--just-run`** escape valve verbatim: "Use `/engine <id> --just-run` to skip pre-flight (will record bypass + go directly to engine execution)." Do NOT default to `--just-run` proactively — the contract has real value when framing is ambiguous; only surface the escape when friction signals are clear.
 
 ## Sprint Protocol
 Work is organized into **sprints** — small batches (3-8 items) with a clear goal, approved once.
@@ -101,6 +130,36 @@ Commands must work at any milestone. When encountering missing state:
 | `/pulse` | Program dashboard — project areas needing attention |
 | `/workstream` | Queue management (14 subcommands) |
 | `/autopilot` | Schedule hours of autonomous work |
+
+## Command Routing — Use the Envelope
+
+When you need information that a CWOS command produces, **invoke the command**. Do not bypass to underlying scripts or YAML files when a command exists for the same operation. FIND-119 measured AI reading `prog-*.yaml` directly across 10 days while never invoking `/pulse` — defeating ADR-037's projected token savings and its observability story.
+
+| Need | Use this | Don't |
+|------|----------|-------|
+| Program health / status | `/pulse` or `/status` | grep `prog-*.yaml` |
+| Sprint composition | `/next` | hand-rank `queue/WS-*.yaml` |
+| Drift / staleness check | `/audit drift` | run `cwos-reconcile.js` directly |
+| Verify before merge | `/verify` | run individual INV scripts |
+| Record a decision | `/decide` | hand-edit `decisions.md` |
+| Workstream changes | `/workstream done|defer|claim|...` | hand-edit queue YAMLs |
+
+**Exceptions** — read freely:
+- `cwos-state-store.js <domain> <op>` — the typed-API path commands themselves use.
+- `cwos-event.js append ...` — event emission is mandatory at command boundaries.
+- One-off file reads when no command exists for the operation. (If you find yourself doing this regularly, that's a gap — flag it rather than normalizing the bypass.)
+
+INV-cli-bypass-via-command monitors compliance from envelope telemetry; sustained bypass routes a finding to `prog-self-compliance`.
+
+## Catch-state suggestions (ADR-040 / WS-299)
+
+A `UserPromptSubmit` hook (`cwos-catch-state-hook.js`) runs the catch-state classifier on each founder turn. When the rule-tier (R1–R6) produces a suggestion clearing the 0.6 confidence gate, the hook injects an `additionalContext` line of the form:
+
+> `Catch-state: consider /engine X on Y (R1,R3) conf=0.78. Founder may dismiss silently.`
+
+When you see that line in your context, surface it to the founder in the WS-276 routing form ("Consider `/engine X on Y` — `<one-clause reason>`"). Do not insist; founder may dismiss silently or invoke a different engine. Bypass-without-friction per ADR-040 Decision #7.
+
+If the founder invokes the suggested engine within ~30 minutes, Layer-3 `cwos-frame compose` automatically pre-fills its contract draft from the suggestion's `suggested_contract` (mode/stretch/success_shape/scope_ceiling). The provenance flows into `engine_intent_recorded.catch_state_prefill`.
 
 ## Path Resolution
 Read `system_dir` from `.cwos-config.yaml` (default: `system`). Substitute in all `system/` file references. Example: `system_dir: .cwos` → `system/state.md` becomes `.cwos/state.md`.
@@ -160,10 +219,6 @@ These rules run automatically, every session, without prompting.
 - **Before marking item done:** Run `/verify`.
 - **Domain rules:** Always read `.claude/rules/` — they're mandatory and override general patterns.
 - **Self-healing:** Stale program → auto-generate maintenance item. Failed vital sign → flag + suggest fix. Invariant check commands → run periodically. Kit version behind HomeBase → mention during `/status`.
-- **Staging hygiene in a busy tree (load-bearing; see `.claude/failures/UNTRACKED_IMPORT_BUILD_BREAK.md`):** Before `git commit` when the working tree carries uncommitted modifications outside the current workstream:
-  1. Run `npm run preflight:staged` — fails if any staged source file's relative import resolves to an untracked target.
-  2. For every shared file (router / root mount / context provider / index barrel) in the staged set, run `git diff --cached <file>` and confirm every hunk belongs to the current workstream. If a hunk is cross-workstream contamination, restore the upstream file (`git show <last-green-commit>:<file> > /tmp/clean`) and re-apply only the current-workstream hunks before re-staging.
-  3. Never `git add <shared-file>` blindly in a busy tree — whole-file add sweeps all hunks. Local build passes (working tree has the untracked target); CI fails on the resolver. Caught locally by step 1, redundantly by `deploy.yml` CI preflight.
 
 ## Autonomous Work Cycle
 When working autonomously: active sprint → resume | no sprint → `/next` → approve | queue empty → `/audit` → compose | still empty → `/plan` | still empty → drift-detector questions.
@@ -171,10 +226,6 @@ When working autonomously: active sprint → resume | no sprint → `/next` → 
 
 ---
 <!-- CWOS Preamble End — Project-specific content below -->
-
-<!-- CWOS Preamble End -->
-<!-- Override: project-specific sections below take precedence over preamble defaults -->
-
 
 # CLAUDE.md - Poker Tracker
 

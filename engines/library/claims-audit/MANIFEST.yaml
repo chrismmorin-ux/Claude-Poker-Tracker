@@ -1,0 +1,35 @@
+# Engine Extension Pack Manifest
+engine_id: claims-audit
+name: Claims Policy Audit (drafting + drift)
+description: Audit a repo's domain claims against documented evidence standards. On first baseline (when docs/claims/ has no promoted artifacts), Phase 0b drafts claims-register.draft.md + evidence-standards-matrix.draft.md from product copy + UI strings + AI outputs + README + marketing copy + claim-domain keyword scan. Conditionally drafts evaluator-validation-plan.draft.md when an AI-evaluator pattern is detected (rubric / grader / sim / judge files or scoring code over LLM outputs). Founder reviews and promotes via rename. Subsequent runs (with promoted artifacts) skip Phase 0b and audit drift, ungrounded claims, scope leaks, and evaluator-truth divergence. Honors no-silent-install — never overwrites non-draft artifacts, never silently mutates prog-claims-policy.yaml.
+category: governance
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service, research-clinical]
+install_conditions: governance capability enabled AND prog-claims-policy registered AND repo_claims non-empty
+programs: [claims-policy]
+personas_required:
+  - architect            # Phase 0b drafts claims-register + evidence-standards-matrix as code-traced rules
+  - failure-engineer     # Phase 0b cross-checks claims for scope leak / evidence-tier mismatch / silent assertion
+  - cross-critic         # Phase 2: adversarial review per the credentialed-skeptic mandate from prog-claims-policy.challenge protocol
+  - facilitator          # Phase 3: synthesis
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/claims-audit.md
+trigger: manual
+inputs: [repo_path, previous_claims_set]
+outputs: [claims_register_draft, evidence_standards_matrix_draft, evaluator_validation_plan_draft, drafts_manifest, claim_inventory, finding_inventory]
+chains:
+  on_complete: null
+  on_finding: workstream-promote
+finding_severities: [critical, high, medium, low]
+
+choice_point:
+  accepts: repo
+  size: standard
+  estimated_time: "~6-9 min (first run drafts 2-3 artifacts depending on AI-evaluator detection)"
+  hook: "Audit domain claims — drafts claims register + evidence standards matrix on first run (plus evaluator validation plan when AI-judge pattern detected), then catches drift, ungrounded claims, scope leaks"

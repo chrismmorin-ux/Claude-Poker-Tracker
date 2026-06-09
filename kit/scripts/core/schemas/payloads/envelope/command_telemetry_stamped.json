@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/command_telemetry_stamped.json",
+  "title": "envelope.command_telemetry_stamped",
+  "description": "T0:envelope command_telemetry_stamped event payload (WS-260, ADR-037 Phase 1). Back-fills tool_rounds_actual and tokens_derived onto a prior command_completed event via causation_id reference.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "tool_rounds_actual", "chars_total", "tokens_derived"],
+  "properties": {
+    "type": { "type": "string", "const": "command_telemetry_stamped" },
+    "tool_rounds_actual": { "type": "integer", "minimum": 0 },
+    "chars_total": { "type": "integer", "minimum": 0 },
+    "tokens_derived": { "type": "integer", "minimum": 0 },
+    "tokens_per_char": { "type": ["number", "null"], "minimum": 0 },
+    "transcript_lines_scanned": { "type": ["integer", "null"], "minimum": 0 }
+  }
+}

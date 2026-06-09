@@ -1,0 +1,240 @@
+id: claims-policy
+name: "Claims Policy & Evidence Standards"  # Renamed during /adopt to reflect claim domains (e.g., "Clinical Claims Policy", "Financial Accuracy Claims")
+schema_version: 3
+status: NEW
+
+# This program exists for repos that make DOMAIN CLAIMS about their output —
+# claims that, if wrong, carry real-world cost (clinical harm, legal liability,
+# financial loss, scientific invalidity). It is the accountability structure
+# for: what does this product assert, with what evidence, to what standard?
+#
+# /adopt installs this conditionally when claim-domain signals are detected in
+# README.md, intention.md, and other top-level governance docs. Signal classes:
+#   clinical    — "clinical", "FDA", "healthcare", "patient", "therapy",
+#                 "diagnosis", anatomical/physiological terminology
+#   legal       — "compliance", "attorney", "legal", "contract", "liability",
+#                 "regulatory"
+#   financial   — "SEC", "accounting", "transaction", "payment", "financial",
+#                 "revenue"
+#   scientific  — "theorem", "proof", "derivation", "peer-reviewed",
+#                 "hypothesis", "empirical"
+#
+# Detected classes are written to .cwos-onboarding.yaml as `repo_claims: [...]`
+# and mirrored into this program's scope.domain_claims field below.
+
+contract: >
+  Every domain claim this product makes carries an evidence chain a reasonable
+  reviewer could trace. The product's authorized voice (what it claims) is
+  defined in docs/claims/claims-policy.md. The evidence standard for each
+  claim type is defined in docs/claims/evidence-standards-matrix.md. If an
+  AI evaluator grades outputs (AISimPT-style), its ground-truth anchor is
+  defined in docs/claims/evaluator-validation-plan.md. If this program is
+  healthy, the founder can defend any claim against a domain-expert skeptic.
+
+capability_brief:
+  value: "Holds every domain claim accountable to a documented evidence chain — what the product asserts, who's authorized to assert it, and how it's verified."
+  problems_prevented:
+    - "Unsupported claims slipping into product copy or AI-generated output"
+    - "Evidence-standards drift across claim domains (clinical, legal, financial, scientific)"
+    - "AI evaluators (rubric / grader / sim) judging claims without a ground-truth anchor"
+    - "Authorized-voice gaps that let fabricated claims ship as if they were the product's official position"
+  cost:
+    activation: "~10 min — also requires founder confirms which claim domains apply"
+    ongoing: "Periodic /pulse run claims-policy + reviewing draft claims-policy.md and evidence-standards-matrix.md"
+  first_output:
+    - "docs/claims/claims-register.draft.md — claims drafted from product copy + UI strings + AI outputs + README + marketing copy (founder reviews and promotes via rename)"
+    - "docs/claims/evidence-standards-matrix.draft.md — per-domain evidence tier definitions + claim-type-to-tier mappings tied to the register"
+    - "docs/claims/evaluator-validation-plan.draft.md — generated only when an AI-evaluator pattern is detected in the repo (rubric / grader / sim / judge files or LLM-output scoring code)"
+    - "Authorized-voice gaps map + drift / scope-leak findings auto-promoted as work items (after promotion)"
+  activation_command: "/pulse run claims-policy baseline"
+  requires_user_input: true   # Founder reviews drafts and promotes; engine never silently activates load-bearing claims
+
+# Problem classes are tuned to claim-making repos. /adopt's customization pass
+# refines examples based on which claim domains were detected.
+problem_classes:
+  - name: "Claim Verification"
+    description: "Every domain claim the product makes can be traced to an authorized source"
+    examples:
+      - "clinical claim in UI without citation to peer-reviewed or textbook source"
+      - "financial number in report that wasn't computed from verified ground truth"
+      - "scientific derivation presented as proof with no SymPy or reviewed-paper anchor"
+    detection: "Claim inventory cross-referenced against evidence-standards-matrix.md; any ungrounded claim is a finding"
+
+  - name: "Evidence Chain Integrity"
+    description: "Each claim's evidence chain (data -> analysis -> claim) is intact and inspectable"
+    examples:
+      - "claim references a paper that has since been retracted"
+      - "internal derivation lost its SymPy verification when the file was refactored"
+      - "anatomical value in code has no source field linking back to an authorized reference"
+    detection: "Evidence freshness audit, source-reference integrity check, re-verification cadence review"
+
+  - name: "Claim-Backing Invariants"
+    description: "Rules that MUST hold if the product is making claims in this domain are enforced in code"
+    examples:
+      - "clinical claim domain requires every generated image to cite its primitive sources - invariant missing"
+      - "financial claim domain requires every computed total to trace to line items - invariant missing"
+      - "scientific claim domain requires every derivation to pass SymPy verification - invariant missing"
+    detection: "Invariant enumeration per claim domain, code-path coverage vs. claims made, failure-mode enumeration"
+
+  - name: "Evaluator Ground Truth (AI-as-judge setups only)"
+    description: "If an AI evaluator grades outputs before release, its judgments are anchored to truth (not just founder agreement)"
+    examples:
+      - "AISimPT-style evaluator drifts from real clinician review; calibration is self-referential"
+      - "rubric grader trained on founder-approved examples gradually encodes founder biases"
+      - "no scheduled human-expert spot-check cadence, so evaluator-truth divergence can compound silently"
+    detection: "Evaluator validation plan audit, spot-check cadence review, divergence metric check"
+
+  - name: "Disclaimer & Scope Boundaries"
+    description: "The product is explicit about what it does NOT claim; readers can't be misled"
+    examples:
+      - "research tool used in clinical context without disclaimer"
+      - "pre-FDA device claims that imply clearance"
+      - "v1 scope leaks into v2/v3 implied capability in marketing or docs"
+    detection: "Surface audit across README, UI copy, docs; scope-fence cross-reference"
+
+scope:
+  # domain_claims is populated during /adopt from .cwos-onboarding.yaml repo_claims
+  domain_claims: []
+  file_patterns:
+    - "docs/claims/**"
+    - "README.md"
+    - "system/intention.md"
+    - "**/*"   # /adopt narrows to claim-bearing paths after customization
+  invariants: []         # /adopt populates with claim-backing invariants
+  anti_invariants: []
+  constraints: []
+
+tier: dormant
+tier_triggers:
+  watch: "Any claim-domain signal detected in repo content (repo_claims non-empty)"
+  active: "Product surfaces claims to any user (internal demo, external preview, or real deployment)"
+  critical: "Any of: regulated claim domain (clinical/legal/financial); AI evaluator gates releases; claim-backed output has caused user-visible harm"
+
+protocols:
+  # Baseline runs the dedicated claims-audit engine. On first run (when
+  # docs/claims/ has no promoted artifacts), Phase 0b drafts claims-register
+  # + evidence-standards-matrix from product copy + UI strings + AI outputs
+  # + README + marketing copy + claim-domain keyword scan. Conditionally
+  # drafts evaluator-validation-plan when an AI-evaluator pattern is detected
+  # (rubric / grader / sim / judge files or LLM-output scoring code).
+  # Subsequent runs (with promoted artifacts) skip Phase 0b and run drift,
+  # blindspot, evidence-tier-violation, and disclaimer-gap checks.
+  # See engines/library/claims-audit/SKILL.md for the full phase sequence.
+  baseline:
+    engine: claims-audit
+    focus: "Full claim inventory and evidence audit: drafts register + standards matrix on first run (plus evaluator validation plan when applicable); subsequently checks drift, ungrounded claims, scope leaks, disclaimer gaps"
+    problem_classes: all
+    outputs:
+      - claims_inventory
+      - claims_register_draft
+      - evidence_standards_matrix_draft
+      - evaluator_validation_plan_draft   # only when AI-evaluator pattern detected
+      - evidence_chain_audit
+      - claim_backing_invariants_proposed
+      - disclaimers_gap_list
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Comprehensive claims review across all detected domains"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 3
+    focus: "Recent changes that add, modify, or remove claims; new claim surfaces"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to file_patterns, surface any added claim-domain keywords"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Adversarial claims review — what would a domain-expert skeptic (clinician, attorney, auditor, peer reviewer) challenge about this product's claims?"
+    prompt_additions: >
+      CHALLENGE protocol for Claims Policy. Role-play a credentialed skeptic
+      in each detected claim domain. For each claim the product makes:
+      - Would this hold up to professional peer review?
+      - Is the evidence cited actually sufficient for this claim's weight?
+      - Is there a silent scope leak (claim implies more than evidence supports)?
+      - Are disclaimers prominent where they need to be, or buried?
+      - Has the domain's consensus shifted since this evidence was recorded?
+      - For AI-evaluator gates: is the evaluator anchored to truth or just to founder judgment?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "What claim-policy gaps are we systematically missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Claims Policy.
+      - What claims does the product make implicitly (through UI affordances,
+        defaults, or omissions) that aren't in the claims inventory?
+      - What claim domains has the product drifted INTO without adding them to
+        repo_claims (e.g., a research tool that quietly became a clinical tool)?
+      - What evidence classes are we treating as equivalent that shouldn't be
+        (e.g., a textbook and a Kenhub video both cited as "anatomy source")?
+      - If the product were to be audited by a regulator tomorrow, what would
+        they find that we haven't documented?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 5
+    priority_floor: 28           # Claim-policy gaps are high-stakes; outranks most program findings
+    escalation:
+      stale_days: 7
+      escalate_to: session_start
+      escalate_priority_bump: 10
+  on_stale:
+    action: create_work_item
+    message: "Claims Policy program has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run claims-policy"
+    block_sprint: true           # Cannot ship new claims-bearing work while policy is stale
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [domain-correctness, anti-hallucination, launch]
+  fed_by: [domain-correctness, anti-hallucination]
+  blocks: [launch]
+
+phase_relevance:
+  foundation: high          # Get claims fenced early
+  pre-launch: critical      # No launch without claims-policy green
+  launch: critical
+  growth: critical
+  maturity: high
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run claims-policy baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 730           # Claim evidence retained longer than most — audit trails often needed after the fact
+  evidence_dir: ".claude/workstream/evidence/claims-policy/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Claims inventoried. Claims-policy doc drafted."
+    level_2: "Evidence-standards matrix filled per claim domain. Disclaimers audited. Claim-backing invariants added to system/invariants.md."
+    level_3: "Challenge active. All active-domain claims defensible against a credentialed skeptic. Evaluator validation plan complete for any AI-as-judge setup."
+    level_4: "Blind-spot active. Silent scope leaks impossible (delta protocol catches new claim surfaces). Zero unanchored claims sustained across releases."
+  current_gaps: "Never run."
+
+created_at: null
+updated_at: null

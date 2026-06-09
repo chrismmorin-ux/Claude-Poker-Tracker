@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_intent_bypassed.json",
+  "title": "engines.engine_intent_bypassed",
+  "description": "ADR-038 Layer 3 (WS-277) terminal event — fired when /engine is invoked with --just-run (or /engine!!), bypassing cwos-frame pre-flight entirely. Recorded silently per Decision #3 (zero-resistance escape valve); used by post-hoc analysis to measure whether bypass correlates with re-runs (AS-INTENT-1 falsification signal).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "engine", "target", "bypass_reason"],
+  "properties": {
+    "type":         { "type": "string", "const": "engine_intent_bypassed" },
+    "engine":       { "type": "string", "minLength": 1 },
+    "target":       { "type": "string" },
+    "bypass_reason": { "type": "string", "enum": ["founder-explicit", "ai-autonomous"], "description": "founder-explicit = --just-run flag; ai-autonomous = autopilot batch mode" },
+    "would_have_been_contract": {
+      "type": ["object", "null"],
+      "description": "If cwos-frame compose ran before bypass, snapshot of the would-be contract. Null when bypass short-circuited everything (typical case)."
+    },
+    "bypassed_at": { "type": ["string", "null"], "format": "date-time" },
+    "composed_by": { "type": "string", "const": "cli-deterministic" }
+  }
+}

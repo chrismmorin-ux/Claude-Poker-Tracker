@@ -1,0 +1,29 @@
+# Engine Extension Pack Manifest
+engine_id: research-review
+name: Research Review
+description: Adversarial research review with falsifiability analysis, load-bearing assumption scoring, and portfolio balance check
+archetypes: [research]
+install_conditions: none
+programs: []
+personas_required: [research-scientist]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/research-review.md
+category: analysis
+impact: changes-state
+procedure: agent-dispatch
+extends: context-gather
+trigger: manual
+inputs: [codebase, system_model]
+outputs: [finding, report]
+chains:
+  on_complete: null
+  on_finding: create_work_item
+finding_severities:
+  critical: 90
+  high: 72
+  medium: 54
+  low: 36
+  info: 18

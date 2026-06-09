@@ -10,6 +10,18 @@ user-invocable: true
 
 ## Steps
 
+### 0a. Dormant-mode gate (WS-321)
+
+Read `.cwos-onboarding.yaml`. If the top-level field `adoption_phase` equals `M0`, the repo was scaffolded by `/genesis` and is in dormant mode — `/welcome`'s job (orienting the founder to a freshly-adopted L2 install) does not apply yet. Exit silently with this single line and stop:
+
+```
+/welcome will run after /intend completes ignition. The repo is in dormant mode — run /status to see capture progress, or /intend when you're ready to ignite.
+```
+
+Do NOT emit the standard adoption-arc envelope, the welcome message, or any of Steps 1–8. The actual orientation work happens at ignition time (`cwos-genesis-ignite.js apply` sets `usage.yaml welcome_completed: true` so this command never auto-fires for genesis-path repos after M1 promotion).
+
+If `.cwos-onboarding.yaml` is missing or `adoption_phase` is unset/null/`M1`–`M5`, continue normally with Step 0b.
+
 ### 0b. Read Adoption Arc State
 
 Read `.cwos-onboarding.yaml` (or `system/onboarding-state.yaml`). Extract:
@@ -56,12 +68,16 @@ Substitute `<repo_name>` from the onboarding state if available. Fall back to "y
 
 ### 2. Show What Was Installed
 
-Read `.cwos-version`. Render the "What's Set Up" block, substituting real values before display so no angle-bracket placeholders appear in the founder output. Use this shape:
+Read `.cwos-onboarding.yaml` `capabilities` block (ADR-016 canonical state). Build a comma-list of capability names where `state == "enabled"` — that's the founder-facing answer. If the `capabilities` block is missing (legacy adopted repo) fall back to "core" (the always-installed M1 baseline).
+
+Read `.cwos-version` for the kit version + adoption timestamp. Do NOT render any `level` field from `.cwos-version` — that field is deprecated per ADR-016 and is absent on fresh installs.
+
+Render the "What's Set Up" block, substituting real values before display so no angle-bracket placeholders appear in the founder output. Use this shape:
 
 ```
 ## What's Set Up
 
-**Adoption Level:** L2
+**Capabilities enabled:** core, workstream, engines
 **Engines installed:** 5 (health-check, engine, product-ideation, optimization-feedback, meta-engine)
 **Personas available:** 3
 

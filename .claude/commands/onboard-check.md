@@ -47,7 +47,27 @@ If any M1 check fails, something went wrong with `/adopt`. Log friction and sugg
 #### M4: First Engine Run
 - `engine_run_completed`: `.claude/workstream/runs/` contains at least 1 `RUN-*.yaml`
 - `findings_exist`: `.claude/workstream/findings/` contains at least 1 `FIND-*.yaml`
-- `engine_registry_valid`: Read `.claude/workstream/engines/registry.yaml`. For every uncommented engine entry, verify `skill_path` points to a file that exists. If any don't: silently remove the phantom entry and log friction.
+- `engine_registry_valid` **(WS-373 / INV-F2 — VISIBLE):** Read `.claude/workstream/engines/registry.yaml`. For every uncommented engine entry, verify `skill_path` points to a file that exists. If any don't, do BOTH of:
+  1. Remove the phantom entry from the registry.
+  2. **Surface to founder VERBATIM** (do not silently swallow):
+     > "Phantom cleanup: removed N engine registry entries with missing skill files: [list of removed names]. Their capability flag has been flipped to `installed: false`. Run `/engine <real-engine>` to verify operational coverage, or `/adopt --repair` to attempt restoration."
+  3. For each phantom engine, flip the matching `deferred_commands.<cap>.installed` flag in `.cwos-onboarding.yaml` to `false` (capability flag must reflect actual file presence — without this step the AI keeps dispatching against a phantom).
+
+  Per FIND-RUN017-2 / INV-F2: if any phantoms are detected and removed, log friction AND keep the founder-facing line above visible in the M4 output. The friction-log entry alone is not sufficient observability.
+
+### 4a. Re-validate All Capability Flags (WS-373 Defect 2 fix)
+
+After the M4 phantom-cleanup pass, walk **every** `deferred_commands.<cap>` group in `.cwos-onboarding.yaml`. For each group whose `installed: true`:
+
+1. Read the kit MANIFEST or the capability's expected source path (e.g. `engines/` for `engines:`, `personas/` for `personas:`).
+2. Check that at least one backing file exists at the expected location.
+3. If no backing file exists: flip the flag back to `installed: false` and add a one-line note to the friction log.
+
+Surface verbatim to the founder if any flags flipped:
+
+> "Re-validated N capability flags; flipped M back to `installed: false`: [list]. These capabilities were marked installed but their backing files are missing. Re-run `/adopt` (idempotent) to recover."
+
+This closes the second half of the INV-F2 violation: the flag drifts true after a file gets removed downstream of adoption (e.g. manual cleanup, OneDrive sync deletion). Without this re-validation pass, the flag remains a misleading provenance signal.
 
 #### M5: Steady State
 - `all_programs_audited`: Every `prog-*.yaml` with `status: active` has `last_run.date` not null

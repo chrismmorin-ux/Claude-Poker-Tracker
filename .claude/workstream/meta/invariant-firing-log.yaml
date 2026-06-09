@@ -1,0 +1,324 @@
+schema_version: 1
+invariants:
+  INV-001:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-002:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-004:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-006:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-008:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-009:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-010:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-011:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-013:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-014:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-016:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-018:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-024:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-025:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-026:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-027:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-028:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-029:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-030:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-031:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-032:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-033:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-034:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-035:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-036:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-037:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-038:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-039:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-040:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-041:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-042:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-043:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-044:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-045:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-046:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-047:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-048:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-049:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-053:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-055:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-056:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-057:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-059:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-cli-envelope-consumed-completely:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null
+  INV-program-fields-have-runtime-effect:
+    consecutive_failures: 1
+    first_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-09"
+    last_status: "FAIL"
+    threshold: 5
+    migration_ws_id: null
+  INV-readpath-determinism:
+    consecutive_failures: 0
+    first_failed_at: null
+    last_failed_at: null
+    last_status: "PASS"
+    threshold: 5
+    migration_ws_id: null

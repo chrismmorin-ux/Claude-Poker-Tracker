@@ -134,6 +134,8 @@ Launch the **roundtable-facilitator** agent (use `facilitator` persona from `.cl
 > De-duplicate against existing queue items. Use the RICE scoring reference provided.
 >
 > Format work items for the workstream queue (YAML format with all required fields).
+>
+> **WS-id allocation (WS-040):** allocate every new work item's id via `node kit/scripts/cwos-next.js allocate-ws-id` — call it once per id, in order. Do NOT compute the next id by eyeballing the active-queue max: that scan misses `queue/archive/` and re-issues retired ids, which lets reconcile force-complete the new item (the SPR-018 / WS-033 incident). The CLI scans queue + archive + index.
 
 ### 6. Output: Proposed Sprint(s)
 

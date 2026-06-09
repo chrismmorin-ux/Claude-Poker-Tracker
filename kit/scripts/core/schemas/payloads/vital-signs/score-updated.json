@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/vital-signs/score-updated.json",
+  "title": "vital-signs.score-updated",
+  "description": "T11:vital-signs score-updated event payload (cwos-score). WS-210.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "program_file": { "type": "string" },
+    "finding_health": { "type": "number" },
+    "protocol_currency": { "type": "number" },
+    "coverage": { "type": "number" }
+  }
+}

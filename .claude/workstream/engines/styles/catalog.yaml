@@ -1,0 +1,186 @@
+# Engine Style Catalog — composable dimensions for engine execution
+# Styles are orthogonal: any reasoning + any output + any tone.
+# Each style is a markdown fragment that injects into procedure phases.
+#
+# Resolution order: CLI flags > per-engine config > signal detection > catalog defaults
+
+schema_version: 1
+
+dimensions:
+
+  reasoning:
+    description: "How agents structure their thinking and interact with each other"
+    default: dispatch
+    options:
+      dispatch:
+        file: engines/styles/reasoning/dispatch.md
+        label: "Standard roundtable"
+        description: "Each expert gives their independent take, then cross-critique finds the gaps."
+        injects_into: [phase-1, phase-2]
+        best_for: ["general analysis", "broad coverage", "first look"]
+        complexity: low
+        time_multiplier: 1.0
+
+      pre-mortem:
+        file: engines/styles/reasoning/pre-mortem.md
+        label: "Pre-mortem"
+        description: "Imagine the project failed — work backward to find what killed it."
+        injects_into: [phase-1, phase-2]
+        best_for: ["pre-deploy", "launch readiness", "risk assessment"]
+        complexity: medium
+        time_multiplier: 1.2
+
+      dialectical:
+        file: engines/styles/reasoning/dialectical.md
+        label: "Thesis vs. antithesis"
+        description: "Agents argue opposing positions for each concern, then a third finds the synthesis."
+        injects_into: [phase-1, phase-2, phase-3]
+        best_for: ["architecture decisions", "tradeoff analysis", "contentious choices"]
+        complexity: high
+        time_multiplier: 1.5
+
+      five-whys:
+        file: engines/styles/reasoning/five-whys.md
+        label: "Five whys"
+        description: "Drill into root causes — keep asking 'why' until you find bedrock."
+        injects_into: [phase-1, phase-3]
+        best_for: ["recurring bugs", "post-incident", "pattern investigation"]
+        complexity: medium
+        time_multiplier: 1.3
+
+      delphi:
+        file: engines/styles/reasoning/delphi.md
+        label: "Delphi method"
+        description: "Agents score independently, then revise after seeing anonymized peer reasoning."
+        injects_into: [phase-1, phase-2, phase-3]
+        best_for: ["effort estimation", "risk quantification", "severity calibration"]
+        complexity: high
+        time_multiplier: 1.8
+
+      progressive-deepening:
+        file: engines/styles/reasoning/progressive-deepening.md
+        label: "Progressive deepening"
+        description: "Start broad, identify hotspots, zoom in deeper on what matters most."
+        injects_into: [phase-1, phase-3]
+        best_for: ["large codebase", "first analysis", "unknown territory", "time-constrained"]
+        complexity: medium
+        time_multiplier: 1.0
+
+      inversion:
+        file: engines/styles/reasoning/inversion.md
+        label: "Inversion"
+        description: "Instead of 'what should we fix?' ask 'what would guarantee failure?'"
+        injects_into: [phase-1]
+        best_for: ["strategy review", "anti-pattern detection", "resilience testing"]
+        complexity: low
+        time_multiplier: 1.0
+
+      competing-hypotheses:
+        file: engines/styles/reasoning/competing-hypotheses.md
+        label: "Competing hypotheses"
+        description: "Define multiple theories about the problem, build an evidence matrix, then systematically eliminate."
+        injects_into: [phase-1, phase-2, phase-3]
+        best_for: ["large refactor", "architecture choice", "ambiguous problems", "diagnosis"]
+        complexity: high
+        time_multiplier: 1.5
+
+      scenario-planning:
+        file: engines/styles/reasoning/scenario-planning.md
+        label: "Scenario planning"
+        description: "Map out 3-4 plausible futures and stress-test the project against each."
+        injects_into: [phase-1, phase-3]
+        best_for: ["strategic planning", "growth preparation", "market uncertainty"]
+        complexity: medium
+        time_multiplier: 1.3
+
+  output:
+    description: "How results are structured and presented to the user"
+    default: executive
+    options:
+      executive:
+        file: engines/styles/output/executive.md
+        label: "Executive briefing"
+        description: "Top findings, what to do next, bottom line up front. 1-page max."
+        modifies: [phase-5]
+        best_for: ["busy founder", "decision-making", "daily use"]
+
+      progressive-disclosure:
+        file: engines/styles/output/progressive-disclosure.md
+        label: "Progressive disclosure"
+        description: "Headline first, then expandable depth for those who want detail."
+        modifies: [phase-5]
+        best_for: ["mixed audiences", "flexible depth", "reference material"]
+
+      opinionated:
+        file: engines/styles/output/opinionated.md
+        label: "Opinionated"
+        description: "One clear recommendation with strong conviction. No fence-sitting."
+        modifies: [phase-3, phase-5]
+        best_for: ["speed", "trust the system", "action-oriented"]
+
+      options-matrix:
+        file: engines/styles/output/options-matrix.md
+        label: "Options matrix"
+        description: "Structured comparison table — here are your options, here are the tradeoffs."
+        modifies: [phase-3, phase-5]
+        best_for: ["design decisions", "architecture choices", "stakeholder alignment"]
+
+      narrative:
+        file: engines/styles/output/narrative.md
+        label: "Narrative"
+        description: "Tells the story of what was found, building understanding as it goes."
+        modifies: [phase-5]
+        best_for: ["learning", "first-time analysis", "complex context"]
+
+      risk-register:
+        file: engines/styles/output/risk-register.md
+        label: "Risk register"
+        description: "Formal risk table with likelihood, impact, mitigation, and owner columns."
+        modifies: [phase-3, phase-5]
+        best_for: ["compliance", "due diligence", "investor prep", "audit trail"]
+
+  tone:
+    description: "Voice and language register of the briefing"
+    default: co-founder
+    options:
+      co-founder:
+        file: engines/styles/tone/co-founder.md
+        label: "Co-founder"
+        description: "Direct, honest peer — 'here's what I'd prioritize if it were my company.'"
+        modifies: [phase-3, phase-5]
+        best_for: ["day-to-day dev", "pragmatic decisions", "non-technical founders"]
+
+      mentor:
+        file: engines/styles/tone/mentor.md
+        label: "Mentor"
+        description: "Patient, educational — explains the 'why' behind each finding."
+        modifies: [phase-3, phase-5]
+        best_for: ["learning", "first-time users", "unfamiliar domains"]
+
+      surgeon:
+        file: engines/styles/tone/surgeon.md
+        label: "Surgeon"
+        description: "Precise, no-nonsense — 'here's the problem, here's the fix, moving on.'"
+        modifies: [phase-3, phase-5]
+        best_for: ["pre-deploy", "crisis", "experienced users", "time pressure"]
+
+      auditor:
+        file: engines/styles/tone/auditor.md
+        label: "Auditor"
+        description: "Formal, evidence-based — every claim has a citation. Pass/fail verdicts."
+        modifies: [phase-3, phase-5]
+        best_for: ["compliance prep", "security review", "external sharing"]
+
+      socratic:
+        file: engines/styles/tone/socratic.md
+        label: "Socratic"
+        description: "Asks questions that lead you to the conclusion rather than stating it."
+        modifies: [phase-3, phase-5]
+        best_for: ["learning", "code review", "teaching moments"]
+
+      consultant:
+        file: engines/styles/tone/consultant.md
+        label: "Consultant"
+        description: "Professional, structured — 'based on our analysis, we recommend...'"
+        modifies: [phase-3, phase-5]
+        best_for: ["investor prep", "strategic planning", "formal presentations"]

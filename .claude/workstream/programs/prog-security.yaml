@@ -1,0 +1,192 @@
+id: security
+name: Security
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that the application is hardened against attack vectors,
+  user data is protected, secrets are managed, and dependencies are free of known
+  vulnerabilities. Security is not something the founder needs to understand —
+  this program ensures it is handled to a standard the founder can point to
+  if a customer, investor, or regulator asks "how do you handle security?"
+
+capability_brief:
+  value: "Holds security accountable to a defensible standard — auth, secrets, dependencies, input validation, and infrastructure config get continuously checked."
+  problems_prevented:
+    - "Secrets leaking via tracked files, commits, or logs"
+    - "Auth / permission gaps shipping to production"
+    - "Dependency CVEs lingering unpatched past their disclosure window"
+    - "Input-validation holes in user-facing surfaces (XSS, SQLi, deserialization)"
+    - "Misconfigured infrastructure (open buckets, missing TLS, exposed admin endpoints)"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run security (3-day delta + 14-day sweep — fastest cadences in the kit)"
+  first_output:
+    - "Security baseline covering auth / secrets / deps / input / infra config"
+    - "High-severity findings auto-promoted as work items"
+    - "Dependency CVE snapshot with remediation suggestions"
+    - "Misconfig audit (TLS, headers, public endpoints, auth scopes)"
+  activation_command: "/pulse run security baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Authentication & Authorization
+    description: "Who can access what, and is that enforced correctly everywhere"
+    examples: ["missing auth on API endpoint", "role escalation via parameter tampering", "session fixation"]
+    detection: "Route/endpoint audit for auth decorators, role-check coverage, session management review"
+
+  - name: Data Protection
+    description: "Sensitive data is encrypted, masked, and never exposed inappropriately"
+    examples: ["PII in logs", "unencrypted database fields", "API responses leaking internal IDs"]
+    detection: "Log content scan, database field audit, API response schema review"
+
+  - name: Secrets Management
+    description: "API keys, passwords, tokens are never in code and are rotated"
+    examples: ["hardcoded API key", ".env committed to git", "secrets in CI logs"]
+    detection: "Secret pattern grep, git history scan for leaked secrets, CI log review"
+
+  - name: Input Validation & Injection
+    description: "All user input is validated and cannot be used to attack the system"
+    examples: ["SQL injection", "XSS via form fields", "command injection via file upload names"]
+    detection: "Input handling audit, parameterized query check, output encoding verification"
+
+  - name: Dependency Vulnerabilities
+    description: "Third-party packages have no known security vulnerabilities"
+    examples: ["npm audit findings", "CVE in pinned version", "abandoned package with no patches"]
+    detection: "Package audit tools, CVE database cross-reference, maintenance status check"
+
+  - name: Infrastructure & Configuration
+    description: "Server, cloud, and deployment configs follow security best practices"
+    examples: ["debug mode in production", "CORS allowing *", "no rate limiting on auth endpoints"]
+    detection: "Config file audit, header analysis, rate limit verification"
+
+scope:
+  file_patterns:
+    - "**/*auth*"
+    - "**/*security*"
+    - "**/*login*"
+    - "**/*password*"
+    - "**/*token*"
+    - "**/*session*"
+    - "**/*.env*"
+    - "**/middleware*"
+    - "**/config*"
+    # /adopt adjusts to match detected security-relevant paths
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: dormant
+tier_triggers:
+  watch: "Application accepts user input or has authentication"
+  active: "Application is deployed to production with real users"
+  critical: "Application handles PII, financial data, or has had a security incident"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full security assessment: auth, data protection, secrets, injection, dependencies, infra config"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 7
+    focus: "Comprehensive security review of all problem classes"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 3
+    focus: "Security review of recent changes: new endpoints, auth changes, dependency updates"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Adversarial security review"
+    prompt_additions: >
+      CHALLENGE protocol for Security. Think like an attacker:
+      - What would you try first to break into this application?
+      - What data could you exfiltrate if you compromised one user account?
+      - What happens if an API key is leaked? What's the blast radius?
+      - Are there endpoints that bypass the normal auth flow?
+      - What would a supply chain attack via a dependency look like?
+      - What information does the application leak in error messages?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "What security risks are we systematically missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Security. Review protocol history and ask:
+      - What problem classes have never produced findings? Are we not checking, or actually clean?
+      - Has the attack surface grown (new endpoints, new integrations) since the last sweep?
+      - Are there security practices standard for this tech stack we haven't verified?
+      - What would OWASP Top 10 items look like specifically in THIS application?
+      - Are there timing attacks, race conditions, or business logic vulnerabilities beyond input validation?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 5            # Security findings should not queue up
+    priority_floor: 27           # Security items are always high priority
+    escalation:
+      stale_days: 7              # Security findings must be addressed quickly
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Security program has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run security"
+    block_sprint: true           # Cannot compose new sprints while security is stale at active+ tier
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [launch, compliance]
+  fed_by: []
+  blocks: [launch]
+
+phase_relevance:
+  foundation: medium
+  pre-launch: critical
+  launch: critical
+  growth: high
+  maturity: high
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/security/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline protocol has run."
+    level_2: "All 6 problem classes checked. No critical vulnerabilities open."
+    level_3: "Challenge protocol active. Regular scanning on cadence. Secrets managed."
+    level_4: "Blind-spot protocol active. Zero critical/high findings sustained. All auth paths verified."
+  current_gaps: "Never run. Security posture unknown."
+
+created_at: null
+updated_at: null

@@ -1,0 +1,121 @@
+# Founder Glossary — terms whose unexplained use in engine briefings
+# triggers a jargon finding (WS-129 / P2 enforcement).
+#
+# Add a term when you notice it showing up in briefings without
+# translation. Keep expansions in plain language ("runs multiple
+# tasks in parallel"), not code-comment paraphrase ("executes
+# promises concurrently").
+#
+# Format:
+#   term: the exact phrase the detector whole-word matches (case-insensitive)
+#   expansion: the founder-facing plain-language rewrite
+#   category: programming | web | databases | devops | cwos
+#
+# Glossary is merged additively on kit updates — fleet updates will
+# not clobber terms you add.
+
+version: 1
+terms:
+
+  # --- programming / general ---
+  - term: "idempotent"
+    expansion: "safe to retry — running it twice has the same effect as running once"
+    category: programming
+  - term: "Promise.allSettled"
+    expansion: "runs multiple tasks in parallel and waits for all of them"
+    category: programming
+  - term: "memoize"
+    expansion: "cache the result so the same call doesn't re-run the work"
+    category: programming
+  - term: "closure"
+    expansion: "a function that remembers variables from where it was created"
+    category: programming
+  - term: "race condition"
+    expansion: "a bug where the outcome depends on which of two operations finishes first"
+    category: programming
+  - term: "polyfill"
+    expansion: "a shim that adds a newer feature to an older runtime"
+    category: programming
+  - term: "monkeypatch"
+    expansion: "changing a library's behavior at runtime without editing its source"
+    category: programming
+  - term: "async"
+    expansion: "runs in the background instead of blocking the next step"
+    category: programming
+  - term: "mutex"
+    expansion: "a lock that prevents two tasks from changing the same thing at once"
+    category: programming
+  - term: "thrashing"
+    expansion: "wasting time switching between tasks instead of finishing any one"
+    category: programming
+
+  # --- web ---
+  - term: "CORS"
+    expansion: "rules that decide whether one website can call another website's API"
+    category: web
+  - term: "CSP"
+    expansion: "Content Security Policy — browser rules about what scripts and styles a page can load"
+    category: web
+  - term: "JWT"
+    expansion: "a signed token the server gives a user to prove who they are on later requests"
+    category: web
+  - term: "XSS"
+    expansion: "a security bug where attacker-controlled content runs as code in a user's browser"
+    category: web
+  - term: "SSR"
+    expansion: "server-side rendering — building the HTML on the server instead of in the browser"
+    category: web
+  - term: "hydration"
+    expansion: "the browser wiring interactivity onto HTML the server already rendered"
+    category: web
+
+  # --- databases ---
+  - term: "ACID"
+    expansion: "database guarantees that a transaction either finishes completely or doesn't happen at all"
+    category: databases
+  - term: "eventual consistency"
+    expansion: "different parts of the system briefly see different values, then agree"
+    category: databases
+  - term: "primary key"
+    expansion: "the unique ID column a database uses to find a specific row"
+    category: databases
+  - term: "foreign key"
+    expansion: "a column that points to another table's ID — enforces the relationship"
+    category: databases
+  - term: "N+1 query"
+    expansion: "a performance bug where one lookup triggers N follow-up queries instead of a single batch"
+    category: databases
+  - term: "index"
+    expansion: "a database shortcut that makes one kind of lookup much faster"
+    category: databases
+
+  # --- devops / infra ---
+  - term: "CI/CD"
+    expansion: "automation that runs tests on every commit and ships changes when they pass"
+    category: devops
+  - term: "container"
+    expansion: "a packaged app that runs the same way on any machine"
+    category: devops
+  - term: "orchestration"
+    expansion: "software that schedules and monitors many containers across servers"
+    category: devops
+  - term: "blue-green deploy"
+    expansion: "keep the old version running while the new one comes up, then switch traffic"
+    category: devops
+  - term: "canary release"
+    expansion: "send a small slice of real traffic to a new version before rolling it out to everyone"
+    category: devops
+  - term: "backpressure"
+    expansion: "a consumer signaling 'slow down' to a producer so queues don't overflow"
+    category: devops
+
+  # --- CWOS-specific ---
+  - term: "invariant"
+    expansion: "a rule that must always hold — if it breaks, the system is in trouble"
+    category: cwos
+  - term: "hardlink"
+    expansion: "two file paths that point to the exact same file on disk — edit one, both change"
+    category: cwos
+  - term: "reconcile"
+    expansion: "rebuild the index files from the source YAMLs so they agree"
+    category: cwos

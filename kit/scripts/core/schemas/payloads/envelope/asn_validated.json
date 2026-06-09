@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/asn_validated.json",
+  "title": "envelope.asn_validated",
+  "description": "T0:envelope asn_validated event payload (WS-318). Emitted when an AS-N (load-bearing assumption) verdict is recorded — manually via cwos-asn-transition.js or by a future deterministic verdict executor. Closes the falsification loop: a declared assumption transitions to validated, contradicted, at_risk, or insufficient_data with explicit evidence and provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type", "assumption_id", "program_id", "verdict",
+    "evidence", "validated_by", "validated_at"
+  ],
+  "properties": {
+    "type":              { "type": "string", "const": "asn_validated" },
+    "assumption_id":     { "type": "string", "pattern": "^AS-\\d+$" },
+    "program_id":        { "type": "string", "minLength": 1 },
+    "verdict":           { "type": "string", "enum": ["validated", "contradicted", "at_risk", "insufficient_data"] },
+    "evidence":          { "type": "string", "minLength": 20 },
+    "validated_by":      { "type": "string", "minLength": 1 },
+    "validated_at":      { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "contradict_reason": { "type": ["string", "null"] },
+    "runner_version":    { "type": ["string", "null"] }
+  }
+}

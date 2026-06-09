@@ -1,0 +1,99 @@
+schema_version: "1"
+# adoption_level retired (WS-438 / ADR-016) — capabilities block is canonical.
+adopted_at: ""      # Set during /adopt
+repo_type: ""       # Set during /adopt (SaaS, Frontend, etc.)
+
+# Command usage tracking — incremented each time a command runs
+# Updated by: session-end (batch), quick-fix epilogue, individual commands
+command_usage:
+  status: 0
+  session_start: 0
+  session_end: 0
+  next: 0
+  workstream: 0
+  engine: 0
+  build_engine: 0
+  audit: 0
+  verify: 0
+  plan: 0
+  pulse: 0
+  decide: 0
+  # Quick fix and standard mode aren't commands but track session types
+  quick_fix_sessions: 0
+  standard_sessions: 0
+  strategic_sessions: 0
+
+# Engine run tracking — which engines are actually used
+engine_runs:
+  # engine_name: { runs: N, last_run: date, findings_generated: N, items_created: N }
+  # Example:
+  # eng-engine: { runs: 3, last_run: "2026-04-01", findings_generated: 12, items_created: 5 }
+
+# Value ledger — concrete evidence of CWOS impact
+# Each entry is a timestamped record of value delivered
+value_ledger:
+  total_findings_caught: 0
+  total_items_completed: 0
+  total_items_created: 0
+  regressions_prevented: 0       # Findings that matched failure library patterns
+  invariant_violations_caught: 0  # Times invariant checks caught issues
+  drift_corrections: 0           # State drift detected and fixed
+  decisions_recorded: 0          # Decisions logged (institutional memory)
+  sessions_with_handoff: 0       # Sessions that wrote handoff notes (continuity)
+  # Calculated at read time:
+  # value_density = total_findings_caught / max(engine_runs_total, 1)
+  # session_continuity = sessions_with_handoff / max(total_sessions, 1)
+
+# Adoption trajectory — tracks which features are actually providing value
+# Updated by convergence engine
+feature_engagement:
+  # Feature: { available: true, used: bool, last_used: date, value_score: 0-10 }
+  session_discipline:
+    available: true
+    used: false
+    last_used: ""
+    value_score: 0    # Updated by convergence engine based on handoff quality
+  queue_management:
+    available: false   # Set true at L2+
+    used: false
+    last_used: ""
+    value_score: 0
+  engine_analysis:
+    available: false   # Set true at L3+
+    used: false
+    last_used: ""
+    value_score: 0
+  program_governance:
+    available: false   # Set true at L4+
+    used: false
+    last_used: ""
+    value_score: 0
+  autonomous_cycles:
+    available: false   # Set true at L5
+    used: false
+    last_used: ""
+    value_score: 0
+
+# Escalation readiness — signals that suggest the repo is ready for next level
+# Computed by convergence engine, consumed by session-start
+escalation_signals:
+  current_level: L3
+  next_level_ready: false
+  readiness_score: 0.0   # 0.0 to 1.0
+  signals: []
+  # Example signals:
+  # - "10+ sessions completed — session discipline is established"
+  # - "User manually tracks work outside queue — queue management would help"
+  # - "3+ ad-hoc analyses performed — engine framework would formalize this"
+  last_evaluated: ""
+  recommendation: ""      # Human-readable suggestion
+
+# Convergence metrics — is the system embedding deeper or being ignored?
+convergence:
+  trend: "unknown"        # "embedding", "stable", "declining", "unused"
+  weeks_tracked: 0
+  weekly_snapshots: []
+  # Each snapshot: { week: "2026-W14", sessions: N, commands: N, findings: N, items_done: N }
+  # Convergence = positive slope on commands+findings over 4+ weeks
+  # Decline = negative slope or zero activity for 2+ weeks
+  last_evaluated: ""

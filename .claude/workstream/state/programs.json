@@ -1,0 +1,1305 @@
+{
+  "schema_version": 2,
+  "domain": "programs",
+  "updated_at": "2026-06-09T19:09:05.932Z",
+  "updated_by_event": "ev-1781032145932-eccac38a7aa1",
+  "items": {
+    "anti-hallucination": {
+      "id": "anti-hallucination",
+      "name": "Anti-Hallucination & AI Accuracy",
+      "status": "NEW",
+      "tier": "watch",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 3,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Phantom Dependencies & Imports",
+          "description": "Code references packages, modules, or APIs that don't exist",
+          "examples": [
+            "import from package not in requirements.txt",
+            "calling API endpoint that was never built",
+            "referencing env var that's not set"
+          ],
+          "detection": "Import resolution check, requirements.txt vs actual imports, env var cross-reference"
+        },
+        {
+          "name": "Invented API Contracts",
+          "description": "Code calls external services with parameters or endpoints that don't match reality",
+          "examples": [
+            "Stripe API call with wrong parameter name",
+            "webhook handler expecting fields the provider doesn't send",
+            "SDK method that doesn't exist in the installed version"
+          ],
+          "detection": "API contract validation against docs/SDKs, response schema verification, version-specific method check"
+        },
+        {
+          "name": "False Assumptions in Logic",
+          "description": "Code assumes things about data, state, or behavior that aren't true",
+          "examples": [
+            "assumes user always has email",
+            "assumes API returns sorted data",
+            "assumes timezone is UTC"
+          ],
+          "detection": "Assumption enumeration, null/undefined path analysis, implicit contract audit"
+        },
+        {
+          "name": "Stale or Fictional Documentation",
+          "description": "Docs, comments, or README describe behavior that doesn't match the code",
+          "examples": [
+            "README says 'run npm start' but package.json has no start script",
+            "docstring describes parameters the function doesn't accept",
+            "architecture doc references deleted modules"
+          ],
+          "detection": "Doc-code cross-reference, command verification, module existence check"
+        },
+        {
+          "name": "Inconsistent Data Models",
+          "description": "Data shapes assumed by different parts of the code don't match",
+          "examples": [
+            "frontend expects 'user.name' but API returns 'user.full_name'",
+            "migration adds field but model doesn't reference it",
+            "type definition doesn't match runtime shape"
+          ],
+          "detection": "Type/schema consistency check, frontend-backend contract comparison, migration-model alignment"
+        },
+        {
+          "name": "Orphaned & Dead Code",
+          "description": "Code exists that serves no purpose, confusing future AI sessions",
+          "examples": [
+            "function defined but never called",
+            "feature flag permanently off",
+            "commented-out code blocks",
+            "routes with no handler"
+          ],
+          "detection": "Dead code analysis, unused export detection, unreachable code identification"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 18,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Anti-hallucination program has not run in {days} days. AI-generated code is accumulating without verification.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "change-management": {
+      "id": "change-management",
+      "name": "Knowledge & Decision Integrity",
+      "status": "NEW",
+      "tier": "active",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 4,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Decision Traceability",
+          "description": "Important decisions are recorded with context and rationale",
+          "examples": [
+            "major refactor with no ADR",
+            "architecture choice not documented",
+            "why we use X instead of Y is tribal knowledge"
+          ],
+          "detection": "Decision log review, git history scan for large changes without ADR, implicit decision detection"
+        },
+        {
+          "name": "System Model Currency",
+          "description": "State files, invariants, and constraints reflect actual code",
+          "examples": [
+            "invariant references deleted file",
+            "state.md says 'pre-launch' but app is live",
+            "constraint assumption no longer valid"
+          ],
+          "detection": "System file cross-reference against code, state vs reality check"
+        },
+        {
+          "name": "Documentation Freshness",
+          "description": "Docs and comments match current behavior",
+          "examples": [
+            "README setup steps don't work",
+            "API docs missing new endpoints",
+            "CLAUDE.md references deleted commands"
+          ],
+          "detection": "Doc-code divergence scan, command verification, setup step testing"
+        },
+        {
+          "name": "Session Context Reliability",
+          "description": "What the AI reads at session start is accurate and complete",
+          "examples": [
+            "session handoff notes reference completed work as pending",
+            "stale queue items",
+            "workstream config out of date"
+          ],
+          "detection": "Workstream file audit, handoff note verification, queue currency check"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 9,
+          "escalation": {
+            "stale_days": 21,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Knowledge integrity program has not been checked in {days} days.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "claims-policy": {
+      "id": "claims-policy",
+      "name": "\"Claims Policy & Evidence Standards\"  # Renamed during /adopt to reflect claim domains (e.g., \"Clinical Claims Policy\", \"Financial Accuracy Claims\")",
+      "tier": "dormant",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Claim Verification",
+          "description": "Every domain claim the product makes can be traced to an authorized source",
+          "examples": [
+            "clinical claim in UI without citation to peer-reviewed or textbook source",
+            "financial number in report that wasn't computed from verified ground truth",
+            "scientific derivation presented as proof with no SymPy or reviewed-paper anchor"
+          ],
+          "detection": "Claim inventory cross-referenced against evidence-standards-matrix.md; any ungrounded claim is a finding"
+        },
+        {
+          "name": "Evidence Chain Integrity",
+          "description": "Each claim's evidence chain (data -> analysis -> claim) is intact and inspectable",
+          "examples": [
+            "claim references a paper that has since been retracted",
+            "internal derivation lost its SymPy verification when the file was refactored",
+            "anatomical value in code has no source field linking back to an authorized reference"
+          ],
+          "detection": "Evidence freshness audit, source-reference integrity check, re-verification cadence review"
+        },
+        {
+          "name": "Claim-Backing Invariants",
+          "description": "Rules that MUST hold if the product is making claims in this domain are enforced in code",
+          "examples": [
+            "clinical claim domain requires every generated image to cite its primitive sources - invariant missing",
+            "financial claim domain requires every computed total to trace to line items - invariant missing",
+            "scientific claim domain requires every derivation to pass SymPy verification - invariant missing"
+          ],
+          "detection": "Invariant enumeration per claim domain, code-path coverage vs. claims made, failure-mode enumeration"
+        },
+        {
+          "name": "Evaluator Ground Truth (AI-as-judge setups only)",
+          "description": "If an AI evaluator grades outputs before release, its judgments are anchored to truth (not just founder agreement)",
+          "examples": [
+            "AISimPT-style evaluator drifts from real clinician review; calibration is self-referential",
+            "rubric grader trained on founder-approved examples gradually encodes founder biases",
+            "no scheduled human-expert spot-check cadence, so evaluator-truth divergence can compound silently"
+          ],
+          "detection": "Evaluator validation plan audit, spot-check cadence review, divergence metric check"
+        },
+        {
+          "name": "Disclaimer & Scope Boundaries",
+          "description": "The product is explicit about what it does NOT claim; readers can't be misled",
+          "examples": [
+            "research tool used in clinical context without disclaimer",
+            "pre-FDA device claims that imply clearance",
+            "v1 scope leaks into v2/v3 implied capability in marketing or docs"
+          ],
+          "detection": "Surface audit across README, UI copy, docs; scope-fence cross-reference"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 5,
+          "priority_floor": "28           # Claim-policy gaps are high-stakes; outranks most program findings",
+          "escalation": {
+            "stale_days": 7,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 10
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Claims Policy program has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run claims-policy",
+          "block_sprint": "true           # Cannot ship new claims-bearing work while policy is stale"
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": [
+          "block_sprint + stale -> max 2"
+        ]
+      },
+      "engine_history_count": 0
+    },
+    "compliance": {
+      "id": "compliance",
+      "name": "Regulatory Compliance",
+      "tier": "dormant",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Privacy & Data Handling",
+          "description": "Personal data is collected, stored, and processed lawfully",
+          "examples": [
+            "no privacy policy",
+            "collecting data without consent",
+            "no way to delete user data"
+          ],
+          "detection": "Consent flow audit, data collection inventory, deletion capability check"
+        },
+        {
+          "name": "Cookie & Tracking Consent",
+          "description": "Tracking technologies require user consent where legally mandated",
+          "examples": [
+            "analytics without consent banner",
+            "third-party cookies set before consent",
+            "no opt-out mechanism"
+          ],
+          "detection": "Cookie audit, tracking script inventory, consent flow verification"
+        },
+        {
+          "name": "Terms & Legal Documents",
+          "description": "Required legal documents exist, are accessible, and match actual behavior",
+          "examples": [
+            "terms of service missing",
+            "privacy policy doesn't mention data sharing with third parties",
+            "no refund policy where required"
+          ],
+          "detection": "Document existence check, content-vs-behavior cross-reference"
+        },
+        {
+          "name": "Industry-Specific Requirements",
+          "description": "Regulations specific to the application's domain are met",
+          "examples": [
+            "PCI DSS for payment processing",
+            "HIPAA for health data",
+            "SOX for financial reporting"
+          ],
+          "detection": "Domain-specific checklist audit (determined during baseline based on detected industry)"
+        },
+        {
+          "name": "Access & Audit Controls",
+          "description": "Who accessed what data and when is traceable",
+          "examples": [
+            "no audit log for admin actions",
+            "PII accessible without logging",
+            "no access controls on sensitive data exports"
+          ],
+          "detection": "Audit trail review, access control matrix, logging coverage check"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 27,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Compliance program has not been checked in {days} days.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "data-quality": {
+      "id": "data-quality",
+      "name": "Data Quality & Integrity",
+      "tier": "dormant",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Input Validation",
+          "description": "All data entering the system is validated before storage",
+          "examples": [
+            "form accepts invalid email",
+            "API allows negative quantity",
+            "no length limits on text fields"
+          ],
+          "detection": "Validation rule audit per model field, API schema review, form validation check"
+        },
+        {
+          "name": "Schema & Migration Safety",
+          "description": "Database schema changes are safe, reversible, and don't lose data",
+          "examples": [
+            "migration drops column with data",
+            "NOT NULL added without default",
+            "index missing on frequently queried field"
+          ],
+          "detection": "Migration review, schema diff analysis, query plan check"
+        },
+        {
+          "name": "Referential Integrity",
+          "description": "Relationships between data entities are consistent and enforced",
+          "examples": [
+            "orphaned records after parent deletion",
+            "foreign key not enforced at DB level",
+            "soft-delete breaks joins"
+          ],
+          "detection": "Foreign key audit, orphan record scan, cascade behavior review"
+        },
+        {
+          "name": "Data Consistency",
+          "description": "The same data viewed from different paths shows the same value",
+          "examples": [
+            "cached value stale vs database",
+            "denormalized field out of sync",
+            "aggregate doesn't match detail records"
+          ],
+          "detection": "Cache invalidation audit, denormalization sync check, aggregate verification"
+        },
+        {
+          "name": "Data Loss Prevention",
+          "description": "Data cannot be silently lost, truncated, or corrupted",
+          "examples": [
+            "silent truncation on oversized input",
+            "race condition overwrites",
+            "backup not configured"
+          ],
+          "detection": "Truncation risk audit, concurrent write analysis, backup verification"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 18,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Data quality program has not been checked in {days} days.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "design": {
+      "id": "design",
+      "name": "Design Program (5-Gate UX Framework)",
+      "status": "ACTIVE",
+      "tier": "active",
+      "health_score": 0,
+      "last_run_date": "2026-04-21",
+      "founder_priority": 2,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Gate 1 Entry skipped",
+          "description": "UX-touching change made production without scope classification, persona/JTBD identification, or gap analysis (GREEN/YELLOW/RED verdict). Per CLAUDE.md Design Program Guardrail, Gate 1 is non-bypassable for new views/widgets/destructive actions/layout refactors/visible-copy changes on primary controls.",
+          "examples": [
+            "new SCREEN.* added without gap analysis",
+            "destructive action added without persona check",
+            "layout refactor without scope classification"
+          ],
+          "detection": "git diff against last sweep, scoped to UX surfaces. Cross-reference each PR description for audit-id or surface-id citation per CLAUDE.md."
+        },
+        {
+          "name": "Gate 2 Blind-Spot skipped",
+          "description": "Gate 1 returned YELLOW or RED, or the work introduces a new surface, targets an underserved persona, or crosses product lines — but no blind-spot roundtable was conducted before specifying the design. Per docs/design/ROUNDTABLES.md.",
+          "examples": [
+            "YELLOW Gate 1 verdict but no audit doc at docs/design/audits/",
+            "new surface bypassing roundtable",
+            "cross-product-line feature without facilitator"
+          ],
+          "detection": "Cross-reference Gate 1 verdicts in audit docs against existence of corresponding roundtable doc."
+        },
+        {
+          "name": "Gate 4 Design surface artifact missing",
+          "description": "UX change in production but no surface artifact exists at docs/design/surfaces/<surface-id>.md. Per CLAUDE.md, this gate is non-bypassable.",
+          "examples": [
+            "new view in src/components/views/ with no surfaces/<view>.md",
+            "modal added without surface entry",
+            "navigation pattern changed without spec update"
+          ],
+          "detection": "Cross-reference docs/design/surfaces/CATALOG.md against SCREEN constants and active routes."
+        },
+        {
+          "name": "PROTO persona staleness",
+          "description": "Personas marked PROTO (provisional) past 180 days without a verification pass — observation, structured interview, or downgrade to ARCHIVED. Per design.md health metrics.",
+          "examples": [
+            "15 of 15 personas PROTO baseline 2026-04-21 — no verification by 2026-10-21"
+          ],
+          "detection": "Scan docs/design/personas/ for `status: PROTO` files older than 180 days from `last_verified` or file creation."
+        },
+        {
+          "name": "Discovery LOG aging",
+          "description": "Items in docs/design/discoveries/ stuck in CAPTURED state past 60 days without triage to RESEARCHED or DEFERRED.",
+          "examples": [
+            "DISC-* in CAPTURED state with capture date > 60 days ago"
+          ],
+          "detection": "Scan docs/design/discoveries/*.md for status field; flag CAPTURED items past threshold."
+        },
+        {
+          "name": "Surface CATALOG drift",
+          "description": "docs/design/surfaces/CATALOG.md falls out of sync with active SCREEN.* constants in src/constants/uiConstants.js. New routes added without surface artifacts.",
+          "examples": [
+            "SCREEN.PLAYER_EDITOR added (PEO) but missing from CATALOG",
+            "view directory added with no surface entry"
+          ],
+          "detection": "Diff SCREEN constants against CATALOG entries; report missing surfaces."
+        },
+        {
+          "name": "JTBD domain unserved",
+          "description": "JTBD domain referenced by 1+ active discoveries but has 0 served surface artifacts. Tracked as risk, not blocker.",
+          "examples": [
+            "subscription-account JTBD referenced but no served surface",
+            "coaching domain demand visible in discoveries with no surfaces"
+          ],
+          "detection": "Cross-reference JTBD domain references in docs/design/jtbd/ against surface artifacts."
+        },
+        {
+          "name": "Audit findings open past SLA",
+          "description": "Audit-generated findings in docs/design/audits/*.md still open > 60 days from audit date.",
+          "examples": [
+            "MPMF audit 2026-04-24 with finding still open 2026-06-25"
+          ],
+          "detection": "Scan audit docs for unresolved findings; flag those past SLA."
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 8,
+          "priority_floor": 22,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Design program has not run a sweep in {days} days. Run /pulse run design.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.75,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "domain-correctness": {
+      "id": "domain-correctness",
+      "name": "Poker Theory Integrity",
+      "status": "ACTIVE",
+      "tier": "critical",
+      "health_score": 0,
+      "last_run_date": "2026-05-19",
+      "founder_priority": 1,
+      "health_ceiling": 0,
+      "health_updated_at": "2026-05-19T00:00:00Z",
+      "findings_open": 17,
+      "work_items_open": 1,
+      "problem_classes": [
+        {
+          "name": "First-principles decision modeling",
+          "description": "Villain decisions must derive from equity, pot odds, SPR, and players remaining — NEVER from position/bucket/style labels directly. Labels are OUTPUTS of the decision process, not inputs. Stacking style on top of the stats that define style is double-counting.",
+          "examples": [
+            "if (position === 'EP') foldRate *= 1.05  // wrong — derive from per-position pre-flop equity, not the label",
+            "POP_CALLING_RATES[bucket] used when per-combo equity available — should use logistic",
+            "applying style multiplier on top of villain.vpip + villain.pfr — those stats DEFINE the style, double-counting"
+          ],
+          "detection": "grep for hardcoded position/bucket/style label conditionals in src/utils/exploitEngine/, src/utils/rangeEngine/, src/utils/villainDecisionModel/ — cross-reference against POKER_THEORY.md §7 + exploitEngine/CLAUDE.md anti-patterns"
+        },
+        {
+          "name": "Range estimation correctness",
+          "description": "Range engine must use Bayesian methods with population priors, never frequentist methods. Per-combo equity preferred over bucket-anchor approximations when computationally feasible. Sample-size confidence must propagate as credible intervals, not point estimates.",
+          "examples": [
+            "z-test on small-sample VPIP — should be Bayesian credible interval",
+            "uniform prior on villain range — should be population prior conditioned on stakes/pool",
+            "bucket-anchor equity used in depth-1 game tree where per-combo enumeration was viable"
+          ],
+          "detection": "Audit src/utils/rangeEngine/* for prior/posterior shape, sample-size handling, credible-interval propagation. Cross-reference RANGE_ENGINE_DESIGN.md."
+        },
+        {
+          "name": "Equity calculation correctness",
+          "description": "Equity computation must be Monte Carlo with sufficient samples or exact enumeration when ≤20 combos. Stratified sampling for flush-bearing turn cards. Texture-aware adjustments to equity realization (wet OOP ×0.92, dry OOP ×1.05).",
+          "examples": [
+            "Equity rollout with too-few samples for required confidence band",
+            "Missing exact enumeration fast-path on small ranges",
+            "Equity realization without texture adjustment"
+          ],
+          "detection": "Audit src/utils/handAnalysis/equityCalc.js, computeRiverCheckEV, computeRiverBetEV, exactEnumerateEquity. Cross-reference POKER_THEORY.md §5."
+        },
+        {
+          "name": "Game tree EV correctness",
+          "description": "Game tree must compute depth-2/3 EV correctly with rake threading, polarization sizing, blocker effects, multi-way fold correlation, and 5-zone SPR strategy. Action-rate-weighted sub-range equity for filtered actions. Bet-sizing range shapes (air/value/draw/capped/polarized).",
+          "examples": [
+            "depth-2 raise response disabled (enableDepth2Raise=false) when budget allows",
+            "Rake not threaded through foldEquityCalc → depth-2/3",
+            "Multi-way fold correlation missing in 3+ player pots",
+            "Polarization sizing missing for river overbet"
+          ],
+          "detection": "Audit src/utils/gameTreeEvaluator.js, src/utils/villainDecisionModel/, src/utils/foldEquityCalc.js. Verify rake threading via potCalculator. Cross-reference POKER_THEORY.md §6 + memory: project_game_tree_*."
+        },
+        {
+          "name": "Bayesian confidence representation",
+          "description": "Sample-size-aware confidence must propagate as credible intervals (Bayesian) not point estimates (frequentist). All decision-display surfaces must reflect uncertainty (worthiness, dataQuality, confidence-weighted display).",
+          "examples": [
+            "Point-estimate fold% surfaced where credible interval is computed upstream",
+            "Action recommendation displayed without sample-size caveat",
+            "Confidence band not narrowing as samples accumulate"
+          ],
+          "detection": "Audit src/utils/bayesianConfidence.js + downstream consumers (PlayerAnalysisPanel, OnlineView, HandReplay). Verify credible interval bounds reach UI."
+        },
+        {
+          "name": "Villain decision model fidelity",
+          "description": "Villain model must use style-conditioned priors (Fish/Nit/LAG/TAG override population), per-bucket differential scaling (calling station inflates marginals, not air uniformly), logistic fold response (not linear), street-conditional depth-2 rates, texture preservation through L3 of hierarchy.",
+          "examples": [
+            "Linear fold% scaling on bet size",
+            "Style applied as multiplier on top of vpip/pfr — double-counted",
+            "Texture dropped at L2 of villain model hierarchy",
+            "Multiway model treats sequential decisions as independent"
+          ],
+          "detection": "Audit src/utils/villainDecisionModel/. Cross-reference memory: project_villain_model_assumptions_fix.md."
+        },
+        {
+          "name": "Exploit generation soundness",
+          "description": "Exploits must derive from game-tree EV computation, not from hardcoded weakness-label maps. Weaknesses (villain behavior observations) ≠ exploits (hero recommendations). Current WEAKNESS_EXPLOIT_MAP is a known stopgap awaiting Phase 4D removal.",
+          "examples": [
+            "New exploit added via WEAKNESS_EXPLOIT_MAP entry instead of game tree",
+            "Hero action recommended without game-tree EV justification",
+            "Same weakness producing same exploit across all situations (situation-blind)"
+          ],
+          "detection": "Audit src/utils/exploitEngine/generateExploits.js. Check WEAKNESS_EXPLOIT_MAP usage — should be shrinking, not growing. Cross-reference memory: feedback_weakness_exploit_separation.md."
+        },
+        {
+          "name": "Theory-spec drift",
+          "description": "POKER_THEORY.md must remain the canonical doctrine. Engine implementations must not silently diverge from it. ADR required for any deliberate divergence.",
+          "examples": [
+            "Engine uses formula X but POKER_THEORY.md states formula Y",
+            "New algorithm added without theory-doc update",
+            "POKER_THEORY.md last verified > 90 days ago"
+          ],
+          "detection": "Grep engine implementations for formulas/thresholds; cross-reference against POKER_THEORY.md content. Stale-date check on `last verified` line."
+        },
+        {
+          "name": "Anti-pattern enforcement",
+          "description": "Anti-patterns enumerated in src/utils/exploitEngine/CLAUDE.md and src/utils/rangeEngine/CLAUDE.md must not appear in committed code.",
+          "examples": [
+            "Conflating calling station with weak range",
+            "Treating bet sizing as deterministic of range shape (without showdown calibration)",
+            "Treating positions as equally informative"
+          ],
+          "detection": "Re-read sub-directory CLAUDE.md anti-pattern sections; grep for the anti-patterns in committed code."
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 5,
+          "priority_floor": 27,
+          "escalation": {
+            "stale_days": 7,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Poker Theory Integrity has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run domain-correctness",
+          "block_sprint": true
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 0.2,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.5,
+        "hard_caps_applied": [
+          "block_sprint + stale -> max 2"
+        ]
+      },
+      "engine_history_count": 0
+    },
+    "engineering": {
+      "id": "engineering",
+      "name": "Engineering Health",
+      "status": "NEW",
+      "tier": "watch",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 3,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 18,
+      "problem_classes": [
+        {
+          "name": "Test Coverage & Quality",
+          "description": "Tests exist, are meaningful, and cover critical paths",
+          "examples": [
+            "untested payment flow",
+            "tests that pass but don't assert anything",
+            "no integration tests"
+          ],
+          "detection": "Coverage analysis, test file audit, assertion density check"
+        },
+        {
+          "name": "Architecture Drift",
+          "description": "Code structure diverges from intended patterns over time",
+          "examples": [
+            "business logic in API handlers",
+            "circular imports",
+            "god objects accumulating methods"
+          ],
+          "detection": "Dependency analysis, module boundary checks, file size trends"
+        },
+        {
+          "name": "Dependency Health",
+          "description": "Third-party packages are current, secure, and necessary",
+          "examples": [
+            "outdated packages with known CVEs",
+            "unused dependencies",
+            "pinned to vulnerable versions"
+          ],
+          "detection": "Package audit, unused import scan, version freshness check"
+        },
+        {
+          "name": "Error Handling & Resilience",
+          "description": "Code handles failures gracefully, not just the happy path",
+          "examples": [
+            "bare except clauses",
+            "no retry logic on external calls",
+            "silent failures that lose data"
+          ],
+          "detection": "Exception handling audit, external call patterns, logging coverage"
+        },
+        {
+          "name": "Build & Deploy Pipeline",
+          "description": "CI/CD works, is fast, and catches problems before production",
+          "examples": [
+            "flaky tests blocking deploys",
+            "no staging environment",
+            "manual deploy steps"
+          ],
+          "detection": "CI config review, deploy script audit, pipeline timing analysis"
+        },
+        {
+          "name": "Code Maintainability",
+          "description": "Code is understandable and changeable by the next session's AI",
+          "examples": [
+            "functions over 100 lines",
+            "magic numbers",
+            "implicit state coupling between modules"
+          ],
+          "detection": "Complexity metrics, naming analysis, coupling detection"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 18,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Engineering program has not been checked in {days} days.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "cap_breach": {
+        "active": true,
+        "work_items_open": 18,
+        "findings_open": 0,
+        "max_open_items": 3,
+        "priority_floor": 18,
+        "ratio": 6,
+        "since": "2026-06-09"
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "infrastructure": {
+      "id": "infrastructure",
+      "name": "Infrastructure & Operations",
+      "tier": "dormant",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Deployment Safety",
+          "description": "Deploys are reliable, reversible, and don't break production",
+          "examples": [
+            "deploy without rollback plan",
+            "migrations run before code is ready",
+            "no staging environment"
+          ],
+          "detection": "CI/CD pipeline audit, rollback mechanism check, deployment step review"
+        },
+        {
+          "name": "Availability & Recovery",
+          "description": "Application recovers from failures without data loss",
+          "examples": [
+            "no health checks",
+            "single point of failure",
+            "no backup verification",
+            "no disaster recovery plan"
+          ],
+          "detection": "Health endpoint check, redundancy audit, backup test, recovery runbook review"
+        },
+        {
+          "name": "Monitoring & Alerting",
+          "description": "Problems are detected before users report them",
+          "examples": [
+            "no error tracking",
+            "no uptime monitoring",
+            "alerts go to an unmonitored channel"
+          ],
+          "detection": "Monitoring tool inventory, alert routing verification, coverage gap analysis"
+        },
+        {
+          "name": "Scaling & Performance",
+          "description": "Application handles load growth without degradation",
+          "examples": [
+            "N+1 queries",
+            "no connection pooling",
+            "unbounded memory growth",
+            "no caching strategy"
+          ],
+          "detection": "Query analysis, resource utilization patterns, caching layer audit"
+        },
+        {
+          "name": "Cost & Resource Management",
+          "description": "Infrastructure costs are reasonable and won't surprise the founder",
+          "examples": [
+            "unbounded log storage",
+            "oversized instances",
+            "no spend alerts",
+            "orphaned resources"
+          ],
+          "detection": "Resource inventory, cost trend analysis, orphaned resource scan"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 18,
+          "escalation": {
+            "stale_days": 7,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Infrastructure program has not been checked in {days} days.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "launch": {
+      "id": "launch",
+      "name": "Launch Readiness",
+      "status": "NEW",
+      "tier": "active",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 4,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 8,
+      "problem_classes": [
+        {
+          "name": "Blocking Program Health",
+          "description": "All programs that must be healthy before launch are actually healthy",
+          "examples": [
+            "security program has open critical findings",
+            "financial accuracy untested",
+            "compliance incomplete"
+          ],
+          "detection": "Cross-program health check against launch_gate.blocking_programs"
+        },
+        {
+          "name": "Core User Flows",
+          "description": "Primary user journeys work end-to-end",
+          "examples": [
+            "signup flow broken",
+            "payment fails on edge case",
+            "user can't reset password"
+          ],
+          "detection": "Critical path enumeration and verification"
+        },
+        {
+          "name": "Operational Readiness",
+          "description": "Monitoring, alerting, and incident response are in place",
+          "examples": [
+            "no error monitoring",
+            "no alerting on payment failures",
+            "no runbook for common issues"
+          ],
+          "detection": "Monitoring coverage audit, alerting rule review, runbook existence check"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 5,
+          "priority_floor": 27,
+          "escalation": {
+            "stale_days": 3,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Launch readiness has not been assessed in {days} days. Sprint is blocked. To unblock: /pulse run launch-readiness",
+          "block_sprint": true
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "cap_breach": {
+        "active": true,
+        "work_items_open": 8,
+        "findings_open": 0,
+        "max_open_items": 5,
+        "priority_floor": 27,
+        "ratio": 1.6,
+        "since": "2026-06-09"
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": [
+          "block_sprint + stale -> max 2"
+        ]
+      },
+      "engine_history_count": 0
+    },
+    "methodology-integrity": {
+      "id": "methodology-integrity",
+      "name": "\"Methodology Integrity\"  # Renamed during /adopt (e.g., \"Bayesian Model Validity\", \"Scoring Objectivity\", \"Evidence Classification\")",
+      "status": "NEW",
+      "tier": "active",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 1,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Scoring/Classification Bias",
+          "description": "The method of scoring or classifying produces systematically skewed results",
+          "examples": [
+            "\"[CUSTOMIZE: e.g.",
+            "missing-data inflates scores",
+            "evidence tier misapplied",
+            "confidence overfit]\""
+          ],
+          "detection": "Bias audit, calibration check, sensitivity analysis on methodology parameters"
+        },
+        {
+          "name": "Sample Size & Statistical Validity",
+          "description": "Decisions are made on insufficient data, or confidence exceeds what the data supports",
+          "examples": [
+            "\"[CUSTOMIZE: e.g.",
+            "n=5 treated as conclusive",
+            "confidence intervals too tight",
+            "Bayesian priors miscalibrated]\""
+          ],
+          "detection": "Sample size verification, confidence calibration check, prior sensitivity analysis"
+        },
+        {
+          "name": "Post-Hoc Fitting & Flexibility",
+          "description": "Results look good because the method was tuned to match known answers",
+          "examples": [
+            "\"[CUSTOMIZE: e.g.",
+            "parameters chosen to match first",
+            "then 'predicted'; search space not disclosed]\""
+          ],
+          "detection": "Degrees of freedom audit, search space enumeration, blind prediction verification"
+        },
+        {
+          "name": "Cross-Method Consistency",
+          "description": "Different methods applied to the same question produce different answers",
+          "examples": [
+            "\"[CUSTOMIZE: e.g.",
+            "two calculation paths give different totals",
+            "aggregation hides detail-level disagreement]\""
+          ],
+          "detection": "Multi-path verification, reconciliation check, aggregate-vs-detail comparison"
+        },
+        {
+          "name": "Methodology Drift",
+          "description": "The method changes over time without tracking, invalidating comparisons",
+          "examples": [
+            "weights quietly adjusted",
+            "classification criteria evolved without re-scoring old items",
+            "threshold changed but historical data not re-evaluated"
+          ],
+          "detection": "Methodology version tracking, change log audit, historical consistency check"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 3,
+          "priority_floor": 18,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Methodology integrity program has not been checked in {days} days. Decision methods may be producing unreliable results.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
+    "security": {
+      "id": "security",
+      "name": "Security",
+      "tier": "dormant",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Authentication & Authorization",
+          "description": "Who can access what, and is that enforced correctly everywhere",
+          "examples": [
+            "missing auth on API endpoint",
+            "role escalation via parameter tampering",
+            "session fixation"
+          ],
+          "detection": "Route/endpoint audit for auth decorators, role-check coverage, session management review"
+        },
+        {
+          "name": "Data Protection",
+          "description": "Sensitive data is encrypted, masked, and never exposed inappropriately",
+          "examples": [
+            "PII in logs",
+            "unencrypted database fields",
+            "API responses leaking internal IDs"
+          ],
+          "detection": "Log content scan, database field audit, API response schema review"
+        },
+        {
+          "name": "Secrets Management",
+          "description": "API keys, passwords, tokens are never in code and are rotated",
+          "examples": [
+            "hardcoded API key",
+            ".env committed to git",
+            "secrets in CI logs"
+          ],
+          "detection": "Secret pattern grep, git history scan for leaked secrets, CI log review"
+        },
+        {
+          "name": "Input Validation & Injection",
+          "description": "All user input is validated and cannot be used to attack the system",
+          "examples": [
+            "SQL injection",
+            "XSS via form fields",
+            "command injection via file upload names"
+          ],
+          "detection": "Input handling audit, parameterized query check, output encoding verification"
+        },
+        {
+          "name": "Dependency Vulnerabilities",
+          "description": "Third-party packages have no known security vulnerabilities",
+          "examples": [
+            "npm audit findings",
+            "CVE in pinned version",
+            "abandoned package with no patches"
+          ],
+          "detection": "Package audit tools, CVE database cross-reference, maintenance status check"
+        },
+        {
+          "name": "Infrastructure & Configuration",
+          "description": "Server, cloud, and deployment configs follow security best practices",
+          "examples": [
+            "debug mode in production",
+            "CORS allowing *",
+            "no rate limiting on auth endpoints"
+          ],
+          "detection": "Config file audit, header analysis, rate limit verification"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": "5            # Security findings should not queue up",
+          "priority_floor": "27           # Security items are always high priority",
+          "escalation": {
+            "stale_days": "7              # Security findings must be addressed quickly",
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Security program has not been checked in {days} days. Sprint is blocked. To unblock: /pulse run security",
+          "block_sprint": "true           # Cannot compose new sprints while security is stale at active+ tier"
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": [
+          "block_sprint + stale -> max 2"
+        ]
+      },
+      "engine_history_count": 0
+    },
+    "self-compliance": {
+      "id": "self-compliance",
+      "name": "Self-Compliance",
+      "tier": "critical",
+      "status": "NEW",
+      "health_score": 0,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Principle Violation",
+          "description": "A constitutional principle (P1, P2, P3) is detectably violated",
+          "examples": [
+            "P2 violated — a command asks founder to validate YAML",
+            "P3 violated — /adopt requires M1-M5 completion upfront"
+          ],
+          "detection": "constitutional-audit engine; kit/scripts/cwos-constitutional-audit.js detectPN() functions"
+        },
+        {
+          "name": "Founder-Invariant Breach",
+          "description": "INV-F1 (No Unnecessary Burden) fails — installed components are not proportional to goal value",
+          "examples": [
+            "2+ installed programs with no goal-alignment trace",
+            "component-alignment engine scores >=2 components at <=2/10 relevance"
+          ],
+          "detection": "constitutional-audit detectInvF1; component-alignment engine low-relevance threshold"
+        },
+        {
+          "name": "Failed State Detected",
+          "description": "A concrete dystopia from intention.md is firing in the current repo",
+          "examples": [
+            "FS-1 ceremony theater — rituals without subsequent action",
+            "FS-7 findings noise — engine run produced >=15 findings",
+            "FS-10 self-aggrandizing complexity — programs lack contract trace to intention.md"
+          ],
+          "detection": "constitutional-audit detectFSN functions per failed state"
+        },
+        {
+          "name": "Detector Coverage Gap",
+          "description": "A constitutional item has no detector or its detector is infeasible — the constitution is declared but not watched",
+          "examples": [
+            "FS-6 infeasible — detector regex mismatches current queue shape",
+            "SYS-INV-all no-detector — cwos-verify lacks --json interface"
+          ],
+          "detection": "constitutional-audit flags status: infeasible or no-detector per item; each promotes to a LOW finding"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 5,
+          "priority_floor": 20,
+          "escalation": {
+            "stale_days": 14,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 9
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Self-compliance has not been checked in {days} days. The constitution is declared but unwatched. To unblock: /pulse run self-compliance",
+          "block_sprint": true
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": [
+          "block_sprint + stale -> max 2"
+        ]
+      },
+      "engine_history_count": 0
+    }
+  },
+  "last_event_log_head": "ev-1781032145932-eccac38a7aa1"
+}

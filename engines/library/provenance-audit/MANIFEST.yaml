@@ -1,0 +1,35 @@
+# Engine Extension Pack Manifest
+engine_id: provenance-audit
+name: Data Provenance Audit (drafting + drift)
+description: Audit a repo's data provenance — every data point displayed to users must trace to its source. On first baseline (when docs/provenance/ has no promoted artifacts), Phase 0b drafts data-source-registry.draft.md + provenance-chain-map.draft.md from migrations + ORM schemas + SDK dependencies + URL/HTTP-client patterns + fixtures + config blocks. Founder reviews and promotes via rename. Subsequent runs catch drift, undocumented sources, trust-tier upgrades through the chain (inference errors), broken chains, stale source authorities, and orphan sources. Honors no-silent-install — never overwrites non-draft artifacts, never silently mutates prog-data-provenance.yaml.
+category: governance
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: governance capability enabled AND prog-data-provenance registered
+programs: [data-provenance]
+personas_required:
+  - architect            # Phase 0b drafts data-source-registry + provenance-chain-map from code structure
+  - failure-engineer     # Phase 0b cross-checks for engineering-detail-as-source / tier-upgrades / orphans
+  - cross-critic         # Phase 2: adversarial review (investigative-journalist mandate from prog-data-provenance.challenge protocol)
+  - facilitator          # Phase 3: synthesis
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/provenance-audit.md
+trigger: manual
+inputs: [repo_path, previous_provenance_set]
+outputs: [data_source_registry_draft, provenance_chain_map_draft, drafts_manifest, source_inventory, finding_inventory]
+chains:
+  on_complete: null
+  on_finding: workstream-promote
+finding_severities: [critical, high, medium, low]
+
+choice_point:
+  accepts: repo
+  size: standard
+  estimated_time: "~5-8 min (first run drafts 2 always-on artifacts: registry + chain map)"
+  hook: "Audit data provenance — drafts source registry + chain map on first run, then catches drift, undocumented sources, trust-tier upgrades, broken chains"

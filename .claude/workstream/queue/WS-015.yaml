@@ -2,7 +2,7 @@ id: "WS-015"
 title: "Stream D"
 legacy_id: "EAL-Stream-D"
 type: improvement
-status: decomposed
+status: done
 claimed_by: "session-2026-05-09-next-spr-060"
 claimed_at: "2026-05-09T06:00:00Z"
 started_at: "2026-05-09T06:05:00Z"
@@ -48,3 +48,4 @@ source:
   source_line: 111
 created_at: "2026-05-01"
 updated_at: "2026-05-09"
+auto_promoted_by_reconcile: "2026-06-09 — sprint SPR-060 was status=done but queue item was decomposed"

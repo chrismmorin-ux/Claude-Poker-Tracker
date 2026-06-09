@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_contract_verified.json",
+  "title": "engines.engine_contract_verified",
+  "description": "WS-288 / FIND-122 — deterministic post-run cross-check of an engine briefing's Contract Alignment claims against measurable evidence (synthesis structure, cross-critique AS-N engagement, success_shape keyword presence). Emitted by kit/scripts/cwos-engine-contract-verify.js. Per-field verdict surfaces where a synthesizer-self-attestation departed from observable artifacts. v1 returns BLOCKED-BY-WS-289 for scope_ceiling pending the per-engine token meter.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "contract_id", "run_id", "engine", "target", "results", "overall", "alarmed"],
+  "properties": {
+    "type":         { "type": "string", "const": "engine_contract_verified" },
+    "contract_id":  { "type": "string", "minLength": 1, "description": "Refers back to the engine_intent_recorded event's contract_id" },
+    "run_id":       { "type": "string", "minLength": 1 },
+    "engine":       { "type": "string", "minLength": 1 },
+    "target":       { "type": "string" },
+    "verified_at":  { "type": ["string", "null"], "format": "date-time" },
+    "binding": {
+      "type": "string",
+      "enum": ["engine_run_completed", "heuristic"],
+      "description": "How the verifier bound this run to the contract event. engine_run_completed = canonical (run_id-pinned). heuristic = engine+target+timestamp proximity (brittle if multiple runs share engine+target on one day)."
+    },
+    "results": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["field", "claim", "verdict", "evidence"],
+        "properties": {
+          "field":          { "type": "string", "enum": ["mode", "stretch", "success_shape", "scope_ceiling"] },
+          "claim":          { "type": "string", "enum": ["honored", "departed", "missing", "unknown"] },
+          "verdict":        { "type": "string", "enum": ["PASS", "PARTIAL", "FAIL", "HONEST-DEPART", "INCONCLUSIVE", "NO-CONTRACT-VALUE", "UNKNOWN-MODE", "BLOCKED-BY-WS-289"] },
+          "evidence":       { "type": "string", "description": "Human-readable reason for the verdict" },
+          "contract_value": {}
+        }
+      }
+    },
+    "overall":  { "type": "string", "enum": ["PASS", "PARTIAL", "FAIL"] },
+    "alarmed":  { "type": "boolean", "description": "True iff overall=FAIL; routes a HIGH-severity finding to prog-engine-reliability" },
+    "counts": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "pass":    { "type": "integer", "minimum": 0 },
+        "partial": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "fail":    { "type": "integer", "minimum": 0 },
+        "depart":  { "type": "integer", "minimum": 0 },
+        "other":   { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

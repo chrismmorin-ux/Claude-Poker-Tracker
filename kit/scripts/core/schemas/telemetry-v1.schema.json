@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/telemetry-v1.json",
+  "title": "cwos-telemetry-v1",
+  "description": "Per-invocation telemetry record (ADR-018 step 1, WS-172). Explicit field allowlist — no free-form payload capture (privacy hygiene).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "timestamp", "command_name", "duration_ms", "exit_code"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "command_name": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "exit_code": { "type": "integer" },
+    "command_id": { "type": ["string", "null"], "maxLength": 128 },
+    "events_emitted": { "type": "integer", "minimum": 0 },
+    "bytes_read": { "type": "integer", "minimum": 0 },
+    "bytes_written": { "type": "integer", "minimum": 0 },
+    "files_read": { "type": "integer", "minimum": 0 },
+    "tokens_derived": {
+      "description": "Derived token cost. Populated from transcript parsing when accessible (per ADR-018 pre-step-1 spike); otherwise null and the bytes_* fields are the proxy.",
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "tokens_source": {
+      "description": "Which source was used to derive tokens_derived. 'transcript' = parsed from ~/.claude/projects/*/conversations/*.jsonl. 'proxy' = estimated from bytes. 'unavailable' = no derivation attempted this session.",
+      "type": "string",
+      "enum": ["transcript", "proxy", "unavailable"]
+    },
+    "kit_sha": {
+      "description": "Git SHA of HomeBase kit tree at the time the telemetry was emitted. Used for regression attribution.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{7,40}$|^$"
+    }
+  }
+}

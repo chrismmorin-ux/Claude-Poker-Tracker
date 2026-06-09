@@ -80,3 +80,5 @@ ignition-poker-tracker/dist/
 # Personal notes
 docs/chris-notes
 .playwright-verify/
+
+.cwos-snapshots/

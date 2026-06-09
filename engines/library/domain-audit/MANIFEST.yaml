@@ -1,0 +1,35 @@
+# Engine Extension Pack Manifest
+engine_id: domain-audit
+name: Domain Correctness Audit
+description: Audit a repo's load-bearing domain logic against its declared rules. On first baseline (when docs/domain-spec.md is absent), drafts the rules from CLAUDE.md, README, system/intention.md, and prominent source files into docs/domain-spec.draft.md for founder review-and-promotion. Honors no-silent-install — never overwrites non-draft artifacts, never silently mutates prog-domain-correctness.yaml. Subsequent runs analyze the promoted spec for rule-vs-code drift, edge cases, and constraint enforcement gaps.
+category: governance
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: governance capability enabled AND prog-domain-correctness registered
+programs: [domain-correctness]
+personas_required:
+  - architect            # Phase 0b-ii: drafts load-bearing domain rules from repo content
+  - failure-engineer     # Phase 0b-iii: cross-checks drafts against ambient-best-practice false positives
+  - cross-critic         # Phase 2: adversarial review of finding set
+  - facilitator          # Phase 3: synthesis
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/domain-audit.md
+trigger: manual
+inputs: [repo_path, previous_spec]
+outputs: [domain_spec_draft, drafts_manifest, rule_inventory, finding_inventory, governance_candidates, model_level_rules]
+chains:
+  on_complete: null
+  on_finding: workstream-promote
+finding_severities: [critical, high, medium, low]
+
+choice_point:
+  accepts: repo
+  size: standard
+  estimated_time: "~5-8 min (first run includes Phase 0b draft generation)"
+  hook: "Audit load-bearing domain rules — drafts the spec on first run, then catches drift, missing edge cases, unenforced constraints"

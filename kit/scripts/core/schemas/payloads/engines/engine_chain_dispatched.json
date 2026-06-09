@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_chain_dispatched.json",
+  "title": "engines.engine_chain_dispatched",
+  "description": "T7:engines engine_chain_dispatched event payload (WS-310 Phase E). Emitted by cwos-engine-complete after engine_run_completed when the source engine declares chains.on_complete in registry.yaml. Each chained target gets one event + one priority-35 queue item. The chain is reactive (queue item, not synchronous engine invocation) so the founder or autopilot can choose to run it.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "source_engine", "source_run_id", "chained_engine"],
+  "properties": {
+    "type":              { "type": "string", "const": "engine_chain_dispatched" },
+    "source_engine":     { "type": "string", "minLength": 1, "description": "engine_id whose run just completed and triggered the chain" },
+    "source_run_id":     { "type": "string", "minLength": 1, "description": "run_id of the just-completed run" },
+    "chained_engine":    { "type": "string", "minLength": 1, "description": "engine_id named in chains.on_complete" },
+    "dispatched_at":     { "type": ["string", "null"], "format": "date-time" },
+    "source_event_id":   { "type": ["string", "null"], "description": "id of the engine_run_completed event that triggered this dispatch" },
+    "queue_item_id":     { "type": ["string", "null"], "description": "WS-NNN created for the chained run, or null if creation was skipped" },
+    "skipped":           { "type": "boolean", "description": "True when dispatch was suppressed by cycle-guard or missing target" },
+    "skip_reason":       { "type": ["string", "null"] }
+  }
+}

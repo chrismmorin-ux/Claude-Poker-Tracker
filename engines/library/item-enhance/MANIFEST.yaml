@@ -1,0 +1,31 @@
+# Engine Extension Pack Manifest
+engine_id: item-enhance
+name: Work Item Enhancement
+description: Sharpen a work item — refine scope, enrich acceptance criteria, validate effort estimate, map file impact
+category: enhancement
+procedure: single-pass
+extends: context-gather
+impact: changes-state
+size: light
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [senior-engineer]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/item-enhance.md
+trigger: manual
+inputs: [work_item, system_model]
+outputs: [enhancement]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null
+
+choice_point:
+  accepts: work-item
+  size: light
+  estimated_time: "~30 sec"
+  hook: "Sharpen scope, enrich acceptance criteria, validate effort"

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/genesis_ignition_consumed.json",
+  "title": "envelope.genesis_ignition_consumed",
+  "description": "T0:envelope event emitted by cwos-genesis-ignite.js apply when ignition completes. Acts as the read-receipt / archive boundary for the dormant-mode capture buffer (WS-321 Phase C). Re-ignition is refused if this event is present in the log.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "archetype", "stage"],
+  "properties": {
+    "type": { "const": "genesis_ignition_consumed" },
+    "archetype": { "type": "string", "pattern": "^A[1-5]$|^NONE$" },
+    "stage": { "type": "string", "pattern": "^S[1-5]$|^N[1-3]$" },
+    "exit_trigger": {
+      "type": ["string", "null"],
+      "enum": ["intend_command", "intention_md_edit_detected", null]
+    },
+    "event_count": { "type": ["integer", "null"], "minimum": 0 },
+    "span_start": { "type": ["string", "null"] },
+    "span_end": { "type": ["string", "null"] },
+    "summary": { "type": ["string", "null"] }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/vital-signs/reconcile-refresh.json",
+  "title": "vital-signs.reconcile-refresh",
+  "description": "T11:vital-signs reconcile-refresh event (WS-207 reducer auto-refresh hook). WS-210.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "type": { "type": "string", "const": "reconcile-refresh" },
+    "domains_intended": { "type": "array", "items": { "type": "string" } }
+  }
+}

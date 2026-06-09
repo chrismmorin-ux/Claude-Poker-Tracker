@@ -1,0 +1,181 @@
+id: data-quality
+name: Data Quality & Integrity
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that data entering, stored in, and leaving the application
+  is correct, consistent, and complete. Data corruption, silent validation failures,
+  orphaned records, and migration errors are caught before they cascade into business
+  logic failures or user-visible bugs. The founder does not need to understand
+  database design — this program ensures data integrity is maintained.
+
+capability_brief:
+  value: "Holds data quality accountable — corruption, validation gaps, orphaned records, and migration errors are caught before they cascade into business logic."
+  problems_prevented:
+    - "Silent data-validation failures letting bad input reach storage"
+    - "Orphaned records accumulating after deletes / cascade gaps"
+    - "Migration scripts producing inconsistent state between environments"
+    - "Schema drift between dev / staging / prod going unnoticed until a bug reveals it"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run data-quality (14-day sweep) + closing data findings alongside other work"
+  first_output:
+    - "Data-quality baseline report covering validation / consistency / completeness"
+    - "Schema consistency map across environments"
+    - "Migration-risk findings auto-promoted as work items"
+    - "Validation-coverage gaps (where untrusted input lands without checks)"
+  activation_command: "/pulse run data-quality baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Input Validation
+    description: "All data entering the system is validated before storage"
+    examples: ["form accepts invalid email", "API allows negative quantity", "no length limits on text fields"]
+    detection: "Validation rule audit per model field, API schema review, form validation check"
+
+  - name: Schema & Migration Safety
+    description: "Database schema changes are safe, reversible, and don't lose data"
+    examples: ["migration drops column with data", "NOT NULL added without default", "index missing on frequently queried field"]
+    detection: "Migration review, schema diff analysis, query plan check"
+
+  - name: Referential Integrity
+    description: "Relationships between data entities are consistent and enforced"
+    examples: ["orphaned records after parent deletion", "foreign key not enforced at DB level", "soft-delete breaks joins"]
+    detection: "Foreign key audit, orphan record scan, cascade behavior review"
+
+  - name: Data Consistency
+    description: "The same data viewed from different paths shows the same value"
+    examples: ["cached value stale vs database", "denormalized field out of sync", "aggregate doesn't match detail records"]
+    detection: "Cache invalidation audit, denormalization sync check, aggregate verification"
+
+  - name: Data Loss Prevention
+    description: "Data cannot be silently lost, truncated, or corrupted"
+    examples: ["silent truncation on oversized input", "race condition overwrites", "backup not configured"]
+    detection: "Truncation risk audit, concurrent write analysis, backup verification"
+
+scope:
+  file_patterns:
+    - "**/models*"
+    - "**/serializers*"
+    - "**/validators*"
+    - "**/migrations/**"
+    - "**/schema*"
+    - "**/types*"
+    # /adopt adjusts to detected data patterns
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: dormant
+tier_triggers:
+  watch: "Application has data models or database configuration"
+  active: "Application stores real user data"
+  critical: "Data inconsistency reported OR large-scale migration planned"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Full data quality assessment: validation, migrations, referential integrity, consistency, loss prevention"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Comprehensive data quality review"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent data model changes: new fields, migrations, validation rules"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial data integrity review"
+    prompt_additions: >
+      CHALLENGE protocol for Data Quality. Think like corrupted data:
+      - What happens if the same record is updated by two requests simultaneously?
+      - What if a migration fails halfway — is it recoverable?
+      - What if someone sends null, empty string, or max-length data for every field?
+      - What cascade deletions could wipe out more data than intended?
+      - Can you reconstruct the state of any entity at a past point in time?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What data risks are we systematically missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Data Quality. Review history and ask:
+      - Are there new data models not covered by scope file_patterns?
+      - What data validation exists at the API layer but not the database layer (or vice versa)?
+      - Are there implicit data contracts between services that aren't enforced?
+      - What data growth patterns could cause performance issues?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 18
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Data quality program has not been checked in {days} days."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [engineering, financial-accuracy, launch]
+  fed_by: [ux]
+  blocks: [launch]
+
+phase_relevance:
+  foundation: critical
+  pre-launch: high
+  launch: high
+  growth: high
+  maturity: medium
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/data-quality/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline has mapped all data models."
+    level_2: "All 5 problem classes checked. Validation coverage known."
+    level_3: "Challenge active. Consistency checks passing. Orphan detection in place."
+    level_4: "Blind-spot active. Zero data integrity issues sustained. Full validation coverage."
+  current_gaps: "Never run."
+
+created_at: null
+updated_at: null

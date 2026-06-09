@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/workstream/fleet-scanned.json",
+  "title": "workstream.fleet-scanned",
+  "description": "T6:workstream fleet-scanned event payload (WS-210).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "repo_count": { "type": ["integer", "null"], "minimum": 0 }
+  }
+}

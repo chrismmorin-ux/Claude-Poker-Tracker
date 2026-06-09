@@ -1,0 +1,57 @@
+# Evaluator Validation Plan
+
+> **Status:** `.draft` — installed by `/adopt` when an AI-as-judge pattern was detected in this repo (rubric graders, simulated reviewers, LLM-evaluator gates). If this repo does NOT use an AI evaluator to grade outputs before release, delete this file. Otherwise, fill in every section before removing the `.draft` suffix.
+
+## Why this plan exists
+
+An AI evaluator that grades the product's outputs against a rubric is only trustworthy if it's **anchored to ground truth**. Without a validation plan, the common failure mode is a self-referential calibration loop: founder agrees with evaluator → agreement is labelled "calibrated" → evaluator drifts toward founder's blind spots.
+
+This document spells out how this repo's evaluator avoids that trap.
+
+## 1. The evaluator
+
+- **Name:** `<e.g., AISimPT, rubric-grader-v0>`
+- **What it grades:** `<the output artifact(s) and the axes it scores>`
+- **Where it gates:** `<which tier(s), which releases, which protocols>`
+- **Where it lives:** `<file paths, engine definitions, persona definitions>`
+
+## 2. Ground-truth sources
+
+List every source of truth the evaluator's judgments are measured against. Rank by authority.
+
+1. `<e.g., credentialed clinician review of sampled outputs>`
+2. `<e.g., published literature or professional standard>`
+3. `<e.g., spot-audit by the founder against a verified reference>`
+
+An evaluator with zero rows in this list is not anchored to truth. It is anchored to the founder's judgment, which is a **finding**, not a plan.
+
+## 3. Validation cadence
+
+- **Weekly:** `<e.g., spot-check 5 evaluator judgments against the next-tier reviewer; record divergence>`.
+- **Monthly:** `<e.g., formal calibration session — N outputs scored independently by evaluator, founder, and credentialed reviewer; compute inter-rater agreement>`.
+- **Quarterly:** `<e.g., audit against published literature updates; re-verify anatomical / regulatory / domain references>`.
+- **Event-driven:** `<e.g., any evaluator judgment that passes but a downstream reviewer rejects triggers an immediate recalibration>`.
+
+## 4. Divergence thresholds and triggers
+
+- **Acceptable divergence:** `<X% on primary axis>` sustained over `<N>` samples.
+- **Recalibration threshold:** `<Y% on primary axis>` in a single session, OR any divergence on a safety-critical axis.
+- **Graduation criteria:** the evaluator can be trusted to gate at Tier `<N>` independently after: `<e.g., 3 months of < Y% divergence from credentialed reviewer, plus founder sign-off>`.
+
+## 5. Known risks
+
+- **Self-referential calibration.** If the only source in section 2 is the founder, the evaluator encodes founder blind spots. Mitigation: `<what you're doing to bring in an external reviewer, by when>`.
+- **Drift from updated ground truth.** If ground-truth sources themselves update (new clinical guidelines, revised textbook, retracted paper), the evaluator's anchor shifts. Mitigation: `<re-verification cadence in section 3>`.
+- **Scope creep.** The evaluator was built for claim-domain X but gets applied to domain Y. Mitigation: `<how the repo prevents this — e.g., evaluator refuses to grade outside trained domain>`.
+
+## 6. Current state
+
+- **Last calibration:** `<date, link to session log>`.
+- **Divergence trend:** `<improving / stable / drifting — with numbers>`.
+- **Graduation status:** `<still gated by founder / graduated to Tier N independent / under review>`.
+
+## 7. Version history
+
+| Date | Author | Change |
+|------|--------|--------|
+| YYYY-MM-DD | `<name>` | Drafted from `/adopt` detection. |

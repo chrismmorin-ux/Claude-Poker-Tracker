@@ -27,6 +27,91 @@ If neither file exists: emit the fallback line (*Setup hasn't been initialized y
 
 If `repo_goal` matches the placeholder template default: declare it explicitly in the Value line rather than citing a fake goal.
 
+### 0c. Dormant-mode short-circuit (WS-321)
+
+Determine `adoption_phase`:
+- **If pre-phase bundle is present:** read `data.adoption_phase.adoption_phase` from the bundle.
+- **Legacy mode (no bundle):** read `.cwos-onboarding.yaml` directly and look at the top-level `adoption_phase` field. If the field is missing or null, treat as `M1`.
+
+If `adoption_phase` equals `M0`, the repo was scaffolded by `/genesis` and is in dormant mode (kit installed, programs inert, queue closed, awaiting intention). **Render the Dormant View below and stop** — do NOT render Steps 1–7 of the standard dashboard. Standard sections (vital signs, queue, programs, findings, sessions) are meaningless during dormant mode and rendering them framed as "missing config" reproduces the failure mode `/genesis` was designed to avoid.
+
+**Dormant View shape:**
+
+```
+## Where you are: Dormant — kit installed, awaiting intention
+
+CWOS infrastructure is in place but inert. No programs are active, the queue is closed, and engines won't run. This is by design — the repo will spring to life once you declare what it's for.
+
+**Capture so far:** {N} notes · {M} file drops · {K} conversation summaries · {D} implicit decisions
+{If total == 0: "_(nothing captured yet — drop a note in `notes/`, write a paragraph in `system/intention.md`, or just keep talking)_"}
+
+**Intention:** system/intention.md is {placeholder | filled in}
+{If placeholder: "_(write a paragraph in any section to start shaping the bundle /intend will propose)_"}
+{If filled in: "_(non-comment content present — `/intend` will use it as the seed for the ignition bundle)_"}
+
+**When you're ready:**
+- Run `/intend` to ignite — proposes archetype, programs, invariants, and a first sprint based on what you've captured
+- Or just write more in `intention.md`; I'll detect it on the next session-start and offer to ignite
+
+Started dormant: {entered_at relative — "3 days ago", "today", etc.}
+```
+
+**Substitution rules:**
+- `{N} notes`, `{M} file drops`, etc. — pull from `data.adoption_phase.capture_counts.by_tag` (keys: `note_added`, `file_dropped`, `conversation_summary`, `implicit_decision`). If any key is missing from `by_tag`, render its count as 0.
+- `{D} implicit decisions` — `capture_counts.by_tag.implicit_decision || 0`.
+- `total` — `capture_counts.total`.
+- `placeholder | filled in` — heuristic: if `m0_dormant.intention_template_present` is true AND `m0_dormant.intention_content_hash` matches the original placeholder hash, render "placeholder". Otherwise "filled in".
+- `{entered_at relative}` — humanize `m0_dormant.entered_at` ISO timestamp.
+
+**Integrity warning:** If any of `m0_dormant.kit_files_installed`, `m0_dormant.capture_buffer_present`, or `m0_dormant.intention_template_present` is `false`, prepend a single line ABOVE the Dormant View:
+
+```
+⚠ Dormant infrastructure damaged — {comma-separated list of failed flags}. Run `/genesis --repair` (TODO Phase F) or re-run `/genesis` to restore.
+```
+
+After rendering the Dormant View, append the shadow-event envelope (Step 8 below) and stop.
+
+### 0d. Kit Health (skipped if dormant short-circuit fired)
+
+Run the deterministic check:
+
+```
+node kit/scripts/cwos-kit-health.js --json
+```
+
+This produces a JSON document of shape:
+
+```json
+{
+  "ok": true | false,
+  "degraded": true | false,
+  "coverage": { "core": {"expected": N, "present": N, "missing": [...]},  ... },
+  "gaps": [ {"capability": "...", "destination": "...", "reason": "missing|hardlink-broken"} ],
+  "hardlinks": {"checked": N, "broken": N, "broken_paths": [...]},
+  "drift": {"kit_version_installed": "X.Y.Z", "kit_version_homebase": "X.Y.Z", "version_lags": false},
+  "elapsed_ms": N
+}
+```
+
+Render a **Kit Health** section in the dashboard:
+
+- Header: `### Kit Health`
+- One-line summary using per-capability coverage where `expected > 0`, e.g.
+  - Clean: `core 19/19 · workstream 7/7 · engines 5/5 — clean`
+  - Degraded: `core 19/19 · workstream 6/7 · engines 5/5 — 1 gap`
+- If `degraded`, append a one-line follow-up:
+  > ⚠ Run /audit for details, /adopt --repair to fix.
+- **Always** emit a one-line kit-version header (WS-404 — drift must be impossible to ignore, so it shows on every run, not only when behind). Read `drift.kit_version_installed`, `drift.kit_version_homebase`, `drift.lag_severity`:
+  - If `lag_severity` is `none`: `CWOS kit: {kit_version_installed} ✓ current` (omit the arrow when installed == homebase; if `kit_version_installed` is null — pre-stamp repo — render `CWOS kit: unknown → {kit_version_homebase}` instead).
+  - If `lag_severity` is `patch` / `minor` / `major`: `CWOS kit: {kit_version_installed} → {kit_version_homebase} ⚠ {lag_severity} behind — run /fleet-update to refresh.`
+  - The `/fleet-update` suggestion fires for ANY non-`none` severity (a single patch or a minor+ both qualify under WS-404 AC #3).
+- If `onboarding_missing` is true (WS-407 — an adopted repo whose `.cwos-onboarding.yaml` is absent), append:
+  > ⚠ `.cwos-onboarding.yaml` is missing — upgrade-path tooling falls back to defaults until it's restored. Run /kit-upgrade to backfill it.
+
+If the script is missing (older kit) or the JSON unparseable, render a single line: `Kit Health: check unavailable (kit script missing).` Do not gate the rest of the dashboard on this section.
+
+WS-379 / `feedback_determinism_first` — script before AI; surface the gap, don't ask the founder to remember to look.
+
 ### 1. Read System State [SKIPPED if pre-phase succeeded]
 - Read `system/state.md` for the last-known state
 - Note when it was last updated — if > 24h, flag as STALE
@@ -121,6 +206,8 @@ Last state update: YYYY-MM-DD (Xh ago) [CURRENT | STALE]
 
 Run `/pulse` for the full program dashboard, or `/pulse run <program>` to refresh a stale one.
 
+**Pending migrations:** {Count `.claude/workstream/queue/WS-*.yaml` files with `category: migration` AND `status: backlog`. If count > 0, render: "N migration item(s) auto-generated by cwos-migrate-watch — run `/next` to address, or `node kit/scripts/cwos-migrate-watch.js --list` to inspect." (WS-376 / FIND-251). If count is 0, omit this line entirely.}
+
 #### Unbaselined Programs (YELLOW active signal — fleet-wide)
 
 {For each `prog-*.yaml` in `.claude/workstream/programs/` where `monitor_only` is not true AND `last_run_by_protocol.baseline.date` is null, render a YELLOW Case-B block using the program's own `capability_brief`. This is **mandatory** — silent availability is not adoption (feedback_no_silent_install_no_user_invention; ADR-028; INV-041).}
@@ -192,6 +279,18 @@ Optimization Monitor: {indicator} {one-line status}
 {For each: one line — "✓ /tag  started_at → completed_at" for completed, "↻ /tag  started_at" for active/in-progress.}
 {If data.recent_commands.active_count > 0, note it: "N command(s) active."}
 ```
+
+If `data.deferred_scope` is non-null (WS-322 Phase C), surface a single yellow line BEFORE the ACTION REQUIRED block:
+
+```
+⚠ Deferred scope: N item(s) eligible for re-eval, M still blocked. Run /pulse to triage.
+```
+
+Substitution rules:
+- `N` = `data.deferred_scope.eligible` (only render line if ≥ 1 OR `still_blocked` ≥ 1)
+- `M` = `data.deferred_scope.still_blocked`
+- If `eligible` is 0 and `still_blocked` is ≥ 1, soften wording: *"N deferred item(s) waiting on triggers — visible in /pulse."*
+- If `eligible` is ≥ 1 the line should be prominent (eligible items are the actionable signal)
 
 If any vital sign is RED or any critical finding is open, end with:
 ```

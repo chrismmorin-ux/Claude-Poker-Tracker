@@ -1,0 +1,50 @@
+# Optimization Index — tracks self-improvement signals across all engine runs
+# Signals accumulate here. /evolve optimize reviews and applies confirmed patterns.
+# Schema: see engines/standard/optimization-feedback.md for signal types and lifecycle.
+
+next_signal_id: 1  # type: integer — counter for OPT-NNN IDs
+last_updated: null
+
+summary:
+  total_signals: 0
+  by_status:
+    pending: 0
+    confirmed: 0
+    applied: 0
+    rejected: 0
+  by_type:
+    prompt_gap: 0
+    calibration_drift: 0
+    coverage_gap: 0
+    process_friction: 0
+    effectiveness: 0
+    waste: 0
+    plateau: 0
+    convergence: 0
+
+# Confirmed patterns — signals that appeared in 2+ runs
+# These are ready for /evolve optimize review
+confirmed_patterns: []
+  # - pattern_id: "PAT-001"
+  #   target_object: { type: "engine", id: "eng-engine" }
+  #   signal_type: "prompt_gap"
+  #   description: "[what the pattern is]"
+  #   signal_ids: ["OPT-001", "OPT-005"]  # supporting signals
+  #   proposed_change: "[concrete change]"
+  #   status: "confirmed"
+
+# Individual signals — newest first
+signals: []
+  # - signal_id: "OPT-001"
+  #   timestamp: "2026-04-10"
+  #   source_run: "run-008"
+  #   source_engine: "eng-engine"
+  #   source_protocol: "blind_spot"
+  #   source_program: "kit-quality"
+  #   target_object: { type: "engine", id: "eng-engine" }
+  #   signal_type: "prompt_gap"
+  #   observation: "[what was observed]"
+  #   proposed_change: "[concrete change]"
+  #   evidence: ["[pointer]"]
+  #   confidence: "low"
+  #   status: "pending"

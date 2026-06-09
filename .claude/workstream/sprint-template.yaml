@@ -1,0 +1,60 @@
+# Sprint Template — a coherent batch of work items approved as a unit
+# Created by /next (auto-composition) or /sprint plan (manual)
+# Stored in .claude/workstream/sprints/SPR-NNN.yaml
+
+id: "SPR-NNN"
+title: "Sprint goal in plain language"
+status: proposed        # proposed | approved | active | completed | abandoned
+goal: |
+  One sentence: what the user gets when this sprint is done.
+
+items:
+  # Ordered sequence — this IS the execution order
+  - id: "WS-NNN"
+    title: "Short title"
+    mode: execute         # execute ("Just do it") | plan-first ("Design first")
+    effort: S             # S | M | L
+    decision_flags: []    # Decisions the user must make before execution
+                          # e.g., ["UX: layout choice", "Architecture: sync vs async"]
+    depends_on: []        # WS-NNN IDs within this sprint that must complete first
+    status: pending       # pending | in_progress | done | skipped
+    notes: ""             # Completion notes or skip reason
+
+# Sprint metadata
+composed_by: auto         # auto (composed by /next) | manual (composed by /sprint plan) | plan (from /plan deliberation)
+program_focus: ""         # Primary program ID, if sprint is program-focused
+total_effort: ""          # Human-readable: "S+S+M = ~2 sessions"
+decisions_needed: []      # Aggregated from items — surfaced at approval time
+                          # Each entry: "Item #N: [decision description]"
+
+# Anti-goal cross-check (WS-227 — populated by /next Step 4a). Records whether
+# the founder reviewed the sprint goal + item titles against the constitution
+# (anti-goals + failed states from system/intention.md). Required on sprints
+# approved on/after 2026-04-25 (INV-038). Omit on grandfathered/manual sprints.
+anti_goal_check:          # Optional pre-2026-04-25; required after.
+  status: passed          # passed (no matches) | exempted (founder accepted with reason) | accepted_implicit (founder approved despite matches — discouraged)
+  reviewed_at: ""         # ISO timestamp when /next Step 4a ran
+  reason: ""              # Free text — only populated when status: exempted
+  matches: []             # Only populated when status != passed; each entry: { corpus, phrase, similarity, coverage }
+
+# Lifecycle timestamps
+created_at: ""
+approved_at: ""
+started_at: ""
+completed_at: ""
+session_ids: []           # Sessions that worked on this sprint
+
+# Classification rules reference:
+#
+# An item is "plan-first" (Design first) if ANY of:
+#   - effort is M or L
+#   - category is architecture or ux
+#   - type is improvement (not bug or finding)
+#   - files_involved spans 3+ directories
+#   - decision_flags is non-empty
+#
+# An item is "execute" (Just do it) if ALL of:
+#   - effort is S
+#   - type is bug or finding
+#   - no decision_flags
+#   - files_involved in 1-2 directories

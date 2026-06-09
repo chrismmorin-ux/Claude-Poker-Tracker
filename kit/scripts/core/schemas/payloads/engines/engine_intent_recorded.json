@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_intent_recorded.json",
+  "title": "engines.engine_intent_recorded",
+  "description": "ADR-038 Layer 3 (WS-277) terminal event — fired when cwos-frame.js confirm writes a finalized intent contract before engine execution. Reducer can join engine outputs back to the contract via contract_id for post-hoc 'did this engine answer the question it was asked?' audit.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "contract_id", "engine", "target", "contract"],
+  "properties": {
+    "type":          { "type": "string", "const": "engine_intent_recorded" },
+    "contract_id":   { "type": "string", "minLength": 1, "description": "Stable id identifying this contract; used by engine outputs to reference back" },
+    "engine":        { "type": "string", "minLength": 1, "description": "Specialized engine name (eng-engine, design-audit, etc.)" },
+    "target":        { "type": "string", "description": "Focus/target argument passed to /engine — file path, program name, or free text" },
+    "contract": {
+      "type": "object",
+      "required": ["mode", "readiness", "stretch"],
+      "properties": {
+        "mode":         { "type": "string", "enum": ["decide", "build-best", "mockup", "explore"] },
+        "readiness":    { "type": "string", "enum": ["ready", "defer"] },
+        "readiness_reason": { "type": ["string", "null"], "description": "When readiness=defer, the structured signal explaining why" },
+        "success_shape":{ "type": ["string", "null"], "description": "Structured per WS-269 template; enums where possible" },
+        "scope_ceiling":{ "type": ["string", "null"], "description": "Out-of-bounds bound — e.g., 'token:80k', 'rounds:15', 'files:src/auth/'" },
+        "stretch":      { "type": "boolean", "description": "When true, engine questions loaded AS-N tags + constraints" },
+        "failed_states_seed": {
+          "description": "WS-296 / FIND-129: Failed-State excerpts injected at compose time so the engine reads constitutional anchors from the envelope, not from system/intention.md (upholds INV-cli-envelope-consumed-completely). Matched BY NAME (not index) to defeat renumbering attacks. section_hash detects any edit to the Failed States block; per-state content_hash pinpoints which anchor moved.",
+          "type": ["object", "null"],
+          "required": ["section_hash", "source_path", "states"],
+          "properties": {
+            "section_hash": { "type": "string", "description": "SHA-256 of the entire `## Failed States` section content (hex)" },
+            "source_path":  { "type": "string", "description": "Repo-relative path to the source file, e.g. system/intention.md" },
+            "states": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "content", "content_hash"],
+                "properties": {
+                  "name":                     { "type": "string", "description": "Bolded title of the failed state, e.g. 'Compliance over value'" },
+                  "content":                  { "type": ["string", "null"], "description": "Full body text of the state (after the bolded title), or null if not found" },
+                  "position_at_compose":      { "type": ["integer", "null"], "description": "1-based index in the Failed States list at compose time (informational; renumbering is detected via section_hash)" },
+                  "content_hash":             { "type": "string", "description": "SHA-256 of `name + content` (hex). Empty string when content is null." }
+                }
+              }
+            },
+            "warnings": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Per-state extraction warnings (e.g. requested name not found in source)."
+            }
+          }
+        }
+      }
+    },
+    "revisions": {
+      "type": "array",
+      "description": "Fields the founder edited from defaults during pre-flight. Empty array means defaults accepted as-is.",
+      "items": {
+        "type": "object",
+        "required": ["field", "default_value", "final_value"],
+        "properties": {
+          "field":         { "type": "string" },
+          "default_value": {},
+          "final_value":   {}
+        }
+      }
+    },
+    "created_at":  { "type": ["string", "null"], "format": "date-time" },
+    "created_by":  { "type": "string", "enum": ["founder", "ai-autonomous"] },
+    "composed_by": { "type": "string", "const": "cli-deterministic", "description": "ALTERATION-5 two-field provenance" }
+  }
+}

@@ -1,0 +1,54 @@
+# Engine Extension Pack Manifest
+engine_id: design-critique
+name: Design Pressure-Test
+description: >
+  Pressure-test an architectural design (ADR, system spec, or design doc) BEFORE
+  any code is written. For every primitive: surface the load-bearing assumption,
+  ceiling of effectiveness, strongest alternative, rationale for chosen approach,
+  and a falsification test. Tiered depth (full vs tight) by primitive importance.
+  Outputs a single review artifact + greenlight or amendment list. Compatible with
+  the labeled-assumptions methodology (AS-N format) so future AI evaluators can
+  diagnose where a design failed.
+category: enhancement
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required:
+  - architect            # alternative architectures, ceiling reasoning
+  - failure-engineer     # falsification of load-bearing assumptions
+  - senior-engineer      # alternative implementation paths, complexity ceiling
+  - performance-engineer # scaling/throughput ceilings
+  - security-engineer    # trust-boundary attacks on the design
+  - cross-critic         # cross-persona blind spots, missed alternatives
+  - facilitator          # synthesis, greenlight/amend decision
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: engines/library/design-critique/SKILL.md
+procedure: agent-dispatch
+extends: context-gather
+trigger: manual
+inputs: [design_doc, system_model]
+outputs: [report, finding, enhancement]
+chains:
+  on_complete: null
+  on_finding: create_work_item
+finding_severities:
+  CRITICAL: critical   # superior alternative — chosen approach should be replaced
+  HIGH: high           # amendment required — claim fails its falsification test
+  MEDIUM: medium       # ceiling lower than implied — narrow the scope
+  LOW: low             # blind-spot topic not addressed — note + cover separately
+  INFO: info           # holds — labeled assumption added for future review
+
+choice_point:
+  accepts: design_doc
+  size: standard
+  estimated_time: "~15 min for tiered run on a 4-primitive ADR"
+  hook: "Pressure-test a design before implementation — per-primitive worksheet, falsification tests, greenlight or amendment list"
+
+# Measurement record per ADR-021 ship-gate. Updated after each probe sweep.
+# Ship status remains gated on items enumerated in scorecard §ship_gate.
+measurement_record: "docs/evolution/corrective-scorecards/design-critique.yaml"

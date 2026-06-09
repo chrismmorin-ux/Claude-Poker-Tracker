@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/workstream/migration-indexes-rebuilt.json",
+  "title": "workstream.migration-indexes-rebuilt",
+  "description": "T6:workstream migration-indexes-rebuilt event payload (cwos-migrate). WS-210.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "phase": { "type": "string" },
+    "path": { "type": "string" }
+  }
+}

@@ -1,0 +1,29 @@
+# Engine Extension Pack Manifest
+engine_id: traction
+name: Traction
+description: Strategic prioritization with RICE scoring, phase multipliers, bottleneck detection, and parallel work stream identification
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: none
+programs: []
+personas_required: [strategic-thinker, mission-advocate]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/traction.md
+category: analysis
+impact: changes-state
+procedure: null  # custom multi-phase strategic analysis
+extends: context-gather
+trigger: manual
+inputs: [codebase, system_model]
+outputs: [finding, report]
+chains:
+  on_complete: null
+  on_finding: create_work_item
+finding_severities:
+  critical: 90
+  high: 72
+  medium: 54
+  low: 36
+  info: 18

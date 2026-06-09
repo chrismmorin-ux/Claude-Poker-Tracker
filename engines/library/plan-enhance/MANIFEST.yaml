@@ -1,0 +1,24 @@
+# Engine Extension Pack Manifest
+engine_id: plan-enhance
+name: Plan Enhancement
+description: Enrich a rough plan with risk annotations, dependency mapping, effort estimates, and gap detection
+category: enhancement
+impact: changes-state
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [architect, failure-engineer, performance-engineer, senior-engineer]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/plan-enhance.md
+procedure: agent-dispatch
+extends: context-gather
+trigger: manual
+inputs: [plan_context, system_model]
+outputs: [enhancement]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null

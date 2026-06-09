@@ -1,0 +1,186 @@
+id: infrastructure
+name: Infrastructure & Operations
+schema_version: 3
+status: NEW
+
+contract: >
+  The founder can trust that the application stays up, recovers from failures,
+  deploys safely, and scales when needed. CI/CD, hosting, databases, and
+  operational tooling are monitored. The founder does not need to be a DevOps
+  engineer — this program ensures the infrastructure won't surprise them
+  with downtime, data loss, or runaway costs.
+
+capability_brief:
+  value: "Holds infrastructure and operations accountable — uptime, deploy safety, recovery paths, and runaway-cost prevention stay monitored without DevOps expertise."
+  problems_prevented:
+    - "Deploy regressions slipping into production from missing rollback paths"
+    - "Scale-related failures not anticipated until they hit (DB connection pool exhaustion, etc.)"
+    - "Runaway cloud costs from misconfigured services or feedback loops"
+    - "Missing recovery paths for foreseeable failures (backups untested, no failover)"
+    - "CI/CD rot — flaky tests, slow pipelines, manual steps that bottleneck deploys"
+  cost:
+    activation: "~5-10 min for the baseline audit"
+    ongoing: "Periodic /pulse run infrastructure (14-day sweep) + closing ops findings alongside other work"
+  first_output:
+    - "Infrastructure baseline report covering deploy / recovery / scale / cost"
+    - "Deploy-readiness map (which surfaces have rollback paths, which don't)"
+    - "Cost-trend snapshot for major resources"
+    - "CI/CD health audit and pipeline-speed findings"
+  activation_command: "/pulse run infrastructure baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Deployment Safety
+    description: "Deploys are reliable, reversible, and don't break production"
+    examples: ["deploy without rollback plan", "migrations run before code is ready", "no staging environment"]
+    detection: "CI/CD pipeline audit, rollback mechanism check, deployment step review"
+
+  - name: Availability & Recovery
+    description: "Application recovers from failures without data loss"
+    examples: ["no health checks", "single point of failure", "no backup verification", "no disaster recovery plan"]
+    detection: "Health endpoint check, redundancy audit, backup test, recovery runbook review"
+
+  - name: Monitoring & Alerting
+    description: "Problems are detected before users report them"
+    examples: ["no error tracking", "no uptime monitoring", "alerts go to an unmonitored channel"]
+    detection: "Monitoring tool inventory, alert routing verification, coverage gap analysis"
+
+  - name: Scaling & Performance
+    description: "Application handles load growth without degradation"
+    examples: ["N+1 queries", "no connection pooling", "unbounded memory growth", "no caching strategy"]
+    detection: "Query analysis, resource utilization patterns, caching layer audit"
+
+  - name: Cost & Resource Management
+    description: "Infrastructure costs are reasonable and won't surprise the founder"
+    examples: ["unbounded log storage", "oversized instances", "no spend alerts", "orphaned resources"]
+    detection: "Resource inventory, cost trend analysis, orphaned resource scan"
+
+scope:
+  file_patterns:
+    - "docker-compose*.yml"
+    - "Dockerfile*"
+    - ".github/workflows/**"
+    - ".gitlab-ci*"
+    - "scripts/**"
+    - "**/settings/**"
+    - "**/config/**"
+    - "ops/**"
+    - "infra/**"
+    - "deploy/**"
+    # /adopt adjusts to detected infrastructure patterns
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: dormant
+tier_triggers:
+  watch: "Application has deployment configuration (Dockerfile, CI, deploy scripts)"
+  active: "Application is deployed to production"
+  critical: "Downtime incident occurred OR scaling to new usage tier"
+
+protocols:
+  baseline:
+    engine: health-check
+    focus: "Full infrastructure assessment: deployment, availability, monitoring, scaling, cost"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage]
+
+  sweep:
+    engine: health-check
+    cadence_days: 7
+    focus: "Comprehensive infrastructure health review"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 1
+    focus: "Recent infrastructure changes: CI config, deploy scripts, infra additions"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Adversarial infrastructure review"
+    prompt_additions: >
+      CHALLENGE protocol for Infrastructure. Think like Murphy's Law:
+      - What if the database goes down for 10 minutes? What's lost?
+      - What if a deploy goes out with a breaking bug? How long to rollback?
+      - What if traffic 10x's in an hour? What breaks first?
+      - What if the founder's credit card expires? What stops working?
+      - What if a developer accidentally deletes the production database?
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "What infrastructure risks are we missing?"
+    prompt_additions: >
+      BLIND SPOT protocol for Infrastructure. Review history and ask:
+      - Are there new services or infrastructure components not in scope?
+      - What monitoring gaps exist for recent feature additions?
+      - Are there cloud provider features we should be using but aren't?
+      - What infrastructure debt has accumulated that protocols haven't flagged?
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 3
+    priority_floor: 18
+    escalation:
+      stale_days: 7
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Infrastructure program has not been checked in {days} days."
+    block_sprint: false
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [security, launch]
+  fed_by: []
+  blocks: [launch]
+
+phase_relevance:
+  foundation: low
+  pre-launch: critical
+  launch: critical
+  growth: critical
+  maturity: high
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/infrastructure/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. Baseline has mapped all infrastructure."
+    level_2: "All 5 problem classes checked. CI passing. Backups verified."
+    level_3: "Challenge active. Runbooks verified. Disaster recovery tested."
+    level_4: "Blind-spot active. Auto-recovery for known failures. Zero manual interventions."
+  current_gaps: "Never run."
+
+created_at: null
+updated_at: null

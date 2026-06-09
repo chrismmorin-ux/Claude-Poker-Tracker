@@ -1,0 +1,59 @@
+# Claims Policy
+
+> **Status:** `.draft` — installed by `/adopt` when claim-domain signals were detected in this repo. The founder (or a credentialed reviewer) must customize each section before removing the `.draft` suffix. Nothing below is binding until this file is reviewed and renamed.
+
+## 1. Detected claim domains
+
+The adoption detector flagged the following claim domains in this repo's governance docs:
+
+`<!-- /adopt writes detected domains here, e.g., clinical, scientific -->`
+
+If any of these are wrong, delete them. If a claim domain is missing, add it — every domain in this list drives its own evidence-standards row in `evidence-standards-matrix.md`.
+
+## 2. What this product claims (the authorized voice)
+
+List the claims this product makes, or intends to make, to its users. One bullet per claim class. Be specific about the form the claim takes (UI element, API response, report, generated artifact).
+
+- **Example (clinical):** "A generated image of a patient in posture X shows the asymmetry consistent with the pathology the PT described." — appears in the primary UI output.
+- **Example (scientific):** "A derivation is correct." — appears in the computed-derivation panel.
+- **Example (financial):** "A total correctly sums the line items shown." — appears on every invoice.
+
+Rule: if it's not on this list, the product isn't authorized to claim it. Silent implied claims (via UI affordance, default behaviour, marketing copy) count and must appear here.
+
+## 3. What this product does NOT claim
+
+The boundary matters as much as the claim. List explicit anti-claims.
+
+- **Example (clinical):** "The product is NOT a diagnostic tool. Generated images are for therapist visualization, not patient-specific treatment planning."
+- **Example (scientific):** "A derivation shown as 'correct' has passed computer-algebra verification; it has not been peer-reviewed."
+
+If a user could reasonably infer a claim the product isn't making, write the anti-claim here.
+
+## 4. Authority & review
+
+- **Claims owner:** `<name/role>` — responsible for the content of this document and authorized to approve new claims.
+- **Reviewer(s):** `<name/role>` — credentialed to challenge claims in each detected domain.
+- **Review cadence:** `<e.g., quarterly, or before every release that touches a claim-bearing surface>`.
+- **Escalation path:** when the claims owner and a reviewer disagree, resolution goes to `<final decision-maker>`.
+
+For solo non-technical founders: if you don't yet have a credentialed reviewer, name the gap here and commit to the cadence at which you'll find one. This gap is a finding, not an invariant.
+
+## 5. Disclaimers
+
+For each claim domain, list the disclaimer that must be surfaced and where it must appear.
+
+- `<domain>` disclaimer: `<text>` — required in: `<UI location / doc / email footer>`.
+
+## 6. Scope fences
+
+What does this version of the product claim that future versions will claim differently? (Prevents v1→v2 scope leak.)
+
+- **v1 claims:** …
+- **v2 claims:** …
+- **v3 claims:** …
+
+## 7. Version history
+
+| Date | Author | Change |
+|------|--------|--------|
+| YYYY-MM-DD | `<name>` | Drafted from `/adopt` detection. |

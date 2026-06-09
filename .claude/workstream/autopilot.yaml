@@ -1,0 +1,39 @@
+# Autopilot State — Template
+# Created by /autopilot command, coordinated via git commits between Remote Task cycles.
+# Do not edit manually while a run is active.
+
+schema_version: "1"
+status: idle            # idle | active | completed | stopped | error
+
+# Run configuration (set at start, read-only during cycles)
+run_id: ""              # ap-YYYYMMDD-HHMM
+trigger_id: ""          # Remote Task trigger ID
+trigger_cron: ""        # cron expression (e.g., "0 */1 * * *")
+started_at: ""          # ISO timestamp
+scheduled_end_at: ""    # ISO timestamp (start + duration)
+duration_hours: 0
+max_error_streak: 3     # stop after N consecutive failures
+
+# Progress (updated after each cycle)
+cycles_completed: 0
+items_completed: []     # [{id, title, completed_at, cycle_number}]
+items_failed: []        # [{id, title, failed_at, reason, cycle_number}]
+error_streak: 0         # consecutive failures — resets on success
+last_cycle_at: ""       # ISO timestamp of most recent cycle
+last_cycle_status: ""   # success | failure | skipped
+last_cycle_item: ""     # WS-NNN of last attempted item
+
+# Stop coordination
+stop_requested: false   # set by /autopilot stop; checked at cycle start
+stopped_at: ""
+stopped_by: ""          # user | guard_rail | time_expired | queue_empty
+
+# Cycle log (last 20 entries)
+cycle_log: []
+# Each entry:
+#   cycle: 1
+#   started_at: ""
+#   item_id: "WS-NNN"
+#   item_title: ""
+#   status: success | failure | skipped | guard_stopped
+#   notes: ""

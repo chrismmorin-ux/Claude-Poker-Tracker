@@ -1,0 +1,232 @@
+id: self-compliance
+name: Self-Compliance
+schema_version: 4
+status: NEW
+
+contract: >
+  The founder can trust that the repo's CWOS installation still matches its
+  own constitution (system/intention.md) — principles, founder invariants,
+  and failed states stay falsifiable and monitored. When compliance regresses
+  (a principle becomes unverifiable, a failed state starts firing, coverage
+  drops), the program escalates and blocks new sprints until the violation
+  is acknowledged. Self-compliance is how CWOS resists its own failed state
+  #10 (self-aggrandizing complexity) over time.
+
+capability_brief:
+  value: "Keeps CWOS itself accountable to the repo's constitution — principles stay falsifiable, failed-state detectors keep firing, and self-compliance regressions block new sprints."
+  problems_prevented:
+    - "Principles drifting into unfalsifiable language as the system evolves"
+    - "Failed-state detectors going stale or losing the references they were measuring against"
+    - "Constitutional coverage dropping below threshold without a sprint-blocking signal"
+    - "CWOS sliding into its own failed state #10 (self-aggrandizing complexity) — adding governance for governance's sake"
+  cost:
+    activation: "~5 min for the baseline constitutional audit"
+    ongoing: "Periodic /pulse run self-compliance + closing constitutional findings alongside other work"
+  first_output:
+    - "Constitutional-audit baseline (principles + failed states scanned for falsifiability)"
+    - "Detector-coverage map (which clauses have working detectors, which don't)"
+    - "Falsifiability scorecard per principle"
+    - "Regression risks flagged with concrete file pointers"
+  activation_command: "/pulse run self-compliance baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: Principle Violation
+    description: "A constitutional principle (P1, P2, P3) is detectably violated"
+    examples: ["P2 violated — a command asks founder to validate YAML", "P3 violated — /adopt requires M1-M5 completion upfront"]
+    detection: "constitutional-audit engine; kit/scripts/cwos-constitutional-audit.js detectPN() functions"
+
+  - name: Founder-Invariant Breach
+    description: "INV-F1 (No Unnecessary Burden) fails — installed components are not proportional to goal value"
+    examples: ["2+ installed programs with no goal-alignment trace", "component-alignment engine scores >=2 components at <=2/10 relevance"]
+    detection: "constitutional-audit detectInvF1; component-alignment engine low-relevance threshold"
+
+  - name: Failed State Detected
+    description: "A concrete dystopia from intention.md is firing in the current repo"
+    examples: ["FS-1 ceremony theater — rituals without subsequent action", "FS-7 findings noise — engine run produced >=15 findings", "FS-10 self-aggrandizing complexity — programs lack contract trace to intention.md"]
+    detection: "constitutional-audit detectFSN functions per failed state"
+
+  - name: Detector Coverage Gap
+    description: "A constitutional item has no detector or its detector is infeasible — the constitution is declared but not watched"
+    examples: ["FS-6 infeasible — detector regex mismatches current queue shape", "SYS-INV-all no-detector — cwos-verify lacks --json interface"]
+    detection: "constitutional-audit flags status: infeasible or no-detector per item; each promotes to a LOW finding"
+
+scope:
+  file_patterns:
+    - "system/intention.md"
+    - "system/invariants.md"
+    - "kit/scripts/cwos-constitutional-audit.js"
+    - "kit/scripts/cwos-verify.js"
+    - "engines/standard/constitutional-audit.md"
+    - ".claude/workstream/compliance-trends.yaml"
+    - ".claude/workstream/compliance-scores/**"
+  invariants: []
+  anti_invariants: []
+  constraints: []
+
+tier: critical
+tier_triggers:
+  watch: "intention.md exists and has declared principles"
+  active: "constitutional-audit has run at least once and compliance_score is being tracked"
+  critical: "Default — the constitution is universally applicable to every CWOS repo"
+
+protocols:
+  baseline:
+    engine: constitutional-audit
+    focus: "First full constitutional audit — scores 3 principles + 1 founder invariant + 10 failed states + 21 system invariants; establishes trend baseline"
+    problem_classes: all
+    outputs: [baseline_report, initial_findings, problem_class_coverage, compliance_score_first]
+
+  sweep:
+    engine: constitutional-audit
+    cadence_days: 30
+    focus: "Full monthly constitutional audit across all four suites"
+    problem_classes: all
+    min_tier: watch
+
+  delta:
+    engine: constitutional-audit
+    cadence_days: 7
+    focus: "Weekly delta check — re-runs only suites with prior failures OR items whose detector files changed since last delta"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope.file_patterns; run focused suites where changed"
+    min_tier: watch
+
+  challenge:
+    engine: constitutional-audit
+    cadence_days: 60
+    focus: "Adversarial review — force-fail each detector in isolation, confirm each produces a recoverable finding rather than crashing silently"
+    prompt_additions: >
+      CHALLENGE protocol for Self-Compliance. Think like a regression:
+      - What would a silent drift from intention.md look like — how would we fail to notice?
+      - For each item still marked infeasible or no-detector, what minimum-viable detector would surface 80% of the real signal?
+      - Are any detectors falsely passing because their heuristic is too lenient (e.g., P2 only greps a narrow pattern set)?
+      - Is the trend file being appended correctly — does it survive a restart, a rebase, a conflicting edit?
+    min_tier: active
+
+  blind_spot:
+    engine: constitutional-audit
+    cadence_days: 90
+    focus: "What failed states exist in the wild that our 10 enumerated ones don't cover?"
+    prompt_additions: >
+      BLIND SPOT protocol for Self-Compliance:
+      - Since last blind_spot, has the kit added new primitives (engines, programs, commands) that introduce failure modes not in the constitution?
+      - Are there new adopted repos whose goals reveal failed states the constitution didn't anticipate?
+      - Has any principle become ambiguous as the product evolved — needs sharpening in intention.md?
+      - Propose additions/amendments to intention.md via /checkpoint.
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 5
+    priority_floor: 20
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+  on_stale:
+    action: create_work_item
+    message: "Self-compliance has not been checked in {days} days. The constitution is declared but unwatched. To unblock: /pulse run self-compliance"
+    block_sprint: true
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+interconnections:
+  feeds_into: [kit-quality, program-integrity]
+  fed_by: [engine-reliability]
+  blocks: []
+
+phase_relevance:
+  foundation: critical
+  pre-launch: critical
+  launch: critical
+  growth: critical
+  maturity: critical
+
+last_run_by_protocol:
+  baseline: { date: null, engine: null, run_id: null, result: null }
+  delta: { date: null, engine: null, run_id: null, result: null }
+  sweep: { date: null, engine: null, run_id: null, result: null }
+  challenge: { date: null, engine: null, run_id: null, result: null }
+  blind_spot: { date: null, engine: null, run_id: null, result: null }
+
+health_score: 0
+health_ceiling: 0
+health_ceiling_reason: "No analysis performed yet. Run /pulse run self-compliance baseline to establish first score."
+findings_open: 0
+work_items_open: 0
+
+evidence:
+  last_audit_report: null
+  protocol_history: []
+  retention_days: 365
+  evidence_dir: ".claude/workstream/evidence/self-compliance/"
+
+maturity:
+  level: 1
+  criteria:
+    level_1: "Program established. First constitutional-audit run has produced a baseline compliance_score + trend file."
+    level_2: "All four suites (principles / founder-invariants / failed-states / system-invariants) have >=80% detector coverage. No infeasible items remain."
+    level_3: "Challenge protocol active. Every CRITICAL and HIGH finding has been triaged to either resolved or explicit deferral within 14 days."
+    level_4: "Blind-spot protocol active. No constitutional regression has gone undetected for >30 days. Compliance_score trend is stable or improving across 6 consecutive monthly sweeps."
+  current_gaps: "Never run."
+
+assumptions:
+  - id: AS-700
+    type: empirical
+    severity: critical
+    claim: >
+      The 14 hand-wired detectors in kit/scripts/cwos-constitutional-audit.js
+      surface >=70% of real constitutional regressions within one sweep
+      cadence (30 days) on HomeBase. Source: ADR-025.
+    falsifies_if:
+      threshold: >
+        Fewer than 70% of seeded synthetic violations are flagged by the
+        next sweep run as HIGH or CRITICAL findings. One seeded violation
+        per quarter (e.g., add a command that asks founder to validate
+        YAML; remove a program's intention.md trace).
+      window: "rolling from 2026-04-24, evaluated quarterly"
+      observation_source: "seeded violations vs. findings-index.yaml after next sweep; zero false positives on healthy-state seeding required"
+    revisit: 2026-07-24
+    status: proposed
+
+  - id: AS-702
+    type: empirical
+    severity: high
+    claim: >
+      prog-self-compliance block_sprint: true on stale does not trigger
+      false blocks that erode founder trust. Source: ADR-025 AS-702.
+    falsifies_if:
+      threshold: >
+        More than 1 false-block event occurs in the first 90 days post-ship
+        (sprint blocked by stale self-compliance program when constitutional-
+        audit would have passed on a fresh run).
+      window: "rolling from 2026-04-24"
+      observation_source: "block-sprint events in session logs + /pulse run output"
+    revisit: 2026-07-24
+    status: proposed
+
+market_dynamics:
+  subsumption_risk: low
+  self_preference: ours
+  durable_ground: >
+    Self-auditing a repo against a declared constitution (intention.md) is
+    a CWOS-native discipline. No native Claude Code feature or competitor
+    ships an equivalent. The labeled-assumption + failed-state framework is
+    distinctive IP; the detector functions themselves encode repo-specific
+    judgments (what "ceremony theater" or "tool-shaped hammer" looks like
+    in this codebase) that persist under any future replacement harness.
+  watch_surfaces:
+    - "https://docs.anthropic.com/en/docs/claude-code"
+    - "https://www.anthropic.com/news"
+  trigger_event: >
+    Any AI-dev platform ships a "repo constitution" primitive with
+    built-in detector registry + cadence-driven audit. Would force
+    self_preference re-evaluation; the underlying intention.md remains
+    portable to the new harness.
+  last_reviewed: 2026-04-24
+
+created_at: null
+updated_at: null

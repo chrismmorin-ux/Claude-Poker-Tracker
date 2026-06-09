@@ -1,0 +1,9 @@
+# Chain anchors — git-tracked trust surface for the shadow event log.
+# See ADR-018 §Consequences. Each entry is the chain head at the time of
+# either session-end or every 100 events, whichever came first.
+
+anchors:
+  - chain_head: "4b6b483b2930e258223217baf4b0738d49df779101094704bb07d198abeae0a1"
+    event_count: 1
+    timestamp: "2026-06-09T18:44:03.109Z"
+    schema_version: 1

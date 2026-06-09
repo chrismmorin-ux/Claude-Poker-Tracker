@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_intent_abandoned.json",
+  "title": "engines.engine_intent_abandoned",
+  "description": "ADR-038 Layer 3 (WS-277) terminal event — fired when founder cancels pre-flight before confirm. Friction signal: abandon-event rate >30% indicates contract is too heavy or smart defaults too wrong (AS-INTENT-2 falsification proxy).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "engine", "target"],
+  "properties": {
+    "type":           { "type": "string", "const": "engine_intent_abandoned" },
+    "engine":         { "type": "string", "minLength": 1 },
+    "target":         { "type": "string" },
+    "fields_touched": {
+      "type": "array",
+      "description": "Field names the founder edited before cancelling. Empty array = cancel without any edits.",
+      "items": { "type": "string" }
+    },
+    "elapsed_ms":     { "type": ["number", "null"], "description": "How long pre-flight ran before cancel" },
+    "abandoned_at":   { "type": ["string", "null"], "format": "date-time" },
+    "composed_by":    { "type": "string", "const": "cli-deterministic" }
+  }
+}

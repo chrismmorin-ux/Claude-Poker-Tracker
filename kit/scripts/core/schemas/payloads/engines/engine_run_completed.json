@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_run_completed.json",
+  "title": "engines.engine_run_completed",
+  "description": "T7:engines engine_run_completed event payload (WS-263, ADR-037 Phase 2). Emitted at the end of every /engine invocation. Reducer materializes state/engines.json so engine_history_count is replay-pure derivable.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "run_id", "engine_id", "program_id"],
+  "properties": {
+    "type":          { "type": "string", "const": "engine_run_completed" },
+    "run_id":        { "type": "string", "minLength": 1 },
+    "engine_id":     { "type": "string", "minLength": 1 },
+    "program_id":    { "type": "string", "minLength": 1 },
+    "artifacts_dir": { "type": ["string", "null"] },
+    "completed_at":  { "type": ["string", "null"], "format": "date-time" },
+    "backfilled":    { "type": "boolean", "description": "True for synthetic events emitted by scripts/migrate-engine-history.js. Real events from /engine omit this field." }
+  }
+}

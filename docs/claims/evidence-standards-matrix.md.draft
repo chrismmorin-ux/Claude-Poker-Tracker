@@ -1,0 +1,41 @@
+# Evidence Standards Matrix
+
+> **Status:** `.draft` — installed by `/adopt` alongside `claims-policy.md`. Fill in one row per claim class that appears in the claims policy's authorized-voice list. Claims with no row cannot be made.
+
+## How to use this matrix
+
+Each row maps a single claim type to its evidence standard. The claims-policy program's baseline protocol audits every claim the product makes against this matrix; any claim whose evidence does not meet the required standard becomes a finding.
+
+| Claim type | Example claim | Acceptable evidence (ranked, high → low) | Minimum standard to make the claim | Confidence tier the evidence earns | Tier gate the claim drives | Re-verification cadence |
+|---|---|---|---|---|---|---|
+| `<e.g., clinical-anatomy>` | "muscle origination/insertion" | peer-reviewed anatomical atlas; widely-used textbook (Netter, Gray's); Kenhub (verified page, not AI recall); founder+clinician consensus; AI model recall | widely-used textbook | `proven` / `likely` / `hypothesis` | Tier 1 / Tier 2 / Tier 3 | 6 months |
+| `<e.g., scientific-derivation>` | "derivation X is correct" | SymPy-verified derivation; peer-reviewed paper; reviewed textbook | SymPy-verified OR peer-reviewed paper | `proven` | Tier 1 | re-verify on symbol change |
+| `<e.g., financial-calculation>` | "total T sums the displayed line items" | deterministic code path; integration test against ground-truth fixture | deterministic code path AND test | `proven` | Tier 1 | CI on every change |
+| ... | ... | ... | ... | ... | ... | ... |
+
+## Confidence tiers
+
+- **`proven`** — evidence meets the minimum standard and is independently verifiable. The claim can be made without hedging.
+- **`likely`** — evidence is one step below the minimum (e.g., textbook when standard requires peer review). The claim requires a "based on <source>" attribution.
+- **`hypothesis`** — evidence is weak (AI recall, single non-expert source). The claim requires a "subject to review" disclaimer AND cannot gate a release.
+- **`unknown`** — no evidence on file. The claim cannot be made; the product must either (a) not claim, or (b) generate a placeholder with an explicit "unverified" flag.
+
+## Tier gates
+
+How the confidence tier maps to release gating is repo-specific. Common pattern:
+
+- **Tier 1 gate** — automated checks; failure blocks every commit and release.
+- **Tier 2 gate** — sampled or scheduled checks; failure opens a finding but does not block.
+- **Tier 3 gate** — AI-evaluator or human-spot-check; failure surfaces for founder review.
+
+If your repo has a different tier structure (see `system/invariants.md` tiering), replace the Tier 1/2/3 language above with the structure you actually use.
+
+## Source freshness
+
+Fast-moving fields (clinical guidelines, regulatory rules, market data) require shorter re-verification cadences. Slow-moving fields (basic anatomy, well-established theorems) tolerate longer. Record the cadence per row, not a blanket policy.
+
+## Version history
+
+| Date | Author | Change |
+|------|--------|--------|
+| YYYY-MM-DD | `<name>` | Drafted from `/adopt` detection. |

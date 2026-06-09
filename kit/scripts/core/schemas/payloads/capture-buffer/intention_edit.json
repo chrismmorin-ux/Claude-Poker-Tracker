@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/capture-buffer/intention_edit.json",
+  "title": "capture-buffer.intention_edit",
+  "description": "T20:capture-buffer intention_edit event (WS-321 Phase B + Phase E). Emitted by /session-start Step 0c when intention.md non-comment content hash changes. Drives the placeholder->content detection that triggers the optional 'run /intend' nudge.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["old_hash", "new_hash"],
+  "properties": {
+    "old_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Previous SHA-256 of intention.md non-comment content" },
+    "new_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Current SHA-256 of intention.md non-comment content" },
+    "changed_sections": {
+      "type": "array",
+      "description": "Best-effort list of intention.md sections that changed (Imagined Outcome, Principles, Softgoals, Anti-goals, Open Questions)",
+      "items": { "type": "string" }
+    }
+  }
+}

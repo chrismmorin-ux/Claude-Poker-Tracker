@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/event-v1.json",
+  "title": "cwos-event-v1",
+  "description": "Shadow event log envelope (ADR-018 §Event envelope, step 1 wrapper schema only — per-type payload schemas land in step 2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "schema_version",
+    "timestamp",
+    "author",
+    "source_tier",
+    "source_track",
+    "track_tag",
+    "command_id",
+    "content_hash",
+    "prior_hash",
+    "payload"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "schema_version": { "type": "integer", "const": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "author": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "source_tier": {
+      "type": "string",
+      "enum": ["founder-prompt", "llm-emission", "reducer-output", "external-paste"]
+    },
+    "source_track": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "track_tag": { "type": "string", "maxLength": 128 },
+    "command_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prior_hash": { "oneOf": [{ "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "string", "const": "" }] },
+    "payload": {
+      "oneOf": [
+        { "type": "object" },
+        {
+          "type": "object",
+          "required": ["payload_ref", "payload_hash"],
+          "properties": {
+            "payload_ref": { "type": "string" },
+            "payload_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      ]
+    },
+    "causation_id": { "type": ["string", "null"], "maxLength": 128 },
+    "classifier_version": { "type": "string", "maxLength": 64 }
+  }
+}

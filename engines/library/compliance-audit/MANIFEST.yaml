@@ -1,0 +1,35 @@
+# Engine Extension Pack Manifest
+engine_id: compliance-audit
+name: Compliance Audit (drafting + drift)
+description: Audit a repo's compliance posture against its declared jurisdictions and regulations. On first baseline (when docs/compliance/ has no promoted artifacts), Phase 0b drafts privacy-policy.draft.md, consent-flows.draft.md, and applicable-regulations.draft.md from repo content + dependency manifests + user-facing copy + founder-named jurisdictions. Founder reviews and promotes via rename. Subsequent runs (with promoted artifacts) skip Phase 0b and audit drift, blindspots, and unenforced regulatory checkpoints. Honors no-silent-install — never overwrites non-draft artifacts, never silently mutates prog-compliance.yaml. Coexists with `legal-safety` (the deeper compliance audit engine) — compliance-audit drafts and tracks; legal-safety reviews findings with veto authority.
+category: governance
+procedure: agent-dispatch
+extends: context-gather
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: governance capability enabled AND prog-compliance registered
+programs: [compliance]
+personas_required:
+  - legal-guardian       # Phase 0b drafts privacy-policy + consent-flows; Phase 0b-vi cross-checks all three drafts for boilerplate-vs-load-bearing
+  - architect            # Phase 0b drafts applicable-regulations as code-level checkpoints
+  - cross-critic         # Phase 2: adversarial review of finding set
+  - facilitator          # Phase 3: synthesis
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/compliance-audit.md
+trigger: manual
+inputs: [repo_path, previous_compliance_set]
+outputs: [privacy_policy_draft, consent_flows_draft, applicable_regulations_draft, drafts_manifest, regulation_inventory, finding_inventory]
+chains:
+  on_complete: null
+  on_finding: workstream-promote
+finding_severities: [critical, high, medium, low]
+
+choice_point:
+  accepts: repo
+  size: standard
+  estimated_time: "~6-10 min (first run includes Phase 0b draft generation across 3 artifacts)"
+  hook: "Audit compliance — drafts privacy policy / consent flows / applicable regulations on first run, then catches drift, missing controls, unenforced regulatory checkpoints"

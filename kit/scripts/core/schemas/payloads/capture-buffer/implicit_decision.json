@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/capture-buffer/implicit_decision.json",
+  "title": "capture-buffer.implicit_decision",
+  "description": "T20:capture-buffer implicit_decision event (WS-321 Phase B). Pre-intention analog of /session-end's existing decision-detection (Step 5.4). Emitted when a 'let's do X' / 'we'll use Y' pattern is detected in notes or conversation. Feeds the ignition proposal's constraints/decisions list.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["decision_text"],
+  "properties": {
+    "decision_text": { "type": "string", "minLength": 1, "description": "The detected decision in plain language" },
+    "source_path": { "type": ["string", "null"], "description": "File the decision was detected in (null if from conversation)" },
+    "line_no": { "type": ["integer", "null"], "minimum": 1, "description": "Line number in source file (null if from conversation)" }
+  }
+}

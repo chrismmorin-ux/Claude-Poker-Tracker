@@ -1,0 +1,24 @@
+# Engine Extension Pack Manifest
+engine_id: decision-enhance
+name: Decision Enhancement
+description: Enrich a decision with scenarios, tradeoffs, risk profiles, and reversibility assessment
+category: enhancement
+impact: changes-state
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [architect, failure-engineer, business-strategist]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/decision-enhance.md
+procedure: agent-dispatch
+extends: context-gather
+trigger: manual
+inputs: [decision_context, system_model]
+outputs: [enhancement]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null

@@ -1,0 +1,258 @@
+# Context Signal Definitions — maps project situations to style recommendations
+# The system evaluates these signals during engine invocation.
+# Signals are checked in priority order (lowest number = highest priority);
+# first strong match wins.
+#
+# Detection rules are STRUCTURED for machine-parseability:
+#   Each rule has a `check` (data source), `field` (what to read),
+#   `operator` (how to compare), and `value` (what to compare against).
+#
+# Operators:
+#   contains    — field value contains the string (case-insensitive)
+#   equals      — exact match
+#   matches_any — field value matches any item in the list
+#   gt / lt     — numeric greater/less than
+#   exists      — field/file is present (value ignored)
+#   not_exists  — field/file is absent (value ignored)
+#   within_days — date field is within N days of today
+#   has_entries — array/list field has >= N entries matching a filter
+#
+# Data sources (check):
+#   system_context  → system/context.md → items[]
+#   git             → git CLI queries
+#   runs            → .claude/workstream/runs/*/manifest.yaml
+#   findings_index  → .claude/workstream/findings-index.yaml
+#   failures        → system/failures.md → entries
+#   engine          → current engine invocation metadata
+#   work_item       → current sprint/work item YAML
+#   queue_index     → .claude/workstream/queue-index.yaml
+
+schema_version: 2
+
+signals:
+
+  # --- HIGH PRIORITY (situation-driven) ---
+
+  post-incident:
+    priority: 10
+    description: "Recovering from a production issue"
+    match_mode: any  # any rule matching triggers the signal
+    detection:
+      - check: engine
+        field: name
+        operator: equals
+        value: "incident-response"
+      - check: system_context
+        field: items
+        operator: has_entries
+        value:
+          min_count: 1
+          filter:
+            type: customer_issue
+            urgency: high
+      - check: failures
+        field: entries
+        operator: has_entries
+        value:
+          min_count: 1
+          filter:
+            first_seen:
+              operator: within_days
+              value: 2
+    recommended_style:
+      reasoning: five-whys
+      output: executive
+      tone: surgeon
+    plain_language: >
+      Post-incident mode. I'll drill to root cause fast and give you a
+      fix list ordered by impact.
+
+  pre-deploy:
+    priority: 20
+    description: "About to deploy or launch"
+    match_mode: any
+    detection:
+      - check: system_context
+        field: items
+        operator: has_entries
+        value:
+          min_count: 1
+          filter:
+            type: deadline
+            title:
+              operator: matches_any
+              value: ["deploy", "launch", "release", "go live"]
+      - check: git
+        field: branch_name
+        operator: matches_any
+        value: ["release/*", "deploy/*", "hotfix/*"]
+      - check: runs
+        field: recent
+        operator: has_entries
+        value:
+          min_count: 1
+          filter:
+            engine: preflight
+            completed_at:
+              operator: within_days
+              value: 0.1  # ~2.4 hours
+    recommended_style:
+      reasoning: pre-mortem
+      output: executive
+      tone: surgeon
+    plain_language: >
+      You're about to deploy — switching to surgical pre-mortem mode.
+      I'll focus on what could go wrong and give you precise fix-or-ship verdicts.
+
+  # --- MEDIUM PRIORITY (pattern-driven) ---
+
+  recurring-bug-cluster:
+    priority: 30
+    description: "Same area keeps producing bugs"
+    match_mode: any
+    detection:
+      - check: findings_index
+        field: items
+        operator: has_entries
+        value:
+          min_count: 3
+          filter:
+            status: open
+            dedup_key:
+              operator: shared_prefix
+              value: 3  # 3+ findings share a dedup_key prefix (same file area)
+          window_runs: 3  # within last 3 engine runs
+      - check: failures
+        field: entries
+        operator: has_entries
+        value:
+          min_count: 2
+          filter:
+            category:
+              operator: same_value  # 2+ entries share the same category
+            first_seen:
+              operator: within_days
+              value: 30
+    recommended_style:
+      reasoning: five-whys
+      output: opinionated
+      tone: co-founder
+    plain_language: >
+      This area keeps breaking. Let me dig into root causes instead of
+      treating symptoms — I'll tell you what I think the real fix is.
+
+  architecture-decision:
+    priority: 40
+    description: "Facing a significant design choice"
+    match_mode: any
+    detection:
+      - check: engine
+        field: name
+        operator: matches_any
+        value: ["decision-enhance", "refactor-prep"]
+      - check: work_item
+        field: decision_flags
+        operator: contains
+        value: "architecture"
+      - check: engine
+        field: focus
+        operator: matches_any
+        value: ["architecture", "design", "structure", "pattern", "restructure"]
+    recommended_style:
+      reasoning: dialectical
+      output: options-matrix
+      tone: consultant
+    plain_language: >
+      Architecture decision detected. I'll present competing approaches
+      with a clear comparison so you can decide with full information.
+
+  large-refactor:
+    priority: 50
+    description: "Planning a significant code restructuring"
+    match_mode: any
+    detection:
+      - check: engine
+        field: name
+        operator: equals
+        value: "refactor-prep"
+      - check: engine
+        field: focus
+        operator: matches_any
+        value: ["refactor", "restructure", "rewrite", "migrate"]
+    recommended_style:
+      reasoning: competing-hypotheses
+      output: options-matrix
+      tone: consultant
+    plain_language: >
+      Big refactor ahead. I'll compare different restructuring approaches
+      and map the safest path forward.
+
+  compliance-prep:
+    priority: 60
+    description: "Investor, compliance, or regulatory preparation"
+    match_mode: any
+    detection:
+      - check: system_context
+        field: items
+        operator: has_entries
+        value:
+          min_count: 1
+          filter:
+            type: deadline
+            title:
+              operator: matches_any
+              value: ["investor", "compliance", "audit", "due diligence", "SOC", "GDPR"]
+      - check: engine
+        field: name
+        operator: matches_any
+        value: ["legal-safety", "financial-audit"]
+    recommended_style:
+      reasoning: dispatch
+      output: risk-register
+      tone: auditor
+    plain_language: >
+      Compliance mode. I'll produce a formal risk register with evidence
+      citations — the kind of document you can share with auditors or investors.
+
+  # --- LOW PRIORITY (context-driven) ---
+
+  first-engine-run:
+    priority: 70
+    description: "First time running this engine on this repo"
+    match_mode: all  # all rules must match
+    detection:
+      - check: runs
+        field: manifests
+        operator: not_exists
+        value:
+          filter:
+            engine:
+              operator: equals_current  # matches the currently invoked engine name
+    recommended_style:
+      reasoning: progressive-deepening
+      output: narrative
+      tone: mentor
+    plain_language: >
+      This is your first time running this engine here. I'll start broad,
+      explain what I find and why it matters, then zero in on the important stuff.
+
+  queue-empty-exploring:
+    priority: 80
+    description: "No work queued, exploring what to do"
+    match_mode: all
+    detection:
+      - check: queue_index
+        field: by_status.backlog
+        operator: equals
+        value: 0
+      - check: engine
+        field: invocation_source
+        operator: equals
+        value: "next-queue-empty"
+    recommended_style:
+      reasoning: scenario-planning
+      output: progressive-disclosure
+      tone: co-founder
+    plain_language: >
+      Queue's empty — let's think strategically. I'll map out where your
+      project could go from here and what risks are lurking.

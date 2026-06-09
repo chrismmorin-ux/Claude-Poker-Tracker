@@ -1,0 +1,25 @@
+# Engine Extension Pack Manifest
+engine_id: refactor-prep
+name: Refactor Preparation
+description: Map dependency graph, test coverage gaps, and shared interfaces before refactoring — zero impact guaranteed
+category: preparation
+impact: zero-impact
+safety_guarantee: "This engine reads your codebase and documents what it finds. It makes NO code changes and NO state changes."
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: []
+personas_required: [architect, senior-engineer, failure-engineer]
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: .claude/commands/refactor-prep.md
+procedure: suite-check
+extends: context-gather
+trigger: manual
+inputs: [codebase, system_model, refactor_target]
+outputs: [readiness-report]
+chains:
+  on_complete: null
+  on_finding: null
+finding_severities: null

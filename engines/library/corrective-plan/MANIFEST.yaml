@@ -1,0 +1,59 @@
+# Engine Extension Pack Manifest
+engine_id: corrective-plan
+name: Plan Corrective
+description: >
+  Corrective pass over an implementation plan / feature spec / sprint composition
+  / plan-mode output / ADR-in-plan-shape. Five-persona parallel redundancy
+  applies T-6 pattern-match (senior-engineer template library, product-ux
+  user-observability subset, performance-engineer timing subset), T-3 inversion
+  (failure-engineer), and T-5 elevation (architect). Cross-critic surfaces T-1
+  redundancy effect via convergence/disagreement detection. Facilitator emits
+  SHIP | AMEND | REFRAME | REJECT verdict with a forced Strongest Objection
+  callout to prevent the "review found 12 small things, missed the one big thing"
+  failure mode. First user-facing skill under prog-corrective (UC-002 from
+  phase-4 register). Measured per the standardized phase-5 corrective scorecard.
+category: enhancement
+impact: changes-state
+size: standard
+archetypes: [saas, frontend, data-platform, dev-tool, research, api-service]
+install_conditions: always available
+programs: [corrective]
+personas_required:
+  - architect            # T-5 elevation / scope questioning
+  - failure-engineer     # T-3 inversion / pre-mortem
+  - senior-engineer      # T-6 pattern-match against plan-failure template library
+  - product-ux           # T-6 subset — user-observability of plan elements
+  - performance-engineer # T-6 subset — timing / scaling / parallelism assumptions
+  - cross-critic         # T-1 redundancy via convergence/disagreement detection
+  - facilitator          # synthesis, Strongest Objection, ship/amend/reframe verdict
+files:
+  - SKILL.md
+
+# --- Registry fields (used by /adopt to generate engine entries) ---
+skill_path: engines/library/corrective-plan/SKILL.md
+procedure: agent-dispatch
+extends: context-gather
+trigger: manual
+inputs: [plan_doc, system_model]
+outputs: [report, finding, enhancement]
+chains:
+  on_complete: null
+  on_finding: create_work_item
+finding_severities:
+  CRITICAL: critical   # REFRAME verdict — plan needs upstream amendment before execution
+  HIGH: high           # AMEND verdict — proposed amendment required
+  MEDIUM: medium       # AMEND verdict — recoverable but adds rework
+  LOW: low             # tight-depth concern OR unaddressed blind spot
+  INFO: info           # HOLDS — element verified
+
+choice_point:
+  accepts: plan_doc
+  size: standard
+  estimated_time: "~10-15 min for tiered run on a 4-6-element plan"
+  hook: "Corrective pass over a plan before execution — 5-persona parallel redundancy, T-3/T-5/T-6 techniques, forced Strongest Objection, SHIP/AMEND/REFRAME/REJECT verdict"
+
+# Measurement record per ADR-021 ship-gate. Updated after each probe sweep.
+# v1 ships with stub scorecard (all gates status: missing) under labeled
+# measurement-gate exception (ADR-050, sunset 2026-06-13). Resolution path is
+# tracked by WS-408.
+measurement_record: "docs/evolution/corrective-scorecards/corrective-plan.yaml"
