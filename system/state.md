@@ -16,7 +16,7 @@ Last updated: 2026-06-09 (SPR-110 closed — WS-164 PIO recognition scoring + co
 |------|--------|-------|--------|
 | Tests | GREEN | `bash scripts/smart-test-runner.sh` | 12,103 app passing (496 files; 20 skipped) + 2,249 extension (+36 net via WS-164 SPR-110). 0 failures this run (no flakes tripped) |
 | Build | GREEN | `npm run build` | Vite production build clean |
-| Git | YELLOW | `git status --short` | Accumulated work uncommitted on `main` (incl. SPR-107) |
+| Git | GREEN | `git status --short` | Clean. SPR-109 + SPR-110 committed `6d42a6f` (2026-06-09) on `main` |
 | Dependencies | NEEDS CHECK | `npm audit` | Last verified: never since CWOS adoption (2026-05-01) |
 
 ## Project Phase
