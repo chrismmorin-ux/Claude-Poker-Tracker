@@ -3,7 +3,7 @@
  * routed by concept-kind. Per WS-148 / SPR-033.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock IDB stores BEFORE module-under-test import.
 const mockHeroLeaks = vi.hoisted(() => ({ records: [] }));
@@ -48,10 +48,22 @@ vi.mock('../lessonRegistry.js', () => ({
 
 const { computeConceptMastery, listAllConceptMastery } = await import('../conceptMastery.js');
 
+// Pin the clock so recency-based assertions are deterministic. computeRecencyPenalty
+// is a 30-day linear decay from `Date.now()`; the fixtures below are dated 2026-05-04,
+// so without a fixed "now" the recencyPenalty assertions rot once the real calendar
+// passes the 30-day window (per testing-strategy.md: tests must not depend on time).
+// "Now" is set a few hours after the fixtures so freshly-dated leaks stay in-window.
+const FIXED_NOW = Date.parse('2026-05-04T12:00:00Z');
+
 beforeEach(() => {
+  vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
   mockHeroLeaks.records = [];
   mockPreflopDrills.records = [];
   mockPostflopDrills.records = [];
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('conceptMastery — preconditions', () => {
