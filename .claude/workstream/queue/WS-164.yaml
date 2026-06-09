@@ -1,10 +1,45 @@
 id: "WS-164"
 title: "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)"
 type: improvement
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-06-09-spr110"
+claimed_at: "2026-06-09T00:00:00Z"
+completed_at: "2026-06-09T00:00:00Z"
+sprint_id: "SPR-110"
+done_note: |
+  SPR-110 (2026-06-09): shipped the unblocked recognition-scoring CORE.
+  Founder ratified (1) replace the scorePlayerMatch contract additively,
+  (2) ship audit defaults, PlayersView-only.
+
+  SHIPPED:
+    - src/utils/playerMatching/scorePlayerMatch.js (NEW) — §PIO-G4-PVA weighted
+      score over modern fields + active-dim renormalization + computeStability
+      scaling (when sightings supplied) + §PIO-G4-DISAMB confidence band; retains
+      highlight metadata (additive). usePlayerFiltering.js re-exports it.
+    - src/components/views/PlayerProfileView/ConfidenceBar.jsx (NEW) — 10-segment
+      bar + factual label; AP-PIO-04 neutral copy (DOM-lint enforced).
+    - PlayersView.jsx + PlayerRow.jsx — rank by score desc + ConfidenceBar per
+      row when a recognition query is active (first consumer; PlayersView-internal).
+    - docs/projects/player-identification-v2/recognition-confidence-schema.md (NEW).
+    - Tests: scorePlayerMatch (23) + ConfidenceBar (8) + usePlayerFiltering (+2)
+      + PlayersView ranking (+2). Full app 12,103 passing / 0 fail; build clean.
+    - Playwright-verified at 1600×720: search "Mi" → Michael R/S strong-match
+      ranked above weak-match substring-only "Tight Mike"; factual labels; 0 console errors.
+
+  PREMISE CORRECTIONS surfaced:
+    - scorePlayerMatch already existed (highlight primitive) → extended additively
+      rather than name-colliding (founder chose "replace contract").
+    - Audit weight vector text says "=1.00" but lists values summing to 0.95;
+      kept verbatim (renormalization makes absolute sum irrelevant); documented.
+
+  DEFERRED (the item's only soft-block): the "Live re-rank in CandidateColumn on
+  every FeatureColumn change" accept-criterion — Table-Build Gate 5
+  (CandidateColumn / PossibleMatchesPanel) is NOT ticketed. The scorer +
+  ConfidenceBar are built + reusable; wiring them into Table-Build is a thin
+  follow-up to author when Table-Build Gate 5 is ticketed. Also deferred:
+  corpus-tuned weights (separate follow-up per validation-as-quality-signal);
+  skin/hair/hat query dims (no PlayersView filter input — scorer supports them
+  for the future Table-Build FeatureColumn).
 priority_score: 18.0
 priority_label: "P2"
 category: "player-identification-v2"

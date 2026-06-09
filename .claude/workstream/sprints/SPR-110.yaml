@@ -1,0 +1,99 @@
+id: "SPR-110"
+title: "PIO recognition scoring + confidence — unblocked core (WS-164)"
+status: completed
+goal: >
+  Looking up a known player by their physical features returns a ranked,
+  confidence-scored shortlist — so recognition at the table is fast and the
+  top match is trustworthy.
+program_focus: design
+program_initiative: >
+  Player Identification v2 (PIO) Gate 5 — recognition-search + disambiguation
+  per PIO Gate 4 audit §PIO-G4-PVA + §PIO-G4-DISAMB. First PIO-line sprint
+  since SPR-041 (rotates off six consecutive WS-146 SCF claims). Ships the
+  unblocked core (scorePlayerMatch + ConfidenceBar + PlayersView rewire +
+  schema doc); the CandidateColumn live-rerank accept-criterion is deferred
+  because Table-Build Gate 5 is not yet ticketed (the item's only soft-block).
+  Top genuinely-shippable feature after the launch program (P22, blocked on
+  founder Q7/Q8 decisions + un-ticketed MPMF Gate 4 surfaces) and the
+  NEEDS-RESCOPE domain-correctness test trio (WS-020/023/025).
+composed_by: auto
+created_at: "2026-06-09T00:00:00Z"
+approved_at: "2026-06-09T00:00:00Z"
+completed_at: "2026-06-09T00:00:00Z"
+
+item_count: 1
+items_done: 1
+
+completion_notes: |
+  Shipped the unblocked recognition-scoring core (WS-164). Founder decisions:
+  (1) replace scorePlayerMatch contract additively, (2) ship audit defaults,
+  PlayersView-only. NEW scorePlayerMatch.js (§PIO-G4-PVA weighted score +
+  active-dim renormalization + computeStability scaling + §PIO-G4-DISAMB band)
+  + ConfidenceBar.jsx (AP-PIO-04 neutral, DOM-lint) + PlayersView/PlayerRow
+  rank-by-score + ConfidenceBar wiring + schema doc. +36 net tests; full app
+  12,103 passing / 0 fail / 20 skipped; build clean. Playwright-verified at
+  1600×720 (ranked strong/weak match labels, 0 console errors). Premise
+  corrections: scorePlayerMatch pre-existed (extended additively); audit weight
+  vector sums to 0.95 not "1.00" (kept verbatim; renormalization makes it moot).
+  DEFERRED: Table-Build CandidateColumn live re-rank (Gate 5 not ticketed) —
+  scorer + ConfidenceBar reusable for that thin follow-up.
+
+decisions_needed:
+  - "Item #1: Weight vector + confidence thresholds — ship PIO Gate 4 audit defaults (8-dim 0.35 name / 0.10 age·skin·ethnicity·hair / 0.05 jewelry·wardrobe·hat·logo; strong ≥0.7, weak <0.4) vs corpus-tuned variants."
+  - "Item #1: Table-Build coordination — ship PlayersView-internal now (defer CandidateColumn live re-rank) vs wait for Table-Build Gate 5."
+  - "Item #1: recognition-confidence-schema.md — author here vs defer to the Phase 5+ exploit-engine consumer."
+
+composition_notes: |
+  Premise verified at composition (verify-at-composition discipline). Read
+  WS-164.yaml + the six launch tickets + WS-020/023/025 + WS-150 + queue-index.
+
+  Verified blocks (re-checked, not carried-forward assertion):
+    - launch P22 ×6 (WS-027/030/031/032/033/036): all soft-blocked. WS-027 =
+      external counsel (non-coding); WS-030/032/033 = un-ticketed MPMF Gate 4
+      surfaces (S5/S6) + Q7/Q8 founder verdicts; WS-031 = un-ticketed
+      MPMF-G5-ER entitlement-rules; WS-036 = structurally blocked_by WS-031.
+      Damp 0.25× → ~5.5.
+    - WS-191 P20: soft-blocked on live-session telemetry. → 5.0.
+    - WS-020/023/025 P15 domain-correctness: NEEDS-RESCOPE (SPR-071 reclassify;
+      premises shifted when EAL Stream B/D shipped). Not executable as-written.
+    - WS-150 P14: HSP-v2 master tracking ticket; all v2 children shipped
+      (turn/river WS-152/153, multiway WS-154, composition WS-155, orchestrator
+      WS-211); remainder (WS-156 caching, WS-157 LLM) is conditional/event-gated.
+      Not a workable anchor.
+
+  Queue drift reconciled this composition (kit/scripts absent → by hand):
+    - WS-185 (EV-bucket, P14): ticket file = done, index = backlog → fixed to done.
+    - WS-155 (HSP-X1, P13): ticket file = done, index = backlog → fixed to done.
+    - WS-150: left backlog (master tracking parent; flagged above as effectively
+      complete — candidate for a status:tracking reclassification in a future
+      reconcile, not touched here).
+
+  Anchor WS-164 (P18, design): structural blocker WS-163 cleared at SPR-049/050.
+  Its blocked_by_note (Table-Build Gate 5 CandidateColumn) is partial — the
+  status_note confirms core deliverables ship standalone. Plan-first (M effort,
+  type improvement, 3+ directories, 4 decision_flags). Single-item focused
+  sprint (PIO G5 core siblings WS-160/161/162/163 all done).
+
+  Source-class damping (Step 2d): last 3 anchors WS-146 (SPR-109), WS-146
+  (SPR-108), WS-190 (SPR-107) — no auto-rec/engine-finding saturation → no
+  damping. Fleet-anchor rotation: N/A (product repo, no fleet/repo-goal candidate).
+  anti_goal_check: { status: skipped_tooling_absent, reviewed_at: "2026-06-09T00:00:00Z" }
+  No constitutional concern: factual recognition scoring; AP-PIO-04 no-shame
+  lint is an explicit accept criterion.
+
+anti_goal_check: { status: skipped_tooling_absent, reviewed_at: "2026-06-09T00:00:00Z" }
+
+items:
+  - seq: 1
+    id: "WS-164"
+    title: "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)"
+    mode: plan-first
+    effort: "M"
+    status: done
+    program: design
+    type: improvement
+    decision_flags:
+      - "Weight vector + confidence thresholds: ship audit defaults vs corpus-tuned"
+      - "Table-Build coordination: ship PlayersView-internal now (defer CandidateColumn live re-rank) vs wait for Table-Build Gate 5"
+      - "recognition-confidence-schema.md: author here vs defer to Phase 5+ exploit-engine consumer"
+    notes: "Ship unblocked core: scorePlayerMatch.js (8-dim weighted score [0..1], per-dim scaled by computeStability from WS-160) + ConfidenceBar.jsx (shared) + PlayersView rewire to scorePlayerMatch + recognition-confidence-schema.md + AP-PIO-04 no-shame lint test + edge-case tests. Defer: CandidateColumn live re-rank (Table-Build Gate 5 not ticketed)."

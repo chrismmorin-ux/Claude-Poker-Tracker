@@ -97,6 +97,30 @@ describe('getSolverBaseline', () => {
     const wet = getSolverBaseline('flop:wet:LATE:def:ip:bet:vsBet:pfc');
     expect(wet.baseline).toBeGreaterThan(dry.baseline);
   });
+
+  // ─── SPR-109 / WS-146 sixth claim — decision-bucket baselines ──────────
+  it('turn-barrel decision baseline present (~50% HU, SPR-109)', () => {
+    const entry = getSolverBaseline('turn:barrel-decision:hu');
+    expect(entry).not.toBeNull();
+    expect(entry.baseline).toBeCloseTo(0.50, 5);
+    expect(entry.confidence).toBeGreaterThan(0);
+  });
+
+  it('all 4 RFI per-position decision baselines present + monotonic by position (SPR-109)', () => {
+    const early = getSolverBaseline('preflop:rfi-decision:EARLY');
+    const middle = getSolverBaseline('preflop:rfi-decision:MIDDLE');
+    const late = getSolverBaseline('preflop:rfi-decision:LATE');
+    const button = getSolverBaseline('preflop:rfi-decision:BUTTON');
+    for (const entry of [early, middle, late, button]) {
+      expect(entry).not.toBeNull();
+      expect(entry.baseline).toBeGreaterThan(0);
+      expect(entry.baseline).toBeLessThan(1);
+    }
+    // RFI range widens toward the button.
+    expect(middle.baseline).toBeGreaterThan(early.baseline);
+    expect(late.baseline).toBeGreaterThan(middle.baseline);
+    expect(button.baseline).toBeGreaterThan(late.baseline);
+  });
 });
 
 describe('listCoveredSituationKeys', () => {
@@ -104,8 +128,10 @@ describe('listCoveredSituationKeys', () => {
     const keys = listCoveredSituationKeys();
     // 6 IP cbet + 1 BB defense + 6 OOP cbet + 6 donk + 4 PF 3bet (per-position;
     // isIP normalized) + 2 OOP 3bet underfold = 25 keys post-SPR-046; + 1
-    // multiway cbet-frequency decision-bucket baseline = 26 post-SPR-108.
-    expect(keys.length).toBe(26);
+    // multiway cbet-frequency decision-bucket baseline = 26 post-SPR-108; + 1
+    // turn-barrel decision baseline + 4 RFI per-position decision baselines = 31
+    // post-SPR-109.
+    expect(keys.length).toBe(31);
     const sorted = [...keys].sort();
     expect(keys).toEqual(sorted);
   });

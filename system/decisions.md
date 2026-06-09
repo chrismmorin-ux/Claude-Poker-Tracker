@@ -517,3 +517,27 @@ src/
 **Context:** Refactor Sprint Item 3 (2026-05-11). The same pattern is used in `scripts/check-refresher-writers.sh` (PRF writer-registry I-WR-1 / I-WR-5 enforcement), though that gate is currently orphaned (not wired into the test runner) — flagged as separate follow-up.
 
 ---
+
+## DEC-018: Under-frequency decision-bucket leak rules invert the detect gate (delta = baseline − observed; CI UPPER must clear baseline)
+
+**Date:** 2026-06-08 | **Status:** Accepted | **Detected:** implicit (SPR-109 / WS-146 sixth claim)
+
+**Decision:** The SCF decision-bucket rule class (aggression-frequency rules reading `accumulatorOutput.decisionBuckets`) now supports two polarities. OVER-frequency rules (`hero-multiway-bluff-frequency`, `hero-turn-barrel-frequency`) fire when `observed − baseline ≥ deltaPP` AND `ci.lower > baseline`. UNDER-frequency rules (`hero-pf-open-overfold`, the first of its kind) invert both halves of the gate: fire when `baseline − observed ≥ deltaPP` AND `ci.upper < baseline`. The `evidence.delta` field is always stored as the positive magnitude in the rule's own direction. The shared accumulator bucket shape (`aggressFrequency` + Wilson `aggressFrequencyCI`) is unchanged — only the rule's `detect()` reads it differently.
+
+**Reasoning:** A frequency leak can err in either direction (barreling too much vs opening too tight), and the credible-interval guard must point the same way as the point estimate or it admits false positives. For an under-frequency claim the meaningful CI bound is the UPPER one (the whole interval must sit below the reference for "demonstrably too low" to hold), mirror-imaging the over-frequency rules where the LOWER bound must sit above. This parallels how `hero-oop-3bet-underfold` (SPR-046) established the under-FOLD pattern for the 8-axis action-bucket class — the same observed-vs-reference logic, gate inverted. Keeping the bucket shape and severity formula common across both polarities means new rules of either direction stay single-file additions. Trade-off rejected: a separate "under-frequency bucket type" — pure duplication, since the data is identical and only the comparison flips.
+
+**Context:** SPR-109 (2026-06-08) shipped `hero-turn-barrel-frequency` (over) + `hero-pf-open-overfold` (under, resolving the deferral open since SPR-046) on the SPR-108 decision-bucket substrate. Founder ratified shipping both via AskUserQuestion. First-principles guard preserved: the aggress/pass label is an OUTPUT derived from the observed action; the rule compares an observed frequency to a hardcoded baseline (no label-as-input).
+
+---
+
+## DEC-019: PlayersView recognition scoring v1 — active-dim renormalization + verbatim audit weights + additive scorePlayerMatch contract
+
+**Date:** 2026-06-09 | **Status:** Accepted | **Detected:** implicit (SPR-110 / WS-164)
+
+**Decision:** The §PIO-G4-PVA recognition score (`src/utils/playerMatching/scorePlayerMatch.js`) makes three v1 design choices: (1) **active-dim renormalization** — the score divides by the sum of weights of only the query dims the user actually specified, so a name-only query can reach 1.0 rather than being capped at the 0.35 name weight, and unqueried dims never penalize a match; (2) **audit weights kept verbatim** — the §PIO-G4-PVA per-dim weights are used exactly as the audit lists them even though they sum to 0.95 (the audit text says "= 1.00" but the listed values total 0.95); renormalization makes the absolute sum irrelevant, so the literal relative weighting is preserved rather than inventing a different distribution to force 1.00; (3) **additive contract** — `scorePlayerMatch` (the pre-existing PEO-3 highlight primitive) gains the numeric `score`/`confidence`/`perDim` fields while retaining all highlight metadata, so existing/future highlight consumers are unaffected.
+
+**Reasoning:** (1) Recognition queries in practice specify a subset of dims; penalizing a player for dims the user didn't ask about would make every partial query read "weak" and defeat the ranking. Renormalization makes the score "match quality over what was asked," which is the useful signal. (2) The audit is the spec of record; silently re-deriving weights to hit a round sum would diverge from it for zero behavioral gain (renormalization neutralizes the sum). Preserving verbatim + documenting the discrepancy keeps traceability. (3) The founder chose "replace the contract" over a new function name; doing it additively (grep confirmed no component consumed the primitive yet) gets the audit's intent with no breakage risk. Trade-off: a name-only query cannot differentiate same-name distractors (both score 1.0) — accepted as correct v1 behavior (the §5.2 scenario; differentiation requires a feature dim, which the future Table-Build FeatureColumn supplies).
+
+**Context:** SPR-110 / WS-164 (PIO G5 child E) shipped the recognition-scoring core against PlayersView as first consumer. Decisions ratified via AskUserQuestion. Companion: `docs/projects/player-identification-v2/recognition-confidence-schema.md`.
+
+---

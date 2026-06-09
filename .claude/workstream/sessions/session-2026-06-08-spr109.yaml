@@ -1,0 +1,113 @@
+id: "session-2026-06-08-spr109"
+status: completed
+started_at: "2026-06-08T00:00:00Z"
+ended_at: "2026-06-08T00:00:00Z"
+mode: standard
+ceremony: standard
+last_heartbeat: "2026-06-08T00:00:00Z"
+
+claimed_items: []
+items_progressed:
+  - "WS-146"  # 6th claim shipped (stays in_progress — ongoing authoring ticket)
+
+sprints_completed:
+  - "SPR-109"
+
+files_locked:
+  - "src/utils/skillAssessment/deriveSituationKey.js"
+  - "src/utils/skillAssessment/heroDecisionAccumulator.js"
+  - "src/utils/skillAssessment/solverBaselines.js"
+  - "src/utils/skillAssessment/tierConceptMap.js"
+  - "src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js"
+  - "src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js"
+  - "docs/projects/self-coach-foundation/lessons/turn-barrel-discipline-cluster.md"
+  - "docs/projects/self-coach-foundation/lessons/rfi-discipline-cluster.md"
+  - "docs/projects/self-coach-foundation/leak-catalog.md"
+
+decisions_recorded:
+  - "DEC-018"  # under-frequency decision-bucket rules invert the detect gate
+
+handoff_notes: |
+  ## SPR-109 — SCF leak rules: turn-barrel + RFI open-fold frequency (WS-146 6th claim)
+
+  Resumed an approved-but-never-executed sprint (status:approved, items_done:0,
+  completed_at:null) per memory [[resume-approved-sprints]] — /next correctly
+  resumed rather than stacking a new sprint. Single plan-first item.
+
+  ### Substrate re-verification (SPR-046-blocker guard) — PASSED in plan mode
+  Both candidate rules derive cleanly from existing deriveSituationKey
+  primitives on the SPR-108 decision-bucket substrate; zero migration of the
+  6 shipped 8-axis fold-rate rules. Founder ratified shipping BOTH via
+  AskUserQuestion.
+
+  ### Shipped
+  - **Substrate generalization (additive):** deriveSituationKey gains
+    `deriveTurnBarrelDecision` + `deriveRfiDecision` + a `DECISION_DERIVERS`
+    registry; heroDecisionAccumulator iterates the registry (existing
+    `flop:cbet-decision` behavior byte-identical).
+  - **hero-turn-barrel-frequency** — OVER-frequency decision rule
+    (`turn:barrel-decision:hu`, baseline ~0.50, mirrors heroMultiwayBluffFrequency).
+    Hero PFA + bet flop + first-in turn → aggress(bet)/pass(check). Turn-barrel
+    catalog category 0/3 → 1/3.
+  - **hero-pf-open-overfold** — FIRST UNDER-frequency decision-bucket rule;
+    RESOLVES the deferral open since SPR-046. `preflop:rfi-decision:{EARLY|MIDDLE
+    |LATE|BUTTON}`; position-split baselines 0.15/0.19/0.26/0.42; folded-to-hero
+    first-in (limp + blinds excluded v1) → open(raise)/fold. Inverted detect gate
+    (DEC-018). Preflop fold-equity category CLOSED 3/4 → 4/4.
+  - **Concepts:** `rfi-discipline-cluster` (tier 2) + 4 position children WITH
+    SITUATION_KEY_TO_CONCEPT resolution; `turn-barrel-discipline-cluster` (tier 5)
+    + 2 anticipated children (umbrella absorbs fire-state).
+  - **Lessons:** both umbrellas authored (CD-5-compliant, factual; no graded/
+    shame/engagement copy).
+  - **Catalog:** 7/25 → 9/25; the duplicate `hero-pf-open-overfold` entries
+    reconciled to one SHIPPED record + a forensic resolution note.
+  - **Baselines:** 5 new solver baseline entries.
+
+  ### Decisions made
+  - **DEC-018** (Medium): under-frequency decision-bucket rules invert the detect
+    gate (delta = baseline − observed; CI UPPER must clear baseline) — parallels
+    how hero-oop-3bet-underfold established the under-fold pattern for action
+    buckets. First-principles guard preserved.
+
+  ### Tests + verification
+  - +60 net tests in skillAssessment (heroTurnBarrelFrequency 14 +
+    heroPfOpenOverfold 17 + accumulator derivers 17 + solverBaselines 2 +
+    conceptMastery/baseline count bumps). skillAssessment **316/316 green**.
+  - Full app smart-test-runner: **12,067 passing / 20 skipped / 1 failed**.
+    The failure is `RangeLabExplorer.test.jsx` (PostflopDrillsView) — a 10s UI
+    timeout under concurrent full-suite load; passes ISOLATED in 2.8s; outside
+    impact zone (skillAssessment additive-only). Treat as a load flake.
+  - Production build clean (6.40s).
+  - First-principles guard preserved (aggress/pass labels OUTPUT-only;
+    observed-vs-baseline comparison; no label-as-input). No new UI surface —
+    fired leaks render generically via existing CD-5 fields (HeroCoachingCard /
+    SelfCoachView), so no Playwright pass required.
+
+  ### Items completed
+  - WS-146 6th claim (ticket stays in_progress — ongoing catalog-authoring ticket).
+
+  ### Items remaining
+  - None claimed.
+
+  ### Next recommended action
+  - `/next` to compose the next sprint. The SPR-108/109 substrate now unblocks
+    the HU under-cbet mirror + multiway turn barrel (`turn:barrel-decision:mw`)
+    as future WS-146 claims with NO further substrate work. Other blocked rule
+    classes still need their own axes (sizing → sizing axis; position-discipline
+    / thin-value / capped → hand-strength axis). Higher-scored frontrunners
+    remain blocked (launch P22 program-gated + founder-decision; WS-191 P20
+    telemetry soft-block; EAL P15 needs-rescope) — re-verify at composition.
+
+context_notes: |
+  Session-end state. kit/scripts/ absent in this repo → cwos-reconcile /
+  cwos-gc / state-store / shadow-event steps degraded gracefully; sprint +
+  queue-index + sprint-index bookkeeping done by hand on touched entries.
+  No active claim, no session lock to clean up (this was a /next invocation;
+  no .current-session file existed). WS-146 intentionally left in_progress
+  (ongoing authoring ticket per its status_note).
+
+  Additive-safety note: all changes are additive within skillAssessment/. The
+  6 shipped 8-axis fold-rate rules + the existing flop:cbet-decision bucket are
+  untouched (the player-count / position / decision dimensions live only in the
+  new decision-bucket keys). No IDB schema change, no reducer change, no UI
+  surface change.

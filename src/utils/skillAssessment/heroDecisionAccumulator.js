@@ -22,7 +22,7 @@
 
 import {
   deriveSituationKey,
-  deriveCbetDecision,
+  DECISION_DERIVERS,
   buildHeroSituationKey,
   _internals,
 } from './deriveSituationKey.js';
@@ -95,18 +95,22 @@ export const accumulateHeroDecisions = ({ hands, heroSeat }) => {
       else if (verb === 'check') bucket.checkCount += 1;
       else if (verb === 'bet') bucket.betCount += 1;
 
-      // Parallel decision-bucket population: if this hero action is a flop
-      // cbet decision (hero-as-PFA, first-in), aggregate aggress (cbet) vs
-      // pass (check) into the decision bucket. Most hero actions return null
-      // here (not a cbet decision) — only first-in flop continuation acts.
-      const decision = deriveCbetDecision({
-        hand,
-        actionEntry: heroAction,
-        heroSeat,
-        buttonSeat,
-        totalPlayers,
-      });
-      if (decision) {
+      // Parallel decision-bucket population: run every registered decision
+      // deriver against this hero action. Each maps the action to one
+      // decision class's aggress/pass contribution, or null. The derivers are
+      // mutually exclusive by street/precondition, so at most one fires per
+      // action (most actions match none). This aggregates a frequency-of-
+      // aggression (cbet / turn-barrel / RFI-open), which the 8-axis action
+      // buckets above cannot compute (aggress + pass route to different keys).
+      for (const deriveDecision of DECISION_DERIVERS) {
+        const decision = deriveDecision({
+          hand,
+          actionEntry: heroAction,
+          heroSeat,
+          buttonSeat,
+          totalPlayers,
+        });
+        if (!decision) continue;
         if (!decisionBuckets[decision.decisionKey]) {
           decisionBuckets[decision.decisionKey] = {
             situationKey: decision.decisionKey, // alias so the detector interface (matchesBucket/bucket.situationKey) is shared

@@ -1,6 +1,6 @@
 id: "SPR-109"
 title: "SCF leak rules — frequency-of-aggression follow-through (turn barrel + RFI open-fold) (WS-146 6th claim)"
-status: approved
+status: completed
 goal: >
   The self-coach catches two more real mistakes — barreling the turn too often,
   and opening too tight preflop — by reusing the aggression-frequency machinery
@@ -19,10 +19,47 @@ program_initiative: >
 composed_by: auto
 created_at: "2026-06-06T00:00:00Z"
 approved_at: "2026-06-06T00:00:00Z"
-completed_at: null
+completed_at: "2026-06-08T00:00:00Z"
 
 item_count: 1
-items_done: 0
+items_done: 1
+
+completion_notes: |
+  SHIPPED both rules (founder ratified "Both" via AskUserQuestion). Substrate
+  re-verification (SPR-046-blocker guard) PASSED in plan mode: both rules derive
+  cleanly from existing deriveSituationKey primitives; zero migration of the 6
+  shipped 8-axis fold-rate rules.
+
+  Substrate generalization (additive): deriveSituationKey gains
+  deriveTurnBarrelDecision + deriveRfiDecision + a DECISION_DERIVERS registry;
+  heroDecisionAccumulator loops the registry (existing flop:cbet-decision
+  behavior byte-identical).
+
+  Rules:
+    - hero-turn-barrel-frequency (turn:barrel-decision:hu, OVER-frequency,
+      baseline ~0.50, mirrors heroMultiwayBluffFrequency). Catalog turn-barrel 0→1.
+    - hero-pf-open-overfold (preflop:rfi-decision:{EARLY|MIDDLE|LATE|BUTTON},
+      FIRST UNDER-frequency decision-bucket rule; position-split baselines
+      0.15/0.19/0.26/0.42; resolves the SPR-046 deferral). Catalog preflop
+      fold-equity 3→4 (category closed).
+
+  Concepts: rfi-discipline-cluster (tier 2) + 4 position children WITH
+  SITUATION_KEY_TO_CONCEPT resolution; turn-barrel-discipline-cluster (tier 5)
+  + 2 anticipated children (umbrella absorbs fire-state, coarse bucket).
+  Lessons authored for both umbrellas (CD-5-compliant, factual).
+  Catalog 7/25 → 9/25; duplicate hero-pf-open-overfold entries reconciled.
+
+  Tests: +60 net in skillAssessment (heroTurnBarrelFrequency 14 +
+  heroPfOpenOverfold 17 + accumulator derivers 17 + solverBaselines 2 +
+  conceptMastery/baseline count bumps). skillAssessment 316/316 green.
+  Full app 12,067 passing / 20 skipped / 1 load-flake (RangeLabExplorer —
+  PostflopDrillsView UI timeout under concurrent load; passes isolated in 2.8s,
+  outside impact zone). Production build clean (6.40s).
+
+  First-principles guard preserved: aggress/pass decision labels are OUTPUTS
+  derived from observed actions; each rule compares an OBSERVED frequency to a
+  hardcoded solver baseline (no label-as-input). No new UI surface — fired
+  leaks render generically via existing CD-5 fields.
 
 decisions_needed:
   - "Item #1: Confirm which rules to ship. Recommend BOTH hero-turn-barrel-frequency (turn-barrel category 0/3 — top coverage-gap; over-barrel direction; HU coarse baseline ~0.50) + hero-pf-open-overfold (preflop fold-equity 3/4 -> 4/4; resolves the SPR-046 deferral; UNDER-open direction = first under-FREQUENCY decision-bucket rule; position-split baselines). Alternatives: ship only one (turn-barrel is simpler; RFI closes the long-standing deferral), or swap in the HU under-cbet mirror. Confirmed in plan mode after substrate re-verification."
@@ -67,7 +104,7 @@ items:
     title: "SCF G5 child 2 — ship turn-barrel + RFI open-fold frequency rules (6th claim)"
     mode: plan-first
     effort: "M"
-    status: pending
+    status: done
     program: design
     type: improvement
     decision_flags:

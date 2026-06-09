@@ -333,6 +333,163 @@ export const deriveCbetDecision = ({ hand, actionEntry, heroSeat, buttonSeat, to
   };
 };
 
+// ─── Turn double-barrel frequency decision (WS-146 SPR-109) ──────────────
+//
+// The turn analogue of the cbet decision: hero was the preflop aggressor,
+// continued (bet) the flop, and now faces the turn first-in (no bet/raise on
+// the turn before hero's action). The choice to fire again (barrel) or check
+// back is a frequency-of-aggression decision — cbet and check route to
+// different `contextAction` keys, so the 8-axis action buckets can't compute
+// a barrel FREQUENCY. This deriver feeds the parallel decision-bucket type.
+//
+// v1 scope (per leak-catalog #hero-turn-barrel-frequency): heads-up only
+// (coarse single baseline maximizes sample; equity-shifter-card splits are
+// v2). The `hu`/`mw` dimension lives in the decision key; the rule matches
+// only `hu` for v1 (mirrors heroMultiwayBluffFrequency matching only `mw`).
+
+const HERO_BET_OR_RAISED_STREET = (actionSequence, heroSeat, street) => {
+  if (!Array.isArray(actionSequence)) return false;
+  return actionSequence.some((a) => {
+    if (a.street !== street) return false;
+    if (Number(a.seat) !== Number(heroSeat)) return false;
+    const verb = NORMALIZE_ACTION(a.action);
+    return verb === 'bet' || verb === 'raise';
+  });
+};
+
+/**
+ * Derive the turn-barrel decision for a single hero action, or null if the
+ * action is not a turn-barrel decision.
+ *
+ * A barrel decision is: street===turn, hero was the preflop aggressor
+ * (`pfa`), hero bet/raised the flop (continued), and hero is first-in on the
+ * turn (no prior aggression this street → contextAction is `cbet` for a bet
+ * or `check`). Facing a turn bet (`vsBet`), not the PFA, or no flop bet, is
+ * NOT a barrel decision.
+ *
+ * @param {object} args - Same shape as deriveSituationKey().
+ * @returns {{decisionKey: string, decisionClass: 'aggress'|'pass', playersRemaining: 'hu'|'mw', villainCount: number}|null}
+ */
+export const deriveTurnBarrelDecision = ({ hand, actionEntry, heroSeat, buttonSeat, totalPlayers = 6 }) => {
+  if (!hand || !actionEntry || !heroSeat || !buttonSeat) return null;
+  const street = actionEntry.street;
+  if (street !== 'turn') return null; // v1: turn barrel decision only
+
+  const actionSequence = hand?.gameState?.actionSequence || [];
+  const order = actionEntry.order ?? 0;
+
+  const preflopAggressor = DERIVE_PREFLOP_AGGRESSOR({ street, actionSequence, heroSeat });
+  if (preflopAggressor !== 'pfa') return null; // only hero-as-PFA barrel decisions
+
+  // Hero must have continued (bet/raised) the flop — a barrel is a SECOND
+  // bullet. A delayed cbet (checked flop, bet turn) is a different decision.
+  if (!HERO_BET_OR_RAISED_STREET(actionSequence, heroSeat, 'flop')) return null;
+
+  const isAgg = HERO_IS_AGGRESSOR({
+    street,
+    actionSequence,
+    heroSeat,
+    currentOrder: order,
+    currentAction: actionEntry.action,
+  });
+  const contextAction = DERIVE_CONTEXT_ACTION({
+    street,
+    action: actionEntry.action,
+    actionSequence,
+    order,
+    isAgg,
+  });
+
+  let decisionClass;
+  if (contextAction === 'cbet') decisionClass = 'aggress'; // first-in bet on turn = barrel
+  else if (contextAction === 'check') decisionClass = 'pass';
+  else return null; // vsBet / unknown — hero is not first-in, not a barrel decision
+
+  const villainCount = computeActiveOpponentSeats(actionSequence, heroSeat, street, order).length;
+  const playersRemaining = PLAYERS_REMAINING_BUCKET(villainCount);
+
+  return {
+    decisionKey: `${street}:barrel-decision:${playersRemaining}`,
+    decisionClass,
+    playersRemaining,
+    villainCount,
+  };
+};
+
+// ─── Preflop RFI (raise-first-in) open-fold frequency decision (WS-146 SPR-109) ──
+//
+// Resolves the `hero-pf-open-overfold` blocker DEFERRED since SPR-046. When
+// folded to hero preflop (pot unopened — hero is first-in), the choice is
+// open-raise (aggress) vs fold (pass). The 8-axis action key buckets an RFI
+// fold (contextAction `limp`) and an RFI open (contextAction `open`) under
+// different keys, so the open FREQUENCY over the RFI decision space was not
+// computable from one action bucket. The parallel decision-bucket type (the
+// same path that resolved the cbet-frequency blocker) makes it computable.
+//
+// v1 scope (per leak-catalog #hero-pf-open-overfold):
+//   - First-in only: any prior voluntary action (limp/call/raise) → null.
+//     Limp is excluded (over-limp / iso decisions are separate future rules).
+//   - Open-positions only: EARLY / MIDDLE / LATE / BUTTON. Blinds (SB/BB)
+//     excluded — the SB RFI vs BB is a structurally different decision.
+//   - Position-split decision key (RFI range size differs sharply by seat).
+
+/**
+ * Derive the preflop RFI open-fold decision for a single hero action, or null
+ * if the action is not a clean RFI decision (first-in, non-blind, open-or-fold).
+ *
+ * @param {object} args - Same shape as deriveSituationKey().
+ * @returns {{decisionKey: string, decisionClass: 'aggress'|'pass', posCategory: string}|null}
+ */
+export const deriveRfiDecision = ({ hand, actionEntry, heroSeat, buttonSeat, totalPlayers = 6 }) => {
+  if (!hand || !actionEntry || !heroSeat || !buttonSeat) return null;
+  const street = actionEntry.street;
+  if (street !== 'preflop') return null; // RFI is a preflop decision
+
+  const actionSequence = hand?.gameState?.actionSequence || [];
+  const order = actionEntry.order ?? 0;
+
+  // First-in check: no VOLUNTARY action (limp/call/raise/bet) by anyone before
+  // hero this preflop. Only folds before → pot unopened → RFI. A prior limp or
+  // raise means it's an iso/over-limp/3bet decision, not RFI (excluded v1).
+  const priorVoluntary = actionSequence.some((a) => {
+    if (a.street !== 'preflop') return false;
+    if ((a.order ?? 0) >= order) return false;
+    const verb = NORMALIZE_ACTION(a.action);
+    return verb === 'call' || verb === 'raise' || verb === 'bet';
+  });
+  if (priorVoluntary) return null;
+
+  const posCategory = POS_CATEGORY_FOR_SEAT(heroSeat, buttonSeat, totalPlayers);
+  // v1 covers open-positions only. Blinds are a different decision class.
+  if (posCategory !== 'EARLY' && posCategory !== 'MIDDLE'
+      && posCategory !== 'LATE' && posCategory !== 'BUTTON') {
+    return null;
+  }
+
+  const verb = NORMALIZE_ACTION(actionEntry.action);
+  let decisionClass;
+  if (verb === 'raise' || verb === 'bet') decisionClass = 'aggress'; // open-raise
+  else if (verb === 'fold') decisionClass = 'pass'; // open-fold
+  else return null; // limp (call) / check / unknown — excluded from the RFI decision v1
+
+  return {
+    decisionKey: `${street}:rfi-decision:${posCategory}`,
+    decisionClass,
+    posCategory,
+  };
+};
+
+// Registry of decision derivers. Each maps a hero action to a decision-bucket
+// contribution (aggress/pass for one decision class) or null. The accumulator
+// iterates all of them per hero action; each is mutually exclusive by
+// street/precondition, so at most one fires per action. Additive — adding a
+// deriver here adds a decision-bucket type without touching existing buckets.
+export const DECISION_DERIVERS = [
+  deriveCbetDecision,
+  deriveTurnBarrelDecision,
+  deriveRfiDecision,
+];
+
 // Internal helpers exported for accumulator's bucket population (it needs
 // these same primitives to count actions per hand).
 export const _internals = {

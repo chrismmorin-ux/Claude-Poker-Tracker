@@ -180,6 +180,14 @@ friction_log:
     detail: "queue-index.yaml drifted from queue/WS-*.yaml: WS-205/WS-206 showed status:backlog in index but were claimed in their files; WS-185 showed backlog but was done. Also queue-index summary lacks blocked_by_note, so soft-blocked items ranked at full priority in the first pass (P=22 monetization cluster, WS-191, WS-047, WS-092) until each WS file was opened. Root cause: absent cwos-reconcile.js (no automated index rebuild). See user_feedback fb-003."
     component: queue-index
     workaround: "Read candidate WS-*.yaml files directly to recover true status + soft-block state before ranking. Hand-corrected index entries for WS-205/206 (→done) and added WS-209 during sprint close-out; WS-185 staleness left for next reconcile."
+  - id: fr-014
+    timestamp: "2026-06-09T00:00:00Z"
+    session_id: "session-2026-06-09-spr110"
+    category: manual_fix
+    severity: low
+    detail: "Recurrence of fr-013 (4th+ time). At SPR-110 /next composition the queue-index again showed WS-185 + WS-155 as status:backlog while their ticket files were done; WS-164's blocked_by_note (soft-block) is absent from the index summary so it ranked at full P18 in the index pass until the WS file was opened. Same root cause: kit/scripts/cwos-reconcile.js absent (no automated index rebuild). All sprint/queue/sprint-index/state bookkeeping for SPR-110 done by hand."
+    component: queue-index
+    workaround: "Block-scoped Python edit to fix WS-185/WS-155 index status (→done) + claim/complete WS-164; opened WS files directly to read true soft-block state before ranking. Load-bearing fix remains installing the cwos-* script suite."
 
 # Pre-existing entry (kept for context):
 # Entry format:
@@ -194,16 +202,16 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 13
+  total_friction_events: 14
   total_user_feedback: 3
   unresolved_feedback: 3
   by_severity:
     high: 1
     medium: 4
-    low: 8
+    low: 9
   by_category:
     file_not_found: 9
-    manual_fix: 2
+    manual_fix: 3
     workaround: 2
   by_component:
     cwos-constitutional-audit.js: 1
@@ -216,8 +224,8 @@ summary:
     system-summary: 1
     findings-reconciliation: 1
     next-step1-resume-check: 1
-    queue-index: 1
-  most_recent_friction: "fr-013 — 2026-05-20 — queue-index drift + soft-block flag absent from index (SPR-095)"
+    queue-index: 2
+  most_recent_friction: "fr-014 — 2026-06-09 — queue-index drift recurrence (WS-185/WS-155 backlog-but-done) + soft-block flag absent from index (SPR-110); kit/scripts still absent"
   most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future

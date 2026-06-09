@@ -2,8 +2,8 @@
 # Rebuild from: sprints/SPR-*.yaml
 # Updated by /next, /sprint, /session-end
 
-last_updated: "2026-06-06T00:00:00Z"
-sprint_count: 109
+last_updated: "2026-06-09T00:00:00Z"
+sprint_count: 110
 # 2026-06-04 — Single session closed both SPR-104 (WS-211 deferred from 2026-05-31)
 # AND SPR-105 (WS-155 HSP-X1, founder-ratified expanded scope). HSP v2 milestone
 # now: WS-155 + WS-211 done; WS-154 (multiway) is the lone hard-dep remaining
@@ -1307,15 +1307,28 @@ sprints:
     created_at: "2026-06-04T00:00:00Z"
     approved_at: "2026-06-04T00:00:00Z"
     completed_at: "2026-06-04T00:00:00Z"
+  - id: "SPR-110"
+    title: "PIO recognition scoring + confidence — unblocked core (WS-164)"
+    status: completed
+    item_count: 1
+    items_done: 1
+    completed_at: "2026-06-09T00:00:00Z"
+    effort_summary: "M plan-first (WS-164). PIO v2 Gate 5 recognition-search + disambiguation (§PIO-G4-PVA + §PIO-G4-DISAMB). First PIO-line sprint since SPR-041 (rotates off 6× WS-146). Ships unblocked core (scorePlayerMatch 8-dim weighted + ConfidenceBar + PlayersView rewire + schema doc); defers CandidateColumn live-rerank (Table-Build Gate 5 not ticketed). Top genuinely-shippable item after launch P22 (blocked: founder Q7/Q8 + un-ticketed MPMF Gate 4) + NEEDS-RESCOPE test trio. Queue drift reconciled at composition: WS-185 + WS-155 index backlog→done (ticket files authoritative)."
+    program_focus: design
+    program_initiative: "Player Identification v2 (PIO) Gate 5 — recognition scoring/disambiguation. Master Plan §A line."
+    composed_by: auto
+    created_at: "2026-06-09T00:00:00Z"
+    approved_at: "2026-06-09T00:00:00Z"
+    completed_at: null
   - id: "SPR-109"
     title: "SCF leak rules — frequency-of-aggression follow-through (turn barrel + RFI open-fold) (WS-146 6th claim)"
-    status: approved
+    status: completed
     item_count: 1
-    items_done: 0
-    effort_summary: "M plan-first (WS-146 6th claim). Composed via /next after SPR-108. Direct follow-through on the SPR-108 decision-bucket substrate (catalog names turn-barrel + RFI open-fold as the unblocked next rules, no further substrate work). Frontrunners re-verified blocked (launch P22 program-gated + founder-decision; WS-191 P20 telemetry soft-block; EAL P15 needs-rescope)."
+    items_done: 1
+    effort_summary: "M plan-first → M actual (resumed approved-but-unexecuted sprint per [[resume-approved-sprints]]). Founder ratified BOTH rules via AskUserQuestion. Substrate re-verification (SPR-046-blocker guard) PASSED. Shipped: DECISION_DERIVERS registry generalization of heroDecisionAccumulator + deriveTurnBarrelDecision + deriveRfiDecision (additive, existing flop:cbet-decision byte-identical) + hero-turn-barrel-frequency (turn:barrel-decision:hu, over-freq, baseline 0.50; catalog turn-barrel 0→1) + hero-pf-open-overfold (FIRST under-frequency decision rule; preflop:rfi-decision:{POS} position-split 0.15/0.19/0.26/0.42; resolves SPR-046 deferral; preflop fold-equity category closed 3→4) + 2 umbrellas (rfi-discipline-cluster tier 2 w/ SITUATION_KEY_TO_CONCEPT resolution + turn-barrel-discipline-cluster tier 5) + 6 sub-concepts + 2 lessons + catalog 7/25→9/25 (duplicate hero-pf-open-overfold entries reconciled). +60 net tests; skillAssessment 316/316; full app 12,067 passing / 20 skipped / 1 load-flake (RangeLabExplorer, passes isolated, outside impact zone); build clean 6.40s. First-principles guard preserved (decision labels OUTPUT-only). Substrate unblocks HU under-cbet mirror + multiway turn barrel next, no further substrate work."
     program_focus: design
-    program_initiative: "Self-Coach Foundation Gate 5 — catalog authoring continuation. 6th WS-146 claim. Capitalizes on the fresh SPR-108 aggression-frequency substrate."
+    program_initiative: "Self-Coach Foundation Gate 5 — catalog authoring continuation. 6th WS-146 claim. Capitalized on the fresh SPR-108 aggression-frequency substrate; closed the SPR-046 RFI deferral."
     composed_by: auto
     created_at: "2026-06-06T00:00:00Z"
     approved_at: "2026-06-06T00:00:00Z"
-    completed_at: null
+    completed_at: "2026-06-08T00:00:00Z"

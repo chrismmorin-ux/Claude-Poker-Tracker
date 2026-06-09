@@ -415,7 +415,7 @@ items:
     status_note: "SHIPPED SPR-035. 5 PlayerEditor sections (AgeDecade/EthnicityTags/Wardrobe/Jewelry/Logo) + 3 palette data files + PaletteChipsInput shared component + 4 PlayersView filter chips + row-tap routing change to PlayerProfileView + PlayerRow getDescriptionSummary extension. 21 new component tests + 1 PlayerRow test rewrite. 103 PlayerEditor tests + 54 usePlayerFiltering tests all green."
   - id: "WS-164"
     title: "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)"
-    status: backlog
+    status: done
     priority_score: 18.0
     priority_label: "P2"
     category: "player-identification-v2"
@@ -423,8 +423,9 @@ items:
     program: "design"
     type: improvement
     effort: "M"
-    claimed_by: ""
-    sprint_id: ""
+    claimed_by: "session-2026-06-09-spr110"
+    completed_at: "2026-06-09T00:00:00Z"
+    sprint_id: "SPR-110"
     status_note: "Blocked by WS-163 + soft-blocked on Table-Build Gate 5."
   - id: "WS-165"
     title: "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)"
@@ -2295,7 +2296,7 @@ items:
     status_note: "SHIPPED SPR-106 2026-06-04. 3 multiway archetypes by potType (FLOP_MULTIWAY_SRP/_3BP/_LIMPED) + multiwayHeroRole descriptor slot + §7.4 design-doc RESOLVED + equityVsRangeParts MULTIWAY throw lifted (null role partition return) + buildHeroState:519 dead-code guard fix. 239/239 heroState + production build clean. HSP v2 milestone: WS-154 (this) done; only conditional WS-156/157 remain."
   - id: "WS-155"
     title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
-    status: backlog
+    status: done
     priority_score: 13.0
     priority_label: "P2"
     category: "hero-state-primitive"
@@ -2538,7 +2539,7 @@ items:
     status_note: "DONE 2026-05-13 in SPR-076. FSM rewrite of CameraCaptureModal shipped (source/preparing/cropping/saving stages + orthogonal error field; named transitions; dev-mode logTransition). NEW downscaleImageBlob.js (1500×1500 max edge before Cropper sees source); rewritten CameraCaptureModal.jsx; extended modal tests (12); NEW downscale tests (9); PlayerFinderView onSaved chain wired with photoUrl→capturedPreviewUrl. All 5 bugs (A-E) closed. Build clean. Enables WS-187."
   - id: "WS-185"
     title: "Postflop EV-bucket display — mutually-exclusive bucket groups must sum to exactly 100%"
-    status: backlog
+    status: done
     priority_score: 14.0
     priority_label: "P2"
     category: "postflop-lessons"

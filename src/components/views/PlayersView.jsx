@@ -5,19 +5,22 @@
  * Pattern follows SessionsView.jsx structure.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, Users } from 'lucide-react';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
 import { SeatAssignmentGrid } from '../ui/SeatAssignmentGrid';
 import { ScaledContainer } from '../ui/ScaledContainer';
 import { LIMITS, LAYOUT } from '../../constants/gameConstants';
-import { usePlayerFiltering } from '../../hooks/usePlayerFiltering';
+import { usePlayerFiltering, scorePlayerMatch } from '../../hooks/usePlayerFiltering';
+import { LEGACY_ETHNICITY_TO_TAG } from '../../utils/identityAvatar/migratePlayerLegacyFields';
 import { useToast } from '../../contexts/ToastContext';
 import { usePlayer, useUI, useTendency, useSession, useGame } from '../../contexts';
 import { RangeDetailPanel } from '../ui/RangeDetailPanel';
 
 const UNDO_TOAST_DURATION_MS = 12000;
+
+const norm = (s) => (s || '').toString().trim().toLowerCase();
 
 /** PlayersView - Player management view. All state via context hooks. */
 export const PlayersView = ({ scale = 1 }) => {
@@ -95,6 +98,38 @@ export const PlayersView = ({ scale = 1 }) => {
     setFilterLogo,
     clearFilters,
   } = usePlayerFiltering(playerState.allPlayers, tendencyMap);
+
+  // WS-164 (PIO G5 child E) — recognition scoring + confidence.
+  // Build a §PIO-G4-PVA recognition query from the score-relevant active
+  // filters. When present, rank the (already hard-filtered) players by match
+  // score descending and surface a ConfidenceBar per row. Filters that don't
+  // map to a score dim (gender / build / facialHair / sunglasses / hat-toggle)
+  // still hard-filter via the hook but don't drive the recognition score.
+  const recognitionQuery = useMemo(() => {
+    const q = {};
+    if (searchTerm.trim()) q.nameQuery = searchTerm.trim();
+    if (filterAgeDecade) q.ageDecade = filterAgeDecade;
+    if (filterEthnicity) q.ethnicityTags = [LEGACY_ETHNICITY_TO_TAG[norm(filterEthnicity)] || norm(filterEthnicity)];
+    if (filterWardrobe) q.wardrobe = [filterWardrobe];
+    if (filterJewelry) q.jewelry = [filterJewelry];
+    if (filterLogo) q.logo = [filterLogo];
+    return q;
+  }, [searchTerm, filterAgeDecade, filterEthnicity, filterWardrobe, filterJewelry, filterLogo]);
+
+  const hasRecognitionQuery = Object.keys(recognitionQuery).length > 0;
+
+  // When a recognition query is active, rank by match score (desc) and attach
+  // the score for the row's ConfidenceBar. Otherwise preserve the hook's sort
+  // and pass score=null (no bar rendered). Standalone PlayersView has no
+  // sighting history loaded → stability scaling defaults to full weight.
+  const rankedPlayers = useMemo(() => {
+    if (!hasRecognitionQuery) {
+      return filteredPlayers.map((p) => ({ player: p, score: null }));
+    }
+    return filteredPlayers
+      .map((p) => ({ player: p, score: scorePlayerMatch(p, recognitionQuery).score }))
+      .sort((a, b) => b.score - a.score);
+  }, [filteredPlayers, recognitionQuery, hasRecognitionQuery]);
 
   // UI state (PEO-4: removed showNewPlayerModal, editingPlayer, lastCreatedPlayerId,
   // showPendingAssignmentPrompt — all migrated to PlayerEditorView route.)
@@ -525,10 +560,11 @@ export const PlayersView = ({ scale = 1 }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {filteredPlayers.filter(p => !pendingDeletedIds.has(p.playerId)).map(player => (
+                {rankedPlayers.filter(({ player }) => !pendingDeletedIds.has(player.playerId)).map(({ player, score }) => (
                   <PlayerRow
                     key={player.playerId}
                     player={player}
+                    matchScore={score}
                     assignedSeat={getPlayerSeat(player.playerId)}
                     isSelecting={!!selectedSeat}
                     onDragStart={() => handleDragStart(player.playerId)}

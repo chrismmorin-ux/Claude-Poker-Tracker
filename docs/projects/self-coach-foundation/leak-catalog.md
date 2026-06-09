@@ -17,19 +17,19 @@ This catalog **is** that mechanism.
 
 | Category | Total entries | Shipped | Spec'd | Planned | Future-research | Deferred |
 |---|---:|---:|---:|---:|---:|---:|
-| Preflop fold-equity | 4 | **3** ★★★ | 0 | 0 | 0 | 1 |
+| Preflop fold-equity | 4 | **4** ★★★★ | 0 | 0 | 0 | 0 |
 | Preflop sizing | 3 | 0 | 0 | 3 | 0 | 0 |
 | Flop continuation | 3 | **3** ★★★ | 0 | 0 | 0 | 0 |
 | Flop sizing | 2 | 0 | 0 | 2 | 0 | 0 |
-| Turn barrel | 3 | 0 | 0 | 1 | 2 | 0 |
+| Turn barrel | 3 | **1** ★ | 0 | 0 | 2 | 0 |
 | River bluff-catch | 2 | 0 | 0 | 0 | 2 | 0 |
 | Multiway adjustment | 2 | **1** ★ | 0 | 0 | 1 | 0 |
 | Capped-range misread | 2 | 0 | 0 | 1 | 1 | 0 |
 | Position discipline | 2 | 0 | 0 | 2 | 0 | 0 |
 | Sample-size discipline | 2 | 0 | 0 | 2 | 0 | 0 |
-| **Total** | **25** | **7** | 0 | 11 | 6 | 1 |
+| **Total** | **25** | **9** | 0 | 10 | 6 | 0 |
 
-**v1 milestone:** 7/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031); ★ OOP cbet defense overfold (SPR-040); ★ Flop vs donk misresponse (SPR-040); ★ PF 3bet overfold (SPR-046); ★ OOP 3bet underfold (SPR-046); ★ Multiway cbet frequency (SPR-108) — **first decision-bucket/aggression-frequency rule**, opening the frequency-of-aggression substrate that was the blocker class deferred since SPR-046). Flop-continuation category **closed 3/3**; preflop fold-equity **3/4 shipped** (1 deferred — `hero-pf-open-overfold` blocked on accumulator design). Shipped rules bind to **cluster umbrella concepts** (SPR-033 / WS-148 + SPR-040 + SPR-046): `cbet-defense-cluster` + `bb-defense-cluster` + `oop-cbet-defense-cluster` + `flop-vs-donk-defense-cluster` + `pf-3bet-defense-cluster` + `oop-3bet-defense-cluster`. SPR-046 also shipped the **first UNDER-fold direction** in the catalog (`hero-oop-3bet-underfold`) — establishes the mirror detection pattern for future under-fold rules. Per the granularity floor (`feedback_scf_high_granularity.md`), 29 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
+**v1 milestone:** 9/25 shipped (★ IP cbet defense overfold (SPR-030); ★ BB defense width (SPR-031); ★ OOP cbet defense overfold (SPR-040); ★ Flop vs donk misresponse (SPR-040); ★ PF 3bet overfold (SPR-046); ★ OOP 3bet underfold (SPR-046); ★ Multiway cbet frequency (SPR-108) — **first decision-bucket/aggression-frequency rule**, opening the frequency-of-aggression substrate that was the blocker class deferred since SPR-046; ★ Turn double-barrel frequency (SPR-109) — second over-frequency decision-bucket rule; ★ Preflop open frequency / RFI (SPR-109) — **first UNDER-frequency decision-bucket rule**, resolving the `hero-pf-open-overfold` deferral via that substrate). Flop-continuation category **closed 3/3**; preflop fold-equity category **closed 4/4** (deferral resolved); turn-barrel **1/3 shipped**. Shipped rules bind to **cluster umbrella concepts** (SPR-033 / WS-148 + SPR-040 + SPR-046): `cbet-defense-cluster` + `bb-defense-cluster` + `oop-cbet-defense-cluster` + `flop-vs-donk-defense-cluster` + `pf-3bet-defense-cluster` + `oop-3bet-defense-cluster`. SPR-046 also shipped the **first UNDER-fold direction** in the catalog (`hero-oop-3bet-underfold`) — establishes the mirror detection pattern for future under-fold rules. Per the granularity floor (`feedback_scf_high_granularity.md`), 29 fine-grained sub-concepts under those umbrellas are registered in `src/utils/skillAssessment/tierConceptMap.js`; sub-concept lesson files land in WS-149 ongoing.
 
 **SPR-040 architectural note:** Situation key extended from 7 to 8 axes (added `preflopAggressor` — `pfa`/`pfc`/`na`). This was necessary for the donk rule to distinguish "hero raised preflop, faces villain donk" from "hero called preflop, faces villain cbet" — both situations had collapsed to the same bucket under the 7-axis key. The IP cbet rule narrowed to `pfc` post-migration (donk-response cases now route to the new donk rule). All existing baselines + tests + sub-concept resolution migrated.
 
@@ -45,15 +45,18 @@ This catalog **is** that mechanism.
 
 ### Preflop fold-equity leaks
 
-#### `hero-pf-open-overfold`
-- **Label:** Preflop open-fold rate (RFI)
+#### `hero-pf-open-overfold` ★ v1 (SPR-109) — first UNDER-frequency decision-bucket rule
+- **Label:** Preflop open frequency (RFI)
 - **Category:** preflop-fold-equity
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `preflop:none:{EARLY|MIDDLE|LATE|BUTTON}:agg:none:none:open` (one per position)
-- **Solver baseline source:** Hardcoded (well-known by position: EP ~14%, MP ~17%, HJ ~21%, CO ~26%, BTN ~40% — open-raise frequencies)
-- **Intent:** Detect when hero opens too tight from a position, leaving open EV on the table by missing playable hands.
-- **Scope notes:** Inverse leak (folding too much when should open) is detectable; overopening (raising too wide) is its own rule (`hero-pf-open-too-wide`, also planned). Rules diverge in remediation (tighten range vs widen).
+- **Status:** **SHIPPED v1 (SPR-109 / WS-146 sixth claim)** — Drill-this opens `rfi-discipline-cluster.md`. Was DEFERRED at SPR-046 (see the resolution note below); unblocked by the SPR-108 decision-bucket substrate.
+- **Decision keys:** `preflop:rfi-decision:{EARLY|MIDDLE|LATE|BUTTON}` (decision-bucket keys, NOT 8-axis action keys — one per open position). Emitted by `deriveRfiDecision()` when the pot is folded to hero (first-in), from an open position. Aggregates aggress (open-raise) vs pass (open-fold) so an open FREQUENCY is computable. Blinds + limp/iso excluded v1.
+- **Solver baseline source:** Hardcoded per position (RFI range size = open frequency given first-in): EARLY ~15%, MIDDLE ~19%, LATE/CO ~26%, BUTTON ~42%. Confidence 0.75.
+- **Ship sprint:** SPR-109
+- **Related concept:** `rfi-discipline-cluster` (umbrella, tier 2) — lesson at `lessons/rfi-discipline-cluster.md`. Sub-concepts `rfi-discipline-{EARLY|MIDDLE|LATE|BUTTON}` registered in `tierConceptMap.js` WITH `SITUATION_KEY_TO_CONCEPT` resolution (baselines are position-split). Sub-concept lessons WS-149.
+- **Intent:** Detect when hero opens too tight first-in, leaving fold equity + dead blinds uncontested.
+- **Polarity:** UNDER-frequency (LOW open rate is the leak) — first of its kind for decision buckets; mirrors how `hero-oop-3bet-underfold` established the under-FOLD pattern for action buckets. The `detect` gate is inverted (delta = baseline − observed; CI UPPER bound must clear baseline).
+- **Scope notes:** Overopening (raising too wide) is its own future rule (`hero-pf-open-too-wide`) with different remediation (tighten vs widen). Blinds (SB/BB) RFI is a structurally different decision class, excluded v1.
 - **Expansion notes:** v2 split by table dynamic (passive vs active table — open ranges shift); v3 split by stack depth (short-stack vs deep).
 
 #### `hero-pf-3bet-overfold` ★ v1 (SPR-046)
@@ -69,15 +72,12 @@ This catalog **is** that mechanism.
 - **Scope notes:** Opposite of `hero-oop-3bet-underfold` (which is about the 3bet caller). This rule is about the original raiser. v1 normalizes isIP axis to a single per-position baseline (per-isIP and per-3bettor-position splits are v2 expansions).
 - **Expansion notes:** v2 split by 3bettor stack-off propensity (TAGs underbluff 3bets, fish overbluff); v3 split by 3bet sizing.
 
-#### `hero-pf-open-overfold` (DEFERRED)
-- **Label:** Preflop open-fold rate (RFI)
-- **Category:** preflop-fold-equity
-- **Complexity tier:** Medium
-- **Status:** **DEFERRED 2026-05-07 (SPR-046 mid-sprint discovery)** — structurally blocked by current accumulator design.
-- **Discovery:** `deriveSituationKey:DERIVE_CONTEXT_ACTION` buckets RFI fold (`limp` contextAction; verb='fold' falls through the open/limp branch) and RFI open (`open` contextAction; verb='raise') under different keys. The accumulator can't compute fold-rate over the RFI decision space from a single bucket. Other shipped rules avoid this because vs-bet defense buckets all actions (fold/call/raise) under the same `contextAction`.
-- **Resolution path:** either (a) refactor `DERIVE_CONTEXT_ACTION` so RFI fold + RFI open share `contextAction='rfi'` (breaking change to existing situation keys; requires migration of all shipped rules + tests), or (b) add an additive "decision-class bucket" path to the accumulator that aggregates across action-taken (preserves existing keys, adds a parallel bucket type).
-- **Re-targeted situation keys (post-resolution):** `preflop:none:{EARLY|MIDDLE|LATE|BUTTON}:agg:none:none:rfi:na` (using `:rfi:` if option a) OR a new accumulator output with shared bucket key per (street × position × pre-action-state) regardless of action verb.
-- **Sprint pivot:** SPR-046 swapped this rule for `hero-pf-3bet-overfold` after the discovery (founder-ratified 2026-05-07). The pivot keeps the same sprint goal (close preflop fold-equity gap +2 → 3/4) without dragging an accumulator refactor into a leak-rule sprint.
+#### `hero-pf-open-overfold` — SPR-046 deferral (RESOLVED SPR-109; forensic note)
+- **Status:** **RESOLVED SPR-109** — shipped via resolution option (b). The canonical SHIPPED entry is above; this note preserves the discovery + resolution-path history.
+- **Original discovery (DEFERRED 2026-05-07, SPR-046 mid-sprint):** `deriveSituationKey:DERIVE_CONTEXT_ACTION` buckets RFI fold (`limp` contextAction; verb='fold' falls through the open/limp branch) and RFI open (`open` contextAction; verb='raise') under different keys. The accumulator couldn't compute frequency over the RFI decision space from a single bucket. Other shipped rules avoid this because vs-bet defense buckets all actions (fold/call/raise) under the same `contextAction`.
+- **Resolution path (as recorded):** either (a) refactor `DERIVE_CONTEXT_ACTION` so RFI fold + RFI open share `contextAction='rfi'` (breaking change requiring migration of all shipped rules + tests), or (b) add an additive "decision-class bucket" path to the accumulator that aggregates across action-taken (preserves existing keys, adds a parallel bucket type).
+- **What shipped:** option (b). SPR-108 introduced the parallel decision-bucket type (`decisionBuckets` + `deriveCbetDecision` + `bucketType:'decision'` routing) for the multiway cbet-frequency rule. SPR-109 generalized the accumulator to a `DECISION_DERIVERS` registry and added `deriveRfiDecision` — the RFI open frequency is now computable with zero migration of the 6 shipped 8-axis fold-rate rules. Decision keys: `preflop:rfi-decision:{EARLY|MIDDLE|LATE|BUTTON}` (see the canonical entry above).
+- **Sprint pivot (historical):** SPR-046 swapped this rule for `hero-pf-3bet-overfold` after the discovery (founder-ratified 2026-05-07), keeping the sprint goal without dragging an accumulator refactor into a leak-rule sprint. The substrate was later paid down incrementally (SPR-108) and the rule shipped (SPR-109).
 
 #### `hero-oop-3bet-underfold` ★ v1 (SPR-046) — first UNDER-fold rule in catalog
 - **Label:** OOP 3bet defense width (calling too wide post-flat)
@@ -204,16 +204,18 @@ This catalog **is** that mechanism.
 
 ### Turn barrel leaks
 
-#### `hero-turn-barrel-frequency`
+#### `hero-turn-barrel-frequency` ★ v1 (SPR-109)
 - **Label:** Turn double-barrel frequency
 - **Category:** turn-barrel
 - **Complexity tier:** Medium
-- **Status:** PLANNED
-- **Situation keys:** `turn:*:*:agg:*:bet:barrel`
-- **Solver baseline source:** Hardcoded baseline range (40-60% barrel frequency depending on board run-out class); split by equity-shifter card
-- **Intent:** Hero either over-barrels (bluffing too much on bad runouts) or under-barrels (giving up on good runouts).
-- **Scope notes:** Equity-shifter axis adds complexity.
-- **Expansion notes:** v2 split by equity-shifter card class (overcards / connectors / paired).
+- **Status:** **SHIPPED v1 (SPR-109 / WS-146 sixth claim)** — Drill-this opens `turn-barrel-discipline-cluster.md`. Second over-frequency decision-bucket rule (after multiway cbet frequency).
+- **Decision key:** `turn:barrel-decision:hu` (decision-bucket key, NOT an 8-axis action key). Emitted by `deriveTurnBarrelDecision()` when hero was preflop aggressor, bet the flop, and is first-in on the turn heads-up. Aggregates aggress (barrel) vs pass (check) so a barrel FREQUENCY is computable.
+- **Solver baseline source:** Hardcoded ~50% (coarse single baseline across textures/runouts; HU solver barrels ~half its continuing range). Confidence 0.70. Fires on OVER-barreling (>55% with 5pp delta).
+- **Ship sprint:** SPR-109
+- **Related concept:** `turn-barrel-discipline-cluster` (umbrella, tier 5). Children `turn-barrel-discipline-{good-runout,bad-runout}` registered ahead per the v2 equity-shifter split (no `SITUATION_KEY_TO_CONCEPT` entries yet — coarse bucket; umbrella absorbs fire-state, same as multiway v1). Sub-concept lessons WS-149.
+- **Intent:** Hero over-barrels the turn (firing automatically after a flop cbet on bricks the flop call's continuing range doesn't fold to). The under-barrel mirror (giving up on good runouts) is a separate future rule.
+- **Scope notes:** v1 heads-up only + coarse baseline; the multiway turn barrel and the equity-shifter-card split are v2.
+- **Expansion notes:** v2 split by equity-shifter card class (overcards / connectors / paired) → good-runout vs bad-runout sub-concepts; v3 multiway barrel frequency (same decision-bucket substrate, `turn:barrel-decision:mw`).
 
 #### `hero-turn-checkraise-frequency`
 - **Label:** Turn check-raise frequency

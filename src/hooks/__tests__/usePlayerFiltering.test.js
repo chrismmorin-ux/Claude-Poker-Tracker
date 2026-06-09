@@ -598,6 +598,28 @@ describe('scorePlayerMatch', () => {
       expect(r.passesFilters).toBe(false);
     });
   });
+
+  // WS-164 / SPR-110 — additive weighted-score contract (highlight fields above
+  // remain unchanged; these assert the new score/confidence are also present).
+  describe('weighted recognition score (§PIO-G4-PVA, additive contract)', () => {
+    it('returns a numeric score + confidence band alongside highlight fields', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'Mi' });
+      expect(r.score).toBeTypeOf('number');
+      expect(r.score).toBeGreaterThanOrEqual(0);
+      expect(r.score).toBeLessThanOrEqual(1);
+      expect(['strong', 'partial', 'weak']).toContain(r.confidence);
+      // name-prefix match with name as the only active dim → full score.
+      expect(r.score).toBeCloseTo(1.0, 5);
+      expect(r.confidence).toBe('strong');
+    });
+
+    it('no-match name query → score 0 / weak, and highlight still reports no prefix', () => {
+      const r = scorePlayerMatch(mike, { nameQuery: 'xyz' });
+      expect(r.score).toBe(0);
+      expect(r.confidence).toBe('weak');
+      expect(r.nameMatchStart).toBeNull();
+    });
+  });
 });
 
 // =============================================================================

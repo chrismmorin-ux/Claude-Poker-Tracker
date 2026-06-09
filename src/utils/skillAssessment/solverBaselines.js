@@ -111,6 +111,36 @@ const BASELINES = {
   // cbets; a high observed frequency is dominated by over-bluffing because the
   // value fraction is small multiway).
   'flop:cbet-decision:mw': { baseline: 0.25, source: 'hardcoded', confidence: 0.70, lastValidatedAt: '2026-06-06' },
+
+  // ─── hero-turn-barrel-frequency rule (SHIPPED v1, SPR-109 / WS-146 sixth claim) ────
+  // DECISION-bucket baseline (not an 8-axis action key). Heads-up turn
+  // double-barrel frequency: how often hero fires a second bullet on the turn
+  // after cbetting the flop as the preflop aggressor and getting called, when
+  // first-in on the turn. v1 single coarse baseline (~50%) across textures /
+  // runout classes — solver turn barrel frequency centers near half-range HU,
+  // shading by the equity-shifter card (overcard/connector/paired splits are
+  // the v2 expansion). The rule fires on OVER-barreling (barreling too often =
+  // bluffing turns that should give up). Confidence 0.70 (coarse baseline +
+  // the metric mixes value barrels with bluffs; a high observed frequency is
+  // dominated by over-bluffing because the value fraction is bounded).
+  'turn:barrel-decision:hu': { baseline: 0.50, source: 'hardcoded', confidence: 0.70, lastValidatedAt: '2026-06-06' },
+
+  // ─── hero-pf-open-overfold rule (SHIPPED v1, SPR-109 / WS-146 sixth claim) ────
+  // DECISION-bucket baselines (not 8-axis action keys). Preflop RFI open
+  // frequency by position: given the pot is folded to hero (first-in), how
+  // often hero open-raises vs open-folds. The baseline IS the position's RFI
+  // range size — the fraction of a full 100% range that should open-raise
+  // first-in. Standard 100bb 6/9-max solver RFI ranges: EP ~15%, MP ~19%,
+  // CO/LATE ~26%, BTN ~42% (limp excluded; SB/BB are a separate decision class
+  // excluded from v1). The rule fires on UNDER-opening (open frequency too LOW
+  // = folding hands that should open, leaving EV uncontested) — the first
+  // under-frequency decision-bucket rule. Confidence 0.75 (RFI ranges are
+  // well-established; the live-vs-online + table-dynamic spread is the v2
+  // refinement). Position-split because RFI width differs sharply by seat.
+  'preflop:rfi-decision:EARLY':  { baseline: 0.15, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-06-06' },
+  'preflop:rfi-decision:MIDDLE': { baseline: 0.19, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-06-06' },
+  'preflop:rfi-decision:LATE':   { baseline: 0.26, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-06-06' },
+  'preflop:rfi-decision:BUTTON': { baseline: 0.42, source: 'hardcoded', confidence: 0.75, lastValidatedAt: '2026-06-06' },
 };
 
 /**

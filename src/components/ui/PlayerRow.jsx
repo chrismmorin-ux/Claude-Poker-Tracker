@@ -9,6 +9,7 @@ import { Layers, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { TendencyStats } from './TendencyStats';
 import { ExploitList } from './ExploitList';
 import IdentityAvatar from './IdentityAvatar';
+import { ConfidenceBar } from '../views/PlayerProfileView/ConfidenceBar';
 import { filterDismissed } from '../../utils/exploitEngine/generateExploits';
 import { migratePlayerLegacyFields } from '../../utils/identityAvatar/migratePlayerLegacyFields';
 
@@ -130,6 +131,7 @@ export const PlayerRow = ({
   onAcceptBriefing,
   onDismissBriefing,
   onDeferBriefing,
+  matchScore = null,
 }) => {
   const isAssigned = assignedSeat !== null;
   const [showExploits, setShowExploits] = useState(false);
@@ -174,6 +176,13 @@ export const PlayerRow = ({
             <div className="font-semibold text-gray-200">{player.name}</div>
             {player.nickname && (
               <div className="text-xs text-gray-500">"{player.nickname}"</div>
+            )}
+            {/* Recognition match confidence (WS-164) — shown only when a
+                search/feature query is active (matchScore passed by PlayersView). */}
+            {typeof matchScore === 'number' && (
+              <div className="mt-1">
+                <ConfidenceBar score={matchScore} />
+              </div>
             )}
             <TendencyStats stats={tendencyStats} />
           </div>

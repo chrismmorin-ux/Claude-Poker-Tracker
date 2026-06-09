@@ -1,0 +1,105 @@
+id: "session-2026-06-09-spr110"
+status: completed
+started_at: "2026-06-09T00:00:00Z"
+ended_at: "2026-06-09T00:00:00Z"
+mode: standard
+ceremony: standard
+last_heartbeat: "2026-06-09T00:00:00Z"
+
+claimed_items: []
+items_progressed:
+  - "WS-164"  # done (unblocked core; CandidateColumn live-rerank deferred)
+
+sprints_completed:
+  - "SPR-110"
+
+files_locked:
+  - "src/utils/playerMatching/scorePlayerMatch.js"
+  - "src/hooks/usePlayerFiltering.js"
+  - "src/components/views/PlayerProfileView/ConfidenceBar.jsx"
+  - "src/components/ui/PlayerRow.jsx"
+  - "src/components/views/PlayersView.jsx"
+  - "docs/projects/player-identification-v2/recognition-confidence-schema.md"
+
+decisions_recorded:
+  - "DEC-019"  # recognition scoring v1: active-dim renormalization + verbatim weights + additive contract
+
+handoff_notes: |
+  ## SPR-110 / WS-164 — PIO recognition scoring + confidence (unblocked core)
+
+  Composed via /next after SPR-109. Anchor selected after verifying the backlog:
+  launch P22 ×6 genuinely soft-blocked (founder Q7/Q8 + un-ticketed MPMF Gate 4);
+  domain-correctness test trio (WS-020/023/025) NEEDS-RESCOPE; WS-150 master
+  effectively done. WS-164 was the top genuinely-shippable feature (rotates off
+  6× WS-146). Plan-first; 2 founder decisions ratified via AskUserQuestion.
+
+  ### Shipped (unblocked core)
+  - `src/utils/playerMatching/scorePlayerMatch.js` (NEW) — §PIO-G4-PVA weighted
+    score over modern fields + active-dim renormalization + computeStability
+    scaling (when sightings supplied) + §PIO-G4-DISAMB confidence band. Retains
+    highlight metadata (additive contract). `usePlayerFiltering.js` re-exports it.
+  - `ConfidenceBar.jsx` (NEW, shared under PlayerProfileView) — 10-segment bar +
+    factual label; AP-PIO-04 neutral copy enforced by DOM-lint test.
+  - `PlayersView.jsx` + `PlayerRow.jsx` — rank by score desc + ConfidenceBar per
+    row when a recognition query is active (first consumer, PlayersView-internal).
+  - `recognition-confidence-schema.md` (NEW).
+
+  ### Decisions made
+  - **DEC-019** (Medium): recognition scoring v1 — active-dim renormalization +
+    verbatim audit weights (sum 0.95, not the audit's stated "1.00"; renormalization
+    moots it) + additive scorePlayerMatch contract.
+
+  ### Premise corrections (verify-at-composition / anti-hallucination)
+  - `scorePlayerMatch` pre-existed as an unused highlight primitive → extended
+    additively (founder chose "replace contract"); grep confirmed zero consumers.
+  - Explore agent claimed files existed that initial Glob missed → deterministically
+    re-verified each via `find` before trusting (all real; Globs had false-negatived).
+  - Audit weight vector text "= 1.00" vs listed values summing to 0.95 → kept verbatim.
+
+  ### Queue drift reconciled at composition (kit/scripts absent → by hand)
+  - WS-185 + WS-155: index `backlog` but ticket files `done` → fixed to done.
+  - WS-150: left backlog (master tracking parent; children all shipped — flagged
+    as a future status:tracking reclassification candidate).
+
+  ### Tests + verification
+  - +36 net tests (scorePlayerMatch 23 + ConfidenceBar 8 + usePlayerFiltering +2
+    + PlayersView ranking +2; weight-sum test corrected to 0.95).
+  - Full app smart-test-runner: **12,103 passing / 20 skipped / 0 failed** (no
+    flakes tripped this run).
+  - Production build clean.
+  - **Playwright at 1600×720:** seeded two same-name "Michael" distractors;
+    search "Mi" ranked Michael R/S (strong match, 100%) above substring-only
+    "Tight Mike" (weak match, 0%); factual labels; no AP-PIO-04 forbidden copy;
+    0 console errors. Test players removed afterward (dev DB restored).
+  - AP-PIO-05/01 confirmed: scorePlayerMatch imports only playerFilterRange +
+    computeStability; no path reaches tendencyMap / exploit engine.
+
+  ### Items completed
+  - WS-164 (done — unblocked core).
+
+  ### Items remaining
+  - None claimed.
+
+  ### Next recommended action
+  - `/next`. Backlog reality (re-verify at composition): launch P22 still blocked
+    on founder Q7 (legal counsel) / Q8 (analytics vendor) + un-ticketed MPMF
+    Gate 4 surfaces — if the founder wants to advance launch, the unblock is
+    authoring the MPMF Gate 4 surface tickets + making the Q7/Q8 calls. Otherwise
+    candidates: WS-146 7th SCF claim (substrate fresh), or rescope the
+    NEEDS-RESCOPE domain-correctness test trio (WS-020/023/025).
+
+  ### Deferred follow-ups (not yet ticketed)
+  - Table-Build CandidateColumn / PossibleMatchesPanel live re-rank (Table-Build
+    Gate 5) — the scorer + ConfidenceBar are reusable; thin wire when ticketed.
+  - Corpus-tuned recognition weights (separate follow-up per validation-as-quality-signal).
+  - PlayersView skin/hair/hat query dims (no filter input yet; scorer already supports them).
+
+context_notes: |
+  Session-end state. This was a /next invocation; no .current-session file
+  existed, no session lock to clean up. kit/scripts/ absent → cwos-reconcile /
+  cwos-gc / state-store / shadow-event steps degraded gracefully; sprint + queue
+  + sprint-index bookkeeping done by hand on touched entries.
+
+  All changes are additive in the PIO/playerMatching surface + PlayersView. No
+  IDB schema change, no reducer change. The existing scorePlayerMatch highlight
+  contract is preserved (fields unchanged; score/confidence added).

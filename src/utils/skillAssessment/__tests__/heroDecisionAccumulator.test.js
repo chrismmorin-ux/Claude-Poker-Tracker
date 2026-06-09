@@ -8,6 +8,10 @@ import {
   buildHeroSituationKey,
   wilsonCI,
 } from '../heroDecisionAccumulator.js';
+import {
+  deriveTurnBarrelDecision,
+  deriveRfiDecision,
+} from '../deriveSituationKey.js';
 
 const HERO_SEAT = 1;
 const BTN_SEAT = 6;
@@ -317,5 +321,270 @@ describe('accumulateHeroDecisions — decisionBuckets (cbet frequency)', () => {
     const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
     expect(result.decisionBuckets).toBeDefined();
     expect(Object.keys(result.decisionBuckets)).toHaveLength(0);
+  });
+});
+
+// ─── deriveTurnBarrelDecision (WS-146 SPR-109) ───────────────────────────
+
+describe('deriveTurnBarrelDecision', () => {
+  // Hero (seat 1) raised pf (PFA), bet the flop, got called, now acts on the turn.
+  const buildBarrelHand = ({ turnAction, callers = [2], flopHeroAction = 'bet' }) => ({
+    gameState: {
+      dealerButtonSeat: BTN_SEAT,
+      mySeat: HERO_SEAT,
+      players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+      actionSequence: [
+        { seat: HERO_SEAT, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+        ...callers.map((seat, i) => ({ seat, action: 'call', street: 'preflop', order: i + 1, amount: 2.5 })),
+        { seat: HERO_SEAT, action: flopHeroAction, street: 'flop', order: callers.length + 1, amount: flopHeroAction === 'bet' ? 3 : 0 },
+        ...callers.map((seat, i) => ({ seat, action: 'call', street: 'flop', order: callers.length + 2 + i, amount: 3 })),
+        { seat: HERO_SEAT, action: turnAction, street: 'turn', order: callers.length * 2 + 2, amount: turnAction === 'bet' ? 6 : 0 },
+      ],
+    },
+    cardState: { communityCards: [20, 13, 3, 44], heroCards: [51, 46] },
+  });
+
+  const turnEntry = (hand) => hand.gameState.actionSequence.find((a) => a.street === 'turn');
+
+  it('classifies a first-in turn bet (HU, PFA, bet flop) as an aggress barrel', () => {
+    const hand = buildBarrelHand({ turnAction: 'bet', callers: [2] });
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: turnEntry(hand), heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d).not.toBeNull();
+    expect(d.decisionKey).toBe('turn:barrel-decision:hu');
+    expect(d.decisionClass).toBe('aggress');
+  });
+
+  it('classifies a first-in turn check as a pass', () => {
+    const hand = buildBarrelHand({ turnAction: 'check', callers: [2] });
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: turnEntry(hand), heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d.decisionClass).toBe('pass');
+  });
+
+  it('emits :mw when 2+ villains remain on the turn', () => {
+    const hand = buildBarrelHand({ turnAction: 'bet', callers: [2, 3] });
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: turnEntry(hand), heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d.decisionKey).toBe('turn:barrel-decision:mw');
+  });
+
+  it('returns null when hero was NOT the preflop aggressor (pfc)', () => {
+    // seat 4 opens, hero calls preflop, hero leads flop + turn = probe, not a barrel
+    const hand = {
+      gameState: {
+        dealerButtonSeat: BTN_SEAT,
+        mySeat: HERO_SEAT,
+        players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+        actionSequence: [
+          { seat: 4, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'call', street: 'preflop', order: 1, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'bet', street: 'flop', order: 2, amount: 3 },
+          { seat: 4, action: 'call', street: 'flop', order: 3, amount: 3 },
+          { seat: HERO_SEAT, action: 'bet', street: 'turn', order: 4, amount: 6 },
+        ],
+      },
+      cardState: { communityCards: [20, 13, 3, 44], heroCards: [51, 46] },
+    };
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: hand.gameState.actionSequence[4], heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d).toBeNull();
+  });
+
+  it('returns null when hero did NOT bet the flop (delayed cbet, not a barrel)', () => {
+    const hand = buildBarrelHand({ turnAction: 'bet', callers: [2], flopHeroAction: 'check' });
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: turnEntry(hand), heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d).toBeNull();
+  });
+
+  it('returns null when hero faces a turn bet (not first-in)', () => {
+    const hand = {
+      gameState: {
+        dealerButtonSeat: BTN_SEAT,
+        mySeat: HERO_SEAT,
+        players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+        actionSequence: [
+          { seat: HERO_SEAT, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+          { seat: 2, action: 'call', street: 'preflop', order: 1, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'bet', street: 'flop', order: 2, amount: 3 },
+          { seat: 2, action: 'call', street: 'flop', order: 3, amount: 3 },
+          { seat: 2, action: 'bet', street: 'turn', order: 4, amount: 6 }, // villain donks turn
+          { seat: HERO_SEAT, action: 'call', street: 'turn', order: 5, amount: 6 },
+        ],
+      },
+      cardState: { communityCards: [20, 13, 3, 44], heroCards: [51, 46] },
+    };
+    const d = deriveTurnBarrelDecision({ hand, actionEntry: hand.gameState.actionSequence[5], heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT });
+    expect(d).toBeNull();
+  });
+
+  it('returns null for a flop action (street guard)', () => {
+    const hand = buildBarrelHand({ turnAction: 'bet', callers: [2] });
+    const flopEntry = hand.gameState.actionSequence.find((a) => a.street === 'flop' && a.seat === HERO_SEAT);
+    expect(deriveTurnBarrelDecision({ hand, actionEntry: flopEntry, heroSeat: HERO_SEAT, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+});
+
+// ─── deriveRfiDecision (WS-146 SPR-109) ──────────────────────────────────
+
+describe('deriveRfiDecision', () => {
+  // buttonSeat 6; hero seat controls position. Folded-to-hero = first-in.
+  const buildRfiHand = ({ heroSeat, heroAction, priorActions = [] }) => ({
+    gameState: {
+      dealerButtonSeat: BTN_SEAT,
+      mySeat: heroSeat,
+      players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+      actionSequence: [
+        ...priorActions,
+        { seat: heroSeat, action: heroAction, street: 'preflop', order: priorActions.length, amount: heroAction === 'raise' ? 2.5 : 0 },
+      ],
+    },
+    cardState: { communityCards: [], heroCards: [51, 46] },
+  });
+  const heroEntry = (hand) => hand.gameState.actionSequence[hand.gameState.actionSequence.length - 1];
+
+  it('classifies a first-in open-raise from the BUTTON as aggress', () => {
+    // hero seat 6 == button → BUTTON; all prior seats folded → first-in
+    const hand = buildRfiHand({
+      heroSeat: 6,
+      heroAction: 'raise',
+      priorActions: [
+        { seat: 2, action: 'fold', street: 'preflop', order: 0 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 4, action: 'fold', street: 'preflop', order: 2 },
+        { seat: 5, action: 'fold', street: 'preflop', order: 3 },
+      ],
+    });
+    const d = deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 6, buttonSeat: BTN_SEAT });
+    expect(d).not.toBeNull();
+    expect(d.decisionKey).toBe('preflop:rfi-decision:BUTTON');
+    expect(d.decisionClass).toBe('aggress');
+  });
+
+  it('classifies a first-in open-fold as pass (and resolves EARLY position)', () => {
+    // hero seat 3, button 6 → offset 3 → EARLY; first to act, folds
+    const hand = buildRfiHand({ heroSeat: 3, heroAction: 'fold', priorActions: [] });
+    const d = deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 3, buttonSeat: BTN_SEAT });
+    expect(d.decisionKey).toBe('preflop:rfi-decision:EARLY');
+    expect(d.decisionClass).toBe('pass');
+  });
+
+  it('resolves LATE (cutoff) position', () => {
+    // hero seat 5, button 6 → offset 5 (6max) → LATE
+    const hand = buildRfiHand({
+      heroSeat: 5,
+      heroAction: 'raise',
+      priorActions: [
+        { seat: 2, action: 'fold', street: 'preflop', order: 0 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 4, action: 'fold', street: 'preflop', order: 2 },
+      ],
+    });
+    const d = deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 5, buttonSeat: BTN_SEAT });
+    expect(d.decisionKey).toBe('preflop:rfi-decision:LATE');
+  });
+
+  it('returns null when a player limped (called) before hero — not RFI (limp excluded v1)', () => {
+    const hand = buildRfiHand({
+      heroSeat: 6,
+      heroAction: 'raise',
+      priorActions: [
+        { seat: 4, action: 'call', street: 'preflop', order: 0, amount: 1 }, // limp
+        { seat: 5, action: 'fold', street: 'preflop', order: 1 },
+      ],
+    });
+    expect(deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 6, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+
+  it('returns null when a player raised before hero — not RFI', () => {
+    const hand = buildRfiHand({
+      heroSeat: 6,
+      heroAction: 'fold',
+      priorActions: [
+        { seat: 4, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+        { seat: 5, action: 'fold', street: 'preflop', order: 1 },
+      ],
+    });
+    expect(deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 6, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+
+  it('returns null from the blinds (SB/BB excluded v1)', () => {
+    // hero seat 1, button 6 → offset 1 → SMALL_BLIND
+    const hand = buildRfiHand({
+      heroSeat: 1,
+      heroAction: 'raise',
+      priorActions: [
+        { seat: 2, action: 'fold', street: 'preflop', order: 0 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 4, action: 'fold', street: 'preflop', order: 2 },
+        { seat: 5, action: 'fold', street: 'preflop', order: 3 },
+      ],
+    });
+    expect(deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 1, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+
+  it('returns null when hero limps first-in (call excluded from RFI decision v1)', () => {
+    const hand = buildRfiHand({
+      heroSeat: 5,
+      heroAction: 'call',
+      priorActions: [
+        { seat: 2, action: 'fold', street: 'preflop', order: 0 },
+        { seat: 3, action: 'fold', street: 'preflop', order: 1 },
+        { seat: 4, action: 'fold', street: 'preflop', order: 2 },
+      ],
+    });
+    expect(deriveRfiDecision({ hand, actionEntry: heroEntry(hand), heroSeat: 5, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+
+  it('returns null for a postflop action (street guard)', () => {
+    const hand = buildRfiHand({ heroSeat: 6, heroAction: 'raise', priorActions: [] });
+    const flopEntry = { seat: 6, action: 'bet', street: 'flop', order: 5, amount: 3 };
+    expect(deriveRfiDecision({ hand, actionEntry: flopEntry, heroSeat: 6, buttonSeat: BTN_SEAT })).toBeNull();
+  });
+});
+
+// ─── accumulator integration: multiple decision-bucket types coexist ─────
+
+describe('accumulateHeroDecisions — multiple decision-bucket types (SPR-109)', () => {
+  it('records both a flop cbet decision AND a turn barrel decision in one hand', () => {
+    const hand = {
+      gameState: {
+        dealerButtonSeat: BTN_SEAT,
+        mySeat: HERO_SEAT,
+        players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+        actionSequence: [
+          { seat: HERO_SEAT, action: 'raise', street: 'preflop', order: 0, amount: 2.5 },
+          { seat: 2, action: 'call', street: 'preflop', order: 1, amount: 2.5 },
+          { seat: HERO_SEAT, action: 'bet', street: 'flop', order: 2, amount: 3 },
+          { seat: 2, action: 'call', street: 'flop', order: 3, amount: 3 },
+          { seat: HERO_SEAT, action: 'bet', street: 'turn', order: 4, amount: 6 },
+        ],
+      },
+      cardState: { communityCards: [20, 13, 3, 44], heroCards: [51, 46] },
+    };
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: HERO_SEAT });
+    expect(result.decisionBuckets['flop:cbet-decision:hu']).toBeDefined();
+    expect(result.decisionBuckets['flop:cbet-decision:hu'].aggressCount).toBe(1);
+    expect(result.decisionBuckets['turn:barrel-decision:hu']).toBeDefined();
+    expect(result.decisionBuckets['turn:barrel-decision:hu'].aggressCount).toBe(1);
+  });
+
+  it('records an RFI decision bucket from a first-in open-raise', () => {
+    const hand = {
+      gameState: {
+        dealerButtonSeat: BTN_SEAT,
+        mySeat: 6,
+        players: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} },
+        actionSequence: [
+          { seat: 2, action: 'fold', street: 'preflop', order: 0 },
+          { seat: 3, action: 'fold', street: 'preflop', order: 1 },
+          { seat: 4, action: 'fold', street: 'preflop', order: 2 },
+          { seat: 5, action: 'fold', street: 'preflop', order: 3 },
+          { seat: 6, action: 'raise', street: 'preflop', order: 4, amount: 2.5 },
+        ],
+      },
+      cardState: { communityCards: [], heroCards: [51, 46] },
+    };
+    const result = accumulateHeroDecisions({ hands: [hand], heroSeat: 6 });
+    const rfi = result.decisionBuckets['preflop:rfi-decision:BUTTON'];
+    expect(rfi).toBeDefined();
+    expect(rfi.aggressCount).toBe(1);
+    expect(rfi.aggressFrequency).toBe(1.0);
   });
 });

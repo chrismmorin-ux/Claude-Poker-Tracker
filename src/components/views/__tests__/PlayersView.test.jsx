@@ -36,8 +36,8 @@ vi.mock('../../ui/PlayerFilters', () => ({
 }));
 
 vi.mock('../../ui/PlayerRow', () => ({
-  PlayerRow: ({ player, assignedSeat, isSelecting, onClick, onEdit, onDelete }) => (
-    <tr data-testid={`player-row-${player.playerId}`}>
+  PlayerRow: ({ player, assignedSeat, isSelecting, onClick, onEdit, onDelete, matchScore }) => (
+    <tr data-testid={`player-row-${player.playerId}`} data-match-score={matchScore == null ? '' : String(matchScore)}>
       <td>{player.name}</td>
       <td>{assignedSeat || 'Unassigned'}</td>
       <td>
@@ -113,12 +113,17 @@ vi.mock('../../../utils/persistence/index', () => ({
   GUEST_USER_ID: 'guest',
 }));
 
+// Mutable state for the usePlayerFiltering mock (read at hook-call time, so it
+// can be overridden per-test without re-mocking). Default searchTerm '' →
+// no recognition query → ranking inactive → existing tests see input order.
+const mockFilteringState = { searchTerm: '', scores: {} };
+
 // Mock usePlayerFiltering hook
 vi.mock('../../../hooks/usePlayerFiltering', () => ({
   usePlayerFiltering: (players) => ({
     filteredPlayers: players,
     allStyleTags: ['TAG', 'LAG'],
-    searchTerm: '',
+    searchTerm: mockFilteringState.searchTerm,
     setSearchTerm: vi.fn(),
     sortBy: 'name',
     setSortBy: vi.fn(),
@@ -138,6 +143,8 @@ vi.mock('../../../hooks/usePlayerFiltering', () => ({
     setFilterSunglasses: vi.fn(),
     clearFilters: vi.fn(),
   }),
+  // WS-164: deterministic stub so PlayersView's ranking is testable.
+  scorePlayerMatch: (player) => ({ score: mockFilteringState.scores[player.playerId] ?? 0 }),
 }));
 
 const renderWithToast = (ui) => render(<ToastProvider>{ui}</ToastProvider>);
@@ -166,6 +173,9 @@ describe('PlayersView', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset recognition-ranking mock state (WS-164) so it doesn't leak.
+    mockFilteringState.searchTerm = '';
+    mockFilteringState.scores = {};
     // Reset mock context with test data
     mockPlayerContext.allPlayers = mockPlayers;
     mockPlayerContext.seatPlayers = {};
@@ -451,6 +461,31 @@ describe('PlayersView', () => {
     it('calls loadAllPlayers on mount', () => {
       renderWithToast(<PlayersView {...defaultProps} />);
       expect(mockPlayerContext.loadAllPlayers).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // WS-164 / SPR-110 — recognition ranking + confidence on PlayersView.
+  describe('recognition ranking (WS-164)', () => {
+    it('passes no matchScore to rows when no recognition query is active', () => {
+      // default mockFilteringState.searchTerm = '' → ranking inactive
+      renderWithToast(<PlayersView {...defaultProps} />);
+      expect(screen.getByTestId('player-row-1').getAttribute('data-match-score')).toBe('');
+      expect(screen.getByTestId('player-row-2').getAttribute('data-match-score')).toBe('');
+    });
+
+    it('ranks rows by match score (desc) and passes the score when a query is active', () => {
+      mockFilteringState.searchTerm = 'J';          // activates the recognition query
+      mockFilteringState.scores = { 1: 0.3, 2: 0.9 }; // player 2 scores higher than player 1
+      renderWithToast(<PlayersView {...defaultProps} />);
+
+      // Higher-scoring player 2 row appears before player 1 in the table body.
+      const rows = screen.getAllByTestId(/^player-row-/);
+      const order = rows.map((r) => r.getAttribute('data-testid'));
+      expect(order.indexOf('player-row-2')).toBeLessThan(order.indexOf('player-row-1'));
+
+      // Each row receives its numeric matchScore for the ConfidenceBar.
+      expect(screen.getByTestId('player-row-2').getAttribute('data-match-score')).toBe('0.9');
+      expect(screen.getByTestId('player-row-1').getAttribute('data-match-score')).toBe('0.3');
     });
   });
 });

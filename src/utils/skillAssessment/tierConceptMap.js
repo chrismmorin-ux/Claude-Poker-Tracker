@@ -198,6 +198,50 @@ export const CONCEPT_REGISTRY = {
   },
   'multiway-cbet-discipline-3way':      { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
   'multiway-cbet-discipline-4way-plus': { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
+
+  // ─── Tier 2 (cont.) — RFI open discipline umbrella (SPR-109 / WS-146 sixth claim) ────
+  // hero-pf-open-overfold: hero opens too tight first-in (open frequency too
+  // LOW). First UNDER-frequency decision-bucket rule. Tier 2 because RFI is the
+  // most fundamental preflop decision (whether to enter the pot). Baselines are
+  // position-split, so the 4 sub-concepts resolve via SITUATION_KEY_TO_CONCEPT
+  // (unlike the coarse multiway/bb-defense v1 umbrellas). Resolves the
+  // hero-pf-open-overfold rule DEFERRED since SPR-046.
+  'rfi-discipline-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 2,
+    parent: null,
+    children: [
+      'rfi-discipline-EARLY',
+      'rfi-discipline-MIDDLE',
+      'rfi-discipline-LATE',
+      'rfi-discipline-BUTTON',
+    ],
+  },
+  'rfi-discipline-EARLY':  { kind: 'rule-anchored-specific', tier: 2, parent: 'rfi-discipline-cluster', children: [] },
+  'rfi-discipline-MIDDLE': { kind: 'rule-anchored-specific', tier: 2, parent: 'rfi-discipline-cluster', children: [] },
+  'rfi-discipline-LATE':   { kind: 'rule-anchored-specific', tier: 2, parent: 'rfi-discipline-cluster', children: [] },
+  'rfi-discipline-BUTTON': { kind: 'rule-anchored-specific', tier: 2, parent: 'rfi-discipline-cluster', children: [] },
+
+  // ─── Tier 5 (cont.) — turn double-barrel discipline umbrella (SPR-109 / WS-146 sixth claim) ────
+  // hero-turn-barrel-frequency: hero fires the turn too often after cbetting
+  // the flop (barrel frequency too HIGH). Over-frequency decision-bucket rule.
+  // Tier 5 because multi-street barreling requires reading turn equity shifts
+  // on top of flop-continuation fundamentals. v1 fires on the coarse
+  // `turn:barrel-decision:hu` bucket → umbrella absorbs fire-state (no
+  // SITUATION_KEY_TO_CONCEPT entry yet, same as multiway v1). Children
+  // registered ahead per the catalog v2 split (good-runout vs bad-runout by
+  // equity-shifter card class). Sub-concept lessons follow in WS-149.
+  'turn-barrel-discipline-cluster': {
+    kind: 'rule-anchored-umbrella',
+    tier: 5,
+    parent: null,
+    children: [
+      'turn-barrel-discipline-good-runout',
+      'turn-barrel-discipline-bad-runout',
+    ],
+  },
+  'turn-barrel-discipline-good-runout': { kind: 'rule-anchored-specific', tier: 5, parent: 'turn-barrel-discipline-cluster', children: [] },
+  'turn-barrel-discipline-bad-runout':  { kind: 'rule-anchored-specific', tier: 5, parent: 'turn-barrel-discipline-cluster', children: [] },
 };
 
 // ─── Reverse map: situation-key → most-specific conceptId ───────────────
@@ -262,6 +306,16 @@ export const SITUATION_KEY_TO_CONCEPT = {
   // 2 entries (SB + BB).
   'preflop:none:SMALL_BLIND:def:oop:raise:vs3bet:na': 'oop-3bet-defense-SB',
   'preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na':   'oop-3bet-defense-BB',
+
+  // hero-pf-open-overfold rule (SPR-109 / WS-146 sixth claim)
+  // DECISION-bucket keys (not 8-axis action keys). 4 entries (one per open
+  // position); baselines are position-split so each resolves to its own
+  // specific sub-concept. The multiway/turn-barrel coarse umbrellas, by
+  // contrast, have no entries (umbrella absorbs fire-state).
+  'preflop:rfi-decision:EARLY':  'rfi-discipline-EARLY',
+  'preflop:rfi-decision:MIDDLE': 'rfi-discipline-MIDDLE',
+  'preflop:rfi-decision:LATE':   'rfi-discipline-LATE',
+  'preflop:rfi-decision:BUTTON': 'rfi-discipline-BUTTON',
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────
