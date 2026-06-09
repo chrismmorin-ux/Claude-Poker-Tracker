@@ -1,0 +1,63 @@
+id: "WS-212"
+title: "Kit upgrade 3.5.0 → 3.8.0 — install missing cwos-* script suite (run from HomeBase)"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 16.0
+priority_label: "P2"
+category: "cwos-infrastructure"
+capability: "core"
+program: "engineering"
+effort: "S"
+blocked_by: []
+blocked_by_note: "Cannot run autonomously in this repo. /kit-upgrade operates on the repo's own kit/scripts/cwos-kit-upgrade.js, which is absent (the whole problem) — so it can't bootstrap here. Must be initiated from a Claude Code session rooted in HomeBase (C:/Users/chris/Claude HomeBase) via /adopt --update (Step 1), then optionally /kit-upgrade in-repo (Step 2). Founder-driven meta-task; do not surface as an autonomous-execution candidate."
+enables: []
+sprint_id: ""
+decision_flags:
+  - "After provisioning, decide whether to also run /kit-upgrade --apply for the full schema migration (program v→v4, state-store) + validation gate, or stop at the additive /adopt --update."
+description: |
+  This repo is a CWOS adopter pinned at kit 3.5.0 (.cwos-version, adopted
+  2026-05-01). HomeBase is at 3.8.0. The kit/scripts/ suite (cwos-reconcile.js,
+  cwos-state-store.js, cwos-event.js, cwos-gc.js, cwos-kit-upgrade.js, etc.)
+  arrived/relocated at kit 3.6.0 (".cwos/scripts/ → kit/scripts/") and was never
+  installed here — there is no kit/ directory in the repo at all.
+
+  Consequence: every /next and /session-end has to hand-reconcile queue-index.yaml,
+  sprint-index.yaml, and counters because cwos-reconcile.js is absent, and the
+  anti-goal / state-store / shadow-event steps degrade to no-ops. Recurring
+  friction logged as fr-011 through fr-014 in .cwos-feedback.yaml (4+ occurrences;
+  the signature is queue-index drift — e.g. WS-185/WS-155 showing backlog in the
+  index while their ticket files were done — and soft-block flags missing from
+  the index summary, both because no automated index rebuild runs).
+
+  Fix (run from a HomeBase-rooted session):
+    Step 1 — provision the kit (additive update; preserves all local state):
+      /adopt "C:/Users/chris/OneDrive/Desktop/Claude-Poker-Tracker" --update
+      Review the update plan; expect kit/scripts/ to install as "new" files +
+      .kit-update sidecars for any customized command/rule files. CLAUDE.md's
+      project section (below the preamble separator) is preserved.
+    Step 2 — if a version gap remains, close 3.5.0 → 3.8.0 safely (in-repo, after
+      Step 1 installs kit/scripts/):
+      node kit/scripts/cwos-kit-upgrade.js --homebase "C:/Users/chris/Claude HomeBase"          # dry-run
+      node kit/scripts/cwos-kit-upgrade.js --homebase "C:/Users/chris/Claude HomeBase" --apply  # snapshot + schema migration + validation gate + auto-rollback
+
+  After: run /audit (install health) + npm test + npm run build in this repo,
+  review any .kit-update sidecars, and commit the new kit/ files.
+accept_criteria:
+  - "kit/scripts/cwos-reconcile.js + cwos-state-store.js present and runnable in this repo"
+  - ".cwos-version version bumped (3.5.0 → current) with installed_files hashes refreshed"
+  - "cwos-reconcile.js --quiet runs clean (or its warnings triaged); /next + /session-end no longer require hand-reconciling indexes"
+  - "Local state preserved: .claude/workstream/ queue + sprints + sessions intact; system/ files intact; CLAUDE.md project section intact; any .kit-update sidecars reviewed"
+  - "npm test + npm run build green post-upgrade"
+files_involved:
+  - "kit/ (new — provisioned by adopt/kit-upgrade)"
+  - ".cwos-version (version stamp + installed_files)"
+  - ".claude/commands/ + .claude/skills/ (HomeBase-authored surfaces refreshed; .kit-update sidecars for customized files)"
+source:
+  origin: "conversation-2026-06-09-session-end-followup"
+  conversation: "Founder asked whether /adopt runs here or from HomeBase after recurring kit/scripts-absent friction (fr-014)"
+status_note: "LEGITIMATE-BACKLOG. CWOS-ops meta-task; must run from HomeBase (see blocked_by_note). Soft-block damping (0.25× in /next) appropriate — should not anchor a product sprint. Resolves the root cause of fr-011..fr-014."
+created_at: "2026-06-09"
+updated_at: "2026-06-09"

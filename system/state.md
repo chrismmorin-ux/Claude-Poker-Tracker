@@ -46,13 +46,15 @@ Architecture detail: `.claude/context/SYSTEM_MODEL.md` (restored from backup 202
 
 | Status | Count |
 |--------|-------|
-| Backlog | 80 |
+| Backlog | 81 |
 | In Progress | 4 |
 | Done | 82 |
 | Completed | 7 |
 | Decomposed | 2 |
 | Tracking parent | 1 |
-| **Total** | **176** |
+| **Total** | **177** |
+
+> **CWOS-ops pending — WS-212:** this repo is on **kit 3.5.0**; HomeBase is **3.8.0** and the `kit/scripts/` suite (`cwos-reconcile.js` et al.) was never installed (arrived in 3.6.0). Root cause of the recurring manual index-reconcile each session (friction fr-011…fr-014). Fix runs **from a HomeBase session** — `/adopt "<this repo>" --update`, then optional in-repo `/kit-upgrade`. See `WS-212` for the full runbook.
 
 See `.claude/workstream/queue-index.yaml`. **Refactor Sprint anchor:** feature work paused; Items 1+2+3 DONE; Items 4 (decision-system extraction, NEXT), 5 (useLiveActionAdvisor split), 6 (queue triage) drive the next ~3–6 sessions.
 

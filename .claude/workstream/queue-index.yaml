@@ -2922,3 +2922,17 @@ items:
     claimed_by: "SPR-104"
     sprint_id: "SPR-104"
     status_note: "Claimed for SPR-104 (status: approved, awaiting new-session execution per founder direction 2026-05-31). Mode: execute (Path A — IMPLEMENT-LOCAL in heroState; founder ratified at /next composition after Explore-agent audit found all 3 shape-compatible accumulator modules invert dependency direction). 4-module vocab-reuse audit + Path-A scope detail captured in SPR-104.yaml composition_notes + implementation_notes."
+  - id: "WS-212"
+    title: "Kit upgrade 3.5.0 -> 3.8.0 — install missing cwos-* script suite (run from HomeBase)"
+    status: backlog
+    priority_score: 16.0
+    priority_label: "P2"
+    category: "cwos-infrastructure"
+    capability: "core"
+    program: "engineering"
+    type: improvement
+    effort: "S"
+    claimed_by: ""
+    sprint_id: ""
+    blocked_by_note: "Run from HomeBase only (/adopt --update, then optional in-repo /kit-upgrade). kit/scripts absent so /kit-upgrade cannot bootstrap here. Soft-block 0.25x — meta-task, do not anchor a sprint."
+    status_note: "Resolves root cause of fr-011..fr-014 (no cwos-reconcile.js -> manual index reconcile every session). Founder-driven CWOS-ops task."
