@@ -1,0 +1,29 @@
+id: "SPR-113"
+title: "Ship WS-020: Hook-hoisting race test (cross-surface)"
+status: done
+approved_at: "2026-06-10T16:11:44.268Z"
+completed_at: "2026-06-10T16:18:40.487Z"
+completed_by_commit: "773ca80"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-020: Hook-hoisting race test (cross-surface)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-10T16:11:44.268Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-020 selected (15 × no damping = 15).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-020"
+    title: "Hook-hoisting race test (cross-surface)"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-10T16:18:40.487Z"
+
+created_at: "2026-06-10T16:11:44.268Z"

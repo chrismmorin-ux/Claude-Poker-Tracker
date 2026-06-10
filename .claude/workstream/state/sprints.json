@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-10T04:02:02.846Z",
-  "updated_by_event": "ev-1781064122846-fe57e7c24cae",
+  "updated_at": "2026-06-10T16:18:42.564Z",
+  "updated_by_event": "ev-1781108322564-3492579f762d",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1833,7 +1833,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-113": {
+      "id": "SPR-113",
+      "title": "Ship WS-020: Hook-hoisting race test (cross-surface)",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-10T16:11:44.268Z",
+      "approved_at": "2026-06-10T16:11:44.268Z",
+      "completed_at": "2026-06-10T16:18:40.487Z",
+      "goal": "Ship WS-020: Hook-hoisting race test (cross-surface)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781064122846-fe57e7c24cae"
+  "last_event_log_head": "ev-1781108322564-3492579f762d"
 }

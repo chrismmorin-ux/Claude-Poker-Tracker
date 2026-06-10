@@ -2,9 +2,9 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 210
+total_items: 211
 by_status:
-  done: 137
+  done: 138
   decomposed: 1
   in_progress: 3
   backlog: 55
@@ -250,7 +250,7 @@ items:
 
   - id: "WS-020"
     title: "Hook-hoisting race test (cross-surface)"
-    status: backlog
+    status: done
     priority_score: 15
     category: exploit-anchor-library
     effort: M
@@ -2133,5 +2133,14 @@ items:
     category: cwos-infrastructure
     effort: S
     program: engineering
+    capability: core
+
+  - id: "WS-213"
+    title: "Harden naive YAML reader to strip inline comments on scalar values"
+    status: backlog
+    priority_score: 12
+    category: infrastructure
+    effort: S
+    program: self-compliance
     capability: core
 

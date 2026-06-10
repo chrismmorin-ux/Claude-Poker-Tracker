@@ -2,10 +2,11 @@ id: "WS-020"
 title: "Hook-hoisting race test (cross-surface)"
 legacy_id: "EAL-G5-HH"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "773ca80"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -32,3 +33,4 @@ source:
   source_line: 116
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781108320522-07b72a54ab10"

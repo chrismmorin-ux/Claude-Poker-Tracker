@@ -1,0 +1,51 @@
+id: "WS-213"
+title: "Harden naive YAML reader to strip inline comments on scalar values"
+type: improvement
+status: backlog
+priority_score: 12.0
+category: infrastructure
+program: self-compliance
+capability: core
+description: |
+  The kit's naive YAML reader (used by cwos-next.js and other kit scripts) does
+  NOT strip inline comments from scalar values. `.cwos-config.yaml` has
+  `max_items: 5  # ...` / `max_effort_sessions: 2  # ...`; the reader returned
+  the STRING "5  # ..." instead of the integer 5. In cwos-next.js these were
+  truthy, overwrote the numeric ceremony defaults, and made the cap comparison
+  `items.length >= cap.max_items` (number vs string) evaluate to NaN → never
+  true → the sprint cap silently never fired. `/next compose` produced a
+  21-item / ~33-session "standard" sprint (6x the 5-item / 2-session cap).
+
+  SPR-113 (2026-06-10) fixed this at the consumer in cwos-next.js loadConfig()
+  via a toInt() helper that parses the leading integer and discards trailing
+  comments. That fix is scoped to the two sprint-cap fields ONLY. Every OTHER
+  consumer of the shared reader still receives inline-comment-polluted scalar
+  strings.
+
+  Root fix: strip inline comments from scalar values inside the shared YAML
+  reader itself (the `# ...` after a value, while preserving `#` inside quoted
+  strings and not mangling URLs/hashes inside quotes). Same flaw class as the
+  flow-mapping misparse that caused the false `first-run-required` block on
+  domain-correctness (2026-06-09).
+accept_criteria: |
+  - Shared reader strips trailing inline comments from unquoted scalar values
+    (e.g. `key: 5  # note` -> 5, `key: foo  # note` -> "foo").
+  - `#` inside a quoted scalar is preserved (e.g. `key: "a#b"` -> "a#b", color
+    hex strings, URL fragments).
+  - A regression test covers both: comment stripped on unquoted, preserved on
+    quoted.
+  - cwos-next.js loadConfig() still parses caps correctly (the local toInt
+    guard can stay as defense-in-depth).
+effort: S
+files_involved:
+  - kit/scripts/cwos-next.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  origin: "SPR-113 follow-up — broader root-cause of the inline-comment cap-breach bug"
+created_at: "2026-06-10"
+updated_at: "2026-06-10"

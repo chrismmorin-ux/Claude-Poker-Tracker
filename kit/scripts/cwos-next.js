@@ -111,17 +111,27 @@ function readContextOverrideClass() {
 function loadConfig() {
   // Standard defaults if `.cwos-config.yaml` is absent. Per next.md Step 1b.
   const defaults = { ceremony: 'standard', sprints: { max_items: 5, max_effort_sessions: 2 } };
+  // The naive YAML reader keeps inline comments on scalar values
+  // (e.g. `max_items: 5  # ...` parses as the STRING "5  # ..."). Coerce numeric
+  // caps to integers so the cap comparisons in compose() don't silently NaN out
+  // and disable the cap entirely. Falls back to the default when no leading int.
+  const toInt = (v, dflt) => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    const m = typeof v === 'string' ? v.match(/-?\d+/) : null;
+    return m ? parseInt(m[0], 10) : dflt;
+  };
   try {
     const p = path.join(repoRoot(), '.cwos-config.yaml');
     if (!fs.existsSync(p)) return defaults;
     const r = readYAMLFile(p);
     if (!r.ok || !r.data) return defaults;
     const c = r.data;
+    const cs = c.sprints || {};
     return {
       ceremony: c.ceremony || defaults.ceremony,
       sprints: {
-        max_items: (c.sprints && c.sprints.max_items) || defaults.sprints.max_items,
-        max_effort_sessions: (c.sprints && c.sprints.max_effort_sessions) || defaults.sprints.max_effort_sessions,
+        max_items: toInt(cs.max_items, defaults.sprints.max_items),
+        max_effort_sessions: toInt(cs.max_effort_sessions, defaults.sprints.max_effort_sessions),
       },
     };
   } catch { return defaults; }

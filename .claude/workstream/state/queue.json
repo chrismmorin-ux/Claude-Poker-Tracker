@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T04:20:56.450Z",
-  "updated_by_event": "ev-1781065256450-f5d775279756",
+  "updated_at": "2026-06-10T16:25:27.810Z",
+  "updated_by_event": "ev-1781108727810-7e56f0f669e2",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -448,7 +448,7 @@
     "WS-020": {
       "id": "WS-020",
       "title": "Hook-hoisting race test (cross-surface)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 15,
       "category": "exploit-anchor-library",
       "effort": "M",
@@ -5385,7 +5385,29 @@
         ".claude/commands/ + .claude/skills/ (HomeBase-authored surfaces refreshed; .kit-update sidecars for customized files)"
       ],
       "source_class": "conversation"
+    },
+    "WS-213": {
+      "id": "WS-213",
+      "title": "Harden naive YAML reader to strip inline comments on scalar values",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "infrastructure",
+      "effort": "S",
+      "program": "self-compliance",
+      "capability": "core",
+      "sprint_id": "",
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "SPR-113 follow-up — broader root-cause of the inline-comment cap-breach bug"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "kit/scripts/cwos-next.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781065256450-f5d775279756"
+  "last_event_log_head": "ev-1781108727810-7e56f0f669e2"
 }
