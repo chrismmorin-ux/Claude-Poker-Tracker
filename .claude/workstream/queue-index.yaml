@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 218
+total_items: 220
 by_status:
-  done: 139
+  done: 140
   decomposed: 1
   in_progress: 3
-  backlog: 61
-  deferred: 5
+  backlog: 51
+  deferred: 16
   dismissed: 1
   completed: 7
   review: 1
@@ -53,6 +53,7 @@ by_category:
   tableview-invariant-audit: 3
   test-health: 5
   test-reliability: 1
+  ux: 2
 
 items:
   - id: "WS-001"
@@ -300,7 +301,7 @@ items:
 
   - id: "WS-025"
     title: "In-app test assertions for 9 autonomy red lines"
-    status: backlog
+    status: done
     priority_score: 15
     category: exploit-anchor-library
     effort: M
@@ -625,7 +626,7 @@ items:
 
   - id: "WS-058"
     title: "Phase 3"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: range-lab
     effort: M
@@ -635,7 +636,7 @@ items:
 
   - id: "WS-059"
     title: "Phase 4"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: range-lab
     effort: M
@@ -645,7 +646,7 @@ items:
 
   - id: "WS-060"
     title: "Phase 5"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: range-lab
     effort: M
@@ -665,7 +666,7 @@ items:
 
   - id: "WS-062"
     title: "Pilot refits to v2"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: sidebar-program
     effort: M
@@ -724,7 +725,7 @@ items:
 
   - id: "WS-068"
     title: "Stream E"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -734,7 +735,7 @@ items:
 
   - id: "WS-069"
     title: "Stream E"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -744,7 +745,7 @@ items:
 
   - id: "WS-070"
     title: "Stream U"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -754,7 +755,7 @@ items:
 
   - id: "WS-071"
     title: "Stream U"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -764,7 +765,7 @@ items:
 
   - id: "WS-072"
     title: "Stream U"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -774,7 +775,7 @@ items:
 
   - id: "WS-073"
     title: "Stream U"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
@@ -1583,7 +1584,7 @@ items:
 
   - id: "WS-156"
     title: "HSP-X2 — Caching strategy (event-driven; only claim if production HSP usage surfaces a perf issue)"
-    status: backlog
+    status: deferred
     priority_score: 10
     category: hero-state-primitive
     effort: M
@@ -2209,5 +2210,23 @@ items:
     category: test-reliability
     effort: S
     program: engineering
+    capability: core
+
+  - id: "WS-221"
+    title: "Global anchor-library reset — red line #4b (design-gated destructive action)"
+    status: backlog
+    priority_score: 9
+    category: ux
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-222"
+    title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
+    status: backlog
+    priority_score: 10
+    category: ux
+    effort: M
+    program: design
     capability: core
 

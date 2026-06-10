@@ -1,12 +1,12 @@
 {
-  "composed_at": "2026-06-10T16:42:03.027Z",
-  "goal": "Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)",
+  "composed_at": "2026-06-10T18:53:54.227Z",
+  "goal": "Ship WS-025: In-app test assertions for 9 autonomy red lines",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-023",
-      "title": "Per-seed-anchor snapshot tests (RT-108 pattern)",
+      "id": "WS-025",
+      "title": "In-app test assertions for 9 autonomy red lines",
       "raw_score": 15,
       "adjusted_score": 15,
       "effort": "M",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-023 selected (15 × no damping = 15).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-025 selected (15 × no damping = 15).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

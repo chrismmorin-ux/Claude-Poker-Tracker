@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T18:27:54.588Z",
-  "updated_by_event": "ev-1781116074588-0ad682eb0096",
+  "updated_at": "2026-06-10T19:21:19.400Z",
+  "updated_by_event": "ev-1781119279400-ad41b2dd223a",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -558,7 +558,7 @@
     "WS-025": {
       "id": "WS-025",
       "title": "In-app test assertions for 9 autonomy red lines",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 15,
       "category": "exploit-anchor-library",
       "effort": "M",
@@ -1318,7 +1318,7 @@
     "WS-058": {
       "id": "WS-058",
       "title": "Phase 3",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "range-lab",
       "effort": "M",
@@ -1342,7 +1342,7 @@
     "WS-059": {
       "id": "WS-059",
       "title": "Phase 4",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "range-lab",
       "effort": "M",
@@ -1366,7 +1366,7 @@
     "WS-060": {
       "id": "WS-060",
       "title": "Phase 5",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "range-lab",
       "effort": "M",
@@ -1412,7 +1412,7 @@
     "WS-062": {
       "id": "WS-062",
       "title": "Pilot refits to v2",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "sidebar-program",
       "effort": "M",
@@ -1549,7 +1549,7 @@
     "WS-068": {
       "id": "WS-068",
       "title": "Stream E",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -1573,7 +1573,7 @@
     "WS-069": {
       "id": "WS-069",
       "title": "Stream E",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -1597,7 +1597,7 @@
     "WS-070": {
       "id": "WS-070",
       "title": "Stream U",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -1622,7 +1622,7 @@
     "WS-071": {
       "id": "WS-071",
       "title": "Stream U",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -1647,7 +1647,7 @@
     "WS-072": {
       "id": "WS-072",
       "title": "Stream U",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -1672,7 +1672,7 @@
     "WS-073": {
       "id": "WS-073",
       "title": "Stream U",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "played-hand-review-protocol",
       "effort": "M",
@@ -3703,7 +3703,7 @@
     "WS-156": {
       "id": "WS-156",
       "title": "HSP-X2 — Caching strategy (event-driven; only claim if production HSP usage surfaces a perf issue)",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 10,
       "category": "hero-state-primitive",
       "effort": "M",
@@ -5592,7 +5592,59 @@
         "src/components/views/PostflopDrillsView/__tests__/RangeLabExplorer.test.jsx"
       ],
       "source_class": "untagged"
+    },
+    "WS-221": {
+      "id": "WS-221",
+      "title": "Global anchor-library reset — red line #4b (design-gated destructive action)",
+      "status": "backlog",
+      "priority_score": 9,
+      "category": "ux",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "source": {
+        "type": "manual",
+        "created_by": "ai-during-sprint",
+        "sprint_id": "SPR-115",
+        "origin_item": "WS-025"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/reducers/anchorLibraryReducer.js",
+        "src/constants/anchorLibraryConstants.js",
+        "src/components/views/CalibrationDashboardView/",
+        "src/components/views/AnchorLibraryView/__tests__/autonomyRedLines.test.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-222": {
+      "id": "WS-222",
+      "title": "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
+      "status": "backlog",
+      "priority_score": 10,
+      "category": "ux",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "source": {
+        "type": "manual",
+        "created_by": "ai-during-sprint",
+        "sprint_id": "SPR-115",
+        "origin_item": "WS-025"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/views/SettingsView/",
+        "src/components/views/CalibrationDashboardView/EnrollmentStateBanner.jsx",
+        "src/reducers/anchorLibraryReducer.js",
+        "src/hooks/useAnchorLibraryPersistence.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781116074588-0ad682eb0096"
+  "last_event_log_head": "ev-1781119279400-ad41b2dd223a"
 }

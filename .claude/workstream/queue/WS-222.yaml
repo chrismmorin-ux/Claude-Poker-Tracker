@@ -1,0 +1,41 @@
+id: "WS-222"
+title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
+type: manual
+status: backlog
+priority_score: 10.0
+category: ux
+program: design
+capability: core
+description: |
+  The ENROLLMENT_TOGGLED reducer action (Q1-A global enrollment toggle for
+  the anchor-calibration loop) has NO UI dispatch site. The Calibration
+  Dashboard's EnrollmentStateBanner CTA says "Open Settings", but SettingsView
+  has no anchor-enrollment control — the owner currently cannot enroll at all.
+
+  This fails safe (default not-enrolled means the Tier 2 calibration loop
+  never runs without consent — red line #1 holds), but the opt-in promised by
+  the red line is not actually reachable. Found during WS-025 (SPR-115) recon.
+
+  Scope: design first — UX-touching change (new Settings control). Gate 1 +
+  Gate 4 surface artifact (Settings placement, copy per AP-06 discipline,
+  enrolled/not-enrolled state display), then wire the toggle to dispatch
+  ENROLLMENT_TOGGLED and persist the enrollment slice, and wire the banner's
+  onOpenSettings CTA to actually navigate.
+accept_criteria: "Settings exposes an anchor-calibration enrollment toggle dispatching ENROLLMENT_TOGGLED; state persists across reload; EnrollmentStateBanner CTA navigates to it; Gate 4 surface artifact updated"
+effort: "M"
+files_involved:
+  - src/components/views/SettingsView/
+  - src/components/views/CalibrationDashboardView/EnrollmentStateBanner.jsx
+  - src/reducers/anchorLibraryReducer.js
+  - src/hooks/useAnchorLibraryPersistence.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "UX: Settings section placement + copy for the enrollment explainer"
+source:
+  type: manual
+  created_by: ai-during-sprint
+  sprint_id: "SPR-115"
+  origin_item: "WS-025"
+created_at: "2026-06-10"

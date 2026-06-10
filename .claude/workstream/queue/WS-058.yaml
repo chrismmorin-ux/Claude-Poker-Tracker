@@ -2,7 +2,7 @@ id: "WS-058"
 title: "Phase 3"
 legacy_id: "RL-P3"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -29,5 +29,7 @@ source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Ready to Start"
   source_line: 292
+deferred_at: "2026-06-10"
+deferred_reason: "Range Lab Phase 3 (AI-native differentiators) — not on active roadmap; legacy-migration item with truncated title. Deferred to clear engineering cap-breach distorting /next composition. Reversible: set status back to backlog to revive."
 created_at: "2026-05-01"
-updated_at: "2026-05-14"
+updated_at: "2026-06-10"

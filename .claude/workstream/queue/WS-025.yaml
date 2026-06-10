@@ -2,10 +2,11 @@ id: "WS-025"
 title: "In-app test assertions for 9 autonomy red lines"
 legacy_id: "EAL-G5-RL"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "1c25e78"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -31,3 +32,4 @@ source:
   source_line: 121
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781119278802-0fc0caaa7587"

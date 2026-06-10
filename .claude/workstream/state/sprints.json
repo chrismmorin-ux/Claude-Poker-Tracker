@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-10T16:48:44.781Z",
-  "updated_by_event": "ev-1781110124781-cc3bce90367e",
+  "updated_at": "2026-06-10T19:21:19.400Z",
+  "updated_by_event": "ev-1781119279400-ad41b2dd223a",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1865,7 +1865,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-115": {
+      "id": "SPR-115",
+      "title": "Ship WS-025: In-app test assertions for 9 autonomy red lines",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-10T18:53:54.368Z",
+      "approved_at": "2026-06-10T18:53:54.368Z",
+      "completed_at": "2026-06-10T19:21:18.761Z",
+      "goal": "Ship WS-025: In-app test assertions for 9 autonomy red lines",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781110124781-cc3bce90367e"
+  "last_event_log_head": "ev-1781119279400-ad41b2dd223a"
 }

@@ -1,0 +1,44 @@
+id: "WS-221"
+title: "Global anchor-library reset — red line #4b (design-gated destructive action)"
+type: manual
+status: backlog
+priority_score: 9.0
+category: ux
+program: design
+capability: core
+description: |
+  Red line #4b (three-way reversibility, arm b) promises a global library
+  reset — one owner action that resets all anchor calibration data. The EAL
+  Gate 2 audit (docs/design/audits/2026-04-24-blindspot-exploit-anchor-library.md)
+  ratified it, but it was never built: only per-anchor reset (retirementCopy
+  'reset' action) and per-observation incognito exist.
+
+  Found during WS-025 (SPR-115): the autonomy red-lines contract suite
+  (src/components/views/AnchorLibraryView/__tests__/autonomyRedLines.test.jsx)
+  carries an it.todo marker referencing this item.
+
+  Scope: design first — this is a NEW DESTRUCTIVE ACTION, so the Design
+  Program gates apply (Gate 1 entry + Gate 4 surface artifact: confirmation
+  flow, copy via deterministic generator with AP-06 discipline, placement in
+  Calibration Dashboard or Settings, undo/no-undo decision). Then reducer
+  action + persistence + the contract-suite todo replaced with real
+  assertions.
+accept_criteria: "Gate 1 + Gate 4 artifacts exist; global reset implemented behind 2-tap destructive confirm; autonomyRedLines.test.jsx it.todo for #4b replaced with passing assertions"
+effort: "M"
+files_involved:
+  - src/reducers/anchorLibraryReducer.js
+  - src/constants/anchorLibraryConstants.js
+  - src/components/views/CalibrationDashboardView/
+  - src/components/views/AnchorLibraryView/__tests__/autonomyRedLines.test.jsx
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "UX: placement — Calibration Dashboard vs Settings"
+  - "Scope: reset anchors only, observations only, or both"
+source:
+  type: manual
+  created_by: ai-during-sprint
+  sprint_id: "SPR-115"
+  origin_item: "WS-025"
+created_at: "2026-06-10"
