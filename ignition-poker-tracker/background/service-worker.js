@@ -13,6 +13,7 @@ import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, 
 import * as errors from '../shared/error-reporter.js';
 import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
+import { validateHandForRelay } from '../shared/wire-schemas.js';
 import { deepFreeze } from '../shared/freeze-utils.js';
 
 const SW_VERSION = EXTENSION_VERSION;
@@ -557,12 +558,35 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       const result = await chrome.storage.local.get(STORAGE_KEYS.CAPTURED_HANDS);
       const legacyHands = result[STORAGE_KEYS.CAPTURED_HANDS] || [];
       if (legacyHands.length > 0) {
-        // Import legacy hands into the new session queue
+        // Import legacy hands into the new session queue.
+        // WS-109: legacy hands were captured under an older schema and MUST pass
+        // validateHandForRelay before entering the queue — the same gate the live
+        // capture path enforces (content/ignition-capture.js onHandComplete).
+        // enqueueHand assumes a pre-validated record; bypassing the gate here let
+        // malformed legacy hands relay to the app unvalidated. Drop + report
+        // invalid ones rather than enqueue them.
         const { enqueueHand } = await import('../shared/storage-writer.js');
+        let migrated = 0;
+        let skipped = 0;
         for (const hand of legacyHands) {
+          const validation = validateHandForRelay(hand);
+          if (!validation.valid) {
+            skipped++;
+            console.warn('[SW] Legacy hand failed validation, not migrated:', validation.errors);
+            errors.report(
+              'validation',
+              `Legacy migration: hand failed validateHandForRelay: ${validation.errors.join(', ')}`,
+              { op: 'update_migration', handNumber: hand?.ignitionMeta?.handNumber }
+            );
+            continue;
+          }
           await enqueueHand(hand);
+          migrated++;
         }
-        console.log(`[SW] Migrated ${legacyHands.length} legacy hand(s) to session queue`);
+        console.log(
+          `[SW] Migrated ${migrated} legacy hand(s) to session queue` +
+          (skipped > 0 ? `; skipped ${skipped} invalid` : '')
+        );
       }
       // Clear legacy storage
       await chrome.storage.local.remove([STORAGE_KEYS.CAPTURED_HANDS, 'ignition_hand_count', 'ignition_acked_ids']);

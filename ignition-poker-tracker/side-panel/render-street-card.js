@@ -120,10 +120,23 @@ export const renderStreetCard = (street, advice, liveContext, appSeatData, focus
     return;
   }
 
-  // Live but no advice yet (e.g. DEALING/PREFLOP before engine responds):
-  // hold existing visual content and show shimmer — prevents empty/stale flash
-  if (isLive && !advice && loading && card.innerHTML) {
-    card.classList.toggle('loading-advice', true);
+  // Live but no advice yet. Two sub-cases, sharing one shimmer toggle (R-2.3
+  // mutation discipline — do not add a second classList.toggle here):
+  //   • DEALING (WS-113 / RT-90): the gap between hands — the prior hand is
+  //     over and the new hand has no cards/advice yet. Holding the prior hand's
+  //     content under the shimmer misrepresents stale advice as loading-current
+  //     ("DEALING shimmer animates prior-hand content"). Blank the Z3 advice
+  //     body so no prior-hand advice shows; the .street-card min-height (200px)
+  //     + the loading-advice ::after shimmer keep the frame stable. This branch
+  //     is UNCONDITIONAL on existing content so repeated DEALING renders stay
+  //     blank rather than falling through to the live "waiting" placeholder.
+  //   • PREFLOP awaiting advice: the now-live hand — hold existing content +
+  //     shimmer to prevent an empty/stale flash. Only fires when content exists.
+  const dealing = isLive && !advice && liveContext.state === 'DEALING';
+  if (dealing || (isLive && !advice && loading && card.innerHTML)) {
+    if (dealing && card.innerHTML !== '') card.innerHTML = '';
+    card.classList.toggle('loading-advice', dealing ? !!loading : true);
+    if (dealing) _prevStreet = null;
     return;
   }
 

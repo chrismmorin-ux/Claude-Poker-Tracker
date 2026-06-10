@@ -92,13 +92,18 @@ describe('versionMismatchStorage (WS-076)', () => {
     expect(sessionStorage.getItem(KEY)).toBeNull();
   });
 
-  it('write swallows sessionStorage failures (e.g. storage full)', () => {
+  it('write swallows sessionStorage failures (e.g. storage full) but logs a breadcrumb (WS-110)', () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota exceeded');
     });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() =>
       writeReloadFlag({ extProtocolVersion: 2, extManifestVersion: '0.9.0', appProtocolVersion: 3 })
     ).not.toThrow();
+    // WS-110: the failure must NOT be silently swallowed — a breadcrumb is logged
+    // (per .claude/rules/error-handling) while the user still degrades gracefully.
+    expect(warnSpy).toHaveBeenCalledWith('[versionMismatch] writeReloadFlag failed:', 'quota exceeded');
+    warnSpy.mockRestore();
     setItemSpy.mockRestore();
   });
 
@@ -144,11 +149,14 @@ describe('versionMismatchStorage dismiss flag (WS-077)', () => {
     expect(readDismissedFlag()).toBe(false);
   });
 
-  it('writeDismissedFlag swallows sessionStorage failures', () => {
+  it('writeDismissedFlag swallows sessionStorage failures but logs a breadcrumb (WS-110)', () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() => writeDismissedFlag()).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledWith('[versionMismatch] writeDismissedFlag failed:', 'quota');
+    warnSpy.mockRestore();
     setItemSpy.mockRestore();
   });
 

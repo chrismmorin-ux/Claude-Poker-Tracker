@@ -27,7 +27,13 @@ export const writeReloadFlag = ({ extProtocolVersion, extManifestVersion, appPro
       fromExtManifestVersion: extManifestVersion ?? null,
       fromAppProtocolVersion: appProtocolVersion,
     }));
-  } catch (_) { /* swallow per UpdateBanner.jsx convention */ }
+  } catch (e) {
+    // QuotaExceededError / disabled storage: the post-reload verification flag
+    // won't persist, so useSyncBridge can't confirm whether the reload fixed
+    // the mismatch. Non-fatal — degrade silently for the user, but leave a
+    // breadcrumb (per .claude/rules/error-handling; matches rangeLabPersistence).
+    console.warn('[versionMismatch] writeReloadFlag failed:', e?.message || e);
+  }
 };
 
 /**
@@ -73,7 +79,12 @@ const DISMISS_KEY = 'versionMismatchDismissed';
 export const writeDismissedFlag = () => {
   try {
     sessionStorage.setItem(DISMISS_KEY, JSON.stringify({ ts: Date.now() }));
-  } catch (_) { /* swallow */ }
+  } catch (e) {
+    // QuotaExceededError / disabled storage: the "continue anyway" override
+    // won't persist, so the banner may reappear next mount. Non-fatal — degrade
+    // silently for the user, but leave a breadcrumb (per error-handling rule).
+    console.warn('[versionMismatch] writeDismissedFlag failed:', e?.message || e);
+  }
 };
 
 /** True iff the user has dismissed the version-mismatch banner this session. */
