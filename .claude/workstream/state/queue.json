@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T16:48:44.781Z",
-  "updated_by_event": "ev-1781110124781-cc3bce90367e",
+  "updated_at": "2026-06-10T18:27:54.588Z",
+  "updated_by_event": "ev-1781116074588-0ad682eb0096",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5407,7 +5407,192 @@
         "kit/scripts/cwos-next.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-214": {
+      "id": "WS-214",
+      "title": "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "seam-integrity",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-215"
+      ],
+      "files_involved": [
+        "src/utils/rangeEngine/index.js",
+        "src/utils/exploitEngine/rangeRules.js",
+        "src/utils/exploitEngine/__tests__/bucketQueryUtils.test.js",
+        "src/utils/exploitEngine/decisionAccumulator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-215": {
+      "id": "WS-215",
+      "title": "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw",
+      "status": "backlog",
+      "priority_score": 13,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [
+        "WS-214"
+      ],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/rangeRules.js",
+        "src/utils/rangeEngine/index.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-216": {
+      "id": "WS-216",
+      "title": "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)",
+      "status": "backlog",
+      "priority_score": 10,
+      "category": "seam-integrity",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/reducers/gameReducer.js",
+        "src/hooks/usePersistence.js",
+        "src/utils/handAnalysis/handTimeline.js",
+        "src/utils/tendencyCalculations.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-217": {
+      "id": "WS-217",
+      "title": "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type",
+      "status": "backlog",
+      "priority_score": 10,
+      "category": "seam-integrity",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "ignition-poker-tracker/shared/protocol.js",
+        "ignition-poker-tracker/shared/hand-state-machine.js",
+        "ignition-poker-tracker/side-panel/__tests__/message-sequences.js",
+        "ignition-poker-tracker/side-panel/render-street-card.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-218": {
+      "id": "WS-218",
+      "title": "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
+      "status": "backlog",
+      "priority_score": 11,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/anchorLibrary/validateAnchor.js",
+        "src/utils/assumptionEngine/assumptionTypes.js",
+        "src/utils/anchorLibrary/__tests__/claimContractSeam.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-219": {
+      "id": "WS-219",
+      "title": "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test",
+      "status": "backlog",
+      "priority_score": 8,
+      "category": "seam-integrity",
+      "effort": "S",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/persistence/sessionsStorage.js",
+        "src/utils/persistence/__tests__/sessionsStorage.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-220": {
+      "id": "WS-220",
+      "title": "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load",
+      "status": "backlog",
+      "priority_score": 9,
+      "category": "test-reliability",
+      "effort": "S",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "origin": "seam-audit-2026-06-10"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/views/PostflopDrillsView/__tests__/RangeLabExplorer.test.jsx"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781110124781-cc3bce90367e"
+  "last_event_log_head": "ev-1781116074588-0ad682eb0096"
 }

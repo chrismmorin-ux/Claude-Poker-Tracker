@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-06-10T16:48:44.849Z",
-  "updated_by_event": "ev-1781110124848-94f52b65aabc",
+  "updated_at": "2026-06-10T18:27:43.021Z",
+  "updated_by_event": "ev-1781116063021-e18fb8934207",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -736,7 +736,7 @@
       "founder_priority": 3,
       "health_ceiling": 0,
       "findings_open": 0,
-      "work_items_open": 14,
+      "work_items_open": 18,
       "problem_classes": [
         {
           "name": "Test Coverage & Quality",
@@ -821,7 +821,13 @@
         }
       },
       "cap_breach": {
-        "active": false
+        "active": true,
+        "work_items_open": 18,
+        "findings_open": 0,
+        "max_open_items": 15,
+        "priority_floor": 18,
+        "ratio": 1.2,
+        "since": "2026-06-10"
       },
       "health_breakdown": {
         "finding_health": 1,
@@ -1286,5 +1292,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1781110124848-94f52b65aabc"
+  "last_event_log_head": "ev-1781116063021-e18fb8934207"
 }

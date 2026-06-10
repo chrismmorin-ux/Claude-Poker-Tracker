@@ -1,0 +1,44 @@
+id: "WS-215"
+title: "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw"
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  2026-06-10 cross-stream seam audit: rangeRules.js:131-132 backs an integer
+  success count out of getRangeWidthSummary values (`coldCall / 100 *
+  facedRaiseHands`) and feeds it to a frequentist proportion test — but those
+  values are Bayesian posterior GRID WIDTHS (PRIOR_WEIGHT=10 smoothed), not
+  observed frequencies. In the low-sample regime live tracking actually
+  operates in (5-15 hands/villain), the prior dominates and rules fire or
+  stay silent for the wrong reason: a 30%-observed cold-caller over 10 hands
+  can read ~20% width (below the 25% trigger) while a 0-observation player
+  reads ~10-12% pure prior. Mixing Bayesian smoothing into a frequentist k
+  is statistically incoherent. Fix needs theory design: either test on raw
+  observed counts (sub-action counts exist) or replace the threshold test
+  with a posterior-credible-interval criterion consistent with
+  rangeEngine/CLAUDE.md "Bayesian, not frequentist".
+accept_criteria:
+  - "Range-profile exploit rules gate on a statistically coherent criterion (documented in the module header)"
+  - "Low-sample behavior verified: prior-dominated profiles do not fire frequency-threshold rules"
+  - "Seam test from WS-214 extended to cover the corrected criterion"
+effort: "M"
+files_involved:
+  - src/utils/exploitEngine/rangeRules.js
+  - src/utils/rangeEngine/index.js
+blocked_by: ["WS-214"]
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Theory: observed-count proportion test vs posterior credible-interval criterion for range-profile rules"
+source:
+  type: manual
+  created_by: user
+  origin: "seam-audit-2026-06-10"
+created_at: "2026-06-10"

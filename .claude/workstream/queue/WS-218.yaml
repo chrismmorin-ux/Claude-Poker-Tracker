@@ -1,0 +1,45 @@
+id: "WS-218"
+title: "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 11.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  2026-06-10 cross-stream seam audit (surfaced fixing the seed-operator
+  divergence, commit 299a5f8): 3 of 4 EAL seed predicates
+  (riverProbeBluffFrequencyAfterTurnXX, callVsTurnDoubleBarrelPaired,
+  foldVsFlopDonkWetConnected) are NOT in assumptionEngine PREDICATE_KEYS, so
+  the documented two-validator inheritance contract (validateAnchor JSDoc
+  shows callers invoking validateAssumption too — but no caller ever does)
+  cannot be wired without every seed failing validateClaim. Decide: (a)
+  anchor predicates join PREDICATE_KEYS under the 4-artifact discipline
+  (assumptionTypes entry + producer recipe + narrative + Tier-1 scenario per
+  assumptionEngine/CLAUDE.md), or (b) anchors get their own predicate
+  registry with a compound-schemaVersion-aware base validation path. Then
+  wire the inheritance validation and widen claimContractSeam.test.js from
+  operator-only to full claim validation.
+accept_criteria:
+  - "Decision recorded via /decide with rationale"
+  - "validateAnchor (or its caller) executes base-contract validation per the decision"
+  - "claimContractSeam.test.js widened to the decided contract; all 4 seeds pass"
+effort: "M"
+files_involved:
+  - src/utils/anchorLibrary/validateAnchor.js
+  - src/utils/assumptionEngine/assumptionTypes.js
+  - src/utils/anchorLibrary/__tests__/claimContractSeam.test.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Design: anchor predicates join PREDICATE_KEYS (4-artifact discipline) vs anchor-owned predicate space"
+source:
+  type: manual
+  created_by: user
+  origin: "seam-audit-2026-06-10"
+created_at: "2026-06-10"

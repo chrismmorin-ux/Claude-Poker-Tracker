@@ -1,0 +1,35 @@
+id: "WS-220"
+title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 9.0
+priority_label: "P3"
+category: "test-reliability"
+capability: "core"
+program: "engineering"
+description: |
+  RangeLabExplorer.test.jsx > "painting the second grid includes a hand in
+  Range B" exceeds the 10s testTimeout under full-suite parallel load (fails
+  in both full runs on 2026-06-10) but passes in isolation (8/8, ~19s file
+  time). Pre-existing — predates the 2026-06-10 seam fixes. A red full-suite
+  run that engineers learn to ignore erodes CI trust (the deployment
+  checklist blocks on any failing test). Either profile and speed up the
+  grid-painting interaction (fireEvent storm?), raise the per-test timeout
+  with justification, or isolate the file from parallel contention.
+accept_criteria:
+  - "3 consecutive full-suite runs green with no RangeLabExplorer timeout"
+effort: "S"
+files_involved:
+  - src/components/views/PostflopDrillsView/__tests__/RangeLabExplorer.test.jsx
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  origin: "seam-audit-2026-06-10"
+created_at: "2026-06-10"

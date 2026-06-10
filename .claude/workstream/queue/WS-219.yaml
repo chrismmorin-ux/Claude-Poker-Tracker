@@ -1,0 +1,37 @@
+id: "WS-219"
+title: "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P3"
+category: "seam-integrity"
+capability: "core"
+program: "engineering"
+description: |
+  2026-06-10 cross-stream seam audit: createSession writes tipAmount: null
+  on create while createSessionAtomic omits the field entirely — schema
+  divergence between the two creators that could confuse future migrations
+  (downstream readers tolerate it via `|| 0`). Also endSessionAtomic's
+  conditional tipAmount write has no round-trip test (END_SESSION with
+  tipAmount → restart → hydrated session shows the tip; P&L depends on it).
+  Align the two creators' record shapes and add the round-trip test
+  alongside the straddle test added in 299a5f8.
+accept_criteria:
+  - "createSession and createSessionAtomic produce identical record schemas"
+  - "endSessionAtomic tipAmount round-trip test green"
+effort: "S"
+files_involved:
+  - src/utils/persistence/sessionsStorage.js
+  - src/utils/persistence/__tests__/sessionsStorage.test.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  origin: "seam-audit-2026-06-10"
+created_at: "2026-06-10"

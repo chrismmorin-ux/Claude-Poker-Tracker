@@ -1,0 +1,44 @@
+id: "WS-217"
+title: "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type"
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 10.0
+priority_label: "P2"
+category: "seam-integrity"
+capability: "core"
+program: "engineering"
+description: |
+  2026-06-10 cross-stream seam audit: the 16 HUD fixtures are hand-authored;
+  no test feeds captured WebSocket traffic (spike-data/) through parseWsBatch
+  → protocol-adapter → hand-state-machine → getLiveHandContext → render
+  functions, so a protocol-adapter shape change ships green with a broken
+  HUD. Also: message-sequences.js:47 defaults dataQuality to the STRING
+  'good' while the real producer (useLiveActionAdvisor) emits an OBJECT
+  {sampleSize, tier, confidenceNote} — any future renderer reading
+  dataQuality.tier would crash in production while tests pass. Add a replay
+  seam test from captured frames asserting the rendered HUD contains no
+  'undefined' text, and align the fixture factory's dataQuality shape with
+  the producer. Note: wire-schemas ADVICE_FIELDS sync risk (3-file update on
+  any new advice field) — consider a shape-contract assertion against
+  useLiveActionAdvisor's assembledAdvice keys.
+accept_criteria:
+  - "A test replays at least one captured WS frame sequence end-to-end into render output with no undefined/raw text"
+  - "message-sequences dataQuality default matches the producer's object shape"
+effort: "M"
+files_involved:
+  - ignition-poker-tracker/shared/protocol.js
+  - ignition-poker-tracker/shared/hand-state-machine.js
+  - ignition-poker-tracker/side-panel/__tests__/message-sequences.js
+  - ignition-poker-tracker/side-panel/render-street-card.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  origin: "seam-audit-2026-06-10"
+created_at: "2026-06-10"

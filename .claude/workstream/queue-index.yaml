@@ -2,12 +2,12 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 211
+total_items: 218
 by_status:
   done: 139
   decomposed: 1
   in_progress: 3
-  backlog: 54
+  backlog: 61
   deferred: 5
   dismissed: 1
   completed: 7
@@ -16,7 +16,7 @@ by_status:
 by_category:
   cwos-infrastructure: 1
   design-comprehension: 5
-  domain-correctness: 6
+  domain-correctness: 8
   domain-correctness-validation: 1
   exploit-anchor-library: 16
   fix-wave: 4
@@ -42,6 +42,7 @@ by_category:
   ready-to-start: 10
   review-workflow: 1
   rules-invariant: 1
+  seam-integrity: 4
   seat-selection: 2
   self-coach-foundation: 12
   shape-language: 12
@@ -51,6 +52,7 @@ by_category:
   table-view: 1
   tableview-invariant-audit: 3
   test-health: 5
+  test-reliability: 1
 
 items:
   - id: "WS-001"
@@ -2143,5 +2145,69 @@ items:
     category: infrastructure
     effort: S
     program: self-compliance
+    capability: core
+
+  - id: "WS-214"
+    title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"
+    status: backlog
+    priority_score: 12
+    category: seam-integrity
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-215"
+    title: "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw"
+    status: backlog
+    priority_score: 13
+    category: domain-correctness
+    effort: M
+    blocked_by: ["WS-214"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-216"
+    title: "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)"
+    status: backlog
+    priority_score: 10
+    category: seam-integrity
+    effort: M
+    program: engineering
+    capability: core
+
+  - id: "WS-217"
+    title: "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type"
+    status: backlog
+    priority_score: 10
+    category: seam-integrity
+    effort: M
+    program: engineering
+    capability: core
+
+  - id: "WS-218"
+    title: "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance"
+    status: backlog
+    priority_score: 11
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-219"
+    title: "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test"
+    status: backlog
+    priority_score: 8
+    category: seam-integrity
+    effort: S
+    program: engineering
+    capability: core
+
+  - id: "WS-220"
+    title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
+    status: backlog
+    priority_score: 9
+    category: test-reliability
+    effort: S
+    program: engineering
     capability: core
 
