@@ -164,7 +164,7 @@ health_score: 4
 health_ceiling: 6
 health_ceiling_reason: "Baseline complete (2026-06-09). compliance 0.67 / coverage 0.75 / pass 0.89. All principles pass, no failed states firing — strong substantive posture. Score held to 4 by 1 open HIGH (INV-F1 detector unenforceable) + coverage gaps (3 skipped, 2 infeasible, 1 no-detector). Ceiling 6 until challenge + blind_spot protocols run (each raises rigor) and the HIGH closes."
 findings_open: 0
-work_items_open: 1
+work_items_open: 0
 
 evidence:
   last_audit_report: null

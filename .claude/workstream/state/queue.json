@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T19:21:19.400Z",
-  "updated_by_event": "ev-1781119279400-ad41b2dd223a",
+  "updated_at": "2026-06-10T22:37:21.443Z",
+  "updated_by_event": "ev-1781131041443-9c0239c86599",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -3534,15 +3534,15 @@
     "WS-150": {
       "id": "WS-150",
       "title": "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 14,
       "category": "hero-state-primitive",
       "effort": "L",
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": "",
-      "claimed_at": null,
-      "completed_at": null,
+      "claimed_at": "2026-06-10T22:19:23Z",
+      "completed_at": "2026-06-10T22:19:23Z",
       "source": {
         "origin": "founder-promotion-2026-05-03",
         "parent_doc": "docs/HERO_STATE_DESIGN.md §7 + project_hero_state_primitive.md v2 backlog",
@@ -3729,7 +3729,7 @@
     "WS-157": {
       "id": "WS-157",
       "title": "HSP-X3 — LLM-augmented narrative authorship for long tail (research/spike, NOT v1-catalog replacement)",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 10,
       "category": "hero-state-primitive",
       "effort": "M",
@@ -5389,13 +5389,14 @@
     "WS-213": {
       "id": "WS-213",
       "title": "Harden naive YAML reader to strip inline comments on scalar values",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 12,
       "category": "infrastructure",
       "effort": "S",
       "program": "self-compliance",
       "capability": "core",
-      "sprint_id": "",
+      "sprint_id": "SPR-116",
+      "completed_at": "2026-06-10T22:37:20.749Z",
       "source": {
         "type": "manual",
         "created_by": "user",
@@ -5646,5 +5647,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781119279400-ad41b2dd223a"
+  "last_event_log_head": "ev-1781131041443-9c0239c86599"
 }

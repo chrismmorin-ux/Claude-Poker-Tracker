@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-06-10T18:53:54.227Z",
-  "goal": "Ship WS-025: In-app test assertions for 9 autonomy red lines",
-  "program_focus": "domain-correctness",
+  "composed_at": "2026-06-10T22:20:52.354Z",
+  "goal": "Harden the CWOS YAML reader against inline-comment misparses (root-cause fix for two /next malfunctions)",
+  "program_focus": "self-compliance",
   "override_class": null,
   "items": [
     {
-      "id": "WS-025",
-      "title": "In-app test assertions for 9 autonomy red lines",
-      "raw_score": 15,
-      "adjusted_score": 15,
-      "effort": "M",
-      "program": "domain-correctness",
+      "id": "WS-213",
+      "title": "Harden naive YAML reader to strip inline comments on scalar values",
+      "raw_score": 12,
+      "adjusted_score": 12,
+      "effort": "S",
+      "program": "self-compliance",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-025 selected (15 × no damping = 15).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-213 selected (12 × no damping = 12).\nCap usage: 0.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 1.5,
+    "effort_sessions": 0.5,
     "ceremony": "standard"
   }
 }

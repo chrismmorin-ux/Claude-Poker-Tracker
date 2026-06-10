@@ -4,11 +4,11 @@
 
 total_items: 220
 by_status:
-  done: 140
+  done: 142
   decomposed: 1
   in_progress: 3
-  backlog: 51
-  deferred: 16
+  backlog: 48
+  deferred: 17
   dismissed: 1
   completed: 7
   review: 1
@@ -1522,12 +1522,13 @@ items:
 
   - id: "WS-150"
     title: "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM"
-    status: backlog
+    status: done
     priority_score: 14
     category: hero-state-primitive
     effort: L
     program: domain-correctness
     capability: core
+    completion_notes: "CLOSED 2026-06-10 (founder-approved during /next premise check — umbrella was stale and winning sprint composition while ~90% shipped). Accept criteria met: all 7 children closed or explicitly re-deferred with rationale —   WS-151 done (SPR-102, turn taxonomy: 12 archetypes + templates)   WS-152 done (SPR-103, river taxonomy + templates)   WS-153 done (SPR-103, classifyArchetype turn/river, NotImplementedError removed)   WS-154 done (SPR-106, multiway model; FLOP_MULTIWAY_SRP/_3BP/_LIMPED + role slot)   WS-155 done (SPR-105, adjustment composition rule; §7.2 resolved)   WS-156 deferred (event-driven caching; claim only on production perf signal)   WS-157 re-deferred 2026-06-10 (LLM spike is event-driven on long-tail     frequency evidence from instrumented production usage; rationale in ticket) src/utils/heroState/ extended turn/river + multiway (239/239 heroState tests at SPR-106 close). First-principles guard preserved per child completion notes. HERO_STATE_DESIGN.md §7.2 + §7.4 resolved; §7.3 (LLM) + §7.6 (caching) remain open by design — both event-driven."
 
   - id: "WS-151"
     title: "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)"
@@ -1593,7 +1594,7 @@ items:
 
   - id: "WS-157"
     title: "HSP-X3 — LLM-augmented narrative authorship for long tail (research/spike, NOT v1-catalog replacement)"
-    status: backlog
+    status: deferred
     priority_score: 10
     category: hero-state-primitive
     effort: M
@@ -2141,12 +2142,14 @@ items:
 
   - id: "WS-213"
     title: "Harden naive YAML reader to strip inline comments on scalar values"
-    status: backlog
+    status: done
     priority_score: 12
     category: infrastructure
     effort: S
+    sprint_id: "SPR-116"
     program: self-compliance
     capability: core
+    completion_notes: "SHIPPED 2026-06-10 (SPR-116). Root fix inside the shared reader (kit/scripts/lib/cwos-utils.js): new quote-aware stripInlineComment() helper cuts at the first '#' preceded by whitespace outside quoted spans. Applied (1) at top of parseScalar — covers mapping scalars, block-sequence items, sequence-of-mapping values, inline-array elements; (2) on afterColon in parseMapping before branch dispatch — fixes `key: [a, b]  # note` corrupting the last array element. Block-scalar content untouched (readBlockScalar never routes through parseScalar). Bonus fix beyond accept criteria: `key: \"val\"  # note` now properly unquotes (previously returned the raw string with quotes). Leading-# values (`key: #fff`) deliberately unchanged — minimal scope. cwos-next.js loadConfig toInt() guard retained as defense-in-depth. Tests: scripts/__tests__/cwos-utils-yaml.test.js (12 cases incl. SPR-113 reproduction + quoted/unquoted/block-scalar/inline-array coverage), all green. Verification: gate parses caps as numbers {max_items: 5, max_effort_sessions: 2}; candidates parses queue cleanly. Full suite 12,297/12,320 passing — 2 failures are pre-existing full-suite-load flakes (gameTreeDepth2 green in isolation; src/ has zero imports of kit code, so the reader change cannot affect app tests)."
 
   - id: "WS-214"
     title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"

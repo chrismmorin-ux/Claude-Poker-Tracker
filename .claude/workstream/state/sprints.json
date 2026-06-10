@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-10T19:21:19.400Z",
-  "updated_by_event": "ev-1781119279400-ad41b2dd223a",
+  "updated_at": "2026-06-10T22:37:21.443Z",
+  "updated_by_event": "ev-1781131041443-9c0239c86599",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1881,7 +1881,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-116": {
+      "id": "SPR-116",
+      "title": "Harden the CWOS YAML reader against inline-comment misparses (root-cause fix for two /next malfuncti",
+      "status": "done",
+      "program_focus": "self-compliance",
+      "created_at": "2026-06-10T22:21:05.230Z",
+      "approved_at": "2026-06-10T22:21:05.230Z",
+      "completed_at": "2026-06-10T22:37:20.749Z",
+      "goal": "Harden the CWOS YAML reader against inline-comment misparses (root-cause fix for two /next malfunctions)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781119279400-ad41b2dd223a"
+  "last_event_log_head": "ev-1781131041443-9c0239c86599"
 }

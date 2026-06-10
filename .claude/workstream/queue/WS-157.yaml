@@ -1,7 +1,7 @@
 id: "WS-157"
 title: "HSP-X3 — LLM-augmented narrative authorship for long tail (research/spike, NOT v1-catalog replacement)"
 type: research
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -67,6 +67,13 @@ source:
   origin: "founder-promotion-2026-05-03"
   parent_ws: "WS-150"
   parent_doc: "docs/HERO_STATE_DESIGN.md §7.3"
-status_note: "v2 research/spike; reject is a valid outcome; deliberately P3"
+status_note: |
+  v2 research/spike; reject is a valid outcome; deliberately P3.
+  RE-DEFERRED 2026-06-10 at HSP-v2 close-out (founder-approved, /next session).
+  Rationale: spike is event-driven — its first step requires long-tail frequency
+  evidence from instrumented production HSP usage, which doesn't exist yet.
+  Mirrors WS-156's deferral pattern. Re-claim when production usage surfaces
+  awkward/generic long-tail narratives worth treating. This deferral satisfies
+  WS-150's accept criterion "closed or explicitly re-deferred with rationale".
 created_at: "2026-05-03"
-updated_at: "2026-05-03"
+updated_at: "2026-06-10"

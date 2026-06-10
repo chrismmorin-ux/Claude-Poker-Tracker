@@ -1,10 +1,10 @@
 id: "WS-150"
 title: "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM"
 type: feature
-status: backlog
-claimed_by: ""
-claimed_at: null
-completed_at: null
+status: done
+claimed_by: "session-2026-06-10-next"
+claimed_at: "2026-06-10T22:19:23Z"
+completed_at: "2026-06-10T22:19:23Z"
 priority_score: 14.0
 priority_label: "P2"
 category: "hero-state-primitive"
@@ -83,5 +83,22 @@ source:
   conversation_session: "session-2026-05-03-design-hsp-v2"
   parent_ws: "WS-136"
 status_note: "v2 master; deferred from WS-136 v1 closing 2026-05-03; schedule against /next when SCF surfaces a turn/river need"
+completion_notes: |
+  CLOSED 2026-06-10 (founder-approved during /next premise check — umbrella was
+  stale and winning sprint composition while ~90% shipped). Accept criteria met:
+  all 7 children closed or explicitly re-deferred with rationale —
+    WS-151 done (SPR-102, turn taxonomy: 12 archetypes + templates)
+    WS-152 done (SPR-103, river taxonomy + templates)
+    WS-153 done (SPR-103, classifyArchetype turn/river, NotImplementedError removed)
+    WS-154 done (SPR-106, multiway model; FLOP_MULTIWAY_SRP/_3BP/_LIMPED + role slot)
+    WS-155 done (SPR-105, adjustment composition rule; §7.2 resolved)
+    WS-156 deferred (event-driven caching; claim only on production perf signal)
+    WS-157 re-deferred 2026-06-10 (LLM spike is event-driven on long-tail
+      frequency evidence from instrumented production usage; rationale in ticket)
+  src/utils/heroState/ extended turn/river + multiway (239/239 heroState tests at
+  SPR-106 close). First-principles guard preserved per child completion notes.
+  HERO_STATE_DESIGN.md §7.2 + §7.4 resolved; §7.3 (LLM) + §7.6 (caching) remain
+  open by design — both event-driven.
 created_at: "2026-05-03"
-updated_at: "2026-05-03"
+updated_at: "2026-06-10"
+closed_by_event: "ev-1781129963371-d833d8d55097"
