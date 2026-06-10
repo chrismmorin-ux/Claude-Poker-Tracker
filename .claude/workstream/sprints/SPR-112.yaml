@@ -1,0 +1,30 @@
+id: "SPR-112"
+title: "Z3-zone sidebar rendering fixes: blank stale advice during DEALING + glanceable stale-state band"
+status: done
+approved_at: "2026-06-10T03:44:11.293Z"
+completed_at: "2026-06-10T04:02:01.662Z"
+completed_by_commit: "6240e90"
+program_focus: "engineering"
+
+goal: |
+  Z3-zone sidebar rendering fixes: blank stale advice during DEALING + glanceable stale-state band
+
+anti_goal_check:
+  status: clean
+  reviewed_at: "2026-06-10T03:44:11.293Z"
+  matches: []
+
+items:
+  - id: "WS-113"
+    title: "DEALING shimmer animates prior-hand content"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-06-10T04:02:01.662Z"
+  - id: "WS-111"
+    title: "Z3 stale-advice zone-wide amber band"
+    mode: execute
+    effort: M
+    status: skipped
+
+created_at: "2026-06-10T03:44:11.293Z"

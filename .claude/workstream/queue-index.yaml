@@ -4,10 +4,12 @@
 
 total_items: 210
 by_status:
-  done: 134
+  done: 137
   decomposed: 1
   in_progress: 3
-  backlog: 64
+  backlog: 55
+  deferred: 5
+  dismissed: 1
   completed: 7
   review: 1
 
@@ -313,7 +315,7 @@ items:
 
   - id: "WS-027"
     title: "Q7 legal-scoping session scheduled"
-    status: backlog
+    status: deferred
     priority_score: 22
     category: monetization-and-pmf
     effort: M
@@ -341,7 +343,7 @@ items:
 
   - id: "WS-030"
     title: "Payment processor integration (Stripe or per Q7)"
-    status: backlog
+    status: deferred
     priority_score: 22
     category: monetization-and-pmf
     effort: M
@@ -350,7 +352,7 @@ items:
 
   - id: "WS-031"
     title: "PaywallGate shared component"
-    status: backlog
+    status: deferred
     priority_score: 22
     category: monetization-and-pmf
     effort: M
@@ -359,7 +361,7 @@ items:
 
   - id: "WS-032"
     title: "BillingSettings extension of SettingsView"
-    status: backlog
+    status: deferred
     priority_score: 22
     category: monetization-and-pmf
     effort: M
@@ -368,7 +370,7 @@ items:
 
   - id: "WS-033"
     title: "PostHog install + event schema v1"
-    status: backlog
+    status: deferred
     priority_score: 22
     category: monetization-and-pmf
     effort: M
@@ -1114,7 +1116,7 @@ items:
 
   - id: "WS-109"
     title: "CAPTURED_HANDS migration bypasses validateHandForRelay"
-    status: backlog
+    status: done
     priority_score: 8
     category: sidebar-recurrence
     effort: M
@@ -1123,7 +1125,7 @@ items:
 
   - id: "WS-110"
     title: "QuotaExceededError silent swallow on session storage"
-    status: backlog
+    status: done
     priority_score: 8
     category: sidebar-recurrence
     effort: M
@@ -1132,7 +1134,7 @@ items:
 
   - id: "WS-111"
     title: "Z3 stale-advice zone-wide amber band"
-    status: backlog
+    status: dismissed
     priority_score: 8
     category: sidebar-recurrence
     effort: M
@@ -1151,7 +1153,7 @@ items:
 
   - id: "WS-113"
     title: "DEALING shimmer animates prior-hand content"
-    status: backlog
+    status: done
     priority_score: 8
     category: sidebar-recurrence
     effort: M

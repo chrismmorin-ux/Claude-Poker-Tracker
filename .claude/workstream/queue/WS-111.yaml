@@ -2,7 +2,9 @@ id: "WS-111"
 title: "Z3 stale-advice zone-wide amber band"
 legacy_id: "RT-88"
 type: improvement
-status: backlog
+status: dismissed
+dismissed_at: "2026-06-09"
+dismissed_reason: "Premise superseded (founder decision 2026-06-09, SPR-112). The per-row `(stale)` suffix this ticket aimed to promote was removed in RT-48 + SHC V-3 (2026-04-27/28); stale advice now renders as an amber border + 'Stale Ns' badge + V-3 freshness dots, deliberately 'muted enough not to distract during live play' (side-panel.html:68). A more-prominent zone-wide band conflicts with that deliberate decision and would be a fresh Gate-1 design question, not this ticket's mechanical 'promote the suffix' scope."
 claimed_by: ""
 claimed_at: null
 completed_at: null

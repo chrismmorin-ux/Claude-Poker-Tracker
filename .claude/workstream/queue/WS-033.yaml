@@ -2,7 +2,7 @@ id: "WS-033"
 title: "PostHog install + event schema v1"
 legacy_id: "MPMF-G5-PH"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -30,5 +30,7 @@ source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "NEXT — Monetization & PMF (project: `docs/projects/monetization-and-pmf.project.md`)"
   source_line: 178
+deferred_at: "2026-06-09"
+deferred_reason: "Monetization off roadmap (founder decision 2026-06-09); local-first sole-user tool. Deferred to clear launch cap-breach distorting /next composition. Reversible: set status back to backlog to revive."
 created_at: "2026-05-01"
-updated_at: "2026-05-11"
+updated_at: "2026-06-09"

@@ -282,12 +282,16 @@ phase_relevance:
 last_run_by_protocol:
   baseline: { date: "2026-05-01", engine: "eng-engine", run_id: "run-domain-correctness-baseline-2026-05-01", result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified" }
   delta: { date: null, engine: null, run_id: null, result: null }
-  sweep: { date: "2026-05-19", engine: eng-engine, run_id: "run-domain-correctness-sweep-2026-05-19", result: "Drift sweep vs 2026-05-01 baseline across all 9 problem classes. NO new HIGH/critical drift. Engine work since baseline is doctrine-aligned: villainStrengthBucket (WS-194) computes strength as a per-combo OUTPUT from card scores per river-equity memory; heroState classifyArchetype documents archetypeId as output-never-input; POKER_THEORY §7.6 AP-RL-01 strengthens anti-bucket-label doctrine; rangeEngine revealMechanism is a sound MNAR observability rail. 1 new LOW (FIND-022): WS-131 positional-prior normalization widens position-label-keyed fold-estimate surface — accepted as Tier-1/2 prior fallback, monitor. 8 MEDIUM + 8 LOW from baseline still open." }
+  sweep:
+    date: "2026-06-09"
+    engine: eng-engine
+    run_id: "run-domain-correctness-sweep-2026-06-09"
+    result: "Drift sweep vs 2026-05-19 over the ~6,730-insertion engine surface from SPR-101..110 (Range Lab P1/P2b, HSP v2, 5 SCF hero-leak rules + shapeLanguage Bayesian substrate). NO new HIGH/MEDIUM drift; new work doctrine-aligned, in places doctrine-improving. Verified: new leak rules enforce n>=30 floor + CI-gated firing + treat position/decision labels as baseline-lookup keys not decision inputs; solverBaselines RFI/barrel/multiway match standard 100bb solver outputs with confidence discounts on sparse data; shapeLanguage betaPosterior is a sound single-source Beta CI with a>=1/b>=1 floors and no fused score; heroState composeAdjustments derives per-axis composition from minimax-regret + locally-linear-regime theory with archetypeId and composedDelta OUTPUT-only; pokerCore exactComboEquity collapses two enumeration copies into one deterministic single-source routine eliminating a divergence risk. 1 new LOW FIND-023: composeAdjustments multiplicative sizing assumes vulnerability orthogonality not asserted upstream, bounded by the 0.6-2.0 clamp, monitor. Sampled-not-exhausted: villainProfileBuilder, bayesianUpdater, equityCache follow established audited patterns, flagged for delta. 8 MEDIUM plus prior LOWs from baseline still open. Cleared the WS-365 first-run-required block left by the kit 3.8.0 re-materialization."
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
 
 health_score: 5
-health_updated_at: "2026-05-19T00:00:00Z"
+health_updated_at: "2026-06-09T00:00:00Z"
 health_ceiling: 8
 health_ceiling_reason: "Baseline (2026-05-01) + first sweep (2026-05-19) complete; all 5 baseline HIGH findings resolved (SPR-001/016/017). Sweep found NO new HIGH/critical drift — engine work since baseline actively implements doctrine (WS-194 villainStrengthBucket as output, archetype-as-output guard, AP-RL-01, MNAR rail). Score 5/8: full problem-class coverage confirmed + sweep currency fresh, but finding_health dragged by 8 open MEDIUM. Ceiling stays 8 — challenge + blind_spot protocols not yet run (each raises rigor ceiling). block_sprint cleared (sweep fresh)."
 health_breakdown:
@@ -298,7 +302,7 @@ health_breakdown:
   raw: 0.54
   earned: 4
   applied: 5                # rounded up for clean-HIGH + clean-sweep, no hard caps
-findings_open: 17
+findings_open: 18
 work_items_open: 1
 
 evidence:
@@ -342,6 +346,14 @@ evidence:
       work_items: 0
       result: "First sweep (4d late vs 14-day cadence; cleared block_sprint). Audited committed + uncommitted engine changes since baseline across all 9 problem classes. NO new HIGH/critical drift — engine work IMPROVED theory alignment: WS-194 villainStrengthBucket (per-combo strength as output), heroState archetype-as-output guard, POKER_THEORY §7.6 AP-RL-01 anti-bucket-label doctrine, rangeEngine MNAR revealMechanism rail. 1 new LOW (FIND-022): WS-131 positional-prior normalization — accepted, monitor."
       health_score: 5
+    - date: "2026-06-09"
+      protocol: sweep
+      engine: eng-engine
+      run_id: "run-domain-correctness-sweep-2026-06-09"
+      findings: 1
+      work_items: 0
+      result: "Sweep vs 2026-05-19 over the ~6,730-insertion engine surface from SPR-101..110 (Range Lab P1/P2b, HSP v2, 5 SCF hero-leak rules + shapeLanguage Bayesian substrate). NO new HIGH/MEDIUM drift; new work doctrine-aligned and in places doctrine-improving (exactComboEquity single-source enumeration eliminates a divergence risk; leak rules treat labels as baseline-lookup keys not decision inputs; betaPosterior is a sound single-source Beta CI; composeAdjustments derives per-axis composition from minimax-regret/locally-linear-regime theory with archetype+composedDelta OUTPUT-only). 1 new LOW (FIND-023): composeAdjustments multiplicative sizing assumes vulnerability orthogonality not asserted upstream — bounded by [0.6,2.0] clamp, monitor. Re-materialized intent event ev-1781038517610; cleared WS-365 first-run-required block."
+      health_score: 5
   retention_days: 365
   evidence_dir: ".claude/workstream/evidence/domain-correctness/"
 
@@ -355,4 +367,4 @@ maturity:
   current_gaps: "All 5 HIGH findings from 2026-05-01 baseline now resolved. SPR-001 closed FIND-003/004/005 (2026-05-01). SPR-016 closed FIND-002 (2026-05-02). SPR-017 closed FIND-001 (2026-05-02). 8 MEDIUM and 8 LOW findings remain open for sweep/challenge cycles (next sweep cadence: 14 days, due 2026-05-15). v2 follow-up WS-135 (P2) tracks expansive credible-interval surface scope (PlayerAnalysisPanel + HandReplay tendency sections) deferred per owner staged-scope decision."
 
 created_at: "2026-05-01"
-updated_at: "2026-05-19"
+updated_at: "2026-06-09"

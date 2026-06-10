@@ -2,10 +2,11 @@ id: "WS-113"
 title: "DEALING shimmer animates prior-hand content"
 legacy_id: "RT-90"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "6240e90"
 priority_score: 8.0
 priority_label: "P3"
 category: "sidebar-recurrence"
@@ -28,3 +29,4 @@ source:
   source_line: 673
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781064121715-c83e6027a4e9"

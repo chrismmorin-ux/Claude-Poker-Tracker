@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-09T19:09:05.853Z",
-  "updated_by_event": "ev-1781032145853-b4ff9dfa1de7",
+  "updated_at": "2026-06-10T04:20:56.450Z",
+  "updated_by_event": "ev-1781065256450-f5d775279756",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -602,7 +602,7 @@
     "WS-027": {
       "id": "WS-027",
       "title": "Q7 legal-scoping session scheduled",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 22,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -669,7 +669,7 @@
     "WS-030": {
       "id": "WS-030",
       "title": "Payment processor integration (Stripe or per Q7)",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 22,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -692,7 +692,7 @@
     "WS-031": {
       "id": "WS-031",
       "title": "PaywallGate shared component",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 22,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -715,7 +715,7 @@
     "WS-032": {
       "id": "WS-032",
       "title": "BillingSettings extension of SettingsView",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 22,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -738,7 +738,7 @@
     "WS-033": {
       "id": "WS-033",
       "title": "PostHog install + event schema v1",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 22,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -2478,7 +2478,7 @@
     "WS-109": {
       "id": "WS-109",
       "title": "CAPTURED_HANDS migration bypasses validateHandForRelay",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -2500,7 +2500,7 @@
     "WS-110": {
       "id": "WS-110",
       "title": "QuotaExceededError silent swallow on session storage",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -2522,7 +2522,7 @@
     "WS-111": {
       "id": "WS-111",
       "title": "Z3 stale-advice zone-wide amber band",
-      "status": "backlog",
+      "status": "dismissed",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -2566,7 +2566,7 @@
     "WS-113": {
       "id": "WS-113",
       "title": "DEALING shimmer animates prior-hand content",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -5387,5 +5387,5 @@
       "source_class": "conversation"
     }
   },
-  "last_event_log_head": "ev-1781032145853-b4ff9dfa1de7"
+  "last_event_log_head": "ev-1781065256450-f5d775279756"
 }

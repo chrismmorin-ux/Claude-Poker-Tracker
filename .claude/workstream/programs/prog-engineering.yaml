@@ -126,8 +126,17 @@ protocols:
 
 accountability:
   on_finding:
-    action: create_work_item
-    max_open_items: 3
+    # max_open_items re-calibrated 3 → 15 (2026-06-09). The original 3 was an
+    # untuned template default — lower than every other program (domain-
+    # correctness / self-compliance / launch are all 5) despite engineering
+    # being the one program that legitimately carries an active development
+    # backlog. At 3 it false-breached constantly (14 open, ratio 4.67), flooring
+    # every engineering item to priority_floor and hijacking /next into oversized
+    # bundles. 15 reflects a realistic-but-bounded solo-dev WIP+backlog ceiling
+    # for an app this size (33 hooks / 13 views / 4 engines / ~184 test files):
+    # high enough to stop the false breach, low enough to still flag genuine
+    # overload. If it climbs past 15, that is a real signal to groom the backlog.
+    max_open_items: 15
     priority_floor: 18
     escalation:
       stale_days: 14
@@ -165,16 +174,10 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
 findings_open: 0
-work_items_open: 18
+work_items_open: 14
 
 cap_breach:
-  active: true
-  work_items_open: 18
-  findings_open: 0
-  max_open_items: 3
-  priority_floor: 18
-  ratio: 6
-  since: "2026-06-09"
+  active: false
 evidence:
   last_audit_report: null
   protocol_history: []
@@ -191,4 +194,4 @@ maturity:
   current_gaps: "Never run."
 
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-09"

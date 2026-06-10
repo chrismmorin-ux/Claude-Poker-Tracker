@@ -8,9 +8,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-002:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -22,30 +22,30 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-006:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-008:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-009:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-010:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -57,16 +57,16 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-013:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-014:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -85,16 +85,16 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-024:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-025:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -113,9 +113,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-028:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -134,10 +134,10 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-031:
-    consecutive_failures: 0
-    first_failed_at: null
-    last_failed_at: null
-    last_status: "PASS"
+    consecutive_failures: 3
+    first_failed_at: "2026-06-10"
+    last_failed_at: "2026-06-10"
+    last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
   INV-032:
@@ -176,9 +176,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-037:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -204,9 +204,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-041:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -260,9 +260,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-049:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -281,9 +281,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-056:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -295,9 +295,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-059:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null
@@ -309,9 +309,9 @@ invariants:
     threshold: 5
     migration_ws_id: null
   INV-program-fields-have-runtime-effect:
-    consecutive_failures: 1
+    consecutive_failures: 4
     first_failed_at: "2026-06-09"
-    last_failed_at: "2026-06-09"
+    last_failed_at: "2026-06-10"
     last_status: "FAIL"
     threshold: 5
     migration_ws_id: null

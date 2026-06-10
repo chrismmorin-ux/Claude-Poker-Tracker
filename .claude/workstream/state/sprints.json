@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-09T18:44:41.867Z",
-  "updated_by_event": "ev-1781030681867-8693f3425ab4",
+  "updated_at": "2026-06-10T04:02:02.846Z",
+  "updated_by_event": "ev-1781064122846-fe57e7c24cae",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1799,7 +1799,41 @@
         "spr-followup"
       ],
       "anchor_source_class": "spr-followup"
+    },
+    "SPR-111": {
+      "id": "SPR-111",
+      "title": "Reliability slice: fix silent storage-quota swallow + hand-relay validation bypass",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-10T02:47:46.314Z",
+      "approved_at": "2026-06-10T02:47:46.314Z",
+      "completed_at": "2026-06-10T02:53:20.669Z",
+      "goal": "Reliability slice: fix silent storage-quota swallow + hand-relay validation bypass",
+      "item_count": 2,
+      "items_done": 2,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-112": {
+      "id": "SPR-112",
+      "title": "Z3-zone sidebar rendering fixes: blank stale advice during DEALING + glanceable stale-state band",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-10T03:44:11.293Z",
+      "approved_at": "2026-06-10T03:44:11.293Z",
+      "completed_at": "2026-06-10T04:02:01.662Z",
+      "goal": "Z3-zone sidebar rendering fixes: blank stale advice during DEALING + glanceable stale-state band",
+      "item_count": 2,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781030681867-8693f3425ab4"
+  "last_event_log_head": "ev-1781064122846-fe57e7c24cae"
 }

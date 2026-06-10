@@ -2,10 +2,11 @@ id: "WS-110"
 title: "QuotaExceededError silent swallow on session storage"
 legacy_id: "RT-87"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "6240e90"
 priority_score: 8.0
 priority_label: "P3"
 category: "sidebar-recurrence"
@@ -30,3 +31,4 @@ source:
   source_line: 670
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781060000700-5355c817788a"
